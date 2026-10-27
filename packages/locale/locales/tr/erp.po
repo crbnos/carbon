@@ -810,6 +810,9 @@ msgstr "{previewCount, plural, one {Bu # kişi-gün için +{hoursInput}s fazla m
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# satırı kalıcı olarak sil?} other {# satırı kalıcı olarak sil?}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} MRP dışı depolamada, planlamaya dahil değil"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
 
@@ -2710,6 +2713,9 @@ msgstr "Tahsis edildi"
 
 msgid "Allows acknowledge & continue"
 msgstr "Onaylayıp devam etmeye izin verir"
+
+msgid "Already non-nettable through its parent or a storage type"
+msgstr "Üst birim veya bir depolama türü nedeniyle zaten MRP dışı"
 
 msgid "also at {otherStationNames}"
 msgstr "ayrıca {otherStationNames} adresinde"
@@ -9867,6 +9873,9 @@ msgstr "Dönem kapatılmadan önce her gerekli görev Bitti veya Atlandı olmal�
 msgid "Every row was imported successfully."
 msgstr "Her satır başarıyla içe aktarıldı."
 
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "Bu türdeki her depolama birimi MRP dışıdır: MRP ve toplama içindeki stoku yok sayar."
+
 msgid "Every unit has a rate."
 msgstr "Her adetin bir oranı vardır."
 
@@ -14588,6 +14597,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (planlama)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP ve toplama bu birimdeki ve içindeki birimlerdeki stoku yok sayar. Karantina ve bekletme alanları için kullanın."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP otomatik olarak her 3 saatte bir çalışır, ancak buradan manuel olarak çalıştırabilirsiniz."
 
@@ -14725,6 +14737,9 @@ msgstr "Net ROU Varlığı"
 
 msgid "Net Unit Price"
 msgstr "Net Birim Fiyat"
+
+msgid "Nettable"
+msgstr "MRP'ye dahil"
 
 msgid "Network error"
 msgstr "Ağ hatası"
@@ -15993,6 +16008,9 @@ msgstr "Uzun vadeli kısım"
 
 msgid "Non-Inventory"
 msgstr "Stok dışı"
+
+msgid "Non-nettable"
+msgstr "MRP dışı"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Bu sınıftaki bir varlık net defter değerinin altında satıldığında veya hurda haline getirildiğinde borç kaydedilen işletme dışı gider hesabı."
@@ -22677,6 +22695,9 @@ msgstr "Stok"
 
 msgid "Stock Availability"
 msgstr "Stok Mevcudiyeti"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "Bu depolama birimindeki stok arz değildir. MRP ve planlama ekranları onu saymaz, toplama da ondan almaz. Üst birimi veya depolama türlerinden biri MRP dışıysa birim de MRP dışıdır. Karantina ve bekletme alanları için kullanın. Bir stok transferi stoku yeniden dışarı taşır."
 
 msgid "Stock movement corrected"
 msgstr "Stok hareketi düzeltildi"

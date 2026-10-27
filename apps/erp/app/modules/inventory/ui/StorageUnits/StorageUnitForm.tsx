@@ -25,6 +25,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
 import { PrintButton } from "~/components";
 import {
+  Boolean,
   Hidden,
   Input,
   Location,
@@ -47,6 +48,8 @@ type StorageUnitFormProps = {
     workCenterId: string;
     workCenterName: string | null;
   } | null;
+  /** A parent or one of its storage types makes this unit non-nettable. */
+  inheritsNonNettable?: boolean;
 };
 
 const StorageUnitForm = ({
@@ -55,7 +58,8 @@ const StorageUnitForm = ({
   open = true,
   type = "drawer",
   onClose,
-  inheritedWorkCenter
+  inheritedWorkCenter,
+  inheritsNonNettable = false
 }: StorageUnitFormProps) => {
   // A modal closes once the unit exists, so the picker that opened it can
   // select it; an error is toasted and the form stays.
@@ -183,6 +187,16 @@ const StorageUnitForm = ({
                     helperText={t`Assigns this storage unit to a work center (lineside)`}
                   />
                 )}
+                <Boolean
+                  name="nonNettable"
+                  label={t`Non-nettable`}
+                  termId="non-nettable"
+                  description={
+                    inheritsNonNettable
+                      ? t`Already non-nettable through its parent or a storage type`
+                      : t`MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas.`
+                  }
+                />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

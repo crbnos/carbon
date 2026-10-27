@@ -168,8 +168,9 @@ export async function getSerialNumbersForItem(
 /**
  * Available tracked entities for an item at a location, one row per entity, with
  * its bin, on-hand, and FEFO/FIFO order keys — for the shared TrackedEntityPicker.
- * `excludeLineside` drops lineside (work-center) bins; `excludeAllocated` nets out
- * quantities already allocated to other non-cancelled picking lines.
+ * `excludeLineside` drops lineside (work-center) bins; `excludeNonNettable` drops
+ * non-nettable bins (a quarantine area); `excludeAllocated` nets out quantities
+ * already allocated to other non-cancelled picking lines.
  */
 export async function getAvailableTrackedEntities(
   client: SupabaseClient<Database>,
@@ -178,6 +179,7 @@ export async function getAvailableTrackedEntities(
     companyId: string;
     locationId: string;
     excludeLineside?: boolean;
+    excludeNonNettable?: boolean;
     excludeAllocated?: boolean;
     excludeLineId?: string | null;
     sortMethod?: Database["public"]["Enums"]["pickMethodSortMethod"];
@@ -190,7 +192,8 @@ export async function getAvailableTrackedEntities(
     p_exclude_lineside: args.excludeLineside ?? false,
     p_exclude_allocated: args.excludeAllocated ?? false,
     p_exclude_line_id: args.excludeLineId ?? undefined,
-    p_sort_method: args.sortMethod ?? undefined
+    p_sort_method: args.sortMethod ?? undefined,
+    p_exclude_non_nettable: args.excludeNonNettable ?? false
   });
 }
 
@@ -322,6 +325,7 @@ export async function getSuggestedAllocationForMaterial(
     companyId: args.companyId,
     locationId: args.locationId,
     excludeLineside: true,
+    excludeNonNettable: true,
     excludeAllocated: true,
     sortMethod
   });

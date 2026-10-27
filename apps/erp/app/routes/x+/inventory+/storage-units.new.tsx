@@ -51,7 +51,8 @@ export default function NewStorageUnitRoute() {
     name: "",
     locationId,
     parentId,
-    storageTypeIds: []
+    storageTypeIds: [],
+    nonNettable: false
   };
 
   return (

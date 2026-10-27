@@ -18,6 +18,7 @@ import { mergeDemandProjections } from "~/modules/items/demand-projection";
 import {
   getDemandForecastSources,
   getItemDemand,
+  getItemNonNettableQuantity,
   getItemQuantities,
   getOpenJobMaterials,
   getOpenProductionOrders,
@@ -38,6 +39,8 @@ const defaultResponse = {
   supply: [],
   periods: [],
   quantityOnHand: 0,
+  quantityNonNettable: 0,
+  quantityNettable: 0,
   openSalesOrderLines: [],
   openJobMaterials: [],
   openProductionOrders: [],
@@ -136,23 +139,26 @@ async function getRedirectedOpenJobMaterials(
 
   for (const rule of incoming.data ?? []) {
     if (!effective(rule)) continue;
-    const [predecessorLines, quantities] = await Promise.all([
+    const [predecessorLines, quantities, nonNettable] = await Promise.all([
       getOpenJobMaterials(client, {
         itemId: rule.itemId,
         companyId,
         locationId
       }),
-      getItemQuantities(client, rule.itemId, companyId, locationId)
+      getItemQuantities(client, rule.itemId, companyId, locationId),
+      getItemNonNettableQuantity(client, rule.itemId, companyId, locationId)
     ]);
     if (predecessorLines.error) {
       throw new Error(predecessorLines.error.message);
     }
     if (quantities.error) throw new Error(quantities.error.message);
+    if (nonNettable.error) throw new Error(nonNettable.error.message);
     const factor = Number(rule.conversionFactor ?? 1) || 1;
     const { moved } = redirectJobMaterialLines(
       predecessorLines.data ?? [],
       rule.supersessionMode,
-      Number(quantities.data?.quantityOnHand ?? 0)
+      Number(quantities.data?.quantityOnHand ?? 0) -
+        Number(nonNettable.data?.quantityNonNettable ?? 0)
     );
     for (const line of moved) {
       lines.push({
@@ -187,6 +193,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [
     demand,
     quantities,
+    nonNettable,
     openSalesOrderLines,
     openJobMaterials,
     openProductionOrders,
@@ -200,6 +207,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId
     }),
     getItemQuantities(client, itemId, companyId, locationId),
+    getItemNonNettableQuantity(client, itemId, companyId, locationId),
     getOpenSalesOrderLines(client, { itemId, companyId, locationId }),
     getOpenJobMaterials(client, { itemId, companyId, locationId }),
     getOpenProductionOrders(client, { itemId, companyId, locationId }),
@@ -254,6 +262,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // The projection starts from nettable stock, the figure MRP plans against.
+  const quantityOnHand = Number(quantities.data?.quantityOnHand ?? 0);
+  const quantityNonNettable = Number(
+    nonNettable.data?.quantityNonNettable ?? 0
+  );
+  const quantityNettable = quantityOnHand - quantityNonNettable;
+
   const redirectedOpenJobMaterials = await getRedirectedOpenJobMaterials(
     client,
     {
@@ -261,7 +276,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       locationId,
       companyId,
       today: today.toString(),
-      onHand: Number(quantities.data?.quantityOnHand ?? 0),
+      onHand: quantityNettable,
       lines: openJobMaterials.data ?? []
     }
   );
@@ -306,7 +321,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     demandForecastSources: demandForecastSources.data ?? [],
     supply,
     periods,
-    quantityOnHand: quantities.data?.quantityOnHand ?? 0,
+    quantityOnHand,
+    quantityNonNettable,
+    quantityNettable,
     openSalesOrderLines: openSalesOrderLines.data ?? [],
     openJobMaterials: redirectedOpenJobMaterials,
     openProductionOrders: productionOrders,

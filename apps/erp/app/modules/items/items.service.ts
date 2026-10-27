@@ -1195,6 +1195,26 @@ export async function getItemPlanning(
     .maybeSingle();
 }
 
+/**
+ * The part of an item's on-hand at a location that sits in non-nettable
+ * storage units: stock MRP and the planning screens do not count as supply.
+ * get_inventory_quantities includes it in quantityOnHand.
+ */
+export async function getItemNonNettableQuantity(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("itemStockQuantities")
+    .select("quantityNonNettable")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .eq("locationId", locationId)
+    .maybeSingle();
+}
+
 export async function getItemQuantities(
   client: SupabaseClient<Database>,
   itemId: string,

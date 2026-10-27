@@ -27164,18 +27164,21 @@ export type Database = {
           companyId: string
           itemId: string
           locationId: string
+          quantityNonNettable: number
           quantityOnHand: number
         }
         Insert: {
           companyId: string
           itemId: string
           locationId?: string
+          quantityNonNettable?: number
           quantityOnHand?: number
         }
         Update: {
           companyId?: string
           itemId?: string
           locationId?: string
+          quantityNonNettable?: number
           quantityOnHand?: number
         }
         Relationships: []
@@ -64540,6 +64543,7 @@ export type Database = {
           customFields: Json | null
           id: string
           name: string
+          nettable: boolean
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -64550,6 +64554,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name: string
+          nettable?: boolean
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -64560,6 +64565,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name?: string
+          nettable?: boolean
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -64671,10 +64677,12 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
+          effectiveNettable: boolean
           id: string
           isWorkCenterDefault: boolean
           locationId: string
           name: string
+          nettable: boolean
           parentId: string | null
           storageTypeIds: string[]
           tags: string[] | null
@@ -64689,10 +64697,12 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
+          effectiveNettable?: boolean
           id?: string
           isWorkCenterDefault?: boolean
           locationId: string
           name: string
+          nettable?: boolean
           parentId?: string | null
           storageTypeIds?: string[]
           tags?: string[] | null
@@ -64707,10 +64717,12 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
+          effectiveNettable?: boolean
           id?: string
           isWorkCenterDefault?: boolean
           locationId?: string
           name?: string
+          nettable?: boolean
           parentId?: string | null
           storageTypeIds?: string[]
           tags?: string[] | null
@@ -90340,6 +90352,7 @@ export type Database = {
           ancestorPath: string[] | null
           companyId: string | null
           depth: number | null
+          effectiveNettable: boolean | null
           id: string | null
           locationId: string | null
           name: string | null
@@ -92822,6 +92835,7 @@ export type Database = {
           p_exclude_allocated?: boolean
           p_exclude_line_id?: string
           p_exclude_lineside?: boolean
+          p_exclude_non_nettable?: boolean
           p_filter_storage_unit?: boolean
           p_item_id: string
           p_location_id: string
@@ -94711,6 +94725,12 @@ export type Database = {
           userCount: number
         }[]
       }
+      get_warehouse_storage_unit_ids: {
+        Args: { p_storage_unit_ids: string[] }
+        Returns: {
+          storageUnitId: string
+        }[]
+      }
       get_webhook_signing_secret: {
         Args: { p_company_id: string; p_webhook_id: string }
         Returns: string
@@ -94998,6 +95018,10 @@ export type Database = {
         Returns: undefined
       }
       reconcile_item_stock_quantities: { Args: never; Returns: undefined }
+      refresh_storage_unit_nettable: {
+        Args: { p_location_ids: string[] }
+        Returns: undefined
+      }
       resolve_shelf_life_start_for_receipt: {
         Args: { p_item_id: string; p_receipt_id: string }
         Returns: string
@@ -95141,6 +95165,14 @@ export type Database = {
         Returns: undefined
       }
       storage_unit_enforce_same_location: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      storage_unit_is_nettable: {
+        Args: { p_storage_unit_id: string }
+        Returns: boolean
+      }
+      storage_unit_release_non_nettable_stock: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
@@ -95332,6 +95364,14 @@ export type Database = {
         Returns: undefined
       }
       sync_set_job_operation_in_progress: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      sync_storage_type_nettable: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      sync_storage_unit_nettable: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }

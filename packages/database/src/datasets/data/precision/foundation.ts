@@ -209,7 +209,7 @@ export const WAREHOUSES: WarehouseSpec[] = [
   { key: "QC", name: "Incoming Inspection Hold", requiresBin: true }
 ];
 
-export const STORAGE_TYPES = ["Shelf", "Bin", "Rack"];
+export const STORAGE_TYPES = ["Shelf", "Bin", "Rack", "Quarantine"];
 
 // Names here are the contract for OPENING_STOCK[].shelf — a mismatch is a hard
 // error, so the racking rows are listed rather than generated.
@@ -225,7 +225,10 @@ export const SHELVES: ShelfSpec[] = [
   { name: "B3-L2", warehouse: "Main", storageType: "Bin", parent: "Rack-1" },
   { name: "B3-L3", warehouse: "Main", storageType: "Bin", parent: "Rack-1" },
   // Bar, plate and tube live on cantilever racking, not in bins.
-  { name: "Bar-Stock", warehouse: "Main", storageType: "Shelf" }
+  { name: "Bar-Stock", warehouse: "Main", storageType: "Shelf" },
+  // Non-nettable (its storage type is): stock held here pending a quality
+  // decision is not planned against or picked.
+  { name: "MRB-Hold", warehouse: "Main", storageType: "Quarantine" }
 ];
 
 export const PRINTER_ROUTE: PrinterRouteSpec = {
@@ -848,6 +851,7 @@ export const precisionFoundation: FoundationData = {
   employeeJob: EMPLOYEE_JOB,
   warehouses: WAREHOUSES,
   storageTypes: STORAGE_TYPES,
+  nonNettableStorageTypes: ["Quarantine"],
   shelves: SHELVES,
   printerRoute: PRINTER_ROUTE,
   holidays: HOLIDAYS,

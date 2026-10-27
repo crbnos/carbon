@@ -1641,9 +1641,27 @@ export async function getJobMaterialShortfallByItem(
         item_id: successorId
       })
   );
+  // On-hand is the nettable figure, like the job's own lines
+  // (get_job_quantity_on_hand): stock in a non-nettable storage unit cannot
+  // cover the remainder. get_inventory_quantities counts it.
+  const successorStock =
+    successorIds.length > 0
+      ? await client
+          .from("itemStockQuantities")
+          .select("itemId, quantityOnHand, quantityNonNettable")
+          .eq("companyId", companyId)
+          .eq("locationId", locationId)
+          .in("itemId", successorIds)
+      : { data: [] };
+  const successorOnHand = new Map(
+    (successorStock.data ?? []).map((row) => [
+      row.itemId,
+      Number(row.quantityOnHand ?? 0) - Number(row.quantityNonNettable ?? 0)
+    ])
+  );
   successorIds.forEach((successorId, index) => {
     const row = successorQuantities[index]?.data?.[0];
-    onHandByItem.set(successorId, Number(row?.quantityOnHand ?? 0));
+    onHandByItem.set(successorId, successorOnHand.get(successorId) ?? 0);
     incomingByItem.set(
       successorId,
       Number(row?.quantityOnPurchaseOrder ?? 0) +
@@ -21690,9 +21708,16 @@ async function loadSupersessionRedirect(
     .map((r) => r.itemId);
   const consumeFirstOnHand = new Map<string, number>();
   if (consumeFirstItemIds.length > 0 && job?.locationId) {
+    // Nettable on-hand: stock in a non-nettable storage unit cannot supply
+    // the job.
     const stock = await db
       .selectFrom("itemStockQuantities")
-      .select(["itemId", "quantityOnHand"])
+      .select((eb) => [
+        "itemId",
+        eb("quantityOnHand", "-", eb.ref("quantityNonNettable")).as(
+          "quantityNettable"
+        )
+      ])
       .where("companyId", "=", companyId)
       .where("locationId", "=", job.locationId)
       .where("itemId", "in", consumeFirstItemIds)
@@ -21707,7 +21732,7 @@ async function loadSupersessionRedirect(
     for (const r of stock) {
       onHandByItem.set(
         r.itemId,
-        (onHandByItem.get(r.itemId) ?? 0) + Number(r.quantityOnHand ?? 0)
+        (onHandByItem.get(r.itemId) ?? 0) + Number(r.quantityNettable ?? 0)
       );
     }
     const madeItemIds = new Set(
@@ -22018,9 +22043,15 @@ async function settleConsumeFirstLines(opts: {
       predecessorIds.add(id);
     }
   }
+  // Nettable on-hand, the same figure loadSupersessionRedirect reads.
   const stock = await trx
     .selectFrom("itemStockQuantities")
-    .select(["itemId", "quantityOnHand"])
+    .select((eb) => [
+      "itemId",
+      eb("quantityOnHand", "-", eb.ref("quantityNonNettable")).as(
+        "quantityNettable"
+      )
+    ])
     .where("companyId", "=", companyId)
     .where("locationId", "=", locationId)
     .where("itemId", "in", [...predecessorIds])
@@ -22029,7 +22060,7 @@ async function settleConsumeFirstLines(opts: {
   for (const row of stock) {
     onHandByItem.set(
       row.itemId,
-      (onHandByItem.get(row.itemId) ?? 0) + Number(row.quantityOnHand ?? 0)
+      (onHandByItem.get(row.itemId) ?? 0) + Number(row.quantityNettable ?? 0)
     );
   }
 

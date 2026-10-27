@@ -45,8 +45,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     inheritedWorkCenterName = wc?.name ?? null;
   }
 
+  // Its own flag is on, yet a parent or one of its storage types makes it
+  // non-nettable.
+  const inheritsNonNettable =
+    storageUnit?.data?.nettable === true &&
+    storageUnit.data.effectiveNettable === false;
+
   return {
     storageUnit: storageUnit?.data ?? null,
+    inheritsNonNettable,
     inheritedWorkCenter: isInherited
       ? {
           workCenterId: effectiveWorkCenterId,
@@ -77,7 +84,8 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function EditStorageUnitRoute() {
-  const { storageUnit, inheritedWorkCenter } = useLoaderData<typeof loader>();
+  const { storageUnit, inheritedWorkCenter, inheritsNonNettable } =
+    useLoaderData<typeof loader>();
   const closeRoute = useCloseRoute();
 
   const initialValues = {
@@ -88,6 +96,7 @@ export default function EditStorageUnitRoute() {
     parentId: storageUnit?.parentId ?? undefined,
     workCenterId: storageUnit?.workCenterId ?? undefined,
     storageTypeIds: storageUnit?.storageTypeIds ?? [],
+    nonNettable: storageUnit?.nettable === false,
     ...getCustomFields(storageUnit?.customFields)
   };
 
@@ -98,6 +107,7 @@ export default function EditStorageUnitRoute() {
         initialValues={initialValues}
         locationId={initialValues.locationId}
         inheritedWorkCenter={inheritedWorkCenter}
+        inheritsNonNettable={inheritsNonNettable}
         onClose={() => closeRoute()}
       />
       <RecordOutlet />

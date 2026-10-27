@@ -1494,6 +1494,9 @@ export function foundation(ctx: ValidationCtx): void {
       f.contractorAgency.type
     );
   }
+  for (const name of f.nonNettableStorageTypes) {
+    need("storageType", "foundation.nonNettableStorageTypes", name);
+  }
   const seenShelves = new Set<string>();
   for (const shelf of f.shelves) {
     need("warehouse", `foundation.shelves "${shelf.name}"`, shelf.warehouse);

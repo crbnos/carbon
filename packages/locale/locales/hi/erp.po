@@ -810,6 +810,9 @@ msgstr "{previewCount, plural, one {यह # व्यक्ति-दिन प
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# पंक्ति को स्थायी रूप से हटाएँ?} other {# पंक्तियों को स्थायी रूप से हटाएँ?}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} MRP से बाहर भंडारण में, योजना में शामिल नहीं"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
 
@@ -2710,6 +2713,9 @@ msgstr "आवंटित"
 
 msgid "Allows acknowledge & continue"
 msgstr "स्वीकार करने और जारी रखने की अनुमति देता है"
+
+msgid "Already non-nettable through its parent or a storage type"
+msgstr "अपनी मूल इकाई या किसी भंडारण प्रकार के कारण पहले से MRP से बाहर"
 
 msgid "also at {otherStationNames}"
 msgstr "यह भी {otherStationNames} पर"
@@ -9867,6 +9873,9 @@ msgstr "अवधि को बंद करने से पहले प्र
 msgid "Every row was imported successfully."
 msgstr "हर पंक्ति सफलतापूर्वक आयात की गई।"
 
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "इस प्रकार की हर भंडारण इकाई MRP से बाहर है: MRP और पिकिंग इसके स्टॉक को अनदेखा करते हैं।"
+
 msgid "Every unit has a rate."
 msgstr "प्रत्येक इकाई की एक दर है।"
 
@@ -14588,6 +14597,9 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (योजना)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP और पिकिंग इस इकाई और इसके भीतर की इकाइयों के स्टॉक को अनदेखा करते हैं। क्वारंटाइन और होल्ड क्षेत्रों के लिए इसका उपयोग करें।"
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP हर 3 घंटे में स्वचालित रूप से चलता है, लेकिन आप इसे यहां मैन्युअल रूप से चला सकते हैं।"
 
@@ -14725,6 +14737,9 @@ msgstr "शुद्ध ROU संपत्ति"
 
 msgid "Net Unit Price"
 msgstr "शुद्ध इकाई मूल्य"
+
+msgid "Nettable"
+msgstr "MRP में शामिल"
 
 msgid "Network error"
 msgstr "नेटवर्क त्रुटि"
@@ -15993,6 +16008,9 @@ msgstr "गैर-वर्तमान भाग"
 
 msgid "Non-Inventory"
 msgstr "गैर-इन्वेंटरी"
+
+msgid "Non-nettable"
+msgstr "MRP से बाहर"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "गैर-संचालन व्यय खाता डेबिट किया जाता है जब इस वर्ग की एक संपत्ति इसके शुद्ध बही मूल्य से कम पर बेची या नष्ट की जाती है।"
@@ -22677,6 +22695,9 @@ msgstr "स्टॉक"
 
 msgid "Stock Availability"
 msgstr "स्टॉक उपलब्धता"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "इस भंडारण इकाई का स्टॉक आपूर्ति नहीं है। MRP और योजना स्क्रीन इसे नहीं गिनतीं, और पिकिंग इससे नहीं लेती। कोई इकाई तब भी MRP से बाहर होती है जब उसकी मूल इकाई या उसका कोई भंडारण प्रकार बाहर हो। क्वारंटाइन और होल्ड क्षेत्रों के लिए इसका उपयोग करें। स्टॉक स्थानांतरण स्टॉक को फिर से बाहर ले जाता है।"
 
 msgid "Stock movement corrected"
 msgstr "स्टॉक आंदोलन सही किया गया"

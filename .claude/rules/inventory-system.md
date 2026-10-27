@@ -157,8 +157,51 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
   `20250209170952_shipment.sql`; don't read or write it.
 - **`storageUnit`** — bins/locations. Renamed from `shelf` (`20260417000100`); supports nesting via
   `parentId` and `storageTypeIds TEXT[]` (`20260417000200`). Cols: `id`, `name`, `locationId`,
-  `warehouseId`, `parentId`, `storageTypeIds`, `active`.
-- **`storageType`** — storage-unit type definitions (`20260417000000`).
+  `warehouseId`, `parentId`, `storageTypeIds`, `active`, `nettable`, `effectiveNettable`.
+- **`storageType`** — storage-unit type definitions (`20260417000000`), with `nettable`.
+
+## Non-nettable storage
+
+Stock in a non-nettable unit (a quarantine or MRB hold area) is on hand and valued, but it is
+not supply (migration `20261027181718_non-nettable-storage.sql`). The form field is
+"Non-nettable" (`nonNettable`); the columns are positive (`nettable`, default true), and
+`upsertStorageUnit` / `upsertStorageType` convert, leaving the column alone when
+`nonNettable` is omitted.
+
+- **The rule.** A unit is non-nettable when its own `nettable` is false, when ANY of its
+  storage types has `nettable` false, or when its parent is non-nettable. No override: a child
+  cannot opt back in. Stock in no unit (NULL `storageUnitId`) is nettable.
+- **Stored, not walked.** `storageUnit.effectiveNettable` holds the result, written only by
+  `refresh_storage_unit_nettable(locationIds)`, which recomputes a location's units top-down
+  from the roots. The after-interceptors `sync_storage_unit_nettable` (on `nettable`,
+  `parentId`, `storageTypeIds`, `locationId` changes, and INSERT) and
+  `sync_storage_type_nettable` (on `nettable` change and DELETE) call it. Lineside is the
+  opposite pattern (`get_effective_work_center_id`, walked per row); don't copy that for
+  planning reads.
+- **The aggregate.** `itemStockQuantities.quantityNonNettable` is the part of `quantityOnHand`
+  in non-nettable units, maintained by `apply_item_stock_quantities` (joins `storageUnit`) and
+  moved by `refresh_storage_unit_nettable` when a unit flips. It is the NON-nettable part, so
+  a backup taken before the column existed restores as "nothing quarantined". Deleting a
+  non-nettable unit releases its stock first (`storage_unit_release_non_nettable_stock`, a
+  BEFORE interceptor), because the FK sets the ledger rows' unit to NULL and the ledger
+  handler can no longer tell. A ledger write racing a flip can land on the wrong side; the
+  nightly reconcile corrects it.
+- **Who reads nettable stock** (`quantityOnHand - quantityNonNettable`): `runMrp`,
+  `generatePlanningActions`, `get_purchasing_planning` / `get_production_planning` (which
+  also stopped counting Rejected lots), job-creation Consume First (`loadSupersessionRedirect`,
+  `settleConsumeFirstLines`), the quote lead time, the job materials page
+  (`get_job_quantity_on_hand` filters the unit) and its Order Status successor read, and the
+  item planning chart's projection (the "Quantity on Hand" card stays physical and notes the
+  non-nettable part).
+- **Picking never sources from it.** `get_warehouse_storage_unit_ids(ids)` (not lineside AND
+  nettable) backs `resolveWarehouseSource` / `getWarehouseOnHand` / `hasWarehouseStock`;
+  `get_picking_schedule`, `get_picking_list_availability` and
+  `get_picking_list_tracked_available` add `storage_unit_is_nettable(il."storageUnitId")`
+  beside the lineside test. `get_available_tracked_entities` has its own
+  `p_exclude_non_nettable` switch: picking (ERP and MES) and MES suggested allocation pass it,
+  a stock transfer does not, since moving stock out is how it is released.
+- **Physical readers are unchanged:** `get_inventory_quantities` (the Inventory screen), the
+  item picker badge, the workflow `item.quantityOnHand`, valuation and GL.
 - **`trackedEntity`** — serial/batch/lot tracking (`20250225145619`). Cols: `id`, `quantity`,
   `status` (`trackedEntityStatus`), `sourceDocument(Id)`, `attributes JSONB` (batch/serial #, supplier…),
   `expirationDate`. Companion `trackedActivity` + `trackedActivityInput`/`Output` record movements.

@@ -92,7 +92,6 @@ import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   assertEntityCoversPick,
-  async,
   buildBatchMergeRecords,
   buildBatchSplitRecords,
   buildMergeRecords,
@@ -1321,7 +1320,9 @@ export async function getSerialNumbersForItem(
  * Available tracked entities for an item at a location, one row per entity, with
  * its bin, on-hand, and FEFO/FIFO order keys — for the shared TrackedEntityPicker.
  * `excludeLineside` drops lineside (work-center) bins (picking sources from the
- * warehouse). `excludeAllocated` nets out quantities already allocated to other
+ * warehouse). `excludeNonNettable` drops non-nettable bins: picking passes it, a
+ * stock transfer does not, since moving a lot out of one is how it is released.
+ * `excludeAllocated` nets out quantities already allocated to other
  * non-cancelled picking lines so the same lot is never recommended twice;
  * `excludeLineId` keeps the current line's own allocation visible.
  */
@@ -1332,6 +1333,7 @@ export async function getAvailableTrackedEntities(
     companyId: string;
     locationId: string;
     excludeLineside?: boolean;
+    excludeNonNettable?: boolean;
     excludeAllocated?: boolean;
     excludeLineId?: string | null;
     /** Only lots in this bin; `id: null` is the unassigned bin. */
@@ -1346,7 +1348,8 @@ export async function getAvailableTrackedEntities(
     p_exclude_allocated: args.excludeAllocated ?? false,
     p_exclude_line_id: args.excludeLineId ?? undefined,
     p_filter_storage_unit: args.inStorageUnit !== undefined,
-    p_storage_unit_id: args.inStorageUnit?.id ?? undefined
+    p_storage_unit_id: args.inStorageUnit?.id ?? undefined,
+    p_exclude_non_nettable: args.excludeNonNettable ?? false
   });
 }
 
@@ -2878,15 +2881,29 @@ export async function upsertReceipt(
     .single();
 }
 
+/**
+ * The form asks "Non-nettable?"; the column stores `nettable`. An omitted
+ * `nonNettable` leaves the column alone, so an update that does not mention it
+ * never makes a unit nettable again.
+ */
+function toNettableColumn<T extends { nonNettable?: boolean }>({
+  nonNettable,
+  ...rest
+}: T): Omit<T, "nonNettable"> & { nettable?: boolean } {
+  return nonNettable === undefined ? rest : { ...rest, nettable: !nonNettable };
+}
+
 export async function upsertStorageUnit(
   client: SupabaseClient<Database>,
   storageUnit:
-    | (Omit<z.infer<typeof storageUnitValidator>, "id"> & {
+    | (Omit<z.infer<typeof storageUnitValidator>, "id" | "nonNettable"> & {
+        nonNettable?: boolean;
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof storageUnitValidator>, "id"> & {
+    | (Omit<z.infer<typeof storageUnitValidator>, "id" | "nonNettable"> & {
+        nonNettable?: boolean;
         id: string;
         updatedBy: string;
         customFields?: Json;
@@ -2896,7 +2913,7 @@ export async function upsertStorageUnit(
     return client
       .from("storageUnit")
       .insert({
-        ...storageUnit,
+        ...toNettableColumn(storageUnit),
         id: nanoid()
       })
       .select("id")
@@ -2905,7 +2922,7 @@ export async function upsertStorageUnit(
   return client
     .from("storageUnit")
     .update({
-      ...sanitize(storageUnit),
+      ...sanitize(toNettableColumn(storageUnit)),
       updatedAt: datetime.timestamp()
     })
     .eq("id", storageUnit.id)
@@ -3281,12 +3298,14 @@ export async function getStorageTypesList(
 export async function upsertStorageType(
   client: SupabaseClient<Database>,
   storageType:
-    | (Omit<z.infer<typeof storageTypeValidator>, "id"> & {
+    | (Omit<z.infer<typeof storageTypeValidator>, "id" | "nonNettable"> & {
+        nonNettable?: boolean;
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof storageTypeValidator>, "id"> & {
+    | (Omit<z.infer<typeof storageTypeValidator>, "id" | "nonNettable"> & {
+        nonNettable?: boolean;
         id: string;
         updatedBy: string;
         customFields?: Json;
@@ -3295,14 +3314,14 @@ export async function upsertStorageType(
   if ("createdBy" in storageType) {
     return client
       .from("storageType")
-      .insert({ ...storageType })
+      .insert(toNettableColumn(storageType))
       .select("id")
       .single();
   }
   return client
     .from("storageType")
     .update({
-      ...sanitize(storageType),
+      ...sanitize(toNettableColumn(storageType)),
       updatedAt: datetime.timestamp()
     })
     .eq("id", storageType.id)
@@ -3999,12 +4018,29 @@ async function getItemOnHandByStorageUnit(
 }
 
 /**
- * Resolve a WAREHOUSE (non-lineside) source storage unit for a pick by on-hand.
+ * The storage units among `storageUnitIds` that a pick may source from: not
+ * lineside (no work center via `get_effective_work_center_id`) and nettable.
+ * Stock in a non-nettable unit (a quarantine area) is not available to pick.
+ */
+async function getWarehouseStorageUnitIds(
+  client: SupabaseClient<Database>,
+  storageUnitIds: string[]
+): Promise<Set<string>> {
+  if (storageUnitIds.length === 0) return new Set();
+  const result = await client.rpc("get_warehouse_storage_unit_ids", {
+    p_storage_unit_ids: storageUnitIds
+  });
+  if (result.error) throw new PickingReadError(result.error);
+  return new Set((result.data ?? []).map((row) => row.storageUnitId));
+}
+
+/**
+ * Resolve a WAREHOUSE source storage unit for a pick by on-hand.
  *
- * Returns the non-lineside storage unit holding the most on-hand of the item at
- * the location, or null when no warehouse stock exists (a shortage — we never
- * source a pick from another work center's lineside bin). A storage unit is
- * "lineside" when it resolves to a work center via `get_effective_work_center_id`.
+ * Returns the warehouse storage unit (see `getWarehouseStorageUnitIds`) holding
+ * the most on-hand of the item at the location, or null when no warehouse stock
+ * exists (a shortage — we never source a pick from another work center's
+ * lineside bin, or from a non-nettable one).
  */
 async function resolveWarehouseSource(
   client: SupabaseClient<Database>,
@@ -4015,15 +4051,15 @@ async function resolveWarehouseSource(
     .filter(([, qty]) => qty > 0)
     .sort((a, b) => b[1] - a[1]);
 
-  for (const [storageUnitId] of candidates) {
-    const effectiveWc = await client.rpc("get_effective_work_center_id", {
-      p_storage_unit_id: storageUnitId
-    });
-    // First non-lineside bin (no work center) with the most on-hand wins.
-    if (!effectiveWc.data) return storageUnitId;
-  }
-
-  return null;
+  const warehouse = await getWarehouseStorageUnitIds(
+    client,
+    candidates.map(([storageUnitId]) => storageUnitId)
+  );
+  // First warehouse bin with the most on-hand wins.
+  const source = candidates.find(([storageUnitId]) =>
+    warehouse.has(storageUnitId)
+  );
+  return source?.[0] ?? null;
 }
 
 function toPickFactor(value: number | string | null | undefined): number {
@@ -4056,23 +4092,20 @@ async function getWarehouseOnHand(
   total = Math.max(0, total);
 
   const stocked = Array.from(perUnit).filter(([, qty]) => qty > 0);
-  const workCenters = await async.map(
-    stocked,
-    async ([storageUnitId]) =>
-      await client.rpc("get_effective_work_center_id", {
-        p_storage_unit_id: storageUnitId
-      })
+  const warehouse = await getWarehouseStorageUnitIds(
+    client,
+    stocked.map(([storageUnitId]) => storageUnitId)
   );
-  stocked.forEach(([, qty], index) => {
-    if (!workCenters[index]?.data) total += qty;
-  });
+  for (const [storageUnitId, qty] of stocked) {
+    if (warehouse.has(storageUnitId)) total += qty;
+  }
 
   return total;
 }
 
 /**
- * Whether an item has any WAREHOUSE (non-lineside) on-hand at a location,
- * INCLUDING the unassigned (null storage unit) bin.
+ * Whether an item has any WAREHOUSE (not lineside, nettable) on-hand at a
+ * location, INCLUDING the unassigned (null storage unit) bin.
  *
  * This is the stock *test*, deliberately decoupled from `resolveWarehouseSource`
  * (which selects a concrete source shelf and so cannot see null-bin stock). The
@@ -4107,16 +4140,12 @@ async function hasWarehouseStock(
   }
   if (unassignedQty > 0) return true;
 
-  for (const [storageUnitId, qty] of perUnit) {
-    if (qty <= 0) continue;
-    const effectiveWc = await client.rpc("get_effective_work_center_id", {
-      p_storage_unit_id: storageUnitId
-    });
-    // Any non-lineside bin with on-hand counts as available warehouse stock.
-    if (!effectiveWc.data) return true;
-  }
-
-  return false;
+  // Any warehouse bin with on-hand counts as available warehouse stock.
+  const stocked = Array.from(perUnit)
+    .filter(([, qty]) => qty > 0)
+    .map(([storageUnitId]) => storageUnitId);
+  const warehouse = await getWarehouseStorageUnitIds(client, stocked);
+  return warehouse.size > 0;
 }
 
 class PickingReadError extends Error {
@@ -4572,14 +4601,13 @@ export async function generatePickingList(
 
         let sourceStorageUnitId: string | null;
         if (pickItemId === mat.itemId && mat.storageUnitId) {
-          const effectiveWc = await client.rpc("get_effective_work_center_id", {
-            p_storage_unit_id: mat.storageUnitId
-          });
-          const materialEffectiveWc =
-            (effectiveWc.data as string | null) ?? null;
-          sourceStorageUnitId = materialEffectiveWc
-            ? await resolveWarehouseSource(client, onHandByUnit)
-            : mat.storageUnitId;
+          // The material's own bin, unless it is lineside or non-nettable.
+          const warehouse = await getWarehouseStorageUnitIds(client, [
+            mat.storageUnitId
+          ]);
+          sourceStorageUnitId = warehouse.has(mat.storageUnitId)
+            ? mat.storageUnitId
+            : await resolveWarehouseSource(client, onHandByUnit);
         } else {
           sourceStorageUnitId = await resolveWarehouseSource(
             client,

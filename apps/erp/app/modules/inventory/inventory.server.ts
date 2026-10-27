@@ -4601,6 +4601,7 @@ export const getAvailableTrackedEntities = defineServiceFn({
     itemId: z.string(),
     locationId: z.string(),
     excludeLineside: z.boolean().optional(),
+    excludeNonNettable: z.boolean().optional(),
     excludeAllocated: z.boolean().optional(),
     excludeLineId: z.string().nullable().optional(),
     inStorageUnit: z.looseObject({ id: z.string().nullable() }).optional()
@@ -5862,6 +5863,12 @@ export const createStorageUnit = defineServiceFn({
     parentId: z.string().optional(),
     workCenterId: z.string().optional(),
     storageTypeIds: z.array(z.string()).optional(),
+    nonNettable: z
+      .boolean()
+      .describe(
+        "Stock in it is not supply: MRP and planning ignore it, and picking never sources from it."
+      )
+      .optional(),
     customFields: z.unknown().optional()
   }),
   permission: { create: "inventory" },
@@ -5893,6 +5900,12 @@ export const updateStorageUnit = defineServiceFn({
       parentId: z.string().optional(),
       workCenterId: z.string().optional(),
       storageTypeIds: z.array(z.string()).optional(),
+      nonNettable: z
+        .boolean()
+        .describe(
+          "Stock in it is not supply: MRP and planning ignore it, and picking never sources from it."
+        )
+        .optional(),
       customFields: z.unknown().optional(),
       id: z.string().describe("The storage unit to update.").optional()
     })
@@ -6251,6 +6264,10 @@ export const getStorageTypesList = defineServiceFn({
 export const createStorageType = defineServiceFn({
   input: z.looseObject({
     name: z.string().min(1),
+    nonNettable: z
+      .boolean()
+      .describe("Every storage unit of this type is non-nettable.")
+      .optional(),
     customFields: z.unknown().optional()
   }),
   permission: { create: "parts" },
@@ -6277,6 +6294,10 @@ export const updateStorageType = defineServiceFn({
   input: z
     .looseObject({
       name: z.string().min(1),
+      nonNettable: z
+        .boolean()
+        .describe("Every storage unit of this type is non-nettable.")
+        .optional(),
       customFields: z.unknown().optional(),
       id: z.string().describe("The storage type to update.").optional()
     })

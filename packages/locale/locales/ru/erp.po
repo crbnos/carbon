@@ -810,6 +810,9 @@ msgstr "{previewCount, plural, one {Это установит +{hoursInput}ч п
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Окончательно удалить # строку?} other {Окончательно удалить # строк?}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} на хранении, не учитываемом в MRP, не планируется"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# этап остался} other {# этапов осталось}}"
 
@@ -2710,6 +2713,9 @@ msgstr "Распределено"
 
 msgid "Allows acknowledge & continue"
 msgstr "Позволяет подтвердить и продолжить"
+
+msgid "Already non-nettable through its parent or a storage type"
+msgstr "Уже не учитывается в MRP из-за родительской единицы или типа хранилища"
 
 msgid "also at {otherStationNames}"
 msgstr "также на {otherStationNames}"
@@ -9867,6 +9873,9 @@ msgstr "Каждая требуемая задача должна быть Го�
 msgid "Every row was imported successfully."
 msgstr "Каждая строка была успешно импортирована."
 
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "Каждая единица хранения этого типа не учитывается в MRP: MRP и отбор игнорируют её запас."
+
 msgid "Every unit has a rate."
 msgstr "Каждая единица имеет ставку."
 
@@ -14588,6 +14597,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (планирование)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP и отбор игнорируют запас в этой единице и во вложенных единицах. Используйте для зон карантина и блокировки."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP запускается автоматически каждые 3 часа, но вы можете запустить его вручную здесь."
 
@@ -14725,6 +14737,9 @@ msgstr "Чистый актив ПИ"
 
 msgid "Net Unit Price"
 msgstr "Чистая цена за единицу"
+
+msgid "Nettable"
+msgstr "Учитывается в MRP"
 
 msgid "Network error"
 msgstr "Ошибка сети"
@@ -15993,6 +16008,9 @@ msgstr "Долгосрочная часть"
 
 msgid "Non-Inventory"
 msgstr "Нескладской"
+
+msgid "Non-nettable"
+msgstr "Не учитывается в MRP"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Счёт прочих расходов, дебетуемый при продаже или списании актива данного класса по цене ниже его остаточной стоимости."
@@ -22677,6 +22695,9 @@ msgstr "Запас"
 
 msgid "Stock Availability"
 msgstr "Наличие запаса"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "Запас в этой единице хранения не является обеспечением. MRP и экраны планирования его не учитывают, и отбор из неё не берёт. Единица также не учитывается, если не учитывается её родительская единица или один из её типов хранилища. Используйте для зон карантина и блокировки. Перемещение запасов выводит запас обратно."
 
 msgid "Stock movement corrected"
 msgstr "Движение запаса исправлено"
