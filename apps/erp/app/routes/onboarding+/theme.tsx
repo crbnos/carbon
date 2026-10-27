@@ -82,14 +82,13 @@ export default function OnboardingTheme() {
   const modePreference = useModePreference();
   const modeFetcher = useFetcher<typeof modeAction>();
 
-  const [theme, setTheme] = useState<ThemeValue>(initialTheme);
+  const [picked, setPicked] = useState<ThemeValue | null>(null);
+  const theme = picked ?? initialTheme;
   const seasonalTheme = useSeasonalTheme();
 
-  const onThemeChange = (t: Theme) => {
+  const applyThemeColors = (t: Theme) => {
     // In season the page shows the seasonal theme, whatever is picked.
     if (seasonalTheme) return;
-    setTheme(t.name);
-
     const variables = mode === "dark" ? t.cssVars.dark : t.cssVars.light;
 
     Object.entries(variables).forEach(([key, value]) => {
@@ -101,11 +100,17 @@ export default function OnboardingTheme() {
     );
   };
 
+  const onThemeChange = (t: Theme) => {
+    if (seasonalTheme) return;
+    setPicked(t.name);
+    applyThemeColors(t);
+  };
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     const t = themes.find((t) => t.name === theme);
     if (t) {
-      onThemeChange(t);
+      applyThemeColors(t);
     }
   }, [mode]);
 
