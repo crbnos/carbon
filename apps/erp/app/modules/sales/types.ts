@@ -125,6 +125,9 @@ export type PriceTraceStep = {
   amount: number;
   adjustment?: number;
   ruleId?: string;
+  // The price override an Override / Type Override / All Override step
+  // applied, so the trace can open it.
+  overrideId?: string;
   // A readable name for the step's badge — the parameter label on a
   // Configuration step.
   label?: string;

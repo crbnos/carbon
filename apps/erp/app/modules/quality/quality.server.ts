@@ -31,6 +31,7 @@ import {
   setPurchaseReturnOrderLineTrackedEntities,
   upsertPurchaseReturnOrderLine
 } from "~/modules/purchasing/purchasing.service";
+import { optionalTiptapDoc } from "~/modules/shared/shared.models";
 import {
   getLocationTimeZone,
   invokePosting,
@@ -273,7 +274,8 @@ export const updateIssueField = defineServiceFn({
       "closeDate",
       "quantity"
     ]),
-    value: z.string().nullish()
+    // A list field takes a list, or the form's comma-separated text.
+    value: z.union([z.string(), z.array(z.string())]).nullish()
   }),
   permission: { update: "quality" },
 
@@ -300,10 +302,12 @@ export const updateIssueField = defineServiceFn({
       .update(
         unchecked({
           [field]: isArrayField
-            ? value
-              ? value.split(",")
-              : []
-            : value || null,
+            ? Array.isArray(value)
+              ? value
+              : value
+                ? value.split(",")
+                : []
+            : (Array.isArray(value) ? value.join(",") : value) || null,
           updatedBy: ctx.auditUserId,
           updatedAt: datetime.timestamp()
         })
@@ -3281,7 +3285,7 @@ export const createGaugeCalibrationRecord = defineServiceFn({
     calibrationAttempts: z.array(
       z.looseObject({ reference: z.number(), actual: z.number() })
     ),
-    notes: z.string().optional(),
+    notes: optionalTiptapDoc,
     inspectionStatus: z.enum(["Pass", "Fail"]),
     customFields: z.unknown().optional(),
     id: z
@@ -3325,7 +3329,7 @@ export const updateGaugeCalibrationRecord = defineServiceFn({
       calibrationAttempts: z.array(
         z.looseObject({ reference: z.number(), actual: z.number() })
       ),
-      notes: z.string().optional(),
+      notes: optionalTiptapDoc,
       inspectionStatus: z.enum(["Pass", "Fail"]),
       customFields: z.unknown().optional(),
       id: z
@@ -3697,7 +3701,7 @@ export const createQualityDocument = defineServiceFn({
   input: z.looseObject({
     name: z.string().min(1),
     version: z.number().min(0),
-    content: z.string().optional(),
+    content: optionalTiptapDoc,
     copyFromId: z.string().optional(),
     id: z
       .string()
@@ -3736,7 +3740,7 @@ export const updateQualityDocument = defineServiceFn({
     .looseObject({
       name: z.string().min(1),
       version: z.number().min(0),
-      content: z.string().optional(),
+      content: optionalTiptapDoc,
       copyFromId: z.string().optional(),
       id: z
         .string()

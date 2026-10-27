@@ -642,6 +642,9 @@ msgstr "{missingCount} операций не найдено в поставщи�
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} не найдено операций и {mismatchCount} несовпадающих месяцев"
 
+msgid "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} удален"
 
@@ -1233,6 +1236,9 @@ msgstr "Требуется имя для сохранения представл
 
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Согласованная цена, установленная для конкретной номенклатуры — по покупателю, типу покупателя или для всех покупателей — которая полностью заменяет базовую цену, опционально с шкалами количества."
+
+msgid "A new invite link is sent. A link sent before stops working."
+msgstr "Отправляется новая ссылка-приглашение. Ранее отправленная ссылка перестаёт работать."
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Для каждого поставщика будет создан новый заказ на покупку. Кроме того, вы можете выбрать существующий черновик заказа на покупку поставщика, чтобы добавить к нему внешние операции."
@@ -3510,8 +3516,14 @@ msgstr "Вы уверены, что хотите пройти эту контр�
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "Вы уверены, что хотите окончательно удалить {0}?"
 
+msgid "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "Вы уверены, что хотите окончательно удалить процесс поставщика?"
+
+msgid "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to permanently delete this bank account?"
 msgstr "Вы уверены, что хотите навсегда удалить этот банковский счёт?"
@@ -5831,6 +5843,9 @@ msgstr "Сокращение"
 msgid "Contractor"
 msgstr "Подрядчик"
 
+msgid "contractors"
+msgstr ""
+
 msgid "Contractors"
 msgstr "Подрядчики"
 
@@ -7791,6 +7806,9 @@ msgstr "Удалить передачу между складами"
 
 msgid "Delete Webhook"
 msgstr "Удалить вебхук"
+
+msgid "Delete Work Center"
+msgstr ""
 
 msgid "Delete Workflow"
 msgstr "Удалить рабочий процесс"
@@ -10516,6 +10534,9 @@ msgstr "Класс основных средств"
 msgid "Fixed asset settings updated"
 msgstr ""
 
+msgid "fixed assets"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "Основные средства"
 
@@ -11081,6 +11102,9 @@ msgstr "Управляемый"
 msgid "Guided implementation"
 msgstr "Управляемое внедрение"
 
+msgid "Halloween surprise"
+msgstr "Сюрприз на Хэллоуин"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Обработка повторяющихся и сторнирующих операций"
 
@@ -11092,6 +11116,9 @@ msgstr "Практический"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Практическая поддержка с быстрым ответом в течение первых 3–4 недель"
+
+msgid "Happy Halloween"
+msgstr "Счастливого Хэллоуина"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Сложно увидеть истинную себестоимость или маржу производственного заказа"
@@ -12196,6 +12223,9 @@ msgstr "Проблема"
 msgid "Issue (material)"
 msgstr "Выпуск (материал)"
 
+msgid "issue actions"
+msgstr ""
+
 msgid "Issue Credit"
 msgstr "Выдать кредит"
 
@@ -12331,6 +12361,9 @@ msgstr "Страницы номенклатуры"
 msgid "Item Scope"
 msgstr "Область применения товара"
 
+msgid "item shelf life rules"
+msgstr ""
+
 msgid "Item Type"
 msgstr "Тип номенклатуры"
 
@@ -12411,6 +12444,9 @@ msgstr "Операция заказа"
 
 msgid "Job operation batch"
 msgstr "Серия операции заказа"
+
+msgid "job operations"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "Операции заказа"
@@ -13243,6 +13279,9 @@ msgstr "Станок"
 msgid "Machine Costs"
 msgstr "Стоимость станка"
 
+msgid "machine devices"
+msgstr ""
+
 msgid "Machine Hours"
 msgstr "Часы станка"
 
@@ -13257,6 +13296,9 @@ msgstr "Ставка станка"
 
 msgid "Machine Rate (Hourly)"
 msgstr "Ставка станка (почасовая)"
+
+msgid "machine state changes"
+msgstr ""
 
 msgid "Machine time"
 msgstr "Машинное время"
@@ -13309,8 +13351,17 @@ msgstr ""
 msgid "Maintenance Dispatch Notifications"
 msgstr "Уведомления о заявках на техобслуживание"
 
+msgid "maintenance dispatch work centers"
+msgstr ""
+
+msgid "maintenance dispatches"
+msgstr ""
+
 msgid "Maintenance Dispatches"
 msgstr "Заявки на техобслуживание"
+
+msgid "maintenance events"
+msgstr ""
 
 msgid "Maintenance Expense"
 msgstr "Расходы на техобслуживание"
@@ -13320,6 +13371,9 @@ msgstr "Расходы на техобслуживание (по умолчан�
 
 msgid "Maintenance parts"
 msgstr "Детали техобслуживания"
+
+msgid "maintenance schedules"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "Графики техобслуживания"
@@ -13825,6 +13879,9 @@ msgstr "ID метода"
 
 msgid "Method Materials"
 msgstr "Материалы метода"
+
+msgid "method operations"
+msgstr ""
 
 msgid "Method Operations"
 msgstr "Операции метода"
@@ -16195,6 +16252,9 @@ msgstr "Операция"
 msgid "Operation batch"
 msgstr "Серия операций"
 
+msgid "operation batches"
+msgstr ""
+
 msgid "Operation created"
 msgstr ""
 
@@ -16519,6 +16579,9 @@ msgstr "Переопределить цену для одного покупат
 msgid "Override price for all customers of a type"
 msgstr "Переопределить цену для всех покупателей такого типа"
 
+msgid "Override price for every customer"
+msgstr "Переопределить цену для всех покупателей"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "Причина переопределения: {0}"
@@ -16692,6 +16755,9 @@ msgstr "Частично признано"
 
 msgid "Partner"
 msgstr "Партнер"
+
+msgid "partners"
+msgstr ""
 
 msgid "Partners"
 msgstr "Партнеры"
@@ -16986,8 +17052,8 @@ msgstr "Выберите измерение Carbon и целевого пров�
 msgid "Pick a column to sort by"
 msgstr "Выберите столбец для сортировки"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "Выберите покупателя или тип покупателя, чтобы просмотреть их ценообразование."
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "Выберите покупателя, тип покупателя или «Все покупатели», чтобы просмотреть их цены."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Выберите дату или оставьте пустым, чтобы очистить."
@@ -17259,6 +17325,9 @@ msgstr "Номер ПО"
 
 msgid "PO PDF"
 msgstr "ПО PDF"
+
+msgid "Poke the spider… if you dare"
+msgstr "Ткните паука… если осмелитесь"
 
 msgid "Policy"
 msgstr "Политика"
@@ -17632,6 +17701,9 @@ msgstr "Событие производства"
 
 msgid "Production Event"
 msgstr "Производственное событие"
+
+msgid "production events"
+msgstr ""
 
 msgid "Production events"
 msgstr "События производства"
@@ -18084,6 +18156,9 @@ msgstr "Квалификация истекает через столько дн
 msgid "Qualified"
 msgstr "Квалифицирован"
 
+msgid "qualified employees"
+msgstr ""
+
 msgid "Qualified Employees"
 msgstr "Квалифицированные сотрудники"
 
@@ -18256,6 +18331,9 @@ msgstr "Предложение не найдено"
 
 msgid "Quote Number"
 msgstr "Номер предложения"
+
+msgid "quote operations"
+msgstr ""
 
 msgid "Quote to cash"
 msgstr "От коммерческого предложения к продаже"
@@ -19199,6 +19277,9 @@ msgstr "Заменить на"
 msgid "Replacement Order"
 msgstr "Заказ на замену"
 
+msgid "replacement parts"
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Замена PDF удаляет все размещения выносок на этом документе. Строки характеристик и их значения остаются; вы можете разместить выноски снова на новом чертеже."
 
@@ -19352,6 +19433,9 @@ msgstr "Допуск переноса"
 
 msgid "Reschedule tolerance updated"
 msgstr ""
+
+msgid "Resend Invite"
+msgstr "Отправить приглашение повторно"
 
 msgid "Reserve floor"
 msgstr "Минимальный уровень запаса"
@@ -24998,6 +25082,9 @@ msgstr ""
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Обучение вашей команды через Academy и встроенные руководства"
 
+msgid "trainings"
+msgstr ""
+
 msgid "Trainings"
 msgstr "Обучение"
 
@@ -25190,6 +25277,9 @@ msgstr "Отменить назначение правила"
 
 msgid "Unassigned"
 msgstr "Не назначено"
+
+msgid "unattributed machine time entries"
+msgstr ""
 
 msgid "Unattributed Time"
 msgstr "Неучтённое время"
@@ -26880,6 +26970,9 @@ msgstr "Рабочие центры"
 
 msgid "Work Centers"
 msgstr "Рабочие центры"
+
+msgid "work centers requiring its ability"
+msgstr ""
 
 msgid "Work in process (WIP)"
 msgstr "Незавершенное производство (WIP)"

@@ -642,6 +642,9 @@ msgstr "प्रदाता में {missingCount} जर्नल गाय
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} गायब जर्नल और {mismatchCount} असमान महीने"
 
+msgid "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} हटाया गया"
 
@@ -1233,6 +1236,9 @@ msgstr "एक दृश्य को सहेजने के लिए एक
 
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "एक समझौता किया गया मूल्य एक विशिष्ट आइटम के लिए तय किया गया — ग्राहक, ग्राहक प्रकार, या सभी ग्राहकों द्वारा — जो मूल मूल्य को पूरी तरह से प्रतिस्थापित करता है, वैकल्पिक रूप से मात्रा स्तर के साथ।"
+
+msgid "A new invite link is sent. A link sent before stops working."
+msgstr "एक नया आमंत्रण लिंक भेजा जाता है। पहले भेजा गया लिंक काम करना बंद कर देता है।"
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "प्रत्येक आपूर्तिकर्ता के लिए एक नया क्रय आदेश बनाया जाएगा। वैकल्पिक रूप से, आप आपूर्तिकर्ता के लिए एक मौजूदा ड्राफ्ट क्रय आदेश चुन सकते हैं ताकि बाहरी ऑपरेशन जोड़े जा सकें।"
@@ -3510,8 +3516,14 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "क्या आप {0} को स्थायी रूप से हटाना चाहते हैं?"
 
+msgid "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "क्या आप आपूर्तिकर्ता प्रक्रिया को स्थायी रूप से हटाना चाहते हैं?"
+
+msgid "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to permanently delete this bank account?"
 msgstr "क्या आप वाकई इस बैंक खाते को स्थायी रूप से हटाना चाहते हैं?"
@@ -5831,6 +5843,9 @@ msgstr "संकुचन"
 msgid "Contractor"
 msgstr "ठेकेदार"
 
+msgid "contractors"
+msgstr ""
+
 msgid "Contractors"
 msgstr "ठेकेदार"
 
@@ -7791,6 +7806,9 @@ msgstr "गोदाम स्थानांतरण हटाएं"
 
 msgid "Delete Webhook"
 msgstr "वेबहुक हटाएं"
+
+msgid "Delete Work Center"
+msgstr ""
 
 msgid "Delete Workflow"
 msgstr "वर्कफ़्लो हटाएँ"
@@ -10516,6 +10534,9 @@ msgstr "अचल संपत्ति वर्ग"
 msgid "Fixed asset settings updated"
 msgstr ""
 
+msgid "fixed assets"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "अचल संपत्तियाँ"
 
@@ -11081,6 +11102,9 @@ msgstr "निर्देशित"
 msgid "Guided implementation"
 msgstr "निर्देशित कार्यान्वयन"
 
+msgid "Halloween surprise"
+msgstr "हैलोवीन सरप्राइज़"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "आवर्ती और उलट जर्नल प्रविष्टियों को संभालें"
 
@@ -11092,6 +11116,9 @@ msgstr "हैंड्स-ऑन"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "पहले 3–4 हफ्तों के लिए व्यावहारिक, तेज़ प्रतिक्रिया समर्थन"
+
+msgid "Happy Halloween"
+msgstr "हैप्पी हैलोवीन"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "किसी काम पर सच्ची लागत या मार्जिन देखना मुश्किल है"
@@ -12196,6 +12223,9 @@ msgstr "समस्या"
 msgid "Issue (material)"
 msgstr "समस्या (सामग्री)"
 
+msgid "issue actions"
+msgstr ""
+
 msgid "Issue Credit"
 msgstr "क्रेडिट जारी करें"
 
@@ -12331,6 +12361,9 @@ msgstr "आइटम पृष्ठ"
 msgid "Item Scope"
 msgstr "आइटम स्कोप"
 
+msgid "item shelf life rules"
+msgstr ""
+
 msgid "Item Type"
 msgstr "आइटम प्रकार"
 
@@ -12411,6 +12444,9 @@ msgstr "जॉब ऑपरेशन"
 
 msgid "Job operation batch"
 msgstr "जॉब ऑपरेशन बैच"
+
+msgid "job operations"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "जॉब ऑपरेशन"
@@ -13243,6 +13279,9 @@ msgstr "मशीन"
 msgid "Machine Costs"
 msgstr "मशीन लागत"
 
+msgid "machine devices"
+msgstr ""
+
 msgid "Machine Hours"
 msgstr "मशीन घंटे"
 
@@ -13257,6 +13296,9 @@ msgstr "मशीन दर"
 
 msgid "Machine Rate (Hourly)"
 msgstr "मशीन दर (प्रति घंटा)"
+
+msgid "machine state changes"
+msgstr ""
 
 msgid "Machine time"
 msgstr "मशीन समय"
@@ -13309,8 +13351,17 @@ msgstr ""
 msgid "Maintenance Dispatch Notifications"
 msgstr "रखरखाव कार्य सूचनाएँ"
 
+msgid "maintenance dispatch work centers"
+msgstr ""
+
+msgid "maintenance dispatches"
+msgstr ""
+
 msgid "Maintenance Dispatches"
 msgstr "रखरखाव कार्य"
+
+msgid "maintenance events"
+msgstr ""
 
 msgid "Maintenance Expense"
 msgstr "रखरखाव व्यय"
@@ -13320,6 +13371,9 @@ msgstr "रखरखाव व्यय (डिफ़ॉल्ट)"
 
 msgid "Maintenance parts"
 msgstr "रखरखाव पार्ट्स"
+
+msgid "maintenance schedules"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "रखरखाव शेड्यूल"
@@ -13825,6 +13879,9 @@ msgstr "विधि आईडी"
 
 msgid "Method Materials"
 msgstr "विधि सामग्री"
+
+msgid "method operations"
+msgstr ""
 
 msgid "Method Operations"
 msgstr "विधि ऑपरेशन"
@@ -16195,6 +16252,9 @@ msgstr "ऑपरेशन"
 msgid "Operation batch"
 msgstr "ऑपरेशन बैच"
 
+msgid "operation batches"
+msgstr ""
+
 msgid "Operation created"
 msgstr ""
 
@@ -16519,6 +16579,9 @@ msgstr "एक एकल ग्राहक के लिए मूल्य ओ
 msgid "Override price for all customers of a type"
 msgstr "सभी प्रकार के ग्राहकों के लिए मूल्य ओवरराइड करें"
 
+msgid "Override price for every customer"
+msgstr "सभी ग्राहकों के लिए मूल्य ओवरराइड करें"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "ओवरराइड कारण: {0}"
@@ -16692,6 +16755,9 @@ msgstr "आंशिक रूप से मान्य"
 
 msgid "Partner"
 msgstr "साथी"
+
+msgid "partners"
+msgstr ""
 
 msgid "Partners"
 msgstr "भागीदार"
@@ -16986,8 +17052,8 @@ msgstr "एक Carbon आयाम चुनें और वह प्रदा
 msgid "Pick a column to sort by"
 msgstr "सॉर्ट करने के लिए एक कॉलम चुनें"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "उनकी मूल्य निर्धारण देखने के लिए एक ग्राहक या ग्राहक प्रकार चुनें।"
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "कोई ग्राहक, ग्राहक प्रकार, या सभी ग्राहक चुनें, उनके मूल्य देखने के लिए।"
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "एक तारीख चुनें या इसे साफ करने के लिए खाली छोड़ें।"
@@ -17259,6 +17325,9 @@ msgstr "PO संख्या"
 
 msgid "PO PDF"
 msgstr "पीओ पीडीएफ"
+
+msgid "Poke the spider… if you dare"
+msgstr "मकड़ी को छुएँ… अगर हिम्मत है"
 
 msgid "Policy"
 msgstr "नीति"
@@ -17632,6 +17701,9 @@ msgstr "उत्पादन इवेंट"
 
 msgid "Production Event"
 msgstr "उत्पादन इवेंट"
+
+msgid "production events"
+msgstr ""
 
 msgid "Production events"
 msgstr "उत्पादन इवेंट"
@@ -18084,6 +18156,9 @@ msgstr "योग्यता प्रशिक्षण के इतने �
 msgid "Qualified"
 msgstr "योग्य"
 
+msgid "qualified employees"
+msgstr ""
+
 msgid "Qualified Employees"
 msgstr "योग्य कर्मचारी"
 
@@ -18256,6 +18331,9 @@ msgstr "उद्धरण नहीं मिला"
 
 msgid "Quote Number"
 msgstr "उद्धरण संख्या"
+
+msgid "quote operations"
+msgstr ""
 
 msgid "Quote to cash"
 msgstr "कोटेशन से नकद तक"
@@ -19199,6 +19277,9 @@ msgstr "के साथ बदलें"
 msgid "Replacement Order"
 msgstr "प्रतिस्थापन आदेश"
 
+msgid "replacement parts"
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDF को बदलने से इस दस्तावेज़ पर सभी बैलून प्लेसमेंट हटा दिए जाते हैं। विशेषता पंक्तियां और उनके मान रहते हैं; आप नए चित्र पर फिर से बैलून रख सकते हैं।"
 
@@ -19352,6 +19433,9 @@ msgstr "पुनर्निर्धारण सहनशीलता"
 
 msgid "Reschedule tolerance updated"
 msgstr ""
+
+msgid "Resend Invite"
+msgstr "आमंत्रण दोबारा भेजें"
 
 msgid "Reserve floor"
 msgstr "रिज़र्व फ़्लोर"
@@ -24998,6 +25082,9 @@ msgstr ""
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Academy और इन-ऐप गाइड के माध्यम से अपनी टीम को प्रशिक्षण दें"
 
+msgid "trainings"
+msgstr ""
+
 msgid "Trainings"
 msgstr "प्रशिक्षण"
 
@@ -25190,6 +25277,9 @@ msgstr "नियम को अनअसाइन करें"
 
 msgid "Unassigned"
 msgstr "अनुत्तरित"
+
+msgid "unattributed machine time entries"
+msgstr ""
 
 msgid "Unattributed Time"
 msgstr "अनिर्दिष्ट समय"
@@ -26880,6 +26970,9 @@ msgstr "वर्क सेंटर"
 
 msgid "Work Centers"
 msgstr "वर्क सेंटर"
+
+msgid "work centers requiring its ability"
+msgstr ""
 
 msgid "Work in process (WIP)"
 msgstr "प्रक्रिया में कार्य (WIP)"

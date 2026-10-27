@@ -32,11 +32,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const customerId = url.searchParams.get("customerId") ?? undefined;
   const customerTypeId = url.searchParams.get("customerTypeId") ?? undefined;
-  const initialScope: "customer" | "customerType" | undefined = customerId
-    ? "customer"
-    : customerTypeId
-      ? "customerType"
-      : undefined;
+  const initialScope: "customer" | "customerType" | "all" | undefined =
+    customerId
+      ? "customer"
+      : customerTypeId
+        ? "customerType"
+        : url.searchParams.get("scope") === "all"
+          ? "all"
+          : undefined;
   return {
     initial: {
       customerId,
@@ -85,6 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const {
     customerId,
     customerTypeId,
+    allCustomers,
     itemId,
     active,
     applyRulesOnTop,
@@ -117,6 +121,7 @@ export async function action({ request }: ActionFunctionArgs) {
     {
       customerId: customerId || undefined,
       customerTypeId: customerTypeId || undefined,
+      allCustomers,
       itemId,
       breaks,
       active,
@@ -153,6 +158,7 @@ export default function NewPriceOverrideRoute() {
         itemId: initial.itemId,
         customerId: initial.customerId,
         customerTypeId: initial.customerTypeId,
+        allCustomers: initialScope === "all",
         active: true,
         applyRulesOnTop: true,
         validFrom: initial.validFrom

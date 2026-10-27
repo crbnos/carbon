@@ -73,6 +73,13 @@ export type ModelPreviewProps = {
   /** The model's `pmi.json` (PMI read from its STEP AP242 source). When it
    *  holds items, a PMI panel lists them and the server model draws them. */
   pmiUrl?: string | null;
+  /** Controls which PMI item is selected (an inspection screen's active
+   *  characteristic). A change selects the item and turns the camera to it.
+   *  Leave undefined to let the PMI panel own the selection. */
+  selectedPmiItemId?: string | null;
+  /** Called when the user picks a PMI item in the panel or on the model
+   *  (null when the pick clears the selection). */
+  onPmiItemSelect?: (id: string | null) => void;
   /** Static poster image (thumbnail PNG) shown before any 3D loads. */
   thumbnailUrl?: string | null;
   /** The raw uploaded file's auth-proxied URL — the WASM fallback tier renders
@@ -127,6 +134,8 @@ export function ModelPreview({
   optimizedUrl = null,
   glbUrl = null,
   pmiUrl = null,
+  selectedPmiItemId,
+  onPmiItemSelect,
   thumbnailUrl = null,
   rawUrl = null,
   optimizing = false,
@@ -181,9 +190,15 @@ export function ModelPreview({
     null
   );
   const focusSeqRef = useRef(0);
-  // A new document starts with nothing picked.
+  // The selection as last set here, so a host echoing a pick back does not
+  // turn the camera a second time.
+  const pmiSelectedRef = useRef<string | null>(null);
+  pmiSelectedRef.current = pmiSelectedId;
+  // A new document starts with nothing picked. The ref is cleared with it, so
+  // a controlled selection (below) is applied again to the new document.
   // biome-ignore lint/correctness/useExhaustiveDependencies: resets on a new document without reading it
   useEffect(() => {
+    pmiSelectedRef.current = null;
     setPmiViewId(null);
     setPmiSelectedId(null);
     setFocusRequest(null);
@@ -192,28 +207,58 @@ export function ModelPreview({
     () => (pmi ? visibleItemIds(pmi, pmiViewId) : undefined),
     [pmi, pmiViewId]
   );
+  const focusPmiItem = useCallback((id: string) => {
+    pmiSelectedRef.current = id;
+    setPmiSelectedId(id);
+    setPmiVisible(true);
+    focusSeqRef.current += 1;
+    setFocusRequest({ kind: "item", id, seq: focusSeqRef.current });
+  }, []);
   // Picking the selected item again clears it; picking another turns to it.
   const selectPmiItem = useCallback(
     (id: string) => {
       if (pmiSelectedId === id) {
         setPmiSelectedId(null);
+        onPmiItemSelect?.(null);
         return;
       }
-      setPmiSelectedId(id);
-      setPmiVisible(true);
-      focusSeqRef.current += 1;
-      setFocusRequest({ kind: "item", id, seq: focusSeqRef.current });
+      focusPmiItem(id);
+      onPmiItemSelect?.(id);
     },
-    [pmiSelectedId]
+    [pmiSelectedId, focusPmiItem, onPmiItemSelect]
   );
-  const selectPmiView = useCallback((viewId: string | null) => {
-    setPmiViewId(viewId);
-    setPmiSelectedId(null);
-    if (viewId) {
-      focusSeqRef.current += 1;
-      setFocusRequest({ kind: "view", id: viewId, seq: focusSeqRef.current });
+  // A controlled selection follows the host, also once the document arrives
+  // (a new document resets the selection above).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reacts to the host's id and a new document only
+  useEffect(() => {
+    if (selectedPmiItemId === undefined || !pmi) return;
+    if (selectedPmiItemId === null) {
+      setPmiSelectedId(null);
+      return;
     }
-  }, []);
+    if (
+      selectedPmiItemId !== pmiSelectedRef.current &&
+      pmi.items.some((item) => item.id === selectedPmiItemId)
+    ) {
+      focusPmiItem(selectedPmiItemId);
+    }
+  }, [selectedPmiItemId, pmi]);
+  const selectPmiView = useCallback(
+    (viewId: string | null) => {
+      setPmiViewId(viewId);
+      setPmiSelectedId(null);
+      onPmiItemSelect?.(null);
+      if (viewId) {
+        focusSeqRef.current += 1;
+        setFocusRequest({
+          kind: "view",
+          id: viewId,
+          seq: focusSeqRef.current
+        });
+      }
+    },
+    [onPmiItemSelect]
+  );
 
   const interactiveUrl = optimizedUrl ?? glbUrl;
   // The instant 3D layer: the LOD if it's distinct from the interactive model

@@ -809,6 +809,12 @@ msgstr "返回操作"
 msgid "Go to onboarding"
 msgstr "前往入门"
 
+msgid "Halloween surprise"
+msgstr "万圣节惊喜"
+
+msgid "Happy Halloween"
+msgstr "万圣节快乐"
+
 msgid "Heading {level}"
 msgstr "标题 {level}"
 
@@ -1490,6 +1496,9 @@ msgstr "请选择一个物料"
 
 msgid "PM schedule lapsed"
 msgstr "PM排程已逾期"
+
+msgid "Poke the spider… if you dare"
+msgstr "戳一下蜘蛛……如果你敢的话"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "在任何页面按 ? 打开此列表。在字段中输入时快捷键不可用。"

@@ -642,6 +642,9 @@ msgstr "{missingCount} journals missing in the provider"
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} missing journals and {mismatchCount} mismatched months"
 
+msgid "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+msgstr "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+
 msgid "{name} deleted"
 msgstr "{name} deleted"
 
@@ -1233,6 +1236,9 @@ msgstr "A name is required to save a view"
 
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
+
+msgid "A new invite link is sent. A link sent before stops working."
+msgstr "A new invite link is sent. A link sent before stops working."
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
@@ -3510,8 +3516,14 @@ msgstr "Are you sure you want to pass this checkpoint? The {0} phase still has u
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "Are you sure you want to permanently delete {0}?"
 
+msgid "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+msgstr "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "Are you sure you want to permanently delete the supplier process?"
+
+msgid "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
+msgstr "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
 
 msgid "Are you sure you want to permanently delete this bank account?"
 msgstr "Are you sure you want to permanently delete this bank account?"
@@ -5831,6 +5843,9 @@ msgstr "Contraction"
 msgid "Contractor"
 msgstr "Contractor"
 
+msgid "contractors"
+msgstr "contractors"
+
 msgid "Contractors"
 msgstr "Contractors"
 
@@ -7791,6 +7806,9 @@ msgstr "Delete Warehouse Transfer"
 
 msgid "Delete Webhook"
 msgstr "Delete Webhook"
+
+msgid "Delete Work Center"
+msgstr "Delete Work Center"
 
 msgid "Delete Workflow"
 msgstr "Delete Workflow"
@@ -10516,6 +10534,9 @@ msgstr "Fixed Asset Class"
 msgid "Fixed asset settings updated"
 msgstr "Fixed asset settings updated"
 
+msgid "fixed assets"
+msgstr "fixed assets"
+
 msgid "Fixed Assets"
 msgstr "Fixed Assets"
 
@@ -11081,6 +11102,9 @@ msgstr "Guided"
 msgid "Guided implementation"
 msgstr "Guided implementation"
 
+msgid "Halloween surprise"
+msgstr "Halloween surprise"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Handle recurring and reversing journal entries"
 
@@ -11092,6 +11116,9 @@ msgstr "Hands-on"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Hands-on, fast-response support for the first 3–4 weeks"
+
+msgid "Happy Halloween"
+msgstr "Happy Halloween"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Hard to see true cost or margin on a job"
@@ -12196,6 +12223,9 @@ msgstr "Issue"
 msgid "Issue (material)"
 msgstr "Issue (material)"
 
+msgid "issue actions"
+msgstr "issue actions"
+
 msgid "Issue Credit"
 msgstr "Issue Credit"
 
@@ -12331,6 +12361,9 @@ msgstr "Item pages"
 msgid "Item Scope"
 msgstr "Item Scope"
 
+msgid "item shelf life rules"
+msgstr "item shelf life rules"
+
 msgid "Item Type"
 msgstr "Item Type"
 
@@ -12411,6 +12444,9 @@ msgstr "Job Operation"
 
 msgid "Job operation batch"
 msgstr "Job operation batch"
+
+msgid "job operations"
+msgstr "job operations"
 
 msgid "Job Operations"
 msgstr "Job Operations"
@@ -13243,6 +13279,9 @@ msgstr "Machine"
 msgid "Machine Costs"
 msgstr "Machine Costs"
 
+msgid "machine devices"
+msgstr "machine devices"
+
 msgid "Machine Hours"
 msgstr "Machine Hours"
 
@@ -13257,6 +13296,9 @@ msgstr "Machine Rate"
 
 msgid "Machine Rate (Hourly)"
 msgstr "Machine Rate (Hourly)"
+
+msgid "machine state changes"
+msgstr "machine state changes"
 
 msgid "Machine time"
 msgstr "Machine time"
@@ -13309,8 +13351,17 @@ msgstr "Maintenance dispatch notification settings updated"
 msgid "Maintenance Dispatch Notifications"
 msgstr "Maintenance Dispatch Notifications"
 
+msgid "maintenance dispatch work centers"
+msgstr "maintenance dispatch work centers"
+
+msgid "maintenance dispatches"
+msgstr "maintenance dispatches"
+
 msgid "Maintenance Dispatches"
 msgstr "Maintenance Dispatches"
+
+msgid "maintenance events"
+msgstr "maintenance events"
 
 msgid "Maintenance Expense"
 msgstr "Maintenance Expense"
@@ -13320,6 +13371,9 @@ msgstr "Maintenance Expense (default)"
 
 msgid "Maintenance parts"
 msgstr "Maintenance parts"
+
+msgid "maintenance schedules"
+msgstr "maintenance schedules"
 
 msgid "Maintenance Schedules"
 msgstr "Maintenance Schedules"
@@ -13825,6 +13879,9 @@ msgstr "Method Id"
 
 msgid "Method Materials"
 msgstr "Method Materials"
+
+msgid "method operations"
+msgstr "method operations"
 
 msgid "Method Operations"
 msgstr "Method Operations"
@@ -16195,6 +16252,9 @@ msgstr "Operation"
 msgid "Operation batch"
 msgstr "Operation batch"
 
+msgid "operation batches"
+msgstr "operation batches"
+
 msgid "Operation created"
 msgstr "Operation created"
 
@@ -16519,6 +16579,9 @@ msgstr "Override price for a single customer"
 msgid "Override price for all customers of a type"
 msgstr "Override price for all customers of a type"
 
+msgid "Override price for every customer"
+msgstr "Override price for every customer"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "Override reason: {0}"
@@ -16692,6 +16755,9 @@ msgstr "Partly Recognized"
 
 msgid "Partner"
 msgstr "Partner"
+
+msgid "partners"
+msgstr "partners"
 
 msgid "Partners"
 msgstr "Partners"
@@ -16986,8 +17052,8 @@ msgstr "Pick a Carbon dimension and the provider target it posts to. Auto-create
 msgid "Pick a column to sort by"
 msgstr "Pick a column to sort by"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "Pick a customer or customer type to view their pricing."
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "Pick a customer, a customer type, or All Customers to view their pricing."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Pick a date or leave blank to clear it."
@@ -17259,6 +17325,9 @@ msgstr "PO Number"
 
 msgid "PO PDF"
 msgstr "PO PDF"
+
+msgid "Poke the spider… if you dare"
+msgstr "Poke the spider… if you dare"
 
 msgid "Policy"
 msgstr "Policy"
@@ -17632,6 +17701,9 @@ msgstr "Production event"
 
 msgid "Production Event"
 msgstr "Production Event"
+
+msgid "production events"
+msgstr "production events"
 
 msgid "Production events"
 msgstr "Production events"
@@ -18084,6 +18156,9 @@ msgstr "Qualification expires this many days after training; blank = never"
 msgid "Qualified"
 msgstr "Qualified"
 
+msgid "qualified employees"
+msgstr "qualified employees"
+
 msgid "Qualified Employees"
 msgstr "Qualified Employees"
 
@@ -18256,6 +18331,9 @@ msgstr "Quote not found"
 
 msgid "Quote Number"
 msgstr "Quote Number"
+
+msgid "quote operations"
+msgstr "quote operations"
 
 msgid "Quote to cash"
 msgstr "Quote to cash"
@@ -19199,6 +19277,9 @@ msgstr "Replace with"
 msgid "Replacement Order"
 msgstr "Replacement Order"
 
+msgid "replacement parts"
+msgstr "replacement parts"
+
 msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 
@@ -19352,6 +19433,9 @@ msgstr "Reschedule Tolerance"
 
 msgid "Reschedule tolerance updated"
 msgstr "Reschedule tolerance updated"
+
+msgid "Resend Invite"
+msgstr "Resend Invite"
 
 msgid "Reserve floor"
 msgstr "Reserve floor"
@@ -24998,6 +25082,9 @@ msgstr "Training video"
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Training your team via the Academy and in-app guides"
 
+msgid "trainings"
+msgstr "trainings"
+
 msgid "Trainings"
 msgstr "Trainings"
 
@@ -25190,6 +25277,9 @@ msgstr "Unassign rule"
 
 msgid "Unassigned"
 msgstr "Unassigned"
+
+msgid "unattributed machine time entries"
+msgstr "unattributed machine time entries"
 
 msgid "Unattributed Time"
 msgstr "Unattributed Time"
@@ -26880,6 +26970,9 @@ msgstr "Work centers"
 
 msgid "Work Centers"
 msgstr "Work Centers"
+
+msgid "work centers requiring its ability"
+msgstr "work centers requiring its ability"
 
 msgid "Work in process (WIP)"
 msgstr "Work in process (WIP)"

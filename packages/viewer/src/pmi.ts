@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { round } from "@carbon/utils";
 import type { Vec3 } from "./types";
 
 /**
@@ -749,4 +750,147 @@ export function pmiViewBounds(
     if (ids.has(item.id)) addItem(builder, doc, item, true);
   }
   return builder.result();
+}
+
+// ---------------------------------------------------------------------------
+// Inspection characteristics
+// ---------------------------------------------------------------------------
+
+/**
+ * One inspection characteristic made from a PMI item: the shape the
+ * `pmi-inspection-plan` job writes into `inspectionFeature`. Values are text,
+ * as the feature columns are; a null nominal is a Pass/Fail characteristic.
+ */
+export type PmiCharacteristic = {
+  /** The PMI item it was made from (`d1`, `t3`). */
+  pmiItemId: string;
+  /** Characteristic number: `1`, `2`, … in `pmi.json` order. */
+  label: string;
+  /** What the drawing would print, e.g. `Diameter ⌀10 ±0.05`. */
+  description: string;
+  nominalValue: string | null;
+  tolerancePlus: string | null;
+  toleranceMinus: string | null;
+  /** `mm` or `in` (the file's own unit), or `deg` for an angle. */
+  unit: string;
+};
+
+/**
+ * The characteristics an inspection plan made from this PMI holds: one per
+ * dimension and geometric tolerance. Datums and notes have nothing to
+ * measure, and a dimension with no value (a label, a presentation-only
+ * dimension) has nothing to compare against — all are left out.
+ *
+ * Lengths are in the file's own unit (mm when unknown), so an inch drawing
+ * inspects in inches. A geometric tolerance is a zone: the reading is the
+ * measured deviation, nominal 0 and the zone as its upper limit. A dimension
+ * whose only tolerance is a fit class, a min/max qualifier or none at all
+ * keeps its nominal off, so the grid records Pass or Fail.
+ */
+export function pmiInspectionCharacteristics(
+  doc: PmiDocument
+): PmiCharacteristic[] {
+  const lengthUnit: PmiDisplayUnit = doc.sourceUnit ?? "mm";
+  const toLength = (mm: number) => (lengthUnit === "mm" ? mm : mm / MM_PER_IN);
+  const text = (value: number) => String(round(value));
+
+  const characteristics: PmiCharacteristic[] = [];
+  for (const item of doc.items) {
+    const spec =
+      item.kind === "dimension" && item.dimension
+        ? dimensionSpec(item.dimension, toLength, text)
+        : item.kind === "tolerance" && item.tolerance
+          ? toleranceSpec(item.tolerance, toLength, text)
+          : null;
+    if (!spec) continue;
+
+    // A tolerance's label already opens with its symbol (`⌖ | 0.75 | A`).
+    const { title, label } = formatPmiItem(item, lengthUnit, doc.sourceUnit);
+    characteristics.push({
+      pmiItemId: item.id,
+      label: String(characteristics.length + 1),
+      description: label === title ? title : `${title} ${label}`,
+      nominalValue: spec.nominal,
+      tolerancePlus: spec.plus,
+      toleranceMinus: spec.minus,
+      unit: spec.angular ? "deg" : lengthUnit
+    });
+  }
+  return characteristics;
+}
+
+type CharacteristicSpec = {
+  nominal: string | null;
+  plus: string | null;
+  minus: string | null;
+  angular: boolean;
+};
+
+function dimensionSpec(
+  dimension: PmiDimension,
+  toLength: (mm: number) => number,
+  text: (value: number) => string
+): CharacteristicSpec | null {
+  if (dimension.type === "commonLabel" || dimension.type === "presentation") {
+    return null;
+  }
+  const angular = isAngular(dimension.type);
+  const convert = (value: number) => (angular ? value : toLength(value));
+
+  if (dimension.upper !== null || dimension.lower !== null) {
+    if (dimension.value === null) return null;
+    const value = convert(dimension.value);
+    const upper = convert(dimension.upper ?? 0);
+    const lower = convert(dimension.lower ?? 0);
+    // A reading passes inside [nominal − Tol−, nominal + Tol+], both taken
+    // as magnitudes. That holds the drawing's limits only while the nominal
+    // lies between them; a one-sided fit (⌀10 −0.013/−0.028, a press fit
+    // +0.05/+0.02) is re-centred on its band instead.
+    if (lower <= 0 && upper >= 0) {
+      return {
+        nominal: text(value),
+        plus: text(upper),
+        minus: text(-lower),
+        angular
+      };
+    }
+    const half = Math.abs(upper - lower) / 2;
+    return {
+      nominal: text(value + (upper + lower) / 2),
+      plus: text(half),
+      minus: text(half),
+      angular
+    };
+  }
+  if (dimension.upperBound !== null && dimension.lowerBound !== null) {
+    const upper = convert(dimension.upperBound);
+    const lower = convert(dimension.lowerBound);
+    const half = Math.abs(upper - lower) / 2;
+    return {
+      nominal: text((upper + lower) / 2),
+      plus: text(half),
+      minus: text(half),
+      angular
+    };
+  }
+  if (dimension.value === null) return null;
+  // No numeric limits (a fit class, a min/max qualifier, a basic dimension):
+  // nothing to compare a reading against, so it is recorded Pass or Fail.
+  return { nominal: null, plus: null, minus: null, angular };
+}
+
+function toleranceSpec(
+  tolerance: PmiTolerance,
+  toLength: (mm: number) => number,
+  text: (value: number) => string
+): CharacteristicSpec {
+  if (tolerance.value === null) {
+    return { nominal: null, plus: null, minus: null, angular: false };
+  }
+  return {
+    nominal: "0",
+    plus: text(toLength(tolerance.value)),
+    minus: "0",
+    angular: false
+  };
 }

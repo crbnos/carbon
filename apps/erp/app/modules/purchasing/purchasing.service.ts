@@ -23,12 +23,18 @@ import {
   getCompanyTimeZone
 } from "@carbon/database";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
-import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import {
+  type Kysely,
+  type KyselyDatabase,
+  type KyselyTx,
+  withTransaction
+} from "@carbon/database/client";
 import {
   type AutomaticJournalStatus,
   journalPostingStatus,
   readAccountingCutoverDate
 } from "@carbon/database/journal-posting-status";
+import { toJson } from "@carbon/database/json";
 import type { AccountClass } from "@carbon/database/ledger";
 import { toStoredAmount } from "@carbon/database/ledger";
 import { assertBalanced, equals } from "@carbon/database/precision";
@@ -127,7 +133,7 @@ import { getUser } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
   getExchangeRate
@@ -1304,7 +1310,7 @@ export async function insertSupplier(
 }
 
 export async function insertSupplierContact(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   supplierContact: {
     supplierId: string;
     companyId: string;
@@ -1313,40 +1319,69 @@ export async function insertSupplierContact(
     customFields?: Json;
   }
 ) {
-  const insertContact = await client
-    .from("contact")
-    .insert([
-      {
-        ...supplierContact.contact,
-        companyId: supplierContact.companyId,
-        isCustomer: false
+  const { supplierId, companyId, supplierLocationId, contact } =
+    supplierContact;
+  try {
+    // One transaction: a contact with no supplier link is invisible in the app.
+    const id = await withTransaction(db, async (trx) => {
+      const owner = await trx
+        .selectFrom("supplier")
+        .select("id")
+        .where("id", "=", supplierId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) return "Supplier not found";
+      if (supplierLocationId) {
+        const location = await trx
+          .selectFrom("supplierLocation")
+          .select("id")
+          .where("id", "=", supplierLocationId)
+          .where("supplierId", "=", supplierId)
+          .executeTakeFirst();
+        if (!location) return "Location not found";
       }
-    ])
-    .select("id")
-    .single();
 
-  if (insertContact.error) {
-    return insertContact;
+      const inserted = await trx
+        .insertInto("contact")
+        .values({
+          companyId,
+          isCustomer: false,
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          title: contact.title,
+          email: contact.email,
+          mobilePhone: contact.mobilePhone,
+          homePhone: contact.homePhone,
+          workPhone: contact.workPhone,
+          notes: contact.notes
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const link = await trx
+        .insertInto("supplierContact")
+        .values({
+          supplierId,
+          contactId: inserted.id,
+          supplierLocationId,
+          companyId,
+          customFields: toJson(supplierContact.customFields)
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      return { id: link.id };
+    });
+    return typeof id === "string"
+      ? { data: null, error: ruleError(id) }
+      : { data: id, error: null };
+  } catch (error) {
+    logger.error("Failed to create supplier contact", {
+      companyId,
+      supplierId,
+      error
+    });
+    return { data: null, error: error as Error };
   }
-
-  const contactId = insertContact.data?.id;
-  if (!contactId) {
-    return { data: null, error: new Error("Contact ID not found") };
-  }
-
-  return client
-    .from("supplierContact")
-    .insert([
-      {
-        supplierId: supplierContact.supplierId,
-        contactId,
-        supplierLocationId: supplierContact.supplierLocationId,
-        companyId: supplierContact.companyId,
-        customFields: supplierContact.customFields
-      }
-    ])
-    .select("id")
-    .single();
 }
 
 export async function insertSupplierInteraction(

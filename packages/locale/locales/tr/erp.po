@@ -642,6 +642,9 @@ msgstr "{missingCount} muhasebe fişi sağlayıcıda eksik"
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} eksik muhasebe fişi ve {mismatchCount} uyumsuz ay"
 
+msgid "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} silindi"
 
@@ -1233,6 +1236,9 @@ msgstr "Bir görünüm kaydetmek için bir isim gereklidir"
 
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Belirli bir müşteri, müşteri türü veya tüm müşteriler için sabitlenmiş ve temel fiyatın yerini tamamıyla alan, isteğe bağlı olarak miktar kademesileri ile birlikte gelen müzakere edilmiş fiyat."
+
+msgid "A new invite link is sent. A link sent before stops working."
+msgstr "Yeni bir davet bağlantısı gönderilir. Daha önce gönderilen bağlantı artık çalışmaz."
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Her tedarikçi için yeni bir satın alma siparişi oluşturulacaktır. Alternatif olarak, tedarikçinin dış operasyonları eklemesi için mevcut taslak bir satın alma siparişi seçebilirsiniz."
@@ -3510,8 +3516,14 @@ msgstr "Bu kontrol noktasını geçmek istediğinizden emin misiniz? {0} aşamas
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "{0} öğesini kalıcı olarak silmek istediğinizden emin misiniz?"
 
+msgid "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "Tedarikçi prosesini kalıcı olarak silmek istediğinizden emin misiniz?"
+
+msgid "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to permanently delete this bank account?"
 msgstr "Bu banka hesabını kalıcı olarak silmek istediğinizden emin misiniz?"
@@ -5831,6 +5843,9 @@ msgstr "Daralma"
 msgid "Contractor"
 msgstr "Taşeron"
 
+msgid "contractors"
+msgstr ""
+
 msgid "Contractors"
 msgstr "Taşeronlar"
 
@@ -7791,6 +7806,9 @@ msgstr "Depo Transferini Sil"
 
 msgid "Delete Webhook"
 msgstr "Webhook'u Sil"
+
+msgid "Delete Work Center"
+msgstr ""
 
 msgid "Delete Workflow"
 msgstr "İş Akışını Sil"
@@ -10516,6 +10534,9 @@ msgstr "Sabit Kıymet Sınıfı"
 msgid "Fixed asset settings updated"
 msgstr ""
 
+msgid "fixed assets"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "Sabit kıymetler"
 
@@ -11081,6 +11102,9 @@ msgstr "Rehberli"
 msgid "Guided implementation"
 msgstr "Rehberli uygulama"
 
+msgid "Halloween surprise"
+msgstr "Cadılar Bayramı sürprizi"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Tekrarlanan ve tersine çevirme muhasebe fişi girişlerini yönetin."
 
@@ -11092,6 +11116,9 @@ msgstr "Uygulamalı"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "İlk 3–4 hafta boyunca uygulamalı, hızlı yanıt veren destek"
+
+msgid "Happy Halloween"
+msgstr "Mutlu Cadılar Bayramı"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Bir işte gerçek maliyeti veya marjı görmek zor"
@@ -12196,6 +12223,9 @@ msgstr "Sorun"
 msgid "Issue (material)"
 msgstr "Sorun (malzeme)"
 
+msgid "issue actions"
+msgstr ""
+
 msgid "Issue Credit"
 msgstr "Kredi Sorunu"
 
@@ -12331,6 +12361,9 @@ msgstr "Stok kartı sayfaları"
 msgid "Item Scope"
 msgstr "Ürün Kapsamı"
 
+msgid "item shelf life rules"
+msgstr ""
+
 msgid "Item Type"
 msgstr "Stok kartı türü"
 
@@ -12411,6 +12444,9 @@ msgstr "İş emri operasyonu"
 
 msgid "Job operation batch"
 msgstr "İş emri operasyonu partisi"
+
+msgid "job operations"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "İş emri operasyonları"
@@ -13243,6 +13279,9 @@ msgstr "Makine"
 msgid "Machine Costs"
 msgstr "Makine Maliyetleri"
 
+msgid "machine devices"
+msgstr ""
+
 msgid "Machine Hours"
 msgstr "Makine Saatleri"
 
@@ -13257,6 +13296,9 @@ msgstr "Makine Birim Fiyatı"
 
 msgid "Machine Rate (Hourly)"
 msgstr "Makine Ücreti (Saatlik)"
+
+msgid "machine state changes"
+msgstr ""
 
 msgid "Machine time"
 msgstr "Makine süresi"
@@ -13309,8 +13351,17 @@ msgstr ""
 msgid "Maintenance Dispatch Notifications"
 msgstr "Bakım emri bildirimleri"
 
+msgid "maintenance dispatch work centers"
+msgstr ""
+
+msgid "maintenance dispatches"
+msgstr ""
+
 msgid "Maintenance Dispatches"
 msgstr "Bakım emirleri"
+
+msgid "maintenance events"
+msgstr ""
 
 msgid "Maintenance Expense"
 msgstr "Bakım Gideri"
@@ -13320,6 +13371,9 @@ msgstr "Bakım Gideri (varsayılan)"
 
 msgid "Maintenance parts"
 msgstr "Bakım parçaları"
+
+msgid "maintenance schedules"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "Bakım Programları"
@@ -13825,6 +13879,9 @@ msgstr "Metot Kimliği"
 
 msgid "Method Materials"
 msgstr "Metot Malzemeleri"
+
+msgid "method operations"
+msgstr ""
 
 msgid "Method Operations"
 msgstr "Yöntem operasyonları"
@@ -16195,6 +16252,9 @@ msgstr "Operasyon"
 msgid "Operation batch"
 msgstr "Operasyon partisi"
 
+msgid "operation batches"
+msgstr ""
+
 msgid "Operation created"
 msgstr ""
 
@@ -16519,6 +16579,9 @@ msgstr "Tek bir müşteri için fiyatı geçersiz kıl"
 msgid "Override price for all customers of a type"
 msgstr "Bir müşteri türündeki tüm müşterilerin fiyatını geçersiz kıl"
 
+msgid "Override price for every customer"
+msgstr "Tüm müşteriler için fiyatı geçersiz kıl"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "Geçersiz kılma nedeni: {0}"
@@ -16692,6 +16755,9 @@ msgstr "Kısmen Tanındı"
 
 msgid "Partner"
 msgstr "İş Ortağı"
+
+msgid "partners"
+msgstr ""
 
 msgid "Partners"
 msgstr "Ortaklar"
@@ -16986,8 +17052,8 @@ msgstr "Bir Carbon boyutu ve gönderdiği sağlayıcı hedefini seçin. Otomatik
 msgid "Pick a column to sort by"
 msgstr "Sıralamak için bir sütun seçin"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "Fiyatlandırmalarını görüntülemek için bir müşteri veya müşteri türü seçin."
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "Fiyatlarını görüntülemek için bir müşteri, bir müşteri türü veya Tüm Müşteriler seçin."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Bir tarih seçin veya temizlemek için boş bırakın."
@@ -17259,6 +17325,9 @@ msgstr "PO Numarası"
 
 msgid "PO PDF"
 msgstr "PO PDF"
+
+msgid "Poke the spider… if you dare"
+msgstr "Örümceği dürt… cesaretin varsa"
 
 msgid "Policy"
 msgstr "Politika"
@@ -17632,6 +17701,9 @@ msgstr "Üretim olayı"
 
 msgid "Production Event"
 msgstr "Üretim Olayı"
+
+msgid "production events"
+msgstr ""
 
 msgid "Production events"
 msgstr "Üretim olayları"
@@ -18084,6 +18156,9 @@ msgstr "Nitelik eğitimden sonra bu kadar gün sonra süresi dolar; boş = asla"
 msgid "Qualified"
 msgstr "Nitelikli"
 
+msgid "qualified employees"
+msgstr ""
+
 msgid "Qualified Employees"
 msgstr "Nitelikli Çalışanlar"
 
@@ -18256,6 +18331,9 @@ msgstr "Teklif bulunamadı"
 
 msgid "Quote Number"
 msgstr "Teklif Numarası"
+
+msgid "quote operations"
+msgstr ""
 
 msgid "Quote to cash"
 msgstr "Tekliften nakit"
@@ -19199,6 +19277,9 @@ msgstr "Şu ile değiştir"
 msgid "Replacement Order"
 msgstr "Değişim Siparişi"
 
+msgid "replacement parts"
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDF'yi değiştirmek bu belgede tüm balon yerleştirmelerini kaldırır. Özellik satırları ve değerleri kalır; yeni çizimde tekrar balon yerleştirebilirsiniz."
 
@@ -19352,6 +19433,9 @@ msgstr "Yeniden Planlama Toleransı"
 
 msgid "Reschedule tolerance updated"
 msgstr ""
+
+msgid "Resend Invite"
+msgstr "Daveti Yeniden Gönder"
 
 msgid "Reserve floor"
 msgstr "Rezerv tabanı"
@@ -24998,6 +25082,9 @@ msgstr ""
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Ekibinizi Academy ve uygulama içi kılavuzlar aracılığıyla eğitin"
 
+msgid "trainings"
+msgstr ""
+
 msgid "Trainings"
 msgstr "Eğitimler"
 
@@ -25190,6 +25277,9 @@ msgstr "Kuralı kaldır"
 
 msgid "Unassigned"
 msgstr "Atanmamış"
+
+msgid "unattributed machine time entries"
+msgstr ""
 
 msgid "Unattributed Time"
 msgstr "Atanmamış Süre"
@@ -26880,6 +26970,9 @@ msgstr "İş merkezleri"
 
 msgid "Work Centers"
 msgstr "İş Merkezleri"
+
+msgid "work centers requiring its ability"
+msgstr ""
 
 msgid "Work in process (WIP)"
 msgstr "Üretim'de çalışma (Yarı mamul)"

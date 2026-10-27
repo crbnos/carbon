@@ -1399,18 +1399,38 @@ export async function getCustomerIdAndContactId(
   }
 
   if (!customerContactId) {
-    // If there is no matching contact in Carbon, check if contact exists by email first
+    // If there is no matching contact in Carbon, check if contact exists by email first.
+    // Contacts may share an email: reuse one already on this customer, or the only match.
     const existingContactByEmail = await carbon
       .from("contact")
-      .select("id")
+      .select("id, customerContact(customerId)")
       .eq("companyId", company.id)
       .eq("email", contact.email!)
       .eq("isCustomer", true)
-      .maybeSingle();
+      .order("id");
+
+    if (existingContactByEmail.error) {
+      logger.error("Failed to look up contact by email in Carbon", {
+        error: existingContactByEmail.error
+      });
+      return {
+        customerContactId: null,
+        customerId
+      };
+    }
+
+    const contactsWithEmail = existingContactByEmail.data;
+    const reusableContact =
+      contactsWithEmail.find((c) =>
+        c.customerContact.some((link) => link.customerId === customerId)
+      ) ??
+      // Several contacts with this email and none on the customer: they are
+      // other people's, so create a new one rather than take one over.
+      (contactsWithEmail.length === 1 ? contactsWithEmail[0] : undefined);
 
     let contactId: string;
 
-    if (existingContactByEmail.data) {
+    if (reusableContact) {
       // Update the existing contact
       const updatedContact = await carbon
         .from("contact")
@@ -1418,7 +1438,7 @@ export async function getCustomerIdAndContactId(
           firstName: contact.first_name!,
           lastName: contact.last_name!
         })
-        .eq("id", existingContactByEmail.data.id)
+        .eq("id", reusableContact.id)
         .select()
         .single();
 

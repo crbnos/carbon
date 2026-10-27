@@ -21986,6 +21986,7 @@ export type Database = {
           drawingNumber: string | null
           fileName: string | null
           id: string
+          modelUploadId: string | null
           pageCount: number | null
           partId: string
           samplingAql: number | null
@@ -22015,6 +22016,7 @@ export type Database = {
           drawingNumber?: string | null
           fileName?: string | null
           id?: string
+          modelUploadId?: string | null
           pageCount?: number | null
           partId: string
           samplingAql?: number | null
@@ -22044,6 +22046,7 @@ export type Database = {
           drawingNumber?: string | null
           fileName?: string | null
           id?: string
+          modelUploadId?: string | null
           pageCount?: number | null
           partId?: string
           samplingAql?: number | null
@@ -22127,6 +22130,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
           },
           {
             foreignKeyName: "inspectionDocument_partId_fkey"
@@ -22254,6 +22278,7 @@ export type Database = {
           label: string
           nominalValue: string | null
           pageNumber: number
+          pmiItemId: string | null
           samplingAql: number | null
           samplingInspectionLevel:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -22284,6 +22309,7 @@ export type Database = {
           label: string
           nominalValue?: string | null
           pageNumber: number
+          pmiItemId?: string | null
           samplingAql?: number | null
           samplingInspectionLevel?:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -22314,6 +22340,7 @@ export type Database = {
           label?: string
           nominalValue?: string | null
           pageNumber?: number
+          pmiItemId?: string | null
           samplingAql?: number | null
           samplingInspectionLevel?:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -77168,9 +77195,22 @@ export type Database = {
           drawingNumber: string | null
           fileName: string | null
           id: string | null
+          modelUploadId: string | null
           pageCount: number | null
           partId: string | null
           partReadableId: string | null
+          samplingAql: number | null
+          samplingInspectionLevel:
+            | Database["public"]["Enums"]["inspectionLevel"]
+            | null
+          samplingPercentage: number | null
+          samplingPlanType:
+            | Database["public"]["Enums"]["samplingPlanType"]
+            | null
+          samplingSampleSize: number | null
+          samplingSeverity:
+            | Database["public"]["Enums"]["inspectionSeverity"]
+            | null
           storagePath: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -77240,6 +77280,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
           },
           {
             foreignKeyName: "inspectionDocument_partId_fkey"

@@ -26,6 +26,7 @@ import {
   withTransaction
 } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
+import { deleteUnusedPmiInspectionPlans } from "@carbon/database/quality";
 import { insertRows, many, maybeSingle } from "@carbon/database/rows";
 import {
   hasPendingApproval,
@@ -37,7 +38,6 @@ import {
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
-import { TiptapText } from "@carbon/files/markdown";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
@@ -685,6 +685,9 @@ async function deleteItemsWithPriceBreaks(
         .where("companyId", "=", companyId)
     )
     .execute();
+
+  // Plans made from the items' model PMI must not block the delete.
+  await deleteUnusedPmiInspectionPlans(trx, { companyId, itemIds });
 
   await trx
     .deleteFrom("item")
@@ -4583,7 +4586,8 @@ export async function upsertMethodMaterial(
   client: SupabaseClient<Database>,
 
   methodMaterial:
-    | (z.infer<typeof methodMaterialValidator> & {
+    | (Omit<z.infer<typeof methodMaterialValidator>, "id"> & {
+        id?: string;
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -4596,8 +4600,10 @@ export async function upsertMethodMaterial(
 ) {
   // The MCP/API path skips methodMaterialValidator, and the insert spreads the
   // id over the column default — so a blank id was stored as "" and the next
-  // blank create collided with it.
-  if (!methodMaterial.id?.trim()) {
+  // blank create collided with it. A create may leave the id out: the column
+  // default makes one.
+  const blankId = methodMaterial.id !== undefined && !methodMaterial.id.trim();
+  if (blankId || ("updatedBy" in methodMaterial && !methodMaterial.id)) {
     return {
       data: null,
       error: { message: "Material ID is required" }
@@ -10352,13 +10358,6 @@ export function priceBreakRows(
 export const isMakeMethodId = (id: string) => id.startsWith("make_");
 
 // ── Change notices ──────────────────────────────────────────────────────────
-
-// Reason and description arrive as Markdown; the columns are tiptap JSON, so
-// non-empty text becomes a doc the detail page's editor can edit.
-export function toRichText(value: string | undefined): Json | undefined {
-  if (!value) return undefined;
-  return TiptapText(value).toDocument() as unknown as Json;
-}
 
 const onShapeDataValidator = z.object({
   index: z.string(),

@@ -17,6 +17,7 @@ import {
   RadioGroupButton,
   useMode,
   useModePreference,
+  useThemePreview,
   VStack
 } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
@@ -49,10 +50,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const theme = getTheme(request);
-
   return {
-    theme: theme ?? "zinc"
+    theme: getTheme(request)
   };
 }
 
@@ -70,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!next) throw new Error("Fatal: next is required");
 
   throw redirect(next || path.to.onboarding.root, {
-    headers: { "Set-Cookie": setTheme(theme) }
+    headers: setTheme(theme, { inApp: false })
   });
 }
 
@@ -82,27 +81,30 @@ export default function OnboardingTheme() {
   const modePreference = useModePreference();
   const modeFetcher = useFetcher<typeof modeAction>();
 
-  const [theme, setTheme] = useState<ThemeValue>(initialTheme as "zinc");
+  const [picked, setPicked] = useState<ThemeValue | null>(null);
+  const theme = picked ?? initialTheme;
 
-  const onThemeChange = (t: Theme) => {
-    setTheme(t.name);
+  // Kept until the step is left: the pick is saved only on Continue.
+  const previewTheme = useThemePreview(false);
 
-    const variables = mode === "dark" ? t.cssVars.dark : t.cssVars.light;
-
-    Object.entries(variables).forEach(([key, value]) => {
-      document.body.style.setProperty(`--${key}`, value);
-    });
+  const applyThemeColors = (t: Theme) => {
+    previewTheme(mode === "dark" ? t.cssVars.dark : t.cssVars.light);
 
     window.dispatchEvent(
       new CustomEvent("onboarding-theme-change", { detail: t.name })
     );
   };
 
+  const onThemeChange = (t: Theme) => {
+    setPicked(t.name);
+    applyThemeColors(t);
+  };
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     const t = themes.find((t) => t.name === theme);
     if (t) {
-      onThemeChange(t);
+      applyThemeColors(t);
     }
   }, [mode]);
 

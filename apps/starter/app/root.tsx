@@ -24,14 +24,13 @@ import {
   Toaster,
   useMode
 } from "@carbon/react";
-import type { Theme } from "@carbon/utils";
 import {
   colorSchemeHintScript,
   getPreferenceHeaders,
   modeValidator,
   prefetchCacheMiddleware,
-  themeColorValidator,
-  themes
+  themeByName,
+  themeColorValidator
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
@@ -159,7 +158,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(
       {},
       {
-        headers: { "Set-Cookie": setTheme(themeValidation.data.theme) }
+        headers: setTheme(themeValidation.data.theme, { inApp: true })
       }
     );
   }
@@ -194,27 +193,18 @@ function Document({
   lang?: string;
 }) {
   const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
-  const selectedTheme = themes.find((t) => t.name === theme) as
-    | Theme
-    | undefined;
+  const selectedTheme = themeByName(theme);
 
   // Create style objects for both light and dark modes
   const lightVars: Record<string, string> = {};
   const darkVars: Record<string, string> = {};
 
-  if (selectedTheme) {
-    // Set light mode variables
-    Object.entries(selectedTheme.cssVars.light).forEach(([key, value]) => {
-      const cssKey = `--${key}`;
-      lightVars[cssKey] = `${value}`;
-    });
-
-    // Set dark mode variables
-    Object.entries(selectedTheme.cssVars.dark).forEach(([key, value]) => {
-      const cssKey = `--${key}`;
-      darkVars[cssKey] = `${value}`;
-    });
-  }
+  Object.entries(selectedTheme.cssVars.light).forEach(([key, value]) => {
+    lightVars[`--${key}`] = `${value}`;
+  });
+  Object.entries(selectedTheme.cssVars.dark).forEach(([key, value]) => {
+    darkVars[`--${key}`] = `${value}`;
+  });
 
   // Combine the styles with proper selectors
   const themeStyle = {

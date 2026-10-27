@@ -66,7 +66,7 @@ import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
-import { incoterms } from "~/modules/shared/shared.models";
+import { incoterms, optionalTiptapDoc } from "~/modules/shared/shared.models";
 import {
   getLocationTimeZone,
   invokePosting,
@@ -5075,7 +5075,7 @@ export const insertSupplierContact = defineServiceFn({
     return unwrap(
       ctx,
       await service.insertSupplierContact(
-        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         payload(ctx, input).forUpsert() as never
       )
     );
@@ -5429,8 +5429,8 @@ export const insertPurchaseOrder = defineServiceFn({
     supplierQuoteId: z.string().optional(),
     receiptRequestedDate: z.string().optional(),
     supplierReference: z.string().optional(),
-    notes: z.unknown().optional(),
-    externalNotes: z.unknown().optional(),
+    notes: optionalTiptapDoc,
+    externalNotes: optionalTiptapDoc,
     customFields: z.unknown().optional()
   }),
   permission: { create: "purchasing" },
