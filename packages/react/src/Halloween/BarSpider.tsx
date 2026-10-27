@@ -66,11 +66,14 @@ function measureBar(layer: HTMLElement) {
   if (!bar) return null;
   const obstacles: Obstacle[] = [];
   for (const node of Array.from(bar.querySelectorAll("*"))) {
-    // Links and buttons whole, and every other element that holds no
+    // Anything pressable whole (links, buttons, fields, focusable or
+    // role-carrying elements), and every other element that holds no
     // further elements (text, icons).
     const leaf =
       node.childElementCount === 0 ||
-      node.matches("a, button, input, select, textarea, [role]");
+      node.matches(
+        "a, button, input, select, textarea, label, summary, [role], [tabindex]"
+      );
     if (!leaf) continue;
     const box = node.getBoundingClientRect();
     if (box.width < 1 || box.height < 1) continue;
@@ -146,7 +149,7 @@ export function BarSpider({
     const barChanged = new MutationObserver(() => schedule());
     function measure() {
       if (!layer) return;
-      s?.layout(layer.getBoundingClientRect().width);
+      s?.layout(layer.getBoundingClientRect());
       const found = measureBar(layer);
       s?.setObstacles(found?.obstacles ?? []);
       if (!found || found.bar === watched) return;
@@ -154,10 +157,14 @@ export function BarSpider({
       barChanged.disconnect();
       watched = found.bar;
       barResized.observe(found.bar);
+      // An item shown, hidden or moved by a class, a style or its open
+      // state changes the boxes as much as one added or removed.
       barChanged.observe(found.bar, {
         childList: true,
         subtree: true,
-        characterData: true
+        characterData: true,
+        attributes: true,
+        attributeFilter: ["class", "style", "hidden", "data-state"]
       });
     }
     function schedule() {
@@ -168,11 +175,26 @@ export function BarSpider({
     layerResized.observe(layer);
     const cardChanged = new MutationObserver(schedule);
     cardChanged.observe(card, { childList: true });
+    // Scrolling only moves the layer on the screen: no need to re-measure
+    // the bar, just where pointer events land.
+    let scrollFrame = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(scrollFrame);
+      scrollFrame = requestAnimationFrame(() =>
+        s.layout(layer.getBoundingClientRect())
+      );
+    };
+    window.addEventListener("scroll", onScroll, {
+      capture: true,
+      passive: true
+    });
 
     measure();
     s.appear();
     return () => {
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(scrollFrame);
+      window.removeEventListener("scroll", onScroll, { capture: true });
       barResized.disconnect();
       barChanged.disconnect();
       layerResized.disconnect();

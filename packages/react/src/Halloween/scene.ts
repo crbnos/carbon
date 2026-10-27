@@ -6,17 +6,7 @@
 // so the scene is identical on every open. The scene's coordinates are a
 // 1600 × 900 viewBox; the ground line sits around y 700–760.
 
-/** mulberry32: a small seeded PRNG returning [0, 1). */
-export function seededRandom(seed: number) {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+import { seeded } from "./math";
 
 export type Star = {
   id: string;
@@ -30,7 +20,7 @@ export type Star = {
 
 // Most stars are faint pinpricks; a cubed random keeps the big ones rare.
 export const STARS: Star[] = (() => {
-  const rand = seededRandom(1031);
+  const rand = seeded(1031);
   return Array.from({ length: 120 }, (_, i) => {
     const size = rand();
     return {
@@ -61,7 +51,7 @@ export const BRIGHT_STARS = [
  * line from the top left down towards the moon, as one path of tiny circles.
  */
 export const STAR_DUST = (() => {
-  const rand = seededRandom(2203);
+  const rand = seeded(2203);
   let d = "";
   for (let i = 0; i < 220; i++) {
     const t = rand();
@@ -81,7 +71,7 @@ export const STAR_DUST = (() => {
  * little and leans back towards the line, the way a real channel does.
  */
 export const LIGHTNING = (() => {
-  const rand = seededRandom(1310);
+  const rand = seeded(1310);
   function channel(
     x: number,
     y: number,
@@ -128,7 +118,7 @@ export const SHOOTING_STARS = [
  * puff is more than a half circle, so neighbours overlap like real billows.
  */
 function cloudPath(width: number, height: number, seed: number) {
-  const rand = seededRandom(seed);
+  const rand = seeded(seed);
   const puffs = 6;
   const step = width / puffs;
   let d = "M 0 0";
@@ -186,7 +176,7 @@ export const CLOUDS = [
  * width, so each depth is drawn as a single stroked path.
  */
 export const TREE = (() => {
-  const rand = seededRandom(666);
+  const rand = seeded(666);
   const baseX = 1432;
   const baseY = 790;
   const byDepth: string[] = [];
@@ -254,7 +244,7 @@ export const TREE = (() => {
  * the graveyard gate between two stone pillars.
  */
 export const FENCE = (() => {
-  const rand = seededRandom(13);
+  const rand = seeded(13);
   const startX = 520;
   const count = 30;
   const gap = 16;
@@ -364,7 +354,7 @@ function bladesPath({
   height: [number, number];
   perClump: number;
 }) {
-  const rand = seededRandom(seed);
+  const rand = seeded(seed);
   let d = "";
   for (let x = from; x < to; x += every[0] + rand() * (every[1] - every[0])) {
     const ground = base(x);
@@ -431,7 +421,7 @@ export const FAR_RIDGE = (() => {
   for (let x = -70; x <= 1680; x += 10) line += ` L ${x} ${ridge(x)}`;
   const d = `${line} L 1680 900 L -80 900 Z`;
 
-  const rand = seededRandom(91);
+  const rand = seeded(91);
   let trees = "";
   for (const x of [618, 640, 652, 846, 862, 1000, 1018, 1196, 1210]) {
     const tall = 14 + rand() * 16;
@@ -456,7 +446,7 @@ export type Drifter = {
 
 /** Fireflies over the graveyard, each wandering its own small loop. */
 export const FIREFLIES: Drifter[] = (() => {
-  const rand = seededRandom(3110);
+  const rand = seeded(3110);
   return Array.from({ length: 18 }, (_, i) => ({
     id: `firefly-${i}`,
     x: 260 + rand() * 1300,
@@ -517,7 +507,7 @@ export type FogPuff = {
 
 /** One bank of ground fog: a row of soft overlapping puffs. */
 function fogBank(seed: number, y: number, rx: number, ry: number): FogPuff[] {
-  const rand = seededRandom(seed);
+  const rand = seeded(seed);
   const puffs: FogPuff[] = [];
   for (let x = -260; x < 1900; x += rx * (0.7 + rand() * 0.5)) {
     puffs.push({

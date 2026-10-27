@@ -4,8 +4,7 @@
 
 // The spider's legs, animated the way real legs work rather than wiggled.
 //
-// Each foot grips something (a thread of the web, or the page) and stays put
-// while the body moves over it. Once the body has drawn too far ahead of a
+// Each foot stays put on the page while the body moves over it. Once the body has drawn too far ahead of a
 // foot, the leg lifts and swings it forward to a new grip. Spiders walk with
 // an alternating tetrapod gait: legs 1 and 3 on one side step together with
 // legs 2 and 4 on the other, then the other four, so four feet are always
@@ -15,20 +14,12 @@
 // The body's own frame has the head along +y and the spider's right along
 // +x; an angle of 0 points the head down the screen.
 
+import { at, ease } from "./math";
+
 // Sized to sit in the top bar: about 20 px from fangs to spinnerets.
 export const SPIDER_SCALE = 0.72;
 
 type Vec = { x: number; y: number };
-
-/** Whatever a foot is holding: the caller turns it back into a live point. */
-export type Hold = unknown;
-
-export type Surface = {
-  /** The grip nearest a point: where the foot goes, and what it holds. */
-  grip(x: number, y: number): { x: number; y: number; hold: Hold | null };
-  /** Where a hold is now (the web sways, and the feet go with it). */
-  locate(hold: Hold): Vec;
-};
 
 export type Body = { x: number; y: number; angle: number };
 
@@ -64,13 +55,11 @@ export const LEGS: LegSpec[] = ([-1, 1] as const).flatMap((side) =>
 type Foot = {
   x: number;
   y: number;
-  hold: Hold | null;
   stepping: boolean;
   fromX: number;
   fromY: number;
   toX: number;
   toY: number;
-  toHold: Hold | null;
   t: number;
   duration: number;
 };
@@ -81,14 +70,6 @@ export type LegPose = { hip: Vec; knee: Vec; ankle: Vec; foot: Vec };
 // can be: a stride is never longer than a leg.
 const LEAD = 0.11;
 const MAX_LEAD = 9;
-const smooth = (t: number) => t * t * (3 - 2 * t);
-
-// A leg number always names one of the eight legs, so a missing one is a bug.
-function at<T>(list: readonly T[], i: number): T {
-  const value = list[i];
-  if (value === undefined) throw new Error(`spider rig: no leg ${i}`);
-  return value;
-}
 
 export function toWorld(body: Body, p: Vec): Vec {
   const cos = Math.cos(body.angle);
@@ -147,13 +128,11 @@ export function createRig() {
   const feet: Foot[] = LEGS.map(() => ({
     x: 0,
     y: 0,
-    hold: null,
     stepping: false,
     fromX: 0,
     fromY: 0,
     toX: 0,
     toY: 0,
-    toHold: null,
     t: 0,
     duration: 0.1
   }));
@@ -165,36 +144,25 @@ export function createRig() {
     return (upper + lower) * SPIDER_SCALE;
   };
 
-  function startStep(
-    i: number,
-    target: Vec,
-    surface: Surface,
-    speed: number,
-    duration?: number
-  ) {
+  function startStep(i: number, target: Vec, speed: number) {
     const foot = at(feet, i);
-    const grip = surface.grip(target.x, target.y);
     foot.stepping = true;
     foot.fromX = foot.x;
     foot.fromY = foot.y;
-    foot.toX = grip.x;
-    foot.toY = grip.y;
-    foot.toHold = grip.hold;
+    foot.toX = target.x;
+    foot.toY = target.y;
     foot.t = 0;
     // Quick steps when running, deliberate ones when creeping.
-    foot.duration =
-      duration ?? Math.max(0.05, Math.min(0.12, 0.12 - speed / 2000));
+    foot.duration = Math.max(0.05, Math.min(0.12, 0.12 - speed / 2000));
   }
 
   return {
-    /** Put every foot straight down where it rests, gripping the surface. */
-    place(body: Body, surface: Surface) {
+    /** Put every foot straight down where it rests. */
+    place(body: Body) {
       feet.forEach((foot, i) => {
         const p = restAt(body, i);
-        const grip = surface.grip(p.x, p.y);
-        foot.x = grip.x;
-        foot.y = grip.y;
-        foot.hold = grip.hold;
+        foot.x = p.x;
+        foot.y = p.y;
         foot.stepping = false;
       });
     },
@@ -203,30 +171,16 @@ export function createRig() {
      * Move the feet for this step of the body. "curl" draws the legs in, as a
      * spider dangling from a thread holds them.
      */
-    update(
-      dt: number,
-      body: Body,
-      velocity: Vec,
-      surface: Surface,
-      mode: "walk" | "curl"
-    ) {
+    update(dt: number, body: Body, velocity: Vec, mode: "walk" | "curl") {
       const speed = Math.hypot(velocity.x, velocity.y);
-      for (const foot of feet) {
-        if (!foot.stepping && foot.hold !== null) {
-          const p = surface.locate(foot.hold);
-          foot.x = p.x;
-          foot.y = p.y;
-        }
-      }
 
       if (mode === "curl") {
-        const ease = Math.min(1, dt * 14);
+        const pull = Math.min(1, dt * 14);
         feet.forEach((foot, i) => {
           const rest = at(LEGS, i).rest;
           const p = toWorld(body, { x: rest.x * 0.42, y: rest.y * 0.42 + 2 });
-          foot.x += (p.x - foot.x) * ease;
-          foot.y += (p.y - foot.y) * ease;
-          foot.hold = null;
+          foot.x += (p.x - foot.x) * pull;
+          foot.y += (p.y - foot.y) * pull;
           foot.stepping = false;
         });
         return;
@@ -238,11 +192,8 @@ export function createRig() {
       feet.forEach((foot, i) => {
         if (!foot.stepping) return;
         foot.t = Math.min(1, foot.t + dt / foot.duration);
-        const to =
-          foot.toHold !== null
-            ? surface.locate(foot.toHold)
-            : { x: foot.toX, y: foot.toY };
-        const e = smooth(foot.t);
+        const to = { x: foot.toX, y: foot.toY };
+        const e = ease(foot.t);
         const stride = Math.hypot(to.x - foot.fromX, to.y - foot.fromY);
         const swing =
           Math.sin(Math.PI * foot.t) *
@@ -252,7 +203,6 @@ export function createRig() {
         foot.y = foot.fromY + (to.y - foot.fromY) * e + lateral.y * swing;
         if (foot.t >= 1) {
           foot.stepping = false;
-          foot.hold = foot.toHold;
           foot.x = to.x;
           foot.y = to.y;
         }
@@ -280,7 +230,7 @@ export function createRig() {
           if (!due) continue;
           LEGS.forEach((leg, i) => {
             if (leg.group === group && at(error, i) > threshold * 0.4) {
-              startStep(i, at(targets, i), surface, speed);
+              startStep(i, at(targets, i), speed);
             }
           });
           nextGroup = group === 0 ? 1 : 0;
@@ -297,17 +247,10 @@ export function createRig() {
         const overstretched =
           Math.hypot(foot.x - hip.x, foot.y - hip.y) > reachOf(i) * 0.97;
         if (overstretched || at(error, i) > threshold * 3.2) {
-          startStep(i, at(targets, i), surface, speed);
+          startStep(i, at(targets, i), speed);
           airborne++;
         }
       });
-    },
-
-    /** Lift one leg and set it down again a little elsewhere: idle fussing. */
-    fidget(i: number, body: Body, surface: Surface, nudge: Vec) {
-      if (at(feet, i).stepping) return;
-      const p = restAt(body, i);
-      startStep(i, { x: p.x + nudge.x, y: p.y + nudge.y }, surface, 0, 0.22);
     },
 
     stepping() {
@@ -349,7 +292,7 @@ export function createRig() {
           outward
         );
         // The metatarsus comes down from the raised knee; near the foot the
-        // tarsus hooks onto the thread, a small bend just short of the end.
+        // tarsus bends a little, just short of the end.
         const ankle = {
           x: knee.x + (end.x - knee.x) * 0.74 + outwardSide.x * height * 0.08,
           y: knee.y + (end.y - knee.y) * 0.74 + outwardSide.y * height * 0.08

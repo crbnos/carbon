@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { Bat } from "./Bat";
 import type { Flight } from "./flight";
 import { approach, crossing, takeOff } from "./flight";
+import { onToast } from "./toasts";
 
 // Bats that pass through now and then while Halloween is on: a few across
 // the screen every few minutes, and a few out of a success toast. Each flies
@@ -131,7 +132,6 @@ export function BatFlyby() {
   );
 }
 
-const TOAST_SELECTOR = '[data-sonner-toast][data-type="success"]';
 // At most one burst this often, so a run of saves is not a swarm.
 const BURST_GAP_MS = 12_000;
 
@@ -147,47 +147,35 @@ export function SuccessBats() {
     if (still) return;
     let id = 0;
     const timers = new Set<number>();
-    // Looks only for the toast library adding a toast; every other change in
-    // the page fails the first check.
-    const observer = new MutationObserver((records) => {
-      for (const record of records) {
-        for (const node of Array.from(record.addedNodes)) {
-          if (!(node instanceof Element)) continue;
-          const toast = node.matches(TOAST_SELECTOR)
-            ? node
-            : node.querySelector(TOAST_SELECTOR);
-          if (!toast) continue;
-          if (performance.now() - lastBurst.current < BURST_GAP_MS) continue;
-          lastBurst.current = performance.now();
-          // Once the toast has slid into place.
-          const timer = window.setTimeout(() => {
-            timers.delete(timer);
-            const box = toast.getBoundingClientRect();
-            if (box.width === 0) return;
-            id += 1;
-            const count =
-              3 + (Math.random() < 0.5 ? 1 : 0) + (Math.random() < 0.5 ? 1 : 0);
-            const burst: Burst = {
-              id,
-              x: box.left + box.width * (0.3 + Math.random() * 0.4),
-              y: box.top + 8,
-              bats: Array.from({ length: count }, (_, key) => ({
-                key,
-                flight: takeOff(Math.random),
-                duration: 1.5 + Math.random() * 0.9,
-                delay: Math.random() * 0.45,
-                flap: 0.13 + Math.random() * 0.07
-              }))
-            };
-            setBursts((current) => [...current, burst]);
-          }, 380);
-          timers.add(timer);
-        }
-      }
+    const stop = onToast("success", (toast) => {
+      if (performance.now() - lastBurst.current < BURST_GAP_MS) return;
+      lastBurst.current = performance.now();
+      // Once the toast has slid into place.
+      const timer = window.setTimeout(() => {
+        timers.delete(timer);
+        const box = toast.getBoundingClientRect();
+        if (box.width === 0) return;
+        id += 1;
+        const count =
+          3 + (Math.random() < 0.5 ? 1 : 0) + (Math.random() < 0.5 ? 1 : 0);
+        const burst: Burst = {
+          id,
+          x: box.left + box.width * (0.3 + Math.random() * 0.4),
+          y: box.top + 8,
+          bats: Array.from({ length: count }, (_, key) => ({
+            key,
+            flight: takeOff(Math.random),
+            duration: 1.5 + Math.random() * 0.9,
+            delay: Math.random() * 0.45,
+            flap: 0.13 + Math.random() * 0.07
+          }))
+        };
+        setBursts((current) => [...current, burst]);
+      }, 380);
+      timers.add(timer);
     });
-    observer.observe(document.body, { childList: true, subtree: true });
     return () => {
-      observer.disconnect();
+      stop();
       for (const timer of timers) window.clearTimeout(timer);
     };
   }, [still]);

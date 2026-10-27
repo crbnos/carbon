@@ -11,6 +11,7 @@ import { miniFace } from "./faces";
 import { makeBuffers, renderFrame } from "./frame";
 import type { Grid } from "./grid";
 import { makeLayout } from "./layout";
+import type { Labels } from "./scene";
 import { IDLE_WATCHER } from "./scene";
 import type { ShiftPlan } from "./story";
 import { actStart, LANTERNS_FOR_LIGHTING, momentAt, planShift } from "./story";
@@ -21,6 +22,17 @@ const SIZES = [
   [135, 76]
 ] as const;
 
+const LABELS: Labels = {
+  stations: ["Wash", "Carve", "Light up", "QC"],
+  item: "Jack-o'-lantern",
+  inProgress: "In Progress",
+  complete: "Completed",
+  scrapped: "Scrapped",
+  passed: "QC passed",
+  rejected: "Rejected"
+};
+
+/** Every glyph, then every label's words. */
 function text(grid: Grid) {
   let out = "";
   for (let r = 0; r < grid.rows; r++) {
@@ -28,6 +40,7 @@ function text(grid: Grid) {
       out += String.fromCharCode(grid.ch[r * grid.cols + c] ?? 32);
     out += "\n";
   }
+  for (const label of grid.labels) out += `${label.text}\n`;
   return out;
 }
 
@@ -36,12 +49,21 @@ function render(
   seconds: number,
   cols = 100,
   rows = 60,
-  watcher = IDLE_WATCHER
+  watcher = IDLE_WATCHER,
+  labels = LABELS
 ) {
   const layout = makeLayout(cols, rows, 1.93);
   const buffers = makeBuffers(cols, rows);
   const moment = momentAt(seconds, plan.index);
-  const frame = renderFrame(buffers, layout, plan, moment, seconds, watcher);
+  const frame = renderFrame(
+    buffers,
+    layout,
+    plan,
+    moment,
+    seconds,
+    watcher,
+    labels
+  );
   return { frame, grid: buffers.main, layout };
 }
 
@@ -96,6 +118,34 @@ describe("renderFrame", () => {
     const after = text(render(plan, actStart("line") + 23).grid);
     expect(after).toContain("Complete");
     expect(after).toContain("QC PASSED");
+  });
+
+  it("keeps a long translation inside the ticket", () => {
+    const plan = planShift(7, 2);
+    const long = "x".repeat(60);
+    const { grid } = render(plan, actStart("line") + 10, 70, 40, IDLE_WATCHER, {
+      ...LABELS,
+      item: long,
+      inProgress: long,
+      stations: [long, long, long, long]
+    });
+    const status = grid.labels.find((label) => label.text === long);
+    expect(status).toBeDefined();
+    for (const label of grid.labels) {
+      expect(label.x).toBeGreaterThanOrEqual(0);
+      expect(label.x + label.cells).toBeLessThanOrEqual(grid.cols);
+    }
+    // The ticket's labels never overlap one another.
+    const row = (y: number) =>
+      grid.labels.filter((label) => label.y === y).sort((a, b) => a.x - b.x);
+    for (const y of new Set(grid.labels.map((label) => label.y))) {
+      const labels = row(y);
+      labels.slice(1).forEach((label, i) => {
+        const before = labels[i];
+        if (before)
+          expect(label.x).toBeGreaterThanOrEqual(before.x + before.cells);
+      });
+    }
   });
 
   it("scraps a rejected pumpkin", () => {

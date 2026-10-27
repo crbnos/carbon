@@ -4,8 +4,8 @@
 
 import type { CornerWeb } from "./corner-web";
 import { BAR_HEIGHT, createCornerWeb } from "./corner-web";
-import { seededRandom } from "./scene";
-import type { Body, LegPose, Surface } from "./spider-rig";
+import { at, seeded } from "./math";
+import type { Body, LegPose } from "./spider-rig";
 import { createRig, SPIDER_SCALE, toWorld } from "./spider-rig";
 
 // A garden spider living on the top bar, with a web in each of its top
@@ -105,25 +105,14 @@ function turn(from: number, to: number) {
 /** The angle that points the spider's head along (dx, dy). */
 const facing = (dx: number, dy: number) => Math.atan2(-dx, dy);
 
-// The track always has its six points and five lengths once it is built, so
-// a missing one is a bug.
-function at<T>(list: readonly T[], i: number): T {
-  const value = list[i];
-  if (value === undefined) throw new Error(`bar spider: no track entry ${i}`);
-  return value;
-}
-
-/** The page itself: a foot holds wherever it lands. */
-const page: Surface = {
-  grip: (x, y) => ({ x, y, hold: null }),
-  locate: () => ({ x: 0, y: 0 })
-};
-
 export function createBarSpider() {
   const rig = createRig();
-  const rand = seededRandom(31);
+  const rand = seeded(31);
 
   let width = 0;
+  // Where the layer sits on the screen, from the last layout: a pointer event
+  // is turned into layer coordinates without measuring the page.
+  let origin = { left: 0, top: 0 };
   let webs: CornerWeb[] = [];
   // The spider's path: out of the left web, along the bar, into the right one.
   let track: Vec[] = [];
@@ -180,13 +169,15 @@ export function createBarSpider() {
   let last = 0;
   let accumulator = 0;
   let calm = 0;
-  let clock = 0;
   let awake = false;
   let idleTimer = 0;
   let quietSince = 0;
   // Watching: whether the pointer is still close (else it moves on soon).
   let watching = false;
   let pointerWasNear = false;
+  // Asked to appear before the bar had a width (the layer is hidden below
+  // md): there is no track yet, so it appears on the first real layout.
+  let appearOnLayout = false;
 
   // ---- The track ------------------------------------------------------------
 
@@ -254,8 +245,9 @@ export function createBarSpider() {
         later(seconds, then);
         return;
       }
+      // Anything that moves the spider wakes the loop itself (`walkTo`,
+      // `watch`), so a check that changes nothing costs no frames.
       then();
-      wake();
     }, seconds * 1000);
   }
 
@@ -294,7 +286,7 @@ export function createBarSpider() {
     const pointerIsLeft = pointer.x < spider.body.x;
     walkTo(pointerIsLeft ? total : 0, RUN_SPEED, () => {
       spider.mode = "hide";
-      quietSince = clock;
+      quietSince = performance.now();
       watchFromHiding();
     });
   }
@@ -305,8 +297,11 @@ export function createBarSpider() {
       const away =
         Math.hypot(pointer.x - spider.body.x, pointer.y - spider.body.y) >
         SAFE_DISTANCE;
-      if (!away) quietSince = clock;
-      if (away && clock - quietSince >= QUIET_BEFORE_RETURN) {
+      if (!away) quietSince = performance.now();
+      if (
+        away &&
+        performance.now() - quietSince >= QUIET_BEFORE_RETURN * 1000
+      ) {
         wander();
         return;
       }
@@ -360,7 +355,6 @@ export function createBarSpider() {
   }
 
   function step(dt: number) {
-    clock += dt;
     for (const web of webs) web.step(dt);
     const before = { x: spider.body.x, y: spider.body.y };
 
@@ -400,7 +394,6 @@ export function createBarSpider() {
       dt,
       spider.body,
       { x: spider.vx, y: spider.vy },
-      page,
       onThread ? "curl" : "walk"
     );
   }
@@ -554,7 +547,7 @@ export function createBarSpider() {
   function land() {
     spider.s = spider.holdS;
     place();
-    rig.place(spider.body, page);
+    rig.place(spider.body);
     spider.mode = "pause";
     spider.timer = 0.8;
     spider.after = wander;
@@ -678,14 +671,11 @@ export function createBarSpider() {
   // ---- The pointer ------------------------------------------------------------
 
   function local(clientX: number, clientY: number) {
-    const rect = el?.svg?.getBoundingClientRect();
-    return rect
-      ? { x: clientX - rect.left, y: clientY - rect.top }
-      : { x: clientX, y: clientY };
+    return { x: clientX - origin.left, y: clientY - origin.top };
   }
 
   function onPointerMove(event: PointerEvent) {
-    if (!el?.svg || spider.mode === "drag") return;
+    if (!el?.svg || !total || spider.mode === "drag") return;
     const p = local(event.clientX, event.clientY);
     const now = event.timeStamp;
     const dt = Math.max(0.008, (now - pointer.time) / 1000);
@@ -714,7 +704,9 @@ export function createBarSpider() {
         return;
       }
     }
-    if (spider.mode === "hide" && near < SAFE_DISTANCE) quietSince = clock;
+    if (spider.mode === "hide" && near < SAFE_DISTANCE) {
+      quietSince = performance.now();
+    }
 
     // Drawing near, it stops to face the pointer and follows it round; once
     // the pointer has gone, it waits a moment and moves on.
@@ -769,11 +761,37 @@ export function createBarSpider() {
     wake();
   }
 
+  /**
+   * The webs, and the spider resting in the right-hand one; in a moment it
+   * comes out for a walk. With reduced motion it simply stays there.
+   */
+  function appear() {
+    appearOnLayout = !total;
+    if (appearOnLayout) return;
+    clearIdle();
+    for (const web of webs) web.reset();
+    spider.s = total;
+    spider.speed = 0;
+    spider.spin = 0;
+    spider.body.angle = 0;
+    place();
+    rig.place(spider.body);
+    render();
+    spider.mode = "rest";
+    if (options.reducedMotion) return;
+    later(1.6, wander);
+  }
+
   return {
     attach(elements: BarSpiderElements, spiderOptions: BarSpiderOptions = {}) {
       el = elements;
       options = spiderOptions;
-      window.addEventListener("pointermove", onPointerMove, { passive: true });
+      // With reduced motion nothing follows the pointer.
+      if (!options.reducedMotion) {
+        window.addEventListener("pointermove", onPointerMove, {
+          passive: true
+        });
+      }
     },
     detach() {
       sleep();
@@ -782,9 +800,15 @@ export function createBarSpider() {
       el = null;
     },
     sleep,
-    /** The bar's width changed: re-spin the corner webs to fit. */
-    layout(nextWidth: number) {
-      if (nextWidth === width) return;
+    /**
+     * Where the layer is now. When the bar's width changed, re-spin the
+     * corner webs to fit.
+     */
+    layout(box: { left: number; top: number; width: number }) {
+      origin = { left: box.left, top: box.top };
+      const nextWidth = box.width;
+      // A hidden layer measures 0: keep the last track rather than none.
+      if (!nextWidth || nextWidth === width) return;
       const fraction = total ? spider.s / total : 1;
       width = nextWidth;
       webs = [createCornerWeb("left", width), createCornerWeb("right", width)];
@@ -793,33 +817,17 @@ export function createBarSpider() {
       spider.target = Math.min(total, spider.target);
       if (spider.mode !== "drag" && spider.mode !== "dangle") {
         place();
-        rig.place(spider.body, page);
+        rig.place(spider.body);
       }
       render();
+      if (appearOnLayout) appear();
     },
     /** What on the bar the click target must keep clear of. */
     setObstacles(next: Obstacle[]) {
       obstacles = next;
       render();
     },
-    /**
-     * The webs, and the spider resting in the right-hand one; in a moment it
-     * comes out for a walk. With reduced motion it simply stays there.
-     */
-    appear() {
-      clearIdle();
-      for (const web of webs) web.reset();
-      spider.s = total;
-      spider.speed = 0;
-      spider.spin = 0;
-      spider.body.angle = 0;
-      place();
-      rig.place(spider.body, page);
-      render();
-      spider.mode = "rest";
-      if (options.reducedMotion) return;
-      later(1.6, wander);
-    },
+    appear,
     /** The webs burst and the spider drops. */
     snap() {
       clearIdle();

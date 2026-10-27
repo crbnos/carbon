@@ -3,18 +3,21 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The Night Shift on a canvas: fills its positioned parent, runs at 24 fps,
-// pauses with the tab, and watches the sign-in form so the cast can react.
+// pauses with the tab, and watches the sign-in form so the cast can react
+// (with reduced motion it draws one still frame and watches nothing).
 // The story resumes from the next shift on the next visit in the same
 // browser session, so the hill keeps the lanterns it has earned.
 
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
+import { onToast } from "../toasts";
 import type { Buffers } from "./frame";
 import { makeBuffers, renderFrame } from "./frame";
 import type { Layout } from "./layout";
 import { makeLayout } from "./layout";
 import type { Metrics } from "./paint";
 import { paint } from "./paint";
-import type { Watcher } from "./scene";
+import type { Labels, Watcher } from "./scene";
 import { IDLE_WATCHER } from "./scene";
 import type { Moment, ShiftPlan } from "./story";
 import { actStart, momentAt, planShift } from "./story";
@@ -99,10 +102,21 @@ function readFocus(watcher: Watcher) {
   watcher.field = !watcher.secret;
 }
 
-const ERROR_TOAST = '[data-sonner-toast][data-type="error"]';
-
 export default function NightShift() {
+  const { t } = useLingui();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const words: Labels = {
+    stations: [t`Wash`, t`Carve`, t`Light up`, t`QC`],
+    item: t`Jack-o'-lantern`,
+    inProgress: t`In Progress`,
+    complete: t`Completed`,
+    scrapped: t`Scrapped`,
+    passed: t`QC passed`,
+    rejected: t`Rejected`
+  };
+  // Read by every frame, so a language change shows on the next one.
+  const labels = useRef(words);
+  labels.current = words;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -180,7 +194,8 @@ export default function NightShift() {
         planFor(moment.shift),
         moment,
         clock,
-        watcher
+        watcher,
+        labels.current
       );
       paint(ctx, buffers.main, frame, metrics);
     };
@@ -206,7 +221,14 @@ export default function NightShift() {
     });
     const resize = new ResizeObserver(redraw);
     resize.observe(host);
-    if (!still) frameId = window.requestAnimationFrame(tick);
+    // One still frame: nothing moves, so nothing needs to react.
+    if (still) {
+      return () => {
+        disposed = true;
+        resize.disconnect();
+      };
+    }
+    frameId = window.requestAnimationFrame(tick);
 
     const onPointer = (event: PointerEvent) => {
       if (!metrics) return;
@@ -222,20 +244,9 @@ export default function NightShift() {
     const onSubmit = () => {
       flareAt = clock;
     };
-    const toasts = new MutationObserver((records) => {
-      for (const record of records) {
-        for (const node of record.addedNodes) {
-          if (
-            node instanceof Element &&
-            (node.matches(ERROR_TOAST) || node.querySelector(ERROR_TOAST))
-          ) {
-            alarmAt = clock;
-            return;
-          }
-        }
-      }
+    const stopToasts = onToast("error", () => {
+      alarmAt = clock;
     });
-    toasts.observe(document.body, { childList: true, subtree: true });
     window.addEventListener("pointermove", onPointer, { passive: true });
     document.documentElement.addEventListener("pointerleave", onLeave);
     document.addEventListener("submit", onSubmit, true);
@@ -244,7 +255,7 @@ export default function NightShift() {
       disposed = true;
       window.cancelAnimationFrame(frameId);
       resize.disconnect();
-      toasts.disconnect();
+      stopToasts();
       window.removeEventListener("pointermove", onPointer);
       document.documentElement.removeEventListener("pointerleave", onLeave);
       document.removeEventListener("submit", onSubmit, true);

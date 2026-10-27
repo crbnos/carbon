@@ -6,19 +6,7 @@
 // seed, so a shift looks the same however often it is rendered, and the
 // story can be replayed (and tested) from the seed alone.
 
-export type Random = () => number;
-
-/** Mulberry32: small, fast and good enough for picking pumpkin faces. */
-export function seeded(seed: number): Random {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+import type { Random } from "../math";
 
 /** Folds numbers into one 32-bit seed (FNV-1a over their bits). */
 export function hashSeed(...parts: number[]): number {
@@ -29,12 +17,6 @@ export function hashSeed(...parts: number[]): number {
     hash ^= hash >>> 13;
   }
   return hash >>> 0;
-}
-
-/** The whole-number part, rounded towards minus infinity. */
-export function floorOf(value: number): number {
-  const whole = Math.trunc(value);
-  return value < whole ? whole - 1 : whole;
 }
 
 /** Picks by weight: `[["a", 3], ["b", 1]]` gives "a" three times in four. */

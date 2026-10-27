@@ -6,8 +6,9 @@
 // Recomputed only when the panel resizes. The upper left stays clear for the
 // Carbon logo and the lower band is fog, behind the panel's headline.
 
+import { floorOf, seeded } from "../math";
 import { fbm2, noise2 } from "./noise";
-import { floorOf, hashSeed, seeded } from "./random";
+import { hashSeed } from "./random";
 
 export type Point = { x: number; y: number };
 

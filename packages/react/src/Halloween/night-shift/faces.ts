@@ -7,8 +7,8 @@
 // relative to the pumpkin's centre. Every lantern also has a one-line
 // version, `(^w^)`, for the procession on the hill.
 
-import type { Random } from "./random";
-import { floorOf } from "./random";
+import type { Random } from "../math";
+import { floorOf } from "../math";
 
 type Part = { mask: readonly string[]; mini: string };
 

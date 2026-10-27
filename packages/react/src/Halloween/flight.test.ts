@@ -7,14 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 import { approach, crossing, takeOff } from "./flight";
-
-function seeded(seed: number) {
-  let state = seed;
-  return () => {
-    state = (state * 16807) % 2147483647;
-    return (state - 1) / 2147483646;
-  };
-}
+import { seeded } from "./math";
 
 const WIDTH = 1440;
 const HEIGHT = 900;

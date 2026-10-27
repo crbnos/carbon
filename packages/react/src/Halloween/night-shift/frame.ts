@@ -6,20 +6,15 @@
 // the Line), wipes between them with a curtain of falling glyphs, rolls the
 // fog in, and lights every glyph near a lantern, a window or a candle.
 
-import {
-  DAWN_HORIZON,
-  DAWN_TOP,
-  drawExterior,
-  SKY_HORIZON,
-  SKY_TOP
-} from "./exterior";
+import { ease, hash01, lerp, segment } from "../math";
+import { drawExterior } from "./exterior";
 import type { Color } from "./grid";
 import { blue, Grid, green, hex, mix, NO_BG, red, rgb } from "./grid";
 import { drawInterior } from "./interior";
 import type { Layout } from "./layout";
 import { fbm2 } from "./noise";
-import type { Light, Scene, Watcher } from "./scene";
-import { ease, hash01, lerp, segment } from "./scene";
+import { DAWN_HORIZON, DAWN_TOP, SKY_HORIZON, SKY_TOP } from "./palette";
+import type { Labels, Light, Scene, Watcher } from "./scene";
 import type { Moment, ShiftPlan } from "./story";
 
 export type Sky = { top: Color; horizon: Color };
@@ -177,12 +172,19 @@ function wipe(
 ) {
   const { cols, rows } = target;
   const spread = 0.45;
+  const frontAt = (c: number) =>
+    (progress * (1 + spread) - hash01(c * 53 + 7) * spread) * (rows + 4);
+  const sourceAt = (c: number, r: number) => (r < frontAt(c) - 2 ? to : from);
+  // A label goes with the cell it starts in.
+  target.labels = [
+    ...from.labels.filter((label) => sourceAt(label.x, label.y) === from),
+    ...to.labels.filter((label) => sourceAt(label.x, label.y) === to)
+  ];
   for (let c = 0; c < cols; c++) {
-    const lag = hash01(c * 53 + 7) * spread;
-    const front = (progress * (1 + spread) - lag) * (rows + 4);
+    const front = frontAt(c);
     for (let r = 0; r < rows; r++) {
       const i = r * cols + c;
-      const source = r < front - 2 ? to : from;
+      const source = sourceAt(c, r);
       target.ch[i] = source.ch[i] ?? 32;
       target.fg[i] = source.fg[i] ?? 0;
       target.bg[i] = source.bg[i] ?? NO_BG;
@@ -203,16 +205,12 @@ function wipe(
   }
 }
 
-function sceneFor(
-  grid: Grid,
-  layout: Layout,
-  plan: ShiftPlan,
-  moment: Moment,
-  seconds: number,
-  watcher: Watcher
-): Scene {
-  return { grid, layout, plan, moment, seconds, watcher, lights: [] };
+function sceneFor(grid: Grid, view: View, moment: Moment): Scene {
+  return { grid, ...view, moment, lights: [] };
 }
+
+/** Everything a frame is drawn from but the moment. */
+type View = Omit<Scene, "grid" | "moment" | "lights">;
 
 export function renderFrame(
   buffers: Buffers,
@@ -220,9 +218,11 @@ export function renderFrame(
   plan: ShiftPlan,
   moment: Moment,
   seconds: number,
-  watcher: Watcher
+  watcher: Watcher,
+  labels: Labels
 ): FrameOut {
   const { main, from, to } = buffers;
+  const view: View = { layout, plan, seconds, watcher, labels };
   main.clear();
   let lights: Light[] = [];
   let flash = 0;
@@ -241,8 +241,8 @@ export function renderFrame(
     const before: Moment = toLine
       ? { ...moment, act: "harvest", t: 14, progress: 1 }
       : { ...moment, act: "line", t: 24, progress: 1 };
-    const fromScene = sceneFor(from, layout, plan, before, seconds, watcher);
-    const toScene = sceneFor(to, layout, plan, moment, seconds, watcher);
+    const fromScene = sceneFor(from, view, before);
+    const toScene = sceneFor(to, view, moment);
     if (toLine) {
       drawExterior(fromScene);
       drawInterior(toScene);
@@ -269,12 +269,12 @@ export function renderFrame(
     ];
     exterior = !toLine;
   } else if (moment.act === "line") {
-    const scene = sceneFor(main, layout, plan, moment, seconds, watcher);
+    const scene = sceneFor(main, view, moment);
     drawInterior(scene);
     lights = scene.lights;
     exterior = false;
   } else {
-    const scene = sceneFor(main, layout, plan, moment, seconds, watcher);
+    const scene = sceneFor(main, view, moment);
     const out = drawExterior(scene);
     flash = out.flash;
     dawn = out.dawn;

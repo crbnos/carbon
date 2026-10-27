@@ -2,21 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { AnimatePresence } from "motion/react";
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState
-} from "react";
-import { createPortal } from "react-dom";
-import { BarSpider } from "./BarSpider";
-import { BooGhost } from "./Ghost";
-import { HalloweenStyles } from "./HalloweenStyles";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useHalloween } from "./season";
-import { BatFlyby, SuccessBats } from "./Visitors";
 
 // Seasonal decoration, shared by the ERP and the MES (`@carbon/react/Halloween`).
 // Everything renders only on Halloween, when the theme is on for everyone
@@ -33,23 +20,28 @@ import { BatFlyby, SuccessBats } from "./Visitors";
 //      packages/utils/src/index.ts and its entry in `seasonalThemes`
 //      (packages/utils/src/themes.ts). The theme carries everything else
 //      (its day, its mesh colors), so nothing reads it by name.
-//   4. Run `pnpm run lingui:extract` to drop its strings from the catalogs.
+//   4. Delete the doc lines that name them: the Halloween paragraphs of
+//      .claude/rules/coding-conventions.md (Theme System), the "Seasonal
+//      decorations" bullet of packages/react/AGENTS.md (keep its last
+//      sentence) and `halloween-theme.ts` in packages/utils/AGENTS.md.
+//   5. Run `pnpm run lingui:extract` to drop its strings from the catalogs.
 // Typecheck flags any mount or import left behind. The `data-user-menu`,
 // `data-date` and `data-app-card` attributes the styles hang off, and
 // `relative` on the sign-in logos, do nothing on their own and can stay.
 
-const loadReveal = () => import("./HalloweenReveal");
+// This file is all the shells import, so it stays small: everything else
+// loads in its own chunk, and only while the theme is on.
+const Decorations = lazy(() => import("./Decorations"));
 const NightShift = lazy(() => import("./night-shift/NightShift"));
-const HalloweenReveal = lazy(loadReveal);
-
-function preloadReveal() {
-  void loadReveal();
-}
 
 export function HalloweenLayer() {
   const on = useHalloween();
   if (!on) return null;
-  return <Decorations />;
+  return (
+    <Suspense fallback={null}>
+      <Decorations />
+    </Suspense>
+  );
 }
 
 /**
@@ -64,14 +56,25 @@ export function HalloweenLoginArt() {
 
 function LoginArt() {
   const ref = useRef<HTMLDivElement>(null);
+  // The panel is hidden on narrow screens: the engine loads and runs only
+  // while it is shown.
+  const [shown, setShown] = useState(false);
 
   // The scene is night in either mode, so the panel it fills goes dark: its
   // logo and headline take their dark variants. Undone on unmount.
   useEffect(() => {
     const panel = ref.current?.parentElement;
-    if (!panel || panel.classList.contains("dark")) return;
-    panel.classList.add("dark");
-    return () => panel.classList.remove("dark");
+    if (!panel) return;
+    const darkened = !panel.classList.contains("dark");
+    if (darkened) panel.classList.add("dark");
+    const resized = new ResizeObserver(([entry]) => {
+      setShown((entry?.contentRect.width ?? 0) > 0);
+    });
+    resized.observe(panel);
+    return () => {
+      resized.disconnect();
+      if (darkened) panel.classList.remove("dark");
+    };
   }, []);
 
   return (
@@ -80,42 +83,13 @@ function LoginArt() {
       aria-hidden
       className="pointer-events-none absolute inset-0 overflow-hidden"
     >
-      <Suspense fallback={null}>
-        <NightShift />
-      </Suspense>
+      {shown && (
+        <Suspense fallback={null}>
+          <NightShift />
+        </Suspense>
+      )}
       {/* Keeps the panel's headline readable over the fog. */}
       <div className="absolute inset-x-0 bottom-0 z-10 h-64 bg-gradient-to-t from-black/75 via-black/40 to-transparent" />
     </div>
-  );
-}
-
-function Decorations() {
-  const [revealOpen, setRevealOpen] = useState(false);
-  const open = useCallback(() => setRevealOpen(true), []);
-  const close = useCallback(() => setRevealOpen(false), []);
-
-  return (
-    <>
-      <HalloweenStyles />
-      {createPortal(
-        <div aria-hidden className="halloween-fog" />,
-        document.body
-      )}
-      <BarSpider
-        revealOpen={revealOpen}
-        onOpen={open}
-        onPreload={preloadReveal}
-      />
-      <BatFlyby />
-      <SuccessBats />
-      <BooGhost />
-      <AnimatePresence>
-        {revealOpen && (
-          <Suspense key="halloween-reveal" fallback={null}>
-            <HalloweenReveal onClose={close} />
-          </Suspense>
-        )}
-      </AnimatePresence>
-    </>
   );
 }

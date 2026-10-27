@@ -8,9 +8,10 @@
 // then a rare event), and the lanterns it ships stay on the hill. When the
 // hill holds thirteen, they all rise and become the Carbon mark in the sky.
 
+import { seeded } from "../math";
 import type { Face } from "./faces";
 import { drawFace } from "./faces";
-import { hashSeed, pickWeighted, seeded } from "./random";
+import { hashSeed, pickWeighted } from "./random";
 
 export const ACTS = [
   { id: "midnight", seconds: 9 },

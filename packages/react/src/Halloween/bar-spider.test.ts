@@ -91,7 +91,7 @@ function moveTo(x: number, y: number) {
   pointerMove?.({ clientX: x, clientY: y, timeStamp: now });
 }
 
-function setup(options = {}) {
+function setup(options = {}, width = WIDTH) {
   const sim = createBarSpider();
   const web = () => ({
     spokes: fakeElement(),
@@ -111,7 +111,7 @@ function setup(options = {}) {
     button: fakeElement()
   };
   sim.attach(el as unknown as BarSpiderElements, options);
-  sim.layout(WIDTH);
+  sim.layout({ left: 0, top: 0, width });
   sim.setObstacles(BAR);
   return { sim, el };
 }
@@ -226,6 +226,14 @@ describe("createBarSpider", { timeout: 30_000 }, () => {
       Math.hypot(hiding.body.x - leftHub.x, hiding.body.y - leftHub.y)
     ).toBeLessThan(1);
 
+    // While it waits, its look round every second costs no frames.
+    live(2);
+    let frames = 0;
+    live(4, () => {
+      frames++;
+    });
+    expect(frames).toBe(0);
+
     moveTo(WIDTH / 2, 400);
     let outAgain = false;
     live(20, () => {
@@ -300,6 +308,20 @@ describe("createBarSpider", { timeout: 30_000 }, () => {
       }
     });
     expect(backOnTheBar).toBe(true);
+  });
+
+  it("waits while the bar has no width (hidden below md), then appears once it has one", () => {
+    const { sim } = setup({}, 0);
+    sim.appear();
+    moveTo(20, 20);
+    live(5);
+    expect(sim.state().total).toBe(0);
+
+    sim.layout({ left: 0, top: 0, width: WIDTH });
+    const { mode, s, total } = sim.state();
+    expect(total).toBeGreaterThan(0);
+    expect(mode).toBe("rest");
+    expect(s).toBe(total);
   });
 
   it("lets the page sleep while it rests", () => {

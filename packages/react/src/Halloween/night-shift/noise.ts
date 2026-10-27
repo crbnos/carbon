@@ -4,7 +4,7 @@
 
 // Smooth value noise for fog, moon craters, ridges and candle flicker.
 
-import { floorOf } from "./random";
+import { ease, floorOf } from "../math";
 
 function lattice(x: number, y: number, seed: number) {
   let h =
@@ -15,16 +15,12 @@ function lattice(x: number, y: number, seed: number) {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
-function smooth(t: number) {
-  return t * t * (3 - 2 * t);
-}
-
 /** Value noise in [0, 1], continuous in x and y. */
 export function noise2(x: number, y: number, seed = 0) {
   const x0 = floorOf(x);
   const y0 = floorOf(y);
-  const fx = smooth(x - x0);
-  const fy = smooth(y - y0);
+  const fx = ease(x - x0);
+  const fy = ease(y - y0);
   const a = lattice(x0, y0, seed);
   const b = lattice(x0 + 1, y0, seed);
   const c = lattice(x0, y0 + 1, seed);

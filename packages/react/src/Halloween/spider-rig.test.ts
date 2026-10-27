@@ -3,15 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { Surface } from "./spider-rig";
 import { createRig, LEGS, SPIDER_SCALE, solveKnee } from "./spider-rig";
 
 // The page: a foot holds wherever it lands.
-const page: Surface = {
-  grip: (x, y) => ({ x, y, hold: null }),
-  locate: () => ({ x: 0, y: 0 })
-};
-
 const DT = 1 / 120;
 
 function groupOf(leg: number) {
@@ -50,10 +44,10 @@ describe("createRig", () => {
   it("keeps every foot planted while the body holds still", () => {
     const rig = createRig();
     const body = { x: 100, y: 100, angle: 0 };
-    rig.place(body, page);
+    rig.place(body);
     const placed = rig.feet();
     for (let i = 0; i < 240; i++) {
-      rig.update(DT, body, { x: 0, y: 0 }, page, "walk");
+      rig.update(DT, body, { x: 0, y: 0 }, "walk");
     }
     expect(rig.stepping()).toBe(false);
     expect(rig.feet()).toEqual(placed);
@@ -62,14 +56,14 @@ describe("createRig", () => {
   it("walks with an alternating gait: four feet down, the groups taking turns", () => {
     const rig = createRig();
     const body = { x: 0, y: 0, angle: 0 };
-    rig.place(body, page);
+    rig.place(body);
     // An unhurried walk: about four body lengths a second.
     const speed = 60 * SPIDER_SCALE;
     const steps = { 0: 0, 1: 0 };
     let wasUp = new Set<number>();
     for (let i = 0; i < 360; i++) {
       body.y += speed * DT;
-      rig.update(DT, body, { x: 0, y: speed }, page, "walk");
+      rig.update(DT, body, { x: 0, y: speed }, "walk");
       const up = new Set(
         rig
           .feet()
@@ -90,35 +84,13 @@ describe("createRig", () => {
     expect(Math.abs(steps[0] - steps[1])).toBeLessThanOrEqual(4);
   });
 
-  it("feet holding a thread go with it as it sways", () => {
-    const rig = createRig();
-    let sway = 0;
-    const thread: Surface = {
-      grip: (x, y) => ({ x, y, hold: { x, y } }),
-      locate: (hold) => {
-        const p = hold as { x: number; y: number };
-        return { x: p.x + sway, y: p.y };
-      }
-    };
-    const body = { x: 50, y: 50, angle: 0 };
-    rig.place(body, thread);
-    const before = rig.feet();
-    sway = 2;
-    rig.update(DT, body, { x: 0, y: 0 }, thread, "walk");
-    rig.feet().forEach((foot, i) => {
-      const was = before[i];
-      if (!was) throw new Error(`no foot ${i} before`);
-      expect(foot.x).toBeCloseTo(was.x + 2);
-    });
-  });
-
   it("draws its legs in when it dangles", () => {
     const rig = createRig();
     const body = { x: 0, y: 0, angle: 0 };
-    rig.place(body, page);
+    rig.place(body);
     const spread = Math.max(...rig.feet().map((f) => Math.hypot(f.x, f.y)));
     for (let i = 0; i < 120; i++) {
-      rig.update(DT, body, { x: 0, y: 0 }, page, "curl");
+      rig.update(DT, body, { x: 0, y: 0 }, "curl");
     }
     const drawnIn = Math.max(...rig.feet().map((f) => Math.hypot(f.x, f.y)));
     expect(drawnIn).toBeLessThan(spread * 0.6);

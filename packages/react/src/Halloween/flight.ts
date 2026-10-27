@@ -8,6 +8,9 @@
 // path is a random walk in position and in depth (`scale`), banking into each
 // turn. Pure: the randomness comes from the `random` passed in.
 
+import type { Random } from "./math";
+import { clamp } from "./math";
+
 export type Flight = {
   x: number[];
   y: number[];
@@ -15,12 +18,6 @@ export type Flight = {
   scale: number[];
   opacity: number[];
 };
-
-type Random = () => number;
-
-function clamp(value: number, low: number, high: number) {
-  return Math.max(low, Math.min(high, value));
-}
 
 /** Banks into the turn: the steeper the climb or dive, the harder the tilt. */
 function bank(x: number[], y: number[]) {

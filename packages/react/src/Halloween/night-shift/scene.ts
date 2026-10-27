@@ -48,8 +48,23 @@ export const IDLE_WATCHER: Watcher = {
   alarm: 0
 };
 
+/**
+ * The words the scene shows, in the user's language: the factory's four
+ * stations, the job on the line's ticket, its status and the QC stamp.
+ */
+export type Labels = {
+  stations: readonly [string, string, string, string];
+  item: string;
+  inProgress: string;
+  complete: string;
+  scrapped: string;
+  passed: string;
+  rejected: string;
+};
+
 export type Scene = {
   grid: Grid;
+  labels: Labels;
   layout: Layout;
   plan: ShiftPlan;
   moment: Moment;
@@ -58,44 +73,3 @@ export type Scene = {
   watcher: Watcher;
   lights: Light[];
 };
-
-export function clamp01(value: number) {
-  return value <= 0 ? 0 : value >= 1 ? 1 : value;
-}
-
-/** 0 before `from`, 1 after `to`, linear between. */
-export function segment(t: number, from: number, to: number) {
-  return clamp01((t - from) / (to - from));
-}
-
-export function ease(t: number) {
-  const k = clamp01(t);
-  return k * k * (3 - 2 * k);
-}
-
-export function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
-
-/** The nearest whole number, halves away from zero. */
-export function nearest(value: number) {
-  return value >= 0 ? Math.trunc(value + 0.5) : -Math.trunc(-value + 0.5);
-}
-
-/** The fractional part, always in [0, 1). */
-export function fraction(value: number) {
-  return (
-    value -
-    Math.trunc(value) +
-    (value < 0 && value !== Math.trunc(value) ? 1 : 0)
-  );
-}
-
-/** A stable pseudo-random number in [0, 1) for an integer. */
-export function hash01(n: number) {
-  let h = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b);
-  h ^= h >>> 13;
-  h = Math.imul(h, 0xc2b2ae35);
-  h ^= h >>> 16;
-  return (h >>> 0) / 4294967296;
-}

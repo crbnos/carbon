@@ -2,8 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { seededRandom } from "./scene";
-
 // The classic cobweb in a corner: spokes fanning out from where the bar's
 // top edge meets its side, and rings strung between them, each span sagging
 // towards the corner. One outer strand has snapped and hangs loose.
@@ -15,6 +13,8 @@ import { seededRandom } from "./scene";
 //
 // Coordinates are the bar's own: its top edge is y 0, its left edge x 0, its
 // lower border y BAR_HEIGHT.
+
+import { at, seeded } from "./math";
 
 export const BAR_HEIGHT = 49;
 
@@ -38,16 +38,8 @@ const RINGS = RING_RADII.length;
 const HIDE_SPOKE = 2;
 const HIDE_RING = 1;
 
-// Every index here comes from the web's own layout, so a missing value is a
-// bug, not a state to carry on through.
-function at<T>(list: ArrayLike<T>, i: number): T {
-  const value = list[i];
-  if (value === undefined) throw new Error(`corner web: no value at ${i}`);
-  return value;
-}
-
 export function createCornerWeb(side: "left" | "right", width: number) {
-  const rand = seededRandom(side === "left" ? 4242 : 777);
+  const rand = seeded(side === "left" ? 4242 : 777);
   // Out from the corner: +x along the top edge for the left corner, -x for
   // the right; +y down the side.
   const sx = side === "left" ? 1 : -1;

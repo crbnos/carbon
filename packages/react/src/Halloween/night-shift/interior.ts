@@ -7,13 +7,13 @@
 // along, the way a Carbon job does. Once the candle catches, the whole floor
 // turns from cold purple to warm orange.
 
+import { clamp01, ease, fraction, hash01, lerp, segment } from "../math";
 import { carvedCells, cellKey, HERO_MIN_RADIUS } from "./faces";
 import type { Color } from "./grid";
-import { hex, mix, scale } from "./grid";
+import { cellsFor, hex, mix, scale } from "./grid";
 import { flicker, noise2 } from "./noise";
 import { drawPumpkin } from "./pumpkin";
 import type { Scene } from "./scene";
-import { clamp01, ease, fraction, hash01, lerp, segment } from "./scene";
 import { CANDLE, LAMP, NOZZLE, SKELETON } from "./sprites";
 
 const WALL_COLD = hex("#120c18");
@@ -46,8 +46,6 @@ const AMBER = hex("#f5b544");
 const PENDING = hex("#5a5270");
 const PUMPKIN_GLOW = hex("#ff8a2a");
 
-const STATIONS = ["Wash", "Carve", "Light", "QC"] as const;
-
 /** Where the pumpkin is along the line, seconds into the act. */
 function travel(t: number, stops: number[], start: number, exit: number) {
   const [wash = 0, carve = 0, light = 0, qc = 0] = stops;
@@ -73,13 +71,30 @@ export function warmthAt(t: number) {
   return ease(segment(t, 17.4, 18.6));
 }
 
+/** A bracketed plate, `[ WORD ]`, centred on x, the word cut to fit. */
+function plate(
+  scene: Scene,
+  centre: number,
+  y: number,
+  word: string,
+  color: Color,
+  background: Color,
+  maxCells: number
+) {
+  const cells = Math.max(1, Math.min(cellsFor(word), maxCells));
+  const left = Math.trunc(centre - (cells + 4) / 2);
+  // `$` keeps the wall out from behind the plate.
+  scene.grid.sprite(left, y, [`[$${"$".repeat(cells)}$]`], color, background);
+  scene.grid.label(left + 2, y, word, color, cells, "center", background);
+}
+
 function drawTicket(
   scene: Scene,
   done: boolean[],
   rejected: boolean,
   active: number
 ) {
-  const { grid, layout, plan } = scene;
+  const { grid, layout, plan, labels } = scene;
   const width = Math.min(layout.cols - 4, 48);
   const left = Math.trunc((layout.cols - width) / 2);
   const top = Math.max(7, Math.trunc(layout.rows * 0.12));
@@ -96,22 +111,33 @@ function drawTicket(
   grid.put(left + width - 1, top + 2, "|", TICKET_LINE);
 
   grid.text(left + 2, top + 1, plan.job, TICKET_JOB);
-  grid.text(
-    left + 3 + plan.job.length,
-    top + 1,
-    "· Jack-o'-lantern",
-    TICKET_TEXT
-  );
   const finished = done.every(Boolean);
-  const status =
-    rejected && done[3] ? "Scrapped" : finished ? "Complete" : "In Progress";
-  const statusColor = rejected && done[3] ? FAIL : finished ? PASS : AMBER;
-  const statusLeft = left + width - 3 - status.length - 2;
+  const scrapped = rejected && done[3];
+  const status = scrapped
+    ? labels.scrapped
+    : finished
+      ? labels.complete
+      : labels.inProgress;
+  const statusColor = scrapped ? FAIL : finished ? PASS : AMBER;
+  // The status keeps up to a third of the ticket; the item takes the rest.
+  const statusCells = Math.min(cellsFor(status), Math.trunc(inner / 3));
+  const statusLeft = left + width - 3 - statusCells - 2;
   grid.put(statusLeft, top + 1, "●", statusColor);
-  grid.text(statusLeft + 2, top + 1, status, statusColor);
+  grid.label(statusLeft + 2, top + 1, status, statusColor, statusCells);
+  const itemLeft = left + 3 + plan.job.length;
+  grid.put(itemLeft, top + 1, "·", TICKET_TEXT);
+  grid.label(
+    itemLeft + 2,
+    top + 1,
+    labels.item,
+    TICKET_TEXT,
+    statusLeft - 1 - (itemLeft + 2)
+  );
 
+  // Four equal slots: a mark, a space, the station's name.
+  const slot = Math.trunc((inner - 2) / 4);
   let x = left + 2;
-  STATIONS.forEach((name, k) => {
+  labels.stations.forEach((name, k) => {
     const isDone = done[k] ?? false;
     const failed = rejected && k === 3 && isDone;
     const mark = failed ? "✗" : isDone ? "✓" : k === active ? "●" : "○";
@@ -123,18 +149,19 @@ function drawTicket(
           ? AMBER
           : PENDING;
     grid.put(x, top + 2, mark, color);
-    grid.text(
+    grid.label(
       x + 2,
       top + 2,
       name,
-      isDone || k === active ? TICKET_TEXT : PENDING
+      isDone || k === active ? TICKET_TEXT : PENDING,
+      slot - 3
     );
-    x += name.length + 6;
+    x += slot;
   });
 }
 
 export function drawInterior(scene: Scene) {
-  const { grid, layout, plan, moment, seconds, lights } = scene;
+  const { grid, layout, plan, moment, seconds, lights, labels } = scene;
   const { cols, rows, aspect } = layout;
   const t = moment.act === "line" ? moment.t : 24;
   const warmth = warmthAt(t);
@@ -346,28 +373,29 @@ export function drawInterior(scene: Scene) {
   grid.sprite(inspector.x, inspector.y, pose, BONE);
 
   if (t >= 21.3) {
-    // `$` keeps the wall out of the gaps between words.
-    const stamp = rejected ? "[$REJECTED$]" : "[$QC$PASSED$]";
     const pop = 1 - ease(segment(t, 21.3, 21.6)) * 0.4;
     const color: Color = rejected ? FAIL : PASS;
-    grid.sprite(
-      qc - Math.trunc(stamp.length / 2),
+    plate(
+      scene,
+      qc,
       beltY - radius * 2 - 3.5,
-      [stamp],
+      (rejected ? labels.rejected : labels.passed).toLocaleUpperCase(),
       scale(color, pop + 0.4),
-      TICKET_BG
+      TICKET_BG,
+      Math.trunc(cols * 0.3)
     );
   }
 
   // Signs last, so the wash pipe and the carving arm pass behind them.
   stops.forEach((stop, k) => {
-    const label = `[$${(STATIONS[k] ?? "").toUpperCase()}$]`;
-    grid.sprite(
-      stop - Math.trunc(label.length / 2),
+    plate(
+      scene,
+      stop,
       signY,
-      [label],
+      (labels.stations[k] ?? "").toLocaleUpperCase(),
       SIGN,
-      SIGN_BG
+      SIGN_BG,
+      Math.trunc(cols * 0.19) - 4
     );
   });
 

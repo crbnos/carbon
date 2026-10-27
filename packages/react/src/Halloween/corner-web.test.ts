@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import { BAR_HEIGHT, createCornerWeb } from "./corner-web";
-import { seededRandom } from "./scene";
+import { seeded } from "./math";
 
 // The corner cobwebs sit over the top bar all day. They must stay in their
 // corner, keep inside the bar, sway when brushed and settle again.
@@ -56,7 +56,7 @@ describe("createCornerWeb", () => {
   it("bursts on a snap and is whole again after a reset", () => {
     const web = createCornerWeb("right", WIDTH);
     const rest = web.paths();
-    web.burst(seededRandom(1));
+    web.burst(seeded(1));
     settle(web, 0.1);
     expect(web.paths().rings).not.toBe(rest.rings);
     web.reset();

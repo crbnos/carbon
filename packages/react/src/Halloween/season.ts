@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { halloweenTheme } from "@carbon/utils";
-import { useSyncExternalStore } from "react";
+import useHydrated from "../hooks/useHydrated";
 import { useRouteData } from "../hooks/useRouteData";
 
 // The one check every Halloween decoration sits behind, the sign-in page's
@@ -13,23 +13,12 @@ import { useRouteData } from "../hooks/useRouteData";
 // and off by itself, and the rest of the year nothing is rendered, styled or
 // listened to.
 
-// Hydration never reverses, so there is nothing to listen to.
-function subscribe() {
-  return () => {
-    // Nothing to unsubscribe.
-  };
-}
-
 /**
  * Whether the Halloween decorations are on. False on the server: they
  * measure the page and listen to the document, so they mount after hydration.
  */
 export function useHalloween() {
   const root = useRouteData<{ theme?: string }>("/");
-  const hydrated = useSyncExternalStore(
-    subscribe,
-    () => true,
-    () => false
-  );
+  const hydrated = useHydrated();
   return hydrated && root?.theme === halloweenTheme.name;
 }

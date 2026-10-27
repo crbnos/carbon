@@ -4,6 +4,7 @@
 
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bat } from "./Bat";
 import { JackOLanterns, LANTERN_THUD_AT } from "./Pumpkins";
 import { SpiderBody } from "./Spider";
@@ -41,8 +42,6 @@ import {
   Stars,
   Witch
 } from "./scene-sky";
-
-export { NIGHT };
 
 // The surprise behind the spider web: a moonlit graveyard. Lightning opens
 // the night, a witch crosses the moon, a haunted house lets out a colony of
@@ -356,12 +355,54 @@ function Ghost() {
 }
 
 const TITLE_FONT = "Georgia, 'Times New Roman', serif";
+const TITLE_X = 740;
+const TITLE_Y = 212;
+// The scene's centre, which `xMidYMid slice` always keeps on screen.
+const SCENE_CENTRE = 800;
+const TITLE_MARGIN = 40;
+
+/**
+ * Where the title sits and how big, so it is never cut off. The scene is
+ * cropped to fill the window, so a portrait or narrow window shows only a
+ * middle band of it; a title too long for that band (a long translation, a
+ * tablet held upright) is centred and shrunk to fit.
+ */
+function useTitleFit() {
+  const ref = useRef<SVGTextElement>(null);
+  const [fit, setFit] = useState({ x: TITLE_X, scale: 1 });
+  useEffect(() => {
+    const text = ref.current;
+    const svg = text?.ownerSVGElement;
+    if (!text || !svg) return;
+    const measure = () => {
+      const { width, height } = svg.getBoundingClientRect();
+      const length = text.getComputedTextLength();
+      if (!width || !height || !length) return;
+      const visible = Math.min(1600, (900 * width) / height);
+      const half = visible / 2 - TITLE_MARGIN;
+      const fitsInPlace =
+        TITLE_X - length / 2 >= SCENE_CENTRE - half &&
+        TITLE_X + length / 2 <= SCENE_CENTRE + half;
+      setFit(
+        fitsInPlace
+          ? { x: TITLE_X, scale: 1 }
+          : { x: SCENE_CENTRE, scale: Math.min(1, half / (length / 2)) }
+      );
+    };
+    measure();
+    const resized = new ResizeObserver(measure);
+    resized.observe(svg);
+    return () => resized.disconnect();
+  }, []);
+  return { ref, ...fit };
+}
 
 function Title({ title }: { title: string }) {
   const still = useStill();
+  const fit = useTitleFit();
   const lettering = {
-    x: 740,
-    y: 212,
+    x: TITLE_X,
+    y: TITLE_Y,
     textAnchor: "middle",
     fontFamily: TITLE_FONT,
     fontWeight: 700,
@@ -369,7 +410,9 @@ function Title({ title }: { title: string }) {
     letterSpacing: 3
   } as const;
   return (
-    <g>
+    <g
+      transform={`translate(${fit.x} ${TITLE_Y}) scale(${fit.scale}) translate(${-TITLE_X} ${-TITLE_Y})`}
+    >
       <motion.g
         initial={still ? false : { opacity: 0 }}
         animate={{ opacity: [0, 1, 0.25, 1, 0.55, 1] }}
@@ -379,10 +422,21 @@ function Title({ title }: { title: string }) {
           times: [0, 0.18, 0.3, 0.48, 0.62, 1]
         }}
       >
-        <ellipse cx={740} cy={180} rx={560} ry={120} fill="url(#hw-title-halo)">
+        <ellipse
+          cx={TITLE_X}
+          cy={180}
+          rx={560}
+          ry={120}
+          fill="url(#hw-title-halo)"
+        >
           <Loop attributeName="opacity" values="1;0.7;1;0.82;1" dur="2.2s" />
         </ellipse>
-        <text {...lettering} fill="#ff6a12" filter="url(#hw-title-glow)">
+        <text
+          ref={fit.ref}
+          {...lettering}
+          fill="#ff6a12"
+          filter="url(#hw-title-glow)"
+        >
           {title}
         </text>
         {/* Cut deep: a dark shadow below, the letters, then their bevel */}

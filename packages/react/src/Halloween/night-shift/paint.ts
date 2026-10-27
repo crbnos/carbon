@@ -9,7 +9,7 @@
 // a fallback font need not share the monospace advance.
 
 import type { FrameOut } from "./frame";
-import type { Grid } from "./grid";
+import type { Grid, Label } from "./grid";
 import { blue, css, green, NO_BG, red } from "./grid";
 
 export type Metrics = {
@@ -43,6 +43,31 @@ function rgba(color: number, alpha: number) {
 /** Drops the lowest bits so neighbouring glyphs share a colour and a run. */
 function quantize(color: number) {
   return color & 0xf8f8f8;
+}
+
+// Graphemes, so a cut never splits a letter from its marks.
+const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+
+/** A label's whole string over its cells, cut with an ellipsis to fit. */
+function drawLabel(ctx: CanvasRenderingContext2D, label: Label, m: Metrics) {
+  const room = label.cells * m.cellWidth;
+  let text = label.text;
+  if (ctx.measureText(text).width > room) {
+    const parts = Array.from(graphemes.segment(text), (part) => part.segment);
+    while (parts.length > 0 && ctx.measureText(`${text}…`).width > room) {
+      parts.pop();
+      text = parts.join("");
+    }
+    text = `${text}…`;
+  }
+  const left = m.offsetX + label.x * m.cellWidth;
+  ctx.fillStyle = style(quantize(label.color));
+  ctx.textAlign = label.align;
+  ctx.fillText(
+    text,
+    label.align === "center" ? left + room / 2 : left,
+    m.offsetY + label.y * m.cellHeight + m.cellHeight / 2
+  );
 }
 
 export function paint(
@@ -146,6 +171,8 @@ export function paint(
     }
     flush();
   }
+
+  for (const label of grid.labels) drawLabel(ctx, label, m);
 
   if (frame.flash > 0) {
     ctx.fillStyle = `rgba(232,228,255,${frame.flash * 0.45})`;

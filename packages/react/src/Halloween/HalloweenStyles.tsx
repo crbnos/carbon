@@ -336,11 +336,16 @@ const FOG_FADE =
 // the window adds no scrolling.)
 const FOG_RISE = 90;
 
+// Each bank is a tile wider than the window on both sides and drifts by
+// moving the whole layer (`transform`), which the browser can do without
+// repainting the mask; animating `mask-position` repainted half the window
+// every frame. One tile per loop, so the noise lines up again.
 function fogLayer(image: string, opacity: number) {
   return `
   content: "";
   position: absolute;
-  inset: 0 0 -${FOG_RISE}px 0;
+  inset: 0 -${FOG_TILE.width}px -${FOG_RISE}px;
+  will-change: transform;
   background-color: hsl(var(--foreground) / ${opacity});
   -webkit-mask-image: ${image}, ${FOG_FADE};
   -webkit-mask-size: ${FOG_TILE.width}px ${FOG_TILE.height}px, 100% 100%;
@@ -415,12 +420,12 @@ export const HALLOWEEN_CSS = `
     halloween-fog-rise 9s ease-in-out -4s infinite alternate;
 }
 @keyframes halloween-fog-right {
-  from { -webkit-mask-position: 0 100%, 0 0; mask-position: 0 100%, 0 0; }
-  to { -webkit-mask-position: ${FOG_TILE.width}px 100%, 0 0; mask-position: ${FOG_TILE.width}px 100%, 0 0; }
+  from { transform: translateX(0); }
+  to { transform: translateX(${FOG_TILE.width}px); }
 }
 @keyframes halloween-fog-left {
-  from { -webkit-mask-position: 0 100%, 0 0; mask-position: 0 100%, 0 0; }
-  to { -webkit-mask-position: -${FOG_TILE.width}px 100%, 0 0; mask-position: -${FOG_TILE.width}px 100%, 0 0; }
+  from { transform: translateX(0); }
+  to { transform: translateX(-${FOG_TILE.width}px); }
 }
 @keyframes halloween-fog-rise {
   from { translate: 0 0; }

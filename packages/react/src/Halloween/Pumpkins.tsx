@@ -5,7 +5,7 @@
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
-import { seededRandom } from "./scene";
+import { seeded } from "./math";
 import { Loop, LoopTransform, SCENE_ORIGIN, useStill } from "./scene-loops";
 
 // Three jack-o'-lanterns, each with its own entrance and its own temper.
@@ -192,7 +192,7 @@ const SMOKE = {
 type Particle = { id: string; dx: number; dy: number; r: number };
 
 function particles(seed: number, count: number, spread: number): Particle[] {
-  const rand = seededRandom(seed);
+  const rand = seeded(seed);
   return Array.from({ length: count }, (_, i) => {
     const side = i % 2 === 0 ? -1 : 1;
     return {
