@@ -79,7 +79,7 @@ export async function bulkReleaseJobs(
   for (const batch of chunkArray(ids, IN_CHUNK)) {
     const page = await client
       .from("job")
-      .select("id, jobId, status, quantity, scrapQuantity, locationId")
+      .select("id, jobId, status, locationId")
       .in("id", batch)
       .eq("companyId", companyId);
     if (page.error) {
@@ -129,10 +129,6 @@ export async function bulkReleaseJobs(
     const ready = readinessByJobId.get(job.id);
     const problems = ready
       ? [
-          // The job page disables Release for the same job.
-          ...(job.quantity === 0 && job.scrapQuantity === 0
-            ? ["nothing to make"]
-            : []),
           ...jobReleaseProblems(ready),
           ...(ready.supplierIds.some((id) => starting.suppliersToChoose.has(id))
             ? ["choose a purchase order for its outside operations on the job"]
