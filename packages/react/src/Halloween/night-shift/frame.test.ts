@@ -184,10 +184,25 @@ describe("renderFrame", () => {
     expect(stars.length).toBeGreaterThanOrEqual(LANTERNS_FOR_LIGHTING);
   });
 
-  it("wipes between the hill and the Line with a curtain of glyphs", () => {
+  it("brings the Line down over the hill from the top while the wipe runs", () => {
     const plan = planShift(7, 2);
-    const half = render(plan, actStart("line") + 0.75);
-    const glyphs = text(half.grid);
-    expect(glyphs).toMatch(/[*+x%#@&?!]/);
+    const line = actStart("line");
+    const rowsAt = (seconds: number) =>
+      text(render(plan, seconds).grid).split("\n").slice(0, 60);
+    const settled = rowsAt(line + 2);
+    // How many rows, from the top, already show the settled Line.
+    const lineRows = (seconds: number) => {
+      const rows = rowsAt(seconds);
+      let n = 0;
+      while (n < rows.length && rows[n] === settled[n]) n++;
+      return n;
+    };
+    const early = lineRows(line + 0.4);
+    const half = lineRows(line + 0.75);
+    const late = lineRows(line + 1.1);
+    expect(early).toBe(0);
+    expect(half).toBeGreaterThan(0);
+    expect(late).toBeGreaterThan(half);
+    expect(late).toBeLessThan(60);
   });
 });
