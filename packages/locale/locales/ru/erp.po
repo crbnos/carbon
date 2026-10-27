@@ -6732,6 +6732,9 @@ msgstr "Пересчет валют"
 msgid "Currency Translation (default)"
 msgstr "Пересчет валют (по умолчанию)"
 
+msgid "Currency Translation Offset"
+msgstr ""
+
 msgid "current"
 msgstr "текущий"
 
@@ -9350,6 +9353,9 @@ msgstr "Счет собственного капитала для накопле
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Счет собственного капитала для корректировок пересчета валют (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr ""
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Счет собственного капитала, компенсирующий начальные остатки при установке бухгалтерии. Сумма должна быть равна нулю."

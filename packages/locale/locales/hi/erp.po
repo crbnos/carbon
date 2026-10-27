@@ -6732,6 +6732,9 @@ msgstr "मुद्रा रूपांतरण"
 msgid "Currency Translation (default)"
 msgstr "मुद्रा रूपांतरण (डिफ़ॉल्ट)"
 
+msgid "Currency Translation Offset"
+msgstr ""
+
 msgid "current"
 msgstr "वर्तमान"
 
@@ -9350,6 +9353,9 @@ msgstr "संचित लाभ या हानि के लिए इक्
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "मुद्रा रूपांतरण समायोजन के लिए इक्विटी खाता (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr ""
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "इक्विटी खाता जो लेखांकन सेट अप होने पर खुली शेष राशि को ऑफसेट करता है। यह कुल शून्य होना चाहिए।"

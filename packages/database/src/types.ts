@@ -373,6 +373,7 @@ export type Database = {
           contractAssetAccount: string | null
           costOfGoodsSoldAccount: string
           currencyTranslationAccount: string
+          currencyTranslationOffsetAccount: string | null
           customerPaymentDiscountAccount: string
           customerWriteOffAccount: string
           deferredRevenueAccount: string | null
@@ -449,6 +450,7 @@ export type Database = {
           contractAssetAccount?: string | null
           costOfGoodsSoldAccount: string
           currencyTranslationAccount: string
+          currencyTranslationOffsetAccount?: string | null
           customerPaymentDiscountAccount: string
           customerWriteOffAccount: string
           deferredRevenueAccount?: string | null
@@ -525,6 +527,7 @@ export type Database = {
           contractAssetAccount?: string | null
           costOfGoodsSoldAccount?: string
           currencyTranslationAccount?: string
+          currencyTranslationOffsetAccount?: string | null
           customerPaymentDiscountAccount?: string
           customerWriteOffAccount?: string
           deferredRevenueAccount?: string | null
@@ -804,6 +807,20 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_currencyTranslationAccount_fkey"
             columns: ["currencyTranslationAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_currencyTranslationOffsetAccount_fkey"
+            columns: ["currencyTranslationOffsetAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_currencyTranslationOffsetAccount_fkey"
+            columns: ["currencyTranslationOffsetAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]

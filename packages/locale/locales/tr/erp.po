@@ -6732,6 +6732,9 @@ msgstr "Kur çevrimi"
 msgid "Currency Translation (default)"
 msgstr "Kur çevrimi (varsayılan)"
 
+msgid "Currency Translation Offset"
+msgstr ""
+
 msgid "current"
 msgstr "geçerli"
 
@@ -9350,6 +9353,9 @@ msgstr "Birikmiş kar veya zarar için özkaynak hesabı"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Kur çevrimi düzeltmeleri (CTA) için özkaynak hesabı"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr ""
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Muhasebe kurulduğunda açılış bakiyelerini dengelemek için özkaynak hesabı. Toplam sıfır olması gerekir."

@@ -6732,6 +6732,9 @@ msgstr "Conversion de Devises"
 msgid "Currency Translation (default)"
 msgstr "Conversion de Devises (par défaut)"
 
+msgid "Currency Translation Offset"
+msgstr ""
+
 msgid "current"
 msgstr "actuel"
 
@@ -9350,6 +9353,9 @@ msgstr "Compte de capitaux propres pour les bénéfices ou pertes accumulés"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Compte de capitaux propres pour ajustements de conversion de devises (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr ""
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Compte de Capitaux propres qui compense les soldes d'ouverture quand la Comptabilité est configurée. Il doit totaliser zéro."

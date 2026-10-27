@@ -514,7 +514,8 @@ export const defaultBalanceSheetAccountValidator = z.object({
   accumulatedRightOfUseAmortizationAccount: z.string().optional(),
   leaseLiabilityAccount: z.string().optional(),
   arRevaluationAccount: z.string().optional(),
-  apRevaluationAccount: z.string().optional()
+  apRevaluationAccount: z.string().optional(),
+  currencyTranslationOffsetAccount: z.string().optional()
 });
 
 export const defaultIncomeAcountValidator = z.object({

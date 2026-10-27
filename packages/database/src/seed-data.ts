@@ -1515,6 +1515,18 @@ export const accounts = [
     createdBy: "system"
   },
   {
+    key: "3210",
+    number: "3210",
+    name: "Currency Translation Offset",
+    isGroup: false,
+    parentKey: "equity",
+    accountType: "Equity - Close",
+    incomeBalance: "Balance Sheet",
+    class: "Equity",
+    consolidatedRate: "Historical",
+    createdBy: "system"
+  },
+  {
     key: "3300",
     number: "3300",
     name: "Dividends Payable",
@@ -2367,7 +2379,8 @@ export const accountDefaults = {
   unrealizedExchangeGainAccount: "4160",
   unrealizedExchangeLossAccount: "7030",
   arRevaluationAccount: "1170",
-  apRevaluationAccount: "2030"
+  apRevaluationAccount: "2030",
+  currencyTranslationOffsetAccount: "3210"
 } as const;
 
 export const fixedAssetClasses = [
@@ -2535,6 +2548,16 @@ export const periodCloseTaskDefinitions = [
     taskType: "Auto",
     autoCheckKey: "unmatched-ic",
     sortOrder: 5,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  {
+    name: "Post currency translation adjustment",
+    taskType: "Auto",
+    autoCheckKey: "cta-posted",
+    sortOrder: 6,
     required: true,
     severity: "Warning",
     active: true,

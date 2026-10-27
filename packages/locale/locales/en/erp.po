@@ -6732,6 +6732,9 @@ msgstr "Currency Translation"
 msgid "Currency Translation (default)"
 msgstr "Currency Translation (default)"
 
+msgid "Currency Translation Offset"
+msgstr "Currency Translation Offset"
+
 msgid "current"
 msgstr "current"
 
@@ -9350,6 +9353,9 @@ msgstr "Equity account for accumulated profits or losses"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Equity account for currency translation adjustments (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Equity account that offsets the opening balances when accounting is set up. It must total zero."

@@ -6732,6 +6732,9 @@ msgstr "通貨換算"
 msgid "Currency Translation (default)"
 msgstr "通貨換算（デフォルト）"
 
+msgid "Currency Translation Offset"
+msgstr ""
+
 msgid "current"
 msgstr "現在"
 
@@ -9350,6 +9353,9 @@ msgstr "利益損失の累積のための純資産勘定科目"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "通貨換算調整（CTA）のための純資産勘定科目"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr ""
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "会計がセットアップされるときに開始残高を相殺する純資産アカウント。合計がゼロである必要があります。"

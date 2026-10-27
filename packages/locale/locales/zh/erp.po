@@ -6732,6 +6732,9 @@ msgstr "货币折算"
 msgid "Currency Translation (default)"
 msgstr "货币折算（默认）"
 
+msgid "Currency Translation Offset"
+msgstr ""
+
 msgid "current"
 msgstr "当前"
 
@@ -9350,6 +9353,9 @@ msgstr "所有者权益科目，用于累计利润或损失"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "所有者权益科目，用于货币折算调整(CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr ""
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "权益账户，在设置会计时抵消开盘余额。其总额必须为零。"

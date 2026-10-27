@@ -45541,6 +45541,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.apRevaluationAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.currencyTranslationOffsetAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -45822,6 +45825,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.apRevaluationAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.currencyTranslationOffsetAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -46055,6 +46061,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.apRevaluationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.currencyTranslationOffsetAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -140563,6 +140572,12 @@ export default {
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
           type: "string"
+        },
+        currencyTranslationOffsetAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -193295,6 +193310,12 @@ export default {
     },
     "rowFilter.accountDefault.apRevaluationAccount": {
       name: "apRevaluationAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.currencyTranslationOffsetAccount": {
+      name: "currencyTranslationOffsetAccount",
       required: false,
       in: "query",
       type: "string"

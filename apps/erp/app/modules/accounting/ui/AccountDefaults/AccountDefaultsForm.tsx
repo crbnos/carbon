@@ -364,6 +364,12 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
             termId: "account-default-currency-translation"
           },
           {
+            name: "currencyTranslationOffsetAccount",
+            label: t`Currency Translation Offset`,
+            description: t`Equity account that balances the posted CTA on the elimination company; consolidated reports hide it`,
+            badgeType: "Equity"
+          },
+          {
             name: "migrationClearingAccount",
             label: t`Migration Clearing`,
             description: t`Equity account that offsets the opening balances when accounting is set up. It must total zero.`,

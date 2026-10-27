@@ -118,6 +118,7 @@ export const ROLE_NAMES = {
   unrealizedExchangeLossAccount: "Unrealized Exchange Loss",
   arRevaluationAccount: "AR Revaluation Adjustment",
   apRevaluationAccount: "AP Revaluation Adjustment",
+  currencyTranslationOffsetAccount: "Currency Translation Offset",
   serviceChargeAccount: "Service Charges",
   interestAccount: "Interest",
   roundingAccount: "Rounding Account",

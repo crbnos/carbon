@@ -6732,6 +6732,9 @@ msgstr "통화 환산"
 msgid "Currency Translation (default)"
 msgstr "통화 환산(기본값)"
 
+msgid "Currency Translation Offset"
+msgstr ""
+
 msgid "current"
 msgstr "현재"
 
@@ -9350,6 +9353,9 @@ msgstr "누적 손익에 대한 자본 계정"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "통화 환산 조정용 자본 계정 (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr ""
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "회계가 설정될 때 개시 잔액을 상쇄하는 자본 계정. 총계는 0이어야 합니다."

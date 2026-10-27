@@ -6732,6 +6732,9 @@ msgstr "Währungsumrechnung"
 msgid "Currency Translation (default)"
 msgstr "Währungsumrechnung (Standard)"
 
+msgid "Currency Translation Offset"
+msgstr ""
+
 msgid "current"
 msgstr "aktuell"
 
@@ -9350,6 +9353,9 @@ msgstr "Eigenkapitalkonto für angesammelte Gewinne oder Verluste"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Eigenkapitalkonto für Währungsumrechnungsanpassungen (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr ""
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Eigenkapitalskonto, das die Eröffnungssalden ausgleicht, wenn die Buchhaltung eingerichtet ist. Es muss insgesamt null sein."

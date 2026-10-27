@@ -3413,7 +3413,8 @@ export const updateDefaultAccounts = defineServiceFn({
     unrealizedExchangeGainAccount: z.string().optional(),
     unrealizedExchangeLossAccount: z.string().optional(),
     arRevaluationAccount: z.string().optional(),
-    apRevaluationAccount: z.string().optional()
+    apRevaluationAccount: z.string().optional(),
+    currencyTranslationOffsetAccount: z.string().optional()
   }),
   permission: { update: "accounting" },
   async run(ctx, input) {

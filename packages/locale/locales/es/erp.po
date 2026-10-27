@@ -6732,6 +6732,9 @@ msgstr "Conversión de Moneda"
 msgid "Currency Translation (default)"
 msgstr "Conversión de Moneda (predeterminada)"
 
+msgid "Currency Translation Offset"
+msgstr ""
+
 msgid "current"
 msgstr "actual"
 
@@ -9350,6 +9353,9 @@ msgstr "Cuenta de patrimonio para ganancias o pérdidas acumuladas"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Cuenta de patrimonio para ajustes de conversión de moneda (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr ""
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Cuenta de Patrimonio que compensa los saldos de apertura cuando se configura la Contabilidad. Debe totalizar cero."

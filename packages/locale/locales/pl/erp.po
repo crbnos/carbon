@@ -6732,6 +6732,9 @@ msgstr "Przeliczenie walut"
 msgid "Currency Translation (default)"
 msgstr "Przeliczenie walut (domyślne)"
 
+msgid "Currency Translation Offset"
+msgstr ""
+
 msgid "current"
 msgstr "bieżący"
 
@@ -9350,6 +9353,9 @@ msgstr "Konto kapitału własnego dla skumulowanych zysków lub strat"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Konto kapitału własnego dla korekt przeliczenia walut (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr ""
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Konto kapitału własnego, które wyrównuje salda otwarcia, gdy księgowość jest skonfigurowana. Musi sumować się do zera."

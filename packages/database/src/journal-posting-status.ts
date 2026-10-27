@@ -74,6 +74,7 @@ export const OPTIONAL_DEFAULT_ROLES = [
   "apRevaluationAccount",
   "arRevaluationAccount",
   "contractAssetAccount",
+  "currencyTranslationOffsetAccount",
   "deferredRevenueAccount",
   "deferredTaxExpenseAccountId",
   "deferredTaxLiabilityAccountId",
@@ -154,6 +155,7 @@ export const OPTIONAL_DEFAULT_LABELS: Record<OptionalDefaultRole, string> = {
   unrealizedExchangeLossAccount: "Unrealized Exchange Loss",
   arRevaluationAccount: "AR Revaluation Adjustment",
   apRevaluationAccount: "AP Revaluation Adjustment",
+  currencyTranslationOffsetAccount: "Currency Translation Offset",
   migrationClearingAccount: "Migration Clearing"
 };
 
