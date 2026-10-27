@@ -227,7 +227,7 @@ msgid "Are you sure you want to mark this operation as done? This will end all a
 msgstr "Вы уверены, что хотите отметить эту операцию как выполненную? Это завершит все активные производственные события для этой операции."
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
-msgstr ""
+msgstr "Попросите руководителя добавить навык {processName} в ваш профиль."
 
 msgid "Assembly steps"
 msgstr "Шаги сборки"
@@ -458,7 +458,7 @@ msgid "Complete passed"
 msgstr "Завершить пройденные"
 
 msgid "Complete the {trainingName} training to get the {processName} ability."
-msgstr ""
+msgstr "Завершите обучение {trainingName}, чтобы получить навык {processName}."
 
 msgid "Completed"
 msgstr "Завершено"
@@ -1872,7 +1872,7 @@ msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by 
 msgstr "Войдите с помощью биометрии вместо волшебной ссылки. Ключи доступа защищены с помощью Face ID, Touch ID или PIN вашего устройства."
 
 msgid "Sign in with code"
-msgstr ""
+msgstr "Войти с кодом"
 
 msgid "Sign in with Google"
 msgstr "Войти через Google"
@@ -1893,7 +1893,7 @@ msgid "Sign out instead"
 msgstr "Вместо этого выйдите"
 
 msgid "Sign-in code"
-msgstr ""
+msgstr "Код входа"
 
 msgid "Signed in as {stationName}"
 msgstr "Вход выполнен как {stationName}"
@@ -2199,7 +2199,7 @@ msgid "Updated {0}"
 msgstr "Обновлено {0}"
 
 msgid "Updated avatar"
-msgstr ""
+msgstr "Аватар обновлен"
 
 msgid "Updated successfully"
 msgstr "Успешно обновлено"
@@ -2246,7 +2246,7 @@ msgid "View or open"
 msgstr "Просмотр или открытие"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
-msgstr ""
+msgstr "Мы отправили вам ссылку для входа и 6-значный код. Перейдите по ссылке или введите код здесь."
 
 msgid "What is {translatedTerm}?"
 msgstr "Что такое {translatedTerm}?"
@@ -2273,19 +2273,19 @@ msgid "Yes"
 msgstr "Да"
 
 msgid "You can still start this operation."
-msgstr ""
+msgstr "Вы все еще можете начать эту операцию."
 
 msgid "You can't work on this operation"
-msgstr ""
+msgstr "Вы не можете работать с этой операцией."
 
 msgid "You don't have the {processName} ability"
-msgstr ""
+msgstr "У вас нет навыка {processName}"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Вы находились на работе {hoursElapsed} часов. Вы забыли записать окончание работы?"
 
 msgid "Your {processName} qualification expired on {expiredDate}."
-msgstr ""
+msgstr "Истек срок вашей квалификации {processName} на {expiredDate}."
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Ваша учетная запись еще не входит ни в одну Организацию. Завершите подготовку к работе в Carbon ERP, чтобы продолжить."
