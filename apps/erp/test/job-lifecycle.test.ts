@@ -16,18 +16,9 @@ vi.mock("@carbon/planning", () => ({
   runMrp: vi.fn(async () => null),
   runLocationSchedule: vi.fn()
 }));
-vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  // The SQL numbering and receipt need a database;
-  // serial-number-timing.test.ts covers them.
-  numberSerialUnitsForCompletion: vi.fn(async () => ({ numbered: 0 })),
-  completeJobToInventory: vi.fn(async () => {})
-}));
 
-import { completeJobToInventory } from "../app/modules/production/production.service";
 import {
   closeJob,
-  completeJob,
   createProductionQuantity,
   pauseJob,
   reopenJob,
@@ -82,9 +73,7 @@ const contextWith = (caller: unknown) =>
     company: { id: "c1", groupId: "g1" },
     caller: caller as never,
     system: () => ({}) as never,
-    // An open transaction: ctx.transaction joins it, and the service
-    // functions that would use it are stubbed above.
-    pg: () => ({ isTransaction: true }) as never,
+    pg: () => ({}) as never,
     kv: () => ({}) as never
   });
 
@@ -217,31 +206,6 @@ describe("closeJob", () => {
     expect(result.error).toBeNull();
     expect(result.data?.warning).toBeTruthy();
     expect(flips()).toEqual([{ status: "Closed", fromStatuses: ["Completed"] }]);
-  });
-});
-
-describe("completeJob", () => {
-  const complete = (caller: unknown) =>
-    completeJob(contextWith(caller), { jobId: "j1", quantityComplete: 5 });
-
-  it("returns the database's refusal as a rule", async () => {
-    vi.mocked(completeJobToInventory).mockRejectedValueOnce(
-      new Error("Quantity is below what was received")
-    );
-    const result = await complete(callerWith(null));
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "Quantity is below what was received"
-    });
-  });
-
-  it("keeps the completion and warns when returning picked material fails", async () => {
-    // The sweep posts through `pg`, which this context lacks.
-    const result = await complete(callerWith(null));
-    expect(result).toEqual({
-      data: { jobId: "j1", warning: expect.any(String) },
-      error: null
-    });
   });
 });
 

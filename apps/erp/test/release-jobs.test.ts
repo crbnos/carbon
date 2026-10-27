@@ -44,11 +44,9 @@ vi.mock("@carbon/jobs", () => ({
 }));
 vi.mock("@carbon/lib/workflows", () => ({ raiseMoment: vi.fn() }));
 vi.mock("@carbon/lib/telemetry", () => ({ trackWorkEvent: vi.fn() }));
-// The readiness read has its own test (job-release-readiness); release
-// numbering needs a database, and serial-number-timing.test.ts covers it.
+// The readiness read has its own test (job-release-readiness).
 vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  assignJobSerialNumbersAtRelease: vi.fn(async () => {}),
   getJobReleaseReadiness: vi.fn()
 }));
 

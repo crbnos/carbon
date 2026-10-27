@@ -53,12 +53,12 @@ vi.mock("@carbon/env", async (importOriginal) => {
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
 
-function contextFor(f: Fixture) {
+function contextFor(f: Fixture, system: () => unknown = () => client) {
   return createServiceContext({
     actor: { type: "system", onBehalfOf: USER },
     company: { id: f.companyId, groupId: f.groupId },
     caller: client!,
-    system: () => client!,
+    system: system as () => NonNullable<typeof client>,
     pg: () => f.db,
     kv: () => {
       throw new Error("completeJob reads no cache");
@@ -416,6 +416,36 @@ describe.skipIf(!client)("serial number timing", () => {
         .where("itemId", "=", f.assemblyId)
         .executeTakeFirstOrThrow();
       expect(Number(sequence.next)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("keeps the numbered completion and warns when returning picked material fails", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "sweep", 3);
+
+      // A system client that is neither the service role nor signed in as the
+      // user: the picked-material return refuses it after the completion committed.
+      const result = await completeJob(
+        contextFor(f, () => ({})),
+        { jobId: job.jobId, quantityComplete: 2 }
+      );
+
+      expect(result).toEqual({
+        data: {
+          jobId: job.jobId,
+          warning: "Job completed, but returning picked material failed"
+        },
+        error: null
+      });
+      expect(await receivedUnits(f, job.jobId)).toEqual([
+        { readableId: "SN-001", quantity: 1 },
+        { readableId: "SN-002", quantity: 1 }
+      ]);
     } finally {
       await f.cleanup();
     }
