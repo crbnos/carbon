@@ -2848,6 +2848,9 @@ msgstr "Zobowiązania do zapłaty"
 msgid "AP Overdue"
 msgstr "Zobowiązania po terminie"
 
+msgid "AP Revaluation Adjustment"
+msgstr ""
+
 msgid "API Docs"
 msgstr "Dokumentacja API"
 
@@ -3029,6 +3032,9 @@ msgstr "Zaległości z tytułu należności"
 
 msgid "AR Overdue"
 msgstr "Należności przeterminowane"
+
+msgid "AR Revaluation Adjustment"
+msgstr ""
 
 msgid "AR/AP"
 msgstr "Należności/Zobowiązania"
@@ -3629,6 +3635,9 @@ msgstr "Konto aktywów"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Konto aktywów dla płatności zaliczkowych dokonanych dostawcom przed otrzymaniem towarów lub usług."
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr ""
 
 msgid "Asset Acquisition Cost"
 msgstr "Cena nabycia środków trwałych"
@@ -9652,6 +9661,9 @@ msgstr "Konto wydatków na sprzęt i utrzymanie ruchu urządzeń"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "Konto wydatków dla strat walutowych, gdy płatność rozlicza fakturę w walucie obcej po mniej korzystnym kursie"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "Konto wydatków dla zakupów niemagazynowych (usług, materiałów eksploatacyjnych)"
 
@@ -12796,6 +12808,9 @@ msgstr "Konto zobowiązań dla podatku od sprzedaży pobranego od klientów"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "Konto zobowiązań dla podatku zapłaconego na zakupach"
+
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Zobowiązanie ujmowane, gdy pozycja faktury z datą usługi lub wynajmu jest zafakturowana przed uzyskaniem przychodu; zwalniane przez uruchomienia rozpoznania."
@@ -16325,6 +16340,9 @@ msgstr "Pozostałe przychody"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Konto przychodów pozostałych dla zysków walutowych gdy płatność rozlicza fakturę w walucie obcej po bardziej korzystnym kursie"
+
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
 
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "Konto pozostałych przychodów dla sald dostawcy rozliczonych bez pełnej płatności w rozliczeniu zobowiązań"
@@ -25287,6 +25305,12 @@ msgstr "Cofnij publikowanie"
 
 msgid "Unpublish {name}?"
 msgstr "Cofnąć publikację {name}?"
+
+msgid "Unrealized Exchange Gain"
+msgstr ""
+
+msgid "Unrealized Exchange Loss"
+msgstr ""
 
 msgid "Unreceived POs"
 msgstr "Nieprzyjęte zamówienia"

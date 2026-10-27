@@ -2848,6 +2848,9 @@ msgstr "Ausstehende Kreditoren"
 msgid "AP Overdue"
 msgstr "Überfällige Kreditoren"
 
+msgid "AP Revaluation Adjustment"
+msgstr ""
+
 msgid "API Docs"
 msgstr "API-Dokumentation"
 
@@ -3029,6 +3032,9 @@ msgstr "Ausstehende Debitoren"
 
 msgid "AR Overdue"
 msgstr "Überfällige Debitoren"
+
+msgid "AR Revaluation Adjustment"
+msgstr ""
 
 msgid "AR/AP"
 msgstr "Debitoren/Kreditoren"
@@ -3629,6 +3635,9 @@ msgstr "Vermögenskonto"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Aktivkonto für Vorauszahlungen an Lieferanten vor Erhalt von Waren oder Dienstleistungen"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr ""
 
 msgid "Asset Acquisition Cost"
 msgstr "Vermögensanschaffungskosten"
@@ -9652,6 +9661,9 @@ msgstr "Aufwandskonto für Anlagen und Instandhaltung"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "Aufwandskonto für Wechselkursverluste, wenn eine Zahlung eine Rechnung in Fremdwährung zu einem ungünstigeren Kurs begleicht"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "Aufwandskonto für Käufe nicht lagergeführter Artikel (Dienstleistungen, Verbrauchsmaterial)"
 
@@ -12796,6 +12808,9 @@ msgstr "Verbindlichkeitskonto für eingezogene Umsatzsteuer von Kunden"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "Haftungskonto für Steuern auf Einkäufe"
+
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Verbindlichkeit, die verbucht wird, wenn eine Position mit Leistungsdatum oder eine Miete vor Verdienungsdatum fakturiert wird; wird durch Anerkennungsläufe freigegeben."
@@ -16325,6 +16340,9 @@ msgstr "Sonstige Erträge"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Konto Sonstige Erträge für Wechselkursgewinne, wenn eine Zahlung eine Rechnung in Fremdwährung zu einem günstigeren Kurs ausgleicht"
+
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
 
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "Konto für Sonstige Erträge für Lieferantensalden, die ohne vollständige Zahlung beim Kreditorenausgleich beglichen werden"
@@ -25287,6 +25305,12 @@ msgstr "Veröffentlichung aufheben"
 
 msgid "Unpublish {name}?"
 msgstr "Veröffentlichung von {name} aufheben?"
+
+msgid "Unrealized Exchange Gain"
+msgstr ""
+
+msgid "Unrealized Exchange Loss"
+msgstr ""
 
 msgid "Unreceived POs"
 msgstr "Nicht eingegangene Bestellungen"

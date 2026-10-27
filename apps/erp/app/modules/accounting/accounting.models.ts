@@ -504,7 +504,9 @@ export const defaultBalanceSheetAccountValidator = z.object({
   netInvestmentInLeasesAccount: z.string().optional(),
   rightOfUseAssetAccount: z.string().optional(),
   accumulatedRightOfUseAmortizationAccount: z.string().optional(),
-  leaseLiabilityAccount: z.string().optional()
+  leaseLiabilityAccount: z.string().optional(),
+  arRevaluationAccount: z.string().optional(),
+  apRevaluationAccount: z.string().optional()
 });
 
 export const defaultIncomeAcountValidator = z.object({
@@ -598,7 +600,9 @@ export const defaultIncomeAcountValidator = z.object({
   operatingLeaseExpenseAccount: z.string().optional(),
   variableLeaseExpenseAccount: z.string().optional(),
   rightOfUseAmortizationExpenseAccount: z.string().optional(),
-  leaseInterestExpenseAccount: z.string().optional()
+  leaseInterestExpenseAccount: z.string().optional(),
+  unrealizedExchangeGainAccount: z.string().optional(),
+  unrealizedExchangeLossAccount: z.string().optional()
 });
 
 export const defaultAccountValidator =

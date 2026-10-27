@@ -2848,6 +2848,9 @@ msgstr "AP Outstanding"
 msgid "AP Overdue"
 msgstr "AP Overdue"
 
+msgid "AP Revaluation Adjustment"
+msgstr "AP Revaluation Adjustment"
+
 msgid "API Docs"
 msgstr "API Docs"
 
@@ -3029,6 +3032,9 @@ msgstr "AR Outstanding"
 
 msgid "AR Overdue"
 msgstr "AR Overdue"
+
+msgid "AR Revaluation Adjustment"
+msgstr "AR Revaluation Adjustment"
 
 msgid "AR/AP"
 msgstr "AR/AP"
@@ -3629,6 +3635,9 @@ msgstr "Asset Account"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Asset account for advance payments made to suppliers before goods or services are received"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
 
 msgid "Asset Acquisition Cost"
 msgstr "Asset Acquisition Cost"
@@ -9652,6 +9661,9 @@ msgstr "Expense account for equipment and facility maintenance"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "Expense account for non-inventory purchases (services, supplies)"
 
@@ -12796,6 +12808,9 @@ msgstr "Liability account for sales tax collected from customers"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "Liability account for tax paid on purchases"
+
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
@@ -16325,6 +16340,9 @@ msgstr "Other Income"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
+
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
 
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "Other Income account for supplier balances cleared without full payment on AP settlement"
@@ -25287,6 +25305,12 @@ msgstr "Unpublish"
 
 msgid "Unpublish {name}?"
 msgstr "Unpublish {name}?"
+
+msgid "Unrealized Exchange Gain"
+msgstr "Unrealized Exchange Gain"
+
+msgid "Unrealized Exchange Loss"
+msgstr "Unrealized Exchange Loss"
 
 msgid "Unreceived POs"
 msgstr "Unreceived POs"

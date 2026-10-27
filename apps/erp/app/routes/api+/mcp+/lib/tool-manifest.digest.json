@@ -130,7 +130,7 @@
     {"name":"accounting_updateAccount","classification":"WRITE","schema":"d810ef7c1f8c","response":"3797626bd17e","permission":"accounting:update","paginates":false},
     {"name":"accounting_updateCostCenter","classification":"WRITE","schema":"d3ac6d2d2bb9","response":"3797626bd17e","permission":"accounting:update","paginates":false},
     {"name":"accounting_updateCurrency","classification":"WRITE","schema":"7f4f47859592","response":"0e98c276626d","permission":"accounting:update","paginates":false},
-    {"name":"accounting_updateDefaultAccounts","classification":"WRITE","schema":"7eafac321195","response":"bcde375ebd4c","permission":"accounting:update","paginates":false},
+    {"name":"accounting_updateDefaultAccounts","classification":"WRITE","schema":"b678b19463e3","response":"bcde375ebd4c","permission":"accounting:update","paginates":false},
     {"name":"accounting_updateDimension","classification":"DESTRUCTIVE","schema":"bc296a45be9e","response":"660c8bead643","permission":"accounting:update","paginates":false},
     {"name":"accounting_updateFiscalYearSettings","classification":"WRITE","schema":"fb433e35b233","response":"bcde375ebd4c","permission":"accounting:update","paginates":false},
     {"name":"accounting_updateFixedAsset","classification":"WRITE","schema":"7cf19679ef1c","response":"3797626bd17e","permission":"accounting:update","paginates":false},

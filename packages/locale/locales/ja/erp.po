@@ -2848,6 +2848,9 @@ msgstr "未払買掛金"
 msgid "AP Overdue"
 msgstr "期限超過買掛金"
 
+msgid "AP Revaluation Adjustment"
+msgstr ""
+
 msgid "API Docs"
 msgstr "API ドキュメント"
 
@@ -3029,6 +3032,9 @@ msgstr "売掛金未払い"
 
 msgid "AR Overdue"
 msgstr "売掛金期限超過"
+
+msgid "AR Revaluation Adjustment"
+msgstr ""
 
 msgid "AR/AP"
 msgstr "売掛金/買掛金"
@@ -3629,6 +3635,9 @@ msgstr "資産勘定"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "仕入先に対する前払い金の資産勘定（商品またはサービスが受け取られる前に行われた支払い）"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr ""
 
 msgid "Asset Acquisition Cost"
 msgstr "資産取得原価"
@@ -9652,6 +9661,9 @@ msgstr "設備および施設保全の費用勘定"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "支払いが外貨建て請求書をより不利なレートで決済する場合のFX損失に対する費用勘定"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "非在庫購買（外注サービス、消耗品）の費用勘定"
 
@@ -12796,6 +12808,9 @@ msgstr "得意先から徴収した売上税の負債勘定"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "購入に支払う税金の負債勘定"
+
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "サービス日付またはレンタル請求書明細が売上高計上前に請求された場合にクレジットされた負債。収益認識実行で解放されます。"
@@ -16325,6 +16340,9 @@ msgstr "営業外収益"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "支払が外貨請求書をより有利なレートで決済する場合の為替差益のための営業外収益勘定"
+
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
 
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "買掛金決済時に全額支払なしで消去された仕入先の残高に対する営業外収益勘定科目"
@@ -25287,6 +25305,12 @@ msgstr "公開を取り消す"
 
 msgid "Unpublish {name}?"
 msgstr "{name}の公開を取り消しますか?"
+
+msgid "Unrealized Exchange Gain"
+msgstr ""
+
+msgid "Unrealized Exchange Loss"
+msgstr ""
 
 msgid "Unreceived POs"
 msgstr "未受領PO"

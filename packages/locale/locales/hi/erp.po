@@ -2848,6 +2848,9 @@ msgstr "देय खाते शेष राशि"
 msgid "AP Overdue"
 msgstr "देय खाते अतिदेय"
 
+msgid "AP Revaluation Adjustment"
+msgstr ""
+
 msgid "API Docs"
 msgstr "API डॉक्स"
 
@@ -3029,6 +3032,9 @@ msgstr "प्राप्य खाते बकाया"
 
 msgid "AR Overdue"
 msgstr "प्राप्य खाते अतिदेय"
+
+msgid "AR Revaluation Adjustment"
+msgstr ""
 
 msgid "AR/AP"
 msgstr "प्राप्य खाते / देय खाते"
@@ -3629,6 +3635,9 @@ msgstr "संपत्ति खाता"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "आपूर्तिकर्ताओं को माल या सेवाएं प्राप्त करने से पहले किए गए अग्रिम भुगतान के लिए संपत्ति खाता"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr ""
 
 msgid "Asset Acquisition Cost"
 msgstr "परिसंपत्ति अधिग्रहण लागत"
@@ -9652,6 +9661,9 @@ msgstr "उपकरण और सुविधा रखरखाव के ल�
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "विदेशी मुद्रा हानि के लिए व्यय खाता जब कोई भुगतान विदेशी मुद्रा चालान को कम अनुकूल दर पर निपटाता है"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "गैर-इन्वेंटरी खरीद (सेवाएं, आपूर्ति) के लिए व्यय खाता"
 
@@ -12796,6 +12808,9 @@ msgstr "ग्राहकों से एकत्र किए गए बि�
 
 msgid "Liability account for tax paid on purchases"
 msgstr "खरीद पर भुगतान किए गए कर के लिए दायित्व खाता"
+
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "देयता जमा की जाती है जब सेवा-तारीखित या किराये की चालान पंक्ति राजस्व अर्जित होने से पहले बिल किया जाता है; पहचान रन द्वारा जारी किया जाता है।"
@@ -16325,6 +16340,9 @@ msgstr "अन्य आय"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "विदेशी मुद्रा लाभ के लिए अन्य आय खाता जब कोई भुगतान विदेशी-मुद्रा चालान को अधिक अनुकूल दर पर निपटाता है"
+
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
 
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "देय खाते निपटान पर पूर्ण भुगतान के बिना समाशोधित आपूर्तिकर्ता शेष राशि के लिए अन्य आय खाता"
@@ -25287,6 +25305,12 @@ msgstr "अप्रकाशित करें"
 
 msgid "Unpublish {name}?"
 msgstr "{name} को प्रकाशन रद्द करें?"
+
+msgid "Unrealized Exchange Gain"
+msgstr ""
+
+msgid "Unrealized Exchange Loss"
+msgstr ""
 
 msgid "Unreceived POs"
 msgstr "अप्राप्त POs"

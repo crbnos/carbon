@@ -2848,6 +2848,9 @@ msgstr "应付账款未结"
 msgid "AP Overdue"
 msgstr "应付账款已逾期"
 
+msgid "AP Revaluation Adjustment"
+msgstr ""
+
 msgid "API Docs"
 msgstr "API 文档"
 
@@ -3029,6 +3032,9 @@ msgstr "应收账款未结"
 
 msgid "AR Overdue"
 msgstr "应收账款已逾期"
+
+msgid "AR Revaluation Adjustment"
+msgstr ""
 
 msgid "AR/AP"
 msgstr "应收账款/应付账款"
@@ -3629,6 +3635,9 @@ msgstr "资产账户"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "供应商在收到商品或服务前预先支付的预付款的资产科目"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr ""
 
 msgid "Asset Acquisition Cost"
 msgstr "资产购置成本"
@@ -9652,6 +9661,9 @@ msgstr "设备和设施维护的费用账户"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "付款以不利汇率结算外币发票时的外汇损失费用科目"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "非库存采购（服务、物资）的费用账户"
 
@@ -12796,6 +12808,9 @@ msgstr "从客户征收的销售税的负债账户"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "采购支付的税款的负债账户"
+
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "当具有服务日期或租赁的发票行在收入实现前开票时所应计的负债；由收益确认凭证实现"
@@ -16325,6 +16340,9 @@ msgstr "营业外收入"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "当付款以更优惠的汇率结算外币发票时用于外汇收益的营业外收入账户"
+
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
 
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "营业外收入账户，用于应付账款结算中未全额付款而清除的供应商余额"
@@ -25287,6 +25305,12 @@ msgstr "取消发布"
 
 msgid "Unpublish {name}?"
 msgstr "取消发布 {name}？"
+
+msgid "Unrealized Exchange Gain"
+msgstr ""
+
+msgid "Unrealized Exchange Loss"
+msgstr ""
 
 msgid "Unreceived POs"
 msgstr "未收到的采购订单"

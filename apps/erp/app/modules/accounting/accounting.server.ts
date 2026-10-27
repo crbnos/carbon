@@ -3102,7 +3102,11 @@ export const updateDefaultAccounts = defineServiceFn({
     operatingLeaseExpenseAccount: z.string().optional(),
     variableLeaseExpenseAccount: z.string().optional(),
     rightOfUseAmortizationExpenseAccount: z.string().optional(),
-    leaseInterestExpenseAccount: z.string().optional()
+    leaseInterestExpenseAccount: z.string().optional(),
+    unrealizedExchangeGainAccount: z.string().optional(),
+    unrealizedExchangeLossAccount: z.string().optional(),
+    arRevaluationAccount: z.string().optional(),
+    apRevaluationAccount: z.string().optional()
   }),
   permission: { update: "accounting" },
   async run(ctx, input) {

@@ -2848,6 +2848,9 @@ msgstr "매입채무 미결제액"
 msgid "AP Overdue"
 msgstr "매입채무 기한 초과"
 
+msgid "AP Revaluation Adjustment"
+msgstr ""
+
 msgid "API Docs"
 msgstr "API 문서"
 
@@ -3029,6 +3032,9 @@ msgstr "매출채권 미결제액"
 
 msgid "AR Overdue"
 msgstr "매출채권 기한 초과"
+
+msgid "AR Revaluation Adjustment"
+msgstr ""
 
 msgid "AR/AP"
 msgstr "매출채권/매입채무"
@@ -3629,6 +3635,9 @@ msgstr "자산 계정"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "공급업체에 상품 또는 서비스를 받기 전에 선금으로 지불한 금액을 기록하는 자산 계정"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr ""
 
 msgid "Asset Acquisition Cost"
 msgstr "자산 취득원가"
@@ -9652,6 +9661,9 @@ msgstr "설비 및 시설 유지보수 비용 계정"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "지불이 외화 송장을 더 불리한 환율로 결제할 때 FX 손실에 대한 비용 계정"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "비재고 구매(서비스, 소모품)에 대한 비용 계정"
 
@@ -12796,6 +12808,9 @@ msgstr "고객으로부터 수집한 판매세 부채 계정"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "구매 시 납부한 세금 부채 계정"
+
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "서비스 날짜가 있는 송장 라인 또는 리스 라인이 매출 창출 전에 송장이 발행될 때 차변에 기입되는 부채로, 인식 실행으로 해제됩니다."
@@ -16325,6 +16340,9 @@ msgstr "영업외수익"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "지불이 외화 송장을 더 유리한 환율로 결제할 때 FX 이익에 대한 영업외수익 계정"
+
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
 
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "매입채무 결제 시 전액 지불 없이 처리된 공급업체 잔액에 대한 영업외수익 계정"
@@ -25287,6 +25305,12 @@ msgstr "게시 취소"
 
 msgid "Unpublish {name}?"
 msgstr "게시 취소 {name}?"
+
+msgid "Unrealized Exchange Gain"
+msgstr ""
+
+msgid "Unrealized Exchange Loss"
+msgstr ""
 
 msgid "Unreceived POs"
 msgstr "미입고 구매주문"

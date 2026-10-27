@@ -2848,6 +2848,9 @@ msgstr "Cuentas por pagar pendientes"
 msgid "AP Overdue"
 msgstr "Cuentas por pagar Atrasadas"
 
+msgid "AP Revaluation Adjustment"
+msgstr ""
+
 msgid "API Docs"
 msgstr "Documentación de API"
 
@@ -3029,6 +3032,9 @@ msgstr "Cuentas por Cobrar Pendientes"
 
 msgid "AR Overdue"
 msgstr "Cuentas por cobrar Atrasadas"
+
+msgid "AR Revaluation Adjustment"
+msgstr ""
 
 msgid "AR/AP"
 msgstr "Cuentas por cobrar/Cuentas por pagar"
@@ -3629,6 +3635,9 @@ msgstr "Cuenta de activos"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Cuenta de activo para pagos anticipados realizados a proveedores antes de recibir bienes o servicios"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr ""
 
 msgid "Asset Acquisition Cost"
 msgstr "Costo de adquisición de activos"
@@ -9652,6 +9661,9 @@ msgstr "Cuenta de gastos para mantenimiento de equipos e instalaciones"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "Cuenta de gastos para pérdidas de divisas cuando un pago liquida una factura en moneda extranjera a una tasa menos favorable"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "Cuenta de gastos para compras que no son de inventario (servicios, suministros)"
 
@@ -12796,6 +12808,9 @@ msgstr "Cuenta de pasivo para impuestos sobre ventas cobrados de clientes"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "Cuenta de pasivo para impuestos pagados en compras"
+
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Pasivo acreditado cuando una línea de factura de servicio o de arrendamiento se factura antes de que se gane el ingreso; se libera por ejecuciones de reconocimiento."
@@ -16325,6 +16340,9 @@ msgstr "Otro Ingreso"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Cuenta de Otros Ingresos para ganancias de divisas cuando un pago liquida una factura en moneda extranjera a una tasa más favorable"
+
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr ""
 
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "Cuenta de Otros Ingresos para saldos de proveedor cancelados sin pago completo en la liquidación de cuentas por pagar"
@@ -25287,6 +25305,12 @@ msgstr "Anular la publicación"
 
 msgid "Unpublish {name}?"
 msgstr "¿Despublicar {name}?"
+
+msgid "Unrealized Exchange Gain"
+msgstr ""
+
+msgid "Unrealized Exchange Loss"
+msgstr ""
 
 msgid "Unreceived POs"
 msgstr "POs no recibidas"
