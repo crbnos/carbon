@@ -19362,6 +19362,9 @@ msgstr "重新安排容差"
 msgid "Reschedule tolerance updated"
 msgstr ""
 
+msgid "Resend Invite"
+msgstr ""
+
 msgid "Reserve floor"
 msgstr "储备下限"
 

@@ -19362,6 +19362,9 @@ msgstr "पुनर्निर्धारण सहनशीलता"
 msgid "Reschedule tolerance updated"
 msgstr ""
 
+msgid "Resend Invite"
+msgstr ""
+
 msgid "Reserve floor"
 msgstr "रिज़र्व फ़्लोर"
 

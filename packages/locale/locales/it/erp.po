@@ -19362,6 +19362,9 @@ msgstr "Tolleranza di Riprogrammazione"
 msgid "Reschedule tolerance updated"
 msgstr ""
 
+msgid "Resend Invite"
+msgstr ""
+
 msgid "Reserve floor"
 msgstr "Limite di riserva"
 

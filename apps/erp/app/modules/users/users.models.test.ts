@@ -5,10 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { canBulkActOnUser } from "./users.models";
 
-const context = {
-  actorId: "me",
-  unrevokedInviteEmails: new Set(["pending@example.com"])
-};
+const context = { actorId: "me" };
 
 const user = (
   id: string,
@@ -36,18 +33,11 @@ describe("canBulkActOnUser", () => {
     );
   });
 
-  it("invites inactive users with an email and no unrevoked invite", () => {
+  it("invites inactive users with an email, pending invite or not", () => {
     expect(canBulkActOnUser("invite", user("a", false), context)).toBe(true);
     expect(canBulkActOnUser("invite", user("a", true), context)).toBe(false);
     expect(canBulkActOnUser("invite", user("a", false, null), context)).toBe(
       false
     );
-    expect(
-      canBulkActOnUser(
-        "invite",
-        user("p", false, "pending@example.com"),
-        context
-      )
-    ).toBe(false);
   });
 });

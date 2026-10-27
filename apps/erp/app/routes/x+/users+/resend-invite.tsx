@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   const { ip, city } = originOf(args.request);
 
   // Every matching user of the Employees list: the background job picks the
-  // inactive users with an email and no unrevoked invite and queues a resend.
+  // inactive users with an email and queues a resend.
   const allMatching = (await args.request.clone().formData()).get(
     "allMatching"
   );

@@ -294,10 +294,7 @@ const EmployeesTable = memo(
         // Every matching user: the background job applies the same rules
         // (`canBulkActOnUser`) to each matching row and skips the rest.
         const allMatching = scope?.allMatching ?? null;
-        const rules = {
-          actorId: currentUserId,
-          unrevokedInviteEmails: unrevokedInviteSet
-        };
+        const rules = { actorId: currentUserId };
         const usersFor = (action: "permissions" | "invite" | "deactivate") =>
           selectedRows
             .filter((row) => canBulkActOnUser(action, row, rules))
@@ -357,7 +354,6 @@ const EmployeesTable = memo(
         bulkEditDrawer,
         deactivateEmployeeModal,
         resendInviteModal,
-        unrevokedInviteSet,
         currentUserId
       ]
     );
@@ -423,29 +419,34 @@ const EmployeesTable = memo(
                   </MenuItem>
                 )}
               </>
-            ) : hasUnrevokedInvite ? (
-              permissions.can("delete", "users") && (
+            ) : (
+              <>
                 <MenuItem
                   onClick={() => {
                     setSelectedUserIds([row.id!]);
-                    revokeInviteModal.onOpen();
+                    resendInviteModal.onOpen();
                   }}
-                  destructive
                 >
-                  <MenuIcon icon={<LuBan />} />
-                  <Trans>Revoke Invite</Trans>
+                  <MenuIcon icon={<LuMailCheck />} />
+                  {hasUnrevokedInvite ? (
+                    <Trans>Resend Invite</Trans>
+                  ) : (
+                    <Trans>Send Invite</Trans>
+                  )}
                 </MenuItem>
-              )
-            ) : (
-              <MenuItem
-                onClick={() => {
-                  setSelectedUserIds([row.id!]);
-                  resendInviteModal.onOpen();
-                }}
-              >
-                <MenuIcon icon={<LuMailCheck />} />
-                <Trans>Send Invite</Trans>
-              </MenuItem>
+                {hasUnrevokedInvite && permissions.can("delete", "users") && (
+                  <MenuItem
+                    onClick={() => {
+                      setSelectedUserIds([row.id!]);
+                      revokeInviteModal.onOpen();
+                    }}
+                    destructive
+                  >
+                    <MenuIcon icon={<LuBan />} />
+                    <Trans>Revoke Invite</Trans>
+                  </MenuItem>
+                )}
+              </>
             )}
           </>
         );

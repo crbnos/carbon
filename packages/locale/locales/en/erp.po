@@ -19362,6 +19362,9 @@ msgstr "Reschedule Tolerance"
 msgid "Reschedule tolerance updated"
 msgstr "Reschedule tolerance updated"
 
+msgid "Resend Invite"
+msgstr "Resend Invite"
+
 msgid "Reserve floor"
 msgstr "Reserve floor"
 

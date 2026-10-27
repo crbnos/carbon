@@ -19362,6 +19362,9 @@ msgstr "재일정 허용도"
 msgid "Reschedule tolerance updated"
 msgstr ""
 
+msgid "Resend Invite"
+msgstr ""
+
 msgid "Reserve floor"
 msgstr "예약 최저 수량"
 
