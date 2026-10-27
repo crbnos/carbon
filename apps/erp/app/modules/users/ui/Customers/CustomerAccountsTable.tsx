@@ -289,6 +289,7 @@ const CustomerAccountsTable = memo(
             ) : (
               <>
                 <MenuItem
+                  disabled={!permissions.can("create", "users")}
                   onClick={() => {
                     setSelectedUserIds([row.user.id]);
                     resendInviteModal.onOpen();

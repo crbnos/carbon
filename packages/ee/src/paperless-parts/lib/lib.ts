@@ -1400,7 +1400,7 @@ export async function getCustomerIdAndContactId(
 
   if (!customerContactId) {
     // If there is no matching contact in Carbon, check if contact exists by email first.
-    // Contacts may share an email, so prefer one already on this customer.
+    // Contacts may share an email: reuse one already on this customer, or the only match.
     const existingContactByEmail = await carbon
       .from("contact")
       .select("id, customerContact(customerId)")
@@ -1423,7 +1423,10 @@ export async function getCustomerIdAndContactId(
     const reusableContact =
       contactsWithEmail.find((c) =>
         c.customerContact.some((link) => link.customerId === customerId)
-      ) ?? contactsWithEmail[0];
+      ) ??
+      // Several contacts with this email and none on the customer: they are
+      // other people's, so create a new one rather than take one over.
+      (contactsWithEmail.length === 1 ? contactsWithEmail[0] : undefined);
 
     let contactId: string;
 

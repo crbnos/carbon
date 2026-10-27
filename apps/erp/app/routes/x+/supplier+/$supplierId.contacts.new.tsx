@@ -67,8 +67,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   if (createSupplierContact.error) {
+    // The form reads `{ data, error }`; never send it the database's message.
     return modal
-      ? createSupplierContact
+      ? {
+          data: null,
+          error: { message: "Failed to create supplier contact" }
+        }
       : redirect(
           path.to.supplierContacts(supplierId),
           await flash(

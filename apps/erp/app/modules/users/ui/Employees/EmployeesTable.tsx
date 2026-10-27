@@ -426,6 +426,7 @@ const EmployeesTable = memo(
             ) : (
               <>
                 <MenuItem
+                  disabled={!permissions.can("create", "users")}
                   onClick={() => {
                     setSelectedUserIds([row.id!]);
                     resendInviteModal.onOpen();
