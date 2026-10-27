@@ -642,6 +642,9 @@ msgstr "प्रदाता में {missingCount} जर्नल गाय
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} गायब जर्नल और {mismatchCount} असमान महीने"
 
+msgid "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} हटाया गया"
 
@@ -3510,8 +3513,14 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "क्या आप {0} को स्थायी रूप से हटाना चाहते हैं?"
 
+msgid "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "क्या आप आपूर्तिकर्ता प्रक्रिया को स्थायी रूप से हटाना चाहते हैं?"
+
+msgid "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to permanently delete this bank account?"
 msgstr "क्या आप वाकई इस बैंक खाते को स्थायी रूप से हटाना चाहते हैं?"
@@ -5831,6 +5840,9 @@ msgstr "संकुचन"
 msgid "Contractor"
 msgstr "ठेकेदार"
 
+msgid "contractors"
+msgstr ""
+
 msgid "Contractors"
 msgstr "ठेकेदार"
 
@@ -7791,6 +7803,9 @@ msgstr "गोदाम स्थानांतरण हटाएं"
 
 msgid "Delete Webhook"
 msgstr "वेबहुक हटाएं"
+
+msgid "Delete Work Center"
+msgstr ""
 
 msgid "Delete Workflow"
 msgstr "वर्कफ़्लो हटाएँ"
@@ -10516,6 +10531,9 @@ msgstr "अचल संपत्ति वर्ग"
 msgid "Fixed asset settings updated"
 msgstr ""
 
+msgid "fixed assets"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "अचल संपत्तियाँ"
 
@@ -12202,6 +12220,9 @@ msgstr "समस्या"
 msgid "Issue (material)"
 msgstr "समस्या (सामग्री)"
 
+msgid "issue actions"
+msgstr ""
+
 msgid "Issue Credit"
 msgstr "क्रेडिट जारी करें"
 
@@ -12337,6 +12358,9 @@ msgstr "आइटम पृष्ठ"
 msgid "Item Scope"
 msgstr "आइटम स्कोप"
 
+msgid "item shelf life rules"
+msgstr ""
+
 msgid "Item Type"
 msgstr "आइटम प्रकार"
 
@@ -12417,6 +12441,9 @@ msgstr "जॉब ऑपरेशन"
 
 msgid "Job operation batch"
 msgstr "जॉब ऑपरेशन बैच"
+
+msgid "job operations"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "जॉब ऑपरेशन"
@@ -13249,6 +13276,9 @@ msgstr "मशीन"
 msgid "Machine Costs"
 msgstr "मशीन लागत"
 
+msgid "machine devices"
+msgstr ""
+
 msgid "Machine Hours"
 msgstr "मशीन घंटे"
 
@@ -13263,6 +13293,9 @@ msgstr "मशीन दर"
 
 msgid "Machine Rate (Hourly)"
 msgstr "मशीन दर (प्रति घंटा)"
+
+msgid "machine state changes"
+msgstr ""
 
 msgid "Machine time"
 msgstr "मशीन समय"
@@ -13315,8 +13348,17 @@ msgstr ""
 msgid "Maintenance Dispatch Notifications"
 msgstr "रखरखाव कार्य सूचनाएँ"
 
+msgid "maintenance dispatch work centers"
+msgstr ""
+
+msgid "maintenance dispatches"
+msgstr ""
+
 msgid "Maintenance Dispatches"
 msgstr "रखरखाव कार्य"
+
+msgid "maintenance events"
+msgstr ""
 
 msgid "Maintenance Expense"
 msgstr "रखरखाव व्यय"
@@ -13326,6 +13368,9 @@ msgstr "रखरखाव व्यय (डिफ़ॉल्ट)"
 
 msgid "Maintenance parts"
 msgstr "रखरखाव पार्ट्स"
+
+msgid "maintenance schedules"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "रखरखाव शेड्यूल"
@@ -13831,6 +13876,9 @@ msgstr "विधि आईडी"
 
 msgid "Method Materials"
 msgstr "विधि सामग्री"
+
+msgid "method operations"
+msgstr ""
 
 msgid "Method Operations"
 msgstr "विधि ऑपरेशन"
@@ -16201,6 +16249,9 @@ msgstr "ऑपरेशन"
 msgid "Operation batch"
 msgstr "ऑपरेशन बैच"
 
+msgid "operation batches"
+msgstr ""
+
 msgid "Operation created"
 msgstr ""
 
@@ -16698,6 +16749,9 @@ msgstr "आंशिक रूप से मान्य"
 
 msgid "Partner"
 msgstr "साथी"
+
+msgid "partners"
+msgstr ""
 
 msgid "Partners"
 msgstr "भागीदार"
@@ -17642,6 +17696,9 @@ msgstr "उत्पादन इवेंट"
 msgid "Production Event"
 msgstr "उत्पादन इवेंट"
 
+msgid "production events"
+msgstr ""
+
 msgid "Production events"
 msgstr "उत्पादन इवेंट"
 
@@ -18093,6 +18150,9 @@ msgstr "योग्यता प्रशिक्षण के इतने �
 msgid "Qualified"
 msgstr "योग्य"
 
+msgid "qualified employees"
+msgstr ""
+
 msgid "Qualified Employees"
 msgstr "योग्य कर्मचारी"
 
@@ -18265,6 +18325,9 @@ msgstr "उद्धरण नहीं मिला"
 
 msgid "Quote Number"
 msgstr "उद्धरण संख्या"
+
+msgid "quote operations"
+msgstr ""
 
 msgid "Quote to cash"
 msgstr "कोटेशन से नकद तक"
@@ -19207,6 +19270,9 @@ msgstr "के साथ बदलें"
 
 msgid "Replacement Order"
 msgstr "प्रतिस्थापन आदेश"
+
+msgid "replacement parts"
+msgstr ""
 
 msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDF को बदलने से इस दस्तावेज़ पर सभी बैलून प्लेसमेंट हटा दिए जाते हैं। विशेषता पंक्तियां और उनके मान रहते हैं; आप नए चित्र पर फिर से बैलून रख सकते हैं।"
@@ -25007,6 +25073,9 @@ msgstr ""
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Academy और इन-ऐप गाइड के माध्यम से अपनी टीम को प्रशिक्षण दें"
 
+msgid "trainings"
+msgstr ""
+
 msgid "Trainings"
 msgstr "प्रशिक्षण"
 
@@ -25199,6 +25268,9 @@ msgstr "नियम को अनअसाइन करें"
 
 msgid "Unassigned"
 msgstr "अनुत्तरित"
+
+msgid "unattributed machine time entries"
+msgstr ""
 
 msgid "Unattributed Time"
 msgstr "अनिर्दिष्ट समय"
@@ -26889,6 +26961,9 @@ msgstr "वर्क सेंटर"
 
 msgid "Work Centers"
 msgstr "वर्क सेंटर"
+
+msgid "work centers requiring its ability"
+msgstr ""
 
 msgid "Work in process (WIP)"
 msgstr "प्रक्रिया में कार्य (WIP)"

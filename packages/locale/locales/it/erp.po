@@ -642,6 +642,9 @@ msgstr "{missingCount} prima nota mancanti nel provider"
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} prima nota mancanti e {mismatchCount} mesi non corrispondenti"
 
+msgid "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} eliminato"
 
@@ -3510,8 +3513,14 @@ msgstr "Sei sicuro di voler superare questo checkpoint? La fase {0} ha ancora at
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "Sei sicuro di voler eliminare permanentemente {0}?"
 
+msgid "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "Sei sicuro di voler eliminare permanentemente il processo del fornitore?"
+
+msgid "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to permanently delete this bank account?"
 msgstr "Sei sicuro di voler eliminare definitivamente questo conto bancario?"
@@ -5831,6 +5840,9 @@ msgstr "Contrazione"
 msgid "Contractor"
 msgstr "Collaboratore esterno"
 
+msgid "contractors"
+msgstr ""
+
 msgid "Contractors"
 msgstr "Collaboratori esterni"
 
@@ -7791,6 +7803,9 @@ msgstr "Elimina Trasferimento deposito"
 
 msgid "Delete Webhook"
 msgstr "Elimina Webhook"
+
+msgid "Delete Work Center"
+msgstr ""
 
 msgid "Delete Workflow"
 msgstr "Elimina flusso di lavoro"
@@ -10516,6 +10531,9 @@ msgstr "Classe di cespiti"
 msgid "Fixed asset settings updated"
 msgstr ""
 
+msgid "fixed assets"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "Cespiti"
 
@@ -12202,6 +12220,9 @@ msgstr "Problema"
 msgid "Issue (material)"
 msgstr "Uscita (materiale)"
 
+msgid "issue actions"
+msgstr ""
+
 msgid "Issue Credit"
 msgstr "Emettere Accredito"
 
@@ -12337,6 +12358,9 @@ msgstr "Pagine degli Articoli"
 msgid "Item Scope"
 msgstr "Ambito Articolo"
 
+msgid "item shelf life rules"
+msgstr ""
+
 msgid "Item Type"
 msgstr "Tipo di articolo"
 
@@ -12417,6 +12441,9 @@ msgstr "Operazione dell'ordine"
 
 msgid "Job operation batch"
 msgstr "Lotto di operazione dell'ordine"
+
+msgid "job operations"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "Operazioni dell'ordine"
@@ -13249,6 +13276,9 @@ msgstr "Macchina"
 msgid "Machine Costs"
 msgstr "Costi macchina"
 
+msgid "machine devices"
+msgstr ""
+
 msgid "Machine Hours"
 msgstr "Ore di macchina"
 
@@ -13263,6 +13293,9 @@ msgstr "Tariffa Macchina"
 
 msgid "Machine Rate (Hourly)"
 msgstr "Tariffa Macchina (Oraria)"
+
+msgid "machine state changes"
+msgstr ""
 
 msgid "Machine time"
 msgstr "Tempo macchina"
@@ -13315,8 +13348,17 @@ msgstr ""
 msgid "Maintenance Dispatch Notifications"
 msgstr "Notifiche interventi di manutenzione"
 
+msgid "maintenance dispatch work centers"
+msgstr ""
+
+msgid "maintenance dispatches"
+msgstr ""
+
 msgid "Maintenance Dispatches"
 msgstr "Interventi di manutenzione"
+
+msgid "maintenance events"
+msgstr ""
 
 msgid "Maintenance Expense"
 msgstr "Spese di Manutenzione"
@@ -13326,6 +13368,9 @@ msgstr "Spese di Manutenzione (predefinite)"
 
 msgid "Maintenance parts"
 msgstr "Componenti di manutenzione"
+
+msgid "maintenance schedules"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "Programmi di Manutenzione"
@@ -13831,6 +13876,9 @@ msgstr "ID Metodo"
 
 msgid "Method Materials"
 msgstr "Materiali del Metodo"
+
+msgid "method operations"
+msgstr ""
 
 msgid "Method Operations"
 msgstr "Operazioni Metodo"
@@ -16201,6 +16249,9 @@ msgstr "Operazione"
 msgid "Operation batch"
 msgstr "Lotto di Operazioni"
 
+msgid "operation batches"
+msgstr ""
+
 msgid "Operation created"
 msgstr ""
 
@@ -16698,6 +16749,9 @@ msgstr "Parzialmente riconosciuto"
 
 msgid "Partner"
 msgstr "Partner"
+
+msgid "partners"
+msgstr ""
 
 msgid "Partners"
 msgstr "Partner"
@@ -17642,6 +17696,9 @@ msgstr "Evento di produzione"
 msgid "Production Event"
 msgstr "Evento di Produzione"
 
+msgid "production events"
+msgstr ""
+
 msgid "Production events"
 msgstr "Eventi di produzione"
 
@@ -18093,6 +18150,9 @@ msgstr "La qualificazione scade dopo tanti giorni di formazione; vuoto = mai"
 msgid "Qualified"
 msgstr "Qualificato"
 
+msgid "qualified employees"
+msgstr ""
+
 msgid "Qualified Employees"
 msgstr "Dipendenti Qualificati"
 
@@ -18265,6 +18325,9 @@ msgstr "Preventivo non trovato"
 
 msgid "Quote Number"
 msgstr "Numero Preventivo"
+
+msgid "quote operations"
+msgstr ""
 
 msgid "Quote to cash"
 msgstr "Dalla offerta al pagamento"
@@ -19207,6 +19270,9 @@ msgstr "Sostituisci con"
 
 msgid "Replacement Order"
 msgstr "Ordine di Sostituzione"
+
+msgid "replacement parts"
+msgstr ""
 
 msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 msgstr "La sostituzione del PDF rimuove tutti i posizionamenti dei palloni su questo documento. Le righe caratteristiche e i loro valori rimangono; puoi posizionare di nuovo i palloni sul nuovo disegno."
@@ -25007,6 +25073,9 @@ msgstr ""
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Formazione del tuo team tramite l'Academy e le guide in-app"
 
+msgid "trainings"
+msgstr ""
+
 msgid "Trainings"
 msgstr "Corsi di formazione"
 
@@ -25199,6 +25268,9 @@ msgstr "Annulla assegnazione regola"
 
 msgid "Unassigned"
 msgstr "Non assegnato"
+
+msgid "unattributed machine time entries"
+msgstr ""
 
 msgid "Unattributed Time"
 msgstr "Tempo non attribuito"
@@ -26889,6 +26961,9 @@ msgstr "Centri di lavoro"
 
 msgid "Work Centers"
 msgstr "Centri di Lavoro"
+
+msgid "work centers requiring its ability"
+msgstr ""
 
 msgid "Work in process (WIP)"
 msgstr "Lavoro in corso (WIP)"

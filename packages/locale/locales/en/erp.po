@@ -642,6 +642,9 @@ msgstr "{missingCount} journals missing in the provider"
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} missing journals and {mismatchCount} mismatched months"
 
+msgid "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+msgstr "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+
 msgid "{name} deleted"
 msgstr "{name} deleted"
 
@@ -3510,8 +3513,14 @@ msgstr "Are you sure you want to pass this checkpoint? The {0} phase still has u
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "Are you sure you want to permanently delete {0}?"
 
+msgid "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+msgstr "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "Are you sure you want to permanently delete the supplier process?"
+
+msgid "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
+msgstr "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
 
 msgid "Are you sure you want to permanently delete this bank account?"
 msgstr "Are you sure you want to permanently delete this bank account?"
@@ -5831,6 +5840,9 @@ msgstr "Contraction"
 msgid "Contractor"
 msgstr "Contractor"
 
+msgid "contractors"
+msgstr "contractors"
+
 msgid "Contractors"
 msgstr "Contractors"
 
@@ -7791,6 +7803,9 @@ msgstr "Delete Warehouse Transfer"
 
 msgid "Delete Webhook"
 msgstr "Delete Webhook"
+
+msgid "Delete Work Center"
+msgstr "Delete Work Center"
 
 msgid "Delete Workflow"
 msgstr "Delete Workflow"
@@ -10516,6 +10531,9 @@ msgstr "Fixed Asset Class"
 msgid "Fixed asset settings updated"
 msgstr "Fixed asset settings updated"
 
+msgid "fixed assets"
+msgstr "fixed assets"
+
 msgid "Fixed Assets"
 msgstr "Fixed Assets"
 
@@ -12202,6 +12220,9 @@ msgstr "Issue"
 msgid "Issue (material)"
 msgstr "Issue (material)"
 
+msgid "issue actions"
+msgstr "issue actions"
+
 msgid "Issue Credit"
 msgstr "Issue Credit"
 
@@ -12337,6 +12358,9 @@ msgstr "Item pages"
 msgid "Item Scope"
 msgstr "Item Scope"
 
+msgid "item shelf life rules"
+msgstr "item shelf life rules"
+
 msgid "Item Type"
 msgstr "Item Type"
 
@@ -12417,6 +12441,9 @@ msgstr "Job Operation"
 
 msgid "Job operation batch"
 msgstr "Job operation batch"
+
+msgid "job operations"
+msgstr "job operations"
 
 msgid "Job Operations"
 msgstr "Job Operations"
@@ -13249,6 +13276,9 @@ msgstr "Machine"
 msgid "Machine Costs"
 msgstr "Machine Costs"
 
+msgid "machine devices"
+msgstr "machine devices"
+
 msgid "Machine Hours"
 msgstr "Machine Hours"
 
@@ -13263,6 +13293,9 @@ msgstr "Machine Rate"
 
 msgid "Machine Rate (Hourly)"
 msgstr "Machine Rate (Hourly)"
+
+msgid "machine state changes"
+msgstr "machine state changes"
 
 msgid "Machine time"
 msgstr "Machine time"
@@ -13315,8 +13348,17 @@ msgstr "Maintenance dispatch notification settings updated"
 msgid "Maintenance Dispatch Notifications"
 msgstr "Maintenance Dispatch Notifications"
 
+msgid "maintenance dispatch work centers"
+msgstr "maintenance dispatch work centers"
+
+msgid "maintenance dispatches"
+msgstr "maintenance dispatches"
+
 msgid "Maintenance Dispatches"
 msgstr "Maintenance Dispatches"
+
+msgid "maintenance events"
+msgstr "maintenance events"
 
 msgid "Maintenance Expense"
 msgstr "Maintenance Expense"
@@ -13326,6 +13368,9 @@ msgstr "Maintenance Expense (default)"
 
 msgid "Maintenance parts"
 msgstr "Maintenance parts"
+
+msgid "maintenance schedules"
+msgstr "maintenance schedules"
 
 msgid "Maintenance Schedules"
 msgstr "Maintenance Schedules"
@@ -13831,6 +13876,9 @@ msgstr "Method Id"
 
 msgid "Method Materials"
 msgstr "Method Materials"
+
+msgid "method operations"
+msgstr "method operations"
 
 msgid "Method Operations"
 msgstr "Method Operations"
@@ -16201,6 +16249,9 @@ msgstr "Operation"
 msgid "Operation batch"
 msgstr "Operation batch"
 
+msgid "operation batches"
+msgstr "operation batches"
+
 msgid "Operation created"
 msgstr "Operation created"
 
@@ -16698,6 +16749,9 @@ msgstr "Partly Recognized"
 
 msgid "Partner"
 msgstr "Partner"
+
+msgid "partners"
+msgstr "partners"
 
 msgid "Partners"
 msgstr "Partners"
@@ -17642,6 +17696,9 @@ msgstr "Production event"
 msgid "Production Event"
 msgstr "Production Event"
 
+msgid "production events"
+msgstr "production events"
+
 msgid "Production events"
 msgstr "Production events"
 
@@ -18093,6 +18150,9 @@ msgstr "Qualification expires this many days after training; blank = never"
 msgid "Qualified"
 msgstr "Qualified"
 
+msgid "qualified employees"
+msgstr "qualified employees"
+
 msgid "Qualified Employees"
 msgstr "Qualified Employees"
 
@@ -18265,6 +18325,9 @@ msgstr "Quote not found"
 
 msgid "Quote Number"
 msgstr "Quote Number"
+
+msgid "quote operations"
+msgstr "quote operations"
 
 msgid "Quote to cash"
 msgstr "Quote to cash"
@@ -19207,6 +19270,9 @@ msgstr "Replace with"
 
 msgid "Replacement Order"
 msgstr "Replacement Order"
+
+msgid "replacement parts"
+msgstr "replacement parts"
 
 msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
@@ -25007,6 +25073,9 @@ msgstr "Training video"
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Training your team via the Academy and in-app guides"
 
+msgid "trainings"
+msgstr "trainings"
+
 msgid "Trainings"
 msgstr "Trainings"
 
@@ -25199,6 +25268,9 @@ msgstr "Unassign rule"
 
 msgid "Unassigned"
 msgstr "Unassigned"
+
+msgid "unattributed machine time entries"
+msgstr "unattributed machine time entries"
 
 msgid "Unattributed Time"
 msgstr "Unattributed Time"
@@ -26889,6 +26961,9 @@ msgstr "Work centers"
 
 msgid "Work Centers"
 msgstr "Work Centers"
+
+msgid "work centers requiring its ability"
+msgstr "work centers requiring its ability"
 
 msgid "Work in process (WIP)"
 msgstr "Work in process (WIP)"

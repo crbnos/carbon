@@ -33,7 +33,10 @@ import type {
   getTrainingAssignment,
   getTrainingQuestions,
   getTrainings,
-  getWorkCenters
+  getWorkCenters,
+  ProcessReferenceKey,
+  ResourceReference,
+  WorkCenterReferenceKey
 } from "./resources.service";
 
 export type Ability = NonNullable<
@@ -189,3 +192,7 @@ export type MaintenanceDispatchByLocation = NonNullable<
 export type MaintenanceScheduleByLocation = NonNullable<
   Awaited<ReturnType<typeof getMaintenanceSchedulesByLocation>>["data"]
 >[number];
+
+/** A table whose rows block deleting a work center or process. */
+export type ResourceReferenceKey = WorkCenterReferenceKey | ProcessReferenceKey;
+export type { ResourceReference };

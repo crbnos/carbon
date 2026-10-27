@@ -1,5 +1,5 @@
 {
-  "totalTools": 1618,
+  "totalTools": 1619,
   "modules": 14,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -1181,12 +1181,13 @@
     {"name":"resources_deleteMaintenanceEvent","classification":"DESTRUCTIVE","schema":"a5eeac694397","response":"8e58a21e4c94","permission":"resources:delete","paginates":false},
     {"name":"resources_deleteMaintenanceSchedule","classification":"DESTRUCTIVE","schema":"093d449cdac0","response":"bcde375ebd4c","permission":"resources:delete","paginates":false},
     {"name":"resources_deletePartner","classification":"DESTRUCTIVE","schema":"48d3fd6edb53","response":"bcde375ebd4c","permission":"resources:delete","paginates":false},
-    {"name":"resources_deleteProcess","classification":"DESTRUCTIVE","schema":"5631e53ea64f","response":"bcde375ebd4c","permission":"resources:delete","paginates":false},
+    {"name":"resources_deleteProcess","classification":"DESTRUCTIVE","schema":"01edb53077b2","response":"01edb53077b2","permission":"resources:delete","paginates":false},
     {"name":"resources_deleteShift","classification":"DESTRUCTIVE","schema":"7830c71fa7a3","response":"bcde375ebd4c","permission":"resources:delete","paginates":false},
     {"name":"resources_deleteSuggestion","classification":"DESTRUCTIVE","schema":"7e2e609c39b4","response":"bcde375ebd4c","permission":"resources:delete","paginates":false},
     {"name":"resources_deleteTraining","classification":"DESTRUCTIVE","schema":"ad4ee6c278a0","response":"bcde375ebd4c","permission":"resources:delete","paginates":false},
     {"name":"resources_deleteTrainingAssignment","classification":"DESTRUCTIVE","schema":"9ee4c244585a","response":"bcde375ebd4c","permission":"resources:delete","paginates":false},
     {"name":"resources_deleteTrainingQuestion","classification":"DESTRUCTIVE","schema":"3a46a4c5c924","response":"bcde375ebd4c","permission":"resources:delete","paginates":false},
+    {"name":"resources_deleteWorkCenter","classification":"DESTRUCTIVE","schema":"3797626bd17e","response":"3797626bd17e","permission":"resources:delete","paginates":false},
     {"name":"resources_getAbilities","classification":"READ","schema":"cd40ae40fad5","response":"b306c2cb1888","permission":"resources:view","paginates":true},
     {"name":"resources_getAbilitiesList","classification":"READ","schema":"31b84d65b2ac","response":"fc7a0345fc53","permission":"resources:view","paginates":false},
     {"name":"resources_getAbility","classification":"READ","schema":"18c5e48c0ea4","response":"d98eac986c97","permission":"resources:view","paginates":false},

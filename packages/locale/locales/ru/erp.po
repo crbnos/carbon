@@ -642,6 +642,9 @@ msgstr "{missingCount} операций не найдено в поставщи�
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} не найдено операций и {mismatchCount} несовпадающих месяцев"
 
+msgid "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} удален"
 
@@ -3510,8 +3513,14 @@ msgstr "Вы уверены, что хотите пройти эту контр�
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "Вы уверены, что хотите окончательно удалить {0}?"
 
+msgid "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "Вы уверены, что хотите окончательно удалить процесс поставщика?"
+
+msgid "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to permanently delete this bank account?"
 msgstr "Вы уверены, что хотите навсегда удалить этот банковский счёт?"
@@ -5831,6 +5840,9 @@ msgstr "Сокращение"
 msgid "Contractor"
 msgstr "Подрядчик"
 
+msgid "contractors"
+msgstr ""
+
 msgid "Contractors"
 msgstr "Подрядчики"
 
@@ -7791,6 +7803,9 @@ msgstr "Удалить передачу между складами"
 
 msgid "Delete Webhook"
 msgstr "Удалить вебхук"
+
+msgid "Delete Work Center"
+msgstr ""
 
 msgid "Delete Workflow"
 msgstr "Удалить рабочий процесс"
@@ -10516,6 +10531,9 @@ msgstr "Класс основных средств"
 msgid "Fixed asset settings updated"
 msgstr ""
 
+msgid "fixed assets"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "Основные средства"
 
@@ -12202,6 +12220,9 @@ msgstr "Проблема"
 msgid "Issue (material)"
 msgstr "Выпуск (материал)"
 
+msgid "issue actions"
+msgstr ""
+
 msgid "Issue Credit"
 msgstr "Выдать кредит"
 
@@ -12337,6 +12358,9 @@ msgstr "Страницы номенклатуры"
 msgid "Item Scope"
 msgstr "Область применения товара"
 
+msgid "item shelf life rules"
+msgstr ""
+
 msgid "Item Type"
 msgstr "Тип номенклатуры"
 
@@ -12417,6 +12441,9 @@ msgstr "Операция заказа"
 
 msgid "Job operation batch"
 msgstr "Серия операции заказа"
+
+msgid "job operations"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "Операции заказа"
@@ -13249,6 +13276,9 @@ msgstr "Станок"
 msgid "Machine Costs"
 msgstr "Стоимость станка"
 
+msgid "machine devices"
+msgstr ""
+
 msgid "Machine Hours"
 msgstr "Часы станка"
 
@@ -13263,6 +13293,9 @@ msgstr "Ставка станка"
 
 msgid "Machine Rate (Hourly)"
 msgstr "Ставка станка (почасовая)"
+
+msgid "machine state changes"
+msgstr ""
 
 msgid "Machine time"
 msgstr "Машинное время"
@@ -13315,8 +13348,17 @@ msgstr ""
 msgid "Maintenance Dispatch Notifications"
 msgstr "Уведомления о заявках на техобслуживание"
 
+msgid "maintenance dispatch work centers"
+msgstr ""
+
+msgid "maintenance dispatches"
+msgstr ""
+
 msgid "Maintenance Dispatches"
 msgstr "Заявки на техобслуживание"
+
+msgid "maintenance events"
+msgstr ""
 
 msgid "Maintenance Expense"
 msgstr "Расходы на техобслуживание"
@@ -13326,6 +13368,9 @@ msgstr "Расходы на техобслуживание (по умолчан�
 
 msgid "Maintenance parts"
 msgstr "Детали техобслуживания"
+
+msgid "maintenance schedules"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "Графики техобслуживания"
@@ -13831,6 +13876,9 @@ msgstr "ID метода"
 
 msgid "Method Materials"
 msgstr "Материалы метода"
+
+msgid "method operations"
+msgstr ""
 
 msgid "Method Operations"
 msgstr "Операции метода"
@@ -16201,6 +16249,9 @@ msgstr "Операция"
 msgid "Operation batch"
 msgstr "Серия операций"
 
+msgid "operation batches"
+msgstr ""
+
 msgid "Operation created"
 msgstr ""
 
@@ -16698,6 +16749,9 @@ msgstr "Частично признано"
 
 msgid "Partner"
 msgstr "Партнер"
+
+msgid "partners"
+msgstr ""
 
 msgid "Partners"
 msgstr "Партнеры"
@@ -17642,6 +17696,9 @@ msgstr "Событие производства"
 msgid "Production Event"
 msgstr "Производственное событие"
 
+msgid "production events"
+msgstr ""
+
 msgid "Production events"
 msgstr "События производства"
 
@@ -18093,6 +18150,9 @@ msgstr "Квалификация истекает через столько дн
 msgid "Qualified"
 msgstr "Квалифицирован"
 
+msgid "qualified employees"
+msgstr ""
+
 msgid "Qualified Employees"
 msgstr "Квалифицированные сотрудники"
 
@@ -18265,6 +18325,9 @@ msgstr "Предложение не найдено"
 
 msgid "Quote Number"
 msgstr "Номер предложения"
+
+msgid "quote operations"
+msgstr ""
 
 msgid "Quote to cash"
 msgstr "От коммерческого предложения к продаже"
@@ -19207,6 +19270,9 @@ msgstr "Заменить на"
 
 msgid "Replacement Order"
 msgstr "Заказ на замену"
+
+msgid "replacement parts"
+msgstr ""
 
 msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Замена PDF удаляет все размещения выносок на этом документе. Строки характеристик и их значения остаются; вы можете разместить выноски снова на новом чертеже."
@@ -25007,6 +25073,9 @@ msgstr ""
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Обучение вашей команды через Academy и встроенные руководства"
 
+msgid "trainings"
+msgstr ""
+
 msgid "Trainings"
 msgstr "Обучение"
 
@@ -25199,6 +25268,9 @@ msgstr "Отменить назначение правила"
 
 msgid "Unassigned"
 msgstr "Не назначено"
+
+msgid "unattributed machine time entries"
+msgstr ""
 
 msgid "Unattributed Time"
 msgstr "Неучтённое время"
@@ -26889,6 +26961,9 @@ msgstr "Рабочие центры"
 
 msgid "Work Centers"
 msgstr "Рабочие центры"
+
+msgid "work centers requiring its ability"
+msgstr ""
 
 msgid "Work in process (WIP)"
 msgstr "Незавершенное производство (WIP)"
