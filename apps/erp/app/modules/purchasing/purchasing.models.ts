@@ -778,6 +778,19 @@ export function isPurchaseOrderPromisedDateEditable(
   );
 }
 
+/** Why an order's status refuses a promised date, or null when it allows one.
+ *  A Closed order may still have lines nothing was received on. */
+export function purchaseOrderPromisedDateRefusal(
+  status: (typeof purchaseOrderStatusType)[number] | string | null | undefined
+): string | null {
+  if (status === "Closed") {
+    return "Cannot change the promised date of a closed purchase order.";
+  }
+  return isPurchaseOrderPromisedDateEditable(status)
+    ? null
+    : "Cannot change the promised date of a fully received purchase order.";
+}
+
 /** A line's own dates. `receivedDate` is its delivery date. */
 export const purchaseOrderLineDateFields = [
   "requiredDate",
@@ -818,12 +831,12 @@ export function purchaseOrderLineDateRefusal(
         ? "Cannot change the requested date of a confirmed purchase order."
         : null;
     case "promisedDate":
-      if (!isPurchaseOrderPromisedDateEditable(line.status)) {
-        return "Cannot change the promised date of a fully received purchase order.";
-      }
-      return line.receivedComplete
-        ? "Cannot change the promised date of a received line."
-        : null;
+      return (
+        purchaseOrderPromisedDateRefusal(line.status) ??
+        (line.receivedComplete
+          ? "Cannot change the promised date of a received line."
+          : null)
+      );
     case "receivedDate":
       return null;
   }

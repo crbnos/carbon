@@ -99,8 +99,8 @@ The close/reopen action was applied twice. The line is already in the requested 
 ### "Cannot change the requested date of a confirmed purchase order."
 A line's Requested Date (`purchaseOrderLine.requiredDate`) locks at the same statuses as the order. Reopen the order to change it, or record the supplier's new date as the Promised Date.
 
-### "Cannot change the promised date of a received line." / "Cannot change the promised date of a fully received purchase order."
-The line is received complete, or the order is at "To Invoice", "Completed" or "Closed". Line dates save one at a time through `updatePurchaseOrderLineDate`; the order's Receipt Promised Date through `updatePurchaseOrders`.
+### "Cannot change the promised date of a received line." / "…of a fully received purchase order." / "…of a closed purchase order."
+The line is received complete, the order is at "To Invoice" or "Completed", or the order was closed (a Closed order may still have lines with nothing received; reopen it to change the date). Line dates save one at a time through `updatePurchaseOrderLineDate`; the order's Receipt Promised Date through `updatePurchaseOrders`.
 
 ### "Failed to finalize purchase order"
 Generic wrapper. Common underlying causes: no PO number sequence configured for the company, or a PDF/email step failing (separate "Failed to generate PDF" / "Failed to send email" messages). Ask for the full error text and check the supplier contact's email if sending failed.

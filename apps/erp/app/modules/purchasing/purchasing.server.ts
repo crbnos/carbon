@@ -83,7 +83,6 @@ import {
   isPurchaseOrderDateField,
   isPurchaseOrderEditableFromPlanning,
   isPurchaseOrderLocked,
-  isPurchaseOrderPromisedDateEditable,
   isPurchaseReturnOrderLocked,
   isRfqLocked,
   isSupplierQuoteLocked,
@@ -98,6 +97,7 @@ import {
   purchaseOrderDeleteRefusal,
   purchaseOrderLineDateFields,
   purchaseOrderLineDateRefusal,
+  purchaseOrderPromisedDateRefusal,
   purchaseOrderStatusType,
   purchaseReturnOrderLineValidator,
   purchasingRfqFinalizeValidator,
@@ -1881,12 +1881,10 @@ export const updatePurchaseOrders = defineServiceFn({
     if (field === "receiptPromisedDate") {
       const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
       if (statuses instanceof CarbonError) return statuses;
-      if (!statuses.every(isPurchaseOrderPromisedDateEditable)) {
-        return ctx.error(
-          "rule",
-          "Cannot change the promised date of a fully received purchase order."
-        );
-      }
+      const refusal = statuses
+        .map(purchaseOrderPromisedDateRefusal)
+        .find((message) => message !== null);
+      if (refusal) return ctx.error("rule", refusal);
     } else if (field !== "deliveryDate") {
       const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
       if (statuses instanceof CarbonError) return statuses;
