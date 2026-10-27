@@ -44,7 +44,9 @@ import { resolveJobConfiguration } from "~/modules/sales/sales.utils";
 import {
   inspectionPlanRequired,
   methodItemType,
-  methodType
+  methodType,
+  optionalTiptapDoc,
+  requiredTiptapDoc
 } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
@@ -5057,22 +5059,14 @@ export const setProcedureFields = defineServiceFn({
   input: z.object({
     ids: z.array(z.string()).min(1),
     name: z.string().optional(),
-    content: z.string().optional(),
+    content: optionalTiptapDoc,
     status: z.enum(procedureStatus).optional(),
     processId: z.string().optional(),
     tags: z.array(z.string()).optional()
   }),
   permission: { update: "production" },
 
-  async run(ctx, { ids, content, ...fields }) {
-    let parsedContent: Json | undefined;
-    if (content !== undefined) {
-      try {
-        parsedContent = JSON.parse(content);
-      } catch {
-        return ctx.error("validation", "Invalid procedure content");
-      }
-    }
+  async run(ctx, { ids, content: parsedContent, ...fields }) {
     let update = ctx.asCaller.supabase
       .from("procedure")
       .update({
@@ -7754,7 +7748,7 @@ export const insertJob = defineServiceFn({
     quoteId: z.string().optional(),
     quoteLineId: z.string().optional(),
     modelUploadId: z.string().optional(),
-    notes: z.string().optional(),
+    notes: optionalTiptapDoc,
     customFields: z.unknown().optional(),
     configuration: z.record(z.string(), z.unknown()).optional(),
     fixedAssetClassId: z.string().nullable().optional(),
@@ -7813,7 +7807,7 @@ export const createJobOperationStep = defineServiceFn({
   input: z.looseObject({
     operationId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().min(1),
+    description: requiredTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -7861,7 +7855,7 @@ export const updateJobOperationStep = defineServiceFn({
     .looseObject({
       operationId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().min(1),
+      description: requiredTiptapDoc,
       type: z.enum([
         "Task",
         "Value",
@@ -8261,7 +8255,7 @@ export const createProcedure = defineServiceFn({
     name: z.string().min(1),
     version: z.number().min(0),
     processId: z.string().optional(),
-    content: z.string().optional(),
+    content: optionalTiptapDoc,
     copyFromId: z.string().optional(),
     id: z
       .string()
@@ -8294,7 +8288,7 @@ export const updateProcedure = defineServiceFn({
       name: z.string().min(1),
       version: z.number().min(0),
       processId: z.string().optional(),
-      content: z.string().optional(),
+      content: optionalTiptapDoc,
       copyFromId: z.string().optional(),
       id: z
         .string()
@@ -8326,7 +8320,7 @@ export const createProcedureStep = defineServiceFn({
   input: z.looseObject({
     procedureId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().optional(),
+    description: optionalTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -8373,7 +8367,7 @@ export const updateProcedureStep = defineServiceFn({
     .looseObject({
       procedureId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().optional(),
+      description: optionalTiptapDoc,
       type: z.enum([
         "Task",
         "Value",
@@ -9515,7 +9509,7 @@ export const upsertAssemblyInstructionStep = defineServiceFn({
         "Inspection"
       ])
       .optional(),
-    description: z.unknown().optional(),
+    description: optionalTiptapDoc,
     required: z.boolean().optional(),
     unitOfMeasureCode: z.string().nullable().optional(),
     minValue: z.number().nullable().optional(),
@@ -9789,7 +9783,7 @@ export const insertAssemblyInstructionStep = defineServiceFn({
         "Inspection"
       ])
       .optional(),
-    description: z.unknown().optional(),
+    description: optionalTiptapDoc,
     required: z.boolean().optional(),
     unitOfMeasureCode: z.string().nullable().optional(),
     minValue: z.number().nullable().optional(),

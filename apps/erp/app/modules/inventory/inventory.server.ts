@@ -51,7 +51,10 @@ import {
   getCompanySettings,
   getNextSequence
 } from "~/modules/settings/settings.service";
-import { booleanField } from "~/modules/shared/shared.models";
+import {
+  booleanField,
+  optionalTiptapDoc
+} from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
@@ -3248,7 +3251,7 @@ export const updatePickingList = defineServiceFn({
     locationId: z.string().min(1),
     assignee: z.string().optional(),
     dueDate: z.string().optional(),
-    notes: z.string().optional(),
+    notes: optionalTiptapDoc,
     customFields: z.record(z.string(), z.unknown()).optional()
   }),
   permission: { update: "inventory" },

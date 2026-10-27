@@ -49,7 +49,8 @@ import {
 } from "~/modules/settings/settings.service";
 import {
   inspectionPlanRequired,
-  optionalTiptapDoc
+  optionalTiptapDoc,
+  requiredTiptapDoc
 } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
@@ -150,9 +151,9 @@ export const createSalesRfq = defineServiceFn({
     lines: z
       .array(
         z.object({
-          partNumber: z.coerce.string().nullish(),
-          description: z.coerce.string().nullish(),
-          quantity: z.coerce.number().nullish()
+          partNumber: z.coerce.string<string>().nullish(),
+          description: z.coerce.string<string>().nullish(),
+          quantity: z.coerce.number<number>().nullish()
         })
       )
       .default([]),
@@ -7916,7 +7917,7 @@ export const createQuoteOperationStep = defineServiceFn({
   input: z.looseObject({
     operationId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().min(1),
+    description: requiredTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -7964,7 +7965,7 @@ export const updateQuoteOperationStep = defineServiceFn({
     .looseObject({
       operationId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().min(1),
+      description: requiredTiptapDoc,
       type: z.enum([
         "Task",
         "Value",

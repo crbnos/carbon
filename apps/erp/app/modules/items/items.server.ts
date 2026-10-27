@@ -32,6 +32,8 @@ import { replanAfterItemChange } from "~/modules/production/production.server";
 import {
   booleanField,
   methodType,
+  optionalTiptapDoc,
+  requiredTiptapDoc,
   sourcingType
 } from "~/modules/shared/shared.models";
 import {
@@ -1407,6 +1409,8 @@ export const recalculateItemCost = defineServiceFn({
 export const createChangeNotice = defineServiceFn({
   input: changeNoticeValidator.omit({ id: true, type: true }).extend({
     openDate: z.string().optional(),
+    reasonForChange: optionalTiptapDoc,
+    description: optionalTiptapDoc,
     customFields: customFieldsInput
   }),
   permission: { create: "parts" },
@@ -1419,8 +1423,8 @@ export const createChangeNotice = defineServiceFn({
     const created = await service.insertChangeNotice(client, {
       changeNoticeId: input.changeOrderId || undefined,
       name: input.name,
-      reasonForChange: service.toRichText(input.reasonForChange),
-      description: service.toRichText(input.description),
+      reasonForChange: input.reasonForChange,
+      description: input.description,
       priority: input.priority,
       changeNoticeTypeId: input.changeOrderTypeId || undefined,
       nonConformanceId: input.nonConformanceId || undefined,
@@ -4970,7 +4974,7 @@ export const createMethodOperationStep = defineServiceFn({
   input: z.looseObject({
     operationId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().min(1),
+    description: requiredTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -5033,7 +5037,7 @@ export const updateMethodOperationStep = defineServiceFn({
     .looseObject({
       operationId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().min(1),
+      description: requiredTiptapDoc,
       type: z.enum([
         "Task",
         "Value",
@@ -6260,8 +6264,8 @@ export const updateChangeNotice = defineServiceFn({
     changeOrderTypeId: z.string().nullable().optional(),
     nonConformanceId: z.string().nullable().optional(),
     openDate: z.string().optional(),
-    reasonForChange: z.unknown().optional(),
-    description: z.unknown().optional(),
+    reasonForChange: optionalTiptapDoc,
+    description: optionalTiptapDoc,
     dueDate: z.string().nullable().optional(),
     assignee: z.string().nullable().optional(),
     customFields: z.unknown().optional()

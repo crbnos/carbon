@@ -65,6 +65,7 @@ import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
+import { optionalTiptapDoc } from "~/modules/shared/shared.models";
 import {
   getLocationTimeZone,
   invokePosting,
@@ -5266,8 +5267,8 @@ export const insertPurchaseOrder = defineServiceFn({
     supplierQuoteId: z.string().optional(),
     receiptRequestedDate: z.string().optional(),
     supplierReference: z.string().optional(),
-    notes: z.unknown().optional(),
-    externalNotes: z.unknown().optional(),
+    notes: optionalTiptapDoc,
+    externalNotes: optionalTiptapDoc,
     customFields: z.unknown().optional()
   }),
   permission: { create: "purchasing" },

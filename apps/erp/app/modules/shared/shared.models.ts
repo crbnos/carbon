@@ -168,6 +168,22 @@ export const booleanField = () =>
     z.boolean()
   ) as unknown as z.ZodType<boolean, boolean>;
 
+/**
+ * A JSON value. A form posts it as text in a hidden field; an API caller sends
+ * the value itself. Typed as the value, so the published API schema describes
+ * it instead of "anything". Text that is not JSON is left for `schema` to refuse.
+ */
+export const jsonInput = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((value) => {
+    if (typeof value !== "string") return value;
+    if (value.trim() === "") return undefined;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }, schema) as unknown as T;
+
 export function normalizeOperationSourceIds<
   T extends {
     operationType?: string;
@@ -309,6 +325,11 @@ export const optionalTiptapDoc = tiptapDocInput();
  * round trip (`1. Ship` would come back as `Ship`).
  */
 export const optionalPlainTextDoc = tiptapDocInput("text");
+
+/** Required rich text: Markdown, or a Tiptap document. */
+export const requiredTiptapDoc = z
+  .union([z.string().trim().min(1), tiptapDocumentInput])
+  .transform((value): any => toTiptapDoc(value));
 
 /**
  * A List step's options. Blank rows (the empty row "Add option" leaves) are
