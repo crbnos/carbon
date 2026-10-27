@@ -1504,9 +1504,6 @@ msgstr "売上見積依頼（得意先が見積をお願いする）または購
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "carbon-key リクエスト ヘッダーで送信されるスコープ付きシークレット。Carbon へのプログラマティック呼び出しを認証し、ユーザー セッションではなく独自の権限とレート制限を保有します。"
 
-msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
-msgstr "本日は全員に季節限定のテーマが適用されています。終了後に、もう一度ご自分のテーマを選べます。"
-
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "税務報告のための別のスケジュール。税務ルールが帳簿減価償却とは異なる方法を要求する場合。"
 
@@ -4822,9 +4819,6 @@ msgstr "運送業者"
 
 msgid "Carrier Account"
 msgstr "運送業者アカウント"
-
-msgid "Carve"
-msgstr "彫刻"
 
 msgid "Cash & Banking"
 msgstr "現金と銀行"
@@ -12376,9 +12370,6 @@ msgstr "変更通知のリリース前に、そのデザインが変わる可能
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "その売上高は各明細が計上待ちしている金額に戻ります。"
 
-msgid "Jack-o'-lantern"
-msgstr "ジャック・オー・ランタン"
-
 msgid "Job"
 msgstr "ジョブ"
 
@@ -12907,9 +12898,6 @@ msgstr "後入先出"
 
 msgid "Light"
 msgstr "ライト"
-
-msgid "Light up"
-msgstr "点灯"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "ライト、ダーク、またはシステム設定に従う。"
@@ -18064,12 +18052,6 @@ msgstr "支払のPV"
 
 msgid "PV of Residual"
 msgstr "残存価値のPV"
-
-msgid "QC"
-msgstr "品質検査"
-
-msgid "QC passed"
-msgstr "検査合格"
 
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "このかんばんの現在の工程を完了するためのQRコード"
@@ -26255,9 +26237,6 @@ msgstr "受け取った人と同じ人が受け入れ品を検査する場合に
 
 msgid "Warning"
 msgstr "警告"
-
-msgid "Wash"
-msgstr "洗浄"
 
 msgid "Watch"
 msgstr "見る"

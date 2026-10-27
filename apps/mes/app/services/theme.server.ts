@@ -4,28 +4,32 @@
 
 import { DOMAIN, getCookieDomain } from "@carbon/auth";
 import type { ThemeName } from "@carbon/utils";
-import { resolveTheme } from "@carbon/utils";
+import { themeCookieWrites, themeForRequest } from "@carbon/utils";
 import * as cookie from "cookie";
 
-const cookieName = "theme";
-
-/**
- * The theme to render: a seasonal theme while in season, for everyone;
- * otherwise the cookie's, or the default (`resolveTheme`).
- */
+/** The theme to render (`themeForRequest`). */
 export function getTheme(request: Request): ThemeName {
-  const cookieHeader = request.headers.get("cookie");
-  const stored = cookieHeader ? cookie.parse(cookieHeader)[cookieName] : null;
-  return resolveTheme(stored).name;
+  return themeForRequest(
+    request.headers.get("cookie"),
+    new URL(request.url).pathname
+  ).name;
 }
 
-export function setTheme(theme: string) {
+/** The `Set-Cookie` headers for a theme pick (`themeCookieWrites`). */
+export function setTheme(theme: string, { inApp }: { inApp: boolean }) {
   const cookieDomain = getCookieDomain(DOMAIN);
-  return cookie.serialize(cookieName, theme, {
-    path: "/",
-    sameSite: "lax",
-    secure: !!cookieDomain,
-    domain: cookieDomain,
-    maxAge: 31536000
-  });
+  const headers = new Headers();
+  for (const { name, value, maxAge } of themeCookieWrites(theme, { inApp })) {
+    headers.append(
+      "Set-Cookie",
+      cookie.serialize(name, value, {
+        path: "/",
+        sameSite: "lax",
+        secure: !!cookieDomain,
+        domain: cookieDomain,
+        maxAge
+      })
+    );
+  }
+  return headers;
 }

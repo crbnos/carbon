@@ -1504,9 +1504,6 @@ msgstr "Un RFQ di vendita (un cliente ti chiede di quotare) o un RFQ di acquisto
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Un segreto con ambito inviato nell'intestazione della richiesta carbon-key che autentica le chiamate programmatiche a Carbon, portando le proprie autorizzazioni e limite di velocità invece della sessione utente."
 
-msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
-msgstr "Oggi è attivo un tema stagionale per tutti. Al termine potrai scegliere di nuovo il tuo."
-
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Un programma separato per la rendicontazione fiscale quando le norme fiscali richiedono un metodo diverso dall'ammortamento contabile."
 
@@ -4822,9 +4819,6 @@ msgstr "Vettore"
 
 msgid "Carrier Account"
 msgstr "Conto Vettore"
-
-msgid "Carve"
-msgstr "Intaglio"
 
 msgid "Cash & Banking"
 msgstr "Cassa e banche"
@@ -12376,9 +12370,6 @@ msgstr "Il suo design potrebbe cambiare prima che l'Avviso di modifica sia emess
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "I suoi ricavi tornano a quello che rimane da riconoscere di ogni riga."
 
-msgid "Jack-o'-lantern"
-msgstr "Zucca di Halloween"
-
 msgid "Job"
 msgstr "Lavoro"
 
@@ -12907,9 +12898,6 @@ msgstr "LIFO"
 
 msgid "Light"
 msgstr "Chiaro"
-
-msgid "Light up"
-msgstr "Accensione"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Chiaro, scuro, o segui l'impostazione di sistema."
@@ -18064,12 +18052,6 @@ msgstr "VA dei pagamenti"
 
 msgid "PV of Residual"
 msgstr "VA residuale"
-
-msgid "QC"
-msgstr "CQ"
-
-msgid "QC passed"
-msgstr "CQ superato"
 
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR Code per completare l'operazione corrente per questo kanban"
@@ -26255,9 +26237,6 @@ msgstr "Avvisa quando la persona che ispeziona un articolo in entrata è la stes
 
 msgid "Warning"
 msgstr "Avvertenza"
-
-msgid "Wash"
-msgstr "Lavaggio"
 
 msgid "Watch"
 msgstr "Guarda"

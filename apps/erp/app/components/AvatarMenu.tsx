@@ -23,15 +23,14 @@ import {
   DropdownMenuTrigger,
   getSystemMode,
   ItarDisclosure,
-  SeasonalThemeNotice,
   useDisclosure,
   useEdition,
   useMode,
   useModePreference,
-  useSeasonalTheme
+  useThemePreview
 } from "@carbon/react";
 import type { ModePreference } from "@carbon/utils";
-import { Edition, modeValidator, themes } from "@carbon/utils";
+import { Edition, modeValidator, pickableThemes } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ReactElement, ReactNode } from "react";
@@ -94,9 +93,10 @@ export function useAccountMenu() {
   const mode = useMode();
   const modePreference = useModePreference();
   const serverTheme = useTheme();
-  const seasonalTheme = useSeasonalTheme();
+  const themeOptions = pickableThemes();
 
   const fetcher = useFetcher<typeof action>();
+  const previewTheme = useThemePreview(fetcher.state === "idle");
 
   const onModeChange = (value: string) => {
     const parsed = modeValidator.shape.mode.safeParse(value);
@@ -128,21 +128,16 @@ export function useAccountMenu() {
   );
 
   const onThemeChange = (t: string) => {
-    if (seasonalTheme) return;
-    const newTheme = themes.find((theme) => theme.name === t);
+    const newTheme = themeOptions.find((theme) => theme.name === t);
     if (!newTheme) return;
-    const variables =
-      mode === "dark" ? newTheme.cssVars.dark : newTheme.cssVars.light;
-
     setSelectedTheme(t);
 
     const formData = new FormData();
     formData.append("theme", t);
     fetcher.submit(formData, { method: "post", action: path.to.theme });
-
-    Object.entries(variables).forEach(([key, value]) => {
-      document.body.style.setProperty(`--${key}`, value);
-    });
+    previewTheme(
+      mode === "dark" ? newTheme.cssVars.dark : newTheme.cssVars.light
+    );
   };
 
   const optimisticTheme = selectedTheme ?? serverTheme;
@@ -265,7 +260,7 @@ export function useAccountMenu() {
     onModeChange,
     optimisticTheme,
     onThemeChange,
-    seasonalTheme,
+    themeOptions,
     languageOptions,
     resolvedLocale,
     localeFetcher,
@@ -286,7 +281,7 @@ const AvatarMenu = () => {
     onModeChange,
     optimisticTheme,
     onThemeChange,
-    seasonalTheme,
+    themeOptions,
     languageOptions,
     resolvedLocale,
     localeFetcher,
@@ -365,16 +360,14 @@ const AvatarMenu = () => {
               {item.label}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
-              <SeasonalThemeNotice className="max-w-56 px-2 py-1.5" />
               <DropdownMenuRadioGroup
                 value={optimisticTheme}
                 onValueChange={onThemeChange}
               >
-                {themes.map((t) => (
+                {themeOptions.map((t) => (
                   <DropdownMenuRadioItem
                     key={t.name}
                     value={t.name}
-                    disabled={seasonalTheme}
                     onSelect={(e) => e.preventDefault()}
                     style={
                       {

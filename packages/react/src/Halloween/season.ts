@@ -6,12 +6,12 @@ import { halloweenTheme } from "@carbon/utils";
 import useHydrated from "../hooks/useHydrated";
 import { useRouteData } from "../hooks/useRouteData";
 
-// The one check every Halloween decoration sits behind, the sign-in page's
-// Night Shift included: the root loader's theme is Halloween. That is the
-// case for everyone on Halloween (`available` on `halloweenTheme`, applied by
-// `resolveTheme`) and for no one on any other day, so everything switches on
-// and off by itself, and the rest of the year nothing is rendered, styled or
-// listened to.
+// The one check every Halloween decoration sits behind: the root loader's
+// theme is Halloween. That is the case inside the app in season (`available`
+// on `halloweenTheme`, applied by `themeForRequest`) for everyone who has not
+// picked another theme, and for no one on any other day, so everything
+// switches on and off by itself, and the rest of the year nothing is
+// rendered, styled or listened to.
 
 /**
  * Whether the Halloween decorations are on. False on the server: they

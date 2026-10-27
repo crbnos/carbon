@@ -15,10 +15,9 @@ import {
   PrefetchLink,
   RadioGroup,
   RadioGroupButton,
-  SeasonalThemeNotice,
   useMode,
   useModePreference,
-  useSeasonalTheme,
+  useThemePreview,
   VStack
 } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
@@ -40,7 +39,7 @@ import { useOnboarding } from "~/hooks";
 import type { Theme as ThemeValue } from "~/modules/settings/settings.models";
 import { themeValidator } from "~/modules/settings/settings.models";
 import type { action as modeAction } from "~/root";
-import { getStoredTheme, setTheme } from "~/services/theme.server";
+import { getTheme, setTheme } from "~/services/theme.server";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -52,7 +51,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   return {
-    theme: getStoredTheme(request)
+    theme: getTheme(request)
   };
 }
 
@@ -70,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!next) throw new Error("Fatal: next is required");
 
   throw redirect(next || path.to.onboarding.root, {
-    headers: { "Set-Cookie": setTheme(theme) }
+    headers: setTheme(theme, { inApp: false })
   });
 }
 
@@ -84,16 +83,12 @@ export default function OnboardingTheme() {
 
   const [picked, setPicked] = useState<ThemeValue | null>(null);
   const theme = picked ?? initialTheme;
-  const seasonalTheme = useSeasonalTheme();
+
+  // Kept until the step is left: the pick is saved only on Continue.
+  const previewTheme = useThemePreview(false);
 
   const applyThemeColors = (t: Theme) => {
-    // In season the page shows the seasonal theme, whatever is picked.
-    if (seasonalTheme) return;
-    const variables = mode === "dark" ? t.cssVars.dark : t.cssVars.light;
-
-    Object.entries(variables).forEach(([key, value]) => {
-      document.body.style.setProperty(`--${key}`, value);
-    });
+    previewTheme(mode === "dark" ? t.cssVars.dark : t.cssVars.light);
 
     window.dispatchEvent(
       new CustomEvent("onboarding-theme-change", { detail: t.name })
@@ -101,7 +96,6 @@ export default function OnboardingTheme() {
   };
 
   const onThemeChange = (t: Theme) => {
-    if (seasonalTheme) return;
     setPicked(t.name);
     applyThemeColors(t);
   };
@@ -190,10 +184,8 @@ export default function OnboardingTheme() {
               <Trans>System</Trans>
             </RadioGroupButton>
           </RadioGroup>
-          <SeasonalThemeNotice />
           <RadioGroup
             value={theme}
-            disabled={seasonalTheme}
             onValueChange={(name) => {
               const selected = themes.find((entry) => entry.name === name);
               if (selected) onThemeChange(selected);
