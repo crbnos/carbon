@@ -23,7 +23,6 @@ import {
 import { getLogger } from "@carbon/logger";
 import { nanoid } from "nanoid";
 import { isItemBulkUpdateField } from "~/modules/items/items.models";
-import { bulkUpdateItems } from "~/modules/items/items.service";
 import { bulkDeleteJobs } from "~/modules/production/production.service";
 import { bulkDeletePurchaseOrders } from "~/modules/purchasing/purchasing.service";
 import { systemContext } from "~/modules/service-context.server";
@@ -34,8 +33,11 @@ import {
   queueUserDeactivations,
   selectUsersForBulkAction
 } from "~/modules/users/users.service";
-import { getDatabaseClient } from "~/services/database.server";
 import { decodeCursor } from "./cursor";
+import {
+  bulkUpdateItems,
+  isItemBulkUpdateValue
+} from "./item-bulk-actions.server";
 import { fetchListPage, getListDefinition } from "./list-registry/index.server";
 import {
   bulkDissolveBatches,
@@ -151,7 +153,6 @@ type BulkActionRunContext = TableJobContext & {
   /** The user's client, signed again when its token is four minutes old:
    *  RLS applies as it does to the action route. */
   getClient: ReturnType<typeof userClientFactory>;
-  db: ReturnType<typeof getDatabaseClient>;
 };
 
 /** What a bulk action does to one chunk of ids (at most 100); throws only
@@ -201,25 +202,23 @@ function userClientFactory(userId: string) {
 }
 
 /**
- * Each bulk action with a background path runs the same server function as
+ * Each bulk action with a background path runs the same service functions as
  * its action route, so the per-row checks are the same on both paths.
  */
 const BULK_ACTION_RUNS: Record<TableBulkActionKey, BulkActionRun> = {
   "items.update": async (ids, { field, value }, context) => {
-    if (!isItemBulkUpdateField(field) || typeof value !== "string") {
+    if (
+      !isItemBulkUpdateField(field) ||
+      typeof value !== "string" ||
+      !isItemBulkUpdateValue(field, value)
+    ) {
       throw new Error("The item update is not valid");
     }
-    const result = await bulkUpdateItems(
-      await context.getClient(),
-      context.db,
-      {
-        itemIds: ids,
-        field,
-        value,
-        companyId: context.companyId,
-        userId: context.userId
-      }
-    );
+    const result = await bulkUpdateItems(await jobServiceContext(context), {
+      itemIds: ids,
+      field,
+      value
+    });
     return {
       done: result.done,
       skipped: result.skipped,
@@ -442,8 +441,7 @@ async function runBulkAction(
     action.params,
     {
       ...context,
-      getClient: userClientFactory(context.userId),
-      db: getDatabaseClient()
+      getClient: userClientFactory(context.userId)
     },
     carry
   );

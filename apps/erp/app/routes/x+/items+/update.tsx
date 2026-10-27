@@ -13,6 +13,7 @@ import {
   type itemTrackingTypes
 } from "~/modules/items/items.models";
 import type { methodType, sourcingType } from "~/modules/shared/shared.models";
+import { isItemBulkUpdateValue } from "~/utils/item-bulk-actions.server";
 import { bulkStartFormResponse } from "~/utils/table-jobs";
 import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
 
@@ -65,6 +66,9 @@ export async function action(args: ActionFunctionArgs) {
   // Every matching row: the background job updates them 100 at a time
   // (bulkUpdateItems).
   if (allMatching && isItemBulkUpdateField(field)) {
+    if (!isItemBulkUpdateValue(field, value)) {
+      return invalid(`${value} is not a valid ${field}`);
+    }
     const { companyId, userId } = await requirePermissions(args.request, {
       update: "parts"
     });
