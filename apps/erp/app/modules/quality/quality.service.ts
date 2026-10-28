@@ -2495,13 +2495,10 @@ function mapInspectionDocument(row: Record<string, unknown>) {
   };
 }
 
-// The list groups plans under their part, so the part leads every order: a
-// user's sort orders the plans within each part.
+// The table groups plans under their part, so the part leads every order.
 export const INSPECTION_DOCUMENTS_PAGING: Paging = {
-  defaultSorts: [
-    { column: "partReadableId", ascending: true },
-    { column: "drawingNumber", ascending: true }
-  ]
+  leadingSorts: [{ column: "partReadableId", ascending: true }],
+  defaultSorts: [{ column: "drawingNumber", ascending: true }]
 };
 
 export async function getInspectionDocuments(
@@ -2521,20 +2518,7 @@ export async function getInspectionDocuments(
   }
 
   if (args) {
-    const userSorts = (args.sorts ?? []).filter(
-      (sort) => sort.sortBy !== "partReadableId"
-    );
-    query = setGenericQueryFilters(
-      query,
-      {
-        ...args,
-        sorts:
-          userSorts.length > 0
-            ? [{ sortBy: "partReadableId", sortAsc: true }, ...userSorts]
-            : args.sorts
-      },
-      INSPECTION_DOCUMENTS_PAGING
-    );
+    query = setGenericQueryFilters(query, args, INSPECTION_DOCUMENTS_PAGING);
   }
 
   const result = await query;

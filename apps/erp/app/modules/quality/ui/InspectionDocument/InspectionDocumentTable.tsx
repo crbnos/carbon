@@ -37,7 +37,6 @@ type InspectionDocumentTableProps = {
 };
 
 const defaultColumnVisibility = {
-  partId: false,
   createdAt: false,
   updatedAt: false,
   updatedBy: false
@@ -55,14 +54,6 @@ const InspectionDocumentTable = memo(
       () => new Map(items.map((item) => [item.id, item])),
       [items]
     );
-    const partLabel = useCallback(
-      (partId: string | null) =>
-        partId
-          ? (itemsById.get(partId)?.readableIdWithRevision ?? partId)
-          : null,
-      [itemsById]
-    );
-
     const groupRowsBy = useMemo(
       () => ({
         key: (row: InspectionDocument) => row.partId ?? "",
@@ -114,22 +105,24 @@ const InspectionDocumentTable = memo(
           meta: { mobile: "P1", icon: <LuTarget /> }
         },
         {
-          // The group header shows the part; the column stays for its filter
-          // and the CSV export.
-          accessorKey: "partId",
-          header: t`Part`,
-          cell: ({ row }) => partLabel(row.original.partId),
+          // The group header shows the part, so the column never renders: it
+          // holds the Part filter and puts the part number in the CSV. The
+          // view's `partReadableId` is what the background export writes too.
+          accessorKey: "partReadableId",
+          header: () => null,
+          cell: () => null,
           enableSorting: false,
           meta: {
-            mobile: "P3",
+            exportOnly: true,
+            filterHeader: t`Part`,
             filter: {
               type: "static" as const,
               options: items?.map((item) => ({
-                value: item.id,
+                value: item.readableIdWithRevision,
                 label: item.readableIdWithRevision
               }))
             },
-            exportValue: (row) => partLabel(row.partId),
+            exportValue: (row) => row.partReadableId,
             icon: <LuBookMarked />
           }
         },
@@ -166,7 +159,7 @@ const InspectionDocumentTable = memo(
           meta: { icon: <LuFileText /> }
         }
       ],
-      [items, partLabel, t]
+      [items, t]
     );
 
     const renderContextMenu = useCallback(

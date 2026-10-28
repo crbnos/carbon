@@ -49,6 +49,12 @@ export type DefaultSort = {
  */
 export type Paging = {
   defaultSorts: DefaultSort[];
+  /**
+   * Sorts that lead every order, the user's included: a list grouped by a
+   * column (inspection plans by part) keeps its groups together, and the
+   * user's sort orders the rows within each group.
+   */
+  leadingSorts?: DefaultSort[];
   /** The unique column that breaks ties. Default: `id`. */
   idColumn?: string;
 };
@@ -65,13 +71,20 @@ const logger = getLogger("erp", "cursor");
  */
 export function resolveSorts(
   sorts: Sort[] | undefined,
-  defaultSorts: DefaultSort[] = []
+  defaultSorts: DefaultSort[] = [],
+  leadingSorts: DefaultSort[] = []
 ): { orders: DefaultSort[]; keyset: KeysetSort[] } {
   const userSorts = (sorts ?? [])
     .filter((sort) => !sort.sortBy.includes("."))
     .map((sort) => ({ column: sort.sortBy, ascending: sort.sortAsc }));
 
-  const orders = userSorts.length > 0 ? userSorts : defaultSorts;
+  const leading = new Set(leadingSorts.map((sort) => sort.column));
+  const orders = [
+    ...leadingSorts,
+    ...(userSorts.length > 0 ? userSorts : defaultSorts).filter(
+      (sort) => !leading.has(sort.column)
+    )
+  ];
   const keyset = orders
     .filter((sort) => !("foreignTable" in sort && sort.foreignTable))
     .map(({ column, ascending }) => ({ column, ascending }));
@@ -292,7 +305,11 @@ export function toPage<T extends Record<string, unknown>>(
 ): { rows: T[]; nextCursor: string | null } {
   const { limit } = args;
   const sorts = paging
-    ? resolveSorts(args.sorts as Sort[] | undefined, paging.defaultSorts).keyset
+    ? resolveSorts(
+        args.sorts as Sort[] | undefined,
+        paging.defaultSorts,
+        paging.leadingSorts
+      ).keyset
     : (args as PageArgs).sorts;
   const idColumn = (paging ?? (args as PageArgs)).idColumn ?? "id";
 
