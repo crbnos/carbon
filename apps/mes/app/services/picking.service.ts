@@ -38,8 +38,11 @@ export async function getPickingListForExecution(
       "*, item:item(name, readableId, unitOfMeasureCode), jobMaterial:jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job:job(jobId), jobOperation:jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name)"
     )
     .eq("pickingListId", pickingListId)
+    // The ERP picking list reads the same order: line numbers are positions.
     .order("jobOperationId")
-    .order("storageUnitId");
+    .order("storageUnitId")
+    .order("itemId")
+    .order("id");
 
   if (lineError) return { data: null, error: lineError };
 
