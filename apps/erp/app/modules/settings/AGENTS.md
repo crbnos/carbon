@@ -56,7 +56,7 @@ pnpm run lint
 | `documentSection` | Company-global reusable header/body/footer rich text |
 | `terms` | Company `salesTerms` / `purchasingTerms` JSON (PK = company id) |
 | `sequence` | Readable-id numbering per table |
-| `itemSerialSequence` / `itemSerialSequences` (view) | Per-item serial-number numbering |
+| `itemSerialSequence` / `itemSerialSequences` (view) | Per-item serial-number numbering; `serialNumberTiming` overrides the company's serial number timing for the item (NULL follows it) |
 | `customField` / `customFieldTables` (view) | User-defined fields, grouped per table |
 | `companyIntegration` / `integrations` (view) | Per-company third-party config + metadata |
 | `apiKey` | Hashed API keys with per-module scopes |
@@ -75,7 +75,7 @@ A settings page has ONE update operation, `update<Page>Settings` (`updateAccount
 |---|---|---|
 | `updateAccountingSettings` / `writeMissingJournals` | `x+/settings+/accounting.tsx` | The deferred tax accounts go to `accountDefault`; the repair runs `journal-legacy-documents` under the operation's own gate and needs `update: accounting` too, so it is not published (the API gate takes one module) |
 | `updateInvoicingSettings`, `updatePurchasingSettings` | `invoicing.tsx`, `purchasing.tsx` | The centralized billing address (a null field clears it); Stripe must be connected for "Post and Send via Stripe" |
-| `updateProductionSettings` | `production.tsx` | A location's staffing rule is written as the system, for the company's own location only |
+| `updateProductionSettings` | `production.tsx` | A location's staffing rule is written as the system, for the company's own location only; a change re-plans the location (kind `location`) |
 | `updatePeopleSettings` | `people.tsx` | Console mode through `@carbon/ee/console.server` (the plan lock); returns a generated PIN once, never to a key caller. Not published |
 | `updateSecuritySettings` | `security.tsx` | Requiring two-factor through `@carbon/ee/two-factor.server`; emails the company on off → on, never in a controlled environment |
 | `updatePlanningSettings` | `planning.tsx` | Every employee named must be the company's; a location hidden by RLS is refused |
@@ -99,7 +99,7 @@ A plan refusal from `@carbon/ee` (`EntitlementError`) comes back as an `entitlem
 - `getDocumentSections` / `getDocumentSectionsByIds` / `upsertDocumentSection` / `deleteDocumentSection` / `resolveSections` — sections; `resolveSections` seeds built-ins first, then lets a stored row of the same id override
 - `getTerms` — company terms fallback for the Terms block; `getAccountsPayableBillingAddress` / `getAccountsReceivableBillingAddress` (+ `update*`) — addresses printed on documents
 - `getCustomField(s)` / `getCustomFieldsTables`, plus `upsertCustomField` / `deleteCustomField` / `updateCustomFieldsSortOrder` (`settings.service.ts`, cache-clearing)
-- `getIntegration(s)` / `getCompanyIntegrations` / `upsertCompanyIntegration` / `deactivateIntegration` / `getIntegrationsWithHealth`
+- `getIntegration(s)` / `getCompanyIntegrations` / `upsertCompanyIntegration` / `markIntegrationInstalled` (installed flag only — never overwrites metadata) / `deactivateIntegration` / `getIntegrationsWithHealth`
 - Webhook + API-key READ helpers stay here (`getWebhook(s)` / `getWebhookTables`, `getApiKey(s)`); the commercial AUTHORING writers moved to `@carbon/ee` behind the entitlement lock — `upsertApiKey` / `deleteApiKey` (`@carbon/ee/api-keys.server`, `API_KEYS`) and `upsertWebhook` / `deleteWebhook` / `deactivateWebhooks` (`@carbon/ee/webhooks.server`, `WEBHOOKS`)
 - `insertCompany` / `insertSubsidiary` / `updateSubsidiary` / `deleteSubsidiary` / `seedCompany` / `updateCompany` / `updateCompanyPlan` — the building blocks of `createCompany` / `updateCompanyDetails` / `createSubsidiary` / `updateSubsidiaryDetails`
 - The lease policy (the ASC 842 thresholds `leaseMajorPartThresholdPercent` / `leaseSubstantiallyAllThresholdPercent`, `leaseDefaultDiscountRate` and `leaseIncrementalBorrowingRate`, percentage points) — written by `updateAccountingSettings` from `x+/settings+/accounting.tsx` (intent `leasePolicy`); applies to later lease activations only. Revenue recognition has no setting of its own. The same page's General Ledger card has no switch: it shows "Accounting since {date}" from `companySettings.accountingCutoverDate`, or "Accounting is not set up" and a "Set up accounting" button to the enable wizard (`x+/accounting+/activation`, see accounting AGENTS). The test is `hasAccountingCutover` (`~/modules/accounting/accounting.utils`). After the cutover the card shows a warning alert when documents posted on or after the cutover have no journal: the loader awaits `hasLegacyDocuments` (one statement of EXISTS tests, `@carbon/database/accounting-cutover-reads`), because it decides whether the alert exists, and streams the count (`getLegacyDocumentCounts`, read with `useResolved`). The alert's "Write missing journals" button posts intent `journal-legacy`, which runs `writeMissingJournals` (`repairLegacyJournals` (`accounting.service.ts`, ported from the `journal-legacy-documents` server function)); it needs `update: settings` and `update: accounting`. The `accountingEnabled` column is unused

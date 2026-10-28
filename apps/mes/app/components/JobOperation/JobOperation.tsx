@@ -127,7 +127,10 @@ import type {
   BatchWorkInstructions,
   JobOperationBatch
 } from "~/services/operations.service";
-import { getFileType } from "~/services/operations.service";
+import {
+  getFileType,
+  isSerialEntityIncompleteForOperation
+} from "~/services/operations.service";
 import type {
   Job,
   JobMakeMethod,
@@ -143,7 +146,7 @@ import type {
 } from "~/services/types";
 import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/durations";
-import { isKanbanCompleteScan } from "~/utils/kanban";
+import { isKanbanCompleteScan, kanbanCompleteTarget } from "~/utils/kanban";
 import { useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
@@ -684,7 +687,32 @@ export const JobOperation = ({
   const completeFetcher = useFetcher<Result>();
   useKeyboardWedge({
     test: (input) => !!kanban && isKanbanCompleteScan(input, kanban),
-    callback: () => completeFetcher.load(path.to.endOperation(operation.id)),
+    callback: () => {
+      // Complete the unit the operator holds, never one the server picks: at a
+      // later operation that pick need not be the unit in their hands.
+      const selected = trackedEntityParam
+        ? trackedEntities.find((entity) => entity.id === trackedEntityParam)
+        : undefined;
+      const target = kanbanCompleteTarget({
+        requiresSerialTracking: !!parentIsSerial,
+        isFirstOperation,
+        selectedEntityId: selected?.id ?? null,
+        selectedIsIncomplete:
+          !!selected &&
+          isSerialEntityIncompleteForOperation(selected, operation.id)
+      });
+      if (target.action === "select") {
+        toast.info(t`Scan or select the unit, then scan the kanban card again`);
+        serialModal.onOpen();
+        return;
+      }
+      const endPath = path.to.endOperation(operation.id);
+      return completeFetcher.load(
+        target.trackedEntityId
+          ? `${endPath}?trackedEntityId=${target.trackedEntityId}`
+          : endPath
+      );
+    },
     inTextFields: true,
     // The wedge completes this single op via endOperation — never for a batched
     // member; the batch completes as a whole.
@@ -2157,9 +2185,14 @@ export const JobOperation = ({
                                               </span>
                                             </>
                                           ) : (
-                                            <span className="font-mono truncate">
-                                              {entity.id}
-                                            </span>
+                                            <>
+                                              <span className="font-medium text-muted-foreground truncate">
+                                                <Trans>No serial number</Trans>
+                                              </span>
+                                              <span className="text-xs text-muted-foreground font-mono truncate">
+                                                {entity.id}
+                                              </span>
+                                            </>
                                           )}
                                         </div>
                                         {entity.id === trackedEntityId && (

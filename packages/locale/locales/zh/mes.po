@@ -113,6 +113,9 @@ msgstr "之前的完成未完成。重试会恢复剩余步骤 — 数量不会�
 msgid "About"
 msgstr "关于"
 
+msgid "About this field"
+msgstr "关于此字段"
+
 msgid "Accept"
 msgstr "接受"
 
@@ -1234,6 +1237,9 @@ msgstr "今天没有计划的维护"
 msgid "No matches. Type to create one."
 msgstr "没有匹配项。输入以创建一个。"
 
+msgid "No matching time"
+msgstr "没有匹配的时间"
+
 msgid "No materials"
 msgstr "没有原材料"
 
@@ -1284,6 +1290,9 @@ msgstr "不需要样本。"
 
 msgid "No scheduled time"
 msgstr "无排定时间"
+
+msgid "No serial number"
+msgstr "无序列号"
 
 msgid "No serial numbers"
 msgstr "无序列号"
@@ -1753,6 +1762,9 @@ msgstr "扫码或搜索序列号..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "从此批次中扫码或选择追踪实体并将其添加为样本列，然后在网格中记录其结果。"
 
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "请扫描或选择该单元，然后再次扫描看板卡"
+
 msgid "Scan received"
 msgstr "已收到扫码"
 
@@ -2132,14 +2144,17 @@ msgstr "此零件是按订单制造的。将其报废可重新打开其工艺路
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "此零件将从库存报废。其要求保持未结，以便您可以领料替代品。"
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "此单元将被永久报废，并将创建替换序列号。"
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "此单元将被永久报废，并将创建替换单元。"
 
 msgid "Thumbnail"
 msgstr "缩略图"
 
 msgid "Tick the jobs this was done for."
 msgstr "标记完成此项工作的工单。"
+
+msgid "Time"
+msgstr "时间"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "时间和成本按数量比例分配到各个工作中。"

@@ -113,6 +113,9 @@ msgstr "A previous completion did not finish. Retrying resumes the remaining ste
 msgid "About"
 msgstr "About"
 
+msgid "About this field"
+msgstr "About this field"
+
 msgid "Accept"
 msgstr "Accept"
 
@@ -1234,6 +1237,9 @@ msgstr "No maintenance scheduled for today"
 msgid "No matches. Type to create one."
 msgstr "No matches. Type to create one."
 
+msgid "No matching time"
+msgstr "No matching time"
+
 msgid "No materials"
 msgstr "No materials"
 
@@ -1284,6 +1290,9 @@ msgstr "No samples required."
 
 msgid "No scheduled time"
 msgstr "No scheduled time"
+
+msgid "No serial number"
+msgstr "No serial number"
 
 msgid "No serial numbers"
 msgstr "No serial numbers"
@@ -1753,6 +1762,9 @@ msgstr "Scan or search serial number..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "Scan or select the unit, then scan the kanban card again"
+
 msgid "Scan received"
 msgstr "Scan received"
 
@@ -2132,14 +2144,17 @@ msgstr "This part was made to order. Scrapping it can reopen its routing to make
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "This unit will be permanently scrapped and a replacement serial number will be created."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "This unit will be permanently scrapped and a replacement unit will be created."
 
 msgid "Thumbnail"
 msgstr "Thumbnail"
 
 msgid "Tick the jobs this was done for."
 msgstr "Tick the jobs this was done for."
+
+msgid "Time"
+msgstr "Time"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Time and cost split across jobs proportionally to quantity."

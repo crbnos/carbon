@@ -157,6 +157,11 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
+import {
+  connectionsHealthy,
+  needsReconnect,
+  readConnections
+} from "@carbon/ee/integrations/connections";
 import type { OeeDevice } from "@carbon/ee/oee";
 import { getOeeProvider } from "@carbon/ee/oee.server";
 import type {
@@ -192,7 +197,10 @@ import {
   patchOnshapeOAuthGrant,
   patchOnshapeSettings
 } from "@carbon/ee/onshape.server";
-import { isIntegrationComingSoon } from "@carbon/ee/plan";
+import {
+  isIntegrationComingSoon,
+  isIntegrationWhitelisted
+} from "@carbon/ee/plan";
 import {
   companyHasFeature,
   hasIntegrationEarlyAccess
@@ -207,6 +215,7 @@ import {
   reportBackupCompatibility,
   selectExportableTables
 } from "@carbon/jobs/backups";
+import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -292,7 +301,10 @@ import {
   type CompanyBackupSummary,
   listCompanyBackupFolders
 } from "./backups.service";
-import type { IntegrationErrorCode } from "./integration-errors";
+import type {
+  IntegrationErrorCode,
+  SharedIntegrationErrorCode
+} from "./integration-errors";
 import { integrationErrorSearch } from "./integration-errors";
 import type { OAuthPopupOutcome, OAuthPopupResult } from "./oauth-popup";
 import { OAUTH_POPUP_MESSAGE } from "./oauth-popup";
@@ -611,6 +623,32 @@ export async function getIntegration(
 
 const integrationInstallLogger = getLogger("erp", "settings", "integrations");
 
+/** The install action's checks, for the piece connect route and callback, which install without it. */
+export async function pieceConnectRefusal(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    integrationId: string;
+    email: string;
+    userId: string;
+  }
+): Promise<"unavailable" | SharedIntegrationErrorCode | null> {
+  const integration = availableIntegrations.find(
+    (i) => i.id === args.integrationId
+  );
+  if (!integration?.active) return "unavailable";
+  if (
+    !isIntegrationWhitelisted(args.integrationId) &&
+    !(await companyHasFeature(client, args.companyId, {
+      feature: "INTEGRATIONS"
+    }))
+  ) {
+    return "plan-required";
+  }
+  if (await isIntegrationInstallWithheld(client, args)) return "coming-soon";
+  return null;
+}
+
 /**
  * Whether a new install is refused: an `internalOnly` integration this user
  * sees as "Coming soon" (`isIntegrationComingSoon`), in a company that does not
@@ -662,7 +700,7 @@ export async function getKanbanOutputSetting(
 ) {
   return client
     .from("companySettings")
-    .select("kanbanOutput")
+    .select("kanbanOutput, kanbanLabelSize")
     .eq("id", companyId)
     .single();
 }
@@ -2174,6 +2212,7 @@ export async function getOeeDevicesTabData(
 }
 
 const INTEGRATION_CACHE_TTL = 3600;
+const PIECE_HEALTHY_CACHE_TTL = 300;
 
 /**
  * Drop the cached auth record for an API key so a scope change or revocation
@@ -2506,51 +2545,6 @@ export async function getCompanyIntegration(
   );
 }
 
-export async function getSlackIntegration(
-  client: SupabaseClient<Database>,
-  companyId: string
-): Promise<{ token: string; channelId?: string } | null> {
-  // The Redis cache (getCompanyIntegration) no longer holds secret material, so
-  // read the row directly with a service-role client — required both to resolve
-  // the vaulted access_token and, in the transitional window, to see the plaintext
-  // still in the column.
-  const serviceRole = getCarbonServiceRole();
-  const { data: integration } = await serviceRole
-    .from("companyIntegration")
-    .select("metadata, secretRef, active")
-    .eq("companyId", companyId)
-    .eq("id", "slack")
-    .maybeSingle();
-
-  if (!integration?.active || !integration.metadata) {
-    return null;
-  }
-
-  const metadata = (await resolveIntegrationSecrets(
-    serviceRole,
-    companyId,
-    "slack",
-    integration.metadata,
-    integration.secretRef
-  )) as any;
-
-  if (!metadata.access_token) {
-    return null;
-  }
-
-  return {
-    token: metadata.access_token,
-    channelId: metadata.channel_id || metadata.default_channel_id
-  };
-}
-
-export async function hasSlackIntegration(
-  client: SupabaseClient<Database>,
-  companyId: string
-): Promise<boolean> {
-  return hasIntegration(client, companyId, "slack");
-}
-
 export async function upsertCompanyIntegration(
   client: SupabaseClient<Database>,
   update: {
@@ -2652,6 +2646,43 @@ export async function upsertCompanyIntegration(
   await clearCompanyIntegrationCache(update.companyId);
 
   return result;
+}
+
+/**
+ * Flip an integration to installed without touching anything else on the row. The
+ * piece callback marks its card installed after a connection is saved; an upsert
+ * that UPDATES on conflict would write empty metadata over whatever settings the
+ * row already holds.
+ */
+export async function markIntegrationInstalled(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; updatedBy: string }
+): Promise<{ error: PostgrestError | null }> {
+  // Two statements that are each safe against a concurrent callback, instead of
+  // read-then-insert (two callbacks both read "absent" and the second insert
+  // failed on the primary key): insert only when absent, then activate only
+  // when inactive. Neither touches `metadata`.
+  const inserted = await client.from("companyIntegration").upsert(
+    {
+      id: args.id,
+      companyId: args.companyId,
+      active: true,
+      metadata: {},
+      updatedBy: args.updatedBy
+    },
+    { onConflict: "id,companyId", ignoreDuplicates: true }
+  );
+  let error: PostgrestError | null = inserted.error;
+  if (error === null) {
+    ({ error } = await client
+      .from("companyIntegration")
+      .update({ active: true, updatedBy: args.updatedBy })
+      .eq("id", args.id)
+      .eq("companyId", args.companyId)
+      .eq("active", false));
+  }
+  if (error === null) await clearCompanyIntegrationCache(args.companyId);
+  return { error };
 }
 
 export async function upsertCustomField(
@@ -2764,6 +2795,53 @@ async function getConnectionHealth(
     };
   }
 
+  const key = `integrations:${companyId}:${integration.id}:health`;
+
+  // A workflow-piece card's health is its accounts: none revoked/expired, and none
+  // predating a scope the piece now needs (its steps would fail with
+  // `missing_scope`). One read serves both questions. Decided here rather than in
+  // an ee hook because only this side can see the allowlist's required list, and
+  // an ee hook would read the same rows a second time.
+  if (allowlistEntry(integration.id!) !== undefined) {
+    const cached = await redis.get(key);
+    if (cached === "1")
+      return { ...integration, health: "healthy", healthReason: null };
+    if (cached === "0")
+      return { ...integration, health: "unhealthy", healthReason: null };
+
+    // A failed read is one unhealthy card, never a crashed Settings page —
+    // `getIntegrationsWithHealth` runs these in a Promise.all with no catch. It
+    // is not cached: the next load should re-ask rather than pin a transient
+    // failure for the TTL.
+    let healthy: boolean;
+    try {
+      const [rows, required] = await Promise.all([
+        readConnections(getCarbonServiceRole(), companyId, integration.id!),
+        requiredScopesFor(integration.id!)
+      ]);
+      healthy =
+        connectionsHealthy(rows) &&
+        !rows.some((row) => needsReconnect(row, required));
+    } catch {
+      return { ...integration, health: "unhealthy", healthReason: null };
+    }
+    // The callback, disconnect and uninstall invalidate this key. A refresh the
+    // vendor rejects does not: ee's `markExpired` sets the connection Expired and
+    // cannot reach this key. So a healthy answer is kept for five minutes, not
+    // hours, and an unhealthy one for a minute.
+    await redis.set(
+      key,
+      healthy ? "1" : "0",
+      "EX",
+      healthy ? PIECE_HEALTHY_CACHE_TTL : 60
+    );
+    return {
+      ...integration,
+      health: healthy ? "healthy" : "unhealthy",
+      healthReason: null
+    };
+  }
+
   const serverHooks = getIntegrationServerHooks(integration.id!);
   const config = getIntegrationConfigById(integration.id as IntegrationID);
   const healthcheck = serverHooks?.onHealthcheck ?? config?.onHealthcheck;
@@ -2775,8 +2853,6 @@ async function getConnectionHealth(
       healthReason: null
     };
   }
-
-  const key = `integrations:${companyId}:${integration.id}:health`;
 
   const cached = await redis.get(key);
 
@@ -5259,7 +5335,8 @@ export async function completeOnshapeAuthorization({
   }
 }
 
-function withCookie(response: Response, cookie: string) {
+/** Sets the OAuth state cookie a consume rewrote on the reply that ends the flow. */
+export function withCookie(response: Response, cookie: string) {
   response.headers.append("Set-Cookie", cookie);
   return response;
 }

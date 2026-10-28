@@ -255,7 +255,18 @@ of a paused URL, which is itself a valid link.
   complete the kanban (`isKanbanCompleteScan`, `~/utils/kanban`). That check
   compares the label's PATH, because a label holds the origin it was printed
   from. It accepts the completed barcode override and the printed label.
-- All three set `inTextFields`: a matching scan is taken even while a field
+- A kanban Complete scan on a serial part completes the unit ON SCREEN:
+  `kanbanCompleteTarget` (`~/utils/kanban`, tested) sends the URL's
+  `?trackedEntityId` to `end.$operationId` when that unit is still open at the
+  operation. With none, the first operation lets the route take the next unit
+  in order; a later operation opens the serial picker instead, because the
+  route's own pick (first incomplete by `createdAt`) need not be the unit in
+  the operator's hands. The route refuses a named unit already complete there,
+  and at a later operation redirects back onto the completed unit (never a
+  next or spawned one), so the view's held-unit edge (`useOperation`, and
+  `heldEntityRef` in `AssemblyView`) asks for the next scan. A scan through the
+  ERP URL names no unit and still takes the route's pick.
+- All three wedges (layout, `JobOperation`, `AssemblyView`) set `inTextFields`: a matching scan is taken even while a field
   has focus, and the field is set back to its value from before the scan.
   A scan no handler takes stays in the field.
 - A scan outside a field that no handler takes is kept from the page, and

@@ -173,7 +173,8 @@ describe("releaseCheckedJobs", () => {
     expect(result.data).toEqual({
       failure: null,
       purchaseOrdersBySupplierId: {},
-      releasedJobIds: ["job-1"]
+      releasedJobIds: ["job-1"],
+      warnings: []
     });
     expect(events).toEqual(["recalculate", "mrp", "ready:job-1"]);
   });

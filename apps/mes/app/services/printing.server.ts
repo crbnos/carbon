@@ -6,15 +6,24 @@ import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
+import { isFirstOperationOfMakeMethod } from "~/services/operations.service";
 
 type ServiceRole = Awaited<ReturnType<typeof getCarbonServiceRole>>;
 
 const log = getLogger("mes", "printing");
 
 /**
- * Triggers an auto-print of the entity's label when this is its first
- * operation (i.e. the entity was just minted) and the work center's
- * printer assignment has auto-print enabled.
+ * Triggers an auto-print of the entity's label when the operation is the
+ * first of its make method's routing (the unit was just minted) and the work
+ * center's printer assignment has auto-print enabled.
+ *
+ * "First" comes from the routing (`isFirstOperationOfMakeMethod`), the same
+ * answer the operation and assembly views use — never from the unit's
+ * `Operation <id>` completion markers. A unit completed at a later operation
+ * can carry one marker or none (the kanban scan completes the next incomplete
+ * unit, which need not be one that passed the first operation; a batch lot
+ * carries no markers at all), and counting them reprinted a label at every
+ * later operation.
  *
  * Shared by every MES path that completes a tracked unit — the Complete
  * form (`x+/complete.tsx`) and the QR/kanban scan (`x+/end.$operationId.tsx`)
@@ -23,33 +32,34 @@ const log = getLogger("mes", "printing");
 export async function autoPrintFirstOperationLabel({
   serviceRole,
   trackedEntityId,
+  jobOperationId,
+  jobMakeMethodId,
   workCenterId,
   companyId,
   userId
 }: {
   serviceRole: ServiceRole;
   trackedEntityId: string;
+  jobOperationId: string;
+  jobMakeMethodId: string | null;
   workCenterId: string | undefined;
   companyId: string;
   userId: string;
 }) {
   try {
-    const { data: entity } = await serviceRole
-      .from("trackedEntity")
-      .select("attributes")
-      .eq("id", trackedEntityId)
-      .eq("companyId", companyId)
-      .maybeSingle();
+    if (!workCenterId || !jobMakeMethodId) return;
+    const [{ data: entity }, isFirstOperation] = await Promise.all([
+      serviceRole
+        .from("trackedEntity")
+        .select("id")
+        .eq("id", trackedEntityId)
+        .eq("companyId", companyId)
+        .maybeSingle(),
+      isFirstOperationOfMakeMethod(serviceRole, jobOperationId, jobMakeMethodId)
+    ]);
     // Service-role read: an entity outside the caller's company prints nothing.
-    if (!entity) return;
+    if (!entity || !isFirstOperation) return;
 
-    const attributes = (entity?.attributes ?? {}) as Record<string, unknown>;
-    const operationCount = Object.keys(attributes).filter((k) =>
-      k.startsWith("Operation ")
-    ).length;
-    if (operationCount > 1) return;
-
-    if (!workCenterId) return;
     const { data: workCenter } = await serviceRole
       .from("workCenter")
       .select("locationId")

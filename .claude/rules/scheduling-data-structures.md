@@ -74,7 +74,10 @@ Spec/plan: `.ai/specs/2026-09-22-quote-lead-time-prediction.md`.
   sequence and work center only — does not reschedule. Change dates on the Dates board."*)
   and `dates.tsx` (jobs-by-due-date Kanban; drag →
   `dates.update.tsx` → `api.production.moveScheduleJob`, which writes `job.dueDate` +
-  `priority`, **then calls `notifyScheduleInputsChanged(…, "reorder", …)`** — which only stamps the
+  `priority` and, in the same UPDATE, the deadline type the date implies
+  (`deadlineTypeForDueDate`: a dated No Deadline or ASAP job becomes Soft Deadline — the
+  scheduler ignores an ASAP date that MRP would plan supply to — and an undated
+  Hard / Soft Deadline job becomes No Deadline), **then calls `notifyScheduleInputsChanged(…, "reorder", …)`** — which only stamps the
   jobs schedule-outdated; the debounced wave regenerates the whole location. There
   is no immediate single-job path). `people.tsx` is the People
   page with a segmented view switcher (`?view=`): the People **board** (manning
@@ -89,20 +92,32 @@ Spec/plan: `.ai/specs/2026-09-22-quote-lead-time-prediction.md`.
   re-plans too instead of keeping a stale booking), a
   week **matrix** (`PeopleMatrix.tsx`: employee×day grid + assigned-vs-needed
   coverage as sub-tabs, department filter), and a week **capacity** board
-  (`PeopleCapacity.tsx`). Capacity math: Demand = open `jobOperation` hours by
-  due date via `makeDurations` (Draft/Planned jobs excluded — released work
-  only; ops overdue up to 28 days land in a Past-due column); Scheduled =
-  `capacityReservation.workHours` split across the days of the booking by
-  the work center's WORKING time in each day (`getWorkCenterWorkingWindows`,
-  the same ladder and holidays the engine uses; a station's linked shifts at
-  another location are loaded too, `getShiftsWithTimesByIds`), so a booking from Monday
-  noon to Tuesday 11:30 puts its hours in shift time and none on the night
-  or a weekend; a booking with no working time falls back to the clock-time
-  share; Available = people headcount × real shift hours resolved through
-  the ladder assignment `shiftId` → the person's `employeeShift` →
-  most-common shift duration at the location → 8h (unassigned stations fall
-  back to the location's per-weekday shift calendar; a company holiday is
-  0, and nobody manned on it counts as staffed); Load renders as hours
+  (`PeopleCapacity.tsx`). Both read each station's working windows:
+  `getWorkCenterWorkingWindows` (the engine's ladder and holidays; a station's
+  linked shifts at another location are loaded too, `getShiftsWithTimesByIds`)
+  less the open offline maintenance outages (`getWorkCenterOutages` →
+  `downtimeOutages`, `@carbon/planning`, the rule the engine uses). Capacity
+  math: Demand = the hours each open `jobOperation` still needs as the engine
+  counts them (`remainingWorkHours`: setup + max(labor, machine), netted by
+  quantity complete, setup dropped once a production event exists) by due date
+  (Draft/Planned jobs excluded — released work only; overdue lands in a
+  Past-due column); Scheduled = `capacityReservation.workHours` split across
+  the days of the booking by the station's working time in each day, so a
+  booking from Monday noon to Tuesday 11:30 puts its hours in shift time and
+  none on the night or a weekend (no working time falls back to the clock-time
+  share); Available = the working hours in each plant day
+  (`workingHoursByDay`: 0 on a holiday, less maintenance downtime, and the
+  real day length on a lights-out station, 23 or 25 hours across DST).
+  Coverage (Matrix) needs `ceil(attended hours / person-day hours)` people per
+  station-day, where attended hours are the setup + labor share of each booking
+  laid on the station's working time from the booking's start
+  (`attendedHoursByDay`, `getOperationAttendedShares`); machine time and
+  lights-out stations need nobody. On a shift tab only the hours inside that
+  shift count (`within`, `getShiftWorkingWindows`), each on the day the shift
+  STARTS: the roster puts Friday's night shift on Friday, so its hours past
+  midnight are Friday's (a run longer than a day, back-to-back shifts merged
+  into one window, is split by the clock). A shift id from the URL that is not
+  one of the location's shifts reads as All shifts. Load renders as hours
   over/free (+Xh / Xh free), not %. Shift + location filters live in header
   popovers; the shift filter's "All shifts" option (`shiftId` null on
   drag) creates shift-less assignments that resolve hours via the ladder.
@@ -218,7 +233,10 @@ Two Inngest functions listen on that event
   count), or on a process those stations run (`processesOfWorkCenters`: an unstarted op
   can move onto them). An unknown shift id stamps company-wide. `createShift`,
   `updateShift` and `deleteShift` send the id; an update that moves the shift to
-  another location sends kind `location` instead, so the stations it left re-plan too. Recomputes nothing.
+  another location sends kind `location` instead, so the stations it left re-plan too.
+  Changing a location's staffing requirement (`updateProductionSettings`) or its
+  timezone (`updateLocation`, shifts are local times) also sends kind `location`,
+  only when the value actually changed. Recomputes nothing.
 - **WAVE** (`scheduleReplanWaveFunction`, **debounce 30s / timeout 10m**,
   concurrency 1 per company): loads the company's stale jobs, groups them by
   **LOCATION**, and calls `runLocationSchedule({ db: getJobDatabaseClient(),
@@ -372,7 +390,11 @@ only; its output is read by nothing in the placement path (spec
   removes them from the location calendar, and `buildFiniteContext` adds each holiday as
   an absence for every person (`withHolidays`, `people-utils.ts`). The ERP reads the same
   dates (`getHolidayDates`, `production.service.ts`): the Forecast shades a holiday as
-  closed, and the Capacity view shows 0 Available on it. `createHoliday`,
+  closed, and the Capacity view shows 0 Available on it. Each Forecast lane is shaded and
+  its bars split on its OWN station's hours (`getWorkCenterNonWorkingIntervals` →
+  the Gantt's `nonWorkingIntervalsByRow`; rows under a lane inherit it, the location
+  rollup is not split, operator-pool lanes keep the plant calendar,
+  `getForecastNonWorkingIntervals`), so a lights-out station is never shaded. `createHoliday`,
   `updateHoliday` and `deleteHoliday` (`people.server.ts`) notify kind `location`.
 - **A qualification ends at its expiry.** `isEligibleOperator` tests an operator at the
   op's earliest start only. `clipToQualification` (`operator-eligibility.ts`) then cuts
@@ -400,6 +422,11 @@ only; its output is read by nothing in the placement path (spec
   nights/weekends a per-date clip would leave open (the bug an earlier per-date version
   caused — the op landed on a future Saturday and fell out of the current-week view).
   Blank board => every qualified person is a floater => fallback unchanged.
+  When people ARE qualified but every one is on the board elsewhere, the reason says so
+  (`composeNoFreeOperator`: "No free operator for X: … assigned to other stations on
+  the manning board"), the Forecast detail lists who is qualified and the stations
+  the board has them at (`getQualifiedPeopleByProcess`), and the ability page warns
+  how many operations of its process can't be scheduled (`getAbilityScheduleImpact`).
 - **Require-staffing policy** (`location.requiresStaffing`, `20260820151847_location-requires-staffing.sql`;
   per-location, default false; edited on the Production settings page): when ON, the finite scheduler
   places work ONLY where an operator is manned. `buildFiniteContext` reads it
@@ -443,7 +470,10 @@ only; its output is read by nothing in the placement path (spec
   placed end, the forecast finish) while clearing
   `scheduleOutdatedReason`/`scheduleOutdatedAt` for each job. The engine's `buildWrites` also computes the
   **newly-late** flag (was on-time-or-unforecast before, now projected past `dueDate`
-  on the location calendar) for the wave's digest.
+  on the location calendar) for the wave's digest. Every due-date judgement — need-by
+  targets, lateness conflicts, newly-late, the behind-target sentence — reads
+  `committedDueDate` (`priority-calculator.ts`): only a Hard or Soft Deadline job has
+  one; the date left on an ASAP or No Deadline job (the job form hides it) is ignored.
 - **Behind-target attribution (informational only):** when the JOB's verdict is late,
   `getCause()` appends `composeBehindTarget` (`conflict-messages.ts`) — "First behind
   target: {op} (due X, projected Y)", the first op in topological order whose
@@ -502,7 +532,9 @@ so `job.projectedCompletionAt` extends to it and successors chain after it
 the next regen. The Forecast surfaces it with a red "can't be scheduled" alert
 (`LuBan`) in the TREE status column — via `GanttEvent.data.isUnschedulable`, set
 on BOTH the work-center lane (any unplaceable child) and the operation row, so it
-reports at the work-center level AND per operation; clicking either row opens the
+reports at the work-center level AND per operation (in a Compact lane the
+placeholders get their own bottom strip, overlapping ones merged into one
+"N can't be scheduled" chip, `groupOverlaps`); clicking either row opens the
 detail sidebar ("Unschedulable" chip + reason + "where it would run"
 explanation). Plus a separate "{n} can't be scheduled" header count. (Placed-but
 -LATE ops keep a real reservation, show the generic `isError` triangle, and are

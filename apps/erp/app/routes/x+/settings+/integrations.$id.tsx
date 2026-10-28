@@ -52,6 +52,7 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
+import { readConnections } from "@carbon/ee/integrations/connections";
 import {
   getPath,
   patchIntegrationState,
@@ -69,6 +70,7 @@ import { requireFeature } from "@carbon/ee/plan.server";
 import { LEDGER_FAMILY_KEYS, type LedgerFamilyKey } from "@carbon/ee/sync";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
+import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { Badge } from "@carbon/react";
@@ -120,6 +122,7 @@ import {
 import { IntegrationForm, SyncActivity } from "~/modules/settings/ui";
 import { AccountingSyncControl } from "~/modules/settings/ui/Integrations/AccountingSyncControl";
 import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMapping";
+import { ConnectionsTab } from "~/modules/settings/ui/Integrations/ConnectionsTab";
 import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";
 import type { IntegrationFormTab } from "~/modules/settings/ui/Integrations/IntegrationForm";
 import { useMountActionStates } from "~/modules/settings/ui/Integrations/MountPublishStatus";
@@ -548,6 +551,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       accountingSync: null,
       postingSync: null,
       dimensionSync: null,
+      connections: null,
       devices: null
     };
   }
@@ -1001,6 +1005,46 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })
     : null;
 
+  // An allowlisted workflow piece has no settings — what it has is the accounts a
+  // workflow step can act as, so its card gets that list as a tab.
+  const piece = allowlistEntry(integrationId);
+  const [connectionRows, requiredScopes] = piece
+    ? await Promise.all([
+        readConnections(client, companyId, integrationId),
+        requiredScopesFor(integrationId)
+      ])
+    : [[], []];
+  const connections = piece
+    ? {
+        pieceName: integrationId,
+        defaultName: piece.label,
+        // Only what the tab renders. `metadata` can carry workspace facts that
+        // are not for the browser; `scopes` is the one key the tab compares.
+        rows: connectionRows.map(
+          ({
+            id,
+            pieceName,
+            name,
+            accountLabel,
+            status,
+            lastError,
+            metadata
+          }) => ({
+            id,
+            pieceName,
+            name,
+            accountLabel,
+            status,
+            lastError,
+            metadata: { scopes: metadata.scopes }
+          })
+        ),
+        // What a connection must hold for this piece's steps; an account that
+        // predates a scope shows "Reconnect needed".
+        requiredScopes: [...requiredScopes]
+      }
+    : null;
+
   // The header's sync switch: off on a new connection, and only switchable on
   // once every required account is mapped.
   const accountingSync = accountMapping
@@ -1021,6 +1065,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     accountingSync,
     postingSync,
     dimensionSync,
+    connections,
     devices
   };
 }
@@ -1554,6 +1599,7 @@ export default function IntegrationRoute() {
     accountingSync,
     postingSync,
     dimensionSync,
+    connections,
     devices
   } = useLoaderData<typeof loader>();
 
@@ -1568,6 +1614,21 @@ export default function IntegrationRoute() {
   // and Sync Activity tabs next to the Settings form (deep-linkable via
   // ?tab=<value>).
   const tabs: IntegrationFormTab[] = [];
+  if (connections) {
+    tabs.push({
+      value: "connections",
+      label: <Trans>Accounts</Trans>,
+      content: (tabBar) => (
+        <ConnectionsTab
+          tabs={tabBar}
+          pieceName={connections.pieceName}
+          defaultName={connections.defaultName}
+          connections={connections.rows}
+          requiredScopes={connections.requiredScopes}
+        />
+      )
+    });
+  }
   if (devices) {
     tabs.push({
       value: "devices",

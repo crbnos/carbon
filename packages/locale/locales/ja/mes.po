@@ -113,6 +113,9 @@ msgstr "前回の完了は終了しませんでした。再試行により残り
 msgid "About"
 msgstr "バージョン情報"
 
+msgid "About this field"
+msgstr "このフィールドについて"
+
 msgid "Accept"
 msgstr "承諾"
 
@@ -1234,6 +1237,9 @@ msgstr "本日の保全予定はありません。"
 msgid "No matches. Type to create one."
 msgstr "一致するものがありません。入力して新しく作成してください。"
 
+msgid "No matching time"
+msgstr "一致する時刻がありません"
+
 msgid "No materials"
 msgstr "材料なし"
 
@@ -1284,6 +1290,9 @@ msgstr "サンプルは必要ありません。"
 
 msgid "No scheduled time"
 msgstr "予定時間なし"
+
+msgid "No serial number"
+msgstr "シリアル番号なし"
 
 msgid "No serial numbers"
 msgstr "シリアル番号なし"
@@ -1753,6 +1762,9 @@ msgstr "シリアル番号をスキャンまたは検索..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "このロットから追跡対象をスキャンまたは選択してサンプル列として追加し、グリッドに結果を記録します。"
 
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "ユニットをスキャンまたは選択してから、かんばんカードをもう一度スキャンしてください"
+
 msgid "Scan received"
 msgstr "スキャンを受け付けました"
 
@@ -2132,14 +2144,17 @@ msgstr "この部品は受注生産で製造されました。スクラップす
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "この部品は在庫からスクラップされます。その要求事項は開いたままなので、代替品を出庫できます。"
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "このユニットは永久にスクラップされ、代替シリアル番号が作成されます。"
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "このユニットは永久にスクラップされ、代替ユニットが作成されます。"
 
 msgid "Thumbnail"
 msgstr "サムネイル"
 
 msgid "Tick the jobs this was done for."
 msgstr "これが完了した製造指図をチェック"
+
+msgid "Time"
+msgstr "時刻"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "時間と原価が数量に比例して製造指図全体に分配されます。"

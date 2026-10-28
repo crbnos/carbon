@@ -36,6 +36,11 @@ import {
 import { updateConsoleSetting } from "@carbon/ee/console.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
+import {
+  disconnectConnection,
+  readConnection,
+  renameConnection
+} from "@carbon/ee/integrations/connections";
 import type { OeeDevice } from "@carbon/ee/oee";
 import {
   deleteWorkCenterDevice,
@@ -70,6 +75,7 @@ import { parseTime } from "@internationalized/date";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { plmReleaseControl } from "~/modules/items/items.models";
+import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import {
   invalidateCompanyTimeZone,
   invokePosting,
@@ -88,9 +94,11 @@ import {
   expiredEntityPolicies,
   incompletePickingListPolicies,
   invoiceAutomations,
+  kanbanLabelSizes,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
   returnPickedMaterialTimings,
+  serialNumberTimings,
   subsidiaryValidator
 } from "./settings.models";
 import * as service from "./settings.service";
@@ -221,7 +229,8 @@ export const writeMissingJournals = defineServiceFn({
  *
  * @remarks
  * Writes the fields sent and leaves the rest: what a kanban card prints
- * (label, QR code or URL), the shelf-life and expiry policy (the near-expiry
+ * (label, QR code or URL) and the size its label prints at (a letter sheet of
+ * six, or a 4" x 2" or 3" x 2" thermal label), the shelf-life and expiry policy (the near-expiry
  * warning in days, null to turn the badges off; the default shelf life of a
  * new item; which inputs a calculated expiry reads; and what consuming an
  * expired entity does), whether finishing a picking list with unpicked
@@ -235,6 +244,7 @@ export const writeMissingJournals = defineServiceFn({
 export const updateInventorySettings = defineServiceFn({
   input: z.object({
     kanbanOutput: z.enum(kanbanOutputTypes).optional(),
+    kanbanLabelSize: z.enum(kanbanLabelSizes).optional(),
     inventoryShelfLife: z
       .object({
         nearExpiryWarningDays: z.number().int().min(0).max(365).nullable(),
@@ -369,11 +379,13 @@ export const updateItemsSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: who is notified when an
  * inventory or a sales job completes, whether opening an operation starts its
  * timer, whether the job traveler lists materials and operations, whether
- * tracked material is pre-selected without a picking list, and whether one
- * location requires an assigned operator before the scheduler places work
+ * tracked material is pre-selected without a picking list, when a produced
+ * unit draws its serial number (when the job is created, when it is released,
+ * or the first time the unit is worked on, scrapped or received), and whether
+ * one location requires an assigned operator before the scheduler places work
  * there. The staffing rule lives on the location row and is written for the
  * company's own location only, so a settings admin without the resources
- * permission can still set it.
+ * permission can still set it. Changing it re-plans the location.
  *
  * @mcp
  */
@@ -385,6 +397,7 @@ export const updateProductionSettings = defineServiceFn({
     includeMaterialsOnTraveler: z.boolean().optional(),
     includeOperationsOnTraveler: z.boolean().optional(),
     autoSelectMaterialWithoutPickingList: z.boolean().optional(),
+    serialNumberTiming: z.enum(serialNumberTimings).optional(),
     locationStaffing: z
       .object({
         locationId: z.string().min(1),
@@ -406,20 +419,47 @@ export const updateProductionSettings = defineServiceFn({
     if (saved) return saved;
 
     if (locationStaffing) {
-      const { data, error } = await ctx.asSystem.supabase
+      const { locationId, requiresStaffing } = locationStaffing;
+      const current = await ctx.asSystem.supabase
         .from("location")
-        .update({ requiresStaffing: locationStaffing.requiresStaffing })
-        .eq("id", locationStaffing.locationId)
+        .select("requiresStaffing")
+        .eq("id", locationId)
         .eq("companyId", ctx.company.id)
-        .select("id");
-      if (error) {
+        .maybeSingle();
+      if (current.error) {
         return ctx.error(
           "internal",
           "Failed to update the staffing requirement",
-          error
+          current.error
         );
       }
-      if (data.length === 0) return ctx.error("notFound", "Location not found");
+      if (current.data === null) {
+        return ctx.error("notFound", "Location not found");
+      }
+      if (current.data.requiresStaffing !== requiresStaffing) {
+        const { error } = await ctx.asSystem.supabase
+          .from("location")
+          .update({ requiresStaffing })
+          .eq("id", locationId)
+          .eq("companyId", ctx.company.id);
+        if (error) {
+          return ctx.error(
+            "internal",
+            "Failed to update the staffing requirement",
+            error
+          );
+        }
+        // The scheduler places work only where an operator is manned while
+        // this is on, so the location's plan changes either way.
+        await notifyScheduleInputsChanged(
+          ctx.company.id,
+          "location",
+          requiresStaffing
+            ? "Staffing requirement enabled"
+            : "Staffing requirement disabled",
+          locationId
+        );
+      }
     }
     return input;
   }
@@ -745,9 +785,11 @@ const employeeOrNone = z.string().min(1).nullable();
  * resources update permission it is refused. Then whether purchase orders
  * the planning pages raise skip approval, the reschedule tolerance in days,
  * the default planning horizon in days (null for no time fence), the forecast
- * consumption window in weekly periods back and forward, and the time of day
+ * consumption window in weekly periods back and forward, the time of day
  * scheduled MRP runs on the company's clock ("HH:MM" or "HH:MM:SS"; null runs
- * it every 3 hours).
+ * it every 3 hours), and whether the planning grids and demand forecasts head
+ * their weeks by calendar week (ISO 8601 week of the year) rather than
+ * counting from the present week.
  *
  * @mcp
  */
@@ -768,6 +810,7 @@ export const updatePlanningSettings = defineServiceFn({
       })
       .optional(),
     skipApprovalForPlanningPurchaseOrders: z.boolean().optional(),
+    useCalendarWeeks: z.boolean().optional(),
     rescheduleToleranceDays: z.number().int().min(0).max(365).optional(),
     defaultPlanningHorizonDays: z
       .number()
@@ -1684,6 +1727,92 @@ export const deactivateCompanyIntegration = defineServiceFn({
 
     await service.invalidateIntegrationHealthCache(id, ctx.company.id);
     return { id, name: integration.name };
+  }
+});
+
+/**
+ * Rename an account connected to a workflow integration.
+ *
+ * @remarks
+ * The name a workflow step's account picker shows. Names are unique per app.
+ */
+export const renameIntegrationConnection = defineServiceFn({
+  input: z.object({ id: z.string().min(1), name: z.string().trim().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { id, name }) {
+    // The table is read-only to API roles, so every write goes through the
+    // service role, scoped by the caller's company.
+    const connection = await readConnection(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      id
+    );
+    if (connection === null) {
+      return ctx.error("notFound", "Connection not found");
+    }
+
+    const update = await renameConnection(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      id,
+      name,
+      ctx.auditUserId
+    );
+    // Names are unique per app: the unique index refuses a taken one.
+    if (update.error?.code === "23505") {
+      return ctx.error(
+        "conflict",
+        "An account is already called that — pick a different name."
+      );
+    }
+    if (update.error) {
+      return ctx.error("internal", "Failed to rename connection", update.error);
+    }
+    return { id };
+  }
+});
+
+/**
+ * Disconnect an account connected to a workflow integration.
+ *
+ * @remarks
+ * Drops the account's token and marks it Revoked. The account stays listed, so
+ * a workflow step that uses it says "reconnect" rather than naming an account
+ * that is gone.
+ */
+export const disconnectIntegrationConnection = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { id }) {
+    const connection = await readConnection(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      id
+    );
+    if (connection === null) {
+      return ctx.error("notFound", "Connection not found");
+    }
+
+    try {
+      await disconnectConnection(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        connection.pieceName,
+        id,
+        ctx.auditUserId
+      );
+    } catch (err) {
+      return ctx.error("internal", "Failed to disconnect", err);
+    }
+
+    // The card's badge is cached (five minutes while healthy) and its health is
+    // computed from these rows, so without this Settings keeps saying "Healthy"
+    // for an account the builder already treats as disconnected.
+    await service.invalidateIntegrationHealthCache(
+      connection.pieceName,
+      ctx.company.id
+    );
+    return { id };
   }
 });
 
@@ -2793,6 +2922,13 @@ export const createItemSerialSequence = defineServiceFn({
     next: z.number().min(0),
     step: z.number().min(1),
     size: z.number().min(1).max(20),
+    serialNumberTiming: z
+      .enum(serialNumberTimings)
+      .nullable()
+      .optional()
+      .describe(
+        "When this item's units draw their serial numbers. Omit or null to follow the company setting."
+      ),
     id: z
       .string()
       .describe("Send to update that record; omit to create a new one.")
@@ -2827,6 +2963,13 @@ export const updateItemSerialSequence = defineServiceFn({
       next: z.number().min(0),
       step: z.number().min(1),
       size: z.number().min(1).max(20),
+      serialNumberTiming: z
+        .enum(serialNumberTimings)
+        .nullable()
+        .optional()
+        .describe(
+          "When this item's units draw their serial numbers. Null follows the company setting. Omitted, a new sequence follows the company setting and an update keeps the current value."
+        ),
       id: z
         .string()
         .describe("Send to update that record; omit to create a new one.")

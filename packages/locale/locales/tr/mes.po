@@ -113,6 +113,9 @@ msgstr "Önceki bir tamamlanma işlemi bitmedi. Yeniden deneme kalan adımları 
 msgid "About"
 msgstr "Hakkında"
 
+msgid "About this field"
+msgstr "Bu alan hakkında"
+
 msgid "Accept"
 msgstr "Kabul Et"
 
@@ -1234,6 +1237,9 @@ msgstr "Bugün planlanmış bakım yok"
 msgid "No matches. Type to create one."
 msgstr "Eşleşme yok. Bir tane oluşturmak için yazın."
 
+msgid "No matching time"
+msgstr "Eşleşen saat yok"
+
 msgid "No materials"
 msgstr "Malzeme yok"
 
@@ -1284,6 +1290,9 @@ msgstr "Örnek gerekli değil."
 
 msgid "No scheduled time"
 msgstr "Planlanmış zaman yok"
+
+msgid "No serial number"
+msgstr "Seri numarası yok"
 
 msgid "No serial numbers"
 msgstr "Seri numarası yok"
@@ -1753,6 +1762,9 @@ msgstr "Seri numaras tarayın veya arayın..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Bu lottan izlenen bir varlığı tarayın veya seçin, onu bir örnek sütunu olarak ekleyin ve sonucunu ızgarada kaydedin."
 
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "Birimi tarayın veya seçin, ardından kanban kartını yeniden tarayın"
+
 msgid "Scan received"
 msgstr "Tarama alındı"
 
@@ -2132,14 +2144,17 @@ msgstr "Bu parça siparişe göre yapılmıştır. Hurdalaması, bir yedek yapma
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Bu parça stoktan hurdaya ayrılacak. Gerekliliği açık kalacak, böylece bir yedek sağlayabilirsiniz."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numarası oluşturulacaktır."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir birim oluşturulacaktır."
 
 msgid "Thumbnail"
 msgstr "Küçük Resim"
 
 msgid "Tick the jobs this was done for."
 msgstr "Bunun için yapılan iş emirlerini işaretleyin."
+
+msgid "Time"
+msgstr "Saat"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Zaman ve maliyet, miktar ile orantılı olarak iş emirleri arasında bölünür."

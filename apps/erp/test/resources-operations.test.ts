@@ -32,6 +32,8 @@ vi.mock("../app/modules/shared/shared.service", async (importOriginal) => {
   };
 });
 vi.mock("@carbon/jobs", () => ({ trigger }));
+// The location timezone cache.
+vi.mock("@carbon/kv", () => ({ redis: { del: vi.fn() } }));
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
@@ -44,6 +46,7 @@ const {
   createTrainingAssignment,
   completeTrainingAssignment,
   issueMaintenancePart,
+  updateLocation,
   updateMaintenanceDispatchField,
   updateTrainingField
 } = await import("../app/modules/resources/resources.server");
@@ -64,8 +67,9 @@ type Answer = { data: unknown; error: unknown };
 
 /**
  * A Supabase client whose every query on a table answers with the result the
- * test names for it (rows, or `{ data, error }`). Each write is recorded with
- * its payload; nothing else is checked.
+ * test names for it (rows, or `{ data, error }`); a query that writes nothing
+ * answers from `<table>:read` when the test names one. Each write is recorded
+ * with its payload; nothing else is checked.
  */
 function client(answers: Record<string, unknown>) {
   const writes: { op: string; table: string; payload?: unknown }[] = [];
@@ -77,18 +81,30 @@ function client(answers: Record<string, unknown>) {
   };
   const from = (table: string) => {
     const chain: Record<string, unknown> = {};
-    for (const method of ["select", "eq", "in", "match", "limit", "order"]) {
+    let wrote = false;
+    for (const method of [
+      "select",
+      "eq",
+      "neq",
+      "in",
+      "match",
+      "limit",
+      "order"
+    ]) {
       chain[method] = () => chain;
     }
     for (const op of ["insert", "update", "upsert", "delete"]) {
       chain[op] = (payload?: unknown) => {
+        wrote = true;
         writes.push({ op, table, payload });
         return chain;
       };
     }
-    chain.single = chain.maybeSingle = () => Promise.resolve(answer(table));
+    const result = () =>
+      answer(!wrote && `${table}:read` in answers ? `${table}:read` : table);
+    chain.single = chain.maybeSingle = () => Promise.resolve(result());
     chain.then = (resolve: (value: unknown) => unknown) =>
-      Promise.resolve(answer(table)).then(resolve);
+      Promise.resolve(result()).then(resolve);
     return chain;
   };
   const rpc = (name: string) => Promise.resolve(answer(`rpc:${name}`));
@@ -267,6 +283,8 @@ describe("setting a field on maintenance dispatches", () => {
 describe("creating a process that requires an ability", () => {
   it("turns the requirement off again when the ability cannot be created", async () => {
     const { ctx, writes } = contextWith({
+      // no process holds the name yet; the insert returns the new one
+      "process:read": null,
       process: { id: "proc-1" },
       ability: { data: null, error: { message: "boom" } }
     });
@@ -283,6 +301,38 @@ describe("creating a process that requires an ability", () => {
       "process",
       { requiresAbility: false }
     ]);
+  });
+});
+
+describe("process names", () => {
+  // A taken name is the user's to fix, on the form, not a failed save.
+  it("refuses a name another process holds, before writing", async () => {
+    const { ctx, writes } = contextWith({ process: { id: "proc-0" } });
+
+    const result = await createProcess(ctx, {
+      name: "Welding",
+      processType: "Process",
+      requiresAbility: false
+    });
+
+    expect(result.error?.category).toBe("conflict");
+    expect(writes).toEqual([]);
+  });
+
+  // Another request saved the same name between the check and the insert.
+  it("refuses a name the database rejects as a duplicate", async () => {
+    const { ctx } = contextWith({
+      "process:read": null,
+      process: { data: null, error: { code: "23505", message: "duplicate" } }
+    });
+
+    const result = await createProcess(ctx, {
+      name: "Welding",
+      processType: "Process",
+      requiresAbility: false
+    });
+
+    expect(result.error?.category).toBe("conflict");
   });
 });
 
@@ -396,5 +446,40 @@ describe("a training's guide or video", () => {
     const { ctx } = contextWith({ training: [] });
     const result = await updateTrainingField(ctx, { ids: ["tr-1"], field, value });
     expect(result.error?.category).toBe("rule");
+  });
+});
+
+describe("a location's timezone", () => {
+  const location = {
+    id: "loc-1",
+    name: "Plant",
+    addressLine1: "1 Main St",
+    city: "Chicago",
+    postalCode: "60601",
+    countryCode: "US",
+    timezone: "America/New_York"
+  };
+
+  // Shifts are local times, so the whole plan moves with the timezone.
+  it("re-plans the location when the timezone changes", async () => {
+    const { ctx } = contextWith({ location: { timezone: "America/Chicago" } });
+
+    const result = await updateLocation(ctx, location);
+
+    expect(result).toEqual({ data: { id: "loc-1" }, error: null });
+    expect(scheduleNotices()).toEqual([
+      [
+        "schedule-inputs-changed",
+        expect.objectContaining({ kind: "location", entityId: "loc-1" })
+      ]
+    ]);
+  });
+
+  it("tells no scheduler when only other fields change", async () => {
+    const { ctx } = contextWith({ location: { timezone: "America/New_York" } });
+
+    await updateLocation(ctx, location);
+
+    expect(scheduleNotices()).toEqual([]);
   });
 });

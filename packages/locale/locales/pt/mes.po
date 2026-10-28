@@ -113,6 +113,9 @@ msgstr "Uma conclusão anterior não foi concluída. Tentar novamente retoma as 
 msgid "About"
 msgstr "Sobre"
 
+msgid "About this field"
+msgstr "Sobre este campo"
+
 msgid "Accept"
 msgstr "Aceitar"
 
@@ -1234,6 +1237,9 @@ msgstr "Nenhuma manutenção programada para hoje"
 msgid "No matches. Type to create one."
 msgstr "Nenhuma correspondência. Digite para criar uma."
 
+msgid "No matching time"
+msgstr "Nenhum horário correspondente"
+
 msgid "No materials"
 msgstr "Nenhum material"
 
@@ -1284,6 +1290,9 @@ msgstr "Nenhuma amostra necessária."
 
 msgid "No scheduled time"
 msgstr "Nenhum horário programado"
+
+msgid "No serial number"
+msgstr "Sem número de série"
 
 msgid "No serial numbers"
 msgstr "Nenhum número de série"
@@ -1753,6 +1762,9 @@ msgstr "Escanear ou pesquisar número de série..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Escanear ou selecionar uma entidade rastreada deste lote para adicioná-la como coluna de amostra, depois registrar seu resultado na grade."
 
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "Escaneie ou selecione a unidade e depois escaneie o cartão kanban novamente"
+
 msgid "Scan received"
 msgstr "Escaneamento recebido"
 
@@ -2132,14 +2144,17 @@ msgstr "Esta peça foi fabricada sob encomenda. Refugá-la pode reabrir seu rote
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Esta peça será descartada do estoque. Seu requisito permanece aberto para que você possa emitir uma substituição."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Esta unidade será permanentemente descartada e um novo número de série de substituição será criado."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Esta unidade será permanentemente descartada e uma unidade de substituição será criada."
 
 msgid "Thumbnail"
 msgstr "Miniatura"
 
 msgid "Tick the jobs this was done for."
 msgstr "Marque as ordens de produção para as quais isso foi feito."
+
+msgid "Time"
+msgstr "Hora"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Tempo e custo divididos entre as ordens de produção na proporção da quantidade."

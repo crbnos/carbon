@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { serialNumberTimings } from "@carbon/database/serial-number-timing";
 import {
   blockSchema,
   documentSectionPlacementSchema,
@@ -36,6 +37,10 @@ export const modulesType = [
 ] as const;
 
 export const kanbanOutputTypes = ["label", "qrcode", "url"] as const;
+
+// Mirrors the `kanbanLabelSize` DB enum. `letter` is a sheet of six; the
+// others are thermal label ids in @carbon/utils `labelSizes`.
+export const kanbanLabelSizes = ["letter", "label4x2", "label3x2"] as const;
 
 // Mirrors the `invoiceAutomation` DB enum: what happens to a recurring
 // invoice (rental agreements today) when the daily job creates it.
@@ -102,6 +107,21 @@ export function apiKeyFields({
     scopes: (scopes ? JSON.parse(scopes) : {}) as Record<string, string[]>
   };
 }
+
+export const integrationConnectionActionValidator = z.discriminatedUnion(
+  "intent",
+  [
+    z.object({
+      intent: z.literal("rename"),
+      id: z.string().min(1, { message: "No connection was named" }),
+      name: z.string().trim().min(1, { message: "A connection needs a name" })
+    }),
+    z.object({
+      intent: z.literal("disconnect"),
+      id: z.string().min(1, { message: "No connection was named" })
+    })
+  ]
+);
 
 const ssoDomainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
 
@@ -310,7 +330,9 @@ export const mrpScheduleValidator = z
   );
 
 export const kanbanOutputValidator = z.object({
-  kanbanOutput: z.enum(kanbanOutputTypes)
+  kanbanOutput: z.enum(kanbanOutputTypes),
+  // Only on the form while the output is a label.
+  kanbanLabelSize: z.enum(kanbanLabelSizes).optional()
 });
 
 export const plmReleaseControlValidator = z.object({
@@ -400,6 +422,21 @@ export type ReturnPickedMaterialTiming =
 
 export const returnPickedMaterialTimingValidator = z.object({
   returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).default("job")
+});
+
+// When a produced unit's serial number is drawn from the item's serial sequence.
+// 'jobCreation' (default) reserves one number per unit as soon as the job exists;
+// 'jobRelease' when the job is released to the shop floor; 'production' waits
+// until the unit is first touched on the floor — its first production event,
+// its first operation completion, its scrap, or its receipt. The company's
+// choice is the default; an item's serial sequence can override it.
+export {
+  type SerialNumberTiming,
+  serialNumberTimings
+} from "@carbon/database/serial-number-timing";
+
+export const serialNumberTimingValidator = z.object({
+  serialNumberTiming: z.enum(serialNumberTimings).default("jobCreation")
 });
 
 export const updateLeadTimesOnReceiptValidator = z.object({
@@ -511,7 +548,9 @@ export const itemSerialSequenceValidator = z.object({
   suffix: zfd.text(z.string().optional()),
   next: zfd.numeric(z.number().min(0)),
   step: zfd.numeric(z.number().min(1)),
-  size: zfd.numeric(z.number().min(1).max(20))
+  size: zfd.numeric(z.number().min(1).max(20)),
+  // Empty follows the company's serial number timing.
+  serialNumberTiming: zfd.text(z.enum(serialNumberTimings).optional())
 });
 
 export type Theme = ThemeName;

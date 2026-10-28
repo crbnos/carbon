@@ -60,7 +60,10 @@ import {
   useUser
 } from "~/hooks";
 import type { getWorkCenterCapitalCost } from "~/modules/accounting/accounting.service";
-import { workCenterValidator } from "~/modules/resources/resources.models";
+import {
+  workCenterFormValidator,
+  type workCenterValidator
+} from "~/modules/resources/resources.models";
 import { path } from "~/utils/path";
 
 type ScheduleMode = "all" | "some" | "lightsOut";
@@ -150,7 +153,7 @@ const WorkCenterForm = ({
       >
         <ModalDrawerContent size="lg">
           <ValidatedForm
-            validator={workCenterValidator}
+            validator={workCenterFormValidator}
             method="post"
             action={
               isEditing
@@ -183,6 +186,8 @@ const WorkCenterForm = ({
                     name="processes"
                     label={t`Processes`}
                     termId="work-center-processes"
+                    inHouseOnly
+                    saved={initialValues.processes}
                   />
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
@@ -344,6 +349,7 @@ const WorkCenterForm = ({
                   name="shifts"
                   active={scheduleMode === "some"}
                 />
+                <Hidden name="operatingHours" value={scheduleMode} />
                 {scheduleMode === "lightsOut" && (
                   <Hidden name="alwaysOn" value="on" />
                 )}

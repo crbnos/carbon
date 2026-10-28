@@ -113,6 +113,9 @@ msgstr "Poprzednie zakończenie nie zostało ukończone. Ponowienie wznawia pozo
 msgid "About"
 msgstr "O programie"
 
+msgid "About this field"
+msgstr "O tym polu"
+
 msgid "Accept"
 msgstr "Zaakceptuj"
 
@@ -1234,6 +1237,9 @@ msgstr "Brak zaplanowanego utrzymania ruchu na dziś"
 msgid "No matches. Type to create one."
 msgstr "Brak wyników. Wpisz, aby utworzyć nowy."
 
+msgid "No matching time"
+msgstr "Brak pasującej godziny"
+
 msgid "No materials"
 msgstr "Brak materiałów"
 
@@ -1284,6 +1290,9 @@ msgstr "Nie wymagane żadne próbki."
 
 msgid "No scheduled time"
 msgstr "Brak zaplanowanego czasu"
+
+msgid "No serial number"
+msgstr "Brak numeru seryjnego"
 
 msgid "No serial numbers"
 msgstr "Brak numerów seryjnych"
@@ -1753,6 +1762,9 @@ msgstr "Skanuj lub wyszukaj numer seryjny..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Skanuj lub wybierz jednostkę śledzoną z tej partii, aby dodać ją jako kolumnę próby, a następnie zapisz jej wynik w siatce."
 
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "Zeskanuj lub wybierz jednostkę, a następnie ponownie zeskanuj kartę kanban"
+
 msgid "Scan received"
 msgstr "Skan odebrany"
 
@@ -2132,14 +2144,17 @@ msgstr "Ta część została wyprodukowana na zamówienie. Jej skierowanie do br
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Ta część będzie skierowana do braku ze zapasów. Jej wymaganie pozostaje otwarte, aby można było wydać zamiennik."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Ta jednostka zostanie bezpowrotnie złomowana i zostanie utworzony nowy numer seryjny zamiennika."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Ta jednostka zostanie bezpowrotnie złomowana i zostanie utworzona jednostka zastępcza."
 
 msgid "Thumbnail"
 msgstr "Miniatura"
 
 msgid "Tick the jobs this was done for."
 msgstr "Zaznacz zlecenia produkcyjne, dla których to zostało wykonane."
+
+msgid "Time"
+msgstr "Godzina"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Czas i koszt rozdzielone na zlecenia produkcyjne proporcjonalnie do ilości."

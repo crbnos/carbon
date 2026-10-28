@@ -721,3 +721,26 @@ export const workCenterValidator = z
       path: ["minimumBatchQuantity"]
     }
   );
+
+/**
+ * The work center form: its Operating hours choice is posted only to be
+ * checked, since "Some Shifts" with no shift picked would save as every
+ * shift. The API takes `workCenterValidator`, where `alwaysOn` and `shifts`
+ * say it all.
+ */
+export const workCenterFormValidator = workCenterValidator
+  .safeExtend({
+    operatingHours: zfd.text(z.enum(["all", "some", "lightsOut"]).optional())
+  })
+  .refine(
+    (data) => data.operatingHours !== "some" || (data.shifts?.length ?? 0) > 0,
+    { message: "Select at least one shift", path: ["shifts"] }
+  );
+
+/** The form's data as the API takes it: the choice was only for checking. */
+export function withoutOperatingHours<T extends { operatingHours?: unknown }>({
+  operatingHours: _operatingHours,
+  ...data
+}: T): Omit<T, "operatingHours"> {
+  return data;
+}

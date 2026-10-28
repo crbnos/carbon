@@ -55,7 +55,7 @@ export function AgentThreadList({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search chats…"
-          className="w-full rounded-md border bg-background px-2 py-1.5 text-sm outline-none placeholder:text-muted-foreground"
+          className="w-full rounded-md border bg-card px-2 py-1.5 text-sm outline-none placeholder:text-muted-foreground"
         />
       </div>
       <div className="overflow-y-auto p-1">

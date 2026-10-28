@@ -197,7 +197,9 @@ export const attachments = {
   jobOperationNote: { statement: ["broadcast_table_changes"] },
   jobOperationStep: { statement: ["broadcast_table_changes"] },
   jobOperationStepRecord: { statement: ["broadcast_table_changes"] },
-  kanban: { after: ["sync_kanban_level_check"] },
+  kanban: {
+    after: ["sync_advance_document_sequence", "sync_kanban_level_check"]
+  },
   journal: {
     after: ["sync_advance_document_sequence"],
     events: true,

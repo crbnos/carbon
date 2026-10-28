@@ -8352,6 +8352,7 @@ export type Database = {
           inventoryShelfLife: Json
           invoiceAutomation: Database["public"]["Enums"]["invoiceAutomation"]
           invoiceNotificationGroup: string[]
+          kanbanLabelSize: Database["public"]["Enums"]["kanbanLabelSize"]
           kanbanOutput: Database["public"]["Enums"]["kanbanOutput"]
           leaseDefaultDiscountRate: number
           leaseIncrementalBorrowingRate: number
@@ -8384,6 +8385,7 @@ export type Database = {
           salesJobCompletedNotificationGroup: string[]
           salesRuleNotificationGroup: string[]
           samplingStandard: Database["public"]["Enums"]["samplingStandard"]
+          serialNumberTiming: string
           shelfLabelSize: string | null
           showBomExplorerReadableId: boolean
           showCurrencyTrailingZeros: boolean
@@ -8393,6 +8395,7 @@ export type Database = {
           supplierQuoteNotificationGroup: string[]
           timeCardEnabled: boolean
           updateLeadTimesOnReceipt: boolean
+          useCalendarWeeks: boolean
           useMetric: boolean
         }
         Insert: {
@@ -8429,6 +8432,7 @@ export type Database = {
           inventoryShelfLife?: Json
           invoiceAutomation?: Database["public"]["Enums"]["invoiceAutomation"]
           invoiceNotificationGroup?: string[]
+          kanbanLabelSize?: Database["public"]["Enums"]["kanbanLabelSize"]
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           leaseDefaultDiscountRate?: number
           leaseIncrementalBorrowingRate?: number
@@ -8461,6 +8465,7 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
+          serialNumberTiming?: string
           shelfLabelSize?: string | null
           showBomExplorerReadableId?: boolean
           showCurrencyTrailingZeros?: boolean
@@ -8470,6 +8475,7 @@ export type Database = {
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
           updateLeadTimesOnReceipt?: boolean
+          useCalendarWeeks?: boolean
           useMetric?: boolean
         }
         Update: {
@@ -8506,6 +8512,7 @@ export type Database = {
           inventoryShelfLife?: Json
           invoiceAutomation?: Database["public"]["Enums"]["invoiceAutomation"]
           invoiceNotificationGroup?: string[]
+          kanbanLabelSize?: Database["public"]["Enums"]["kanbanLabelSize"]
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           leaseDefaultDiscountRate?: number
           leaseIncrementalBorrowingRate?: number
@@ -8538,6 +8545,7 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
+          serialNumberTiming?: string
           shelfLabelSize?: string | null
           showBomExplorerReadableId?: boolean
           showCurrencyTrailingZeros?: boolean
@@ -8547,6 +8555,7 @@ export type Database = {
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
           updateLeadTimesOnReceipt?: boolean
+          useCalendarWeeks?: boolean
           useMetric?: boolean
         }
         Relationships: [
@@ -23313,6 +23322,162 @@ export type Database = {
         }
         Relationships: []
       }
+      integrationConnection: {
+        Row: {
+          accountLabel: string | null
+          authType: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          expiresAt: string | null
+          id: string
+          lastError: string | null
+          metadata: Json
+          name: string
+          pieceName: string
+          refreshingAt: string | null
+          secretRef: string | null
+          status: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          accountLabel?: string | null
+          authType?: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          expiresAt?: string | null
+          id?: string
+          lastError?: string | null
+          metadata?: Json
+          name: string
+          pieceName: string
+          refreshingAt?: string | null
+          secretRef?: string | null
+          status?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          accountLabel?: string | null
+          authType?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          expiresAt?: string | null
+          id?: string
+          lastError?: string | null
+          metadata?: Json
+          name?: string
+          pieceName?: string
+          refreshingAt?: string | null
+          secretRef?: string | null
+          status?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrationConnection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "integrationConnection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "integrationConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "integrationConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       intercompanyEliminationLine: {
         Row: {
           accountId: string
@@ -26614,6 +26779,7 @@ export type Database = {
           itemId: string
           next: number
           prefix: string | null
+          serialNumberTiming: string | null
           size: number
           step: number
           suffix: string | null
@@ -26628,6 +26794,7 @@ export type Database = {
           itemId: string
           next?: number
           prefix?: string | null
+          serialNumberTiming?: string | null
           size?: number
           step?: number
           suffix?: string | null
@@ -26642,6 +26809,7 @@ export type Database = {
           itemId?: string
           next?: number
           prefix?: string | null
+          serialNumberTiming?: string | null
           size?: number
           step?: number
           suffix?: string | null
@@ -30968,6 +31136,7 @@ export type Database = {
           id: string
           itemId: string
           jobId: string | null
+          kanbanId: string | null
           locationId: string
           purchaseUnitOfMeasureCode: string | null
           quantity: number
@@ -30990,6 +31159,7 @@ export type Database = {
           id?: string
           itemId: string
           jobId?: string | null
+          kanbanId?: string | null
           locationId: string
           purchaseUnitOfMeasureCode?: string | null
           quantity: number
@@ -31012,6 +31182,7 @@ export type Database = {
           id?: string
           itemId?: string
           jobId?: string | null
+          kanbanId?: string | null
           locationId?: string
           purchaseUnitOfMeasureCode?: string | null
           quantity?: number
@@ -77425,6 +77596,91 @@ export type Database = {
           }
         ]
       }
+      inspectionPlanParts: {
+        Row: {
+          companyId: string | null
+          createdAt: string | null
+          id: string | null
+          partName: string | null
+          partReadableId: string | null
+          planCount: number | null
+          planNames: string | null
+          plans: Json | null
+          updatedAt: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspectionDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_partId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_partId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_partId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_partId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_partId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_partId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       integrations: {
         Row: {
           active: boolean | null
@@ -78226,6 +78482,7 @@ export type Database = {
             | null
           next: number | null
           prefix: string | null
+          serialNumberTiming: string | null
           size: number | null
           step: number | null
           suffix: string | null
@@ -78771,7 +79028,6 @@ export type Database = {
           quantityComplete: number | null
           quantityReworked: number | null
           quantityScrapped: number | null
-          readyAt: string | null
           reworkId: string | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
@@ -78824,7 +79080,6 @@ export type Database = {
           quantityComplete?: number | null
           quantityReworked?: number | null
           quantityScrapped?: number | null
-          readyAt?: string | null
           reworkId?: string | null
           setupTime?: number | null
           setupUnit?: Database["public"]["Enums"]["factor"] | null
@@ -78877,7 +79132,6 @@ export type Database = {
           quantityComplete?: number | null
           quantityReworked?: number | null
           quantityScrapped?: number | null
-          readyAt?: string | null
           reworkId?: string | null
           setupTime?: number | null
           setupUnit?: Database["public"]["Enums"]["factor"] | null
@@ -79200,7 +79454,6 @@ export type Database = {
           quantityComplete: number | null
           quantityReworked: number | null
           quantityScrapped: number | null
-          readyAt: string | null
           reworkId: string | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
@@ -80254,6 +80507,7 @@ export type Database = {
           itemId: string | null
           jobId: string | null
           jobReadableId: string | null
+          kanbanId: string | null
           locationId: string | null
           locationName: string | null
           name: string | null
@@ -92220,6 +92474,10 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      delete_connection_secret: {
+        Args: { p_company_id: string; p_connection_id: string }
+        Returns: undefined
+      }
       delete_event_system_subscription: {
         Args: { p_subscription_id: string }
         Returns: undefined
@@ -92659,6 +92917,10 @@ export type Database = {
           status: Database["public"]["Enums"]["jobStatus"]
           thumbnailPath: string
         }[]
+      }
+      get_connection_secret: {
+        Args: { p_company_id: string; p_connection_id: string }
+        Returns: Json
       }
       get_consumable_details: {
         Args: { item_id: string }
@@ -93436,6 +93698,16 @@ export type Database = {
       get_next_sequence: {
         Args: { company_id: string; sequence_name: string }
         Returns: string
+      }
+      get_next_serial_numbers: {
+        Args: {
+          p_company_id: string
+          p_count: number
+          p_item_id: string
+          p_location_code?: string
+          p_location_name?: string
+        }
+        Returns: string[]
       }
       get_opportunity_with_related_records: {
         Args: { opportunity_id: string }
@@ -94512,6 +94784,10 @@ export type Database = {
         Args: { p_company_id: string; p_entries: Json[] }
         Returns: number
       }
+      interpolate_serial_segment: {
+        Args: { p_location: string; p_now: string; p_value: string }
+        Returns: string
+      }
       is_claims_admin: { Args: { company: string }; Returns: boolean }
       is_last_job_operation: {
         Args: { operation_id: string }
@@ -94645,6 +94921,15 @@ export type Database = {
         Args: { alphabet: string; mask: number; size: number; step: number }
         Returns: string
       }
+      number_serial_units_for_receipt: {
+        Args: {
+          p_company_id: string
+          p_item_id: string
+          p_location_id: string
+          p_unit_ids: string[]
+        }
+        Returns: number
+      }
       populate_company_search_index: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -94717,8 +95002,32 @@ export type Database = {
         Args: { p_item_id: string; p_receipt_id: string }
         Returns: string
       }
+      revoke_connections: {
+        Args: {
+          p_company_id: string
+          p_connection_id?: string
+          p_piece_name: string
+          p_updated_by: string
+        }
+        Returns: undefined
+      }
       rotate_webhook_signing_secret: {
         Args: { p_company_id: string; p_webhook_id: string }
+        Returns: string
+      }
+      save_connection: {
+        Args: {
+          p_account_label?: string
+          p_auth_type: string
+          p_company_id: string
+          p_connection_id?: string
+          p_expires_at?: string
+          p_metadata?: Json
+          p_name: string
+          p_piece_name: string
+          p_secret: Json
+          p_user_id: string
+        }
         Returns: string
       }
       save_inspection_document_atomic: {
@@ -94813,6 +95122,15 @@ export type Database = {
       snapshotAccountingPeriodBalances: {
         Args: { p_company_id: string; p_period_id: string; p_user_id: string }
         Returns: undefined
+      }
+      split_serial_units_for_completion: {
+        Args: {
+          p_company_id: string
+          p_count: number
+          p_job_id: string
+          p_make_method_id: string
+        }
+        Returns: number
       }
       storage_unit_block_location_change_with_children: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
@@ -95177,6 +95495,10 @@ export type Database = {
           p_updated_by?: string
         }
         Returns: Json
+      }
+      upsert_connection_secret: {
+        Args: { p_company_id: string; p_connection_id: string; p_secret: Json }
+        Returns: string
       }
       upsert_integration_secret: {
         Args: { p_company_id: string; p_integration_id: string; p_secret: Json }
@@ -95673,6 +95995,7 @@ export type Database = {
         | "Rental Agreement"
         | "Contract"
         | "Lease"
+      kanbanLabelSize: "letter" | "label4x2" | "label3x2"
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
       leaseEventType: "Modification" | "Termination" | "Purchase"
@@ -97218,6 +97541,7 @@ export const Constants = {
         "Contract",
         "Lease",
       ],
+      kanbanLabelSize: ["letter", "label4x2", "label3x2"],
       kanbanOutput: ["label", "qrcode", "url"],
       kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],
       leaseEventType: ["Modification", "Termination", "Purchase"],

@@ -25,3 +25,30 @@ export function isKanbanCompleteScan(
   }
   return !!kanban.id && url.pathname === `/api/kanban/complete/${kanban.id}`;
 }
+
+/**
+ * Which unit a kanban Complete scan completes in the operation and assembly
+ * views. A serial part completes the unit on screen when it is still open at
+ * this operation. With no such unit, the first operation lets the end route
+ * take the next unit in order (units flow through it unscanned); a later
+ * operation asks the operator to scan or select one, since the route's own
+ * pick need not be the unit in their hands. Batch and untracked parts name no
+ * unit.
+ */
+export function kanbanCompleteTarget({
+  requiresSerialTracking,
+  isFirstOperation,
+  selectedEntityId,
+  selectedIsIncomplete
+}: {
+  requiresSerialTracking: boolean;
+  isFirstOperation: boolean;
+  selectedEntityId: string | null;
+  selectedIsIncomplete: boolean;
+}): { action: "complete"; trackedEntityId?: string } | { action: "select" } {
+  if (!requiresSerialTracking) return { action: "complete" };
+  if (selectedEntityId && selectedIsIncomplete) {
+    return { action: "complete", trackedEntityId: selectedEntityId };
+  }
+  return isFirstOperation ? { action: "complete" } : { action: "select" };
+}

@@ -113,6 +113,9 @@ msgstr "Предыдущее выполнение не завершилось. �
 msgid "About"
 msgstr "О системе"
 
+msgid "About this field"
+msgstr "О данном поле"
+
 msgid "Accept"
 msgstr "Принять"
 
@@ -1234,6 +1237,9 @@ msgstr "На сегодня техобслуживание не запланир
 msgid "No matches. Type to create one."
 msgstr "Совпадений не найдено. Введите текст для создания."
 
+msgid "No matching time"
+msgstr "Нет подходящего времени"
+
 msgid "No materials"
 msgstr "Нет материалов"
 
@@ -1284,6 +1290,9 @@ msgstr "Образцы не требуются."
 
 msgid "No scheduled time"
 msgstr "Нет запланированного времени"
+
+msgid "No serial number"
+msgstr "Нет серийного номера"
 
 msgid "No serial numbers"
 msgstr "Нет серийных номеров"
@@ -1753,6 +1762,9 @@ msgstr "Сканировать или найти серийный номер..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Сканировать или выбрать отслеживаемый объект из этой партии, чтобы добавить его как столбец образца, затем записать его результат в таблицу."
 
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "Отсканируйте или выберите единицу, затем снова отсканируйте карточку канбана"
+
 msgid "Scan received"
 msgstr "Скан получен"
 
@@ -2132,14 +2144,17 @@ msgstr "Эта деталь была произведена на заказ. С�
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Эта часть будет списана со склада. Её требование остается открытым, чтобы вы могли выдать замену."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Эта единица будет окончательно списана, и будет создан новый серийный номер замены."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Эта единица будет окончательно списана, и будет создана единица на замену."
 
 msgid "Thumbnail"
 msgstr "Миниатюра"
 
 msgid "Tick the jobs this was done for."
 msgstr "Отметьте производственные заказы, для которых это было сделано."
+
+msgid "Time"
+msgstr "Время"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Время и себестоимость распределяются между производственными заказами пропорционально количеству."

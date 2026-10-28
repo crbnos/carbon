@@ -69,6 +69,8 @@ BEGIN
   END IF;
 
   IF (SELECT prosecdef FROM pg_proc WHERE oid = 'backflush_job_materials(text,numeric,text,text)'::regprocedure)
+     OR (SELECT prosecdef FROM pg_proc WHERE oid = 'split_serial_units_for_completion(text,text,text,integer)'::regprocedure)
+     OR (SELECT prosecdef FROM pg_proc WHERE oid = 'number_serial_units_for_receipt(text[],text,text,text)'::regprocedure)
      OR NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'dispatch_event_interceptors()'::regprocedure)
      OR NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'dispatch_event_after_interceptors()'::regprocedure) THEN
     RAISE EXCEPTION 'FAIL: internal functions or dispatchers have the wrong security mode';

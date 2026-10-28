@@ -97,6 +97,7 @@ import {
   productionEventValidator,
   productionOrderValidator,
   productionQuantityValidator,
+  SCHEDULED_JOB_STATUSES,
   salesOrderToJobValidator,
   scheduleJobUpdateValidator,
   scheduleOperationReorderValidator,
@@ -238,8 +239,9 @@ export const planDraftJob = defineServiceFn({
  *
  * @remarks
  * The step every release path shares (`releaseJobs`, `releaseBatchMemberJobs`).
- * Per job, in order: refresh requirements, run MRP, flip to Ready, put outside
- * operations on purchase orders, stamp releasedDate. Scheduling is the
+ * Per job, in order: refresh requirements, run MRP, flip to Ready, number the
+ * serial units when the item's timing is `jobRelease`, put outside operations
+ * on purchase orders, stamp releasedDate. Scheduling is the
  * caller's (one location run, or a notify, after all jobs are released).
  * Validation (`getJobReleaseReadiness`) is the caller's, BEFORE this runs.
  *
@@ -247,6 +249,10 @@ export const planDraftJob = defineServiceFn({
  * supplier's first "new" PO is reused for the jobs after it, so a batch puts
  * each supplier's outside operations from every member job on one PO. The map
  * is returned with those POs filled in, for a caller releasing job by job.
+ *
+ * Serial numbering at release never stops it: a job whose units could not be
+ * numbered is listed in `warnings` and released, and its units draw their
+ * numbers at their first touch or at completion.
  *
  * It stops at the first job that fails, and that is `failure`, not an error:
  * `releasedJobIds` are the jobs that ARE Ready when this returns. After a
@@ -266,9 +272,11 @@ export const releaseCheckedJobs = defineServiceFn({
     const userId = ctx.auditUserId;
     const purchaseOrders = { ...purchaseOrdersBySupplierId };
     const releasedJobIds: string[] = [];
+    const warnings: { jobId: string; message: string }[] = [];
     const report = (failure: CarbonError<"internal" | "conflict"> | null) => ({
       purchaseOrdersBySupplierId: purchaseOrders,
       releasedJobIds,
+      warnings,
       failure
     });
 
@@ -329,6 +337,22 @@ export const releaseCheckedJobs = defineServiceFn({
         );
       }
       releasedJobIds.push(id);
+
+      // Under the jobRelease serial number timing (the item's, else the
+      // company's) every unit is numbered now. The job is already Ready, so a
+      // failure is a warning, not a refusal.
+      const numbered = await service.assignJobSerialNumbersAtRelease(
+        ctx.asSystem.supabase,
+        ctx.asSystem.pg,
+        { jobId: id, companyId, userId }
+      );
+      if (!numbered) {
+        warnings.push({
+          jobId: id,
+          message:
+            "The job is released, but its serial numbers could not be assigned"
+        });
+      }
 
       const purchaseOrder = await invokeCreate(
         { db: ctx.asSystem.pg, companyId, userId },
@@ -407,7 +431,7 @@ type JobRef = { jobId: string; readableId: string };
  * @param purchaseOrdersBySupplierId - For each supplier, `new` or the id of one of its Draft purchase orders to add to.
  * @param carriedPurchaseOrders - The PO each supplier went on in an earlier call of the same release, as that call returned it
  *
- * @returns `released`, `failed` (each with its reason), `skipped` (not Draft or Planned), `warnings` (released, but a purchase order failed), whether the locations were `scheduled`, and `purchaseOrdersBySupplierId` for the next call.
+ * @returns `released`, `failed` (each with its reason), `skipped` (not Draft or Planned), `warnings` (released, but a purchase order or its serial numbers failed), whether the locations were `scheduled`, and `purchaseOrdersBySupplierId` for the next call.
  *
  * @mcp
  */
@@ -533,6 +557,9 @@ export const releaseJobs = defineServiceFn({
         continue;
       }
       if (failure) warnings.push({ ...ref, message: failure.message });
+      for (const warning of result.data?.warnings ?? []) {
+        warnings.push({ ...ref, message: warning.message });
+      }
       if (job.locationId) locationIds.add(job.locationId);
       released.push(ref);
     }
@@ -876,9 +903,11 @@ export const closeJob = defineServiceFn({
  * job's own), backflushes materials, rolls up cost and, for a Make to Asset
  * job, creates the fixed assets. It refuses a quantity of zero or below what
  * was received, a fractional quantity on a serial job, and the Make to Asset
- * rules; its message says what to fix (a `rule` error). Then the picked
- * material the job did not consume is returned to the warehouse; a failure
- * there leaves the job completed and is returned as `warning`.
+ * rules; its message says what to fix (a `rule` error). Units it takes that
+ * have no serial number yet (a deferred serial number timing) are numbered by
+ * the same function, so a refused completion spends no numbers. Then the
+ * picked material the job did not consume is returned to the warehouse; a
+ * failure there leaves the job completed and is returned as `warning`.
  *
  * @mcp
  */
@@ -1344,6 +1373,9 @@ export const reorderScheduleOperations = defineServiceFn({
  * `columnId` is a date (`YYYY-MM-DD`) or one of the board's undated columns,
  * which clears the due date. Writes the due date and priority of a job at
  * `locationId` that is not locked; a job elsewhere or locked is a `conflict`.
+ * The deadline type follows the date: a dated "No Deadline" or "ASAP" job
+ * becomes "Soft Deadline", and an undated Hard or Soft Deadline job becomes
+ * "No Deadline".
  * Then the scheduler is told; the debounced wave regenerates the location in
  * due date, then priority, order. A failed notice is logged and not returned.
  *
@@ -1360,17 +1392,37 @@ export const moveScheduleJob = defineServiceFn({
       return ctx.error("validation", "Invalid form data");
     }
 
+    const current = await ctx.asCaller.supabase
+      .from("job")
+      .select("deadlineType")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .eq("locationId", locationId)
+      .not("status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`)
+      .maybeSingle();
+    if (current.error) {
+      return ctx.error("internal", current.error.message, current.error);
+    }
+    if (current.data === null) {
+      return ctx.error("conflict", "Job unavailable or locked");
+    }
+
     const { data, error } = await ctx.asCaller.supabase
       .from("job")
       .update({
         dueDate,
         priority,
+        deadlineType: service.deadlineTypeForDueDate(
+          current.data.deadlineType,
+          dueDate
+        ),
         updatedBy: ctx.auditUserId,
         updatedAt: datetime.timestamp()
       })
       .eq("id", id)
       .eq("companyId", companyId)
       .eq("locationId", locationId)
+      .eq("deadlineType", current.data.deadlineType)
       .not("status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`)
       .select("id")
       .maybeSingle();
@@ -1387,6 +1439,7 @@ export const moveScheduleJob = defineServiceFn({
     return { id };
   }
 });
+
 /**
  * Record a production event (labor, machine or setup time) on a job operation.
  *
@@ -1427,6 +1480,9 @@ export const createProductionEvent = defineServiceFn({
       createdBy: ctx.auditUserId
     });
     if (insert.error) {
+      if (service.isSecondOpenTimer(insert.error)) {
+        return ctx.error("rule", service.SECOND_OPEN_TIMER_MESSAGE);
+      }
       return ctx.error(
         "internal",
         "Failed to insert production event",
@@ -1465,6 +1521,9 @@ export const updateProductionEvent = defineServiceFn({
       updatedBy: ctx.auditUserId
     });
     if (update.error) {
+      if (service.isSecondOpenTimer(update.error)) {
+        return ctx.error("rule", service.SECOND_OPEN_TIMER_MESSAGE);
+      }
       return ctx.error(
         "internal",
         "Failed to update production event",
@@ -1634,7 +1693,10 @@ export const setJobItem = defineServiceFn({
  * Refused when any job is locked. Each job's priority is recalculated among
  * the jobs at its location on the new date (`nextJobPriority`), in one read
  * and one write for every job. A field left out keeps the job's current
- * value; a `dueDate` of null clears it.
+ * value; a `dueDate` of null clears it. The two stay in step
+ * (`nextJobDeadline`): ASAP and No Deadline clear the date, and a date given
+ * to a No Deadline or ASAP job makes it a Soft Deadline. Then the scheduler is
+ * told; a failed notice is logged and not returned.
  *
  * @mcp
  */
@@ -1655,8 +1717,7 @@ export const setJobDeadline = defineServiceFn({
     const moves = jobs.map((job) => ({
       id: job.id,
       locationId: job.locationId,
-      dueDate: dueDate !== undefined ? dueDate || null : job.dueDate,
-      deadlineType: deadlineType ?? job.deadlineType
+      ...service.nextJobDeadline(job, { dueDate, deadlineType })
     }));
 
     // The jobs already on each new date at each location, in one read: a
@@ -1712,6 +1773,15 @@ export const setJobDeadline = defineServiceFn({
         AND j."companyId" = ${companyId}
         AND j."status" NOT IN (${sql.join(JOB_LOCKED_STATUSES.map((status) => sql`${status}`))})
     `.execute(ctx.asSystem.pg);
+
+    // A Draft or Planned job is not on the schedule yet.
+    if (jobs.some((job) => SCHEDULED_JOB_STATUSES.includes(job.status))) {
+      await service.notifyScheduleInputsChanged(
+        companyId,
+        "reorder",
+        "Job deadline changed"
+      );
+    }
     return { ids };
   }
 });
@@ -3811,7 +3881,8 @@ export const setPersonHours = defineServiceFn({
  * @remarks
  * Optionally only a department's work centers or one shift. One UPDATE, so it
  * applies to all or none. Every work center touched is rescheduled. Returns
- * how many assignments were updated.
+ * how many assignments were updated (`updated`), and on how many person-days
+ * (`personDays`: a person split across stations is one).
  *
  * @mcp
  */
@@ -3846,7 +3917,11 @@ export const setPeopleOvertime = defineServiceFn({
       "People overtime changed",
       rows.map((row) => row.workCenterId)
     );
-    return { updated: rows.length };
+    return {
+      updated: rows.length,
+      personDays: new Set(rows.map((row) => `${row.employeeId}:${row.date}`))
+        .size
+    };
   }
 });
 
@@ -3895,7 +3970,11 @@ export const copyPeopleDay = defineServiceFn({
  *
  * @remarks
  * One assignment per working day of their shift (Monday to Friday when it has
- * none) from `weekStart`. Then the work center is rescheduled.
+ * none) from `weekStart`, leaving a day they are off or already booked in that
+ * shift as it is. Then the work center is rescheduled.
+ *
+ * @returns `assigned`, the days written, and `skipped`, the working days left
+ * as they were.
  *
  * @mcp
  */
@@ -3926,7 +4005,11 @@ export const assignPersonWeek = defineServiceFn({
     await service.notifyPeopleChange(ctx, "People week assignment", [
       week.workCenterId
     ]);
-    return { employeeId: week.employeeId };
+    return {
+      employeeId: week.employeeId,
+      assigned: written.assigned,
+      skipped: written.skipped
+    };
   }
 });
 
@@ -6905,6 +6988,35 @@ export const getJobOperationStepRecords = defineServiceFn({
         payload(ctx, input).build() as never
       )
     );
+  }
+});
+
+/**
+ * Get step timings for a job operation
+ *
+ * @remarks
+ * Estimates how long each step of a job operation took, from the times its steps were recorded. A step's time is measured from the same operator's previous step record on this operation, or from their latest clock-in to it, whichever is later. Steps recorded at the same instant (a manager's Complete All, or a batch record) are flagged `bulk` and left out of the per-step statistics. A step's time includes any break the operator did not clock out for, and steps recorded together after the work was done read as near zero.
+ *
+ * @param jobOperationId - The job operation whose steps to time.
+ * @returns `steps`: each step in order, with the number of timed units and the average, median, minimum and maximum seconds. `records`: every step record in the order it was made, with its 0-based unit index, the operator, the seconds, what they were measured from (`previousStep`, `clockIn`, or null when there was nothing to measure from) and whether it was a `bulk` record.
+ *
+ * @mcp read
+ */
+export const getJobOperationStepTimings = defineServiceFn({
+  input: z.object({ jobOperationId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    const timings = unwrap(
+      ctx,
+      await service.getJobOperationStepTimings(
+        ctx.asCaller.supabase,
+        input.jobOperationId,
+        ctx.company.id
+      )
+    );
+    if (timings instanceof CarbonError) return timings;
+    if (!timings) return ctx.error("notFound", "Job operation not found");
+    return timings;
   }
 });
 

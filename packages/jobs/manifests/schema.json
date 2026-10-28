@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261028143517",
+  "schemaVersion": "20261028221530",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-27T22:55:12.218Z",
+  "exportedAt": "2026-10-28T17:35:23.502Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -457,10 +457,10 @@
         "incompletePickingListPolicy",
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
-        "salesRuleNotificationGroup",
         "showCurrencyTrailingZeros",
         "requireMfa",
         "allowLowercaseItemIds",
+        "salesRuleNotificationGroup",
         "includeOperationsOnTraveler",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
@@ -486,7 +486,10 @@
         "requireBackflushStorageUnit",
         "preventNegativeBackflush",
         "receiptQuantitiesStartAtZero",
-        "requirePurchaseOrderApprovalSignature"
+        "requirePurchaseOrderApprovalSignature",
+        "serialNumberTiming",
+        "useCalendarWeeks",
+        "kanbanLabelSize"
       ]
     },
     {
@@ -3031,7 +3034,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "serialNumberTiming"
       ]
     },
     {
@@ -5492,8 +5496,8 @@
         "manuallyScheduled",
         "reworkId",
         "assemblyInstructionId",
-        "readyAt",
         "inspectionDocumentId",
+        "readyAt",
         "projectedCompletionAt",
         "jobOperationBatchId"
       ]
@@ -5756,7 +5760,8 @@
         "completedBarcodeOverride",
         "jobId",
         "fromStorageUnitId",
-        "replenishmentLevel"
+        "replenishmentLevel",
+        "kanbanId"
       ]
     },
     {
@@ -7734,6 +7739,7 @@
     "apiKeyRateLimit",
     "companyIntegration",
     "employeePin",
+    "integrationConnection",
     "oauthClient",
     "oauthCode",
     "oauthToken",

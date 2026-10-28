@@ -34,7 +34,9 @@ import type {
 } from "./peopleShared";
 import {
   assignmentHours,
+  assignmentMatchesShift,
   dayOvertime,
+  editorDayRows,
   ladderShiftHours,
   ladderShiftTime,
   UNASSIGNED
@@ -61,6 +63,14 @@ type PeopleBoardProps = {
   employees: PeopleEmployee[];
   workCenters: { id: string; name: string }[];
   assignments: PeopleAssignment[];
+  /**
+   * Every row at the location on the date, whatever the shift and department
+   * filters hide. Not drawn: the free-hours pool counts the hidden stations,
+   * and the day editor opens with the whole day its save reconciles.
+   */
+  dayAssignments: PeopleAssignment[];
+  /** Every station at the location, for the day editor's rows. */
+  allWorkCenters?: { id: string; name: string }[];
   absences: PeopleAbsence[];
   requiredAbilities: {
     workCenterId: string;
@@ -104,6 +114,7 @@ function usePendingMoves() {
     })
     .map((fetcher) => ({
       intent: String(fetcher.formData.get("intent")),
+      id: String(fetcher.formData.get("id") ?? ""),
       employeeId: String(fetcher.formData.get("employeeId")),
       workCenterId: String(fetcher.formData.get("workCenterId") ?? ""),
       hours: fetcher.formData.get("hours")
@@ -118,6 +129,8 @@ const PeopleBoard = ({
   employees,
   workCenters,
   assignments,
+  dayAssignments,
+  allWorkCenters,
   absences,
   requiredAbilities,
   requiredHoursByWorkCenter,
@@ -182,11 +195,30 @@ const PeopleBoard = ({
           }
         ]);
       } else if (move.intent === "unassign") {
-        map.delete(move.employeeId);
+        // only the row being removed — a split person keeps their others
+        const kept = (map.get(move.employeeId) ?? []).filter(
+          (row) => row.id !== move.id
+        );
+        if (kept.length > 0) map.set(move.employeeId, kept);
+        else map.delete(move.employeeId);
       }
     }
     return map;
   }, [assignments, pendingMoves, employeeShiftId, date]);
+
+  // employeeId -> the page shift's rows at stations the department filter hides
+  const elsewhereByEmployee = useMemo(() => {
+    const shown = new Set(workCenters.map((workCenter) => workCenter.id));
+    const map = new Map<string, PeopleAssignment[]>();
+    for (const row of dayAssignments) {
+      if (shown.has(row.workCenterId)) continue;
+      if (!assignmentMatchesShift(row, shiftId, employeeShiftId)) continue;
+      const list = map.get(row.employeeId);
+      if (list) list.push(row);
+      else map.set(row.employeeId, [row]);
+    }
+    return map;
+  }, [dayAssignments, workCenters, shiftId, employeeShiftId]);
 
   const absenceByEmployee = useMemo(() => {
     const map = new Map<string, PeopleAbsence>();
@@ -258,13 +290,18 @@ const PeopleBoard = ({
     for (const employee of employees) {
       const absence = absenceByEmployee.get(employee.id) ?? null;
       const rows = assignmentsByEmployee.get(employee.id) ?? [];
-      const dayRows = dayRowsFor(rows);
-      const overtimeForDay = dayOvertime(rows);
+      // the page shift's whole day, the stations the department hides included
+      const wholeDay = [
+        ...rows,
+        ...(elsewhereByEmployee.get(employee.id) ?? [])
+      ];
+      const dayRows = dayRowsFor(wholeDay);
+      const overtimeForDay = dayOvertime(wholeDay);
       const baseHours = baseShiftHoursFor(employee.id);
-      const dayStartTime = dayStartFor(employee.id, rows);
-      const dayEndTime = dayEndFor(employee.id, rows);
+      const dayStartTime = dayStartFor(employee.id, wholeDay);
+      const dayEndTime = dayEndFor(employee.id, wholeDay);
       // day-scoped note (setPeopleDay writes it to every row)
-      const note = rows.find((row) => row.note)?.note ?? null;
+      const note = wholeDay.find((row) => row.note)?.note ?? null;
       const abilities = employeeAbilityNames[employee.id] ?? [];
 
       // Absent people always sit (grayed) at the bottom of Unassigned — their
@@ -311,45 +348,43 @@ const PeopleBoard = ({
       }
 
       // the Unassigned pool = people with free hours: nobody scheduled yet
-      // (plain card) or a partially-allocated remainder ("Xh free")
-      if (rows.length === 0) {
-        map.get(UNASSIGNED)!.push({
-          employee,
-          assignment: null,
-          isAbsent: false,
-          absenceId: null,
-          missingAbilities: [],
-          abilities,
-          freeHours: null,
-          displayHours: null,
-          dayRows,
-          overtimeHours: overtimeForDay,
-          baseHours,
-          dayStartTime,
-          dayEndTime,
-          note
-        });
-      } else if (rows.every((row) => row.hours != null)) {
-        const free =
-          baseShiftHoursFor(employee.id) -
-          rows.reduce((sum, row) => sum + effectiveHours(row), 0);
+      // (plain card) or a partially-allocated remainder ("Xh free"). Hours at
+      // stations a department filter hides count too: dropping a plain card
+      // replaces the person's whole day, those rows included.
+      const poolCard: PeopleCardItem = {
+        employee,
+        assignment: null,
+        isAbsent: false,
+        absenceId: null,
+        missingAbilities: [],
+        abilities,
+        freeHours: null,
+        displayHours: null,
+        dayRows,
+        overtimeHours: overtimeForDay,
+        baseHours,
+        dayStartTime,
+        dayEndTime,
+        note
+      };
+      if (wholeDay.length === 0) {
+        map.get(UNASSIGNED)!.push(poolCard);
+      } else {
+        // a whole-shift row leaves nothing free
+        const free = wholeDay.every((row) => row.hours != null)
+          ? baseShiftHoursFor(employee.id) -
+            wholeDay.reduce((sum, row) => sum + effectiveHours(row), 0)
+          : 0;
         if (free > 0.01) {
           map.get(UNASSIGNED)!.push({
-            employee,
-            assignment: null,
-            isAbsent: false,
-            absenceId: null,
-            missingAbilities: [],
-            abilities,
+            ...poolCard,
             freeHours: Math.round(free * 100) / 100,
-            displayHours: null,
-            dayRows,
-            overtimeHours: overtimeForDay,
-            baseHours,
-            dayStartTime,
-            dayEndTime,
-            note
+            bookedElsewhere: false
           });
+        } else if (rows.length === 0) {
+          // booked in full at stations the department filter hides: still on
+          // the board, so the filter never hides a person
+          map.get(UNASSIGNED)!.push({ ...poolCard, bookedElsewhere: true });
         }
       }
     }
@@ -360,6 +395,7 @@ const PeopleBoard = ({
     employees,
     workCenters,
     assignmentsByEmployee,
+    elsewhereByEmployee,
     absenceByEmployee,
     requiredByWorkCenter,
     qualifiedAbilitiesByEmployee,
@@ -478,7 +514,27 @@ const PeopleBoard = ({
     }
   };
 
-  const editor: CardEditorContext = { date, shiftId, locationId, workCenters };
+  const editor: CardEditorContext = {
+    date,
+    shiftId,
+    locationId,
+    workCenters: allWorkCenters ?? workCenters
+  };
+
+  // The editor saves the person's day in their own shift, so it opens with
+  // every row of that shift, not only the ones the filters show.
+  const editorShiftId = editorItem
+    ? shiftForEmployee(editorItem.employee.id)
+    : null;
+  const editorRows = editorItem
+    ? editorDayRows(
+        dayAssignments,
+        editorItem.employee.id,
+        date,
+        editorShiftId,
+        employeeShiftId
+      )
+    : [];
 
   return (
     <DndContext
@@ -548,16 +604,39 @@ const PeopleBoard = ({
           employeeId={editorItem.employee.id}
           employeeName={editorItem.employee.name}
           date={date}
-          shiftId={shiftForEmployee(editorItem.employee.id)}
+          shiftId={editorShiftId}
           locationId={locationId}
           locationTimeZone={locationTimeZone}
-          workCenters={workCenters}
-          rows={editorItem.dayRows}
-          note={editorItem.note}
-          overtimeHours={editorItem.overtimeHours}
-          baseHours={editorItem.baseHours}
-          dayStartTime={editorItem.dayStartTime}
-          dayEndTime={editorItem.dayEndTime}
+          workCenters={allWorkCenters ?? workCenters}
+          rows={editorRows.map((row) => ({
+            workCenterId: row.workCenterId,
+            hours: row.hours
+          }))}
+          note={editorRows.find((row) => row.note)?.note ?? null}
+          overtimeHours={dayOvertime(editorRows)}
+          baseHours={ladderShiftHours(
+            editorShiftId,
+            editorItem.employee.id,
+            hoursLadder
+          )}
+          dayStartTime={ladderShiftTime(
+            editorRows[0]?.shiftId,
+            editorItem.employee.id,
+            {
+              byShift: shiftStartById,
+              byEmployee: employeeShiftStart,
+              fallback: defaultShiftStart
+            }
+          )}
+          dayEndTime={ladderShiftTime(
+            editorRows[0]?.shiftId,
+            editorItem.employee.id,
+            {
+              byShift: shiftEndById,
+              byEmployee: employeeShiftEnd,
+              fallback: defaultShiftEnd
+            }
+          )}
           isAbsent={editorItem.isAbsent}
           absenceId={editorItem.absenceId}
         />

@@ -1888,6 +1888,11 @@ export const ACTIVE_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] = [
   "Paused"
 ];
 
+// The jobs the scheduler places (`runLocationSchedule`): a change to any other
+// job moves nothing on the schedule.
+export const SCHEDULED_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] =
+  ["Ready", "In Progress", "Paused"];
+
 // Explicit list, not the complement of ACTIVE_JOB_STATUSES — active-but-late
 // states like Overdue still surface indicators.
 const JOB_STATUSES_WITHOUT_ORDER_STATUS = [

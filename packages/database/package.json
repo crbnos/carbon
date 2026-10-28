@@ -51,6 +51,7 @@
     "./ratelimit": "./src/ratelimit.ts",
     "./sampling": "./src/sampling.ts",
     "./sequence": "./src/sequence.ts",
+    "./serial-number-timing": "./src/serial-number-timing.ts",
     "./stock-transfer": "./src/stock-transfer.ts",
     "./receipt-serials": "./src/receipt-serials.ts",
     "./storage-objects": "./src/storage-objects.ts",
