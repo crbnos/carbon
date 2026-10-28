@@ -187,6 +187,14 @@ const PURCHASE_RETURN_ORDER_MERGE_FIELDS: MergeField[] = [
   ...COMPANY_MERGE_FIELDS
 ];
 
+const PURCHASING_RFQ_MERGE_FIELDS: MergeField[] = [
+  { token: "rfq.number", label: "RFQ Number", group: "RFQ" },
+  { token: "rfq.date", label: "RFQ Date", group: "RFQ" },
+  { token: "rfq.dueDate", label: "Due Date", group: "RFQ" },
+  { token: "rfq.location", label: "Receiving Location", group: "RFQ" },
+  ...COMPANY_MERGE_FIELDS
+];
+
 const QUOTE_MERGE_FIELDS: MergeField[] = [
   { token: "quote.number", label: "Quote Number", group: "Quote" },
   { token: "quote.revision", label: "Revision", group: "Quote" },
@@ -266,6 +274,7 @@ export const MERGE_FIELDS: Record<string, MergeField[]> = {
   salesReturnOrder: SALES_RETURN_ORDER_MERGE_FIELDS,
   purchaseOrder: PURCHASE_ORDER_MERGE_FIELDS,
   purchaseReturnOrder: PURCHASE_RETURN_ORDER_MERGE_FIELDS,
+  purchasingRfq: PURCHASING_RFQ_MERGE_FIELDS,
   quote: QUOTE_MERGE_FIELDS,
   packingSlip: PACKING_SLIP_MERGE_FIELDS,
   stockTransfer: STOCK_TRANSFER_MERGE_FIELDS,

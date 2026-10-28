@@ -207,6 +207,7 @@ import {
 } from "@carbon/ee/plan.server";
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
+import { flags } from "@carbon/env/flags.server";
 import { trigger } from "@carbon/jobs";
 import {
   compatibilityStatus,
@@ -669,7 +670,7 @@ export async function isIntegrationInstallWithheld(
     !isIntegrationComingSoon(integration, {
       edition: CarbonEdition,
       email,
-      hasEarlyAccess: hasIntegrationEarlyAccess(userId)
+      hasEarlyAccess: await hasIntegrationEarlyAccess({ companyId, userId })
     })
   ) {
     return false;
@@ -1260,17 +1261,19 @@ export async function updateCompany(
 export async function updateCompanyWithBaseCurrencyChange(
   db: Kysely<KyselyDatabase>,
   companyId: string,
-  company: Partial<z.infer<typeof companyValidator>> & {
+  company: Partial<z.infer<typeof subsidiaryValidator>> & {
     updatedBy: string;
-  }
+  },
+  // The subsidiary update also writes `parentCompanyId`.
+  allowedFields: readonly string[] = Object.keys(companyValidator.shape)
 ) {
   // An explicit allow-list of the company form's fields, never the caller's
   // object: Kysely bypasses RLS and the API passes `company` through with
   // whatever keys were sent, so a spread would reach any column of the row.
-  const allowed = new Set<string>(Object.keys(companyValidator.shape));
+  const allowed = new Set<string>(allowedFields);
   const fields = Object.fromEntries(
     Object.entries(sanitize(company)).filter(([key]) => allowed.has(key))
-  ) as Partial<z.infer<typeof companyValidator>>;
+  ) as Partial<z.infer<typeof subsidiaryValidator>>;
 
   return db.transaction().execute(async (trx) => {
     await trx
@@ -3397,8 +3400,8 @@ export async function saveCompanySettings(
   return error ? ctx.error("internal", failure, error) : null;
 }
 
-/** Multi-company management is open to internal (Carbon) users only, for now. */
-export async function refuseUnlessInternalUser(
+/** Multi-company management: Carbon staff, and the companies the `multi-company-management` flag turns it on for. */
+export async function refuseUnlessCanManageCompanies(
   ctx: ServiceContext
 ): Promise<CarbonError | null> {
   const refused = ctx.error(
@@ -3411,7 +3414,14 @@ export async function refuseUnlessInternalUser(
     .select("email")
     .eq("id", ctx.actor.userId)
     .maybeSingle();
-  return isInternalEmail(data?.email ?? "") ? null : refused;
+  if (isInternalEmail(data?.email ?? "")) return null;
+  // The same rule as the Settings → Companies pages: Carbon staff, and the
+  // companies the `multi-company-management` flag turns it on for.
+  const enabled = await flags.bool("multi-company-management", {
+    companyId: ctx.company.id,
+    userId: ctx.actor.userId
+  });
+  return enabled ? null : refused;
 }
 
 /** The headquarters location and the creator's job at it: what a new company starts with. */

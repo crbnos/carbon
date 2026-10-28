@@ -47,7 +47,13 @@ const OpportunityLineNotes = ({
   const permissions = usePermissions();
   const isEmployee = permissions.is("employee");
   const { t } = useLingui();
-  const canEdit = !isReadOnlyProp && permissions.can("update", "sales");
+  // Invoice rows are written under invoicing's RLS, not sales'.
+  const canEdit =
+    !isReadOnlyProp &&
+    permissions.can(
+      "update",
+      table === "salesInvoiceLine" ? "invoicing" : "sales"
+    );
   const [tab, setTab] = useState(isEmployee ? "internal" : "external");
   const [internalNotes, setInternalNotes] = useState(
     initialInternalNotes ?? {}

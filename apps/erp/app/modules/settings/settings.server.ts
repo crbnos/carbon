@@ -1032,7 +1032,8 @@ export const createCompany = defineServiceFn({
  * Create a company in the caller's company group.
  *
  * @remarks
- * Open to internal users only, for now. The parent must be a company of the
+ * Open to Carbon staff, and to the companies the `multi-company-management`
+ * flag turns it on for. A parent is required, and it must be a company of the
  * caller's own group: seeding joins the new company to its parent's group,
  * so a parent from another group would place it inside another tenant. Then
  * as for a new company: insert, seed, the Headquarters location and the
@@ -1042,22 +1043,25 @@ export const createSubsidiary = defineServiceFn({
   input: subsidiaryValidator,
   permission: { create: "settings" },
   async run(ctx, subsidiary) {
-    const refused = await service.refuseUnlessInternalUser(ctx);
+    const refused = await service.refuseUnlessCanManageCompanies(ctx);
     if (refused) return refused;
 
     const { id: _, parentCompanyId, ...company } = subsidiary;
     const client = ctx.asSystem.supabase;
 
-    if (parentCompanyId) {
-      const parent = await client
-        .from("company")
-        .select("id")
-        .eq("id", parentCompanyId)
-        .eq("companyGroupId", ctx.company.groupId)
-        .maybeSingle();
-      if (parent.error || !parent.data) {
-        return ctx.error("notFound", "Parent company not found", parent.error);
-      }
+    // Without a parent, seeding would start a new company group: that is
+    // creating a company, not a subsidiary, and has its own permissions.
+    if (!parentCompanyId) {
+      return ctx.error("validation", "A subsidiary needs a parent company");
+    }
+    const parent = await client
+      .from("company")
+      .select("id")
+      .eq("id", parentCompanyId)
+      .eq("companyGroupId", ctx.company.groupId)
+      .maybeSingle();
+    if (parent.error || !parent.data) {
+      return ctx.error("notFound", "Parent company not found", parent.error);
     }
 
     const inserted = await service.insertCompany(client, company);
@@ -1090,22 +1094,68 @@ export const createSubsidiary = defineServiceFn({
  * Update a company of the caller's company group.
  *
  * @remarks
- * Open to internal users only, for now. Writes the company's details and its
- * parent, then drops its cached time zone.
+ * Open to Carbon staff, and to the companies the `multi-company-management`
+ * flag turns it on for. The company and its new parent must both be in the
+ * caller's group. Writes the company's details and its parent, then drops its
+ * cached time zone. A base-currency change also clears the company's
+ * exchange-rate overrides in the same transaction, as `updateCompanyDetails`
+ * does: they are denominated in the old base.
  */
 export const updateSubsidiaryDetails = defineServiceFn({
   input: subsidiaryValidator.safeExtend({ id: z.string() }),
   permission: { update: "settings" },
   async run(ctx, { id, ...subsidiary }) {
-    const refused = await service.refuseUnlessInternalUser(ctx);
+    const refused = await service.refuseUnlessCanManageCompanies(ctx);
     if (refused) return refused;
 
-    const result = await service.updateSubsidiary(ctx.asCaller.supabase, id, {
-      ...subsidiary,
-      updatedBy: ctx.auditUserId
-    });
-    if (result.error) {
-      return ctx.error("internal", "Failed to update subsidiary", result.error);
+    const client = ctx.asSystem.supabase;
+    const current = await client
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", id)
+      .eq("companyGroupId", ctx.company.groupId)
+      .maybeSingle();
+    if (current.error || !current.data) {
+      return ctx.error("notFound", "Company not found", current.error);
+    }
+    if (subsidiary.parentCompanyId) {
+      const parent = await client
+        .from("company")
+        .select("id")
+        .eq("id", subsidiary.parentCompanyId)
+        .eq("companyGroupId", ctx.company.groupId)
+        .maybeSingle();
+      if (parent.error || !parent.data) {
+        return ctx.error("notFound", "Parent company not found", parent.error);
+      }
+    }
+
+    if (
+      subsidiary.baseCurrencyCode &&
+      subsidiary.baseCurrencyCode !== current.data.baseCurrencyCode
+    ) {
+      try {
+        await service.updateCompanyWithBaseCurrencyChange(
+          ctx.asSystem.pg,
+          id,
+          { ...subsidiary, updatedBy: ctx.auditUserId },
+          Object.keys(subsidiaryValidator.shape).filter((key) => key !== "id")
+        );
+      } catch (error) {
+        return ctx.error("internal", "Failed to update subsidiary", error);
+      }
+    } else {
+      const result = await service.updateSubsidiary(ctx.asCaller.supabase, id, {
+        ...subsidiary,
+        updatedBy: ctx.auditUserId
+      });
+      if (result.error) {
+        return ctx.error(
+          "internal",
+          "Failed to update subsidiary",
+          result.error
+        );
+      }
     }
     await invalidateCompanyTimeZone(id);
     return { id };
@@ -1249,13 +1299,17 @@ export const removePrinterRoute = defineServiceFn({
           next.defaultPrinterRouteId = null;
           dirty = true;
         }
-        if (next.shipping?.printerRouteId === id) {
-          next.shipping = { ...next.shipping, printerRouteId: null };
-          dirty = true;
-        }
-        if (next.receiving?.printerRouteId === id) {
-          next.receiving = { ...next.receiving, printerRouteId: null };
-          dirty = true;
+        for (const context of [
+          "shipping",
+          "receiving",
+          "inventory",
+          "kanban"
+        ] as const) {
+          const assigned = next[context];
+          if (assigned?.printerRouteId === id) {
+            next[context] = { ...assigned, printerRouteId: null };
+            dirty = true;
+          }
         }
         if (next.workCenters) {
           const workCenters = { ...next.workCenters };

@@ -6,7 +6,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./push.server": "./src/push.server.ts",
-    "./validate": "./src/validate.ts"
+    "./validate": "./src/validate.ts",
+    "./flags": "./src/flags.ts",
+    "./flags.server": "./src/flags.server.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -19,6 +21,9 @@
   },
   "dependencies": {
     "@carbon/utils": "workspace:*",
+    "@openfeature/core": "catalog:",
+    "@openfeature/flagd-core": "catalog:",
+    "@openfeature/server-sdk": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

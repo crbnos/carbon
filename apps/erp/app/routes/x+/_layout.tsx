@@ -25,6 +25,7 @@ import { withEmailDelivery } from "@carbon/ee";
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
+import { evaluateBrowserFlags } from "@carbon/env/flags.server";
 import { getVapidDetails } from "@carbon/env/push.server";
 import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
@@ -346,6 +347,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     auditLogEnabled,
     company,
     companies: companies.data ?? [],
+    // Feature flags with `browser: true`, read with `useFeatureFlags().feature(key)`.
+    flags: await evaluateBrowserFlags({ companyId, userId }),
     companySettings: companySettings.data ?? null,
     customFields: customFields.data ?? [],
     defaults: defaults.data,
