@@ -53,6 +53,7 @@
     "./ramp/hooks.server": "./src/ramp/hooks.server.ts",
     "./rillet/hooks.server": "./src/rillet/hooks.server.ts",
     "./sense/hooks.server": "./src/sense/hooks.server.ts",
+    "./sense/webhook": "./src/sense/webhook.ts",
     "./xero/hooks.server": "./src/xero/hooks.server.ts",
     "./stripe-connect.server": "./src/stripe-connect/payment.server.ts",
     "./two-factor.server": "./src/two-factor.server.ts",

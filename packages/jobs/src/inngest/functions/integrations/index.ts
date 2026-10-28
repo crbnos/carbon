@@ -13,7 +13,7 @@ export { linearSyncFunction, syncIssueFromLinearSchema } from "./linear";
 export { mountPublishFunction } from "./mount-publish";
 export { mountSweepFunction } from "./mount-sweep";
 export { oeeSweepFunction } from "./oee-sweep";
-export { oeeSyncFunction } from "./oee-sync";
+export { oeeDeviceSyncFunction, oeeSyncFunction } from "./oee-sync";
 export { onshapeBackfillFunction } from "./onshape-backfill";
 export {
   onshapeDrawingSyncFunction,
