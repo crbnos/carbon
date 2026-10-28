@@ -21630,6 +21630,9 @@ msgstr "显示前500行"
 msgid "Showing the newest 200 journals"
 msgstr "显示最新的 200 个凭证"
 
+msgid "Showing the oldest orders only. Search or filter to see the rest."
+msgstr "仅显示最早的订单。请搜索或筛选以查看其余订单。"
+
 msgid "Showing the top 1,000 groups by amount"
 msgstr "按金额显示前1,000个分组"
 

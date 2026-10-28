@@ -21630,6 +21630,9 @@ msgstr "最初の 500 行を表示中"
 msgid "Showing the newest 200 journals"
 msgstr "最新200件の仕訳を表示中"
 
+msgid "Showing the oldest orders only. Search or filter to see the rest."
+msgstr "古い注文のみを表示しています。残りを表示するには検索または絞り込みを行ってください。"
+
 msgid "Showing the top 1,000 groups by amount"
 msgstr "金額別上位 1,000 グループを表示中"
 

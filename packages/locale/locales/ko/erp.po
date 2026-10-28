@@ -21630,6 +21630,9 @@ msgstr "처음 500줄을 표시하고 있습니다"
 msgid "Showing the newest 200 journals"
 msgstr "최신 200개 전표 표시 중"
 
+msgid "Showing the oldest orders only. Search or filter to see the rest."
+msgstr "가장 오래된 주문만 표시하고 있습니다. 나머지를 보려면 검색하거나 필터를 적용하세요."
+
 msgid "Showing the top 1,000 groups by amount"
 msgstr "금액별 상위 1,000개 그룹을 표시하고 있습니다"
 

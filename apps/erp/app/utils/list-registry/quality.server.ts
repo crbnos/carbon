@@ -80,7 +80,11 @@ export const inspectionPlansList = searchList({
   key: "inspection-plans",
   permission: { view: "quality", role: "employee" },
   paging: INSPECTION_PLAN_PARTS_PAGING,
-  service: getInspectionPlanParts
+  service: getInspectionPlanParts,
+  // The column joins the plans' names; the view's `planNames` is for search.
+  exportValues: {
+    planNames: (row) => row.plans.map((plan) => plan.name).join(", ")
+  }
 });
 
 export const inspectionsList = searchList({

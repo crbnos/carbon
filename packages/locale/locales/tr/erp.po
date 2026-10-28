@@ -21630,6 +21630,9 @@ msgstr "İlk 500 satır gösteriliyor"
 msgid "Showing the newest 200 journals"
 msgstr "En yeni 200 muhasebe fişi gösteriliyor"
 
+msgid "Showing the oldest orders only. Search or filter to see the rest."
+msgstr "Yalnızca en eski siparişler gösteriliyor. Kalanları görmek için ara veya filtrele."
+
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Miktar açısından ilk 1.000 grup gösteriliyor"
 

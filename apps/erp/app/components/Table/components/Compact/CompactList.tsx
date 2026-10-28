@@ -78,6 +78,7 @@ export type CompactListProps<T> = {
   infinite?: InfiniteRows<T>;
   /** A single-load list that read `SINGLE_LOAD_LIMIT` rows (`<Table isTruncated>`). */
   isTruncated?: boolean;
+  rowLimitNote?: ReactNode;
   withSelectableRows: boolean;
   headerActions?: ReactNode;
   primaryAction?: ReactNode;
@@ -98,6 +99,9 @@ export type CompactListProps<T> = {
   allMatchingCount?: number;
   renderExpandedRow?: (row: T) => ReactNode;
   canExpandRow?: (row: T) => boolean;
+  /** The Table's expansion state, shared with the grid (`expandRowsFor`). */
+  isRowExpanded: (rowId: string) => boolean;
+  toggleRowExpanded: (rowId: string) => void;
   groupStarts: Map<string, T[]>;
   groupHeader?: (rows: T[]) => ReactNode;
   totals: {
@@ -126,6 +130,7 @@ export function CompactList<T>({
   withPagination,
   infinite,
   isTruncated = false,
+  rowLimitNote,
   withSelectableRows,
   headerActions,
   primaryAction,
@@ -143,6 +148,8 @@ export function CompactList<T>({
   allMatchingCount,
   renderExpandedRow,
   canExpandRow,
+  isRowExpanded,
+  toggleRowExpanded,
   groupStarts,
   groupHeader,
   totals,
@@ -197,9 +204,6 @@ export function CompactList<T>({
     [selecting, selectionLabel]
   );
   useSetAppBarOverride(override);
-
-  /* Expandable rows */
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   /* Row virtualization on the list's scroll element (`<main>` on a page) */
   const entries = useMemo(() => {
@@ -362,7 +366,7 @@ export function CompactList<T>({
     const { row } = entry;
     const rowExpandable =
       !!renderExpandedRow && (!canExpandRow || canExpandRow(row.original));
-    const isExpanded = rowExpandable && !!expanded[row.id];
+    const isExpanded = rowExpandable && isRowExpanded(row.id);
     const content = (
       <CompactRow
         row={row}
@@ -379,11 +383,7 @@ export function CompactList<T>({
           rowExpandable
             ? {
                 expanded: isExpanded,
-                onToggle: () =>
-                  setExpanded((prev) => ({
-                    ...prev,
-                    [row.id]: !prev[row.id]
-                  }))
+                onToggle: () => toggleRowExpanded(row.id)
               }
             : undefined
         }
@@ -441,7 +441,9 @@ export function CompactList<T>({
       </div>
       <div ref={sentinelRef} aria-hidden />
       {isTruncated ? (
-        <RowLimitNote className="px-4 py-4 text-center text-xs" />
+        <RowLimitNote className="px-4 py-4 text-center text-xs">
+          {rowLimitNote}
+        </RowLimitNote>
       ) : null}
 
       {withPagination || infinite ? (

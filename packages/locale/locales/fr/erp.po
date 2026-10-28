@@ -21630,6 +21630,9 @@ msgstr "Affichage des 500 premières lignes"
 msgid "Showing the newest 200 journals"
 msgstr "Affichage des 200 dernières écritures"
 
+msgid "Showing the oldest orders only. Search or filter to see the rest."
+msgstr "Affichage des commandes les plus anciennes uniquement. Rechercher ou filtrer pour voir le reste."
+
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Affichage des 1 000 meilleurs groupes par montant"
 

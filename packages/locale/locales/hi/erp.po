@@ -21630,6 +21630,9 @@ msgstr "पहली 500 लाइनें दिखा रहे हैं"
 msgid "Showing the newest 200 journals"
 msgstr "नवीनतम 200 जर्नल दिखाए जा रहे हैं"
 
+msgid "Showing the oldest orders only. Search or filter to see the rest."
+msgstr "केवल सबसे पुराने ऑर्डर दिखाए जा रहे हैं। बाकी देखने के लिए खोजें या फ़िल्टर करें।"
+
 msgid "Showing the top 1,000 groups by amount"
 msgstr "राशि द्वारा शीर्ष 1,000 समूह दिखा रहे हैं"
 

@@ -180,6 +180,9 @@ interface TableProps<T extends object> {
   // A single-load list (no `infinite`) whose loader read `SINGLE_LOAD_LIMIT`
   // rows: more may match, so the table says it shows only the first ones.
   isTruncated?: boolean;
+  // Replaces the note under a truncated list, for one whose rows are not what
+  // its loader read (Receiving reads lines and shows orders).
+  rowLimitNote?: ReactNode;
   // Optional per-row class (e.g. to highlight rows that failed validation).
   getRowClassName?: (originalRow: T) => string | undefined;
   rowSelection?: RowSelectionState;
@@ -363,6 +366,7 @@ const Table = <T extends object>({
   infinite,
   infiniteRows: controlledInfiniteRows,
   isTruncated = false,
+  rowLimitNote,
   getRowClassName,
   rowSelection: controlledRowSelection,
   onRowSelectionChange,
@@ -1284,6 +1288,7 @@ const Table = <T extends object>({
         withPagination={withPagination}
         infinite={isInfinite ? infiniteRows : undefined}
         isTruncated={isTruncated && !isInfinite}
+        rowLimitNote={rowLimitNote}
         withSelectableRows={withSelectableRows}
         headerActions={headerActions}
         primaryAction={primaryAction}
@@ -1301,6 +1306,8 @@ const Table = <T extends object>({
         allMatchingCount={allMatching?.count}
         renderExpandedRow={renderExpandedRow}
         canExpandRow={canExpandRow}
+        isRowExpanded={isRowExpanded}
+        toggleRowExpanded={toggleRowExpanded}
         groupStarts={groupStarts}
         groupHeader={groupRowsBy?.header}
         totals={table
@@ -1736,7 +1743,9 @@ const Table = <T extends object>({
                 <tbody>
                   <tr>
                     <td colSpan={visibleColumns.length} className="p-0">
-                      <RowLimitNote className="sticky left-0 w-fit px-4 py-3" />
+                      <RowLimitNote className="sticky left-0 w-fit px-4 py-3">
+                        {rowLimitNote}
+                      </RowLimitNote>
                     </td>
                   </tr>
                 </tbody>

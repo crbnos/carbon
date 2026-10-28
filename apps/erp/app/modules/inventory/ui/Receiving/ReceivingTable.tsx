@@ -45,6 +45,8 @@ import { path } from "~/utils/path";
 
 type ReceivingTableProps = {
   rows: ReceivingRow[];
+  /** The loader read its line limit: more orders may match. */
+  isTruncated: boolean;
   draftReceiptByOrder: Record<string, ReceivingDraftReceipt>;
 };
 
@@ -131,7 +133,7 @@ function AlsoOpenOn({ orders }: { orders: ReceivingOrder[] }) {
 
 /** One row per order, its lines in the expanded row, which is always open. */
 const ReceivingTable = memo(
-  ({ rows, draftReceiptByOrder }: ReceivingTableProps) => {
+  ({ rows, isTruncated, draftReceiptByOrder }: ReceivingTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const formatQuantity = useQuantityFormatter();
@@ -381,6 +383,12 @@ const ReceivingTable = memo(
         renderExpandedRow={renderExpandedRow}
         pinExpandedRows
         expandRowsFor={search || true}
+        isTruncated={isTruncated}
+        rowLimitNote={
+          <Trans>
+            Showing the oldest orders only. Search or filter to see the rest.
+          </Trans>
+        }
         withSimpleSorting={false}
         sort={null}
         // The search is the page: keep the toolbar when nothing matches.
