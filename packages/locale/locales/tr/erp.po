@@ -577,6 +577,10 @@ msgstr ""
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç tutuldu}}"
 
+#. placeholder {0}: printIds.length
+msgid "{failed} of {0} print jobs failed"
+msgstr "{0} yazdırma işinden {failed} tanesi başarısız oldu"
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {Ve # daha fazla kayıt.} other {Ve # daha fazla kayıt.}}"
 
@@ -949,6 +953,9 @@ msgstr "2s"
 msgid "3 years"
 msgstr "3 yıl"
 
+msgid "3\" x 2\" label"
+msgstr "3\" x 2\" etiket"
+
 msgid "30D"
 msgstr "30G"
 
@@ -960,6 +967,9 @@ msgstr "3s"
 
 msgid "4 years"
 msgstr "4 yıl"
+
+msgid "4\" x 2\" label"
+msgstr "4\" x 2\" etiket"
 
 msgid "4h"
 msgstr "4s"
@@ -1002,6 +1012,9 @@ msgstr "Operatörün döndürebileceği 3D model"
 
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "Operatör oluşturulduğunda bir 4 haneli PIN oluşturulur."
+
+msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
+msgstr "4\" x 2\" veya 3\" x 2\" etiket, Zebra gibi bir termal yazıcı için etiket başına bir kart yazdırır."
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "Bir parti en az bir operasyon gerektirir. Bütün partiyi ayırmak için bunun yerine Çöz'ü kullanın."
@@ -4554,6 +4567,9 @@ msgstr "Hesaplama Yöntemi"
 
 msgid "Calendar"
 msgstr "Takvim"
+
+msgid "Calendar Weeks"
+msgstr "Takvim Haftaları"
 
 msgid "Calibration"
 msgstr "Kalibrasyon"
@@ -8668,6 +8684,9 @@ msgstr "Her tedarikçinin her iş emrinden dış operasyonları yeni bir satın 
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "Her adetin adil değeri ve ekonomik ömrü, terimin çoğunluğunu kapsayıp kapsamadığını belirler. Değiştirmek için hücreyi tıklayın."
 
+msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
+msgstr "Her hafta, yılın ISO 8601 haftasıyla başlıklandırılır: Hafta 44, Hafta 45, Hafta 46."
+
 msgid "Each, lb, ft…"
 msgstr "Her, lb, ft…"
 
@@ -11446,6 +11465,9 @@ msgstr "Örneklem büyüklüğünün nasıl belirlendiği — Tümünü İncele,
 msgid "How the unit price of each quantity was calculated."
 msgstr "Her miktarın birim fiyatı nasıl hesaplandığı."
 
+msgid "How the weekly columns of Material Planning, Production Planning and Demand Forecasts are numbered."
+msgstr "Malzeme Planlama, Üretim Planlama ve Talep Tahminleri'ndeki haftalık sütunların nasıl numaralandırılacağı."
+
 msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
 msgstr "Bir adımda tüm montajın nasıl çevrildiği; örneğin alt yüzeyine parça takmak için ters çevrilmesi. Aynı montajın sonraki adımları, bir adım montajı yeniden çevirene kadar bu konumu korur."
 
@@ -12652,6 +12674,9 @@ msgstr "Set"
 msgid "Label"
 msgstr "Etiket"
 
+msgid "Label Size"
+msgstr "Etiket Boyutu"
+
 msgid "Label to complete the current operation for this kanban"
 msgstr "Bu kanban için mevcut işlemi tamamlamak üzere etiket"
 
@@ -12966,6 +12991,9 @@ msgstr "Hesabınızı kuralım"
 
 msgid "Letter"
 msgstr "Harf"
+
+msgid "Letter, 6 per page"
+msgstr "Letter, sayfa başına 6"
 
 msgid "Liability"
 msgstr "Yükümlülük"
@@ -15855,6 +15883,12 @@ msgstr "Açık görev sayısı"
 msgid "Number of operations"
 msgstr "Operasyon sayısı"
 
+msgid "Number weeks by calendar week"
+msgstr "Haftaları takvim haftasına göre numaralandır"
+
+msgid "Number weeks from the present week"
+msgstr "Haftaları mevcut haftadan itibaren numaralandır"
+
 msgid "Numbering sequence"
 msgstr "Numaralandırma Sırası"
 
@@ -17663,6 +17697,7 @@ msgstr "Toplanan Anapara"
 msgid "Print"
 msgstr "Yazdır"
 
+#. placeholder {0}: printIds.length
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "{0} Etiket Yazdır"
@@ -18360,6 +18395,10 @@ msgstr "Sorular"
 
 msgid "Queued"
 msgstr "Kuyrukta"
+
+#. placeholder {0}: printIds.length
+msgid "Queued {0} labels for printing"
+msgstr "{0} etiket yazdırma kuyruğuna eklendi"
 
 msgid "Queued {count} sync operations for sync"
 msgstr ""
@@ -26509,12 +26548,11 @@ msgstr "Hafta"
 msgid "Week {0}"
 msgstr "Hafta {0}"
 
-#. placeholder {0}: i + 1
-msgid "Week {0} ({formattedDate})"
-msgstr "Hafta {0} ({formattedDate})"
-
 msgid "Week {weekNumber}"
 msgstr "Hafta {weekNumber}"
+
+msgid "Week {weekNumber} ({formattedDate})"
+msgstr "Hafta {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "8. Hafta geçişi"
@@ -26551,6 +26589,15 @@ msgstr "5. ile 7. Haftalar"
 
 msgid "Weeks 7 to 8"
 msgstr "Haftalar 7 ila 8"
+
+msgid "Weeks are counted from today: Present Week, Week 2, Week 3."
+msgstr "Haftalar bugünden itibaren sayılır: Mevcut Hafta, Hafta 2, Hafta 3."
+
+msgid "Weeks are numbered by calendar week"
+msgstr "Haftalar takvim haftasına göre numaralandırılır"
+
+msgid "Weeks are numbered from the present week"
+msgstr "Haftalar mevcut haftadan itibaren numaralandırılır"
 
 msgid "Weeks Open"
 msgstr "Açık Haftalar"

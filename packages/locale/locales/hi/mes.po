@@ -1756,6 +1756,9 @@ msgstr "सीरियल नंबर स्कैन करें या ख�
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "इस लॉट से एक ट्रैक की गई इकाई को स्कैन या चुनें, इसे नमूना कॉलम के रूप में जोड़ें, और फिर ग्रिड में इसका परिणाम रिकॉर्ड करें।"
 
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "इकाई को स्कैन करें या चुनें, फिर कानबान कार्ड को दोबारा स्कैन करें"
+
 msgid "Scan received"
 msgstr "स्कैन प्राप्त हुआ"
 

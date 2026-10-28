@@ -1756,6 +1756,9 @@ msgstr "扫码或搜索序列号..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "从此批次中扫码或选择追踪实体并将其添加为样本列，然后在网格中记录其结果。"
 
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "请扫描或选择该单元，然后再次扫描看板卡"
+
 msgid "Scan received"
 msgstr "已收到扫码"
 

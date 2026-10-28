@@ -19,12 +19,19 @@ import {
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuItem,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
   PulsingDot,
   Status,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   toast,
+  useDisclosure,
   useViewport,
   VStack
 } from "@carbon/react";
@@ -70,7 +77,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions, usePrinting, useUrlParams } from "~/hooks";
 import { useQuantityFormatter } from "~/hooks/useQuantityFormatter";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { kanbanOutputTypes } from "~/modules/settings/settings.models";
@@ -723,34 +730,91 @@ const KanbansTable = memo(
       [params, permissions, items.find, isPhone, kanbanOutput]
     );
 
-    const renderActions = useCallback((selectedRows: typeof data) => {
-      const handlePrintLabels = () => {
-        const selectedIds = selectedRows
-          .map((row) => row.id)
-          .filter(Boolean) as string[];
-        if (selectedIds.length > 0) {
-          window.open(
-            path.to.file.kanbanLabelsPdf(selectedIds, "order"),
-            "_blank"
-          );
-        }
-      };
+    /* Bulk printing of Create cards: to a configured printer (a Zebra prints
+       at its own media size), else the PDF at the company's Label Size. */
+    const { printerRoutes, resolvePrinterRoute } = usePrinting();
+    const printerModal = useDisclosure();
+    const defaultPrinter = resolvePrinterRoute(locationId, "default");
+    const [printIds, setPrintIds] = useState<string[]>([]);
+    const [selectedPrinterId, setSelectedPrinterId] = useState<string>("");
+    const [isPrinting, setIsPrinting] = useState(false);
 
-      return (
+    const handlePrintLabels = useCallback(
+      (ids: string[]) => {
+        if (ids.length === 0) return;
+        if (printerRoutes.length > 0) {
+          setPrintIds(ids);
+          setSelectedPrinterId(
+            defaultPrinter?.id ?? printerRoutes[0]?.id ?? ""
+          );
+          printerModal.onOpen();
+        } else {
+          window.open(path.to.file.kanbanLabelsPdf(ids, "order"), "_blank");
+        }
+      },
+      [printerRoutes, defaultPrinter?.id, printerModal]
+    );
+
+    // Raw fetch (not a fetcher): parallel submissions don't abort each other
+    // and nothing revalidates, so the selection stays intact.
+    const handleConfirmPrint = useCallback(async () => {
+      if (printIds.length === 0 || !selectedPrinterId) return;
+
+      setIsPrinting(true);
+      try {
+        const results = await Promise.allSettled(
+          printIds.map((id) =>
+            fetch(path.to.manualPrint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sourceDocument: "Kanban",
+                sourceDocumentId: id,
+                locationId,
+                printerRouteId: selectedPrinterId
+              })
+            })
+          )
+        );
+
+        const failed = results.filter(
+          (r) => r.status === "rejected" || !r.value.ok
+        ).length;
+
+        if (failed > 0) {
+          toast.error(t`${failed} of ${printIds.length} print jobs failed`);
+        } else {
+          toast.success(t`Queued ${printIds.length} labels for printing`);
+        }
+      } finally {
+        setIsPrinting(false);
+        printerModal.onClose();
+      }
+    }, [printIds, selectedPrinterId, locationId, printerModal, t]);
+
+    const renderActions = useCallback(
+      (selectedRows: typeof data) => (
         <DropdownMenuContent align="end" className="min-w-[200px]">
           <DropdownMenuLabel>
             <Trans>Actions</Trans>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={handlePrintLabels}>
+            <DropdownMenuItem
+              onClick={() =>
+                handlePrintLabels(
+                  selectedRows.map((row) => row.id).filter(Boolean) as string[]
+                )
+              }
+            >
               <LuPrinter className="mr-2 size-4" />
               Print Labels ({selectedRows.length})
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
-      );
-    }, []);
+      ),
+      [handlePrintLabels]
+    );
 
     return (
       <OpenQrCodeContext.Provider value={openQrCode}>
@@ -788,6 +852,72 @@ const KanbansTable = memo(
           withSavedView
           withSelectableRows
         />
+        {printerModal.isOpen && (
+          <Modal
+            open
+            onOpenChange={(open) => {
+              if (!open) printerModal.onClose();
+            }}
+          >
+            <ModalContent>
+              <ModalHeader>
+                <ModalTitle>
+                  <Trans>Select Printer</Trans>
+                </ModalTitle>
+              </ModalHeader>
+              <ModalBody>
+                <div className="flex flex-col gap-1">
+                  {printerRoutes.map((route) => (
+                    <button
+                      type="button"
+                      key={route.id}
+                      className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+                        selectedPrinterId === route.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:bg-muted"
+                      }`}
+                      onClick={() => setSelectedPrinterId(route.id)}
+                    >
+                      <LuPrinter className="size-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium">
+                          {route.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-2 uppercase">
+                          {route.format}
+                        </span>
+                        {route.mediaSizeId && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            {route.mediaSizeId}
+                          </span>
+                        )}
+                      </div>
+                      {selectedPrinterId === route.id && (
+                        <LuCheck className="size-4 text-primary shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <HStack>
+                  <Button
+                    variant="primary"
+                    leftIcon={<LuPrinter />}
+                    isLoading={isPrinting}
+                    disabled={!selectedPrinterId || isPrinting}
+                    onClick={handleConfirmPrint}
+                  >
+                    <Trans>Print {printIds.length} Labels</Trans>
+                  </Button>
+                  <Button variant="solid" onClick={printerModal.onClose}>
+                    <Trans>Cancel</Trans>
+                  </Button>
+                </HStack>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
+        )}
       </OpenQrCodeContext.Provider>
     );
   }

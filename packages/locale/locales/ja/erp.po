@@ -577,6 +577,10 @@ msgstr ""
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行除外} other {# 行除外}}"
 
+#. placeholder {0}: printIds.length
+msgid "{failed} of {0} print jobs failed"
+msgstr "{0} 件中 {failed} 件の印刷ジョブが失敗しました"
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {他に # 件のレコード} other {他に # 件のレコード}}"
 
@@ -949,6 +953,9 @@ msgstr "2時間"
 msgid "3 years"
 msgstr "3 年"
 
+msgid "3\" x 2\" label"
+msgstr "3\" x 2\" ラベル"
+
 msgid "30D"
 msgstr "30日"
 
@@ -960,6 +967,9 @@ msgstr "3時間"
 
 msgid "4 years"
 msgstr "4年"
+
+msgid "4\" x 2\" label"
+msgstr "4\" x 2\" ラベル"
 
 msgid "4h"
 msgstr "4時間"
@@ -1002,6 +1012,9 @@ msgstr "作業者が回転させることができる3Dモデル"
 
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "4 桁の PIN は、作業者が作成されるときに生成されます。"
+
+msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
+msgstr "4\" x 2\" または 3\" x 2\" ラベルは、Zebra などのサーマルプリンター向けに 1 ラベルに 1 枚のカードを印刷します。"
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "バッチには少なくとも 1 つの工程が必要です。バッチ全体を分割するには、代わりに [分割] を使用してください。"
@@ -4554,6 +4567,9 @@ msgstr "計算方法"
 
 msgid "Calendar"
 msgstr "カレンダー"
+
+msgid "Calendar Weeks"
+msgstr "暦週"
 
 msgid "Calibration"
 msgstr "校正"
@@ -8668,6 +8684,9 @@ msgstr "各仕入先の全製造指図からの外注工程は、1つの新規�
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "各個の公正価値と経済的耐用年数により、条件がほとんどをカバーするかどうかが決まります。セルをクリックして変更してください。"
 
+msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
+msgstr "各週の見出しには ISO 8601 の年間週番号が表示されます: 週 44、週 45、週 46。"
+
 msgid "Each, lb, ft…"
 msgstr "各、ポンド、フィート…"
 
@@ -11446,6 +11465,9 @@ msgstr "サンプルサイズがどのように決定されるか—すべてを
 msgid "How the unit price of each quantity was calculated."
 msgstr "各数量の単価がどのように計算されたか。"
 
+msgid "How the weekly columns of Material Planning, Production Planning and Demand Forecasts are numbered."
+msgstr "材料計画、生産計画、所要量予測の週次列の番号の付け方。"
+
 msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
 msgstr "ステップ内でアセンブリ全体の向きを変えます。たとえば、底面に部品を取り付けるために裏返す場合などです。同じアセンブリの後続ステップは、別のステップで向きが変わるまでこの向きを維持します。"
 
@@ -12652,6 +12674,9 @@ msgstr "キット"
 msgid "Label"
 msgstr "ラベル"
 
+msgid "Label Size"
+msgstr "ラベルサイズ"
+
 msgid "Label to complete the current operation for this kanban"
 msgstr "このかんばんの現在の工程を完了するためのラベル"
 
@@ -12966,6 +12991,9 @@ msgstr "アカウントをセットアップしましょう"
 
 msgid "Letter"
 msgstr "文字"
+
+msgid "Letter, 6 per page"
+msgstr "レター、1 ページに 6 枚"
 
 msgid "Liability"
 msgstr "負債"
@@ -15855,6 +15883,12 @@ msgstr "未実行タスクの数"
 msgid "Number of operations"
 msgstr "工程の数"
 
+msgid "Number weeks by calendar week"
+msgstr "週を暦週で番号付けする"
+
+msgid "Number weeks from the present week"
+msgstr "週を今週から番号付けする"
+
 msgid "Numbering sequence"
 msgstr "採番"
 
@@ -17663,6 +17697,7 @@ msgstr "元本回収済み"
 msgid "Print"
 msgstr "印刷"
 
+#. placeholder {0}: printIds.length
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "{0}個のラベルを印刷"
@@ -18360,6 +18395,10 @@ msgstr "質問"
 
 msgid "Queued"
 msgstr "キュー待ち"
+
+#. placeholder {0}: printIds.length
+msgid "Queued {0} labels for printing"
+msgstr "{0} 枚のラベルを印刷キューに追加しました"
 
 msgid "Queued {count} sync operations for sync"
 msgstr ""
@@ -26509,12 +26548,11 @@ msgstr "週"
 msgid "Week {0}"
 msgstr "第{0}週"
 
-#. placeholder {0}: i + 1
-msgid "Week {0} ({formattedDate})"
-msgstr "週 {0} ({formattedDate})"
-
 msgid "Week {weekNumber}"
 msgstr "週 {weekNumber}"
+
+msgid "Week {weekNumber} ({formattedDate})"
+msgstr "週 {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "第8週のカットオーバー"
@@ -26551,6 +26589,15 @@ msgstr "週5～7"
 
 msgid "Weeks 7 to 8"
 msgstr "7～8週目"
+
+msgid "Weeks are counted from today: Present Week, Week 2, Week 3."
+msgstr "週は今日から数えます: 今週、週 2、週 3。"
+
+msgid "Weeks are numbered by calendar week"
+msgstr "週は暦週で番号付けされます"
+
+msgid "Weeks are numbered from the present week"
+msgstr "週は今週から番号付けされます"
 
 msgid "Weeks Open"
 msgstr "開いている週数"

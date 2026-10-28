@@ -29068,6 +29068,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanbans.replenishmentLevel"
           },
           {
+            $ref: "#/parameters/rowFilter.kanbans.kanbanId"
+          },
+          {
             $ref: "#/parameters/rowFilter.kanbans.name"
           },
           {
@@ -102640,10 +102643,13 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
           },
           {
             $ref: "#/parameters/select"
@@ -102927,10 +102933,13 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -103168,10 +103177,13 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -104485,6 +104497,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.replenishmentLevel"
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.kanbanId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -104604,6 +104619,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.replenishmentLevel"
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.kanbanId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -104675,6 +104693,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.kanban.replenishmentLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.kanbanId"
           },
           {
             $ref: "#/parameters/body.kanban"
@@ -132235,6 +132256,10 @@ export default {
         replenishmentLevel: {
           format: "numeric",
           type: "number"
+        },
+        kanbanId: {
+          format: "text",
+          type: "string"
         },
         name: {
           format: "text",
@@ -167549,8 +167574,9 @@ export default {
         "requireBackflushStorageUnit",
         "preventNegativeBackflush",
         "receiptQuantitiesStartAtZero",
+        "requirePurchaseOrderApprovalSignature",
         "serialNumberTiming",
-        "requirePurchaseOrderApprovalSignature"
+        "useCalendarWeeks"
       ],
       properties: {
         id: {
@@ -167954,12 +167980,17 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        requirePurchaseOrderApprovalSignature: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
         serialNumberTiming: {
           default: "jobCreation",
           format: "text",
           type: "string"
         },
-        requirePurchaseOrderApprovalSignature: {
+        useCalendarWeeks: {
           default: false,
           format: "boolean",
           type: "boolean"
@@ -168588,6 +168619,10 @@ export default {
             'Transfer kanbans only. When the projected quantity at the To storage unit is below this level, Carbon creates a Released stock transfer for "quantity". NULL = scan-only.',
           format: "numeric",
           type: "number"
+        },
+        kanbanId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -183997,6 +184032,12 @@ export default {
     },
     "rowFilter.kanbans.replenishmentLevel": {
       name: "replenishmentLevel",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbans.kanbanId": {
+      name: "kanbanId",
       required: false,
       in: "query",
       type: "string"
@@ -223855,14 +223896,20 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companySettings.requirePurchaseOrderApprovalSignature": {
+      name: "requirePurchaseOrderApprovalSignature",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.companySettings.serialNumberTiming": {
       name: "serialNumberTiming",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.requirePurchaseOrderApprovalSignature": {
-      name: "requirePurchaseOrderApprovalSignature",
+    "rowFilter.companySettings.useCalendarWeeks": {
+      name: "useCalendarWeeks",
       required: false,
       in: "query",
       type: "string"
@@ -224539,6 +224586,12 @@ export default {
       name: "replenishmentLevel",
       description:
         'Transfer kanbans only. When the projected quantity at the To storage unit is below this level, Carbon creates a Released stock transfer for "quantity". NULL = scan-only.',
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanban.kanbanId": {
+      name: "kanbanId",
       required: false,
       in: "query",
       type: "string"

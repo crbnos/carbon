@@ -8352,6 +8352,7 @@ export type Database = {
           inventoryShelfLife: Json
           invoiceAutomation: Database["public"]["Enums"]["invoiceAutomation"]
           invoiceNotificationGroup: string[]
+          kanbanLabelSize: Database["public"]["Enums"]["kanbanLabelSize"]
           kanbanOutput: Database["public"]["Enums"]["kanbanOutput"]
           leaseDefaultDiscountRate: number
           leaseIncrementalBorrowingRate: number
@@ -8394,6 +8395,7 @@ export type Database = {
           supplierQuoteNotificationGroup: string[]
           timeCardEnabled: boolean
           updateLeadTimesOnReceipt: boolean
+          useCalendarWeeks: boolean
           useMetric: boolean
         }
         Insert: {
@@ -8430,6 +8432,7 @@ export type Database = {
           inventoryShelfLife?: Json
           invoiceAutomation?: Database["public"]["Enums"]["invoiceAutomation"]
           invoiceNotificationGroup?: string[]
+          kanbanLabelSize?: Database["public"]["Enums"]["kanbanLabelSize"]
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           leaseDefaultDiscountRate?: number
           leaseIncrementalBorrowingRate?: number
@@ -8472,6 +8475,7 @@ export type Database = {
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
           updateLeadTimesOnReceipt?: boolean
+          useCalendarWeeks?: boolean
           useMetric?: boolean
         }
         Update: {
@@ -8508,6 +8512,7 @@ export type Database = {
           inventoryShelfLife?: Json
           invoiceAutomation?: Database["public"]["Enums"]["invoiceAutomation"]
           invoiceNotificationGroup?: string[]
+          kanbanLabelSize?: Database["public"]["Enums"]["kanbanLabelSize"]
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           leaseDefaultDiscountRate?: number
           leaseIncrementalBorrowingRate?: number
@@ -8550,6 +8555,7 @@ export type Database = {
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
           updateLeadTimesOnReceipt?: boolean
+          useCalendarWeeks?: boolean
           useMetric?: boolean
         }
         Relationships: [
@@ -95716,6 +95722,7 @@ export type Database = {
         | "Rental Agreement"
         | "Contract"
         | "Lease"
+      kanbanLabelSize: "letter" | "label4x2" | "label3x2"
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
       leaseEventType: "Modification" | "Termination" | "Purchase"
@@ -97261,6 +97268,7 @@ export const Constants = {
         "Contract",
         "Lease",
       ],
+      kanbanLabelSize: ["letter", "label4x2", "label3x2"],
       kanbanOutput: ["label", "qrcode", "url"],
       kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],
       leaseEventType: ["Modification", "Termination", "Purchase"],
