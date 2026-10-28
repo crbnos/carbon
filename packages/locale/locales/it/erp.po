@@ -678,10 +678,11 @@ msgstr "{inserted} inseriti, {updated} aggiornati, {0} richiedono correzione, {1
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# ordine di produzione aperto ha materiali senza unità di stoccaggio} other {# ordini di produzione aperti hanno materiali senza unità di stoccaggio}}"
 
-msgid "{label} — click to open the next"
-msgstr "{label} — fai clic per aprire il successivo"
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {Preso # valore.} other {Presi # valori.}}"
+
+msgid "{label} — click to open the next"
+msgstr "{label} — fai clic per aprire il successivo"
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} è utilizzato da Documenti, Prima nota o conti predefiniti, quindi non può essere eliminato."
@@ -24097,8 +24098,6 @@ msgstr "L'articolo che ogni ordine di produzione produce — richiedi che corris
 msgid "The item's rental rate"
 msgstr "La tariffa di noleggio dell'articolo"
 
-msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "le ore dell'ordine di produzione ancora da fare che scadono quel giorno (su base di scadenza, non il giorno in cui il lavoro viene eseguito), con il lavoro scaduto in Scaduto"
 msgid "The items in that list have no field by that name."
 msgstr "Gli elementi di quella lista non hanno un campo con quel nome."
 
@@ -24108,8 +24107,8 @@ msgstr "Gli articoli di quel elenco non hanno campi da prendere."
 msgid "The items in that list have no reading as text."
 msgstr "Gli elementi di quella lista non possono essere letti come testo."
 
-msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "le ore di ordine di produzione dovute quel giorno (sulla base della scadenza, non il giorno in cui il lavoro viene eseguito), con il lavoro in ritardo in Scaduto."
+msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr "le ore dell'ordine di produzione ancora da fare che scadono quel giorno (su base di scadenza, non il giorno in cui il lavoro viene eseguito), con il lavoro scaduto in Scaduto"
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Il lavoro la cui operazione copre questa riga di lavorazione esterna; la ricevuta della riga chiude l'operazione su questo lavoro."

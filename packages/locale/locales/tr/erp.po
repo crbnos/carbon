@@ -678,10 +678,11 @@ msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} a
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# açık iş emirinin depolama birimi olmayan malzemeleri var} other {# açık iş emirlerinin depolama birimi olmayan malzemeleri var}}"
 
-msgid "{label} — click to open the next"
-msgstr "{label} — sonrakini açmak için tıklayın"
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {# değer alındı.} other {# değer alındı.}}"
+
+msgid "{label} — click to open the next"
+msgstr "{label} — sonrakini açmak için tıklayın"
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} belgeler, muhasebe fişleri veya varsayılan hesaplar tarafından kullanıldığından silinemez."
@@ -24097,8 +24098,6 @@ msgstr "Her iş emrinin ürettiği stok kartı — çıkış lotlarını birleş
 msgid "The item's rental rate"
 msgstr "Stok kartı'nın kiralama oranı"
 
-msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "o gün süresi dolacak olan yapılacak iş saatleri (bir son tarih esası, işin yürütüldüğü gün değil), gecikmiş işler «Gecikmiş» alanında."
 msgid "The items in that list have no field by that name."
 msgstr "Bu listedeki öğelerde bu adda bir alan yok."
 
@@ -24108,8 +24107,8 @@ msgstr "O listedeki stok kartlarının alınacak alanı yok."
 msgid "The items in that list have no reading as text."
 msgstr "Bu listedeki öğeler metin olarak okunamıyor."
 
-msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "o gün vadesi olan iş saatleri (çalışmanın çalıştığı günü değil, vade tarihine göre), gecikmiş iş Gecikmede."
+msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr "o gün süresi dolacak olan yapılacak iş saatleri (bir son tarih esası, işin yürütüldüğü gün değil), gecikmiş işler «Gecikmiş» alanında."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Bu dış işleme satırının kapsadığı işlem, işi; satırın alındığı bu işi karşı operasyonu kapatır."

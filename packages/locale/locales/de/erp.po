@@ -678,10 +678,11 @@ msgstr "{inserted} eingefügt, {updated} aktualisiert, {0} benötigen Behebung, 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# offener Fertigungsauftrag hat Materialien ohne Lagereinheit} other {# offene Fertigungsaufträge haben Materialien ohne Lagereinheit}}"
 
-msgid "{label} — click to open the next"
-msgstr "{label} — klicken Sie, um die nächste zu öffnen"
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {# Wert übernommen.} other {# Werte übernommen.}}"
+
+msgid "{label} — click to open the next"
+msgstr "{label} — klicken Sie, um die nächste zu öffnen"
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} wird von Dokumenten, Buchungssätzen oder Standardkonten verwendet, daher kann es nicht gelöscht werden."
@@ -24097,8 +24098,6 @@ msgstr "Der Artikel, den jeder Fertigungsauftrag produziert – erforderlich, um
 msgid "The item's rental rate"
 msgstr "Der Mietpreis des Artikels"
 
-msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "die noch ausstehenden Fertigungsauftrag-Stunden, die an diesem Tag fällig sind (basierend auf dem Fälligkeitsdatum, nicht auf dem Tag, an dem die Arbeit läuft), mit überfälliger Arbeit unter „Überfällig“."
 msgid "The items in that list have no field by that name."
 msgstr "Die Elemente dieser Liste haben kein Feld mit diesem Namen."
 
@@ -24108,8 +24107,8 @@ msgstr "Die Einträge in dieser Liste haben keine Felder zum Auswählen."
 msgid "The items in that list have no reading as text."
 msgstr "Die Elemente dieser Liste lassen sich nicht als Text lesen."
 
-msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "die Arbeitsstunden fällig an diesem Tag (basierend auf dem Fälligkeitsdatum, nicht dem Tag der Ausführung), mit überfälligen Arbeiten unter Überfällig."
+msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr "die noch ausstehenden Fertigungsauftrag-Stunden, die an diesem Tag fällig sind (basierend auf dem Fälligkeitsdatum, nicht auf dem Tag, an dem die Arbeit läuft), mit überfälliger Arbeit unter „Überfällig“."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Der Auftrag, dessen Operation diese Außenbearbeitungslinie abdeckt; der Beleg der Zeile schließt die Operation gegen diesen Auftrag."

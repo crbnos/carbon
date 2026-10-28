@@ -678,10 +678,11 @@ msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다} other {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다}}"
 
-msgid "{label} — click to open the next"
-msgstr "{label} — 클릭하여 다음을 엽니다"
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, other {값 #개를 가져왔습니다.}}"
+
+msgid "{label} — click to open the next"
+msgstr "{label} — 클릭하여 다음을 엽니다"
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label}은(는) 문서, 전표 또는 기본 계정에서 사용 중이므로 삭제할 수 없습니다."
@@ -24097,8 +24098,6 @@ msgstr "각 작업 지시가 생산하는 품목 — 출력 로트를 병합하�
 msgid "The item's rental rate"
 msgstr "품목의 임차료"
 
-msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "그 날이 기한인 남은 작업 지시 시간(작업이 실행되는 날이 아닌 기한 기준)이며, 기한 초과 작업은 기한 초과에 있습니다."
 msgid "The items in that list have no field by that name."
 msgstr "해당 목록의 항목에는 그 이름의 필드가 없습니다."
 
@@ -24108,8 +24107,8 @@ msgstr "해당 목록의 항목에는 가져올 필드가 없습니다."
 msgid "The items in that list have no reading as text."
 msgstr "해당 목록의 항목은 텍스트로 읽을 수 없습니다."
 
-msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "그 날에 마감될 작업 지시 시간(작업이 실행되는 날이 아닌 마감일 기준)이며, 기한 초과 작업은 기한 초과 섹션에 표시됩니다."
+msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr "그 날이 기한인 남은 작업 지시 시간(작업이 실행되는 날이 아닌 기한 기준)이며, 기한 초과 작업은 기한 초과에 있습니다."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "이 외주 라인이 처리하는 공정작업이 속한 작업입니다. 이 라인의 입고는 해당 작업의 공정작업을 마감합니다."

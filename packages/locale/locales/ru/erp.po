@@ -678,10 +678,11 @@ msgstr "{inserted} вставлено, {updated} обновлено, {0} тре�
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# открытый производственный заказ имеет материалы без единицы хранения} other {# открытых производственных заказов имеют материалы без единиц хранения}}"
 
-msgid "{label} — click to open the next"
-msgstr "{label} — нажмите, чтобы открыть следующий"
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {Взято # значение.} few {Взято # значения.} many {Взято # значений.} other {Взято # значения.}}"
+
+msgid "{label} — click to open the next"
+msgstr "{label} — нажмите, чтобы открыть следующий"
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} используется документами, операциями или учетными записями по умолчанию, поэтому не может быть удалена."
@@ -24097,8 +24098,6 @@ msgstr "Номенклатура, которую производит кажды
 msgid "The item's rental rate"
 msgstr "Ставка аренды номенклатуры"
 
-msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "часы производственного заказа, которые необходимо выполнить с учётом срока в этот день (по срокам выполнения, а не по дню запуска работ), с просроченными работами в разделе «Просрочено»."
 msgid "The items in that list have no field by that name."
 msgstr "У элементов этого списка нет поля с таким именем."
 
@@ -24108,8 +24107,8 @@ msgstr "Номенклатура в этом списке не имеет пол
 msgid "The items in that list have no reading as text."
 msgstr "Элементы этого списка нельзя прочитать как текст."
 
-msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "рабочие часы, подлежащие в этот день (на основе даты срока, не дня выполнения работы), с просроченной работой в разделе «Просроченные»."
+msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr "часы производственного заказа, которые необходимо выполнить с учётом срока в этот день (по срокам выполнения, а не по дню запуска работ), с просроченными работами в разделе «Просрочено»."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Работа, операция которой охватывает эту строку внешней обработки; квитанция по строке закрывает операцию для этой работы."

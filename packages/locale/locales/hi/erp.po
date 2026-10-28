@@ -678,10 +678,11 @@ msgstr "{inserted} सम्मिलित किया गया, {updated} �
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# खुले जॉब में भंडारण इकाई के बिना सामग्री है} other {# खुले जॉब में भंडारण इकाई के बिना सामग्री हैं}}"
 
-msgid "{label} — click to open the next"
-msgstr "{label} — अगला खोलने के लिए क्लिक करें"
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {# मान लिया गया।} other {# मान लिए गए।}}"
+
+msgid "{label} — click to open the next"
+msgstr "{label} — अगला खोलने के लिए क्लिक करें"
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} को दस्तावेज़, जर्नल या डिफ़ॉल्ट खातों द्वारा उपयोग किया जाता है, इसलिए इसे हटाया नहीं जा सकता।"
@@ -24097,8 +24098,6 @@ msgstr "प्रत्येक जॉब द्वारा उत्पाद
 msgid "The item's rental rate"
 msgstr "आइटम की किराये की दर"
 
-msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "जॉब घंटे जो अभी करने हैं वह उस दिन के कारण हैं (एक देय-तारीख आधार, न कि दिन जब काम चलता है), अतिदेय काम अतिदेय में है।"
 msgid "The items in that list have no field by that name."
 msgstr "उस सूची के आइटम में उस नाम का कोई फ़ील्ड नहीं है।"
 
@@ -24108,8 +24107,8 @@ msgstr "उस सूची में आइटम्स के पास ले
 msgid "The items in that list have no reading as text."
 msgstr "उस सूची के आइटम को टेक्स्ट के रूप में नहीं पढ़ा जा सकता।"
 
-msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "उस दिन देय नौकरी के घंटे (देय तारीख आधार पर, वह दिन नहीं जब काम चलता है), अतिदेय कार्य पिछली देय में।"
+msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr "जॉब घंटे जो अभी करने हैं वह उस दिन के कारण हैं (एक देय-तारीख आधार, न कि दिन जब काम चलता है), अतिदेय काम अतिदेय में है।"
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "वह काम जिसका संचालन यह बाहरी-प्रसंस्करण लाइन कवर करता है; लाइन की रसीद इस काम के विरुद्ध संचालन को बंद करती है।"

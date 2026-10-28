@@ -678,10 +678,11 @@ msgstr "{inserted} 件が挿入されました、{updated} 件が更新されま
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {#個のオープン製造指図に保管ユニットがない材料があります} other {#個のオープン製造指図に保管ユニットがない材料があります}}"
 
-msgid "{label} — click to open the next"
-msgstr "{label} — 次を開くをクリック"
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, other {# 件の値を取得しました。}}"
+
+msgid "{label} — click to open the next"
+msgstr "{label} — 次を開くをクリック"
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} はドキュメント、仕訳、またはデフォルトアカウントで使用されているため、削除できません。"
@@ -24097,8 +24098,6 @@ msgstr "各製造指図が生産する品目 — 出力ロットをマージす�
 msgid "The item's rental rate"
 msgstr "品目のレンタル料金"
 
-msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "その日が期限の、まだ行うべき製造指図の時間（仕事が実行される日ではなく、期限ベース）、期限超過の仕事は「期限超過」に表示されます。"
 msgid "The items in that list have no field by that name."
 msgstr "そのリストの項目には、その名前のフィールドがありません。"
 
@@ -24108,8 +24107,8 @@ msgstr "そのリストの品目には取得するフィールドがありませ
 msgid "The items in that list have no reading as text."
 msgstr "そのリストの項目はテキストとして読み取れません。"
 
-msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "その日に期限切れになるジョブの時間（作業が実行される日ではなく、期限日ベース）、期限超過の作業は「期限超過」に表示されます。"
+msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr "その日が期限の、まだ行うべき製造指図の時間（仕事が実行される日ではなく、期限ベース）、期限超過の仕事は「期限超過」に表示されます。"
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "この外部加工明細が対象とする作業。行の受領はこの作業に対して操作を閉じます。"
