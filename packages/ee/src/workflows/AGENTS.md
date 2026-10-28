@@ -358,13 +358,19 @@ global; custom fields are runtime and per company, so they are merged in rather 
   synthetic `CatalogEvent`. `WORKFLOW_EVENTS` stays closed and drift-checked. `sync.ts` uses it
   too, which is what gives a custom-field trigger its `UPDATE` subscription.
 
-## `linkify` and `ctx.linkFor`
+## `links` and `ctx.linkFor`
 
-`CatalogInput.linkify` marks an input as prose a person reads. `renderTemplate(template, ctx,
-{ linkFor })` wraps an entity part as `[readableId](url)`; `actionExecutor` passes the callback
-only for `linkify` inputs, so a webhook body still renders a bare readable id. This package
-constructs no URL — it is bundled for the browser with four runtime dependencies and cannot
-import `@carbon/env`; the engine supplies `ctx.linkFor`.
+`CatalogInput.links` (`LinksDeclaration`: a `format` of `markdown`, `slack` or `html`, plus an
+optional `when: { input, equals }` gate on a sibling input) marks an input as prose that its
+destination renders with links. `resolveStepInputs` (`runtime/resolve.ts`, shared by the action
+and integration executors) asks `linkState` (`definition/links.ts`) per input; only a `linked`
+input goes through `renderTemplate(template, ctx, { linkFor, format })`, which wraps a record
+part in that dialect's renderer (`LINK_RENDERERS`) and escapes every other value for it
+(`TEXT_ESCAPERS`: html and Slack mrkdwn; a value is customer data, never markup, so
+`AT&T <Sales>` or `<!channel>` reads as written). Every other input, a webhook body included,
+renders the record's plain name. The builder's hints (`notices.ts`) read the same `linkState`.
+This package constructs no URL — it is bundled for the browser with four runtime dependencies
+and cannot import `@carbon/env`; the engine supplies `ctx.linkFor`.
 
 `rendersAsText` now accepts a whole record (it prints as its readable id) and still refuses a
 LIST of records.

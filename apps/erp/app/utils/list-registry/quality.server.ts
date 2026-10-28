@@ -9,7 +9,7 @@ import {
   getGaugeCalibrationRecords,
   getGauges,
   getGaugeTypes,
-  getInspectionDocuments,
+  getInspectionPlanParts,
   getInspections,
   getIssues,
   getIssueTypes,
@@ -18,7 +18,7 @@ import {
   getQualityDocuments,
   getRequiredActions,
   getRisks,
-  INSPECTION_DOCUMENTS_PAGING,
+  INSPECTION_PLAN_PARTS_PAGING,
   INSPECTIONS_PAGING,
   ISSUE_TYPES_PAGING,
   ISSUE_WORKFLOWS_PAGING,
@@ -79,8 +79,12 @@ export const gaugeTypesList = searchList({
 export const inspectionPlansList = searchList({
   key: "inspection-plans",
   permission: { view: "quality", role: "employee" },
-  paging: INSPECTION_DOCUMENTS_PAGING,
-  service: getInspectionDocuments
+  paging: INSPECTION_PLAN_PARTS_PAGING,
+  service: getInspectionPlanParts,
+  // The column joins the plans' names; the view's `planNames` is for search.
+  exportValues: {
+    planNames: (row) => row.plans.map((plan) => plan.name).join(", ")
+  }
 });
 
 export const inspectionsList = searchList({

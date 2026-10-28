@@ -92,7 +92,7 @@ export function getActionColumn<T>(
 }
 
 export function getExpandColumn<T>(
-  expandedRows: Record<string, boolean>,
+  isRowExpanded: (rowId: string) => boolean,
   toggleRowExpanded: (rowId: string) => void,
   labels: { expand: string; expandRow: string; collapseRow: string },
   canExpandRow?: (row: T) => boolean
@@ -106,7 +106,7 @@ export function getExpandColumn<T>(
       cell: ({ row }) => {
         // No chevron for rows that have nothing to reveal (tree `hasChildren`).
         if (canExpandRow && !canExpandRow(row.original)) return null;
-        const isExpanded = expandedRows[row.id] ?? false;
+        const isExpanded = isRowExpanded(row.id);
         return (
           <button
             type="button"

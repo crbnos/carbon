@@ -113,6 +113,9 @@ msgstr "A previous completion did not finish. Retrying resumes the remaining ste
 msgid "About"
 msgstr "About"
 
+msgid "About this field"
+msgstr "About this field"
+
 msgid "Accept"
 msgstr "Accept"
 
@@ -1234,6 +1237,9 @@ msgstr "No maintenance scheduled for today"
 msgid "No matches. Type to create one."
 msgstr "No matches. Type to create one."
 
+msgid "No matching time"
+msgstr "No matching time"
+
 msgid "No materials"
 msgstr "No materials"
 
@@ -2143,6 +2149,9 @@ msgstr "Thumbnail"
 
 msgid "Tick the jobs this was done for."
 msgstr "Tick the jobs this was done for."
+
+msgid "Time"
+msgstr "Time"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Time and cost split across jobs proportionally to quantity."

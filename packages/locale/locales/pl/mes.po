@@ -113,6 +113,9 @@ msgstr "Poprzednie zakończenie nie zostało ukończone. Ponowienie wznawia pozo
 msgid "About"
 msgstr "O programie"
 
+msgid "About this field"
+msgstr "O tym polu"
+
 msgid "Accept"
 msgstr "Zaakceptuj"
 
@@ -1234,6 +1237,9 @@ msgstr "Brak zaplanowanego utrzymania ruchu na dziś"
 msgid "No matches. Type to create one."
 msgstr "Brak wyników. Wpisz, aby utworzyć nowy."
 
+msgid "No matching time"
+msgstr "Brak pasującej godziny"
+
 msgid "No materials"
 msgstr "Brak materiałów"
 
@@ -2143,6 +2149,9 @@ msgstr "Miniatura"
 
 msgid "Tick the jobs this was done for."
 msgstr "Zaznacz zlecenia produkcyjne, dla których to zostało wykonane."
+
+msgid "Time"
+msgstr "Godzina"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Czas i koszt rozdzielone na zlecenia produkcyjne proporcjonalnie do ilości."

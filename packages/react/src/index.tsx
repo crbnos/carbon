@@ -122,6 +122,7 @@ import {
   DatePicker,
   DateRangePicker,
   DateTimePicker,
+  TimeCombobox,
   TimePicker
 } from "./Date";
 import type { DateTimeProps } from "./DateTime";
@@ -758,6 +759,7 @@ export {
   Tfoot,
   Th,
   Thead,
+  TimeCombobox,
   TimePicker,
   Toaster,
   Toggle,

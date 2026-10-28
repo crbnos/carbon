@@ -15,11 +15,12 @@ import type {
   WorkflowRunDetail as WorkflowRunDetailType,
   WorkflowRunStep
 } from "../../workflows.service";
-import { useWorkflowEventLabel, useWorkflowLabel } from "../Builder/catalog";
+import { useWorkflowEventLabel } from "../Builder/catalog";
 import { EntityRecordLink } from "./EntityRecordLink";
 import { RunLiveUpdates } from "./RunLiveUpdates";
 import { RunStatus, TestRunBadge } from "./RunStatus";
 import { runOutcome } from "./runOutcome";
+import { useNodeLabel } from "./useNodeLabel";
 import { WorkflowRunSteps } from "./WorkflowRunSteps";
 
 type WorkflowRunDetailProps = {
@@ -100,7 +101,7 @@ export function WorkflowRunDetail({
   const workflowName =
     (run.workflow as { name?: string } | null)?.name ?? run.workflowId;
 
-  const label = useWorkflowLabel();
+  const nodeLabel = useNodeLabel();
   const triggerLabel = useWorkflowEventLabel();
   const eventLabel = run.eventId
     ? triggerLabel(run.eventId, run.eventId)
@@ -109,7 +110,12 @@ export function WorkflowRunDetail({
   const isInFlight = run.status === "Queued" || run.status === "Running";
   const compacted = run.compactedAt !== null;
   const stepsPurged = steps.length === 0 && run.compactedAt !== null;
-  const outcome = runOutcome(run, steps, definition, label);
+  const outcome = runOutcome(
+    run,
+    steps,
+    definition,
+    (node) => nodeLabel(node).title
+  );
 
   return (
     <div className="flex flex-col h-full overflow-auto">

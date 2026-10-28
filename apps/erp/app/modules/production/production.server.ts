@@ -1439,6 +1439,7 @@ export const moveScheduleJob = defineServiceFn({
     return { id };
   }
 });
+
 /**
  * Record a production event (labor, machine or setup time) on a job operation.
  *
@@ -1479,6 +1480,9 @@ export const createProductionEvent = defineServiceFn({
       createdBy: ctx.auditUserId
     });
     if (insert.error) {
+      if (service.isSecondOpenTimer(insert.error)) {
+        return ctx.error("rule", service.SECOND_OPEN_TIMER_MESSAGE);
+      }
       return ctx.error(
         "internal",
         "Failed to insert production event",
@@ -1517,6 +1521,9 @@ export const updateProductionEvent = defineServiceFn({
       updatedBy: ctx.auditUserId
     });
     if (update.error) {
+      if (service.isSecondOpenTimer(update.error)) {
+        return ctx.error("rule", service.SECOND_OPEN_TIMER_MESSAGE);
+      }
       return ctx.error(
         "internal",
         "Failed to update production event",

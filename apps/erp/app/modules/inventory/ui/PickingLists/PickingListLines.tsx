@@ -149,6 +149,16 @@ const PickingListLines = ({
     });
   }, [pickingListLines]);
 
+  // Numbered down the list in display order, across kits, so a line number
+  // names one line of the whole list. The MES numbers it the same way.
+  const lineNumbers = useMemo(
+    () =>
+      new Map(
+        kits.flatMap((kit) => kit.lines).map((line, i) => [line.id, i + 1])
+      ),
+    [kits]
+  );
+
   if (kits.length === 0) {
     return (
       <Card>
@@ -172,6 +182,7 @@ const PickingListLines = ({
         <PickingKitCard
           key={kit.key}
           kit={kit}
+          lineNumbers={lineNumbers}
           pickingListId={pickingListId}
           isLocked={isLocked}
           recommendations={recommendations}
@@ -183,11 +194,13 @@ const PickingListLines = ({
 
 function PickingKitCard({
   kit,
+  lineNumbers,
   pickingListId,
   isLocked,
   recommendations
 }: {
   kit: Kit;
+  lineNumbers: Map<string, number>;
   pickingListId: string;
   isLocked: boolean;
   recommendations: RecommendationsPromise;
@@ -226,6 +239,7 @@ function PickingKitCard({
           <Card key={line.id} className="bg-card">
             <PickingListLineItem
               line={line}
+              lineNumber={lineNumbers.get(line.id)}
               pickingListId={pickingListId}
               isLast
               isLocked={isLocked}
@@ -259,6 +273,7 @@ function PickingKitCard({
             <PickingListLineItem
               key={line.id}
               line={line}
+              lineNumber={lineNumbers.get(line.id)}
               pickingListId={pickingListId}
               isLast={index === kit.lines.length - 1}
               isLocked={isLocked}
@@ -278,12 +293,14 @@ const phoneActionCells: ActionPresentation = {
 
 function PickingListLineItem({
   line,
+  lineNumber,
   pickingListId,
   isLast,
   isLocked,
   recommendations
 }: {
   line: PickingListLineData[number];
+  lineNumber?: number;
   pickingListId: string;
   isLast: boolean;
   isLocked: boolean;
@@ -528,6 +545,9 @@ function PickingListLineItem({
           isResolved && "opacity-50 group-hover:opacity-100"
         )}
       >
+        <span className="w-6 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
+          {lineNumber}
+        </span>
         <ItemThumbnail
           size="xl"
           thumbnailPath={null}

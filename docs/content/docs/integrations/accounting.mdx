@@ -15,11 +15,11 @@ Once **Sync** is on, Carbon sends **customers**, **vendors**, **items**, **sales
 While **Sync** is on, Carbon mirrors every automated GL posting to the connected provider. Journals with a `Manual` source do not synchronize.
 </Callout>
 
-A provider payment creates a Carbon payment and <Term id="invoice-settlement">invoice settlement</Term>, then posts to Carbon's <Term id="general-ledger">general ledger</Term>. Rillet also accepts outbound Carbon payments. Xero and QuickBooks support inbound payment synchronization only.
+A provider payment creates a Carbon payment and <Term id="invoice-settlement">invoice settlement</Term>, then posts to Carbon's <Term id="general-ledger">general ledger</Term>. Rillet, Xero and QuickBooks also accept outbound Carbon payments.
 
 ## Connect a ledger
 
-Xero and QuickBooks Online use **OAuth**. Rillet uses a per-company **API key**.
+Xero and QuickBooks Online use **OAuth**. Rillet uses a per-company **API key**. Step-by-step: [Connect Xero](/docs/integrations/setup/xero).
 
 <Steps>
   <Step>
@@ -58,8 +58,8 @@ Rillet's connection fields:
   <Field name="Webhook token">Optional secret. Inbound payment write-back stays off until this is set.</Field>
 </FieldTable>
 
-<Callout type="warn" title="Xero and QuickBooks are hidden without a server-side client">
-Xero appears only when `XERO_CLIENT_ID` is set. QuickBooks Online appears only when `QUICKBOOKS_CLIENT_ID` is set. See [Environment variables](/docs/platform/self-hosting/environment-variables). Rillet is always available because it authenticates with a per-company API key.
+<Callout type="warn" title="QuickBooks Online is not available yet">
+The QuickBooks Online card reads **Not Configured** and cannot be installed. On a self-hosted deployment, Xero needs `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET`; without them the connection fails with *Xero OAuth not configured*. See [Environment variables](/docs/platform/self-hosting/environment-variables). Rillet is always available because it authenticates with a per-company API key.
 </Callout>
 
 ## Configure the sync

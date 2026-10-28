@@ -7,6 +7,23 @@ import { join } from "pathe";
 import { APP_CHOICES } from "./constants.js";
 import { type JwtCreds, type PortMap, SHARED_REDIS_PORT } from "./worktree.js";
 
+/**
+ * Keys copied from `.env`, which `crbn up` loads into process.env before this
+ * runs. A key with a `fallback` is always written. One without is left out when
+ * unset: an empty line in `.env.local` would hide the `.env` value.
+ */
+const FROM_DOT_ENV: readonly { key: string; fallback?: string }[] = [
+  // Consumed by docker-compose.dev.yml. Supabase's own services hold ~20
+  // connections at idle, so the old default of 25 left no room for GoTrue/the
+  // app and caused "remaining connection slots are reserved..." (53300)
+  // errors that surfaced as random logouts. Matches the prod default.
+  { key: "PG_MAX_CONNECTIONS", fallback: "100" },
+  // The workflow integrations' Google OAuth app.
+  { key: "GOOGLE_CLIENT_ID" },
+  { key: "GOOGLE_CLIENT_SECRET" },
+  { key: "GOOGLE_OAUTH_REDIRECT_URL" }
+];
+
 export function renderEnv(opts: {
   slug: string;
   ports: PortMap;
@@ -51,12 +68,11 @@ export function renderEnv(opts: {
   lines.push("# Internal compose ports (apps do not read these directly)");
   for (const [k, v] of Object.entries(ports)) lines.push(`${k}=${v}`);
   lines.push("");
-  lines.push("# Postgres tuning (consumed by docker-compose.dev.yml)");
-  // Supabase's own services (PostgREST, realtime, storage, cron, ...) hold
-  // ~20 connections at idle, so the previous default of 25 left no room for
-  // GoTrue/the app and caused "remaining connection slots are reserved..."
-  // (53300) errors that surfaced as random logouts. Match the prod default.
-  lines.push(`PG_MAX_CONNECTIONS=${process.env.PG_MAX_CONNECTIONS ?? "100"}`);
+  lines.push("# From .env, or crbn's default when it has one");
+  for (const { key, fallback } of FROM_DOT_ENV) {
+    const value = process.env[key] || fallback;
+    if (value) lines.push(`${key}=${value}`);
+  }
   lines.push("");
   lines.push(
     portless
