@@ -3524,9 +3524,6 @@ msgstr "この変更通知を削除してもよろしいですか？"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "この測定器を削除してもよろしいですか?"
 
-msgid "Are you sure you want to delete this inspection plan?"
-msgstr "この検査計画を削除しますか？"
-
 msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
 msgstr "この検査計画を削除してもよろしいですか?これは元に戻せません。"
 
@@ -6224,9 +6221,6 @@ msgstr "手順書の識別子をコピー"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "仕入先請求書の一意識別子をコピー"
-
-msgid "Copy purchase order number"
-msgstr "発注書番号をコピー"
 
 msgid "Copy purchase order unique identifier"
 msgstr "発注書の一意識別子をコピー"
@@ -17501,6 +17495,9 @@ msgstr "計画"
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "品目と拠点ごとの所要量を予測して先行計画を立て、MRP とスケジューリングに直接フィードします。"
 
+msgid "Plan Names"
+msgstr "検査計画名"
+
 msgid "Plan the work"
 msgstr "作業を計画する"
 
@@ -21977,6 +21974,9 @@ msgstr "最初の 500 行を表示中"
 
 msgid "Showing the newest 200 journals"
 msgstr "最新200件の仕訳を表示中"
+
+msgid "Showing the oldest orders only. Search or filter to see the rest."
+msgstr "古い注文のみを表示しています。残りを表示するには検索または絞り込みを行ってください。"
 
 msgid "Showing the top 1,000 groups by amount"
 msgstr "金額別上位 1,000 グループを表示中"

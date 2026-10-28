@@ -23,6 +23,7 @@ import type {
 } from "~/modules/inventory/types";
 import ReceivingTable from "~/modules/inventory/ui/Receiving/ReceivingTable";
 import type { Handle } from "~/utils/handle";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -43,12 +44,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const searchParams = new URL(request.url).searchParams;
   const search = searchParams.get("search");
-  const { limit, offset, filters } = getGenericQueryFilters(searchParams);
+  const { filters } = getGenericQueryFilters(searchParams);
 
+  // The table shows orders, so it reads every line at once rather than a page
+  // of lines, which could cut an order in two.
   const lines = await getPurchaseOrderLinesToReceive(client, companyId, {
     search,
-    limit,
-    offset,
+    limit: SINGLE_LOAD_LIMIT,
+    offset: 0,
     filters
   });
 
@@ -67,11 +70,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   // The view's keys are never null; the generated view type cannot say so.
-  const openLines = (lines.data ?? []).flatMap((line) =>
+  const readLines = (lines.data ?? []).flatMap((line) =>
     line.id && line.purchaseOrderId
       ? [{ ...line, id: line.id, purchaseOrderId: line.purchaseOrderId }]
       : []
   );
+  // At the limit, more lines may match and the last order may be missing
+  // some: leave it out, so every order shown has all its lines.
+  const isTruncated = (lines.data ?? []).length === SINGLE_LOAD_LIMIT;
+  const cutOrderId = isTruncated ? readLines.at(-1)?.purchaseOrderId : null;
+  const completeLines = cutOrderId
+    ? readLines.filter((line) => line.purchaseOrderId !== cutOrderId)
+    : readLines;
+  // One order with more lines than the limit is all there is to show.
+  const openLines = completeLines.length > 0 ? completeLines : readLines;
   const itemIds = [
     ...new Set(openLines.flatMap((line) => (line.itemId ? [line.itemId] : [])))
   ];
@@ -129,19 +141,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     rows,
-    count: lines.count ?? 0,
-    draftReceiptByOrder
+    draftReceiptByOrder,
+    isTruncated
   };
 }
 
 export default function ReceivingRoute() {
-  const { rows, count, draftReceiptByOrder } = useLoaderData<typeof loader>();
+  const { rows, draftReceiptByOrder, isTruncated } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <ReceivingTable
         rows={rows}
-        count={count}
+        isTruncated={isTruncated}
         draftReceiptByOrder={draftReceiptByOrder}
       />
     </VStack>

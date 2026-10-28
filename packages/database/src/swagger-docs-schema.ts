@@ -57468,6 +57468,75 @@ export default {
         tags: ["costCenter"]
       }
     },
+    "/inspectionPlanParts": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspectionPlanParts.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionPlanParts.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionPlanParts.partReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionPlanParts.partName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionPlanParts.planCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionPlanParts.planNames"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionPlanParts.plans"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionPlanParts.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionPlanParts.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/inspectionPlanParts"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["inspectionPlanParts"]
+      }
+    },
     "/purchaseReturnOrderLineTrackedEntity": {
       get: {
         parameters: [
@@ -146519,6 +146588,50 @@ export default {
       },
       type: "object"
     },
+    inspectionPlanParts: {
+      properties: {
+        id: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        partReadableId: {
+          format: "text",
+          type: "string"
+        },
+        partName: {
+          format: "text",
+          type: "string"
+        },
+        planCount: {
+          format: "integer",
+          type: "integer"
+        },
+        planNames: {
+          format: "text",
+          type: "string"
+        },
+        plans: {
+          format: "jsonb"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     purchaseReturnOrderLineTrackedEntity: {
       required: [
         "purchaseReturnOrderLineId",
@@ -199999,6 +200112,69 @@ export default {
     },
     "rowFilter.costCenter.ownerId": {
       name: "ownerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.inspectionPlanParts": {
+      name: "inspectionPlanParts",
+      description: "inspectionPlanParts",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/inspectionPlanParts"
+      }
+    },
+    "rowFilter.inspectionPlanParts.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionPlanParts.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionPlanParts.partReadableId": {
+      name: "partReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionPlanParts.partName": {
+      name: "partName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionPlanParts.planCount": {
+      name: "planCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionPlanParts.planNames": {
+      name: "planNames",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionPlanParts.plans": {
+      name: "plans",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionPlanParts.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionPlanParts.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

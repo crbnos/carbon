@@ -2532,6 +2532,52 @@ export async function getInspectionDocuments(
   };
 }
 
+export const INSPECTION_PLAN_PARTS_PAGING: Paging = {
+  defaultSorts: [{ column: "partReadableId", ascending: true }]
+};
+
+/** One plan in a part's `plans` rollup (the `inspectionPlanParts` view). */
+export type InspectionPlanSummary = {
+  id: string;
+  name: string | null;
+  modelUploadId: string | null;
+  createdBy: string;
+  createdAt: string;
+};
+
+/** The Inspection Plans list: one row per part, with its plans. */
+export async function getInspectionPlanParts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: { search: string | null } & GenericQueryFilters
+) {
+  let query = client
+    .from("inspectionPlanParts")
+    .select("*", { count: listCount(args) })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      searchFilter(["partReadableId", "partName", "planNames"], args.search)
+    );
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, INSPECTION_PLAN_PARTS_PAGING);
+  }
+
+  const result = await query;
+
+  return {
+    data: (result.data ?? []).map((row) => ({
+      ...row,
+      plans: (row.plans as InspectionPlanSummary[] | null) ?? []
+    })),
+    count: result.count ?? 0,
+    error: result.error
+  };
+}
+
 export async function getInspectionDocumentsForItem(
   client: SupabaseClient<Database>,
   itemId: string,

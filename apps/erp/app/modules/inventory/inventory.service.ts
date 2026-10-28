@@ -3457,6 +3457,7 @@ export async function getPickingListLines(
   client: SupabaseClient<Database>,
   pickingListId: string
 ) {
+  // The MES picking screen reads the same order: line numbers are positions.
   return client
     .from("pickingListLine")
     .select(
@@ -3464,7 +3465,9 @@ export async function getPickingListLines(
     )
     .eq("pickingListId", pickingListId)
     .order("jobOperationId")
-    .order("itemId");
+    .order("storageUnitId")
+    .order("itemId")
+    .order("id");
 }
 
 /**

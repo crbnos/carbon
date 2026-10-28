@@ -3524,9 +3524,6 @@ msgstr "Bu değişiklik bildirisini silmek istediğinizden emin misiniz?"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Bu ölçüm aletini silmek istediğinizden emin misiniz?"
 
-msgid "Are you sure you want to delete this inspection plan?"
-msgstr "Bu kontrol planını silmek istediğinizden emin misiniz?"
-
 msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
 msgstr "Bu kontrol planını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
@@ -6224,9 +6221,6 @@ msgstr "Prosedürün benzersiz tanımlayıcısını kopyala"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Alış faturası benzersiz tanıtıcısını kopyala"
-
-msgid "Copy purchase order number"
-msgstr "Satın alma siparişi numarasını kopyala"
 
 msgid "Copy purchase order unique identifier"
 msgstr "Satın alma siparişi benzersiz tanıtıcısını kopyala"
@@ -17501,6 +17495,9 @@ msgstr "Plan"
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Stok kartı ve lokasyon başına talep projeksiyonu yaparak önceden planlayın, sonra bunu doğrudan MRP ve planlama'ya besleyin."
 
+msgid "Plan Names"
+msgstr "Kontrol Planı Adları"
+
 msgid "Plan the work"
 msgstr "Çalışmayı planlayın"
 
@@ -21977,6 +21974,9 @@ msgstr "İlk 500 satır gösteriliyor"
 
 msgid "Showing the newest 200 journals"
 msgstr "En yeni 200 muhasebe fişi gösteriliyor"
+
+msgid "Showing the oldest orders only. Search or filter to see the rest."
+msgstr "Yalnızca en eski siparişler gösteriliyor. Kalanları görmek için ara veya filtrele."
 
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Miktar açısından ilk 1.000 grup gösteriliyor"

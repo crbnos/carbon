@@ -3524,9 +3524,6 @@ msgstr "Are you sure you want to delete this change notice?"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Are you sure you want to delete this gauge?"
 
-msgid "Are you sure you want to delete this inspection plan?"
-msgstr "Are you sure you want to delete this inspection plan?"
-
 msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
 msgstr "Are you sure you want to delete this inspection plan? This cannot be undone."
 
@@ -6224,9 +6221,6 @@ msgstr "Copy procedure unique identifier"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Copy purchase invoice unique identifier"
-
-msgid "Copy purchase order number"
-msgstr "Copy purchase order number"
 
 msgid "Copy purchase order unique identifier"
 msgstr "Copy purchase order unique identifier"
@@ -17501,6 +17495,9 @@ msgstr "Plan"
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 
+msgid "Plan Names"
+msgstr "Plan Names"
+
 msgid "Plan the work"
 msgstr "Plan the work"
 
@@ -21977,6 +21974,9 @@ msgstr "Showing the first 500 lines"
 
 msgid "Showing the newest 200 journals"
 msgstr "Showing the newest 200 journals"
+
+msgid "Showing the oldest orders only. Search or filter to see the rest."
+msgstr "Showing the oldest orders only. Search or filter to see the rest."
 
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Showing the top 1,000 groups by amount"

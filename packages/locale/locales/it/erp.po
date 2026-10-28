@@ -3524,9 +3524,6 @@ msgstr "Sei sicuro di voler eliminare questo avviso di modifica?"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Sei sicuro di voler eliminare questo strumento di misura?"
 
-msgid "Are you sure you want to delete this inspection plan?"
-msgstr "Sei sicuro di voler eliminare questo piano di controllo?"
-
 msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare questo piano di controllo? Questa azione non può essere annullata."
 
@@ -6224,9 +6221,6 @@ msgstr "Copia identificatore univoco della procedura"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Copia identificatore univoco fattura di acquisto"
-
-msgid "Copy purchase order number"
-msgstr "Copia numero ordine di acquisto"
 
 msgid "Copy purchase order unique identifier"
 msgstr "Copia identificatore univoco ordine di acquisto"
@@ -17501,6 +17495,9 @@ msgstr "Piano"
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Pianifica in anticipo proiettando il fabbisogno per articolo e ubicazione, quindi inseriscilo direttamente in MRP e programmazione."
 
+msgid "Plan Names"
+msgstr "Nomi dei piani di controllo"
+
 msgid "Plan the work"
 msgstr "Pianifica il lavoro"
 
@@ -21977,6 +21974,9 @@ msgstr "Visualizzazione delle prime 500 righe"
 
 msgid "Showing the newest 200 journals"
 msgstr "Visualizzazione delle 200 prime note più recenti"
+
+msgid "Showing the oldest orders only. Search or filter to see the rest."
+msgstr "Vengono mostrati solo gli ordini più vecchi. Cerca o filtra per vedere gli altri."
 
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Visualizzazione dei primi 1.000 gruppi per importo"

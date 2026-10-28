@@ -77587,6 +77587,91 @@ export type Database = {
           }
         ]
       }
+      inspectionPlanParts: {
+        Row: {
+          companyId: string | null
+          createdAt: string | null
+          id: string | null
+          partName: string | null
+          partReadableId: string | null
+          planCount: number | null
+          planNames: string | null
+          plans: Json | null
+          updatedAt: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspectionDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_partId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_partId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_partId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_partId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_partId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_partId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       integrations: {
         Row: {
           active: boolean | null
