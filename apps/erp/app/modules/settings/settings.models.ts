@@ -104,6 +104,21 @@ export function apiKeyFields({
   };
 }
 
+export const integrationConnectionActionValidator = z.discriminatedUnion(
+  "intent",
+  [
+    z.object({
+      intent: z.literal("rename"),
+      id: z.string().min(1, { message: "No connection was named" }),
+      name: z.string().trim().min(1, { message: "A connection needs a name" })
+    }),
+    z.object({
+      intent: z.literal("disconnect"),
+      id: z.string().min(1, { message: "No connection was named" })
+    })
+  ]
+);
+
 const ssoDomainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
 
 /**

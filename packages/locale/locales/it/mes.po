@@ -113,6 +113,9 @@ msgstr "Un completamento precedente non è terminato. Riprovare riprende i passa
 msgid "About"
 msgstr "Informazioni"
 
+msgid "About this field"
+msgstr "Informazioni su questo campo"
+
 msgid "Accept"
 msgstr "Accetta"
 
@@ -1234,6 +1237,9 @@ msgstr "Nessuna manutenzione programmata per oggi"
 msgid "No matches. Type to create one."
 msgstr "Nessuna corrispondenza. Digita per crearne una."
 
+msgid "No matching time"
+msgstr "Nessun orario corrispondente"
+
 msgid "No materials"
 msgstr "Nessun materiale"
 
@@ -2143,6 +2149,9 @@ msgstr "Miniatura"
 
 msgid "Tick the jobs this was done for."
 msgstr "Seleziona gli ordini di produzione per i quali è stato fatto questo."
+
+msgid "Time"
+msgstr "Ora"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Tempo e costo ripartiti tra gli ordini di produzione in proporzione alla quantità."

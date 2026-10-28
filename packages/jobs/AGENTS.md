@@ -45,6 +45,7 @@ pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + 
 | `./events` | `Events` type |
 | `./inngest` | Inngest client plus workflow dispatch/manual-run server seams; the table-job seams for the ERP: `setTableJobHandlers`, `takeTableJobLock` / `releaseTableJobLock`, `tableExportStorageKey`, `tempStagingStorage`, `TABLE_JOB_PAGE_SIZE` |
 | `./backups` | Import-light backup catalog, scope, and compatibility helpers |
+| `./integrations` | **Server-only.** What the ERP needs from the integration pieces: `allowlistEntry` (+ the `AllowlistEntry` type), the OAuth helpers (`resolveOAuthApp`, `buildConsentUrl`, `requiredScopesFor`, `accountLabelFromBody`, `connectionMetadataFrom`), the options provider ids (`CONNECTION_PROVIDER`, `PROPERTY_PROVIDER`), `resolvePieceAuth`, and `getPieceAction` / `getPieceOAuth2Auth`. The catalog scripts import `buildPieceActionDeclarations` (the generator's sixth `buildCatalog` input) from `src/workflows/integrations/catalog.ts` directly. Piece packages bundle Node vendor SDKs — never import this from browser code. See `.claude/rules/workflow-integrations.md` |
 
 ## Durable Entry Points
 
@@ -88,6 +89,7 @@ pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + 
 - Jobs that post (`tasks/post-transaction.ts`, the Ramp families, the invoice automation in `src/invoicing/automate-invoice.ts`, `recurring-billing`, `revenue-recognition-proposal`, `kanban-level-check`, `tasks/recalculate.ts`) call `posting` / `postingOrThrow` (`@carbon/api/postings.server`): the ERP registers each posting at start (`apps/erp/app/modules/postings.server.ts`), in-process, not over HTTP. A posting with a `client` runs as the caller behind it, else as the system.
 - `src/inngest/functions/events/sync-tables.ts` is the import-light table→accounting-entity map. `subscriptions-mapping.test.ts` pins it to provider subscriptions/syncers.
 - `src/inngest/functions/integrations/ramp-sync.ts` owns step ids, ordering, result aggregation, and notification only; changing a family module must preserve that durable public shape.
+- `src/workflows/actions/integration.ts` (`runIntegrationAction`) reads the connection and its token with a service-role client scoped by the run's `companyId`: the vault RPCs are service_role only, and the row's RLS asks for `settings_view`, which a workflow author need not have.
 - `src/table-jobs/` holds what both table jobs share: paging (`paging.ts`), the per-company Redis lock as Lua scripts (`lock.ts`), storage keys (`storage.ts`) and `notifyTableJobUser` with an Inngest event id per outcome (`notify.ts`). `packages/jobs` cannot import `~/modules`, so the ERP fills `TableJobHandlers` with `setTableJobHandlers` in `api+/inngest.ts`. See `.claude/rules/table-csv-export.md` and `.claude/rules/table-infinite-scroll.md`.
 - `src/workflows/actions/dispatcher.ts` is filled by `apps/erp/app/routes/api+/inngest.ts` with the canonical `callOperation` seam. Missing registration fails cleanly.
 - `src/workflows/engine/log.ts` redacts secret/token/password/header values before persisting step input.
@@ -101,6 +103,7 @@ pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + 
 - `.claude/rules/accounting-sync-handlers.md` — accounting ledger, sweeps, and reconciliation.
 - `.claude/rules/ramp-integration.md` — Ramp families and correctness contracts.
 - `.claude/rules/workflow-actions.md` — action implementations and dispatch seam.
+- `.claude/rules/workflow-integrations.md` — the piece allowlist, connections, OAuth and the host shim.
 - `.claude/rules/workflow-engine.md` — owner-scoped execution and run ledger.
 - `.claude/rules/workflow-matcher.md` — event matching and queued runs.
 - `.claude/rules/company-backup-restore.md` — backup compatibility and manifests.

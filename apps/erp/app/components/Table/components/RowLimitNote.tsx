@@ -5,6 +5,7 @@
 import { cn } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
+import type { ReactNode } from "react";
 import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 
 /**
@@ -12,13 +13,22 @@ import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
  * (`<Table isTruncated>`): more rows may match, and only search or a filter
  * reaches them.
  */
-export function RowLimitNote({ className }: { className?: string }) {
+export function RowLimitNote({
+  className,
+  children
+}: {
+  className?: string;
+  /** Replaces the default copy, for a list whose rows are not what it read. */
+  children?: ReactNode;
+}) {
   const limit = useNumberFormatter().format(SINGLE_LOAD_LIMIT);
   return (
     <p className={cn("text-sm text-muted-foreground", className)}>
-      <Trans>
-        Showing the first {limit} rows. Search or filter to see the rest.
-      </Trans>
+      {children ?? (
+        <Trans>
+          Showing the first {limit} rows. Search or filter to see the rest.
+        </Trans>
+      )}
     </p>
   );
 }

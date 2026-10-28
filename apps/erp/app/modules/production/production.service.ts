@@ -3531,6 +3531,17 @@ export async function updateProcedureStepOrder(
   return Promise.all(updatePromises);
 }
 
+export const SECOND_OPEN_TIMER_MESSAGE =
+  "This employee already has an open event of this type on this operation. End it before adding another.";
+
+/** One open Setup or Labor event per employee per operation (productionEvent_one_open_per_operator_idx). */
+export function isSecondOpenTimer(error: { code?: string; message?: string }) {
+  return (
+    error.code === "23505" &&
+    (error.message ?? "").includes("productionEvent_one_open_per_operator_idx")
+  );
+}
+
 /** The row write only; `createProductionEvent` / `updateProductionEvent` also post the time to the GL. */
 export async function upsertProductionEvent(
   client: SupabaseClient<Database>,

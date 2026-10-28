@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { WorkflowNode, WorkflowNodeType } from "@carbon/ee/workflows";
+import type {
+  DataOperation,
+  WorkflowNode,
+  WorkflowNodeType
+} from "@carbon/ee/workflows";
+import { cardsOf, integrationStepId } from "@carbon/ee/workflows";
 import { WORKFLOW_LABELS } from "@carbon/ee/workflows/labels";
 import { OPERATOR_LABELS } from "@carbon/utils";
 import type { IconType } from "react-icons";
@@ -10,12 +15,19 @@ import {
   LuCalculator,
   LuFilter,
   LuPlay,
+  LuPlug,
   LuSearch,
   LuSplit,
   LuZap
 } from "react-icons/lu";
 import { camelCaseToWords } from "~/utils/string";
 import { NODE_ACCEPTS_INCOMING } from "./kinds";
+
+/** Translated wording a summary needs. This module cannot call hooks, so the card
+ * passes in what it resolved — the same words the node's form shows. */
+export type SummaryLabels = {
+  operation: (operation: DataOperation) => string;
+};
 
 /** The one place per-kind presentation lives. Palette and node card both read this. */
 export type NodeKindMeta = {
@@ -26,7 +38,7 @@ export type NodeKindMeta = {
   hasTarget: boolean;
   catalogId?: (node: WorkflowNode) => string | undefined;
   title?: (node: WorkflowNode) => string | undefined;
-  summary?: (node: WorkflowNode) => string | undefined;
+  summary?: (node: WorkflowNode, labels: SummaryLabels) => string | undefined;
 };
 
 const count = (n: number, one: string, many: string) =>
@@ -105,6 +117,23 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
       return labelText(node.data.action) ?? node.data.action;
     }
   },
+  integration: {
+    name: "Integration",
+    Icon: LuPlug,
+    description: "Runs a step in a connected app",
+    defaultTitle: "Use an integration",
+    hasTarget: NODE_ACCEPTS_INCOMING.integration,
+    catalogId: (node) =>
+      node.type === "integration" && node.data.piece && node.data.action
+        ? integrationStepId(node.data.piece, node.data.action)
+        : undefined,
+    summary: (node) => {
+      if (node.type !== "integration" || !node.data.piece) return undefined;
+      if (!node.data.action) return undefined;
+      const id = integrationStepId(node.data.piece, node.data.action);
+      return labelText(id) ?? id;
+    }
+  },
   compute: {
     name: "Compute",
     Icon: LuCalculator,
@@ -138,15 +167,30 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
         : `Find ${entity}`;
     }
   },
+  // Stored type stays `filter` — every saved workflow holds that literal. Only the
+  // name a person reads widened, along with what the node can do.
   filter: {
-    name: "Filter",
+    name: "Data",
     Icon: LuFilter,
-    description: "Keeps only the items that match",
-    defaultTitle: "Narrow a list",
+    description: "Works through a list — filter, count, pick or combine",
+    defaultTitle: "Work through a list",
     hasTarget: NODE_ACCEPTS_INCOMING.filter,
-    summary: (node) => {
+    summary: (node, labels) => {
       if (node.type !== "filter") return undefined;
-      const n = node.data.clauses?.length ?? 0;
+      // The same normalizer the form, validator and runtime read, so the card
+      // cannot describe a different chain than the one that runs.
+      const cards = cardsOf(node);
+      if (cards.length > 1) {
+        return cards
+          .map((card) => labels.operation(card.operation))
+          .join(" → ");
+      }
+      const [card] = cards;
+      if (card === undefined) return undefined;
+      if (card.operation !== "filter") {
+        return labels.operation(card.operation);
+      }
+      const n = card.clauses.length;
       return n > 0
         ? `Keep items matching ${count(n, "rule", "rules")}`
         : undefined;
@@ -159,6 +203,7 @@ export const NODE_KIND_ORDER: WorkflowNodeType[] = [
   "trigger",
   "condition",
   "action",
+  "integration",
   "compute",
   "lookup",
   "filter"

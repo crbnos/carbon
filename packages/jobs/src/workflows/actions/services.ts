@@ -49,6 +49,22 @@ export function createWorkflowServices(params: {
     workflowId
   } = params;
 
+  /** An integration step names its piece on its own catalog entry, so this never
+   * parses an id and the action path above never learns what a piece is. */
+  async function runIntegration(
+    piece: { name: string; action: string },
+    inputs: Record<string, RuntimeValue>
+  ): Promise<ActionOutcome> {
+    // Lazy: `./integration` imports `@carbon/auth`, which validates the server env on load.
+    const { runIntegrationAction } = await import("./integration");
+    return runIntegrationAction({
+      companyId,
+      pieceName: piece.name,
+      actionName: piece.action,
+      inputs
+    });
+  }
+
   async function runAction(
     actionId: string,
     inputs: Record<string, RuntimeValue>
@@ -108,6 +124,7 @@ export function createWorkflowServices(params: {
 
   return {
     runAction,
+    runIntegration,
     runOperation: (
       operationId: string,
       inputs: Record<string, RuntimeValue>

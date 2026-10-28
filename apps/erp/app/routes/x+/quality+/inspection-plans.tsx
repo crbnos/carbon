@@ -18,19 +18,15 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  return loadListPage(request, inspectionPlansList, { dataKey: "diagrams" });
+  return loadListPage(request, inspectionPlansList, { dataKey: "parts" });
 }
 
 export default function InspectionDocumentsRoute() {
-  const { diagrams, count, infinite } = useLoaderData<typeof loader>();
+  const { parts, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <InspectionDocumentTable
-        data={diagrams}
-        count={count}
-        infinite={infinite}
-      />
+      <InspectionDocumentTable data={parts} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

@@ -113,6 +113,9 @@ msgstr "Önceki bir tamamlanma işlemi bitmedi. Yeniden deneme kalan adımları 
 msgid "About"
 msgstr "Hakkında"
 
+msgid "About this field"
+msgstr "Bu alan hakkında"
+
 msgid "Accept"
 msgstr "Kabul Et"
 
@@ -1234,6 +1237,9 @@ msgstr "Bugün planlanmış bakım yok"
 msgid "No matches. Type to create one."
 msgstr "Eşleşme yok. Bir tane oluşturmak için yazın."
 
+msgid "No matching time"
+msgstr "Eşleşen saat yok"
+
 msgid "No materials"
 msgstr "Malzeme yok"
 
@@ -2143,6 +2149,9 @@ msgstr "Küçük Resim"
 
 msgid "Tick the jobs this was done for."
 msgstr "Bunun için yapılan iş emirlerini işaretleyin."
+
+msgid "Time"
+msgstr "Saat"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Zaman ve maliyet, miktar ile orantılı olarak iş emirleri arasında bölünür."

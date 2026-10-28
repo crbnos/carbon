@@ -37,13 +37,17 @@ export const BACKUP_VERSION = 1;
  * `pushSubscription` holds a browser's push endpoint and its encryption keys:
  * a device credential that means nothing in another company, and being secret
  * keeps an in-place restore from bringing back signed-out browsers or wiping
- * the current ones.)
+ * the current ones. `integrationConnection`'s token lives in the vault, which
+ * a backup never carries, under a name built from the company and the row id
+ * (`get_connection_secret`); a restored row would read as an Active account
+ * with no token behind it, so every step using it would fail.)
  */
 export const SECRET_TABLES = [
   "apiKey",
   "apiKeyRateLimit",
   "tableChange",
   "companyIntegration",
+  "integrationConnection",
   "employeePin",
   "webhook",
   "oauthClient",
