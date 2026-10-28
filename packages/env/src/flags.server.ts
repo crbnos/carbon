@@ -5,6 +5,7 @@
 /// <reference types="node" />
 import { createHash } from "node:crypto";
 import { FlagdCore } from "@openfeature/flagd-core";
+import flagdCorePackage from "@openfeature/flagd-core/package.json";
 import {
   type Client,
   type EvaluationContext,
@@ -59,9 +60,12 @@ export function parseHeaders(raw = ""): Record<string, string> {
     const key = pair.slice(0, i).trim();
     if (i < 0 || !key) continue;
     try {
-      headers[decodeURIComponent(key)] = decodeURIComponent(
-        pair.slice(i + 1).trim()
-      );
+      // Header names are case-insensitive: keep one spelling, the last wins.
+      const name = decodeURIComponent(key).toLowerCase();
+      if (name in headers) {
+        consoleWarn("A CARBON_FLAGS_HEADERS name appears twice", { name });
+      }
+      headers[name] = decodeURIComponent(pair.slice(i + 1).trim());
     } catch {
       consoleWarn("Skipping a malformed CARBON_FLAGS_HEADERS pair", { key });
     }
@@ -180,12 +184,16 @@ export class CarbonFlagsProvider implements Provider {
       // 12 characters on every platform, the length BYOC's release
       // versions carry, so the source can compare them.
       ...(options.commit
-        ? { "X-Carbon-Commit": options.commit.slice(0, 12) }
+        ? { "x-carbon-commit": options.commit.slice(0, 12) }
         : {}),
       ...parseHeaders(options.headers)
     };
+    // Keyed by the flagd-core version too: processes on two versions that
+    // parse a document differently each keep their own shared copy.
     this.scope = createHash("sha256")
-      .update(`${this.endpoint}\n${options.headers ?? ""}`)
+      .update(
+        `${this.endpoint}\n${options.headers ?? ""}\n${flagdCorePackage.version}`
+      )
       .digest("hex")
       .slice(0, 16);
     this.store = options.store;
@@ -352,17 +360,15 @@ export class CarbonFlagsProvider implements Provider {
       const fetchedAt = Date.now();
       if (result.status === 200) {
         this.apply(result.body, result.etag);
-        // A process that cannot read the shared copy keeps its own document
-        // in memory: the processes that can read it own the store. Writing
-        // here made two versions overwrite each other on every sync.
-        if (!storeRejected) {
-          await this.store.write(this.scope, {
-            body: result.body,
-            etag: result.etag,
-            fetchedAt
-          });
-        }
-      } else if (!storeRejected) {
+        // The scope includes the flagd-core version, so every process on this
+        // key parses alike: a copy this process rejected is bad for all of
+        // them, and the fresh document replaces it.
+        await this.store.write(this.scope, {
+          body: result.body,
+          etag: result.etag,
+          fetchedAt
+        });
+      } else {
         await this.store.write(this.scope, { fetchedAt });
       }
       this.confirmedAt = fetchedAt;

@@ -144,8 +144,8 @@ describe("parseHeaders", () => {
         "Authorization=Bearer%20ab+c%2Cd=,X-Bad=%zz, X-Carbon-Instance = inst_1,no-equals"
       )
     ).toEqual({
-      Authorization: "Bearer ab+c,d=",
-      "X-Carbon-Instance": "inst_1"
+      authorization: "Bearer ab+c,d=",
+      "x-carbon-instance": "inst_1"
     });
     expect(warn).toHaveBeenCalledOnce();
   });
@@ -168,6 +168,21 @@ describe("CarbonFlagsProvider", () => {
     expect(await read("cmp_123")).toBe(true);
     expect(await read("cmp_999")).toBe(false);
     expect(requests[0]?.authorization).toBe("Bearer tok+1");
+  });
+
+  it("treats header names case-insensitively, and a configured commit wins", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    expect(parseHeaders("Authorization=a,authorization=b")).toEqual({
+      authorization: "b"
+    });
+    await start(
+      new CarbonFlagsProvider({
+        endpoint: url,
+        commit: "aaaaaaaaaaaaaaaa",
+        headers: "X-Carbon-Commit=bbbbbbbbbbbb"
+      })
+    );
+    expect(requests[0]?.commit).toBe("bbbbbbbbbbbb");
   });
 
   it("sends the first 12 characters of the build's commit as X-Carbon-Commit", async () => {
@@ -347,9 +362,9 @@ describe("CarbonFlagsProvider", () => {
     }
     const read = await start(new CarbonFlagsProvider({ endpoint: url, store }));
     expect(await read("cmp_123")).toBe(true);
-    // It keeps its fetch to itself: the shared copy belongs to the processes
-    // that can read it.
-    for (const value of store.data.values()) expect(value.etag).toBe('"bad"');
+    // Every process on this scope runs the same flagd-core, so the fetch
+    // repairs the shared copy.
+    for (const value of store.data.values()) expect(value.etag).toBe('"v1"');
   });
 
   it("sends warnings to onWarning with structured properties", async () => {

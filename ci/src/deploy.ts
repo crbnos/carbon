@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { FLAGS } from "@carbon/env/flags";
+import { MemoryStorage } from "@openfeature/flagd-core";
 import { $ } from "execa";
 
 import { client } from "./client";
@@ -111,6 +113,9 @@ async function fetchFlagsDocument(
   token: string | null,
   commit: string
 ): Promise<string> {
+  if (token && !endpoint.startsWith("https://")) {
+    throw new Error("flags_endpoint must use https: when flags_token is set");
+  }
   const res = await fetch(endpoint, {
     headers: {
       // 12 characters, as the apps send it.
@@ -136,33 +141,25 @@ async function fetchFlagsDocument(
     chunks.push(chunk);
   }
   const body = Buffer.concat(chunks).toString("utf8");
-  assertFlagdDocument(JSON.parse(body));
+  assertFlagdDocument(body);
   return `data:application/json;base64,${Buffer.from(body).toString("base64")}`;
 }
 
-// The provider (`@carbon/env/flags.server`) validates with flagd-core at boot.
-// This catches the same mistakes here, so a bad document fails the deploy
-// instead of running a whole release on code defaults.
-function assertFlagdDocument(doc: unknown): void {
-  const flags = (doc as { flags?: unknown } | null)?.flags;
-  if (!flags || typeof flags !== "object") {
-    throw new Error("The flags document has no flags object");
-  }
-  for (const [key, flag] of Object.entries(flags)) {
-    const { state, variants, defaultVariant } = (flag ?? {}) as {
-      state?: unknown;
-      variants?: Record<string, unknown>;
-      defaultVariant?: unknown;
-    };
-    if (state !== "ENABLED" && state !== "DISABLED") {
-      throw new Error(`Flag "${key}" has an invalid state`);
-    }
-    if (
-      !variants ||
-      typeof defaultVariant !== "string" ||
-      !(defaultVariant in variants)
-    ) {
-      throw new Error(`Flag "${key}" has no valid defaultVariant`);
+// flagd-core's strict mode checks the flag and targeting schemas that the
+// provider's lenient parse only logs, and every registered flag is a boolean
+// (`@carbon/env/flags`). A bad document fails the deploy instead of running a
+// whole release on code defaults.
+const silent = { debug() {}, info() {}, warn() {}, error() {} };
+
+function assertFlagdDocument(body: string): void {
+  new MemoryStorage(silent).setConfigurations(body, true);
+  const { flags } = JSON.parse(body) as {
+    flags: Record<string, { variants?: Record<string, unknown> }>;
+  };
+  for (const key of Object.keys(FLAGS)) {
+    const variants = Object.values(flags[key]?.variants ?? {});
+    if (variants.some((value) => typeof value !== "boolean")) {
+      throw new Error(`Flag "${key}" must have boolean variants`);
     }
   }
 }

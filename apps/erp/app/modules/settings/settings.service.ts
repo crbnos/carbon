@@ -207,6 +207,7 @@ import {
 } from "@carbon/ee/plan.server";
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
+import { flags } from "@carbon/env/flags.server";
 import { trigger } from "@carbon/jobs";
 import {
   compatibilityStatus,
@@ -3398,7 +3399,7 @@ export async function saveCompanySettings(
 }
 
 /** Multi-company management is open to internal (Carbon) users only, for now. */
-export async function refuseUnlessInternalUser(
+export async function refuseUnlessCanManageCompanies(
   ctx: ServiceContext
 ): Promise<CarbonError | null> {
   const refused = ctx.error(
@@ -3411,7 +3412,14 @@ export async function refuseUnlessInternalUser(
     .select("email")
     .eq("id", ctx.actor.userId)
     .maybeSingle();
-  return isInternalEmail(data?.email ?? "") ? null : refused;
+  if (isInternalEmail(data?.email ?? "")) return null;
+  // The same rule as the Settings → Companies pages: Carbon staff, and the
+  // companies the `multi-company-management` flag turns it on for.
+  const enabled = await flags.bool("multi-company-management", {
+    companyId: ctx.company.id,
+    userId: ctx.actor.userId
+  });
+  return enabled ? null : refused;
 }
 
 /** The headquarters location and the creator's job at it: what a new company starts with. */

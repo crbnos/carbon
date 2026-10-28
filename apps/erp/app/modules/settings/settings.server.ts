@@ -1042,7 +1042,7 @@ export const createSubsidiary = defineServiceFn({
   input: subsidiaryValidator,
   permission: { create: "settings" },
   async run(ctx, subsidiary) {
-    const refused = await service.refuseUnlessInternalUser(ctx);
+    const refused = await service.refuseUnlessCanManageCompanies(ctx);
     if (refused) return refused;
 
     const { id: _, parentCompanyId, ...company } = subsidiary;
@@ -1097,7 +1097,7 @@ export const updateSubsidiaryDetails = defineServiceFn({
   input: subsidiaryValidator.safeExtend({ id: z.string() }),
   permission: { update: "settings" },
   async run(ctx, { id, ...subsidiary }) {
-    const refused = await service.refuseUnlessInternalUser(ctx);
+    const refused = await service.refuseUnlessCanManageCompanies(ctx);
     if (refused) return refused;
 
     const result = await service.updateSubsidiary(ctx.asCaller.supabase, id, {
