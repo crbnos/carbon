@@ -159,6 +159,32 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
   `parentId` and `storageTypeIds TEXT[]` (`20260417000200`). Cols: `id`, `name`, `locationId`,
   `warehouseId`, `parentId`, `storageTypeIds`, `active`, `nettable`, `effectiveNettable`.
 - **`storageType`** — storage-unit type definitions (`20260417000000`), with `nettable`.
+- **`trackedEntity`** — serial/batch/lot tracking (`20250225145619`). Cols: `id`, `quantity`,
+  `status` (`trackedEntityStatus`), `sourceDocument(Id)`, `attributes JSONB` (batch/serial #, supplier…),
+  `expirationDate`. Companion `trackedActivity` + `trackedActivityInput`/`Output` record movements.
+- **`warehouseTransfer` / `warehouseTransferLine`** — inter-location moves (`20250726000000`).
+  Status enum `warehouseTransferStatus`. Lines carry from/to location + storage unit, shipped/received qty.
+- **`stockTransfer*`** — intra-location moves (separate from warehouse transfers).
+- **`pickMethod`** — default storage unit for picking an item at a location (`defaultStorageUnitId`).
+- **`itemPlanning`** / **`itemReplenishment`** — reorder/planning params and replenishment strategy.
+- **`enforcementRule`** + assignment tables — ONE table for storage and sales rules, discriminated by `family` (`20260817143022`/`20260817143512`). Storage-family reads must filter `family = 'storage'`. Lineage: `itemRule` → `customRule` → `storageRule` → merged into `enforcementRule`.
+
+`get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL)` — the central
+read. Newest definition is `20261006130001_demand-forecast-consumption.sql` (the
+`20260713235406_item-ledger-snapshot.sql` body — snapshot + delta via `itemLedgerSnapshot`,
+`item_id` restricts to one item for detail-page loads — plus a net-projection demand arm:
+`GREATEST("forecastQuantity" - "consumedQuantity", 0)` of `demandProjection`). Returns ~52 cols:
+item identity + material props, planning fields, and quantities `quantityOnHand`, `quantityOnHold`,
+`quantityRejected` (status-aware: excludes `Rejected`, surfaces `On Hold`), `quantityOnSalesOrder`,
+`quantityOnPurchaseOrder`, `quantityOnProductionOrder`, `quantityOnProductionDemand`, `demandForecast`,
+`usageLast30Days`, `usageLast90Days`, `daysRemaining`, plus `storageTypeIds`/`storageUnitIds` arrays.
+Aggregates from `itemLedger`, open `purchaseOrder(Line)`, `salesOrder(Line)`, `job`/`jobMaterial`,
+`demandForecast`/`demandActual`, and `demandProjection` net of `consumedQuantity`.
+
+Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
+`20260807090400`), `trackedEntityStatus`
+(`Available`, `Reserved`, `On Hold`, `Consumed`, `Rejected`, `Scrapped`), `warehouseTransferStatus`,
+`itemTrackingType`, `itemReplenishmentSystem`, `itemReorderingPolicy`.
 
 ## Non-nettable storage
 
@@ -218,8 +244,8 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   someone named (the material's own, the item's `pickMethod.defaultStorageUnitId`) is still
   used as named. Pinned by `apps/erp/test/database/non-nettable-fullest-bin.test.ts`.
 - **CSV import** has a "Non-nettable" column for storage units and storage types
-  (`parseCsvNonNettable`, `shared.service.ts`): blank leaves an existing unit's flag alone, and
-  anything but true/false is a row error.
+  (`parseCsvNonNettable`, `shared.service.ts`): blank leaves an existing unit's flag alone,
+  true/false (also yes/no, y/n, 1/0, on/off) sets it, and anything else is a row error.
 - **Kanbans refuse it.** `createKanban` / `updateKanban` call
   `refuseNonNettableKanbanUnits` (`inventory.service.ts`) and refuse a To or From storage unit
   that is non-nettable (`ctx.error("rule", …)`), since replenishing into one builds stock
@@ -235,32 +261,6 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   "…through its parent X".
 - **Physical readers are unchanged:** `get_inventory_quantities` (the Inventory screen), the
   item picker badge, the workflow `item.quantityOnHand`, valuation and GL.
-- **`trackedEntity`** — serial/batch/lot tracking (`20250225145619`). Cols: `id`, `quantity`,
-  `status` (`trackedEntityStatus`), `sourceDocument(Id)`, `attributes JSONB` (batch/serial #, supplier…),
-  `expirationDate`. Companion `trackedActivity` + `trackedActivityInput`/`Output` record movements.
-- **`warehouseTransfer` / `warehouseTransferLine`** — inter-location moves (`20250726000000`).
-  Status enum `warehouseTransferStatus`. Lines carry from/to location + storage unit, shipped/received qty.
-- **`stockTransfer*`** — intra-location moves (separate from warehouse transfers).
-- **`pickMethod`** — default storage unit for picking an item at a location (`defaultStorageUnitId`).
-- **`itemPlanning`** / **`itemReplenishment`** — reorder/planning params and replenishment strategy.
-- **`enforcementRule`** + assignment tables — ONE table for storage and sales rules, discriminated by `family` (`20260817143022`/`20260817143512`). Storage-family reads must filter `family = 'storage'`. Lineage: `itemRule` → `customRule` → `storageRule` → merged into `enforcementRule`.
-
-`get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL)` — the central
-read. Newest definition is `20261006130001_demand-forecast-consumption.sql` (the
-`20260713235406_item-ledger-snapshot.sql` body — snapshot + delta via `itemLedgerSnapshot`,
-`item_id` restricts to one item for detail-page loads — plus a net-projection demand arm:
-`GREATEST("forecastQuantity" - "consumedQuantity", 0)` of `demandProjection`). Returns ~52 cols:
-item identity + material props, planning fields, and quantities `quantityOnHand`, `quantityOnHold`,
-`quantityRejected` (status-aware: excludes `Rejected`, surfaces `On Hold`), `quantityOnSalesOrder`,
-`quantityOnPurchaseOrder`, `quantityOnProductionOrder`, `quantityOnProductionDemand`, `demandForecast`,
-`usageLast30Days`, `usageLast90Days`, `daysRemaining`, plus `storageTypeIds`/`storageUnitIds` arrays.
-Aggregates from `itemLedger`, open `purchaseOrder(Line)`, `salesOrder(Line)`, `job`/`jobMaterial`,
-`demandForecast`/`demandActual`, and `demandProjection` net of `consumedQuantity`.
-
-Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
-`20260807090400`), `trackedEntityStatus`
-(`Available`, `Reserved`, `On Hold`, `Consumed`, `Rejected`, `Scrapped`), `warehouseTransferStatus`,
-`itemTrackingType`, `itemReplenishmentSystem`, `itemReorderingPolicy`.
 
 ## Gotchas
 

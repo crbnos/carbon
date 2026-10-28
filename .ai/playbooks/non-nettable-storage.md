@@ -24,10 +24,10 @@ Routes: /x/inventory/storage-types, /x/inventory/storage-units,
   Quarantine" (a child unit reads "…through its parent MRB-Hold"). Saving unchanged
   keeps `nettable=true, effectiveNettable=false`.
 - New child: `/x/inventory/storage-units/new?parentId=<MRB-Hold id>&location=<loc>`,
-  fill Name, requestSubmit "Save" — child gets `effectiveNettable=false`.
+  fill Name "MRB-Hold-Shelf-1", requestSubmit "Save" — child gets `effectiveNettable=false`.
 - Toggle a parent rack (Aisle-A): all its children flip, and
   `itemStockQuantities.quantityNonNettable` moves by their stock.
-- `?filter=effectiveNettable:eq:false` lists the non-nettable roots.
+- `?filter=effectiveNettable:eq:false` lists every non-nettable unit, children included.
 
 ### 3. Stock into quarantine, planning
 - Item inventory page `/x/inventory/quantities/<itemId>/details` → "Update

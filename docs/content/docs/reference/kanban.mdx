@@ -110,7 +110,7 @@ Exact errors from saving and scanning kanban cards.
 The **order** scan hit a kanban whose replenishment system is **`Buy and Make`**. A single card fires one clear action, so only `Buy`, `Make`, and `Transfer` are supported at scan. Set the kanban to one of those.
 
 ### "… is non-nettable. A kanban cannot replenish into or from a non-nettable storage unit."
-The kanban's storage unit, or a Transfer kanban's From storage unit, is <Term id="non-nettable">non-nettable</Term> (a quarantine or hold area). Choose another storage unit. A scan of a kanban whose storage unit became non-nettable later is refused too, whatever its replenishment system.
+The kanban's storage unit, or a Transfer kanban's From storage unit, is <Term id="non-nettable">non-nettable</Term> (a quarantine or hold area). Choose another storage unit. A scan of a kanban whose storage unit became non-nettable later is refused too, whatever its replenishment system. A Transfer kanban's scan reads "A kanban cannot replenish into or from a non-nettable storage unit".
 
 ### "Supplier is required"
 A `Buy` kanban has no supplier. The order scan needs to know who to raise the purchase order against — set the supplier on the kanban.
