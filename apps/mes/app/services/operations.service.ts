@@ -2731,6 +2731,23 @@ export async function startProductionEvent(
   });
   if (!refs.ok) return notFoundResponse(refs.message);
 
+  // A Setup or Labor timer the operator already has running on this operation
+  // is returned, not started again: a double-tap, or a second device, would
+  // otherwise count the labor twice. The partial unique index on open events
+  // refuses the insert when two starts race past this read.
+  if (data.type === "Setup" || data.type === "Labor") {
+    const running = await client
+      .from("productionEvent")
+      .select("*")
+      .eq("jobOperationId", data.jobOperationId)
+      .eq("type", data.type)
+      .eq("employeeId", data.employeeId)
+      .eq("companyId", data.companyId)
+      .is("endTime", null)
+      .limit(1);
+    if (running.error || running.data.length > 0) return running;
+  }
+
   // The tracked entity is the separate argument; productionEvent has no column for it.
   const { trackedEntityId: _trackedEntityId, ...event } = data;
 

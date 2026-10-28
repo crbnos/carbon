@@ -202,6 +202,7 @@ import {
   type standardFactorType,
   toTiptapDoc
 } from "./shared.models";
+import { invoicedChargeFraction } from "./shared.utils";
 import { assertMethodHasPullFrom, isStrictBackflush } from "./strict-backflush";
 import type { ItemModelUpload, MethodRowsAdded } from "./types";
 
@@ -9648,6 +9649,21 @@ export async function convertDocument(
         return acc;
       }, 0);
 
+      // The order's shipping goes on its first (non-voided) invoice only;
+      // flat line charges follow the share of the quantity being invoiced.
+      // Untyped client: this embedded select exceeds TypeScript's
+      // instantiation depth, and only the row count is read.
+      const priorSalesInvoiceLines = await (client as unknown as SupabaseClient)
+        .from("salesInvoiceLine")
+        .select("id, salesInvoice!inner(status)")
+        .eq("salesOrderId", salesOrderId)
+        .eq("companyId", companyId)
+        .neq("salesInvoice.status", "Voided")
+        .limit(1);
+      if (priorSalesInvoiceLines.error)
+        throw new Error(priorSalesInvoiceLines.error.message);
+      const hasPriorInvoice = (priorSalesInvoiceLines.data?.length ?? 0) > 0;
+
       let salesInvoiceId = "";
 
       await db.transaction().execute(async (trx) => {
@@ -9695,7 +9711,9 @@ export async function convertDocument(
               order,
               orderShipment
             ),
-            shippingCost: orderShipment.shippingCost ?? 0,
+            shippingCost: hasPriorInvoice
+              ? 0
+              : (orderShipment.shippingCost ?? 0),
             shippingMethodId: orderShipment.shippingMethodId,
             shippingTermId: orderShipment.shippingTermId,
             incoterm: orderShipment.incoterm,
@@ -9713,6 +9731,10 @@ export async function convertDocument(
             line.quantityToInvoice > 0 &&
             !line.invoicedComplete
           ) {
+            const chargeFraction = invoicedChargeFraction(
+              line.quantityToInvoice,
+              line.saleQuantity
+            );
             acc.push({
               invoiceId: salesInvoiceId,
               invoiceLineType: line.salesOrderLineType,
@@ -9727,9 +9749,10 @@ export async function convertDocument(
               description: line.description,
               quantity: line.quantityToInvoice,
               unitPrice: line.unitPrice ?? 0,
-              addOnCost: line.addOnCost ?? 0,
-              nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
-              shippingCost: line.shippingCost ?? 0,
+              addOnCost: (line.addOnCost ?? 0) * chargeFraction,
+              nonTaxableAddOnCost:
+                (line.nonTaxableAddOnCost ?? 0) * chargeFraction,
+              shippingCost: (line.shippingCost ?? 0) * chargeFraction,
               taxPercent: line.taxPercent ?? 0,
               unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
               exchangeRate: line.exchangeRate ?? 1,
@@ -10268,6 +10291,21 @@ export async function convertDocument(
         return acc;
       }, 0);
 
+      // The order's shipping goes on its first (non-voided) invoice only;
+      // flat line charges follow the share of the quantity being invoiced.
+      // Untyped client: this embedded select exceeds TypeScript's
+      // instantiation depth, and only the row count is read.
+      const priorSalesInvoiceLines = await (client as unknown as SupabaseClient)
+        .from("salesInvoiceLine")
+        .select("id, salesInvoice!inner(status)")
+        .eq("salesOrderId", order.id)
+        .eq("companyId", companyId)
+        .neq("salesInvoice.status", "Voided")
+        .limit(1);
+      if (priorSalesInvoiceLines.error)
+        throw new Error(priorSalesInvoiceLines.error.message);
+      const hasPriorInvoice = (priorSalesInvoiceLines.data?.length ?? 0) > 0;
+
       let salesInvoiceId = "";
 
       await db.transaction().execute(async (trx) => {
@@ -10316,7 +10354,9 @@ export async function convertDocument(
               order,
               orderShipment
             ),
-            shippingCost: orderShipment.shippingCost ?? 0,
+            shippingCost: hasPriorInvoice
+              ? 0
+              : (orderShipment.shippingCost ?? 0),
             shippingMethodId: orderShipment.shippingMethodId,
             shippingTermId: orderShipment.shippingTermId,
             incoterm: orderShipment.incoterm,
@@ -10334,6 +10374,10 @@ export async function convertDocument(
             line.quantityToInvoice > 0 &&
             !line.invoicedComplete
           ) {
+            const chargeFraction = invoicedChargeFraction(
+              line.quantityToInvoice,
+              line.saleQuantity
+            );
             acc.push({
               invoiceId: salesInvoiceId,
               invoiceLineType: line.salesOrderLineType,
@@ -10348,9 +10392,10 @@ export async function convertDocument(
               description: line.description,
               quantity: line.quantityToInvoice,
               unitPrice: line.unitPrice ?? 0,
-              addOnCost: line.addOnCost ?? 0,
-              nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
-              shippingCost: line.shippingCost ?? 0,
+              addOnCost: (line.addOnCost ?? 0) * chargeFraction,
+              nonTaxableAddOnCost:
+                (line.nonTaxableAddOnCost ?? 0) * chargeFraction,
+              shippingCost: (line.shippingCost ?? 0) * chargeFraction,
               taxPercent: line.taxPercent ?? 0,
               unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
               exchangeRate: line.exchangeRate ?? 1,

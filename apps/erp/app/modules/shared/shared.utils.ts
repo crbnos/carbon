@@ -105,3 +105,17 @@ export function resolveSupplierPrice(
   if (supplierPrice === null || !pricing) return documentFallbackPrice;
   return convertUnitPrice(supplierPrice, pricing.currency, document);
 }
+
+/**
+ * The share of a line's flat charges (add-ons, line shipping) that one invoice
+ * bills: the quantity invoiced over the quantity ordered, capped at 1. Partial
+ * invoices then add up to the order instead of each repeating the charges.
+ */
+export function invoicedChargeFraction(
+  quantityInvoiced: number,
+  quantityOrdered: number | null
+): number {
+  const ordered = quantityOrdered ?? 0;
+  if (ordered <= 0) return 1;
+  return Math.min(quantityInvoiced / ordered, 1);
+}
