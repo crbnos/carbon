@@ -88,15 +88,21 @@ BEGIN
     UPDATE "jobOperation"
     SET "status" = 'In Progress'
     WHERE id = p_new->>'jobOperationId'
+      AND "companyId" = p_new->>'companyId'
       AND "status" NOT IN ('Done', 'Canceled');
   END IF;
 
-  -- Set parent job to In Progress if it is still Ready
+  -- Set parent job to In Progress if it is still Ready. Both updates stay in
+  -- the event's own company: this runs as the owner, and jobOperationId is a
+  -- single-column FK.
   UPDATE "job"
   SET "status" = 'In Progress'
   WHERE id = (
-    SELECT "jobId" FROM "jobOperation" WHERE id = p_new->>'jobOperationId'
+    SELECT "jobId" FROM "jobOperation"
+    WHERE id = p_new->>'jobOperationId'
+      AND "companyId" = p_new->>'companyId'
   )
+  AND "companyId" = p_new->>'companyId'
   AND "status" = 'Ready';
 END;
 $function$;
