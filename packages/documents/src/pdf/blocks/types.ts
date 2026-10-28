@@ -20,6 +20,9 @@ export type SalesInvoiceLocations =
   Database["public"]["Views"]["salesInvoiceLocations"]["Row"] & {
     customerTaxId?: string | null;
     customerVatNumber?: string | null;
+    /** The invoice's contact (`invoiceCustomerContactId`), resolved by the loader. */
+    contactName?: string | null;
+    contactEmail?: string | null;
   };
 
 /**
