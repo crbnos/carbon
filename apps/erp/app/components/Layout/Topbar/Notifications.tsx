@@ -694,6 +694,7 @@ export function NotificationsPanel({
 }
 
 const Notifications = () => {
+  const { t } = useLingui();
   const {
     id: userId,
     company: { id: companyId }
@@ -720,9 +721,17 @@ const Notifications = () => {
           variant="ghost"
           isIcon
           className="w-8 h-8 flex items-center relative"
+          aria-label={
+            unreadNotifications.length > 0
+              ? t`Notifications, ${unreadNotifications.length} unread`
+              : t`Notifications`
+          }
         >
           {unreadNotifications.length > 0 && (
-            <span className="absolute top-0 right-0 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium leading-4 text-center tabular-nums">
+            <span
+              aria-hidden
+              className="absolute top-0 right-0 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium leading-4 text-center tabular-nums"
+            >
               {unreadNotifications.length}
             </span>
           )}

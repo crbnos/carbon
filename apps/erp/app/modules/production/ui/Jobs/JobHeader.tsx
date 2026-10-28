@@ -94,7 +94,11 @@ import type { action as statusAction } from "~/routes/x+/job+/$jobId.status";
 import { useSuppliers } from "~/stores";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
-import { isJobDeletable, jobCompleteValidator } from "../../production.models";
+import {
+  deadlineRequiresDueDate,
+  isJobDeletable,
+  jobCompleteValidator
+} from "../../production.models";
 import { getJobMethodTree } from "../../production.utils";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
@@ -216,7 +220,10 @@ const JobHeader = () => {
   // Forecast slack: calendar days between the projected completion (forward-ASAP
   // finish) and the promised due date. Positive = late, negative = early.
   const projectedCompletionAt = routeData?.job?.projectedCompletionAt;
-  const jobDueDate = routeData?.job?.dueDate;
+  // Only a Hard or Soft Deadline promises a date; the form hides the rest.
+  const jobDueDate = deadlineRequiresDueDate(routeData?.job?.deadlineType)
+    ? routeData?.job?.dueDate
+    : null;
   const slack = useMemo(() => {
     if (!projectedCompletionAt || !jobDueDate) return null;
     const days = parseDate(projectedCompletionAt.slice(0, 10)).compare(
@@ -309,14 +316,12 @@ const JobHeader = () => {
         routeData?.job?.status ?? ""
       ) && (
         <>
-          {routeData?.job?.dueDate &&
-            isSameDay(parseDate(routeData?.job?.dueDate), todaysDate) && (
-              <JobStatus status="Due Today" />
-            )}
-          {routeData?.job?.dueDate &&
-            parseDate(routeData?.job?.dueDate) < todaysDate && (
-              <JobStatus status="Overdue" />
-            )}
+          {jobDueDate && isSameDay(parseDate(jobDueDate), todaysDate) && (
+            <JobStatus status="Due Today" />
+          )}
+          {jobDueDate && parseDate(jobDueDate).compare(todaysDate) < 0 && (
+            <JobStatus status="Overdue" />
+          )}
           {slack && (
             <Status
               color={slack.late ? "red" : "green"}

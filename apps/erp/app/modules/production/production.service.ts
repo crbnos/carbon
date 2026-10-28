@@ -108,9 +108,12 @@ import { getLogger } from "@carbon/logger";
 import {
   type CalendarWindow,
   closeHolidays,
+  downtimeOutages,
   type LadderShiftRow,
+  remainingWorkHours,
   resolveLocationWindows,
   resolveWorkCenterWindows,
+  SCHEDULING_HORIZON_DAYS,
   subtractDates,
   subtractIntervals
 } from "@carbon/planning";
@@ -155,7 +158,6 @@ import {
   validateSubAssemblies
 } from "@carbon/viewer";
 import {
-  getDayOfWeek,
   parseDate,
   parseDateTime,
   toCalendarDateTime
@@ -177,7 +179,6 @@ import {
 } from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
 import type { Cursor } from "~/utils/cursor";
-import { makeDurations } from "~/utils/duration";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import {
   getGenericFilter,
@@ -653,13 +654,6 @@ const DEADLINE_TYPE_PRIORITY: Record<DeadlineType, number> = {
 };
 
 /**
- * The priority of a job placed among `siblings` — the jobs that share its due
- * date (or lack of one) at its location, in priority order. Fractional
- * indexing: before the first job whose deadline type ranks lower than this
- * one's, else at the end. Pure, so a batch can place several jobs on one date
- * in turn by appending each result to the siblings it passes for the next.
- */
-/**
  * The deadline type a job carries once planning gives it a due date. The job
  * form hides the due-date field for "No Deadline" (`deadlineRequiresDueDate`),
  * so a date written under that type is one the planner can neither see nor
@@ -672,6 +666,65 @@ export function deadlineTypeForPlanningDate(
   return deadlineType === "No Deadline" ? "Soft Deadline" : deadlineType;
 }
 
+/**
+ * The type a job carries once its due date is set or cleared outside the job
+ * form. A dated job leaves "No Deadline" (`deadlineTypeForPlanningDate`) and
+ * "ASAP" for "Soft Deadline": the scheduler ignores an ASAP job's date while
+ * MRP takes it as the supply date (`jobCompletionDate`), and the job form
+ * hides it. An undated Hard or Soft Deadline job becomes "No Deadline", since
+ * those two require a date; an undated ASAP job stays ASAP.
+ */
+export function deadlineTypeForDueDate(
+  deadlineType: DeadlineType,
+  dueDate: string | null
+): DeadlineType {
+  if (dueDate !== null) {
+    return deadlineType === "ASAP"
+      ? "Soft Deadline"
+      : deadlineTypeForPlanningDate(deadlineType);
+  }
+  return deadlineType === "Hard Deadline" || deadlineType === "Soft Deadline"
+    ? "No Deadline"
+    : deadlineType;
+}
+
+/**
+ * A job's due date and deadline type after a change to either, kept in step:
+ * a type that takes no date (ASAP, No Deadline) clears the date, which the
+ * job form hides for those; a date set on its own follows
+ * `deadlineTypeForDueDate`.
+ */
+export function nextJobDeadline(
+  job: { dueDate: string | null; deadlineType: DeadlineType },
+  change: { dueDate?: string | null; deadlineType?: DeadlineType }
+): { dueDate: string | null; deadlineType: DeadlineType } {
+  const dueDate =
+    change.dueDate !== undefined ? change.dueDate || null : job.dueDate;
+  if (change.deadlineType !== undefined) {
+    const takesDate =
+      change.deadlineType === "Hard Deadline" ||
+      change.deadlineType === "Soft Deadline";
+    return {
+      dueDate: takesDate ? dueDate : null,
+      deadlineType: change.deadlineType
+    };
+  }
+  return {
+    dueDate,
+    deadlineType:
+      change.dueDate !== undefined
+        ? deadlineTypeForDueDate(job.deadlineType, dueDate)
+        : job.deadlineType
+  };
+}
+
+/**
+ * The priority of a job placed among `siblings` — the jobs that share its due
+ * date (or lack of one) at its location, in priority order. Fractional
+ * indexing: before the first job whose deadline type ranks lower than this
+ * one's, else at the end. Pure, so a batch can place several jobs on one date
+ * in turn by appending each result to the siblings it passes for the next.
+ */
 export function nextJobPriority(
   siblings: { priority: number | null; deadlineType: DeadlineType }[],
   deadlineType: DeadlineType
@@ -1294,7 +1347,7 @@ export async function getCapacityReservationsForResources(
     .select(
       `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours, isPlaceholder, jobOperationBatchId,
        job!inner(jobId, status, dueDate, locationId),
-       jobOperation(description, hasConflict, conflictReason, jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, type))),
+       jobOperation(description, status, processId, hasConflict, conflictReason, jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, type))),
        jobOperationBatch(readableId)`
     )
     .eq("companyId", companyId)
@@ -5529,30 +5582,33 @@ export async function getPeopleAbsencesRange(
  * Planned jobs are excluded — only released (firm) work counts toward load,
  * matching the industry release-gating convention. Paginated — the default
  * PostgREST max_rows (1000) would silently truncate a busy location.
+ * `started` is whether any production event exists, as the scheduler asks.
  */
 export async function getPeopleCapacityOperations(
   client: SupabaseClient<Database>,
   companyId: string,
   args: { locationId: string; startDate: string | null; endDate: string }
 ) {
-  return fetchAllFromTable<{
+  const result = await fetchAllFromTable<{
     id: string;
     workCenterId: string | null;
     dueDate: string | null;
     status: string;
     operationQuantity: number | null;
+    quantityComplete: number | null;
     setupTime: number;
-    setupUnit: string;
+    setupUnit: FactorUnit;
     laborTime: number;
-    laborUnit: string;
+    laborUnit: FactorUnit;
     machineTime: number;
-    machineUnit: string;
+    machineUnit: FactorUnit;
+    productionEvent: { id: string }[];
   }>(
     client,
     "jobOperation",
-    `id, workCenterId, dueDate, status, operationQuantity,
+    `id, workCenterId, dueDate, status, operationQuantity, quantityComplete,
      setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit,
-     job!inner(status, locationId)`,
+     job!inner(status, locationId), productionEvent(id)`,
     (query) => {
       let scoped = query
         .eq("companyId", companyId)
@@ -5564,7 +5620,8 @@ export async function getPeopleCapacityOperations(
           "job.status",
           "in",
           '("Draft","Planned","Completed","Cancelled","Closed")'
-        );
+        )
+        .limit(1, { referencedTable: "productionEvent" });
       // Null start = no floor: overdue work back to the earliest open op counts
       // toward Past due (the released-only status filters already bound the set).
       if (args.startDate != null) {
@@ -5573,12 +5630,19 @@ export async function getPeopleCapacityOperations(
       return scoped.order("id");
     }
   );
+  return {
+    ...result,
+    data: result.data?.map(({ productionEvent, ...operation }) => ({
+      ...operation,
+      started: productionEvent.length > 0
+    }))
+  };
 }
 
 /**
  * The `workCenterShift` links (rung 1 of the availability ladder) for a set of
- * work centers, in ONE `.in()` query. Feeds the Capacity view's per-work-center
- * calendar-hours DISPLAY mirror of the engine ladder.
+ * work centers, in ONE `.in()` query. Feeds the stations' working windows on
+ * the People page (Capacity and Coverage).
  */
 export async function getWorkCenterShifts(
   client: SupabaseClient<Database>,
@@ -5594,7 +5658,7 @@ export async function getWorkCenterShifts(
 
 /**
  * WorkCenter-kind reservations overlapping a window — the Capacity view's
- * Scheduled series. Bounded by the window (not "recent only") so earlier days
+ * Scheduled series and the Matrix Coverage. Bounded by the window (not "recent only") so earlier days
  * of the current week keep their completed bookings, filtered to WorkCenter
  * rows server-side, and paginated past the PostgREST max_rows cap.
  */
@@ -5606,13 +5670,14 @@ export async function getWorkCenterReservationsRange(
   return fetchAllFromTable<{
     id: string;
     resourceId: string;
+    operationId: string;
     startAt: string;
     endAt: string;
     workHours: number | null;
   }>(
     client,
     "capacityReservation",
-    `id, resourceId, startAt, endAt, workHours, job!inner(status)`,
+    `id, resourceId, operationId, startAt, endAt, workHours, job!inner(status)`,
     (query) =>
       query
         .eq("companyId", companyId)
@@ -5716,6 +5781,188 @@ export async function getWorkCenterRequiredAbilities(
     }
   );
   return { data: rows, error: null };
+}
+
+/**
+ * Who is qualified for each gated process and where the manning board has
+ * them, by the scheduler's own rule: a qualification counts until the day it
+ * expires, and a board day the person is absent does not commit them. Every
+ * gated process gets an entry, so "nobody" can be shown. People sort by name,
+ * stations by name.
+ */
+export function groupQualifiedPeople(args: {
+  /** abilityId → processId, for active abilities of gated processes */
+  processByAbility: Map<string, string>;
+  qualifications: {
+    employeeId: string;
+    abilityId: string;
+    expiresAt: string | null;
+  }[];
+  nameById: Map<string, string>;
+  assignments: { employeeId: string; date: string; station: string }[];
+  absences: { employeeId: string; date: string }[];
+  fromDate: string;
+}): Map<string, { name: string; stations: string[] }[]> {
+  const absent = new Set(
+    args.absences.map((absence) => `${absence.employeeId}:${absence.date}`)
+  );
+  const stationsByEmployee = new Map<string, Set<string>>();
+  for (const row of args.assignments) {
+    if (absent.has(`${row.employeeId}:${row.date}`)) continue;
+    const stations = stationsByEmployee.get(row.employeeId) ?? new Set();
+    stations.add(row.station);
+    stationsByEmployee.set(row.employeeId, stations);
+  }
+
+  const result = new Map<string, { name: string; stations: string[] }[]>(
+    [...new Set(args.processByAbility.values())].map((processId) => [
+      processId,
+      []
+    ])
+  );
+  for (const row of args.qualifications) {
+    if (row.expiresAt && row.expiresAt.slice(0, 10) <= args.fromDate) continue;
+    const processId = args.processByAbility.get(row.abilityId);
+    if (!processId) continue;
+    result.get(processId)?.push({
+      name: args.nameById.get(row.employeeId) ?? "",
+      stations: [...(stationsByEmployee.get(row.employeeId) ?? [])].sort()
+    });
+  }
+  for (const people of result.values()) {
+    people.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return result;
+}
+
+/**
+ * For operations the scheduler could not place: per process that requires an
+ * ability, who is qualified and the stations the manning board has them at
+ * (`groupQualifiedPeople`), read across every location and the scheduling
+ * horizon, as the scheduler commits a person on the board anywhere in it.
+ */
+export async function getQualifiedPeopleByProcess(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { processIds: string[]; fromDate: string }
+): Promise<{
+  data: Map<string, { name: string; stations: string[] }[]>;
+  error: PostgrestError | null;
+}> {
+  const empty = new Map<string, { name: string; stations: string[] }[]>();
+  if (args.processIds.length === 0) return { data: empty, error: null };
+  const toDate = parseDate(args.fromDate)
+    .add({ days: SCHEDULING_HORIZON_DAYS })
+    .toString();
+
+  const abilities = await client
+    .from("ability")
+    .select("id, processId, process!inner(requiresAbility)")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .eq("process.requiresAbility", true)
+    .in("processId", args.processIds);
+  if (abilities.error) return { data: empty, error: abilities.error };
+  const processByAbility = new Map(
+    abilities.data.flatMap((ability) =>
+      ability.processId ? [[ability.id, ability.processId] as const] : []
+    )
+  );
+  if (processByAbility.size === 0) return { data: empty, error: null };
+
+  // Every qualified person company-wide: paged, and the people read in
+  // batches, so neither PostgREST's row cap nor the gateway's URL limit
+  // drops anyone.
+  const qualifications = await fetchAllByIds<{
+    id: string;
+    employeeId: string;
+    abilityId: string;
+    expiresAt: string | null;
+  }>([...processByAbility.keys()], (batch) =>
+    client
+      .from("employeeAbility")
+      .select("id, employeeId, abilityId, expiresAt")
+      .eq("companyId", companyId)
+      .in("abilityId", batch)
+      .order("id")
+  );
+  if (qualifications.error) {
+    return { data: empty, error: qualifications.error };
+  }
+  const employeeIds = [
+    ...new Set(qualifications.data.map((row) => row.employeeId))
+  ];
+
+  const [users, assignments, absences] =
+    employeeIds.length === 0
+      ? [
+          { data: [], error: null },
+          { data: [], error: null },
+          { data: [], error: null }
+        ]
+      : await Promise.all([
+          fetchAllByIds<{ id: string; fullName: string | null }>(
+            employeeIds,
+            (batch) =>
+              client
+                .from("user")
+                .select("id, fullName")
+                .in("id", batch)
+                .order("id")
+          ),
+          fetchAllByIds<{
+            employeeId: string;
+            date: string;
+            workCenter: { name: string } | null;
+          }>(employeeIds, (batch) =>
+            client
+              .from("peopleAssignment")
+              .select("id, employeeId, date, workCenter(name)")
+              .eq("companyId", companyId)
+              .gte("date", args.fromDate)
+              .lte("date", toDate)
+              .in("employeeId", batch)
+              .order("id")
+          ),
+          fetchAllByIds<{ employeeId: string; date: string }>(
+            employeeIds,
+            (batch) =>
+              client
+                .from("peopleAbsence")
+                .select("id, employeeId, date")
+                .eq("companyId", companyId)
+                .gte("date", args.fromDate)
+                .lte("date", toDate)
+                .in("employeeId", batch)
+                .order("id")
+          )
+        ]);
+  const failed = users.error ?? assignments.error ?? absences.error;
+  if (failed) return { data: empty, error: failed };
+
+  return {
+    data: groupQualifiedPeople({
+      processByAbility,
+      qualifications: qualifications.data,
+      nameById: new Map(
+        (users.data ?? []).map((user) => [user.id, user.fullName ?? ""])
+      ),
+      assignments: (assignments.data ?? []).flatMap((row) =>
+        row.workCenter?.name
+          ? [
+              {
+                employeeId: row.employeeId,
+                date: row.date,
+                station: row.workCenter.name
+              }
+            ]
+          : []
+      ),
+      absences: absences.data ?? [],
+      fromDate: args.fromDate
+    }),
+    error: null
+  };
 }
 
 export async function getActiveEmployeeAbilities(
@@ -6253,7 +6500,9 @@ export async function setPeopleOvertimeBulk(
           .where("departmentId", "=", departmentId)
       );
     }
-    return query.returning(["id", "workCenterId"]).execute();
+    return query
+      .returning(["id", "workCenterId", "employeeId", "date"])
+      .execute();
   });
 }
 
@@ -6425,7 +6674,7 @@ export async function assignPeopleWeek(
       activeWeekdays = WEEKDAYS_MONDAY_FIRST.filter((day) => shift?.[day]);
     }
     const weekEnd = addIsoDays(args.weekStart, 6);
-    const [existing, absences] = await Promise.all([
+    const [existing, absences, ownShift] = await Promise.all([
       // Company-wide (NOT location-scoped): the unique index is
       // peopleAssignment_person_day_key (companyId, employeeId, date,
       // COALESCE(shiftId,'')) — a person already booked for this day+shift at
@@ -6446,23 +6695,47 @@ export async function assignPeopleWeek(
         .where("employeeId", "=", args.employeeId)
         .where("date", ">=", args.weekStart)
         .where("date", "<=", weekEnd)
-        .execute()
+        .execute(),
+      trx
+        .selectFrom("employeeShift")
+        .select(["shiftId"])
+        .where("employeeId", "=", args.employeeId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst()
     ]);
-    // Key on date + shift to mirror the unique index exactly.
+    // A day is taken by a row in the same slot of the unique index, or by a
+    // row in the same EFFECTIVE shift (a shift-less row counts as the
+    // person's own), which the boards would show as a double booking.
     const slotKey = (date: string, shiftId: string | null) =>
       `${date}:${shiftId ?? ""}`;
+    const personShiftId = ownShift?.shiftId ?? null;
+    const newEffectiveShiftId = args.shiftId ?? personShiftId;
     const takenSlots = new Set(
-      existing.map((row) => slotKey(toIsoDate(row.date), row.shiftId))
+      existing.flatMap((row) => {
+        const date = toIsoDate(row.date);
+        const effective = row.shiftId ?? personShiftId;
+        return [
+          slotKey(date, row.shiftId),
+          ...(effective ? [`${date}:effective:${effective}`] : [])
+        ];
+      })
     );
+    const isTaken = (date: string) =>
+      takenSlots.has(slotKey(date, args.shiftId)) ||
+      (newEffectiveShiftId !== null &&
+        takenSlots.has(`${date}:effective:${newEffectiveShiftId}`));
     const absentDays = new Set(absences.map((row) => toIsoDate(row.date)));
 
     const rows = [];
+    let skipped = 0;
     for (let offset = 0; offset < 7; offset++) {
       const date = addIsoDays(args.weekStart, offset);
       // weekStart is a Monday, so offset maps 1:1 onto WEEKDAYS_MONDAY_FIRST
       if (!activeWeekdays.includes(WEEKDAYS_MONDAY_FIRST[offset])) continue;
-      if (absentDays.has(date)) continue;
-      if (takenSlots.has(slotKey(date, args.shiftId))) continue;
+      if (absentDays.has(date) || isTaken(date)) {
+        skipped++;
+        continue;
+      }
       rows.push({
         companyId: args.companyId,
         locationId: args.locationId,
@@ -6476,10 +6749,8 @@ export async function assignPeopleWeek(
     if (rows.length > 0) {
       await trx.insertInto("peopleAssignment").values(rows).execute();
     }
-    return {
-      assigned: rows.length,
-      skipped: takenSlots.size + absentDays.size
-    };
+    // working days left as they were: already booked, or off
+    return { assigned: rows.length, skipped };
   });
 }
 
@@ -11604,12 +11875,11 @@ const WEEKDAY_FLAGS = [
 
 /**
  * Non-working intervals inside [windowStartMs, windowEndMs) for the forecast
- * board's shading — the complement of the plant's operating hours. Uses the
- * SAME availability ladder the scheduler uses (the location's shifts if any,
- * else the stock Mon–Fri 08:00–16:00 week in the plant timezone), so the bars
- * and the shaded background can never disagree. Location-level, not
- * per-work-center: one plant calendar behind every lane. Per-WC shifts /
- * `alwaysOn` are a deliberate follow-up (see #3b).
+ * board's rows that are not a station (the location, operator pools) — the
+ * complement of the plant's operating hours, on the scheduler's ladder (the
+ * location's shifts if any, else the stock Mon–Fri 08:00–16:00 week in the
+ * plant timezone). A station's lane uses its own hours,
+ * `getWorkCenterNonWorkingIntervals`.
  */
 export function getForecastNonWorkingIntervals(args: {
   timeZone: string;
@@ -11708,6 +11978,50 @@ export function getWorkCenterWorkingWindows(args: {
   });
 }
 
+/**
+ * One shift's own working windows (holidays closed), read through the same
+ * ladder as a work center linked to only that shift. Null when the shift is
+ * not among `shifts` / `linkedShifts`: the ladder would fall back to the
+ * location's shifts, which is not that shift.
+ */
+export function getShiftWorkingWindows(
+  args: Omit<
+    Parameters<typeof getWorkCenterWorkingWindows>[0],
+    "workCenters" | "workCenterShifts"
+  > & { shiftId: string }
+): CalendarWindow[] | null {
+  const { shiftId, ...ladder } = args;
+  const known = [...ladder.shifts, ...(ladder.linkedShifts ?? [])].some(
+    (shift) => shift.id === shiftId
+  );
+  if (!known) return null;
+  const key = `shift:${shiftId}`;
+  return (
+    getWorkCenterWorkingWindows({
+      ...ladder,
+      workCenters: [{ id: key, alwaysOn: false }],
+      workCenterShifts: [{ workCenterId: key, shiftId }]
+    }).get(key) ?? []
+  );
+}
+
+/**
+ * Each work center's non-working time inside [rangeStart, rangeEnd): the
+ * complement of its working windows (`getWorkCenterWorkingWindows`), so the
+ * forecast board shades and splits every lane on its own hours.
+ */
+export function getWorkCenterNonWorkingIntervals(
+  args: Parameters<typeof getWorkCenterWorkingWindows>[0]
+): Map<string, CalendarWindow[]> {
+  const range = [{ start: args.rangeStart, end: args.rangeEnd }];
+  return new Map(
+    [...getWorkCenterWorkingWindows(args)].map(([workCenterId, windows]) => [
+      workCenterId,
+      subtractIntervals(range, windows)
+    ])
+  );
+}
+
 /** The company's holiday dates ("YYYY-MM-DD") between two dates, inclusive. */
 export async function getHolidayDates(
   client: SupabaseClient<Database>,
@@ -11729,16 +12043,21 @@ export async function getHolidayDates(
     error: null
   };
 }
+type FactorUnit = Database["public"]["Enums"]["factor"];
+
 type CapacityOperation = {
   workCenterId: string | null;
   dueDate: string | null;
   setupTime?: number;
-  setupUnit?: string;
+  setupUnit?: FactorUnit;
   laborTime?: number;
-  laborUnit?: string;
+  laborUnit?: FactorUnit;
   machineTime?: number;
-  machineUnit?: string;
+  machineUnit?: FactorUnit;
   operationQuantity: number | null;
+  quantityComplete?: number | null;
+  /** Any production event recorded: setup is done. */
+  started?: boolean;
 };
 
 type CapacityReservation = {
@@ -11748,97 +12067,263 @@ type CapacityReservation = {
   workHours: number | null;
 };
 
-/** A location shift reduced to its per-day hours and which weekdays it runs. */
-type CapacityShift = {
-  id: string;
-  /** shift hours per day (start→end duration, or the location default). */
-  hours: number;
-  /** 7 weekday flags, Sunday-first (index 0 = Sunday … 6 = Saturday). */
-  runsOn: boolean[];
-};
+/**
+ * The open maintenance outages of each work center (`downtimeOutages`), read
+ * the way the scheduler reads them, for the Capacity view.
+ */
+export async function getWorkCenterOutages(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { workCenterIds: string[]; rangeEnd: number }
+): Promise<{
+  data: Map<string, CalendarWindow[]>;
+  error: PostgrestError | null;
+}> {
+  if (args.workCenterIds.length === 0) return { data: new Map(), error: null };
+  const dispatches = await fetchAllRecords<{
+    id: string;
+    workCenterId: string | null;
+    plannedStartTime: string | null;
+    plannedEndTime: string | null;
+    actualStartTime: string | null;
+    actualEndTime: string | null;
+    createdAt: string;
+  }>(() =>
+    client
+      .from("maintenanceDispatch")
+      .select(
+        "id, workCenterId, plannedStartTime, plannedEndTime, actualStartTime, actualEndTime, createdAt"
+      )
+      .eq("companyId", companyId)
+      .eq("takesWorkCenterOffline", true)
+      .not("status", "in", '("Completed","Cancelled")')
+      .order("id")
+  );
+  if (dispatches.error) return { data: new Map(), error: dispatches.error };
+  if (dispatches.data.length === 0) return { data: new Map(), error: null };
 
-// Rung 3 of the ladder: no shifts anywhere → stock Mon–Fri, 8h/day. Mirrors the
-// engine's stock week (08:00–16:00 = 8h) so machine and people capacity assume
-// the same default day.
-const FALLBACK_SHIFT_HOURS = 8;
+  const joined = await fetchAllByIds<{
+    id: string;
+    maintenanceDispatchId: string;
+    workCenterId: string;
+  }>(
+    dispatches.data.map((dispatch) => dispatch.id),
+    (batch) =>
+      client
+        .from("maintenanceDispatchWorkCenter")
+        .select("id, maintenanceDispatchId, workCenterId")
+        .eq("companyId", companyId)
+        .in("maintenanceDispatchId", batch)
+        .order("id")
+  );
+  if (joined.error) return { data: new Map(), error: joined.error };
+
+  return {
+    data: downtimeOutages({
+      dispatches: dispatches.data,
+      dispatchWorkCenters: joined.data,
+      workCenterIds: args.workCenterIds,
+      rangeEnd: args.rangeEnd
+    }),
+    error: null
+  };
+}
 
 /**
- * DAY-granularity mirror of the engine's machine-availability ladder, for the
- * Capacity view's Available series. The engine
- * (`packages/planning/src/scheduling/machine-availability.ts`)
- * owns the AUTHORITATIVE wall-clock ladder; this is DISPLAY math and resolves the
- * same rungs at day granularity.
- *
- * Per work center, per week date, resolved in order:
- *   1. `alwaysOn` → 24h (lights-out).
- *   2. explicit `workCenterShift` rows → Σ (shift hours whose weekday flag covers
- *      that date) over the work center's shifts.
- *   3. no WC rows but the location has shifts → the same Σ over the location's
- *      shifts.
- *   4. no shifts anywhere → 8h on Mon–Fri, 0 on the weekend.
+ * The windows a station can work: its working windows with its maintenance
+ * outages taken out — what the scheduler places work in.
  */
-export function getWorkCenterCalendarHoursByDay(args: {
-  workCenters: { id: string; alwaysOn: boolean }[];
-  workCenterShifts: { workCenterId: string; shiftId: string }[];
-  locationShifts: CapacityShift[];
-  /** Shifts a work center is linked to at another location. */
-  linkedShifts?: CapacityShift[];
-  weekDates: string[];
-  /** Company holidays: 0 hours, except on a lights-out station. */
-  holidayDates?: Set<string>;
-}): Map<string, Map<string, number>> {
-  const { workCenters, workCenterShifts, locationShifts, weekDates } = args;
-  const holidayDates = args.holidayDates ?? new Set<string>();
-
-  const shiftById = new Map(
-    [...locationShifts, ...(args.linkedShifts ?? [])].map((shift) => [
-      shift.id,
-      shift
-    ])
-  );
-  const shiftIdsByWorkCenter = new Map<string, string[]>();
-  for (const link of workCenterShifts) {
-    const list = shiftIdsByWorkCenter.get(link.workCenterId);
-    if (list) list.push(link.shiftId);
-    else shiftIdsByWorkCenter.set(link.workCenterId, [link.shiftId]);
+export function withoutOutages(
+  windowsByWorkCenter: Map<string, CalendarWindow[]>,
+  outagesByWorkCenter: Map<string, CalendarWindow[]>
+): Map<string, CalendarWindow[]> {
+  const result = new Map(windowsByWorkCenter);
+  for (const [workCenterId, outages] of outagesByWorkCenter) {
+    const windows = result.get(workCenterId);
+    if (windows) result.set(workCenterId, subtractIntervals(windows, outages));
   }
+  return result;
+}
 
-  // weekday index per week date — a plain calendar date, so timezone-independent
-  const dowByDate = weekDates.map((day) =>
-    getDayOfWeek(parseDate(day), "en-US")
-  );
+/** Each week date's bounds on the plant's calendar (DST-aware). */
+function plantDayBounds(weekDates: string[], timezone: string) {
+  return weekDates.map((day) => {
+    const dayDate = parseDate(day);
+    return {
+      day,
+      startMs: dayDate.toDate(timezone).getTime(),
+      endMs: dayDate.add({ days: 1 }).toDate(timezone).getTime()
+    };
+  });
+}
 
-  const sumShiftHours = (shifts: CapacityShift[], dow: number) =>
-    shifts.reduce(
-      (sum, shift) => (shift.runsOn[dow] ? sum + shift.hours : sum),
-      0
-    );
-
+/**
+ * Working hours per plant day for each work center: the Capacity view's
+ * Available series, read off the windows the scheduler places work in
+ * (shifts, holidays, maintenance downtime). A lights-out station's day is the
+ * length of that local day, 23 or 25 hours across a DST change.
+ */
+export function workingHoursByDay(args: {
+  windowsByWorkCenter: Map<string, CalendarWindow[]>;
+  weekDates: string[];
+  timezone: string;
+}): Map<string, Map<string, number>> {
+  const days = plantDayBounds(args.weekDates, args.timezone);
   const result = new Map<string, Map<string, number>>();
-  for (const workCenter of workCenters) {
-    const wcShiftIds = shiftIdsByWorkCenter.get(workCenter.id) ?? [];
-    const wcShifts = wcShiftIds.flatMap((id) => {
-      const shift = shiftById.get(id);
-      return shift ? [shift] : [];
-    });
-    const byDate = new Map<string, number>();
-    weekDates.forEach((day, i) => {
-      const dow = dowByDate[i] ?? 0;
-      let hours: number;
-      if (workCenter.alwaysOn) {
-        hours = 24;
-      } else if (holidayDates.has(day)) {
-        hours = 0;
-      } else if (wcShifts.length > 0) {
-        hours = sumShiftHours(wcShifts, dow);
-      } else if (locationShifts.length > 0) {
-        hours = sumShiftHours(locationShifts, dow);
-      } else {
-        hours = dow === 0 || dow === 6 ? 0 : FALLBACK_SHIFT_HOURS;
+  for (const [workCenterId, windows] of args.windowsByWorkCenter) {
+    result.set(
+      workCenterId,
+      new Map(
+        days.map(({ day, startMs, endMs }) => [
+          day,
+          workingOverlapMs(windows, startMs, endMs) / HOUR_MS
+        ])
+      )
+    );
+  }
+  return result;
+}
+
+/**
+ * Each operation's hands-on share of its booking (attended ÷ duration,
+ * `remainingWorkHours`), and whether its process needs a qualified operator.
+ * An operation with nothing left keeps the share of its full time standards:
+ * its booking stands until the next re-plan.
+ */
+export async function getOperationAttendedShares(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operationIds: string[]
+): Promise<{
+  data: Map<string, { share: number; gated: boolean }>;
+  error: PostgrestError | null;
+}> {
+  const operations = await fetchAllByIds<{
+    id: string;
+    operationQuantity: number | null;
+    quantityComplete: number | null;
+    setupTime: number;
+    setupUnit: FactorUnit;
+    laborTime: number;
+    laborUnit: FactorUnit;
+    machineTime: number;
+    machineUnit: FactorUnit;
+    process: { requiresAbility: boolean } | null;
+    productionEvent: { id: string }[];
+  }>([...new Set(operationIds)], (batch) =>
+    client
+      .from("jobOperation")
+      .select(
+        "id, operationQuantity, quantityComplete, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, process(requiresAbility), productionEvent(id)"
+      )
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .limit(1, { referencedTable: "productionEvent" })
+      .order("id")
+  );
+  if (operations.error) return { data: new Map(), error: operations.error };
+  const shares = new Map<string, { share: number; gated: boolean }>();
+  for (const { productionEvent, process, ...operation } of operations.data) {
+    const remaining = remainingWorkHours(operation, productionEvent.length > 0);
+    const hours =
+      remaining.durationHours > 0
+        ? remaining
+        : remainingWorkHours({ ...operation, quantityComplete: 0 }, false);
+    if (hours.durationHours > 0) {
+      shares.set(operation.id, {
+        share: hours.attendedHours / hours.durationHours,
+        gated: process?.requiresAbility ?? false
+      });
+    }
+  }
+  return { data: shares, error: null };
+}
+
+/**
+ * Hands-on hours booked per plant day at each work center, for the manning
+ * Matrix's Coverage. The scheduler books people for an operation's setup and
+ * labor at its START and lets the machine run the rest alone, so a booking's
+ * attended hours (its work × the operation's `share`) are laid on the
+ * station's working time from the booking's start. A lights-out station runs
+ * work alone unless its process needs a qualified operator (`gated`). With
+ * `within` (the shift the Matrix is filtered by, `getShiftWorkingWindows`),
+ * only the hours inside those windows count, each on the day its shift
+ * starts: the roster puts Friday's night shift on Friday, so its hours past
+ * midnight are Friday's too.
+ */
+export function attendedHoursByDay(args: {
+  weekDates: string[];
+  timezone: string;
+  reservations: (CapacityReservation & { operationId: string })[];
+  /** `getOperationAttendedShares` */
+  attendedShareByOperation: Map<string, { share: number; gated: boolean }>;
+  windowsByWorkCenter: Map<string, CalendarWindow[]>;
+  lightsOut: Set<string>;
+  within?: CalendarWindow[];
+}): Record<string, Record<string, number>> {
+  const days = plantDayBounds(args.weekDates, args.timezone);
+  const result: Record<string, Record<string, number>> = {};
+  for (const reservation of args.reservations) {
+    const operation = args.attendedShareByOperation.get(
+      reservation.operationId
+    );
+    if (!operation || operation.share <= 0) continue;
+    if (args.lightsOut.has(reservation.resourceId) && !operation.gated) {
+      continue;
+    }
+    const startMs = Date.parse(reservation.startAt);
+    const endMs = Date.parse(reservation.endAt);
+    const windows = args.windowsByWorkCenter.get(reservation.resourceId) ?? [];
+    // A booking without measured work holds the working time of its span.
+    const workMs =
+      reservation.workHours != null
+        ? reservation.workHours * HOUR_MS
+        : workingOverlapMs(windows, startMs, endMs);
+    let attendedMs = operation.share * workMs;
+    for (const window of windows) {
+      if (attendedMs <= 0) break;
+      const from = Math.max(startMs, window.start);
+      const to = Math.min(endMs, window.end, from + attendedMs);
+      if (to <= from) continue;
+      attendedMs -= to - from;
+      const pieces: { start: number; end: number; shiftStart?: number }[] =
+        args.within
+          ? args.within.flatMap((shift) => {
+              const start = Math.max(from, shift.start);
+              const end = Math.min(to, shift.end);
+              // A run longer than a day is back-to-back shifts merged into
+              // one window: no single start day, so split it by the clock.
+              const shiftStart =
+                shift.end - shift.start <= 24 * HOUR_MS
+                  ? shift.start
+                  : undefined;
+              return end > start ? [{ start, end, shiftStart }] : [];
+            })
+          : [{ start: from, end: to }];
+      for (const piece of pieces) {
+        if (piece.shiftStart !== undefined) {
+          const shiftStart = piece.shiftStart;
+          // a shift that started before the week belongs to no day shown
+          const shiftDay = days.find(
+            ({ startMs: dayStart, endMs: dayEnd }) =>
+              shiftStart >= dayStart && shiftStart < dayEnd
+          );
+          if (shiftDay) {
+            const byDay = (result[reservation.resourceId] ??= {});
+            byDay[shiftDay.day] =
+              (byDay[shiftDay.day] ?? 0) + (piece.end - piece.start) / HOUR_MS;
+          }
+          continue;
+        }
+        for (const { day, startMs: dayStart, endMs: dayEnd } of days) {
+          const overlap =
+            Math.min(piece.end, dayEnd) - Math.max(piece.start, dayStart);
+          if (overlap <= 0) continue;
+          const byDay = (result[reservation.resourceId] ??= {});
+          byDay[day] = (byDay[day] ?? 0) + overlap / HOUR_MS;
+        }
       }
-      byDate.set(day, hours);
-    });
-    result.set(workCenter.id, byDate);
+    }
   }
   return result;
 }
@@ -11860,8 +12345,10 @@ function workingOverlapMs(
 /**
  * The Capacity view's week buckets.
  *
- * Demand = open job-operation hours by due date (overdue lands in `pastDue`,
- * like the classic capacity board's Past Weeks column). Scheduled = each
+ * Demand = the hours each open job operation still needs, as the scheduler
+ * counts them (`remainingWorkHours`: setup + the longer of labor and machine,
+ * netted by what is done), by due date. Overdue lands in `pastDue`, like the
+ * classic capacity board's Past Weeks column. Scheduled = each
  * reservation's actual work content distributed across its wall-clock span —
  * a reservation holds the station for its full span (including idle
  * overnight stretches), so distributing `workHours` keeps a spanning op from
@@ -11873,7 +12360,7 @@ export function buildPeopleCapacityBuckets(args: {
   timezone: string;
   operations: CapacityOperation[];
   reservations: CapacityReservation[];
-  /** per-work-center calendar hours (the ladder above) — clamps null-workHours reservations. */
+  /** per-work-center working hours (`workingHoursByDay`) — clamps null-workHours reservations. */
   calendarHoursByWorkCenter: Map<string, Map<string, number>>;
   /**
    * Each work center's working windows (`getWorkCenterWorkingWindows`). A
@@ -11905,12 +12392,10 @@ export function buildPeopleCapacityBuckets(args: {
   > = {};
   for (const operation of operations) {
     if (!operation.workCenterId || !operation.dueDate) continue;
-    const durations = makeDurations(operation);
-    const hours =
-      (durations.setupDuration +
-        durations.laborDuration +
-        durations.machineDuration) /
-      HOUR_MS;
+    const hours = remainingWorkHours(
+      operation,
+      operation.started ?? false
+    ).durationHours;
     if (hours <= 0) continue;
     const bucket = (demandByWorkCenter[operation.workCenterId] ??= {
       pastDue: 0,
@@ -11925,14 +12410,7 @@ export function buildPeopleCapacityBuckets(args: {
   }
 
   // day boundaries on the plant's calendar, computed once (not per reservation)
-  const dayBounds = weekDates.map((day) => {
-    const dayDate = parseDate(day);
-    return {
-      day,
-      startMs: dayDate.toDate(timezone).getTime(),
-      endMs: dayDate.add({ days: 1 }).toDate(timezone).getTime()
-    };
-  });
+  const dayBounds = plantDayBounds(weekDates, timezone);
 
   const scheduledByWorkCenter: Record<string, Record<string, number>> = {};
   for (const reservation of reservations) {

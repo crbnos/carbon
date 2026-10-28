@@ -537,10 +537,8 @@ const JobProperties = () => {
           onChange={(value) => {
             const next = value?.value ?? "";
             setDeadlineType(next);
+            // One post: the server clears the date a type takes none of.
             onUpdate("deadlineType", next || null);
-            if (!deadlineRequiresDueDate(next)) {
-              onUpdate("dueDate", null);
-            }
           }}
         />
       </ValidatedForm>

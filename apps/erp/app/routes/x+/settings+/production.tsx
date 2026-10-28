@@ -293,6 +293,7 @@ export default function ProductionSettingsRoute() {
                 </VStack>
                 <Switch
                   checked={includeOperationsOnTraveler}
+                  aria-label={t`Include operations on the traveler`}
                   onCheckedChange={handleTravelerOperationsToggle}
                   disabled={isToggling}
                 />
@@ -325,6 +326,7 @@ export default function ProductionSettingsRoute() {
                 </VStack>
                 <Switch
                   checked={includeMaterialsOnTraveler}
+                  aria-label={t`Include materials on the traveler`}
                   onCheckedChange={handleTravelerMaterialsToggle}
                   disabled={isToggling}
                 />
@@ -372,6 +374,7 @@ export default function ProductionSettingsRoute() {
                 </VStack>
                 <Switch
                   checked={autoStartOperationTimer}
+                  aria-label={t`Start the timer automatically`}
                   onCheckedChange={handleOperationTimerToggle}
                   disabled={isToggling}
                 />
@@ -404,6 +407,7 @@ export default function ProductionSettingsRoute() {
                 </VStack>
                 <Switch
                   checked={autoSelectMaterialWithoutPickingList}
+                  aria-label={t`Pre-select material`}
                   onCheckedChange={handleAutoSelectMaterialToggle}
                   disabled={isToggling}
                 />
@@ -493,6 +497,7 @@ export default function ProductionSettingsRoute() {
                       </span>
                       <Switch
                         checked={location.requiresStaffing ?? false}
+                        aria-label={t`Require staffing at ${location.name}`}
                         onCheckedChange={(checked) =>
                           handleStaffingToggle(location.id, checked)
                         }

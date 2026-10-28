@@ -6,6 +6,9 @@ import {
   Alert,
   AlertDescription,
   cn,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Table,
   Tabs,
   TabsList,
@@ -14,9 +17,6 @@ import {
   Td,
   Th,
   Thead,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   Tr
 } from "@carbon/react";
 import {
@@ -85,7 +85,7 @@ type PeopleCapacityProps = {
   shiftHoursById: Record<string, number>;
   employeeShiftHours: Record<string, number>;
   defaultShiftHours: number;
-  /** per-work-center calendar hours (the availability ladder) — the Available series. */
+  /** per-work-center working hours (the scheduler's windows, less maintenance downtime) — the Available series. */
   calendarHoursByWorkCenter: Record<string, Record<string, number>>;
   /** Company holidays: the plant is closed, so nobody counts as staffed. */
   holidayDates: string[];
@@ -201,7 +201,7 @@ export function PeopleCapacity({
     defaultShiftHours
   ]);
 
-  // Available is the calendar-hours ladder, never people-derived — staffing a
+  // Available is the station's working time, never people-derived — staffing a
   // station no longer lowers its displayed available hours (the fallback cliff).
   const availableHours = useCallback(
     (workCenterId: string, date: string) =>
@@ -323,8 +323,8 @@ export function PeopleCapacity({
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <Popover>
+            <PopoverTrigger asChild>
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -332,8 +332,8 @@ export function PeopleCapacity({
                 <LuInfo className="h-3.5 w-3.5" />
                 <Trans>What these rows mean</Trans>
               </button>
-            </TooltipTrigger>
-            <TooltipContent align="start" className="max-w-[320px]">
+            </PopoverTrigger>
+            <PopoverContent align="start" className="max-w-[320px] p-3">
               <div className="flex flex-col gap-1.5 text-xs">
                 <p>
                   <span className="font-medium">
@@ -348,8 +348,9 @@ export function PeopleCapacity({
                   </span>{" "}
                   —{" "}
                   <Trans>
-                    the station's calendar hours from its shifts. Staffed hours
-                    (the people you've assigned) show beneath.
+                    the station's working hours from its shifts, less holidays
+                    and maintenance that takes it offline. Staffed hours (the
+                    people you've assigned) show beneath.
                   </Trans>
                 </p>
                 <p>
@@ -368,13 +369,14 @@ export function PeopleCapacity({
                   </span>{" "}
                   —{" "}
                   <Trans>
-                    the job hours due that day (a due-date basis, not the day
-                    the work runs), with overdue work in Past due.
+                    the job hours still to do that are due that day (a due-date
+                    basis, not the day the work runs), with overdue work in Past
+                    due.
                   </Trans>
                 </p>
               </div>
-            </TooltipContent>
-          </Tooltip>
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="flex items-center gap-2 text-xs tabular-nums">
           <span className="inline-flex items-center rounded-md bg-emerald-500/15 px-2 py-0.5 text-emerald-700 dark:text-emerald-400">

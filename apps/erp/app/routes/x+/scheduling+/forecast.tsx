@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
+import { error, hasPermission } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Badge, Button, ClientOnly, cn, useDebounce } from "@carbon/react";
@@ -20,25 +20,32 @@ import {
   toCalendarDate
 } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Plural, Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
 import { LuBan, LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs, Location } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { Empty } from "~/components";
-import { Gantt } from "~/components/Gantt";
+import {
+  Gantt,
+  type GanttEvent,
+  type GanttVisibility
+} from "~/components/Gantt";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
 import {
   getDepartmentsList,
-  getShiftsWithTimes
+  getShiftsWithTimes,
+  getShiftsWithTimesByIds
 } from "~/modules/people/people.service";
 import {
   getCapacityReservationsForResources,
   getForecastNonWorkingIntervals,
   getHolidayDates,
-  getMaintenanceDowntimeForResources
+  getMaintenanceDowntimeForResources,
+  getQualifiedPeopleByProcess,
+  getWorkCenterNonWorkingIntervals
 } from "~/modules/production/production.service";
 import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
 import type {
@@ -49,7 +56,9 @@ import { ForecastHeader } from "~/modules/production/ui/Schedule/ForecastHeader"
 import {
   buildResourceTimeline,
   collapseToLanes,
-  workCenterIdFromLaneId
+  forecastCounts,
+  workCenterIdFromLaneId,
+  workCenterLaneId
 } from "~/modules/production/ui/Schedule/resourceTimeline";
 import { TimelineDetail } from "~/modules/production/ui/Schedule/TimelineDetail";
 import type { TimelineNodeDetail } from "~/modules/production/ui/Schedule/timeline";
@@ -135,9 +144,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "production"
-  });
+  const { client, companyId, userId, permissions } = await requirePermissions(
+    request,
+    { view: "production" }
+  );
 
   const url = new URL(request.url);
   const searchParams = url.searchParams;
@@ -304,6 +314,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
           )
       : { data: [] as { workCenterId: string; shiftId: string }[] };
 
+  // A station can be linked to a shift of another location.
+  const locationShiftIds = new Set(shifts.map((shift) => shift.id));
+  const linkedShiftIds = [
+    ...new Set(
+      (workCenterShiftRows.data ?? [])
+        .map((row) => row.shiftId)
+        .filter((id) => !locationShiftIds.has(id))
+    )
+  ];
+  const linkedShifts =
+    linkedShiftIds.length > 0
+      ? await getShiftsWithTimesByIds(client, companyId, linkedShiftIds)
+      : { data: [], error: null };
+  if (linkedShifts.error) {
+    throw redirect(
+      path.to.production,
+      await flash(request, error(linkedShifts.error, "Failed to load shifts"))
+    );
+  }
   const toShiftInfo = (shift: (typeof shifts)[number]): AvailabilityShift => ({
     name: shift.name,
     startTime: shift.startTime,
@@ -320,9 +349,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const shiftInfoById = new Map(
-    shifts.map((shift) => [shift.id, toShiftInfo(shift)])
+    [...shifts, ...(linkedShifts.data ?? [])].map((shift) => [
+      shift.id,
+      toShiftInfo(shift)
+    ])
   );
-  const locationShiftInfos = shifts.map(toShiftInfo);
+  // Shifts read in the order they run in a day.
+  const byStart = (a: AvailabilityShift, b: AvailabilityShift) =>
+    (a.startTime ?? "").localeCompare(b.startTime ?? "");
+  const locationShiftInfos = shifts.map(toShiftInfo).sort(byStart);
   const shiftIdsByWorkCenter = new Map<string, string[]>();
   for (const row of workCenterShiftRows.data ?? []) {
     const existing = shiftIdsByWorkCenter.get(row.workCenterId) ?? [];
@@ -336,7 +371,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (!workCenterId) continue;
     const workCenterShiftInfos = (shiftIdsByWorkCenter.get(workCenterId) ?? [])
       .map((shiftId) => shiftInfoById.get(shiftId))
-      .filter((info): info is AvailabilityShift => info !== undefined);
+      .filter((info): info is AvailabilityShift => info !== undefined)
+      .sort(byStart);
     const tier: WorkCenterAvailability["tier"] = workCenter.alwaysOn
       ? "alwaysOn"
       : workCenterShiftInfos.length > 0
@@ -353,6 +389,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
       locationRequiresStaffing
     };
   }
+
+  // Each station's lane is shaded and its bars split on its own hours (the
+  // scheduler's ladder and the holidays), never the plant's.
+  const nonWorkingIntervalsByLane = Object.fromEntries(
+    [
+      ...getWorkCenterNonWorkingIntervals({
+        workCenters: filteredWorkCenters.flatMap((workCenter) =>
+          workCenter.id
+            ? [{ id: workCenter.id, alwaysOn: !!workCenter.alwaysOn }]
+            : []
+        ),
+        workCenterShifts: workCenterShiftRows.data ?? [],
+        shifts,
+        linkedShifts: linkedShifts.data ?? [],
+        timeZone,
+        holidayDates: holidays.data,
+        rangeStart: windowStartMs,
+        rangeEnd: windowEndMs
+      })
+    ].map(([workCenterId, intervals]) => [
+      workCenterLaneId(workCenterId),
+      intervals
+    ])
+  );
 
   // A department scopes the board to its work centers and their reservations —
   // employee/operator-pool lanes are not department-scoped, so they drop out
@@ -381,29 +441,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     else abilityIds.add(r.resourceId);
   }
 
-  const [workCenters, abilities, operators] = await Promise.all([
-    workCenterIds.size > 0
-      ? client
-          .from("workCenter")
-          .select("id, name")
-          .in("id", Array.from(workCenterIds))
-      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-    abilityIds.size > 0
-      ? client
-          .from("abilities")
-          .select("id, name")
-          .in("id", Array.from(abilityIds))
-      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-    employeeIds.size > 0
-      ? client
-          .from("user")
-          .select("id, fullName")
-          .in("id", Array.from(employeeIds))
-      : Promise.resolve({
-          data: [] as { id: string; fullName: string | null }[]
-        })
-  ]);
-
   // A batch-tagged reservation is ONE coalesced hold for N member jobs — it
   // must read as the BATCH (BAT… · N jobs), not as its anchor member. Member
   // counts come from one grouped read over the visible batches.
@@ -414,20 +451,78 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .filter((id): id is string => Boolean(id))
     )
   ];
-  const batchMemberRows =
-    visibleBatchIds.length > 0
-      ? await client
-          .from("jobOperation")
-          .select("jobOperationBatchId")
-          .in("jobOperationBatchId", visibleBatchIds)
-          .eq("companyId", companyId)
-      : { data: [] as { jobOperationBatchId: string | null }[] };
+  // Who could run the work the scheduler could not place, and where the board
+  // has them — the people to move.
+  const unschedulableProcessIds = [
+    ...new Set(
+      rows.flatMap((r) =>
+        r.isPlaceholder && r.jobOperation?.processId
+          ? [r.jobOperation.processId]
+          : []
+      )
+    )
+  ];
+
+  const [workCenters, abilities, operators, batchMemberRows, qualifiedPeople] =
+    await Promise.all([
+      workCenterIds.size > 0
+        ? client
+            .from("workCenter")
+            .select("id, name")
+            .in("id", Array.from(workCenterIds))
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+      abilityIds.size > 0
+        ? client
+            .from("abilities")
+            .select("id, name")
+            .in("id", Array.from(abilityIds))
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+      employeeIds.size > 0
+        ? client
+            .from("user")
+            .select("id, fullName")
+            .in("id", Array.from(employeeIds))
+        : Promise.resolve({
+            data: [] as { id: string; fullName: string | null }[]
+          }),
+      visibleBatchIds.length > 0
+        ? client
+            .from("jobOperation")
+            .select("jobOperationBatchId")
+            .in("jobOperationBatchId", visibleBatchIds)
+            .eq("companyId", companyId)
+        : Promise.resolve({
+            data: [] as { jobOperationBatchId: string | null }[]
+          }),
+      // Qualifications are readable with resources view only; without it the
+      // list would read as "nobody is qualified", so it is left out.
+      hasPermission(permissions, "resources", "view", companyId)
+        ? getQualifiedPeopleByProcess(client, companyId, {
+            processIds: unschedulableProcessIds,
+            fromDate: toCalendarDate(now(timeZone)).toString()
+          })
+        : Promise.resolve({
+            data: new Map<string, { name: string; stations: string[] }[]>(),
+            error: null
+          })
+    ]);
+
   const batchMemberCounts = new Map<string, number>();
   for (const row of batchMemberRows.data ?? []) {
     if (!row.jobOperationBatchId) continue;
     batchMemberCounts.set(
       row.jobOperationBatchId,
       (batchMemberCounts.get(row.jobOperationBatchId) ?? 0) + 1
+    );
+  }
+
+  if (qualifiedPeople.error) {
+    throw redirect(
+      path.to.production,
+      await flash(
+        request,
+        error(qualifiedPeople.error, "Failed to load qualified people")
+      )
     );
   }
 
@@ -475,7 +570,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       conflictReason: r.jobOperation?.conflictReason ?? null,
       unschedulable: r.isPlaceholder ?? false,
       scheduleNote: r.scheduleNote,
-      workHours: r.workHours
+      workHours: r.workHours,
+      inProgress: r.jobOperation?.status === "In Progress",
+      qualifiedPeople:
+        r.isPlaceholder && r.jobOperation?.processId
+          ? qualifiedPeople.data.get(r.jobOperation.processId)
+          : undefined
     })),
     // Only outages on the work centers actually shown (respects the department
     // filter, and avoids conjuring a lane for a hidden station).
@@ -485,26 +585,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     window: { start: windowStartMs, end: windowEndMs }
   });
 
-  const jobCount = new Set(rows.map((r) => r.jobId)).size;
-  // A placeholder reservation carries hasConflict too — split the two so the
-  // header reads "late placements" vs "can't be scheduled at all" distinctly
-  // instead of double-counting an unplaceable op as a generic conflict.
-  const conflictCount = new Set(
-    rows
-      .filter((r) => r.jobOperation?.hasConflict && !r.isPlaceholder)
-      .map((r) => r.operationId)
-  ).size;
-  const unschedulableCount = new Set(
-    rows.filter((r) => r.isPlaceholder).map((r) => r.operationId)
-  ).size;
-
   // When the visible window has NO work, the board reads as broken even though
   // work may simply be scheduled another week (forward-ASAP places a Ready job
   // at the next open shift). Find the nearest reservation OUTSIDE the window —
   // future first, else past — so the empty state can point the user to it.
+  // A department narrows the search to its own stations; a department with no
+  // station here never has work to point to.
   let nextScheduledDate: string | null = null;
   let nextScheduledDirection: "future" | "past" | null = null;
-  if (rows.length === 0) {
+  if (rows.length === 0 && (!departmentId || plantWorkCenters.length > 0)) {
     const nearestReservation = async (
       bound: "future" | "past"
     ): Promise<string | null> => {
@@ -516,6 +605,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .eq("job.locationId", locationId)
         .not("job.status", "in", '("Cancelled","Completed","Closed")')
         .limit(1);
+      if (departmentId) {
+        query = query
+          .eq("resourceKind", "WorkCenter")
+          .in("resourceId", [...departmentWorkCenterIds]);
+      }
       query =
         bound === "future"
           ? query
@@ -535,16 +629,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
-  // Count every station shown, not just the ones carrying reservations —
-  // include plant work centers, plus any resource a reservation references.
-  const shownWorkCenterIds = new Set<string>([
-    ...plantWorkCenters.map((workCenter) => workCenter.id),
-    ...workCenterIds
-  ]);
-
   return {
     locationId,
+    locationName,
     departmentId,
+    departmentName:
+      departments.find((department) => department.value === departmentId)
+        ?.label ?? null,
+    departmentHasWorkCenters: plantWorkCenters.length > 0,
     departments,
     range,
     date,
@@ -552,12 +644,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     timeZone,
     windowStartMs,
     nonWorkingIntervals,
+    nonWorkingIntervalsByLane,
     shifts: shifts.map((shift) => ({ id: shift.id, name: shift.name })),
-    resourceCount: shownWorkCenterIds.size + abilityIds.size + employeeIds.size,
     reservationCount: rows.length,
-    jobCount,
-    conflictCount,
-    unschedulableCount,
     nextScheduledDate,
     nextScheduledDirection,
     trace:
@@ -587,7 +676,10 @@ function getView(location: Location<any>): ForecastView {
 export default function ResourceGanttView() {
   const {
     locationId,
+    locationName,
     departmentId,
+    departmentName,
+    departmentHasWorkCenters,
     departments,
     range,
     date,
@@ -595,12 +687,9 @@ export default function ResourceGanttView() {
     timeZone,
     windowStartMs,
     nonWorkingIntervals,
+    nonWorkingIntervalsByLane,
     shifts,
-    resourceCount,
     reservationCount,
-    jobCount,
-    conflictCount,
-    unschedulableCount,
     nextScheduledDate,
     nextScheduledDirection,
     trace,
@@ -688,6 +777,75 @@ export default function ResourceGanttView() {
     ? detailsById[selectedSpanId]
     : undefined;
 
+  const nextWorkDate = nextScheduledDate
+    ? formatDate(
+        nextScheduledDate,
+        { weekday: "long", month: "short", day: "numeric" },
+        locale
+      )
+    : null;
+  // A department id from an old link may no longer name one: then each hint
+  // below says "this department" in a sentence of its own.
+  const nextWorkHint = nextWorkDate ? (
+    departmentId ? (
+      nextScheduledDirection === "future" ? (
+        departmentName ? (
+          <Trans>
+            The next {departmentName} work at this location starts{" "}
+            {nextWorkDate}.
+          </Trans>
+        ) : (
+          <Trans>
+            The next work for this department at this location starts{" "}
+            {nextWorkDate}.
+          </Trans>
+        )
+      ) : departmentName ? (
+        <Trans>
+          The most recent {departmentName} work at this location was{" "}
+          {nextWorkDate}.
+        </Trans>
+      ) : (
+        <Trans>
+          The most recent work for this department at this location was{" "}
+          {nextWorkDate}.
+        </Trans>
+      )
+    ) : nextScheduledDirection === "future" ? (
+      <Trans>
+        The next scheduled work at this location starts {nextWorkDate}.
+      </Trans>
+    ) : (
+      <Trans>
+        The most recent scheduled work at this location was {nextWorkDate}.
+      </Trans>
+    )
+  ) : departmentId ? (
+    departmentName ? (
+      <Trans>No {departmentName} work is scheduled at this location.</Trans>
+    ) : (
+      <Trans>No work for this department is scheduled at this location.</Trans>
+    )
+  ) : (
+    <Trans>
+      No jobs are scheduled at this location yet — release a job to see
+      work-center load.
+    </Trans>
+  );
+  const goToNextWork = nextScheduledDate ? (
+    <Button
+      variant="secondary"
+      onClick={() => {
+        const params = new URLSearchParams(location.search);
+        params.set("range", "week");
+        params.set("date", nextScheduledDate);
+        navigate(`?${params.toString()}`);
+      }}
+    >
+      <Trans>Go to that week</Trans>
+    </Button>
+  ) : null;
+
   if (isGated) {
     return (
       <ForecastUpgradeOverlay
@@ -720,66 +878,62 @@ export default function ResourceGanttView() {
           )
         }
       />
-      {reservationCount === 0 && (
+      {reservationCount === 0 && trace && (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-2.5">
           <div className="flex flex-col">
             <span className="text-sm font-medium">
               <Trans>No scheduled work in this window</Trans>
             </span>
             <span className="text-xs text-muted-foreground text-pretty">
-              {nextScheduledDate ? (
-                nextScheduledDirection === "future" ? (
-                  <Trans>
-                    The next scheduled work at this location starts{" "}
-                    {formatDate(
-                      nextScheduledDate,
-                      { weekday: "long", month: "short", day: "numeric" },
-                      locale
-                    )}
-                    .
-                  </Trans>
-                ) : (
-                  <Trans>
-                    The most recent scheduled work at this location was{" "}
-                    {formatDate(
-                      nextScheduledDate,
-                      { weekday: "long", month: "short", day: "numeric" },
-                      locale
-                    )}
-                    .
-                  </Trans>
-                )
-              ) : (
-                <Trans>
-                  No jobs are scheduled at this location yet — release a job to
-                  see work-center load.
-                </Trans>
-              )}
+              {nextWorkHint}
             </span>
           </div>
-          {nextScheduledDate && (
-            <Button
-              variant="secondary"
-              onClick={() => {
-                const params = new URLSearchParams(location.search);
-                params.set("range", "week");
-                params.set("date", nextScheduledDate);
-                navigate(`?${params.toString()}`);
-              }}
-            >
-              <Trans>Go to that week</Trans>
-            </Button>
-          )}
+          {goToNextWork}
         </div>
       )}
       {!trace ? (
         <div className="flex flex-1 items-center justify-center">
-          <Empty>
-            <Trans>
-              No capacity reservations to visualize. Schedule a job to see
-              work-center load.
-            </Trans>
-          </Empty>
+          {departmentId && !departmentHasWorkCenters ? (
+            <Empty
+              title={
+                departmentName ? (
+                  <Trans>No work centers in {departmentName}</Trans>
+                ) : (
+                  <Trans>No work centers in this department</Trans>
+                )
+              }
+              description={
+                departmentName && locationName ? (
+                  <Trans>
+                    {departmentName} has no work centers at {locationName}. Pick
+                    another department or location.
+                  </Trans>
+                ) : departmentName ? (
+                  <Trans>
+                    {departmentName} has no work centers at this location. Pick
+                    another department or location.
+                  </Trans>
+                ) : locationName ? (
+                  <Trans>
+                    This department has no work centers at {locationName}. Pick
+                    another department or location.
+                  </Trans>
+                ) : (
+                  <Trans>
+                    This department has no work centers at this location. Pick
+                    another department or location.
+                  </Trans>
+                )
+              }
+            />
+          ) : (
+            <Empty
+              title={<Trans>No scheduled work in this window</Trans>}
+              description={nextWorkHint}
+            >
+              {goToNextWork}
+            </Empty>
+          )}
         </div>
       ) : (
         <div
@@ -802,44 +956,13 @@ export default function ResourceGanttView() {
                       }
                       changeToSpan(selectedSpan);
                     }}
-                    toolbarAccessory={
-                      <div className="flex items-center gap-2">
-                        <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
-                          <Trans>
-                            {resourceCount} resources · {reservationCount}{" "}
-                            reservations · {jobCount} jobs
-                          </Trans>
-                        </span>
-                        {unschedulableCount > 0 && (
-                          <Badge
-                            variant="red"
-                            className="gap-1 whitespace-nowrap tabular-nums"
-                          >
-                            <LuBan className="size-3" />
-                            {unschedulableCount === 1 ? (
-                              <Trans>1 can't be scheduled</Trans>
-                            ) : (
-                              <Trans>
-                                {unschedulableCount} can't be scheduled
-                              </Trans>
-                            )}
-                          </Badge>
-                        )}
-                        {conflictCount > 0 && (
-                          <Badge
-                            variant="red"
-                            className="gap-1 whitespace-nowrap tabular-nums"
-                          >
-                            <LuTriangleAlert className="size-3" />
-                            {conflictCount === 1 ? (
-                              <Trans>1 conflict</Trans>
-                            ) : (
-                              <Trans>{conflictCount} conflicts</Trans>
-                            )}
-                          </Badge>
-                        )}
-                      </div>
-                    }
+                    toolbarAccessory={(visibility) => (
+                      <ForecastCounts
+                        events={events}
+                        detailsById={detailsById}
+                        visibility={visibility}
+                      />
+                    )}
                     renderNodeAside={(node) => {
                       const workCenterId = workCenterIdFromLaneId(node.id);
                       const availability = workCenterId
@@ -861,6 +984,7 @@ export default function ResourceGanttView() {
                     axis="absolute"
                     windowStartMs={windowStartMs}
                     nonWorkingIntervals={nonWorkingIntervals}
+                    nonWorkingIntervalsByRow={nonWorkingIntervalsByLane}
                     tickIntervalMs={tickIntervalMs}
                     axisTickMs={axisTickMs}
                     formatAxisTick={formatAxisTick}
@@ -880,6 +1004,57 @@ export default function ResourceGanttView() {
             )}
           </ClientOnly>
         </div>
+      )}
+    </div>
+  );
+}
+
+/** The board's header counts and problem badges, for what is on screen. */
+function ForecastCounts({
+  events,
+  detailsById,
+  visibility
+}: {
+  events: GanttEvent[];
+  detailsById: Record<string, TimelineNodeDetail>;
+  visibility: GanttVisibility;
+}) {
+  const counts = useMemo(
+    () => forecastCounts(events, detailsById, visibility),
+    [events, detailsById, visibility]
+  );
+  return (
+    <div className="flex items-center gap-2">
+      <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+        <Plural value={counts.resources} one="# resource" other="# resources" />
+        {" · "}
+        <Plural
+          value={counts.reservations}
+          one="# reservation"
+          other="# reservations"
+        />
+        {" · "}
+        <Plural value={counts.jobs} one="# job" other="# jobs" />
+      </span>
+      {counts.unschedulable > 0 && (
+        <Badge variant="red" className="gap-1 whitespace-nowrap tabular-nums">
+          <LuBan className="size-3" />
+          <Plural
+            value={counts.unschedulable}
+            one="# can't be scheduled"
+            other="# can't be scheduled"
+          />
+        </Badge>
+      )}
+      {counts.conflicts > 0 && (
+        <Badge variant="red" className="gap-1 whitespace-nowrap tabular-nums">
+          <LuTriangleAlert className="size-3" />
+          <Plural
+            value={counts.conflicts}
+            one="# conflict"
+            other="# conflicts"
+          />
+        </Badge>
       )}
     </div>
   );

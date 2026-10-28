@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { sortOperationsByPriority } from "./priority-calculator.ts";
+import {
+  committedDueDate,
+  sortOperationsByPriority
+} from "./priority-calculator.ts";
 import type { OperationWithJobInfo } from "./types.ts";
 
 const op = (
@@ -33,5 +36,19 @@ describe("sortOperationsByPriority", () => {
     expect(
       sortOperationsByPriority([...ops].reverse()).map((o) => o.id)
     ).toEqual(expected);
+  });
+});
+
+describe("committedDueDate", () => {
+  // The job form hides the date of ASAP and No Deadline jobs, so it is never late.
+  it.each([
+    ["Hard Deadline", "2026-10-24"],
+    ["Soft Deadline", "2026-10-24"],
+    ["ASAP", null],
+    ["No Deadline", null]
+  ] as const)("a %s job dated 24 Oct is due %s", (deadlineType, expected) => {
+    expect(committedDueDate({ deadlineType, dueDate: "2026-10-24" })).toBe(
+      expected
+    );
   });
 });

@@ -9,7 +9,8 @@ import {
   TRAINING_CERTIFICATE_MAX_BYTES,
   trainingAssignmentValidator,
   trainingGuideKeyPrefix,
-  validateTrainingCertificate
+  validateTrainingCertificate,
+  workCenterFormValidator
 } from "./resources.models";
 
 describe("isValidTrainingGuideKey", () => {
@@ -110,5 +111,36 @@ describe("trainingAssignmentValidator", () => {
       trainingAssignmentValidator.safeParse({ ...input, groupIds: ["grp_1"] })
         .success
     ).toBe(success);
+  });
+});
+
+describe("workCenterFormValidator", () => {
+  const workCenter = {
+    name: "Laser Cell",
+    description: "",
+    defaultStandardFactor: "Minutes/Piece",
+    locationId: "loc-1",
+    laborRate: 0,
+    machineRate: 0,
+    overheadRate: 0
+  };
+  const shiftsError = (fields: Record<string, unknown>) =>
+    workCenterFormValidator
+      .safeParse({ ...workCenter, ...fields })
+      .error?.issues.find((issue) => issue.path[0] === "shifts")?.message;
+
+  // Saved with no shift, "Some Shifts" runs every shift at the location.
+  it("refuses Some Shifts with no shift picked", () => {
+    expect(shiftsError({ operatingHours: "some" })).toBe(
+      "Select at least one shift"
+    );
+  });
+
+  it.each([
+    { operatingHours: "some", shifts: ["day"] },
+    { operatingHours: "all" },
+    {}
+  ])("accepts %o", (fields) => {
+    expect(shiftsError(fields)).toBeUndefined();
   });
 });

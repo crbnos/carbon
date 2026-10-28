@@ -97,6 +97,7 @@ import {
   productionEventValidator,
   productionOrderValidator,
   productionQuantityValidator,
+  SCHEDULED_JOB_STATUSES,
   salesOrderToJobValidator,
   scheduleJobUpdateValidator,
   scheduleOperationReorderValidator,
@@ -1372,6 +1373,9 @@ export const reorderScheduleOperations = defineServiceFn({
  * `columnId` is a date (`YYYY-MM-DD`) or one of the board's undated columns,
  * which clears the due date. Writes the due date and priority of a job at
  * `locationId` that is not locked; a job elsewhere or locked is a `conflict`.
+ * The deadline type follows the date: a dated "No Deadline" or "ASAP" job
+ * becomes "Soft Deadline", and an undated Hard or Soft Deadline job becomes
+ * "No Deadline".
  * Then the scheduler is told; the debounced wave regenerates the location in
  * due date, then priority, order. A failed notice is logged and not returned.
  *
@@ -1388,17 +1392,37 @@ export const moveScheduleJob = defineServiceFn({
       return ctx.error("validation", "Invalid form data");
     }
 
+    const current = await ctx.asCaller.supabase
+      .from("job")
+      .select("deadlineType")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .eq("locationId", locationId)
+      .not("status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`)
+      .maybeSingle();
+    if (current.error) {
+      return ctx.error("internal", current.error.message, current.error);
+    }
+    if (current.data === null) {
+      return ctx.error("conflict", "Job unavailable or locked");
+    }
+
     const { data, error } = await ctx.asCaller.supabase
       .from("job")
       .update({
         dueDate,
         priority,
+        deadlineType: service.deadlineTypeForDueDate(
+          current.data.deadlineType,
+          dueDate
+        ),
         updatedBy: ctx.auditUserId,
         updatedAt: datetime.timestamp()
       })
       .eq("id", id)
       .eq("companyId", companyId)
       .eq("locationId", locationId)
+      .eq("deadlineType", current.data.deadlineType)
       .not("status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`)
       .select("id")
       .maybeSingle();
@@ -1669,7 +1693,10 @@ export const setJobItem = defineServiceFn({
  * Refused when any job is locked. Each job's priority is recalculated among
  * the jobs at its location on the new date (`nextJobPriority`), in one read
  * and one write for every job. A field left out keeps the job's current
- * value; a `dueDate` of null clears it.
+ * value; a `dueDate` of null clears it. The two stay in step
+ * (`nextJobDeadline`): ASAP and No Deadline clear the date, and a date given
+ * to a No Deadline or ASAP job makes it a Soft Deadline. Then the scheduler is
+ * told; a failed notice is logged and not returned.
  *
  * @mcp
  */
@@ -1690,8 +1717,7 @@ export const setJobDeadline = defineServiceFn({
     const moves = jobs.map((job) => ({
       id: job.id,
       locationId: job.locationId,
-      dueDate: dueDate !== undefined ? dueDate || null : job.dueDate,
-      deadlineType: deadlineType ?? job.deadlineType
+      ...service.nextJobDeadline(job, { dueDate, deadlineType })
     }));
 
     // The jobs already on each new date at each location, in one read: a
@@ -1747,6 +1773,15 @@ export const setJobDeadline = defineServiceFn({
         AND j."companyId" = ${companyId}
         AND j."status" NOT IN (${sql.join(JOB_LOCKED_STATUSES.map((status) => sql`${status}`))})
     `.execute(ctx.asSystem.pg);
+
+    // A Draft or Planned job is not on the schedule yet.
+    if (jobs.some((job) => SCHEDULED_JOB_STATUSES.includes(job.status))) {
+      await service.notifyScheduleInputsChanged(
+        companyId,
+        "reorder",
+        "Job deadline changed"
+      );
+    }
     return { ids };
   }
 });
@@ -3846,7 +3881,8 @@ export const setPersonHours = defineServiceFn({
  * @remarks
  * Optionally only a department's work centers or one shift. One UPDATE, so it
  * applies to all or none. Every work center touched is rescheduled. Returns
- * how many assignments were updated.
+ * how many assignments were updated (`updated`), and on how many person-days
+ * (`personDays`: a person split across stations is one).
  *
  * @mcp
  */
@@ -3881,7 +3917,11 @@ export const setPeopleOvertime = defineServiceFn({
       "People overtime changed",
       rows.map((row) => row.workCenterId)
     );
-    return { updated: rows.length };
+    return {
+      updated: rows.length,
+      personDays: new Set(rows.map((row) => `${row.employeeId}:${row.date}`))
+        .size
+    };
   }
 });
 
@@ -3930,7 +3970,11 @@ export const copyPeopleDay = defineServiceFn({
  *
  * @remarks
  * One assignment per working day of their shift (Monday to Friday when it has
- * none) from `weekStart`. Then the work center is rescheduled.
+ * none) from `weekStart`, leaving a day they are off or already booked in that
+ * shift as it is. Then the work center is rescheduled.
+ *
+ * @returns `assigned`, the days written, and `skipped`, the working days left
+ * as they were.
  *
  * @mcp
  */
@@ -3961,7 +4005,11 @@ export const assignPersonWeek = defineServiceFn({
     await service.notifyPeopleChange(ctx, "People week assignment", [
       week.workCenterId
     ]);
-    return { employeeId: week.employeeId };
+    return {
+      employeeId: week.employeeId,
+      assigned: written.assigned,
+      skipped: written.skipped
+    };
   }
 });
 

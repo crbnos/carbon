@@ -12,6 +12,7 @@ import { it } from "vitest";
 import { intersectWindows, subtractIntervals } from "./calendar-utils.ts";
 import {
   closeHolidays,
+  downtimeOutages,
   type LadderShiftRow,
   resolveLocationWindows,
   resolveWorkCenterWindows,
@@ -302,4 +303,58 @@ it("a holiday closes a shift-based work center for the whole local day; a lights
 
   assertEquals(result.get("wc-shift"), [tuesday]);
   assertEquals(result.get("wc-lights-out"), [around]);
+});
+
+const dispatch = (
+  overrides: Partial<Parameters<typeof downtimeOutages>[0]["dispatches"][0]>
+) => ({
+  id: "md-1",
+  workCenterId: "wc-a",
+  plannedStartTime: null,
+  plannedEndTime: null,
+  actualStartTime: null,
+  actualEndTime: null,
+  createdAt: "2026-01-05T06:00:00Z",
+  ...overrides
+});
+
+it("downtimeOutages: an actual time wins over the planned one, on the dispatch's station and every joined one", () => {
+  const outages = downtimeOutages({
+    dispatches: [
+      dispatch({
+        plannedStartTime: "2026-01-06T08:00:00Z",
+        plannedEndTime: "2026-01-06T12:00:00Z",
+        actualStartTime: "2026-01-06T09:00:00Z"
+      })
+    ],
+    dispatchWorkCenters: [
+      { maintenanceDispatchId: "md-1", workCenterId: "wc-b" },
+      { maintenanceDispatchId: "md-1", workCenterId: "wc-elsewhere" }
+    ],
+    workCenterIds: ["wc-a", "wc-b"],
+    rangeEnd: RANGE_END
+  });
+  const window = {
+    start: utc("2026-01-06T09:00:00Z"),
+    end: utc("2026-01-06T12:00:00Z")
+  };
+  assertEquals(
+    [...outages],
+    [
+      ["wc-a", [window]],
+      ["wc-b", [window]]
+    ]
+  );
+});
+
+it("downtimeOutages: a dispatch with no end is down to the range end, from its creation when it has no start", () => {
+  const outages = downtimeOutages({
+    dispatches: [dispatch({})],
+    dispatchWorkCenters: [],
+    workCenterIds: ["wc-a"],
+    rangeEnd: RANGE_END
+  });
+  assertEquals(outages.get("wc-a"), [
+    { start: utc("2026-01-05T06:00:00Z"), end: RANGE_END }
+  ]);
 });
