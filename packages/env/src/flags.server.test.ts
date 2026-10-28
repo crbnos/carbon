@@ -56,13 +56,18 @@ let url = "";
 let doc = flagDoc(companyRule(["cmp_123"]));
 let etag = '"v1"';
 let mode: "ok" | "hang" | "big" | "down" = "ok";
-let requests: { ifNoneMatch?: string; authorization?: string }[] = [];
+let requests: {
+  ifNoneMatch?: string;
+  authorization?: string;
+  commit?: string;
+}[] = [];
 
 beforeAll(async () => {
   server = createServer((req, res) => {
     requests.push({
       ifNoneMatch: req.headers["if-none-match"] as string | undefined,
-      authorization: req.headers.authorization
+      authorization: req.headers.authorization,
+      commit: req.headers["x-carbon-commit"] as string | undefined
     });
     if (mode === "hang") return;
     if (mode === "down") return res.writeHead(503).end();
@@ -167,6 +172,13 @@ describe("CarbonFlagsProvider", () => {
     expect(await read("cmp_123")).toBe(true);
     expect(await read("cmp_999")).toBe(false);
     expect(requests[0]?.authorization).toBe("Bearer tok+1");
+  });
+
+  it("sends the build's commit as X-Carbon-Commit", async () => {
+    await start(
+      new CarbonFlagsProvider({ endpoint: url, commit: "abc123def456" })
+    );
+    expect(requests[0]?.commit).toBe("abc123def456");
   });
 
   it("targets users inside a company", async () => {

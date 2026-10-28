@@ -89,7 +89,16 @@ daemon can also read the endpoint, because flagd's own HTTP sync sends the same
 headers (`Authorization`, extra headers, `If-None-Match`).
 
 **Request:** `GET <CARBON_FLAGS_ENDPOINT>` with the configured headers. The
-request also sends `If-None-Match` when the instance has an ETag.
+request also sends `If-None-Match` when the instance has an ETag, and
+`X-Carbon-Commit` with the build's git commit when the instance knows it.
+
+| Header | Set by | Use in the source |
+|--------|--------|-------------------|
+| `Authorization` | `CARBON_FLAGS_HEADERS` | The instance token. It is the only identity. |
+| `X-Carbon-Commit` | `CARBON_COMMIT_SHA` (alias `VERCEL_GIT_COMMIT_SHA`; `sst.config.ts` forwards `IMAGE_TAG`), and `ci/src/deploy.ts` at deploy time | Record which build each instance runs, next to `lastFetchAt`. |
+| `If-None-Match` | The provider | Answer `304` when the document has not changed. |
+
+The headers carry no company id, user id or other tenant data.
 
 | Response | Meaning | Instance action |
 |----------|---------|-----------------|
@@ -356,7 +365,7 @@ Each source has:
 |------|---------------|
 | Flag table | `key`, `description`, `variants` (JSON), `defaultVariant`, `archivedAt`, audit columns |
 | Rule table | `flagKey`, `order`, `variant`, and the conditions: `companyIds`, `userIds`, `percent`, `tenancy` (`single`, `multi` or empty), `editions`, `instanceIds` (empty = every instance) |
-| Instance token table | `instanceId`, `tokenHash` (SHA-256), `createdAt`, `revokedAt`, `lastFetchAt` |
+| Instance token table | `instanceId`, `tokenHash` (SHA-256), `createdAt`, `revokedAt`, `lastFetchAt`, `lastCommit` (from `X-Carbon-Commit`) |
 | Change log | One row per save: who, when, the flag before and after |
 | Admin form | Staff edit variants, default, rules and archive state |
 | Endpoint | Section 2. It hashes the bearer token, finds the instance, compiles the rules into one `if` chain per flag and validates the result. It sets `lastFetchAt`. |
@@ -573,7 +582,7 @@ and `flags_token` (text, secret). Both are nullable.
 | File | Change |
 |------|--------|
 | `packages/env/src/schema.ts` | Add `CARBON_FLAGS_ENDPOINT` (type `url`) and `CARBON_FLAGS_HEADERS` (`secret: true`). |
-| `packages/env/src/index.ts` | Export both variables. |
+| `packages/env/src/index.ts` | Export both variables and `CARBON_COMMIT_SHA`. |
 | `packages/env/src/flags.ts` | New. The `FLAGS` registry and its types. Client-safe. |
 | `packages/env/src/flags.server.ts` | New. Provider, `initFlags`, `flags.*`, `evaluateBrowserFlags`, `flagStatus`, `parseHeaders`. |
 | `packages/env/src/flags.server.test.ts` | New. The tests for the acceptance criteria of the provider. |
@@ -595,7 +604,7 @@ and `flags_token` (text, secret). Both are nullable.
 | `.claude/rules/onshape-panel.md`, `.claude/rules/environment-configuration.md`, `packages/ee/AGENTS.md` | Replace `INTEGRATION_EARLY_ACCESS_USER_IDS` with the `integration-early-access` flag. |
 | `.env.example` | Document both variables, next to `SYSTEM_STATUS_URL`. |
 | `contrib/deploying/simple-docker-caddy/docker-compose.prod.yml` | Pass both variables to the ERP and MES services. |
-| `sst.config.ts` | Forward `CARBON_FLAGS_ENDPOINT` in the ERP and MES environment blocks. |
+| `sst.config.ts` | Forward `CARBON_FLAGS_ENDPOINT`, and `IMAGE_TAG` as `CARBON_COMMIT_SHA`, in the ERP and MES environment blocks. |
 | `ci/src/deploy.ts` | Read `flags_endpoint` and `flags_token`, fetch the flags, set `CARBON_FLAGS_ENDPOINT` to a `data:` URL. |
 | `.claude/rules/environment-configuration.md` | Add a flags section next to the maintenance and status section. |
 | `packages/env/AGENTS.md` | Document the flags exports and the lifecycle. |
@@ -705,3 +714,4 @@ None in the ERP or the MES. The admin form is in each source (section 6).
 - 2026-10-28: Added `userIds` rules (Q16 revised) and the Redis-backed store (Q17): three layers, a lease for the source fetch, and the measured cost per request.
 - 2026-10-28: Built on `feat/feature-flags`. Changes from the build: the browser hook moved to `@carbon/react` (`useFeatureFlags`), the Redis store has no unit test, and the AWS `data:` URL has a 32 KiB cap.
 - 2026-10-28: Review fixes. The provider keeps the lease after a failed fetch, fetches for itself when it cannot load the Redis copy, sends structured warnings to `onWarning`, and keeps the boot sync alive with `waitUntil`. The MES layout sends no flags. `ci/src/deploy.ts` checks the document's shape.
+- 2026-10-28: Added the `X-Carbon-Commit` header from `CARBON_COMMIT_SHA` (alias `VERCEL_GIT_COMMIT_SHA`; `IMAGE_TAG` on AWS), so each source records which build every instance runs.

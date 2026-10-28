@@ -24,6 +24,7 @@ import {
   flagDefault
 } from "./flags";
 import {
+  CARBON_COMMIT_SHA,
   CARBON_FLAGS_ENDPOINT,
   CARBON_FLAGS_HEADERS,
   CarbonEdition,
@@ -98,6 +99,8 @@ export type CarbonFlagsOptions = {
   endpoint?: string;
   /** Raw `CARBON_FLAGS_HEADERS`. */
   headers?: string;
+  /** The build's git commit, sent to the source as `X-Carbon-Commit`. */
+  commit?: string;
   store?: FlagsStore;
   /** Keeps a background sync alive after the response is sent (Vercel). */
   waitUntil?: (promise: Promise<unknown>) => void;
@@ -175,7 +178,11 @@ export class CarbonFlagsProvider implements Provider {
       : /^https?:\/\//i.test(this.endpoint)
         ? "remote"
         : "static";
-    this.headers = parseHeaders(options.headers);
+    // The source sees which build each instance runs. Configured headers win.
+    this.headers = {
+      ...(options.commit ? { "X-Carbon-Commit": options.commit } : {}),
+      ...parseHeaders(options.headers)
+    };
     this.scope = createHash("sha256")
       .update(`${this.endpoint}\n${options.headers ?? ""}`)
       .digest("hex")
@@ -494,6 +501,7 @@ export async function initFlags(
   const provider = new CarbonFlagsProvider({
     endpoint: CARBON_FLAGS_ENDPOINT,
     headers: CARBON_FLAGS_HEADERS,
+    commit: CARBON_COMMIT_SHA,
     store: options.store,
     waitUntil: options.waitUntil,
     onWarning: options.onWarning,

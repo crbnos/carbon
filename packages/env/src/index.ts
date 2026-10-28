@@ -131,6 +131,8 @@ export const SYSTEM_STATUS_URL = getEnv("SYSTEM_STATUS_URL");
 // its registry default.
 export const CARBON_FLAGS_ENDPOINT = getEnv("CARBON_FLAGS_ENDPOINT");
 export const CARBON_FLAGS_HEADERS = getEnv("CARBON_FLAGS_HEADERS");
+// The build's git commit: Vercel's VERCEL_GIT_COMMIT_SHA, or IMAGE_TAG on AWS.
+export const CARBON_COMMIT_SHA = getEnv("CARBON_COMMIT_SHA");
 
 // Carbon GovCloud Rider metadata. These are the authoritative `docVersion` /
 // `docHash` stamped onto every ITAR certification, and the target of the

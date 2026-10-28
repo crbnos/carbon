@@ -141,6 +141,12 @@ export const schema = define({
       "Feature flags document (flagd JSON): an https: URL to poll, or a data: or file: URL loaded once",
     type: url
   },
+  CARBON_COMMIT_SHA: {
+    group: "core",
+    description:
+      "Git commit of this build, sent to the flags source as X-Carbon-Commit. Vercel sets it; AWS deploys forward IMAGE_TAG",
+    aliases: ["VERCEL_GIT_COMMIT_SHA"]
+  },
   CARBON_FLAGS_HEADERS: {
     group: "core",
     description:

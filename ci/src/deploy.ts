@@ -106,10 +106,14 @@ const MAX_FLAGS_DOCUMENT_BYTES = 32 * 1024;
  */
 async function fetchFlagsDocument(
   endpoint: string,
-  token: string | null
+  token: string | null,
+  commit: string
 ): Promise<string> {
   const res = await fetch(endpoint, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: {
+      "X-Carbon-Commit": commit,
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
     signal: AbortSignal.timeout(10_000),
   });
   if (!res.ok) {
@@ -350,7 +354,7 @@ async function deploy(): Promise<void> {
       // Feature flags are fixed at deploy time. A failed fetch fails this
       // workspace's deploy, and the running release keeps its flags.
       const carbon_flags_endpoint = flags_endpoint
-        ? await fetchFlagsDocument(flags_endpoint, flags_token)
+        ? await fetchFlagsDocument(flags_endpoint, flags_token, imageTag)
         : undefined;
 
       const $$ = $({
