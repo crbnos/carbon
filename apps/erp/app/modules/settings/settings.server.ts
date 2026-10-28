@@ -1249,13 +1249,17 @@ export const removePrinterRoute = defineServiceFn({
           next.defaultPrinterRouteId = null;
           dirty = true;
         }
-        if (next.shipping?.printerRouteId === id) {
-          next.shipping = { ...next.shipping, printerRouteId: null };
-          dirty = true;
-        }
-        if (next.receiving?.printerRouteId === id) {
-          next.receiving = { ...next.receiving, printerRouteId: null };
-          dirty = true;
+        for (const context of [
+          "shipping",
+          "receiving",
+          "inventory",
+          "kanban"
+        ] as const) {
+          const assigned = next[context];
+          if (assigned?.printerRouteId === id) {
+            next[context] = { ...assigned, printerRouteId: null };
+            dirty = true;
+          }
         }
         if (next.workCenters) {
           const workCenters = { ...next.workCenters };

@@ -5137,7 +5137,7 @@ export async function defaultLocationOf(ctx: ServiceContext) {
   return defaults.data?.locationId ?? undefined;
 }
 
-/** Print a document's labels when its location's printer auto-prints. */
+/** Print a document's labels (or a new kanban's card) when its location's printer auto-prints. */
 export async function autoPrint(
   ctx: ServiceContext,
   {
@@ -5146,10 +5146,10 @@ export async function autoPrint(
     locationId,
     context
   }: {
-    sourceDocument: "Receipt" | "Shipment";
+    sourceDocument: "Receipt" | "Shipment" | "Kanban";
     sourceDocumentId: string;
     locationId: string | null;
-    context: "receiving" | "shipping";
+    context: "receiving" | "shipping" | "kanban";
   }
 ) {
   if (!locationId) return;

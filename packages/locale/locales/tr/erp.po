@@ -3915,8 +3915,8 @@ msgstr "Bir tarih itibariyle varlıklar, yükümlülükler ve özkaynak"
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Yüklü bir operasyonun talep etmediği makine süresini doğru işe atayın veya göz ardı edin."
 
-msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
-msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
+msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
+msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul, envanter, kanbanlar ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
 
 msgid "Assign To"
 msgstr "Ata"
@@ -18042,6 +18042,9 @@ msgid "Print"
 msgstr "Yazdır"
 
 #. placeholder {0}: printIds.length
+msgid "Print {0} Kanbans"
+msgstr "{0} Kanban Yazdır"
+
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "{0} Etiket Yazdır"
@@ -18750,8 +18753,8 @@ msgid "Queued"
 msgstr "Kuyrukta"
 
 #. placeholder {0}: printIds.length
-msgid "Queued {0} labels for printing"
-msgstr "{0} etiket yazdırma kuyruğuna eklendi"
+msgid "Queued {0} kanbans for printing"
+msgstr "{0} kanban yazdırma kuyruğuna eklendi"
 
 msgid "Queued {count} sync operations for sync"
 msgstr ""

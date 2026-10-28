@@ -3915,8 +3915,8 @@ msgstr "某一日期的资产、负债和所有者权益"
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "将未被加载工序认领的机器工时分配给正确的工单，或将其放弃。"
 
-msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
-msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
+msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
+msgstr "将打印机分配到位置。运输、接收、库存管理、看板和工作中心继承位置默认值，除非被覆盖。"
 
 msgid "Assign To"
 msgstr "分配给"
@@ -18042,6 +18042,9 @@ msgid "Print"
 msgstr "打印"
 
 #. placeholder {0}: printIds.length
+msgid "Print {0} Kanbans"
+msgstr "打印 {0} 个看板"
+
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "打印 {0} 个标签"
@@ -18750,8 +18753,8 @@ msgid "Queued"
 msgstr "排队中"
 
 #. placeholder {0}: printIds.length
-msgid "Queued {0} labels for printing"
-msgstr "已将 {0} 个标签加入打印队列"
+msgid "Queued {0} kanbans for printing"
+msgstr "已将 {0} 个看板加入打印队列"
 
 msgid "Queued {count} sync operations for sync"
 msgstr ""
