@@ -1094,7 +1094,8 @@ export function IntegrationForm({
                 isDisabled={
                   isDisabled ||
                   installGate.comingSoon ||
-                  !!installGate.conflictsWith
+                  !!installGate.conflictsWith ||
+                  installGate.needsModeChoice
                 }
               >
                 <Trans>Install</Trans>
