@@ -7,6 +7,10 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  connectionUsable,
+  readConnections
+} from "@carbon/ee/integrations/connections";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getVapidDetails } from "@carbon/env/push.server";
 import { validationError, validator } from "@carbon/form";
@@ -22,16 +26,16 @@ import {
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, userId, companyId } = await requirePermissions(request, {});
 
-  const [preferences, slackIntegration, emailPlanEnabled] = await Promise.all([
+  const [preferences, slackActive, emailPlanEnabled] = await Promise.all([
     getNotificationPreferences(client, userId, companyId),
-    // Service role: companyIntegration SELECT requires settings_view, which
-    // regular employees don't have.
-    getCarbonServiceRole()
-      .from("companyIntegration")
-      .select("active")
-      .eq("companyId", companyId)
-      .eq("id", "slack")
-      .maybeSingle(),
+    // Service role: integrationConnection SELECT requires settings_view, which
+    // regular employees don't have. Slack is "on" when the company has a usable
+    // Slack connection — the same rows the Assistant and workflows read.
+    // A failed read reads as Slack off: it must not fail the whole pane.
+    readConnections(getCarbonServiceRole(), companyId, "slack").then(
+      (rows) => rows.some(connectionUsable),
+      () => false
+    ),
     companyHasFeature(client, companyId, { feature: "EMAIL_NOTIFICATIONS" })
   ]);
 
@@ -39,7 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     preferences: preferences.data ?? [],
-    slackActive: slackIntegration.data?.active ?? false,
+    slackActive,
     emailPlanEnabled,
     // Null hides every push control: the deployment has no push keys (no
     // SESSION_SECRET).

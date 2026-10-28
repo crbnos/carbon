@@ -36,6 +36,11 @@ import {
 import { updateConsoleSetting } from "@carbon/ee/console.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
+import {
+  disconnectConnection,
+  readConnection,
+  renameConnection
+} from "@carbon/ee/integrations/connections";
 import type { OeeDevice } from "@carbon/ee/oee";
 import {
   deleteWorkCenterDevice,
@@ -1689,6 +1694,92 @@ export const deactivateCompanyIntegration = defineServiceFn({
 
     await service.invalidateIntegrationHealthCache(id, ctx.company.id);
     return { id, name: integration.name };
+  }
+});
+
+/**
+ * Rename an account connected to a workflow integration.
+ *
+ * @remarks
+ * The name a workflow step's account picker shows. Names are unique per app.
+ */
+export const renameIntegrationConnection = defineServiceFn({
+  input: z.object({ id: z.string().min(1), name: z.string().trim().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { id, name }) {
+    // The table is read-only to API roles, so every write goes through the
+    // service role, scoped by the caller's company.
+    const connection = await readConnection(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      id
+    );
+    if (connection === null) {
+      return ctx.error("notFound", "Connection not found");
+    }
+
+    const update = await renameConnection(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      id,
+      name,
+      ctx.auditUserId
+    );
+    // Names are unique per app: the unique index refuses a taken one.
+    if (update.error?.code === "23505") {
+      return ctx.error(
+        "conflict",
+        "An account is already called that — pick a different name."
+      );
+    }
+    if (update.error) {
+      return ctx.error("internal", "Failed to rename connection", update.error);
+    }
+    return { id };
+  }
+});
+
+/**
+ * Disconnect an account connected to a workflow integration.
+ *
+ * @remarks
+ * Drops the account's token and marks it Revoked. The account stays listed, so
+ * a workflow step that uses it says "reconnect" rather than naming an account
+ * that is gone.
+ */
+export const disconnectIntegrationConnection = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { id }) {
+    const connection = await readConnection(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      id
+    );
+    if (connection === null) {
+      return ctx.error("notFound", "Connection not found");
+    }
+
+    try {
+      await disconnectConnection(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        connection.pieceName,
+        id,
+        ctx.auditUserId
+      );
+    } catch (err) {
+      return ctx.error("internal", "Failed to disconnect", err);
+    }
+
+    // The card's badge is cached (five minutes while healthy) and its health is
+    // computed from these rows, so without this Settings keeps saying "Healthy"
+    // for an account the builder already treats as disconnected.
+    await service.invalidateIntegrationHealthCache(
+      connection.pieceName,
+      ctx.company.id
+    );
+    return { id };
   }
 });
 
