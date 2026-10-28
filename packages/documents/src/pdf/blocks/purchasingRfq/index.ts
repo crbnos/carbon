@@ -6,6 +6,7 @@ export { purchasingRfqBlockRegistry } from "./registry";
 export type {
   BlockRenderer,
   PurchasingRfqAddress,
+  PurchasingRfqContact,
   PurchasingRfqData,
   PurchasingRfqPdfLine
 } from "./types";

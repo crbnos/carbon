@@ -22,17 +22,12 @@ export function TermsBlock({
   if (!hasContent(terms)) return null;
 
   return (
-    <View break>
-      <View style={tw("border-b border-gray-400 mb-3 pb-2 mt-2")}>
-        <Text
-          style={[
-            tw("text-[14px] font-bold uppercase tracking-wide"),
-            { color: theme.accent }
-          ]}
-        >
-          Terms & Conditions
-        </Text>
-      </View>
+    <View>
+      <Text
+        style={[tw("text-[16px] font-bold mt-2 mb-3"), { color: theme.accent }]}
+      >
+        Terms and Conditions
+      </Text>
       <Note content={terms!} />
     </View>
   );

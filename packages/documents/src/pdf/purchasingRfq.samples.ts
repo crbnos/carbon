@@ -16,6 +16,9 @@ export const SAMPLE_PURCHASING_RFQ = {
     stateProvince: "MI",
     postalCode: "48201",
     countryCode: "US",
+    phone: "(313) 555-0100",
+    email: "purchasing@acme.example",
+    website: "acme.example",
     baseCurrencyCode: "USD",
     logoLight: null,
     logoLightIcon: null,
@@ -77,6 +80,7 @@ export const SAMPLE_PURCHASING_RFQ = {
     postalCode: "48201",
     countryCode: "US"
   },
+  contact: { name: "Jane Doe", email: "jane.doe@acme.example" },
   thumbnails: {},
   terms: {},
   locale: "en-US"
