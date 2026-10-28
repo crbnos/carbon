@@ -1644,6 +1644,12 @@ msgstr "Un bene a breve termine non registra nessuna prima nota all'attivazione.
 msgid "A short-term lease has no schedule. Each invoice is expensed."
 msgstr "Una locazione a breve termine non ha un programma. Ogni fattura viene contabilizzata come spesa."
 
+msgid "A signature is optional to approve"
+msgstr ""
+
+msgid "A signature is required to approve"
+msgstr ""
+
 msgid "A step needs a name."
 msgstr "Un passaggio ha bisogno di un nome."
 
@@ -1703,6 +1709,9 @@ msgstr "Una registrazione temporale di Attrezzaggio, Manodopera, o lavoro di Mac
 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Un utensile è un articolo fisico usato per fare un componente che può essere usato su più ordini di produzione"
+
+msgid "A unit draws its number the first time it is worked on, scrapped or received, so cancelled jobs burn none."
+msgstr ""
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "Un'unità è trattata come vendita quando una di queste è vera, e come noleggio altrimenti."
@@ -2346,6 +2355,9 @@ msgstr "Aggiungi Spedizione"
 msgid "Add Shipping"
 msgstr "Aggiungi Spedizione"
 
+msgid "Add Signature"
+msgstr ""
+
 msgid "Add Slide"
 msgstr "Aggiungi diapositiva"
 
@@ -2412,6 +2424,9 @@ msgstr "Aggiungi unità"
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
 msgstr "Aggiungi il tuo primo {0}"
+
+msgid "Add your signature"
+msgstr ""
 
 msgid "Add-On"
 msgstr "Componente aggiuntivo"
@@ -2725,6 +2740,12 @@ msgstr "Un avviso che qualcosa ha bisogno dell'attenzione di una persona, distri
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "Un requisito di approvazione su una non conformità i cui revisori (seeded Engineering and Quality) devono firmare prima che il problema possa chiudersi."
 
+msgid "An approver must have a signature in Account → Profile before they can approve a purchase order. The purchase order PDF prints the signature of the person who approved it."
+msgstr ""
+
+msgid "An approver with no signature on file is asked to add one before they approve."
+msgstr ""
+
 msgid "An asset is a finance lease when any of these is true, and an operating lease when none is."
 msgstr "Un bene è una locazione finanziaria quando uno di questi è vero, ed una locazione operativa quando nessuno lo è."
 
@@ -2826,6 +2847,9 @@ msgstr "Il sistema di approvvigionamento di un articolo cambia"
 
 msgid "An item's revision status changes"
 msgstr "Lo stato della revisione di un elemento cambia"
+
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
 
 msgid "An item's tracking type changes"
 msgstr "Il tipo di tracciabilità di un articolo cambia"
@@ -3108,6 +3132,12 @@ msgstr "Requisiti di Approvazione"
 
 msgid "Approval Rules"
 msgstr "Regole di Approvazione"
+
+msgid "Approval signature requirement disabled"
+msgstr ""
+
+msgid "Approval signature requirement enabled"
+msgstr ""
 
 msgid "Approvals"
 msgstr "Approvazioni"
@@ -4060,21 +4090,11 @@ msgstr "Ore disponibili"
 msgid "Available on the Business plan"
 msgstr "Disponibile nel piano Business"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "Opzione avatar {0}"
-
 msgid "Avatar style"
 msgstr "Stile avatar"
 
 msgid "Avatar url"
 msgstr "URL avatar"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "Avatar da <0>{0}</0> di {1}, con licenza <1>{2}</1>."
 
 msgid "Average"
 msgstr "Media"
@@ -4553,6 +4573,11 @@ msgstr "Buyer, Pianificatore"
 
 msgid "by {byUser}"
 msgstr "da {byUser}"
+
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Accettando l'invito, accetti i <0>Termini di Servizio</0> e l'<1>Informativa sulla Privacy</1>."
@@ -5134,6 +5159,9 @@ msgstr "Scegli un processo raggruppabile per vedere le operazioni che possono es
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Scegli un componente che {itemReadableId} sostituisce. La regola è salvata su quel componente con {itemReadableId} come suo successore."
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Scegli una riga a sinistra per vedere da dove può provenire il suo stock."
 
@@ -5248,6 +5276,9 @@ msgstr "Fai clic di nuovo per disconnettere"
 
 msgid "Click components in the viewer to add them. Shift-click adds several."
 msgstr "Fai clic sui componenti nel visualizzatore per aggiungerli. Maiusc+clic aggiunge più di uno."
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Click to rename"
 msgstr "Fai clic per rinominare"
@@ -5434,6 +5465,9 @@ msgstr "Azienda"
 
 msgid "Company default"
 msgstr "Azienda predefinita"
+
+msgid "Company default ({companyDefault})"
+msgstr ""
 
 msgid "Company default ({companyLabel})"
 msgstr "Impostazione predefinita Azienda ({companyLabel})"
@@ -6862,6 +6896,9 @@ msgstr "Personalizzato {label}"
 msgid "Custom attributes you track against your people"
 msgstr "Attributi personalizzati che traccia per le tue persone"
 
+msgid "Custom color"
+msgstr ""
+
 msgid "Custom development beyond what's listed"
 msgstr "Sviluppo personalizzato oltre quanto elencato"
 
@@ -7272,6 +7309,9 @@ msgstr "Decidi cosa vede un operatore se tenta di emettere un lotto o un numero 
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Decidi cosa accade quando un operatore preme Fine in officina con materiale ancora non prelevato."
+
+msgid "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+msgstr ""
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "Decidere quando il materiale prelevato a un centro di lavoro ma non consumato ritorna al deposito."
@@ -8420,6 +8460,12 @@ msgstr "Trascina per ridimensionare il disegno e le caratteristiche"
 msgid "Drag to zoom"
 msgstr "Trascina per ingrandire"
 
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
 msgid "Drawing"
 msgstr "Prelievo"
 
@@ -8428,6 +8474,9 @@ msgstr "Numero di Disegno"
 
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Disegno sostituito. I posizionamenti dei palloni sono stati rimossi; le righe caratteristiche rimangono invariate."
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Drop Ship"
 msgstr "Spedizione diretta"
@@ -9192,6 +9241,9 @@ msgstr "Abilita per consentire caratteri minuscoli negli ID degli articoli."
 msgid "Enable to allow shared workstation mode."
 msgstr "Abilita per consentire la modalità workstation condivisa."
 
+msgid "Enable to block approval from anyone with no signature on file."
+msgstr ""
+
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "Attiva per bloccare l'emissione o la registrazione per un cliente senza contatto o senza ubicazione."
 
@@ -9644,6 +9696,12 @@ msgstr "Ogni riga è stata importata correttamente."
 msgid "Every unit has a rate."
 msgstr "Ogni unità ha un tasso."
 
+msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
+msgstr ""
+
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "Ogni utente che corrisponde ai filtri dell'elenco. Gli utenti a cui questa azione non si applica vengono saltati."
 
@@ -9939,6 +9997,13 @@ msgstr "Informazioni aggiuntive inviate con la richiesta, come una chiave di aut
 msgid "Extra tags for slicing your GL reporting"
 msgstr "Tag aggiuntivi per suddividere la rendicontazione della contabilità generale"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Fail"
 msgstr "Non conforme"
 
@@ -10198,6 +10263,9 @@ msgstr "Impossibile caricare le entità tracciate"
 msgid "Failed to plan job"
 msgstr "Impossibile pianificare l'ordine di produzione"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Impossibile registrare lo strumento di misura"
 
@@ -10338,6 +10406,9 @@ msgstr "Caricamento del modello non riuscito"
 
 msgid "Failed to upload PDF"
 msgstr "Caricamento PDF non riuscito"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "Failed to upload thumbnail"
 msgstr "Impossibile caricare la miniatura"
@@ -17171,8 +17242,8 @@ msgstr "Scegli un tipo di record…"
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "Seleziona un passo dall'elenco per modificare i dettagli, i componenti e i materiali."
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "Scegli uno stile e un avatar, o mescola per vederne di nuovi."
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick a target date to compare."
 msgstr "Seleziona una data di destinazione da confrontare."
@@ -17411,6 +17482,9 @@ msgstr "Seleziona un articolo"
 
 msgid "Please upload a CSV file of your data"
 msgstr "Si prega di caricare un file CSV dei tuoi dati"
+
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
 
 msgid "PO"
 msgstr "PO"
@@ -17706,6 +17780,12 @@ msgstr "Stampa Etichetta"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Output di stampa ({0})"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer route created"
 msgstr ""
@@ -19224,6 +19304,9 @@ msgstr "Rimosso"
 msgid "Removed line"
 msgstr "Riga rimossa"
 
+msgid "Removed signature"
+msgstr ""
+
 #. placeholder {0}: count > 1 ? "s" : ""
 msgid "Removing this path will also disconnect {count} connection{0}. Continue?"
 msgstr "La rimozione di questo percorso disconnetterà anche {count} connessione{0}. Continuare?"
@@ -19438,6 +19521,9 @@ msgstr "Richiedi un codice a 6 cifre dall'app autenticatore al momento dell'acce
 
 msgid "Require a Customer Contact and Location"
 msgstr "Richiedi un contatto cliente e un'ubicazione"
+
+msgid "Require a Signature to Approve Purchase Orders"
+msgstr ""
 
 msgid "Require a Supplier Contact and Location"
 msgstr "Richiedi un contatto fornitore e un'ubicazione"
@@ -20422,6 +20508,9 @@ msgstr "Salva bozza"
 msgid "Save Method"
 msgstr "Salva Metodo"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Salva il modulo che stai modificando"
 
@@ -20454,6 +20543,9 @@ msgid "Saved dimension value mapping"
 msgstr ""
 
 msgid "Saved document layout"
+msgstr ""
+
+msgid "Saved signature"
 msgstr ""
 
 msgid "Saved view"
@@ -21096,6 +21188,18 @@ msgstr "Numero di Serie:"
 msgid "Serial Numbers"
 msgstr "Numeri di Serie"
 
+msgid "Serial numbers are drawn when a unit is produced"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is created"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
+msgid "Serial numbers are drawn when the units are received."
+msgstr ""
+
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "I numeri di serie vengono generati solo per articoli tracciati in serie o per lotto."
 
@@ -21679,6 +21783,9 @@ msgstr "Mostrato all'utente quando questa regola fallisce."
 msgid "Shuffle"
 msgstr "Mescola"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in here instead"
 msgstr ""
 
@@ -21717,6 +21824,15 @@ msgstr "Revisione di approvazione prima di passare al passaggio successivo"
 
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "Autorizzazioni che devono essere registrate prima che questo problema possa essere chiuso; oltre a quelle richieste dal flusso di lavoro."
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
+msgstr ""
+
+msgid "Signature path"
+msgstr ""
 
 msgid "Signed in as {name}"
 msgstr "Accesso effettuato come {name}"
@@ -22335,6 +22451,9 @@ msgstr "Stripe non ha ancora un cliente per questo cliente Carbon. La registrazi
 
 msgid "Structure"
 msgstr "Struttura"
+
+msgid "Style"
+msgstr ""
 
 msgid "Style default"
 msgstr "Predefinito dello stile"
@@ -24848,6 +24967,9 @@ msgstr "Timer in esecuzione"
 msgid "Timezone"
 msgstr "Fuso orario"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "Inclina lontano da te"
 
@@ -25823,6 +25945,9 @@ msgstr "Carica PDF"
 msgid "Uploaded model"
 msgstr "Modello caricato"
 
+msgid "Uploaded signature"
+msgstr ""
+
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -26751,8 +26876,8 @@ msgstr "Quando si prevede che i fornitori rispondano; i fornitori vedono questa 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
 msgstr "Quando il buyer ha richiesto la merce; il fornitore può promettere qualcosa di diverso sulla data promessa e consegnare qualcosa di diverso di nuovo sulla data di consegna."
 
-msgid "When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "Quando il Buyer ha bisogno dei beni di questa riga sulla banchina; la pianificazione utilizza questa data per la disponibilità della giacenza e la pianificazione della lavorazione esterna."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr "Quando il Buyer richiede la merce di questa riga in banchina. Una nuova riga parte dalla Data richiesta dell'ordine; la Pianificazione usa questa data per la verifica della disponibilità di magazzino e per la programmazione delle lavorazioni esterne."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Quando il contratto è in corso e cosa accade al completamento."
@@ -26775,6 +26900,12 @@ msgstr "Quando la richiesta del cliente non è più attuale; dopo questa data, l
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "Quando i beni sono effettivamente arrivati; registrato sulla ricevuta e utilizzato per il punteggio di puntualità di consegna del fornitore."
 
+msgid "When the job is created"
+msgstr ""
+
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Quando la carta kanban viene scansionata, il lavoro viene automaticamente spostato dalla bozza e rilasciato al piano."
 
@@ -26796,11 +26927,17 @@ msgstr "Quando il fornitore si è impegnato a consegnare; la pianificazione util
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Quando la determinazione dei prezzi del fornitore non è più onorata; la conversione di questa quotazione a un ordine di acquisto dopo questa data potrebbe richiedere una nuova quotazione."
 
+msgid "When the unit is produced"
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "Quando questo strumento di misura è scaduto per la taratura; una volta scaduto, indica Non tarato."
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "Quando questo strumento di misura è stato tarato con successo per l'ultima volta; la data della prossima taratura viene ricalcolata da questo valore più l'intervallo."
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Quando sembra giusto, contrassegnalo come concordato. Questo completa il passaggio Discovery nel tuo centro di comando."
@@ -27291,6 +27428,9 @@ msgstr "I tuoi libri e come scorre il denaro."
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Le tue modifiche vengono inserite in una nuova versione bozza rilasciata con questo avviso di modifica."
 
+msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
+msgstr ""
+
 msgid "Your Console PIN"
 msgstr "Il tuo PIN Console"
 
@@ -27371,6 +27511,9 @@ msgstr "I tuoi dati reali sono caricati e hai controllato un campione e lo hai a
 
 msgid "Your session was locked after inactivity."
 msgstr "La tua sessione è stata bloccata per inattività."
+
+msgid "Your signature"
+msgstr ""
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "I tuoi dati di origine sono accessibili e ragionevolmente puliti"

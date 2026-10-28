@@ -209,7 +209,8 @@ export async function renderPurchaseOrderPdf(
     getPurchaseOrderApproval(getCarbonServiceRole(), {
       companyId,
       purchaseOrderId,
-      timezone: company.data.timezone
+      timezone: company.data.timezone,
+      withSignature: true
     })
   ]);
   const currencyDecimals = currencyRow?.data?.decimalPlaces ?? null;

@@ -1644,6 +1644,12 @@ msgstr "एक अल्पकालिक संपत्ति सक्रि
 msgid "A short-term lease has no schedule. Each invoice is expensed."
 msgstr "एक अल्पकालीन पट्टा का कोई शेड्यूल नहीं है। प्रत्येक चालान पर खर्च किया जाता है।"
 
+msgid "A signature is optional to approve"
+msgstr ""
+
+msgid "A signature is required to approve"
+msgstr ""
+
 msgid "A step needs a name."
 msgstr "एक चरण को एक नाम की आवश्यकता है।"
 
@@ -1703,6 +1709,9 @@ msgstr "एक जॉब ऑपरेशन के विरुद्ध लॉ�
 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "एक टूल एक भौतिक आइटम है जिसका उपयोग एक पार्ट बनाने के लिए किया जाता है जिसे कई जॉब में उपयोग किया जा सकता है"
+
+msgid "A unit draws its number the first time it is worked on, scrapped or received, so cancelled jobs burn none."
+msgstr ""
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "एक इकाई को बिक्री के रूप में माना जाता है जब इनमें से कोई भी सत्य है, और अन्यथा किराया के रूप में।"
@@ -2346,6 +2355,9 @@ msgstr "शिपमेंट जोड़ें"
 msgid "Add Shipping"
 msgstr "शिपिंग जोड़ें"
 
+msgid "Add Signature"
+msgstr ""
+
 msgid "Add Slide"
 msgstr "स्लाइड जोड़ें"
 
@@ -2412,6 +2424,9 @@ msgstr "इकाई जोड़ें"
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
 msgstr "अपना पहला {0} जोड़ें"
+
+msgid "Add your signature"
+msgstr ""
 
 msgid "Add-On"
 msgstr "ऐड-ऑन"
@@ -2725,6 +2740,12 @@ msgstr "एक सतर्कता कि कुछ को एक व्यक
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "एक गैर-अनुरूपता पर एक अनुमोदन आवश्यकता जिसके समीक्षकों (सीडेड इंजीनियरिंग और गुणवत्ता) को समस्या बंद होने से पहले हस्ताक्षर करने चाहिए।"
 
+msgid "An approver must have a signature in Account → Profile before they can approve a purchase order. The purchase order PDF prints the signature of the person who approved it."
+msgstr ""
+
+msgid "An approver with no signature on file is asked to add one before they approve."
+msgstr ""
+
 msgid "An asset is a finance lease when any of these is true, and an operating lease when none is."
 msgstr "एक संपत्ति एक वित्त पट्टा है जब इनमें से कोई भी सत्य है, और एक ऑपरेटिंग पट्टा है जब कोई भी नहीं है।"
 
@@ -2826,6 +2847,9 @@ msgstr "किसी आइटम की पुनःपूर्ति प्�
 
 msgid "An item's revision status changes"
 msgstr "एक आइटम की रिवीजन स्थिति में परिवर्तन"
+
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
 
 msgid "An item's tracking type changes"
 msgstr "किसी आइटम का ट्रैकिंग प्रकार बदलता है"
@@ -3108,6 +3132,12 @@ msgstr "अनुमोदन आवश्यकताएं"
 
 msgid "Approval Rules"
 msgstr "अनुमोदन नियम"
+
+msgid "Approval signature requirement disabled"
+msgstr ""
+
+msgid "Approval signature requirement enabled"
+msgstr ""
 
 msgid "Approvals"
 msgstr "अनुमोदन"
@@ -4060,21 +4090,11 @@ msgstr "उपलब्ध घंटे"
 msgid "Available on the Business plan"
 msgstr "बिज़नेस प्लान पर उपलब्ध"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "अवतार विकल्प {0}"
-
 msgid "Avatar style"
 msgstr "अवतार शैली"
 
 msgid "Avatar url"
 msgstr "अवतार url"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "<0>{0}</0> से अवतार, {1} द्वारा, <1>{2}</1> के तहत लाइसेंस प्राप्त।"
 
 msgid "Average"
 msgstr "औसत"
@@ -4553,6 +4573,11 @@ msgstr "क्रेता, योजनाकार"
 
 msgid "by {byUser}"
 msgstr "द्वारा {byUser}"
+
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "आमंत्रण स्वीकार करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
@@ -5134,6 +5159,9 @@ msgstr "एक साथ चल सकने वाले ऑपरेशन द
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "एक पार्ट चुनें जिसे {itemReadableId} प्रतिस्थापित करता है। नियम उस पार्ट पर सहेजा जाता है जिसमें {itemReadableId} उत्तराधिकारी है।"
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "यह देखने के लिए बाईं ओर की पंक्ति को चुनें कि इसका स्टॉक कहां से आ सकता है।"
 
@@ -5248,6 +5276,9 @@ msgstr "डिस्कनेक्ट करने के लिए फिर �
 
 msgid "Click components in the viewer to add them. Shift-click adds several."
 msgstr "दर्शक में घटकों पर क्लिक करें और उन्हें जोड़ें। Shift-क्लिक से कई जोड़ें।"
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Click to rename"
 msgstr "नाम बदलने के लिए क्लिक करें"
@@ -5434,6 +5465,9 @@ msgstr "कंपनी"
 
 msgid "Company default"
 msgstr "कंपनी डिफ़ॉल्ट"
+
+msgid "Company default ({companyDefault})"
+msgstr ""
 
 msgid "Company default ({companyLabel})"
 msgstr "कंपनी डिफ़ॉल्ट ({companyLabel})"
@@ -6862,6 +6896,9 @@ msgstr "कस्टम {label}"
 msgid "Custom attributes you track against your people"
 msgstr "आपके लोगों के विरुद्ध आप जो कस्टम विशेषताएं ट्रैक करते हैं"
 
+msgid "Custom color"
+msgstr ""
+
 msgid "Custom development beyond what's listed"
 msgstr "सूचीबद्ध से परे कस्टम विकास"
 
@@ -7272,6 +7309,9 @@ msgstr "तय करें कि यदि कोई ऑपरेटर एक
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "तय करें कि जब ऑपरेटर शॉप फ्लोर पर फिनिश दबाता है तो क्या होता है जब सामग्री अभी भी अनचुनी होती है।"
+
+msgid "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+msgstr ""
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "तय करें कि वर्क सेंटर में चुनी गई अप्रयुक्त सामग्री कब गोदाम में वापस जाए।"
@@ -8420,6 +8460,12 @@ msgstr "चित्र और विशेषताओं को आकार �
 msgid "Drag to zoom"
 msgstr "ज़ूम करने के लिए ड्रैग करें"
 
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
 msgid "Drawing"
 msgstr "आहरण"
 
@@ -8428,6 +8474,9 @@ msgstr "ड्राइंग नंबर"
 
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "चित्र को प्रतिस्थापित किया गया। बैलून प्लेसमेंट हटा दिए गए; विशेषता पंक्तियां अपरिवर्तित रहीं।"
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Drop Ship"
 msgstr "ड्रॉप शिप"
@@ -9192,6 +9241,9 @@ msgstr "आइटम आईडी में लोअरकेस वर्ण�
 msgid "Enable to allow shared workstation mode."
 msgstr "साझा वर्कस्टेशन मोड की अनुमति देने के लिए सक्षम करें।"
 
+msgid "Enable to block approval from anyone with no signature on file."
+msgstr ""
+
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "संपर्क या स्थान के बिना ग्राहक के लिए जारी करना या पोस्टिंग को ब्लॉक करने के लिए सक्षम करें।"
 
@@ -9644,6 +9696,12 @@ msgstr "हर पंक्ति सफलतापूर्वक आयात
 msgid "Every unit has a rate."
 msgstr "प्रत्येक इकाई की एक दर है।"
 
+msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
+msgstr ""
+
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "सूची के फ़िल्टर से मेल खाने वाला हर उपयोगकर्ता। जिन उपयोगकर्ताओं पर यह कार्रवाई लागू नहीं होती, उन्हें छोड़ दिया जाएगा।"
 
@@ -9939,6 +9997,13 @@ msgstr "अनुरोध के साथ भेजी गई अतिरि�
 msgid "Extra tags for slicing your GL reporting"
 msgstr "आपकी सामान्य खाता बही रिपोर्टिंग को स्लाइस करने के लिए अतिरिक्त टैग"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Fail"
 msgstr "अनुत्तीर्ण"
 
@@ -10198,6 +10263,9 @@ msgstr "ट्रैक किए गए इकाइयों को लोड 
 msgid "Failed to plan job"
 msgstr "जॉब को प्लान करने में विफल"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "गेज रिकॉर्ड करने में विफल"
 
@@ -10338,6 +10406,9 @@ msgstr "मॉडल अपलोड करने में विफल"
 
 msgid "Failed to upload PDF"
 msgstr "PDF अपलोड करने में विफल"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "Failed to upload thumbnail"
 msgstr "थंबनेल अपलोड करने में विफल"
@@ -17171,8 +17242,8 @@ msgstr "एक रिकॉर्ड प्रकार चुनें…"
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "सूची से एक चरण चुनें और उसके विवरण, घटक और सामग्री संपादित करें।"
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "एक शैली और एक अवतार चुनें, या नए अवतारों के लिए शफ़ल करें।"
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick a target date to compare."
 msgstr "तुलना के लिए एक लक्ष्य तारीख चुनें।"
@@ -17411,6 +17482,9 @@ msgstr "कृपया एक आइटम चुनें"
 
 msgid "Please upload a CSV file of your data"
 msgstr "कृपया अपने डेटा की एक CSV फ़ाइल अपलोड करें"
+
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
 
 msgid "PO"
 msgstr "PO"
@@ -17706,6 +17780,12 @@ msgstr "लेबल प्रिंट करें"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "प्रिंट आउटपुट ({0})"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer route created"
 msgstr ""
@@ -19224,6 +19304,9 @@ msgstr "हटाया गया"
 msgid "Removed line"
 msgstr "निकाली गई पंक्ति"
 
+msgid "Removed signature"
+msgstr ""
+
 #. placeholder {0}: count > 1 ? "s" : ""
 msgid "Removing this path will also disconnect {count} connection{0}. Continue?"
 msgstr "इस पथ को हटाने से {count} कनेक्शन{0} भी डिस्कनेक्ट हो जाएंगे। जारी रखें?"
@@ -19438,6 +19521,9 @@ msgstr "साइन इन करते समय ऑथेंटिकेट�
 
 msgid "Require a Customer Contact and Location"
 msgstr "ग्राहक संपर्क और स्थान की आवश्यकता है"
+
+msgid "Require a Signature to Approve Purchase Orders"
+msgstr ""
 
 msgid "Require a Supplier Contact and Location"
 msgstr "आपूर्तिकर्ता संपर्क और स्थान की आवश्यकता है"
@@ -20422,6 +20508,9 @@ msgstr "ड्राफ्ट सहेजें"
 msgid "Save Method"
 msgstr "विधि सहेजें"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "जिस फॉर्म को आप संपादित कर रहे हैं उसे सहेजें"
 
@@ -20454,6 +20543,9 @@ msgid "Saved dimension value mapping"
 msgstr ""
 
 msgid "Saved document layout"
+msgstr ""
+
+msgid "Saved signature"
 msgstr ""
 
 msgid "Saved view"
@@ -21096,6 +21188,18 @@ msgstr "सीरियल नंबर:"
 msgid "Serial Numbers"
 msgstr "सीरियल नंबर"
 
+msgid "Serial numbers are drawn when a unit is produced"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is created"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
+msgid "Serial numbers are drawn when the units are received."
+msgstr ""
+
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "सीरियल नंबर केवल सीरियल या बैच-ट्रैक किए गए आइटम के लिए उत्पन्न होते हैं।"
 
@@ -21679,6 +21783,9 @@ msgstr "जब यह नियम विफल हो तब उपयोगक
 msgid "Shuffle"
 msgstr "शफ़ल करें"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in here instead"
 msgstr ""
 
@@ -21717,6 +21824,15 @@ msgstr "अगले चरण में जाने से पहले सा
 
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "साइन-ऑफ जो इस समस्या को बंद करने से पहले दर्ज किए जाने चाहिए; वर्कफ़्लो द्वारा आवश्यक किसी के अलावा।"
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
+msgstr ""
+
+msgid "Signature path"
+msgstr ""
 
 msgid "Signed in as {name}"
 msgstr "{name} के रूप में साइन इन किया गया"
@@ -22335,6 +22451,9 @@ msgstr "Stripe के पास इस Carbon ग्राहक के लि�
 
 msgid "Structure"
 msgstr "संरचना"
+
+msgid "Style"
+msgstr ""
 
 msgid "Style default"
 msgstr "शैली का डिफ़ॉल्ट"
@@ -24848,6 +24967,9 @@ msgstr "टाइमर चल रहा है"
 msgid "Timezone"
 msgstr "समय क्षेत्र"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "अपनी ओर से दूर झुकाएँ"
 
@@ -25823,6 +25945,9 @@ msgstr "PDF अपलोड करें"
 msgid "Uploaded model"
 msgstr "अपलोड किया गया मॉडल"
 
+msgid "Uploaded signature"
+msgstr ""
+
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -26751,8 +26876,8 @@ msgstr "जब आपूर्तिकर्ता प्रतिक्रि�
 msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
 msgstr "जब क्रेता ने माल के लिए अनुरोध किया; आपूर्तिकर्ता वादा की गई तिथि पर कुछ और वादा कर सकता है और डिलीवरी तिथि पर फिर से कुछ और पोस्ट कर सकता है।"
 
-msgid "When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "जब क्रेता को इस पंक्ति के माल की डॉक पर आवश्यकता हो; योजना स्टॉक-उपलब्धता और बाहरी प्रसंस्करण शेड्यूलिंग के लिए इस तिथि का उपयोग करती है।"
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr "क्रेता को इस पंक्ति का माल डॉक पर कब चाहिए। नई पंक्ति ऑर्डर की अनुरोधित तिथि से शुरू होती है; योजना इस तिथि का उपयोग स्टॉक उपलब्धता और बाहरी प्रसंस्करण की शेड्यूलिंग के लिए करती है।"
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "जब अनुबंध चलता है और जब वह पूर्ण होता है तो क्या होता है।"
@@ -26775,6 +26900,12 @@ msgstr "जब ग्राहक का अनुरोध वर्तमा�
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "जब सामान वास्तव में आ गए; रसीद पर दर्ज किए गए और आपूर्तिकर्ता की समय पर डिलीवरी स्कोरिंग के लिए उपयोग किए गए।"
 
+msgid "When the job is created"
+msgstr ""
+
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "जब कानबान कार्ड को स्कैन किया जाता है, तो नौकरी स्वचालित रूप से ड्राफ्ट से बाहर चली जाती है और फर्श पर रिलीज के लिए जारी की जाती है।"
 
@@ -26796,11 +26927,17 @@ msgstr "जब आपूर्तिकर्ता डिलीवरी के
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "जब आपूर्तिकर्ता की मूल्य निर्धारण सम्मानित नहीं रह जाती है; इस तारीख के बाद इस उद्धरण को एक पीओ में परिवर्तित करने के लिए पुनः-उद्धरण की आवश्यकता हो सकती है।"
 
+msgid "When the unit is produced"
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "जब यह गेज अंशांकन के लिए देय हो जाता है; एक बार देय होने के बाद यह Out-of-Calibration पढ़ता है।"
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "जब यह गेज पिछली बार सफलतापूर्वक अंशांकित किया गया था; अगली-कैलिब्रेशन तारीख इस मूल्य और अंतराल से फिर से गणना की जाती है।"
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "जब यह सही लगे, तो इसे सहमत के रूप में चिह्नित करें। यह आपके कमांड सेंटर पर डिस्कवरी चरण को पूरा करता है।"
@@ -27294,6 +27431,9 @@ msgstr "आपकी किताबें और पैसा कैसे ब�
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "आपके परिवर्तन इस परिवर्तन सूचना के साथ जारी किए गए एक नए ड्राफ्ट संस्करण में जाते हैं।"
 
+msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
+msgstr ""
+
 msgid "Your Console PIN"
 msgstr "आपका कंसोल PIN"
 
@@ -27374,6 +27514,9 @@ msgstr "आपका वास्तविक डेटा लोड हो ग�
 
 msgid "Your session was locked after inactivity."
 msgstr "निष्क्रियता के बाद आपका सत्र लॉक कर दिया गया।"
+
+msgid "Your signature"
+msgstr ""
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "आपका स्रोत डेटा सुलभ है और उचित रूप से स्वच्छ है"

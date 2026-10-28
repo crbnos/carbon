@@ -56,7 +56,7 @@ pnpm run lint
 | `documentSection` | Company-global reusable header/body/footer rich text |
 | `terms` | Company `salesTerms` / `purchasingTerms` JSON (PK = company id) |
 | `sequence` | Readable-id numbering per table |
-| `itemSerialSequence` / `itemSerialSequences` (view) | Per-item serial-number numbering |
+| `itemSerialSequence` / `itemSerialSequences` (view) | Per-item serial-number numbering; `serialNumberTiming` overrides the company's serial number timing for the item (NULL follows it) |
 | `customField` / `customFieldTables` (view) | User-defined fields, grouped per table |
 | `companyIntegration` / `integrations` (view) | Per-company third-party config + metadata |
 | `apiKey` | Hashed API keys with per-module scopes |

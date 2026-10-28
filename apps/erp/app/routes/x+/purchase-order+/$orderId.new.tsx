@@ -10,6 +10,7 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
+import { useRouteData } from "~/hooks";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import {
   isPurchaseOrderLocked,
@@ -19,6 +20,7 @@ import {
   getPurchaseOrder,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
+import type { PurchaseOrder } from "~/modules/purchasing/types";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
@@ -113,6 +115,10 @@ export default function NewPurchaseOrderLineRoute() {
 
   if (!orderId) throw new Error("Could not find purchase order id");
 
+  const routeData = useRouteData<{ purchaseOrder: PurchaseOrder }>(
+    path.to.purchaseOrder(orderId)
+  );
+
   const initialValues = {
     conversionFactor: 1,
     exchangeRate: 1,
@@ -124,7 +130,8 @@ export default function NewPurchaseOrderLineRoute() {
     purchaseOrderLineType: "Part" as MethodItemType,
     purchaseQuantity: 1,
     purchaseUnitOfMeasureCode: "",
-    requiredDate: undefined,
+    requiredDate: routeData?.purchaseOrder?.receiptRequestedDate ?? undefined,
+    promisedDate: routeData?.purchaseOrder?.receiptPromisedDate ?? undefined,
     setupPrice: 0,
     storageUnitId: "",
     supplierShippingCost: 0,

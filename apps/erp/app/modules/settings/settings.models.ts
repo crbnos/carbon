@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { serialNumberTimings } from "@carbon/database/serial-number-timing";
 import {
   blockSchema,
   documentSectionPlacementSchema,
@@ -402,6 +403,21 @@ export const returnPickedMaterialTimingValidator = z.object({
   returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).default("job")
 });
 
+// When a produced unit's serial number is drawn from the item's serial sequence.
+// 'jobCreation' (default) reserves one number per unit as soon as the job exists;
+// 'jobRelease' when the job is released to the shop floor; 'production' waits
+// until the unit is first touched on the floor — its first production event,
+// its first operation completion, its scrap, or its receipt. The company's
+// choice is the default; an item's serial sequence can override it.
+export {
+  type SerialNumberTiming,
+  serialNumberTimings
+} from "@carbon/database/serial-number-timing";
+
+export const serialNumberTimingValidator = z.object({
+  serialNumberTiming: z.enum(serialNumberTimings).default("jobCreation")
+});
+
 export const updateLeadTimesOnReceiptValidator = z.object({
   updateLeadTimesOnReceipt: zfd.checkbox()
 });
@@ -511,7 +527,9 @@ export const itemSerialSequenceValidator = z.object({
   suffix: zfd.text(z.string().optional()),
   next: zfd.numeric(z.number().min(0)),
   step: zfd.numeric(z.number().min(1)),
-  size: zfd.numeric(z.number().min(1).max(20))
+  size: zfd.numeric(z.number().min(1).max(20)),
+  // Empty follows the company's serial number timing.
+  serialNumberTiming: zfd.text(z.enum(serialNumberTimings).optional())
 });
 
 export type Theme = ThemeName;

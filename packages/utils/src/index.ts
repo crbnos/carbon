@@ -69,6 +69,7 @@ export * from "./rule-filters";
 export * from "./rules";
 export * from "./rules-schema";
 export * from "./short-close";
+export * from "./signature";
 export * from "./ssr";
 export * from "./status";
 export * from "./status-colors";

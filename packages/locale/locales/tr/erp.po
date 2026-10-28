@@ -1644,6 +1644,12 @@ msgstr "Kısa vadeli bir varlık etkinleştirme sırasında muhasebe fişi muhas
 msgid "A short-term lease has no schedule. Each invoice is expensed."
 msgstr "Kısa vadeli bir kiralama çizelgesine sahip değil. Her fatura masraf olarak kaydedilir."
 
+msgid "A signature is optional to approve"
+msgstr ""
+
+msgid "A signature is required to approve"
+msgstr ""
+
 msgid "A step needs a name."
 msgstr "Bir adım bir ada ihtiyaç duyuyor."
 
@@ -1703,6 +1709,9 @@ msgstr "Bir iş emri operasyonuna karşı kaydedilen Hazırlık, İşçilik veya
 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Takım, bir Parça yapmak için kullanılan ve birden fazla İş emirlerine göre kullanılabilen fiziksel bir Stok kartıdır."
+
+msgid "A unit draws its number the first time it is worked on, scrapped or received, so cancelled jobs burn none."
+msgstr ""
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "Bunlardan biri doğru olduğunda bir adet satış olarak muhasebeleştirilir, aksi takdirde kiralama olarak muhasebeleştirilir."
@@ -2346,6 +2355,9 @@ msgstr "Sevkiyat Ekle"
 msgid "Add Shipping"
 msgstr "Nakliye Ekle"
 
+msgid "Add Signature"
+msgstr ""
+
 msgid "Add Slide"
 msgstr "Slayt Ekle"
 
@@ -2412,6 +2424,9 @@ msgstr "Adet Ekle"
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
 msgstr "İlk {0}inizi ekleyin"
+
+msgid "Add your signature"
+msgstr ""
 
 msgid "Add-On"
 msgstr "Ek Üzerine Ek"
@@ -2725,6 +2740,12 @@ msgstr "Bir carbon/notify etkinliğinden uygulama içi gelen kutusu ve isteğe b
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "Sorun kapanmadan önce gözden geçirenler (Mühendislik ve Kalite) onay vermelidir uygunsuzluk üzerinde bir onay gerekliliği."
 
+msgid "An approver must have a signature in Account → Profile before they can approve a purchase order. The purchase order PDF prints the signature of the person who approved it."
+msgstr ""
+
+msgid "An approver with no signature on file is asked to add one before they approve."
+msgstr ""
+
 msgid "An asset is a finance lease when any of these is true, and an operating lease when none is."
 msgstr "Varlık, bunlardan herhangi biri doğru olduğunda finansal kiralama, hiçbiri doğru olmadığında faaliyet kiralamasıdır."
 
@@ -2826,6 +2847,9 @@ msgstr "Bir stok kartının ikmal yöntemi değişir"
 
 msgid "An item's revision status changes"
 msgstr "Bir öğenin revizyon durumu değişir"
+
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
 
 msgid "An item's tracking type changes"
 msgstr "Bir stok kartının izleme türü değişir"
@@ -3108,6 +3132,12 @@ msgstr "Onay Gereklilikleri"
 
 msgid "Approval Rules"
 msgstr "Onay Kuralları"
+
+msgid "Approval signature requirement disabled"
+msgstr ""
+
+msgid "Approval signature requirement enabled"
+msgstr ""
 
 msgid "Approvals"
 msgstr "Onaylar"
@@ -4060,21 +4090,11 @@ msgstr "Kullanılabilir saatler"
 msgid "Available on the Business plan"
 msgstr "Business planında kullanılabilir"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "Avatar seçeneği {0}"
-
 msgid "Avatar style"
 msgstr "Avatar stili"
 
 msgid "Avatar url"
 msgstr "Avatar URL'si"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "Avatarlar {1} tarafından <0>{0}</0> kaynağından alınmıştır, <1>{2}</1> ile lisanslanmıştır."
 
 msgid "Average"
 msgstr "Ortalama"
@@ -4553,6 +4573,11 @@ msgstr "Satın almacı, Planlayıcı"
 
 msgid "by {byUser}"
 msgstr "by {byUser}"
+
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Davetiyeyi kabul ederek, <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılırsınız."
@@ -5134,6 +5159,9 @@ msgstr "Birlikte çalışabilecek operasyonları görmek için toplu işlenebili
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}'nin yerine geçen bir parça seçin. Kural seçilen parçaya {itemReadableId} ardıl olarak kaydedilir."
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Stokun nereden gelebileceğini görmek için sol taraftaki bir satırı seçin."
 
@@ -5248,6 +5276,9 @@ msgstr "Bağlantıyı kesmek için yeniden tıklayın"
 
 msgid "Click components in the viewer to add them. Shift-click adds several."
 msgstr "Bileşenleri eklemek için görüntüleyicide tıklayın. Shift tuşuyla tıklamak birkaçını ekler."
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Click to rename"
 msgstr "Yeniden adlandırmak için tıklayın"
@@ -5434,6 +5465,9 @@ msgstr "Şirket"
 
 msgid "Company default"
 msgstr "Şirket varsayılanı"
+
+msgid "Company default ({companyDefault})"
+msgstr ""
 
 msgid "Company default ({companyLabel})"
 msgstr "Şirket varsayılanı ({companyLabel})"
@@ -6862,6 +6896,9 @@ msgstr "Özel {label}"
 msgid "Custom attributes you track against your people"
 msgstr "Personellerinize karşı izlediğiniz özel öznitelikler"
 
+msgid "Custom color"
+msgstr ""
+
 msgid "Custom development beyond what's listed"
 msgstr "Listelenenin ötesinde özel geliştirme"
 
@@ -7272,6 +7309,9 @@ msgstr "Süresi dolmuş bir Parti veya seri için Malzeme çıkışı yapmaya ç
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Bir operatör atölyede henüz çıkış yapılmamış malzeme varken Bitir'e bastığında ne olacağını belirleyin."
+
+msgid "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+msgstr ""
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "Bir iş merkezine alınan ancak tüketilmeyen malzemenin depoya geri akışının ne zaman gerçekleşeceğine karar verin."
@@ -8420,6 +8460,12 @@ msgstr "Çizimi ve özellikleri yeniden boyutlandırmak için sürükleyin"
 msgid "Drag to zoom"
 msgstr "Yakınlaştırmak için sürükleyin"
 
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
 msgid "Drawing"
 msgstr "Çekiliyor"
 
@@ -8428,6 +8474,9 @@ msgstr "Resim numarası"
 
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Çizim değiştirildi. Balon yerleştirmeleri kaldırıldı; özellik satırları değişmedi."
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Drop Ship"
 msgstr "Direkt Sevkiyat"
@@ -9192,6 +9241,9 @@ msgstr "Ürün kimliklerinde küçük harf karakterlere izin vermek için etkinl
 msgid "Enable to allow shared workstation mode."
 msgstr "Paylaşımlı iş istasyonu moduna izin vermek için etkinleştirin."
 
+msgid "Enable to block approval from anyone with no signature on file."
+msgstr ""
+
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "İlgili kişisi veya lokasyonu olmayan bir müşteri için yayınlamayı veya muhasebeleştirmeyi engellemek için etkinleştirin."
 
@@ -9644,6 +9696,12 @@ msgstr "Her satır başarıyla içe aktarıldı."
 msgid "Every unit has a rate."
 msgstr "Her adetin bir oranı vardır."
 
+msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
+msgstr ""
+
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "Listenin filtrelerine uyan her kullanıcı. Bu işlemin uygulanmadığı kullanıcılar atlanır."
 
@@ -9939,6 +9997,13 @@ msgstr "İstekle gönderilen ek bilgiler, örneğin bir yetkilendirme anahtarı;
 msgid "Extra tags for slicing your GL reporting"
 msgstr "GL raporlamanızı bölümlendirmek için ekstra etiketler"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Fail"
 msgstr "Uygun değil"
 
@@ -10198,6 +10263,9 @@ msgstr "Takip edilen varlıklar yüklenemedi"
 msgid "Failed to plan job"
 msgstr "İş emrini planlama başarısız"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Ölçüm aleti kaydedilemedi"
 
@@ -10338,6 +10406,9 @@ msgstr "Model yüklenemedi"
 
 msgid "Failed to upload PDF"
 msgstr "PDF yüklenemedi"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "Failed to upload thumbnail"
 msgstr "Küçük resim yüklenemedi"
@@ -17171,8 +17242,8 @@ msgstr "Bir kayıt türü seçin…"
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "Ayrıntılarını, bileşenlerini ve malzemelerini düzenlemek için listeden bir adım seçin."
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "Bir stil ve bir avatar seçin veya yenilerini görmek için karıştırın."
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick a target date to compare."
 msgstr "Karşılaştırma için hedef bir tarih seçin."
@@ -17411,6 +17482,9 @@ msgstr "Lütfen bir ürün seçin"
 
 msgid "Please upload a CSV file of your data"
 msgstr "Lütfen verilerinizin bir CSV dosyasını yükleyin"
+
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
 
 msgid "PO"
 msgstr "SİP"
@@ -17706,6 +17780,12 @@ msgstr "Etiket Yazdır"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Yazdırma Çıktısı ({0})"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer route created"
 msgstr ""
@@ -19224,6 +19304,9 @@ msgstr "Kaldırıldı"
 msgid "Removed line"
 msgstr "Kaldırılan Satır"
 
+msgid "Removed signature"
+msgstr ""
+
 #. placeholder {0}: count > 1 ? "s" : ""
 msgid "Removing this path will also disconnect {count} connection{0}. Continue?"
 msgstr "Bu yolu kaldırmak {count} bağlantı{0} da kesilecektir. Devam edilsin mi?"
@@ -19438,6 +19521,9 @@ msgstr "Oturum açarken kimlik doğrulayıcı uygulamasından 6 haneli kod istey
 
 msgid "Require a Customer Contact and Location"
 msgstr "Müşteri İlgili Kişisi ve Lokasyonu İste"
+
+msgid "Require a Signature to Approve Purchase Orders"
+msgstr ""
 
 msgid "Require a Supplier Contact and Location"
 msgstr "Tedarikçi İlgili Kişisi ve Lokasyonu İste"
@@ -20422,6 +20508,9 @@ msgstr "Taslağı Kaydet"
 msgid "Save Method"
 msgstr "Yöntemi Kaydet"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Düzenlemekte olduğunuz formu kaydet"
 
@@ -20454,6 +20543,9 @@ msgid "Saved dimension value mapping"
 msgstr ""
 
 msgid "Saved document layout"
+msgstr ""
+
+msgid "Saved signature"
 msgstr ""
 
 msgid "Saved view"
@@ -21096,6 +21188,18 @@ msgstr "Seri Numarası:"
 msgid "Serial Numbers"
 msgstr "Seri Numaraları"
 
+msgid "Serial numbers are drawn when a unit is produced"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is created"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
+msgid "Serial numbers are drawn when the units are received."
+msgstr ""
+
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Seri numaraları yalnızca seri- veya batch-izlenen öğeler için oluşturulur."
 
@@ -21679,6 +21783,9 @@ msgstr "Bu kural başarısız olduğunda kullanıcıya gösterilir."
 msgid "Shuffle"
 msgstr "Karıştır"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in here instead"
 msgstr ""
 
@@ -21717,6 +21824,15 @@ msgstr "Bir sonraki adıma geçmeden önce onay incelemesi"
 
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "Bu sorun kapatılmadan önce kaydedilmesi gereken onaylar; iş akışı tarafından gerekli olan olanların dışında."
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
+msgstr ""
+
+msgid "Signature path"
+msgstr ""
 
 msgid "Signed in as {name}"
 msgstr "Oturum açıldı olarak {name}"
@@ -22335,6 +22451,9 @@ msgstr "Bu Carbon müşterisi için Stripe'da henüz müşteri yok. Muhasebeleş
 
 msgid "Structure"
 msgstr "Yapı"
+
+msgid "Style"
+msgstr ""
 
 msgid "Style default"
 msgstr "Stil varsayılanı"
@@ -24848,6 +24967,9 @@ msgstr "Zamanlayıcı çalışıyor"
 msgid "Timezone"
 msgstr "Saat Dilim"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "Sizden uzağa eğ"
 
@@ -25823,6 +25945,9 @@ msgstr "PDF Yükle"
 msgid "Uploaded model"
 msgstr "Yüklenen model"
 
+msgid "Uploaded signature"
+msgstr ""
+
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -26751,8 +26876,8 @@ msgstr "Tedarikçi yanıtlarının ne zaman beklenmesi gerektiği; tedarikçiler
 msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
 msgstr "Satın almacının malları istediği zaman; tedarikçi Taahhüt tarihinde başka bir şey taahhüt edebilir ve Teslim tarihinde yine başka bir şey muhasebeleştirebilir."
 
-msgid "When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "Satın almacının bu satırın mallarına rampa üzerinde ihtiyaç duyduğu zaman; planlama bu tarihi stok uygunluğu ve fason işlem planlaması için kullanır."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr "Satın almacının bu satırdaki malları rıhtımda istediği tarih. Yeni bir satır, siparişin Talep edilen tarihinde başlar; planlama bu tarihi stok uygunluğu ve dış işlem çizelgelemesi için kullanır."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Sözleşme ne zaman çalıştırılır ve tamamlandığında ne olur."
@@ -26775,6 +26900,12 @@ msgstr "Müşterinin talebi geçerli olmaktan çıktığında; bu tarihten sonra
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "Mallar gerçekten geldiğinde; makbuzda kaydedilmiş ve tedarikçinin zamanında teslimat puanlaması için kullanılmıştır."
 
+msgid "When the job is created"
+msgstr ""
+
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Kanban kartı tarandığında, iş otomatik olarak taslaktan çıkarılır ve yere yayınlanır."
 
@@ -26796,11 +26927,17 @@ msgstr "Tedarikçi teslim etmeyi ne zaman taahhüt etti; planlama bu tarihi gele
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Tedarikçi fiyatlandırması artık kabul edilmediğinde; bu fiyatlandırmayı bu tarihten sonra bir PO'ya dönüştürmek yeniden fiyatlandırma gerektirebilir."
 
+msgid "When the unit is produced"
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "Bu ölçü aleti kalibrasyonun yapılması gerektiğinde; vadesi geçtikten sonra Kalibrasyondan Çıktı olarak okunur."
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "Bu ölçü aletinin en son başarıyla kalibre edildiği zaman; sonraki kalibrasyonu tarihi bu değer artı aralığından yeniden hesaplanır."
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Bu doğru göründüğünde, kabul edildi olarak işaretleyin. Bu, komut merkezinizde Keşif adımını tamamlar."
@@ -27291,6 +27428,9 @@ msgstr "Muhasebe defterleriniz ve paranın akışı."
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Değişiklikleriniz bu değişiklik bildirisi ile yayınlanan yeni taslak sürüme girer."
 
+msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
+msgstr ""
+
 msgid "Your Console PIN"
 msgstr "Konsol PIN'iniz"
 
@@ -27371,6 +27511,9 @@ msgstr "Gerçek verileriniz yüklendi ve bir örneği kontrol ederek onayladın�
 
 msgid "Your session was locked after inactivity."
 msgstr "Oturumunuz hareketsizlikten sonra kilitlendi."
+
+msgid "Your signature"
+msgstr ""
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "Kaynak verileriniz erişilebilir ve makul ölçüde temizdir"

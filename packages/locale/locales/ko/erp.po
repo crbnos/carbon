@@ -1644,6 +1644,12 @@ msgstr "단기 자산은 활성화 시 전표를 전기하지 않습니다. 각 
 msgid "A short-term lease has no schedule. Each invoice is expensed."
 msgstr "단기 리스는 일정이 없습니다. 각 송장은 비용으로 처리됩니다."
 
+msgid "A signature is optional to approve"
+msgstr ""
+
+msgid "A signature is required to approve"
+msgstr ""
+
 msgid "A step needs a name."
 msgstr "단계에 이름이 필요합니다."
 
@@ -1703,6 +1709,9 @@ msgstr "작업 지시 공정에 기록된 셋업, 노무 또는 기계 작업의
 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "공구는 여러 작업 지시에 걸쳐 사용될 수 있는 부품을 만드는 데 사용되는 물리적 품목입니다"
+
+msgid "A unit draws its number the first time it is worked on, scrapped or received, so cancelled jobs burn none."
+msgstr ""
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "개가 다음 중 하나라도 참인 경우 판매로 취급되고, 그 외의 경우 임차로 취급됩니다."
@@ -2346,6 +2355,9 @@ msgstr "출하 추가"
 msgid "Add Shipping"
 msgstr "배송비 추가"
 
+msgid "Add Signature"
+msgstr ""
+
 msgid "Add Slide"
 msgstr "슬라이드 추가"
 
@@ -2412,6 +2424,9 @@ msgstr "단위 추가"
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
 msgstr "첫 {0}을(를) 추가하세요"
+
+msgid "Add your signature"
+msgstr ""
 
 msgid "Add-On"
 msgstr "애드온"
@@ -2725,6 +2740,12 @@ msgstr "누군가의 주의가 필요함을 알리는 경보로서, carbon/notif
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "부적합에 대한 승인 요구사항으로, 미리 설정된 설계 및 품질 검토자가 부적합을 마감하기 전에 서명해야 함"
 
+msgid "An approver must have a signature in Account → Profile before they can approve a purchase order. The purchase order PDF prints the signature of the person who approved it."
+msgstr ""
+
+msgid "An approver with no signature on file is asked to add one before they approve."
+msgstr ""
+
 msgid "An asset is a finance lease when any of these is true, and an operating lease when none is."
 msgstr "다음 중 하나라도 참이면 자산은 금융 리스이고, 하나도 참이 아니면 운영 리스입니다."
 
@@ -2826,6 +2847,9 @@ msgstr "품목의 조달 방식 변경"
 
 msgid "An item's revision status changes"
 msgstr "품목의 리비전 상태 변경"
+
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
 
 msgid "An item's tracking type changes"
 msgstr "항목의 추적 유형이 변경됩니다"
@@ -3108,6 +3132,12 @@ msgstr "승인 요구사항"
 
 msgid "Approval Rules"
 msgstr "승인 규칙"
+
+msgid "Approval signature requirement disabled"
+msgstr ""
+
+msgid "Approval signature requirement enabled"
+msgstr ""
 
 msgid "Approvals"
 msgstr "승인"
@@ -4060,21 +4090,11 @@ msgstr "가용 시간"
 msgid "Available on the Business plan"
 msgstr "Business 플랜에서 사용 가능"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "아바타 옵션 {0}"
-
 msgid "Avatar style"
 msgstr "아바타 스타일"
 
 msgid "Avatar url"
 msgstr "아바타 URL"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "아바타 출처: {1}의 <0>{0}</0>, <1>{2}</1> 라이선스."
 
 msgid "Average"
 msgstr "평균"
@@ -4553,6 +4573,11 @@ msgstr "구매 담당자, 계획 담당자"
 
 msgid "by {byUser}"
 msgstr "{byUser}"
+
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "초대를 수락하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
@@ -5134,6 +5159,9 @@ msgstr "함께 실행할 수 있는 작업을 보려면 배치 가능한 공정�
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}가 대체하는 부품을 선택하세요. 규칙은 해당 부품에 저장되며 {itemReadableId}가 후속 품목으로 지정됩니다."
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "왼쪽의 행을 선택하여 해당 재고가 어디서 올 수 있는지 확인하세요."
 
@@ -5248,6 +5276,9 @@ msgstr "다시 클릭하여 연결 해제"
 
 msgid "Click components in the viewer to add them. Shift-click adds several."
 msgstr "뷰어에서 구성품을 클릭하여 추가합니다. Shift 클릭으로 여러 개를 추가합니다."
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Click to rename"
 msgstr "클릭하여 이름 바꾸기"
@@ -5434,6 +5465,9 @@ msgstr "회사"
 
 msgid "Company default"
 msgstr "회사 기본값"
+
+msgid "Company default ({companyDefault})"
+msgstr ""
 
 msgid "Company default ({companyLabel})"
 msgstr "회사 기본값({companyLabel})"
@@ -6862,6 +6896,9 @@ msgstr "사용자 정의 {label}"
 msgid "Custom attributes you track against your people"
 msgstr "인원에 대해 추적하는 사용자 정의 속성"
 
+msgid "Custom color"
+msgstr ""
+
 msgid "Custom development beyond what's listed"
 msgstr "나열된 항목 외의 맞춤 개발"
 
@@ -7272,6 +7309,9 @@ msgstr "작업자가 이미 만료된 배치 또는 직렬 번호를 불출하�
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "작업자가 아직 선택되지 않은 재료가 있는 상태에서 현장에서 완료를 누를 때 발생할 사항을 결정하십시오."
+
+msgid "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+msgstr ""
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "작업장으로 이송했으나 소비하지 않은 재료가 창고로 반환되는 시기를 결정합니다."
@@ -8420,6 +8460,12 @@ msgstr "도면 및 특성의 크기를 조정하려면 드래그하세요"
 msgid "Drag to zoom"
 msgstr "드래그하여 확대/축소"
 
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
 msgid "Drawing"
 msgstr "도면"
 
@@ -8428,6 +8474,9 @@ msgstr "도면 번호"
 
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "도면이 교체되었습니다. 풍선 배치가 제거되었으며 특성 행은 변경되지 않았습니다."
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Drop Ship"
 msgstr "직배송"
@@ -9192,6 +9241,9 @@ msgstr "항목 ID에 소문자 사용을 허용하려면 활성화하세요."
 msgid "Enable to allow shared workstation mode."
 msgstr "공유 워크스테이션 모드를 허용하려면 활성화하세요."
 
+msgid "Enable to block approval from anyone with no signature on file."
+msgstr ""
+
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "담당자 또는 사업장이 없는 고객의 경우 발급 또는 전기를 차단하려면 활성화합니다."
 
@@ -9644,6 +9696,12 @@ msgstr "모든 행이 성공적으로 가져와졌습니다."
 msgid "Every unit has a rate."
 msgstr "모든 단위에 요율이 있습니다."
 
+msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
+msgstr ""
+
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "목록 필터와 일치하는 모든 사용자입니다. 이 작업이 적용되지 않는 사용자는 건너뜁니다."
 
@@ -9939,6 +9997,13 @@ msgstr "요청과 함께 전송되는 추가 정보(예: 인증 키); 실행 이
 msgid "Extra tags for slicing your GL reporting"
 msgstr "총계정원장 보고를 세분화하기 위한 추가 태그"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Fail"
 msgstr "불합격"
 
@@ -10198,6 +10263,9 @@ msgstr "추적 개체를 불러오지 못했습니다"
 msgid "Failed to plan job"
 msgstr "작업 지시 계획 실패"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "계측기 기록에 실패했습니다"
 
@@ -10338,6 +10406,9 @@ msgstr "모델을 업로드하지 못했습니다"
 
 msgid "Failed to upload PDF"
 msgstr "PDF를 업로드하지 못했습니다"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "Failed to upload thumbnail"
 msgstr "썸네일을 업로드하지 못했습니다"
@@ -17171,8 +17242,8 @@ msgstr "레코드 유형 선택…"
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "목록에서 단계를 선택하여 세부 사항, 구성 요소 및 자재를 편집하세요."
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "스타일과 아바타를 선택하거나 섞어서 새 아바타를 보세요."
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick a target date to compare."
 msgstr "비교할 목표 날짜를 선택하세요."
@@ -17411,6 +17482,9 @@ msgstr "품목을 선택하세요"
 
 msgid "Please upload a CSV file of your data"
 msgstr "데이터의 CSV 파일을 업로드하세요"
+
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
 
 msgid "PO"
 msgstr "PO"
@@ -17706,6 +17780,12 @@ msgstr "라벨 인쇄"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "인쇄 출력({0})"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer route created"
 msgstr ""
@@ -19224,6 +19304,9 @@ msgstr "제거됨"
 msgid "Removed line"
 msgstr "제거된 라인"
 
+msgid "Removed signature"
+msgstr ""
+
 #. placeholder {0}: count > 1 ? "s" : ""
 msgid "Removing this path will also disconnect {count} connection{0}. Continue?"
 msgstr "이 경로를 제거하면 {count}개 연결도 끊어집니다{0}. 계속하시겠습니까?"
@@ -19438,6 +19521,9 @@ msgstr "로그인 시 인증 앱의 6자리 코드를 입력하세요."
 
 msgid "Require a Customer Contact and Location"
 msgstr "고객 담당자 및 사업장 필수"
+
+msgid "Require a Signature to Approve Purchase Orders"
+msgstr ""
 
 msgid "Require a Supplier Contact and Location"
 msgstr "공급업체 담당자 및 사업장 필수"
@@ -20422,6 +20508,9 @@ msgstr "초안 저장"
 msgid "Save Method"
 msgstr "저장 방법"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "편집 중인 양식 저장"
 
@@ -20454,6 +20543,9 @@ msgid "Saved dimension value mapping"
 msgstr ""
 
 msgid "Saved document layout"
+msgstr ""
+
+msgid "Saved signature"
 msgstr ""
 
 msgid "Saved view"
@@ -21096,6 +21188,18 @@ msgstr "시리얼 번호:"
 msgid "Serial Numbers"
 msgstr "시리얼 번호"
 
+msgid "Serial numbers are drawn when a unit is produced"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is created"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
+msgid "Serial numbers are drawn when the units are received."
+msgstr ""
+
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "시리얼 번호는 시리얼 또는 배치 추적 항목에만 생성됩니다."
 
@@ -21679,6 +21783,9 @@ msgstr "이 규칙이 실패할 때 사용자에게 표시됩니다."
 msgid "Shuffle"
 msgstr "섞기"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in here instead"
 msgstr ""
 
@@ -21717,6 +21824,15 @@ msgstr "다음 단계로 넘어가기 전 서명 검토"
 
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "이 이슈를 종료하기 전에 기록해야 하는 서명으로, 워크플로에서 요구하는 서명과는 별도입니다."
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
+msgstr ""
+
+msgid "Signature path"
+msgstr ""
 
 msgid "Signed in as {name}"
 msgstr "{name}(으)로 로그인됨"
@@ -22335,6 +22451,9 @@ msgstr "이 Carbon 고객에 대한 Stripe 고객이 아직 없습니다. 전기
 
 msgid "Structure"
 msgstr "구조"
+
+msgid "Style"
+msgstr ""
 
 msgid "Style default"
 msgstr "스타일 기본값"
@@ -24848,6 +24967,9 @@ msgstr "타이머 실행 중"
 msgid "Timezone"
 msgstr "시간대"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "몸에서 멀어지는 방향으로 기울이기"
 
@@ -25823,6 +25945,9 @@ msgstr "PDF 업로드"
 msgid "Uploaded model"
 msgstr "업로드된 모델"
 
+msgid "Uploaded signature"
+msgstr ""
+
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -26751,8 +26876,8 @@ msgstr "공급업체 응답이 도착할 것으로 예상되는 시점입니다.
 msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
 msgstr "구매 담당자가 물품을 요청한 시점; 공급업체는 약속일에 다른 것을 약속할 수 있으며 납기일에 다시 다른 것을 전기할 수 있습니다."
 
-msgid "When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "구매 담당자가 이 라인의 물품을 도크에서 필요로 할 때; 계획은 이 날짜를 재고 가용성 및 외주 처리 스케줄링에 사용합니다."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr "구매 담당자가 이 라인의 품목을 하역장(도크)에서 받기를 원하는 날짜입니다. 새 라인은 주문의 요청일로 시작하며, 계획에서는 이 날짜를 재고 가용성 및 외주 공정 일정 산정에 사용합니다."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "계약이 실행되는 시간과 완료되면 어떻게 되는가"
@@ -26775,6 +26900,12 @@ msgstr "고객의 요청이 더 이상 유효하지 않을 때; 이 날짜가 �
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "재화가 실제로 도착한 시점으로, 입고에 기록되며 공급업체 정시 납품 평가에 사용됩니다."
 
+msgid "When the job is created"
+msgstr ""
+
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "칸반 카드를 스캔하면 작업이 자동으로 초안 상태에서 벗어나 현장으로 릴리즈됩니다."
 
@@ -26796,11 +26927,17 @@ msgstr "공급업체가 납품을 약속한 시점으로, 계획에서는 이 �
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "공급업체의 가격이 더 이상 유효하지 않을 때; 이 날짜 이후에 이 견적서를 발주서로 전환하는 것은 다시 견적이 필요할 수 있습니다."
 
+msgid "When the unit is produced"
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "이 계측기의 교정이 만료될 때; 만료되면 Out-of-Calibration으로 표시됩니다."
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "이 계측기가 마지막으로 성공적으로 교정된 시점; 다음 교정 날짜는 이 값에 간격을 더해서 다시 계산됩니다."
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "이 내용이 맞으면 합의됨으로 표시하세요. 그러면 커맨드 센터의 발견(Discovery) 단계가 완료됩니다."
@@ -27291,6 +27428,9 @@ msgstr "귀사의 장부와 자금 흐름."
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "변경사항이 이 변경 통지로 릴리스된 새로운 초안 버전으로 이동합니다."
 
+msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
+msgstr ""
+
 msgid "Your Console PIN"
 msgstr "콘솔 PIN"
 
@@ -27371,6 +27511,9 @@ msgstr "실제 데이터가 로드되었고 샘플을 확인하여 승인했습�
 
 msgid "Your session was locked after inactivity."
 msgstr "세션이 비활성으로 인해 잠겼습니다."
+
+msgid "Your signature"
+msgstr ""
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "원본 데이터에 접근 가능하고 어느 정도 정리되어 있음"
