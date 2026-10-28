@@ -79,7 +79,8 @@ import {
 import {
   getNextRevisionSequence,
   getNextSequence,
-  getNextSerialNumbers
+  getNextSerialNumbers,
+  resolveSerialNumberTiming
 } from "@carbon/database/sequence";
 import { getStrictBackflushSettings } from "@carbon/database/strict-backflush";
 import {
@@ -3864,16 +3865,27 @@ export async function insertJob(
 }
 
 /**
- * Assign configured serial numbers to a freshly-created job's tracked entities.
- * Best-effort and cheap: it skips the operation entirely unless the item has
- * an `itemSerialSequence` configured. Shared by every job-creation path so serial
- * numbering is applied consistently (insertJob, sales-order conversion, ...).
+ * Assign configured serial numbers to a job's tracked entities, when the job is
+ * created (`at: "jobCreation"`, the default) or released (`at: "jobRelease"`).
+ * Best-effort and cheap: it skips the operation entirely unless the item has an
+ * `itemSerialSequence` configured. Shared by every job-creation path
+ * (insertJob, sales-order conversion, ...) and by `releaseCheckedJobs`, so
+ * serial numbering is applied consistently. The `assign-serial-numbers`
+ * posting decides whether the item's serial number timing names this moment.
+ *
+ * Returns false when numbering failed (logged), true otherwise.
  */
-async function assignJobSerialNumbers(
+export async function assignJobSerialNumbers(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { jobId: string; itemId: string; companyId: string; userId: string }
-) {
+  args: {
+    jobId: string;
+    itemId: string;
+    companyId: string;
+    userId: string;
+    at?: "jobCreation" | "jobRelease";
+  }
+): Promise<boolean> {
   const serialSequence = await client
     .from("itemSerialSequence")
     .select("id")
@@ -3888,18 +3900,56 @@ async function assignJobSerialNumbers(
       itemId: args.itemId,
       companyId: args.companyId
     });
-    return;
+    return false;
   }
-  if (!serialSequence.data) return;
+  if (!serialSequence.data) return true;
   const { error } = await invokePosting(
     { client, db, companyId: args.companyId, userId: args.userId },
     "assign-serial-numbers",
-    { jobId: args.jobId },
+    { jobId: args.jobId, at: args.at ?? "jobCreation" },
     assignSerialNumbers,
     { as: assignSerialNumbersPermission }
   );
   if (error) {
     logger.error("Failed to assign serial numbers", { error });
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Number a job's units when `releaseCheckedJobs` releases it, under the
+ * `jobRelease` timing (the item's, else the company's). Returns false when
+ * numbering failed (logged): the job is already Ready, so the caller warns and
+ * the release goes on; the units then draw their numbers at their first touch
+ * or at completion (`complete_job_to_inventory`).
+ */
+export async function assignJobSerialNumbersAtRelease(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { jobId: string; companyId: string; userId: string }
+): Promise<boolean> {
+  try {
+    const job = await client
+      .from("job")
+      .select("itemId")
+      .eq("id", args.jobId)
+      .eq("companyId", args.companyId)
+      .maybeSingle();
+    if (job.error) throw job.error;
+    if (!job.data?.itemId) return true;
+    return await assignJobSerialNumbers(client, db, {
+      ...args,
+      itemId: job.data.itemId,
+      at: "jobRelease"
+    });
+  } catch (error) {
+    logger.error("Failed to number serial units at release", {
+      error,
+      jobId: args.jobId,
+      companyId: args.companyId
+    });
+    return false;
   }
 }
 
@@ -12830,14 +12880,19 @@ export async function closeJob(
   return { success: true };
 }
 export const assignSerialNumbersInput = z.object({
-  jobId: z.string()
+  jobId: z.string(),
+  // The moment calling: it numbers only when the item's timing names it.
+  at: z.enum(["jobCreation", "jobRelease"]).default("jobCreation")
 });
 
 /**
- * Assigns configured serial numbers to a job's tracked entities at creation time.
+ * Assigns configured serial numbers to a job's tracked entities, at creation or
+ * release.
  *
- * Run (best-effort) by `insertJob` only when the job's item has an
- * `itemSerialSequence`. For a Batch item it stamps one number on the single
+ * Run (best-effort) by `assignJobSerialNumbers` only when the job's item has an
+ * `itemSerialSequence`. It numbers only when the item's serial number timing
+ * (its own, else the company's) is `at`; a Batch lot is always numbered at
+ * creation, since the timing is for serial units. For a Batch item it stamps one number on the single
  * whole-quantity seed entity; for a Serial item it splits the seed into N
  * quantity-1 entities and stamps one number on each. Numbers come from the
  * item's sequence (atomic counter) with %{...} date/week/location tokens.
@@ -12852,7 +12907,7 @@ export async function assignSerialNumbers(
   ctx: ServiceContext,
   raw: z.input<typeof assignSerialNumbersInput>
 ) {
-  const { jobId } = assignSerialNumbersInput.parse(raw);
+  const { jobId, at } = assignSerialNumbersInput.parse(raw);
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
 
@@ -12881,11 +12936,23 @@ export async function assignSerialNumbers(
     // 3. The item's serial sequence (optional, at most one)
     const sequence = await trx
       .selectFrom("itemSerialSequence")
-      .select(["prefix", "suffix", "next", "size", "step"])
+      .select(["serialNumberTiming"])
       .where("itemId", "=", job.itemId)
       .where("companyId", "=", companyId)
       .executeTakeFirst();
     if (!sequence) return { assigned: 0 };
+
+    // 3b. Only at the moment the item's timing names. A Batch lot is numbered
+    //     at creation: the completion numbers serial units only.
+    const timing =
+      trackingType === "Batch"
+        ? "jobCreation"
+        : await resolveSerialNumberTiming(
+            trx,
+            companyId,
+            sequence.serialNumberTiming
+          );
+    if (timing !== at) return { assigned: 0 };
 
     // 4. Location context for the %{location} token (code, falling back to name)
     let locationCode: string | null = null;
@@ -12989,6 +13056,7 @@ export async function assignSerialNumbers(
     return { assigned: count };
   });
 }
+
 const sandboxLogger = getLogger("erp", "configuration-rule");
 
 /**

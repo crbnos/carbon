@@ -1285,6 +1285,9 @@ msgstr "Nenhuma amostra necessária."
 msgid "No scheduled time"
 msgstr "Nenhum horário programado"
 
+msgid "No serial number"
+msgstr "Sem número de série"
+
 msgid "No serial numbers"
 msgstr "Nenhum número de série"
 
@@ -2132,8 +2135,8 @@ msgstr "Esta peça foi fabricada sob encomenda. Refugá-la pode reabrir seu rote
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Esta peça será descartada do estoque. Seu requisito permanece aberto para que você possa emitir uma substituição."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Esta unidade será permanentemente descartada e um novo número de série de substituição será criado."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Esta unidade será permanentemente descartada e uma unidade de substituição será criada."
 
 msgid "Thumbnail"
 msgstr "Miniatura"

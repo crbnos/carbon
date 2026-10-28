@@ -1285,6 +1285,9 @@ msgstr "No samples required."
 msgid "No scheduled time"
 msgstr "No scheduled time"
 
+msgid "No serial number"
+msgstr "No serial number"
+
 msgid "No serial numbers"
 msgstr "No serial numbers"
 
@@ -2132,8 +2135,8 @@ msgstr "This part was made to order. Scrapping it can reopen its routing to make
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "This unit will be permanently scrapped and a replacement serial number will be created."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "This unit will be permanently scrapped and a replacement unit will be created."
 
 msgid "Thumbnail"
 msgstr "Thumbnail"

@@ -1285,6 +1285,9 @@ msgstr "Образцы не требуются."
 msgid "No scheduled time"
 msgstr "Нет запланированного времени"
 
+msgid "No serial number"
+msgstr "Нет серийного номера"
+
 msgid "No serial numbers"
 msgstr "Нет серийных номеров"
 
@@ -2132,8 +2135,8 @@ msgstr "Эта деталь была произведена на заказ. С�
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Эта часть будет списана со склада. Её требование остается открытым, чтобы вы могли выдать замену."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Эта единица будет окончательно списана, и будет создан новый серийный номер замены."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Эта единица будет окончательно списана, и будет создана единица на замену."
 
 msgid "Thumbnail"
 msgstr "Миниатюра"

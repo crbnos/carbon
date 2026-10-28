@@ -238,8 +238,9 @@ export const planDraftJob = defineServiceFn({
  *
  * @remarks
  * The step every release path shares (`releaseJobs`, `releaseBatchMemberJobs`).
- * Per job, in order: refresh requirements, run MRP, flip to Ready, put outside
- * operations on purchase orders, stamp releasedDate. Scheduling is the
+ * Per job, in order: refresh requirements, run MRP, flip to Ready, number the
+ * serial units when the item's timing is `jobRelease`, put outside operations
+ * on purchase orders, stamp releasedDate. Scheduling is the
  * caller's (one location run, or a notify, after all jobs are released).
  * Validation (`getJobReleaseReadiness`) is the caller's, BEFORE this runs.
  *
@@ -247,6 +248,10 @@ export const planDraftJob = defineServiceFn({
  * supplier's first "new" PO is reused for the jobs after it, so a batch puts
  * each supplier's outside operations from every member job on one PO. The map
  * is returned with those POs filled in, for a caller releasing job by job.
+ *
+ * Serial numbering at release never stops it: a job whose units could not be
+ * numbered is listed in `warnings` and released, and its units draw their
+ * numbers at their first touch or at completion.
  *
  * It stops at the first job that fails, and that is `failure`, not an error:
  * `releasedJobIds` are the jobs that ARE Ready when this returns. After a
@@ -266,9 +271,11 @@ export const releaseCheckedJobs = defineServiceFn({
     const userId = ctx.auditUserId;
     const purchaseOrders = { ...purchaseOrdersBySupplierId };
     const releasedJobIds: string[] = [];
+    const warnings: { jobId: string; message: string }[] = [];
     const report = (failure: CarbonError<"internal" | "conflict"> | null) => ({
       purchaseOrdersBySupplierId: purchaseOrders,
       releasedJobIds,
+      warnings,
       failure
     });
 
@@ -329,6 +336,22 @@ export const releaseCheckedJobs = defineServiceFn({
         );
       }
       releasedJobIds.push(id);
+
+      // Under the jobRelease serial number timing (the item's, else the
+      // company's) every unit is numbered now. The job is already Ready, so a
+      // failure is a warning, not a refusal.
+      const numbered = await service.assignJobSerialNumbersAtRelease(
+        ctx.asSystem.supabase,
+        ctx.asSystem.pg,
+        { jobId: id, companyId, userId }
+      );
+      if (!numbered) {
+        warnings.push({
+          jobId: id,
+          message:
+            "The job is released, but its serial numbers could not be assigned"
+        });
+      }
 
       const purchaseOrder = await invokeCreate(
         { db: ctx.asSystem.pg, companyId, userId },
@@ -407,7 +430,7 @@ type JobRef = { jobId: string; readableId: string };
  * @param purchaseOrdersBySupplierId - For each supplier, `new` or the id of one of its Draft purchase orders to add to.
  * @param carriedPurchaseOrders - The PO each supplier went on in an earlier call of the same release, as that call returned it
  *
- * @returns `released`, `failed` (each with its reason), `skipped` (not Draft or Planned), `warnings` (released, but a purchase order failed), whether the locations were `scheduled`, and `purchaseOrdersBySupplierId` for the next call.
+ * @returns `released`, `failed` (each with its reason), `skipped` (not Draft or Planned), `warnings` (released, but a purchase order or its serial numbers failed), whether the locations were `scheduled`, and `purchaseOrdersBySupplierId` for the next call.
  *
  * @mcp
  */
@@ -533,6 +556,9 @@ export const releaseJobs = defineServiceFn({
         continue;
       }
       if (failure) warnings.push({ ...ref, message: failure.message });
+      for (const warning of result.data?.warnings ?? []) {
+        warnings.push({ ...ref, message: warning.message });
+      }
       if (job.locationId) locationIds.add(job.locationId);
       released.push(ref);
     }
@@ -876,9 +902,11 @@ export const closeJob = defineServiceFn({
  * job's own), backflushes materials, rolls up cost and, for a Make to Asset
  * job, creates the fixed assets. It refuses a quantity of zero or below what
  * was received, a fractional quantity on a serial job, and the Make to Asset
- * rules; its message says what to fix (a `rule` error). Then the picked
- * material the job did not consume is returned to the warehouse; a failure
- * there leaves the job completed and is returned as `warning`.
+ * rules; its message says what to fix (a `rule` error). Units it takes that
+ * have no serial number yet (a deferred serial number timing) are numbered by
+ * the same function, so a refused completion spends no numbers. Then the
+ * picked material the job did not consume is returned to the warehouse; a
+ * failure there leaves the job completed and is returned as `warning`.
  *
  * @mcp
  */

@@ -1639,6 +1639,9 @@ msgstr "ジョブ指図工程に対して記録された段取り、労務、ま
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "工具は部品を製造するために使用され、複数の製造指図で使用できる物理的アイテムです"
 
+msgid "A unit draws its number the first time it is worked on, scrapped or received, so cancelled jobs burn none."
+msgstr ""
+
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "以下のいずれかが当てはまる場合、個は売上として処理され、そうでない場合はレンタルとして処理されます。"
 
@@ -2773,6 +2776,9 @@ msgstr "品目の調達方式が変更される"
 
 msgid "An item's revision status changes"
 msgstr "アイテムのリビジョンステータスが変更されます"
+
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
 
 msgid "An item's tracking type changes"
 msgstr "アイテムの追跡タイプが変更されます"
@@ -5391,6 +5397,9 @@ msgstr "会社"
 msgid "Company default"
 msgstr "会社のデフォルト"
 
+msgid "Company default ({companyDefault})"
+msgstr ""
+
 msgid "Company default ({companyLabel})"
 msgstr "会社のデフォルト（{companyLabel}）"
 
@@ -7235,6 +7244,9 @@ msgstr "作業者が既に期限切れのバッチまたはシリアルを出庫
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "作業者が製造現場で完了を押したときに、ピック待ちの材料がある場合に何が起こるかを決定します。"
+
+msgid "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+msgstr ""
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "作業区にピッキングされたが消費済みでない材料がいつ倉庫に戻されるかを決定"
@@ -9618,6 +9630,12 @@ msgstr "すべての行が正常にインポートされました。"
 
 msgid "Every unit has a rate."
 msgstr "すべての個にレートが設定されています。"
+
+msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
+msgstr ""
 
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "一覧の絞り込み条件に一致するすべてのユーザーが対象です。このアクションの対象外のユーザーはスキップされます。"
@@ -21065,6 +21083,18 @@ msgstr "シリアル番号:"
 msgid "Serial Numbers"
 msgstr "シリアル番号"
 
+msgid "Serial numbers are drawn when a unit is produced"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is created"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
+msgid "Serial numbers are drawn when the units are received."
+msgstr ""
+
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "シリアル番号は、シリアルまたはバッチ追跡アイテムに対してのみ生成されます。"
 
@@ -24816,6 +24846,9 @@ msgstr "タイマー実行中"
 msgid "Timezone"
 msgstr "タイムゾーン"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "奥に傾ける"
 
@@ -26746,6 +26779,12 @@ msgstr "得意先のリクエストが現在のものでなくなった日。こ
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "商品が実際に到着した日時。入荷に記録され、仕入先の定時配達スコアリングに使用されます。"
 
+msgid "When the job is created"
+msgstr ""
+
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "かんばんカードがスキャンされると、製造指図は自動的に下書きから移動され、フロアにリリース済となります。"
 
@@ -26767,11 +26806,17 @@ msgstr "仕入先が配達を約束した日時。計画はこの日付を使用
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "仕入先の価格設定が有効でなくなる日時。この日付以降にこの見積をPOに変換する場合、再見積が必要な場合があります。"
 
+msgid "When the unit is produced"
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "この測定器が校正の対象日となる日時。期限を過ぎるとOut-of-Calibrationと表示されます。"
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "この測定器が最後に正常に校正された日時。次の校正日はこの値とインターバルの合計から再計算されます。"
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "これが正しく見えたら、同意済みとしてマークしてください。これでコマンドセンターの検出ステップが完了します。"

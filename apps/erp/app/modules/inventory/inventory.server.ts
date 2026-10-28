@@ -3515,6 +3515,13 @@ export const scanKanban = defineServiceFn({
           error: failure
         });
       }
+      for (const warning of result.data?.warnings ?? []) {
+        logger.warn("A kanban job was released with a warning", {
+          companyId,
+          jobId,
+          warning: warning.message
+        });
+      }
 
       // After the status is persisted: the scheduler only places released jobs.
       if (released) {
