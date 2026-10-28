@@ -49,7 +49,9 @@ export type HubMutation =
   | { intent: "applyHandover" }
   // A person's page file, as text. The server parses and checks it.
   | { intent: "setMemberPage"; page: string }
-  | { intent: "deleteMemberPage"; userId: string };
+  | { intent: "deleteMemberPage"; userId: string }
+  // Priority set answers and overrides, as field values (logic/priority-set).
+  | { intent: "setPriority"; writes: { fieldKey: string; value: string }[] };
 
 // Shape a mutation into flat string fields for FormData submission. JSON-encodes
 // the structured payloads exactly as the server validator expects to parse them.
@@ -122,5 +124,7 @@ export function toFormFields(m: HubMutation): Record<string, string> {
       return { intent: m.intent, page: m.page };
     case "deleteMemberPage":
       return { intent: m.intent, userId: m.userId };
+    case "setPriority":
+      return { intent: m.intent, writes: JSON.stringify(m.writes) };
   }
 }

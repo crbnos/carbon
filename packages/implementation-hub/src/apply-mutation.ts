@@ -8,6 +8,7 @@
 // it lets any employee of the company write, and these rules narrow that.
 
 import type { Database } from "@carbon/database";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { applyHandover } from "./apply-handover";
 import { checkKey, rowItemKey } from "./logic/keys";
@@ -16,6 +17,14 @@ import {
   catalogueByItem,
   checkMemberPage
 } from "./logic/page";
+import {
+  checkPriorityWrite,
+  isPriorityAnswerKey,
+  isPriorityOverrideKey,
+  PRIORITY_VIA_ASSISTANT,
+  priorityViaKey,
+  stampPriorityOverride
+} from "./logic/priority-set";
 import { answerQuestionPayload } from "./logic/question";
 import type { StateAction } from "./models";
 import {
@@ -32,6 +41,7 @@ import {
   upsertCheckState,
   upsertCheckStates,
   upsertFieldValue,
+  upsertFieldValues,
   upsertImplementationAssignment,
   upsertImplementationMember
 } from "./server";
@@ -147,7 +157,72 @@ export function refusalFor(
     case "setMemberPage":
     case "deleteMemberPage":
       return "Only Carbon staff can set up a person's hub page";
+    case "setPriority":
+      // Anyone in the company answers the questionnaire; setting a feature by
+      // hand is Carbon staff work, like a person's page.
+      return (parsePriorityWrites(action.writes) ?? []).some((write) =>
+        isPriorityOverrideKey(write.fieldKey)
+      )
+        ? "Only Carbon staff can set a feature by hand"
+        : null;
   }
+}
+
+// The most writes one save may carry: every answer and override at once.
+const MAX_PRIORITY_WRITES = 200;
+
+// Pure: parse a JSON-encoded list of { fieldKey, value }; null when it is not one.
+export function parsePriorityWrites(
+  json: string
+): { fieldKey: string; value: string }[] | null {
+  try {
+    const value: unknown = JSON.parse(json);
+    if (!Array.isArray(value) || value.length > MAX_PRIORITY_WRITES)
+      return null;
+    const writes = value.filter(
+      (w): w is { fieldKey: string; value: string } =>
+        !!w &&
+        typeof w === "object" &&
+        typeof (w as Record<string, unknown>).fieldKey === "string" &&
+        typeof (w as Record<string, unknown>).value === "string"
+    );
+    return writes.length === value.length ? writes : null;
+  } catch {
+    return null;
+  }
+}
+
+// Pure: the field values one priority save stores, or why it is refused.
+// Every write is checked and re-encoded; an override is stamped with who set
+// it and when; the last write of a key wins, as it did on the page. Each
+// answer also records how it was entered: by an AI assistant over MCP, or by
+// a person on the page, which clears an earlier mark.
+export function priorityFieldValues(
+  writes: { fieldKey: string; value: string }[],
+  actor: Pick<HubActor, "userId" | "source">,
+  at: string
+): { values: { fieldKey: string; value: string }[] } | { error: string } {
+  const latest = new Map<string, string>();
+  for (const write of writes) {
+    const checked = checkPriorityWrite(write.fieldKey, write.value);
+    if ("error" in checked) return { error: checked.error };
+    latest.set(
+      write.fieldKey,
+      isPriorityOverrideKey(write.fieldKey)
+        ? stampPriorityOverride(checked.value, actor.userId, at)
+        : checked.value
+    );
+  }
+  for (const [fieldKey, value] of Array.from(latest)) {
+    if (!isPriorityAnswerKey(fieldKey)) continue;
+    latest.set(
+      priorityViaKey(fieldKey),
+      actor.source === "mcp" && value !== "" ? PRIORITY_VIA_ASSISTANT : ""
+    );
+  }
+  return {
+    values: Array.from(latest, ([fieldKey, value]) => ({ fieldKey, value }))
+  };
 }
 
 // Pure: what a new row is recorded as. Staff may record that it came from the
@@ -552,6 +627,19 @@ export async function applyHubMutation(
       const result = await deleteImplementationMember(client, {
         companyId,
         memberId: action.userId
+      });
+      return result.error ? failed(result.error) : ok();
+    }
+
+    case "setPriority": {
+      const writes = parsePriorityWrites(action.writes);
+      if (!writes?.length) return failed({ message: "Invalid answers" });
+      const checked = priorityFieldValues(writes, actor, datetime.timestamp());
+      if ("error" in checked) return failed({ message: checked.error });
+      const result = await upsertFieldValues(client, {
+        companyId,
+        userId,
+        values: checked.values
       });
       return result.error ? failed(result.error) : ok();
     }

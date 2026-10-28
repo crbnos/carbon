@@ -30,6 +30,8 @@ type DocumentPageHeaderProps = {
   actions?: ReactNode;
   /** Short facts under the title, joined with a middot. */
   meta?: ReactNode;
+  /** False when the title is a name rather than a readable id: no Copy. */
+  copyable?: boolean;
 };
 
 /**
@@ -43,11 +45,13 @@ export function DocumentPageHeader({
   status,
   menuItems,
   actions,
-  meta
+  meta,
+  copyable = true
 }: DocumentPageHeaderProps) {
   const { t } = useLingui();
   const { isPhone } = useViewport();
-  const { hasSidebar, isSidebarOpen, toggleSidebar } = useDocumentPage();
+  const { hasSidebar, isSidebarOpen, toggleSidebar, sidebarLabels } =
+    useDocumentPage();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [isStuck, setIsStuck] = useState(false);
 
@@ -84,8 +88,8 @@ export function DocumentPageHeader({
     <IconButton
       aria-label={
         isSidebarOpen
-          ? t`Hide documents and activity`
-          : t`Show documents and activity`
+          ? (sidebarLabels?.hide ?? t`Hide documents and activity`)
+          : (sidebarLabels?.show ?? t`Show documents and activity`)
       }
       icon={<LuPanelRight />}
       variant="ghost"
@@ -97,7 +101,10 @@ export function DocumentPageHeader({
   if (isPhone) {
     return (
       <>
-        <RecordPhoneChrome menu={menuItems} copyValue={title} />
+        <RecordPhoneChrome
+          menu={menuItems}
+          copyValue={copyable ? title : undefined}
+        />
         {status || metaLine || sidebarToggle ? (
           <header className="flex flex-col gap-1.5 border-b border-border bg-card px-4 py-3">
             <div className="flex min-h-11 items-center justify-between gap-2">
@@ -137,7 +144,7 @@ export function DocumentPageHeader({
               >
                 {title}
               </Heading>
-              <Copy text={title} />
+              {copyable && <Copy text={title} />}
               {menuItems && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

@@ -302,7 +302,7 @@ describe("groupHubPeople", () => {
 });
 
 describe("starterMemberPage", () => {
-  it("is a page file the hub accepts, holding the kickoff task", () => {
+  it("is a page file the hub accepts, holding the questionnaire", () => {
     const starter = starterMemberPage("new.person@example.com", "Start here");
     const checked = checkMemberPage(
       JSON.stringify(starter),
@@ -310,7 +310,7 @@ describe("starterMemberPage", () => {
     );
     expect(checked.problems).toEqual([]);
     expect(checked.page?.sections[0]?.cards).toEqual([
-      { item: "task:kickoff" }
+      { item: "priority:questionnaire" }
     ]);
   });
 });

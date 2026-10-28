@@ -4,6 +4,12 @@
 
 export { MemberPageEmpty, MemberPageView } from "./MemberPageView";
 export { OnboardingHubSummary } from "./OnboardingHubSummary";
+export {
+  PrioritySetPanel,
+  PrioritySetProvider,
+  PrioritySetQuestions,
+  usePrioritySet
+} from "./PrioritySetView";
 export { ProgressPill } from "./ProgressPill";
 export * from "./primitives";
 export * from "./state";

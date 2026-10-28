@@ -19,6 +19,7 @@ export * from "./handover";
 export * from "./objectives";
 export * from "./operational";
 export * from "./page";
+export * from "./priority-set";
 export * from "./registry";
 export * from "./requirements";
 export * from "./scope";

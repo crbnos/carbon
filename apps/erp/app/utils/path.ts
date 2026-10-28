@@ -1503,6 +1503,7 @@ export const path = {
     implementation: `${x}/implementation`,
     implementationEnroll: `${x}/implementation/enroll`,
     implementationLayout: `${x}/implementation/layout`,
+    implementationPrioritySet: `${x}/implementation/priority-set`,
     implementationSettings: `${x}/implementation/settings`,
     implementationState: `${x}/implementation/state`,
     import: (tableId: string) => generatePath(`${x}/shared/import/${tableId}`),

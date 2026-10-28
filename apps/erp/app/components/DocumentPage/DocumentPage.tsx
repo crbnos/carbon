@@ -15,10 +15,18 @@ import { createContext, useContext, useRef, useState } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import { Panel, PanelGroup } from "react-resizable-panels";
 
+/** What the side panel holds, for its toggle and its phone drawer. */
+export type DocumentPageSidebarLabels = {
+  title: string;
+  show: string;
+  hide: string;
+};
+
 type DocumentPageContextType = {
   hasSidebar: boolean;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
+  sidebarLabels?: DocumentPageSidebarLabels;
 };
 
 const DocumentPageContext = createContext<DocumentPageContextType>({
@@ -39,6 +47,11 @@ type DocumentPageProps = {
   children: ReactNode;
   /** Related documents and activity — usually a `DocumentSidebar`. */
   sidebar?: ReactNode;
+  /**
+   * Names the side panel when it holds something other than documents and
+   * activity. Left out, the panel is "documents and activity".
+   */
+  sidebarLabels?: DocumentPageSidebarLabels;
 };
 
 const SIDEBAR_PANEL_ID = "document-page-sidebar";
@@ -49,7 +62,12 @@ const SIDEBAR_PANEL_ID = "document-page-sidebar";
  * a resizable, collapsible side panel for what surrounds it. The panel's size
  * and collapsed state are shared by every document that uses this layout.
  */
-export function DocumentPage({ header, children, sidebar }: DocumentPageProps) {
+export function DocumentPage({
+  header,
+  children,
+  sidebar,
+  sidebarLabels
+}: DocumentPageProps) {
   const { isPhone: isMobile } = useViewport();
   const sidebarRef = useRef<ImperativePanelHandle>(null);
   // Desktop: mirrors the panel, which restores its own saved layout and
@@ -74,7 +92,8 @@ export function DocumentPage({ header, children, sidebar }: DocumentPageProps) {
   const context = {
     hasSidebar,
     isSidebarOpen: isMobile ? isDrawerOpen : isSidebarOpen,
-    toggleSidebar
+    toggleSidebar,
+    sidebarLabels
   };
 
   const content = (
@@ -141,7 +160,7 @@ export function DocumentPage({ header, children, sidebar }: DocumentPageProps) {
             className="w-[24rem] max-w-[90vw] p-0"
           >
             <DrawerTitle className="sr-only">
-              <Trans>Documents and activity</Trans>
+              {sidebarLabels?.title ?? <Trans>Documents and activity</Trans>}
             </DrawerTitle>
             <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
               {sidebar}

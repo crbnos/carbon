@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The open questions a person's page places, as one numbered list answered in
-// place: choice cards when the question lists options, a typed answer
-// otherwise. An answer sets the question's tick,
+// place, like the priority set questionnaire: choice cards when the question
+// lists options, a typed answer otherwise. An answer sets the question's tick,
 // so it counts towards the page's progress and reads answered everywhere.
 
 import {

@@ -25,7 +25,8 @@ import { usesPersonalPages } from "~/modules/shared/shared.models";
 // customer's own objectives are open to any company employee; tailoring
 // (fields, rows, tier, exclusions, contacts, verification) needs Carbon staff.
 // A company on the Company Plan hub shares these records with it, so until it
-// uses Personal Pages only its page files and assignments change here.
+// uses Personal Pages only its page files, assignments and priority set change
+// here.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId, email } = await requirePermissions(
