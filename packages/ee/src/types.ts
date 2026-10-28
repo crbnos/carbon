@@ -171,6 +171,14 @@ export type IntegrationServerHooks = {
    */
   onUninstall?: (companyId: string) => void | Promise<void>;
   /**
+   * Workflow pieces only: after the connect callback saves a NEW account (not a
+   * Reconnect). Best-effort: the connection is already saved.
+   */
+  onConnect?: (connection: {
+    accessToken: string;
+    metadata: Record<string, unknown>;
+  }) => Promise<void>;
+  /**
    * Server-side validation hook to check integration health/credentials.
    * Returns true if the integration is healthy, false otherwise, or a result
    * whose `reason` tells the person what failed and where to fix it.

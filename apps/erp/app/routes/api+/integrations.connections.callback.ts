@@ -5,6 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { consumeOAuthStateByValue } from "@carbon/auth/oauth-state.server";
+import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
 import {
   ConnectionAccountMismatchError,
   ConnectionAccountUnverifiedError,
@@ -14,7 +15,6 @@ import {
   exchangeAuthorizationCode,
   TOKEN_REQUEST_TIMEOUT_MS
 } from "@carbon/ee/integrations/connections";
-import { postSlackWelcome } from "@carbon/ee/slack.server";
 import type { AllowlistEntry } from "@carbon/jobs/integrations";
 import {
   accountLabelFromBody,
@@ -237,19 +237,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   await invalidateIntegrationHealthCache(pieceName, companyId);
 
-  // A new Slack install says hello in the channel picked on the consent screen,
-  // so the person can see the bot is live there. Best-effort: the install is done.
-  const channelId = metadata.channel_id;
-  if (
-    pieceName === "slack" &&
-    state.connectionId === undefined &&
-    typeof channelId === "string" &&
-    channelId !== ""
-  ) {
+  // A new account (not a Reconnect) runs its piece's connect hook, e.g. Slack's
+  // welcome message. Best-effort: the connection is already saved.
+  const onConnect = getIntegrationServerHooks(pieceName)?.onConnect;
+  if (onConnect !== undefined && state.connectionId === undefined) {
     try {
-      await postSlackWelcome({ token: tokens.accessToken, channelId });
+      await onConnect({ accessToken: tokens.accessToken, metadata });
     } catch (err) {
-      logger.warn("Slack welcome message not posted: {detail}", {
+      logger.warn("Integration connect hook failed: {detail}", {
+        pieceName,
         detail: describeError(err)
       });
     }

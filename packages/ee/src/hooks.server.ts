@@ -5,7 +5,10 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { emailHealthcheck } from "./email/hooks.server";
 import { revokeConnectionsForPiece } from "./integrations/connections";
-import { ACTIVEPIECES_PIECES } from "./integrations/pieces";
+import {
+  ACTIVEPIECES_PIECES,
+  type ActivepiecesPiece
+} from "./integrations/pieces";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
 import { mountHealthcheck } from "./mount/hooks.server";
@@ -31,6 +34,7 @@ import {
   rilletOnUninstall
 } from "./rillet/hooks.server";
 import { senseHealthcheck, senseOnUninstall } from "./sense/hooks.server";
+import { slackOnConnect } from "./slack/hooks.server";
 import {
   stripeConnectHealthcheck,
   stripeConnectOnInstall,
@@ -60,12 +64,19 @@ import {
  * lives here. Slack's card serves the Carbon Assistant and workflow steps alike,
  * so uninstalling it revokes every connected workspace.
  */
+const pieceConnectHooks: Partial<
+  Record<ActivepiecesPiece, IntegrationServerHooks["onConnect"]>
+> = {
+  slack: slackOnConnect
+};
+
 const pieceHooks: Record<string, IntegrationServerHooks> = Object.fromEntries(
   ACTIVEPIECES_PIECES.map((piece) => [
     piece,
     {
       onUninstall: (companyId: string) =>
-        revokeConnectionsForPiece(getCarbonServiceRole(), piece, companyId)
+        revokeConnectionsForPiece(getCarbonServiceRole(), piece, companyId),
+      onConnect: pieceConnectHooks[piece]
     }
   ])
 );
