@@ -6449,6 +6449,9 @@ msgstr "Onshape 연결을 완료할 수 없습니다"
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Onshape Government 연동을 완료 처리할 수 없습니다."
 
+msgid "Couldn't confirm the account"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "문서를 불러올 수 없습니다"
 
@@ -12143,6 +12146,9 @@ msgstr "연동을 찾을 수 없습니다"
 msgid "Integrations"
 msgstr "연동"
 
+msgid "Integrations aren't included in your plan"
+msgstr ""
+
 msgid "Integrations not named here"
 msgstr "여기에 명시되지 않은 연동"
 
@@ -17407,6 +17413,9 @@ msgstr "라이브러리에서 기존 규칙을 선택하거나 새 규칙을 만
 
 msgid "Pick List"
 msgstr "피킹 목록"
+
+msgid "Pick one of its fields"
+msgstr ""
 
 msgid "Pick Order"
 msgstr "피킹 순서"
@@ -23960,6 +23969,9 @@ msgstr "이 고객으로의 출하에서 운송비 지불자, 리스크 부담�
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "통합이 연결을 승인했지만 저장하지 못했습니다. 다시 연결해 보세요."
 
+msgid "The integration didn't say which account signed in, so this connection was left unchanged. Try again."
+msgstr ""
+
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "출하가 전기될 때 인식되는 재고 원가로, 품목의 원가 계산 방법에 따라 평가됩니다."
 
@@ -24758,6 +24770,7 @@ msgstr "이 계정이 작동을 멈췄습니다. 재연결하세요 — 워크�
 
 msgid "This account needs to be reconnected."
 msgstr "이 계정을 재연결해야 합니다."
+
 msgid "This action cannot run on this list."
 msgstr ""
 
@@ -25391,6 +25404,9 @@ msgstr "허용치 (일)"
 msgid "Tomorrow"
 msgstr "내일"
 
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "현재 실행 중인 내보내기와 일괄 작업이 너무 많습니다. 몇 분 후에 다시 시도하세요."
+
 msgid "Took {took} values; kept the first {kept}."
 msgstr "값 {took}개를 가져왔고 처음 {kept}개를 유지했습니다."
 
@@ -25399,8 +25415,6 @@ msgstr "{total}개 중 첫 번째를 가져왔습니다."
 
 msgid "Took the last of {total}."
 msgstr "{total}개 중 마지막을 가져왔습니다."
-msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
-msgstr "현재 실행 중인 내보내기와 일괄 작업이 너무 많습니다. 몇 분 후에 다시 시도하세요."
 
 msgid "tool"
 msgstr "공구"
@@ -25905,6 +25919,10 @@ msgstr "문제 있음"
 msgid "Uninstall"
 msgstr "제거"
 
+#. placeholder {0}: installGate.conflictsWith
+msgid "Uninstall {0} first"
+msgstr ""
+
 msgid "Uninstall {conflictsWith} first"
 msgstr "먼저 {conflictsWith}를 제거하세요"
 
@@ -26238,6 +26256,9 @@ msgstr "업그레이드하여 감사 이력 잠금 해제"
 
 msgid "Upgrade to unlock sales rules"
 msgstr "판매 규칙을 잠금 해제하려면 업그레이드하십시오"
+
+msgid "Upgrade your plan to connect this integration."
+msgstr ""
 
 msgid "Upload"
 msgstr "업로드"

@@ -6449,6 +6449,9 @@ msgstr "Onshape bağlantısı tamamlanamadı"
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Onshape Government bağlantısı tamamlanamadı"
 
+msgid "Couldn't confirm the account"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "Belgeler yüklenemedi"
 
@@ -12143,6 +12146,9 @@ msgstr "Entegrasyon bulunamadı"
 msgid "Integrations"
 msgstr "Entegrasyonlar"
 
+msgid "Integrations aren't included in your plan"
+msgstr ""
+
 msgid "Integrations not named here"
 msgstr "Burada adı geçmeyen entegrasyonlar"
 
@@ -17407,6 +17413,9 @@ msgstr "Bu öğe üzerinde kontroller uygulamaya başlamak için kitaplıktan me
 
 msgid "Pick List"
 msgstr "Seçim Listesi"
+
+msgid "Pick one of its fields"
+msgstr ""
 
 msgid "Pick Order"
 msgstr "Seçim Sırası"
@@ -23960,6 +23969,9 @@ msgstr "Bu Müşteriye giden Sevkiyatlarda nakliyeyi kimin ödeyeceğini, riski 
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "Entegrasyon bağlantıyı yetkilendirdi ancak kaydetmesi başarısız oldu. Tekrar bağlanmayı deneyin."
 
+msgid "The integration didn't say which account signed in, so this connection was left unchanged. Try again."
+msgstr ""
+
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "Bir Sevkiyat muhasebeleştirildiğinde tanınan ve Stok kartının Maliyetlendirme yöntemiyle değerlendirilen Envanter Maliyeti."
 
@@ -24758,6 +24770,7 @@ msgstr "Bu hesap çalışmayı durdurdu. Yeniden bağlayın — onu kullanan iş
 
 msgid "This account needs to be reconnected."
 msgstr "Bu hesabın yeniden bağlanması gerekiyor."
+
 msgid "This action cannot run on this list."
 msgstr ""
 
@@ -25391,6 +25404,9 @@ msgstr "Tolerans (gün)"
 msgid "Tomorrow"
 msgstr "Yarın"
 
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "Şu anda çok fazla dışa aktarma ve toplu işlem çalışıyor. Birkaç dakika sonra tekrar deneyin."
+
 msgid "Took {took} values; kept the first {kept}."
 msgstr "{took} değer alındı; ilk {kept} tutuldu."
 
@@ -25399,8 +25415,6 @@ msgstr "{total} içinden ilki alındı."
 
 msgid "Took the last of {total}."
 msgstr "{total} içinden sonuncusu alındı."
-msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
-msgstr "Şu anda çok fazla dışa aktarma ve toplu işlem çalışıyor. Birkaç dakika sonra tekrar deneyin."
 
 msgid "tool"
 msgstr "Araç"
@@ -25905,6 +25919,10 @@ msgstr "Sağlıksız"
 msgid "Uninstall"
 msgstr "Kaldır"
 
+#. placeholder {0}: installGate.conflictsWith
+msgid "Uninstall {0} first"
+msgstr ""
+
 msgid "Uninstall {conflictsWith} first"
 msgstr "Önce {conflictsWith} kaldırın"
 
@@ -26238,6 +26256,9 @@ msgstr "Denetim geçmişini açmak için yükseltin"
 
 msgid "Upgrade to unlock sales rules"
 msgstr "Satış kurallarının kilidini açmak için yükseltin"
+
+msgid "Upgrade your plan to connect this integration."
+msgstr ""
 
 msgid "Upload"
 msgstr "Yükle"

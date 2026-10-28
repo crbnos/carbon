@@ -6449,6 +6449,9 @@ msgstr "Не удалось завершить подключение к Onshape
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Не удалось завершить подключение Onshape Government"
 
+msgid "Couldn't confirm the account"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "Не удалось загрузить документы"
 
@@ -12143,6 +12146,9 @@ msgstr "Интеграция не найдена"
 msgid "Integrations"
 msgstr "Интеграции"
 
+msgid "Integrations aren't included in your plan"
+msgstr ""
+
 msgid "Integrations not named here"
 msgstr "Интеграции, не указанные здесь"
 
@@ -17407,6 +17413,9 @@ msgstr "Выберите существующее правило из библи
 
 msgid "Pick List"
 msgstr "Список подбора"
+
+msgid "Pick one of its fields"
+msgstr ""
 
 msgid "Pick Order"
 msgstr "Порядок комплектации"
@@ -23960,6 +23969,9 @@ msgstr "Правило Инкотермс (FOB, DAP, EXW, CIF, …), котор�
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "Интеграция авторизовала соединение, но его сохранение не удалось. Попробуйте подключиться снова."
 
+msgid "The integration didn't say which account signed in, so this connection was left unchanged. Try again."
+msgstr ""
+
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "Себестоимость Запасов, признаваемая при проведении Отгрузки, оцениваемая по методу Калькуляции Номенклатуры."
 
@@ -24758,6 +24770,7 @@ msgstr "Этот аккаунт перестал работать. Перепо�
 
 msgid "This account needs to be reconnected."
 msgstr "Этот аккаунт требует переподключения."
+
 msgid "This action cannot run on this list."
 msgstr ""
 
@@ -25391,6 +25404,9 @@ msgstr "Допуск (дней)"
 msgid "Tomorrow"
 msgstr "Завтра"
 
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "Сейчас выполняется слишком много экспортов и массовых действий. Повторите попытку через несколько минут."
+
 msgid "Took {took} values; kept the first {kept}."
 msgstr "Взято значений: {took}; оставлены первые {kept}."
 
@@ -25399,8 +25415,6 @@ msgstr "Взят первый из {total}."
 
 msgid "Took the last of {total}."
 msgstr "Взят последний из {total}."
-msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
-msgstr "Сейчас выполняется слишком много экспортов и массовых действий. Повторите попытку через несколько минут."
 
 msgid "tool"
 msgstr "Инструмент"
@@ -25905,6 +25919,10 @@ msgstr "Некорректно"
 msgid "Uninstall"
 msgstr "Удалить"
 
+#. placeholder {0}: installGate.conflictsWith
+msgid "Uninstall {0} first"
+msgstr ""
+
 msgid "Uninstall {conflictsWith} first"
 msgstr "Сначала удалите {conflictsWith}"
 
@@ -26238,6 +26256,9 @@ msgstr "Обновитесь, чтобы разблокировать истор
 
 msgid "Upgrade to unlock sales rules"
 msgstr "Обновите, чтобы разблокировать правила продаж"
+
+msgid "Upgrade your plan to connect this integration."
+msgstr ""
 
 msgid "Upload"
 msgstr "Загрузить"

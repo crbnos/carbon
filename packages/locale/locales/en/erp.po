@@ -6449,6 +6449,9 @@ msgstr "Couldn't complete the Onshape connection"
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Couldn't complete the Onshape Government connection"
 
+msgid "Couldn't confirm the account"
+msgstr "Couldn't confirm the account"
+
 msgid "Couldn't load documents"
 msgstr "Couldn't load documents"
 
@@ -12143,6 +12146,9 @@ msgstr "Integration not found"
 msgid "Integrations"
 msgstr "Integrations"
 
+msgid "Integrations aren't included in your plan"
+msgstr "Integrations aren't included in your plan"
+
 msgid "Integrations not named here"
 msgstr "Integrations not named here"
 
@@ -17407,6 +17413,9 @@ msgstr "Pick an existing rule from the library or create a new one to start enfo
 
 msgid "Pick List"
 msgstr "Pick List"
+
+msgid "Pick one of its fields"
+msgstr "Pick one of its fields"
 
 msgid "Pick Order"
 msgstr "Pick Order"
@@ -23960,6 +23969,9 @@ msgstr "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freigh
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "The integration authorized the connection but saving it failed. Try connecting again."
 
+msgid "The integration didn't say which account signed in, so this connection was left unchanged. Try again."
+msgstr "The integration didn't say which account signed in, so this connection was left unchanged. Try again."
+
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 
@@ -24758,6 +24770,7 @@ msgstr "This account has stopped working. Reconnect it — workflow steps using 
 
 msgid "This account needs to be reconnected."
 msgstr "This account needs to be reconnected."
+
 msgid "This action cannot run on this list."
 msgstr "This action cannot run on this list."
 
@@ -25391,6 +25404,9 @@ msgstr "Tolerance (days)"
 msgid "Tomorrow"
 msgstr "Tomorrow"
 
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "Too many exports and bulk actions are running right now. Try again in a few minutes."
+
 msgid "Took {took} values; kept the first {kept}."
 msgstr "Took {took} values; kept the first {kept}."
 
@@ -25399,8 +25415,6 @@ msgstr "Took the first of {total}."
 
 msgid "Took the last of {total}."
 msgstr "Took the last of {total}."
-msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
-msgstr "Too many exports and bulk actions are running right now. Try again in a few minutes."
 
 msgid "tool"
 msgstr "tool"
@@ -25905,6 +25919,10 @@ msgstr "Unhealthy"
 msgid "Uninstall"
 msgstr "Uninstall"
 
+#. placeholder {0}: installGate.conflictsWith
+msgid "Uninstall {0} first"
+msgstr "Uninstall {0} first"
+
 msgid "Uninstall {conflictsWith} first"
 msgstr "Uninstall {conflictsWith} first"
 
@@ -26238,6 +26256,9 @@ msgstr "Upgrade to unlock audit history"
 
 msgid "Upgrade to unlock sales rules"
 msgstr "Upgrade to unlock sales rules"
+
+msgid "Upgrade your plan to connect this integration."
+msgstr "Upgrade your plan to connect this integration."
 
 msgid "Upload"
 msgstr "Upload"
