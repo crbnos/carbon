@@ -253,8 +253,8 @@ import {
   deleteChangeNotice,
   deleteItem,
   type getItem,
-  getLockVerdict,
   insertChangeNotice,
+  methodWriteRefusal,
   type ReleaseControl,
   requireChangeNoticeEditable,
   updateDefaultRevision,
@@ -4309,7 +4309,8 @@ type ItemRevisionStatus = Database["public"]["Enums"]["itemRevisionStatus"];
 const onshapeDraftMethodLogger = getLogger("erp", "onshape", "draft-method");
 
 /**
- * Why the assembly push must not write a parent's BOM, per item id. A Draft a
+ * Why the assembly push, or the sync connection's BOM sync (`syncMakeMethod`),
+ * must not write a parent's BOM, per item id: `methodWriteRefusal`. A Draft a
  * change notice holds is the notice's to change, whatever its stage. A
  * released (Production) revision follows `plmReleaseControl` through
  * `getLockVerdict`, as the BOM editor's `checkRevisionLock` does: `enforce`
@@ -4354,19 +4355,14 @@ export async function loadMethodWriteRefusals(
     "enforce") as ReleaseControl;
   for (const target of targets) {
     const changeOrderId = target.method.changeOrderId;
-    if (changeOrderId) {
-      const number = noticeNumber.get(changeOrderId);
-      reasons.set(
-        target.itemId,
-        `its make method is a Draft on ${number ? `change notice ${number}` : "a change notice"}. Change the BOM there.`
-      );
-      continue;
-    }
-    const verdict = getLockVerdict({
-      isLocked: target.revisionStatus === "Production",
-      releaseControl
-    });
-    if (!verdict.ok) reasons.set(target.itemId, verdict.message);
+    const reason = methodWriteRefusal(
+      { changeOrderId, revisionStatus: target.revisionStatus },
+      {
+        noticeNumber: changeOrderId ? noticeNumber.get(changeOrderId) : null,
+        releaseControl
+      }
+    );
+    if (reason) reasons.set(target.itemId, reason);
   }
   return reasons;
 }

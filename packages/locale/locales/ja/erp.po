@@ -4532,6 +4532,9 @@ msgstr ""
 msgid "BOM synced successfully"
 msgstr "BOMが正常に同期されました"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOMを同期しました。書き込まれなかったもの: {notWritten}"
+
 msgid "BOMs"
 msgstr "BOM"
 

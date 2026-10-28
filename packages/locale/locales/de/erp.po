@@ -4532,6 +4532,9 @@ msgstr ""
 msgid "BOM synced successfully"
 msgstr "BOM erfolgreich synchronisiert"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM synchronisiert. Nicht geschrieben: {notWritten}"
+
 msgid "BOMs"
 msgstr "BOMs"
 
