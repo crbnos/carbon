@@ -24,6 +24,7 @@ export default defineConfig({
         "packages/printing/src/ui",
         "docs/content/src/glossary",
         "packages/onboarding/src",
+        "packages/implementation-hub/src",
         "packages/account/src",
         "packages/ee/src/workflows"
       ],

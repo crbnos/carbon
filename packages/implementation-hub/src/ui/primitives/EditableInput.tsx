@@ -1,0 +1,61 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+// Dashed inline input with save-on-blur, built on @carbon/react's <Input>, or
+// its <Textarea> when the text can run long. Holds a local draft so typing is
+// smooth, commits only when the value changed, and re-syncs to the server value
+// if it updates underneath (realtime / revalidate) — but never while focused,
+// so a concurrent update can't clobber live typing.
+
+import { cn, Input, Textarea } from "@carbon/react";
+import { useEffect, useRef, useState } from "react";
+
+export function EditableInput({
+  value,
+  placeholder,
+  onCommit,
+  variant = "primary",
+  multiline = false,
+  className
+}: {
+  value: string;
+  placeholder?: string;
+  onCommit: (next: string) => void;
+  variant?: "primary" | "muted";
+  // A field that grows with its text, so a long answer is read in full.
+  multiline?: boolean;
+  className?: string;
+}) {
+  const [draft, setDraft] = useState(value);
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!focused.current) setDraft(value);
+  }, [value]);
+
+  const field = {
+    value: draft,
+    placeholder,
+    onFocus: () => {
+      focused.current = true;
+    },
+    onBlur: () => {
+      focused.current = false;
+      if (draft !== value) onCommit(draft);
+    },
+    className: cn(
+      "border-dashed bg-primary/[0.03] focus:ring-2 focus:ring-primary/20",
+      variant === "primary"
+        ? "border-primary/40 font-medium"
+        : "border-primary/30 text-xs text-muted-foreground",
+      multiline && "field-sizing-content resize-none",
+      className
+    )
+  };
+
+  return multiline ? (
+    <Textarea {...field} onChange={(e) => setDraft(e.target.value)} />
+  ) : (
+    <Input {...field} onChange={(e) => setDraft(e.target.value)} />
+  );
+}

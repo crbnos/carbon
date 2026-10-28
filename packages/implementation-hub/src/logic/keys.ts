@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+// Stable string keys for persisted state (implementationCheckState.itemKey /
+// implementationFieldValue.fieldKey). Baked into content templates so adding or
+// reordering template nodes never reassigns a saved key.
+
+export const gateKey = (slug: string) => `gate:${slug}`;
+export const productStepKey = (slug: string) => `prod:${slug}`;
+export const taskKey = (boardKey: string) => `task:${boardKey}`;
+export const flagKey = (reqCode: string) => `flag:${reqCode}`;
+export const checkKey = (page: string, n: number | string) =>
+  `check:${page}.${n}`;
+export const fmtKey = (trackRow: string) => `fmt:${trackRow}`;
+export const fieldTextKey = (fieldKey: string) => `txt:${fieldKey}`;
+
+// The assignment key of a custom row (an objective, an open question, a
+// customization). Its status key is collection-specific; the row is `row:<id>`.
+export const rowItemKey = (rowId: string) => `row:${rowId}`;
+// The manual done tick of an objective row ("1" done, "0" open).
+export const objectiveCheckKey = (rowId: string) =>
+  checkKey("objective", rowId);
+
+// DOM anchor id for a spine step's card in the Plan view. Colons aren't valid in
+// a URL fragment target lookup, so swap them for hyphens (gate:configure → gate-configure).
+export const planAnchorId = (stepKey: string) =>
+  `plan-${stepKey.replace(/:/g, "-")}`;
+
+// DOM anchor id for a Setup Map group. A Configure task in the Plan deep-links to
+// its matching group here — its `key` is the group key (see content/board), so
+// both sides derive the same anchor.
+export const setupAnchorId = (groupKey: string) => `setup-${groupKey}`;

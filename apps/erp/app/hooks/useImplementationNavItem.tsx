@@ -18,6 +18,11 @@ import type { I18n } from "@lingui/core";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuRocket } from "react-icons/lu";
+import {
+  type ImplementationLayout,
+  personalPagesHubName,
+  usesPersonalPages
+} from "~/modules/shared/shared.models";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
 import { useResolved } from "./useResolved";
@@ -36,7 +41,11 @@ type ImplementationProgress = {
 };
 
 export type ImplementationHubData = {
-  implementationHub: { tier: Tier; status: HubStatus } | null;
+  implementationHub: {
+    tier: Tier;
+    status: HubStatus;
+    layout?: ImplementationLayout;
+  } | null;
   implementationCheckStates: CheckStateRow[];
   implementationSignals: Signals | null;
   // False until the streamed progress lands. Until then the counts are not
@@ -46,6 +55,11 @@ export type ImplementationHubData = {
 
 const isFinished = (status: HubStatus) =>
   status === "complete" || status === "archived";
+
+// A Personal Pages company has its own hub; every other company keeps the
+// Company Plan hub at its usual address.
+const hubPath = (hub: { layout?: ImplementationLayout }) =>
+  usesPersonalPages(hub) ? path.to.implementation : path.to.getStarted;
 
 // Shared reader. The hub row (null until the company enrols) is awaited by the
 // layout loader; progress is streamed and fills in after.
@@ -88,6 +102,15 @@ export function getImplementationNavItem(
   const hub = data.implementationHub;
   if (!hub || isFinished(hub.status)) return null;
 
+  // The Personal Pages hub has no gates to count: one name, no badge.
+  if (usesPersonalPages(hub)) {
+    return {
+      name: i18n._(personalPagesHubName),
+      to: path.to.implementation,
+      icon: LuRocket
+    };
+  }
+
   const spine = spineForTier(SPINE, hub.tier);
   const done = gatesDone(
     spine,
@@ -114,7 +137,7 @@ export function useImplementationReopenItem(): Authenticated<NavItem> | null {
 
   return {
     name: i18n._(labelForTier(hub.tier)),
-    to: path.to.getStarted,
+    to: hubPath(hub),
     icon: LuRocket
   };
 }

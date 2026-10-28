@@ -116,7 +116,9 @@ const PrimaryNavigation = () => {
   const pendingModule = useMemo(() => {
     if (pendingPathname === pathname) return undefined;
     const segment = getModule(pendingPathname);
-    if (segment === "get-started") return segment;
+    if (segment === "get-started" || segment === "implementation") {
+      return segment;
+    }
     const link = [...links, settingsModule].find(
       (l) => l && getModule(l.to) === segment
     );
@@ -206,7 +208,7 @@ const PrimaryNavigation = () => {
             {(data) => {
               const item = getImplementationNavItem(data, i18n);
               return item
-                ? renderLink(item, currentModule === "get-started")
+                ? renderLink(item, currentModule === getModule(item.to))
                 : null;
             }}
           </ImplementationData>
