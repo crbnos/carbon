@@ -15,6 +15,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData, useUser } from "~/hooks";
+import { isSalesInvoiceLocked } from "~/modules/invoicing/invoicing.models";
 import {
   getInvoiceSettlementsForInvoice,
   getSalesInvoice
@@ -111,6 +112,7 @@ export default function SalesInvoiceBasicRoute() {
         id={invoiceId}
         title={t`Notes`}
         table="salesInvoice"
+        isReadOnly={isSalesInvoiceLocked(salesInvoice.status)}
         internalNotes={internalNotes}
         externalNotes={externalNotes}
       />
