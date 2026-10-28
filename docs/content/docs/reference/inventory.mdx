@@ -32,7 +32,7 @@ On hand can go **negative**. Shipping, issuing to a job, and picking all post th
 
 ## Movements
 
-A **warehouse transfer** moves stock between locations by posting a <Term id="shipment">shipment</Term> from one and a receipt into the other. A **stock transfer** moves stock between storage units in one location. A manual **adjustment** posts a positive or negative ledger entry; *Set Quantity* calculates the entry needed to reach a target.
+A **warehouse transfer** moves stock between locations by posting a <Term id="shipment">shipment</Term> from one and a receipt into the other. A **stock transfer** moves stock between storage units in one location. A manual **adjustment** posts a positive or negative ledger entry; *Set Quantity* calculates the entry needed to reach a target. Serial and batch stock always belongs to a numbered unit: an adjustment that adds stock to a serial- or batch-tracked item names the unit, and a new unit needs its serial or batch number. A decrease can still name no unit, which lets you adjust out stock held without a number.
 
 Adjustments also post a <Term id="journal">journal</Term>, Provisional until the company has [set up accounting](/docs/reference/accounting#setting-up-accounting). A loss debits inventory adjustment and credits inventory; a gain posts the reverse, valued at current item cost. Inventory count variances use the same accounts. Storage-unit transfers create no journal because value remains at the location. [Scrap](/docs/reference/scrap) uses a negative adjustment offset to the scrap account.
 
@@ -72,6 +72,12 @@ Recost works on FIFO and LIFO items only. Change the item's cost on its **Costin
 
 ### "… must have exactly one unit on hand to be recosted" / "… is already carried at that cost"
 The unit has left stock, or the entered cost equals what it already carries.
+
+### "Batch number is required" / "Serial number is required"
+The adjustment adds a new batch or serial unit but gives it no number. Enter the batch or serial number, or open the existing unit's row to add to it.
+
+### "Batch-tracked stock must go into a batch…" / "Serial-tracked stock must go into a serial unit…"
+An increase of a batch- or serial-tracked item named no unit, typically from the API or MCP. Send the unit's `trackedEntityId`, or a new id with its number as `readableId` to create the unit.
 
 ### "Serial number not found"
 The serial or batch number entered for a negative adjustment doesn't exist in the selected storage unit. Verify the number and the storage unit — the stock may sit in a different bin.

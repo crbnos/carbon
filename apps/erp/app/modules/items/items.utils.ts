@@ -38,6 +38,28 @@ export function getNextRevision(maxRevision: string): string {
   return maxRevision;
 }
 
+const NAMED_ITEMS = 5;
+
+/**
+ * Why items cannot become batch or serial tracked, or null. Batch and serial
+ * stock belongs to a numbered unit, so an item that still holds stock with
+ * none (`itemsWithUntrackedStock`, readable ids) keeps its tracking type
+ * until that stock is adjusted out.
+ */
+export function trackingTypeChangeRefusal(
+  newType: Database["public"]["Enums"]["itemTrackingType"],
+  itemsWithUntrackedStock: string[]
+): string | null {
+  if (newType !== "Batch" && newType !== "Serial") return null;
+  if (itemsWithUntrackedStock.length === 0) return null;
+  const number = newType === "Batch" ? "batch number" : "serial number";
+  const named = itemsWithUntrackedStock.slice(0, NAMED_ITEMS).join(", ");
+  const more = itemsWithUntrackedStock.length - NAMED_ITEMS;
+  const items = more > 0 ? `${named} and ${more} more` : named;
+  const verb = itemsWithUntrackedStock.length === 1 ? "has" : "have";
+  return `${items} ${verb} stock with no ${number}. Adjust that stock to zero, change the tracking type, then add the stock back by ${number}.`;
+}
+
 export async function getConfigurationParameters(
   client: SupabaseClient<Database>,
   itemId: string,

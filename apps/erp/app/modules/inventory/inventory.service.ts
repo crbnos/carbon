@@ -229,6 +229,8 @@ import {
 import {
   clampDepth,
   receivingSearchTerms,
+  stockIncreaseRefusal,
+  untrackedIssueRefusal,
   writeOffRestoreQuantity
 } from "./inventory.utils";
 import { renderPackingSlip } from "./packing-slip.pdf";
@@ -19428,6 +19430,20 @@ export async function postInventoryAdjustment(
       return;
     }
 
+    if (entryType === "Positive Adjmt.") {
+      const refusal = stockIncreaseRefusal({
+        itemTrackingType: item.itemTrackingType,
+        trackedEntityId,
+        // A zero-quantity new unit creates nothing (the no-op below).
+        createsUnit:
+          !!trackedEntityId &&
+          !currentQuantity &&
+          round(adjustmentQuantity) !== 0,
+        readableId
+      });
+      if (refusal) throw new InvalidInputError(refusal);
+    }
+
     let signedQuantity = adjustmentQuantity;
     if (entryType === "Negative Adjmt.") {
       if (adjustmentQuantity > currentQuantityOnHand) {
@@ -24411,6 +24427,11 @@ export async function issueMaterial(
             ])
             .executeTakeFirst()
         ]);
+
+        // Read from the item, not the job line: a line copied before the item
+        // became batch or serial tracked still says untracked.
+        const untracked = item ? untrackedIssueRefusal(item) : null;
+        if (untracked) throw new InvalidInputError(untracked);
 
         if (materialId) {
           const material = await trx

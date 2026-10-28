@@ -46,6 +46,7 @@ import {
   datetime,
   getReadableIdWithRevision,
   isUniqueViolation,
+  JOB_LOCKED_STATUSES,
   pick,
   pluckUnique,
   searchFilter,
@@ -3124,6 +3125,45 @@ export async function upsertPickMethodWithShelfLife(
 }
 
 /**
+ * The readable ids of the items, among `itemIds`, whose tracking type is not
+ * `trackingType` and that hold stock with no tracked entity: a positive
+ * untracked balance at any location. `setItemTrackingType` refuses to make
+ * those Batch or Serial (`trackingTypeChangeRefusal`, `items.utils.ts`).
+ */
+export async function getItemsWithUntrackedStock(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    itemIds: string[];
+    companyId: string;
+    trackingType: InventoryItemType;
+  }
+): Promise<string[]> {
+  if (args.itemIds.length === 0) return [];
+  const rows = await db
+    .selectFrom("itemLedger")
+    .innerJoin("item", (join) =>
+      join
+        .onRef("item.id", "=", "itemLedger.itemId")
+        .onRef("item.companyId", "=", "itemLedger.companyId")
+    )
+    .where("itemLedger.itemId", "in", args.itemIds)
+    .where("itemLedger.companyId", "=", args.companyId)
+    .where("itemLedger.trackedEntityId", "is", null)
+    .where("item.itemTrackingType", "!=", args.trackingType)
+    .groupBy([
+      "itemLedger.itemId",
+      "itemLedger.locationId",
+      "item.readableIdWithRevision"
+    ])
+    .having((eb) => eb.fn.sum("itemLedger.quantity"), ">", 0)
+    .select("item.readableIdWithRevision")
+    .execute();
+  return [...new Set(rows.map((row) => row.readableIdWithRevision ?? ""))]
+    .filter(Boolean)
+    .sort();
+}
+
+/**
  * Cascades a change to item.itemTrackingType onto the snapshot columns
  * `requiresSerialTracking` and `requiresBatchTracking` on child rows that
  * belong to OPEN parents (jobs, receipts, shipments, stock transfers).
@@ -3132,6 +3172,13 @@ export async function upsertPickMethodWithShelfLife(
  * UI reading stale (often sticky-true) tracking flags after an item is
  * flipped back to Inventory / Non-Inventory. The cascade only:
  * `setItemTrackingType` also writes the item.
+ *
+ * Job materials follow the item on Draft and Planned jobs, and on released
+ * jobs (not Completed, Closed or Cancelled) while nothing is issued, so the
+ * part row, the backflush and picking treat the line as the item is now. A
+ * released line with something issued keeps the tracking it was issued
+ * under. Job make methods follow on Draft and Planned jobs only: a released
+ * job's output units already exist.
  */
 export async function cascadeItemTrackingType(
   db: Kysely<KyselyDatabase>,
@@ -3183,15 +3230,32 @@ export async function cascadeItemTrackingType(
       .where("itemId", "in", args.itemIds)
       .where("companyId", "=", args.companyId)
       .where((eb) =>
-        eb(
-          "jobId",
-          "in",
-          eb
-            .selectFrom("job")
-            .select("id")
-            .where("companyId", "=", args.companyId)
-            .where("status", "in", ["Draft", "Planned"])
-        )
+        eb.or([
+          eb(
+            "jobId",
+            "in",
+            eb
+              .selectFrom("job")
+              .select("id")
+              .where("companyId", "=", args.companyId)
+              .where("status", "in", ["Draft", "Planned"])
+          ),
+          eb.and([
+            eb(
+              "jobId",
+              "in",
+              eb
+                .selectFrom("job")
+                .select("id")
+                .where("companyId", "=", args.companyId)
+                .where("status", "not in", [...JOB_LOCKED_STATUSES])
+            ),
+            eb.or([
+              eb("quantityIssued", "is", null),
+              eb("quantityIssued", "=", 0)
+            ])
+          ])
+        ])
       )
       .execute();
 

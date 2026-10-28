@@ -31,7 +31,9 @@ Key service functions (verified):
   posting** (`postInventoryAdjustment`, `inventory.service.ts`; MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
   The posting owns positive/negative/set-quantity **plus Scrap/Unscrap**
   (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`) resolution, tracked-entity storage-unit
-  transfers, expiry override, batch/serial assignment — and, in one Kysely transaction, maintains
+  transfers, expiry override, batch/serial assignment (an increase of a Batch or Serial item
+  must name its unit, and a new unit needs its number: `stockIncreaseRefusal`,
+  `inventory.utils.ts`) — and, in one Kysely transaction, maintains
   `costLedger` layers (consume via `calculateCOGS` on decreases, new layer at current cost on
   increases) and posts a journal (Dr/Cr `resolveInventoryAccount` vs
   `accountDefault.inventoryAdjustmentVarianceAccount`) for every company — Provisional before the

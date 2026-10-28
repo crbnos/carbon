@@ -153,7 +153,7 @@
     {"name":"documents_updateDocument","classification":"WRITE","schema":"de7ba932aaf3","response":"1fd372019111","permission":"documents:update","paginates":false},
     {"name":"documents_updateDocumentFavorite","classification":"WRITE","schema":"ff73dc321969","response":"bcde375ebd4c","permission":"documents:update","paginates":false},
     {"name":"documents_updateDocumentLabels","classification":"DESTRUCTIVE","schema":"b97e2ad30e97","response":"bcde375ebd4c","permission":"documents:update","paginates":false},
-    {"name":"inventory_adjustInventory","classification":"WRITE","schema":"6bea071798b4","response":"637aa3a8adf9","permission":"inventory:create+update","paginates":false},
+    {"name":"inventory_adjustInventory","classification":"WRITE","schema":"70e5ca202ca2","response":"637aa3a8adf9","permission":"inventory:create+update","paginates":false},
     {"name":"inventory_assignReceiptReturnEntity","classification":"WRITE","schema":"82c3b94b252f","response":"5d58d420052a","permission":"inventory:create","paginates":false},
     {"name":"inventory_assignShipmentLineEntity","classification":"WRITE","schema":"ef225f89d1f1","response":"5d58d420052a","permission":"inventory:create","paginates":false},
     {"name":"inventory_correctStockMovement","classification":"WRITE","schema":"11e4a2d8d923","response":"baa524ddff70","permission":"inventory:update","paginates":false},

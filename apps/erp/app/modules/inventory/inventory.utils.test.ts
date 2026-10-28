@@ -10,6 +10,8 @@ import {
   receivingSearchMatches,
   receivingSearchTerms,
   shippableEntityStatuses,
+  stockIncreaseRefusal,
+  untrackedIssueRefusal,
   writeOffRestoreQuantity
 } from "./inventory.utils";
 
@@ -185,4 +187,88 @@ describe("nonNettableSource", () => {
       )
     ).toBeNull();
   });
+});
+
+// Batch and serial stock belongs to a numbered unit. The adjustment posting
+// reads this for every caller: the quantities page, the API, MCP and the MES.
+describe("stockIncreaseRefusal", () => {
+  const increase = (
+    overrides: Partial<Parameters<typeof stockIncreaseRefusal>[0]> = {}
+  ) =>
+    stockIncreaseRefusal({
+      itemTrackingType: "Batch",
+      trackedEntityId: "te-1",
+      createsUnit: true,
+      readableId: "LOT-1",
+      ...overrides
+    });
+
+  it.each(["Batch", "Serial"] as const)(
+    "refuses a %s increase that names no unit",
+    (itemTrackingType) => {
+      expect(
+        increase({ itemTrackingType, trackedEntityId: undefined })
+      ).toEqual(expect.any(String));
+    }
+  );
+
+  it.each([undefined, null, "", "  "])(
+    "refuses a new unit whose number is %j",
+    (readableId) => {
+      expect(increase({ readableId })).toEqual(expect.any(String));
+      expect(increase({ itemTrackingType: "Serial", readableId })).toEqual(
+        expect.any(String)
+      );
+    }
+  );
+
+  it("takes a new unit with its number", () => {
+    expect(increase()).toBeNull();
+  });
+
+  it("adds to an existing unit without its number", () => {
+    expect(increase({ createsUnit: false, readableId: undefined })).toBeNull();
+  });
+
+  it.each(["Inventory", "Non-Inventory", null] as const)(
+    "leaves a %s item's increase alone",
+    (itemTrackingType) => {
+      expect(
+        increase({
+          itemTrackingType,
+          trackedEntityId: undefined,
+          readableId: undefined
+        })
+      ).toBeNull();
+      expect(increase({ itemTrackingType, readableId: undefined })).toBeNull();
+    }
+  );
+});
+
+// A quantity-only issue writes stock movements for untracked items only, so a
+// batch or serial item issued that way would count as issued and move nothing.
+describe("untrackedIssueRefusal", () => {
+  it.each(["Batch", "Serial"] as const)(
+    "refuses a quantity-only issue of a %s item, naming it",
+    (itemTrackingType) => {
+      expect(
+        untrackedIssueRefusal({
+          itemTrackingType,
+          readableIdWithRevision: "PART-7.A"
+        })
+      ).toContain("PART-7.A");
+    }
+  );
+
+  it.each(["Inventory", "Non-Inventory"] as const)(
+    "lets a %s item be issued by quantity",
+    (itemTrackingType) => {
+      expect(
+        untrackedIssueRefusal({
+          itemTrackingType,
+          readableIdWithRevision: "PART-7.A"
+        })
+      ).toBeNull();
+    }
+  );
 });

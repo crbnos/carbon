@@ -863,6 +863,13 @@ const InventoryStorageUnits = ({
                       <Input
                         name="readableId"
                         label={isSerial ? t`Serial Number` : t`Batch Number`}
+                        // A new unit needs its number; the adjustment posting
+                        // refuses one without.
+                        isRequired={
+                          !selectedTrackedEntityId &&
+                          (adjustmentType === "Positive Adjmt." ||
+                            adjustmentType === "Set Quantity")
+                        }
                         termId={
                           isSerial
                             ? "inventory-adjustment-serial-number"

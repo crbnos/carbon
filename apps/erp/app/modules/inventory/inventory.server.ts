@@ -2997,6 +2997,15 @@ export const postInventoryCount = defineServiceFn({
  * Every adjustment but an unscrap needs `locationId`; an unscrap resolves its
  * location, bin and cost from the original scrap.
  *
+ * An increase (a positive adjustment, or a set quantity above what is there)
+ * of a Batch or Serial item must name its unit: the `trackedEntityId` of an
+ * existing batch or serial unit, or a new id with the batch or serial number
+ * as `readableId`, which creates the unit. An increase that names no unit, or
+ * creates one with no number, is refused.
+ *
+ * @param trackedEntityId - The batch or serial unit to adjust. An id that does not exist yet creates the unit. Required to add stock to a Batch or Serial item.
+ * @param readableId - The batch or serial number. Required when the adjustment creates the unit.
+ *
  * @mcp
  */
 export const adjustInventory = defineServiceFn({

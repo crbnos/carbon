@@ -96,6 +96,10 @@ const itemIdsInput = z.array(z.string()).min(1);
  * them (`cascadeItemTrackingType`). A failed carry-over leaves the items
  * changed and returns an error.
  *
+ * Making an item Batch or Serial is refused while it holds stock with no
+ * batch or serial number, at any location; nothing is changed. Adjust that
+ * stock to zero first, then add it back by batch or serial number.
+ *
  * @mcp
  */
 export const setItemTrackingType = defineServiceFn({
@@ -107,6 +111,24 @@ export const setItemTrackingType = defineServiceFn({
 
   async run(ctx, { ids, itemTrackingType }) {
     const companyId = ctx.company.id;
+    if (itemTrackingType === "Batch" || itemTrackingType === "Serial") {
+      let withStock: string[];
+      try {
+        withStock = await service.getItemsWithUntrackedStock(ctx.asSystem.pg, {
+          itemIds: ids,
+          companyId,
+          trackingType: itemTrackingType
+        });
+      } catch (err) {
+        return ctx.error("internal", "Failed to read the items' stock", err);
+      }
+      const refusal = utils.trackingTypeChangeRefusal(
+        itemTrackingType,
+        withStock
+      );
+      if (refusal) return ctx.error("rule", refusal);
+    }
+
     const update = await ctx.asCaller.supabase
       .from("item")
       .update({
