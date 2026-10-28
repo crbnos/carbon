@@ -7,7 +7,8 @@
 SET lock_timeout = '5s';
 
 -- Close the duplicates this bug already left open, keeping the earliest. Each
--- later one ends at its own start, so it books no time.
+-- later one ends at its own start, so it books no time. Events with no
+-- employee are not duplicates under the index and are left alone.
 UPDATE "productionEvent" pe
 SET "endTime" = pe."startTime"
 FROM (
@@ -20,6 +21,7 @@ FROM (
   FROM "productionEvent"
   WHERE "endTime" IS NULL
     AND "type" IN ('Setup', 'Labor')
+    AND "employeeId" IS NOT NULL
 ) dup
 WHERE pe.id = dup.id
   AND dup.rn > 1;
