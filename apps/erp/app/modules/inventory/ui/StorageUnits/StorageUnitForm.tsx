@@ -48,8 +48,8 @@ type StorageUnitFormProps = {
     workCenterId: string;
     workCenterName: string | null;
   } | null;
-  /** A parent or one of its storage types makes this unit non-nettable. */
-  inheritsNonNettable?: boolean;
+  /** What makes this unit non-nettable when its own flag is on. */
+  inheritedNonNettable?: { via: "storageType" | "parent"; name: string } | null;
 };
 
 const StorageUnitForm = ({
@@ -59,7 +59,7 @@ const StorageUnitForm = ({
   type = "drawer",
   onClose,
   inheritedWorkCenter,
-  inheritsNonNettable = false
+  inheritedNonNettable = null
 }: StorageUnitFormProps) => {
   // A modal closes once the unit exists, so the picker that opened it can
   // select it; an error is toasted and the form stays.
@@ -69,6 +69,7 @@ const StorageUnitForm = ({
     }
   });
   const { t } = useLingui();
+  const sourceName = inheritedNonNettable?.name;
 
   const permissions = usePermissions();
   const isEditing = !!initialValues?.id;
@@ -193,9 +194,11 @@ const StorageUnitForm = ({
                   termId="non-nettable"
                   bordered
                   description={
-                    inheritsNonNettable
-                      ? t`Already non-nettable through its parent or a storage type`
-                      : t`MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas.`
+                    inheritedNonNettable?.via === "storageType"
+                      ? t`Already non-nettable through its storage type ${sourceName}`
+                      : inheritedNonNettable?.via === "parent"
+                        ? t`Already non-nettable through its parent ${sourceName}`
+                        : t`MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas.`
                   }
                 />
               </VStack>

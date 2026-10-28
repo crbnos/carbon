@@ -2790,6 +2790,34 @@ export async function upsertBatchProperty(
   });
 }
 
+/**
+ * Refuses a kanban whose To or From storage unit is non-nettable. Stock there is
+ * not supply: replenishing into it builds stock nothing may use, and a Transfer
+ * from it would release quarantined stock to production on every scan.
+ */
+export async function refuseNonNettableKanbanUnits(
+  ctx: ServiceContext,
+  storageUnitIds: (string | null | undefined)[]
+): Promise<CarbonError | null> {
+  const ids = storageUnitIds.filter((id): id is string => !!id);
+  if (ids.length === 0) return null;
+  const { data, error } = await ctx.asCaller.supabase
+    .from("storageUnit")
+    .select("name")
+    .in("id", ids)
+    .eq("companyId", ctx.company.id)
+    .eq("effectiveNettable", false);
+  if (error) {
+    return ctx.error("internal", "Failed to check the storage units", error);
+  }
+  const unit = data?.[0];
+  if (!unit) return null;
+  return ctx.error(
+    "rule",
+    `${unit.name} is non-nettable. A kanban cannot replenish into or from a non-nettable storage unit.`
+  );
+}
+
 export async function upsertKanban(
   client: SupabaseClient<Database>,
   kanban:

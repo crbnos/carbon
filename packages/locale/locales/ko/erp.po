@@ -2714,8 +2714,11 @@ msgstr "할당됨"
 msgid "Allows acknowledge & continue"
 msgstr "확인 후 계속 진행 허용"
 
-msgid "Already non-nettable through its parent or a storage type"
-msgstr "상위 단위 또는 저장 유형으로 인해 이미 MRP 제외"
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "상위 단위 {sourceName}(으)로 인해 이미 MRP 제외"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "저장 유형 {sourceName}(으)로 인해 이미 MRP 제외"
 
 msgid "also at {otherStationNames}"
 msgstr "{otherStationNames}에서도"

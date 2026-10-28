@@ -20,8 +20,9 @@ Routes: /x/inventory/storage-types, /x/inventory/storage-units,
 
 ### 2. Storage units list, inheritance
 - `/x/inventory/storage-units?search=MRB` — MRB-Hold checked (through its type).
-- Open it — switch OFF, description "Already non-nettable through its parent or a
-  storage type". Saving unchanged keeps `nettable=true, effectiveNettable=false`.
+- Open it — switch OFF, description "Already non-nettable through its storage type
+  Quarantine" (a child unit reads "…through its parent MRB-Hold"). Saving unchanged
+  keeps `nettable=true, effectiveNettable=false`.
 - New child: `/x/inventory/storage-units/new?parentId=<MRB-Hold id>&location=<loc>`,
   fill Name, requestSubmit "Save" — child gets `effectiveNettable=false`.
 - Toggle a parent rack (Aisle-A): all its children flip, and
@@ -56,6 +57,14 @@ Routes: /x/inventory/storage-types, /x/inventory/storage-units,
   the transfer completes.
 - DB: the lot is at the destination and `quantityNonNettable` drops by it; the
   picking-list tracked routes offer the lot again.
+
+### 6. Kanbans refuse a non-nettable unit
+- `/x/inventory/kanbans/new`: Item combobox (type the part number, click the option),
+  Replenishment System "Make", Storage Unit "MRB-Hold-Shelf-1", requestSubmit the form
+  whose submit button reads "Create Kanban". Toast: "MRB-Hold-Shelf-1 is non-nettable. A
+  kanban cannot replenish into or from a non-nettable storage unit."; no row is written.
+  The same form with a nettable unit creates the kanban; editing it to the non-nettable
+  unit ("Update Kanban") is refused the same way.
 
 ## Selector Notes
 - The switch: `document.querySelector('form button[role=switch]')`.

@@ -242,3 +242,47 @@ export async function getItemLedgerActivity(
     direction === "newer" ? (data ?? []).slice().reverse() : (data ?? []);
   return { data: rows, hasMore: (data?.length ?? 0) === pageSize, error };
 }
+
+export type NonNettableUnit = {
+  id: string;
+  name: string;
+  parentId: string | null;
+  nettable: boolean;
+  storageTypeIds: string[] | null;
+};
+
+/**
+ * Why a unit whose own flag is on is non-nettable: one of its own storage types
+ * first, else the nearest parent that is non-nettable by its own flag or a
+ * type. `units` holds the unit's ancestors by id; `nonNettableTypes` the names
+ * of the company's non-nettable storage types by id. Null when nothing above
+ * the unit makes it non-nettable.
+ */
+export function nonNettableSource(
+  unit: Pick<NonNettableUnit, "parentId" | "storageTypeIds">,
+  units: Map<string, NonNettableUnit>,
+  nonNettableTypes: Map<string, string>
+): { via: "storageType" | "parent"; name: string } | null {
+  const ownType = (unit.storageTypeIds ?? []).find((id) =>
+    nonNettableTypes.has(id)
+  );
+  if (ownType) {
+    return { via: "storageType", name: nonNettableTypes.get(ownType)! };
+  }
+
+  const seen = new Set<string>();
+  let parentId = unit.parentId;
+  while (parentId && !seen.has(parentId)) {
+    seen.add(parentId);
+    const parent = units.get(parentId);
+    if (!parent) return null;
+    const hasType = (parent.storageTypeIds ?? []).some((id) =>
+      nonNettableTypes.has(id)
+    );
+    if (!parent.nettable || hasType) {
+      return { via: "parent", name: parent.name };
+    }
+    parentId = parent.parentId;
+  }
+  return null;
+}

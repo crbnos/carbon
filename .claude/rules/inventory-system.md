@@ -205,6 +205,16 @@ not supply (migration `20261027181718_non-nettable-storage.sql`). The form field
   beside the lineside test. `get_available_tracked_entities` has its own
   `p_exclude_non_nettable` switch: picking (ERP and MES) and MES suggested allocation pass it,
   a stock transfer does not, since moving stock out is how it is released.
+- **Kanbans refuse it.** `createKanban` / `updateKanban` call
+  `refuseNonNettableKanbanUnits` (`inventory.service.ts`) and refuse a To or From storage unit
+  that is non-nettable (`ctx.error("rule", …)`), since replenishing into one builds stock
+  nothing may use and a Transfer from one would release quarantined stock on every scan.
+  A unit that becomes non-nettable later does not touch its existing kanbans.
+- **The form says why.** When a unit's own flag is on but `effectiveNettable` is false, the
+  edit route resolves the cause with the pure `nonNettableSource` (`inventory.utils.ts`:
+  the unit's own storage type first, then the nearest parent that is non-nettable by its
+  flag or a type) and the switch reads "Already non-nettable through its storage type X" /
+  "…through its parent X".
 - **Physical readers are unchanged:** `get_inventory_quantities` (the Inventory screen), the
   item picker badge, the workflow `item.quantityOnHand`, valuation and GL.
 - **`trackedEntity`** — serial/batch/lot tracking (`20250225145619`). Cols: `id`, `quantity`,

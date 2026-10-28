@@ -2714,8 +2714,11 @@ msgstr "已分配"
 msgid "Allows acknowledge & continue"
 msgstr "允许确认并继续"
 
-msgid "Already non-nettable through its parent or a storage type"
-msgstr "已因上级单元或存储类型而不计入MRP"
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "已因上级单元 {sourceName} 而不计入MRP"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "已因存储类型 {sourceName} 而不计入MRP"
 
 msgid "also at {otherStationNames}"
 msgstr "也在 {otherStationNames}"

@@ -2714,8 +2714,11 @@ msgstr "आवंटित"
 msgid "Allows acknowledge & continue"
 msgstr "स्वीकार करने और जारी रखने की अनुमति देता है"
 
-msgid "Already non-nettable through its parent or a storage type"
-msgstr "अपनी मूल इकाई या किसी भंडारण प्रकार के कारण पहले से MRP से बाहर"
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "अपनी मूल इकाई {sourceName} के कारण पहले से MRP से बाहर"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "अपने भंडारण प्रकार {sourceName} के कारण पहले से MRP से बाहर"
 
 msgid "also at {otherStationNames}"
 msgstr "यह भी {otherStationNames} पर"

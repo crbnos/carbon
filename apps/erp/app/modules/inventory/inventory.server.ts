@@ -5805,7 +5805,8 @@ const kanbanInput = z
  *
  * @remarks
  * A Buy kanban needs its supplier; a Transfer kanban needs a from and a to
- * storage unit, and only it can have a replenishment level.
+ * storage unit, and only it can have a replenishment level. Neither storage
+ * unit may be non-nettable.
  *
  * @mcp
  */
@@ -5813,6 +5814,11 @@ export const createKanban = defineServiceFn({
   input: kanbanInput,
   permission: { create: "inventory" },
   async run(ctx, { id: _id, ...input }) {
+    const refused = await service.refuseNonNettableKanbanUnits(ctx, [
+      input.storageUnitId,
+      input.fromStorageUnitId
+    ]);
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertKanban(
@@ -5837,6 +5843,11 @@ export const updateKanban = defineServiceFn({
   }),
   permission: { update: "inventory" },
   async run(ctx, input) {
+    const refused = await service.refuseNonNettableKanbanUnits(ctx, [
+      input.storageUnitId,
+      input.fromStorageUnitId
+    ]);
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertKanban(

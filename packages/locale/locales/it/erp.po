@@ -2714,8 +2714,11 @@ msgstr "Allocato"
 msgid "Allows acknowledge & continue"
 msgstr "Consente di riconoscere e continuare"
 
-msgid "Already non-nettable through its parent or a storage type"
-msgstr "Già non nettabile tramite l'unità superiore o un tipo di archiviazione"
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Già non nettabile tramite l'unità superiore {sourceName}"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Già non nettabile tramite il tipo di archiviazione {sourceName}"
 
 msgid "also at {otherStationNames}"
 msgstr "anche presso {otherStationNames}"

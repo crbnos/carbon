@@ -2714,8 +2714,11 @@ msgstr "Alloué"
 msgid "Allows acknowledge & continue"
 msgstr "Permet d'accuser réception et de continuer"
 
-msgid "Already non-nettable through its parent or a storage type"
-msgstr "Déjà exclu du calcul des besoins par son unité parente ou un type de stockage"
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Déjà exclu du calcul des besoins par son unité parente {sourceName}"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Déjà exclu du calcul des besoins par son type de stockage {sourceName}"
 
 msgid "also at {otherStationNames}"
 msgstr "aussi à {otherStationNames}"

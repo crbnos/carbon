@@ -2714,8 +2714,11 @@ msgstr "Przydzielone"
 msgid "Allows acknowledge & continue"
 msgstr "Umożliwia potwierdzenie i kontynuację"
 
-msgid "Already non-nettable through its parent or a storage type"
-msgstr "Już nieuwzględniany w MRP przez jednostkę nadrzędną lub typ magazynu"
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Już nieuwzględniany w MRP przez jednostkę nadrzędną {sourceName}"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Już nieuwzględniany w MRP przez typ magazynu {sourceName}"
 
 msgid "also at {otherStationNames}"
 msgstr "także w {otherStationNames}"

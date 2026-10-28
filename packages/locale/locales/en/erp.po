@@ -2714,8 +2714,11 @@ msgstr "Allocated"
 msgid "Allows acknowledge & continue"
 msgstr "Allows acknowledge & continue"
 
-msgid "Already non-nettable through its parent or a storage type"
-msgstr "Already non-nettable through its parent or a storage type"
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Already non-nettable through its parent {sourceName}"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Already non-nettable through its storage type {sourceName}"
 
 msgid "also at {otherStationNames}"
 msgstr "also at {otherStationNames}"

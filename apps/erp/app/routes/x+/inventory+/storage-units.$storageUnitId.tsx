@@ -14,6 +14,10 @@ import {
   getEffectiveWorkCenterId,
   getStorageUnit
 } from "~/modules/inventory/inventory.service";
+import {
+  type NonNettableUnit,
+  nonNettableSource
+} from "~/modules/inventory/inventory.utils";
 import { StorageUnitForm } from "~/modules/inventory/ui";
 import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -46,14 +50,43 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   // Its own flag is on, yet a parent or one of its storage types makes it
-  // non-nettable.
-  const inheritsNonNettable =
-    storageUnit?.data?.nettable === true &&
-    storageUnit.data.effectiveNettable === false;
+  // non-nettable: say which.
+  const unit = storageUnit?.data;
+  let inheritedNonNettable: ReturnType<typeof nonNettableSource> = null;
+  if (unit?.nettable === true && unit.effectiveNettable === false) {
+    const [tree, types] = await Promise.all([
+      client
+        .from("storageUnits_recursive")
+        .select("ancestorPath")
+        .eq("id", storageUnitId)
+        .maybeSingle(),
+      client
+        .from("storageType")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .eq("nettable", false)
+    ]);
+    const ancestorIds = (tree.data?.ancestorPath ?? []).filter(
+      (id) => id !== storageUnitId
+    );
+    const ancestors =
+      ancestorIds.length > 0
+        ? await client
+            .from("storageUnit")
+            .select("id, name, parentId, nettable, storageTypeIds")
+            .in("id", ancestorIds)
+            .eq("companyId", companyId)
+        : { data: [] as NonNettableUnit[] };
+    inheritedNonNettable = nonNettableSource(
+      unit,
+      new Map((ancestors.data ?? []).map((u) => [u.id, u])),
+      new Map((types.data ?? []).map((t) => [t.id, t.name]))
+    );
+  }
 
   return {
     storageUnit: storageUnit?.data ?? null,
-    inheritsNonNettable,
+    inheritedNonNettable,
     inheritedWorkCenter: isInherited
       ? {
           workCenterId: effectiveWorkCenterId,
@@ -84,7 +117,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function EditStorageUnitRoute() {
-  const { storageUnit, inheritedWorkCenter, inheritsNonNettable } =
+  const { storageUnit, inheritedWorkCenter, inheritedNonNettable } =
     useLoaderData<typeof loader>();
   const closeRoute = useCloseRoute();
 
@@ -107,7 +140,7 @@ export default function EditStorageUnitRoute() {
         initialValues={initialValues}
         locationId={initialValues.locationId}
         inheritedWorkCenter={inheritedWorkCenter}
-        inheritsNonNettable={inheritsNonNettable}
+        inheritedNonNettable={inheritedNonNettable}
         onClose={() => closeRoute()}
       />
       <RecordOutlet />

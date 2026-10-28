@@ -2714,8 +2714,11 @@ msgstr "Zugewiesen"
 msgid "Allows acknowledge & continue"
 msgstr "Ermöglicht Bestätigung & Fortfahren"
 
-msgid "Already non-nettable through its parent or a storage type"
-msgstr "Bereits nicht disponierbar durch die übergeordnete Einheit oder einen Lagertyp"
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Bereits nicht disponierbar durch die übergeordnete Einheit {sourceName}"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Bereits nicht disponierbar durch den Lagertyp {sourceName}"
 
 msgid "also at {otherStationNames}"
 msgstr "auch bei {otherStationNames}"

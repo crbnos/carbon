@@ -2714,8 +2714,11 @@ msgstr "Alocado"
 msgid "Allows acknowledge & continue"
 msgstr "Permite reconhecer e continuar"
 
-msgid "Already non-nettable through its parent or a storage type"
-msgstr "Já não disponível para MRP pela unidade superior ou por um tipo de armazenamento"
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Já não disponível para MRP pela unidade superior {sourceName}"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Já não disponível para MRP pelo tipo de armazenamento {sourceName}"
 
 msgid "also at {otherStationNames}"
 msgstr "também em {otherStationNames}"

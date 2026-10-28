@@ -2714,8 +2714,11 @@ msgstr "Tahsis edildi"
 msgid "Allows acknowledge & continue"
 msgstr "Onaylayıp devam etmeye izin verir"
 
-msgid "Already non-nettable through its parent or a storage type"
-msgstr "Üst birim veya bir depolama türü nedeniyle zaten MRP dışı"
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Üst birim {sourceName} nedeniyle zaten MRP dışı"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Depolama türü {sourceName} nedeniyle zaten MRP dışı"
 
 msgid "also at {otherStationNames}"
 msgstr "ayrıca {otherStationNames} adresinde"
