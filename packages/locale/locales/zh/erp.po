@@ -9142,6 +9142,9 @@ msgstr "编辑定价"
 msgid "Edit Pricing Rule"
 msgstr "编辑定价规则"
 
+msgid "Edit Printer"
+msgstr ""
+
 msgid "Edit Process"
 msgstr "编辑流程"
 

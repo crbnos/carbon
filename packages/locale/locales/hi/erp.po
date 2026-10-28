@@ -9142,6 +9142,9 @@ msgstr "मूल्य निर्धारण संपादित करे
 msgid "Edit Pricing Rule"
 msgstr "मूल्य निर्धारण नियम संपादित करें"
 
+msgid "Edit Printer"
+msgstr ""
+
 msgid "Edit Process"
 msgstr "प्रक्रिया संपादित करें"
 

@@ -9142,6 +9142,9 @@ msgstr "가격 책정 편집"
 msgid "Edit Pricing Rule"
 msgstr "가격 규칙 편집"
 
+msgid "Edit Printer"
+msgstr ""
+
 msgid "Edit Process"
 msgstr "공법 편집"
 
