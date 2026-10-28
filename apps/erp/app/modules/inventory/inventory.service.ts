@@ -22,6 +22,7 @@ import {
 } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import {
+  fetchAllByIds,
   fetchAllFromTable,
   getCompanyTimeZone,
   journalReference
@@ -138,6 +139,8 @@ import {
 import * as settingsService from "~/modules/settings/settings.service";
 import {
   type AdjustmentItemCost,
+  type AverageCostChange,
+  applyAverageCostChanges,
   assertCompanyRecords,
   assertPostable,
   attributesContain,
@@ -186,9 +189,10 @@ import {
   strictBackflushRefusal
 } from "~/modules/shared/strict-backflush";
 import type { StorageItem } from "~/types";
-import type { Filter, GenericQueryFilters } from "~/utils/query";
+import type { Filter, GenericQueryFilters, Paging } from "~/utils/query";
 import {
   LIST_COUNT,
+  listCount,
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
@@ -222,7 +226,11 @@ import {
   reconcileReceiptLineSerials,
   shippingCarrierType
 } from "./inventory.models";
-import { clampDepth, writeOffRestoreQuantity } from "./inventory.utils";
+import {
+  clampDepth,
+  receivingSearchTerms,
+  writeOffRestoreQuantity
+} from "./inventory.utils";
 import { renderPackingSlip } from "./packing-slip.pdf";
 import {
   effectiveSuccessorId,
@@ -447,6 +455,10 @@ export async function getBatchProperties(
     .order("sortOrder");
 }
 
+export const INVENTORY_ITEMS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getInventoryItems(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -462,7 +474,8 @@ export async function getInventoryItems(
       company_id: companyId
     },
     {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     }
   );
 
@@ -471,9 +484,7 @@ export async function getInventoryItems(
     "readableIdWithRevision"
   ]);
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, INVENTORY_ITEMS_PAGING);
 
   return query;
 }
@@ -641,6 +652,10 @@ export async function createInventoryReconciliationJournal(
   }
 }
 
+export const KANBANS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getKanbans(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -652,7 +667,7 @@ export async function getKanbans(
   let query = client
     .from("kanbans")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("locationId", locationId);
@@ -663,9 +678,7 @@ export async function getKanbans(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, KANBANS_PAGING);
   return query;
 }
 
@@ -744,6 +757,10 @@ export async function getStockTransferTracking(
     .eq("companyId", companyId);
 }
 
+export const STOCK_TRANSFERS_PAGING: Paging = {
+  defaultSorts: [{ column: "stockTransferId", ascending: false }]
+};
+
 export async function getStockTransfers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -755,7 +772,7 @@ export async function getStockTransfers(
   let query = client
     .from("stockTransfer")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -783,9 +800,11 @@ export async function getStockTransfers(
     }
   }
 
-  query = setGenericQueryFilters(query, { ...args, filters: columnFilters }, [
-    { column: "stockTransferId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(
+    query,
+    { ...args, filters: columnFilters },
+    STOCK_TRANSFERS_PAGING
+  );
   return query;
 }
 
@@ -825,6 +844,10 @@ export async function getDefaultStorageUnitOrStorageUnitWithHighestQuantity(
   return storageUnitWithHighestQuantity?.storageUnitId ?? null;
 }
 
+export const RECEIPTS_PAGING: Paging = {
+  defaultSorts: [{ column: "receiptId", ascending: false }]
+};
+
 export async function getReceipts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -835,7 +858,7 @@ export async function getReceipts(
   let query = client
     .from("receipt")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .neq("sourceDocumentId", "");
@@ -846,10 +869,87 @@ export async function getReceipts(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "receiptId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, RECEIPTS_PAGING);
   return query;
+}
+
+/**
+ * The purchase order lines Receiving searches: lines of orders waiting to be
+ * received and not fully received, oldest order first and in line order within
+ * it, so the list groups by order (its sort is fixed). Every search word must
+ * occur in one of the line's values, case, spaces and punctuation ignored
+ * (`receivingSearchTerms`).
+ */
+export async function getPurchaseOrderLinesToReceive(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: Omit<GenericQueryFilters, "sorts"> & { search: string | null }
+) {
+  let query = client
+    .from("purchaseOrderLinesToReceive")
+    .select(
+      "id, purchaseOrderId, purchaseOrderReadableId, revisionId, orderDate, supplierId, supplierName, supplierReference, trackingNumber, locationId, itemId, itemReadableId, itemName, itemType, thumbnailPath, description, supplierPartId, purchaseQuantity, quantityReceived, quantityToReceive, purchaseUnitOfMeasureCode, promisedDate",
+      { count: LIST_COUNT }
+    )
+    .eq("companyId", companyId)
+    .eq("receivedComplete", false);
+
+  for (const term of receivingSearchTerms(args.search)) {
+    query = query.ilike("searchText", `%${term}%`);
+  }
+  // Filters only: assigned back so the select keeps its row type.
+  query = setGenericQueryFilters(query, { filters: args.filters });
+
+  return query
+    .order("orderDate", { ascending: true })
+    .order("purchaseOrderReadableId", { ascending: true })
+    .order("sortOrder", { ascending: true })
+    .order("id", { ascending: true })
+    .range(args.offset ?? 0, (args.offset ?? 0) + args.limit - 1);
+}
+
+/**
+ * Every order still waiting on these items, so Receiving can say a part is
+ * also open on another order.
+ */
+export async function getOpenPurchaseOrdersForItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemIds: string[]
+) {
+  return fetchAllByIds(itemIds, (batch) =>
+    client
+      .from("purchaseOrderLinesToReceive")
+      .select(
+        "id, itemId, purchaseOrderId, purchaseOrderReadableId, revisionId"
+      )
+      .eq("companyId", companyId)
+      .eq("receivedComplete", false)
+      .in("itemId", batch)
+      .order("id")
+  );
+}
+
+/**
+ * The Draft receipts already started for these purchase orders, oldest first,
+ * so Receiving opens one instead of starting a second.
+ */
+export async function getDraftReceiptsForPurchaseOrders(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderIds: string[]
+) {
+  return fetchAllByIds(purchaseOrderIds, (batch) =>
+    client
+      .from("receipt")
+      .select("id, receiptId, sourceDocumentId")
+      .eq("companyId", companyId)
+      .eq("sourceDocument", "Purchase Order")
+      .eq("status", "Draft")
+      .in("sourceDocumentId", batch)
+      .order("createdAt", { ascending: true })
+      .order("id", { ascending: true })
+  );
 }
 
 export async function getReceipt(
@@ -1393,6 +1493,10 @@ export async function getEffectiveWorkCenterId(
 
 // Roots only (depth = 1). Honors search/filter/pagination so the table can
 // paginate top-level storage units while children load lazily on demand.
+export const STORAGE_UNIT_ROOTS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getStorageUnitRoots(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1401,7 +1505,7 @@ export async function getStorageUnitRoots(
 ) {
   let query = client
     .from("storageUnits_recursive")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("locationId", locationId)
     .eq("depth", 1);
@@ -1410,9 +1514,7 @@ export async function getStorageUnitRoots(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, STORAGE_UNIT_ROOTS_PAGING);
 
   return query;
 }
@@ -1446,15 +1548,29 @@ export async function getStorageUnitSubtrees(
   if (rootIds.length === 0) {
     return { data: [] as any[], error: null };
   }
-  return client
-    .from("storageUnits_recursive")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("locationId", locationId)
-    .gt("depth", 1)
-    .lte("depth", maxDepth)
-    .overlaps("ancestorPath", rootIds)
-    .order("name");
+  // `overlaps` writes each root id into the URL, so the ids go 100 per
+  // request. A descendant has one root, so each chunk keeps its own order.
+  const chunks: string[][] = [];
+  for (let i = 0; i < rootIds.length; i += 100) {
+    chunks.push(rootIds.slice(i, i + 100));
+  }
+  const results = await Promise.all(
+    chunks.map((ids) =>
+      client
+        .from("storageUnits_recursive")
+        .select("*")
+        .eq("companyId", companyId)
+        .eq("locationId", locationId)
+        .gt("depth", 1)
+        .lte("depth", maxDepth)
+        .overlaps("ancestorPath", ids)
+        .order("name")
+    )
+  );
+  return {
+    data: results.flatMap((result) => result.data ?? []),
+    error: results.find((result) => result.error)?.error ?? null
+  };
 }
 
 // Set of storageUnit ids that have at least one child in the given location.
@@ -1534,6 +1650,13 @@ export async function searchStorageUnitsWithAncestors(
   };
 }
 
+export const STOCK_MOVEMENTS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "createdAt", ascending: false },
+    { column: "entryNumber", ascending: false }
+  ]
+};
+
 export async function getStockMovements(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1544,7 +1667,7 @@ export async function getStockMovements(
   let query = client
     .from("itemLedgers")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1563,12 +1686,13 @@ export async function getStockMovements(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false },
-    { column: "entryNumber", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, STOCK_MOVEMENTS_PAGING);
   return query;
 }
+
+export const SHIPMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "shipmentId", ascending: false }]
+};
 
 export async function getShipments(
   client: SupabaseClient<Database>,
@@ -1580,7 +1704,7 @@ export async function getShipments(
   let query = client
     .from("shipment")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .neq("sourceDocumentId", "");
@@ -1591,9 +1715,7 @@ export async function getShipments(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "shipmentId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, SHIPMENTS_PAGING);
   return query;
 }
 
@@ -1760,6 +1882,10 @@ export async function getShippingMethod(
     .single();
 }
 
+export const SHIPPING_METHODS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getShippingMethods(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1770,7 +1896,7 @@ export async function getShippingMethods(
   let query = client
     .from("shippingMethod")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -1790,9 +1916,7 @@ export async function getShippingMethods(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SHIPPING_METHODS_PAGING);
   return query;
 }
 
@@ -1846,6 +1970,10 @@ export async function mergeTrackedEntities(
   );
 }
 
+export const TRACKED_ENTITIES_PAGING: Paging = {
+  defaultSorts: [{ column: "sourceDocumentReadableId", ascending: true }]
+};
+
 export async function getTrackedEntities(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1856,7 +1984,7 @@ export async function getTrackedEntities(
   let query = client
     .from("trackedEntity")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .neq("status", "Reserved");
@@ -1870,9 +1998,7 @@ export async function getTrackedEntities(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "sourceDocumentReadableId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, TRACKED_ENTITIES_PAGING);
   return query;
 }
 
@@ -2005,6 +2131,10 @@ export async function getTrackedEntitiesByOperationId(
   );
 }
 
+export const WAREHOUSE_TRANSFERS_PAGING: Paging = {
+  defaultSorts: [{ column: "transferId", ascending: false }]
+};
+
 export async function getWarehouseTransfers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2017,7 +2147,7 @@ export async function getWarehouseTransfers(
     .select(
       "*, fromLocation:location!fromLocationId(name), toLocation:location!toLocationId(name)",
       {
-        count: LIST_COUNT
+        count: listCount(args)
       }
     )
     .eq("companyId", companyId);
@@ -2026,9 +2156,7 @@ export async function getWarehouseTransfers(
     query = query.or(searchFilter(["transferId", "reference"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "transferId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, WAREHOUSE_TRANSFERS_PAGING);
   return query;
 }
 
@@ -2229,6 +2357,10 @@ export async function getStockMovementEffectiveQuantity(
 // Inventory Count / Cycle Count
 // ===========================================================================
 
+export const INVENTORY_COUNTS_PAGING: Paging = {
+  defaultSorts: [{ column: "inventoryCountId", ascending: false }]
+};
+
 export async function getInventoryCounts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2236,16 +2368,14 @@ export async function getInventoryCounts(
 ) {
   let query = client
     .from("inventoryCount")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.ilike("inventoryCountId", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "inventoryCountId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, INVENTORY_COUNTS_PAGING);
   return query;
 }
 
@@ -2262,6 +2392,13 @@ export async function getInventoryCount(
     .single();
 }
 
+export const INVENTORY_COUNT_LINES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "itemReadableIdWithRevision", ascending: true },
+    { column: "id", ascending: true }
+  ]
+};
+
 export async function getInventoryCountLines(
   client: SupabaseClient<Database>,
   inventoryCountId: string,
@@ -2273,7 +2410,7 @@ export async function getInventoryCountLines(
   // apply the same generic column filters the quantities screen does.
   let query = client
     .from("inventoryCountLines")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("inventoryCountId", inventoryCountId)
     .eq("companyId", companyId);
 
@@ -2288,10 +2425,7 @@ export async function getInventoryCountLines(
   // Snapshot lines all share one insert timestamp, so order by the item's part
   // number for a readable count sheet and fall back to the line id for a stable,
   // deterministic order.
-  query = setGenericQueryFilters(query, args, [
-    { column: "itemReadableIdWithRevision", ascending: true },
-    { column: "id", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, INVENTORY_COUNT_LINES_PAGING);
   return query;
 }
 
@@ -3097,6 +3231,10 @@ export async function deleteStorageTypeWithCascade(
   });
 }
 
+export const STORAGE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getStorageTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3104,16 +3242,14 @@ export async function getStorageTypes(
 ) {
   let query = client
     .from("storageType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args ?? {}, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args ?? {}, STORAGE_TYPES_PAGING);
   return query;
 }
 
@@ -3206,6 +3342,10 @@ export async function getTrackedEntityExpirations(
 // Picking List CRUD
 // ----------------------------------------------------------------------------
 
+export const PICKING_LISTS_PAGING: Paging = {
+  defaultSorts: [{ column: "pickingListId", ascending: false }]
+};
+
 export async function getPickingLists(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3219,7 +3359,7 @@ export async function getPickingLists(
   let query = client
     .from("pickingLists")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -3242,9 +3382,7 @@ export async function getPickingLists(
     query = query.eq("locationId", args.locationId);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "pickingListId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PICKING_LISTS_PAGING);
   return query;
 }
 
@@ -5048,12 +5186,20 @@ export async function printEntityLabels(
   }
 }
 
+// Omitted per member, so `field` still tells the `value` types apart.
+type ReceiptFixedAssetLineChange =
+  z.output<typeof receiptFixedAssetLineUpdateValidator> extends infer Change
+    ? Change extends unknown
+      ? Omit<Change, "id">
+      : never
+    : never;
+
 export function receiptFixedAssetLineChange(
-  change: Omit<z.output<typeof receiptFixedAssetLineUpdateValidator>, "id">
+  change: ReceiptFixedAssetLineChange
 ) {
   switch (change.field) {
     case "received":
-      return { received: change.value === "true" };
+      return { received: change.value };
     case "serialNumber":
       return { serialNumber: change.value || null };
     case "meter":
@@ -10404,6 +10550,22 @@ export async function postReceipt(
             "Cannot void: stock received on this receipt was already consumed. Correct the remainder with an inventory adjustment instead."
           );
         }
+        // The receipt's units leave an Average item at the cost they came
+        // in at. Before the reversing item ledger rows: on-hand as it stood.
+        await applyAverageCostChanges(trx, {
+          companyId,
+          changes: receiptCostLedger.flatMap((row) =>
+            row.itemId
+              ? [
+                  {
+                    itemId: row.itemId,
+                    quantity: -Number(row.quantity),
+                    value: -Number(row.cost)
+                  }
+                ]
+              : []
+          )
+        });
         if (costLedgerPlan.layerIdsToClose.length > 0) {
           await trx
             .updateTable("costLedger")
@@ -10654,6 +10816,9 @@ export async function postReceipt(
           itemId: string;
           quantity: number;
         }[] = [];
+        // What each line books (a negative line at the cost it relieves),
+        // for an Average item's unit cost.
+        const averageCostChanges: AverageCostChange[] = [];
 
         const isOutsideProcessing =
           purchaseOrder.data.purchaseOrderType === "Outside Processing";
@@ -11129,6 +11294,11 @@ export async function postReceipt(
           // Cost layers: the receipt is the sole creator of purchase layers.
           // The invoice later adjusts them via appliesToCostLedgerId children.
           if (createsLayers && !isNegativeReceipt) {
+            averageCostChanges.push({
+              itemId: receiptLine.itemId!,
+              quantity: receivedQuantity,
+              value: receiptLineCosts[index]!.cost
+            });
             if (invoiceFirstQty > 0) {
               costLedgerInserts.push({
                 itemLedgerType: "Purchase",
@@ -11458,6 +11628,11 @@ export async function postReceipt(
                 ? cogsResult.totalCost
                 : receiptLineCosts[consumption.index]!.cost;
             relievedCostByLine.set(consumption.index, consumedCost);
+            averageCostChanges.push({
+              itemId: consumption.itemId,
+              quantity: -consumption.quantity,
+              value: -consumedCost
+            });
             costLedgerInserts.push({
               itemLedgerType: "Purchase",
               costLedgerType: "Direct Cost",
@@ -11594,6 +11769,11 @@ export async function postReceipt(
                 .execute();
             }
           }
+          // Before the item ledger rows below: on-hand as it stood.
+          await applyAverageCostChanges(trx, {
+            companyId,
+            changes: averageCostChanges
+          });
 
           for await (const [purchaseOrderLineId, update] of Object.entries(
             purchaseOrderLineUpdates
@@ -23302,6 +23482,13 @@ export async function issueMaterial(
       const completedUnitIndex = trackedEntities.data.findIndex(
         (entity: { id: string }) => entity.id === trackedEntityId
       );
+      // The unit id comes from the request, and a completion cuts an unsplit
+      // seed to one unit: another job's seed would lose the units it holds.
+      if (completedUnitIndex < 0) {
+        throw new InvalidInputError(
+          "The unit does not belong to this operation"
+        );
+      }
 
       const relatedTrackedEntities = trackedEntities.data.filter(
         (trackedEntity) =>
@@ -23339,6 +23526,16 @@ export async function issueMaterial(
           throw new NotFoundError("Tracked entity not found");
         }
 
+        // First-touch numbering: numbers a unit that has none yet, whatever
+        // the timing (under 'production' every unit; otherwise only a unit
+        // left unnumbered by a timing change). A Consumed entity is not cut to
+        // one unit below, so it is numbered only when it already holds one.
+        await sequence.assignSerialNumberIfMissing(trx, {
+          trackedEntityId,
+          companyId,
+          onlyIfSingleUnit: trackedEntity.status === "Consumed"
+        });
+
         if (trackedEntity.status !== "Consumed") {
           const activityId = nanoid();
           await trx
@@ -23357,7 +23554,7 @@ export async function issueMaterial(
                 Job: jobOperation.data.jobId,
                 "Job Operation": row.jobOperationId,
                 Employee: userId,
-                ...(completedUnitIndex >= 0 ? { Unit: completedUnitIndex } : {})
+                Unit: completedUnitIndex
               },
               companyId,
               createdBy: userId
@@ -23390,50 +23587,39 @@ export async function issueMaterial(
             .execute();
         }
 
-        if (
-          trackedEntities.data.length <
-          (jobOperation.data.operationQuantity ?? 0)
-        ) {
+        // An unsplit seed is cut to one unit above; its other units go to the
+        // next unit, since the completion of an item with no serial sequence
+        // receives them against a seed. Otherwise the next unit is spawned
+        // while the units number fewer than the operation quantity.
+        const seedUnitsLeft =
+          trackedEntity.status !== "Consumed"
+            ? Math.max(Number(trackedEntity.quantity) - 1, 0)
+            : 0;
+        const nextUnits =
+          seedUnitsLeft > 0
+            ? seedUnitsLeft
+            : trackedEntities.data.length <
+                (jobOperation.data.operationQuantity ?? 0)
+              ? 1
+              : 0;
+        if (nextUnits > 0) {
           // Number this lazily-spawned unit from the item's serial sequence, if
           // one is configured. This unit wasn't part of the initial pre-split at
           // job creation (e.g. the job quantity was increased afterwards, or the
           // sequence was configured later), so it would otherwise be created with
           // a null readableId. Resolve the job's location for the %{location}
           // token; the reservation runs in this transaction, atomic with the spawn.
-          let spawnReadableId: string | null = null;
-          if (trackedEntity.itemId) {
-            let locationCode: string | null = null;
-            let locationName: string | null = null;
-            const jobIdForLocation = (
-              trackedEntity.attributes as Record<string, unknown>
-            ).Job;
-            if (typeof jobIdForLocation === "string") {
-              const jobRow = await single(
-                trx,
-                "job",
-                { id: jobIdForLocation, companyId },
-                { columns: ["locationId"] }
-              );
-              if (jobRow.data?.locationId) {
-                const loc = await single(
-                  trx,
-                  "location",
-                  { id: jobRow.data.locationId, companyId },
-                  { columns: ["code", "name"] }
-                );
-                locationCode = loc.data?.code ?? null;
-                locationName = loc.data?.name ?? null;
-              }
-            }
-            const spawnSerials = await sequence.getNextSerialNumbers(trx, {
-              itemId: trackedEntity.itemId,
-              companyId,
-              count: 1,
-              locationCode,
-              locationName
-            });
-            spawnReadableId = spawnSerials[0] ?? null;
-          }
+          // Under the item's serialNumberTiming = 'production' the spawned
+          // unit stays unnumbered until it is first touched, and so does a seed.
+          const spawnReadableId =
+            nextUnits === 1 && trackedEntity.itemId
+              ? await sequence.getSpawnSerialNumber(trx, {
+                  itemId: trackedEntity.itemId,
+                  companyId,
+                  jobId: (trackedEntity.attributes as Record<string, unknown>)
+                    .Job as string | undefined
+                })
+              : null;
 
           // Create a new trackedEntity with the same attributes but status = Reserved
           const newTrackedEntityResult = await trx
@@ -23442,7 +23628,7 @@ export async function issueMaterial(
               sourceDocument: trackedEntity.sourceDocument,
               sourceDocumentId: trackedEntity.sourceDocumentId,
               sourceDocumentReadableId: trackedEntity.sourceDocumentReadableId,
-              quantity: 1,
+              quantity: nextUnits,
               status: "Reserved",
               attributes: trackedEntity.attributes,
               itemId: trackedEntity.itemId ?? null,
@@ -23606,6 +23792,20 @@ export async function issueMaterial(
       if (isSerial && quantity !== 1) {
         throw new Error("Serial units are scrapped one at a time");
       }
+      // The unit id comes from the request, and a scrap cuts an unsplit seed
+      // to one unit: another job's seed would lose the units it holds.
+      if (isSerial) {
+        if (trackedEntitiesRes.error) {
+          throw new Error("Failed to fetch the operation's units");
+        }
+        if (
+          !trackedEntitiesRes.data?.some((unit) => unit.id === scrapEntityId)
+        ) {
+          throw new InvalidInputError(
+            "The unit does not belong to this operation"
+          );
+        }
+      }
 
       const todayScrapOp = datetime
         .today(await getCompanyTimeZone(db, companyId))
@@ -23653,19 +23853,46 @@ export async function issueMaterial(
         // 3. Serial: terminal status + Scrap genealogy on the selected unit.
         //    The entity keeps its consumed-material input tree.
         let scrappedEntityAttributes: TrackedEntityAttributes | null = null;
+        // The units an unsplit seed held besides the one scrapped.
+        let seedUnitsLeft = 0;
         if (isSerial && scrapEntityId) {
           const entity = await trx
             .selectFrom("trackedEntity")
             .selectAll()
             .where("id", "=", scrapEntityId)
             .where("companyId", "=", companyId)
+            .forUpdate()
             .executeTakeFirst();
           if (!entity) throw new NotFoundError("Tracked entity not found");
           if (entity.status === "Consumed" || entity.status === "Scrapped") {
             throw new Error("Tracked entity is not in progress");
           }
+          // A unit already received holds stock, and this scrap writes no
+          // ledger row: the stock would stay on a Scrapped unit.
+          const onHand = await trx
+            .selectFrom("itemLedger")
+            .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+            .where("trackedEntityId", "=", scrapEntityId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
+          if (Number(onHand?.quantity ?? 0) > 0) {
+            throw new InvalidInputError(
+              "The unit is already in stock. Scrap it from inventory instead."
+            );
+          }
           scrappedEntityAttributes =
             entity.attributes as TrackedEntityAttributes;
+          seedUnitsLeft = Math.max(Number(entity.quantity) - 1, 0);
+
+          // A unit scrapped before it completed an operation never reached a
+          // completion hook, so number it here if it has no number yet (it is
+          // cut to one unit below). It consumed real material and needs an identifier
+          // on its scrap journal, NCR and lineage; its replacement must not
+          // take the number this unit should have had.
+          await sequence.assignSerialNumberIfMissing(trx, {
+            trackedEntityId: scrapEntityId,
+            companyId
+          });
 
           const scrapActivityId = nanoid();
           await trx
@@ -23697,10 +23924,14 @@ export async function issueMaterial(
             .execute();
           // No `Operation ...` completion stamp — the unit did NOT complete
           // this operation; status is the terminal marker.
+          // One unit is scrapped. An unsplit seed (serialNumberTiming =
+          // 'production', or an item with no serial sequence) holds every unit
+          // of the job, so it keeps one; its replacement carries the rest.
           await trx
             .updateTable("trackedEntity")
             .set({
               status: "Scrapped",
+              quantity: 1,
               attributes: {
                 ...(entity.attributes as TrackedEntityAttributes),
                 "Scrap Reason": scrapReasonId
@@ -23725,6 +23956,9 @@ export async function issueMaterial(
         //    operationQuantity; the top-up above grew operationQuantity by
         //    the beyond-allowance scrap, and pre-created allowance units
         //    (job.scrapQuantity at release) already cover in-allowance scrap.
+        //    A scrapped unsplit seed's other units go with it: the completion
+        //    of an item with no serial sequence receives against a seed, so
+        //    they would otherwise be lost.
         if (isSerial && scrapEntityId && scrappedEntityAttributes) {
           const updatedOperation = await trx
             .selectFrom("jobOperation")
@@ -23732,30 +23966,19 @@ export async function issueMaterial(
             .where("id", "=", jobOperationId)
             .executeTakeFirst();
           const capacity = Number(updatedOperation?.operationQuantity ?? 0);
-          if (existingEntityCount < capacity) {
-            let spawnReadableId: string | null = null;
-            if (makeMethod.itemId) {
-              let locationCode: string | null = null;
-              let locationName: string | null = null;
-              if (job.locationId) {
-                const loc = await single(
-                  trx,
-                  "location",
-                  { id: job.locationId, companyId },
-                  { columns: ["code", "name"] }
-                );
-                locationCode = loc.data?.code ?? null;
-                locationName = loc.data?.name ?? null;
-              }
-              const spawnSerials = await sequence.getNextSerialNumbers(trx, {
-                itemId: makeMethod.itemId,
-                companyId,
-                count: 1,
-                locationCode,
-                locationName
-              });
-              spawnReadableId = spawnSerials[0] ?? null;
-            }
+          const replacementUnits =
+            seedUnitsLeft + (existingEntityCount < capacity ? 1 : 0);
+          if (replacementUnits > 0) {
+            // Under serialNumberTiming = 'production' the replacement stays
+            // unnumbered until it is first touched, and so does a seed.
+            const spawnReadableId =
+              replacementUnits === 1 && makeMethod.itemId
+                ? await sequence.getSpawnSerialNumber(trx, {
+                    itemId: makeMethod.itemId,
+                    companyId,
+                    jobId: job.id
+                  })
+                : null;
 
             const scrappedEntity = await trx
               .selectFrom("trackedEntity")
@@ -23770,7 +23993,7 @@ export async function issueMaterial(
                   scrappedEntity?.sourceDocumentId ?? makeMethod.itemId ?? "",
                 sourceDocumentReadableId:
                   scrappedEntity?.sourceDocumentReadableId,
-                quantity: 1,
+                quantity: replacementUnits,
                 status: "Reserved",
                 attributes: scrappedEntityAttributes as unknown as Json,
                 itemId: makeMethod.itemId ?? null,
@@ -24717,24 +24940,12 @@ export async function issueMaterial(
             });
 
             if (subMakeMethod.requiresSerialTracking && subMakeMethod.itemId) {
-              let locationCode: string | null = null;
-              let locationName: string | null = null;
-              if (job.locationId) {
-                const loc = await single(
-                  trx,
-                  "location",
-                  { id: job.locationId, companyId },
-                  { columns: ["code", "name"] }
-                );
-                locationCode = loc.data?.code ?? null;
-                locationName = loc.data?.name ?? null;
-              }
-              const spawnSerials = await sequence.getNextSerialNumbers(trx, {
+              // Under serialNumberTiming = 'production' the replacement stays
+              // unnumbered until it is first touched.
+              const spawnReadableId = await sequence.getSpawnSerialNumber(trx, {
                 itemId: subMakeMethod.itemId,
                 companyId,
-                count: 1,
-                locationCode,
-                locationName
+                jobId: job.id
               });
               await trx
                 .insertInto("trackedEntity")
@@ -24747,7 +24958,7 @@ export async function issueMaterial(
                   attributes: entity.attributes,
                   itemId: subMakeMethod.itemId,
                   expirationDate: entity.expirationDate ?? null,
-                  readableId: spawnSerials[0] ?? null,
+                  readableId: spawnReadableId,
                   companyId,
                   createdBy: userId
                 })

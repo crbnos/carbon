@@ -149,6 +149,83 @@ describe("buildPurchaseInvoicePostingLines", () => {
     });
   });
 
+  it("writes up an Average item's inventory only for the units still on hand", () => {
+    // Average costing never draws a receipt layer down, so the layer still
+    // reads 10 remaining after 6 of the 10 were sold. On-hand (4) decides.
+    const { lines, receivedVariances } = build([
+      ordered(
+        "a",
+        10,
+        100,
+        {
+          quantityReceived: 10,
+          receiptGroups: [{ quantity: 10, cost: 80 }],
+          coverage: {
+            receiptLayers: [
+              { id: "layer-1", quantity: 10, remainingQuantity: 10 }
+            ],
+            onHandQuantity: 4
+          }
+        },
+        { ...part, costingMethod: "Average" }
+      )
+    ]);
+
+    expect(summary(lines)).toEqual([
+      { accountId: "grni", amount: debit("liability", 80), quantity: 10 },
+      { accountId: "raw", amount: debit("asset", 8), quantity: 10 },
+      { accountId: "ppv", amount: debit("expense", 12), quantity: 10 },
+      { accountId: "ap", amount: credit("liability", 100), quantity: 10 }
+    ]);
+    expect(receivedVariances.get("a")?.allocation.perLayer).toEqual([
+      { costLedgerId: "layer-1", appliedQuantity: 4, adjustmentCost: 8 }
+    ]);
+  });
+
+  it("shares an Average item's on-hand across the invoice's lines of that item", () => {
+    // Two lines of 5, each 2 a unit over receipt cost, with 6 on hand: the
+    // first line's 5 units are on hand, then only 1 of the second's.
+    const average = { ...part, costingMethod: "Average" as const };
+    const coverage = (id: string) => ({
+      receiptLayers: [{ id, quantity: 5, remainingQuantity: 5 }],
+      onHandQuantity: 6
+    });
+    const { lines } = build([
+      ordered(
+        "a",
+        5,
+        50,
+        {
+          quantityReceived: 5,
+          receiptGroups: [{ quantity: 5, cost: 40 }],
+          coverage: coverage("layer-a")
+        },
+        average
+      ),
+      ordered(
+        "b",
+        5,
+        50,
+        {
+          quantityReceived: 5,
+          receiptGroups: [{ quantity: 5, cost: 40 }],
+          coverage: coverage("layer-b")
+        },
+        average
+      )
+    ]);
+
+    expect(summary(lines)).toEqual([
+      { accountId: "grni", amount: debit("liability", 40), quantity: 5 },
+      { accountId: "raw", amount: debit("asset", 10), quantity: 5 },
+      { accountId: "ap", amount: credit("liability", 50), quantity: 5 },
+      { accountId: "grni", amount: debit("liability", 40), quantity: 5 },
+      { accountId: "raw", amount: debit("asset", 2), quantity: 5 },
+      { accountId: "ppv", amount: debit("expense", 8), quantity: 5 },
+      { accountId: "ap", amount: credit("liability", 50), quantity: 5 }
+    ]);
+  });
+
   it("skips the units an earlier invoice cleared and accrues the units not yet received", () => {
     // Two receipts of 3 (at 6, then at 9); an earlier invoice cleared 3, so
     // this invoice of 5 clears the second receipt and accrues 2.

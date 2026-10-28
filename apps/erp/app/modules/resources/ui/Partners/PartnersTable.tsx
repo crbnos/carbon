@@ -24,10 +24,13 @@ import { path } from "~/utils/path";
 type PartnersTableProps = {
   data: Partner[];
   count: number;
+  // The loader read SINGLE_LOAD_LIMIT rows: more may match.
+  isTruncated?: boolean;
   // abilities: Partial<Ability>[];
 };
 
-const PartnersTable = memo(({ data, count }: PartnersTableProps) => {
+const PartnersTable = memo((props: PartnersTableProps) => {
+  const { data, count, isTruncated } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -138,6 +141,7 @@ const PartnersTable = memo(({ data, count }: PartnersTableProps) => {
     <Table<Partner>
       data={data}
       count={count}
+      isTruncated={isTruncated}
       columns={columns}
       primaryAction={
         permissions.can("create", "resources") && (

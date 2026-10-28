@@ -171,6 +171,9 @@ msgstr "サンプルを追加"
 msgid "Add Spare Part"
 msgstr "予備品を追加"
 
+msgid "Add your signature"
+msgstr ""
+
 msgid "Added"
 msgstr "追加完了"
 
@@ -229,6 +232,9 @@ msgstr "このページを離れてもよろしいですか？"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "この工程を完了としてマークしてもよろしいですか？これにより、この工程のすべてのアクティブな生産イベントが終了します。"
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "組立ステップ"
 
@@ -256,18 +262,8 @@ msgstr "利用可能"
 msgid "Available"
 msgstr "利用可能"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "アバターオプション {0}"
-
 msgid "Avatar style"
 msgstr "アバタースタイル"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "アバターは <0>{0}</0> から {1} による提供で、<1>{2}</1> ライセンスの下で使用されています。"
 
 msgid "Back"
 msgstr "戻る"
@@ -322,6 +318,11 @@ msgstr "ボード表示"
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "ご心配なく。パスワード忘却フローを使用して新しいマジックリンクをリクエストできます。"
 
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "サインインすることにより、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意したものとみなされます。"
 
@@ -361,6 +362,9 @@ msgstr "メールを確認してください"
 msgid "Choose a job"
 msgstr "製造指図を選択"
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose an option"
 msgstr "オプションを選択"
 
@@ -384,6 +388,9 @@ msgstr "検索をクリア"
 
 msgid "Clear station default"
 msgstr "既定ステーションをクリア"
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Clock In"
 msgstr "作業開始"
@@ -457,6 +464,9 @@ msgstr "バッチを完了"
 msgid "Complete passed"
 msgstr "合格を完了する"
 
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
+
 msgid "Completed"
 msgstr "完了済み"
 
@@ -506,6 +516,9 @@ msgstr "手直しを作成"
 
 msgid "Current work"
 msgstr "現在の作業"
+
+msgid "Custom color"
+msgstr ""
 
 msgid "Customer"
 msgstr "得意先"
@@ -598,6 +611,15 @@ msgstr "ドラッグして図面と特性のサイズを変更"
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "ドラッグ {0} キャンセル済。"
+
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Due"
 msgstr "期日"
@@ -704,6 +726,13 @@ msgstr "有効期限：<0/>"
 msgid "Expiring first"
 msgstr "最初に期限切れ"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Failed"
 msgstr "失敗"
 
@@ -728,6 +757,9 @@ msgstr "storageUnitsの取得に失敗しました"
 msgid "Failed to get options"
 msgstr "オプションの取得に失敗しました"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "測定器の記録に失敗しました"
 
@@ -750,6 +782,9 @@ msgstr "ファイルのアップロードに失敗しました: {0}"
 
 msgid "Failed to upload image"
 msgstr "画像のアップロードに失敗しました"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "File size exceeds 10MB limit"
 msgstr "ファイルサイズが10MBの制限を超えています"
@@ -805,6 +840,12 @@ msgstr "操作に戻る"
 
 msgid "Go to onboarding"
 msgstr "オンボーディングに移動"
+
+msgid "Halloween surprise"
+msgstr "ハロウィンのサプライズ"
+
+msgid "Happy Halloween"
+msgstr "ハッピーハロウィン"
 
 msgid "Heading {level}"
 msgstr "見出し {level}"
@@ -983,6 +1024,9 @@ msgstr "ロード済み: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "品目詳細を読み込み中..."
+
+msgid "Loading. There's no need to scan again."
+msgstr "読み込み中です。もう一度スキャンする必要はありません。"
 
 msgid "Loading..."
 msgstr "読み込み中..."
@@ -1247,6 +1291,9 @@ msgstr "サンプルは必要ありません。"
 msgid "No scheduled time"
 msgstr "予定時間なし"
 
+msgid "No serial number"
+msgstr "シリアル番号なし"
+
 msgid "No serial numbers"
 msgstr "シリアル番号なし"
 
@@ -1282,6 +1329,9 @@ msgstr "なし"
 
 msgid "Notes"
 msgstr "メモ"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "このページにはそのバーコードを使うものがありません"
 
 msgid "Nothing running"
 msgstr "稼働中の作業はありません"
@@ -1440,8 +1490,8 @@ msgstr "ピック"
 msgid "Pick {0}"
 msgstr "ピッキング {0}"
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "スタイルとアバターを選択するか、新しいものにシャッフルしてください。"
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "追跡品目をピック"
@@ -1491,6 +1541,12 @@ msgstr "品目を選択してください"
 msgid "PM schedule lapsed"
 msgstr "PM スケジュール失効"
 
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
+
+msgid "Poke the spider… if you dare"
+msgstr "クモをつついてみて…勇気があれば"
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "任意のページで「?」を押すとこのリストが表示されます。フィールドへの入力中はショートカットが無視されます。"
 
@@ -1511,6 +1567,12 @@ msgstr "印刷"
 
 msgid "Print batch list"
 msgstr "バッチリストを印刷"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "プリンター設定"
@@ -1625,6 +1687,9 @@ msgstr "部品を除去"
 msgid "Remove two-factor authentication"
 msgstr "二要素認証を除去"
 
+msgid "Removed signature"
+msgstr ""
+
 msgid "Rename"
 msgstr "名前変更"
 
@@ -1636,9 +1701,6 @@ msgstr "サインイン時に認証器アプリからの6桁コードが必要�
 
 msgid "Required"
 msgstr "必須"
-
-msgid "Reset"
-msgstr "リセット"
 
 msgid "Result"
 msgstr "結果"
@@ -1670,8 +1732,14 @@ msgstr "すべての製造指図で同じ"
 msgid "Save"
 msgstr "保存"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "編集中のフォームを保存"
+
+msgid "Saved signature"
+msgstr ""
 
 msgid "Scan"
 msgstr "スキャン"
@@ -1693,6 +1761,9 @@ msgstr "シリアル番号をスキャンまたは検索..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "このロットから追跡対象をスキャンまたは選択してサンプル列として追加し、グリッドに結果を記録します。"
+
+msgid "Scan received"
+msgstr "スキャンを受け付けました"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "このQRコードをスキャンしてください（例：Google AuthenticatorまたはOnePassword）、その後に表示される6桁のコードを入力してください。"
@@ -1868,6 +1939,9 @@ msgstr "キーボードショートカットを表示"
 msgid "Shuffle"
 msgstr "シャッフル"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "マジックリンクの代わりに生体認証でサインインしてください。パスキーはFace ID、Touch ID、またはデバイスPINで保護されています。"
 
@@ -1893,6 +1967,12 @@ msgid "Sign out instead"
 msgstr "代わりにサインアウト"
 
 msgid "Sign-in code"
+msgstr ""
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
 msgstr ""
 
 msgid "Signed in as {stationName}"
@@ -1957,6 +2037,9 @@ msgstr "ステップが未記録です"
 msgid "Storage Unit"
 msgstr "保管ユニット"
 
+msgid "Style"
+msgstr ""
+
 msgid "Style default"
 msgstr "スタイルデフォルト"
 
@@ -2004,6 +2087,10 @@ msgstr "Carbon全体で使用されるアクセントカラー。"
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っています。"
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "このランを構成する製造指図と部品"
@@ -2054,8 +2141,8 @@ msgstr "この部品は受注生産で製造されました。スクラップす
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "この部品は在庫からスクラップされます。その要求事項は開いたままなので、代替品を出庫できます。"
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "このユニットは永久にスクラップされ、代替シリアル番号が作成されます。"
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "このユニットは永久にスクラップされ、代替ユニットが作成されます。"
 
 msgid "Thumbnail"
 msgstr "サムネイル"
@@ -2156,6 +2243,9 @@ msgstr "メッセージを入力..."
 msgid "Unable to unlock"
 msgstr "ロック解除できません"
 
+msgid "Undo"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "未払出のシリアル/バッチ材料"
 
@@ -2212,6 +2302,9 @@ msgstr "アップロード"
 
 msgid "Upload completed but no file path returned"
 msgstr "アップロードが完了しましたがファイルパスが返されません"
+
+msgid "Uploaded signature"
+msgstr ""
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -2275,8 +2368,20 @@ msgstr "メモを書く…"
 msgid "Yes"
 msgstr "はい"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "作業開始から{hoursElapsed}時間が経過しています。作業終了を忘れていませんか？"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "あなたのアカウントはまだ会社に属していません。継続するには、Carbon ERP でオンボーディングを完了してください。"
@@ -2289,6 +2394,9 @@ msgstr "プロフィールを読み込めませんでした。"
 
 msgid "Your session was locked after inactivity."
 msgstr "非アクティビティ後、セッションはロック中になりました。"
+
+msgid "Your signature"
+msgstr ""
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

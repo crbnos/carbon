@@ -12,6 +12,7 @@ import type {
   getInventoryValuationTieOut,
   getItemLedgerPage,
   getKanbans,
+  getPurchaseOrderLinesToReceive,
   getReceiptLines,
   getReceipts,
   getShipmentLines,
@@ -225,4 +226,32 @@ export type IssueContainment = {
   status: string;
   priority: string | null;
   trackedEntityId: string;
+};
+
+export type PurchaseOrderLineToReceive = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseOrderLinesToReceive>>["data"]
+>[number];
+
+/** Another order still waiting on a line's item. */
+export type ReceivingOrder = {
+  id: string;
+  readableId: string | null;
+  revisionId: number | null;
+};
+
+/** A Draft receipt already started for an order. */
+export type ReceivingDraftReceipt = {
+  id: string;
+  receiptId: string;
+};
+
+/**
+ * A row of Inventory → Receiving: a line to receive (the view's keys are never
+ * null; the generated view type cannot say so), with the other orders still
+ * waiting on its item.
+ */
+export type ReceivingRow = PurchaseOrderLineToReceive & {
+  id: string;
+  purchaseOrderId: string;
+  alsoOpenOn: ReceivingOrder[];
 };

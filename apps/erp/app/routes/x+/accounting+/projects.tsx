@@ -5,15 +5,19 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import { getProjects } from "~/modules/accounting/accounting.service";
 import { ProjectsTable } from "~/modules/accounting/ui/Projects";
 import type { Handle } from "~/utils/handle";
+import { projectsList } from "~/utils/list-registry/accounting.server";
+import { fetchListPage } from "~/utils/list-registry/index.server";
+import { listErrorPage, listInfinite } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "projects");
 
 export const handle: Handle = {
   breadcrumb: msg`Projects`,
@@ -21,41 +25,53 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId } = await requirePermissions(
+    request,
+    projectsList.permission
+  );
 
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const projects = await getProjects(client, companyId, {
-    search,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
+  const searchParams = new URL(request.url).searchParams;
+  const projects = await fetchListPage(
+    projectsList,
+    client,
+    companyId,
+    searchParams
+  );
 
   if (projects.error) {
+    if (searchParams.get("after")) {
+      logger.error("Failed to load a later page of projects", {
+        companyId,
+        error: projects.error
+      });
+      return listErrorPage("data");
+    }
     return data(
-      { data: [], count: 0 },
+      {
+        data: [],
+        count: 0,
+        nextCursor: null,
+        infinite: listInfinite(projectsList, "data", null)
+      },
       await flash(request, error(projects.error, "Failed to fetch projects"))
     );
   }
 
-  return { data: projects.data ?? [], count: projects.count ?? 0 };
+  return {
+    data: projects.rows,
+    count: projects.count,
+    exactCount: projects.exactCount,
+    nextCursor: projects.nextCursor,
+    infinite: listInfinite(projectsList, "data", projects.nextCursor)
+  };
 }
 
 export default function ProjectsRoute() {
-  const { data, count } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ProjectsTable data={data ?? []} count={count ?? 0} />
+      <ProjectsTable data={data ?? []} count={count ?? 0} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

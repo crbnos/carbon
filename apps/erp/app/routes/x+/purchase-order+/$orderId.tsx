@@ -7,6 +7,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getCompanyTimeZone } from "@carbon/database";
 import {
   canApproveRequest,
   canCancelRequest,
@@ -15,7 +16,11 @@ import {
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { getPreferenceHeaders, redirect } from "@carbon/utils";
+import {
+  getPreferenceHeaders,
+  isOwnSignaturePath,
+  redirect
+} from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -26,6 +31,7 @@ import { purchaseOrderApprovalValidator } from "~/modules/purchasing/purchasing.
 import {
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
+  getPurchaseOrderApproval,
   getPurchaseOrderDelivery,
   getPurchaseOrderLines,
   getSupplier,
@@ -145,7 +151,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const [supplier, interaction, approvalRequest, companySettings] =
+  const [supplier, interaction, approvalRequest, companySettings, approval] =
     await Promise.all([
       purchaseOrder.data?.supplierId
         ? getSupplier(client, purchaseOrder.data.supplierId)
@@ -159,7 +165,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             orderId
           )
         : Promise.resolve({ data: null, error: null }),
-      getCompanySettings(serviceRole, companyId)
+      getCompanySettings(serviceRole, companyId),
+      // Who approved it, for the properties panel.
+      getCompanyTimeZone(serviceRole, companyId).then((timezone) =>
+        getPurchaseOrderApproval(serviceRole, {
+          companyId,
+          purchaseOrderId: orderId,
+          timezone
+        })
+      )
     ]);
 
   const defaultCc = supplier?.data?.defaultCc?.length
@@ -168,6 +182,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Check if user can approve the request
   let canApprove = false;
+  let approvalNeedsSignature = false;
   let canReopen = true; // Default to true (no approval request = can reopen)
   let canDelete = true; // Default to true (no approval request = can delete)
 
@@ -189,6 +204,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       },
       userId
     );
+
+    // With the setting on, an approver with no signature is sent to add one
+    // first. approveRequest refuses them anyway; this only spares the round trip.
+    if (
+      canApprove &&
+      companySettings.data?.requirePurchaseOrderApprovalSignature
+    ) {
+      const approver = await client
+        .from("user")
+        .select("signaturePath")
+        .eq("id", userId)
+        .single();
+      approvalNeedsSignature = !isOwnSignaturePath(
+        userId,
+        approver.data?.signaturePath
+      );
+    }
 
     // Check if user can reopen: must be requester OR approver
     const isRequester = canCancelRequest(
@@ -271,7 +303,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     interaction: interaction?.data,
     supplier: supplier?.data ?? null,
     approvalRequest: approvalRequest.data,
+    approval,
     canApprove,
+    approvalNeedsSignature,
     canReopen,
     canDelete,
     defaultCc,

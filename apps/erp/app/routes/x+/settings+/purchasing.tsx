@@ -103,6 +103,10 @@ const purchasingSettingsForm = z.discriminatedUnion("intent", [
     "requireSupplierContactAndLocationToggle",
     "requireSupplierContactAndLocation"
   ),
+  settingsToggle(
+    "requirePurchaseOrderApprovalSignatureToggle",
+    "requirePurchaseOrderApprovalSignature"
+  ),
   purchasePriceUpdateTimingValidator.extend({
     intent: z.literal("purchasePriceUpdateTiming")
   }),
@@ -164,6 +168,12 @@ export default function PurchasingSettingsRoute() {
             ? t`Supplier contact requirement enabled`
             : t`Supplier contact requirement disabled`
         );
+      } else if (data.requirePurchaseOrderApprovalSignature !== undefined) {
+        toast.success(
+          data.requirePurchaseOrderApprovalSignature
+            ? t`Approval signature requirement enabled`
+            : t`Approval signature requirement disabled`
+        );
       } else if (data.updateLeadTimesOnReceipt !== undefined) {
         toast.success(
           data.updateLeadTimesOnReceipt
@@ -191,6 +201,25 @@ export default function PurchasingSettingsRoute() {
     "requireSupplierContactAndLocationToggle",
     (companySettings as { requireSupplierContactAndLocation?: boolean })
       .requireSupplierContactAndLocation ?? false
+  );
+
+  const requireApprovalSignature = useSavedToggle(
+    toggleFetcher,
+    "requirePurchaseOrderApprovalSignatureToggle",
+    companySettings.requirePurchaseOrderApprovalSignature ?? false
+  );
+
+  const handleRequireApprovalSignatureToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        {
+          intent: "requirePurchaseOrderApprovalSignatureToggle",
+          enabled: checked.toString()
+        },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
   );
 
   const leadTimesOnReceiptEnabled = useSavedToggle(
@@ -353,6 +382,52 @@ export default function PurchasingSettingsRoute() {
               <Switch
                 checked={requireSupplierContactAndLocation}
                 onCheckedChange={handleRequireSupplierContactToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Require a Signature to Approve Purchase Orders</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                An approver must have a signature in Account → Profile before
+                they can approve a purchase order. The purchase order PDF prints
+                the signature of the person who approved it.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {requireApprovalSignature ? (
+                    <Trans>A signature is required to approve</Trans>
+                  ) : (
+                    <Trans>A signature is optional to approve</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {requireApprovalSignature ? (
+                    <Trans>
+                      An approver with no signature on file is asked to add one
+                      before they approve.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to block approval from anyone with no signature on
+                      file.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={requireApprovalSignature}
+                onCheckedChange={handleRequireApprovalSignatureToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>

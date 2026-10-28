@@ -50,10 +50,16 @@ are regenerated; that's expected, not a bug.
 - **defaults.ts** — `BLOCK_META` (one entry **required** per block type),
   `DEFAULT_TEMPLATES` (one per doc type), `DOCUMENT_CATALOG` + `getDocumentLabel`,
   `resolveTemplate(type, stored)` (read-time normalizer: falls back to the default
-  and **appends missing built-in blocks hidden** so old rows survive new blocks),
+  and **appends missing built-in blocks hidden** so old rows survive new blocks —
+  except a block whose `BLOCK_META` sets `showWhenAppended`, appended visible
+  because it prints nothing until its data exists; today only `approval`),
   `BUILT_IN_SECTIONS`, `collectSectionIds`.
-- **merge.ts** — `{{token}}` merge-field catalog; `interpolateContent` fills
-  header/footer/richText/keyValue at render.
+- **merge.ts** — `{token}` merge-field catalog; `interpolateContent` fills
+  header/footer/richText/shared/terms at render (keyValue/field use
+  `interpolateString`). A paragraph whose merge fields ALL resolve empty is
+  dropped (and a list left empty with it), so "Approved by {order.approvedBy}"
+  prints nothing on an unapproved PO; a Rich Text or Shared block whose
+  content drops out entirely is not rendered, heading included.
 
 ## Editor UI
 
@@ -93,6 +99,24 @@ the generic preview.
 
 **Adding a block type** to the union breaks every registry → add the key to all
 registries + a `BLOCK_META` entry + (if built-in) a `DEFAULT_TEMPLATES` entry.
+
+## Approval block (purchase orders)
+
+The built-in `approval` block (`pdf/blocks/purchaseOrder/ApprovalBlock.tsx`)
+prints a heading, the approver's signature (max 40 pt high) over a line, and a
+caption, and nothing while the order is unapproved. Its options, set in the
+editor's `ApprovalConfig`: `heading` (absent = `DEFAULT_APPROVAL_HEADING`,
+"Approved By"; an empty string prints none), `showSignature` (default true)
+and `content`, a rich-text caption with merge fields (empty =
+`DEFAULT_APPROVAL_CAPTION`: `{order.approvedBy}`, a line break,
+`{order.approvedDate}`). "Approved by … on …" text belongs in this caption,
+not in a separate Rich Text block, or the PDF prints it twice. It is last in the default PO layout and
+is appended visible to saved templates. Its data is `PurchaseOrderData.approval`
+from `getPurchaseOrderApproval(…, { withSignature: true })`
+(`purchasing.service.ts`), which reads the file recorded on the approval
+(`approvalRequest.decisionSignaturePath`, private `signatures` bucket) as a data
+URL. Every other registry renders it as `null`. Spec:
+`.ai/specs/2026-10-28-approval-signatures.md`.
 
 ## Tracking label specifics
 

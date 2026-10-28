@@ -67,6 +67,7 @@
     "react-colorful": "5.6.1",
     "react-hotkeys-hook": "catalog:",
     "react-shiki": "0.9.2",
+    "react-spring-bottom-sheet": "3.4.1",
     "recharts": "2.15.4",
     "sonner": "2.0.7",
     "tailwind-merge": "catalog:"
@@ -115,6 +116,7 @@
     "./ErrorBoundary": "./src/ErrorBoundary/index.ts",
     "./FunnelChart": "./src/FunnelChart.tsx",
     "./GeneratedAvatar": "./src/GeneratedAvatar.tsx",
+    "./Halloween": "./src/Halloween/HalloweenLayer.tsx",
     "./HTML": "./src/HTML.tsx",
     "./RichText": "./src/RichText/index.ts",
     "./VariableText": "./src/VariableText/index.ts"

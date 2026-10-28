@@ -2,19 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getBaseCatalog,
-  resolvePriceList
-} from "~/modules/sales/sales.service";
 import PriceListTable from "~/modules/sales/ui/Pricing/PriceOverridesTable";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { priceListList } from "~/utils/list-registry/sales.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Price List`,
@@ -22,75 +18,39 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales",
-    role: "employee"
+  return loadListPage(request, priceListList, {
+    dataKey: "data",
+    firstPage: async ({ client, companyId, params }) => {
+      const hasScope = Boolean(
+        params.get("customerId") ||
+          params.get("customerTypeId") ||
+          params.get("scope") === "all"
+      );
+      const groupsResult = await client
+        .from("group")
+        .select("id, name, isCustomerOrgGroup, isCustomerTypeGroup")
+        .eq("companyId", companyId)
+        .or("isCustomerOrgGroup.eq.true,isCustomerTypeGroup.eq.true")
+        .order("isCustomerTypeGroup", { ascending: false })
+        .order("name");
+
+      const scopeOptions = (groupsResult.data ?? [])
+        .filter((g) => !g.id.startsWith("11111111-1111"))
+        .map((g) => ({
+          value: g.id,
+          label: g.name,
+          helper: (g.isCustomerTypeGroup ? "Type" : "Customer") as
+            | "Type"
+            | "Customer"
+        }));
+
+      return { scopeOptions, hasScope };
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const customerId = searchParams.get("customerId");
-  const customerTypeId = searchParams.get("customerTypeId");
-  const rawQuantity = Number(searchParams.get("quantity") ?? "1");
-  const quantity =
-    Number.isFinite(rawQuantity) && rawQuantity >= 0 ? rawQuantity : 1;
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const groupOptionsQuery = client
-    .from("group")
-    .select("id, name, isCustomerOrgGroup, isCustomerTypeGroup")
-    .eq("companyId", companyId)
-    .or("isCustomerOrgGroup.eq.true,isCustomerTypeGroup.eq.true")
-    .order("isCustomerTypeGroup", { ascending: false })
-    .order("name");
-
-  const hasScope = Boolean(customerId || customerTypeId);
-  const listPromise = hasScope
-    ? resolvePriceList(client, companyId, {
-        customerId: customerId ?? undefined,
-        customerTypeId: customerTypeId ?? undefined,
-        quantity,
-        search: search ?? undefined,
-        limit,
-        offset,
-        sorts,
-        filters
-      })
-    : getBaseCatalog(client, companyId, {
-        search: search ?? undefined,
-        limit,
-        offset,
-        sorts,
-        filters
-      });
-
-  const [list, groupsResult] = await Promise.all([
-    listPromise,
-    groupOptionsQuery
-  ]);
-
-  const scopeOptions = (groupsResult.data ?? [])
-    .filter((g) => !g.id.startsWith("11111111-1111"))
-    .map((g) => ({
-      value: g.id,
-      label: g.name,
-      helper: (g.isCustomerTypeGroup ? "Type" : "Customer") as
-        | "Type"
-        | "Customer"
-    }));
-
-  return {
-    data: list.data ?? [],
-    count: list.count ?? 0,
-    scopeOptions,
-    hasScope
-  };
 }
 
 export default function PriceListRoute() {
-  const { data, count, scopeOptions, hasScope } =
+  const { data, count, infinite, scopeOptions, hasScope } =
     useLoaderData<typeof loader>();
 
   return (
@@ -98,6 +58,7 @@ export default function PriceListRoute() {
       <PriceListTable
         data={data}
         count={count}
+        infinite={infinite}
         scopeOptions={scopeOptions}
         hasScope={hasScope}
       />

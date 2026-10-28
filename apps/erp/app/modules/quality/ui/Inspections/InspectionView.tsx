@@ -59,7 +59,7 @@ import {
   RecordPhoneChrome
 } from "~/components/Layout/RecordHeader";
 import { Confirm } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import type {
   InspectionGauge,
   InspectionIssue,
@@ -80,6 +80,9 @@ import RejectLotModal from "./RejectLotModal";
 import ScanInspectionSample from "./ScanInspectionSample";
 
 const InspectionDrawingPane = lazy(() => import("./InspectionDrawingPane"));
+const ModelUploadPreview = lazy(
+  () => import("@carbon/viewer/model-upload-preview")
+);
 
 // Vertical-stack sizing, mirrored from InspectionDocumentEditor: the PDF pane
 // keeps a pinned height while the features grid is expanded; a draggable
@@ -130,6 +133,8 @@ export type InspectionViewProps = {
   }[];
   documentName: string | null;
   pdfUrl: string | null;
+  /** A plan made from a model's PMI: the drawing pane shows the model. */
+  model: { modelUploadId: string; modelPath: string | null } | null;
   lotEntities: InspectionTrackedEntity[];
   issueTypes: IssueTypeListItem[];
   /** The issues linked to this lot (a rejected lot's NCR, or a manual link). */
@@ -159,6 +164,7 @@ const InspectionView = ({
   balloons,
   documentName,
   pdfUrl,
+  model,
   lotEntities,
   issueTypes,
   issues,
@@ -167,6 +173,9 @@ const InspectionView = ({
 }: InspectionViewProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const {
+    company: { id: companyId }
+  } = useUser();
   const canUpdate = permissions.can("update", "quality");
   const [items] = useItems();
 
@@ -185,7 +194,7 @@ const InspectionView = ({
   // the lot has an assigned PDF; per-feature feature rows show when the
   // document resolved features, otherwise the grid collapses to one pass/fail
   // "Overall result" row.
-  const showDrawing = pdfUrl != null;
+  const showDrawing = pdfUrl != null || model != null;
   const hasFeatures = liveFeatures.length > 0;
 
   const scannerDisclosure = useDisclosure();
@@ -464,6 +473,14 @@ const InspectionView = ({
 
   const newIssueHref = `/x/issue/new?itemId=${encodeURIComponent(inspection.itemId)}&trackedEntityIds=${encodeURIComponent(failedTrackedEntityIds.join(","))}${inspection.supplierId ? `&supplierId=${encodeURIComponent(inspection.supplierId)}` : ""}`;
 
+  const pmiLinks = useMemo(
+    () =>
+      liveFeatures.map((f) => ({
+        id: f.inspectionFeatureId,
+        pmiItemId: f.inspectionFeature!.pmiItemId ?? null
+      })),
+    [liveFeatures]
+  );
   const drawingBalloons = useMemo<DrawingBalloon[]>(() => {
     const labelByFeatureId = new Map(
       liveFeatures.map((f) => [
@@ -677,12 +694,24 @@ const InspectionView = ({
                       </div>
                     }
                   >
-                    <InspectionDrawingPane
-                      pdfUrl={pdfUrl!}
-                      balloons={drawingBalloons}
-                      activeFeatureId={activeFeatureId}
-                      onBalloonClick={setActiveFeatureId}
-                    />
+                    {model ? (
+                      <ModelUploadPreview
+                        modelUploadId={model.modelUploadId}
+                        modelPath={model.modelPath}
+                        companyId={companyId}
+                        pmiLinks={pmiLinks}
+                        selectedLinkId={activeFeatureId}
+                        onLinkSelect={setActiveFeatureId}
+                        className="h-full rounded-none"
+                      />
+                    ) : (
+                      <InspectionDrawingPane
+                        pdfUrl={pdfUrl!}
+                        balloons={drawingBalloons}
+                        activeFeatureId={activeFeatureId}
+                        onBalloonClick={setActiveFeatureId}
+                      />
+                    )}
                   </Suspense>
                 )}
               </ClientOnly>

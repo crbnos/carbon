@@ -92,6 +92,7 @@ import {
   LuX
 } from "react-icons/lu";
 import { useFetcher, useNavigate, useSearchParams } from "react-router";
+import { AbilityWarning } from "~/components/AbilityWarning";
 import { TrackingTypeIcon } from "~/components/Icons";
 import { OperationChat } from "~/components/JobOperation/components/Chat";
 import { IssueMaterialModal } from "~/components/JobOperation/components/IssueMaterialModal";
@@ -104,7 +105,10 @@ import { RecordModal } from "~/components/JobOperation/components/Step";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { useRealtime, useUser } from "~/hooks";
-import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
+import {
+  type AbilityShortfall,
+  isSerialEntityIncompleteForOperation
+} from "~/services/operations.service";
 import { ownsLooseMaterial } from "~/services/step-backflush";
 import type {
   JobMaterial,
@@ -112,6 +116,7 @@ import type {
   OperationWithDetails,
   ProductionEvent as ProductionEventType
 } from "~/services/types";
+import { isKanbanCompleteScan } from "~/utils/kanban";
 import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
 import { deriveUnits } from "~/utils/units";
@@ -282,6 +287,7 @@ type Operation = {
 };
 
 type Props = {
+  abilityWarning?: AbilityShortfall | null;
   operationId: string;
   job: { itemReadableIdWithRevision?: string | null } | null;
   operation: Operation | null;
@@ -508,6 +514,7 @@ function isUnitIncompleteForOperation(
 }
 
 export function AssemblyView({
+  abilityWarning,
   operationId,
   job,
   operation,
@@ -589,17 +596,13 @@ export function AssemblyView({
   useRealtime("jobOperation", `id=eq.${operationId}`);
 
   // Kanban barcode scan → complete the operation (matches the operation view).
-  // The returned buffer is non-empty while a scan burst is in flight — the
-  // keyboard-shortcut effect below yields Enter to the wedge during that window.
+  // The wedge takes a scan's Enter in the capture phase, so the Enter/Space
+  // shortcut below never sees it.
   const completeFetcher = useFetcher();
-  const wedgeBuffer = useKeyboardWedge({
-    test: (input) =>
-      kanban?.completedBarcodeOverride
-        ? input === kanban.completedBarcodeOverride
-        : kanban?.id
-          ? input === path.to.kanbanComplete(kanban.id)
-          : false,
+  useKeyboardWedge({
+    test: (input) => !!kanban && isKanbanCompleteScan(input, kanban),
     callback: () => completeFetcher.load(path.to.endOperation(operationId)),
+    inTextFields: true,
     active: !!kanban?.id
   });
 
@@ -1336,9 +1339,6 @@ export function AssemblyView({
       // Any open dialog (RecordModal, issue/scan modals, zoom) keeps native
       // key semantics — the armed-clicker swallow below is the one exception.
       !hasOpenDialog() &&
-      // A barcode wedge scan terminates with Enter — yield it to
-      // useKeyboardWedge while a scan burst is buffered.
-      !(event.key === "Enter" && wedgeBuffer !== "") &&
       // No primary action (step done, gated, or submitting) → leave the
       // action keys native, so a keyboard user who focused Skip can still
       // activate it with Space/Enter.
@@ -1811,6 +1811,10 @@ export function AssemblyView({
       </div>
     ) : null;
 
+  // The process requires an ability this operator lacks and its policy is
+  // Block: no production work here. The routes refuse it too.
+  const abilityBlocked = abilityWarning?.policy === "Block";
+
   // The header's actions; the md+ header and the phone app bar share them.
   const headerActions = (
     <>
@@ -1818,8 +1822,9 @@ export function AssemblyView({
       {operation ? (
         <button
           type="button"
+          disabled={abilityBlocked}
           onClick={completeModal.onOpen}
-          className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] max-md:hidden md:gap-2 md:px-4"
+          className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 max-md:hidden md:gap-2 md:px-4"
         >
           <LuCheck className="size-4" />
           <Trans>Complete</Trans>
@@ -1845,6 +1850,7 @@ export function AssemblyView({
               workType={wt}
               trackedEntityId={isTracked ? currentEntity?.id : undefined}
               unitIndex={currentUnitIndex}
+              startDisabled={abilityBlocked}
             />
           ))
         : null}
@@ -1911,6 +1917,12 @@ export function AssemblyView({
 
       {renderStepsBar("max-md:hidden")}
       {!detailsShown && renderPhoneContext()}
+
+      {abilityWarning && (
+        <div className="shrink-0 px-4 pt-3">
+          <AbilityWarning warning={abilityWarning} />
+        </div>
+      )}
 
       {/* ── BODY ── stacks vertically (page scrolls) on phones/tablets,
           three columns side-by-side on lg+. ── */}
@@ -2431,6 +2443,7 @@ export function AssemblyView({
                   variant="ghost"
                   size="lg"
                   icon={<LuCirclePlus />}
+                  isDisabled={abilityBlocked}
                   onClick={() => {
                     // Clear any per-row selection so the modal opens in
                     // "pick any item" mode → issue a part not on the BOM.
@@ -2455,10 +2468,14 @@ export function AssemblyView({
                         unitIndex={currentUnitIndex}
                         issuedIsPerUnit={issuedIsPerUnit}
                         issuedOverride={issuedOverride}
-                        onIssue={() => {
-                          setSelectedMaterial(m);
-                          issueModal.onOpen();
-                        }}
+                        onIssue={
+                          abilityBlocked
+                            ? undefined
+                            : () => {
+                                setSelectedMaterial(m);
+                                issueModal.onOpen();
+                              }
+                        }
                       />
                     )
                   )}
@@ -2579,7 +2596,7 @@ export function AssemblyView({
                     step={step}
                     activeIndex={activeIndex}
                     done={isStepDone(step)}
-                    disabled={hasPendingScans}
+                    disabled={hasPendingScans || abilityBlocked}
                     actionRef={primaryStepActionRef}
                   />
                 </div>
@@ -2613,6 +2630,7 @@ export function AssemblyView({
           <Button
             size="lg"
             leftIcon={<LuCheck />}
+            isDisabled={abilityBlocked}
             onClick={completeModal.onOpen}
             className="h-12 flex-1"
           >
@@ -2753,6 +2771,7 @@ export function AssemblyView({
               <ActionSheetButton
                 icon={<LuTrash className="size-4 shrink-0" />}
                 label="Scrap"
+                disabled={abilityBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   scrapModal.onOpen();
@@ -2761,6 +2780,7 @@ export function AssemblyView({
               <ActionSheetButton
                 icon={<LuGitPullRequest className="size-4 shrink-0" />}
                 label="Rework"
+                disabled={abilityBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   reworkModal.onOpen();
@@ -2769,6 +2789,7 @@ export function AssemblyView({
               <ActionSheetButton
                 icon={<LuCheck className="size-4 shrink-0" />}
                 label="Mark as Done"
+                disabled={abilityBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   finishModal.onOpen();
@@ -2875,17 +2896,20 @@ export function AssemblyView({
       {/* Only auto-start when the operation actually has a timer to track (a configured
           Setup/Labor/Machine duration). With no work types there's nothing to time, so we
           don't start a stray Labor event. */}
-      {operation && autoStartOperationTimer && workTypes.length > 0 && (
-        <AutoTimer
-          operationId={operationId}
-          enabled={autoStartOperationTimer}
-          workType={headerWorkTypes[0]}
-          workCenterId={operation.workCenterId ?? undefined}
-          openEvent={openEventForWorkType(headerWorkTypes[0])}
-          trackedEntityId={isTracked ? currentEntity?.id : undefined}
-          unitIndex={currentUnitIndex}
-        />
-      )}
+      {operation &&
+        autoStartOperationTimer &&
+        !abilityBlocked &&
+        workTypes.length > 0 && (
+          <AutoTimer
+            operationId={operationId}
+            enabled={autoStartOperationTimer}
+            workType={headerWorkTypes[0]}
+            workCenterId={operation.workCenterId ?? undefined}
+            openEvent={openEventForWorkType(headerWorkTypes[0])}
+            trackedEntityId={isTracked ? currentEntity?.id : undefined}
+            unitIndex={currentUnitIndex}
+          />
+        )}
     </div>
   );
 }
@@ -2940,16 +2964,19 @@ function AutoTimer({
 function ActionSheetButton({
   icon,
   label,
-  onClick
+  onClick,
+  disabled = false
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
-      className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 transition-transform active:scale-[0.98]"
+      disabled={disabled}
+      className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
       onClick={onClick}
     >
       {icon}
@@ -2963,13 +2990,17 @@ function TimerControl({
   openEvent,
   workType,
   trackedEntityId,
-  unitIndex
+  unitIndex,
+  startDisabled = false
 }: {
   operation: Operation;
   openEvent: { id: string; startTime: string } | null;
   workType: "Setup" | "Labor" | "Machine";
   trackedEntityId?: string;
   unitIndex?: number;
+  // Starting is refused (ability policy Block); a running timer can still be
+  // paused.
+  startDisabled?: boolean;
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
@@ -3025,7 +3056,7 @@ function TimerControl({
         <input type="hidden" name="unitIndex" value={unitIndex} />
       ) : null}
       <button
-        disabled={fetcher.state !== "idle"}
+        disabled={(startDisabled && !openEvent) || fetcher.state !== "idle"}
         type="submit"
         aria-label={active ? t`Pause timer` : t`Start timer`}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] max-md:min-w-11 max-md:justify-center md:gap-2 md:px-4"

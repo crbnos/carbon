@@ -32,8 +32,8 @@ export async function action(args: ActionFunctionArgs) {
     ...line,
     id: lineId,
     stockTransferId: id,
-    requiresBatchTracking: requiresBatchTracking ? "true" : "false",
-    requiresSerialTracking: requiresSerialTracking ? "true" : "false"
+    requiresBatchTracking: Boolean(requiresBatchTracking),
+    requiresSerialTracking: Boolean(requiresSerialTracking)
   });
   // An error is toasted and the drawer stays open.
   if (result.error) return result;

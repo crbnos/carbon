@@ -28,10 +28,22 @@ and the starter. Each app mounts it once in its shell; it opens over any page.
   root action (`/`), which every app's `root.tsx` handles (`modeValidator` /
   `themeColorValidator` from `@carbon/utils`). `useOptimisticMode` only counts a `/`
   submission carrying `mode`, so the two never read each other's in-flight value.
+  The theme grid lists `pickableThemes()`: the everyday `themes`, with the seasonal theme first
+  while one is in season. Picking an everyday theme then switches the seasonal one off for
+  this browser.
 - Panes read with `useLoaderQuery` (`@carbon/query`), so the host app needs a
   `QueryClientProvider`, `window.clientCache` and `createInvalidationMiddleware` in its root.
   Strings use Lingui macros, so it also needs a `LocaleProvider`; the package is in the erp
   and mes catalogs (`lingui.config.js`), and the starter loads the erp catalog.
+- **Signature** (`SignatureForm`, Profile pane only — not `ProfileForm`, so nobody edits another
+  person's signature from the person page): one dialog with Draw / Upload tabs. Draw is
+  `SignaturePad` (plain canvas, speed- or pen-pressure-weighted ink, undo with `SHORTCUTS.undo`,
+  exported as a trimmed PNG); Upload previews the file after `prepareImageUpload` (`height: 200`). The browser uploads a NEW file to the private
+  `signatures` bucket at `{userId}/{uuid}.{ext}` (owner INSERT/SELECT only, no UPDATE), then posts
+  `intent=signature`; the ERP's `updateOwnSignature` saves `user.signaturePath` and deletes the
+  replaced file only when no `approvalRequest.decisionSignaturePath` names it. The profile loader
+  returns a 5-minute signed `signatureUrl`. Every reader checks a path with `isOwnSignaturePath`
+  (`@carbon/utils`): a user can write any text into their own row.
 
 ## Never
 

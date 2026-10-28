@@ -12,31 +12,61 @@ import {
   DropdownMenuTrigger,
   Menu
 } from "@carbon/react";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
-import type { Table } from "@tanstack/react-table";
+import type { Row, Table } from "@tanstack/react-table";
+import type { Range } from "@tanstack/react-virtual";
 import type { ReactNode } from "react";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronDown } from "react-icons/lu";
 import { BottomBar } from "~/components/Layout/Mobile/ChromeSlots";
 import { useSetAppBarOverride } from "~/components/Layout/Mobile/useAppBarOverride";
 import { useUrlParams } from "~/hooks";
 import type { fieldMappings } from "~/modules/shared/imports.models";
-import { MAX_PAGE_SIZE, PAGE_SIZES } from "~/utils/pagination";
+import type { InfiniteRows } from "../../types";
+import { findScrollParent, useInfiniteScroll } from "../../useInfiniteScroll";
+import { useVirtualRows } from "../../useVirtualRows";
 import type { DownloadProps } from "../Download";
 import type { ColumnFilter } from "../Filter/types";
-import type { usePagination } from "../Pagination";
+import { InfiniteStatus } from "../InfiniteStatus";
+import { RowLimitNote } from "../RowLimitNote";
 import { CompactEmpty, CompactLoading, CompactNoResults } from "./CompactEmpty";
 import { CompactRow } from "./CompactRow";
 import { CompactToolbar } from "./CompactToolbar";
 import { resolveSlots } from "./resolveSlots";
 
-const PAGE = 25;
+// Used until a row is measured: a 3-line list row.
+const ESTIMATED_ROW_HEIGHT = 72;
+// Used until a group header is measured.
+const ESTIMATED_GROUP_HEIGHT = 30;
+const OVERSCAN = 10;
+// The view height the server and the first client render assume, before
+// the scroll element is measured. Without it those renders would draw no rows.
+const INITIAL_VIEW_HEIGHT = 900;
+
+// A page's phone list scrolls with the app shell's `<main>`; a list in a
+// drawer or a modal scrolls with that. It is the nearest ancestor that can
+// scroll and has content past its edge; `<main>` when none has yet.
+function findListScrollParent(element: HTMLElement): HTMLElement | null {
+  return (
+    findScrollParent(element, { withOverflow: true }) ??
+    document.querySelector<HTMLElement>("main")
+  );
+}
+
+// One virtual item: a group header (its own item, so it can stay sticky
+// while its rows scroll under it) or a row with its expanded content.
+type ListEntry<T> =
+  | { kind: "group"; key: string; rows: T[] }
+  | { kind: "row"; key: string; row: Row<T> };
 
 export type CompactListProps<T> = {
   table: Table<T>;
   titleBadge?: ReactNode;
   count: number;
+  /** False while `count` is an estimate (`useExactCount`). */
+  countIsExact: boolean;
   title?: string;
   tableName?: string;
   filters: ColumnFilter[];
@@ -44,7 +74,10 @@ export type CompactListProps<T> = {
   withSearch: boolean;
   withSort: boolean;
   withPagination: boolean;
-  pagination: ReturnType<typeof usePagination>;
+  /** The infinite-scroll state, when the list loads more rows on scroll. */
+  infinite?: InfiniteRows<T>;
+  /** A single-load list that read `SINGLE_LOAD_LIMIT` rows (`<Table isTruncated>`). */
+  isTruncated?: boolean;
   withSelectableRows: boolean;
   headerActions?: ReactNode;
   primaryAction?: ReactNode;
@@ -59,6 +92,10 @@ export type CompactListProps<T> = {
   importCSV?: { table: keyof typeof fieldMappings; label: string }[];
   renderContextMenu?: (row: T) => JSX.Element | null;
   renderActions?: (selectedRows: T[]) => ReactNode;
+  /** The "Select all matching" bar, shown above the rows while selecting. */
+  selectAllBar?: ReactNode;
+  /** Set while every matching row is selected: the list's count. */
+  allMatchingCount?: number;
   renderExpandedRow?: (row: T) => ReactNode;
   canExpandRow?: (row: T) => boolean;
   groupStarts: Map<string, T[]>;
@@ -79,6 +116,7 @@ export type CompactListProps<T> = {
 export function CompactList<T>({
   table,
   count,
+  countIsExact,
   title,
   tableName,
   filters,
@@ -86,7 +124,8 @@ export function CompactList<T>({
   withSearch,
   withSort,
   withPagination,
-  pagination,
+  infinite,
+  isTruncated = false,
   withSelectableRows,
   headerActions,
   primaryAction,
@@ -100,6 +139,8 @@ export function CompactList<T>({
   importCSV,
   renderContextMenu,
   renderActions,
+  selectAllBar,
+  allMatchingCount,
   renderExpandedRow,
   canExpandRow,
   groupStarts,
@@ -109,7 +150,7 @@ export function CompactList<T>({
 }: CompactListProps<T>) {
   const { t } = useLingui();
   const numberFormatter = useNumberFormatter();
-  const [params, setParams] = useUrlParams();
+  const [, setParams] = useUrlParams();
   const rows = table.getRowModel().rows;
 
   // Only the columns desktop shows (a hidden column never fills a slot).
@@ -126,49 +167,15 @@ export function CompactList<T>({
     [table, tableName, title, columnVisibility]
   );
 
-  /* Paging: reveal 25 loaded rows at a time. On the first page, raise `limit`
-     up to the largest page size; past it (or from a deep link with an
-     offset), step through pages like desktop. */
-  const [visible, setVisible] = useState(PAGE);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: a new result set starts over
-  useEffect(() => {
-    setVisible(PAGE);
-  }, [
-    params.get("search"),
-    params.getAll("filter").join(),
-    params.getAll("sort").join(),
-    params.get("view"),
-    params.get("offset")
-  ]);
-
-  const shown = Math.min(visible, rows.length);
-  const offset = withPagination ? pagination.offset : 0;
-  const total = withPagination ? pagination.count : rows.length;
-  const allShown = shown >= rows.length;
-  const hasNextPage = withPagination && pagination.canNextPage;
-  const nextLimit =
-    hasNextPage && offset === 0 && pagination.pageSize < MAX_PAGE_SIZE
-      ? PAGE_SIZES.find((size) => size > pagination.pageSize)
-      : undefined;
-  const canLoadMore = !allShown || nextLimit !== undefined;
-  const loadMore = () => {
-    setVisible((v) => v + PAGE);
-    if (allShown && nextLimit !== undefined) {
-      setParams({ limit: String(nextLimit), offset: null });
-    }
-  };
-  const firstShown = offset + 1;
-  const lastShown = offset + shown;
-  const showPageNav =
-    allShown &&
-    nextLimit === undefined &&
-    (hasNextPage || (withPagination && pagination.canPreviousPage));
-
   /* Selection mode */
   const [selecting, setSelecting] = useState(false);
   const selectedRows = selecting
     ? table.getSelectedRowModel().flatRows.map((row) => row.original)
     : [];
+  const selectionLabel =
+    allMatchingCount !== undefined
+      ? t`All matching rows selected`
+      : t`${selectedRows.length} selected`;
   const exitSelection = () => {
     table.resetRowSelection();
     setSelecting(false);
@@ -179,7 +186,7 @@ export function CompactList<T>({
       selecting
         ? {
             kind: "selection" as const,
-            title: t`${selectedRows.length} selected`,
+            title: selectionLabel,
             trailing: (
               <Button variant="ghost" size="lg" onClick={exitSelection}>
                 <Trans>Cancel</Trans>
@@ -187,12 +194,94 @@ export function CompactList<T>({
             )
           }
         : null,
-    [selecting, selectedRows.length]
+    [selecting, selectionLabel]
   );
   useSetAppBarOverride(override);
 
   /* Expandable rows */
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  /* Row virtualization on the list's scroll element (`<main>` on a page) */
+  const entries = useMemo(() => {
+    const list: ListEntry<T>[] = [];
+    for (const row of rows) {
+      const groupRows = groupHeader ? groupStarts.get(row.id) : undefined;
+      if (groupRows) {
+        list.push({ kind: "group", key: `group-${row.id}`, rows: groupRows });
+      }
+      list.push({ kind: "row", key: row.id, row });
+    }
+    return list;
+  }, [rows, groupStarts, groupHeader]);
+
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null);
+  // The list starts below the toolbar, inside the scrolled content.
+  const [listOffset, setListOffset] = useState(0);
+  // The scroll element is found again when the layout changes: a list that
+  // grows past its drawer's edge starts to scroll with the drawer.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the list mounts with the first row
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || typeof ResizeObserver === "undefined") return;
+    const update = () => {
+      const scroller = findListScrollParent(root);
+      setScrollElement(scroller);
+      const list = listRef.current;
+      if (!scroller || !list) return;
+      setListOffset(
+        list.getBoundingClientRect().top -
+          scroller.getBoundingClientRect().top +
+          scroller.scrollTop
+      );
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [rows.length > 0]);
+
+  // The group header above the first row in view stays rendered, so it can
+  // stay stuck to the top while its rows scroll.
+  const keepGroupHeader = useCallback(
+    (range: Range) => {
+      if (!groupHeader) return undefined;
+      for (let index = range.startIndex; index >= 0; index--) {
+        if (entries[index]?.kind === "group") return index;
+      }
+      return undefined;
+    },
+    [entries, groupHeader]
+  );
+
+  const { virtualizer, renderRows } = useVirtualRows({
+    count: entries.length,
+    getScrollElement: () => scrollElement,
+    getItemKey: (index) => entries[index]?.key ?? index,
+    estimateSize: (index) =>
+      entries[index]?.kind === "group"
+        ? ESTIMATED_GROUP_HEIGHT
+        : ESTIMATED_ROW_HEIGHT,
+    overscan: OVERSCAN,
+    scrollMargin: listOffset,
+    keepIndex: keepGroupHeader,
+    initialHeight: INITIAL_VIEW_HEIGHT
+  });
+
+  /* Infinite scroll: a sentinel after the rows, on the list's scroll
+     element; it also remembers the scroll offset for Back. */
+  const sentinelRef = useInfiniteScroll(infinite, { root: scrollElement });
+  const isLoadingMore = infinite?.isLoadingMore ?? false;
+
+  // "245 of 245 rows" in place of the pager: "about" until the exact count
+  // arrives (`useExactCount`).
+  // An estimate can be below the rows already loaded; it never shows less.
+  const total = Math.max(count, rows.length);
+  const loadedLabel = numberFormatter.format(rows.length);
+  const loadedOfTotal = countIsExact
+    ? t`${loadedLabel} of ${plural(total, { one: "# row", other: "# rows" })}`
+    : t`${loadedLabel} of about ${plural(total, { one: "# row", other: "# rows" })}`;
 
   const toolbar = (
     <CompactToolbar
@@ -250,8 +339,86 @@ export function CompactList<T>({
     );
   }
 
+  // Each entry's outer element is the one the virtualizer measures.
+  const renderEntry = (entry: ListEntry<T>, index: number) => {
+    const measured = {
+      ref: virtualizer.measureElement,
+      "data-index": index
+    };
+    if (entry.kind === "group") {
+      return (
+        <div
+          key={entry.key}
+          {...measured}
+          className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border bg-muted/90 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground backdrop-blur"
+        >
+          <div className="min-w-0 truncate normal-case tracking-normal">
+            {groupHeader?.(entry.rows)}
+          </div>
+          <span className="shrink-0 tabular-nums">{entry.rows.length}</span>
+        </div>
+      );
+    }
+    const { row } = entry;
+    const rowExpandable =
+      !!renderExpandedRow && (!canExpandRow || canExpandRow(row.original));
+    const isExpanded = rowExpandable && !!expanded[row.id];
+    const content = (
+      <CompactRow
+        row={row}
+        slots={slots}
+        selection={
+          selecting
+            ? {
+                selected: row.getIsSelected(),
+                onToggle: () => row.toggleSelected()
+              }
+            : undefined
+        }
+        expansion={
+          rowExpandable
+            ? {
+                expanded: isExpanded,
+                onToggle: () =>
+                  setExpanded((prev) => ({
+                    ...prev,
+                    [row.id]: !prev[row.id]
+                  }))
+              }
+            : undefined
+        }
+      />
+    );
+    return (
+      <div key={entry.key} {...measured}>
+        {renderContextMenu && !selecting ? (
+          <Menu type="context">
+            <ContextMenu>
+              <ContextMenuTrigger asChild>
+                <div>{content}</div>
+              </ContextMenuTrigger>
+              <ContextMenuContent>
+                {renderContextMenu(row.original)}
+              </ContextMenuContent>
+            </ContextMenu>
+          </Menu>
+        ) : (
+          content
+        )}
+        {isExpanded && renderExpandedRow ? (
+          <div className="overflow-x-auto border-b border-border bg-muted/20">
+            {renderExpandedRow(row.original)}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
   return (
-    <div className="flex min-h-full w-full min-w-0 flex-col bg-card">
+    <div
+      ref={rootRef}
+      className="flex min-h-full w-full min-w-0 flex-col bg-card"
+    >
       {toolbar}
       {primaryActionRow}
       {totals.length > 0 ? (
@@ -260,113 +427,33 @@ export function CompactList<T>({
           format={(value) => numberFormatter.format(value)}
         />
       ) : null}
-      <div className="flex flex-col border-t border-border">
-        {rows.slice(0, shown).map((row) => {
-          const rowExpandable =
-            !!renderExpandedRow &&
-            (!canExpandRow || canExpandRow(row.original));
-          const isExpanded = rowExpandable && !!expanded[row.id];
-          const groupRows = groupStarts.get(row.id);
-          const content = (
-            <CompactRow
-              row={row}
-              slots={slots}
-              selection={
-                selecting
-                  ? {
-                      selected: row.getIsSelected(),
-                      onToggle: () => row.toggleSelected()
-                    }
-                  : undefined
-              }
-              expansion={
-                rowExpandable
-                  ? {
-                      expanded: isExpanded,
-                      onToggle: () =>
-                        setExpanded((prev) => ({
-                          ...prev,
-                          [row.id]: !prev[row.id]
-                        }))
-                    }
-                  : undefined
-              }
-            />
-          );
-          return (
-            <Fragment key={row.id}>
-              {groupRows && groupHeader ? (
-                <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border bg-muted/90 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground backdrop-blur">
-                  <div className="min-w-0 truncate normal-case tracking-normal">
-                    {groupHeader(groupRows)}
-                  </div>
-                  <span className="shrink-0 tabular-nums">
-                    {groupRows.length}
-                  </span>
-                </div>
-              ) : null}
-              {renderContextMenu && !selecting ? (
-                <Menu type="context">
-                  <ContextMenu>
-                    <ContextMenuTrigger asChild>
-                      <div>{content}</div>
-                    </ContextMenuTrigger>
-                    <ContextMenuContent>
-                      {renderContextMenu(row.original)}
-                    </ContextMenuContent>
-                  </ContextMenu>
-                </Menu>
-              ) : (
-                content
-              )}
-              {isExpanded && renderExpandedRow ? (
-                <div className="overflow-x-auto border-b border-border bg-muted/20">
-                  {renderExpandedRow(row.original)}
-                </div>
-              ) : null}
-            </Fragment>
-          );
-        })}
+      {selecting ? selectAllBar : null}
+      {/* An empty block stands in for each run of entries not rendered. A
+          group header is the measured element itself, so `sticky` works
+          against the list, not against a wrapper. */}
+      <div ref={listRef} className="flex flex-col border-t border-border">
+        {renderRows(
+          (index) => renderEntry(entries[index]!, index),
+          (key, height) => (
+            <div key={key} aria-hidden style={{ height }} />
+          )
+        )}
       </div>
+      <div ref={sentinelRef} aria-hidden />
+      {isTruncated ? (
+        <RowLimitNote className="px-4 py-4 text-center text-xs" />
+      ) : null}
 
-      {offset > 0 || shown < total ? (
+      {withPagination || infinite ? (
         <div className="flex flex-col items-center gap-2 px-4 py-4">
-          {canLoadMore ? (
-            <Button
-              variant="secondary"
-              size="lg"
-              className="w-full"
-              onClick={loadMore}
-              isLoading={isLoading}
-            >
-              <Trans>Load more</Trans>
-            </Button>
-          ) : null}
-          {showPageNav ? (
-            <div className="flex w-full gap-2">
-              <Button
-                variant="secondary"
-                size="lg"
-                className="flex-1"
-                isDisabled={!pagination.canPreviousPage}
-                onClick={pagination.previousPage}
-              >
-                <Trans>Previous page</Trans>
-              </Button>
-              <Button
-                variant="secondary"
-                size="lg"
-                className="flex-1"
-                isDisabled={!hasNextPage}
-                isLoading={isLoading}
-                onClick={pagination.nextPage}
-              >
-                <Trans>Next page</Trans>
-              </Button>
-            </div>
-          ) : null}
+          <InfiniteStatus
+            variant="list"
+            isLoading={isLoadingMore}
+            loadError={infinite?.loadError ?? false}
+            onRetry={() => infinite?.retry()}
+          />
           <span className="text-xs text-muted-foreground tabular-nums">
-            {t`Showing ${firstShown}–${lastShown} of ${total}`}
+            {loadedOfTotal}
           </span>
         </div>
       ) : null}
@@ -375,7 +462,7 @@ export function CompactList<T>({
         <BottomBar>
           <div className="flex items-center gap-3 border-t border-border bg-card px-4 pt-2 pb-safe-4">
             <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
-              {t`${selectedRows.length} selected`}
+              {selectionLabel}
             </span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

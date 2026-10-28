@@ -19,6 +19,7 @@ import {
   generateHTML,
   Heading,
   HStack,
+  isRichTextEmpty,
   Modal,
   ModalBody,
   ModalContent,
@@ -29,6 +30,7 @@ import {
   ModalTitle,
   RadioGroup,
   RadioGroupItem,
+  RichTextView,
   Separator,
   Table,
   Tbody,
@@ -540,12 +542,11 @@ const LineItems = ({
                   >
                     {line.description}
                   </TruncatedTooltipText>
-                  {Object.keys(line.externalNotes ?? {}).length > 0 && (
-                    <div
-                      className="prose dark:prose-invert mt-2 text-muted-foreground"
-                      dangerouslySetInnerHTML={{
-                        __html: generateHTML(line.externalNotes as JSONContent)
-                      }}
+                  {!isRichTextEmpty(line.externalNotes as JSONContent) && (
+                    <RichTextView
+                      content={line.externalNotes as JSONContent}
+                      empty={null}
+                      className="mt-2 text-muted-foreground"
                     />
                   )}
                 </div>
@@ -1282,16 +1283,15 @@ const Quote = ({ data }: { data: QuoteData }) => {
             setSelectedLines={setSelectedLines}
           />
 
-          {Object.keys(quote?.externalNotes ?? {}).length > 0 && (
+          {!isRichTextEmpty(quote?.externalNotes as JSONContent) && (
             <div className="mt-6 mb-2">
               <Heading size="h4" className="mb-2">
                 <Trans>Notes</Trans>
               </Heading>
-              <div
-                className="prose dark:prose-invert text-muted-foreground"
-                dangerouslySetInnerHTML={{
-                  __html: generateHTML(quote.externalNotes as JSONContent)
-                }}
+              <RichTextView
+                content={quote.externalNotes as JSONContent}
+                empty={null}
+                className="text-muted-foreground"
               />
             </div>
           )}

@@ -77,6 +77,7 @@ export default function ProcessRoute() {
     batchable: process.batchable ?? false,
     batchType: process.batchType ?? ("Sequential" as const),
     requiresAbility: process.requiresAbility ?? false,
+    abilityPolicy: process.abilityPolicy ?? "Warn",
     ...batchRuleInitialValues(process.batchRules as BatchRules | null)
   };
 

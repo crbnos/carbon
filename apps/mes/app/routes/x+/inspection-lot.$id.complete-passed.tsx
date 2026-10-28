@@ -10,7 +10,10 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { inspectionCompletePassedValidator } from "~/services/models";
-import { returnPickedRemainders } from "~/services/operations.service";
+import {
+  abilityBlockRefusal,
+  returnPickedRemainders
+} from "~/services/operations.service";
 import {
   checkStrictBackflush,
   getInspectionOutcomeState,
@@ -88,6 +91,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (state.jobOperationId !== operationId) {
     return fail(null, "Operation does not match the inspection lot");
   }
+  const refusal = await abilityBlockRefusal(serviceRole, {
+    operationId: state.jobOperationId,
+    employeeId: userId,
+    companyId
+  });
+  if (refusal) {
+    return fail(null, refusal);
+  }
   if (["Passed", "Failed", "Partial"].includes(state.inspection.status)) {
     return fail(null, "Inspection is closed — the disposition already ran");
   }
@@ -118,6 +129,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const completions = await postSerialCompletions(serviceRole, {
       candidates,
       jobOperationId: state.jobOperationId,
+      workCenterId: state.operation.workCenterId,
       inspectionId: id,
       eventIds,
       companyId,

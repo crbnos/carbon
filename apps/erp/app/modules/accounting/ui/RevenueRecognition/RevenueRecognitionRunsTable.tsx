@@ -12,6 +12,7 @@ import { LuCalendar, LuEye, LuHash, LuStar, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import type { getRevenueRecognitionRuns } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
@@ -27,11 +28,18 @@ type RevenueRecognitionRunsTableProps = {
   type: RunType;
   data: RevenueRecognitionRunListItem[];
   count: number;
+  infinite: InfiniteOptions;
   primaryAction?: ReactNode;
 };
 
 const RevenueRecognitionRunsTable = memo(
-  ({ type, data, count, primaryAction }: RevenueRecognitionRunsTableProps) => {
+  ({
+    type,
+    data,
+    count,
+    primaryAction,
+    infinite
+  }: RevenueRecognitionRunsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -121,6 +129,7 @@ const RevenueRecognitionRunsTable = memo(
     return (
       <>
         <Table<RevenueRecognitionRunListItem>
+          infinite={infinite}
           data={data}
           columns={columns}
           count={count}

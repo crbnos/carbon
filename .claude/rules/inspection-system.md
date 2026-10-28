@@ -146,6 +146,56 @@ Execution-layer tables (`20260722040401_inbound-inspection-execution.sql`):
 
 RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/create/update/delete`.
 
+## Plans made from a model's PMI (`20261027122437_pmi-inspection-plans.sql`)
+
+Spec: `.ai/specs/2026-10-27-pmi-inspection-plans.md`. A STEP AP242 model's PMI
+(`modelUpload.pmiPath`, see `packages/viewer/AGENTS.md`) becomes an inspection
+plan automatically. The plan holds the model (`inspectionDocument.modelUploadId`,
+ON DELETE SET NULL) and no PDF; each feature names its PMI item
+(`inspectionFeature.pmiItemId`, `d1`/`t3`) and has `pageNumber = 1`.
+
+- **Made by** `pmi-inspection-plan` (`packages/jobs/.../tasks/pmi-inspection-plan.ts`),
+  event `carbon/pmi-inspection-plan`. Senders: `model-optimize` after a run that
+  wrote `pmi.json` (every item on the model), and the `queue_pmi_inspection_plans`
+  statement handler on `item` when an INSERT/UPDATE points an item at a model that
+  already has `pmiPath` (that item only; skipped under `app.sync_in_progress`).
+- **Mapping** is `pmiInspectionCharacteristics` (`@carbon/viewer/pmi`, tested):
+  a ± dimension → nominal/tol± (re-centred on its band when both deviations
+  share a sign, since the verdict reads Tol± as magnitudes); a limit dimension → midpoint ± half range; a
+  dimension with no numeric limit (fit class, min/max) or a tolerance with no
+  zone → nominal null (Pass/Fail); a geometric tolerance → nominal `0`, Tol+ =
+  zone, Tol− `0`. Datums, notes, labels and valueless dimensions are left out.
+  Units are the file's own (`mm`/`in`), `deg` for angles.
+- **Once per item and model.** `createPmiInspectionPlan` (`@carbon/database/quality`)
+  inserts with `ON CONFLICT DO NOTHING` on the partial unique index
+  `inspectionDocument_part_model_key`. A re-optimise never rewrites an edited
+  plan; a new model on the item makes a new plan and leaves the old one (and its
+  assignments) alone. No plan is made when no characteristic results.
+- **Item delete** (`deleteItemsWithPriceBreaks`) first calls
+  `deleteUnusedPmiInspectionPlans` (`@carbon/database/quality`), which deletes
+  the items' PMI plans no `inspection` used, so an automatic plan never trips
+  `partId`'s RESTRICT; a used one still refuses the delete. Pinned, with
+  `createPmiInspectionPlan`, by `packages/database/src/pmi-inspection-plan.test.ts`;
+  the trigger by `supabase/tests/pmi-inspection-plans.test.sql`; the mapping
+  against `valuateMeasurement` by `packages/jobs/.../pmi-inspection-plan.test.ts`.
+- **Screens.** `InspectionView` (ERP and MES) shows `ModelUploadPreview`
+  (`@carbon/viewer/model-upload-preview`, shared — not an app copy) in the
+  drawing pane's place when the loader returns `model`. Its `pmiLinks` (feature
+  id → `pmiItemId`) tie the active feature to its PMI item both ways; a pick on
+  a datum or note clears the active feature. The editor shows the model in its
+  top pane, does not render the PDF tools or the Balloon action, and gives each
+  PMI row a Show action.
+- **Deleting the model** sets `modelUploadId` null (ON DELETE SET NULL): the
+  plan keeps its features and shows no drawing pane, and the item-delete
+  cleanup no longer recognises it as a PMI plan, so it blocks a part delete
+  like a hand-made plan. `deleteUnusedPmiInspectionPlans` runs as the system
+  inside the item delete, so `parts_delete` alone can remove an unused PMI plan.
+- Recreating the `inspectionDocuments` view also added the six `sampling*`
+  columns added after it was first created (`d.*` is fixed at creation), so the
+  plan list now reads the document's sampling default.
+- PMI ids are per-kind counters in file order, stable for one file. An extractor
+  change that reorders items would point an old plan's features at other items.
+
 ## Gauges (`20260929203517_inspection-gauges.sql`)
 
 - **Plan side** — `inspectionFeature.gaugeTypeId` (nullable FK → `gaugeType`,

@@ -12,7 +12,7 @@ import { useIdle } from "./useIdle";
 import useInitialDimensions from "./useInitialDimenions";
 import { useInterval } from "./useInterval";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
-import { useKeyboardWedge } from "./useKeyboardWedge";
+import { useKeyboardWedge, useScanPending } from "./useKeyboardWedge";
 import useLocalStorage from "./useLocalStorage";
 import {
   getSystemMode,
@@ -30,6 +30,7 @@ import { useRouteData } from "./useRouteData";
 import type { Shortcut, ShortcutDefinition } from "./useShortcutKeys";
 import { useShortcutKeyMap, useShortcutKeys } from "./useShortcutKeys";
 import { useShortcutSequence } from "./useShortcutSequence";
+import { useThemePreview } from "./useThemePreview";
 import useThrottle from "./useThrottle";
 import { useUrlParams } from "./useUrlParams";
 
@@ -58,9 +59,11 @@ export {
   usePlan,
   useRevalidator,
   useRouteData,
+  useScanPending,
   useShortcutKeyMap,
   useShortcutKeys,
   useShortcutSequence,
+  useThemePreview,
   useThrottle,
   useUrlParams
 };

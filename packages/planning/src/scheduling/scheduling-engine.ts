@@ -21,8 +21,7 @@ import {
   businessDay,
   msToInstantIso,
   toInstantIso,
-  toInstantMs,
-  toIsoDate
+  toInstantMs
 } from "./date-utils.ts";
 import {
   buildOperationDependencies,
@@ -49,7 +48,7 @@ import {
 import {
   dependencyEdgesEqual,
   type JobWrites,
-  type PlacementWrite
+  placementWrites
 } from "./run-overlay.ts";
 import type {
   AssemblyNode,
@@ -819,37 +818,11 @@ export class SchedulingEngine {
       this.newlyLate = false;
     }
 
-    const placements: JobWrites["placements"] = [];
-    for (const op of this.scheduledOperations.values()) {
-      const originalOp = this.operations.find((o) => o.id === op.id);
-      const isManuallyScheduled = originalOp?.manuallyScheduled ?? false;
-      // Never clobber a work center the user (or method) already set.
-      // Auto-selection may only fill null/empty work centers.
-      const originalWorkCenterId = originalOp?.workCenterId;
-      const workCenterId =
-        originalWorkCenterId != null && originalWorkCenterId !== ""
-          ? originalWorkCenterId
-          : op.workCenterId;
-
-      // dueDate is the backward need-by target and is DIFF-written: only
-      // when the computed value differs from the stored one (a quiet regen
-      // touches zero dueDate values), and never for a pinned op —
-      // manuallyScheduled means a human owns that target.
-      const needBy = this.needByByOperation.get(op.id) ?? null;
-      const storedDueDate = toIsoDate(originalOp?.dueDate ?? null);
-      const writeDueDate = !isManuallyScheduled && needBy !== storedDueDate;
-
-      const placement: PlacementWrite = {
-        startDate: op.startDate,
-        projectedCompletionAt: op.projectedCompletionAt ?? null,
-        ...(writeDueDate ? { dueDate: needBy } : {}),
-        ...(op.priority != null ? { priority: op.priority } : {}),
-        workCenterId,
-        hasConflict: op.hasConflict,
-        conflictReason: op.conflictReason
-      };
-      placements.push({ id: op.id, placement });
-    }
+    const placements = placementWrites({
+      scheduled: this.scheduledOperations.values(),
+      originals: this.operations,
+      needByByOperation: this.needByByOperation
+    });
 
     this.writes = {
       jobId: this.jobId,

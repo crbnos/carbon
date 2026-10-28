@@ -30,6 +30,7 @@ import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import type { TrainingListItem } from "~/modules/resources/types";
 import { path } from "~/utils/path";
@@ -38,10 +39,12 @@ import TrainingStatus from "./TrainingStatus";
 type TrainingsTableProps = {
   data: TrainingListItem[];
   count: number;
+  infinite: InfiniteOptions;
   tags: Array<{ name: string }>;
 };
 
-const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
+const TrainingsTable = memo((props: TrainingsTableProps) => {
+  const { data, count, infinite, tags } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -241,6 +244,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
     <>
       <Table<TrainingListItem>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

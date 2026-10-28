@@ -52,12 +52,14 @@ import {
   LuX
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { AbilityWarning } from "~/components/AbilityWarning";
 import { QualityIssueModal } from "~/components/JobOperation/components/QualityIssueModal";
 import { QuantityModal } from "~/components/JobOperation/components/QuantityModal";
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { useUser } from "~/hooks";
+import type { AbilityShortfall } from "~/services/operations.service";
 import type {
   InspectionGauge,
   InspectionMeasurement,
@@ -79,6 +81,9 @@ import InspectionMeasurementMatrix from "./InspectionMeasurementMatrix";
 import ScanInspectionSample from "./ScanInspectionSample";
 
 const InspectionDrawingPane = lazy(() => import("./InspectionDrawingPane"));
+const ModelUploadPreview = lazy(
+  () => import("@carbon/viewer/model-upload-preview")
+);
 
 // Vertical-stack sizing, mirrored from the ERP quality InspectionView: the PDF
 // pane keeps a pinned height while the features table is expanded; a draggable
@@ -115,6 +120,7 @@ type DrawingBalloonRow = {
 type WorkType = "Setup" | "Labor" | "Machine";
 
 type InspectionViewProps = {
+  abilityWarning?: AbilityShortfall | null;
   operationId: string;
   job: Job;
   operation: OperationWithDetails;
@@ -136,6 +142,8 @@ type InspectionViewProps = {
   balloons: DrawingBalloonRow[];
   documentName: string | null;
   pdfUrl: string | null;
+  /** A plan made from a model's PMI: the drawing pane shows the model. */
+  model: { modelUploadId: string; modelPath: string | null } | null;
   issueTypes: IssueTypeListItem[];
   trackedEntities: TrackedEntity[];
   requiresSerialTracking: boolean;
@@ -155,6 +163,7 @@ type InspectionViewProps = {
 // Accept/Reject disposition) in the MES AssemblyView shell, with the standard
 // shop-floor actions (timer, complete, scrap, rework, quality issue).
 export function InspectionView({
+  abilityWarning,
   operationId,
   job,
   operation,
@@ -167,6 +176,7 @@ export function InspectionView({
   balloons,
   documentName,
   pdfUrl,
+  model,
   issueTypes,
   trackedEntities,
   requiresSerialTracking,
@@ -194,7 +204,7 @@ export function InspectionView({
     [features]
   );
   const hasFeatures = liveFeatures.length > 0;
-  const showDrawing = pdfUrl != null;
+  const showDrawing = pdfUrl != null || model != null;
 
   const scannerDisclosure = useDisclosure();
   const rejectDisclosure = useDisclosure();
@@ -372,6 +382,11 @@ export function InspectionView({
       inspection.status === "Failed" ||
       inspection.status === "Partial");
 
+  // The process requires an ability this operator lacks and its policy is
+  // Block: the lot is read-only for them, as if closed. The routes refuse too.
+  const abilityBlocked = abilityWarning?.policy === "Block";
+  const isLocked = lotClosed || abilityBlocked;
+
   // Outcome bookkeeping, mirrored from the disposition route's server-side
   // buckets (which recompute and clamp — these drive the header affordances).
   const opAttrKey = `Operation ${operationId}`;
@@ -434,7 +449,7 @@ export function InspectionView({
         Math.max(0, passes - linkedProductionQuantity),
         Math.max(0, opRemaining)
       );
-  const showCompletePassed = !lotClosed && completablePassed > 0;
+  const showCompletePassed = !isLocked && completablePassed > 0;
 
   // What Accept will complete: the open remainder, minus failed units.
   const acceptRemaining = isSerial
@@ -470,7 +485,7 @@ export function InspectionView({
 
   // Partial is the terminal mixed close — only once every unit has a verdict.
   const canPartial =
-    !lotClosed && inspected >= inspection.lotSize && passes > 0 && fails > 0;
+    !isLocked && inspected >= inspection.lotSize && passes > 0 && fails > 0;
 
   // Serial lots build their sample columns by scanning tracked entities. The
   // header "Add Sample" button stays primary until the plan's sample size is
@@ -480,21 +495,22 @@ export function InspectionView({
   const hasAutoOpenedScanRef = useRef(false);
   useEffect(() => {
     if (hasAutoOpenedScanRef.current) return;
-    if (isSerial && samples.length === 0 && !lotClosed) {
+    if (isSerial && samples.length === 0 && !isLocked) {
       hasAutoOpenedScanRef.current = true;
       scannerDisclosure.onOpen();
     }
-  }, [isSerial, samples.length, lotClosed, scannerDisclosure]);
+  }, [isSerial, samples.length, isLocked, scannerDisclosure]);
 
   const maxSampleSize = hasFeatures
     ? Math.max(1, ...liveFeatures.map((f) => f.sampleSize))
     : inspection.sampleSize;
 
-  // Gating mirrors the server-side disposition guards: feature-driven lots
-  // gate per feature; lots without features gate at the lot level on
-  // the "Overall result" pass/fail counts.
+  // Accept gating: feature-driven lots gate per feature; lots without
+  // features gate at the lot level on the "Overall result" pass/fail counts.
+  // Reject is open at any time — an inspector can condemn a lot for reasons
+  // no characteristic captures (damage, wrong part, contamination).
   let canAccept: boolean;
-  let canReject: boolean;
+  let failedStatistically: boolean;
   if (hasFeatures) {
     const allFeaturesSatisfied = liveFeatures.every((feature) => {
       const counts = featureCounts.get(feature.inspectionFeatureId) ?? {
@@ -510,15 +526,16 @@ export function InspectionView({
       const counts = featureCounts.get(feature.inspectionFeatureId);
       return counts != null && counts.failed >= feature.rejectionNumber;
     });
-    canAccept = !lotClosed && allFeaturesSatisfied;
-    canReject = !lotClosed && (anyFeatureRejectable || fails > 0);
+    canAccept = !isLocked && allFeaturesSatisfied;
+    failedStatistically = anyFeatureRejectable || fails > 0;
   } else {
     canAccept =
-      !lotClosed &&
+      !isLocked &&
       inspected >= inspection.sampleSize &&
       fails <= inspection.acceptanceNumber;
-    canReject = !lotClosed && fails > inspection.acceptanceNumber;
+    failedStatistically = fails > inspection.acceptanceNumber;
   }
+  const canReject = !isLocked;
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
     if (!hasFeatures) return [];
@@ -545,6 +562,14 @@ export function InspectionView({
       .filter(Boolean) as FailedFeatureSummary[];
   }, [hasFeatures, liveFeatures, effectiveMeasurements]);
 
+  const pmiLinks = useMemo(
+    () =>
+      liveFeatures.map((f) => ({
+        id: f.inspectionFeatureId,
+        pmiItemId: f.inspectionFeature!.pmiItemId ?? null
+      })),
+    [liveFeatures]
+  );
   const drawingBalloons = useMemo(() => {
     const labelByFeatureId = new Map(
       liveFeatures.map((f) => [
@@ -635,6 +660,7 @@ export function InspectionView({
                 workCenterId={operation.workCenterId ?? undefined}
                 openEvent={openEventForWorkType(wt)}
                 workType={wt}
+                startDisabled={abilityBlocked}
               />
             ))}
             <IconButton
@@ -684,7 +710,7 @@ export function InspectionView({
 
           <div className="flex-1" />
 
-          {isSerial && !lotClosed ? (
+          {isSerial && !isLocked ? (
             <button
               type="button"
               onClick={scannerDisclosure.onOpen}
@@ -697,7 +723,7 @@ export function InspectionView({
               <Trans>Add Sample</Trans>
             </button>
           ) : null}
-          {!lotClosed && completablePassed > 0 ? (
+          {!isLocked && completablePassed > 0 ? (
             <CompletePassedButton
               inspectionId={inspection.id}
               operationId={operationId}
@@ -755,9 +781,16 @@ export function InspectionView({
               workCenterId={operation.workCenterId ?? undefined}
               openEvent={openEventForWorkType(wt)}
               workType={wt}
+              startDisabled={abilityBlocked}
             />
           ))}
         </header>
+      )}
+
+      {abilityWarning && (
+        <div className="shrink-0 px-4 pt-3">
+          <AbilityWarning warning={abilityWarning} />
+        </div>
       )}
 
       {/* Phones: the meta bar scrolls away with the body. */}
@@ -824,12 +857,24 @@ export function InspectionView({
                         </div>
                       }
                     >
-                      <InspectionDrawingPane
-                        pdfUrl={pdfUrl!}
-                        balloons={drawingBalloons}
-                        activeFeatureId={activeFeatureId}
-                        onBalloonClick={setActiveFeatureId}
-                      />
+                      {model ? (
+                        <ModelUploadPreview
+                          modelUploadId={model.modelUploadId}
+                          modelPath={model.modelPath}
+                          companyId={user.company.id}
+                          pmiLinks={pmiLinks}
+                          selectedLinkId={activeFeatureId}
+                          onLinkSelect={setActiveFeatureId}
+                          className="h-full rounded-none"
+                        />
+                      ) : (
+                        <InspectionDrawingPane
+                          pdfUrl={pdfUrl!}
+                          balloons={drawingBalloons}
+                          activeFeatureId={activeFeatureId}
+                          onBalloonClick={setActiveFeatureId}
+                        />
+                      )}
                     </Suspense>
                   )}
                 </ClientOnly>
@@ -888,7 +933,7 @@ export function InspectionView({
                 </div>
                 <InspectionMeasurementMatrix
                   inspectionId={inspection.id}
-                  isReadOnly={lotClosed}
+                  isReadOnly={isLocked}
                   isSerial={isSerial}
                   features={features}
                   samples={samples}
@@ -911,7 +956,7 @@ export function InspectionView({
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card max-md:flex-initial">
               <InspectionMeasurementMatrix
                 inspectionId={inspection.id}
-                isReadOnly={lotClosed}
+                isReadOnly={isLocked}
                 isSerial={isSerial}
                 features={features}
                 samples={samples}
@@ -1024,7 +1069,11 @@ export function InspectionView({
           maxAllocatable={opRemaining}
           completions={0}
           issueTypes={issueTypes}
-          summary={t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s). Route the units below to scrap or rework, or record the verdict only.`}
+          summary={
+            failedStatistically
+              ? t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s). Route the units below to scrap or rework, or record the verdict only.`
+              : t`The entire lot of ${inspection.lotSize} will be rejected as non-conforming — ${passes} sampled pass(es) and ${fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only.`
+          }
           failedFeatureSummary={failedFeatureSummary}
           eventIds={eventIds}
           onCancel={rejectDisclosure.onClose}
@@ -1112,6 +1161,7 @@ export function InspectionView({
               <ActionSheetButton
                 icon={<LuTrash className="size-4 shrink-0" />}
                 label={t`Scrap`}
+                disabled={abilityBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   scrapModal.onOpen();
@@ -1120,6 +1170,7 @@ export function InspectionView({
               <ActionSheetButton
                 icon={<LuGitPullRequest className="size-4 shrink-0" />}
                 label={t`Rework`}
+                disabled={abilityBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   reworkModal.onOpen();
@@ -1128,6 +1179,7 @@ export function InspectionView({
               <ActionSheetButton
                 icon={<LuCheck className="size-4 shrink-0" />}
                 label={t`Mark as Done`}
+                disabled={abilityBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   finishModal.onOpen();
@@ -1141,7 +1193,7 @@ export function InspectionView({
                   qualityModal.onOpen();
                 }}
               />
-              {isSerial && !lotClosed ? (
+              {isSerial && !isLocked ? (
                 <ActionSheetButton
                   icon={<LuScan className="size-4 shrink-0" />}
                   label={t`Add Sample`}
@@ -1160,16 +1212,18 @@ export function InspectionView({
           is running (any work type — the exclusive start would end it).
           Always on for inspections, independent of the company-level
           autoStartOperationTimer setting. */}
-      <AutoTimer
-        operationId={operationId}
-        workType={workTypes.includes("Labor") ? "Labor" : workTypes[0]}
-        workCenterId={operation.workCenterId ?? undefined}
-        openEvent={
-          (events.find((e) => !e.endTime) as
-            | { id: string; startTime: string }
-            | undefined) ?? null
-        }
-      />
+      {!abilityBlocked && (
+        <AutoTimer
+          operationId={operationId}
+          workType={workTypes.includes("Labor") ? "Labor" : workTypes[0]}
+          workCenterId={operation.workCenterId ?? undefined}
+          openEvent={
+            (events.find((e) => !e.endTime) as
+              | { id: string; startTime: string }
+              | undefined) ?? null
+          }
+        />
+      )}
     </div>
   );
 }
@@ -1361,16 +1415,19 @@ function AcceptLotModal({
 function ActionSheetButton({
   icon,
   label,
-  onClick
+  onClick,
+  disabled = false
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
-      className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 transition-transform active:scale-[0.98]"
+      disabled={disabled}
+      className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
       onClick={onClick}
     >
       {icon}
@@ -1447,12 +1504,16 @@ function TimerControl({
   operationId,
   workCenterId,
   openEvent,
-  workType
+  workType,
+  startDisabled = false
 }: {
   operationId: string;
   workCenterId?: string;
   openEvent: { id: string; startTime: string } | null;
   workType: WorkType;
+  // Starting is refused (ability policy Block); a running timer can still be
+  // paused.
+  startDisabled?: boolean;
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
@@ -1487,7 +1548,7 @@ function TimerControl({
         <input type="hidden" name="id" value={openEvent.id} />
       ) : null}
       <button
-        disabled={fetcher.state !== "idle"}
+        disabled={(startDisabled && !openEvent) || fetcher.state !== "idle"}
         type="submit"
         aria-label={active ? t`Pause timer` : t`Start timer`}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] max-md:border-l-0 md:gap-2 md:px-4"

@@ -10,6 +10,18 @@ export function getAccessorKey<T>(columnDef: ColumnDef<T, unknown>) {
     : undefined;
 }
 
+// Whether the server can sort the list by this column. Cursor paging compares
+// the sort value inside one table, so a sort on another table's column
+// (`table.column`) is off, as is a column that opts out with
+// `enableSorting: false` (for example a value the list's view does not have).
+export function isServerSortable<T>(columnDef: ColumnDef<T, unknown>) {
+  const accessorKey = getAccessorKey(columnDef);
+  if (!accessorKey) return false;
+  if (columnDef.enableSorting === false) return false;
+  const sortKey = columnDef.meta?.sortBy ?? accessorKey;
+  return !sortKey.includes(".");
+}
+
 export interface ColumnMaps<T> {
   // accessorKey (or column id for display columns) -> header label
   accessors: Record<string, string>;
@@ -36,7 +48,7 @@ export function buildColumnMaps<T>(
 
   for (const column of columns) {
     const accessorKey = getAccessorKey(column);
-    // '_' is the nested-path separator for editable cells (updateNestedProperty).
+    // '_' is the nested-path separator for editable cells (`rowEdits.ts`).
     // Custom-field columns are read-only and keyed by a generated id that may
     // contain '_', so they are exempt.
     if (
@@ -76,7 +88,7 @@ export function buildColumnMaps<T>(
 
     // Sort picker stays keyed on string-header columns only, so JSX-header
     // columns (e.g. MRP week columns with a filterHeader) never flood it.
-    if (accessorKey && stringHeader !== undefined) {
+    if (accessorKey && stringHeader !== undefined && isServerSortable(column)) {
       const sortKey = column.meta?.sortBy ?? accessorKey;
       sortKeyToLabel[sortKey] = stringHeader;
     }
@@ -139,17 +151,23 @@ export function exportOnlyColumn<T>(opts: {
   };
 }
 
-export function updateNestedProperty(
-  obj: object,
-  path: string | string[],
-  value: unknown
-): unknown {
-  if (typeof path == "string")
-    return updateNestedProperty(obj, path.split("_"), value);
-  else if (path.length == 1 && value !== undefined)
-    // @ts-expect-error
-    return (obj[path[0]] = value);
-  else if (path.length == 0) return obj;
-  // @ts-expect-error
-  else return updateNestedProperty(obj[path[0]], path.slice(1), value);
+/**
+ * True when every row has an id in `idColumn` and no two rows share it. The
+ * Table then keys rows by it, so selection and expansion follow the row when
+ * pages are appended or rows move. A list that repeats an id keeps index keys.
+ */
+export function hasUniqueRowIds(
+  rows: readonly unknown[],
+  idColumn = "id"
+): boolean {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (!row || typeof row !== "object" || !(idColumn in row)) return false;
+    const id = (row as Record<string, unknown>)[idColumn];
+    if (id === null || id === undefined) return false;
+    const key = String(id);
+    if (seen.has(key)) return false;
+    seen.add(key);
+  }
+  return true;
 }

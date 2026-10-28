@@ -2,90 +2,29 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  isPurchaseOrderLocked,
-  purchaseOrderDeliveryValidator
-} from "~/modules/purchasing/purchasing.models";
-import {
-  getPurchaseOrder,
-  upsertPurchaseOrderDelivery
-} from "~/modules/purchasing/purchasing.service";
+import { purchaseOrderDeliveryValidator } from "~/modules/purchasing/purchasing.models";
 import { setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(purchaseOrderDeliveryValidator).request(args, {
+    params: ["orderId"]
+  });
+  if ("invalid" in input) return input.invalid;
+  const { orderId } = input.params;
 
-  const { orderId } = params;
-  if (!orderId) throw new Error("Could not find orderId");
-
-  // First check with view permission to get PO status
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "purchasing"
+  const api = await carbon(args.request);
+  const result = await api.purchasing.updatePurchaseOrderDelivery({
+    ...input.data,
+    id: orderId,
+    customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
 
-  const purchaseOrder = await getPurchaseOrder(viewClient, orderId);
-  if (purchaseOrder.error) {
-    throw redirect(
-      path.to.purchaseOrderDetails(orderId),
-      await flash(
-        request,
-        error(purchaseOrder.error, "Failed to load purchase order")
-      )
-    );
-  }
-
-  await requireUnlocked({
-    request,
-    isLocked: isPurchaseOrderLocked(purchaseOrder.data?.status),
-    redirectTo: path.to.purchaseOrderDetails(orderId),
-    message: "Cannot modify a confirmed purchase order."
-  });
-
-  const { client, userId } = await requirePermissions(request, {
-    update: "purchasing"
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(purchaseOrderDeliveryValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const updatePurchaseOrderDelivery = await upsertPurchaseOrderDelivery(
-    client,
-    {
-      ...validation.data,
-      id: orderId,
-      updatedBy: userId,
-      customFields: setCustomFields(formData)
-    }
-  );
-  if (updatePurchaseOrderDelivery.error) {
-    throw redirect(
-      path.to.purchaseOrderDetails(orderId),
-      await flash(
-        request,
-        error(
-          updatePurchaseOrderDelivery.error,
-          "Failed to update purchase order delivery"
-        )
-      )
-    );
-  }
-
-  throw redirect(
+  return respond(args.request, result).redirect(
     path.to.purchaseOrderDetails(orderId),
-    await flash(request, success("Updated purchase order delivery"))
+    { message: "Updated purchase order delivery" }
   );
 }

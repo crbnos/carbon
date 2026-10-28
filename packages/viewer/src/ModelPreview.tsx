@@ -3,19 +3,42 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Button, cn, IconButton } from "@carbon/react";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import {
   LuBox,
   LuCamera,
   LuChevronDown,
   LuDownload,
+  LuEye,
+  LuEyeOff,
   LuMaximize,
   LuRotateCw,
   LuTrash2,
   LuTriangleAlert,
   LuX
 } from "react-icons/lu";
-import type { ModelMetrics, ViewDirection } from "./ModelCanvas";
+import type {
+  ModelMetrics,
+  PmiFocusRequest,
+  ViewDirection
+} from "./ModelCanvas";
+import {
+  formatPmiItem,
+  groupPmiItems,
+  type PmiDisplayUnit,
+  type PmiDocument,
+  type PmiItem,
+  parsePmiDocument,
+  visibleItemIds
+} from "./pmi";
 import { isRawRenderable } from "./raw/formats";
 
 // The three.js renderer is code-split: a page with a model ships only this tier
@@ -47,6 +70,16 @@ export type ModelPreviewProps = {
   optimizedUrl?: string | null;
   /** Lossless assembly GLB — used as the interactive tier if no optimised one. */
   glbUrl?: string | null;
+  /** The model's `pmi.json` (PMI read from its STEP AP242 source). When it
+   *  holds items, a PMI panel lists them and the server model draws them. */
+  pmiUrl?: string | null;
+  /** Controls which PMI item is selected (an inspection screen's active
+   *  characteristic). A change selects the item and turns the camera to it.
+   *  Leave undefined to let the PMI panel own the selection. */
+  selectedPmiItemId?: string | null;
+  /** Called when the user picks a PMI item in the panel or on the model
+   *  (null when the pick clears the selection). */
+  onPmiItemSelect?: (id: string | null) => void;
   /** Static poster image (thumbnail PNG) shown before any 3D loads. */
   thumbnailUrl?: string | null;
   /** The raw uploaded file's auth-proxied URL — the WASM fallback tier renders
@@ -100,6 +133,9 @@ export function ModelPreview({
   lodUrl = null,
   optimizedUrl = null,
   glbUrl = null,
+  pmiUrl = null,
+  selectedPmiItemId,
+  onPmiItemSelect,
   thumbnailUrl = null,
   rawUrl = null,
   optimizing = false,
@@ -131,6 +167,98 @@ export function ModelPreview({
   useEffect(() => {
     if (awaitingModel) setWaitDismissed(false);
   }, [awaitingModel]);
+
+  // One display unit for Measurements and PMI. A model whose PMI names its
+  // source unit starts there, unless the user has already picked one.
+  const [unit, setUnit] = useState<UnitSystem>("imperial");
+  const unitPickedRef = useRef(false);
+  const changeUnit = useCallback((next: UnitSystem) => {
+    unitPickedRef.current = true;
+    setUnit(next);
+  }, []);
+
+  const pmi = usePmiDocument(pmiUrl);
+  useEffect(() => {
+    if (!pmi?.sourceUnit || unitPickedRef.current) return;
+    setUnit(pmi.sourceUnit === "mm" ? "metric" : "imperial");
+  }, [pmi]);
+
+  const [pmiVisible, setPmiVisible] = useState(true);
+  const [pmiViewId, setPmiViewId] = useState<string | null>(null);
+  const [pmiSelectedId, setPmiSelectedId] = useState<string | null>(null);
+  const [focusRequest, setFocusRequest] = useState<PmiFocusRequest | null>(
+    null
+  );
+  const focusSeqRef = useRef(0);
+  // The selection as last set here, so a host echoing a pick back does not
+  // turn the camera a second time.
+  const pmiSelectedRef = useRef<string | null>(null);
+  pmiSelectedRef.current = pmiSelectedId;
+  // A new document starts with nothing picked. The ref is cleared with it, so
+  // a controlled selection (below) is applied again to the new document.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: resets on a new document without reading it
+  useEffect(() => {
+    pmiSelectedRef.current = null;
+    setPmiViewId(null);
+    setPmiSelectedId(null);
+    setFocusRequest(null);
+  }, [pmi]);
+  const pmiVisibleIds = useMemo(
+    () => (pmi ? visibleItemIds(pmi, pmiViewId) : undefined),
+    [pmi, pmiViewId]
+  );
+  const focusPmiItem = useCallback((id: string) => {
+    pmiSelectedRef.current = id;
+    setPmiSelectedId(id);
+    setPmiVisible(true);
+    focusSeqRef.current += 1;
+    setFocusRequest({ kind: "item", id, seq: focusSeqRef.current });
+  }, []);
+  // Picking the selected item again clears it; picking another turns to it.
+  const selectPmiItem = useCallback(
+    (id: string) => {
+      if (pmiSelectedId === id) {
+        setPmiSelectedId(null);
+        onPmiItemSelect?.(null);
+        return;
+      }
+      focusPmiItem(id);
+      onPmiItemSelect?.(id);
+    },
+    [pmiSelectedId, focusPmiItem, onPmiItemSelect]
+  );
+  // A controlled selection follows the host, also once the document arrives
+  // (a new document resets the selection above).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reacts to the host's id and a new document only
+  useEffect(() => {
+    if (selectedPmiItemId === undefined || !pmi) return;
+    if (selectedPmiItemId === null) {
+      setPmiSelectedId(null);
+      return;
+    }
+    if (
+      selectedPmiItemId !== pmiSelectedRef.current &&
+      pmi.items.some((item) => item.id === selectedPmiItemId)
+    ) {
+      focusPmiItem(selectedPmiItemId);
+    }
+  }, [selectedPmiItemId, pmi]);
+  const selectPmiView = useCallback(
+    (viewId: string | null) => {
+      setPmiViewId(viewId);
+      setPmiSelectedId(null);
+      onPmiItemSelect?.(null);
+      if (viewId) {
+        focusSeqRef.current += 1;
+        setFocusRequest({
+          kind: "view",
+          id: viewId,
+          seq: focusSeqRef.current
+        });
+      }
+    },
+    [onPmiItemSelect]
+  );
 
   const interactiveUrl = optimizedUrl ?? glbUrl;
   // The instant 3D layer: the LOD if it's distinct from the interactive model
@@ -209,6 +337,13 @@ export function ModelPreview({
                     viewDirectionRef={viewDirectionRef}
                     onLoaded={() => setFullLoaded(true)}
                     onMetrics={setMetrics}
+                    pmi={pmi}
+                    pmiVisible={pmiVisible}
+                    pmiVisibleIds={pmiVisibleIds}
+                    pmiSelectedId={pmiSelectedId}
+                    pmiUnit={unit === "metric" ? "mm" : "in"}
+                    onPmiSelect={selectPmiItem}
+                    focusRequest={focusRequest}
                   />
                 )}
               </div>
@@ -275,8 +410,34 @@ export function ModelPreview({
             </div>
           )}
 
-          {/* Measurements + unit toggle (top-left), like the WASM viewer. */}
-          {metrics && fullLoaded && <ModelMetricsPanel metrics={metrics} />}
+          {/* Measurements + unit toggle (top-left), like the WASM viewer, and
+              the PMI under it — only over the server model, which draws it. */}
+          {fullLoaded &&
+            (metrics || (hasServerModel && pmi && pmi.items.length > 0)) && (
+              <div className="absolute left-2 top-2 z-20 flex flex-col items-start gap-2">
+                {metrics && (
+                  <ModelMetricsPanel
+                    metrics={metrics}
+                    unit={unit}
+                    onUnitChange={changeUnit}
+                  />
+                )}
+                {hasServerModel && pmi && pmi.items.length > 0 && (
+                  <PmiPanel
+                    doc={pmi}
+                    unit={unit === "metric" ? "mm" : "in"}
+                    visible={pmiVisible}
+                    onVisibleChange={setPmiVisible}
+                    viewId={pmiViewId}
+                    onViewChange={selectPmiView}
+                    visibleIds={pmiVisibleIds}
+                    selectedId={pmiSelectedId}
+                    onSelect={selectPmiItem}
+                    onUnitChange={changeUnit}
+                  />
+                )}
+              </div>
+            )}
 
           {/* Click-to-interact gate. */}
           {fullLoaded && !interactive && (
@@ -418,8 +579,15 @@ type UnitSystem = "metric" | "imperial";
 const MM_PER_IN = 25.4;
 
 /** Dimensions + surface area / volume, with an mm/in toggle. Model space is mm. */
-function ModelMetricsPanel({ metrics }: { metrics: ModelMetrics }) {
-  const [unit, setUnit] = useState<UnitSystem>("imperial");
+function ModelMetricsPanel({
+  metrics,
+  unit,
+  onUnitChange
+}: {
+  metrics: ModelMetrics;
+  unit: UnitSystem;
+  onUnitChange: (unit: UnitSystem) => void;
+}) {
   const [open, setOpen] = useState(false);
   const imperial = unit === "imperial";
 
@@ -443,7 +611,7 @@ function ModelMetricsPanel({ metrics }: { metrics: ModelMetrics }) {
   return (
     <div
       className={cn(
-        "absolute left-2 top-2 z-20 rounded-lg border border-border bg-popover p-2.5 text-xs text-popover-foreground shadow-md",
+        "rounded-lg border border-border bg-popover p-2.5 text-xs text-popover-foreground shadow-md",
         open ? "w-56" : "w-auto"
       )}
     >
@@ -459,7 +627,7 @@ function ModelMetricsPanel({ metrics }: { metrics: ModelMetrics }) {
           />
           Measurements
         </button>
-        {open && <UnitToggle unit={unit} onChange={setUnit} />}
+        {open && <UnitToggle unit={unit} onChange={onUnitChange} />}
       </div>
 
       {open && (
@@ -506,6 +674,201 @@ function ModelMetricsPanel({ metrics }: { metrics: ModelMetrics }) {
       )}
     </div>
   );
+}
+
+/**
+ * The model's PMI: an eye toggle for the layer, the saved views, and the items
+ * by kind. Picking an item turns it blue and turns the camera to it; picking
+ * it again clears it. Copies the Measurements card.
+ */
+function PmiPanel({
+  doc,
+  unit,
+  visible,
+  onVisibleChange,
+  viewId,
+  onViewChange,
+  visibleIds,
+  selectedId,
+  onSelect,
+  onUnitChange
+}: {
+  doc: PmiDocument;
+  unit: PmiDisplayUnit;
+  visible: boolean;
+  onVisibleChange: (visible: boolean) => void;
+  viewId: string | null;
+  onViewChange: (viewId: string | null) => void;
+  visibleIds: Set<string> | undefined;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onUnitChange: (unit: UnitSystem) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const groups = useMemo(
+    () =>
+      groupPmiItems(doc)
+        .map((group) => ({
+          ...group,
+          items: visibleIds
+            ? group.items.filter((item) => visibleIds.has(item.id))
+            : group.items
+        }))
+        .filter((group) => group.items.length > 0),
+    [doc, visibleIds]
+  );
+
+  return (
+    <div
+      className={cn(
+        "rounded-lg border border-border bg-popover p-2.5 text-xs text-popover-foreground shadow-md",
+        open ? "w-64" : "w-auto"
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <LuChevronDown
+            className={cn("size-3 transition-transform", !open && "-rotate-90")}
+          />
+          PMI
+          <span className="tabular-nums">{doc.items.length}</span>
+        </button>
+        <IconButton
+          aria-label={visible ? "Hide PMI" : "Show PMI"}
+          title={visible ? "Hide PMI" : "Show PMI"}
+          className="-my-1 text-muted-foreground"
+          icon={visible ? <LuEye /> : <LuEyeOff />}
+          variant="ghost"
+          size="sm"
+          onClick={() => onVisibleChange(!visible)}
+        />
+      </div>
+
+      {open && (
+        <>
+          <div className="mt-2 flex justify-end">
+            <UnitToggle
+              unit={unit === "mm" ? "metric" : "imperial"}
+              onChange={onUnitChange}
+            />
+          </div>
+          {doc.views.length > 0 && (
+            <select
+              aria-label="Saved view"
+              value={viewId ?? ""}
+              onChange={(event) => onViewChange(event.target.value || null)}
+              className="mt-2 w-full rounded-md border-none bg-muted/60 px-2 py-1 text-[11px] font-medium text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">All PMI</option>
+              {doc.views.map((view) => (
+                <option key={view.id} value={view.id}>
+                  {view.name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <div className="mt-2 flex max-h-64 flex-col gap-2 overflow-y-auto">
+            {groups.map((group) => (
+              <div key={group.kind} className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {group.title}
+                </span>
+                {group.items.map((item) => (
+                  <PmiRow
+                    key={item.id}
+                    item={item}
+                    unit={unit}
+                    sourceUnit={doc.sourceUnit}
+                    selected={item.id === selectedId}
+                    onSelect={onSelect}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function PmiRow({
+  item,
+  unit,
+  sourceUnit,
+  selected,
+  onSelect
+}: {
+  item: PmiItem;
+  unit: PmiDisplayUnit;
+  sourceUnit: PmiDisplayUnit | null;
+  selected: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const { label, symbol, title } = formatPmiItem(item, unit, sourceUnit);
+  // A tolerance prints as its frame (`⌖ | ⌀0.1 | A`) and a datum as its
+  // boxed letter, the way the drawing shows them.
+  const cells = item.kind === "tolerance" ? label.split(" | ") : null;
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-pressed={selected}
+      onClick={() => onSelect(item.id)}
+      className={cn(
+        "flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left font-mono tabular-nums transition-colors hover:bg-accent",
+        selected && "bg-accent text-accent-foreground"
+      )}
+    >
+      {cells ? (
+        <span className="flex min-w-0 divide-x divide-border border border-border">
+          {cells.map((cell, index) => (
+            <span key={index} className="whitespace-nowrap px-1">
+              {cell}
+            </span>
+          ))}
+        </span>
+      ) : item.kind === "datum" ? (
+        <span className="border border-border px-1">{label}</span>
+      ) : (
+        <>
+          {symbol && <span>{symbol}</span>}
+          <span className="truncate">{label}</span>
+        </>
+      )}
+    </button>
+  );
+}
+
+/**
+ * Fetches and parses `pmi.json`. Null while loading, on any failure, or for a
+ * document the viewer cannot read — the preview then simply shows no PMI.
+ */
+function usePmiDocument(url: string | null): PmiDocument | null {
+  const [doc, setDoc] = useState<PmiDocument | null>(null);
+  useEffect(() => {
+    setDoc(null);
+    if (!url) return;
+    const controller = new AbortController();
+    fetch(url, { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((json: unknown) => {
+        if (!controller.signal.aborted) setDoc(parsePmiDocument(json));
+      })
+      .catch(() => {
+        // The preview works without PMI: a failed fetch just shows no panel
+        // (the request itself is in the network log).
+        if (!controller.signal.aborted) setDoc(null);
+      });
+    return () => controller.abort();
+  }, [url]);
+  return doc;
 }
 
 /** iOS-style segmented mm/in toggle — lighter than the tab pills. */

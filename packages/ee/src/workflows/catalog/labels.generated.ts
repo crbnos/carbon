@@ -570,6 +570,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.user.isConsoleOperator": msg`Is console operator`,
   "entity.user.lastName": msg`Last name`,
   "entity.user.phone": msg`Phone`,
+  "entity.user.signaturePath": msg`Signature path`,
   "integration.gmail": msg`Gmail`,
   "integration.gmail.gmail_send_email": msg`Gmail: Send Email`,
   "integration.google-calendar": msg`Google Calendar`,

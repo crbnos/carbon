@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="alTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#ced5da"/>
+      <stop offset="0.28" stop-color="#e8edf0"/>
+      <stop offset="0.6" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#7d848a"/>
+    </linearGradient>
+    <linearGradient id="alEdge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b6bec4"/>
+      <stop offset="0.22" stop-color="#8e969c"/>
+      <stop offset="0.6" stop-color="#767d83"/>
+      <stop offset="1" stop-color="#5b6167"/>
+    </linearGradient>
+    <linearGradient id="alCut" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#7f868b"/>
+      <stop offset="0.4" stop-color="#6a7176"/>
+      <stop offset="1" stop-color="#4a5055"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="topClip">
+      <path d="M128 568 L718 512 L883 394 L293 450 Z"/>
+    </clipPath>
+    <clipPath id="frontClip">
+      <path d="M128 568 L718 512 L718 570 L128 626 Z"/>
+    </clipPath>
+    <clipPath id="cutClip">
+      <path d="M718 512 L883 394 L883 452 L718 570 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="524" cy="702" rx="424" ry="93" fill="url(#shadow)"/>
+
+  <g transform="rotate(-18 505.5 510)">
+    <!-- sawn long edge -->
+    <path d="M128 568 L718 512 L718 570 L128 626 Z" fill="url(#alEdge)" stroke="#4a5055" stroke-width="3"/>
+    <g clip-path="url(#frontClip)" stroke="#3f454a" stroke-opacity="0.40" stroke-width="2">
+      <path d="M160 560 L160 626"/><path d="M196 556 L196 626"/>
+      <path d="M232 552 L232 626"/><path d="M268 549 L268 626"/>
+      <path d="M304 545 L304 626"/><path d="M340 542 L340 626"/>
+      <path d="M376 538 L376 626"/><path d="M412 535 L412 626"/>
+      <path d="M448 531 L448 626"/><path d="M484 528 L484 626"/>
+      <path d="M520 524 L520 626"/><path d="M556 521 L556 626"/>
+      <path d="M592 517 L592 626"/><path d="M628 514 L628 626"/>
+      <path d="M664 510 L664 626"/><path d="M700 507 L700 626"/>
+    </g>
+    <g clip-path="url(#frontClip)" stroke="#e2e8eb" stroke-opacity="0.22" stroke-width="1.8">
+      <path d="M178 558 L178 626"/><path d="M250 551 L250 626"/>
+      <path d="M322 544 L322 626"/><path d="M394 537 L394 626"/>
+      <path d="M466 530 L466 626"/><path d="M538 523 L538 626"/>
+      <path d="M610 516 L610 626"/><path d="M682 509 L682 626"/>
+    </g>
+
+    <!-- oxidised cut end -->
+    <path d="M718 512 L883 394 L883 452 L718 570 Z" fill="url(#alCut)" stroke="#3f454a" stroke-width="3"/>
+    <g clip-path="url(#cutClip)" stroke="#2f353a" stroke-opacity="0.42" stroke-width="2">
+      <path d="M742 496 L742 570"/><path d="M766 478 L766 570"/>
+      <path d="M790 461 L790 570"/><path d="M814 444 L814 570"/>
+      <path d="M838 427 L838 570"/><path d="M862 409 L862 570"/>
+    </g>
+    <g clip-path="url(#cutClip)" fill="#1f2529" opacity="0.22">
+      <path d="M718 540 L883 422 L883 452 L718 570 Z"/>
+    </g>
+
+    <!-- broad milled face -->
+    <path d="M128 568 L718 512 L883 394 L293 450 Z" fill="url(#alTop)" stroke="#4a5055" stroke-width="3"/>
+
+    <!-- faint surface mottling -->
+    <g clip-path="url(#topClip)">
+      <g fill="#5f666b" opacity="0.10">
+        <ellipse cx="330" cy="520" rx="120" ry="26" transform="rotate(-5 330 520)"/>
+        <ellipse cx="640" cy="470" rx="150" ry="22" transform="rotate(-5 640 470)"/>
+        <ellipse cx="470" cy="452" rx="90" ry="16" transform="rotate(-5 470 452)"/>
+      </g>
+      <g fill="#ffffff" opacity="0.12">
+        <ellipse cx="420" cy="490" rx="170" ry="24" transform="rotate(-5 420 490)"/>
+        <ellipse cx="720" cy="440" rx="110" ry="18" transform="rotate(-5 720 440)"/>
+      </g>
+    </g>
+
+    <!-- long directional saw / fly-cut marks -->
+    <g clip-path="url(#topClip)" stroke="#5c636a" stroke-opacity="0.32" stroke-width="2" fill="none">
+      <path d="M136 562 L726 506"/><path d="M146 555 L736 499"/>
+      <path d="M156 548 L746 492"/><path d="M166 541 L756 485"/>
+      <path d="M176 534 L766 478"/><path d="M186 527 L776 471"/>
+      <path d="M196 520 L786 464"/><path d="M206 513 L796 457"/>
+      <path d="M215 506 L805 450"/><path d="M225 498 L815 442"/>
+      <path d="M235 491 L825 435"/><path d="M245 484 L835 428"/>
+      <path d="M255 477 L845 421"/><path d="M265 470 L855 414"/>
+      <path d="M275 463 L865 407"/><path d="M285 456 L875 400"/>
+    </g>
+    <g clip-path="url(#topClip)" stroke="#f2f6f8" stroke-opacity="0.30" stroke-width="1.6" fill="none">
+      <path d="M141 559 L731 503"/><path d="M151 552 L741 496"/>
+      <path d="M161 545 L751 489"/><path d="M171 538 L761 482"/>
+      <path d="M181 531 L771 475"/><path d="M191 524 L781 468"/>
+      <path d="M201 517 L791 461"/><path d="M211 510 L801 454"/>
+      <path d="M220 502 L810 446"/><path d="M230 495 L820 439"/>
+      <path d="M240 488 L830 432"/><path d="M250 481 L840 425"/>
+      <path d="M260 474 L850 418"/><path d="M270 467 L860 411"/>
+      <path d="M280 460 L870 404"/>
+    </g>
+    <!-- a few heavier passes -->
+    <g clip-path="url(#topClip)" stroke="#4e555b" stroke-opacity="0.34" stroke-width="4" fill="none">
+      <path d="M172 537 L762 481"/>
+      <path d="M232 494 L822 438"/>
+      <path d="M272 466 L862 410"/>
+    </g>
+
+    <!-- crisp arris with a light burr along the sawn edges -->
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.42" stroke-width="2.5">
+      <path d="M130 566 L716 510"/>
+      <path d="M719 511 L881 396"/>
+    </g>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+      <path d="M137 573 L714 518"/>
+      <path d="M296 452 L879 397"/>
+      <path d="M726 517 L874 411"/>
+    </g>
+    <g fill="none" stroke="#33383c" stroke-opacity="0.35" stroke-width="2">
+      <path d="M718 514 L718 568"/>
+    </g>
+  </g>
+</svg>
