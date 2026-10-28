@@ -2435,7 +2435,7 @@ msgstr "SubCLIN: 4 cyfry jego macierzystego CLIN na tej samej umowie, plus 2 lit
 msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
 msgstr "Propozycja, którą MRP generuje po każdym uruchomieniu: Zamów lub Produkuj nowe pokrycie, albo Przyspiesz, Odłóż, Zwiększ, Zmniejsz lub Anuluj otwartą pozycję zamówienia zakupu bądź zlecenie produkcyjne. Zastosuj ją na stronie planowania, odrzuć lub przypisz ją."
 
-msgid "A supervisor or the office, after the work is done."
+msgid "A supervisor or the office, after the work is done"
 msgstr ""
 
 msgid "a supplier"
@@ -8332,7 +8332,7 @@ msgstr "pracownicy zewnętrzni"
 msgid "Contractors"
 msgstr "Pracownicy zewnętrzni"
 
-msgid "Contracts."
+msgid "Contracts"
 msgstr ""
 
 msgid "Control"
@@ -9847,7 +9847,7 @@ msgstr "klienci"
 msgid "Customers"
 msgstr "Klienci"
 
-msgid "Customers choose options before they order (configure to order)."
+msgid "Customers choose options before they order (configure to order)"
 msgstr ""
 
 msgid "customers with contacts, locations, types, statuses, payment terms, currency and price overrides"
@@ -14154,7 +14154,7 @@ msgstr "Zakończyć do"
 msgid "Finish with material unpicked?"
 msgstr "Zakończyć bez rozliczenia materiału?"
 
-msgid "Finished components, such as fasteners, electronics or bought-in assemblies."
+msgid "Finished components, such as fasteners, electronics or bought-in assemblies"
 msgstr ""
 
 msgid "Finished goods"
@@ -17337,9 +17337,6 @@ msgstr ""
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "Późniejsze tygodnie są zużywane, gdy wcześniejsze zostały wyczerpane."
 
-msgid "Later."
-msgstr ""
-
 msgid "Latest operation end"
 msgstr "Koniec ostatniej operacji"
 
@@ -19104,7 +19101,7 @@ msgstr "Więcej nadgodzin"
 msgid "More records are waiting. Push again to continue."
 msgstr "Więcej rekordów czeka. Wyślij ponownie, aby kontynuować."
 
-msgid "More than one."
+msgid "More than one"
 msgstr ""
 
 msgid "Morning, {name}."
@@ -19422,7 +19419,7 @@ msgstr "Ujemna Korekta"
 msgid "Negative stock setting updated"
 msgstr "Zaktualizowano ustawienie ujemnych zapasów"
 
-msgid "Neither."
+msgid "Neither"
 msgstr ""
 
 msgid "nested bins within a location with storage types, transfers between bins, default pick bins and lineside bins on work centers; storage rules are Business plan"
@@ -21102,18 +21099,16 @@ msgstr "Nikt nie jest wykwalifikowany do {0}"
 msgid "Nobody is qualified. Add someone to the process's ability."
 msgstr "Nikt nie jest wykwalifikowany. Dodaj kogoś do umiejętności procesu."
 msgid "No, customers supply the material."
+msgid "No, customers supply the material"
 msgstr ""
 
-msgid "No, invoicing stays in another system."
+msgid "No, invoicing stays in another system"
 msgstr ""
 
-msgid "No, the books stay in another system."
+msgid "No, the books stay in another system"
 msgstr ""
 
-msgid "No, we buy and resell."
-msgstr ""
-
-msgid "No."
+msgid "No, we buy and resell"
 msgstr ""
 
 msgid "Nom"
@@ -21210,7 +21205,7 @@ msgstr "Nie skonfigurowano"
 msgid "Not Configured"
 msgstr "Nie skonfigurowane"
 
-msgid "Not decided."
+msgid "Not decided"
 msgstr ""
 
 msgid "Not delivered"
@@ -21551,7 +21546,7 @@ msgstr "Koszty pośrednie absorbowane przesunięciami"
 msgid "Offset Account"
 msgstr "Konto równoważące"
 
-msgid "Often, or through formal change orders."
+msgid "Often, or through formal change orders"
 msgstr ""
 
 msgid "ok"
@@ -21684,6 +21679,9 @@ msgstr "Dodaj swojego agenta do Carbon"
 msgid "Once a day"
 msgstr "Raz dziennie"
 
+msgid "One"
+msgstr ""
+
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
 msgid "One {0} is equal to how many {1}?"
@@ -21799,6 +21797,7 @@ msgid "One."
 msgstr ""
 
 msgid "Only against customer orders."
+msgid "Only against customer orders"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -22257,7 +22256,7 @@ msgstr "Operatorzy zaczynają na karcie Skan"
 msgid "Operators start the timer themselves when they begin an operation."
 msgstr "Operatorzy uruchamiają timer sami, gdy zaczynają operację."
 
-msgid "Operators, at their station or machine."
+msgid "Operators, at their station or machine"
 msgstr ""
 
 msgid "Opportunity"
@@ -23170,7 +23169,7 @@ msgstr ""
 msgid "Physical printers available for assignment."
 msgstr "Drukarki fizyczne dostępne do przypisania."
 
-msgid "Physical products."
+msgid "Physical products"
 msgstr ""
 
 msgid "physical sites with address and timezone; inventory, jobs and employees are scoped to a location"
@@ -24982,6 +24981,7 @@ msgstr "Pracowało w tym czasie"
 msgid "Range"
 msgstr "Zakres"
 msgid "Rarely."
+msgid "Rarely"
 msgstr ""
 
 msgid "Rate"
@@ -25032,7 +25032,7 @@ msgstr "Stawki dla wszystkich klientów danego typu"
 msgid "Rates, FY{fiscalYear}"
 msgstr "Stawki, RB{fiscalYear}"
 
-msgid "Raw material, such as sheet, bar, resin or wire."
+msgid "Raw material, such as sheet, bar, resin or wire"
 msgstr ""
 
 msgid "Raw Materials"
@@ -26007,6 +26007,7 @@ msgstr "Wykorzystanie wynajmu"
 msgid "Renumber WBS"
 msgstr "Zmień numer WBS"
 msgid "Rentals."
+msgid "Rentals"
 msgstr ""
 
 msgid "renting serialized fleet units held as fixed assets; billed in periods, delivered and returned through shipments and receipts"
@@ -28499,7 +28500,7 @@ msgstr "usługi"
 msgid "Services"
 msgstr "Usługi"
 
-msgid "Services, such as repairs or engineering time."
+msgid "Services, such as repairs or engineering time"
 msgstr ""
 
 msgid "Session locked"
@@ -30580,7 +30581,7 @@ msgstr "Dostawcy"
 msgid "suppliers with contacts, locations, types, statuses, payment terms and the processes they offer"
 msgstr ""
 
-msgid "Supplies used up in production, such as adhesives, abrasives or packaging."
+msgid "Supplies used up in production, such as adhesives, abrasives or packaging"
 msgstr ""
 
 msgid "Supply"
@@ -31419,13 +31420,13 @@ msgstr "Klient wykonuje opcję zakupu. Opłata za opcję zakupu w wysokości {0}
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr "Oczekuje się, że klient kupi jednostkę na koniec okresu."
 
-msgid "The customer orders from our price list or catalogue."
+msgid "The customer orders from our price list or catalogue"
 msgstr ""
 
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "Rekord klienta, do którego jest powiązane to konto portalu; tylko kontakty już na tym kliencie mogą być wybrane jako posiadacz konta poniżej."
 
-msgid "The customer sends a formal request for quote that we answer."
+msgid "The customer sends a formal request for quote that we answer"
 msgstr ""
 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
@@ -33443,7 +33444,7 @@ msgstr "Do wysyłki"
 msgid "To Ship and Receive"
 msgstr "Do wysyłki i przyjęcia"
 
-msgid "To stock or forecast, or both."
+msgid "To stock or forecast, or both"
 msgstr ""
 
 msgid "To Storage Unit"
@@ -35371,12 +35372,13 @@ msgstr "Automatycznie dopasowaliśmy każdą kolumnę. Przejrzyj wartości poni�
 msgid "We keep substantial rights"
 msgstr "Zachowujemy istotne prawa"
 msgid "We design and build our own products (OEM or product company)."
+msgid "We design and build our own products (OEM or product company)"
 msgstr ""
 
-msgid "We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer)."
+msgid "We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer)"
 msgstr ""
 
-msgid "We send a quote and the customer accepts it."
+msgid "We send a quote and the customer accepts it"
 msgstr ""
 
 msgid "We triage and fix issues fast while your team settles in"
@@ -36348,25 +36350,25 @@ msgstr "Tak, zaakceptuj"
 msgid "Yes, also delete every nested storage unit."
 msgstr "Tak, usuń również każdą zagnieżdżoną jednostkę magazynową."
 
-msgid "Yes, as PDFs we send ourselves."
+msgid "Yes, as PDFs we send ourselves"
 msgstr ""
 
-msgid "Yes, by serial number on finished units, or by lot or batch on material or output."
+msgid "Yes, by serial number on finished units, or by lot or batch on material or output"
 msgstr ""
 
-msgid "Yes, during onboarding."
+msgid "Yes, during onboarding"
 msgstr ""
 
-msgid "Yes, emailed from Carbon."
+msgid "Yes, emailed from Carbon"
 msgstr ""
 
-msgid "Yes, from go-live."
+msgid "Yes, from go-live"
 msgstr ""
 
-msgid "Yes, in-house."
+msgid "Yes, in-house"
 msgstr ""
 
-msgid "Yes, later."
+msgid "Yes, later"
 msgstr ""
 
 msgid "Yes, Reject"

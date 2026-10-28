@@ -2435,7 +2435,7 @@ msgstr "子 CLIN：同一合同中其父 CLIN 的 4 位数字加上 2 个字母�
 msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
 msgstr "MRP在每次运行后写入的建议：订购或自制新供应，或加急、延期、增加、减少或取消未结的采购订单行或工单。从计划页面应用它、关闭它或分配它。"
 
-msgid "A supervisor or the office, after the work is done."
+msgid "A supervisor or the office, after the work is done"
 msgstr ""
 
 msgid "a supplier"
@@ -8332,7 +8332,7 @@ msgstr "外协人员"
 msgid "Contractors"
 msgstr "外协人员"
 
-msgid "Contracts."
+msgid "Contracts"
 msgstr ""
 
 msgid "Control"
@@ -9847,7 +9847,7 @@ msgstr "客户"
 msgid "Customers"
 msgstr "客户"
 
-msgid "Customers choose options before they order (configure to order)."
+msgid "Customers choose options before they order (configure to order)"
 msgstr ""
 
 msgid "customers with contacts, locations, types, statuses, payment terms, currency and price overrides"
@@ -14154,7 +14154,7 @@ msgstr "完成至"
 msgid "Finish with material unpicked?"
 msgstr "不拣货原材料就完成？"
 
-msgid "Finished components, such as fasteners, electronics or bought-in assemblies."
+msgid "Finished components, such as fasteners, electronics or bought-in assemblies"
 msgstr ""
 
 msgid "Finished goods"
@@ -17337,9 +17337,6 @@ msgstr ""
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "一旦较早的周次用完，较晚的周次将被消耗。"
 
-msgid "Later."
-msgstr ""
-
 msgid "Latest operation end"
 msgstr "最新操作结束"
 
@@ -19104,7 +19101,7 @@ msgstr "更多加班"
 msgid "More records are waiting. Push again to continue."
 msgstr "还有更多记录在等待。请再次推送以继续。"
 
-msgid "More than one."
+msgid "More than one"
 msgstr ""
 
 msgid "Morning, {name}."
@@ -19422,7 +19419,7 @@ msgstr "负调整"
 msgid "Negative stock setting updated"
 msgstr "负库存设置已更新"
 
-msgid "Neither."
+msgid "Neither"
 msgstr ""
 
 msgid "nested bins within a location with storage types, transfers between bins, default pick bins and lineside bins on work centers; storage rules are Business plan"
@@ -21102,18 +21099,16 @@ msgstr "没有人有资质执行 {0}"
 msgid "Nobody is qualified. Add someone to the process's ability."
 msgstr "没有人有资质。向工艺的技能添加人员。"
 msgid "No, customers supply the material."
+msgid "No, customers supply the material"
 msgstr ""
 
-msgid "No, invoicing stays in another system."
+msgid "No, invoicing stays in another system"
 msgstr ""
 
-msgid "No, the books stay in another system."
+msgid "No, the books stay in another system"
 msgstr ""
 
-msgid "No, we buy and resell."
-msgstr ""
-
-msgid "No."
+msgid "No, we buy and resell"
 msgstr ""
 
 msgid "Nom"
@@ -21210,7 +21205,7 @@ msgstr "未配置"
 msgid "Not Configured"
 msgstr "未配置"
 
-msgid "Not decided."
+msgid "Not decided"
 msgstr ""
 
 msgid "Not delivered"
@@ -21551,7 +21546,7 @@ msgstr "抵消吸收的制造费用"
 msgid "Offset Account"
 msgstr "抵消账户"
 
-msgid "Often, or through formal change orders."
+msgid "Often, or through formal change orders"
 msgstr ""
 
 msgid "ok"
@@ -21684,6 +21679,9 @@ msgstr "将您的代理接入Carbon"
 msgid "Once a day"
 msgstr "每天一次"
 
+msgid "One"
+msgstr ""
+
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
 msgid "One {0} is equal to how many {1}?"
@@ -21799,6 +21797,7 @@ msgid "One."
 msgstr ""
 
 msgid "Only against customer orders."
+msgid "Only against customer orders"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -22257,7 +22256,7 @@ msgstr "操作员从扫码选项卡开始"
 msgid "Operators start the timer themselves when they begin an operation."
 msgstr "操作员在开始工序时自己启动计时器。"
 
-msgid "Operators, at their station or machine."
+msgid "Operators, at their station or machine"
 msgstr ""
 
 msgid "Opportunity"
@@ -23170,7 +23169,7 @@ msgstr ""
 msgid "Physical printers available for assignment."
 msgstr "可用于分配的物理打印机。"
 
-msgid "Physical products."
+msgid "Physical products"
 msgstr ""
 
 msgid "physical sites with address and timezone; inventory, jobs and employees are scoped to a location"
@@ -24982,6 +24981,7 @@ msgstr "当时在运行"
 msgid "Range"
 msgstr "范围"
 msgid "Rarely."
+msgid "Rarely"
 msgstr ""
 
 msgid "Rate"
@@ -25032,7 +25032,7 @@ msgstr "同类所有客户的费率"
 msgid "Rates, FY{fiscalYear}"
 msgstr "费率，FY{fiscalYear}"
 
-msgid "Raw material, such as sheet, bar, resin or wire."
+msgid "Raw material, such as sheet, bar, resin or wire"
 msgstr ""
 
 msgid "Raw Materials"
@@ -26007,6 +26007,7 @@ msgstr "租赁设备利用率"
 msgid "Renumber WBS"
 msgstr "重新编号WBS"
 msgid "Rentals."
+msgid "Rentals"
 msgstr ""
 
 msgid "renting serialized fleet units held as fixed assets; billed in periods, delivered and returned through shipments and receipts"
@@ -28499,7 +28500,7 @@ msgstr "服务"
 msgid "Services"
 msgstr "服务"
 
-msgid "Services, such as repairs or engineering time."
+msgid "Services, such as repairs or engineering time"
 msgstr ""
 
 msgid "Session locked"
@@ -30580,7 +30581,7 @@ msgstr "供应商"
 msgid "suppliers with contacts, locations, types, statuses, payment terms and the processes they offer"
 msgstr ""
 
-msgid "Supplies used up in production, such as adhesives, abrasives or packaging."
+msgid "Supplies used up in production, such as adhesives, abrasives or packaging"
 msgstr ""
 
 msgid "Supply"
@@ -31419,13 +31420,13 @@ msgstr "客户行使购买选项。今天开具购买选项费用 {0} 的账单�
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr "预期客户将在期限结束时购买该单位。"
 
-msgid "The customer orders from our price list or catalogue."
+msgid "The customer orders from our price list or catalogue"
 msgstr ""
 
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "此门户帐户链接到的客户记录；只有该客户上已有的联系人才能被选为以下帐户持有人。"
 
-msgid "The customer sends a formal request for quote that we answer."
+msgid "The customer sends a formal request for quote that we answer"
 msgstr ""
 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
@@ -33443,7 +33444,7 @@ msgstr "待发货"
 msgid "To Ship and Receive"
 msgstr "待发货和待收货"
 
-msgid "To stock or forecast, or both."
+msgid "To stock or forecast, or both"
 msgstr ""
 
 msgid "To Storage Unit"
@@ -35371,12 +35372,13 @@ msgstr "我们自动匹配了每一列。继续前请查看下面的值。"
 msgid "We keep substantial rights"
 msgstr "我们保留实质性权利"
 msgid "We design and build our own products (OEM or product company)."
+msgid "We design and build our own products (OEM or product company)"
 msgstr ""
 
-msgid "We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer)."
+msgid "We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer)"
 msgstr ""
 
-msgid "We send a quote and the customer accepts it."
+msgid "We send a quote and the customer accepts it"
 msgstr ""
 
 msgid "We triage and fix issues fast while your team settles in"
@@ -36348,25 +36350,25 @@ msgstr "是的，接受"
 msgid "Yes, also delete every nested storage unit."
 msgstr "是的，也删除每个嵌套的存储单元。"
 
-msgid "Yes, as PDFs we send ourselves."
+msgid "Yes, as PDFs we send ourselves"
 msgstr ""
 
-msgid "Yes, by serial number on finished units, or by lot or batch on material or output."
+msgid "Yes, by serial number on finished units, or by lot or batch on material or output"
 msgstr ""
 
-msgid "Yes, during onboarding."
+msgid "Yes, during onboarding"
 msgstr ""
 
-msgid "Yes, emailed from Carbon."
+msgid "Yes, emailed from Carbon"
 msgstr ""
 
-msgid "Yes, from go-live."
+msgid "Yes, from go-live"
 msgstr ""
 
-msgid "Yes, in-house."
+msgid "Yes, in-house"
 msgstr ""
 
-msgid "Yes, later."
+msgid "Yes, later"
 msgstr ""
 
 msgid "Yes, Reject"

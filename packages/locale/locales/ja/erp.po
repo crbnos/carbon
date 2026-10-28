@@ -2435,7 +2435,7 @@ msgstr "SubCLIN：同じ契約上の親CLINの4桁に2文字または数字を�
 msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
 msgstr "MRPが各実行後に生成する提案：新しい供給を発注または内製する、もしくはオープン状態の発注書明細または製造指図を早める、延期する、数量を増やす、減らす、またはキャンセルする。計画ページから適用するか、却下するか、割り当ててください。"
 
-msgid "A supervisor or the office, after the work is done."
+msgid "A supervisor or the office, after the work is done"
 msgstr ""
 
 msgid "a supplier"
@@ -8332,7 +8332,7 @@ msgstr "外部作業者"
 msgid "Contractors"
 msgstr "外部作業者"
 
-msgid "Contracts."
+msgid "Contracts"
 msgstr ""
 
 msgid "Control"
@@ -9847,7 +9847,7 @@ msgstr "得意先"
 msgid "Customers"
 msgstr "得意先"
 
-msgid "Customers choose options before they order (configure to order)."
+msgid "Customers choose options before they order (configure to order)"
 msgstr ""
 
 msgid "customers with contacts, locations, types, statuses, payment terms, currency and price overrides"
@@ -14154,7 +14154,7 @@ msgstr "完成先"
 msgid "Finish with material unpicked?"
 msgstr "ピッキングされていない材料のまま完了しますか？"
 
-msgid "Finished components, such as fasteners, electronics or bought-in assemblies."
+msgid "Finished components, such as fasteners, electronics or bought-in assemblies"
 msgstr ""
 
 msgid "Finished goods"
@@ -17337,9 +17337,6 @@ msgstr ""
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "早い週が使い尽くされた後、後の週が消費されます。"
 
-msgid "Later."
-msgstr ""
-
 msgid "Latest operation end"
 msgstr "最終操作終了"
 
@@ -19104,7 +19101,7 @@ msgstr "残業を増やす"
 msgid "More records are waiting. Push again to continue."
 msgstr "さらに多くのレコードが待機中です。続行するにはもう一度プッシュしてください。"
 
-msgid "More than one."
+msgid "More than one"
 msgstr ""
 
 msgid "Morning, {name}."
@@ -19422,7 +19419,7 @@ msgstr "負の調整"
 msgid "Negative stock setting updated"
 msgstr "負の在庫の設定を更新しました"
 
-msgid "Neither."
+msgid "Neither"
 msgstr ""
 
 msgid "nested bins within a location with storage types, transfers between bins, default pick bins and lineside bins on work centers; storage rules are Business plan"
@@ -21102,18 +21099,16 @@ msgstr "{0} 向けの適格者がいません"
 msgid "Nobody is qualified. Add someone to the process's ability."
 msgstr "適格者がいません。プロセスのスキルに誰かを追加してください。"
 msgid "No, customers supply the material."
+msgid "No, customers supply the material"
 msgstr ""
 
-msgid "No, invoicing stays in another system."
+msgid "No, invoicing stays in another system"
 msgstr ""
 
-msgid "No, the books stay in another system."
+msgid "No, the books stay in another system"
 msgstr ""
 
-msgid "No, we buy and resell."
-msgstr ""
-
-msgid "No."
+msgid "No, we buy and resell"
 msgstr ""
 
 msgid "Nom"
@@ -21210,7 +21205,7 @@ msgstr "未設定"
 msgid "Not Configured"
 msgstr "未設定"
 
-msgid "Not decided."
+msgid "Not decided"
 msgstr ""
 
 msgid "Not delivered"
@@ -21551,7 +21546,7 @@ msgstr "相殺吸収間接費"
 msgid "Offset Account"
 msgstr "相殺勘定"
 
-msgid "Often, or through formal change orders."
+msgid "Often, or through formal change orders"
 msgstr ""
 
 msgid "ok"
@@ -21684,6 +21679,9 @@ msgstr "エージェントを Carbon にオンボード"
 msgid "Once a day"
 msgstr "1日1回"
 
+msgid "One"
+msgstr ""
+
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
 msgid "One {0} is equal to how many {1}?"
@@ -21799,6 +21797,7 @@ msgid "One."
 msgstr ""
 
 msgid "Only against customer orders."
+msgid "Only against customer orders"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -22257,7 +22256,7 @@ msgstr "作業者はスキャンタブで開始します。"
 msgid "Operators start the timer themselves when they begin an operation."
 msgstr "作業者は工程を開始するときにタイマーを自分で開始します。"
 
-msgid "Operators, at their station or machine."
+msgid "Operators, at their station or machine"
 msgstr ""
 
 msgid "Opportunity"
@@ -23170,7 +23169,7 @@ msgstr ""
 msgid "Physical printers available for assignment."
 msgstr "割り当て可能な物理プリンター。"
 
-msgid "Physical products."
+msgid "Physical products"
 msgstr ""
 
 msgid "physical sites with address and timezone; inventory, jobs and employees are scoped to a location"
@@ -24982,6 +24981,7 @@ msgstr "その時間に稼働"
 msgid "Range"
 msgstr "範囲"
 msgid "Rarely."
+msgid "Rarely"
 msgstr ""
 
 msgid "Rate"
@@ -25032,7 +25032,7 @@ msgstr "特定タイプのすべての顧客向けレート"
 msgid "Rates, FY{fiscalYear}"
 msgstr "レート、FY{fiscalYear}"
 
-msgid "Raw material, such as sheet, bar, resin or wire."
+msgid "Raw material, such as sheet, bar, resin or wire"
 msgstr ""
 
 msgid "Raw Materials"
@@ -26007,6 +26007,7 @@ msgstr "レンタル資産利用率"
 msgid "Renumber WBS"
 msgstr "WBSを再番号付け"
 msgid "Rentals."
+msgid "Rentals"
 msgstr ""
 
 msgid "renting serialized fleet units held as fixed assets; billed in periods, delivered and returned through shipments and receipts"
@@ -28499,7 +28500,7 @@ msgstr "サービス"
 msgid "Services"
 msgstr "サービス"
 
-msgid "Services, such as repairs or engineering time."
+msgid "Services, such as repairs or engineering time"
 msgstr ""
 
 msgid "Session locked"
@@ -30580,7 +30581,7 @@ msgstr "仕入先"
 msgid "suppliers with contacts, locations, types, statuses, payment terms and the processes they offer"
 msgstr ""
 
-msgid "Supplies used up in production, such as adhesives, abrasives or packaging."
+msgid "Supplies used up in production, such as adhesives, abrasives or packaging"
 msgstr ""
 
 msgid "Supply"
@@ -31419,13 +31420,13 @@ msgstr "得意先は購入オプションを行使します。本日、{0}の購
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr "得意先は契約期間の終了時にその単位を購入することが予想されます。"
 
-msgid "The customer orders from our price list or catalogue."
+msgid "The customer orders from our price list or catalogue"
 msgstr ""
 
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "このポータル アカウントがリンクしている得意先レコード。その得意先にすでに存在する担当者のみが、以下のアカウント ホルダーとして選択できます。"
 
-msgid "The customer sends a formal request for quote that we answer."
+msgid "The customer sends a formal request for quote that we answer"
 msgstr ""
 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
@@ -33443,7 +33444,7 @@ msgstr "出荷待ち"
 msgid "To Ship and Receive"
 msgstr "出荷待ちおよび入荷待ち"
 
-msgid "To stock or forecast, or both."
+msgid "To stock or forecast, or both"
 msgstr ""
 
 msgid "To Storage Unit"
@@ -35371,12 +35372,13 @@ msgstr "各列を自動マッチングしました。続行する前に下の値
 msgid "We keep substantial rights"
 msgstr "実質的な権利を保有しています"
 msgid "We design and build our own products (OEM or product company)."
+msgid "We design and build our own products (OEM or product company)"
 msgstr ""
 
-msgid "We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer)."
+msgid "We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer)"
 msgstr ""
 
-msgid "We send a quote and the customer accepts it."
+msgid "We send a quote and the customer accepts it"
 msgstr ""
 
 msgid "We triage and fix issues fast while your team settles in"
@@ -36348,25 +36350,25 @@ msgstr "はい、承諾"
 msgid "Yes, also delete every nested storage unit."
 msgstr "はい、ネストされたすべての保管ユニットも削除"
 
-msgid "Yes, as PDFs we send ourselves."
+msgid "Yes, as PDFs we send ourselves"
 msgstr ""
 
-msgid "Yes, by serial number on finished units, or by lot or batch on material or output."
+msgid "Yes, by serial number on finished units, or by lot or batch on material or output"
 msgstr ""
 
-msgid "Yes, during onboarding."
+msgid "Yes, during onboarding"
 msgstr ""
 
-msgid "Yes, emailed from Carbon."
+msgid "Yes, emailed from Carbon"
 msgstr ""
 
-msgid "Yes, from go-live."
+msgid "Yes, from go-live"
 msgstr ""
 
-msgid "Yes, in-house."
+msgid "Yes, in-house"
 msgstr ""
 
-msgid "Yes, later."
+msgid "Yes, later"
 msgstr ""
 
 msgid "Yes, Reject"

@@ -2435,7 +2435,7 @@ msgstr "एक SubCLIN: एक ही अनुबंध पर इसके म
 msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
 msgstr "एक सुझाव जो MRP प्रत्येक रन के बाद लिखता है: नई आपूर्ति के लिए ऑर्डर करें या निर्माण करें, या किसी खुली क्रय आदेश पंक्ति या जॉब को तेज़ करें, स्थगित करें, बढ़ाएं, घटाएं या रद्द करें। इसे योजना पृष्ठ से लागू करें, इसे खारिज करें, या इसे असाइन करें।"
 
-msgid "A supervisor or the office, after the work is done."
+msgid "A supervisor or the office, after the work is done"
 msgstr ""
 
 msgid "a supplier"
@@ -8332,7 +8332,7 @@ msgstr "ठेकेदार"
 msgid "Contractors"
 msgstr "ठेकेदार"
 
-msgid "Contracts."
+msgid "Contracts"
 msgstr ""
 
 msgid "Control"
@@ -9847,7 +9847,7 @@ msgstr "ग्राहकों"
 msgid "Customers"
 msgstr "ग्राहक"
 
-msgid "Customers choose options before they order (configure to order)."
+msgid "Customers choose options before they order (configure to order)"
 msgstr ""
 
 msgid "customers with contacts, locations, types, statuses, payment terms, currency and price overrides"
@@ -14154,7 +14154,7 @@ msgstr "समाप्त करने के लिए"
 msgid "Finish with material unpicked?"
 msgstr "सामग्री अनचुनी के साथ समाप्त करें?"
 
-msgid "Finished components, such as fasteners, electronics or bought-in assemblies."
+msgid "Finished components, such as fasteners, electronics or bought-in assemblies"
 msgstr ""
 
 msgid "Finished goods"
@@ -17337,9 +17337,6 @@ msgstr ""
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "बाद के सप्ताह तब उपयोग किए जाते हैं जब पहले वाले समाप्त हो जाते हैं।"
 
-msgid "Later."
-msgstr ""
-
 msgid "Latest operation end"
 msgstr "नवीनतम ऑपरेशन अंत"
 
@@ -19104,7 +19101,7 @@ msgstr "अधिक ओवरटाइम"
 msgid "More records are waiting. Push again to continue."
 msgstr "अधिक रिकॉर्ड प्रतीक्षा कर रहे हैं। जारी रखने के लिए फिर से पुश करें।"
 
-msgid "More than one."
+msgid "More than one"
 msgstr ""
 
 msgid "Morning, {name}."
@@ -19422,7 +19419,7 @@ msgstr "नकारात्मक समायोजन"
 msgid "Negative stock setting updated"
 msgstr "नकारात्मक स्टॉक सेटिंग अपडेट की गई"
 
-msgid "Neither."
+msgid "Neither"
 msgstr ""
 
 msgid "nested bins within a location with storage types, transfers between bins, default pick bins and lineside bins on work centers; storage rules are Business plan"
@@ -21102,18 +21099,16 @@ msgstr "कोई भी {0} के लिए योग्य नहीं ह�
 msgid "Nobody is qualified. Add someone to the process's ability."
 msgstr "कोई योग्य नहीं है। प्रक्रिया की कौशल में किसी को जोड़ें।"
 msgid "No, customers supply the material."
+msgid "No, customers supply the material"
 msgstr ""
 
-msgid "No, invoicing stays in another system."
+msgid "No, invoicing stays in another system"
 msgstr ""
 
-msgid "No, the books stay in another system."
+msgid "No, the books stay in another system"
 msgstr ""
 
-msgid "No, we buy and resell."
-msgstr ""
-
-msgid "No."
+msgid "No, we buy and resell"
 msgstr ""
 
 msgid "Nom"
@@ -21210,7 +21205,7 @@ msgstr "कॉन्फ़िगर नहीं किया गया"
 msgid "Not Configured"
 msgstr "कॉन्फ़िगर नहीं किया गया"
 
-msgid "Not decided."
+msgid "Not decided"
 msgstr ""
 
 msgid "Not delivered"
@@ -21551,7 +21546,7 @@ msgstr "ऑफसेट अवशोषित उपरिव्यय"
 msgid "Offset Account"
 msgstr "ऑफसेट खाता"
 
-msgid "Often, or through formal change orders."
+msgid "Often, or through formal change orders"
 msgstr ""
 
 msgid "ok"
@@ -21684,6 +21679,9 @@ msgstr "अपने एजेंट को Carbon पर ऑनबोर्ड 
 msgid "Once a day"
 msgstr "दिन में एक बार"
 
+msgid "One"
+msgstr ""
+
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
 msgid "One {0} is equal to how many {1}?"
@@ -21799,6 +21797,7 @@ msgid "One."
 msgstr ""
 
 msgid "Only against customer orders."
+msgid "Only against customer orders"
 msgstr ""
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -22257,7 +22256,7 @@ msgstr "ऑपरेटर Scan टैब से शुरू करते ह�
 msgid "Operators start the timer themselves when they begin an operation."
 msgstr "ऑपरेटर जब कोई ऑपरेशन शुरू करते हैं तो टाइमर को स्वयं शुरू करते हैं।"
 
-msgid "Operators, at their station or machine."
+msgid "Operators, at their station or machine"
 msgstr ""
 
 msgid "Opportunity"
@@ -23170,7 +23169,7 @@ msgstr ""
 msgid "Physical printers available for assignment."
 msgstr "असाइनमेंट के लिए उपलब्ध भौतिक प्रिंटर।"
 
-msgid "Physical products."
+msgid "Physical products"
 msgstr ""
 
 msgid "physical sites with address and timezone; inventory, jobs and employees are scoped to a location"
@@ -24982,6 +24981,7 @@ msgstr "उस समय चल रहा था"
 msgid "Range"
 msgstr "श्रेणी"
 msgid "Rarely."
+msgid "Rarely"
 msgstr ""
 
 msgid "Rate"
@@ -25032,7 +25032,7 @@ msgstr "किसी प्रकार के सभी ग्राहको�
 msgid "Rates, FY{fiscalYear}"
 msgstr "दरें, FY{fiscalYear}"
 
-msgid "Raw material, such as sheet, bar, resin or wire."
+msgid "Raw material, such as sheet, bar, resin or wire"
 msgstr ""
 
 msgid "Raw Materials"
@@ -26007,6 +26007,7 @@ msgstr "किराया उपयोग"
 msgid "Renumber WBS"
 msgstr "WBS का पुनः नंबरिंग करें"
 msgid "Rentals."
+msgid "Rentals"
 msgstr ""
 
 msgid "renting serialized fleet units held as fixed assets; billed in periods, delivered and returned through shipments and receipts"
@@ -28499,7 +28500,7 @@ msgstr "सेवाएं"
 msgid "Services"
 msgstr "सेवाएं"
 
-msgid "Services, such as repairs or engineering time."
+msgid "Services, such as repairs or engineering time"
 msgstr ""
 
 msgid "Session locked"
@@ -30580,7 +30581,7 @@ msgstr "आपूर्तिकर्ता"
 msgid "suppliers with contacts, locations, types, statuses, payment terms and the processes they offer"
 msgstr ""
 
-msgid "Supplies used up in production, such as adhesives, abrasives or packaging."
+msgid "Supplies used up in production, such as adhesives, abrasives or packaging"
 msgstr ""
 
 msgid "Supply"
@@ -31419,13 +31420,13 @@ msgstr "ग्राहक खरीद विकल्प का प्रय�
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr "अवधि के अंत में ग्राहक से इकाई को खरीदने की अपेक्षा की जाती है।"
 
-msgid "The customer orders from our price list or catalogue."
+msgid "The customer orders from our price list or catalogue"
 msgstr ""
 
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "ग्राहक रिकॉर्ड जिससे यह पोर्टल खाता जुड़ा है; केवल वे संपर्क जो उस ग्राहक के साथ पहले से हैं, नीचे खाता धारक के रूप में चुने जा सकते हैं।"
 
-msgid "The customer sends a formal request for quote that we answer."
+msgid "The customer sends a formal request for quote that we answer"
 msgstr ""
 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
@@ -33443,7 +33444,7 @@ msgstr "भेजने के लिए"
 msgid "To Ship and Receive"
 msgstr "भेजने और प्राप्त करने के लिए"
 
-msgid "To stock or forecast, or both."
+msgid "To stock or forecast, or both"
 msgstr ""
 
 msgid "To Storage Unit"
@@ -35371,12 +35372,13 @@ msgstr "हमने प्रत्येक कॉलम को स्वच�
 msgid "We keep substantial rights"
 msgstr "हम महत्वपूर्ण अधिकार रखते हैं"
 msgid "We design and build our own products (OEM or product company)."
+msgid "We design and build our own products (OEM or product company)"
 msgstr ""
 
-msgid "We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer)."
+msgid "We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer)"
 msgstr ""
 
-msgid "We send a quote and the customer accepts it."
+msgid "We send a quote and the customer accepts it"
 msgstr ""
 
 msgid "We triage and fix issues fast while your team settles in"
@@ -36348,25 +36350,25 @@ msgstr "हाँ, स्वीकार करें"
 msgid "Yes, also delete every nested storage unit."
 msgstr "हाँ, हर नेस्टेड भंडारण इकाई को भी हटाएँ।"
 
-msgid "Yes, as PDFs we send ourselves."
+msgid "Yes, as PDFs we send ourselves"
 msgstr ""
 
-msgid "Yes, by serial number on finished units, or by lot or batch on material or output."
+msgid "Yes, by serial number on finished units, or by lot or batch on material or output"
 msgstr ""
 
-msgid "Yes, during onboarding."
+msgid "Yes, during onboarding"
 msgstr ""
 
-msgid "Yes, emailed from Carbon."
+msgid "Yes, emailed from Carbon"
 msgstr ""
 
-msgid "Yes, from go-live."
+msgid "Yes, from go-live"
 msgstr ""
 
-msgid "Yes, in-house."
+msgid "Yes, in-house"
 msgstr ""
 
-msgid "Yes, later."
+msgid "Yes, later"
 msgstr ""
 
 msgid "Yes, Reject"
