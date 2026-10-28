@@ -1986,6 +1986,8 @@ msgstr "Новая ревизия будет создана на основе к
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "Новый производственный заказ услуги копирует расценку. Каждая запись времени проводит свою стоимость по расценке стоимости."
+msgid "A new section at the end of the page, with its first card."
+msgstr ""
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "Новый размер будет создан с использованием копии текущего размера"
@@ -2019,6 +2021,11 @@ msgstr "Число или знак рядом со значением меняе
 
 msgid "A part"
 msgstr "Деталь"
+msgid "A note for this person (optional)"
+msgstr ""
+
+msgid "A page needs one card. Remove page in the staff bar removes the whole page."
+msgstr ""
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "Деталь содержит информацию о конкретном товаре, который можно приобрести или изготовить."
@@ -3004,6 +3011,8 @@ msgstr "Добавить и выдать"
 
 msgid "Add a charge number to start logging time."
 msgstr "Добавить номер затрат для начала записи времени."
+msgid "Add a card"
+msgstr ""
 
 msgid "Add a column below to sort the view"
 msgstr "Добавьте столбец ниже для сортировки представления"
@@ -3055,6 +3064,8 @@ msgstr "Добавить строку"
 
 msgid "Add a row for each charge number you worked on."
 msgstr "Добавьте строку для каждого номера расчета, над которым вы работали."
+msgid "Add a section"
+msgstr ""
 
 msgid "Add a step"
 msgstr "Добавить шаг"
@@ -3130,6 +3141,8 @@ msgstr "Добавить запись калибровки"
 
 msgid "Add Ceiling"
 msgstr "Добавить верхний предел"
+msgid "Add card"
+msgstr ""
 
 msgid "Add Characteristic"
 msgstr "Добавить характеристику"
@@ -3377,6 +3390,9 @@ msgstr "Добавить правило из библиотеки"
 
 msgid "Add Sample"
 msgstr "Добавить образец"
+
+msgid "Add section"
+msgstr ""
 
 msgid "Add Selector"
 msgstr "Добавить селектор"
@@ -3996,6 +4012,12 @@ msgstr "Интеграция или пользовательское измен�
 
 msgid "An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code."
 msgstr "Международный номер банковского счёта: одна строка, содержащая страну, банк, отделение и счёт, с двумя контрольными цифрами. Поскольку он уже идентифицирует банк, страны, которые его используют, не нуждаются в отдельном коде маршрутизации."
+
+msgid "An introduction for this person (optional)"
+msgstr ""
+
+msgid "An introduction for this section (optional)"
+msgstr ""
 
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "Приглашение ожидает подтверждения. Они станут активными после его принятия."
@@ -6791,8 +6813,17 @@ msgstr "Приложение Carbon для цеха, где операторы �
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Единая запись Carbon для всего, что имеет номер детали — Деталь, Материал, Инструмент, Услуга, Расходный материал или Приспособление — на которую ссылаются производственные заказы, методы, заказы и запасы."
 
+msgid "Card"
+msgstr ""
+
 msgid "Card Holder"
 msgstr "Держатель карты"
+
+msgid "Card options"
+msgstr ""
+
+msgid "Card title"
+msgstr ""
 
 msgid "Cards"
 msgstr "Карточки"
@@ -7177,6 +7208,8 @@ msgstr "Выберите покупателя"
 
 msgid "Choose a labor category or an employee"
 msgstr "Выберите категорию труда или сотрудника"
+msgid "Choose a hub item"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Выберите деталь, которую заменяет {itemReadableId}. Правило сохраняется на этой детали с {itemReadableId} в качестве преемника."
@@ -7369,6 +7402,9 @@ msgstr "Очистить поисковый запрос"
 
 msgid "Clear selection"
 msgstr "Очистить выделение"
+
+msgid "Clear the due date"
+msgstr ""
 
 msgid "Clear value"
 msgstr "Очистить значение"
@@ -9564,6 +9600,9 @@ msgstr "Пользовательские дополнения"
 msgid "Custom attributes you track against your people"
 msgstr "Пользовательские атрибуты, которые вы отслеживаете для своих сотрудников"
 
+msgid "Custom card"
+msgstr ""
+
 msgid "Custom color"
 msgstr "Пользовательский цвет"
 
@@ -10382,6 +10421,8 @@ msgstr "Удалить"
 #. placeholder {0}: deleting.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
 #. placeholder {0}: row.account?.number ?? ""
+#. placeholder {0}: titleValue || text(card.title) || ""
+#. placeholder {0}: view.name
 msgid "Delete {0}"
 msgstr "Удалить {0}"
 
@@ -10531,6 +10572,9 @@ msgstr "Удалить проблему"
 
 msgid "Delete Item Group"
 msgstr "Удалить группу позиций"
+
+msgid "Delete item…"
+msgstr ""
 
 msgid "Delete Job"
 msgstr "Удалить производственный заказ"
@@ -11049,6 +11093,9 @@ msgstr "Подробный"
 
 msgid "Details"
 msgstr "Детали"
+
+msgid "Details (optional)"
+msgstr ""
 
 msgid "Detected by the motion planner"
 msgstr "Обнаружено планировщиком движения"
@@ -13079,6 +13126,8 @@ msgstr "Каждый элемент сохраняет свой текущий �
 
 msgid "Every entry in the range and every change made to it"
 msgstr "Каждая запись в диапазоне и каждое внесенное в нее изменение"
+msgid "Every hub item is on this page"
+msgstr ""
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Все тесты в области действия проходят в вашей настроенной системе с вашими данными."
@@ -13243,6 +13292,9 @@ msgstr "Существующие отображения. Выберите дру
 
 msgid "Existing Stripe customer"
 msgstr "Существующий покупатель Stripe"
+
+msgid "Exit preview"
+msgstr ""
 
 msgid "Exp. <0/>"
 msgstr "Истечение <0/>"
@@ -14058,6 +14110,10 @@ msgstr "Заполнить"
 msgid "Files on items, jobs and orders"
 msgstr ""
 
+#. placeholder {0}: titleLabel[kind]
+msgid "Fill in the {0}"
+msgstr ""
+
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "Заполните организацию реалистичной историей отрасли, чтобы каждый экран содержал данные. Вы можете восстановить то, что было здесь раньше."
 
@@ -14810,6 +14866,8 @@ msgstr "Установите для аренды <0>фиксированный �
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "Задайте дату начала и дату окончания этапа, чтобы увидеть его сгорание."
+msgid "Give the new section a title"
+msgstr ""
 
 msgid "GL"
 msgstr "Главная книга"
@@ -15558,6 +15616,9 @@ msgstr "Как выглядят ваши коммерческие предлож
 
 msgid "How your team is organized into departments"
 msgstr "Как ваша команда организована по отделам"
+
+msgid "Hub item"
+msgstr ""
 
 msgid "Hub Settings"
 msgstr ""
@@ -17783,6 +17844,9 @@ msgstr "Прилинейный запас"
 msgid "Link"
 msgstr "Ссылка"
 
+msgid "Link (optional)"
+msgstr ""
+
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Ссылка (опционально) — например /x/settings/…"
 
@@ -19154,6 +19218,8 @@ msgstr "Изменить порядок колонки: {0}"
 
 msgid "Move down"
 msgstr "Переместить вниз"
+msgid "Move down"
+msgstr ""
 
 msgid "Move entities"
 msgstr "Переместить сущности"
@@ -19169,6 +19235,12 @@ msgstr "Переместить элемент"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "Переместить из подсборки"
+
+msgid "Move section down"
+msgstr ""
+
+msgid "Move section up"
+msgstr ""
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Переместить часть количества в новую строку решения, чтобы MRB мог решить каждую часть отдельно (например, отправить на брак, отправить на доработку)."
@@ -19188,6 +19260,9 @@ msgstr "Переместить в другую единицу хранения"
 msgid "Move to Group"
 msgstr "Переместить в группу"
 
+msgid "Move to section"
+msgstr ""
+
 msgid "Move to Trash"
 msgstr "Переместить в корзину"
 
@@ -19199,6 +19274,8 @@ msgstr "Переместить вверх"
 
 msgid "Moved"
 msgstr "Перемещено"
+msgid "Move up"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -19563,6 +19640,15 @@ msgstr "Новая деталь покупателя"
 msgid "New Customer Rental Rates"
 msgstr "Новые тарифы аренды для клиента"
 
+msgid "New customization"
+msgstr ""
+
+msgid "New cutover step"
+msgstr ""
+
+msgid "New data item"
+msgstr ""
+
 msgid "New Demand Forecast"
 msgstr "Новый прогноз потребности"
 
@@ -19699,6 +19785,12 @@ msgstr "Новая веха"
 msgid "New Non Conformance Type"
 msgstr "Новый тип несоответствия"
 
+msgid "New objective"
+msgstr ""
+
+msgid "New open question"
+msgstr ""
+
 msgid "New Owner"
 msgstr "Новый ответственный"
 
@@ -19773,6 +19865,8 @@ msgstr "Новое соглашение аренды"
 
 msgid "New Request"
 msgstr "Новый запрос"
+msgid "New requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "Новая ревизия"
@@ -19818,6 +19912,8 @@ msgstr "Новая услуга"
 
 msgid "New Service Job"
 msgstr "Новый заказ на услугу"
+msgid "New setup item"
+msgstr ""
 
 msgid "New Shift"
 msgstr "Новая смена"
@@ -22289,6 +22385,8 @@ msgstr "Параметры"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "Параметры для {0}"
+msgid "Options, one per line (leave empty for a typed answer)"
+msgstr ""
 
 msgid "or"
 msgstr "или"
@@ -22632,6 +22730,9 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Страница {pdfViewPage} из {documentPageCount}"
 
 msgid "Page file contents"
+msgstr ""
+
+msgid "Page title"
 msgstr ""
 
 msgid "Pages"
@@ -23252,6 +23353,9 @@ msgstr "Порядок комплектации"
 msgid "Pick serials/batches to return"
 msgstr "Выбрать серийные номера/партии для возврата"
 
+msgid "Pick several"
+msgstr ""
+
 msgid "Pick the batches on hand that were received from this supplier."
 msgstr "Отберите серии в наличии, полученные от этого поставщика."
 
@@ -23766,6 +23870,9 @@ msgstr "Графики предупреждающего техобслужива
 
 msgid "Preview"
 msgstr "Предпросмотр"
+
+msgid "Preview as customer"
+msgstr ""
 
 msgid "Preview failed: {error}"
 msgstr "Ошибка предпросмотра: {error}"
@@ -25731,6 +25838,9 @@ msgstr "Убрать"
 #. placeholder {0}: action.name
 #. placeholder {0}: attachment.name
 #. placeholder {0}: deleting.account?.number ?? ""
+#. placeholder {0}: domain.domain
+#. placeholder {0}: item.label
+#. placeholder {0}: page.sections[removingSection]?.title ?? ""
 msgid "Remove {0}"
 msgstr "Убрать {0}"
 
@@ -25831,6 +25941,9 @@ msgstr "Удалить из партии"
 msgid "Remove from board"
 msgstr "Удалить с доски"
 
+msgid "Remove from page"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "Убрать из прайс-листа"
 
@@ -25866,6 +25979,9 @@ msgstr "Убрать PDF"
 
 msgid "Remove row"
 msgstr "Убрать строку"
+
+msgid "Remove section"
+msgstr ""
 
 msgid "Remove slide"
 msgstr "Убрать слайд"
@@ -27886,6 +28002,9 @@ msgstr "Раздел E строка 38, зарплата должностных 
 
 msgid "Section saved"
 msgstr "Раздел сохранен"
+
+msgid "Section title"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Защитите свою учетную запись с помощью 2FA"
@@ -31068,6 +31187,8 @@ msgstr "Текст"
 
 msgid "Text color"
 msgstr "Цвет текста"
+msgid "Text (optional)"
+msgstr ""
 
 msgid "Text size"
 msgstr "Размер текста"
@@ -31256,6 +31377,9 @@ msgstr "Пользователь Carbon, ответственный за вза�
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "Пользователь Carbon, который владеет этой RFQ; ответы поставщика и напоминания направляются им."
+
+msgid "The card goes at the end of the section."
+msgstr ""
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "Перевозчик и сервис, через которые отправляется отгрузка, предоставляя шаблон URL отслеживания, который преобразует номер отслеживания в ссылку, и счет, на который проводятся почтовые сборы."
@@ -31743,6 +31867,8 @@ msgstr "Номенклатура не имеет изготовленных ко
 
 msgid "The item has no serial or batch tracking"
 msgstr "Номенклатура не имеет отслеживания по серийному номеру или серии"
+msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "Ставка аренды номенклатуры"
@@ -32302,6 +32428,9 @@ msgstr "График, используемый для распределения
 
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "Планировщик применяет первое подходящее правило ниже, затем вычитает время простоя и укомплектование."
+
+msgid "The section and its cards leave this page. Items on it stay in the hub and can be added again."
+msgstr ""
 
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "Класс основных средств, заранее созданный для единиц, которые вы строите или капитализируете для сдачи в аренду вместо продажи; переводится на собственные счета активов парка проката и накопленной амортизации, и каждый актив, связанный с номенклатурой, появляется в реестре парка."
@@ -32913,6 +33042,9 @@ msgid "This item is built via a configurator and resolves its components per-ord
 msgstr "Эта номенклатура собирается через конфигуратор и разрешает свои компоненты для каждого заказа; производственные заказы, созданные для нее, наследуют разрешенный BOM конфигуратора."
 
 msgid "This item was removed from the hub."
+msgstr ""
+
+msgid "This item was removed from the hub. Remove it from the page to save other changes."
 msgstr ""
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
@@ -34675,6 +34807,9 @@ msgstr "Используйте ... для получения следующег�
 
 msgid "Use ... to get the next tool ID"
 msgstr "Используйте ... для получения следующего ID инструмента"
+
+msgid "Use a Carbon path starting with /x/, or an https link"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "Использовать другую учетную запись"

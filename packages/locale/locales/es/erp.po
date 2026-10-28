@@ -1986,6 +1986,8 @@ msgstr "Se creará una nueva revisión utilizando una copia de la revisión actu
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "Una nueva orden de servicio copia la tarifa de facturación. Cada entrada de tiempo contabiliza su costo a la tarifa de costo."
+msgid "A new section at the end of the page, with its first card."
+msgstr ""
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "Se creará un nuevo tamaño utilizando una copia del tamaño actual"
@@ -2019,6 +2021,11 @@ msgstr "Un número o un signo junto a una cifra cambia lo que dice. Escriba una 
 
 msgid "A part"
 msgstr "Una Pieza"
+msgid "A note for this person (optional)"
+msgstr ""
+
+msgid "A page needs one card. Remove page in the staff bar removes the whole page."
+msgstr ""
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "Una parte contiene la información sobre un artículo específico que puede ser comprado o fabricado."
@@ -3004,6 +3011,8 @@ msgstr "Agregar y Emitir"
 
 msgid "Add a charge number to start logging time."
 msgstr "Agregar un número de cargo para comenzar a registrar tiempo."
+msgid "Add a card"
+msgstr ""
 
 msgid "Add a column below to sort the view"
 msgstr "Agregue una columna debajo para ordenar la vista"
@@ -3055,6 +3064,8 @@ msgstr "Agregar una fila"
 
 msgid "Add a row for each charge number you worked on."
 msgstr "Agregar una fila para cada número de cargo en el que trabajó."
+msgid "Add a section"
+msgstr ""
 
 msgid "Add a step"
 msgstr "Agregar un paso"
@@ -3130,6 +3141,8 @@ msgstr "Agregar Registro de Calibración"
 
 msgid "Add Ceiling"
 msgstr "Agregar techo"
+msgid "Add card"
+msgstr ""
 
 msgid "Add Characteristic"
 msgstr "Agregar Característica"
@@ -3377,6 +3390,9 @@ msgstr "Agregar regla desde la biblioteca"
 
 msgid "Add Sample"
 msgstr "Agregar muestra"
+
+msgid "Add section"
+msgstr ""
 
 msgid "Add Selector"
 msgstr "Agregar selector"
@@ -3996,6 +4012,12 @@ msgstr "Una integración o un cambio personalizado — la pequeña parte que es 
 
 msgid "An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code."
 msgstr "Un Número de Cuenta Bancaria Internacional: una cadena que contiene el país, banco, sucursal y cuenta, con dos dígitos de verificación. Como ya identifica el banco, los países que lo utilizan no necesitan un código de enrutamiento separado."
+
+msgid "An introduction for this person (optional)"
+msgstr ""
+
+msgid "An introduction for this section (optional)"
+msgstr ""
 
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "Una invitación está pendiente. Se hacen activas una vez que la aceptan."
@@ -6791,8 +6813,17 @@ msgstr "Aplicación de planta de Carbon donde los operarios ejecutan operaciones
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Registro único de Carbon para cualquier cosa con un número de pieza — Pieza, Material, Herramienta, Servicio, Consumible o Dispositivo de sujeción — al que apuntan órdenes de trabajo, métodos, pedidos e inventario."
 
+msgid "Card"
+msgstr ""
+
 msgid "Card Holder"
 msgstr "Titular de la Tarjeta"
+
+msgid "Card options"
+msgstr ""
+
+msgid "Card title"
+msgstr ""
 
 msgid "Cards"
 msgstr "Tarjetas"
@@ -7177,6 +7208,8 @@ msgstr "Elija un cliente"
 
 msgid "Choose a labor category or an employee"
 msgstr "Elegir una categoría de mano de obra o un empleado"
+msgid "Choose a hub item"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Selecciona una pieza que {itemReadableId} reemplaza. La regla se guarda en esa pieza con {itemReadableId} como su sucesor."
@@ -7369,6 +7402,9 @@ msgstr "Limpiar consulta de búsqueda"
 
 msgid "Clear selection"
 msgstr "Limpiar selección"
+
+msgid "Clear the due date"
+msgstr ""
 
 msgid "Clear value"
 msgstr "Limpiar valor"
@@ -9564,6 +9600,9 @@ msgstr "Complementos personalizados"
 msgid "Custom attributes you track against your people"
 msgstr "Atributos personalizados que realiza un seguimiento de su personal"
 
+msgid "Custom card"
+msgstr ""
+
 msgid "Custom color"
 msgstr "Color personalizado"
 
@@ -10382,6 +10421,8 @@ msgstr "Eliminar"
 #. placeholder {0}: deleting.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
 #. placeholder {0}: row.account?.number ?? ""
+#. placeholder {0}: titleValue || text(card.title) || ""
+#. placeholder {0}: view.name
 msgid "Delete {0}"
 msgstr "Eliminar {0}"
 
@@ -10531,6 +10572,9 @@ msgstr "Eliminar Problema"
 
 msgid "Delete Item Group"
 msgstr "Eliminar grupo de artículos"
+
+msgid "Delete item…"
+msgstr ""
 
 msgid "Delete Job"
 msgstr "Eliminar orden de trabajo"
@@ -11049,6 +11093,9 @@ msgstr "Detallado"
 
 msgid "Details"
 msgstr "Detalles"
+
+msgid "Details (optional)"
+msgstr ""
 
 msgid "Detected by the motion planner"
 msgstr "Detectado por el planificador de movimiento"
@@ -13079,6 +13126,8 @@ msgstr "Cada elemento mantiene su código WBS actual, incluso cuando se mueve. H
 
 msgid "Every entry in the range and every change made to it"
 msgstr "Cada entrada en el rango y cada cambio realizado en ella"
+msgid "Every hub item is on this page"
+msgstr ""
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Todas las pruebas dentro del alcance se aprueban en su sistema configurado, con sus datos."
@@ -13243,6 +13292,9 @@ msgstr "Mapeos existentes. Elige una opción de proveedor diferente para remapea
 
 msgid "Existing Stripe customer"
 msgstr "Cliente de Stripe existente"
+
+msgid "Exit preview"
+msgstr ""
 
 msgid "Exp. <0/>"
 msgstr "Exp. <0/>"
@@ -14058,6 +14110,10 @@ msgstr "Rellenar"
 msgid "Files on items, jobs and orders"
 msgstr ""
 
+#. placeholder {0}: titleLabel[kind]
+msgid "Fill in the {0}"
+msgstr ""
+
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "Llena esta empresa con una historia realista de la industria para que cada pantalla tenga algo. Puedes restaurar lo que había aquí antes."
 
@@ -14810,6 +14866,8 @@ msgstr "Dale al arrendamiento una <0>duración fija en su paso de Detalles</0>."
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "Dale al hito una fecha de inicio y una fecha de fin para ver su consumo."
+msgid "Give the new section a title"
+msgstr ""
 
 msgid "GL"
 msgstr "Libro mayor"
@@ -15558,6 +15616,9 @@ msgstr "Cómo se ven tus presupuestos, pedidos e facturas cuando se envían"
 
 msgid "How your team is organized into departments"
 msgstr "Cómo está organizado tu equipo en departamentos"
+
+msgid "Hub item"
+msgstr ""
 
 msgid "Hub Settings"
 msgstr ""
@@ -17783,6 +17844,9 @@ msgstr "Pie de línea"
 msgid "Link"
 msgstr "Enlace"
 
+msgid "Link (optional)"
+msgstr ""
+
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Enlace (opcional) — p. ej. /x/settings/…"
 
@@ -19154,6 +19218,8 @@ msgstr "Mover columna: {0}"
 
 msgid "Move down"
 msgstr "Mover abajo"
+msgid "Move down"
+msgstr ""
 
 msgid "Move entities"
 msgstr "Mover entidades"
@@ -19169,6 +19235,12 @@ msgstr "Mover elemento"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "Sacar de Sub-ensamblaje"
+
+msgid "Move section down"
+msgstr ""
+
+msgid "Move section up"
+msgstr ""
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Mover parte de la cantidad a una nueva línea de disposición para que MRB pueda decidir cada porción por separado (por ejemplo, desperdiciar parte, retrabajar parte)."
@@ -19188,6 +19260,9 @@ msgstr "Mover a otra unidad de almacenamiento"
 msgid "Move to Group"
 msgstr "Mover a Grupo"
 
+msgid "Move to section"
+msgstr ""
+
 msgid "Move to Trash"
 msgstr "Mover a la papelera"
 
@@ -19199,6 +19274,8 @@ msgstr "Mover arriba"
 
 msgid "Moved"
 msgstr "Movido"
+msgid "Move up"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -19563,6 +19640,15 @@ msgstr "Nueva Parte de Cliente"
 msgid "New Customer Rental Rates"
 msgstr "Nuevas tasas de alquiler para clientes"
 
+msgid "New customization"
+msgstr ""
+
+msgid "New cutover step"
+msgstr ""
+
+msgid "New data item"
+msgstr ""
+
 msgid "New Demand Forecast"
 msgstr "Nuevo pronóstico de demanda"
 
@@ -19699,6 +19785,12 @@ msgstr "Nuevo hito"
 msgid "New Non Conformance Type"
 msgstr "Nuevo Tipo de No Conformidad"
 
+msgid "New objective"
+msgstr ""
+
+msgid "New open question"
+msgstr ""
+
 msgid "New Owner"
 msgstr "Nuevo Propietario"
 
@@ -19773,6 +19865,8 @@ msgstr "Nuevo acuerdo de alquiler"
 
 msgid "New Request"
 msgstr "Nueva Solicitud"
+msgid "New requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "Nueva Revisión"
@@ -19818,6 +19912,8 @@ msgstr "Nuevo servicio"
 
 msgid "New Service Job"
 msgstr "Nueva orden de trabajo de servicio"
+msgid "New setup item"
+msgstr ""
 
 msgid "New Shift"
 msgstr "Nuevo Turno"
@@ -22289,6 +22385,8 @@ msgstr "Opciones"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "Opciones para {0}"
+msgid "Options, one per line (leave empty for a typed answer)"
+msgstr ""
 
 msgid "or"
 msgstr "o"
@@ -22632,6 +22730,9 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Página {pdfViewPage} de {documentPageCount}"
 
 msgid "Page file contents"
+msgstr ""
+
+msgid "Page title"
 msgstr ""
 
 msgid "Pages"
@@ -23252,6 +23353,9 @@ msgstr "Orden de Picking"
 msgid "Pick serials/batches to return"
 msgstr "Seleccionar números de serie/lotes a devolver"
 
+msgid "Pick several"
+msgstr ""
+
 msgid "Pick the batches on hand that were received from this supplier."
 msgstr "Seleccione los lotes de producción disponibles que fueron recibidos de este proveedor."
 
@@ -23766,6 +23870,9 @@ msgstr "Calendarios de mantenimiento preventivo para su equipo"
 
 msgid "Preview"
 msgstr "Vista previa"
+
+msgid "Preview as customer"
+msgstr ""
 
 msgid "Preview failed: {error}"
 msgstr "Vista previa fallida: {error}"
@@ -25731,6 +25838,9 @@ msgstr "Quitar"
 #. placeholder {0}: action.name
 #. placeholder {0}: attachment.name
 #. placeholder {0}: deleting.account?.number ?? ""
+#. placeholder {0}: domain.domain
+#. placeholder {0}: item.label
+#. placeholder {0}: page.sections[removingSection]?.title ?? ""
 msgid "Remove {0}"
 msgstr "Quitar {0}"
 
@@ -25831,6 +25941,9 @@ msgstr "Eliminar del lote"
 msgid "Remove from board"
 msgstr "Eliminar del tablero"
 
+msgid "Remove from page"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "Quitar de la lista de precios"
 
@@ -25866,6 +25979,9 @@ msgstr "Quitar PDF"
 
 msgid "Remove row"
 msgstr "Quitar fila"
+
+msgid "Remove section"
+msgstr ""
 
 msgid "Remove slide"
 msgstr "Quitar diapositiva"
@@ -27886,6 +28002,9 @@ msgstr "Línea 38 de la Sección E, QREs de salarios de ejecutivos: {0}"
 
 msgid "Section saved"
 msgstr "Sección guardada"
+
+msgid "Section title"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Asegura tu cuenta con 2FA"
@@ -31068,6 +31187,8 @@ msgstr "Texto"
 
 msgid "Text color"
 msgstr "Color del texto"
+msgid "Text (optional)"
+msgstr ""
 
 msgid "Text size"
 msgstr "Tamaño de texto"
@@ -31256,6 +31377,9 @@ msgstr "El usuario de Carbon responsable de esta relación con el proveedor; los
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "El usuario de Carbon que es propietario de esta RFQ; las respuestas del proveedor y los recordatorios se enrutan a ellos."
+
+msgid "The card goes at the end of the section."
+msgstr ""
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "El transportista y el servicio por el cual sale un envío, proporcionando la plantilla de URL de rastreo que convierte un número de rastreo en un enlace y a donde se registran los cargos de envío de la cuenta."
@@ -31743,6 +31867,8 @@ msgstr "El artículo no tiene componentes fabricados en esta profundidad. Incluy
 
 msgid "The item has no serial or batch tracking"
 msgstr "El artículo no tiene seguimiento de número de serie o lote de producción"
+msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "La tarifa de renta del artículo"
@@ -32302,6 +32428,9 @@ msgstr "El cronograma utilizado para distribuir el costo de este activo durante 
 
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "El programador utiliza la primera Regla a continuación que se aplica, luego resta el Tiempo de paro y la dotación de personal."
+
+msgid "The section and its cards leave this page. Items on it stay in the hub and can be added again."
+msgstr ""
 
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "La clase de activo predefinida para unidades que construyes o capitalizas para alquilar en lugar de vender; se contabiliza en su propia cuenta de activo de Flota de alquiler y cuentas de depreciación acumulada, y cada activo vinculado a un artículo aparece en el Registro de flota."
@@ -32913,6 +33042,9 @@ msgid "This item is built via a configurator and resolves its components per-ord
 msgstr "Este artículo se construye mediante un configurador y resuelve sus componentes por pedido; las órdenes de trabajo creadas para él heredan la BOM resuelta del configurador."
 
 msgid "This item was removed from the hub."
+msgstr ""
+
+msgid "This item was removed from the hub. Remove it from the page to save other changes."
 msgstr ""
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
@@ -34675,6 +34807,9 @@ msgstr "Usa ... para obtener el siguiente ID de parte"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Usa ... para obtener el siguiente ID de herramienta"
+
+msgid "Use a Carbon path starting with /x/, or an https link"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "Usar una cuenta diferente"

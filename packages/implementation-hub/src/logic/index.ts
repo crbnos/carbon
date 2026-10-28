@@ -15,6 +15,7 @@ export * from "./labels";
 export * from "./objectives";
 export * from "./overlay";
 export * from "./page";
+export * from "./page-edit";
 export * from "./priority-set";
 export * from "./question";
 export * from "./readiness";

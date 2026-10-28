@@ -156,7 +156,11 @@ export const stateActionValidator = z.discriminatedUnion("intent", [
     // Where the row came from, for discovery output. Only Carbon staff may set
     // a source other than their own (a handover answer, an interview finding).
     source: sourceValidator.optional(),
-    sourceRef: z.string().optional()
+    sourceRef: z.string().optional(),
+    // Carbon staff only: put the new row on a person's page in the same write.
+    // JSON-encoded { page, target }: the page as the editor has it (a
+    // MemberPage) and where the card goes (logic/page-edit PageTarget).
+    place: z.string().optional()
   }),
   z.object({
     intent: z.literal("updateRow"),

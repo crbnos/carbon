@@ -1986,6 +1986,8 @@ msgstr "Yeni bir revizyon, mevcut revizyonun bir kopyası kullanılarak oluştur
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "Yeni bir hizmet iş emri fatura oranını kopyalar. Her zaman girişi maliyeti maliyet oranında muhasebeleştirir."
+msgid "A new section at the end of the page, with its first card."
+msgstr ""
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "Yeni bir boyut, mevcut boyutun bir kopyası kullanılarak oluşturulacaktır"
@@ -2019,6 +2021,11 @@ msgstr "Bir rakamın yanındaki bir sayı veya işaret, yazdığı anlamı deği
 
 msgid "A part"
 msgstr "Bir parça"
+msgid "A note for this person (optional)"
+msgstr ""
+
+msgid "A page needs one card. Remove page in the staff bar removes the whole page."
+msgstr ""
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "Bir parça, satın alınabilir veya üretilebilir belirli bir öğe hakkındaki bilgileri içerir."
@@ -3004,6 +3011,8 @@ msgstr "Ekle ve Çıkış Yap"
 
 msgid "Add a charge number to start logging time."
 msgstr "Zaman kaydetmeye başlamak için bir gider numarası ekleyin."
+msgid "Add a card"
+msgstr ""
 
 msgid "Add a column below to sort the view"
 msgstr "Görünümü sıralamak için aşağı bir sütun ekleyin"
@@ -3055,6 +3064,8 @@ msgstr "Bir satır ekle"
 
 msgid "Add a row for each charge number you worked on."
 msgstr "Çalıştığınız her masraf numarası için bir satır ekle."
+msgid "Add a section"
+msgstr ""
 
 msgid "Add a step"
 msgstr "Bir adım ekle"
@@ -3130,6 +3141,8 @@ msgstr "Kalibrasyon Kaydı Ekle"
 
 msgid "Add Ceiling"
 msgstr "Tavan Ekle"
+msgid "Add card"
+msgstr ""
 
 msgid "Add Characteristic"
 msgstr "Özellik Ekle"
@@ -3377,6 +3390,9 @@ msgstr "Kütüphaneden kural ekle"
 
 msgid "Add Sample"
 msgstr "Örnek Ekle"
+
+msgid "Add section"
+msgstr ""
 
 msgid "Add Selector"
 msgstr "Seçici Ekle"
@@ -3996,6 +4012,12 @@ msgstr "Bir entegrasyon veya özel bir değişiklik — aslında özel olan kü�
 
 msgid "An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code."
 msgstr "Uluslararası Banka Hesap Numarası: ülke, banka, şube ve hesabı tutan bir dize, iki kontrol basamağı ile. Zaten bankayı tanımladığından, kullandığı ülkelerin ayrı bir yönlendirme kodu gerekmez."
+
+msgid "An introduction for this person (optional)"
+msgstr ""
+
+msgid "An introduction for this section (optional)"
+msgstr ""
 
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "Bir davet beklemede. Kabul ettikleri zaman aktif hale gelirler."
@@ -6791,8 +6813,17 @@ msgstr "Carbon'ın operatörlerin operasyonları çalıştırdığı, miktarlar�
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon'ın bir parça numarası olan her şey için — Parça, Malzeme, Takım, Hizmet, Sarf malzemesi veya Bağlama aparatı — iş emirleri, yöntemler, siparişler ve envanterin işaret ettiği tek stok kartı."
 
+msgid "Card"
+msgstr ""
+
 msgid "Card Holder"
 msgstr "Kart Sahibi"
+
+msgid "Card options"
+msgstr ""
+
+msgid "Card title"
+msgstr ""
 
 msgid "Cards"
 msgstr "Kartlar"
@@ -7177,6 +7208,8 @@ msgstr "Müşteri seç"
 
 msgid "Choose a labor category or an employee"
 msgstr "Bir işçilik kategorisi veya bir çalışan seç"
+msgid "Choose a hub item"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}'nin yerine geçen bir parça seçin. Kural seçilen parçaya {itemReadableId} ardıl olarak kaydedilir."
@@ -7369,6 +7402,9 @@ msgstr "Arama sorgusunu temizle"
 
 msgid "Clear selection"
 msgstr "Seçimi temizle"
+
+msgid "Clear the due date"
+msgstr ""
 
 msgid "Clear value"
 msgstr "Değeri temizle"
@@ -9564,6 +9600,9 @@ msgstr "Özel ek hizmetler"
 msgid "Custom attributes you track against your people"
 msgstr "Personellerinize karşı izlediğiniz özel öznitelikler"
 
+msgid "Custom card"
+msgstr ""
+
 msgid "Custom color"
 msgstr "Özel renk"
 
@@ -10382,6 +10421,8 @@ msgstr "Sil"
 #. placeholder {0}: deleting.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
 #. placeholder {0}: row.account?.number ?? ""
+#. placeholder {0}: titleValue || text(card.title) || ""
+#. placeholder {0}: view.name
 msgid "Delete {0}"
 msgstr "{0} Sil"
 
@@ -10531,6 +10572,9 @@ msgstr "Sorunu Sil"
 
 msgid "Delete Item Group"
 msgstr "Öğe Grubunu Sil"
+
+msgid "Delete item…"
+msgstr ""
 
 msgid "Delete Job"
 msgstr "İş Emrini Sil"
@@ -11049,6 +11093,9 @@ msgstr "Ayrıntılı"
 
 msgid "Details"
 msgstr "Detaylar"
+
+msgid "Details (optional)"
+msgstr ""
 
 msgid "Detected by the motion planner"
 msgstr "Hareket planlayıcısı tarafından algılandı"
@@ -13079,6 +13126,8 @@ msgstr "Her öğe, taşındığında bile mevcut WBS kodunu tutar. Kodlar sözle
 
 msgid "Every entry in the range and every change made to it"
 msgstr "Aralıktaki her giriş ve buna yapılan her değişiklik"
+msgid "Every hub item is on this page"
+msgstr ""
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle geçer."
@@ -13243,6 +13292,9 @@ msgstr "Mevcut eşlemeler. Yeniden eşlemek için farklı bir sağlayıcı seçe
 
 msgid "Existing Stripe customer"
 msgstr "Mevcut Stripe müşterisi"
+
+msgid "Exit preview"
+msgstr ""
 
 msgid "Exp. <0/>"
 msgstr "Exp. <0/>"
@@ -14058,6 +14110,10 @@ msgstr "Doldur"
 msgid "Files on items, jobs and orders"
 msgstr ""
 
+#. placeholder {0}: titleLabel[kind]
+msgid "Fill in the {0}"
+msgstr ""
+
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "Bu şirketi gerçekçi bir endüstri hikayesiyle doldurun, böylece her ekran bir şey içerir. Önceki durumu geri getirebilirsiniz."
 
@@ -14810,6 +14866,8 @@ msgstr "Kiralama için <0>Detaylar adımında sabit bir dönem</0> belirleyin."
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "Yakılışını görmek için kilometre taşına başlangıç ve bitiş tarihi verin."
+msgid "Give the new section a title"
+msgstr ""
 
 msgid "GL"
 msgstr "Büyük defter"
@@ -15558,6 +15616,9 @@ msgstr "Teklifleriniz, siparişleriniz ve faturalarınız gönderildiğinde nas�
 
 msgid "How your team is organized into departments"
 msgstr "Ekibiniz departmanlara nasıl organize edildiği"
+
+msgid "Hub item"
+msgstr ""
 
 msgid "Hub Settings"
 msgstr ""
@@ -17783,6 +17844,9 @@ msgstr "Üretim Hattı Yanı"
 msgid "Link"
 msgstr "Bağlantı"
 
+msgid "Link (optional)"
+msgstr ""
+
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Bağlantı (isteğe bağlı) — ör. /x/settings/…"
 
@@ -19154,6 +19218,8 @@ msgstr "Sütun sırasını değiştir: {0}"
 
 msgid "Move down"
 msgstr "Aşağı taşı"
+msgid "Move down"
+msgstr ""
 
 msgid "Move entities"
 msgstr "Varlıkları taşı"
@@ -19169,6 +19235,12 @@ msgstr "Öğeyi taşı"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "Alt Montajdan Taşı"
+
+msgid "Move section down"
+msgstr ""
+
+msgid "Move section up"
+msgstr ""
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Miktarın bir kısmını yeni bir karar satırına taşıyın, böylece MRB her bölümü ayrı ayrı karar verebilir (örneğin, bazılarını fire edin, bazılarını yeniden işleyin)."
@@ -19188,6 +19260,9 @@ msgstr "Başka bir depolama birimine taşı"
 msgid "Move to Group"
 msgstr "Gruba Taşı"
 
+msgid "Move to section"
+msgstr ""
+
 msgid "Move to Trash"
 msgstr "Çöp Sepetine Taşı"
 
@@ -19199,6 +19274,8 @@ msgstr "Yukarı taşı"
 
 msgid "Moved"
 msgstr "Taşındı"
+msgid "Move up"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -19563,6 +19640,15 @@ msgstr "Yeni Müşteri Parçası"
 msgid "New Customer Rental Rates"
 msgstr "Yeni Müşteri Kira Oranları"
 
+msgid "New customization"
+msgstr ""
+
+msgid "New cutover step"
+msgstr ""
+
+msgid "New data item"
+msgstr ""
+
 msgid "New Demand Forecast"
 msgstr "Yeni Talep Tahmini"
 
@@ -19699,6 +19785,12 @@ msgstr "Yeni Kilometre Taşı"
 msgid "New Non Conformance Type"
 msgstr "Yeni Uygunsuzluk Türü"
 
+msgid "New objective"
+msgstr ""
+
+msgid "New open question"
+msgstr ""
+
 msgid "New Owner"
 msgstr "Yeni Sahip"
 
@@ -19773,6 +19865,8 @@ msgstr "Yeni Kira Sözleşmesi"
 
 msgid "New Request"
 msgstr "Yeni İstek"
+msgid "New requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "Yeni Revizyon"
@@ -19818,6 +19912,8 @@ msgstr "Yeni Hizmet"
 
 msgid "New Service Job"
 msgstr "Yeni Hizmet İş Emri"
+msgid "New setup item"
+msgstr ""
 
 msgid "New Shift"
 msgstr "Yeni Vardiya"
@@ -22289,6 +22385,8 @@ msgstr "Seçenekler"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "{0} için seçenekler"
+msgid "Options, one per line (leave empty for a typed answer)"
+msgstr ""
 
 msgid "or"
 msgstr "veya"
@@ -22632,6 +22730,9 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Sayfa {pdfViewPage} / {documentPageCount}"
 
 msgid "Page file contents"
+msgstr ""
+
+msgid "Page title"
 msgstr ""
 
 msgid "Pages"
@@ -23252,6 +23353,9 @@ msgstr "Seçim Sırası"
 msgid "Pick serials/batches to return"
 msgstr "İade edilecek seri numaraları/partileri seç"
 
+msgid "Pick several"
+msgstr ""
+
 msgid "Pick the batches on hand that were received from this supplier."
 msgstr "Bu tedarikçiden alınan eldeki partileri seçin."
 
@@ -23766,6 +23870,9 @@ msgstr "Ekipmanınız için önleyici bakım programları"
 
 msgid "Preview"
 msgstr "Önizle"
+
+msgid "Preview as customer"
+msgstr ""
 
 msgid "Preview failed: {error}"
 msgstr "Önizleme başarısız oldu: {error}"
@@ -25731,6 +25838,9 @@ msgstr "Kaldır"
 #. placeholder {0}: action.name
 #. placeholder {0}: attachment.name
 #. placeholder {0}: deleting.account?.number ?? ""
+#. placeholder {0}: domain.domain
+#. placeholder {0}: item.label
+#. placeholder {0}: page.sections[removingSection]?.title ?? ""
 msgid "Remove {0}"
 msgstr "Kaldır {0}"
 
@@ -25831,6 +25941,9 @@ msgstr "Toplu İşten Kaldır"
 msgid "Remove from board"
 msgstr "Panodan kaldır"
 
+msgid "Remove from page"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "Fiyat Listesinden Kaldır"
 
@@ -25866,6 +25979,9 @@ msgstr "PDF'yi Kaldır"
 
 msgid "Remove row"
 msgstr "Satırı kaldır"
+
+msgid "Remove section"
+msgstr ""
 
 msgid "Remove slide"
 msgstr "Slaytı kaldır"
@@ -27886,6 +28002,9 @@ msgstr "Bölüm E satır 38, Görevli Ücretleri Nitelikli Araştırma Giderleri
 
 msgid "Section saved"
 msgstr "Bölüm kaydedildi"
+
+msgid "Section title"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Hesabınızı 2FA ile güvenli hale getirin"
@@ -31068,6 +31187,8 @@ msgstr "Metin"
 
 msgid "Text color"
 msgstr "Metin rengi"
+msgid "Text (optional)"
+msgstr ""
 
 msgid "Text size"
 msgstr "Metin boyutu"
@@ -31256,6 +31377,9 @@ msgstr "Bu tedarikçi ilişkisinden sorumlu Carbon kullanıcısı; bu tedarikçi
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "Bu RFQ'ya sahip olan Carbon kullanıcısı; tedarikçi yanıtları ve hatırlatmalar onlara yönlendirilir."
+
+msgid "The card goes at the end of the section."
+msgstr ""
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "Sevkiyatın çıktığı taşıyıcı ve hizmet, izleme numarasını bir bağlantıya dönüştüren izleme URL şablonunu ve hesap nakliye masraflarını sağlar."
@@ -31743,6 +31867,8 @@ msgstr "Stok kartının bu derinlikte üretilmiş bileşeni yoktur. Satın alın
 
 msgid "The item has no serial or batch tracking"
 msgstr "Stok kartının seri veya parti takibi yok"
+msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "Stok kartı'nın kiralama oranı"
@@ -32302,6 +32428,9 @@ msgstr "Bu varlığın Maliyetini Faydalı ömrü boyunca yaymak için kullanıl
 
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "Zamanlayıcı aşağıda uygulanan ilk Kuralı kullanır, ardından Duruş ve personel atamalarını çıkarır."
+
+msgid "The section and its cards leave this page. Items on it stay in the hub and can be added again."
+msgstr ""
 
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "Kiralamak için satış yerine inşa ettiğiniz veya aktifleştirdiğiniz birimler için sistem tarafından sağlanan Varlık sınıfı; kendi Kiralık Filo varlığı ve birikmiş amortisman hesaplarına Muhasebeleştirir ve bir Stok kartı ile bağlantılı her varlık Filo kaydında yer alır."
@@ -32913,6 +33042,9 @@ msgid "This item is built via a configurator and resolves its components per-ord
 msgstr "Bu Stok kartı, bir yapılandırıcı aracılığıyla oluşturulur ve bileşenlerini siparişe göre çözer; bunun için oluşturulan İş emirleri yapılandırıcının çözülmüş BOM'unu devralır."
 
 msgid "This item was removed from the hub."
+msgstr ""
+
+msgid "This item was removed from the hub. Remove it from the page to save other changes."
 msgstr ""
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
@@ -34675,6 +34807,9 @@ msgstr "Bir sonraki parça kimliğini almak için ..."
 
 msgid "Use ... to get the next tool ID"
 msgstr "Sonraki araç kimliğini almak için ..."
+
+msgid "Use a Carbon path starting with /x/, or an https link"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "Farklı bir hesap kullan"

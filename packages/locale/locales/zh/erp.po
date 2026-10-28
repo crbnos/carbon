@@ -1986,6 +1986,8 @@ msgstr "将使用当前修订版的副本创建新的修订版"
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "新的服务工单复制账单费率。每个时间条目以成本费率过账其成本。"
+msgid "A new section at the end of the page, with its first card."
+msgstr ""
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "将使用当前尺寸的副本创建新尺寸"
@@ -2019,6 +2021,11 @@ msgstr "数字或符号紧挨数值时会改变其含义。请在二者之间加
 
 msgid "A part"
 msgstr "一个零件"
+msgid "A note for this person (optional)"
+msgstr ""
+
+msgid "A page needs one card. Remove page in the staff bar removes the whole page."
+msgstr ""
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "零件包含可以购买或制造的特定项目的信息。"
@@ -3004,6 +3011,8 @@ msgstr "添加并发放"
 
 msgid "Add a charge number to start logging time."
 msgstr "添加计费代码来开始记录工时。"
+msgid "Add a card"
+msgstr ""
 
 msgid "Add a column below to sort the view"
 msgstr "在下方添加一列以对视图进行排序"
@@ -3055,6 +3064,8 @@ msgstr "添加一行"
 
 msgid "Add a row for each charge number you worked on."
 msgstr "为你工作的每个计费号添加一行。"
+msgid "Add a section"
+msgstr ""
 
 msgid "Add a step"
 msgstr "添加步骤"
@@ -3130,6 +3141,8 @@ msgstr "添加校准记录"
 
 msgid "Add Ceiling"
 msgstr "添加上限"
+msgid "Add card"
+msgstr ""
 
 msgid "Add Characteristic"
 msgstr "添加特性"
@@ -3377,6 +3390,9 @@ msgstr "从库中添加规则"
 
 msgid "Add Sample"
 msgstr "添加样品"
+
+msgid "Add section"
+msgstr ""
 
 msgid "Add Selector"
 msgstr "添加选择器"
@@ -3996,6 +4012,12 @@ msgstr "一个集成或自定义更改——实际上是自定义的小部分。
 
 msgid "An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code."
 msgstr "国际银行账户号码：包含国家、银行、支行和账户的一串数字，附加两位校验位。因为它已经标识银行，使用它的国家不需要单独的路由代码。"
+
+msgid "An introduction for this person (optional)"
+msgstr ""
+
+msgid "An introduction for this section (optional)"
+msgstr ""
 
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "邀请待处理。他们接受后就会启用"
@@ -6791,8 +6813,17 @@ msgstr "Carbon的车间应用程序，操作员可在其中执行工序、报告
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon对任何具有零件号的事物的单一记录 — 零件、原材料、刀具、服务、耗材或工装夹具 — 工单、方法、订单和库存管理都指向。"
 
+msgid "Card"
+msgstr ""
+
 msgid "Card Holder"
 msgstr "持卡人"
+
+msgid "Card options"
+msgstr ""
+
+msgid "Card title"
+msgstr ""
 
 msgid "Cards"
 msgstr "卡片"
@@ -7177,6 +7208,8 @@ msgstr "选择客户"
 
 msgid "Choose a labor category or an employee"
 msgstr "选择人工类别或员工"
+msgid "Choose a hub item"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
@@ -7369,6 +7402,9 @@ msgstr "清除搜索查询"
 
 msgid "Clear selection"
 msgstr "清除选择"
+
+msgid "Clear the due date"
+msgstr ""
 
 msgid "Clear value"
 msgstr "清除值"
@@ -9564,6 +9600,9 @@ msgstr "自定义附加项"
 msgid "Custom attributes you track against your people"
 msgstr "针对人员跟踪的自定义属性"
 
+msgid "Custom card"
+msgstr ""
+
 msgid "Custom color"
 msgstr "自定义颜色"
 
@@ -10382,6 +10421,8 @@ msgstr "删除"
 #. placeholder {0}: deleting.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
 #. placeholder {0}: row.account?.number ?? ""
+#. placeholder {0}: titleValue || text(card.title) || ""
+#. placeholder {0}: view.name
 msgid "Delete {0}"
 msgstr "删除 {0}"
 
@@ -10531,6 +10572,9 @@ msgstr "删除问题"
 
 msgid "Delete Item Group"
 msgstr "删除物品组"
+
+msgid "Delete item…"
+msgstr ""
 
 msgid "Delete Job"
 msgstr "删除工单"
@@ -11049,6 +11093,9 @@ msgstr "详细"
 
 msgid "Details"
 msgstr "详情"
+
+msgid "Details (optional)"
+msgstr ""
 
 msgid "Detected by the motion planner"
 msgstr "由运动规划器检测"
@@ -13079,6 +13126,8 @@ msgstr "每个要素保持其当前WBS代码，即使在移动时也是如此。
 
 msgid "Every entry in the range and every change made to it"
 msgstr "范围内的每个条目和对其所做的每项更改"
+msgid "Every hub item is on this page"
+msgstr ""
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "您配置的系统中的每项范围内测试都通过了您的数据。"
@@ -13243,6 +13292,9 @@ msgstr "现有映射。选择不同的提供商选项进行重新映射。"
 
 msgid "Existing Stripe customer"
 msgstr "现有 Stripe 客户"
+
+msgid "Exit preview"
+msgstr ""
 
 msgid "Exp. <0/>"
 msgstr "预期<0/>"
@@ -14058,6 +14110,10 @@ msgstr "填充"
 msgid "Files on items, jobs and orders"
 msgstr ""
 
+#. placeholder {0}: titleLabel[kind]
+msgid "Fill in the {0}"
+msgstr ""
+
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "用逼真的行业故事填充此公司，使每个屏幕都有内容。您可以恢复之前的内容。"
 
@@ -14810,6 +14866,8 @@ msgstr "在其详细信息步骤中为租赁指定<0>固定期限</0>。"
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "给里程碑设置开始日期和结束日期以查看其消耗。"
+msgid "Give the new section a title"
+msgstr ""
 
 msgid "GL"
 msgstr "总账"
@@ -15558,6 +15616,9 @@ msgstr "您的报价单、订单和发票发出时的外观"
 
 msgid "How your team is organized into departments"
 msgstr "您的班组如何组织成部门"
+
+msgid "Hub item"
+msgstr ""
 
 msgid "Hub Settings"
 msgstr ""
@@ -17783,6 +17844,9 @@ msgstr "线边"
 msgid "Link"
 msgstr "链接"
 
+msgid "Link (optional)"
+msgstr ""
+
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "链接（可选）— 例如 /x/settings/…"
 
@@ -19154,6 +19218,8 @@ msgstr "调整列顺序：{0}"
 
 msgid "Move down"
 msgstr "下移"
+msgid "Move down"
+msgstr ""
 
 msgid "Move entities"
 msgstr "移动实体"
@@ -19169,6 +19235,12 @@ msgstr "移动项目"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "从子装配移出"
+
+msgid "Move section down"
+msgstr ""
+
+msgid "Move section up"
+msgstr ""
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "将部分数量移动到新的处置行，以便MRB可以分别决定每一部分（例如报废部分、返工部分）。"
@@ -19188,6 +19260,9 @@ msgstr "移动到其他存储单元"
 msgid "Move to Group"
 msgstr "移动到组"
 
+msgid "Move to section"
+msgstr ""
+
 msgid "Move to Trash"
 msgstr "移动到垃圾箱"
 
@@ -19199,6 +19274,8 @@ msgstr "上移"
 
 msgid "Moved"
 msgstr "已移动"
+msgid "Move up"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -19563,6 +19640,15 @@ msgstr "新客户零件"
 msgid "New Customer Rental Rates"
 msgstr "新客户租赁费率"
 
+msgid "New customization"
+msgstr ""
+
+msgid "New cutover step"
+msgstr ""
+
+msgid "New data item"
+msgstr ""
+
 msgid "New Demand Forecast"
 msgstr "新需求预测"
 
@@ -19699,6 +19785,12 @@ msgstr "新里程碑"
 msgid "New Non Conformance Type"
 msgstr "新建不合格类型"
 
+msgid "New objective"
+msgstr ""
+
+msgid "New open question"
+msgstr ""
+
 msgid "New Owner"
 msgstr "新建负责人"
 
@@ -19773,6 +19865,8 @@ msgstr "新建租赁协议"
 
 msgid "New Request"
 msgstr "新请求"
+msgid "New requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "新修订版"
@@ -19818,6 +19912,8 @@ msgstr "新服务"
 
 msgid "New Service Job"
 msgstr "新建服务工单"
+msgid "New setup item"
+msgstr ""
 
 msgid "New Shift"
 msgstr "新班次"
@@ -22289,6 +22385,8 @@ msgstr "选项"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "{0} 的选项"
+msgid "Options, one per line (leave empty for a typed answer)"
+msgstr ""
 
 msgid "or"
 msgstr "或"
@@ -22632,6 +22730,9 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "第 {pdfViewPage} 页，共 {documentPageCount} 页"
 
 msgid "Page file contents"
+msgstr ""
+
+msgid "Page title"
 msgstr ""
 
 msgid "Pages"
@@ -23252,6 +23353,9 @@ msgstr "拣货单"
 msgid "Pick serials/batches to return"
 msgstr "选择要退货的序列号/批次"
 
+msgid "Pick several"
+msgstr ""
+
 msgid "Pick the batches on hand that were received from this supplier."
 msgstr "从此供应商收到的现有生产批次中拣货。"
 
@@ -23766,6 +23870,9 @@ msgstr "您的设备预防性维护排程"
 
 msgid "Preview"
 msgstr "预览"
+
+msgid "Preview as customer"
+msgstr ""
 
 msgid "Preview failed: {error}"
 msgstr "预览失败：{error}"
@@ -25731,6 +25838,9 @@ msgstr "移除"
 #. placeholder {0}: action.name
 #. placeholder {0}: attachment.name
 #. placeholder {0}: deleting.account?.number ?? ""
+#. placeholder {0}: domain.domain
+#. placeholder {0}: item.label
+#. placeholder {0}: page.sections[removingSection]?.title ?? ""
 msgid "Remove {0}"
 msgstr "移除{0}"
 
@@ -25831,6 +25941,9 @@ msgstr "从批次中移除"
 msgid "Remove from board"
 msgstr "从看板中删除"
 
+msgid "Remove from page"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "从价格列表中移除"
 
@@ -25866,6 +25979,9 @@ msgstr "移除 PDF"
 
 msgid "Remove row"
 msgstr "移除行"
+
+msgid "Remove section"
+msgstr ""
 
 msgid "Remove slide"
 msgstr "移除幻灯片"
@@ -27886,6 +28002,9 @@ msgstr "第E部分第38行，管理人员工资QRE：{0}"
 
 msgid "Section saved"
 msgstr "部分已保存"
+
+msgid "Section title"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "使用2FA保护您的账户"
@@ -31068,6 +31187,8 @@ msgstr "文本"
 
 msgid "Text color"
 msgstr "文本颜色"
+msgid "Text (optional)"
+msgstr ""
 
 msgid "Text size"
 msgstr "文本大小"
@@ -31256,6 +31377,9 @@ msgstr "负责此供应商关系的Carbon用户；关于此供应商的电子邮
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "拥有此RFQ的Carbon用户；供应商响应和提醒会路由给他们。"
+
+msgid "The card goes at the end of the section."
+msgstr ""
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "发货所用的承运商和服务，提供跟踪 URL 模板，将跟踪号转换为链接，以及应付运费所过账的账户。"
@@ -31743,6 +31867,8 @@ msgstr "该物料在此深度无制造零件。包括购买零件以添加其采
 
 msgid "The item has no serial or batch tracking"
 msgstr "该物料没有序列号或生产批次跟踪"
+msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "该物料的租赁费率"
@@ -32302,6 +32428,9 @@ msgstr "用于在其使用年限内分摊此资产成本的排程（直线法、
 
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "调度程序应用以下适用的第一条规则，然后减去停机时间和人员配置。"
+
+msgid "The section and its cards leave this page. Items on it stay in the hub and can be added again."
+msgstr ""
 
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "用于您制造或资本化以出租而非销售的单位的预置资产类别；它过账至其自有的租赁舰队资产和累计折旧账户，每项关联到物料的资产都显示在舰队寄存器中。"
@@ -32913,6 +33042,9 @@ msgid "This item is built via a configurator and resolves its components per-ord
 msgstr "这个物料是通过配置器构建的，根据订单解析其组件；为它创建的工单继承配置器已解析的 BOM。"
 
 msgid "This item was removed from the hub."
+msgstr ""
+
+msgid "This item was removed from the hub. Remove it from the page to save other changes."
 msgstr ""
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
@@ -34675,6 +34807,9 @@ msgstr "使用 ... 获取下一个零件 ID"
 
 msgid "Use ... to get the next tool ID"
 msgstr "使用 ... 获取下一个工具 ID"
+
+msgid "Use a Carbon path starting with /x/, or an https link"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "使用不同的账户"

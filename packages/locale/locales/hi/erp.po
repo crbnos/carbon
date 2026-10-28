@@ -1986,6 +1986,8 @@ msgstr "वर्तमान रिवीजन की एक प्रति �
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "एक नई सेवा जॉब बिल दर को कॉपी करता है। प्रत्येक समय प्रविष्टि लागत दर पर इसकी लागत पोस्ट करती है।"
+msgid "A new section at the end of the page, with its first card."
+msgstr ""
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "एक नया आकार वर्तमान आकार की प्रतिलिपि का उपयोग करके बनाया जाएगा"
@@ -2019,6 +2021,11 @@ msgstr "आंकड़े के बगल में कोई संख्य�
 
 msgid "A part"
 msgstr "एक पार्ट"
+msgid "A note for this person (optional)"
+msgstr ""
+
+msgid "A page needs one card. Remove page in the staff bar removes the whole page."
+msgstr ""
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "एक पार्ट में एक विशिष्ट आइटम की जानकारी होती है जिसे खरीदा या निर्मित किया जा सकता है।"
@@ -3004,6 +3011,8 @@ msgstr "जोड़ें और जारी करें"
 
 msgid "Add a charge number to start logging time."
 msgstr "समय लॉग करना शुरू करने के लिए एक चार्ज नंबर जोड़ें।"
+msgid "Add a card"
+msgstr ""
 
 msgid "Add a column below to sort the view"
 msgstr "इस दृश्य को सॉर्ट करने के लिए नीचे एक कॉलम जोड़ें"
@@ -3055,6 +3064,8 @@ msgstr "एक पंक्ति जोड़ें"
 
 msgid "Add a row for each charge number you worked on."
 msgstr "आपके द्वारा काम किए गए प्रत्येक चार्ज संख्या के लिए एक पंक्ति जोड़ें।"
+msgid "Add a section"
+msgstr ""
 
 msgid "Add a step"
 msgstr "एक चरण जोड़ें"
@@ -3130,6 +3141,8 @@ msgstr "अंशांकन रिकॉर्ड जोड़ें"
 
 msgid "Add Ceiling"
 msgstr "सीलिंग जोड़ें"
+msgid "Add card"
+msgstr ""
 
 msgid "Add Characteristic"
 msgstr "विशेषता जोड़ें"
@@ -3377,6 +3390,9 @@ msgstr "लाइब्रेरी से नियम जोड़ें"
 
 msgid "Add Sample"
 msgstr "नमूना जोड़ें"
+
+msgid "Add section"
+msgstr ""
 
 msgid "Add Selector"
 msgstr "सिलेक्टर जोड़ें"
@@ -3996,6 +4012,12 @@ msgstr "एक एकीकरण या एक कस्टम परिवर�
 
 msgid "An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code."
 msgstr "एक अंतर्राष्ट्रीय बैंक खाता संख्या: एक स्ट्रिंग जो देश, बैंक, शाखा और खाते को धारण करती है, दो जांच अंकों के साथ। क्योंकि यह पहले से ही बैंक की पहचान करती है, जो देश इसका उपयोग करते हैं उन्हें कोई अलग रूटिंग कोड की आवश्यकता नहीं है।"
+
+msgid "An introduction for this person (optional)"
+msgstr ""
+
+msgid "An introduction for this section (optional)"
+msgstr ""
 
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "एक आमंत्रण लंबित है। वे सक्रिय हो जाते हैं एक बार जब वे इसे स्वीकार करते हैं।"
@@ -6791,8 +6813,17 @@ msgstr "Carbon का शॉप फ्लोर ऐप जहां ऑपरे
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon का एकल रिकॉर्ड किसी भी चीज़ के लिए जिसका पार्ट नंबर है — पार्ट, सामग्री, टूल, सेवा, उपभोग्य सामग्री, या फिक्स्चर — जिस पर जॉब, विधि, आदेश और इन्वेंटरी सभी इंगित करते हैं।"
 
+msgid "Card"
+msgstr ""
+
 msgid "Card Holder"
 msgstr "कार्ड धारक"
+
+msgid "Card options"
+msgstr ""
+
+msgid "Card title"
+msgstr ""
 
 msgid "Cards"
 msgstr "कार्ड"
@@ -7177,6 +7208,8 @@ msgstr "एक ग्राहक चुनें"
 
 msgid "Choose a labor category or an employee"
 msgstr "एक श्रम श्रेणी या एक कर्मचारी चुनें"
+msgid "Choose a hub item"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "एक पार्ट चुनें जिसे {itemReadableId} प्रतिस्थापित करता है। नियम उस पार्ट पर सहेजा जाता है जिसमें {itemReadableId} उत्तराधिकारी है।"
@@ -7369,6 +7402,9 @@ msgstr "खोज क्वेरी साफ़ करें"
 
 msgid "Clear selection"
 msgstr "चयन साफ करें"
+
+msgid "Clear the due date"
+msgstr ""
 
 msgid "Clear value"
 msgstr "मान साफ़ करें"
@@ -9564,6 +9600,9 @@ msgstr "कस्टम ऐड-ऑन"
 msgid "Custom attributes you track against your people"
 msgstr "आपके लोगों के विरुद्ध आप जो कस्टम विशेषताएं ट्रैक करते हैं"
 
+msgid "Custom card"
+msgstr ""
+
 msgid "Custom color"
 msgstr "कस्टम रंग"
 
@@ -10382,6 +10421,8 @@ msgstr "हटाएं"
 #. placeholder {0}: deleting.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
 #. placeholder {0}: row.account?.number ?? ""
+#. placeholder {0}: titleValue || text(card.title) || ""
+#. placeholder {0}: view.name
 msgid "Delete {0}"
 msgstr "{0} हटाएं"
 
@@ -10531,6 +10572,9 @@ msgstr "समस्या हटाएं"
 
 msgid "Delete Item Group"
 msgstr "आइटम समूह हटाएं"
+
+msgid "Delete item…"
+msgstr ""
 
 msgid "Delete Job"
 msgstr "जॉब हटाएँ"
@@ -11049,6 +11093,9 @@ msgstr "विस्तृत"
 
 msgid "Details"
 msgstr "विवरण"
+
+msgid "Details (optional)"
+msgstr ""
 
 msgid "Detected by the motion planner"
 msgstr "गति योजनाकार द्वारा पहचाना गया"
@@ -13079,6 +13126,8 @@ msgstr "हर तत्व अपना वर्तमान WBS कोड र
 
 msgid "Every entry in the range and every change made to it"
 msgstr "सीमा में प्रत्येक प्रविष्टि और इसमें किए गए प्रत्येक परिवर्तन"
+msgid "Every hub item is on this page"
+msgstr ""
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "आपकी कॉन्फ़िगर की गई सिस्टम में, आपके डेटा के साथ, हर स्कोप में आने वाला टेस्ट पास होता है।"
@@ -13243,6 +13292,9 @@ msgstr "मौजूदा मैपिंग। पुनः-मैप कर�
 
 msgid "Existing Stripe customer"
 msgstr "मौजूदा Stripe ग्राहक"
+
+msgid "Exit preview"
+msgstr ""
 
 msgid "Exp. <0/>"
 msgstr "अपेक्षित <0/>"
@@ -14058,6 +14110,10 @@ msgstr "भरें"
 msgid "Files on items, jobs and orders"
 msgstr ""
 
+#. placeholder {0}: titleLabel[kind]
+msgid "Fill in the {0}"
+msgstr ""
+
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "इस कंपनी को एक यथार्थवादी उद्योग की कहानी से भरें ताकि हर स्क्रीन में कुछ न कुछ हो। आप पहले जो यहां था उसे वापस डाल सकते हैं।"
 
@@ -14810,6 +14866,8 @@ msgstr "पट्टे को इसके <0>विवरण चरण पर 
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "माइलस्टोन को शुरुआत और अंत तारीख दें इसकी बर्न देखने के लिए।"
+msgid "Give the new section a title"
+msgstr ""
 
 msgid "GL"
 msgstr "सामान्य खाता बही"
@@ -15558,6 +15616,9 @@ msgstr "आपके उद्धरण, ऑर्डर और चालान 
 
 msgid "How your team is organized into departments"
 msgstr "आपकी टीम विभागों में कैसे संगठित है"
+
+msgid "Hub item"
+msgstr ""
 
 msgid "Hub Settings"
 msgstr ""
@@ -17783,6 +17844,9 @@ msgstr "लाइनसाइड"
 msgid "Link"
 msgstr "लिंक"
 
+msgid "Link (optional)"
+msgstr ""
+
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "लिंक (वैकल्पिक) — उदा. /x/settings/…"
 
@@ -19154,6 +19218,8 @@ msgstr "कॉलम का क्रम बदलें: {0}"
 
 msgid "Move down"
 msgstr "नीचे ले जाएँ"
+msgid "Move down"
+msgstr ""
 
 msgid "Move entities"
 msgstr "संस्थाओं को स्थानांतरित करें"
@@ -19169,6 +19235,12 @@ msgstr "आइटम को स्थानांतरित करें"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "उप-असेंबली से बाहर स्थानांतरित करें"
+
+msgid "Move section down"
+msgstr ""
+
+msgid "Move section up"
+msgstr ""
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "कुछ मात्रा को एक नई निपटान पंक्ति में स्थानांतरित करें ताकि MRB प्रत्येक भाग का अलग से निर्णय ले सके (जैसे कुछ स्क्रैप करें, कुछ पुनः कार्य करें)।"
@@ -19188,6 +19260,9 @@ msgstr "दूसरी भंडारण इकाई में स्था�
 msgid "Move to Group"
 msgstr "समूह में ले जाएँ"
 
+msgid "Move to section"
+msgstr ""
+
 msgid "Move to Trash"
 msgstr "ट्रैश में स्थानांतरित करें"
 
@@ -19199,6 +19274,8 @@ msgstr "ऊपर ले जाएँ"
 
 msgid "Moved"
 msgstr "स्थानांतरित किया गया"
+msgid "Move up"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -19563,6 +19640,15 @@ msgstr "नया ग्राहक भाग"
 msgid "New Customer Rental Rates"
 msgstr "नई ग्राहक किराया दरें"
 
+msgid "New customization"
+msgstr ""
+
+msgid "New cutover step"
+msgstr ""
+
+msgid "New data item"
+msgstr ""
+
 msgid "New Demand Forecast"
 msgstr "नया मांग पूर्वानुमान"
 
@@ -19699,6 +19785,12 @@ msgstr "नया मील का पत्थर"
 msgid "New Non Conformance Type"
 msgstr "नई गैर-अनुरूपता प्रकार"
 
+msgid "New objective"
+msgstr ""
+
+msgid "New open question"
+msgstr ""
+
 msgid "New Owner"
 msgstr "नया स्वामी"
 
@@ -19773,6 +19865,8 @@ msgstr "नया किराये का समझौता"
 
 msgid "New Request"
 msgstr "नया अनुरोध"
+msgid "New requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "नया रिवीजन"
@@ -19818,6 +19912,8 @@ msgstr "नई सेवा"
 
 msgid "New Service Job"
 msgstr "नया सेवा जॉब"
+msgid "New setup item"
+msgstr ""
 
 msgid "New Shift"
 msgstr "नई शिफ्ट"
@@ -22289,6 +22385,8 @@ msgstr "विकल्प"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "{0} के विकल्प"
+msgid "Options, one per line (leave empty for a typed answer)"
+msgstr ""
 
 msgid "or"
 msgstr "या"
@@ -22632,6 +22730,9 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "पृष्ठ {pdfViewPage} का {documentPageCount}"
 
 msgid "Page file contents"
+msgstr ""
+
+msgid "Page title"
 msgstr ""
 
 msgid "Pages"
@@ -23252,6 +23353,9 @@ msgstr "पिक ऑर्डर"
 msgid "Pick serials/batches to return"
 msgstr "रिटर्न करने के लिए सीरीज/बैच चुनें"
 
+msgid "Pick several"
+msgstr ""
+
 msgid "Pick the batches on hand that were received from this supplier."
 msgstr "इस आपूर्तिकर्ता से प्राप्त हाथ पर मौजूद बैच चुनें।"
 
@@ -23766,6 +23870,9 @@ msgstr "आपकी उपकरण के लिए निवारक रख�
 
 msgid "Preview"
 msgstr "पूर्वावलोकन"
+
+msgid "Preview as customer"
+msgstr ""
 
 msgid "Preview failed: {error}"
 msgstr "पूर्वावलोकन विफल: {error}"
@@ -25731,6 +25838,9 @@ msgstr "निकालें"
 #. placeholder {0}: action.name
 #. placeholder {0}: attachment.name
 #. placeholder {0}: deleting.account?.number ?? ""
+#. placeholder {0}: domain.domain
+#. placeholder {0}: item.label
+#. placeholder {0}: page.sections[removingSection]?.title ?? ""
 msgid "Remove {0}"
 msgstr "निकालें {0}"
 
@@ -25831,6 +25941,9 @@ msgstr "बैच से हटाएं"
 msgid "Remove from board"
 msgstr "बोर्ड से हटाएं"
 
+msgid "Remove from page"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "मूल्य सूची से निकालें"
 
@@ -25866,6 +25979,9 @@ msgstr "PDF निकालें"
 
 msgid "Remove row"
 msgstr "पंक्ति निकालें"
+
+msgid "Remove section"
+msgstr ""
 
 msgid "Remove slide"
 msgstr "स्लाइड निकालें"
@@ -27886,6 +28002,9 @@ msgstr "Section E line 38, अधिकारियों का वेतन QR
 
 msgid "Section saved"
 msgstr "अनुभाग सहेजा गया"
+
+msgid "Section title"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "2FA के साथ अपने खाते को सुरक्षित करें"
@@ -31068,6 +31187,8 @@ msgstr "टेक्स्ट"
 
 msgid "Text color"
 msgstr "टेक्स्ट रंग"
+msgid "Text (optional)"
+msgstr ""
 
 msgid "Text size"
 msgstr "पाठ आकार"
@@ -31256,6 +31377,9 @@ msgstr "Carbon उपयोगकर्ता जो इस आपूर्त�
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "Carbon उपयोगकर्ता जो इस RFQ का मालिक है; आपूर्तिकर्ता प्रतिक्रिया और अनुस्मारक उन्हें रूट किए जाते हैं।"
+
+msgid "The card goes at the end of the section."
+msgstr ""
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "वाहक और सेवा जिस पर एक शिपमेंट बाहर जाता है, ट्रैकिंग-URL टेम्पलेट की आपूर्ति करते हुए जो एक ट्रैकिंग नंबर को एक लिंक में बदल देता है और खाता भाड़ा शुल्क पोस्ट करता है।"
@@ -31743,6 +31867,8 @@ msgstr "आइटम के इस स्तर पर कोई निर्म
 
 msgid "The item has no serial or batch tracking"
 msgstr "आइटम के पास कोई सीरियल या बैच ट्रैकिंग नहीं है"
+msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "आइटम की किराये की दर"
@@ -32302,6 +32428,9 @@ msgstr "यह शेड्यूल जिसका उपयोग इस स�
 
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "शेड्यूलर नीचे दिए गए पहले नियम का उपयोग करता है जो लागू होता है, फिर डाउनटाइम और स्टाफिंग को घटाता है।"
+
+msgid "The section and its cards leave this page. Items on it stay in the hub and can be added again."
+msgstr ""
 
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "किराये पर देने के लिए निर्मित या पूंजीकृत इकाइयों के लिए पूर्व-निर्धारित परिसंपत्ति वर्ग, बेचने के बजाय; यह अपने किराये का बेड़ा परिसंपत्ति और संचित-मूल्यह्रास खातों में पोस्ट करता है, और प्रत्येक परिसंपत्ति जो किसी आइटम से जुड़ी होती है बेड़े रजिस्टर में दिखाई देती है।"
@@ -32913,6 +33042,9 @@ msgid "This item is built via a configurator and resolves its components per-ord
 msgstr "यह आइटम एक कॉन्फ़िगरेटर के माध्यम से बनाया गया है और अपने घटकों को प्रति-ऑर्डर के आधार पर हल करता है; इसके लिए बनाई गई जॉब कॉन्फ़िगरेटर के हल किए गए BOM को प्राप्त करती हैं।"
 
 msgid "This item was removed from the hub."
+msgstr ""
+
+msgid "This item was removed from the hub. Remove it from the page to save other changes."
 msgstr ""
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
@@ -34675,6 +34807,9 @@ msgstr "अगला पार्ट आईडी प्राप्त कर�
 
 msgid "Use ... to get the next tool ID"
 msgstr "अगली टूल ID प्राप्त करने के लिए ... का उपयोग करें"
+
+msgid "Use a Carbon path starting with /x/, or an https link"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "एक अलग खाता उपयोग करें"

@@ -1986,6 +1986,8 @@ msgstr "현재 리비전을 복사하여 새 리비전이 생성됩니다"
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "새 서비스 작업 지시는 청구 요금을 복사합니다. 각 시간 항목은 원가 요금으로 그 원가를 전기합니다."
+msgid "A new section at the end of the page, with its first card."
+msgstr ""
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "현재 사이즈를 복사하여 새 사이즈가 생성됩니다"
@@ -2019,6 +2021,11 @@ msgstr "숫자 바로 옆의 부호나 기호는 그 의미를 바꿉니다. 사
 
 msgid "A part"
 msgstr "부품"
+msgid "A note for this person (optional)"
+msgstr ""
+
+msgid "A page needs one card. Remove page in the staff bar removes the whole page."
+msgstr ""
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "품목(Part)은 구매하거나 제조할 수 있는 특정 아이템에 대한 정보를 담고 있습니다."
@@ -3004,6 +3011,8 @@ msgstr "추가 및 출고"
 
 msgid "Add a charge number to start logging time."
 msgstr "시간을 기록하려면 청구 번호를 추가하세요."
+msgid "Add a card"
+msgstr ""
 
 msgid "Add a column below to sort the view"
 msgstr "보기를 정렬하려면 아래에 열을 추가하세요"
@@ -3055,6 +3064,8 @@ msgstr "행 추가"
 
 msgid "Add a row for each charge number you worked on."
 msgstr "작업한 각 청구 번호에 대해 라인을 추가하세요."
+msgid "Add a section"
+msgstr ""
 
 msgid "Add a step"
 msgstr "단계 추가"
@@ -3130,6 +3141,8 @@ msgstr "교정 기록 추가"
 
 msgid "Add Ceiling"
 msgstr "천정 추가"
+msgid "Add card"
+msgstr ""
 
 msgid "Add Characteristic"
 msgstr "특성 추가"
@@ -3377,6 +3390,9 @@ msgstr "라이브러리에서 규칙 추가"
 
 msgid "Add Sample"
 msgstr "샘플 추가"
+
+msgid "Add section"
+msgstr ""
 
 msgid "Add Selector"
 msgstr "선택자 추가"
@@ -3996,6 +4012,12 @@ msgstr "연동이나 커스텀 변경 — 실제로 커스텀인 작은 부분."
 
 msgid "An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code."
 msgstr "국제 은행 계좌 번호: 국가, 은행, 지점 및 계좌를 포함하는 하나의 문자열이며 두 개의 검증 숫자가 있습니다. 이미 은행을 식별하므로 이를 사용하는 국가는 별도의 라우팅 코드가 필요하지 않습니다."
+
+msgid "An introduction for this person (optional)"
+msgstr ""
+
+msgid "An introduction for this section (optional)"
+msgstr ""
 
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "초대가 대기 중입니다. 초대를 수락하면 활성화됩니다."
@@ -6791,8 +6813,17 @@ msgstr "Carbon의 현장 앱으로 작업자가 공정을 실행하고, 수량�
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon의 부품 번호를 가진 모든 것에 대한 단일 레코드 — 부품, 자재, 공구, 서비스, 소모품 또는 지그 — 작업 지시, 방법, 주문 및 재고 관리가 모두 참조합니다."
 
+msgid "Card"
+msgstr ""
+
 msgid "Card Holder"
 msgstr "카드 소유자"
+
+msgid "Card options"
+msgstr ""
+
+msgid "Card title"
+msgstr ""
 
 msgid "Cards"
 msgstr "카드"
@@ -7177,6 +7208,8 @@ msgstr "고객 선택"
 
 msgid "Choose a labor category or an employee"
 msgstr "노무 범주 또는 직원 선택"
+msgid "Choose a hub item"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}가 대체하는 부품을 선택하세요. 규칙은 해당 부품에 저장되며 {itemReadableId}가 후속 품목으로 지정됩니다."
@@ -7369,6 +7402,9 @@ msgstr "검색 쿼리 지우기"
 
 msgid "Clear selection"
 msgstr "선택 해제"
+
+msgid "Clear the due date"
+msgstr ""
 
 msgid "Clear value"
 msgstr "값 지우기"
@@ -9564,6 +9600,9 @@ msgstr "사용자 지정 추가 항목"
 msgid "Custom attributes you track against your people"
 msgstr "인원에 대해 추적하는 사용자 정의 속성"
 
+msgid "Custom card"
+msgstr ""
+
 msgid "Custom color"
 msgstr "사용자 정의 색상"
 
@@ -10382,6 +10421,8 @@ msgstr "삭제"
 #. placeholder {0}: deleting.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
 #. placeholder {0}: row.account?.number ?? ""
+#. placeholder {0}: titleValue || text(card.title) || ""
+#. placeholder {0}: view.name
 msgid "Delete {0}"
 msgstr "{0} 삭제"
 
@@ -10531,6 +10572,9 @@ msgstr "이슈 삭제"
 
 msgid "Delete Item Group"
 msgstr "품목 그룹 삭제"
+
+msgid "Delete item…"
+msgstr ""
 
 msgid "Delete Job"
 msgstr "작업 지시 삭제"
@@ -11049,6 +11093,9 @@ msgstr "상세"
 
 msgid "Details"
 msgstr "상세 정보"
+
+msgid "Details (optional)"
+msgstr ""
 
 msgid "Detected by the motion planner"
 msgstr "모션 플래너가 감지함"
@@ -13079,6 +13126,8 @@ msgstr "모든 요소는 이동할 때에도 현재 WBS 코드를 유지합니�
 
 msgid "Every entry in the range and every change made to it"
 msgstr "범위의 모든 항목 및 이에 대한 모든 변경"
+msgid "Every hub item is on this page"
+msgstr ""
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "설정한 시스템에서 귀사의 데이터로 범위 내 모든 테스트를 통과합니다."
@@ -13243,6 +13292,9 @@ msgstr "기존 매핑입니다. 다시 매핑하려면 다른 제공자 옵션�
 
 msgid "Existing Stripe customer"
 msgstr "기존 Stripe 고객"
+
+msgid "Exit preview"
+msgstr ""
 
 msgid "Exp. <0/>"
 msgstr "만료 <0/>"
@@ -14058,6 +14110,10 @@ msgstr "채우기"
 msgid "Files on items, jobs and orders"
 msgstr ""
 
+#. placeholder {0}: titleLabel[kind]
+msgid "Fill in the {0}"
+msgstr ""
+
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "이 회사를 현실적인 산업 시나리오로 채워서 모든 화면에 데이터가 표시되도록 합니다. 이전 상태로 복원할 수 있습니다."
 
@@ -14810,6 +14866,8 @@ msgstr "리스의 <0>세부 정보 단계에서 고정 기간을 지정하세요
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "마일스톤에 시작 및 종료 날짜를 지정하여 번다운을 확인하세요."
+msgid "Give the new section a title"
+msgstr ""
 
 msgid "GL"
 msgstr "총계정원장"
@@ -15558,6 +15616,9 @@ msgstr "당신의 견적서, 주문 및 송장이 발송될 때 어떻게 보이
 
 msgid "How your team is organized into departments"
 msgstr "귀사의 팀이 부서로 조직되는 방식"
+
+msgid "Hub item"
+msgstr ""
 
 msgid "Hub Settings"
 msgstr ""
@@ -17783,6 +17844,9 @@ msgstr "라인사이드"
 msgid "Link"
 msgstr "링크"
 
+msgid "Link (optional)"
+msgstr ""
+
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "링크 (선택 사항) — 예: /x/settings/…"
 
@@ -19154,6 +19218,8 @@ msgstr "열 순서 변경: {0}"
 
 msgid "Move down"
 msgstr "아래로 이동"
+msgid "Move down"
+msgstr ""
 
 msgid "Move entities"
 msgstr "개체 이동"
@@ -19169,6 +19235,12 @@ msgstr "품목 이동"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "부분 조립에서 이동"
+
+msgid "Move section down"
+msgstr ""
+
+msgid "Move section up"
+msgstr ""
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "수량의 일부를 새로운 처분 결정 행으로 할당하여 MRB가 각 부분을 별도로 결정할 수 있도록 합니다(예: 일부는 스크랩, 일부는 재작업)."
@@ -19188,6 +19260,9 @@ msgstr "다른 보관 단위로 이동"
 msgid "Move to Group"
 msgstr "그룹으로 이동"
 
+msgid "Move to section"
+msgstr ""
+
 msgid "Move to Trash"
 msgstr "휴지통으로 이동"
 
@@ -19199,6 +19274,8 @@ msgstr "위로 이동"
 
 msgid "Moved"
 msgstr "이동됨"
+msgid "Move up"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -19563,6 +19640,15 @@ msgstr "신규 고객 부품"
 msgid "New Customer Rental Rates"
 msgstr "신규 고객 임차료"
 
+msgid "New customization"
+msgstr ""
+
+msgid "New cutover step"
+msgstr ""
+
+msgid "New data item"
+msgstr ""
+
 msgid "New Demand Forecast"
 msgstr "새 소요량 예측"
 
@@ -19699,6 +19785,12 @@ msgstr "새 마일스톤"
 msgid "New Non Conformance Type"
 msgstr "새 부적합 유형"
 
+msgid "New objective"
+msgstr ""
+
+msgid "New open question"
+msgstr ""
+
 msgid "New Owner"
 msgstr "신규 책임자"
 
@@ -19773,6 +19865,8 @@ msgstr "새 렌탈 계약"
 
 msgid "New Request"
 msgstr "새 요청"
+msgid "New requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "새 리비전"
@@ -19818,6 +19912,8 @@ msgstr "새 서비스"
 
 msgid "New Service Job"
 msgstr "새 서비스 작업 지시"
+msgid "New setup item"
+msgstr ""
 
 msgid "New Shift"
 msgstr "신규 교대조"
@@ -22289,6 +22385,8 @@ msgstr "옵션"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "{0} 옵션"
+msgid "Options, one per line (leave empty for a typed answer)"
+msgstr ""
 
 msgid "or"
 msgstr "또는"
@@ -22632,6 +22730,9 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "{documentPageCount}페이지 중 {pdfViewPage}페이지"
 
 msgid "Page file contents"
+msgstr ""
+
+msgid "Page title"
 msgstr ""
 
 msgid "Pages"
@@ -23252,6 +23353,9 @@ msgstr "피킹 순서"
 msgid "Pick serials/batches to return"
 msgstr "반품할 일련번호/배치 선택"
 
+msgid "Pick several"
+msgstr ""
+
 msgid "Pick the batches on hand that were received from this supplier."
 msgstr "이 공급업체에서 받은 현재 보유한 배치를 피킹하세요."
 
@@ -23766,6 +23870,9 @@ msgstr "설비 예방 유지보수 일정"
 
 msgid "Preview"
 msgstr "미리보기"
+
+msgid "Preview as customer"
+msgstr ""
 
 msgid "Preview failed: {error}"
 msgstr "미리보기 실패: {error}"
@@ -25731,6 +25838,9 @@ msgstr "제거"
 #. placeholder {0}: action.name
 #. placeholder {0}: attachment.name
 #. placeholder {0}: deleting.account?.number ?? ""
+#. placeholder {0}: domain.domain
+#. placeholder {0}: item.label
+#. placeholder {0}: page.sections[removingSection]?.title ?? ""
 msgid "Remove {0}"
 msgstr "{0} 제거"
 
@@ -25831,6 +25941,9 @@ msgstr "배치에서 제거"
 msgid "Remove from board"
 msgstr "보드에서 제거"
 
+msgid "Remove from page"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "가격표에서 제거"
 
@@ -25866,6 +25979,9 @@ msgstr "PDF 제거"
 
 msgid "Remove row"
 msgstr "행 제거"
+
+msgid "Remove section"
+msgstr ""
 
 msgid "Remove slide"
 msgstr "슬라이드 제거"
@@ -27886,6 +28002,9 @@ msgstr "섹션 E 라인 38, 임원 급여 QREs: {0}"
 
 msgid "Section saved"
 msgstr "섹션 저장됨"
+
+msgid "Section title"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "2FA로 계정 보호"
@@ -31068,6 +31187,8 @@ msgstr "텍스트"
 
 msgid "Text color"
 msgstr "텍스트 색상"
+msgid "Text (optional)"
+msgstr ""
 
 msgid "Text size"
 msgstr "글자 크기"
@@ -31256,6 +31377,9 @@ msgstr "이 공급업체 관계를 담당하는 Carbon 사용자로, 이 공급�
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "이 RFQ를 담당하는 Carbon 사용자로, 공급업체 응답과 알림이 이 사용자에게 전달됩니다."
+
+msgid "The card goes at the end of the section."
+msgstr ""
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "출하가 진행되는 운송업체 및 서비스로, 추적 번호를 링크로 변환하는 추적 URL 템플릿과 계정 운임 요금이 전기되는 기준을 제공합니다."
@@ -31743,6 +31867,8 @@ msgstr "품목에 이 깊이의 제조 부품이 없습니다. 구매한 부품�
 
 msgid "The item has no serial or batch tracking"
 msgstr "품목에 시리얼 또는 배치 추적이 없습니다"
+msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "품목의 임차료"
@@ -32302,6 +32428,9 @@ msgstr "이 자산의 원가를 내용연수에 걸쳐 배분하는 데 사용�
 
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "스케줄러는 아래에 적용되는 첫 번째 규칙을 사용한 다음, 비가동 시간 및 인원을 뺍니다."
+
+msgid "The section and its cards leave this page. Items on it stay in the hub and can be added again."
+msgstr ""
 
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "판매 대신 임대 목적으로 구축하거나 자본화할 개 단위를 위해 사전 설정된 자산 클래스로서, 자체 임대 차량 자산 및 누적 감가상각 계정에 전기되며, 품목과 연결된 모든 자산이 차량 대장에 표시됩니다."
@@ -32913,6 +33042,9 @@ msgid "This item is built via a configurator and resolves its components per-ord
 msgstr "이 품목은 컨피그레이터를 통해 구성되며 주문당 구성 요소를 해석합니다. 이를 위해 생성된 작업 지시는 컨피그레이터의 해석된 BOM을 상속합니다."
 
 msgid "This item was removed from the hub."
+msgstr ""
+
+msgid "This item was removed from the hub. Remove it from the page to save other changes."
 msgstr ""
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
@@ -34675,6 +34807,9 @@ msgstr "다음 품목 ID를 가져오려면 ...을(를) 사용하세요"
 
 msgid "Use ... to get the next tool ID"
 msgstr "다음 공구 ID를 가져오려면 ...을(를) 사용하세요"
+
+msgid "Use a Carbon path starting with /x/, or an https link"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "다른 계정 사용"

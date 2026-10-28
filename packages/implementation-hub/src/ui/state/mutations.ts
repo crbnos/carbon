@@ -12,6 +12,8 @@
 // To add a mutation: add a variant here, a `case` in `toFormFields`, a matching
 // branch in the server action, and (optionally) a wrapper in `useHubActions`.
 
+import type { PageTarget } from "../../logic/page-edit";
+import type { MemberPage } from "../../models";
 import type {
   HubContacts,
   HubExclusions,
@@ -31,6 +33,8 @@ export type HubMutation =
       payload: Record<string, unknown>;
       source?: Source;
       sourceRef?: string;
+      // Carbon staff: the row also goes on this page, in one write.
+      place?: { page: MemberPage; target: PageTarget };
     }
   | { intent: "updateRow"; rowId: string; payload: Record<string, unknown> }
   | {
@@ -79,7 +83,8 @@ export function toFormFields(m: HubMutation): Record<string, string> {
         collection: m.collection,
         payload: JSON.stringify(m.payload),
         ...(m.source ? { source: m.source } : {}),
-        ...(m.sourceRef ? { sourceRef: m.sourceRef } : {})
+        ...(m.sourceRef ? { sourceRef: m.sourceRef } : {}),
+        ...(m.place ? { place: JSON.stringify(m.place) } : {})
       };
     case "updateRow":
       return {

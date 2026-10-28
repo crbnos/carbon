@@ -16,7 +16,7 @@ import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuBadgeCheck } from "react-icons/lu";
 import type { CheckStateRow, Source } from "../../types";
-import { useIsInternal, usePeopleById } from "../state";
+import { usePeopleById, useShowsStaffDetail } from "../state";
 
 // A live count with a link to the list it counts, e.g. "4 work centers". Shows
 // nothing when there is no count, and a dash when the count could not be read
@@ -105,10 +105,10 @@ export function SourceBadge({
   className?: string;
 }) {
   const { t } = useLingui();
-  const isInternal = useIsInternal();
+  const showsStaffDetail = useShowsStaffDetail();
   // Where a row came from helps Carbon staff; on a customer's page it is
-  // noise, so only staff see it.
-  if (!isInternal) return null;
+  // noise, so only staff see it, and not while previewing the customer's view.
+  if (!showsStaffDetail) return null;
   const label =
     source === "mcp"
       ? t`From AI agent`

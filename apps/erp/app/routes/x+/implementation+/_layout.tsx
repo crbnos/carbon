@@ -37,6 +37,10 @@ import { useFetcher, useLoaderData } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
 import { useUser } from "~/hooks";
 import { useFlags } from "~/hooks/useFlags";
+import {
+  isImplementationPreview,
+  useImplementationPreview
+} from "~/hooks/useImplementationPreview";
 import { useImplementationRealtime } from "~/hooks/useImplementationRealtime";
 import { usesPersonalPages } from "~/modules/shared/shared.models";
 import {
@@ -237,7 +241,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     signals,
     counts,
     assignments: assignments.data ?? [],
-    userId
+    userId,
+    // Staff previewing the customer's view (useImplementationPreview).
+    previewAsCustomer:
+      isStaff && isImplementationPreview(request.headers.get("cookie"))
   };
 }
 
@@ -299,9 +306,12 @@ export default function ImplementationHubLayout() {
     [loaderData, people]
   );
 
+  // Staff edit a person's page in place unless they preview the customer's
+  // view.
+  const previewing = useImplementationPreview() && isInternal;
   const flags = useMemo<HubFlags>(
-    () => ({ isInternal, previewing: false, canEdit: isInternal }),
-    [isInternal]
+    () => ({ isInternal, previewing, canEdit: isInternal && !previewing }),
+    [isInternal, previewing]
   );
 
   return (

@@ -69,9 +69,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const result = await applyHubMutation(client, actor, validation.data);
   if (result.error) {
-    // A page file's problems are listed in the dialog that loaded it, not in
-    // a toast.
-    if (validation.data.intent === "setMemberPage" && !result.error.forbidden) {
+    // A page file's problems are listed in the dialog that loaded it, and an
+    // edit on the page shows its own, so neither is flashed.
+    const pageWrite =
+      validation.data.intent === "setMemberPage" ||
+      (validation.data.intent === "addRow" && Boolean(validation.data.place));
+    if (pageWrite && !result.error.forbidden) {
       return data({ success: false, message: result.error.message });
     }
     return data(
