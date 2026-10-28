@@ -64,6 +64,8 @@ export interface ActionDeclarationLike {
  */
 export interface IntegrationDeclarationLike
   extends Omit<ActionDeclarationLike, "call" | "update"> {
+  /** See `CatalogIntegration.batchable`. */
+  batchable: false;
   /** `label` is the APP's own name — see `integrationAppLabelKey`. */
   piece: { name: string; action: string; label: string };
   /** Inputs a person does not see by default — vendor API trivia, or a value we

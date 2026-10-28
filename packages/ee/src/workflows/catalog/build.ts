@@ -137,6 +137,8 @@ export interface BuiltIntegration
   piece: { name: string; action: string };
   /** Hidden inputs, rendered only under the node's Advanced section. */
   advancedInputs?: Record<string, BuiltActionInput>;
+  /** See `CatalogIntegration.batchable`. */
+  batchable: false;
 }
 
 export interface BuiltOperation {

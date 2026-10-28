@@ -146,7 +146,9 @@ export interface CatalogIntegration {
    * from `inputs` so nothing validating required fields can demand one. */
   advancedInputs?: Record<string, CatalogInput>;
   outputs: Record<string, ValueType>;
-  batchable: boolean;
+  /** Always false: the engine runs an integration step once (`execute.ts` batches
+   * actions only), so a list wired into a single-value input is a type error. */
+  batchable: false;
   permission: RequiredPermission;
   piece: { name: string; action: string };
 }
