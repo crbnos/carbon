@@ -117,6 +117,20 @@ export type CarbonFlagsOptions = {
 
 type Mode = "none" | "static" | "remote";
 
+const isLocalhost = (url: string) => {
+  try {
+    const host = new URL(url).hostname;
+    return (
+      host === "localhost" ||
+      host.endsWith(".localhost") ||
+      host === "127.0.0.1" ||
+      host === "[::1]"
+    );
+  } catch {
+    return false;
+  }
+};
+
 const jittered = (ms: number) => ms * (1 - JITTER + 2 * JITTER * Math.random());
 const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms).unref?.());
@@ -174,14 +188,16 @@ export class CarbonFlagsProvider implements Provider {
 
   constructor(options: CarbonFlagsOptions) {
     this.endpoint = options.endpoint ?? "";
-    // https: (or http:) polls, data: loads once. Anything else, file:
-    // included, is refused here rather than failing in fetch().
+    // https: polls, data: loads once, and http: polls only on localhost (a
+    // local source in dev): the request carries the token. Anything else,
+    // file: included, is refused here rather than failing in fetch().
     const scheme = /^[a-z][a-z0-9+.-]*:/i
       .exec(this.endpoint)?.[0]
       .toLowerCase();
     this.mode = !this.endpoint
       ? "none"
-      : scheme === "https:" || scheme === "http:"
+      : scheme === "https:" ||
+          (scheme === "http:" && isLocalhost(this.endpoint))
         ? "remote"
         : scheme === "data:"
           ? "static"
@@ -208,7 +224,7 @@ export class CarbonFlagsProvider implements Provider {
     this.onWarning = options.onWarning ?? consoleWarn;
     if (this.endpoint && this.mode === "none") {
       this.onWarning(
-        "CARBON_FLAGS_ENDPOINT must be an https: or data: URL; using the code defaults",
+        "CARBON_FLAGS_ENDPOINT must be an https: or data: URL (http: only on localhost); using the code defaults",
         { scheme: scheme ?? null }
       );
     }

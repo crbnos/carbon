@@ -401,6 +401,19 @@ describe("CarbonFlagsProvider", () => {
     expect(requests).toHaveLength(0);
   });
 
+  it("refuses http: off localhost, so the token never goes out unencrypted", async () => {
+    const warnings: string[] = [];
+    const read = await start(
+      new CarbonFlagsProvider({
+        endpoint: "http://flags.example.com/api/flags",
+        headers: "Authorization=Bearer%20secret",
+        onWarning: (message) => warnings.push(message)
+      })
+    );
+    expect(await read("cmp_123")).toBe(false);
+    expect(warnings).toHaveLength(1);
+  });
+
   it("refuses a file: endpoint with a warning and answers the defaults", async () => {
     const warnings: string[] = [];
     const provider = new CarbonFlagsProvider({
@@ -410,7 +423,7 @@ describe("CarbonFlagsProvider", () => {
     const read = await start(provider);
     expect(await read("cmp_123")).toBe(false);
     expect(warnings).toEqual([
-      "CARBON_FLAGS_ENDPOINT must be an https: or data: URL; using the code defaults"
+      "CARBON_FLAGS_ENDPOINT must be an https: or data: URL (http: only on localhost); using the code defaults"
     ]);
   });
 
