@@ -65,6 +65,27 @@ export function useVariablesGetter(nodeId: string): () => AvailableVariable[] {
   }, [store, nodeId, catalog]);
 }
 
+/** What the current loop item is at a node, computed on demand for the same reason.
+ * `card` names the operation card of a data-node chain; undefined when the loop's list
+ * is not known yet. */
+export function useLoopItemTypeGetter(
+  nodeId: string
+): (card?: string) => ValueType | undefined {
+  const store = useBuilderStoreApi();
+  const catalog = useWorkflowCatalog();
+  return useCallback(
+    (card?: string) => {
+      const { nodes, edges } = store.getState();
+      const { context } = createContext(fromReactFlow(nodes, edges), catalog);
+      return context.typeOf(
+        { kind: "item", path: [], ...(card ? { card } : {}) },
+        nodeId
+      );
+    },
+    [store, nodeId, catalog]
+  );
+}
+
 /**
  * Every action step's repeat plan, in one pass over the graph. The cards read the result
  * out of the store rather than each deriving its own: subscribing a card to the whole
