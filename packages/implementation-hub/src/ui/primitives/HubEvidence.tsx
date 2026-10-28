@@ -20,7 +20,9 @@ import { usePeopleById, useShowsStaffDetail } from "../state";
 
 // A live count with a link to the list it counts, e.g. "4 work centers". Shows
 // nothing when there is no count, and a dash when the count could not be read
-// (the viewer may have no permission for that module).
+// (the viewer may have no permission for that module). Carbon staff only, and
+// not while previewing: a person ticks their own cards, and a count beside an
+// unticked card reads as a contradiction.
 export function EvidenceCount({
   count,
   label,
@@ -32,7 +34,8 @@ export function EvidenceCount({
   href?: string;
   className?: string;
 }) {
-  if (count === undefined) return null;
+  const showsStaffDetail = useShowsStaffDetail();
+  if (!showsStaffDetail || count === undefined) return null;
   const text = count === null ? "–" : String(count);
   const body = (
     <Badge
