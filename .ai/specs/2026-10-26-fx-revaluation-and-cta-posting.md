@@ -285,7 +285,9 @@ ALTER TABLE "accountDefault"
 --   1170 'AR Revaluation Adjustment'   Asset, Other Current Asset, in 'Receivables'
 --   2030 'AP Revaluation Adjustment'   Liability, Other Current Liability, in 'Payables'
 -- consolidatedRate: Average for the two P&L accounts, Current for the two
--- balance-sheet accounts. Add FKs.
+-- balance-sheet accounts. Add FKs and an index on each new default.
+-- A group that has a leaf with the name keeps it. If another account holds the
+-- number, the new account takes the next free number. The name backfill finds it.
 
 CREATE TABLE "currencyRevaluationRun" (
   "id" TEXT NOT NULL DEFAULT id('fxr'),
@@ -372,7 +374,8 @@ ALTER TABLE "accountDefault"
   ADD COLUMN IF NOT EXISTS "currencyTranslationOffsetAccount" TEXT;
 -- Seed 3210 'Currency Translation Offset' (Equity, Equity - Close, Historical) in
 -- 'Equity'. Never isSystem: report trees treat isSystem rows as chart roots.
--- Backfill by id, add the FK.
+-- If another account holds 3210, take the next free number.
+-- Backfill by id, add the FK and its index.
 
 INSERT INTO "periodCloseTaskDefinition" (...)  -- 'cta-posted', every company
 ```
@@ -520,6 +523,13 @@ Phase 3:
 
 ## Changelog
 
+- 2026-10-28: CodeRabbit review fixes.
+  - The CTA preview and post read the group's balances with the service role. A root accountant who cannot read a subsidiary still posts the full CTA.
+  - The CTA preview and post refuse unless the two CTA defaults are two different Equity accounts. The journal amounts are natural-signed, so an offset account of another class posts an unbalanced journal.
+  - The CTA preview lists asset and liability accounts at the Average rate. The modal shows them as a warning.
+  - The seed migrations take the next free account number when another account holds the reserved number.
+  - The migrations index every new default and `updatedBy` column. `currencyRevaluationLine.documentId` is in the restore id map (`ID_REF_COLUMNS`).
+  - The run readers filter by `companyId`.
 - 2026-10-28: The two FX close tasks show only where they apply. `fx-revaluation` is hidden when nothing is open in a foreign currency at the period end and no run exists. `cta-posted` is hidden unless the company is the root of a group with a company in another base currency. A hidden task never gates the close and is stored as Done. An account counts as a balance exposure only after the company posts to it outside a revaluation journal. Migrations renamed past main's newest after merging main.
 - 2026-10-27: Self-review fixes. An `Account Balance` line is booked without Currency Revaluation journals, so a posted run is never stale against its own valuation. Only accounts the company has posted to are its exposures. The close check counts an out-of-date Posted run even when nothing is open. Undo refuses a run whose period is Closed. The CTA post re-reads the posted CTA under a lock.
 - 2026-10-27: Implemented on branch `consolidation-exchange-rates` (plan Tasks 1–22). Four deviations from the plan:

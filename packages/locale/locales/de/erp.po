@@ -3844,8 +3844,8 @@ msgstr "Fragt die Abschreibung, was ein neuer Lauf für diesen Zeitraum jetzt ab
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Fragt die Ertragsrealisierung, was ein neuer Durchlauf für diesen Zeitraum jetzt realisieren würde — aufgeschobene Rechnungs-Umsatzerlöse und Vertrags-Umsatzerlöse — und prüft auf Entwurfdurchläufe, die Umsatzerlöse halten, die bis zum Ende des Zeitraums fällig sind. Erstellen Sie den Durchlauf und buchen Sie ihn, damit die Umsatzerlöse das Hauptbuch erreichen. Überspringen Sie es mit einem Grund, wenn nichts realisiert werden sollte."
 
-msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "Fragt den Währungsneubewertungslauf, was am Ende dieser Periode noch in einer Fremdwährung offen ist – offene Rechnungen und Memos sowie nicht zugeordnete Kundenquittungen und Lieferantenzahlungen – und überprüft einen Neubewertungslauf im Entwurf, der am Ende der Periode endet. Erstellen Sie den Lauf und buchen Sie ihn, damit die Bilanz diese Posten zum Schlusskurs trägt, mit dem Unterschied aus nicht realisierten Wechselgewinnen oder -verlusten. Überspringen Sie mit einem Grund, wenn nichts in einer Fremdwährung offen ist."
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "Fragt den Währungsneubewertungslauf, was am Ende dieser Periode noch in einer Fremdwährung offen ist – offene Rechnungen und Memos, nicht zugeordnete Kundenquittungen und Lieferantenzahlungen sowie die Salden von Konten, die in einer Fremdwährung geführt werden, etwa Bank- und Darlehenskonten – und überprüft einen Neubewertungslauf im Entwurf, der am Ende der Periode endet. Erstellen Sie den Lauf und buchen Sie ihn, damit die Bilanz diese Posten zum Schlusskurs trägt, mit dem Unterschied aus nicht realisierten Wechselgewinnen oder -verlusten. Überspringen Sie mit einem Grund, wenn nichts in einer Fremdwährung offen ist."
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Fragt den Leasinglauf, was ein neuer Lauf für diesen Zeitraum jetzt buchen würde – Leasingzinsen und Amortisation von Nutzungsrechten, Mietmiete zum Aufschieben oder Abgrenzung und Leasingzinsen für Sales-Type-Leasingverhältnisse – und prüft auf Entwurfsleasingläufe mit Buchungen, die bis zum Ende des Zeitraums fällig sind. Erstellen Sie den Lauf und buchen Sie ihn, damit die Buchungen das Hauptbuch erreichen. Überspringen Sie mit einem Grund, wenn nichts gebucht werden sollte."
@@ -5249,6 +5249,9 @@ msgstr "Wählen Sie Arbeitsgänge auf der linken Seite, um das Los zu erstellen.
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Überprüfen Sie das Artikelledger auf Artikel mit negativer Bestandsmenge am Periodenende – normalerweise ein fehlender Wareneingang oder eine fehlerhafte Buchung, die den Bestandswert und die Umsatzkosten verzerrt. Markieren Sie es als erledigt, nachdem es überprüft wurde, oder überspringen Sie es mit einem Grund."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "Konsolidierungskurs dieser Konten prüfen"
 
 msgid "Check your email"
 msgstr "Überprüfen Sie Ihre E-Mail"
@@ -25012,6 +25015,9 @@ msgstr "Danach"
 
 msgid "These accounts need a replacement"
 msgstr "Diese Konten benötigen einen Ersatz."
+
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "Diese Aktiv- und Passivkonten werden zum Kurs „Durchschnitt“ umgerechnet, was die Währungsumrechnungsdifferenz (CTA) verändert. Bilanzkonten werden üblicherweise zum Kurs „Aktuell“ umgerechnet:"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Diese benutzerdefinierten Felder sind nur für Entitäten mit denselben Tags verfügbar"

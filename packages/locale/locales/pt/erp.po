@@ -3844,8 +3844,8 @@ msgstr "Pergunta à depreciação o que um novo lançamento para este período d
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Pergunta ao reconhecimento de receita o que uma nova execução para este período reconheceria agora — receita de fatura diferida e receita de contrato — e verifica se há execuções de rascunho contendo receita devida até o final do período. Crie a execução e contabilize para que a receita chegue ao livro razão. Ignore com um motivo se nada deve ser reconhecido."
 
-msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "Pergunta à execução da reavaliação de moeda o que ainda está aberto em moeda estrangeira no final deste período — faturas e memorandos abertos e recebimentos de clientes e pagamentos de fornecedores não aplicados — e verifica se há uma execução de Rascunho terminando no período. Crie a execução e contabilize-a para que o balanço patrimonial carregue esses itens à taxa de fechamento, com a diferença no ganho ou perda de câmbio não realizado. Ignore com um motivo se nada estiver aberto em moeda estrangeira."
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "Pergunta à execução da reavaliação de moeda o que ainda está aberto em moeda estrangeira no final deste período — faturas e memorandos abertos, recebimentos de clientes e pagamentos de fornecedores não aplicados, e os saldos de contas mantidas em moeda estrangeira, como contas bancárias e de empréstimos — e verifica se há uma execução de Rascunho terminando no período. Crie a execução e contabilize-a para que o balanço patrimonial carregue esses itens à taxa de fechamento, com a diferença no ganho ou perda de câmbio não realizado. Ignore com um motivo se nada estiver aberto em moeda estrangeira."
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Pergunta à execução de arrendação o que uma nova execução para este período contabilizaria agora — juros de arrendação e amortização de direito de uso, aluguel para diferir ou acumular, e juros de arrendação de tipo vendedor — e verifica se há execuções de arrendação em Rascunho contendo lançamentos devidos até o final do período. Crie a execução e a contabilize para que os lançamentos atinjam o livro-razão. Ignore com um motivo se nada deve ser contabilizado."
@@ -5249,6 +5249,9 @@ msgstr "Verifique as operações à esquerda para construir o lote."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Verifique o ledger do item para qualquer item com quantidade disponível negativa no final do período — geralmente um recebimento ausente ou uma contabilização fora de ordem que distorce o valor do inventário e o custo dos produtos vendidos. Marque como feito após revisado ou pule com um motivo."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "Verifique a taxa de consolidação destas contas"
 
 msgid "Check your email"
 msgstr "Verifique seu email"
@@ -25012,6 +25015,9 @@ msgstr "A partir de então"
 
 msgid "These accounts need a replacement"
 msgstr "Essas contas precisam de uma substituição"
+
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "Estas contas de ativo e passivo são convertidas à taxa Média, o que altera o ajuste de conversão (CTA). As contas do balanço patrimonial costumam ser convertidas à taxa Atual:"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Estes campos personalizados estarão disponíveis apenas para entidades com as mesmas tags"

@@ -3844,8 +3844,8 @@ msgstr "मूल्यह्रास से पूछता है कि इ�
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "राजस्व स्वीकृति से पूछता है कि इस अवधि के लिए एक नया रन अब क्या स्वीकार करेगा - स्थगित चालान राजस्व और अनुबंध राजस्व - और अवधि के अंत तक राजस्व के लिए ड्राफ्ट रन को धारण करने के लिए जांचता है। रन बनाएँ और पोस्ट करें ताकि राजस्व सामान्य खाता बही तक पहुंचे। यदि कुछ भी स्वीकार नहीं किया जाना चाहिए तो कारण के साथ छोड़ दें।"
 
-msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "मुद्रा पुनर्मूल्यांकन रन से पूछता है कि इस अवधि के अंत में एक विदेशी मुद्रा में क्या अभी भी खुला है — खुले चालान और मेमो, और लागू नहीं किए गए ग्राहक प्राप्तियाँ और आपूर्तिकर्ता भुगतान — और अवधि में समाप्त होने वाले ड्राफ्ट रन की जांच करता है। रन बनाएँ और पोस्ट करें ताकि बैलेंस शीट उन आइटम को समापन दर पर ले जाए, अप्राप्त विनिमय लाभ या हानि के अंतर के साथ। यदि विदेशी मुद्रा में कुछ भी खुला नहीं है तो कारण के साथ छोड़ें।"
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "मुद्रा पुनर्मूल्यांकन रन से पूछता है कि इस अवधि के अंत में एक विदेशी मुद्रा में क्या अभी भी खुला है — खुले चालान और मेमो, लागू नहीं किए गए ग्राहक प्राप्तियाँ और आपूर्तिकर्ता भुगतान, और विदेशी मुद्रा में रखे गए खातों की शेष राशि, जैसे बैंक और ऋण खाते — और अवधि में समाप्त होने वाले ड्राफ्ट रन की जांच करता है। रन बनाएँ और पोस्ट करें ताकि बैलेंस शीट उन आइटम को समापन दर पर ले जाए, अप्राप्त विनिमय लाभ या हानि के अंतर के साथ। यदि विदेशी मुद्रा में कुछ भी खुला नहीं है तो कारण के साथ छोड़ें।"
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "पट्टा रन से पूछता है कि इस अवधि के लिए एक नया रन अब क्या पोस्ट करेगा — पट्टा ब्याज और उपयोग अधिकार परिशोधन, किराये का किराया स्थगित या अर्जित करने के लिए, और बिक्रय-प्रकार पट्टा ब्याज — और अवधि के अंत तक भुगतान के लिए प्रविष्टियों को पकड़े हुए ड्राफ्ट पट्टा रन के लिए जाँच करता है। रन बनाएँ और इसे पोस्ट करें ताकि प्रविष्टियाँ खाता तक पहुँचें। यदि कुछ भी पोस्ट न किया जाना चाहिए तो एक कारण के साथ छोड़ दें।"
@@ -5249,6 +5249,9 @@ msgstr "बैच बनाने के लिए बाईं ओर ऑपर
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "अवधि के अंत तक किसी भी आइटम के लिए आइटम लेजर की जांच करें जिसमें नकारात्मक ऑन-हैंड मात्रा है — आमतौर पर एक लापता प्राप्ति या एक गलत क्रम में पोस्टिंग जो इन्वेंटरी मूल्य और बेचे गए माल की लागत को विकृत करती है। एक बार समीक्षा के बाद इसे हो गया के रूप में चिह्नित करें, या कारण के साथ छोड़ दें।"
+
+msgid "Check these accounts' consolidation rate"
+msgstr "इन खातों की समेकन दर जांचें"
 
 msgid "Check your email"
 msgstr "अपना ईमेल जांचें"
@@ -25012,6 +25015,9 @@ msgstr "उसके बाद"
 
 msgid "These accounts need a replacement"
 msgstr "इन खातों को एक प्रतिस्थापन की आवश्यकता है"
+
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "ये परिसंपत्ति और देयता खाते औसत दर पर रूपांतरित होते हैं, जिससे मुद्रा रूपांतरण समायोजन (CTA) बदलता है। बैलेंस शीट खाते आमतौर पर वर्तमान दर पर रूपांतरित होते हैं:"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "ये कस्टम फ़ील्ड केवल समान टैग वाली संस्थाओं के लिए उपलब्ध होंगी"

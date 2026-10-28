@@ -3844,8 +3844,8 @@ msgstr "Amortisman, bu dönem için yeni bir çalışmanın şimdi ne amorti ede
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Hasılat muhasebeleştirmesine bu dönem için yeni bir çalıştırmanın şimdi ne tanıyacağını sorar — ertelenen fatura hasılatı ve sözleşme hasılatı — ve dönem sonunda vadesi gelen hasılatı tutan Taslak çalıştırmalarını kontrol eder. Çalıştırmayı oluşturun ve muhasebeleştirin, böylece hasılat Büyük defter'e ulaşır. Hiçbir şey tanınmaması gerekiyorsa bir neden ile atlayın."
 
-msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "Para birimi yeniden değerleme çalışması, bu dönem sonunda dış para biriminde hala açık olanları sorar — açık faturalar ve notlar, uygulanmamış müşteri makbuzları ve tedarikçi ödemeleri — ve dönemde sona eren bir Taslak çalışmasını kontrol eder. Çalışmayı Oluştur ve bunu Muhasebeleştir, böylece Bilanço bu öğeleri kapanış oranında taşır, gerçekleşmemiş kur kazancı veya zararı farkı ile. Dış para biriminde hiçbir şey açık değilse bir sebep belirterek Atla."
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "Para birimi yeniden değerleme çalışması, bu dönem sonunda dış para biriminde hala açık olanları sorar — açık faturalar ve notlar, uygulanmamış müşteri makbuzları ve tedarikçi ödemeleri ile banka ve kredi hesapları gibi dış para biriminde tutulan hesapların bakiyeleri — ve dönemde sona eren bir Taslak çalışmasını kontrol eder. Çalışmayı Oluştur ve bunu Muhasebeleştir, böylece Bilanço bu öğeleri kapanış oranında taşır, gerçekleşmemiş kur kazancı veya zararı farkı ile. Dış para biriminde hiçbir şey açık değilse bir sebep belirterek Atla."
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Kiralama çalışmasına bu dönem için yeni bir çalışmanın şu anda muhasebeleştirilecek ne olduğunu sorar — kiralama faizi ve kullanım hakkı amortisman, kiralama kirası ertelenecek veya tahakkuk ettirilecek ve satış türü kiralama faizi — ve dönem sonuna kadar muhasebeleştirilecek girişleri içeren Taslak kiralama çalışmaları kontrol eder. Çalışmayı oluştur ve muhasebeleştir böylece giriş deftere ulaşsın. Hiçbir şey muhasebeleştirilmemesi gerekiyorsa bir nedenle atla."
@@ -5249,6 +5249,9 @@ msgstr "Toplu işi oluşturmak için sol tarafta operasyonları kontrol edin."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Dönem sonu itibariyle negatif eldeki miktarı olan herhangi bir stok kartı için stok kartı defterini kontrol edin — genellikle eksik bir mal kabul veya envanter değerini ve satılan malın maliyetini bozan sıra dışı bir muhasebeleştirme. İncelendikten sonra bitti olarak işaretleyin veya bir gerekçeyle atlayın."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "Bu hesapların konsolidasyon oranını kontrol edin"
 
 msgid "Check your email"
 msgstr "E-postanızı kontrol edin"
@@ -25012,6 +25015,9 @@ msgstr "Bundan sonra"
 
 msgid "These accounts need a replacement"
 msgstr "Bu hesapların yerine geçmesi gerekli"
+
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "Bu varlık ve yükümlülük hesapları Ortalama oranla çevrilir; bu da yabancı para çevrim farkını (CTA) değiştirir. Bilanço hesapları genellikle Mevcut oranla çevrilir:"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Bu özel alanlar yalnızca aynı etiketlere sahip varlıklar için kullanılabilir"

@@ -3844,8 +3844,8 @@ msgstr "Запрашивает амортизацию, что новый рас�
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Спросите признание выручки, что новое выполнение за этот период было бы признано теперь — отложенная выручка по счету и выручка по контракту — и проверьте черновики выполнения, содержащие выручку, подлежащую оплате к концу периода. Создайте выполнение и проведите его, чтобы выручка попала в главную книгу. Пропустите с причиной, если ничего не должно быть признано."
 
-msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "Запрашивает у запуска переоценки валютных позиций, что остается открытым в иностранной валюте на конец этого периода — открытые счета-фактуры и меморандумы, а также неприменные поступления от клиентов и платежи поставщикам — и проверяет наличие черновика запуска, заканчивающегося в периоде. Создайте запуск и проведите его, чтобы баланс отражал эти позиции по курсу на конец периода с разницей в нереализованном обменном прибыле или убытке. Пропустите с причиной, если в иностранной валюте ничего не остается открытым."
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "Запрашивает у запуска переоценки валютных позиций, что остается открытым в иностранной валюте на конец этого периода — открытые счета-фактуры и меморандумы, неприменные поступления от клиентов и платежи поставщикам, а также остатки счетов, которые ведутся в иностранной валюте, например банковских и кредитных счетов — и проверяет наличие черновика запуска, заканчивающегося в периоде. Создайте запуск и проведите его, чтобы баланс отражал эти позиции по курсу на конец периода с разницей в нереализованном обменном прибыле или убытке. Пропустите с причиной, если в иностранной валюте ничего не остается открытым."
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Проверяет, что новая операция аренды для этого периода проводила бы сейчас — процент по аренде и амортизацию актива права пользования, плату по аренде для отсрочки или начисления, и процент по аренде типа продажи — и проверяет черновики операций аренды с записями, которые должны быть обработаны к концу периода. Создайте операцию и проведите ее, чтобы записи попали в главную книгу. Пропустите с указанием причины, если ничего не нужно проводить."
@@ -5249,6 +5249,9 @@ msgstr "Отметьте операции слева, чтобы создать 
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Проверьте реестр номенклатуры на наличие номенклатур с отрицательным количеством на складе на конец периода — обычно это недостающее поступление или неправильно проведённая операция, которая искажает стоимость запасов и себестоимость продаж. Отметьте как выполненное после проверки или пропустите с указанием причины."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "Проверьте курс консолидации этих счетов"
 
 msgid "Check your email"
 msgstr "Проверьте вашу почту"
@@ -25012,6 +25015,9 @@ msgstr "После этого"
 
 msgid "These accounts need a replacement"
 msgstr "Эти счета требуют замены"
+
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "Эти счета активов и обязательств пересчитываются по курсу «Среднее», что изменяет курсовую разницу от пересчёта (CTA). Балансовые счета обычно пересчитываются по курсу «Текущее»:"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Эти пользовательские поля будут доступны только для объектов с одинаковыми тегами"

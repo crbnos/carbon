@@ -3844,8 +3844,8 @@ msgstr "この期間の新しい実行が現在減価償却する内容を確認
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "収益認識に対して、この期間の新規実行が現在何を認識するか（繰延請求書収益と契約収益）を要求し、期末までに支払期限のある収益を保持する下書き実行をチェックします。実行を作成し、転記して、収益が総勘定元帳に到達するようにします。認識すべきものがない場合は、理由を付けてスキップしてください。"
 
-msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "通貨再評価の実行において、この決算期末時点で外貨で未清算となっているもの（未決済請求書とメモ、および適用されていない得意先の入金と仕入先への支払）を確認し、この決算期に終了する下書きの実行をチェックします。実行を作成して転記することで、貸借対照表でこれらの項目が決算レートで計上され、未実現為替差益または為替損失として記録されます。外貨で未清算のものがない場合は、理由を記入してスキップしてください。"
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "通貨再評価の実行において、この決算期末時点で外貨で未清算となっているもの（未決済請求書とメモ、適用されていない得意先の入金と仕入先への支払、および銀行口座や借入金勘定など外貨建てで管理されている勘定の残高）を確認し、この決算期に終了する下書きの実行をチェックします。実行を作成して転記することで、貸借対照表でこれらの項目が決算レートで計上され、未実現為替差益または為替損失として記録されます。外貨で未清算のものがない場合は、理由を記入してスキップしてください。"
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "このリース実行に対し、この期間の新規実行が今どのような転記を行うかを確認します—リース利息と使用権資産の償却、レンタル賃料の繰延または発生計上、売上型リース利息です。また、期間終了時点で期限が到来する仕訳を保有する下書きリース実行がないかを確認します。実行を作成して転記し、仕訳が台帳に転記されるようにしてください。何も転記する必要がない場合は理由を付けてスキップしてください。"
@@ -5249,6 +5249,9 @@ msgstr "左側の工程をチェックしてバッチを構築してください
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "期末時点で保有数量がマイナスの品目がないか品目台帳を確認してください — 通常、納品漏れまたは順序外の転記により、在庫価値および売上原価が歪む可能性があります。確認済みの場合はマーク完了し、スキップする場合は理由を記入してください。"
+
+msgid "Check these accounts' consolidation rate"
+msgstr "これらの勘定科目の連結レートを確認してください"
 
 msgid "Check your email"
 msgstr "メールを確認してください"
@@ -25012,6 +25015,9 @@ msgstr "その後"
 
 msgid "These accounts need a replacement"
 msgstr "これらの勘定には代替が必要です。"
+
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "これらの資産・負債勘定は平均レートで換算されるため、為替換算調整勘定（CTA）が変動します。貸借対照表の勘定は通常、現在レートで換算されます:"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "これらのカスタムフィールドは、同じタグを持つエンティティでのみ利用可能です"

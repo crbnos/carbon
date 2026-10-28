@@ -27,6 +27,7 @@ export type RevaluationFixtureAccount =
 export async function currencyRevaluationFixture(): Promise<{
   db: Kysely<KyselyDatabase>;
   companyId: string;
+  companyGroupId: string;
   periodId: string;
   accounts: Record<RevaluationFixtureAccount, string>;
   postJournal(args: {
@@ -147,6 +148,7 @@ export async function currencyRevaluationFixture(): Promise<{
   return {
     db,
     companyId,
+    companyGroupId: groupId,
     periodId,
     accounts,
     async postJournal({ sourceType, postingDate, lines }) {

@@ -3844,8 +3844,8 @@ msgstr "Pyta amortyzację, co nowy przebieg w tym okresie amortyzowałby teraz, 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Zapytaj system rozpoznawania przychodów, co nowe uruchomienie w tym okresie rozpoznałoby teraz — przychody z odroczoną fakturą i przychody z umowy — i sprawdź wersje robocze przechowujące przychody wymagalne do końca okresu. Utwórz uruchomienie i zaksięguj je, aby przychody trafiły do księgi głównej. Pomiń z przyczyna, jeśli nic nie powinno być rozpoznane."
 
-msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "Pyta uruchomienie przeszacowania waluty, co jest jeszcze otwarte w walucie obcej na koniec tego okresu — otwarte faktury i notatki, oraz niezastosowane pokwitowania od klientów i płatności dostawców — i sprawdza, czy jest uruchomienie Wersja robocza kończące się w okresie. Utwórz uruchomienie i zaksięguj je, aby bilans zawierał te artykuły po kursie zamknięcia, z różnicą w niezrealizowanym zysku lub stracie z tytułu wymiany. Pomiń z przyczyn, jeśli w walucie obcej nic nie jest otwarte."
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "Pyta uruchomienie przeszacowania waluty, co jest jeszcze otwarte w walucie obcej na koniec tego okresu — otwarte faktury i notatki, niezastosowane pokwitowania od klientów i płatności dostawców oraz salda kont prowadzonych w walucie obcej, takich jak konta bankowe i kredytowe — i sprawdza, czy jest uruchomienie Wersja robocza kończące się w okresie. Utwórz uruchomienie i zaksięguj je, aby bilans zawierał te artykuły po kursie zamknięcia, z różnicą w niezrealizowanym zysku lub stracie z tytułu wymiany. Pomiń z przyczyn, jeśli w walucie obcej nic nie jest otwarte."
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Pyta przebieg leasingu, co nowy przebieg w tym okresie byłby teraz zaksięgowany — odsetki z tytułu leasingu i amortyzacja prawa użytkowania, czynsz wynajmu do odłożenia lub naliczenia oraz odsetki z tytułu leasingu typu sprzedażnego — i sprawdza przebiegi leasingu w wersji roboczej zawierające wpisy wymagalne do końca okresu. Utwórz przebieg i zaksięguj go, aby wpisy trafiły do księgi. Pomiń z podaniem przyczyny, jeśli nic nie powinno być zaksięgowane."
@@ -5249,6 +5249,9 @@ msgstr "Zaznacz operacje po lewej stronie, aby zbudować wsad."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Sprawdź księgę artykułów pod kątem artykułów z ujemną ilością dostępną na koniec okresu — zwykle brakuje przyjęcia lub zaksięgowania poza kolejnością, które zniekształca wartość zapasów i koszt własny sprzedaży. Oznacz jako gotowe po przejrzeniu lub pomiń z uzasadnieniem."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "Sprawdź kurs konsolidacji tych kont"
 
 msgid "Check your email"
 msgstr "Sprawdź swoją pocztę"
@@ -25012,6 +25015,9 @@ msgstr "Następnie"
 
 msgid "These accounts need a replacement"
 msgstr "Te konta wymagają zastąpienia"
+
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "Te konta aktywów i pasywów są przeliczane po kursie Średnia, co zmienia różnice kursowe z przeliczenia (CTA). Konta bilansowe przelicza się zwykle po kursie Bieżący:"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Te pola niestandardowe będą dostępne tylko dla obiektów z tymi samymi tagami"

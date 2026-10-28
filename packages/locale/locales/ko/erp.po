@@ -3844,8 +3844,8 @@ msgstr "이 기간에 새로운 실행이 지금 감가상각할 항목을 요�
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "수익 인식에 이 기간의 새 실행에서 지금 인식할 내용을 묻습니다 — 이연 송장 수익 및 계약 수익 — 기말까지 인식해야 할 수익을 보유한 초안 실행을 확인합니다. 실행을 생성하고 전기하여 수익이 총계정원장에 도달하도록 합니다. 인식해야 할 내용이 없으면 이유와 함께 건너뜁니다."
 
-msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "통화 재평가 실행을 통해 기간 말 외화로 남아 있는 미결 항목을 확인합니다 — 미결 송장 및 메모, 미적용 고객 영수증 및 공급업체 지불. 기간 종료 시 초안 실행을 확인하고, 이를 생성 및 전기하여 재무상태표에 종가 기준의 항목을 반영하며 미실현 환전 이득 또는 손실의 차이를 포함합니다. 외화에서 미결 항목이 없으면 사유와 함께 건너뜁니다."
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "통화 재평가 실행을 통해 기간 말 외화로 남아 있는 미결 항목을 확인합니다 — 미결 송장 및 메모, 미적용 고객 영수증 및 공급업체 지불, 그리고 은행 및 대출 계정처럼 외화로 관리되는 계정의 잔액. 기간 종료 시 초안 실행을 확인하고, 이를 생성 및 전기하여 재무상태표에 종가 기준의 항목을 반영하며 미실현 환전 이득 또는 손실의 차이를 포함합니다. 외화에서 미결 항목이 없으면 사유와 함께 건너뜁니다."
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "리스 실행에 이 기간의 새로운 실행이 지금 전기할 내용을 물어봅니다 — 리스 이자와 사용권자산 상각, 연기되거나 발생할 임차료, 판매자형 리스 이자 — 그리고 기간 말까지 만기가 되는 항목을 보유하고 있는 초안 리스 실행을 확인합니다. 실행을 생성하고 전기하여 항목이 원장에 도달하도록 합니다. 전기할 항목이 없으면 사유와 함께 건너뜁니다."
@@ -5249,6 +5249,9 @@ msgstr "왼쪽의 공정을 확인하여 배치를 빌드합니다."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "기간 종료 기준 음수 현재고 수량이 있는 품목에 대해 품목 장부를 확인하십시오 — 일반적으로 입고 누락 또는 순서 없는 전기로 인해 재고 관리 가치 및 매출원가가 왜곡됩니다. 검토 후 완료로 표시하거나 사유를 포함하여 건너뜁니다."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "이 계정들의 통합 환율을 확인하세요"
 
 msgid "Check your email"
 msgstr "이메일을 확인하세요"
@@ -25012,6 +25015,9 @@ msgstr "그 이후로"
 
 msgid "These accounts need a replacement"
 msgstr "이 계정에는 대체 계정이 필요합니다."
+
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "이 자산 및 부채 계정은 평균 환율로 환산되어 외화환산조정(CTA)이 달라집니다. 재무상태표 계정은 보통 현재 환율로 환산됩니다:"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "이러한 사용자 정의 필드는 동일한 태그를 가진 엔터티에만 사용 가능합니다."

@@ -3844,8 +3844,8 @@ msgstr "Demande à l'Amortissement ce qu'une nouvelle exécution pour cette pér
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Demande à la reconnaissance des revenus ce qu'une nouvelle exécution pour cette période reconnaîtrait maintenant — revenus de facture différés et revenus de contrat — et vérifie les exécutions en Brouillon détenant les revenus dus à la fin de la période. Créez l'exécution et comptabilisez-la afin que les revenus atteignent le grand livre. Ignorez avec une raison si rien ne devrait être reconnu."
 
-msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "Demande au calcul de réévaluation de devise ce qui est toujours ouvert en devise étrangère à la fin de cette période — factures et mémos ouverts, et reçus clients et paiements fournisseurs non appliqués — et vérifie une exécution Brouillon se terminant dans la période. Créez l'exécution et comptabilisez-la pour que le bilan porte ces articles au taux de clôture, avec la différence en gain ou perte de change non réalisé. Ignorez avec une raison si rien n'est ouvert en devise étrangère."
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "Demande au calcul de réévaluation de devise ce qui est toujours ouvert en devise étrangère à la fin de cette période — factures et mémos ouverts, reçus clients et paiements fournisseurs non appliqués, et soldes des comptes tenus en devise étrangère, comme les comptes bancaires et d'emprunt — et vérifie une exécution Brouillon se terminant dans la période. Créez l'exécution et comptabilisez-la pour que le bilan porte ces articles au taux de clôture, avec la différence en gain ou perte de change non réalisé. Ignorez avec une raison si rien n'est ouvert en devise étrangère."
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Demande au cycle de contrat de location ce qu'un nouveau cycle pour cette période comptabiliserait maintenant – les intérêts de contrat de location et l'amortissement du droit d'utilisation, la rente locative à reporter ou comptabiliser, et les intérêts de contrat de location-vente – et vérifie les cycles de contrat de location en Brouillon contenant des écritures dues à la fin de la période. Créez le cycle et comptabilisez-le pour que les écritures atteignent le grand livre. Ignorez avec une raison si rien ne doit être comptabilisé."
@@ -5249,6 +5249,9 @@ msgstr "Cochez les opérations à gauche pour créer le lot."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Vérifiez le registre des articles pour tous les articles ayant une quantité disponible négative à la fin de la période — généralement un reçu manquant ou une comptabilisation désordonnée qui fausse la valeur des stocks et le coût des marchandises vendues. Marquez comme fait une fois examiné, ou ignorez avec une raison."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "Vérifiez le taux de consolidation de ces comptes"
 
 msgid "Check your email"
 msgstr "Vérifiez votre email"
@@ -25012,6 +25015,9 @@ msgstr "Par la suite"
 
 msgid "These accounts need a replacement"
 msgstr "Ces comptes ont besoin d'un remplacement"
+
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "Ces comptes d'actif et de passif sont convertis au taux Moyenne, ce qui modifie l'écart de conversion (CTA). Les comptes de bilan sont généralement convertis au taux Actuel :"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Ces champs personnalisés ne seront disponibles que pour les entités ayant les mêmes balises"

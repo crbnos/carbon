@@ -5,9 +5,11 @@
 // The currency revaluation run's reads and Undo against a real database:
 // what counts as an account's booked balance, which accounts are this
 // company's exposures, when a posted run is stale, and when Undo refuses.
+// Plus the CTA posting's refusal of a non-Equity account.
 
 import { expect } from "vitest";
 import {
+  insertCurrencyTranslationJournal,
   previewCurrencyRevaluation,
   RunReversalError,
   readRevaluationExposures,
@@ -186,6 +188,39 @@ databaseTest(
           periodEnd: PERIOD_END
         })
       ).toEqual({ count: 0, amount: 0, error: null, applicable: false });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the CTA posting refuses a non-Equity offset account and writes nothing",
+  async () => {
+    const f = await currencyRevaluationFixture();
+    try {
+      const { db, companyId, companyGroupId, accounts } = f;
+      // A credit-natural CTA account with an Asset offset: +50 and -50 would
+      // both credit, and the journal would post unbalanced.
+      await expect(
+        insertCurrencyTranslationJournal(db, {
+          companyGroupId,
+          eliminationCompanyId: companyId,
+          periodEnd: PERIOD_END,
+          liveCta: 50,
+          ctaAccountId: accounts.gain,
+          offsetAccountId: accounts.misc,
+          userId: "system"
+        })
+      ).rejects.toThrow("must be two different Equity accounts");
+
+      const journals = await db
+        .selectFrom("journal")
+        .select("id")
+        .where("companyId", "=", companyId)
+        .where("sourceType", "=", "Currency Translation")
+        .execute();
+      expect(journals).toEqual([]);
     } finally {
       await f.cleanup();
     }

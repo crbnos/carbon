@@ -31,15 +31,22 @@ BEGIN
   END LOOP;
 END $fxfk$;
 
+CREATE INDEX IF NOT EXISTS "accountDefault_unrealizedExchangeGainAccount_idx" ON "accountDefault" ("unrealizedExchangeGainAccount");
+CREATE INDEX IF NOT EXISTS "accountDefault_unrealizedExchangeLossAccount_idx" ON "accountDefault" ("unrealizedExchangeLossAccount");
+CREATE INDEX IF NOT EXISTS "accountDefault_arRevaluationAccount_idx" ON "accountDefault" ("arRevaluationAccount");
+CREATE INDEX IF NOT EXISTS "accountDefault_apRevaluationAccount_idx" ON "accountDefault" ("apRevaluationAccount");
+
 -- 2) Accounts, one per company group that has a chart ---------------------------------
--- A group that already holds the number OR the name keeps its account; the parent is
--- the seeded group by NAME, else the group of a seeded sibling, else the chart root
--- with a NOTICE.
+-- A group that already holds a leaf with the name keeps it. Otherwise the account is
+-- created at the reserved number, or at the next free number when another account
+-- holds it, so the name backfill below always finds it. The parent is the seeded group
+-- by NAME, else the group of a seeded sibling, else the chart root with a NOTICE.
 DO $fxaccounts$
 DECLARE
   spec RECORD;
   grp TEXT;
   parent_id TEXT;
+  account_number TEXT;
 BEGIN
   FOR spec IN
     SELECT * FROM (VALUES
@@ -52,8 +59,19 @@ BEGIN
     FOR grp IN SELECT DISTINCT a."companyGroupId" FROM "account" a LOOP
       CONTINUE WHEN EXISTS (
         SELECT 1 FROM "account" a
-        WHERE a."companyGroupId" = grp AND (a.number = spec.number OR a.name = spec.name)
+        WHERE a."companyGroupId" = grp AND a.name = spec.name AND a."isGroup" = FALSE
       );
+
+      account_number := spec.number;
+      WHILE EXISTS (
+        SELECT 1 FROM "account" a WHERE a."companyGroupId" = grp AND a.number = account_number
+      ) LOOP
+        account_number := (account_number::INTEGER + 1)::TEXT;
+      END LOOP;
+      IF account_number <> spec.number THEN
+        RAISE NOTICE 'currency-revaluation: company group % already uses account %; % is account %',
+          grp, spec.number, spec.name, account_number;
+      END IF;
 
       SELECT g.id INTO parent_id
       FROM "account" g
@@ -76,7 +94,7 @@ BEGIN
 
       INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
       VALUES (
-        id('acct'), spec.number, spec.name, spec.class::"glAccountClass", spec.account_type::"accountType",
+        id('acct'), account_number, spec.name, spec.class::"glAccountClass", spec.account_type::"accountType",
         spec.income_balance::"glIncomeBalance", spec.consolidated_rate::"glConsolidatedRate",
         parent_id, false, true, false, grp, 'system'
       );
@@ -84,7 +102,7 @@ BEGIN
   END LOOP;
 END $fxaccounts$;
 
--- 3) Backfill the four defaults by id: by number, then by leaf name --------------------
+-- 3) Backfill the four defaults by id: by number and name, then by leaf name -----------
 DO $fxdefaults$
 DECLARE
   spec RECORD;
@@ -139,6 +157,7 @@ CREATE INDEX IF NOT EXISTS "currencyRevaluationRun_journalId_idx" ON "currencyRe
 CREATE INDEX IF NOT EXISTS "currencyRevaluationRun_reversalJournalId_idx" ON "currencyRevaluationRun" ("reversalJournalId");
 CREATE INDEX IF NOT EXISTS "currencyRevaluationRun_postedBy_idx" ON "currencyRevaluationRun" ("postedBy");
 CREATE INDEX IF NOT EXISTS "currencyRevaluationRun_createdBy_idx" ON "currencyRevaluationRun" ("createdBy");
+CREATE INDEX IF NOT EXISTS "currencyRevaluationRun_updatedBy_idx" ON "currencyRevaluationRun" ("updatedBy");
 
 -- RLS: the policies are rendered from packages/database/src/authz/manifest.ts.
 
@@ -163,6 +182,7 @@ CREATE INDEX IF NOT EXISTS "currencyRevaluationRate_companyId_idx" ON "currencyR
 CREATE INDEX IF NOT EXISTS "currencyRevaluationRate_runId_idx" ON "currencyRevaluationRate" ("runId");
 CREATE INDEX IF NOT EXISTS "currencyRevaluationRate_currencyCode_idx" ON "currencyRevaluationRate" ("currencyCode");
 CREATE INDEX IF NOT EXISTS "currencyRevaluationRate_createdBy_idx" ON "currencyRevaluationRate" ("createdBy");
+CREATE INDEX IF NOT EXISTS "currencyRevaluationRate_updatedBy_idx" ON "currencyRevaluationRate" ("updatedBy");
 
 -- RLS: the policies are rendered from packages/database/src/authz/manifest.ts.
 
@@ -200,6 +220,7 @@ CREATE INDEX IF NOT EXISTS "currencyRevaluationLine_accountId_idx" ON "currencyR
 CREATE INDEX IF NOT EXISTS "currencyRevaluationLine_currencyCode_idx" ON "currencyRevaluationLine" ("currencyCode");
 CREATE INDEX IF NOT EXISTS "currencyRevaluationLine_openAmountEnteredBy_idx" ON "currencyRevaluationLine" ("openAmountEnteredBy");
 CREATE INDEX IF NOT EXISTS "currencyRevaluationLine_createdBy_idx" ON "currencyRevaluationLine" ("createdBy");
+CREATE INDEX IF NOT EXISTS "currencyRevaluationLine_updatedBy_idx" ON "currencyRevaluationLine" ("updatedBy");
 
 -- RLS: the policies are rendered from packages/database/src/authz/manifest.ts.
 

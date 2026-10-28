@@ -3923,7 +3923,7 @@ export async function getPeriodRunPreview(
         error: previewError(error, "Failed to preview currency revaluation")
       })
     ),
-    previewCurrencyTranslationMovement(client, db, {
+    previewCurrencyTranslationMovement(db, {
       companyId,
       companyGroupId,
       periodEnd
@@ -3954,7 +3954,6 @@ export async function getPeriodRunPreview(
  * group with one currency.
  */
 async function previewCurrencyTranslationMovement(
-  client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   args: { companyId: string; companyGroupId: string; periodEnd: string }
 ): Promise<RunPreview> {
@@ -3975,8 +3974,7 @@ async function previewCurrencyTranslationMovement(
     .where("endDate", "=", periodEnd)
     .executeTakeFirst();
   const preview = await computeCurrencyTranslationPreview({
-    client,
-    eliminationClient: getCarbonServiceRole(),
+    client: getCarbonServiceRole(),
     db,
     companyId,
     companyGroupId,
@@ -13741,9 +13739,10 @@ export async function getCurrencyRevaluationRuns(
 ) {
   let query = client
     .from("currencyRevaluationRun")
-    .select("id, currencyRevaluationRunId, periodEnd, status, postedAt", {
-      count: LIST_COUNT
-    })
+    .select(
+      "id, currencyRevaluationRunId, periodEnd, status, postedAt, createdAt",
+      { count: LIST_COUNT }
+    )
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -13758,24 +13757,28 @@ export async function getCurrencyRevaluationRuns(
 
 export async function getCurrencyRevaluationRun(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
   return client
     .from("currencyRevaluationRun")
     .select("*")
     .eq("id", id)
+    .eq("companyId", companyId)
     .single();
 }
 
 export async function getCurrencyRevaluationLines(
   client: SupabaseClient<Database>,
-  runId: string
+  runId: string,
+  companyId: string
 ) {
   return fetchAllRecords(() =>
     client
       .from("currencyRevaluationLine")
       .select("*")
       .eq("runId", runId)
+      .eq("companyId", companyId)
       .order("exposureType")
       .order("currencyCode")
       .order("documentNumber")
@@ -13785,12 +13788,14 @@ export async function getCurrencyRevaluationLines(
 
 export async function getCurrencyRevaluationRates(
   client: SupabaseClient<Database>,
-  runId: string
+  runId: string,
+  companyId: string
 ) {
   return client
     .from("currencyRevaluationRate")
     .select("*")
     .eq("runId", runId)
+    .eq("companyId", companyId)
     .order("currencyCode");
 }
 
@@ -23740,6 +23745,11 @@ export type CurrencyTranslationPreview = {
   /** Foreign-currency subsidiaries with no posted revaluation run for the
    *  period: revalue them first (NetSuite close order). */
   unrevaluedCompanies: { id: string; name: string }[];
+  /** Asset and liability leaves translated at the Average rate. The current
+   *  rate method translates them at Current; the account form saved Average
+   *  for every account it edited until the posted CTA shipped, so review
+   *  them before posting. */
+  averageRateAccounts: { id: string; number: string | null; name: string }[];
 };
 
 type CurrencyTranslationRefusal = {
@@ -23757,8 +23767,10 @@ type CurrencyTranslationRefusal = {
  * as the consolidated report's does.
  */
 export async function computeCurrencyTranslationPreview(args: {
+  /** A service-role client: the CTA covers every operating company in the
+   *  group, whatever the caller can read. Every read is filtered by
+   *  `companyGroupId`. */
   client: SupabaseClient<Database>;
-  eliminationClient: SupabaseClient<Database>;
   db: Kysely<KyselyDatabase>;
   companyId: string;
   companyGroupId: string;
@@ -23799,7 +23811,8 @@ export async function computeCurrencyTranslationPreview(args: {
     postedCta: 0,
     movement: 0,
     eliminationCompanyId: null,
-    unrevaluedCompanies: []
+    unrevaluedCompanies: [],
+    averageRateAccounts: []
   };
 
   const companies = await getCompaniesInGroup(client, companyGroupId);
@@ -23840,6 +23853,28 @@ export async function computeCurrencyTranslationPreview(args: {
       "Set the Currency Translation and Currency Translation Offset account defaults first"
     );
   }
+  const [accountClasses, averageRateAccounts] = await Promise.all([
+    readCtaAccountClasses(db, companyGroupId, [
+      defaults.currencyTranslationAccount,
+      defaults.currencyTranslationOffsetAccount
+    ]),
+    db
+      .selectFrom("account")
+      .select(["id", "number", "name"])
+      .where("companyGroupId", "=", companyGroupId)
+      .where("isGroup", "=", false)
+      .where("class", "in", ["Asset", "Liability"])
+      .where("consolidatedRate", "=", "Average")
+      .orderBy("number")
+      .orderBy("id")
+      .execute()
+  ]);
+  if (
+    accountClasses.length !== 2 ||
+    accountClasses.some((account) => account.class !== "Equity")
+  ) {
+    return refuse("rule", CTA_ACCOUNTS_NOT_EQUITY);
+  }
 
   const consolidated = await getConsolidatedPeriodSeries(
     client,
@@ -23858,7 +23893,7 @@ export async function computeCurrencyTranslationPreview(args: {
       ],
       includeCurrentYearEarnings: true
     },
-    args.eliminationClient
+    client
   );
   if (consolidated.error) return refuse("rule", consolidated.error);
 
@@ -23906,10 +23941,30 @@ export async function computeCurrencyTranslationPreview(args: {
       eliminationCompanyId: elimination.id,
       unrevaluedCompanies: foreign
         .filter((company) => !revalued.has(company.id))
-        .map((company) => ({ id: company.id, name: company.name }))
+        .map((company) => ({ id: company.id, name: company.name })),
+      averageRateAccounts
     },
     error: null
   };
+}
+
+const CTA_ACCOUNTS_NOT_EQUITY =
+  "The Currency Translation and Currency Translation Offset account defaults must be two different Equity accounts";
+
+/** The class of each CTA account, read from the group's chart. Both must be
+ *  Equity: the journal's amounts are natural-signed, so an offset account of
+ *  any other class would post on the same side as the CTA line. */
+function readCtaAccountClasses(
+  db: Kysely<KyselyDatabase>,
+  companyGroupId: string,
+  accountIds: string[]
+) {
+  return db
+    .selectFrom("account")
+    .select(["id", "class"])
+    .where("companyGroupId", "=", companyGroupId)
+    .where("id", "in", accountIds)
+    .execute();
 }
 
 /** `computeCurrencyTranslationPreview` for one of the caller company's
@@ -23930,8 +23985,7 @@ export async function previewCurrencyTranslationAt(
   if (!period.data) return ctx.error("notFound", "Period not found");
 
   const preview = await computeCurrencyTranslationPreview({
-    client: ctx.asCaller.supabase,
-    eliminationClient: ctx.asSystem.supabase,
+    client: ctx.asSystem.supabase,
     db: ctx.asSystem.pg,
     companyId: ctx.company.id,
     companyGroupId: ctx.company.groupId,
@@ -23989,6 +24043,16 @@ export async function insertCurrencyTranslationJournal(
     await sql`SELECT pg_advisory_xact_lock(hashtext(${`currency-translation:${eliminationCompanyId}`}))`.execute(
       trx
     );
+    const accountClasses = await readCtaAccountClasses(trx, companyGroupId, [
+      ctaAccountId,
+      offsetAccountId
+    ]);
+    if (
+      accountClasses.length !== 2 ||
+      accountClasses.some((account) => account.class !== "Equity")
+    ) {
+      throw new Error(CTA_ACCOUNTS_NOT_EQUITY);
+    }
     const [offset, decimals] = await Promise.all([
       sql<{ balanceAtDate: number }>`
         SELECT "balanceAtDate"

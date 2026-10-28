@@ -21,19 +21,35 @@ BEGIN
   END IF;
 END $ctafk$;
 
+CREATE INDEX IF NOT EXISTS "accountDefault_currencyTranslationOffsetAccount_idx" ON "accountDefault" ("currencyTranslationOffsetAccount");
+
 -- 2) Account, one per company group that has a chart -----------------------------------
--- Never isSystem: report trees treat isSystem rows as chart roots.
+-- Never isSystem: report trees treat isSystem rows as chart roots. A group that already
+-- holds a leaf with the name keeps it; otherwise the account is created at 3210, or at
+-- the next free number when another account holds 3210.
 DO $ctaaccount$
 DECLARE
   grp TEXT;
   parent_id TEXT;
+  account_number TEXT;
 BEGIN
   FOR grp IN SELECT DISTINCT a."companyGroupId" FROM "account" a LOOP
     CONTINUE WHEN EXISTS (
       SELECT 1 FROM "account" a
       WHERE a."companyGroupId" = grp
-        AND (a.number = '3210' OR a.name = 'Currency Translation Offset')
+        AND a.name = 'Currency Translation Offset' AND a."isGroup" = FALSE
     );
+
+    account_number := '3210';
+    WHILE EXISTS (
+      SELECT 1 FROM "account" a WHERE a."companyGroupId" = grp AND a.number = account_number
+    ) LOOP
+      account_number := (account_number::INTEGER + 1)::TEXT;
+    END LOOP;
+    IF account_number <> '3210' THEN
+      RAISE NOTICE 'currency-translation-posting: company group % already uses account 3210; Currency Translation Offset is account %',
+        grp, account_number;
+    END IF;
 
     SELECT g.id INTO parent_id
     FROM "account" g
@@ -49,12 +65,12 @@ BEGIN
     END IF;
 
     IF parent_id IS NULL THEN
-      RAISE NOTICE 'currency-translation-posting: company group % has no "Equity" group; account 3210 is at the chart root', grp;
+      RAISE NOTICE 'currency-translation-posting: company group % has no "Equity" group; account % is at the chart root', grp, account_number;
     END IF;
 
     INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
     VALUES (
-      id('acct'), '3210', 'Currency Translation Offset', 'Equity'::"glAccountClass",
+      id('acct'), account_number, 'Currency Translation Offset', 'Equity'::"glAccountClass",
       'Equity - Close'::"accountType", 'Balance Sheet'::"glIncomeBalance",
       'Historical'::"glConsolidatedRate", parent_id, false, true, false, grp, 'system'
     );

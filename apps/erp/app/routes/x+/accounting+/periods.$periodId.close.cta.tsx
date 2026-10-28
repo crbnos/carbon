@@ -147,6 +147,28 @@ export default function CurrencyTranslationRoute() {
                   </AlertDescription>
                 </Alert>
               )}
+              {preview.averageRateAccounts.length > 0 && (
+                <Alert variant="warning">
+                  <LuTriangleAlert />
+                  <AlertTitle>
+                    <Trans>Check these accounts' consolidation rate</Trans>
+                  </AlertTitle>
+                  <AlertDescription>
+                    <Trans>
+                      These asset and liability accounts translate at the
+                      Average rate, which moves the CTA. Balance sheet accounts
+                      usually translate at the Current rate:
+                    </Trans>{" "}
+                    {preview.averageRateAccounts
+                      .map((account) =>
+                        account.number
+                          ? `${account.number} ${account.name}`
+                          : account.name
+                      )
+                      .join(", ")}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           )}
         </ModalBody>

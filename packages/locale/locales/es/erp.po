@@ -3844,8 +3844,8 @@ msgstr "Pregunta a depreciación qué nueva ejecución para este período deprec
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Pregunta al reconocimiento de ingresos qué reconocería ahora una nueva ejecución para este período — ingresos de facturas diferidas e ingresos por contrato — y verifica las ejecuciones en Borrador que contienen ingresos vencidos al final del período. Cree la ejecución y contabilícela para que los ingresos lleguen al libro mayor. Omita con una razón si nada debe ser reconocido."
 
-msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "Pregunta a la ejecución de revaluación de moneda qué sigue abierto en una moneda extranjera al final de este período — facturas y notas abiertas, así como cobros de clientes y pagos a proveedores no aplicados — y verifica que haya una ejecución en Borrador que finalice en el período. Cree la ejecución y contabilícela para que el balance general lleve esos artículos a la tasa de cierre, con la diferencia de ganancia o pérdida de cambio no realizada. Omítalo con una razón si nada está abierto en una moneda extranjera."
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "Pregunta a la ejecución de revaluación de moneda qué sigue abierto en una moneda extranjera al final de este período — facturas y notas abiertas, cobros de clientes y pagos a proveedores no aplicados, y los saldos de cuentas llevadas en una moneda extranjera, como cuentas bancarias y de préstamos — y verifica que haya una ejecución en Borrador que finalice en el período. Cree la ejecución y contabilícela para que el balance general lleve esos artículos a la tasa de cierre, con la diferencia de ganancia o pérdida de cambio no realizada. Omítalo con una razón si nada está abierto en una moneda extranjera."
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Le pregunta a la ejecución de arrendamiento qué una nueva ejecución para este período contabilizaría ahora — intereses de arrendamiento y amortización del derecho de uso, renta de alquiler a diferir o acumular, e intereses de arrendamiento de tipo de venta — y verifica si hay ejecuciones de arrendamiento en borrador que cumplen con los asientos vencidos al final del período. Cree la ejecución y contabilícela para que los asientos lleguen al libro mayor. Omita con una razón si no hay nada que contabilizar."
@@ -5249,6 +5249,9 @@ msgstr "Marque las operaciones a la izquierda para construir el lote."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Verifique el libro mayor de artículos para cualquier artículo con cantidad negativa en existencias a fin de período — generalmente una recepción faltante o una contabilización fuera de orden que distorsiona el valor del inventario y el costo de ventas. Márquelo como completado una vez revisado, o omítalo con un motivo."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "Revise la tasa de consolidación de estas cuentas"
 
 msgid "Check your email"
 msgstr "Revisa tu correo electrónico"
@@ -25012,6 +25015,9 @@ msgstr "En lo sucesivo"
 
 msgid "These accounts need a replacement"
 msgstr "Estas cuentas necesitan un reemplazo"
+
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "Estas cuentas de activo y pasivo se convierten a la tasa Promedio, lo que modifica el ajuste por conversión (CTA). Las cuentas del balance general suelen convertirse a la tasa Actual:"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Estos campos personalizados solo estarán disponibles para entidades con las mismas etiquetas"

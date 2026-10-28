@@ -63,9 +63,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!runId) throw new Error("Could not find runId");
 
   const [run, lines, rates] = await Promise.all([
-    getCurrencyRevaluationRun(client, runId),
-    getCurrencyRevaluationLines(client, runId),
-    getCurrencyRevaluationRates(client, runId)
+    getCurrencyRevaluationRun(client, runId, companyId),
+    getCurrencyRevaluationLines(client, runId, companyId),
+    getCurrencyRevaluationRates(client, runId, companyId)
   ]);
 
   if (run.error || lines.error || rates.error) {

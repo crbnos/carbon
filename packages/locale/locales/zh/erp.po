@@ -3844,8 +3844,8 @@ msgstr "向折旧查询本期的新运行现在会折旧什么，并检查本期
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "询问收入确认本期的新运行现在应确认什么——递延发票收入和合同收入——并检查是否有在期末前应确认收入的草稿运行。创建运行并过账，以便收入到达总账。如果不应确认任何内容，请跳过并说明原因。"
 
-msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "询问货币重估运行在该期末仍未结的外币项目 — 未结的发票和备忘录，以及未应用的客户收据和供应商付款 — 并检查在该期末的草稿运行。创建该运行并过账，以便资产负债表以收盘汇率列示这些项目，差异为未实现汇兑损益。如果没有未结的外币项目，请跳过并说明理由。"
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "询问货币重估运行在该期末仍未结的外币项目 — 未结的发票和备忘录、未应用的客户收据和供应商付款，以及以外币记账的科目余额（如银行和贷款科目）— 并检查在该期末的草稿运行。创建该运行并过账，以便资产负债表以收盘汇率列示这些项目，差异为未实现汇兑损益。如果没有未结的外币项目，请跳过并说明理由。"
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "询问租赁运行本期间的新运行现在将过账的内容——租赁利息和使用权资产摊销、待摊或应计的租赁费用和售后租回式租赁利息——并检查截至期间结束需提交条目的草稿租赁运行。创建运行并过账以使条目到达凭证。如果无需过账任何内容，请以原因跳过。"
@@ -5249,6 +5249,9 @@ msgstr "勾选左侧的操作以构建批次。"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "检查物料分类账以查找期末现有数量为负的任何物料 — 通常是缺少收货或过账顺序错误，导致库存价值和销售成本失真。审查后标记为完成，或因某个理由跳过。"
+
+msgid "Check these accounts' consolidation rate"
+msgstr "检查这些科目的合并汇率"
 
 msgid "Check your email"
 msgstr "检查您的电子邮件"
@@ -25012,6 +25015,9 @@ msgstr "其后"
 
 msgid "These accounts need a replacement"
 msgstr "这些账户需要替换"
+
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "这些资产和负债科目按平均汇率折算，这会改变外币折算差额（CTA）。资产负债表科目通常按当前汇率折算："
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "这些自定义字段仅对具有相同标签的实体可用"
