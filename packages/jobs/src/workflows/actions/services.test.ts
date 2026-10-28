@@ -5,14 +5,8 @@
 import type { Database } from "@carbon/database";
 import { createWorkflowCatalog } from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createWorkflowServices } from "./services";
-
-// `./integration` reaches `@carbon/auth`, whose module load demands the server env
-// (INNGEST_SIGNING_KEY, SUPABASE_SERVICE_ROLE_KEY, …), so the import alone fails in CI.
-vi.mock("./integration", () => ({
-  runIntegrationAction: vi.fn(async () => ({ ok: true, outputs: {} }))
-}));
 
 function services() {
   return createWorkflowServices({

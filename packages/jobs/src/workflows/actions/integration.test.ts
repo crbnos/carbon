@@ -54,16 +54,6 @@ vi.mock("@carbon/ee/integrations/connections", async (importOriginal) => ({
   resolveConnectionAuth: (...args: unknown[]) => resolveConnectionAuth(...args)
 }));
 
-vi.mock("../integrations/registry", () => ({
-  getPieceAction: (...args: unknown[]) => getPieceAction(...args),
-  getPieceOAuth2Auth: async () => ({
-    type: "OAUTH2",
-    authUrl: "https://accounts.google.com/o/oauth2/auth",
-    tokenUrl: "https://oauth2.googleapis.com/token",
-    scope: []
-  })
-}));
-
 const { runIntegrationAction } = await import("./integration");
 
 const inputs = (extra: Record<string, RuntimeValue> = {}) => ({
@@ -83,13 +73,16 @@ const inputs = (extra: Record<string, RuntimeValue> = {}) => ({
 const run = (
   overrides: Partial<Parameters<typeof runIntegrationAction>[0]> = {}
 ) =>
-  runIntegrationAction({
-    companyId: COMPANY,
-    pieceName: "google-calendar",
-    actionName: "create_google_calendar_event",
-    inputs: inputs(),
-    ...overrides
-  });
+  runIntegrationAction(
+    {
+      companyId: COMPANY,
+      pieceName: "google-calendar",
+      actionName: "create_google_calendar_event",
+      inputs: inputs(),
+      ...overrides
+    },
+    getPieceAction
+  );
 
 describe("runIntegrationAction", () => {
   beforeEach(() => {

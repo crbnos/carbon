@@ -3,12 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ValueType } from "@carbon/ee/workflows";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { asCalendarDateTime, isWritableList, pickControl } from "./control";
-
-// `recordPickers` renders Lingui `msg` labels, which the test runner does not
-// transform; the picker table is not what these cases are about.
-vi.mock("./recordPickers", () => ({ hasRecordPicker: () => false }));
 
 const STRING_LIST: ValueType = {
   kind: "list",

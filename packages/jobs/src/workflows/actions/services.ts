@@ -17,7 +17,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { OwnerPermissions } from "../engine/owner";
 import { runCreateAction } from "./create";
 import { getWorkflowDispatch } from "./dispatcher";
-import { runIntegrationAction } from "./integration";
 import { runNotifyAction } from "./notify";
 import { runOperation } from "./operations";
 import { runSearch } from "./search";
@@ -56,6 +55,8 @@ export function createWorkflowServices(params: {
     piece: { name: string; action: string },
     inputs: Record<string, RuntimeValue>
   ): Promise<ActionOutcome> {
+    // Lazy: `./integration` imports `@carbon/auth`, which validates the server env on load.
+    const { runIntegrationAction } = await import("./integration");
     return runIntegrationAction({
       companyId,
       pieceName: piece.name,

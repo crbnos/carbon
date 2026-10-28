@@ -163,12 +163,16 @@ function authFailureCopy(failure: PieceAuthFailure, label: string): string {
   }
 }
 
-export async function runIntegrationAction(args: {
-  companyId: string;
-  pieceName: string;
-  actionName: string;
-  inputs: Record<string, RuntimeValue>;
-}): Promise<ActionOutcome> {
+export async function runIntegrationAction(
+  args: {
+    companyId: string;
+    pieceName: string;
+    actionName: string;
+    inputs: Record<string, RuntimeValue>;
+  },
+  /** A test passes a fake piece instead of the vendor's npm package. */
+  loadAction: typeof getPieceAction = getPieceAction
+): Promise<ActionOutcome> {
   const { companyId, pieceName, actionName, inputs } = args;
   const label = allowlistEntry(pieceName)?.label ?? pieceName;
 
@@ -189,7 +193,7 @@ export async function runIntegrationAction(args: {
   let action: Awaited<ReturnType<typeof getPieceAction>>;
   let propsValue: Record<string, unknown>;
   try {
-    action = await getPieceAction(pieceName, actionName);
+    action = await loadAction(pieceName, actionName);
     propsValue = toPropsValue(pieceName, actionName, action.props, inputs);
   } catch {
     // Ours, before any vendor call: nothing was sent.

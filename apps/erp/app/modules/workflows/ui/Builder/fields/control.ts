@@ -8,7 +8,7 @@ import {
   parseDate,
   toCalendarDateTime
 } from "@internationalized/date";
-import { hasRecordPicker } from "./recordPickers";
+import { hasRecordPicker } from "./recordPickerEntities";
 
 /** Which control a value field renders. */
 export type ControlKind = "inline" | "chip" | "pick" | "literal";
