@@ -71,6 +71,7 @@ import { useModuleLinks } from "~/hooks/useModuleSubmodules";
 import type { RecentDocument } from "~/hooks/useRecentlyViewed";
 import { usesPersonalPages } from "~/modules/shared/shared.models";
 import { useUIStore } from "~/stores/ui";
+import { buildAgentSetupMessage } from "~/utils/agent-setup";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 
@@ -324,16 +325,6 @@ const AGENT_TOOL_ICONS: {
   { Icon: CursorIcon, className: "h-4 w-4" },
   { Icon: OpenCodeIcon, className: "h-4 w-auto" }
 ];
-
-// The clipboard payload: a short prompt the user pastes into their AI tool, which
-// points the agent at this instance's public setup doc (served by
-// `agent-setup.prompt[.]md.tsx`). `getAppUrl()` is this deployment's own origin,
-// so a self-hosted / ITAR instance links to itself.
-function buildAgentSetupMessage(origin: string) {
-  return `Onboard yourself to my Carbon ERP instance over MCP.
-
-Read the setup instructions at ${origin}/agent-setup/prompt.md and follow them to connect your MCP client to ${origin}/api/mcp, then verify the connection works.`;
-}
 
 function OnboardAgentWidget({ dismissed: initial }: { dismissed: boolean }) {
   const { t } = useLingui();
