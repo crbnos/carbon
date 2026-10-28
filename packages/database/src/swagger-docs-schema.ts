@@ -57511,6 +57511,12 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionPlanParts.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionPlanParts.itemPostingGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionPlanParts.tags"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -146678,6 +146684,19 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        itemPostingGroupId: {
+          description:
+            "Note:\nThis is a Foreign Key to `itemPostingGroup.id`.<fk table='itemPostingGroup' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -200260,6 +200279,18 @@ export default {
     },
     "rowFilter.inspectionPlanParts.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionPlanParts.itemPostingGroupId": {
+      name: "itemPostingGroupId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionPlanParts.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string"
