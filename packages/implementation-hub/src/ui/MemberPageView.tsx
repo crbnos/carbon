@@ -229,7 +229,7 @@ function PageCardView({
     card.kind === "priority";
   const hasFooter =
     Boolean(card.due) ||
-    card.evidence.length > 0 ||
+    (showsStaffDetail && card.evidence.length > 0) ||
     Boolean(checkRow?.verifiedAt) ||
     (showsStaffDetail && isSourceShown(row?.source)) ||
     Boolean(openUrl) ||
