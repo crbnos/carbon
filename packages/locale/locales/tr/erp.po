@@ -2612,7 +2612,7 @@ msgstr "Bir AltCLIN: aynı sözleşmede ana CLIN'inin 4 hanesi, artı 0001AA gib
 msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
 msgstr "Her çalıştırmadan sonra MRP'nin oluşturduğu bir öneri: yeni arz için Sipariş ver veya Üret ya da açık bir satın alma siparişi satırını, iş emrini veya planlanan siparişi Öne al, Ertele, Artır, Azalt veya İptal et. Planlama sayfasından uygula, kapat veya ata."
 
-msgid "A supervisor or the office, after the work is done."
+msgid "A supervisor or the office, after the work is done"
 msgstr ""
 
 msgid "a supplier"
@@ -8721,7 +8721,7 @@ msgstr "Taşeronlar"
 msgid "Contractors"
 msgstr "Taşeronlar"
 
-msgid "Contracts."
+msgid "Contracts"
 msgstr ""
 
 msgid "Control"
@@ -10290,6 +10290,7 @@ msgstr "Müşteriler"
 msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
 msgstr "Müşteriler, tedarikçiler, tedarikçi parçaları ve banka hesapları {fromCode} olarak ayarlıysa bu değerde kalır. Aksi halde {toCode} olarak taşınır."
 msgid "Customers choose options before they order (configure to order)."
+msgid "Customers choose options before they order (configure to order)"
 msgstr ""
 
 msgid "customers with contacts, locations, types, statuses, payment terms, currency and price overrides"
@@ -14734,6 +14735,7 @@ msgstr "Seçilmemiş malzeme ile Bitir?"
 msgid "Finished"
 msgstr "Tamamlandı"
 msgid "Finished components, such as fasteners, electronics or bought-in assemblies."
+msgid "Finished components, such as fasteners, electronics or bought-in assemblies"
 msgstr ""
 
 msgid "Finished goods"
@@ -18049,9 +18051,6 @@ msgstr ""
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "Daha sonraki haftalar, daha önceki olanlar bittiğinde tüketilir."
 
-msgid "Later."
-msgstr ""
-
 msgid "Latest operation end"
 msgstr "En son işlem sonu"
 
@@ -19894,7 +19893,7 @@ msgstr "Daha fazla fazla mesai"
 msgid "More records are waiting. Push again to continue."
 msgstr "Daha fazla kayıt bekleniyor. Devam etmek için yeniden gönderin."
 
-msgid "More than one."
+msgid "More than one"
 msgstr ""
 
 msgid "Morning, {name}."
@@ -20229,6 +20228,7 @@ msgstr "Negatif stok ayarı güncellendi"
 msgid "Net Amount"
 msgstr "Net Tutar"
 msgid "Neither."
+msgid "Neither"
 msgstr ""
 
 msgid "nested bins within a location with storage types, transfers between bins, default pick bins and lineside bins on work centers; storage rules are Business plan"
@@ -21997,18 +21997,16 @@ msgstr "{0} için yeterli nitelikli kimse yok"
 msgid "Nobody is qualified. Add someone to the process's ability."
 msgstr "Yeterli nitelikli kimse yok. Bu prosesin yetkinliğine birisi ekleyin."
 msgid "No, customers supply the material."
+msgid "No, customers supply the material"
 msgstr ""
 
-msgid "No, invoicing stays in another system."
+msgid "No, invoicing stays in another system"
 msgstr ""
 
-msgid "No, the books stay in another system."
+msgid "No, the books stay in another system"
 msgstr ""
 
-msgid "No, we buy and resell."
-msgstr ""
-
-msgid "No."
+msgid "No, we buy and resell"
 msgstr ""
 
 msgid "Nobody yet."
@@ -22114,7 +22112,7 @@ msgstr "Yapılandırılmadı"
 msgid "Not Configured"
 msgstr "Yapılandırılmadı"
 
-msgid "Not decided."
+msgid "Not decided"
 msgstr ""
 
 msgid "Not delivered"
@@ -22478,7 +22476,7 @@ msgstr "Emilen Genel Üretim Giderlerini Dengeleme"
 msgid "Offset Account"
 msgstr "Karşı Hesap"
 
-msgid "Often, or through formal change orders."
+msgid "Often, or through formal change orders"
 msgstr ""
 
 msgid "ok"
@@ -22613,6 +22611,9 @@ msgstr "Aracınızı Carbon'a dahil edin"
 
 msgid "Once a day"
 msgstr "Günde bir kez"
+
+msgid "One"
+msgstr ""
 
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
@@ -22750,6 +22751,7 @@ msgid "One."
 msgstr ""
 
 msgid "Only against customer orders."
+msgid "Only against customer orders"
 msgstr ""
 
 msgid "Only {remaining} left to invoice on the order"
@@ -23249,7 +23251,7 @@ msgstr "Operatörler Tarama sekmesinde başlarlar"
 msgid "Operators start the timer themselves when they begin an operation."
 msgstr "Operatörler bir operasyona başladıklarında zamanlayıcıyı kendileri başlatırlar."
 
-msgid "Operators, at their station or machine."
+msgid "Operators, at their station or machine"
 msgstr ""
 
 msgid "Opportunity"
@@ -24180,7 +24182,7 @@ msgstr ""
 msgid "Physical printers available for assignment."
 msgstr "Atama için kullanılabilecek fiziksel yazıcılar."
 
-msgid "Physical products."
+msgid "Physical products"
 msgstr ""
 
 msgid "physical sites with address and timezone; inventory, jobs and employees are scoped to a location"
@@ -26048,6 +26050,7 @@ msgstr "O sırada çalıştı"
 msgid "Range"
 msgstr "Aralık"
 msgid "Rarely."
+msgid "Rarely"
 msgstr ""
 
 msgid "Rate"
@@ -26098,7 +26101,7 @@ msgstr "Bir tür müşterinin tümü için oranlar"
 msgid "Rates, FY{fiscalYear}"
 msgstr "Oranlar, Mali Yıl {fiscalYear}"
 
-msgid "Raw material, such as sheet, bar, resin or wire."
+msgid "Raw material, such as sheet, bar, resin or wire"
 msgstr ""
 
 msgid "Raw Materials"
@@ -27126,6 +27129,7 @@ msgstr "Kiralama Kullanım Oranı"
 msgid "Renumber WBS"
 msgstr "WBS'i Yeniden Numaralandır"
 msgid "Rentals."
+msgid "Rentals"
 msgstr ""
 
 msgid "renting serialized fleet units held as fixed assets; billed in periods, delivered and returned through shipments and receipts"
@@ -29735,7 +29739,7 @@ msgstr "hizmetler"
 msgid "Services"
 msgstr "Hizmetler"
 
-msgid "Services, such as repairs or engineering time."
+msgid "Services, such as repairs or engineering time"
 msgstr ""
 
 msgid "Session locked"
@@ -31872,7 +31876,7 @@ msgstr "Tedarikçiler"
 msgid "suppliers with contacts, locations, types, statuses, payment terms and the processes they offer"
 msgstr ""
 
-msgid "Supplies used up in production, such as adhesives, abrasives or packaging."
+msgid "Supplies used up in production, such as adhesives, abrasives or packaging"
 msgstr ""
 
 msgid "Supply"
@@ -32849,13 +32853,13 @@ msgstr "Müşteri satın alma seçeneğini kullanır. {0} satın alma seçeneği
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr "Müşteri'nin dönem sonunda birim'i satın alması beklenir."
 
-msgid "The customer orders from our price list or catalogue."
+msgid "The customer orders from our price list or catalogue"
 msgstr ""
 
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "Bu portal hesabının bağlandığı müşteri kaydı; yalnızca zaten o müşteri üzerindeki ilgili kişiler aşağıda hesap sahibi olarak seçilebilir."
 
-msgid "The customer sends a formal request for quote that we answer."
+msgid "The customer sends a formal request for quote that we answer"
 msgstr ""
 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
@@ -34976,6 +34980,7 @@ msgstr "Sevk edilecek ve Mal kabul bekleyen"
 msgid "To Start More"
 msgstr "Daha Fazla Başlatmak İçin"
 msgid "To stock or forecast, or both."
+msgid "To stock or forecast, or both"
 msgstr ""
 
 msgid "To Storage Unit"
@@ -36969,12 +36974,13 @@ msgstr "Her sütunu otomatik olarak eşleştirdik. Devam etmeden önce aşağıd
 msgid "We keep substantial rights"
 msgstr "Biz önemli hakları saklıyoruz"
 msgid "We design and build our own products (OEM or product company)."
+msgid "We design and build our own products (OEM or product company)"
 msgstr ""
 
-msgid "We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer)."
+msgid "We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer)"
 msgstr ""
 
-msgid "We send a quote and the customer accepts it."
+msgid "We send a quote and the customer accepts it"
 msgstr ""
 
 msgid "We triage and fix issues fast while your team settles in"
@@ -37980,25 +37986,25 @@ msgstr "Evet, Kabul Et"
 msgid "Yes, also delete every nested storage unit."
 msgstr "Evet, ayrıca her iç içe geçmiş depolama birimini de sil."
 
-msgid "Yes, as PDFs we send ourselves."
+msgid "Yes, as PDFs we send ourselves"
 msgstr ""
 
-msgid "Yes, by serial number on finished units, or by lot or batch on material or output."
+msgid "Yes, by serial number on finished units, or by lot or batch on material or output"
 msgstr ""
 
-msgid "Yes, during onboarding."
+msgid "Yes, during onboarding"
 msgstr ""
 
-msgid "Yes, emailed from Carbon."
+msgid "Yes, emailed from Carbon"
 msgstr ""
 
-msgid "Yes, from go-live."
+msgid "Yes, from go-live"
 msgstr ""
 
-msgid "Yes, in-house."
+msgid "Yes, in-house"
 msgstr ""
 
-msgid "Yes, later."
+msgid "Yes, later"
 msgstr ""
 
 msgid "Yes, Reject"

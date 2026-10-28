@@ -731,17 +731,17 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "onboarding",
-            label: msg`Yes, during onboarding.`,
+            label: msg`Yes, during onboarding`,
             effects: [{ feature: "platform.ai-agents", category: 0 }]
           },
           {
             key: "later",
-            label: msg`Yes, later.`,
+            label: msg`Yes, later`,
             effects: [{ feature: "platform.ai-agents", category: 1 }]
           },
           {
             key: "no",
-            label: msg`No.`,
+            label: msg`No`,
             effects: []
           }
         ]
@@ -880,7 +880,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "yes",
-            label: msg`Yes, from go-live.`,
+            label: msg`Yes, from go-live`,
             effects: [
               { feature: "accounting.ledger", category: 0 },
               { feature: "invoicing.purchase", category: 0 },
@@ -889,7 +889,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
           },
           {
             key: "elsewhere",
-            label: msg`No, the books stay in another system.`,
+            label: msg`No, the books stay in another system`,
             effects: [
               { feature: "accounting.ledger", category: 3, lower: true },
               { feature: "integrations.accounting", category: 1 }
@@ -897,7 +897,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
           },
           {
             key: "later",
-            label: msg`Later.`,
+            label: msg`Later`,
             effects: [{ feature: "accounting.ledger", category: 1 }]
           }
         ]
@@ -915,7 +915,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "yes",
-            label: msg`Yes, from go-live.`,
+            label: msg`Yes, from go-live`,
             effects: [
               { feature: "invoicing.sales", category: 0 },
               { feature: "platform.document-templates", category: 0 },
@@ -925,7 +925,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
           },
           {
             key: "elsewhere",
-            label: msg`No, invoicing stays in another system.`,
+            label: msg`No, invoicing stays in another system`,
             effects: [
               { feature: "invoicing.sales", category: 3, lower: true },
               { feature: "integrations.accounting", category: 1 }
@@ -933,7 +933,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
           },
           {
             key: "later",
-            label: msg`Later.`,
+            label: msg`Later`,
             effects: []
           }
         ]
@@ -952,7 +952,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "rawMaterial",
-            label: msg`Raw material, such as sheet, bar, resin or wire.`,
+            label: msg`Raw material, such as sheet, bar, resin or wire`,
             effects: [
               { feature: "items.materials", category: 0 },
               { feature: "purchasing.orders", category: 0 },
@@ -962,7 +962,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
           },
           {
             key: "components",
-            label: msg`Finished components, such as fasteners, electronics or bought-in assemblies.`,
+            label: msg`Finished components, such as fasteners, electronics or bought-in assemblies`,
             effects: [
               { feature: "items.parts", category: 0 },
               { feature: "purchasing.orders", category: 0 },
@@ -972,7 +972,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
           },
           {
             key: "supplies",
-            label: msg`Supplies used up in production, such as adhesives, abrasives or packaging.`,
+            label: msg`Supplies used up in production, such as adhesives, abrasives or packaging`,
             effects: [
               { feature: "items.consumables", category: 1 },
               { feature: "purchasing.orders", category: 0 },
@@ -981,7 +981,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
           },
           {
             key: "none",
-            label: msg`No, customers supply the material.`,
+            label: msg`No, customers supply the material`,
             effects: []
           }
         ]
@@ -992,7 +992,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "yes",
-            label: msg`Yes, in-house.`,
+            label: msg`Yes, in-house`,
             effects: [
               { feature: "production.jobs", category: 0 },
               { feature: "items.methods", category: 0 },
@@ -1001,7 +1001,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
           },
           {
             key: "resell",
-            label: msg`No, we buy and resell.`,
+            label: msg`No, we buy and resell`,
             effects: [{ feature: "items.parts", category: 0 }]
           }
         ]
@@ -1013,7 +1013,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "products",
-            label: msg`Physical products.`,
+            label: msg`Physical products`,
             effects: [
               { feature: "inventory.shipments", category: 0 },
               { feature: "inventory.stock", category: 0 }
@@ -1021,7 +1021,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
           },
           {
             key: "services",
-            label: msg`Services, such as repairs or engineering time.`,
+            label: msg`Services, such as repairs or engineering time`,
             effects: [{ feature: "items.services", category: 0 }]
           }
         ]
@@ -1039,7 +1039,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "oem",
-            label: msg`We design and build our own products (OEM or product company).`,
+            label: msg`We design and build our own products (OEM or product company)`,
             effects: [
               { feature: "production.mrp", category: 0 },
               { feature: "items.change-control", category: 1 }
@@ -1047,7 +1047,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
           },
           {
             key: "toOrder",
-            label: msg`We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer).`,
+            label: msg`We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer)`,
             effects: [
               { feature: "sales.quotes", category: 0 },
               { feature: "documents.files", category: 0 }
@@ -1055,7 +1055,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
           },
           {
             key: "configure",
-            label: msg`Customers choose options before they order (configure to order).`,
+            label: msg`Customers choose options before they order (configure to order)`,
             effects: [
               { feature: "items.configurator", category: 0 },
               { feature: "sales.quotes", category: 0 }
@@ -1069,17 +1069,17 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "quote",
-            label: msg`We send a quote and the customer accepts it.`,
+            label: msg`We send a quote and the customer accepts it`,
             effects: [{ feature: "sales.quotes", category: 0 }]
           },
           {
             key: "priceList",
-            label: msg`The customer orders from our price list or catalogue.`,
+            label: msg`The customer orders from our price list or catalogue`,
             effects: []
           },
           {
             key: "rfq",
-            label: msg`The customer sends a formal request for quote that we answer.`,
+            label: msg`The customer sends a formal request for quote that we answer`,
             effects: [
               { feature: "sales.quotes", category: 0 },
               { feature: "sales.rfqs", category: 1 }
@@ -1093,12 +1093,12 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "order",
-            label: msg`Only against customer orders.`,
+            label: msg`Only against customer orders`,
             effects: []
           },
           {
             key: "stock",
-            label: msg`To stock or forecast, or both.`,
+            label: msg`To stock or forecast, or both`,
             effects: [{ feature: "production.mrp", category: 0 }]
           }
         ]
@@ -1128,12 +1128,12 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "yes",
-            label: msg`Yes, by serial number on finished units, or by lot or batch on material or output.`,
+            label: msg`Yes, by serial number on finished units, or by lot or batch on material or output`,
             effects: [{ feature: "inventory.traceability", category: 0 }]
           },
           {
             key: "no",
-            label: msg`No.`,
+            label: msg`No`,
             effects: []
           }
         ]
@@ -1144,7 +1144,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "yes",
-            label: msg`Yes.`,
+            label: msg`Yes`,
             effects: [
               { feature: "quality.inspections", category: 0 },
               { feature: "quality.issues", category: 0 },
@@ -1156,7 +1156,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
           },
           {
             key: "no",
-            label: msg`No.`,
+            label: msg`No`,
             effects: []
           }
         ]
@@ -1183,18 +1183,18 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "operators",
-            label: msg`Operators, at their station or machine.`,
+            label: msg`Operators, at their station or machine`,
             effects: [{ feature: "people.operators", category: 0 }]
           },
           {
             key: "office",
-            label: msg`A supervisor or the office, after the work is done.`,
+            label: msg`A supervisor or the office, after the work is done`,
             effects: [{ feature: "mes.operations", category: 1, lower: true }],
             note: msg`Jobs are completed in the ERP.`
           },
           {
             key: "undecided",
-            label: msg`Not decided.`,
+            label: msg`Not decided`,
             effects: []
           }
         ]
@@ -1234,12 +1234,12 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "pdf",
-            label: msg`Yes, as PDFs we send ourselves.`,
+            label: msg`Yes, as PDFs we send ourselves`,
             effects: [{ feature: "platform.document-templates", category: 0 }]
           },
           {
             key: "email",
-            label: msg`Yes, emailed from Carbon.`,
+            label: msg`Yes, emailed from Carbon`,
             effects: [
               { feature: "platform.document-templates", category: 0 },
               { feature: "platform.email", category: 0 }
@@ -1247,7 +1247,7 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
           },
           {
             key: "no",
-            label: msg`No.`,
+            label: msg`No`,
             effects: []
           }
         ]
@@ -1344,12 +1344,12 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "one",
-            label: msg`One.`,
+            label: msg`One`,
             effects: []
           },
           {
             key: "many",
-            label: msg`More than one.`,
+            label: msg`More than one`,
             effects: [{ feature: "inventory.transfers", category: 1 }]
           }
         ]
@@ -1573,12 +1573,12 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "rarely",
-            label: msg`Rarely.`,
+            label: msg`Rarely`,
             effects: []
           },
           {
             key: "often",
-            label: msg`Often, or through formal change orders.`,
+            label: msg`Often, or through formal change orders`,
             effects: [{ feature: "items.change-control", category: 1 }],
             when: {
               question: "qualityStandard",
@@ -1706,17 +1706,17 @@ export const PRIORITY_SECTIONS: PrioritySection[] = [
         options: [
           {
             key: "rentals",
-            label: msg`Rentals.`,
+            label: msg`Rentals`,
             effects: [{ feature: "sales.rentals", category: 1 }]
           },
           {
             key: "contracts",
-            label: msg`Contracts.`,
+            label: msg`Contracts`,
             effects: [{ feature: "sales.contracts", category: 1 }]
           },
           {
             key: "neither",
-            label: msg`Neither.`,
+            label: msg`Neither`,
             effects: []
           }
         ]

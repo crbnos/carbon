@@ -2612,7 +2612,7 @@ msgstr "부분 CLIN: 동일한 계약의 상위 CLIN의 4자리 숫자에 2개�
 msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
 msgstr "MRP가 실행할 때마다 작성하는 제안입니다: 신규 공급을 발주 또는 사내 생산하거나, 미결 발주서 라인, 작업 지시 또는 계획 주문을 앞당기기, 연기, 증가, 감소 또는 취소합니다. 계획 페이지에서 적용하거나, 무시하거나, 할당할 수 있습니다."
 
-msgid "A supervisor or the office, after the work is done."
+msgid "A supervisor or the office, after the work is done"
 msgstr ""
 
 msgid "a supplier"
@@ -8721,7 +8721,7 @@ msgstr "외주 인력"
 msgid "Contractors"
 msgstr "외주 인력"
 
-msgid "Contracts."
+msgid "Contracts"
 msgstr ""
 
 msgid "Control"
@@ -10290,6 +10290,7 @@ msgstr "고객"
 msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
 msgstr "{fromCode}(으)로 설정된 고객, 공급업체, 공급업체 부품 및 은행 계좌. 그 외에는 {toCode}(으)로 이동합니다."
 msgid "Customers choose options before they order (configure to order)."
+msgid "Customers choose options before they order (configure to order)"
 msgstr ""
 
 msgid "customers with contacts, locations, types, statuses, payment terms, currency and price overrides"
@@ -14734,6 +14735,7 @@ msgstr "자재가 선택되지 않은 상태로 완료하시겠습니까?"
 msgid "Finished"
 msgstr "완료됨"
 msgid "Finished components, such as fasteners, electronics or bought-in assemblies."
+msgid "Finished components, such as fasteners, electronics or bought-in assemblies"
 msgstr ""
 
 msgid "Finished goods"
@@ -18049,9 +18051,6 @@ msgstr ""
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "이전 주가 모두 소진된 후 이후 주가 소진됩니다."
 
-msgid "Later."
-msgstr ""
-
 msgid "Latest operation end"
 msgstr "최신 작업 종료"
 
@@ -19894,7 +19893,7 @@ msgstr "초과 근무 증가"
 msgid "More records are waiting. Push again to continue."
 msgstr "더 많은 기록이 대기 중입니다. 계속하려면 다시 푸시하세요."
 
-msgid "More than one."
+msgid "More than one"
 msgstr ""
 
 msgid "Morning, {name}."
@@ -20229,6 +20228,7 @@ msgstr "마이너스 재고 설정이 업데이트되었습니다"
 msgid "Net Amount"
 msgstr "순 금액"
 msgid "Neither."
+msgid "Neither"
 msgstr ""
 
 msgid "nested bins within a location with storage types, transfers between bins, default pick bins and lineside bins on work centers; storage rules are Business plan"
@@ -21997,18 +21997,16 @@ msgstr "{0}에 대해 숙련된 사람이 없습니다"
 msgid "Nobody is qualified. Add someone to the process's ability."
 msgstr "숙련된 사람이 없습니다. 공법의 역량에 누군가를 추가하세요."
 msgid "No, customers supply the material."
+msgid "No, customers supply the material"
 msgstr ""
 
-msgid "No, invoicing stays in another system."
+msgid "No, invoicing stays in another system"
 msgstr ""
 
-msgid "No, the books stay in another system."
+msgid "No, the books stay in another system"
 msgstr ""
 
-msgid "No, we buy and resell."
-msgstr ""
-
-msgid "No."
+msgid "No, we buy and resell"
 msgstr ""
 
 msgid "Nobody yet."
@@ -22114,7 +22112,7 @@ msgstr "구성되지 않음"
 msgid "Not Configured"
 msgstr "미설정"
 
-msgid "Not decided."
+msgid "Not decided"
 msgstr ""
 
 msgid "Not delivered"
@@ -22478,7 +22476,7 @@ msgstr "상쇄된 간접비"
 msgid "Offset Account"
 msgstr "상계 계정"
 
-msgid "Often, or through formal change orders."
+msgid "Often, or through formal change orders"
 msgstr ""
 
 msgid "ok"
@@ -22613,6 +22611,9 @@ msgstr "Carbon에 에이전트 등록"
 
 msgid "Once a day"
 msgstr "하루에 한 번"
+
+msgid "One"
+msgstr ""
 
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
@@ -22750,6 +22751,7 @@ msgid "One."
 msgstr ""
 
 msgid "Only against customer orders."
+msgid "Only against customer orders"
 msgstr ""
 
 msgid "Only {remaining} left to invoice on the order"
@@ -23249,7 +23251,7 @@ msgstr "작업자가 스캔 탭에서 시작"
 msgid "Operators start the timer themselves when they begin an operation."
 msgstr "작업자가 작업을 시작할 때 직접 타이머를 시작합니다."
 
-msgid "Operators, at their station or machine."
+msgid "Operators, at their station or machine"
 msgstr ""
 
 msgid "Opportunity"
@@ -24180,7 +24182,7 @@ msgstr ""
 msgid "Physical printers available for assignment."
 msgstr "할당 가능한 물리적 프린터입니다."
 
-msgid "Physical products."
+msgid "Physical products"
 msgstr ""
 
 msgid "physical sites with address and timezone; inventory, jobs and employees are scoped to a location"
@@ -26048,6 +26050,7 @@ msgstr "해당 시간에 실행됨"
 msgid "Range"
 msgstr "범위"
 msgid "Rarely."
+msgid "Rarely"
 msgstr ""
 
 msgid "Rate"
@@ -26098,7 +26101,7 @@ msgstr "유형의 모든 고객에 대한 요금"
 msgid "Rates, FY{fiscalYear}"
 msgstr "요율, FY{fiscalYear}"
 
-msgid "Raw material, such as sheet, bar, resin or wire."
+msgid "Raw material, such as sheet, bar, resin or wire"
 msgstr ""
 
 msgid "Raw Materials"
@@ -27126,6 +27129,7 @@ msgstr "임차 자산 이용률"
 msgid "Renumber WBS"
 msgstr "WBS 번호 다시 지정"
 msgid "Rentals."
+msgid "Rentals"
 msgstr ""
 
 msgid "renting serialized fleet units held as fixed assets; billed in periods, delivered and returned through shipments and receipts"
@@ -29735,7 +29739,7 @@ msgstr "서비스"
 msgid "Services"
 msgstr "서비스"
 
-msgid "Services, such as repairs or engineering time."
+msgid "Services, such as repairs or engineering time"
 msgstr ""
 
 msgid "Session locked"
@@ -31872,7 +31876,7 @@ msgstr "공급업체"
 msgid "suppliers with contacts, locations, types, statuses, payment terms and the processes they offer"
 msgstr ""
 
-msgid "Supplies used up in production, such as adhesives, abrasives or packaging."
+msgid "Supplies used up in production, such as adhesives, abrasives or packaging"
 msgstr ""
 
 msgid "Supply"
@@ -32849,13 +32853,13 @@ msgstr "고객이 구매옵션을 행사합니다. 오늘 {0}의 구매옵션 �
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr "고객은 약관 기간 종료 시 개를 구매할 것으로 예상됩니다."
 
-msgid "The customer orders from our price list or catalogue."
+msgid "The customer orders from our price list or catalogue"
 msgstr ""
 
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "이 포털 계정이 연결된 고객 레코드로, 아래에서 계정 소유자로 선택할 수 있는 대상은 해당 고객에 이미 등록된 담당자로 한정됩니다."
 
-msgid "The customer sends a formal request for quote that we answer."
+msgid "The customer sends a formal request for quote that we answer"
 msgstr ""
 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
@@ -34976,6 +34980,7 @@ msgstr "출하 대기 및 입고 대기"
 msgid "To Start More"
 msgstr "추가 착수 대상"
 msgid "To stock or forecast, or both."
+msgid "To stock or forecast, or both"
 msgstr ""
 
 msgid "To Storage Unit"
@@ -36969,12 +36974,13 @@ msgstr "각 열을 자동으로 매칭했습니다. 계속하기 전에 아래 �
 msgid "We keep substantial rights"
 msgstr "실질적 권리 유지"
 msgid "We design and build our own products (OEM or product company)."
+msgid "We design and build our own products (OEM or product company)"
 msgstr ""
 
-msgid "We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer)."
+msgid "We make parts or assemblies to customer drawings or designs (job shop or contract manufacturer)"
 msgstr ""
 
-msgid "We send a quote and the customer accepts it."
+msgid "We send a quote and the customer accepts it"
 msgstr ""
 
 msgid "We triage and fix issues fast while your team settles in"
@@ -37980,25 +37986,25 @@ msgstr "예, 수락"
 msgid "Yes, also delete every nested storage unit."
 msgstr "예, 모든 중첩된 보관 단위도 삭제하세요."
 
-msgid "Yes, as PDFs we send ourselves."
+msgid "Yes, as PDFs we send ourselves"
 msgstr ""
 
-msgid "Yes, by serial number on finished units, or by lot or batch on material or output."
+msgid "Yes, by serial number on finished units, or by lot or batch on material or output"
 msgstr ""
 
-msgid "Yes, during onboarding."
+msgid "Yes, during onboarding"
 msgstr ""
 
-msgid "Yes, emailed from Carbon."
+msgid "Yes, emailed from Carbon"
 msgstr ""
 
-msgid "Yes, from go-live."
+msgid "Yes, from go-live"
 msgstr ""
 
-msgid "Yes, in-house."
+msgid "Yes, in-house"
 msgstr ""
 
-msgid "Yes, later."
+msgid "Yes, later"
 msgstr ""
 
 msgid "Yes, Reject"
