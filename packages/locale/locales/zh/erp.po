@@ -6443,6 +6443,9 @@ msgstr "无法完成 Onshape 连接"
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "无法完成 Onshape Government 连接"
 
+msgid "Couldn't confirm the account"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "无法加载文档"
 
@@ -12137,6 +12140,9 @@ msgstr "集成未找到"
 msgid "Integrations"
 msgstr "集成"
 
+msgid "Integrations aren't included in your plan"
+msgstr ""
+
 msgid "Integrations not named here"
 msgstr "此处未命名的集成"
 
@@ -17401,6 +17407,9 @@ msgstr "从库中选择现有规则或创建新规则以开始对此项目强制
 
 msgid "Pick List"
 msgstr "拣货单"
+
+msgid "Pick one of its fields"
+msgstr ""
 
 msgid "Pick Order"
 msgstr "拣货单"
@@ -23960,6 +23969,9 @@ msgstr "贸易术语规则（FOB、DAP、EXW、CIF 等），规定在发往此�
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "集成已授权连接，但保存失败。请尝试重新连接。"
 
+msgid "The integration didn't say which account signed in, so this connection was left unchanged. Try again."
+msgstr ""
+
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "发货过账时确认的库存管理成本，按物料的成本核算方法计值。"
 
@@ -24758,6 +24770,7 @@ msgstr "此帐户已停止工作。重新连接它 — 使用它的工作流步�
 
 msgid "This account needs to be reconnected."
 msgstr "此帐户需要重新连接。"
+
 msgid "This action cannot run on this list."
 msgstr ""
 
@@ -25391,6 +25404,9 @@ msgstr "容差（天）"
 msgid "Tomorrow"
 msgstr "明天"
 
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "当前正在运行的导出和批量操作过多。请几分钟后重试。"
+
 msgid "Took {took} values; kept the first {kept}."
 msgstr "已取 {took} 个值；保留了前 {kept} 个。"
 
@@ -25399,8 +25415,6 @@ msgstr "已取 {total} 个中的第一个。"
 
 msgid "Took the last of {total}."
 msgstr "已取 {total} 个中的最后一个。"
-msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
-msgstr "当前正在运行的导出和批量操作过多。请几分钟后重试。"
 
 msgid "tool"
 msgstr "工具"
@@ -25905,6 +25919,10 @@ msgstr "异常"
 msgid "Uninstall"
 msgstr "卸载"
 
+#. placeholder {0}: installGate.conflictsWith
+msgid "Uninstall {0} first"
+msgstr ""
+
 msgid "Uninstall {conflictsWith} first"
 msgstr "先卸载 {conflictsWith}"
 
@@ -26238,6 +26256,9 @@ msgstr "升级以解锁审计历史记录"
 
 msgid "Upgrade to unlock sales rules"
 msgstr "升级以解锁销售规则"
+
+msgid "Upgrade your plan to connect this integration."
+msgstr ""
 
 msgid "Upload"
 msgstr "上传"

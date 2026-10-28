@@ -6443,6 +6443,9 @@ msgstr "Nie udało się ukończyć połączenia z Onshape"
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Nie udało się zakończyć połączenia Onshape Government"
 
+msgid "Couldn't confirm the account"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "Nie udało się załadować dokumentów"
 
@@ -12137,6 +12140,9 @@ msgstr "Integracja nie znaleziona"
 msgid "Integrations"
 msgstr "Integracje"
 
+msgid "Integrations aren't included in your plan"
+msgstr ""
+
 msgid "Integrations not named here"
 msgstr "Integracje niewymienione tutaj"
 
@@ -17401,6 +17407,9 @@ msgstr "Wybierz istniejącą regułę z biblioteki lub utwórz nową, aby rozpoc
 
 msgid "Pick List"
 msgstr "Lista pobrania"
+
+msgid "Pick one of its fields"
+msgstr ""
 
 msgid "Pick Order"
 msgstr "Kolejność pobrania"
@@ -23960,6 +23969,9 @@ msgstr "Reguła Incoterm (FOB, DAP, EXW, CIF, ...), która określa, kto płaci 
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "Integracja autoryzowała połączenie, ale zapisanie go nie powiodło się. Spróbuj ponownie nawiązać połączenie."
 
+msgid "The integration didn't say which account signed in, so this connection was left unchanged. Try again."
+msgstr ""
+
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "Koszt zapasów uznany, gdy wysyłka się zaksięgowuje, wyceniony metodą kalkulacji kosztów artykułu."
 
@@ -24758,6 +24770,7 @@ msgstr "To konto przestało działać. Połącz je ponownie — kroki przepływu
 
 msgid "This account needs to be reconnected."
 msgstr "To konto musi być ponownie połączone."
+
 msgid "This action cannot run on this list."
 msgstr ""
 
@@ -25391,6 +25404,9 @@ msgstr "Tolerancja (dni)"
 msgid "Tomorrow"
 msgstr "Jutro"
 
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "Trwa zbyt wiele eksportów i działań zbiorczych. Spróbuj ponownie za kilka minut."
+
 msgid "Took {took} values; kept the first {kept}."
 msgstr "Pobrano wartości: {took}; zachowano pierwsze {kept}."
 
@@ -25399,8 +25415,6 @@ msgstr "Pobrano pierwszy z {total}."
 
 msgid "Took the last of {total}."
 msgstr "Pobrano ostatni z {total}."
-msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
-msgstr "Trwa zbyt wiele eksportów i działań zbiorczych. Spróbuj ponownie za kilka minut."
 
 msgid "tool"
 msgstr "Narzędzie"
@@ -25905,6 +25919,10 @@ msgstr "W złym stanie"
 msgid "Uninstall"
 msgstr "Odinstaluj"
 
+#. placeholder {0}: installGate.conflictsWith
+msgid "Uninstall {0} first"
+msgstr ""
+
 msgid "Uninstall {conflictsWith} first"
 msgstr "Najpierw odinstaluj {conflictsWith}"
 
@@ -26238,6 +26256,9 @@ msgstr "Uaktualnij, aby odblokować historię audytu"
 
 msgid "Upgrade to unlock sales rules"
 msgstr "Uaktualnij, aby odblokować reguły sprzedaży"
+
+msgid "Upgrade your plan to connect this integration."
+msgstr ""
 
 msgid "Upload"
 msgstr "Prześlij plik"

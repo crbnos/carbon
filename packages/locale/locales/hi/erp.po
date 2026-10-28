@@ -6443,6 +6443,9 @@ msgstr "Onshape कनेक्शन पूरा नहीं हो सका
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Onshape Government कनेक्शन को पूर्ण नहीं किया जा सका"
 
+msgid "Couldn't confirm the account"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "दस्तावेज़ लोड नहीं हो सके"
 
@@ -12137,6 +12140,9 @@ msgstr "एकीकरण नहीं मिला"
 msgid "Integrations"
 msgstr "एकीकरण"
 
+msgid "Integrations aren't included in your plan"
+msgstr ""
+
 msgid "Integrations not named here"
 msgstr "यहां नामित नहीं किए गए एकीकरण"
 
@@ -17401,6 +17407,9 @@ msgstr "इस आइटम पर जांच लागू करना शु
 
 msgid "Pick List"
 msgstr "पिक लिस्ट"
+
+msgid "Pick one of its fields"
+msgstr ""
 
 msgid "Pick Order"
 msgstr "पिक ऑर्डर"
@@ -23960,6 +23969,9 @@ msgstr "इनकोटर्म नियम (FOB, DAP, EXW, CIF, …) जो �
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "एकीकरण ने कनेक्शन को अधिकृत किया लेकिन इसे सहेजने में विफल रहा। फिर से कनेक्ट करने का प्रयास करें।"
 
+msgid "The integration didn't say which account signed in, so this connection was left unchanged. Try again."
+msgstr ""
+
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "शिपमेंट पोस्ट होने पर मान्यता दी गई इन्वेंटरी लागत, जिसका मूल्यांकन आइटम की लागत निर्धारण विधि के द्वारा किया गया है।"
 
@@ -24758,6 +24770,7 @@ msgstr "यह खाता काम करना बंद कर गया �
 
 msgid "This account needs to be reconnected."
 msgstr "इस खाते को पुनः कनेक्ट किए जाने की आवश्यकता है।"
+
 msgid "This action cannot run on this list."
 msgstr ""
 
@@ -25391,6 +25404,9 @@ msgstr "सहनशीलता (दिन)"
 msgid "Tomorrow"
 msgstr "कल"
 
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "अभी बहुत सारे एक्सपोर्ट और बल्क एक्शन चल रहे हैं। कुछ मिनट बाद फिर से कोशिश करें।"
+
 msgid "Took {took} values; kept the first {kept}."
 msgstr "{took} मान लिए गए; पहले {kept} रखे गए।"
 
@@ -25399,8 +25415,6 @@ msgstr "{total} में से पहला लिया गया।"
 
 msgid "Took the last of {total}."
 msgstr "{total} में से अंतिम लिया गया।"
-msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
-msgstr "अभी बहुत सारे एक्सपोर्ट और बल्क एक्शन चल रहे हैं। कुछ मिनट बाद फिर से कोशिश करें।"
 
 msgid "tool"
 msgstr "उपकरण"
@@ -25905,6 +25919,10 @@ msgstr "अस्वस्थ"
 msgid "Uninstall"
 msgstr "अनइंस्टॉल करें"
 
+#. placeholder {0}: installGate.conflictsWith
+msgid "Uninstall {0} first"
+msgstr ""
+
 msgid "Uninstall {conflictsWith} first"
 msgstr "पहले {conflictsWith} को अनइंस्टॉल करें"
 
@@ -26238,6 +26256,9 @@ msgstr "ऑडिट इतिहास को अनलॉक करने क�
 
 msgid "Upgrade to unlock sales rules"
 msgstr "बिक्री नियमों को अनलॉक करने के लिए अपग्रेड करें"
+
+msgid "Upgrade your plan to connect this integration."
+msgstr ""
 
 msgid "Upload"
 msgstr "अपलोड करें"

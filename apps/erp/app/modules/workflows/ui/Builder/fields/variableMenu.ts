@@ -15,7 +15,10 @@ import {
   outputLabel,
   propertyLabelKey
 } from "../labelKeys";
+import type { RefPart } from "./tokenId";
 import { encodeTokenId, refLabel, refLeafLabel } from "./tokenId";
+
+const ITEM_HELPER = "the item in the current loop";
 
 export type VariableMenuItem = {
   id: string;
@@ -66,6 +69,9 @@ type Options = {
   inLoop?: boolean;
   /** The operation card an inserted item ref should be scoped to (data-node chains). */
   itemCard?: string;
+  /** What the current item is, so its fields can be offered. Omitted when the loop's
+   * list is not known yet — the item is then offered whole, as a single row. */
+  itemType?: ValueType;
   /** The action runs once per item, so a list may fill a single-value input. */
   batching?: boolean;
   /** Resolves a catalog label key to display text. Defaults to the fallback, which is what
@@ -120,6 +126,7 @@ export function variableMenuItems(
     textOnly,
     inLoop,
     itemCard,
+    itemType,
     batching,
     labelFor = (_key, fallback) => fallback
   }: Options = {}
@@ -129,22 +136,23 @@ export function variableMenuItems(
     (!textOnly || rendersAsText(type)) &&
     (!accepts || canAssign(type, accepts, { batching }));
 
-  for (const variable of withoutDuplicateOutputs(variables)) {
+  /** Adds the root and every property under it, up to `MAX_PATH` hops. */
+  const walk = (
+    type: ValueType,
+    makeRef: (path: string[]) => RefPart,
+    describe: (type: ValueType, path: string[]) => string,
+    nodeName?: string
+  ) => {
     const add = (path: string[], labels: string[], type: ValueType) => {
       if (!fits(type)) return;
-      const ref: VariableRef = {
-        kind: "ref",
-        nodeId: variable.nodeId,
-        output: variable.output,
-        path
-      };
+      const ref = makeRef(path);
       items.push({
         id: encodeTokenId(ref),
         // Named as the tree names them: search matches what the customer can see, which
         // for a custom field is the only name they have ever been shown.
-        label: refLabel(ref, variable.nodeName, labels),
+        label: refLabel(ref, nodeName, labels),
         leaf: refLeafLabel(ref, labels),
-        helper: describeVariable(type, variable.guaranteed, labelFor)
+        helper: describe(type, path)
       });
     };
 
@@ -180,26 +188,57 @@ export function variableMenuItems(
       }
     };
 
-    add([], [], variable.type);
-    expand(variable.type, [], []);
+    add([], [], type);
+    expand(type, [], []);
+  };
+
+  for (const variable of withoutDuplicateOutputs(variables)) {
+    walk(
+      variable.type,
+      (path): VariableRef => ({
+        kind: "ref",
+        nodeId: variable.nodeId,
+        output: variable.output,
+        path
+      }),
+      (type) => describeVariable(type, variable.guaranteed, labelFor),
+      variable.nodeName
+    );
   }
 
   if (inLoop) {
-    const ref = {
-      kind: "item" as const,
-      path: [],
+    const makeItemRef = (path: string[]): RefPart => ({
+      kind: "item",
+      path,
       ...(itemCard ? { card: itemCard } : {})
-    };
-    items.push({
-      id: encodeTokenId(ref),
-      label: refLabel(ref),
-      leaf: refLeafLabel(ref),
-      helper: "the item in the current loop"
     });
+    if (itemType) {
+      walk(itemType, makeItemRef, (type, path) =>
+        path.length === 0 ? ITEM_HELPER : describeVariable(type, true, labelFor)
+      );
+    } else {
+      const ref = makeItemRef([]);
+      items.push({
+        id: encodeTokenId(ref),
+        label: refLabel(ref),
+        leaf: refLeafLabel(ref),
+        helper: ITEM_HELPER
+      });
+    }
   }
 
   return items;
 }
+
+/** Where a branch of the tree starts: a step's output, or the current item. */
+type TreeRoot = {
+  key: string;
+  makeRef: (path: string[]) => RefPart;
+  nodeName?: string;
+  guaranteed: boolean;
+  /** Replaces the type description on the root row only. */
+  helper?: string;
+};
 
 /** The same variables as `variableMenuItems`, as a tree so the menu can show one level at
  * a time. Search still comes off the flat list — it matches the whole breadcrumb. */
@@ -211,6 +250,7 @@ export function variableTree(
     textOnly,
     inLoop,
     itemCard,
+    itemType,
     batching,
     labelFor = (_key, fallback) => fallback
   }: Options = {}
@@ -223,7 +263,7 @@ export function variableTree(
    * that should not be there. An entity with usable properties survives even when the
    * record itself does not fit. */
   function build(
-    variable: AvailableVariable,
+    root: TreeRoot,
     type: ValueType,
     path: string[],
     pathLabels: string[],
@@ -231,22 +271,20 @@ export function variableTree(
     description?: string
   ): VariableTreeNode | null {
     const compatible = fits(type);
-    const ref: VariableRef = {
-      kind: "ref",
-      nodeId: variable.nodeId,
-      output: variable.output,
-      path
-    };
-    const helper = describeVariable(type, variable.guaranteed, labelFor);
+    const ref = root.makeRef(path);
+    const helper =
+      path.length === 0 && root.helper !== undefined
+        ? root.helper
+        : describeVariable(type, root.guaranteed, labelFor);
     const node: VariableTreeNode = {
-      key: `${variable.nodeId}:${variable.output}:${path.join(".")}`,
+      key: `${root.key}:${path.join(".")}`,
       label,
       helper,
       description,
       item: compatible
         ? {
             id: encodeTokenId(ref),
-            label: refLabel(ref, variable.nodeName, pathLabels),
+            label: refLabel(ref, root.nodeName, pathLabels),
             // The row's own label IS the leaf, so a search scoped to this level names
             // its hits exactly as the level it drilled out of did.
             leaf: label,
@@ -261,7 +299,7 @@ export function variableTree(
       const children = Object.entries(type.fields)
         .map(([field, fieldType]) =>
           build(
-            variable,
+            root,
             fieldType,
             [...path, field],
             [...pathLabels, field],
@@ -286,7 +324,7 @@ export function variableTree(
                 property
               );
               return build(
-                variable,
+                root,
                 propertyType,
                 [...path, property],
                 [...pathLabels, propertyName],
@@ -319,7 +357,17 @@ export function variableTree(
       byNode.set(variable.nodeId, step);
     }
     const output = build(
-      variable,
+      {
+        key: `${variable.nodeId}:${variable.output}`,
+        makeRef: (path) => ({
+          kind: "ref",
+          nodeId: variable.nodeId,
+          output: variable.output,
+          path
+        }),
+        nodeName: variable.nodeName,
+        guaranteed: variable.guaranteed
+      },
       variable.type,
       [],
       [],
@@ -335,22 +383,35 @@ export function variableTree(
   );
 
   if (inLoop) {
-    const ref = {
-      kind: "item" as const,
-      path: [],
+    const makeRef = (path: string[]): RefPart => ({
+      kind: "item",
+      path,
       ...(itemCard ? { card: itemCard } : {})
-    };
-    roots.push({
-      key: "item",
-      label: "Current item",
-      helper: "the item in the current loop",
-      item: {
-        id: encodeTokenId(ref),
-        label: refLabel(ref),
-        leaf: refLeafLabel(ref),
-        helper: "the item in the current loop"
-      }
     });
+    if (itemType) {
+      // Its fields hang under it like an output's, so a clause can compare one of them.
+      const item = build(
+        { key: "item", makeRef, guaranteed: true, helper: ITEM_HELPER },
+        itemType,
+        [],
+        [],
+        "Current item"
+      );
+      if (item) roots.push(item);
+    } else {
+      const ref = makeRef([]);
+      roots.push({
+        key: "item",
+        label: "Current item",
+        helper: ITEM_HELPER,
+        item: {
+          id: encodeTokenId(ref),
+          label: refLabel(ref),
+          leaf: refLeafLabel(ref),
+          helper: ITEM_HELPER
+        }
+      });
+    }
   }
 
   return roots;
