@@ -1762,6 +1762,9 @@ msgstr "シリアル番号をスキャンまたは検索..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "このロットから追跡対象をスキャンまたは選択してサンプル列として追加し、グリッドに結果を記録します。"
 
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "ユニットをスキャンまたは選択してから、かんばんカードをもう一度スキャンしてください"
+
 msgid "Scan received"
 msgstr "スキャンを受け付けました"
 

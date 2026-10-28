@@ -51,6 +51,7 @@ import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
   incompletePickingListPolicyValidator,
+  type kanbanLabelSizes,
   kanbanOutputTypes,
   kanbanOutputValidator,
   returnPickedMaterialTimingValidator,
@@ -180,7 +181,8 @@ export default function InventorySettingsRoute() {
             method="post"
             validator={kanbanOutputValidator}
             defaultValues={{
-              kanbanOutput: companySettings.kanbanOutput ?? "qrcode"
+              kanbanOutput: companySettings.kanbanOutput ?? "qrcode",
+              kanbanLabelSize: companySettings.kanbanLabelSize ?? "letter"
             }}
             fetcher={fetcher}
           >
@@ -206,6 +208,7 @@ export default function InventorySettingsRoute() {
                       label: outputLabels[type]
                     }))}
                   />
+                  <KanbanLabelSizeField />
                 </div>
               </div>
             </CardContent>
@@ -454,6 +457,31 @@ function ShelfLifeNumbers() {
         termId="shelf-life"
       />
     </div>
+  );
+}
+
+// The size a kanban label prints at, asked only when the output is a label.
+function KanbanLabelSizeField() {
+  const { t } = useLingui();
+  const [output] = useControlField<string>("kanbanOutput");
+  if (output !== "label") return null;
+
+  const sizeLabels: Record<(typeof kanbanLabelSizes)[number], string> = {
+    letter: t`Letter, 6 per page`,
+    label4x2: t`4" x 2" label`,
+    label3x2: t`3" x 2" label`
+  };
+
+  return (
+    <Select
+      name="kanbanLabelSize"
+      label={t`Label Size`}
+      helperText={t`A 4" x 2" or 3" x 2" label prints one card per label, for a thermal printer such as a Zebra.`}
+      options={Object.entries(sizeLabels).map(([value, label]) => ({
+        value,
+        label
+      }))}
+    />
   );
 }
 

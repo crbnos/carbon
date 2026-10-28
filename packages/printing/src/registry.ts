@@ -32,7 +32,7 @@ export const documentTypeRegistry = [
     id: "kanbanCard",
     displayName: "Kanban Card",
     sourceDocuments: ["Kanban"],
-    builtInRenderer: "pdf" as const,
+    builtInRenderer: "zpl" as const,
     defaultFormat: "pdf" as const,
     description: "Replenishment cards for kanban bins"
   },

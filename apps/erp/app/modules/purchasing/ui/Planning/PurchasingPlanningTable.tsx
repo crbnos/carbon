@@ -78,6 +78,7 @@ import {
 import { splitOrdersByFence } from "~/modules/production/ui/Planning/planning-fence";
 import { planningColumns } from "~/modules/production/ui/Planning/planningColumns";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
+import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { useItems, usePeople } from "~/stores";
@@ -123,6 +124,7 @@ const PlanningTable = memo(
     locationToday
   }: PlanningTableProps) => {
     const { t, i18n } = useLingui();
+    const weekLabel = usePlanningWeekLabel();
     const permissions = usePermissions();
 
     // Memoized on the locale, so it never rebuilds `columns` on its own.
@@ -549,6 +551,7 @@ const PlanningTable = memo(
       const shared = planningColumns<PurchasingPlanningItem>({
         i18n,
         periods,
+        weekLabel,
         locationToday,
         formatQuantity,
         unitOfMeasures,
@@ -787,7 +790,8 @@ const PlanningTable = memo(
       itemPostingGroups,
       ordersByItemId,
       timeFence,
-      locationToday
+      locationToday,
+      weekLabel
       // Note: ordersMap is intentionally not in deps to avoid column regeneration
       // getOrdersForItem inside the cell will access the latest ordersMap via closure
     ]);

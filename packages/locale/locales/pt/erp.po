@@ -665,6 +665,10 @@ msgstr "{errors} falharam"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# linha excluída} other {# linhas excluídas}}"
 
+#. placeholder {0}: printIds.length
+msgid "{failed} of {0} print jobs failed"
+msgstr "{failed} de {0} trabalhos de impressão falharam"
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {E # mais registro.} other {E # mais registros.}}"
 
@@ -1043,6 +1047,9 @@ msgstr "2h"
 msgid "3 years"
 msgstr "3 anos"
 
+msgid "3\" x 2\" label"
+msgstr "Etiqueta de 3\" x 2\""
+
 msgid "30D"
 msgstr "30 dias"
 
@@ -1054,6 +1061,9 @@ msgstr "3h"
 
 msgid "4 years"
 msgstr "4 anos"
+
+msgid "4\" x 2\" label"
+msgstr "Etiqueta de 4\" x 2\""
 
 msgid "4h"
 msgstr "4h"
@@ -1096,6 +1106,9 @@ msgstr "Um modelo 3D que o operador pode girar"
 
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "Um PIN de 4 dígitos é gerado quando o operador é criado."
+
+msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
+msgstr "Uma etiqueta de 4\" x 2\" ou 3\" x 2\" imprime um cartão por etiqueta, para uma impressora térmica como a Zebra."
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "Um lote de produção precisa de pelo menos uma operação. Para dividir o lote de produção inteiro, use Dissolver em vez disso."
@@ -4722,6 +4735,9 @@ msgstr "Método de Cálculo"
 
 msgid "Calendar"
 msgstr "Calendário"
+
+msgid "Calendar Weeks"
+msgstr "Semanas do calendário"
 
 msgid "Calibration"
 msgstr "Calibração"
@@ -8922,6 +8938,9 @@ msgstr "As operações terceirizadas de cada fornecedor de todas as ordens de pr
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "O valor justo de cada unidade e sua vida econômica decidem se o termo cobre a maior parte dela. Clique em uma célula para alterá-la."
 
+msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
+msgstr "Cada semana é identificada pela sua semana do ano ISO 8601: Semana 44, Semana 45, Semana 46."
+
 msgid "Each, lb, ft…"
 msgstr "Cada, lb, ft…"
 
@@ -11769,6 +11788,9 @@ msgstr "Como o tamanho da amostra é decidido — Inspecionar Tudo, Inspecionar 
 msgid "How the unit price of each quantity was calculated."
 msgstr "Como o preço unitário de cada quantidade foi calculado."
 
+msgid "How the weekly columns of Material Planning, Production Planning and Demand Forecasts are numbered."
+msgstr "Como as colunas semanais de Planejamento de Materiais, Planejamento de Produção e Previsões de Demanda são numeradas."
+
 msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
 msgstr "Como o conjunto inteiro fica posicionado em uma etapa, por exemplo virado para encaixar peças na parte de baixo. As etapas seguintes do mesmo conjunto mantêm essa posição até que uma etapa gire o conjunto novamente."
 
@@ -12936,6 +12958,9 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban para {kanbanName}"
 
+msgid "Kanban ID"
+msgstr "ID do Kanban"
+
 msgid "Kanban Output"
 msgstr "Saída Kanban"
 
@@ -13007,6 +13032,9 @@ msgstr "Kit"
 
 msgid "Label"
 msgstr "Rótulo"
+
+msgid "Label Size"
+msgstr "Tamanho da etiqueta"
 
 msgid "Label to complete the current operation for this kanban"
 msgstr "Etiqueta para concluir a operação atual para este kanban"
@@ -13322,6 +13350,9 @@ msgstr "Vamos configurar sua conta"
 
 msgid "Letter"
 msgstr "Letra"
+
+msgid "Letter, 6 per page"
+msgstr "Carta, 6 por página"
 
 msgid "Liability"
 msgstr "Passivo"
@@ -16269,6 +16300,12 @@ msgstr "Número de tarefas abertas"
 msgid "Number of operations"
 msgstr "Número de operações"
 
+msgid "Number weeks by calendar week"
+msgstr "Numerar as semanas pela semana do calendário"
+
+msgid "Number weeks from the present week"
+msgstr "Numerar as semanas a partir da semana atual"
+
 msgid "Numbering sequence"
 msgstr "Sequência de numeração"
 
@@ -18119,6 +18156,7 @@ msgstr "Principal Coletado"
 msgid "Print"
 msgstr "Imprimir"
 
+#. placeholder {0}: printIds.length
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "Imprimir {0} Etiquetas"
@@ -18825,6 +18863,10 @@ msgstr "Perguntas"
 
 msgid "Queued"
 msgstr "Na fila"
+
+#. placeholder {0}: printIds.length
+msgid "Queued {0} labels for printing"
+msgstr "{0} etiquetas na fila de impressão"
 
 msgid "Queued {count} sync operations for sync"
 msgstr "{count} operações de sincronização colocadas na fila"
@@ -27269,12 +27311,11 @@ msgstr "Semana"
 msgid "Week {0}"
 msgstr "Semana {0}"
 
-#. placeholder {0}: i + 1
-msgid "Week {0} ({formattedDate})"
-msgstr "Semana {0} ({formattedDate})"
-
 msgid "Week {weekNumber}"
 msgstr "Semana {weekNumber}"
+
+msgid "Week {weekNumber} ({formattedDate})"
+msgstr "Semana {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "Semana 8 cutover"
@@ -27311,6 +27352,15 @@ msgstr "Semanas 5 a 7"
 
 msgid "Weeks 7 to 8"
 msgstr "Semanas 7 a 8"
+
+msgid "Weeks are counted from today: Present Week, Week 2, Week 3."
+msgstr "As semanas são contadas a partir de hoje: Semana atual, Semana 2, Semana 3."
+
+msgid "Weeks are numbered by calendar week"
+msgstr "As semanas são numeradas pela semana do calendário"
+
+msgid "Weeks are numbered from the present week"
+msgstr "As semanas são numeradas a partir da semana atual"
 
 msgid "Weeks Open"
 msgstr "Semanas Abertas"

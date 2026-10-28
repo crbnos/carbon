@@ -300,6 +300,36 @@ export async function getJobOperationDependencies(
     .eq("jobId", jobId);
 }
 
+/**
+ * Is this the first operation of its make method's routing? A serial unit only
+ * earns a printed label when it is completed at its first operation, so this
+ * decides both the label auto-print and how the operation views pick units.
+ *
+ * "First" means no jobOperationDependency whose predecessor shares this op's
+ * jobMakeMethodId. Cross make-method (subassembly) dependencies are ignored: a
+ * parent-assembly op still has no printed label just because a subassembly
+ * finished first. `order` is only a display/sort field, not a precedence signal.
+ *
+ * Fails closed: an errored lookup reads as "not first" — no auto-select, no
+ * label — which is the safe default when we can't confirm there's no predecessor.
+ */
+export async function isFirstOperationOfMakeMethod(
+  client: SupabaseClient<Database>,
+  operationId: string,
+  jobMakeMethodId: string
+): Promise<boolean> {
+  const priorDependency = await client
+    .from("jobOperationDependency")
+    .select(
+      "dependsOn:jobOperation!jobOperationDependency_dependsOnId_fk!inner(jobMakeMethodId)"
+    )
+    .eq("operationId", operationId)
+    .eq("dependsOn.jobMakeMethodId", jobMakeMethodId)
+    .limit(1)
+    .maybeSingle();
+  return !priorDependency.error && !priorDependency.data;
+}
+
 export async function getUpstreamOperations(
   client: SupabaseClient<Database>,
   operationId: string

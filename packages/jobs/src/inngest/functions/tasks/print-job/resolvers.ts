@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type KanbanCardItem = {
   id: string;
+  kanbanId: string | null;
   kanbanUrl: string;
   itemId: string;
   itemName: string;
@@ -74,6 +75,7 @@ export async function resolveKanbanData(
     items: [
       {
         id: sourceDocumentId,
+        kanbanId: kanban.kanbanId,
         kanbanUrl,
         itemId: kanban.readableIdWithRevision || kanban.itemId || "",
         itemName: kanban.name || "",
@@ -88,7 +90,7 @@ export async function resolveKanbanData(
         thumbnailPath: kanban.thumbnailPath
       }
     ],
-    readableId: kanban.readableIdWithRevision ?? null
+    readableId: kanban.kanbanId ?? kanban.readableIdWithRevision ?? null
   };
 }
 

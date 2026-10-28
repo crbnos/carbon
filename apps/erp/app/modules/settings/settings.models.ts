@@ -38,6 +38,10 @@ export const modulesType = [
 
 export const kanbanOutputTypes = ["label", "qrcode", "url"] as const;
 
+// Mirrors the `kanbanLabelSize` DB enum. `letter` is a sheet of six; the
+// others are thermal label ids in @carbon/utils `labelSizes`.
+export const kanbanLabelSizes = ["letter", "label4x2", "label3x2"] as const;
+
 // Mirrors the `invoiceAutomation` DB enum: what happens to a recurring
 // invoice (rental agreements today) when the daily job creates it.
 export const invoiceAutomations = [
@@ -326,7 +330,9 @@ export const mrpScheduleValidator = z
   );
 
 export const kanbanOutputValidator = z.object({
-  kanbanOutput: z.enum(kanbanOutputTypes)
+  kanbanOutput: z.enum(kanbanOutputTypes),
+  // Only on the form while the output is a label.
+  kanbanLabelSize: z.enum(kanbanLabelSizes).optional()
 });
 
 export const plmReleaseControlValidator = z.object({

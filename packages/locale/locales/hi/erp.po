@@ -665,6 +665,10 @@ msgstr "{errors} विफल"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# पंक्ति बाहर रखी गई} other {# पंक्तियाँ बाहर रखी गईं}}"
 
+#. placeholder {0}: printIds.length
+msgid "{failed} of {0} print jobs failed"
+msgstr "{0} में से {failed} प्रिंट जॉब विफल रहे"
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {और # अधिक रिकॉर्ड।} other {और # अधिक रिकॉर्ड।}}"
 
@@ -1043,6 +1047,9 @@ msgstr "2 घंटा"
 msgid "3 years"
 msgstr "3 वर्ष"
 
+msgid "3\" x 2\" label"
+msgstr "3\" x 2\" लेबल"
+
 msgid "30D"
 msgstr "30 दिन"
 
@@ -1054,6 +1061,9 @@ msgstr "3 घंटे"
 
 msgid "4 years"
 msgstr "4 साल"
+
+msgid "4\" x 2\" label"
+msgstr "4\" x 2\" लेबल"
 
 msgid "4h"
 msgstr "4 घंटे"
@@ -1096,6 +1106,9 @@ msgstr "एक 3D मॉडल जिसे ऑपरेटर घुमा स�
 
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "ऑपरेटर बनाए जाने पर एक 4-अंकीय PIN बनाया जाता है।"
+
+msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
+msgstr "4\" x 2\" या 3\" x 2\" लेबल प्रति लेबल एक कार्ड प्रिंट करता है, Zebra जैसे थर्मल प्रिंटर के लिए।"
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "बैच को कम से कम एक ऑपरेशन की आवश्यकता है। पूरे बैच को विभाजित करने के लिए, इसके बजाय विघटन का उपयोग करें।"
@@ -4722,6 +4735,9 @@ msgstr "गणना विधि"
 
 msgid "Calendar"
 msgstr "कैलेंडर"
+
+msgid "Calendar Weeks"
+msgstr "कैलेंडर सप्ताह"
 
 msgid "Calibration"
 msgstr "अंशांकन"
@@ -8922,6 +8938,9 @@ msgstr "प्रत्येक आपूर्तिकर्ता की ब
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "प्रत्येक इकाई का उचित मूल्य और आर्थिक जीवन तय करता है कि क्या अवधि इसके अधिकांश को कवर करती है। इसे बदलने के लिए एक सेल पर क्लिक करें।"
 
+msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
+msgstr "प्रत्येक सप्ताह के शीर्ष पर वर्ष का ISO 8601 सप्ताह होता है: सप्ताह 44, सप्ताह 45, सप्ताह 46।"
+
 msgid "Each, lb, ft…"
 msgstr "प्रत्येक, lb, ft…"
 
@@ -11769,6 +11788,9 @@ msgstr "नमूना आकार कैसे तय किया जात�
 msgid "How the unit price of each quantity was calculated."
 msgstr "प्रत्येक मात्रा की इकाई मूल्य की गणना कैसे की गई।"
 
+msgid "How the weekly columns of Material Planning, Production Planning and Demand Forecasts are numbered."
+msgstr "सामग्री योजना, उत्पादन योजना और मांग पूर्वानुमान के साप्ताहिक कॉलम कैसे क्रमांकित होते हैं।"
+
 msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
 msgstr "किसी चरण में पूरी असेंबली को किस तरह घुमाया गया है, जैसे नीचे की ओर लगे पार्ट्स के लिए उसे पलटना। उसी असेंबली के बाद के चरण तब तक यही स्थिति रखते हैं, जब तक कोई चरण असेंबली को फिर से न घुमाए."
 
@@ -12936,6 +12958,9 @@ msgstr "कानबान"
 msgid "Kanban for {kanbanName}"
 msgstr "{kanbanName} के लिए कानबन"
 
+msgid "Kanban ID"
+msgstr "कानबान आईडी"
+
 msgid "Kanban Output"
 msgstr "कानबन आउटपुट"
 
@@ -13007,6 +13032,9 @@ msgstr "किट"
 
 msgid "Label"
 msgstr "लेबल"
+
+msgid "Label Size"
+msgstr "लेबल आकार"
 
 msgid "Label to complete the current operation for this kanban"
 msgstr "इस कानबान के लिए वर्तमान ऑपरेशन पूर्ण करें"
@@ -13322,6 +13350,9 @@ msgstr "आइए अपना खाता सेट अप करें"
 
 msgid "Letter"
 msgstr "अक्षर"
+
+msgid "Letter, 6 per page"
+msgstr "लेटर, प्रति पेज 6"
 
 msgid "Liability"
 msgstr "देयता"
@@ -16269,6 +16300,12 @@ msgstr "खुले कार्यों की संख्या"
 msgid "Number of operations"
 msgstr "ऑपरेशन की संख्या"
 
+msgid "Number weeks by calendar week"
+msgstr "सप्ताहों को कैलेंडर सप्ताह के अनुसार क्रमांकित करें"
+
+msgid "Number weeks from the present week"
+msgstr "सप्ताहों को वर्तमान सप्ताह से क्रमांकित करें"
+
 msgid "Numbering sequence"
 msgstr "संख्या अनुक्रम"
 
@@ -18119,6 +18156,7 @@ msgstr "एकत्रित मूलधन"
 msgid "Print"
 msgstr "प्रिंट करें"
 
+#. placeholder {0}: printIds.length
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "{0} लेबल प्रिंट करें"
@@ -18825,6 +18863,10 @@ msgstr "प्रश्न"
 
 msgid "Queued"
 msgstr "कतार में"
+
+#. placeholder {0}: printIds.length
+msgid "Queued {0} labels for printing"
+msgstr "{0} लेबल प्रिंट के लिए कतार में लगाए गए"
 
 msgid "Queued {count} sync operations for sync"
 msgstr "{count} सिंक ऑपरेशन को सिंक के लिए कतार में रखा गया"
@@ -27269,12 +27311,11 @@ msgstr "सप्ताह"
 msgid "Week {0}"
 msgstr "सप्ताह {0}"
 
-#. placeholder {0}: i + 1
-msgid "Week {0} ({formattedDate})"
-msgstr "सप्ताह {0} ({formattedDate})"
-
 msgid "Week {weekNumber}"
 msgstr "सप्ताह {weekNumber}"
+
+msgid "Week {weekNumber} ({formattedDate})"
+msgstr "सप्ताह {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "सप्ताह 8 कटओवर"
@@ -27311,6 +27352,15 @@ msgstr "सप्ताह 5 से 7"
 
 msgid "Weeks 7 to 8"
 msgstr "सप्ताह 7 से 8"
+
+msgid "Weeks are counted from today: Present Week, Week 2, Week 3."
+msgstr "सप्ताह आज से गिने जाते हैं: वर्तमान सप्ताह, सप्ताह 2, सप्ताह 3।"
+
+msgid "Weeks are numbered by calendar week"
+msgstr "सप्ताह कैलेंडर सप्ताह के अनुसार क्रमांकित हैं"
+
+msgid "Weeks are numbered from the present week"
+msgstr "सप्ताह वर्तमान सप्ताह से क्रमांकित हैं"
 
 msgid "Weeks Open"
 msgstr "हफ्ते खुले"

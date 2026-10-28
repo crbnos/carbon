@@ -1762,6 +1762,9 @@ msgstr "Escanear o buscar número de serie..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Escanee o seleccione una entidad rastreada de este lote para agregarla como columna de muestra, luego registre su resultado en la cuadrícula."
 
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "Escanea o selecciona la unidad y luego vuelve a escanear la tarjeta kanban"
+
 msgid "Scan received"
 msgstr "Escaneo recibido"
 
