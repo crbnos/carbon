@@ -8,7 +8,8 @@ import {
   ensureFont,
   getPurchaseOrderDisplayId,
   PurchaseOrderPDF,
-  PurchaseReturnOrderPDF
+  PurchaseReturnOrderPDF,
+  PurchasingRfqPDF
 } from "@carbon/documents/pdf";
 import {
   collectSectionIds,
@@ -40,6 +41,8 @@ import {
   getPurchaseOrderLocations,
   getPurchaseReturnOrder,
   getPurchaseReturnOrderLines,
+  getPurchasingRFQ,
+  getPurchasingRFQLines,
   getPurchasingTerms,
   getSupplier,
   getSupplierLocation,
@@ -410,5 +413,140 @@ export async function renderPurchaseReturnOrderPdf(
   return {
     body,
     fileName: `${company.data.name} - ${purchaseReturnOrder.data.purchaseReturnOrderId}.pdf`
+  };
+}
+
+/** A purchasing RFQ's PDF ("Request for Quote"), for suppliers who quote on paper. */
+export async function renderPurchasingRfqPdf(
+  client: SupabaseClient<Database>,
+  {
+    companyId,
+    purchasingRfqId,
+    locale
+  }: {
+    companyId: string;
+    purchasingRfqId: string;
+    locale: string;
+  }
+): Promise<Rendered> {
+  const [
+    company,
+    companySettings,
+    purchasingRfq,
+    purchasingRfqLines,
+    terms,
+    documentTemplate
+  ] = await Promise.all([
+    getCompany(client, companyId),
+    getCompanySettings(client, companyId),
+    getPurchasingRFQ(client, purchasingRfqId),
+    getPurchasingRFQLines(client, purchasingRfqId),
+    getPurchasingTerms(client, companyId),
+    getDocumentTemplate(client, companyId, "purchasingRfq")
+  ]);
+
+  if (company.error) {
+    logger.error("Failed to load company", { error: company.error });
+  }
+
+  if (purchasingRfq.error) {
+    logger.error("Failed to load purchasingRfq", {
+      error: purchasingRfq.error
+    });
+  }
+
+  if (purchasingRfqLines.error) {
+    logger.error("Failed to load purchasingRfqLines", {
+      error: purchasingRfqLines.error
+    });
+  }
+
+  if (terms.error) {
+    logger.error("Failed to load terms", { error: terms.error });
+  }
+
+  if (
+    company.error ||
+    purchasingRfq.error ||
+    purchasingRfqLines.error ||
+    terms.error
+  ) {
+    throw new Error("Failed to load request for quote");
+  }
+
+  const templateConfig = toDocumentTemplate(
+    documentTemplate.data,
+    "purchasingRfq"
+  );
+  const showThumbnails = templateShowsThumbnails(
+    templateConfig,
+    "purchasingRfq"
+  );
+
+  const [location, thumbnailRows] = await Promise.all([
+    purchasingRfq.data.locationId
+      ? getLocation(client, purchasingRfq.data.locationId)
+      : null,
+    showThumbnails
+      ? Promise.all(
+          (purchasingRfqLines.data ?? []).map((line) =>
+            line.id && line.thumbnailPath
+              ? getBase64ImageFromSupabase(client, line.thumbnailPath).then(
+                  (data) => ({ id: line.id!, data })
+                )
+              : null
+          )
+        )
+      : []
+  ]);
+
+  const thumbnails = thumbnailRows.reduce<Record<string, string | null>>(
+    (acc, thumbnail) => {
+      if (thumbnail) acc[thumbnail.id] = thumbnail.data;
+      return acc;
+    },
+    {}
+  );
+
+  const shipToAddress = location?.data
+    ? {
+        name: location.data.name,
+        addressLine1: location.data.addressLine1,
+        addressLine2: location.data.addressLine2,
+        city: location.data.city,
+        stateProvince: location.data.stateProvince,
+        postalCode: location.data.postalCode,
+        countryCode: location.data.countryCode
+      }
+    : null;
+
+  const resolved = resolveTemplate("purchasingRfq", templateConfig);
+  const sections = await resolveSections(
+    client,
+    companyId,
+    collectSectionIds(resolved)
+  );
+  await ensureFont(resolved.settings.fontFamily);
+
+  const body = await collect(
+    await renderToStream(
+      <PurchasingRfqPDF
+        company={company.data as any}
+        companySettings={companySettings.data}
+        locale={locale}
+        purchasingRfq={purchasingRfq.data}
+        purchasingRfqLines={purchasingRfqLines.data ?? []}
+        shipToAddress={shipToAddress}
+        thumbnails={thumbnails}
+        terms={(terms?.data?.purchasingTerms ?? {}) as JSONContent}
+        template={templateConfig}
+        sections={sections}
+      />
+    )
+  );
+
+  return {
+    body,
+    fileName: `${company.data.name} - ${purchasingRfq.data.rfqId}.pdf`
   };
 }

@@ -19,6 +19,7 @@ import PackingSlipPDF from "./PackingSlipPDF";
 import ProductLabelPDF from "./ProductLabelPDF";
 import PurchaseOrderPDF from "./PurchaseOrderPDF";
 import PurchaseReturnOrderPDF from "./PurchaseReturnOrderPDF";
+import PurchasingRfqPDF from "./PurchasingRfqPDF";
 import { DOCUMENT_PDFS } from "./preview-documents";
 import { SAMPLE_PURCHASE_RETURN_ORDER } from "./purchaseReturnOrder.samples";
 import QuotePDF from "./QuotePDF";
@@ -49,6 +50,7 @@ export {
   ProductLabelPDF,
   PurchaseOrderPDF,
   PurchaseReturnOrderPDF,
+  PurchasingRfqPDF,
   QuotePDF,
   registerDocumentFonts,
   SAMPLE_ISSUE,

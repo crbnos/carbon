@@ -1210,6 +1210,8 @@ export const path = {
 
       purchaseReturnOrder: (id: string) =>
         generatePath(`${file}/purchase-return-order/${id}.pdf`),
+      purchasingRfq: (id: string) =>
+        generatePath(`${file}/purchasing-rfq/${id}.pdf`),
       quote: (id: string) => generatePath(`${file}/quote/${id}.pdf`),
       receiptLabelsPdf: (
         id: string,
