@@ -9142,6 +9142,9 @@ msgstr "Fiyatlandırmayı Düzenle"
 msgid "Edit Pricing Rule"
 msgstr "Fiyatlandırma Kuralını Düzenle"
 
+msgid "Edit Printer"
+msgstr "Yazıcıyı Düzenle"
+
 msgid "Edit Process"
 msgstr "İşlemi Düzenle"
 

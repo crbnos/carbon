@@ -9142,6 +9142,9 @@ msgstr "Modifier la tarification"
 msgid "Edit Pricing Rule"
 msgstr "Modifier la règle de tarification"
 
+msgid "Edit Printer"
+msgstr "Modifier l'imprimante"
+
 msgid "Edit Process"
 msgstr "Modifier le processus"
 
