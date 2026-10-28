@@ -14017,10 +14017,6 @@ msgstr "Mark Short"
 msgid "Mark to delete"
 msgstr "Mark to delete"
 
-#. placeholder {0}: counts.created ?? 0
-msgid "Marked absent for {0} day(s)"
-msgstr "Marked absent for {0} day(s)"
-
 msgid "Market"
 msgstr "Market"
 

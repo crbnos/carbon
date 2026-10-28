@@ -6153,10 +6153,6 @@ msgstr "Conversion en cours…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Convertit l'unité d'achat d'un fournisseur en votre unité d'inventaire sur une ligne de commande, reçu ou facture — acheter en cartons de 12, stocker en unités."
 
-#. placeholder {0}: counts.copied ?? 0
-msgid "Copied {0} assignments"
-msgstr "{0} affectations copiées"
-
 msgid "Copied ID to clipboard"
 msgstr "ID copié dans le presse-papiers"
 
@@ -14021,10 +14017,6 @@ msgstr "Marquer comme manquant"
 msgid "Mark to delete"
 msgstr "Marquer pour supprimer"
 
-#. placeholder {0}: counts.created ?? 0
-msgid "Marked absent for {0} day(s)"
-msgstr "Marqué absent pour {0} jour(s)"
-
 msgid "Market"
 msgstr "Marché"
 
@@ -17110,9 +17102,6 @@ msgstr "Modifier la date d'expiration sur {label}."
 msgid "Overtime"
 msgstr "Heures supplémentaires"
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "Overtime set for {0} assignments"
-msgstr "Heures supplémentaires définies pour {0} affectations"
 msgid "Overtime hours"
 msgstr "Heures supplémentaires"
 

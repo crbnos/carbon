@@ -6153,10 +6153,6 @@ msgstr "转换中…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "在采购单、收货或账单行中将供应商的采购单位转换为您的库存管理单位 — 按 12 个纸箱采购，按件库存。"
 
-#. placeholder {0}: counts.copied ?? 0
-msgid "Copied {0} assignments"
-msgstr "已复制 {0} 项分配"
-
 msgid "Copied ID to clipboard"
 msgstr "已复制ID到剪贴板"
 
@@ -14021,10 +14017,6 @@ msgstr "标记短缺"
 msgid "Mark to delete"
 msgstr "标记删除"
 
-#. placeholder {0}: counts.created ?? 0
-msgid "Marked absent for {0} day(s)"
-msgstr "标记为缺勤 {0} 天"
-
 msgid "Market"
 msgstr "市场"
 
@@ -17110,9 +17102,6 @@ msgstr "覆盖 {label} 上的过期日期。"
 msgid "Overtime"
 msgstr "加班"
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "Overtime set for {0} assignments"
-msgstr "已为 {0} 个分配设置加班"
 msgid "Overtime hours"
 msgstr "加班小时数"
 

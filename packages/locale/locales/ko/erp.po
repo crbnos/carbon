@@ -6153,10 +6153,6 @@ msgstr "변환 중…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "공급업체의 구매 단위를 발주서, 입고, 송장 라인에서 귀사의 재고 단위로 전환합니다 — 12개 상자 단위로 구매하고 개별 단위로 재고에 보관합니다."
 
-#. placeholder {0}: counts.copied ?? 0
-msgid "Copied {0} assignments"
-msgstr "{0}개 할당이 복사됨"
-
 msgid "Copied ID to clipboard"
 msgstr "ID를 클립보드에 복사했습니다"
 
@@ -14021,10 +14017,6 @@ msgstr "부족으로 표시"
 msgid "Mark to delete"
 msgstr "삭제 대상으로 표시"
 
-#. placeholder {0}: counts.created ?? 0
-msgid "Marked absent for {0} day(s)"
-msgstr "{0}일 동안 부재로 표시됨"
-
 msgid "Market"
 msgstr "시장"
 
@@ -17110,9 +17102,6 @@ msgstr "{label}의 유효기한을 재정의합니다."
 msgid "Overtime"
 msgstr "초과근무"
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "Overtime set for {0} assignments"
-msgstr "{0}개의 할당에 대해 초과 근무 설정됨"
 msgid "Overtime hours"
 msgstr "초과근무 시간"
 

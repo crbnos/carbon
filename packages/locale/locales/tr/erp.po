@@ -6153,10 +6153,6 @@ msgstr "Dönüştürülüyor…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satırında envanter biriminize dönüştürür — 12'lik kutularda satın alın, birimlerde stok yapın."
 
-#. placeholder {0}: counts.copied ?? 0
-msgid "Copied {0} assignments"
-msgstr "{0} atama kopyalandı"
-
 msgid "Copied ID to clipboard"
 msgstr "ID panoya kopyalandı"
 
@@ -14021,10 +14017,6 @@ msgstr "Az eksik olarak işaretle"
 msgid "Mark to delete"
 msgstr "Silmek için işaretle"
 
-#. placeholder {0}: counts.created ?? 0
-msgid "Marked absent for {0} day(s)"
-msgstr "{0} gün boyunca devamsız olarak işaretlendi"
-
 msgid "Market"
 msgstr "Pazar"
 
@@ -17110,9 +17102,6 @@ msgstr "{label} üzerindeki son kullanmayı geçersiz kıl."
 msgid "Overtime"
 msgstr "Fazla Mesai"
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "Overtime set for {0} assignments"
-msgstr "Fazla mesai {0} atama için ayarlandı"
 msgid "Overtime hours"
 msgstr "Fazla mesai saatleri"
 

@@ -6153,10 +6153,6 @@ msgstr "変換中…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "仕入先の購入単位をPO、入荷、または請求書上で在庫単位に変換します — 12個のカートン単位で仕入れ、個単位で在庫する。"
 
-#. placeholder {0}: counts.copied ?? 0
-msgid "Copied {0} assignments"
-msgstr "{0}件の割当がコピーされました"
-
 msgid "Copied ID to clipboard"
 msgstr "IDをクリップボードにコピーしました"
 
@@ -14021,10 +14017,6 @@ msgstr "短い数量をマーク"
 msgid "Mark to delete"
 msgstr "削除対象にマーク"
 
-#. placeholder {0}: counts.created ?? 0
-msgid "Marked absent for {0} day(s)"
-msgstr "{0}日間不在としてマークしました"
-
 msgid "Market"
 msgstr "市場"
 
@@ -17110,9 +17102,6 @@ msgstr "有効期限を {label} で上書きします。"
 msgid "Overtime"
 msgstr "残業"
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "Overtime set for {0} assignments"
-msgstr "{0}件の業務に対して残業が設定されました"
 msgid "Overtime hours"
 msgstr "超勤時間"
 
