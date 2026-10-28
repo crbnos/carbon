@@ -174,11 +174,18 @@ export class CarbonFlagsProvider implements Provider {
 
   constructor(options: CarbonFlagsOptions) {
     this.endpoint = options.endpoint ?? "";
+    // https: (or http:) polls, data: loads once. Anything else, file:
+    // included, is refused here rather than failing in fetch().
+    const scheme = /^[a-z][a-z0-9+.-]*:/i
+      .exec(this.endpoint)?.[0]
+      .toLowerCase();
     this.mode = !this.endpoint
       ? "none"
-      : /^https?:\/\//i.test(this.endpoint)
+      : scheme === "https:" || scheme === "http:"
         ? "remote"
-        : "static";
+        : scheme === "data:"
+          ? "static"
+          : "none";
     // The source sees which build each instance runs. Configured headers win.
     this.headers = {
       // 12 characters on every platform, the length BYOC's release
@@ -199,6 +206,12 @@ export class CarbonFlagsProvider implements Provider {
     this.store = options.store;
     this.waitUntil = options.waitUntil;
     this.onWarning = options.onWarning ?? consoleWarn;
+    if (this.endpoint && this.mode === "none") {
+      this.onWarning(
+        "CARBON_FLAGS_ENDPOINT must be an https: or data: URL; using the code defaults",
+        { scheme: scheme ?? null }
+      );
+    }
     this.context = {
       tenancy: options.tenancy ?? "multi",
       edition: options.edition ?? "community"

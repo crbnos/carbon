@@ -1261,17 +1261,19 @@ export async function updateCompany(
 export async function updateCompanyWithBaseCurrencyChange(
   db: Kysely<KyselyDatabase>,
   companyId: string,
-  company: Partial<z.infer<typeof companyValidator>> & {
+  company: Partial<z.infer<typeof subsidiaryValidator>> & {
     updatedBy: string;
-  }
+  },
+  // The subsidiary update also writes `parentCompanyId`.
+  allowedFields: readonly string[] = Object.keys(companyValidator.shape)
 ) {
   // An explicit allow-list of the company form's fields, never the caller's
   // object: Kysely bypasses RLS and the API passes `company` through with
   // whatever keys were sent, so a spread would reach any column of the row.
-  const allowed = new Set<string>(Object.keys(companyValidator.shape));
+  const allowed = new Set<string>(allowedFields);
   const fields = Object.fromEntries(
     Object.entries(sanitize(company)).filter(([key]) => allowed.has(key))
-  ) as Partial<z.infer<typeof companyValidator>>;
+  ) as Partial<z.infer<typeof subsidiaryValidator>>;
 
   return db.transaction().execute(async (trx) => {
     await trx

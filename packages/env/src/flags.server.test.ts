@@ -401,6 +401,19 @@ describe("CarbonFlagsProvider", () => {
     expect(requests).toHaveLength(0);
   });
 
+  it("refuses a file: endpoint with a warning and answers the defaults", async () => {
+    const warnings: string[] = [];
+    const provider = new CarbonFlagsProvider({
+      endpoint: "file:///etc/carbon/flags.json",
+      onWarning: (message) => warnings.push(message)
+    });
+    const read = await start(provider);
+    expect(await read("cmp_123")).toBe(false);
+    expect(warnings).toEqual([
+      "CARBON_FLAGS_ENDPOINT must be an https: or data: URL; using the code defaults"
+    ]);
+  });
+
   it("warns once per archived flag that the code reads", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     doc = flagDoc(companyRule(["cmp_123"]), { archived: true });
