@@ -240,9 +240,9 @@ export function isNamedColumnId(id: string): boolean {
 
 /**
  * The column a saved choice reads: by id, then by name in any case. The name
- * match skips Onshape's own columns, which detection finds, so a name never
- * moves Item onto Onshape's Quantity, nor a part number override onto any of
- * Onshape's columns.
+ * match skips Onshape's own columns, known by id, property name or default
+ * label as detection knows them, so a name never moves Item onto Onshape's
+ * Quantity, nor a part number override onto any of Onshape's columns.
  */
 export function chosenBomColumn(
   headers: readonly BomHeaderLike[],
@@ -260,7 +260,8 @@ export function chosenBomColumn(
         labelKey(header.name) === name &&
         onshapePropertyField({
           id: header.id,
-          propertyName: header.propertyName
+          propertyName: header.propertyName,
+          name: header.name
         }) === null
     )?.id ?? null
   );

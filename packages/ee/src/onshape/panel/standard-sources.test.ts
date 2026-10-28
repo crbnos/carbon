@@ -236,6 +236,19 @@ describe("bomColumnIds and parseBomTree", () => {
     expect(bomColumnIds(withoutErp, sources).partNumber).toBeNull();
   });
 
+  it("never reads an override from a column Onshape's label alone identifies", () => {
+    // No property id or propertyName: "Quantity" is known only by its label.
+    const sources = standardSources([
+      entry({
+        onshapeName: "Quantity",
+        target: { kind: "identity", field: "partNumber" }
+      })
+    ]);
+    const ids = bomColumnIds([{ id: "h-qty", name: "Quantity" }], sources);
+    expect(ids.quantity).toBe("h-qty");
+    expect(ids.partNumber).toBeNull();
+  });
+
   it("reports an overridden part number column the BOM lacks by its name", () => {
     const sources = standardSources([
       entry({ target: { kind: "identity", field: "partNumber" } })
