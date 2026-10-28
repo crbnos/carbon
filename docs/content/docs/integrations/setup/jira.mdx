@@ -26,8 +26,9 @@ webhook.
   <Step>
   ### Allow Carbon in Jira
 
-  Pick **one** Jira site and accept. Carbon links one site: the first one Atlassian
-  lists for your login.
+  Pick **one** Jira site and accept. Carbon links the first site in Atlassian's
+  list. If your login approved Carbon for other sites before, that list can start
+  with one of them, so connect with a login that only has the site you want.
 
   {/* Replace with /screens/setup-jira-consent.png */}
   <Screenshot label="Atlassian's consent screen for Carbon, with the site picker and the Accept button" ratio="tall" />
@@ -96,6 +97,8 @@ On your own servers, you create the Atlassian app once:
 
 1. Create an OAuth 2.0 integration in the
    [Atlassian developer console](https://developer.atlassian.com/console/myapps/).
+   If someone other than its creator will connect it, turn on sharing under
+   **Distribution**.
 2. Add the Jira API with `read:jira-user`, `read:jira-work` and `write:jira-work`.
 3. Set the callback URL to `https://<your Carbon address>/api/integrations/jira/oauth`.
 4. Set `JIRA_CLIENT_ID` and `JIRA_CLIENT_SECRET` in Carbon's environment, then

@@ -7,7 +7,8 @@ description: Add the Carbon Assistant to your Slack workspace in three steps.
 Connect Slack to use the Carbon Assistant in your Slack workspace.
 
 **You need:** permission to change Settings in Carbon, and permission to add apps
-to your Slack workspace.
+to your Slack workspace. Slack isn't available on controlled (ITAR) Carbon
+deployments.
 
 <Diagram name="connect" />
 
@@ -89,13 +90,16 @@ Skip this on Carbon Cloud. The Slack app is already set up.
 
 On your own servers, you create the Slack app once:
 
-1. Create an app at [api.slack.com/apps](https://api.slack.com/apps).
+1. Create an app at [api.slack.com/apps](https://api.slack.com/apps), in the workspace
+   you'll connect. An app made in another workspace needs Slack's distribution turned
+   on before it can be installed elsewhere.
 2. Add every permission from the list above as a **bot** permission.
 3. Add this redirect URL: `https://<your Carbon address>/api/integrations/slack/oauth`.
 4. Turn on interactivity, with this request URL:
    `https://<your Carbon address>/api/integrations/slack/interactive`.
    Add a global shortcut with the callback ID `create_ncr_modal`. It opens Carbon's
-   **Create Issue** form.
+   **Create Issue** form. Anyone in the Slack workspace can use it, and Carbon
+   creates the issue without checking that person's Carbon permissions.
 5. Set these in Carbon's environment, then restart Carbon:
 
 | Variable | Value |

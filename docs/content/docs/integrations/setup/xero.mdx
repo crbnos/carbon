@@ -26,8 +26,10 @@ company as on your Xero organisation.
   <Step>
   ### Allow Carbon in Xero
 
-  Sign in to Xero, pick **one** organisation and allow access. Carbon links one
-  organisation: the first one Xero lists for your login.
+  Sign in to Xero, pick **one** organisation and allow access. Carbon links the
+  first organisation in Xero's list. If you connected other organisations to Carbon
+  before, that list can start with one of them. After connecting, open the Xero
+  integration and check the name next to **Connected to**.
 
   {/* Replace with /screens/setup-xero-consent.png */}
   <Screenshot label="Xero's consent screen for Carbon, with the organisation picker and the Allow access button" ratio="tall" />
@@ -89,7 +91,8 @@ On your own servers, you create the Xero app once:
 3. For live updates from Xero, add a webhook to
    `https://<your Carbon address>/api/webhook/xero` for contacts and invoices, and set
    its key as `XERO_WEBHOOK_SECRET`.
-4. Restart Carbon.
+4. Restart Carbon. Then run Xero's "Intent to receive" check on the webhook; Xero
+   sends no updates until it passes.
 
 {/* Replace with /screens/setup-xero-app.png */}
 <Screenshot label="Xero developer portal, the Carbon app's configuration with its redirect URI" />

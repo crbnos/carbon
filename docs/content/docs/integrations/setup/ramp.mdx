@@ -27,7 +27,14 @@ asks which system that is.
   to Ramp and keeps posting the spend. Carbon only reads back which bills were paid.
 
 In both modes, Carbon sends purchase orders and draft bills to Ramp, and creates
-their vendors there.
+their vendors there. Two things to know:
+
+- **Each draft bill is sent once.** If you change the invoice in Carbon afterwards,
+  update the bill in Ramp too.
+- **Suppliers need contact details.** To create a vendor in Ramp, a supplier needs a
+  contact email and a country on one of its locations (plus a state for US
+  suppliers). Without them, that supplier's bills don't reach Ramp. Carbon doesn't
+  update a vendor in Ramp when the supplier changes later.
 
 ## Connect Ramp
 
@@ -72,7 +79,7 @@ their vendors there.
 | --- | :---: | :---: |
 | Create and update purchase orders | ✓ | ✓ |
 | Create draft bills, and see bills and their payments | ✓ | ✓ |
-| Create and update vendors | ✓ | ✓ |
+| Create vendors | ✓ | ✓ |
 | See your business and its entities | ✓ | ✓ |
 | See card transactions, receipts, reimbursements, repayments, transfers, cashback and statements | ✓ | |
 | See Ramp's accounting connection and coding options | ✓ | ✓ |
@@ -128,6 +135,7 @@ vendors:write
 | *Another system is connected to Ramp as its accounting system* | Your other accounting system already holds Ramp's one spot. Uninstall Ramp in Carbon, then connect again and pick **Another system posts my ledger**. Or disconnect the other system in Ramp, then open the Ramp integration in Carbon and save its settings. |
 | *Ramp denied the connection* | Ramp refused access, for example because it was cancelled. Connect again and allow access, signed in as an Admin or Business Owner. |
 | *The Ramp connection expired* | Carbon couldn't match this sign-in to one you started: it took over an hour, or finished in another browser or Carbon account. Start again from **Settings → Integrations**. |
+| A bill didn't reach Ramp, and **Sync Activity** says the supplier *needs a contact email*, *a country* or *a two-letter state* | Add the missing detail to the supplier in Carbon. The bill is retried on the next sync. |
 | *Ramp connected but setup didn't finish* | Open the Ramp integration and save its settings to finish setup. If that fails too, uninstall Ramp and connect again. |
 
 Picked the wrong answer to the first question? Uninstall Ramp in Carbon and
