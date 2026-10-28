@@ -26071,6 +26071,7 @@ msgstr "{0}を元に戻す"
 
 msgid "Undo Run"
 msgstr "実行を元に戻す"
+
 msgid "Unfurl Links"
 msgstr "リンクを展開"
 

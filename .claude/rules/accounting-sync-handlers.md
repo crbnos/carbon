@@ -737,7 +737,7 @@ is dead config for Rillet only, left in place for the capped providers.
   has been exercised with a Lease or Lease Run journal or a sales-type rental
   invoice -->
 
-  **`'Currency Revaluation'`** (`20261028160213_fx-revaluation-enums.sql`, same
+  **`'Currency Revaluation'`** (`20261028163107_fx-revaluation-enums.sql`, same
   models file and granularity) carries the currency revaluation run's two
   journals: the period-end unrealized exchange gain/loss and its next-day
   reversal. **`'Currency Translation'`** is `syncable: false`: the posted CTA

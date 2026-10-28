@@ -26071,6 +26071,7 @@ msgstr "Geri Al {0}"
 
 msgid "Undo Run"
 msgstr "Çalıştırmayı Geri Al"
+
 msgid "Unfurl Links"
 msgstr "Bağlantıları Aç"
 

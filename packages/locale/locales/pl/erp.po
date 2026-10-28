@@ -26071,6 +26071,7 @@ msgstr "Cofnij {0}"
 
 msgid "Undo Run"
 msgstr "Cofnij przebieg"
+
 msgid "Unfurl Links"
 msgstr "Rozwiń linki"
 

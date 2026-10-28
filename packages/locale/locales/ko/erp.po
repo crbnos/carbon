@@ -26071,6 +26071,7 @@ msgstr "실행 취소 {0}"
 
 msgid "Undo Run"
 msgstr "실행 취소"
+
 msgid "Unfurl Links"
 msgstr "링크 펼치기"
 
