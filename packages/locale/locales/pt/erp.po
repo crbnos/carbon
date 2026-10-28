@@ -21077,6 +21077,10 @@ msgstr "Itens de série requerem um pedido de venda"
 msgid "Serial Number"
 msgstr "Número de Série"
 
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr ""
+
 msgid "Serial Number:"
 msgstr "Número de Série:"
 

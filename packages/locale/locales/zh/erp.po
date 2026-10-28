@@ -21077,6 +21077,10 @@ msgstr "序列号物料需要销售订单"
 msgid "Serial Number"
 msgstr "序列号"
 
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr ""
+
 msgid "Serial Number:"
 msgstr "序列号："
 

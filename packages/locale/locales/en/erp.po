@@ -21077,6 +21077,10 @@ msgstr "Serial items require a sales order"
 msgid "Serial Number"
 msgstr "Serial Number"
 
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr "Serial Number {0}"
+
 msgid "Serial Number:"
 msgstr "Serial Number:"
 
