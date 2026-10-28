@@ -21077,6 +21077,10 @@ msgstr "Seri ürünler satış siparişi gerektirir"
 msgid "Serial Number"
 msgstr "Seri Numarası"
 
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr ""
+
 msgid "Serial Number:"
 msgstr "Seri Numarası:"
 

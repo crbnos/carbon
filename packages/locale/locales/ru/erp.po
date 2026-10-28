@@ -21077,6 +21077,10 @@ msgstr "Для серийных номенклатур требуется зак
 msgid "Serial Number"
 msgstr "Серийный номер"
 
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr ""
+
 msgid "Serial Number:"
 msgstr "Серийный номер:"
 

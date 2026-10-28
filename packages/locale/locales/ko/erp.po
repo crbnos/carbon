@@ -21077,6 +21077,10 @@ msgstr "일련번호 품목은 수주가 필요합니다."
 msgid "Serial Number"
 msgstr "시리얼 번호"
 
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr ""
+
 msgid "Serial Number:"
 msgstr "시리얼 번호:"
 
