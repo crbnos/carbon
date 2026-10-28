@@ -9143,7 +9143,7 @@ msgid "Edit Pricing Rule"
 msgstr "가격 규칙 편집"
 
 msgid "Edit Printer"
-msgstr ""
+msgstr "프린터 편집"
 
 msgid "Edit Process"
 msgstr "공법 편집"

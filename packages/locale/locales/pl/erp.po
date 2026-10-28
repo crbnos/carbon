@@ -9143,7 +9143,7 @@ msgid "Edit Pricing Rule"
 msgstr "Edytuj regułę cenową"
 
 msgid "Edit Printer"
-msgstr ""
+msgstr "Edytuj drukarkę"
 
 msgid "Edit Process"
 msgstr "Edytuj proces"
