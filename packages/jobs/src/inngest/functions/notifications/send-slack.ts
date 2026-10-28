@@ -20,16 +20,11 @@ export const sendSlackFunction = inngest.createFunction(
     // One step, so the token never becomes a step OUTPUT that Inngest would
     // persist in its run state — it lives only in this closure.
     const result = await step.run("post-message", async () => {
-      // The company's own Slack connection. A workspace that cannot be read is
-      // treated as not linked.
-      let accessToken: string | undefined;
-      try {
-        accessToken = (
-          await getSlackWorkspace(getCarbonServiceRole(), companyId)
-        )?.token;
-      } catch {
-        accessToken = undefined;
-      }
+      // The company's own Slack connection. A failed read throws, so the step
+      // retries: it must not read as "not linked" and drop the message.
+      const accessToken = (
+        await getSlackWorkspace(getCarbonServiceRole(), companyId)
+      )?.token;
 
       // The channel id only exists in the company's linked workspace, so without
       // that workspace's token there is nothing valid to post — the old env-token
