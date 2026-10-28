@@ -20,6 +20,7 @@ import { useDatePickerState } from "@react-stately/datepicker";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { dateTimePickerOptions } from "../Date/dateTimePickerOptions";
 import { TimeCombobox } from "../Date/TimeCombobox";
 
 // The Lingui macro is compiled by the app build, not by vitest.
@@ -27,19 +28,17 @@ vi.mock("@lingui/react/macro", () => ({
   Trans: ({ children }: { children: ReactNode }) => children
 }));
 
-/** The hook with the props DateTimePicker passes, minus the pins when asked. */
+/** The hook with the options DateTimePicker passes, or without them. */
 function stateFor(
   pinned: boolean,
-  onChange: (value: DateValue | null) => void = () => {},
-  hourCycle?: 12 | 24
+  onChange: (value: DateValue | null) => void = () => {}
 ) {
   let captured: ReturnType<typeof useDatePickerState> | undefined;
   const Probe = () => {
     captured = useDatePickerState({
       value: null,
       onChange,
-      ...(pinned ? ({ granularity: "minute" } as const) : {}),
-      ...(hourCycle ? { hourCycle } : {}),
+      ...(pinned ? dateTimePickerOptions() : {}),
       shouldCloseOnSelect: false
     });
     return null;
@@ -67,8 +66,11 @@ describe("DateTimePicker state settings", () => {
   // The clock is the CALLER's choice: only fields that need an unambiguous wall
   // clock ask for 24-hour. Timecards and maintenance keep their locale's.
   it("leaves the clock to the locale unless a caller asks for 24-hour", () => {
-    expect(stateFor(true).granularity).toBe("minute");
-    expect(stateFor(true, () => {}, 24).granularity).toBe("minute");
+    expect(dateTimePickerOptions()).toEqual({ granularity: "minute" });
+    expect(dateTimePickerOptions(24)).toEqual({
+      granularity: "minute",
+      hourCycle: 24
+    });
   });
 
   it("does not commit a bare date once granularity is pinned", () => {

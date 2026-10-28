@@ -26,6 +26,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../Tooltip";
 import { FieldButton } from "./components/Button";
 import { Calendar } from "./components/Calendar";
 import DateField from "./components/DateField";
+import { dateTimePickerOptions } from "./dateTimePickerOptions";
 import { TimeCombobox } from "./TimeCombobox";
 
 const dateTimePickerFieldVariants = cva("flex w-full px-4", {
@@ -51,21 +52,7 @@ const DateTimePicker = (
   }
 ) => {
   const { t } = useLingui();
-  // `granularity` is pinned, `hourCycle` is the caller's choice.
-  //
-  // react-stately DERIVES granularity from the value, so an EMPTY picker falls
-  // back to "day" and its `hasTime` is false — picking a date then commits a
-  // bare CalendarDate, silently discarding a time already entered. Pinning
-  // "minute" is a bug fix and applies to every caller (see
-  // `__tests__/DateTimePickerState.test.tsx`).
-  //
-  // The clock is NOT a bug fix: a timecard or a maintenance start time is an
-  // ordinary local-habit field where an en-US user expects AM/PM. Only callers
-  // that need an unambiguous wall clock ask for `hourCycle={24}`.
-  const timeOptions = {
-    granularity: "minute",
-    ...(props.hourCycle ? { hourCycle: props.hourCycle } : {})
-  } as const;
+  const timeOptions = dateTimePickerOptions(props.hourCycle);
 
   const state = useDatePickerState({
     ...props,
