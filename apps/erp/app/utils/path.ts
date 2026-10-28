@@ -1154,7 +1154,7 @@ export const path = {
         generatePath(`${file}/job/${jobId}/traveler.pdf`),
       kanbanLabelsPdf: (
         ids: string | string[],
-        action: "order" | "start" | "complete"
+        action: "order" | "start" | "complete" | "all"
       ) => {
         const idString = Array.isArray(ids) ? ids.join(",") : ids;
         return generatePath(

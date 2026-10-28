@@ -34,6 +34,7 @@ import {
   resolveSections
 } from "~/modules/settings/settings.service";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
+import { getUser } from "~/modules/users/users.service";
 import {
   getPurchaseOrder,
   getPurchaseOrderApproval,
@@ -483,10 +484,14 @@ export async function renderPurchasingRfqPdf(
     "purchasingRfq"
   );
 
-  const [location, thumbnailRows] = await Promise.all([
+  // The buyer the supplier answers: the RFQ's assignee, else its author.
+  const buyerId = purchasingRfq.data.assignee ?? purchasingRfq.data.createdBy;
+
+  const [location, buyer, thumbnailRows] = await Promise.all([
     purchasingRfq.data.locationId
       ? getLocation(client, purchasingRfq.data.locationId)
       : null,
+    buyerId ? getUser(client, buyerId) : null,
     showThumbnails
       ? Promise.all(
           (purchasingRfqLines.data ?? []).map((line) =>
@@ -537,6 +542,11 @@ export async function renderPurchasingRfqPdf(
         purchasingRfq={purchasingRfq.data}
         purchasingRfqLines={purchasingRfqLines.data ?? []}
         shipToAddress={shipToAddress}
+        contact={
+          buyer?.data
+            ? { name: buyer.data.fullName, email: buyer.data.email }
+            : null
+        }
         thumbnails={thumbnails}
         terms={(terms?.data?.purchasingTerms ?? {}) as JSONContent}
         template={templateConfig}

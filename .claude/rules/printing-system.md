@@ -41,16 +41,23 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
    workCenterId?, printerRouteId? }` (`packages/lib/src/events.ts`).
 2. **Generate** — `print-job/index.tsx` (`packages/jobs/src/inngest/functions/tasks/print-job/`,
    `retries: 0`):
+   - **One step, `create-print-jobs`,** holds the dedupe, the printer config and every job write, so
+     they run once. A step makes Inngest run the function again from the top; when the job writes
+     sat outside a step, each `deliver-<jobId>` send re-ran the dedupe, which found the job just
+     written and threw — only a document's FIRST label ever printed (a Make kanban's Create card,
+     never Start or Complete).
    - **30s auto-dedupe:** if an `origin="auto"` `printJob` for the same `sourceDocumentId`+`companyId`
-     was created in the last 30s, throws `NonRetriableError`.
+     was created in the last 30s, throws `NonRetriableError`. Every job the task writes is
+     `origin="auto"`, the manual route's included.
    - **Resolve printer config once:** explicit `printerRouteId` → fetch that route; else if `locationId`,
      `getCachedPrinterConfig(client, companyId, locationId, getPrinterContextForSource(sourceDocument,
      workCenterId), workCenterId)`. Falls back to `docType.defaultFormat` and media size `"label2x1"`
      when no config.
    - For each doc-type-for-source: resolve items (`resolvers.ts`: `resolveTrackedEntityData` /
      `resolveKanbanData` / `resolveStorageUnitData`), then per item create a `printJob` (`generating`),
-     render (`renderers.tsx`), update content (→ `queued`), and if a `printerUrl` exists send a
-     `carbon/print-job-deliver` event (else mark `completed`).
+     render (`renderers.tsx`), update content (→ `queued`), and if a `printerUrl` exists collect it
+     for delivery (else mark `completed`). After the step, one `step.sendEvent("deliver", …)` sends a
+     `carbon/print-job-deliver` event per collected job.
 3. **Deliver** — `print-job-deliver.ts` (event `carbon/print-job-deliver`, `retries: 0`): loads the job,
    sets `printing`, looks up the route `apiKey` by `printerUrl`, `sendToProxyBox` (PDF content is
    base64 → Buffer), then `completed`. Timeouts throw `NonRetriableError` (content may already have

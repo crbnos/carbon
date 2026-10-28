@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { JSONContent } from "@carbon/react";
-import { distinctItemText } from "@carbon/utils";
+import { distinctItemText, formatQuantity } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_LINE_ITEMS_OPTIONS,
@@ -21,6 +21,15 @@ function quantitiesOf(line: PurchasingRfqPdfLine): number[] {
     : [1];
 }
 
+const RULE = "#9ca3af";
+const HEADER_FILL = "#f3f4f6";
+const ZEBRA_FILL = "#f9fafb";
+
+/**
+ * The items to quote, as a plain ruled table: the part, then each quantity
+ * break on its own line with its unit. No price columns — the supplier quotes
+ * in their own format.
+ */
 export function LineItemsBlock({
   block,
   data
@@ -29,107 +38,94 @@ export function LineItemsBlock({
   data: PurchasingRfqData;
 }) {
   const tw = useTw();
-  const { purchasingRfqLines, thumbnails, theme } = data;
+  const { purchasingRfqLines, thumbnails, locale } = data;
   const opts = { ...DEFAULT_LINE_ITEMS_OPTIONS, ...block.options };
   const overflow = itemTextOverflowStyle(opts);
-  // The supplier writes the price and lead time in by hand.
-  const blank = tw("border-b border-gray-400 h-[12px] mx-2");
+
+  const cell = { borderRightWidth: 0.5, borderColor: RULE };
+  // Each row carries its own rules: a border on the table's wrapper is drawn
+  // to the bottom of the page when the table breaks across pages.
+  const rowRules = {
+    borderLeftWidth: 0.5,
+    borderRightWidth: 0.5,
+    borderBottomWidth: 0.5,
+    borderColor: RULE
+  };
+  const columns = {
+    index: [tw("w-[7%] px-2 py-1.5 text-center"), cell],
+    item: [tw("w-[59%] px-2 py-1.5"), cell],
+    quantity: [tw("w-[20%] px-2 py-1.5 text-right"), cell],
+    unit: tw("w-[14%] px-2 py-1.5")
+  };
 
   return (
-    <View style={tw("mb-4")}>
+    <View style={tw("mb-5 text-[9px] text-gray-800")}>
       <View
         fixed
         style={[
-          tw("flex flex-row py-2 px-3 text-[9px] font-bold items-center"),
-          { backgroundColor: theme.accent, color: theme.accentForeground }
+          tw("flex flex-row font-bold"),
+          { backgroundColor: HEADER_FILL, borderTopWidth: 0.5 },
+          rowRules
         ]}
       >
-        <Text style={tw("w-[5%] text-center")}>#</Text>
-        <Text style={tw("w-[35%]")}>Item</Text>
-        <Text style={tw("w-[12%] text-center")}>Qty</Text>
-        <Text style={tw("w-[8%] text-center")}>UOM</Text>
-        <Text style={tw("w-[14%] text-center")}>Unit Price</Text>
-        <Text style={tw("w-[12%] text-center")}>Lead Time</Text>
-        <Text style={tw("w-[14%] text-center")}>Total</Text>
+        <Text style={columns.index}>#</Text>
+        <Text style={columns.item}>Item</Text>
+        <Text style={columns.quantity}>Quantity</Text>
+        <Text style={columns.unit}>Unit</Text>
       </View>
 
       {purchasingRfqLines.map((line, index) => {
         const notes = (line.externalNotes ?? {}) as JSONContent;
         const thumbnail = line.id ? thumbnails?.[line.id] : null;
         const quantities = quantitiesOf(line);
+        const unit =
+          line.purchaseUnitOfMeasureCode ??
+          line.inventoryUnitOfMeasureCode ??
+          "";
 
         return (
           <View
             key={line.id ?? index}
             wrap={false}
             style={[
-              tw("flex flex-col py-2 px-3 border-b border-gray-200 text-[9px]"),
-              {
-                backgroundColor:
-                  opts.zebra && index % 2 === 1
-                    ? "rgba(249, 250, 251, 0.6)"
-                    : "transparent"
-              }
+              tw("flex flex-row"),
+              rowRules,
+              opts.zebra && index % 2 === 1
+                ? { backgroundColor: ZEBRA_FILL }
+                : {}
             ]}
           >
-            <View style={tw("flex flex-row")}>
-              <Text style={tw("w-[5%] text-center text-gray-600")}>
-                {index + 1}
+            <Text style={columns.index}>{index + 1}</Text>
+            <View style={columns.item}>
+              <Text style={{ ...tw("font-bold"), ...overflow }}>
+                {line.itemReadableId ?? ""}
               </Text>
-              <View style={tw("w-[35%] pr-2")}>
-                <Text style={{ ...tw("text-gray-800"), ...overflow }}>
-                  {line.itemReadableId ?? ""}
+              {distinctItemText(line.itemReadableId, line.description) ? (
+                <Text style={{ ...tw("mt-0.5"), ...overflow }}>
+                  {line.description}
                 </Text>
-                {distinctItemText(line.itemReadableId, line.description) ? (
-                  <Text
-                    style={{
-                      ...tw("text-[8px] text-gray-600 mt-0.5"),
-                      ...overflow
-                    }}
-                  >
-                    {line.description}
-                  </Text>
-                ) : null}
-                {opts.showThumbnails && thumbnail ? (
-                  <View style={tw("mt-1 w-16")}>
-                    <Image src={thumbnail} style={tw("w-full h-auto")} />
-                  </View>
-                ) : null}
-              </View>
-              <View style={tw("w-[60%] flex flex-col")}>
-                {quantities.map((quantity, qtyIndex) => (
-                  <View
-                    key={qtyIndex}
-                    style={tw(
-                      `flex flex-row items-end ${qtyIndex > 0 ? "mt-2" : ""}`
-                    )}
-                  >
-                    <Text style={tw("w-[20%] text-center text-gray-800")}>
-                      {quantity}
-                    </Text>
-                    <Text style={tw("w-[13.33%] text-center text-gray-600")}>
-                      {line.purchaseUnitOfMeasureCode ??
-                        line.inventoryUnitOfMeasureCode ??
-                        ""}
-                    </Text>
-                    <View style={tw("w-[23.33%]")}>
-                      <View style={blank} />
-                    </View>
-                    <View style={tw("w-[20%]")}>
-                      <View style={blank} />
-                    </View>
-                    <View style={tw("w-[23.33%]")}>
-                      <View style={blank} />
-                    </View>
-                  </View>
-                ))}
-              </View>
+              ) : null}
+              {Object.keys(notes).length > 0 ? (
+                <View style={tw("mt-1 text-gray-600")}>
+                  <Note content={notes} />
+                </View>
+              ) : null}
+              {opts.showThumbnails && thumbnail ? (
+                <View style={tw("mt-1 w-16")}>
+                  <Image src={thumbnail} style={tw("w-full h-auto")} />
+                </View>
+              ) : null}
             </View>
-            {Object.keys(notes).length > 0 ? (
-              <View style={tw("mt-1 pl-[5%] text-[8px] text-gray-600")}>
-                <Note content={notes} />
-              </View>
-            ) : null}
+            <View style={columns.quantity}>
+              {quantities.map((quantity, qtyIndex) => (
+                <Text key={qtyIndex}>{formatQuantity(quantity, locale)}</Text>
+              ))}
+            </View>
+            <View style={columns.unit}>
+              {quantities.map((_, qtyIndex) => (
+                <Text key={qtyIndex}>{unit}</Text>
+              ))}
+            </View>
           </View>
         );
       })}
