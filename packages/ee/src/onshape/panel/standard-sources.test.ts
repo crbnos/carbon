@@ -222,6 +222,20 @@ describe("bomColumnIds and parseBomTree", () => {
     expect(bomColumnIds(relabelled, sources).partNumber).toBe("col-erp");
   });
 
+  it("never reads an overridden part number from Onshape's column of the same name", () => {
+    // A custom property named "Quantity" that this BOM has no column for.
+    const sources = standardSources([
+      entry({
+        onshapeName: "Quantity",
+        target: { kind: "identity", field: "partNumber" }
+      })
+    ]);
+    const withoutErp = headers(LABEL_SETS.default).filter(
+      (header) => header.id !== ERP_NUMBER_ID
+    );
+    expect(bomColumnIds(withoutErp, sources).partNumber).toBeNull();
+  });
+
   it("reports an overridden part number column the BOM lacks by its name", () => {
     const sources = standardSources([
       entry({ target: { kind: "identity", field: "partNumber" } })

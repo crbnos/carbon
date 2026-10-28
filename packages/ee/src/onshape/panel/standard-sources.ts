@@ -239,9 +239,10 @@ export function isNamedColumnId(id: string): boolean {
 }
 
 /**
- * The column a saved Item or Quantity choice reads: by id, then by name in any
- * case. The name match skips Onshape's own columns, which detection finds, so a
- * name never moves Item onto Onshape's Quantity.
+ * The column a saved choice reads: by id, then by name in any case. The name
+ * match skips Onshape's own columns, which detection finds, so a name never
+ * moves Item onto Onshape's Quantity, nor a part number override onto any of
+ * Onshape's columns.
  */
 export function chosenBomColumn(
   headers: readonly BomHeaderLike[],
@@ -276,7 +277,6 @@ export function bomColumnIds(
   headers: readonly BomHeaderLike[],
   sources: StandardSources = DEFAULT_STANDARD_SOURCES
 ): Record<BomColumnField, string | null> {
-  const ids = new Set(headers.map((header) => header.id));
   const own = new Map<OnshapePropertyField, string>();
   // Property name first: a custom column may carry a standard label. The exact
   // label before the label in any case: "Part number" beats a custom "PART NUMBER".
@@ -305,18 +305,12 @@ export function bomColumnIds(
   const identity = (field: IdentityField) => {
     const override = sources.identity[field];
     if (!override) return own.get(field) ?? null;
-    if (ids.has(override.propertyId)) return override.propertyId;
     // A column whose id is not the property id still matches by its label,
     // as a mapped custom field's cell does (`resolveMappedFields`).
-    const label = override.name ? labelKey(override.name) : null;
-    return (
-      headers.find(
-        (header) =>
-          label !== null &&
-          typeof header.name === "string" &&
-          labelKey(header.name) === label
-      )?.id ?? null
-    );
+    return chosenBomColumn(headers, {
+      headerId: override.propertyId,
+      name: override.name
+    });
   };
   const line = (field: BomLineField) => {
     const override = sources.bomLine[field];
