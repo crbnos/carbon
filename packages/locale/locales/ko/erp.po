@@ -12586,6 +12586,9 @@ msgstr "칸반"
 msgid "Kanban for {kanbanName}"
 msgstr "{kanbanName}의 칸반"
 
+msgid "Kanban ID"
+msgstr "칸반 ID"
+
 msgid "Kanban Output"
 msgstr "칸반 산출물"
 

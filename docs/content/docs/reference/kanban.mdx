@@ -14,6 +14,7 @@ A [reordering policy](/docs/reference/reordering) calculates suggestions from on
 Each kanban is a small record: an item, where it lives, how much to reorder, and how to reorder it. For a `Transfer` kanban, the form shows Item, Replenishment System, Location, From Storage Unit, To Storage Unit, Quantity, and Replenishment Level, in that order.
 
 <FieldTable>
+  <Field name="Kanban ID">The card's number, such as `KB000001`, from the `kanban` [sequence](/docs/reference/sequences). Carbon assigns it when the kanban is created and prints it on the label, so you can find one particular card or bin. It never changes.</Field>
   <Field name="Item" required>The part, material, tool, or consumable this card replenishes.</Field>
   <Field name="Quantity" required>How much to reorder on each signal (at least 1). On a `Transfer` kanban, this is the quantity moved from the From storage unit.</Field>
   <Field name="Replenishment system" required>How the signal replenishes: `Buy` (raise a purchase order), `Make` (create a job), or `Transfer` (create a stock transfer between two storage units in the location). See <Term>replenishment system</Term>.</Field>
@@ -66,7 +67,7 @@ How a card is rendered is a per-company setting, **Kanban Output**, with three m
 | Mode | What a card is |
 | --- | --- |
 | QR code | A scannable QR code (the default), color-coded per action. |
-| Label | A printed PDF label, six to a page, with the QR, item thumbnail, name, storage unit, quantity, and supplier. When the kanban has a replenishment level, a `MIN:` line prints under `QTY:`. |
+| Label | A printed PDF label, six to a page, with the QR, item thumbnail, name, storage unit, quantity, kanban ID, and supplier. When the kanban has a replenishment level, a `MIN:` line prints under `QTY:`. |
 | URL | A copyable link that hits the same scan endpoint directly. |
 
 For `Make` kanbans, the list view also surfaces the **start** and **complete** affordances. `Buy` and `Transfer` kanbans show only the order signal, since there's no job to start. Two columns are hidden by default: **Replenishment Level** and **Projected (To)**. Turn them on from the column picker. **Projected (To)** shows a **Below level** pill when the projected quantity is under the level.

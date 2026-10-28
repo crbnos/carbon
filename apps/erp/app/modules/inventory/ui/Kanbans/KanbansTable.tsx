@@ -190,6 +190,18 @@ const KanbansTable = memo(
     const columns = useMemo<ColumnDef<KanbanRow>[]>(
       () => [
         {
+          accessorKey: "kanbanId",
+          header: t`Kanban ID`,
+          cell: ({ row }) => (
+            <Hyperlink to={`${path.to.kanban(row.original.id!)}?${params}`}>
+              {row.original.kanbanId}
+            </Hyperlink>
+          ),
+          meta: {
+            icon: <LuTag />
+          }
+        },
+        {
           accessorKey: "itemId",
           header: t`Item`,
           cell: ({ row }) => (

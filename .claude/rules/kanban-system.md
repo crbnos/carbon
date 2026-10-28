@@ -18,10 +18,19 @@ stock transfer (`Transfer`). Lives in the inventory module.
 
 ## Data model
 
-Table `kanban` (initial migration `20250909012102_kanban.sql`; newest `20261012232517_kanban-replenishment-level.sql`, plus the generated `20261012232520_kanban-level-check-triggers.sql` for its interceptor).
+Table `kanban` (initial migration `20250909012102_kanban.sql`; newest `20261028191437_kanban-readable-id.sql` (after `20261012232517_kanban-replenishment-level.sql`), plus the generated `20261012232520_kanban-level-check-triggers.sql` for its interceptor).
 **Composite PK `("id", "companyId")`.** Key columns:
 
 - `id` TEXT default `id('kb')`, `itemId` FK→item (CASCADE), `companyId` FK→company
+- `kanbanId` TEXT (nullable) — the readable number (`KB000001`, sequence `kanban`), printed on the
+  label (`20261028191437_kanban-readable-id.sql`). Unique per company. The BEFORE INSERT trigger
+  `set_kanban_readable_id` assigns it from `get_next_sequence` when the insert has none (creating the
+  company's `kanban` sequence row first if it is missing, so no kanban is left unnumbered), so every
+  insert path (form, MCP, datasets, fixtures) is numbered with no call-site code; `upsertKanban`
+  drops a `kanbanId` the caller sends, so the number never changes and the counter is exempt from
+  `sync_advance_document_sequence` (`EXEMPT_COUNTERS`). Nullable only because a restore loads rows
+  with triggers off, and a pre-migration backup has no number. Not to be confused with
+  `stockTransfer.kanbanId`, the FK to `kanban.id` — the same `job.jobId` / `jobMaterial.jobId` split.
 - `replenishmentSystem` `kanbanReplenishmentSystem` enum (`'Buy' | 'Make' | 'Transfer'`),
   default `'Buy'` — **retyped from `itemReplenishmentSystem`** in `20260908143722_kanban-transfer.sql`
   (Transfer is NOT added to `itemReplenishmentSystem`; that enum drives planning/MRP/demand)
@@ -49,7 +58,8 @@ RLS: SELECT = any employee role; INSERT/UPDATE/DELETE = `inventory_create`/`inve
 `name`, `readableIdWithRevision`, `jobReadableId` (= `j."jobId"`), `locationName`, `storageUnitName`,
 `fromStorageUnitName`, `supplierName`, `thumbnailPath`. Recreated with storageUnit refs in
 `20260417000300_storage-unit-recreate-dependents.sql`, then with the source-bin join in
-`20260908143722_kanban-transfer.sql`.
+`20260908143722_kanban-transfer.sql`, and again for `replenishmentLevel` and `kanbanId`
+(`20261012232517`, `20261028191437`).
 
 `kanbanOutput` setting (enum `('label','qrcode','url')`, default `'qrcode'`) is a per-company column on
 `companySettings` (migration `20251001021231_kanban-settings.sql`), NOT a kanban-specific table.
@@ -118,7 +128,7 @@ Spec: `.ai/specs/2026-10-06-kanban-internal-replenishment-level.md`.
 
 - QR PNG route: `apps/erp/app/routes/file+/kanban+/$id.$action[.]png.tsx`, 36px modules, **color-coded by action**: order=black `#000000`, start=emerald `#059669`, complete=blue `#2563eb`. (The old doc claiming "no color differentiation" was stale.)
 - Label PDF route: `apps/erp/app/routes/file+/kanban+/labels.$action[.]pdf.tsx` — takes `?ids=` (comma-separated), fetches kanbans from the `kanbans` view, converts thumbnails to base64, renders `KanbanLabelPDF`.
-- `KanbanLabelPDF`: `packages/documents/src/pdf/KanbanLabelPDF.tsx` (exported via `@carbon/documents/pdf`). Letter page, **2×3 grid = 6 labels/page**; each shows the action-colored QR, item thumbnail, name, readable id, storage-unit/location, `QTY: {quantity} {uom}` (plus `MIN: {replenishmentLevel}` when a level is set — no unit, because `uom` here is the purchase unit and the level is in stock units), and supplier name. QR color matches the PNG route.
+- `KanbanLabelPDF`: `packages/documents/src/pdf/KanbanLabelPDF.tsx` (exported via `@carbon/documents/pdf`). Letter page, **2×3 grid = 6 labels/page**; each shows the action-colored QR, item thumbnail, name, item readable id, storage-unit/location, `QTY: {quantity} {uom}` (plus `MIN: {replenishmentLevel}` when a level is set — no unit, because `uom` here is the purchase unit and the level is in stock units), and a bottom row with the kanban's `kanbanId` (bold, left) and supplier name (right). `kanbanId` is threaded through both label paths, like `fromStorageUnitName`; the print job also uses it as the job's readable id. QR color matches the PNG route.
 - `KanbansTable` renders Create/Start/Complete affordances per `kanbanOutput`: `label`→PDF links, `qrcode`→hover-card iframes (one open at a time: `KanbanQrCodeHoverCard` reads a table-level `OpenQrCodeContext`), `url`→copyable API links. Start/Complete show for Make only. Bulk "Print Labels" opens the PDF for selected ids (`action: "order"`).
 
 ## Gotchas

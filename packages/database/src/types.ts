@@ -30974,6 +30974,7 @@ export type Database = {
           id: string
           itemId: string
           jobId: string | null
+          kanbanId: string | null
           locationId: string
           purchaseUnitOfMeasureCode: string | null
           quantity: number
@@ -30996,6 +30997,7 @@ export type Database = {
           id?: string
           itemId: string
           jobId?: string | null
+          kanbanId?: string | null
           locationId: string
           purchaseUnitOfMeasureCode?: string | null
           quantity: number
@@ -31018,6 +31020,7 @@ export type Database = {
           id?: string
           itemId?: string
           jobId?: string | null
+          kanbanId?: string | null
           locationId?: string
           purchaseUnitOfMeasureCode?: string | null
           quantity?: number
@@ -80261,6 +80264,7 @@ export type Database = {
           itemId: string | null
           jobId: string | null
           jobReadableId: string | null
+          kanbanId: string | null
           locationId: string | null
           locationName: string | null
           name: string | null

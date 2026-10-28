@@ -12586,6 +12586,9 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban for {kanbanName}"
 
+msgid "Kanban ID"
+msgstr "Kanban ID"
+
 msgid "Kanban Output"
 msgstr "Kanban Output"
 

@@ -223,6 +223,7 @@ async function renderKanbanCardPDF(
       labels={[
         {
           id: item.id,
+          kanbanId: item.kanbanId,
           itemId: item.itemId,
           itemName: item.itemName,
           itemReadableId: item.itemId,

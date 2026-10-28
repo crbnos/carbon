@@ -12586,6 +12586,9 @@ msgstr "看板"
 msgid "Kanban for {kanbanName}"
 msgstr "看板 {kanbanName}"
 
+msgid "Kanban ID"
+msgstr "看板ID"
+
 msgid "Kanban Output"
 msgstr "看板输出"
 

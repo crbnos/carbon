@@ -674,7 +674,7 @@ export async function getKanbans(
 
   if (args.search) {
     query = query.or(
-      searchFilter(["name", "readableIdWithRevision"], args.search)
+      searchFilter(["kanbanId", "name", "readableIdWithRevision"], args.search)
     );
   }
 
@@ -2802,8 +2802,14 @@ export async function upsertKanban(
         customFields?: Json;
       })
 ) {
-  // kanban has no customFields column.
-  const { customFields: _customFields, ...row } = kanban;
+  // kanban has no customFields column. Its kanbanId is numbered by the
+  // set_kanban_readable_id trigger and never changes, so one sent through the
+  // API's loose input is dropped.
+  const {
+    customFields: _customFields,
+    kanbanId: _kanbanId,
+    ...row
+  } = kanban as typeof kanban & { kanbanId?: unknown };
   // zod omits a blank optional field, so a plain spread would keep the old
   // level on update. Write null when the field is blank or the kanban is not
   // a Transfer kanban.

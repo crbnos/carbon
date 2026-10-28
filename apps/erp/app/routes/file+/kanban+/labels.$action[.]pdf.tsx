@@ -92,6 +92,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // Prepare label data
       const labelData = {
         id: kanban.id!,
+        kanbanId: kanban.kanbanId,
         itemId: kanban.itemId!,
         itemName: kanban.name || "",
         itemReadableId: kanban.readableIdWithRevision || kanban.itemId!,

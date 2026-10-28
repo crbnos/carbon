@@ -9,6 +9,7 @@ import Footer from "./components/Footer";
 
 interface KanbanLabel {
   id: string;
+  kanbanId?: string | null;
   itemId: string;
   itemName: string;
   itemReadableId: string;
@@ -242,16 +243,33 @@ const KanbanLabelPDF = ({
                         </View>
                       </View>
 
-                      {/* Kanban ID at bottom */}
-                      <Text
-                        style={{
-                          ...tw("text-center"),
-                          fontSize: "12pt",
-                          color: "#7d7d7d"
-                        }}
+                      {/* Kanban ID and supplier at bottom */}
+                      <View
+                        style={tw("flex flex-row items-center justify-between")}
                       >
-                        {label.supplierName}
-                      </Text>
+                        {/* The built-in Helvetica has no bold weight, so
+                            fontWeight alone renders regular. */}
+                        <Text
+                          style={{
+                            fontSize: "12pt",
+                            fontFamily: "Helvetica-Bold",
+                            flexShrink: 0,
+                            marginRight: 8
+                          }}
+                        >
+                          {label.kanbanId ?? ""}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: "12pt",
+                            color: "#7d7d7d",
+                            flex: 1,
+                            textAlign: "right"
+                          }}
+                        >
+                          {label.supplierName ?? ""}
+                        </Text>
+                      </View>
                     </View>
                   );
                 })}
