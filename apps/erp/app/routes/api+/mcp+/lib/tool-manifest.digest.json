@@ -1090,7 +1090,7 @@
     {"name":"quality_getGaugeTypesList","classification":"READ","schema":"31b84d65b2ac","response":"ce08332e0ce6","permission":"quality:view","paginates":false},
     {"name":"quality_getInspection","classification":"READ","schema":"7f8214d1083f","response":"none","permission":"quality:view","paginates":false},
     {"name":"quality_getInspectionDocument","classification":"READ","schema":"7f8214d1083f","response":"b0b23204d0fd","permission":"quality:view","paginates":false},
-    {"name":"quality_getInspectionDocuments","classification":"READ","schema":"cd40ae40fad5","response":"8cd7a5845f74","permission":"quality:view","paginates":true},
+    {"name":"quality_getInspectionDocuments","classification":"READ","schema":"cd40ae40fad5","response":"8a5e5ac81c1f","permission":"quality:view","paginates":true},
     {"name":"quality_getInspectionDocumentsForItem","classification":"READ","schema":"30ab89ff5be9","response":"cfa5f1f7b8aa","permission":"quality:view","paginates":false},
     {"name":"quality_getInspectionFeatures","classification":"READ","schema":"b6a25994639a","response":"ce9a6356909a","permission":"quality:view","paginates":false},
     {"name":"quality_getInspectionGauges","classification":"READ","schema":"162c842697ab","response":"68597e017f0d","permission":"quality:view","paginates":false},

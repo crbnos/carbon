@@ -15329,6 +15329,9 @@ msgstr "कोई ओवरटाइम शेड्यूल नहीं ह�
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "अभी तक कोई मूल स्रोत दर्ज नहीं किया गया है। एट्रिब्यूशन को रीफ्रेश करने के लिए योजना पृष्ठ पर पुनः गणना करें पर क्लिक करें।"
 
+msgid "No part"
+msgstr ""
+
 msgid "No part ID"
 msgstr "कोई भाग ID नहीं"
 

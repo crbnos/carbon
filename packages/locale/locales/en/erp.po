@@ -15329,6 +15329,9 @@ msgstr "No overtime scheduled"
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 
+msgid "No part"
+msgstr "No part"
+
 msgid "No part ID"
 msgstr "No part ID"
 

@@ -3,11 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
-  useDisclosure,
-  VStack
+  useDisclosure
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -21,7 +21,7 @@ import {
   LuTrash,
   LuUser
 } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
@@ -37,6 +37,7 @@ type InspectionDocumentTableProps = {
 };
 
 const defaultColumnVisibility = {
+  partId: false,
   createdAt: false,
   updatedAt: false,
   updatedBy: false
@@ -50,6 +51,50 @@ const InspectionDocumentTable = memo(
     const permissions = usePermissions();
     const [items] = useItems();
 
+    const itemsById = useMemo(
+      () => new Map(items.map((item) => [item.id, item])),
+      [items]
+    );
+    const partLabel = useCallback(
+      (partId: string | null) =>
+        partId
+          ? (itemsById.get(partId)?.readableIdWithRevision ?? partId)
+          : null,
+      [itemsById]
+    );
+
+    const groupRowsBy = useMemo(
+      () => ({
+        key: (row: InspectionDocument) => row.partId ?? "",
+        header: (plans: InspectionDocument[]) => {
+          const partId = plans[0]?.partId ?? null;
+          const item = partId ? itemsById.get(partId) : undefined;
+          return (
+            <HStack spacing={3} className="px-4 py-2">
+              {partId ? (
+                <Link
+                  to={path.to.part(partId)}
+                  className="whitespace-nowrap text-sm font-medium hover:underline"
+                >
+                  {item?.readableIdWithRevision ?? partId}
+                </Link>
+              ) : (
+                <span className="text-sm font-medium text-muted-foreground">
+                  {t`No part`}
+                </span>
+              )}
+              {item?.name ? (
+                <span className="min-w-0 truncate text-sm text-muted-foreground">
+                  {item.name}
+                </span>
+              ) : null}
+            </HStack>
+          );
+        }
+      }),
+      [itemsById, t]
+    );
+
     const deleteDisclosure = useDisclosure();
     const [selectedDiagram, setSelectedDiagram] =
       useState<InspectionDocument | null>(null);
@@ -57,31 +102,26 @@ const InspectionDocumentTable = memo(
     const columns = useMemo<ColumnDef<InspectionDocument>[]>(
       () => [
         {
+          accessorKey: "name",
+          header: t`Inspection Plan`,
+          cell: ({ row }) => (
+            <Hyperlink to={path.to.inspectionDocument(row.original.id)}>
+              {row.original.name}
+            </Hyperlink>
+          ),
+          // The service computes `name`; the view has no such column to sort.
+          enableSorting: false,
+          meta: { mobile: "P1", icon: <LuTarget /> }
+        },
+        {
+          // The group header shows the part; the column stays for its filter
+          // and the CSV export.
           accessorKey: "partId",
           header: t`Part`,
-          cell: ({ row }) => {
-            const partId = row.original.partId;
-            if (!partId) {
-              return <span className="text-muted-foreground">—</span>;
-            }
-            const item = items.find((i) => i.id === partId);
-            return (
-              <Hyperlink to={path.to.inspectionDocument(row.original.id)}>
-                <VStack spacing={0} className="min-w-[160px] leading-tight">
-                  <span className="truncate font-medium">
-                    {item?.readableIdWithRevision ?? partId}
-                  </span>
-                  {item?.name ? (
-                    <span className="truncate text-xs text-muted-foreground">
-                      {item.name}
-                    </span>
-                  ) : null}
-                </VStack>
-              </Hyperlink>
-            );
-          },
+          cell: ({ row }) => partLabel(row.original.partId),
+          enableSorting: false,
           meta: {
-            mobile: "P1",
+            mobile: "P3",
             filter: {
               type: "static" as const,
               options: items?.map((item) => ({
@@ -89,16 +129,9 @@ const InspectionDocumentTable = memo(
                 label: item.readableIdWithRevision
               }))
             },
+            exportValue: (row) => partLabel(row.partId),
             icon: <LuBookMarked />
           }
-        },
-        {
-          accessorKey: "name",
-          header: t`Name`,
-          cell: ({ row }) => row.original.name,
-          // The service computes `name`; the view has no such column to sort.
-          enableSorting: false,
-          meta: { mobile: "P3", icon: <LuTarget /> }
         },
         {
           id: "createdBy",
@@ -133,7 +166,7 @@ const InspectionDocumentTable = memo(
           meta: { icon: <LuFileText /> }
         }
       ],
-      [items, t]
+      [items, partLabel, t]
     );
 
     const renderContextMenu = useCallback(
@@ -178,6 +211,7 @@ const InspectionDocumentTable = memo(
           columns={columns}
           count={count}
           defaultColumnVisibility={defaultColumnVisibility}
+          groupRowsBy={groupRowsBy}
           primaryAction={
             permissions.can("create", "quality") && (
               <New

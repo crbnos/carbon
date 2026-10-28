@@ -15329,6 +15329,9 @@ msgstr "Nenhuma hora extra agendada"
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Nenhuma fonte pai registrada ainda. Clique em Recalcular na página de planejamento para atualizar a atribuição."
 
+msgid "No part"
+msgstr ""
+
 msgid "No part ID"
 msgstr "Sem ID de peça"
 

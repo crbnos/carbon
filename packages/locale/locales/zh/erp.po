@@ -15329,6 +15329,9 @@ msgstr "没有安排加班"
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "尚未记录任何父源。点击计划页面上的\"重新计算\"以刷新归因。"
 
+msgid "No part"
+msgstr ""
+
 msgid "No part ID"
 msgstr "无零件ID"
 

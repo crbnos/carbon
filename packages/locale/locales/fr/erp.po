@@ -15329,6 +15329,9 @@ msgstr "Aucune heure supplémentaire prévue"
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Aucune source parent enregistrée pour le moment. Cliquez sur Recalculer sur la page de planification pour actualiser l'attribution."
 
+msgid "No part"
+msgstr ""
+
 msgid "No part ID"
 msgstr "Aucun ID de pièce"
 

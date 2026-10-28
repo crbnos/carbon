@@ -15329,6 +15329,9 @@ msgstr "예정된 초과근무가 없습니다"
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "아직 기록된 상위 소스가 없습니다. 계획 페이지에서 재계산을 클릭하여 귀속 정보를 새로고침하세요."
 
+msgid "No part"
+msgstr ""
+
 msgid "No part ID"
 msgstr "품목 ID 없음"
 

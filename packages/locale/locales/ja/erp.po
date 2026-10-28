@@ -15329,6 +15329,9 @@ msgstr "残業予定なし"
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "親ソースはまだ記録されていません。計画ページの「再計算」をクリックして属性を更新してください。"
 
+msgid "No part"
+msgstr ""
+
 msgid "No part ID"
 msgstr "パーツIDなし"
 

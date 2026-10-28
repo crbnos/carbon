@@ -2495,8 +2495,13 @@ function mapInspectionDocument(row: Record<string, unknown>) {
   };
 }
 
+// The list groups plans under their part, so the part leads every order: a
+// user's sort orders the plans within each part.
 export const INSPECTION_DOCUMENTS_PAGING: Paging = {
-  defaultSorts: [{ column: "drawingNumber", ascending: true }]
+  defaultSorts: [
+    { column: "partReadableId", ascending: true },
+    { column: "drawingNumber", ascending: true }
+  ]
 };
 
 export async function getInspectionDocuments(
@@ -2516,16 +2521,30 @@ export async function getInspectionDocuments(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, INSPECTION_DOCUMENTS_PAGING);
+    const userSorts = (args.sorts ?? []).filter(
+      (sort) => sort.sortBy !== "partReadableId"
+    );
+    query = setGenericQueryFilters(
+      query,
+      {
+        ...args,
+        sorts:
+          userSorts.length > 0
+            ? [{ sortBy: "partReadableId", sortAsc: true }, ...userSorts]
+            : args.sorts
+      },
+      INSPECTION_DOCUMENTS_PAGING
+    );
   }
 
   const result = await query;
 
   return {
-    // The cursor reads the default sort column from the row.
+    // The cursor reads the sort columns from the row.
     data: (result.data ?? []).map((row: Record<string, unknown>) => ({
       ...mapInspectionDocument(row),
-      drawingNumber: (row.drawingNumber as string | null) ?? null
+      drawingNumber: (row.drawingNumber as string | null) ?? null,
+      partReadableId: (row.partReadableId as string | null) ?? null
     })),
     count: result.count ?? 0,
     error: result.error
