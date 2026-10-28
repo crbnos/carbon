@@ -25,6 +25,7 @@ import { withEmailDelivery } from "@carbon/ee";
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
+import { evaluateBrowserFlags } from "@carbon/env/flags.server";
 import { getVapidDetails } from "@carbon/env/push.server";
 import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
@@ -44,6 +45,7 @@ import {
   useNProgress,
   useViewport
 } from "@carbon/react";
+import { HalloweenLayer } from "@carbon/react/Halloween";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
@@ -62,7 +64,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Await, data, Outlet, useLoaderData, useNavigate } from "react-router";
+import { Await, data, Outlet, useLoaderData } from "react-router";
 import { RealtimeDataProvider } from "~/components";
 import ChangelogPanel from "~/components/ChangelogPanel";
 import {
@@ -345,6 +347,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     auditLogEnabled,
     company,
     companies: companies.data ?? [],
+    // Feature flags with `browser: true`, read with `useFeatureFlags().feature(key)`.
+    flags: await evaluateBrowserFlags({ companyId, userId }),
     companySettings: companySettings.data ?? null,
     customFields: customFields.data ?? [],
     defaults: defaults.data,
@@ -428,7 +432,6 @@ export default function AuthenticatedRoute() {
   useEffect(() => {
     shellLoadedAt = Date.now();
   }, [loaderData]);
-  const navigate = useNavigate();
   const permissions = usePermissions();
   const { isOpen, training, dismiss } = useTrainingPanel();
   const changelogPanel = useChangelogPanel();
@@ -444,15 +447,7 @@ export default function AuthenticatedRoute() {
 
   useNProgress();
   useKeyboardWedge({
-    test: (input) => input.startsWith(MES_URL) || input.startsWith(ERP_URL),
-    callback: (input) => {
-      try {
-        const url = new URL(input);
-        navigate(url.pathname + url.search);
-      } catch {
-        navigate(input);
-      }
-    }
+    test: (input) => input.startsWith(MES_URL) || input.startsWith(ERP_URL)
   });
 
   const userId = user?.id;
@@ -601,6 +596,9 @@ export default function AuthenticatedRoute() {
                         />
                       )}
                     </main>
+                    {/* Seasonal: shows only with the Halloween theme. Remove
+                        with packages/react/src/Halloween/. */}
+                    <HalloweenLayer />
                     {isPhone && (
                       <MobileBottomChrome>
                         <MobileDock />

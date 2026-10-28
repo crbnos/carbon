@@ -11,6 +11,8 @@ import {
 import { it } from "vitest";
 import { intersectWindows, subtractIntervals } from "./calendar-utils.ts";
 import {
+  closeHolidays,
+  downtimeOutages,
   type LadderShiftRow,
   resolveLocationWindows,
   resolveWorkCenterWindows,
@@ -261,4 +263,98 @@ it("intersectWindows: multi-window sweep intersects each overlap once", () => {
   assertEquals(out[0]?.end, utc("2026-01-05T16:00:00.000Z"));
   assertEquals(out[1]?.start, utc("2026-01-06T08:00:00.000Z"));
   assertEquals(out[1]?.end, utc("2026-01-06T12:00:00.000Z"));
+});
+
+it("a holiday closes a shift-based work center for the whole local day; a lights-out one keeps running", () => {
+  // Mon 26 Oct 2026 is a holiday. America/Chicago is UTC-5 that day.
+  const dayShift = {
+    start: utc("2026-10-26T11:00:00Z"),
+    end: utc("2026-10-26T19:30:00Z")
+  };
+  const tuesday = {
+    start: utc("2026-10-27T11:00:00Z"),
+    end: utc("2026-10-27T19:30:00Z")
+  };
+  const around = {
+    start: utc("2026-10-25T05:00:00Z"),
+    end: utc("2026-10-28T05:00:00Z")
+  };
+  const result = closeHolidays({
+    windowsByWorkCenter: new Map([
+      ["wc-shift", [dayShift, tuesday]],
+      ["wc-lights-out", [around]]
+    ]),
+    workCenters: [
+      {
+        id: "wc-shift",
+        alwaysOn: false,
+        locationId: "loc",
+        timezone: "America/Chicago"
+      },
+      {
+        id: "wc-lights-out",
+        alwaysOn: true,
+        locationId: "loc",
+        timezone: "America/Chicago"
+      }
+    ],
+    holidayDates: new Set(["2026-10-26"])
+  });
+
+  assertEquals(result.get("wc-shift"), [tuesday]);
+  assertEquals(result.get("wc-lights-out"), [around]);
+});
+
+const dispatch = (
+  overrides: Partial<Parameters<typeof downtimeOutages>[0]["dispatches"][0]>
+) => ({
+  id: "md-1",
+  workCenterId: "wc-a",
+  plannedStartTime: null,
+  plannedEndTime: null,
+  actualStartTime: null,
+  actualEndTime: null,
+  createdAt: "2026-01-05T06:00:00Z",
+  ...overrides
+});
+
+it("downtimeOutages: an actual time wins over the planned one, on the dispatch's station and every joined one", () => {
+  const outages = downtimeOutages({
+    dispatches: [
+      dispatch({
+        plannedStartTime: "2026-01-06T08:00:00Z",
+        plannedEndTime: "2026-01-06T12:00:00Z",
+        actualStartTime: "2026-01-06T09:00:00Z"
+      })
+    ],
+    dispatchWorkCenters: [
+      { maintenanceDispatchId: "md-1", workCenterId: "wc-b" },
+      { maintenanceDispatchId: "md-1", workCenterId: "wc-elsewhere" }
+    ],
+    workCenterIds: ["wc-a", "wc-b"],
+    rangeEnd: RANGE_END
+  });
+  const window = {
+    start: utc("2026-01-06T09:00:00Z"),
+    end: utc("2026-01-06T12:00:00Z")
+  };
+  assertEquals(
+    [...outages],
+    [
+      ["wc-a", [window]],
+      ["wc-b", [window]]
+    ]
+  );
+});
+
+it("downtimeOutages: a dispatch with no end is down to the range end, from its creation when it has no start", () => {
+  const outages = downtimeOutages({
+    dispatches: [dispatch({})],
+    dispatchWorkCenters: [],
+    workCenterIds: ["wc-a"],
+    rangeEnd: RANGE_END
+  });
+  assertEquals(outages.get("wc-a"), [
+    { start: utc("2026-01-05T06:00:00Z"), end: RANGE_END }
+  ]);
 });

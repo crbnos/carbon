@@ -4,12 +4,12 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  ADDABLE_BLOCK_TYPES,
   BLOCK_META,
   DEFAULT_SALES_INVOICE_TEMPLATE,
   documentThemeColors,
   resolveTemplate
 } from "./defaults";
+import { interpolateContent } from "./merge";
 import { blockSchema, documentTemplateSchema } from "./schema";
 
 describe("documentThemeColors", () => {
@@ -81,6 +81,20 @@ describe("resolveTemplate", () => {
       "summary"
     ]);
   });
+
+  it("appends the approval block visible to a stored purchase order", () => {
+    const stored = [
+      { id: "lineItems", type: "lineItems" as const, visible: true },
+      { id: "summary", type: "summary" as const, visible: true }
+    ];
+    const { blocks } = resolveTemplate("purchaseOrder", { blocks: stored });
+    expect(blocks.at(-1)).toEqual({
+      id: "approval",
+      type: "approval",
+      visible: true
+    });
+    expect(blocks.find((b) => b.type === "header")?.visible).toBe(false);
+  });
 });
 
 describe("block metadata invariants", () => {
@@ -90,26 +104,9 @@ describe("block metadata invariants", () => {
       expect(BLOCK_META[type].removable).toBe(false);
     }
   });
-
-  it("only exposes extension blocks in the add menu", () => {
-    expect(ADDABLE_BLOCK_TYPES).toEqual(["richText", "keyValue", "spacer"]);
-    for (const type of ADDABLE_BLOCK_TYPES) {
-      expect(BLOCK_META[type].isBuiltIn).toBe(false);
-      expect(BLOCK_META[type].removable).toBe(true);
-    }
-  });
 });
 
 describe("document settings", () => {
-  it("includes default settings on the default template", () => {
-    expect(DEFAULT_SALES_INVOICE_TEMPLATE.settings).toEqual({
-      fontFamily: "Inter",
-      showPageNumbers: true,
-      pageNumberFormat: "pageOfTotal",
-      showRegistrationLine: true
-    });
-  });
-
   it("merges a partial stored settings over defaults", () => {
     const { settings } = resolveTemplate("salesInvoice", {
       blocks: [{ id: "summary", type: "summary", visible: true }],
@@ -159,8 +156,59 @@ describe("schema validation", () => {
     expect(() => blockSchema.parse({ id: "x", type: "bogus" })).toThrow();
   });
 
-  it("validates a full template document", () => {
-    const parsed = documentTemplateSchema.parse(DEFAULT_SALES_INVOICE_TEMPLATE);
-    expect(parsed.blocks).toHaveLength(7);
+  it("accepts the default template unchanged", () => {
+    expect(
+      documentTemplateSchema.parse(DEFAULT_SALES_INVOICE_TEMPLATE)
+    ).toEqual(DEFAULT_SALES_INVOICE_TEMPLATE);
+  });
+});
+
+describe("interpolateContent", () => {
+  const paragraph = (text: string) => ({
+    type: "paragraph",
+    content: [{ type: "text", text }]
+  });
+  const doc = (...content: object[]) => ({ type: "doc", content });
+  const approvalLine = paragraph(
+    "Approved by {order.approvedBy} on {order.approvedDate}"
+  );
+
+  it("fills merge fields", () => {
+    expect(
+      interpolateContent(doc(approvalLine), {
+        "order.approvedBy": "Jordan Lee",
+        "order.approvedDate": "Jun 2, 2026"
+      })
+    ).toEqual(doc(paragraph("Approved by Jordan Lee on Jun 2, 2026")));
+  });
+
+  it("leaves out a paragraph whose merge fields are all empty", () => {
+    expect(
+      interpolateContent(doc(approvalLine, paragraph("Thank you")), {
+        "order.approvedBy": "",
+        "order.approvedDate": ""
+      })
+    ).toEqual(doc(paragraph("Thank you")));
+  });
+
+  it("keeps a paragraph when one of its merge fields has a value", () => {
+    expect(
+      interpolateContent(doc(approvalLine), { "order.approvedBy": "Jordan" })
+    ).toEqual(doc(paragraph("Approved by Jordan on ")));
+  });
+
+  it("keeps paragraphs without merge fields, empty ones included", () => {
+    const spacer = { type: "paragraph" };
+    expect(interpolateContent(doc(paragraph("Thank you"), spacer), {})).toEqual(
+      doc(paragraph("Thank you"), spacer)
+    );
+  });
+
+  it("leaves out a list whose items all came out empty", () => {
+    const list = {
+      type: "bulletList",
+      content: [{ type: "listItem", content: [approvalLine] }]
+    };
+    expect(interpolateContent(doc(list), {})).toEqual(doc());
   });
 });

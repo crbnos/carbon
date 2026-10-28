@@ -26,6 +26,7 @@ import {
   withTransaction
 } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
+import { deleteUnusedPmiInspectionPlans } from "@carbon/database/quality";
 import { insertRows, many, maybeSingle } from "@carbon/database/rows";
 import {
   hasPendingApproval,
@@ -37,7 +38,6 @@ import {
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
-import { TiptapText } from "@carbon/files/markdown";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
@@ -58,9 +58,9 @@ import { data } from "react-router";
 import { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
 import {
-  LIST_COUNT,
+  listCount,
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
@@ -686,6 +686,9 @@ async function deleteItemsWithPriceBreaks(
     )
     .execute();
 
+  // Plans made from the items' model PMI must not block the delete.
+  await deleteUnusedPmiInspectionPlans(trx, { companyId, itemIds });
+
   await trx
     .deleteFrom("item")
     .where("id", "in", itemIds)
@@ -862,6 +865,10 @@ export async function getConsumable(
     .single();
 }
 
+export const CONSUMABLES_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getConsumables(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -873,7 +880,7 @@ export async function getConsumables(
   let query = client
     .from("consumables")
     .select(CONSUMABLES_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -889,9 +896,7 @@ export async function getConsumables(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, CONSUMABLES_PAGING);
   return query;
 }
 
@@ -1124,6 +1129,10 @@ export async function getItemPostingGroup(
   return client.from("itemPostingGroup").select("*").eq("id", id).single();
 }
 
+export const ITEM_POSTING_GROUPS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getItemPostingGroups(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1132,7 +1141,7 @@ export async function getItemPostingGroups(
   let query = client
     .from("itemPostingGroup")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1141,9 +1150,7 @@ export async function getItemPostingGroups(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, ITEM_POSTING_GROUPS_PAGING);
   }
 
   return query;
@@ -1424,6 +1431,10 @@ export async function getMaterial(
     .single();
 }
 
+export const MATERIALS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getMaterials(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1435,7 +1446,7 @@ export async function getMaterials(
   let query = client
     .from("materials")
     .select(MATERIALS_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1451,9 +1462,7 @@ export async function getMaterials(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, MATERIALS_PAGING);
   return query;
 }
 
@@ -1469,6 +1478,13 @@ export async function getMaterialDimension(
   return client.from("materialDimension").select("*").eq("id", id).single();
 }
 
+export const MATERIAL_DIMENSIONS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "formName", ascending: true },
+    { column: "name", ascending: true }
+  ]
+};
+
 export async function getMaterialDimensions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1477,7 +1493,7 @@ export async function getMaterialDimensions(
   let query = client
     .from("materialDimensions")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("isMetric", args?.isMetric ?? false)
     .or(`companyId.eq.${companyId},companyId.is.null`);
@@ -1489,10 +1505,7 @@ export async function getMaterialDimensions(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "formName", ascending: true },
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_DIMENSIONS_PAGING);
   }
 
   return query;
@@ -1519,6 +1532,13 @@ export async function getMaterialFinish(
   return client.from("materialFinish").select("*").eq("id", id).single();
 }
 
+export const MATERIAL_FINISHES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "substanceName", ascending: true },
+    { column: "name", ascending: true }
+  ]
+};
+
 export async function getMaterialFinishes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1527,7 +1547,7 @@ export async function getMaterialFinishes(
   let query = client
     .from("materialFinishes")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1538,10 +1558,7 @@ export async function getMaterialFinishes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "substanceName", ascending: true },
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_FINISHES_PAGING);
   }
 
   return query;
@@ -1566,6 +1583,10 @@ export async function getMaterialForm(
   return client.from("materialForm").select("*").eq("id", id).single();
 }
 
+export const MATERIAL_FORMS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getMaterialForms(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1574,7 +1595,7 @@ export async function getMaterialForms(
   let query = client
     .from("materialForm")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1583,9 +1604,7 @@ export async function getMaterialForms(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_FORMS_PAGING);
   }
 
   return query;
@@ -1602,6 +1621,13 @@ export async function getMaterialFormsList(
     .order("name");
 }
 
+export const MATERIAL_GRADES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "substanceName", ascending: true },
+    { column: "name", ascending: true }
+  ]
+};
+
 export async function getMaterialGrades(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1610,7 +1636,7 @@ export async function getMaterialGrades(
   let query = client
     .from("materialGrades")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1621,10 +1647,7 @@ export async function getMaterialGrades(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "substanceName", ascending: true },
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_GRADES_PAGING);
   }
 
   return query;
@@ -1656,6 +1679,10 @@ export async function getMaterialSubstance(
   return client.from("materialSubstance").select("*").eq("id", id).single();
 }
 
+export const MATERIAL_SUBSTANCES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getMaterialSubstances(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1664,7 +1691,7 @@ export async function getMaterialSubstances(
   let query = client
     .from("materialSubstance")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1673,9 +1700,7 @@ export async function getMaterialSubstances(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_SUBSTANCES_PAGING);
   }
 
   return query;
@@ -1692,6 +1717,19 @@ export async function getMaterialSubstancesList(
     .order("name");
 }
 
+export async function getMethodMaterial(
+  client: SupabaseClient<Database>,
+  materialId: string
+) {
+  return client
+    .from("methodMaterial")
+    .select("*, item(name)")
+    .eq("id", materialId)
+    .single();
+}
+
+export const METHOD_MATERIALS_PAGING: Paging = { defaultSorts: [] };
+
 export async function getMethodMaterials(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1702,7 +1740,7 @@ export async function getMethodMaterials(
     .select(
       "*, item(name, readableIdWithRevision), makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
       {
-        count: LIST_COUNT
+        count: listCount(args)
       }
     )
     .eq("companyId", companyId);
@@ -1712,7 +1750,7 @@ export async function getMethodMaterials(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, []);
+    query = setGenericQueryFilters(query, args, METHOD_MATERIALS_PAGING);
   }
 
   return query;
@@ -1753,6 +1791,10 @@ export async function getMethodMaterialsByMakeMethod(
   return result;
 }
 
+export const METHOD_OPERATIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "order", ascending: true }]
+};
+
 export async function getMethodOperations(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1763,7 +1805,7 @@ export async function getMethodOperations(
     .select(
       "*, makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
       {
-        count: LIST_COUNT
+        count: listCount(args)
       }
     )
     .eq("companyId", companyId);
@@ -1773,9 +1815,7 @@ export async function getMethodOperations(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "order", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, METHOD_OPERATIONS_PAGING);
   }
 
   return query;
@@ -2030,6 +2070,10 @@ export async function getPart(
     .single();
 }
 
+export const PARTS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getParts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2040,8 +2084,9 @@ export async function getParts(
 ) {
   let query = client
     .from("parts")
+    // Later pages (`cursor`) skip the count: the first page already has it.
     .select(PARTS_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2057,9 +2102,7 @@ export async function getParts(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PARTS_PAGING);
   return query;
 }
 
@@ -2214,6 +2257,10 @@ export async function getPickMethods(
     .eq("companyId", companyId);
 }
 
+export const SERVICES_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getServices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2226,7 +2273,7 @@ export async function getServices(
   let query = client
     .from("services")
     .select(SERVICES_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2245,9 +2292,7 @@ export async function getServices(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SERVICES_PAGING);
   return query;
 }
 
@@ -2328,6 +2373,10 @@ export async function getTool(
     .single();
 }
 
+export const TOOLS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getTools(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2339,7 +2388,7 @@ export async function getTools(
   let query = client
     .from("tools")
     .select(TOOLS_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2355,9 +2404,7 @@ export async function getTools(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, TOOLS_PAGING);
   return query;
 }
 
@@ -2386,6 +2433,10 @@ export async function getUnitOfMeasureUsage(
   return client.rpc("get_unit_of_measure_usage", { p_id: id });
 }
 
+export const UNIT_OF_MEASURES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getUnitOfMeasures(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2394,7 +2445,7 @@ export async function getUnitOfMeasures(
   let query = client
     .from("unitOfMeasure")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2402,9 +2453,7 @@ export async function getUnitOfMeasures(
     query = query.or(searchFilter(["name", "code"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, UNIT_OF_MEASURES_PAGING);
   return query;
 }
 
@@ -3899,6 +3948,12 @@ export async function upsertPart(
   return updated;
 }
 
+/**
+ * Writes the item row's own fields. Never the readable id or the type: the
+ * type row (`part`, `tool`, …) is keyed by the readable id, so changing either
+ * here would orphan it. Refused when the item is not of `type`, or when
+ * `readableId` differs from the item's (`setItemReadableId` changes it).
+ */
 export async function updateItem(
   client: SupabaseClient<Database>,
   item: z.infer<typeof itemValidator> & {
@@ -3917,13 +3972,38 @@ export async function updateItem(
     shelfLifeTriggerProcessId: _shelfLifeTriggerProcessId,
     shelfLifeTriggerTiming: _shelfLifeTriggerTiming,
     shelfLifeCalculateFromBom: _shelfLifeCalculateFromBom,
+    readableId,
+    type,
     ...row
   } = item;
+
+  const current = await client
+    .from("item")
+    .select("readableId")
+    .eq("id", item.id)
+    .eq("companyId", item.companyId)
+    .eq("type", type)
+    .maybeSingle();
+  if (current.error) return current;
+  if (!current.data) {
+    return { data: null, error: ruleError(`${type} ${item.id} not found`) };
+  }
+  if (readableId !== undefined && readableId !== current.data.readableId) {
+    return {
+      data: null,
+      error: ruleError(
+        `updateItem does not change the readable id ${current.data.readableId}; use setItemReadableId`
+      )
+    };
+  }
+
   return client
     .from("item")
     .update(sanitize(row))
     .eq("id", item.id)
-    .eq("companyId", item.companyId);
+    .eq("companyId", item.companyId)
+    .select("id")
+    .single();
 }
 
 export async function upsertItemCost(
@@ -4506,7 +4586,8 @@ export async function upsertMethodMaterial(
   client: SupabaseClient<Database>,
 
   methodMaterial:
-    | (z.infer<typeof methodMaterialValidator> & {
+    | (Omit<z.infer<typeof methodMaterialValidator>, "id"> & {
+        id?: string;
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -4519,8 +4600,10 @@ export async function upsertMethodMaterial(
 ) {
   // The MCP/API path skips methodMaterialValidator, and the insert spreads the
   // id over the column default — so a blank id was stored as "" and the next
-  // blank create collided with it.
-  if (!methodMaterial.id?.trim()) {
+  // blank create collided with it. A create may leave the id out: the column
+  // default makes one.
+  const blankId = methodMaterial.id !== undefined && !methodMaterial.id.trim();
+  if (blankId || ("updatedBy" in methodMaterial && !methodMaterial.id)) {
     return {
       data: null,
       error: { message: "Material ID is required" }
@@ -5909,6 +5992,8 @@ export async function deleteMaterialType(
   return client.from("materialType").delete().eq("id", id);
 }
 
+export const MATERIAL_TYPES_PAGING: Paging = { defaultSorts: [] };
+
 export async function getMaterialTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5916,7 +6001,7 @@ export async function getMaterialTypes(
 ) {
   let query = client
     .from("materialTypes")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
   if (args?.search) {
@@ -5930,7 +6015,7 @@ export async function getMaterialTypes(
     );
   }
 
-  query = setGenericQueryFilters(query, args ?? {});
+  query = setGenericQueryFilters(query, args ?? {}, MATERIAL_TYPES_PAGING);
   return query;
 }
 
@@ -6402,6 +6487,10 @@ export async function getChangeNotice(
     .single();
 }
 
+export const CHANGE_NOTICES_PAGING: Paging = {
+  defaultSorts: [{ column: "changeOrderId", ascending: false }]
+};
+
 export async function getChangeNotices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6409,7 +6498,7 @@ export async function getChangeNotices(
 ) {
   let query = client
     .from("changeOrders")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -6417,9 +6506,7 @@ export async function getChangeNotices(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "changeOrderId", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, CHANGE_NOTICES_PAGING);
   }
 
   return query;
@@ -6669,6 +6756,10 @@ export async function updateChangeNoticeStatus(
 // -----------------------------------------------------------------------------
 // Change Notice Types (the "Category" lookup — configured like Issue Types)
 // -----------------------------------------------------------------------------
+export const CHANGE_NOTICE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getChangeNoticeTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6676,7 +6767,7 @@ export async function getChangeNoticeTypes(
 ) {
   let query = client
     .from("changeOrderType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -6684,9 +6775,7 @@ export async function getChangeNoticeTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, CHANGE_NOTICE_TYPES_PAGING);
   }
 
   return query;
@@ -7807,6 +7896,10 @@ export async function updateChangeNoticeActionOrder(
 // Change Notice Required Actions (the configurable default-action templates the
 // config CRUD page manages, and the source new change notices are seeded from).
 // =============================================================================
+export const CHANGE_NOTICE_REQUIRED_ACTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getChangeNoticeRequiredActions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -7814,7 +7907,7 @@ export async function getChangeNoticeRequiredActions(
 ) {
   let query = client
     .from("changeOrderRequiredAction")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -7822,9 +7915,11 @@ export async function getChangeNoticeRequiredActions(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(
+      query,
+      args,
+      CHANGE_NOTICE_REQUIRED_ACTIONS_PAGING
+    );
   }
 
   return query;
@@ -10263,13 +10358,6 @@ export function priceBreakRows(
 export const isMakeMethodId = (id: string) => id.startsWith("make_");
 
 // ── Change notices ──────────────────────────────────────────────────────────
-
-// Reason and description arrive as Markdown; the columns are tiptap JSON, so
-// non-empty text becomes a doc the detail page's editor can edit.
-export function toRichText(value: string | undefined): Json | undefined {
-  if (!value) return undefined;
-  return TiptapText(value).toDocument() as unknown as Json;
-}
 
 const onShapeDataValidator = z.object({
   index: z.string(),

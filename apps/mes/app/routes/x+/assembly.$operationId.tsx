@@ -15,6 +15,7 @@ import { useLoaderData, useParams } from "react-router";
 import { AssemblyView } from "~/components/AssemblyView";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
+  getAbilityShortfall,
   getAssemblyPlaybackByOperationId,
   getJobByOperationId,
   getJobMakeMethod,
@@ -31,7 +32,8 @@ import {
   getThumbnailPathByItemId,
   getToolsByOperationId,
   getTrackedEntitiesByMakeMethodId,
-  getWorkCenter
+  getWorkCenter,
+  isFirstOperationOfMakeMethod
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
@@ -168,7 +170,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   // Expiry policy for the issue-material modal — same source as the operation view.
-  const companySettings = await getCompanySettings(serviceRole, companyId);
+  const [companySettings, abilityWarning] = await Promise.all([
+    getCompanySettings(serviceRole, companyId),
+    getAbilityShortfall(serviceRole, {
+      operationId,
+      employeeId: userId,
+      companyId
+    })
+  ]);
   const inventoryShelfLife = (companySettings.data?.inventoryShelfLife ??
     null) as { expiredEntityPolicy?: ExpiredEntityPolicy } | null;
   const expiredEntityPolicy: ExpiredEntityPolicy =
@@ -223,7 +232,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? navEntities[0]?.id
       : navEntities[unitIndex]?.id;
 
-  const [materials, openEvent, priorDependency] = await Promise.all([
+  const [materials, openEvent, isFirstOperation] = await Promise.all([
     getJobMaterialsByOperationId(serviceRole, {
       operation: op,
       trackedEntityId: effectiveEntityId,
@@ -245,27 +254,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .maybeSingle(),
     // Is this the first operation in the routing? A serial unit only earns a printed
     // label when completed at its first operation, so the first op flows unit-by-unit
-    // (auto-select), and later ops scan/select (labels exist). "First" means nothing
-    // precedes it within THIS make method — no jobOperationDependency whose predecessor
-    // shares this op's jobMakeMethodId. Cross make-method (subassembly) dependencies are
-    // ignored: a parent-assembly op still has no printed label just because a subassembly
-    // finished first. `order` is only a display/sort field and isn't a reliable signal.
-    serviceRole
-      .from("jobOperationDependency")
-      .select(
-        "dependsOn:jobOperation!jobOperationDependency_dependsOnId_fk!inner(jobMakeMethodId)"
-      )
-      .eq("operationId", operationId)
-      .eq("dependsOn.jobMakeMethodId", op.jobMakeMethodId)
-      .limit(1)
-      .maybeSingle()
+    // (auto-select), and later ops scan/select (labels exist).
+    isFirstOperationOfMakeMethod(serviceRole, operationId, op.jobMakeMethodId)
   ]);
-  // Fail closed: a query error also returns null data, so treat an errored lookup
-  // as "not first" — later ops require scan/select, which is the safe default when
-  // we can't confirm the operation has no predecessor.
-  const isFirstOperation = !priorDependency.error && !priorDependency.data;
 
   return {
+    abilityWarning,
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     thumbnailPath,

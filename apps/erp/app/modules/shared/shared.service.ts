@@ -59,6 +59,7 @@ import {
   orderLayersForConsumption,
   relieveLayers
 } from "@carbon/database/cost-relief";
+import { TEMPLATE_ASSET_PREFIX } from "@carbon/database/dataset-assets";
 import type { AutomaticJournalStatus } from "@carbon/database/journal-posting-status";
 import {
   assertPostingStatusUnchanged,
@@ -185,9 +186,11 @@ import {
 import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
 import { getUser, getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
+import type { Paging } from "~/utils/query";
 import {
   type GenericQueryFilters,
   LIST_COUNT,
+  listCount,
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
@@ -200,6 +203,7 @@ import {
   type standardFactorType,
   toTiptapDoc
 } from "./shared.models";
+import { flatChargeShare } from "./shared.utils";
 import { assertMethodHasPullFrom, isStrictBackflush } from "./strict-backflush";
 import type { ItemModelUpload, MethodRowsAdded } from "./types";
 
@@ -257,6 +261,13 @@ export async function getBase64ImageFromSupabase(
   // miss, so callers would get a rejected promise instead of the fallback.
   const companyId = path.split("/")[0];
   if (!companyId) {
+    return null;
+  }
+
+  // Demo-template artwork is bundled with the app, not uploaded — there is no
+  // storage object to download. It is also SVG, which react-pdf's <Image>
+  // cannot decode (JPG/PNG only), so there is nothing to hand a PDF either.
+  if (path.startsWith(TEMPLATE_ASSET_PREFIX)) {
     return null;
   }
 
@@ -464,6 +475,10 @@ export async function upsertExternalLink(
     .single();
 }
 
+export const CUSTOMER_PORTALS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getCustomerPortals(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -473,7 +488,7 @@ export async function getCustomerPortals(
   // has its customer (the form requires one), so the inner join drops none.
   let query = client
     .from("externalLink")
-    .select("*, customer!inner(id)", { count: LIST_COUNT })
+    .select("*, customer!inner(id)", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("documentType", "Customer");
 
@@ -482,9 +497,7 @@ export async function getCustomerPortals(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, CUSTOMER_PORTALS_PAGING);
   }
 
   return query;
@@ -8861,6 +8874,154 @@ function orderShipToCustomerLocationId(
     : order.customerLocationId;
 }
 
+/** Base-currency settlement decimals; sales line charges are stored in base. */
+async function baseCurrencyDecimals(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string
+): Promise<number> {
+  const company = await trx
+    .selectFrom("company")
+    .select("baseCurrencyCode")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  return currencyDecimals(trx, companyId, company.baseCurrencyCode);
+}
+
+type BilledLineCharges = Map<string, Record<string, number>>;
+
+function sumBilledLineCharges<Row extends { lineId: string | null }>(
+  rows: Row[],
+  fields: (keyof Row & string)[]
+): BilledLineCharges {
+  const byLine: BilledLineCharges = new Map();
+  for (const row of rows) {
+    if (!row.lineId) continue;
+    const billed = byLine.get(row.lineId) ?? {};
+    for (const field of fields) {
+      billed[field] = (billed[field] ?? 0) + Number(row[field] ?? 0);
+    }
+    byLine.set(row.lineId, billed);
+  }
+  return byLine;
+}
+
+/**
+ * What a sales order's non-voided invoices already bill of its flat charges:
+ * the order's shipping, and each line's add-ons and shipping. Locks the order
+ * row first, so two conversions of one order run one after the other and the
+ * second sees what the first billed.
+ */
+async function billedSalesOrderCharges(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  salesOrderId: string
+) {
+  await trx
+    .selectFrom("salesOrder")
+    .select("id")
+    .where("id", "=", salesOrderId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+
+  const lines = await trx
+    .selectFrom("salesInvoiceLine")
+    .innerJoin("salesInvoice", "salesInvoice.id", "salesInvoiceLine.invoiceId")
+    .select([
+      "salesInvoiceLine.invoiceId",
+      "salesInvoiceLine.salesOrderLineId as lineId",
+      "salesInvoiceLine.addOnCost",
+      "salesInvoiceLine.nonTaxableAddOnCost",
+      "salesInvoiceLine.shippingCost"
+    ])
+    .where("salesInvoiceLine.salesOrderId", "=", salesOrderId)
+    .where("salesInvoiceLine.companyId", "=", companyId)
+    .where("salesInvoice.status", "!=", "Voided")
+    .execute();
+
+  const invoiceIds = [...new Set(lines.map((line) => line.invoiceId))];
+  const shipping =
+    invoiceIds.length > 0
+      ? await trx
+          .selectFrom("salesInvoiceShipment")
+          .select("shippingCost")
+          .where("id", "in", invoiceIds)
+          .where("companyId", "=", companyId)
+          .execute()
+      : [];
+
+  return {
+    orderShipping: shipping.reduce(
+      (sum, row) => sum + Number(row.shippingCost ?? 0),
+      0
+    ),
+    lines: sumBilledLineCharges(lines, [
+      "addOnCost",
+      "nonTaxableAddOnCost",
+      "shippingCost"
+    ])
+  };
+}
+
+/**
+ * What a purchase order's non-voided invoices already bill of its flat
+ * charges: the supplier's shipping, and each line's shipping and tax. Locks
+ * the order row first, like `billedSalesOrderCharges`.
+ */
+async function billedPurchaseOrderCharges(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  purchaseOrderId: string
+) {
+  await trx
+    .selectFrom("purchaseOrder")
+    .select("id")
+    .where("id", "=", purchaseOrderId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+
+  const lines = await trx
+    .selectFrom("purchaseInvoiceLine")
+    .innerJoin(
+      "purchaseInvoice",
+      "purchaseInvoice.id",
+      "purchaseInvoiceLine.invoiceId"
+    )
+    .select([
+      "purchaseInvoiceLine.invoiceId",
+      "purchaseInvoiceLine.purchaseOrderLineId as lineId",
+      "purchaseInvoiceLine.supplierShippingCost",
+      "purchaseInvoiceLine.supplierTaxAmount"
+    ])
+    .where("purchaseInvoiceLine.purchaseOrderId", "=", purchaseOrderId)
+    .where("purchaseInvoiceLine.companyId", "=", companyId)
+    .where("purchaseInvoice.status", "!=", "Voided")
+    .execute();
+
+  const invoiceIds = [...new Set(lines.map((line) => line.invoiceId))];
+  const shipping =
+    invoiceIds.length > 0
+      ? await trx
+          .selectFrom("purchaseInvoiceDelivery")
+          .select("supplierShippingCost")
+          .where("id", "in", invoiceIds)
+          .where("companyId", "=", companyId)
+          .execute()
+      : [];
+
+  return {
+    orderShipping: shipping.reduce(
+      (sum, row) => sum + Number(row.supplierShippingCost ?? 0),
+      0
+    ),
+    lines: sumBilledLineCharges(lines, [
+      "supplierShippingCost",
+      "supplierTaxAmount"
+    ])
+  };
+}
+
 /** `id` for the three document-to-invoice conversions, `convertedId` for the rest. */
 export type ConvertResult = { id?: string; convertedId?: string };
 
@@ -8893,8 +9054,6 @@ export async function convertDocument(
   let convertedId = "";
 
   convertDocumentLogger.info("convert", { type, id, companyId, userId });
-
-  const client = ctx.asSystem.supabase;
 
   switch (payload.type) {
     case "methodVersionToActive": {
@@ -9050,32 +9209,6 @@ export async function convertDocument(
         return acc;
       }, 0);
 
-      // Flat header/line amounts (shipping, tax) must not be duplicated
-      // when a PO is invoiced in multiple partial invoices: the header
-      // shipping goes on the first (non-voided) invoice only, and flat
-      // line amounts are prorated by the fraction being invoiced.
-      // Untyped client: this embedded select exceeds TypeScript's
-      // instantiation depth, and only the row count is read.
-      const priorInvoiceLines = await (client as unknown as SupabaseClient)
-        .from("purchaseInvoiceLine")
-        .select("id, purchaseInvoice!inner(status)")
-        .eq("purchaseOrderId", purchaseOrderId)
-        .eq("companyId", companyId)
-        .neq("purchaseInvoice.status", "Voided")
-        .limit(1);
-      const hasPriorInvoice = (priorInvoiceLines.data?.length ?? 0) > 0;
-
-      const uninvoicedFraction = (line: {
-        purchaseQuantity: number | null;
-        quantityReceived: number | null;
-        quantityInvoiced: number | null;
-        receivedComplete: boolean | null;
-      }) => {
-        const ordered = line.purchaseQuantity ?? 0;
-        if (ordered <= 0) return 1;
-        return Math.min(getRemainingQuantityToInvoice(line) / ordered, 1);
-      };
-
       let purchaseInvoiceId = "";
 
       await db.transaction().execute(async (trx) => {
@@ -9083,6 +9216,18 @@ export async function convertDocument(
           trx,
           "purchaseInvoice",
           companyId
+        );
+        // Flat charges bill once across partial invoices (flatChargeShare).
+        // Supplier amounts are in the order's currency.
+        const billed = await billedPurchaseOrderCharges(
+          trx,
+          companyId,
+          purchaseOrderId
+        );
+        const decimals = await currencyDecimals(
+          trx,
+          companyId,
+          purchaseOrder.data!.currencyCode ?? "USD"
         );
 
         const purchaseInvoice = await trx
@@ -9124,9 +9269,14 @@ export async function convertDocument(
           .values({
             id: purchaseInvoiceId,
             locationId: purchaseOrderDelivery.data!.locationId,
-            supplierShippingCost: hasPriorInvoice
-              ? 0
-              : (purchaseOrderDelivery.data!.supplierShippingCost ?? 0),
+            supplierShippingCost: flatChargeShare({
+              charge: purchaseOrderDelivery.data!.supplierShippingCost ?? 0,
+              billed: billed.orderShipping,
+              quantity: 1,
+              remainingQuantity: 1,
+              orderedQuantity: 1,
+              decimals
+            }),
             shippingMethodId: purchaseOrderDelivery.data!.shippingMethodId,
             shippingTermId: purchaseOrderDelivery.data!.shippingTermId,
             incoterm: purchaseOrderDelivery.data!.incoterm,
@@ -9137,35 +9287,53 @@ export async function convertDocument(
           .execute();
 
         const purchaseInvoiceLines: Database["public"]["Tables"]["purchaseInvoiceLine"]["Insert"][] =
-          uninvoicedLines.map((line) => ({
-            invoiceId: purchaseInvoiceId,
-            invoiceLineType: line.purchaseOrderLineType,
-            purchaseOrderId: line.purchaseOrderId,
-            purchaseOrderLineId: line.id,
-            itemId: line.itemId,
-            locationId: line.locationId,
-            storageUnitId: line.storageUnitId,
-            accountId: line.accountId,
-            costCenterId: line.costCenterId,
-            assetId: line.assetId,
-            description: line.description,
-            quantity: getRemainingQuantityToInvoice(line),
-            supplierUnitPrice: line.supplierUnitPrice ?? 0,
-            supplierShippingCost:
-              (line.supplierShippingCost ?? 0) * uninvoicedFraction(line),
-            supplierTaxAmount:
-              (line.supplierTaxAmount ?? 0) * uninvoicedFraction(line),
-            // The rate is invariant under proration; only the amount scales
-            taxPercent: line.taxPercent ?? 0,
-            purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
-            inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
-            conversionFactor: line.conversionFactor,
-            exchangeRate: line.exchangeRate ?? 1,
-            jobOperationId: line.jobOperationId,
-            sortOrder: line.sortOrder ?? 1,
-            companyId,
-            createdBy: userId
-          }));
+          uninvoicedLines.map((line) => {
+            const lineBilled = billed.lines.get(line.id) ?? {};
+            const quantity = getRemainingQuantityToInvoice(line);
+            const share = (charge: number | null, field: string) =>
+              flatChargeShare({
+                charge: charge ?? 0,
+                billed: lineBilled[field] ?? 0,
+                quantity,
+                remainingQuantity:
+                  (line.purchaseQuantity ?? 0) - (line.quantityInvoiced ?? 0),
+                orderedQuantity: line.purchaseQuantity,
+                decimals
+              });
+            return {
+              invoiceId: purchaseInvoiceId,
+              invoiceLineType: line.purchaseOrderLineType,
+              purchaseOrderId: line.purchaseOrderId,
+              purchaseOrderLineId: line.id,
+              itemId: line.itemId,
+              locationId: line.locationId,
+              storageUnitId: line.storageUnitId,
+              accountId: line.accountId,
+              costCenterId: line.costCenterId,
+              assetId: line.assetId,
+              description: line.description,
+              quantity,
+              supplierUnitPrice: line.supplierUnitPrice ?? 0,
+              supplierShippingCost: share(
+                line.supplierShippingCost,
+                "supplierShippingCost"
+              ),
+              supplierTaxAmount: share(
+                line.supplierTaxAmount,
+                "supplierTaxAmount"
+              ),
+              // The rate is invariant under proration; only the amount scales
+              taxPercent: line.taxPercent ?? 0,
+              purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+              inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
+              conversionFactor: line.conversionFactor,
+              exchangeRate: line.exchangeRate ?? 1,
+              jobOperationId: line.jobOperationId,
+              sortOrder: line.sortOrder ?? 1,
+              companyId,
+              createdBy: userId
+            };
+          });
 
         await trx
           .insertInto("purchaseInvoiceLine")
@@ -9644,10 +9812,19 @@ export async function convertDocument(
         return acc;
       }, 0);
 
+      if (!uninvoicedLines || uninvoicedLines.length === 0) {
+        throw new Error(
+          "No lines available to invoice. All lines may already be marked as invoiced complete."
+        );
+      }
+
       let salesInvoiceId = "";
 
       await db.transaction().execute(async (trx) => {
         salesInvoiceId = await getNextSequence(trx, "salesInvoice", companyId);
+        // Flat charges bill once across partial invoices (flatChargeShare).
+        const billed = await billedSalesOrderCharges(trx, companyId, order.id);
+        const decimals = await baseCurrencyDecimals(trx, companyId);
 
         const salesInvoice = await trx
           .insertInto("salesInvoice")
@@ -9691,7 +9868,14 @@ export async function convertDocument(
               order,
               orderShipment
             ),
-            shippingCost: orderShipment.shippingCost ?? 0,
+            shippingCost: flatChargeShare({
+              charge: orderShipment.shippingCost ?? 0,
+              billed: billed.orderShipping,
+              quantity: 1,
+              remainingQuantity: 1,
+              orderedQuantity: 1,
+              decimals
+            }),
             shippingMethodId: orderShipment.shippingMethodId,
             shippingTermId: orderShipment.shippingTermId,
             incoterm: orderShipment.incoterm,
@@ -9709,6 +9893,17 @@ export async function convertDocument(
             line.quantityToInvoice > 0 &&
             !line.invoicedComplete
           ) {
+            const lineBilled = billed.lines.get(line.id) ?? {};
+            const quantity = line.quantityToInvoice;
+            const share = (charge: number | null, field: string) =>
+              flatChargeShare({
+                charge: charge ?? 0,
+                billed: lineBilled[field] ?? 0,
+                quantity,
+                remainingQuantity: quantity,
+                orderedQuantity: line.saleQuantity,
+                decimals
+              });
             acc.push({
               invoiceId: salesInvoiceId,
               invoiceLineType: line.salesOrderLineType,
@@ -9723,9 +9918,12 @@ export async function convertDocument(
               description: line.description,
               quantity: line.quantityToInvoice,
               unitPrice: line.unitPrice ?? 0,
-              addOnCost: line.addOnCost ?? 0,
-              nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
-              shippingCost: line.shippingCost ?? 0,
+              addOnCost: share(line.addOnCost, "addOnCost"),
+              nonTaxableAddOnCost: share(
+                line.nonTaxableAddOnCost,
+                "nonTaxableAddOnCost"
+              ),
+              shippingCost: share(line.shippingCost, "shippingCost"),
               taxPercent: line.taxPercent ?? 0,
               unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
               exchangeRate: line.exchangeRate ?? 1,
@@ -10230,12 +10428,16 @@ export async function convertDocument(
         throw new NotFoundError("Sales order delivery details not found");
       const orderShipment = salesOrderShipment.data;
 
+      // Each line's quantity no invoice bills yet, before it is narrowed to
+      // what this shipment shipped.
+      const remainingByLine = new Map<string, number>();
       const uninvoicedLines = salesOrderLines?.data?.reduce<
         (typeof salesOrderLines)["data"]
       >((acc, line) => {
         if (line.id in quantitiesByLine) {
           const shippedInThisShipment = quantitiesByLine[line.id]!;
           const remainingToInvoice = line.quantityToInvoice ?? 0;
+          remainingByLine.set(line.id, remainingToInvoice);
           const quantityToInvoice = Math.min(
             shippedInThisShipment,
             remainingToInvoice
@@ -10264,10 +10466,19 @@ export async function convertDocument(
         return acc;
       }, 0);
 
+      if (!uninvoicedLines || uninvoicedLines.length === 0) {
+        throw new Error(
+          "No lines available to invoice. All lines may already be marked as invoiced complete."
+        );
+      }
+
       let salesInvoiceId = "";
 
       await db.transaction().execute(async (trx) => {
         salesInvoiceId = await getNextSequence(trx, "salesInvoice", companyId);
+        // Flat charges bill once across partial invoices (flatChargeShare).
+        const billed = await billedSalesOrderCharges(trx, companyId, order.id);
+        const decimals = await baseCurrencyDecimals(trx, companyId);
 
         const salesInvoice = await trx
           .insertInto("salesInvoice")
@@ -10312,7 +10523,14 @@ export async function convertDocument(
               order,
               orderShipment
             ),
-            shippingCost: orderShipment.shippingCost ?? 0,
+            shippingCost: flatChargeShare({
+              charge: orderShipment.shippingCost ?? 0,
+              billed: billed.orderShipping,
+              quantity: 1,
+              remainingQuantity: 1,
+              orderedQuantity: 1,
+              decimals
+            }),
             shippingMethodId: orderShipment.shippingMethodId,
             shippingTermId: orderShipment.shippingTermId,
             incoterm: orderShipment.incoterm,
@@ -10330,6 +10548,17 @@ export async function convertDocument(
             line.quantityToInvoice > 0 &&
             !line.invoicedComplete
           ) {
+            const lineBilled = billed.lines.get(line.id) ?? {};
+            const quantity = line.quantityToInvoice;
+            const share = (charge: number | null, field: string) =>
+              flatChargeShare({
+                charge: charge ?? 0,
+                billed: lineBilled[field] ?? 0,
+                quantity,
+                remainingQuantity: remainingByLine.get(line.id) ?? quantity,
+                orderedQuantity: line.saleQuantity,
+                decimals
+              });
             acc.push({
               invoiceId: salesInvoiceId,
               invoiceLineType: line.salesOrderLineType,
@@ -10344,9 +10573,12 @@ export async function convertDocument(
               description: line.description,
               quantity: line.quantityToInvoice,
               unitPrice: line.unitPrice ?? 0,
-              addOnCost: line.addOnCost ?? 0,
-              nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
-              shippingCost: line.shippingCost ?? 0,
+              addOnCost: share(line.addOnCost, "addOnCost"),
+              nonTaxableAddOnCost: share(
+                line.nonTaxableAddOnCost,
+                "nonTaxableAddOnCost"
+              ),
+              shippingCost: share(line.shippingCost, "shippingCost"),
               taxPercent: line.taxPercent ?? 0,
               unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
               exchangeRate: line.exchangeRate ?? 1,
@@ -11648,6 +11880,8 @@ export async function createDocument(
             many(db, "purchaseOrderLine", {
               companyId,
               purchaseOrderId,
+              // The `purchaseOrderLinesToReceive` view (Inventory →
+              // Receiving) lists the same types: change both together.
               purchaseOrderLineType: [
                 "Part",
                 "Material",
@@ -16044,6 +16278,120 @@ export function computeCurrentUnitCost(
     default:
       return Number(itemCost.unitCost ?? 0);
   }
+}
+
+/**
+ * An Average item's unit cost after `quantity` units worth `value` come in
+ * (or go out, both negative) at a cost of their own: a receipt, a voided
+ * receipt, an invoice's write-up (`quantity` 0). The same moving average
+ * complete_job_to_inventory keeps, so on-hand × unit cost stays what the
+ * journals booked. With nothing left on hand the cost stays as it was.
+ * Negative on-hand (shipped before it was received) blends in as zero: those
+ * units hold no stock to average with, so a receipt into them takes its own
+ * cost rather than a skewed, possibly negative, one.
+ */
+export function movingAverageUnitCost({
+  onHand,
+  unitCost,
+  quantity,
+  value
+}: {
+  onHand: number;
+  unitCost: number;
+  quantity: number;
+  value: number;
+}): number {
+  const held = Math.max(onHand, 0);
+  const after = held + quantity;
+  if (after <= EPSILON) return unitCost;
+  return (held * unitCost + value) / after;
+}
+
+/** Units and value a posting moves at their own cost, per item. */
+export type AverageCostChange = {
+  itemId: string;
+  quantity: number;
+  value: number;
+};
+
+/**
+ * Folds `changes` into the unit cost of every Average item among them
+ * (`movingAverageUnitCost`); other costing methods are left alone. Call it
+ * BEFORE the posting inserts its own item ledger rows: on-hand is read as it
+ * stood before them. Locks the cost rows, so two postings of one item
+ * average in turn.
+ */
+export async function applyAverageCostChanges(
+  trx: Transaction<DB>,
+  { companyId, changes }: { companyId: string; changes: AverageCostChange[] }
+): Promise<void> {
+  const byItem = new Map<string, { quantity: number; value: number }>();
+  for (const change of changes) {
+    const total = byItem.get(change.itemId) ?? { quantity: 0, value: 0 };
+    total.quantity += change.quantity;
+    total.value += change.value;
+    byItem.set(change.itemId, total);
+  }
+  if (byItem.size === 0) return;
+
+  const averageCosts = await trx
+    .selectFrom("itemCost")
+    .select(["itemId", "unitCost"])
+    .where("companyId", "=", companyId)
+    .where("itemId", "in", [...byItem.keys()])
+    .where("costingMethod", "=", "Average")
+    .orderBy("itemId")
+    .forUpdate()
+    .execute();
+  if (averageCosts.length === 0) return;
+
+  const onHand = await trx
+    .selectFrom("itemLedger")
+    .select((eb) => ["itemId", eb.fn.sum<number>("quantity").as("quantity")])
+    .where("companyId", "=", companyId)
+    .where(
+      "itemId",
+      "in",
+      averageCosts.map((row) => row.itemId)
+    )
+    .groupBy("itemId")
+    .execute();
+  const onHandByItem = new Map(
+    onHand.map((row) => [row.itemId, Number(row.quantity ?? 0)])
+  );
+
+  const updates = averageCosts.flatMap((row) => {
+    const unitCost = Number(row.unitCost ?? 0);
+    const change = byItem.get(row.itemId)!;
+    const next = round(
+      movingAverageUnitCost({
+        onHand: onHandByItem.get(row.itemId) ?? 0,
+        unitCost,
+        quantity: change.quantity,
+        value: change.value
+      })
+    );
+    return equals(next, unitCost) ? [] : [{ itemId: row.itemId, next }];
+  });
+  if (updates.length === 0) return;
+
+  await trx
+    .updateTable("itemCost")
+    .set({
+      unitCost: sql<number>`CASE "itemId" ${sql.join(
+        updates.map(
+          ({ itemId, next }) => sql`WHEN ${itemId} THEN ${next}::numeric`
+        ),
+        sql` `
+      )} END`
+    })
+    .where("companyId", "=", companyId)
+    .where(
+      "itemId",
+      "in",
+      updates.map((update) => update.itemId)
+    )
+    .execute();
 }
 export interface BookAdjustmentArgs {
   ledger: {

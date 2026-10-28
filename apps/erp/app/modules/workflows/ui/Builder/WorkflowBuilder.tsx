@@ -85,8 +85,6 @@ export function WorkflowBuilder({
   const onConnect = useBuilderStore((state) => state.onConnect);
   const setSelected = useBuilderStore((state) => state.setSelected);
   const addNode = useBuilderStore((state) => state.addNode);
-  const setTestRunResult = useBuilderStore((state) => state.setTestRunResult);
-  const setTestRunStatus = useBuilderStore((state) => state.setTestRunStatus);
 
   const isValidConnection = useCallback<IsValidConnection>(
     (connection) => {
@@ -179,9 +177,9 @@ export function WorkflowBuilder({
     </div>
   );
 
-  // Phones: the canvas fills the page. The palette opens from the app bar +,
-  // and a test run's result opens as a full-screen sheet; closing it discards
-  // the result, as the desktop panel's close does.
+  // Phones: the canvas fills the page. The palette opens from the app bar +.
+  // A test run's result is the same drawer as on desktop — phones show every
+  // drawer as a bottom sheet — and closing it discards the result.
   if (isPhone) {
     return (
       <div className="flex-1 overflow-hidden">
@@ -211,54 +209,35 @@ export function WorkflowBuilder({
             </BottomSheet>
           </>
         )}
-        <BottomSheet
-          open={showResults}
-          onOpenChange={(open) => {
-            if (open) return;
-            setTestRunResult(null);
-            setTestRunStatus("idle");
-          }}
-        >
-          <BottomSheetContent size="full">
-            <BottomSheetTitle className="sr-only">
-              <Trans>Test run</Trans>
-            </BottomSheetTitle>
-            <div className="min-h-0 flex-1">
-              <TestRunPanel />
-            </div>
-          </BottomSheetContent>
-        </BottomSheet>
+        {showResults && <TestRunPanel />}
       </div>
     );
   }
 
   return (
-    <ResizablePanelGroup
-      direction="horizontal"
-      autoSaveId="workflow-builder"
-      className="flex-1 overflow-hidden"
-    >
-      {!isReadOnly && (
-        <ResizablePanel
-          id="palette"
-          order={1}
-          defaultSize={14}
-          minSize={10}
-          maxSize={22}
-        >
-          <NodePalette />
+    <>
+      {showResults && <TestRunPanel />}
+      <ResizablePanelGroup
+        direction="horizontal"
+        autoSaveId="workflow-builder"
+        className="flex-1 overflow-hidden"
+      >
+        {!isReadOnly && (
+          <ResizablePanel
+            id="palette"
+            order={1}
+            defaultSize={14}
+            minSize={10}
+            maxSize={22}
+          >
+            <NodePalette />
+          </ResizablePanel>
+        )}
+        {!isReadOnly && <ResizableHandle withHandle />}
+        <ResizablePanel id="canvas" order={2} defaultSize={62} minSize={30}>
+          {canvas}
         </ResizablePanel>
-      )}
-      {!isReadOnly && <ResizableHandle withHandle />}
-      <ResizablePanel id="canvas" order={2} defaultSize={62} minSize={30}>
-        {canvas}
-      </ResizablePanel>
-      {showResults && <ResizableHandle withHandle />}
-      {showResults && (
-        <ResizablePanel id="results" order={3} defaultSize={24} minSize={18}>
-          <TestRunPanel />
-        </ResizablePanel>
-      )}
-    </ResizablePanelGroup>
+      </ResizablePanelGroup>
+    </>
   );
 }

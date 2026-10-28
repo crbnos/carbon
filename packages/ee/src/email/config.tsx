@@ -2,16 +2,24 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { ComponentProps } from "react";
 import { HiEnvelope } from "react-icons/hi2";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
+
+// Carbon's own integration has no vendor mark, so the envelope wears a plain
+// mail-blue to sit beside the branded, colored logos instead of reading as an
+// unfinished monochrome placeholder.
+function Logo(props: ComponentProps<"svg">) {
+  return <HiEnvelope {...props} style={{ color: "#3B82F6" }} />;
+}
 
 export const Email = defineIntegration({
   name: "Email",
   id: "email",
   active: true,
   category: "Email",
-  logo: HiEnvelope,
+  logo: Logo,
   description:
     "Send transactional emails — quotes, purchase orders, invoices, and more. Use this server's mail settings, or pick Resend or Custom SMTP to send from your own account.",
   shortDescription:

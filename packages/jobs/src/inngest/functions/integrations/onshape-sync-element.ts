@@ -226,7 +226,7 @@ export async function runOnshapeElementSync(
 
   const finished = await waitForTranslations(
     step,
-    carbon,
+    () => onshapeClient(carbon, input),
     input,
     label,
     prefix,
@@ -367,7 +367,7 @@ async function onshapeClient(
 
 // Missing selection previously exported the entire studio. Fail closed: a
 // release asset is one part, never an implicit list or whole-studio export.
-function assertSelection(input: SyncOnshapeElementInput) {
+export function assertSelection(input: SyncOnshapeElementInput) {
   if (
     input.modelElementKind === "partstudio" &&
     (typeof input.partId !== "string" ||
@@ -444,6 +444,17 @@ async function assemblySourceKey(
       return null;
     }
   }
+  return assemblySourceKeyAt(input, state);
+}
+
+/** The assembly source key once its version or microversion (`state`) is known. */
+export function assemblySourceKeyAt(
+  input: Pick<
+    SyncOnshapeElementInput,
+    "documentId" | "sourceWvm" | "modelElementId" | "configuration"
+  >,
+  state: string
+): string {
   return createHash("sha256")
     .update(
       JSON.stringify([
@@ -485,16 +496,12 @@ async function currentModelFromSource(
       `model source lookup failed: ${(mapping.error ?? item.error)!.message}`
     );
   }
-  const modelUploadId = (
-    mapping.data?.metadata as { modelUploadId?: unknown } | null
-  )?.modelUploadId;
-  if (
-    mapping.data?.externalId !== source ||
-    typeof modelUploadId !== "string" ||
-    item.data?.modelUploadId !== modelUploadId
-  ) {
-    return null;
-  }
+  const modelUploadId = reusableModelUploadId(
+    mapping.data,
+    item.data?.modelUploadId,
+    source
+  );
+  if (!modelUploadId) return null;
   const model = await carbon
     .from("modelUpload")
     .select("id, name")
@@ -505,6 +512,29 @@ async function currentModelFromSource(
     throw new Error(`existing model lookup failed: ${model.error.message}`);
   }
   return model.data ? { id: model.data.id, name: model.data.name } : null;
+}
+
+/**
+ * The model the last export from `source` produced, when the item still uses
+ * it. A different source, or a model replaced since (by hand or another sync),
+ * means the export runs again.
+ */
+export function reusableModelUploadId(
+  mapping: { externalId: string | null; metadata: unknown } | null,
+  itemModelUploadId: string | null | undefined,
+  source: string
+): string | null {
+  const modelUploadId = (
+    mapping?.metadata as { modelUploadId?: unknown } | null
+  )?.modelUploadId;
+  if (
+    mapping?.externalId !== source ||
+    typeof modelUploadId !== "string" ||
+    itemModelUploadId !== modelUploadId
+  ) {
+    return null;
+  }
+  return modelUploadId;
 }
 
 /** Remember which source the item's new model came from. Only an
@@ -541,10 +571,8 @@ function modelSourceIntegration(input: OnshapeCredentials): string {
   return input.integrationId ?? "onshape";
 }
 
-function startModelTranslation(
-  client: OnshapeClient,
-  input: SyncOnshapeElementInput
-) {
+/** The STEP export Onshape is asked for: a whole assembly, or one part. */
+export function modelTranslationRequest(input: SyncOnshapeElementInput) {
   const options = {
     formatName: "STEP" as const,
     storeInDocument: false,
@@ -552,17 +580,30 @@ function startModelTranslation(
     wvm: input.sourceWvm ?? "v"
   };
   return input.modelElementKind === "assembly"
+    ? { kind: "assembly" as const, options }
+    : {
+        kind: "partstudio" as const,
+        options: { ...options, partIds: input.partId! }
+      };
+}
+
+function startModelTranslation(
+  client: OnshapeClient,
+  input: SyncOnshapeElementInput
+) {
+  const request = modelTranslationRequest(input);
+  return request.kind === "assembly"
     ? client.createAssemblyTranslation(
         input.documentId,
         input.versionId,
         input.modelElementId,
-        options
+        request.options
       )
     : client.createPartStudioTranslation(
         input.documentId,
         input.versionId,
         input.modelElementId,
-        { ...options, partIds: input.partId! }
+        request.options
       );
 }
 
@@ -575,10 +616,10 @@ function startModelTranslation(
  * a poll reads the result, so a forged event can do no more than cause a poll.
  * A failed translation, or an hour without finishing, fails the sync.
  */
-async function waitForTranslations(
+export async function waitForTranslations(
   step: Pick<ElementSyncStep, "run" | "sleep" | "waitForEvent">,
-  carbon: CarbonClient,
-  input: OnshapeCredentials & { documentId: string },
+  getClient: () => Promise<OnshapeClient>,
+  input: Pick<OnshapeCredentials, "companyId"> & { documentId: string },
   label: string,
   prefix: string,
   ids: string[]
@@ -595,7 +636,7 @@ async function waitForTranslations(
       const poll: { at: number; translations: (FinishedTranslation | null)[] } =
         await step.run(`${prefix}-poll-${attempt}`, () =>
           withRateLimitRetry(async () => {
-            const client = await onshapeClient(carbon, input);
+            const client = await getClient();
             const translations = await Promise.all(
               waiting.map(async (id) =>
                 finishedTranslation(await client.getTranslation(id))
@@ -618,7 +659,7 @@ async function waitForTranslations(
 
       if (attempt + 1 >= QUICK_POLLS && webhookId === undefined) {
         webhookId = await step.run(`${prefix}-webhook`, () =>
-          registerTranslationWebhook(carbon, input, label)
+          registerTranslationWebhook(getClient, input, label)
         );
         if (webhookId) continue;
       }
@@ -641,7 +682,7 @@ async function waitForTranslations(
     if (webhookId) {
       const id = webhookId;
       await step.run(`${prefix}-unwebhook`, () =>
-        deleteTranslationWebhook(carbon, input, id, label)
+        deleteTranslationWebhook(getClient, id, label)
       );
     }
   }
@@ -650,12 +691,12 @@ async function waitForTranslations(
 /** Register a webhook for this document's translation.complete events.
  *  Never throws: without one the sync keeps polling. */
 async function registerTranslationWebhook(
-  carbon: CarbonClient,
-  input: OnshapeCredentials & { documentId: string },
+  getClient: () => Promise<OnshapeClient>,
+  input: Pick<OnshapeCredentials, "companyId"> & { documentId: string },
   label: string
 ): Promise<string | null> {
   try {
-    const client = await onshapeClient(carbon, input);
+    const client = await getClient();
     const webhook = await client.createWebhook({
       url: `${getAppUrl()}/api/webhook/onshape/${input.companyId}`,
       events: ["onshape.model.translation.complete"],
@@ -674,13 +715,12 @@ async function registerTranslationWebhook(
 
 /** Best-effort: Onshape removes a transient webhook on its own when idle. */
 async function deleteTranslationWebhook(
-  carbon: CarbonClient,
-  input: OnshapeCredentials,
+  getClient: () => Promise<OnshapeClient>,
   webhookId: string,
   label: string
 ): Promise<void> {
   try {
-    const client = await onshapeClient(carbon, input);
+    const client = await getClient();
     await client.deleteWebhook(webhookId);
   } catch (error) {
     console.warn(
@@ -706,7 +746,7 @@ export function translationEventCondition(
   return `async.data.companyId == "${input.companyId}" && (${translations})`;
 }
 
-function finishedTranslation(
+export function finishedTranslation(
   translation: OnshapeTranslation
 ): FinishedTranslation | null {
   if (translation.requestState === "FAILED") {
@@ -853,7 +893,7 @@ export async function runOnshapeDrawingSync(
   );
   const finished = await waitForTranslations(
     step,
-    carbon,
+    () => onshapeClient(carbon, input),
     input,
     label,
     prefix,

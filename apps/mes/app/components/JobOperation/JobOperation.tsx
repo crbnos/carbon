@@ -72,10 +72,10 @@ import {
   convertDateStringToIsoString,
   formatDate,
   formatDurationMilliseconds,
-  MODEL_RAW_KEEP_MAX_BYTES,
   round
 } from "@carbon/utils";
 import { ModelPreview } from "@carbon/viewer/model-preview";
+import { modelPreviewUrls } from "@carbon/viewer/model-upload-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
@@ -117,15 +117,20 @@ import {
   OperationStatusIcon,
   PrintButton
 } from "~/components";
+import { AbilityWarning } from "~/components/AbilityWarning";
 import { MethodItemTypeIcon } from "~/components/Icons";
 import { useDateFormatter, useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import type {
+  AbilityShortfall,
   BatchMaterialTotal,
   BatchWorkInstructions,
   JobOperationBatch
 } from "~/services/operations.service";
-import { getFileType } from "~/services/operations.service";
+import {
+  getFileType,
+  isSerialEntityIncompleteForOperation
+} from "~/services/operations.service";
 import type {
   Job,
   JobMakeMethod,
@@ -141,8 +146,9 @@ import type {
 } from "~/services/types";
 import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/durations";
+import { isKanbanCompleteScan, kanbanCompleteTarget } from "~/utils/kanban";
 import { useOrigin } from "~/utils/origin";
-import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
 import { MesAppBar } from "../MesAppBar";
 import { BatchCompleteModal } from "./components/BatchCompleteModal";
@@ -177,6 +183,7 @@ const DOCK_COLLAPSED_KEY = "mes:operation-dock-collapsed";
 const log = getLogger("mes", "job-operation");
 
 type JobOperationProps = {
+  abilityWarning?: AbilityShortfall | null;
   // Present only when the op belongs to an Active/Completing batch; the loader
   // resolves it and swaps in the batch's events. In batch mode the timers and
   // completion act on the whole batch.
@@ -224,7 +231,13 @@ type JobOperationProps = {
   >;
 };
 
+/**
+ * The operator's screen for one job operation. When the operation is in a
+ * released batch, the same screen runs the batch: its details, timer and
+ * completion.
+ */
 export const JobOperation = ({
+  abilityWarning,
   batch,
   batchMaterialTotals,
   batchWorkInstructions,
@@ -667,22 +680,43 @@ export const JobOperation = ({
   );
   const locationId = layoutData?.location;
 
+  // The process requires an ability this operator lacks and its policy is
+  // 'block': no production work here. The routes refuse it too.
+  const abilityBlocked = abilityWarning?.policy === "Block";
+
   const completeFetcher = useFetcher<Result>();
   useKeyboardWedge({
-    test: (input) => {
-      if (kanban?.completedBarcodeOverride) {
-        return input === kanban.completedBarcodeOverride;
-      } else if (kanban?.id) {
-        return input === path.to.kanbanComplete(kanban.id);
-      }
-      return false;
-    },
+    test: (input) => !!kanban && isKanbanCompleteScan(input, kanban),
     callback: () => {
-      completeFetcher.load(path.to.endOperation(operation.id));
+      // Complete the unit the operator holds, never one the server picks: at a
+      // later operation that pick need not be the unit in their hands.
+      const selected = trackedEntityParam
+        ? trackedEntities.find((entity) => entity.id === trackedEntityParam)
+        : undefined;
+      const target = kanbanCompleteTarget({
+        requiresSerialTracking: !!parentIsSerial,
+        isFirstOperation,
+        selectedEntityId: selected?.id ?? null,
+        selectedIsIncomplete:
+          !!selected &&
+          isSerialEntityIncompleteForOperation(selected, operation.id)
+      });
+      if (target.action === "select") {
+        toast.info(t`Scan or select the unit, then scan the kanban card again`);
+        serialModal.onOpen();
+        return;
+      }
+      const endPath = path.to.endOperation(operation.id);
+      return completeFetcher.load(
+        target.trackedEntityId
+          ? `${endPath}?trackedEntityId=${target.trackedEntityId}`
+          : endPath
+      );
     },
+    inTextFields: true,
     // The wedge completes this single op via endOperation — never for a batched
     // member; the batch completes as a whole.
-    active: !!kanban?.id && !isBatched
+    active: !!kanban?.id && !isBatched && !abilityBlocked
   });
 
   const item = items.find((it) => it.id === operation.itemId);
@@ -1233,6 +1267,11 @@ export const JobOperation = ({
                 </Card>
               </div>
             )}
+            {abilityWarning && (
+              <div className="px-4 pt-4 lg:px-6">
+                <AbilityWarning warning={abilityWarning} />
+              </div>
+            )}
             {scope === "job" && batch && (
               <div className="px-4 pt-4 lg:px-6">
                 <Alert>
@@ -1259,6 +1298,18 @@ export const JobOperation = ({
                         <Trans>Back to batch</Trans>
                       </Button>
                     </div>
+                    {/* Member links land here, so the planner's notes
+                        follow the operator out of the batch view. */}
+                    {batch.notes?.trim() && (
+                      <div className="mt-3 border-t pt-3">
+                        <p className="font-medium text-foreground">
+                          <Trans>Batch notes</Trans>
+                        </p>
+                        <p className="whitespace-pre-wrap break-words">
+                          {batch.notes}
+                        </p>
+                      </div>
+                    )}
                   </AlertDescription>
                 </Alert>
               </div>
@@ -1767,6 +1818,7 @@ export const JobOperation = ({
                                           onRecord={onRecordStepRecord}
                                           onDelete={onDeleteStepRecord}
                                           operationId={operationId}
+                                          disabled={abilityBlocked}
                                           className={
                                             index === attributes.length - 1
                                               ? "border-none"
@@ -1829,6 +1881,7 @@ export const JobOperation = ({
                         leftIcon={<LuGitBranchPlus />}
                         variant="secondary"
                         size="lg"
+                        isDisabled={abilityBlocked}
                         onClick={() => openIssueModal(null)}
                       >
                         <Trans>Issue Material</Trans>
@@ -1849,6 +1902,7 @@ export const JobOperation = ({
                                 isBatched ? batchMaterialTotals : undefined
                               }
                               onIssue={openIssueModal}
+                              disabled={abilityBlocked}
                             />
                             {renderIssueModal(resolvedMaterials)}
                           </>
@@ -2131,9 +2185,14 @@ export const JobOperation = ({
                                               </span>
                                             </>
                                           ) : (
-                                            <span className="font-mono truncate">
-                                              {entity.id}
-                                            </span>
+                                            <>
+                                              <span className="font-medium text-muted-foreground truncate">
+                                                <Trans>No serial number</Trans>
+                                              </span>
+                                              <span className="text-xs text-muted-foreground font-mono truncate">
+                                                {entity.id}
+                                              </span>
+                                            </>
                                           )}
                                         </div>
                                         {entity.id === trackedEntityId && (
@@ -2218,34 +2277,7 @@ export const JobOperation = ({
                 optimizing={backgroundOptimizing}
                 optimizeFailed={optimizeFailed}
                 sourceMissing={artifacts?.sourceAvailable === false}
-                optimizedUrl={
-                  artifacts?.optimizedModelPath
-                    ? // ?v= busts the immutable preview cache on the STABLE
-                      // optimized.glb path when a re-optimise lands.
-                      `${getPrivateUrl(artifacts.optimizedModelPath)}${
-                        artifacts.optimizedAt
-                          ? `?v=${encodeURIComponent(artifacts.optimizedAt)}`
-                          : ""
-                      }`
-                    : null
-                }
-                glbUrl={
-                  artifacts?.glbPath ? getPrivateUrl(artifacts.glbPath) : null
-                }
-                lodUrl={
-                  artifacts?.lodPath ? getPrivateUrl(artifacts.lodPath) : null
-                }
-                rawUrl={
-                  artifacts?.rawPath &&
-                  (artifacts.size ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES
-                    ? getRawModelUrl(artifacts.rawBucket, artifacts.rawPath)
-                    : null
-                }
-                thumbnailUrl={
-                  artifacts?.thumbnailPath
-                    ? getPrivateUrl(artifacts.thumbnailPath)
-                    : null
-                }
+                {...modelPreviewUrls(artifacts)}
                 mode={mode}
                 className="rounded-none"
                 onRetry={canRetry ? onModelRetry : undefined}
@@ -2467,6 +2499,7 @@ export const JobOperation = ({
                                               onRecord={onRecordStepRecord}
                                               onDelete={onDeleteStepRecord}
                                               operationId={operationId}
+                                              disabled={abilityBlocked}
                                               className={
                                                 index === attributes.length - 1
                                                   ? "border-none"
@@ -2615,6 +2648,7 @@ export const JobOperation = ({
                   }
                   trackedEntityId={trackedEntityId}
                   batchId={batch?.id}
+                  startDisabled={abilityBlocked}
                 />
                 {/* What the big button will do, or what is running — the dock
                     only; the rail and the phone bar stay icon-sized. */}
@@ -2650,14 +2684,15 @@ export const JobOperation = ({
                 <div className="flex flex-col items-center gap-0.5">
                   <IconButtonWithTooltip
                     disabled={
-                      !isBatched &&
-                      parentIsSerial &&
-                      trackedEntities.some(
-                        (entity) =>
-                          entity.id === trackedEntityId &&
-                          `Operation ${operationId}` in
-                            (entity.attributes as TrackedEntityAttributes)
-                      )
+                      abilityBlocked ||
+                      (!isBatched &&
+                        parentIsSerial &&
+                        trackedEntities.some(
+                          (entity) =>
+                            entity.id === trackedEntityId &&
+                            `Operation ${operationId}` in
+                              (entity.attributes as TrackedEntityAttributes)
+                        ))
                     }
                     icon={
                       isBatched ? (
@@ -2691,14 +2726,15 @@ export const JobOperation = ({
                   className="w-full"
                   leftIcon={isBatched ? <LuPackageCheck /> : <FaPlus />}
                   isDisabled={
-                    !isBatched &&
-                    parentIsSerial &&
-                    trackedEntities.some(
-                      (entity) =>
-                        entity.id === trackedEntityId &&
-                        `Operation ${operationId}` in
-                          (entity.attributes as TrackedEntityAttributes)
-                    )
+                    abilityBlocked ||
+                    (!isBatched &&
+                      parentIsSerial &&
+                      trackedEntities.some(
+                        (entity) =>
+                          entity.id === trackedEntityId &&
+                          `Operation ${operationId}` in
+                            (entity.attributes as TrackedEntityAttributes)
+                      ))
                   }
                   onClick={
                     isBatched ? batchCompleteModal.onOpen : completeModal.onOpen
@@ -2744,7 +2780,8 @@ export const JobOperation = ({
               {isBatched && (
                 <button
                   type="button"
-                  className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
+                  disabled={abilityBlocked}
+                  className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform disabled:pointer-events-none disabled:opacity-50"
                   onClick={() => {
                     actionsSheet.onClose();
                     batchCompleteModal.onOpen();
@@ -2763,7 +2800,8 @@ export const JobOperation = ({
                 <>
                   <button
                     type="button"
-                    className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
+                    disabled={abilityBlocked}
+                    className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform disabled:pointer-events-none disabled:opacity-50"
                     onClick={() => {
                       actionsSheet.onClose();
                       scrapModal.onOpen();
@@ -2776,7 +2814,8 @@ export const JobOperation = ({
                   </button>
                   <button
                     type="button"
-                    className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
+                    disabled={abilityBlocked}
+                    className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform disabled:pointer-events-none disabled:opacity-50"
                     onClick={() => {
                       actionsSheet.onClose();
                       reworkModal.onOpen();
@@ -2789,7 +2828,8 @@ export const JobOperation = ({
                   </button>
                   <button
                     type="button"
-                    className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
+                    disabled={abilityBlocked}
+                    className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform disabled:pointer-events-none disabled:opacity-50"
                     onClick={() => {
                       actionsSheet.onClose();
                       finishModal.onOpen();

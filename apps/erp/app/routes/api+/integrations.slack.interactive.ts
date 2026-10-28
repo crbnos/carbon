@@ -6,10 +6,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { SLACK_SIGNING_SECRET } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { resolveIntegrationSecrets } from "@carbon/ee";
 import {
+  AmbiguousSlackWorkspaceError,
   createSlackWebClient,
-  getSlackIntegrationByTeamId
+  getSlackWorkspaceByTeamId
 } from "@carbon/ee/slack.server";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -141,14 +141,28 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
 
-    const integration = await getSlackIntegrationByTeamId(
-      serviceRole,
-      payload.data.team.id
-    );
+    let workspace: Awaited<ReturnType<typeof getSlackWorkspaceByTeamId>>;
+    try {
+      workspace = await getSlackWorkspaceByTeamId(
+        serviceRole,
+        payload.data.team.id
+      );
+    } catch (err) {
+      if (err instanceof AmbiguousSlackWorkspaceError) {
+        logger.error("Slack workspace linked to more than one company", {
+          teamId: payload.data.team.id
+        });
+        return {
+          response_type: "ephemeral",
+          text: "This Slack workspace is connected to more than one Carbon company, so Carbon cannot tell which one you mean. Ask an admin to disconnect it from all but one."
+        };
+      }
+      throw err;
+    }
 
-    if (!integration.data?.[0] || integration.error) {
-      logger.error("Failed to get Slack integration", {
-        error: integration.error
+    if (workspace === null) {
+      logger.error("No Slack connection for workspace", {
+        teamId: payload.data.team.id
       });
       return {
         response_type: "ephemeral",
@@ -156,30 +170,7 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
 
-    const { companyId, metadata, secretRef } = integration.data?.[0];
-    // Secret material (access_token) lives in Supabase Vault; merge it back so
-    // we read the same shape as before. Fails closed when the vault ref is gone.
-    let slackToken: string | undefined;
-    try {
-      const resolved = (await resolveIntegrationSecrets(
-        serviceRole,
-        companyId,
-        "slack",
-        metadata,
-        secretRef
-      )) as { access_token?: string };
-      slackToken = resolved.access_token;
-    } catch (error) {
-      logger.error("Failed to resolve Slack integration secret", { error });
-    }
-
-    if (!slackToken) {
-      logger.error("Slack token not found");
-      return {
-        response_type: "ephemeral",
-        text: "Slack token not found. Please reconfigure the integration."
-      };
-    }
+    const { companyId, token: slackToken } = workspace;
 
     switch (payload.data.type) {
       case "shortcut":

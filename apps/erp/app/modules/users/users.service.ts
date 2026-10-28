@@ -7,6 +7,7 @@ import type {
   ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
+  CarbonEdition,
   CONTROLLED_ENVIRONMENT,
   hasPermission,
   ITAR_RIDER_SHA256,
@@ -37,6 +38,7 @@ import {
   seedSsoIdentityForUser,
   uncoveredSsoDomainError
 } from "@carbon/ee/sso.server";
+import { batchTrigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
 import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
@@ -46,7 +48,15 @@ import {
   type NotificationTopic,
   notificationPreferenceCompanyId
 } from "@carbon/notifications";
-import { datetime, getClientIp } from "@carbon/utils";
+import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
+import {
+  chunkArray,
+  datetime,
+  Edition,
+  getClientIp,
+  isOwnSignaturePath,
+  SIGNATURES_BUCKET
+} from "@carbon/utils";
 import { now, parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -56,8 +66,12 @@ import { getAttribute } from "~/modules/people/people.service";
 import { getSupplierContact } from "~/modules/purchasing/purchasing.service";
 import { getCustomerContact } from "~/modules/sales/sales.service";
 import type { EmployeeInsert, InviteInsert, User } from "~/modules/users/types";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import {
+  type BulkUserAction,
+  canBulkActOnUser
+} from "~/modules/users/users.models";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { insertEmployeeJob } from "../people/people.service";
 import type { UserSelectGroupMembers } from "./types";
@@ -293,6 +307,10 @@ export async function getUsersWithVerifiedMfa(
   return client.rpc("users_with_verified_mfa", { company_id: companyId });
 }
 
+export const EMPLOYEES_PAGING: Paging = {
+  defaultSorts: [{ column: "lastName", ascending: true }]
+};
+
 export async function getEmployees(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -302,7 +320,7 @@ export async function getEmployees(
 ) {
   let query = client
     .from("employees")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -318,11 +336,13 @@ export async function getEmployees(
     query = query.in("status", ["Active", "Invited"]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "lastName", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, EMPLOYEES_PAGING);
   return query;
 }
+
+export const CONSOLE_OPERATORS_PAGING: Paging = {
+  defaultSorts: [{ column: "lastName", ascending: true }]
+};
 
 /**
  * Gets console operators — users with @console.internal emails.
@@ -342,7 +362,7 @@ export async function getConsoleOperators(
 ) {
   let query = client
     .from("employees")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .like("email", "%@console.internal");
 
@@ -350,9 +370,7 @@ export async function getConsoleOperators(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "lastName", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, CONSOLE_OPERATORS_PAGING);
   return query;
 }
 
@@ -367,6 +385,10 @@ export async function getEmployeeType(
     .single();
 }
 
+export const EMPLOYEE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getEmployeeTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -374,7 +396,7 @@ export async function getEmployeeTypes(
 ) {
   let query = client
     .from("employeeType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -382,9 +404,7 @@ export async function getEmployeeTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, EMPLOYEE_TYPES_PAGING);
   }
 
   return query;
@@ -734,11 +754,17 @@ export async function refuseEmailOutsideSso(
   return refusal ? ctx.error("rule", refusal) : null;
 }
 
+/**
+ * Accepts an invite and records it: an audit entry (with the request's IP and
+ * user agent when `request` is given) and, on Cloud, the seat count. The invite
+ * page and /callback both accept through here.
+ */
 export async function acceptInvite(
   serviceRole: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   code: string,
-  email?: string
+  email?: string,
+  request?: Request
 ) {
   const invite = await serviceRole
     .from("invite")
@@ -949,6 +975,42 @@ export async function acceptInvite(
         "Failed to invalidate permission cache after invite accept",
         { error: err, userId }
       );
+    }
+
+    // Best-effort audit of the acceptance, with request metadata.
+    try {
+      await insertAuditLogEntries(serviceRole, companyId, [
+        {
+          tableName: "invite",
+          entityType: "invite",
+          entityId: acceptedInvite.id,
+          recordId: acceptedInvite.id,
+          operation: "UPDATE",
+          actorId: null,
+          diff: { acceptedAt: { old: null, new: acceptedInvite.acceptedAt } },
+          metadata: {
+            ipAddress: request
+              ? (getClientIp(request) ?? undefined)
+              : undefined,
+            userAgent: request?.headers.get("user-agent") ?? undefined
+          }
+        }
+      ]);
+    } catch (err) {
+      logger.warn("[invite] audit write skipped for accept", { error: err });
+    }
+
+    // The invite is accepted by now: a billing failure must not report it as
+    // not accepted.
+    if (CarbonEdition === Edition.Cloud) {
+      try {
+        await updateSubscriptionQuantityForCompany(companyId);
+      } catch (err) {
+        logger.error("Failed to update seats after invite accept", {
+          error: err,
+          companyId
+        });
+      }
     }
 
     return { data: acceptedInvite, error: null };
@@ -1319,10 +1381,7 @@ export async function createEmployeeAccount(
         return null;
       }
     );
-    if (
-      !hasPermission(claims?.permissions, "users", "update", companyId) ||
-      !hasPermission(claims?.permissions, "people", "create", companyId)
-    ) {
+    if (!canReAddDeactivatedEmployee(claims?.permissions, companyId)) {
       logger.error("Re-adding a deactivated employee was refused", {
         companyId,
         userId,
@@ -2119,7 +2178,21 @@ export async function convertConsoleOperatorToUser(
   return { success: true };
 }
 
-function makePermissionsFromEmployeeType({
+/** Re-adding a deactivated employee writes outside RLS, so the inviter needs
+ *  what a first-time add's RLS inserts need: users update and people create. */
+export function canReAddDeactivatedEmployee(
+  permissions: Parameters<typeof hasPermission>[0],
+  companyId: string
+): boolean {
+  return (
+    hasPermission(permissions, "users", "update", companyId) &&
+    hasPermission(permissions, "people", "create", companyId)
+  );
+}
+
+/** An employee type's permission rows as invite permissions, keyed
+ *  `module_action`. */
+export function makePermissionsFromEmployeeType({
   data
 }: {
   data: {
@@ -2682,6 +2755,62 @@ export async function updateAvatar(
     .eq("id", userId);
 }
 
+/**
+ * Save a user's signature path, and delete the file it replaces unless an
+ * approval recorded it: an approved document keeps printing the signature its
+ * approver had on file when they approved it.
+ */
+export async function updateSignature(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  userId: string,
+  signaturePath: string | null
+) {
+  const previous = await client
+    .from("user")
+    .select("signaturePath")
+    .eq("id", userId)
+    .single();
+  if (previous.error) {
+    logger.error("Failed to read the signature being replaced", {
+      userId,
+      error: previous.error
+    });
+  }
+
+  const saved = await client
+    .from("user")
+    .update({ signaturePath, updatedAt: datetime.timestamp() })
+    .eq("id", userId);
+  if (saved.error) return saved;
+
+  const replaced = previous.data?.signaturePath;
+  if (!isOwnSignaturePath(userId, replaced) || replaced === signaturePath) {
+    return saved;
+  }
+
+  const recorded = await db
+    .selectFrom("approvalRequest")
+    .select("id")
+    .where("decisionSignaturePath", "=", replaced)
+    .limit(1)
+    .executeTakeFirst();
+  if (recorded) return saved;
+
+  // The bucket lets a user add files but not delete them.
+  const removal = await getCarbonServiceRole()
+    .storage.from(SIGNATURES_BUCKET)
+    .remove([replaced]);
+  if (removal.error) {
+    logger.error("Failed to remove the replaced signature", {
+      userId,
+      path: replaced,
+      error: removal.error
+    });
+  }
+  return saved;
+}
+
 export async function updatePublicAccount(
   client: SupabaseClient<Database>,
   account: {
@@ -2818,4 +2947,145 @@ export async function refuseAttributeValueChange(
   }
   if (!attribute.data?.canSelfManage) return ctx.error("forbidden", refusal);
   return null;
+}
+
+// --- Bulk actions of the Employees table --------------------------------
+// The action routes call the `queue*` functions with the selected users; the
+// background bulk-action job (`~/utils/table-jobs.server`) first narrows each
+// chunk of matching users with `selectUsersForBulkAction`, then calls them.
+
+/** Queues the `user-admin` deactivate job for each user. */
+export async function queueUserDeactivations(args: {
+  userIds: string[];
+  companyId: string;
+  actorId: string;
+  ip?: string;
+}) {
+  await batchTrigger(
+    "user-admin",
+    args.userIds.map((id) => ({
+      payload: {
+        id,
+        type: "deactivate" as const,
+        companyId: args.companyId,
+        actorId: args.actorId,
+        ip: args.ip
+      }
+    }))
+  );
+}
+
+/** Queues the `user-admin` resend-invite job for each user. */
+export async function queueInviteResends(args: {
+  userIds: string[];
+  companyId: string;
+  location: string;
+  ip: string;
+}) {
+  await batchTrigger(
+    "user-admin",
+    args.userIds.map((id) => ({
+      payload: {
+        id,
+        type: "resend" as const,
+        companyId: args.companyId,
+        location: args.location,
+        ip: args.ip
+      }
+    }))
+  );
+}
+
+/** Queues the `update-permissions` job for each user. */
+export async function queuePermissionUpdates(args: {
+  userIds: string[];
+  companyId: string;
+  actorId: string;
+  permissions: Record<
+    string,
+    { view: boolean; create: boolean; update: boolean; delete: boolean }
+  >;
+  addOnly: boolean;
+  ip?: string;
+}) {
+  await batchTrigger(
+    "update-permissions",
+    args.userIds.map((id) => ({
+      payload: {
+        id,
+        permissions: args.permissions,
+        addOnly: args.addOnly,
+        companyId: args.companyId,
+        actorId: args.actorId,
+        ip: args.ip
+      }
+    }))
+  );
+}
+
+/**
+ * The users a bulk action on the Employees table may act on, from the ids
+ * the background job read from the list: employees of the company only, by
+ * the table's own rule (`canBulkActOnUser`). Reads with the service role, as
+ * the action routes and the jobs they queue do, always scoped to the company.
+ */
+export async function selectUsersForBulkAction(args: {
+  action: BulkUserAction;
+  userIds: string[];
+  companyId: string;
+  actorId: string;
+}): Promise<{ allowed: string[]; skipped: number }> {
+  const serviceRole = getCarbonServiceRole();
+  const ids = [...new Set(args.userIds)];
+  const rows: {
+    id: string | null;
+    active: boolean | null;
+    email: string | null;
+  }[] = [];
+  for (const chunk of chunkArray(ids, 100)) {
+    const employees = await serviceRole
+      .from("employees")
+      .select("id, active, email")
+      .in("id", chunk)
+      .eq("companyId", args.companyId);
+    if (employees.error) {
+      logger.error("Failed to load the users of a bulk action", {
+        companyId: args.companyId,
+        error: employees.error
+      });
+      throw new Error("Failed to load the users of a bulk action");
+    }
+    rows.push(...employees.data);
+  }
+
+  let unrevokedInviteEmails = new Set<string>();
+  if (args.action === "invite") {
+    const emails = rows.flatMap((row) => (row.email ? [row.email] : []));
+    for (const chunk of chunkArray(emails, 100)) {
+      const invites = await serviceRole
+        .from("invite")
+        .select("email")
+        .in("email", chunk)
+        .eq("companyId", args.companyId)
+        .is("acceptedAt", null)
+        .is("revokedAt", null);
+      if (invites.error) {
+        logger.error("Failed to load the invites of a bulk action", {
+          companyId: args.companyId,
+          error: invites.error
+        });
+        throw new Error("Failed to load the invites of a bulk action");
+      }
+      unrevokedInviteEmails = new Set([
+        ...unrevokedInviteEmails,
+        ...invites.data.map((invite) => invite.email)
+      ]);
+    }
+  }
+
+  const context = { actorId: args.actorId, unrevokedInviteEmails };
+  const allowed = rows
+    .filter((row) => canBulkActOnUser(args.action, row, context))
+    .flatMap((row) => (row.id ? [row.id] : []));
+  return { allowed, skipped: ids.length - allowed.length };
 }

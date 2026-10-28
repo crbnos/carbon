@@ -46,6 +46,7 @@ import {
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { useInfiniteRows } from "~/components/Table/useInfiniteRows";
 import {
   useLinkedDrawerItem,
   useMrpScheduleDescription,
@@ -77,6 +78,7 @@ import {
 import { splitOrdersByFence } from "~/modules/production/ui/Planning/planning-fence";
 import { planningColumns } from "~/modules/production/ui/Planning/planningColumns";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
+import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { useItems, usePeople } from "~/stores";
@@ -87,17 +89,22 @@ import type { PurchasingPlanningItem } from "../../types";
 import { PurchasingPlanningOrderDrawer } from "./PurchasingPlanningOrderDrawer";
 import { usePurchaseOrderPlanningCommands } from "./usePurchaseOrderPlanningCommands";
 
+/** A grid row with its persisted MRP worklist (spec §P1.7), rendered as the
+ *  Actions column + the item's expanded row. Every action is here whatever
+ *  its date; the row's time fence decides what shows. */
+type PlanningRow = PurchasingPlanningItem & {
+  planningActions: PlanningAction[];
+};
+
 type PlanningTableProps = {
-  data: PurchasingPlanningItem[];
+  data: PlanningRow[];
   /** The row a `?item=` link opens the drawer on when it is not in `data`. */
-  drawerItem: PurchasingPlanningItem | null;
+  drawerItem: PlanningRow | null;
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
-  /** The persisted MRP worklist for the rows on this page (spec §P1.7),
-   *  rendered as the Actions column + each item's expanded row. Every action
-   *  is here whatever its date; the row's time fence decides what shows. */
-  planningActions: PlanningAction[];
   /** The Actions-column filter in effect; null when the grid is not filtered
    *  by action type. */
   actionTypes: string[] | null;
@@ -110,13 +117,14 @@ const PlanningTable = memo(
     data,
     drawerItem,
     count,
+    nextCursor,
     locationId,
     periods,
-    planningActions,
     actionTypes,
     locationToday
   }: PlanningTableProps) => {
     const { t, i18n } = useLingui();
+    const weekLabel = usePlanningWeekLabel();
     const permissions = usePermissions();
 
     // Memoized on the locale, so it never rebuilds `columns` on its own.
@@ -135,11 +143,30 @@ const PlanningTable = memo(
     const mrpScheduleDescription = useMrpScheduleDescription();
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
 
-    // What the order drawer can open on: the page's rows, plus the row a link
-    // names when it is not on this page.
+    // Every loaded row, each with its own actions. The open drawer's param
+    // does not change the list.
+    const infiniteRows = useInfiniteRows({
+      initialRows: data,
+      infinite: {
+        dataKey: "items",
+        nextCursor,
+        ignoreParams: [PLANNING_DRAWER_PARAM]
+      }
+    });
+    const { rows } = infiniteRows;
+
+    // What the order drawer can open on: the loaded rows, plus the row a link
+    // names when it is not loaded. A loaded row is never counted twice.
     const drawerRows = useMemo(
-      () => (drawerItem ? [...data, drawerItem] : data),
-      [data, drawerItem]
+      () =>
+        drawerItem && !rows.some((row) => row.id === drawerItem.id)
+          ? [...rows, drawerItem]
+          : rows,
+      [rows, drawerItem]
+    );
+    const planningActions = useMemo(
+      () => drawerRows.flatMap((row) => row.planningActions),
+      [drawerRows]
     );
 
     // ── Planning actions (the MRP worklist) ──────────────────────────────────
@@ -315,8 +342,8 @@ const PlanningTable = memo(
     );
 
     const ordersByItemId = useMemo(
-      () => new Map(data.map((row) => [row.id, plannedOrdersFor(row)])),
-      [data, plannedOrdersFor]
+      () => new Map(rows.map((row) => [row.id, plannedOrdersFor(row)])),
+      [rows, plannedOrdersFor]
     );
 
     // Store orders in a map keyed by item id - calculate on-demand instead of eagerly
@@ -344,7 +371,7 @@ const PlanningTable = memo(
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const onBulkUpdate = useCallback(
-      (selectedRows: typeof data, action: "order") => {
+      (selectedRows: PurchasingPlanningItem[], action: "order") => {
         // Filter out rows without suppliers and track them for error reporting
         const rowsWithoutSuppliers = selectedRows.filter(
           (row) => row.id && !suppliersMap[row.id]
@@ -463,7 +490,7 @@ const PlanningTable = memo(
       key: drawerKey,
       open: openDrawer,
       close: closeDrawer
-    } = useLinkedDrawerItem({
+    } = useLinkedDrawerItem<PurchasingPlanningItem>({
       param: PLANNING_DRAWER_PARAM,
       rows: drawerRows
     });
@@ -524,6 +551,7 @@ const PlanningTable = memo(
       const shared = planningColumns<PurchasingPlanningItem>({
         i18n,
         periods,
+        weekLabel,
         locationToday,
         formatQuantity,
         unitOfMeasures,
@@ -762,13 +790,14 @@ const PlanningTable = memo(
       itemPostingGroups,
       ordersByItemId,
       timeFence,
-      locationToday
+      locationToday,
+      weekLabel
       // Note: ordersMap is intentionally not in deps to avoid column regeneration
       // getOrdersForItem inside the cell will access the latest ordersMap via closure
     ]);
 
     const renderActions = useCallback(
-      (selectedRows: typeof data) => {
+      (selectedRows: PurchasingPlanningItem[]) => {
         // inside each row's time fence only — what the row is showing
         const applyableIds = selectedRows.flatMap((row) =>
           (visibleActionsByItemId.get(row.id) ?? [])
@@ -857,6 +886,7 @@ const PlanningTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infiniteRows={infiniteRows}
           defaultColumnVisibility={defaultColumnVisibility}
           defaultColumnPinning={defaultColumnPinning}
           primaryAction={

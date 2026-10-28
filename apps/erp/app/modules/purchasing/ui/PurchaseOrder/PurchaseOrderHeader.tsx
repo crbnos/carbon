@@ -68,6 +68,7 @@ import {
   isPurchaseOrderLocked
 } from "../../purchasing.models";
 import type { PurchaseOrder, PurchaseOrderLine } from "../../types";
+import ApprovalSignatureModal from "./ApprovalSignatureModal";
 import PurchaseOrderApprovalModal from "./PurchaseOrderApprovalModal";
 import PurchaseOrderFinalizeModal from "./PurchaseOrderFinalizeModal";
 import PurchasingStatus from "./PurchasingStatus";
@@ -110,6 +111,7 @@ const PurchaseOrderHeader = () => {
     lines: PurchaseOrderLine[];
     approvalRequest: { id: string } | null;
     canApprove: boolean;
+    approvalNeedsSignature: boolean;
     canReopen: boolean;
     canDelete: boolean;
     defaultCc: string[];
@@ -176,6 +178,7 @@ const PurchaseOrderHeader = () => {
   const createRevisionModal = useDisclosure();
   const [approvalDecision, setApprovalDecision] =
     useState<ApprovalDecision | null>(null);
+  const [isSignaturePromptOpen, setIsSignaturePromptOpen] = useState(false);
 
   const relatedDocsErrorMessage = t`Couldn't load related documents. Refresh before creating a new one to avoid duplicates.`;
 
@@ -459,7 +462,11 @@ const PurchaseOrderHeader = () => {
                       approvalFetcher.formData?.get("decision") === "Approved"
                     }
                     isDisabled={approvalFetcher.state !== "idle"}
-                    onClick={() => setApprovalDecision("Approved")}
+                    onClick={() =>
+                      routeData?.approvalNeedsSignature
+                        ? setIsSignaturePromptOpen(true)
+                        : setApprovalDecision("Approved")
+                    }
                   >
                     <Trans>Approve</Trans>
                   </Button>
@@ -738,6 +745,11 @@ const PurchaseOrderHeader = () => {
           fetcher={approvalFetcher}
           onClose={() => setApprovalDecision(null)}
           defaultCc={routeData?.defaultCc ?? []}
+        />
+      )}
+      {isSignaturePromptOpen && (
+        <ApprovalSignatureModal
+          onClose={() => setIsSignaturePromptOpen(false)}
         />
       )}
       {auditLogDrawer}

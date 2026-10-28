@@ -34,6 +34,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
@@ -45,9 +46,11 @@ import { SalesRFQStatus } from ".";
 type SalesRFQsTableProps = {
   data: SalesRFQ[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
+const SalesRFQsTable = memo((props: SalesRFQsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -275,6 +278,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
     <>
       <Table<SalesRFQ>
         count={count}
+        infinite={infinite}
         columns={columns}
         data={data}
         defaultColumnPinning={{

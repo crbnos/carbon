@@ -15,10 +15,6 @@ on:
 permissions:
   contents: read
 
-# No concurrency group: GitHub takes a run's slot before its job `if`, so
-# a skipped run (an MES or docs deploy) replaced the AWS deploy's waiting
-# one. Runs may overlap; both steps are idempotent.
-
 jobs:
   sync:
     name: Post Deploy Sync

@@ -35,7 +35,12 @@ if (POSTHOG_PROJECT_PUBLIC_KEY?.startsWith("phc_") && !CONTROLLED_ENVIRONMENT) {
     api_host: POSTHOG_API_HOST,
     // LCP, INP and CLS from real sessions: the only way to know which pages are
     // slow for the people using them.
-    capture_performance: { web_vitals: true }
+    capture_performance: { web_vitals: true },
+    // Remote config, web vitals and the recorder load as <script> tags. The
+    // default puts them in <body> ahead of React Router's scripts, a node the
+    // server never sent, and the whole document fails hydration (#418/#423).
+    // React 18 ignores extra nodes at the end of <head>.
+    external_scripts_inject_target: "head"
   });
 }
 

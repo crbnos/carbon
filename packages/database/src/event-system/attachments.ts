@@ -63,7 +63,10 @@ export const attachments = {
     after: ["sync_add_customer_account_to_group"],
     events: true
   },
-  customerContact: { statement: ["broadcast_reference_changes"] },
+  customerContact: {
+    after: ["sync_delete_unlinked_contact"],
+    statement: ["broadcast_reference_changes"]
+  },
   customerContract: { after: ["sync_advance_document_sequence"] },
   customerItemPriceOverride: { events: true },
   customerItemPriceOverrideBreak: { events: true },
@@ -124,7 +127,11 @@ export const attachments = {
       "sync_propagate_item_readable_id_to_tracked_entity"
     ],
     events: true,
-    statement: ["broadcast_table_changes", "log_table_changes"]
+    statement: [
+      "broadcast_table_changes",
+      "log_table_changes",
+      "queue_pmi_inspection_plans"
+    ]
   },
   itemCost: { events: true },
   itemLedger: {
@@ -190,7 +197,9 @@ export const attachments = {
   jobOperationNote: { statement: ["broadcast_table_changes"] },
   jobOperationStep: { statement: ["broadcast_table_changes"] },
   jobOperationStepRecord: { statement: ["broadcast_table_changes"] },
-  kanban: { after: ["sync_kanban_level_check"] },
+  kanban: {
+    after: ["sync_advance_document_sequence", "sync_kanban_level_check"]
+  },
   journal: {
     after: ["sync_advance_document_sequence"],
     events: true,
@@ -420,7 +429,10 @@ export const attachments = {
     after: ["sync_add_supplier_account_to_group"],
     events: true
   },
-  supplierContact: { statement: ["broadcast_reference_changes"] },
+  supplierContact: {
+    after: ["sync_delete_unlinked_contact"],
+    statement: ["broadcast_reference_changes"]
+  },
   supplierLocation: { statement: ["broadcast_reference_changes"] },
   supplierPart: { events: true },
   supplierPayment: { events: true },

@@ -19,12 +19,19 @@ import {
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuItem,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
   PulsingDot,
   Status,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   toast,
+  useDisclosure,
   useViewport,
   VStack
 } from "@carbon/react";
@@ -70,7 +77,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions, usePrinting, useUrlParams } from "~/hooks";
 import { useQuantityFormatter } from "~/hooks/useQuantityFormatter";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { kanbanOutputTypes } from "~/modules/settings/settings.models";
@@ -81,13 +88,17 @@ import { path } from "~/utils/path";
 import type { Kanban } from "../../types";
 
 type KanbansTableProps = {
-  data: Kanban[];
+  data: KanbanRow[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
   kanbanOutput: (typeof kanbanOutputTypes)[number];
-  /** Kanban id → projected quantity at its To storage unit (armed Transfer kanbans only). */
-  projectedQuantities: Record<string, number>;
 };
+
+/** A list row: the kanban plus the projected quantity at its To storage unit
+ *  (armed Transfer kanbans only; null otherwise). */
+type KanbanRow = Kanban & { projectedQuantity: number | null };
 
 const defaultColumnVisibility = {
   createdBy: false,
@@ -167,9 +178,9 @@ const KanbansTable = memo(
   ({
     data,
     count,
+    nextCursor,
     locationId,
-    kanbanOutput,
-    projectedQuantities
+    kanbanOutput
   }: KanbansTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
@@ -183,8 +194,20 @@ const KanbansTable = memo(
     const locations = useLocations();
     const { isPhone } = useViewport();
 
-    const columns = useMemo<ColumnDef<Kanban>[]>(
+    const columns = useMemo<ColumnDef<KanbanRow>[]>(
       () => [
+        {
+          accessorKey: "kanbanId",
+          header: t`Kanban ID`,
+          cell: ({ row }) => (
+            <Hyperlink to={`${path.to.kanban(row.original.id!)}?${params}`}>
+              {row.original.kanbanId}
+            </Hyperlink>
+          ),
+          meta: {
+            icon: <LuTag />
+          }
+        },
         {
           accessorKey: "itemId",
           header: t`Item`,
@@ -222,7 +245,7 @@ const KanbansTable = memo(
             exportValue: (row) => row.readableIdWithRevision ?? null
           }
         },
-        exportOnlyColumn<Kanban>({
+        exportOnlyColumn<KanbanRow>({
           id: "itemName",
           header: t`Item Name`,
           value: (row) => row.name ?? null
@@ -436,10 +459,8 @@ const KanbansTable = memo(
           id: "projectedQuantity",
           header: t`Projected (To)`,
           cell: ({ row }) => {
-            const projected = row.original.id
-              ? projectedQuantities[row.original.id]
-              : undefined;
-            if (projected === undefined) return null;
+            const projected = row.original.projectedQuantity;
+            if (projected === null) return null;
             const level = row.original.replenishmentLevel;
             const isBelowLevel =
               level !== null && level !== undefined && projected < level;
@@ -606,20 +627,76 @@ const KanbansTable = memo(
           }
         }
       ],
-      [
-        formatQuantity,
-        items,
-        kanbanOutput,
-        params,
-        people,
-        projectedQuantities,
-        suppliers,
-        t
-      ]
+      [formatQuantity, items, kanbanOutput, params, people, suppliers, t]
     );
 
+    /* Printing kanban cards (one row, or the selection): to a configured
+       printer, the location's Kanbans printer first (a Zebra prints at its own
+       media size), one card per action, so a Make kanban prints Create, Start
+       and Complete. With no printer, the Create cards' PDF at the company's
+       Label Size. */
+    const { printerRoutes, resolvePrinterRoute } = usePrinting();
+    const printerModal = useDisclosure();
+    const defaultPrinter = resolvePrinterRoute(locationId, "kanban");
+    const [printIds, setPrintIds] = useState<string[]>([]);
+    const [selectedPrinterId, setSelectedPrinterId] = useState<string>("");
+    const [isPrinting, setIsPrinting] = useState(false);
+
+    const handlePrintLabels = useCallback(
+      (ids: string[]) => {
+        if (ids.length === 0) return;
+        if (printerRoutes.length > 0) {
+          setPrintIds(ids);
+          setSelectedPrinterId(
+            defaultPrinter?.id ?? printerRoutes[0]?.id ?? ""
+          );
+          printerModal.onOpen();
+        } else {
+          window.open(path.to.file.kanbanLabelsPdf(ids, "order"), "_blank");
+        }
+      },
+      [printerRoutes, defaultPrinter?.id, printerModal]
+    );
+
+    // Raw fetch (not a fetcher): parallel submissions don't abort each other
+    // and nothing revalidates, so the selection stays intact.
+    const handleConfirmPrint = useCallback(async () => {
+      if (printIds.length === 0 || !selectedPrinterId) return;
+
+      setIsPrinting(true);
+      try {
+        const results = await Promise.allSettled(
+          printIds.map((id) =>
+            fetch(path.to.manualPrint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sourceDocument: "Kanban",
+                sourceDocumentId: id,
+                locationId,
+                printerRouteId: selectedPrinterId
+              })
+            })
+          )
+        );
+
+        const failed = results.filter(
+          (r) => r.status === "rejected" || !r.value.ok
+        ).length;
+
+        if (failed > 0) {
+          toast.error(t`${failed} of ${printIds.length} print jobs failed`);
+        } else {
+          toast.success(t`Queued ${printIds.length} kanbans for printing`);
+        }
+      } finally {
+        setIsPrinting(false);
+        printerModal.onClose();
+      }
+    }, [printIds, selectedPrinterId, locationId, printerModal, t]);
+
     const renderContextMenu = useCallback(
-      (row: Kanban) => {
+      (row: KanbanRow) => {
         const canUpdate = permissions.can("update", "inventory");
         const canDelete = permissions.can("delete", "inventory");
         const canViewItems = permissions.can("view", "inventory");
@@ -634,6 +711,10 @@ const KanbansTable = memo(
                 </Link>
               </MenuItem>
             )}
+            <MenuItem onClick={() => handlePrintLabels([row.id!])}>
+              <LuPrinter className="mr-2 size-4" />
+              <Trans>Print Label</Trans>
+            </MenuItem>
             {/* Phone rows drop the label links column; keep them reachable here */}
             {isPhone && kanbanOutput === "label" && (
               <>
@@ -715,44 +796,48 @@ const KanbansTable = memo(
           </>
         );
       },
-      [params, permissions, items.find, isPhone, kanbanOutput]
+      [
+        params,
+        permissions,
+        items.find,
+        isPhone,
+        kanbanOutput,
+        handlePrintLabels
+      ]
     );
 
-    const renderActions = useCallback((selectedRows: typeof data) => {
-      const handlePrintLabels = () => {
-        const selectedIds = selectedRows
-          .map((row) => row.id)
-          .filter(Boolean) as string[];
-        if (selectedIds.length > 0) {
-          window.open(
-            path.to.file.kanbanLabelsPdf(selectedIds, "order"),
-            "_blank"
-          );
-        }
-      };
-
-      return (
+    const renderActions = useCallback(
+      (selectedRows: typeof data) => (
         <DropdownMenuContent align="end" className="min-w-[200px]">
           <DropdownMenuLabel>
             <Trans>Actions</Trans>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={handlePrintLabels}>
+            <DropdownMenuItem
+              onClick={() =>
+                handlePrintLabels(
+                  selectedRows.map((row) => row.id).filter(Boolean) as string[]
+                )
+              }
+            >
               <LuPrinter className="mr-2 size-4" />
               Print Labels ({selectedRows.length})
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
-      );
-    }, []);
+      ),
+      [handlePrintLabels]
+    );
 
     return (
       <OpenQrCodeContext.Provider value={openQrCode}>
-        <Table<Kanban>
+        <Table<KanbanRow>
           count={count}
           columns={columns}
           data={data}
+          // Location-scoped: no list registry entry, so no `listKey`.
+          infinite={{ dataKey: "kanbans", nextCursor }}
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
             <div className="flex items-center gap-2">
@@ -781,6 +866,72 @@ const KanbansTable = memo(
           withSavedView
           withSelectableRows
         />
+        {printerModal.isOpen && (
+          <Modal
+            open
+            onOpenChange={(open) => {
+              if (!open) printerModal.onClose();
+            }}
+          >
+            <ModalContent>
+              <ModalHeader>
+                <ModalTitle>
+                  <Trans>Select Printer</Trans>
+                </ModalTitle>
+              </ModalHeader>
+              <ModalBody>
+                <div className="flex flex-col gap-1">
+                  {printerRoutes.map((route) => (
+                    <button
+                      type="button"
+                      key={route.id}
+                      className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+                        selectedPrinterId === route.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:bg-muted"
+                      }`}
+                      onClick={() => setSelectedPrinterId(route.id)}
+                    >
+                      <LuPrinter className="size-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium">
+                          {route.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-2 uppercase">
+                          {route.format}
+                        </span>
+                        {route.mediaSizeId && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            {route.mediaSizeId}
+                          </span>
+                        )}
+                      </div>
+                      {selectedPrinterId === route.id && (
+                        <LuCheck className="size-4 text-primary shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <HStack>
+                  <Button
+                    variant="primary"
+                    leftIcon={<LuPrinter />}
+                    isLoading={isPrinting}
+                    disabled={!selectedPrinterId || isPrinting}
+                    onClick={handleConfirmPrint}
+                  >
+                    <Trans>Print {printIds.length} Kanbans</Trans>
+                  </Button>
+                  <Button variant="solid" onClick={printerModal.onClose}>
+                    <Trans>Cancel</Trans>
+                  </Button>
+                </HStack>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
+        )}
       </OpenQrCodeContext.Provider>
     );
   }

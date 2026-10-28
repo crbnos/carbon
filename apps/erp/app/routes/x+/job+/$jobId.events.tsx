@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet, useMount, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -12,12 +13,17 @@ import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
 import {
   getJobOperationsList,
-  getProductionEvents
+  getProductionEvents,
+  PRODUCTION_EVENTS_PAGING
 } from "~/modules/production/production.service";
 import { ProductionEventsTable } from "~/modules/production/ui/Jobs";
 import { getWorkCentersList } from "~/modules/resources/resources.service";
+import { toPage } from "~/utils/cursor";
+import { listErrorPage } from "~/utils/list-registry/load.server";
 import { path, requestReferrer } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "job-events");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -30,12 +36,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   const operations = await getJobOperationsList(client, jobId);
   if (operations.error) {
-    redirect(
+    throw redirect(
       requestReferrer(request) ?? path.to.job(jobId),
       await flash(
         request,
@@ -48,39 +54,55 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return {
       count: 0,
       events: [],
+      nextCursor: null,
       workCenters: [],
       operations: []
     };
   }
 
+  // A later page (`?after=`) is read for its rows only: skip the work centers.
   const [events, workCenters] = await Promise.all([
     getProductionEvents(client, operations.data?.map((o) => o.id) ?? [], {
       search,
       limit,
-      offset,
+      cursor,
       sorts,
       filters
     }),
-    getWorkCentersList(client, companyId)
+    cursor ? null : getWorkCentersList(client, companyId)
   ]);
 
   if (events.error) {
-    redirect(
+    if (cursor) {
+      logger.error("Failed to load a later page of production events", {
+        companyId,
+        error: events.error
+      });
+      return listErrorPage("events");
+    }
+    throw redirect(
       path.to.production,
       await flash(request, error(events.error, "Failed to fetch job events"))
     );
   }
 
+  const page = toPage(
+    events.data ?? [],
+    { limit, sorts },
+    PRODUCTION_EVENTS_PAGING
+  );
+
   return {
     count: events.count ?? 0,
-    events: events.data ?? [],
-    workCenters: workCenters.data ?? [],
+    events: page.rows,
+    nextCursor: page.nextCursor,
+    workCenters: workCenters?.data ?? [],
     operations: operations.data ?? []
   };
 }
 
 export default function ProductionEventsRoute() {
-  const { count, events, operations, workCenters } =
+  const { count, events, nextCursor, operations, workCenters } =
     useLoaderData<typeof loader>();
 
   const { setIsExplorerCollapsed } = usePanels();
@@ -98,6 +120,7 @@ export default function ProductionEventsRoute() {
         <ProductionEventsTable
           data={events}
           count={count}
+          nextCursor={nextCursor}
           operations={operations}
           workCenters={workCenters}
         />

@@ -25,6 +25,7 @@ const log = getLogger("jobs", "print-job");
 import type { GeneratedContent, PrintableDocumentItem } from "./renderers";
 import { renderItemBuiltIn, renderItemWithTemplate } from "./renderers";
 import {
+  type KanbanCardItem,
   resolveKanbanData,
   resolveStorageUnitData,
   resolveTrackedEntityData
@@ -179,6 +180,12 @@ async function resolveDocumentItems(
   }
 }
 
+const KANBAN_CARD_NAMES: Record<KanbanCardItem["action"], string> = {
+  order: "Create",
+  start: "Start",
+  complete: "Complete"
+};
+
 function describeDocument(
   doc: PrintableDocumentItem,
   readableId: string | null,
@@ -193,6 +200,7 @@ function describeDocument(
       break;
     case "kanbanCard":
       if (doc.item.itemId) parts.push(doc.item.itemId);
+      parts.push(KANBAN_CARD_NAMES[doc.item.action]);
       break;
     case "storageUnitLabel":
       break;

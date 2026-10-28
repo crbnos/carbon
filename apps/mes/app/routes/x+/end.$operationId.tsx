@@ -13,12 +13,15 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { erpPosting } from "~/services/erp";
 import {
+  abilityBlockRefusal,
   finishJobOperation,
   getNextIncompleteSerialEntity,
   getTrackedEntitiesByMakeMethodId,
   insertProductionQuantity,
+  isFirstOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
+import { autoPrintFirstOperationLabel } from "~/services/printing.server";
 import { checkStrictBackflush } from "~/services/quality.server";
 import { path } from "~/utils/path";
 
@@ -79,6 +82,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })
     );
   }
+  const abilityRefusal = await abilityBlockRefusal(serviceRole, {
+    operationId,
+    employeeId: userId,
+    companyId
+  });
+  if (abilityRefusal) {
+    return redirect(
+      path.to.operation(operationId),
+      await flash(request, error(null, abilityRefusal))
+    );
+  }
+
   const completeAll = jobOperation.data?.completeAllOnScan ?? false;
 
   const [jobMakeMethod] = await Promise.all([
@@ -169,15 +184,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (quantityToComplete > 0) {
     if (isTrackedEntity) {
-      if (!trackedEntityId) {
-        const trackedEntities = await getTrackedEntitiesByMakeMethodId(
-          serviceRole,
-          jobOperation.data.jobMakeMethodId,
-          companyId
-        );
+      const trackedEntities = await getTrackedEntitiesByMakeMethodId(
+        serviceRole,
+        jobOperation.data.jobMakeMethodId,
+        companyId
+      );
 
-        // Complete the next incomplete serial unit for this operation (createdAt
-        // asc), falling back to the last entity when every unit is complete.
+      if (!trackedEntityId) {
+        // No unit named (a scan from outside the MES, or the first operation,
+        // where units flow in order): complete the next incomplete unit for
+        // this operation (createdAt asc), falling back to the last entity when
+        // every unit is complete.
         const nextTrackedEntity = getNextIncompleteSerialEntity(
           trackedEntities.data ?? [],
           operationId
@@ -185,9 +202,36 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         if (nextTrackedEntity) {
           trackedEntityId = nextTrackedEntity.id;
         }
+      } else if (jobMakeMethod.data.requiresSerialTracking) {
+        // The operation and assembly views send the unit the operator scanned
+        // or selected. Completing it twice would record a second production
+        // quantity for one unit.
+        const heldEntity = (trackedEntities.data ?? []).find(
+          (entity) => entity.id === trackedEntityId
+        );
+        if (
+          !heldEntity ||
+          !isSerialEntityIncompleteForOperation(heldEntity, operationId)
+        ) {
+          return redirect(
+            `${path.to.operation(operationId)}?trackedEntityId=${trackedEntityId}`,
+            await flash(
+              request,
+              error(null, "This unit is already complete at this operation")
+            )
+          );
+        }
       }
 
       if (jobMakeMethod.data.requiresSerialTracking) {
+        // Units flow in order through the first operation; at a later one the
+        // operator scans or selects each unit, so the scan never moves the view
+        // to a unit of its own choosing.
+        const isFirstOperation = await isFirstOperationOfMakeMethod(
+          serviceRole,
+          operationId,
+          jobOperation.data.jobMakeMethodId
+        );
         const response = await erpPosting(
           "issue",
           { companyId, userId },
@@ -213,9 +257,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           );
         }
 
-        const newTrackedEntityId = response.data?.newTrackedEntityId;
+        const newTrackedEntityId = response.data?.newTrackedEntityId as
+          | string
+          | undefined;
 
-        if (newTrackedEntityId) {
+        // Auto-print label on first operation only (entity was just minted).
+        // Print the unit just completed, not the new reserved one.
+        const printEntityId = trackedEntityId || newTrackedEntityId;
+        if (printEntityId) {
+          await autoPrintFirstOperationLabel({
+            serviceRole,
+            trackedEntityId: printEntityId,
+            jobOperationId: jobOperation.data.id,
+            jobMakeMethodId: jobOperation.data.jobMakeMethodId,
+            workCenterId: jobOperation.data.workCenterId ?? undefined,
+            companyId,
+            userId
+          });
+        }
+
+        if (newTrackedEntityId && isFirstOperation) {
           return redirect(
             `${path.to.operation(
               operationId
@@ -244,6 +305,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             path.to.operations,
             await flash(request, {
               ...success("Operation finished successfully"),
+              flash: "success"
+            })
+          );
+        }
+
+        // Later operation: stay on the unit just completed. The view sees it
+        // complete and asks for the next unit (scan or select).
+        if (!isFirstOperation) {
+          return redirect(
+            `${path.to.operation(operationId)}?trackedEntityId=${trackedEntityId}`,
+            await flash(request, {
+              ...success("Completed"),
               flash: "success"
             })
           );
@@ -292,6 +365,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               flash: "error"
             })
           );
+        }
+
+        // Auto-print label on first operation only (batch entity was just minted)
+        if (trackedEntityId) {
+          await autoPrintFirstOperationLabel({
+            serviceRole,
+            trackedEntityId,
+            jobOperationId: jobOperation.data.id,
+            jobMakeMethodId: jobOperation.data.jobMakeMethodId,
+            workCenterId: jobOperation.data.workCenterId ?? undefined,
+            companyId,
+            userId
+          });
         }
       }
     } else {

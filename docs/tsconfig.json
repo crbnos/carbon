@@ -1,7 +1,7 @@
 {
   "extends": "@carbon/config/tsconfig/nextjs.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    "strict": false,
     "paths": {
       "@/*": ["./*"],
       "collections/*": ["./.source/*"]

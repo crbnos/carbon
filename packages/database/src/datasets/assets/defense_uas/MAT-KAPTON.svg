@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="filmBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a5a12"/>
+      <stop offset="0.3" stop-color="#c9903a"/>
+      <stop offset="0.55" stop-color="#e0b25f"/>
+      <stop offset="0.8" stop-color="#a06f22"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <linearGradient id="filmFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8a5a12"/>
+      <stop offset="0.3" stop-color="#c9903a"/>
+      <stop offset="0.55" stop-color="#e0b25f"/>
+      <stop offset="0.8" stop-color="#a06f22"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <linearGradient id="filmFree" x1="0" y1="0" x2="1" y2="0.35">
+      <stop offset="0" stop-color="#a06f22"/>
+      <stop offset="0.22" stop-color="#e0b25f"/>
+      <stop offset="0.48" stop-color="#c9903a"/>
+      <stop offset="0.72" stop-color="#e6bd72"/>
+      <stop offset="1" stop-color="#8a5a12"/>
+    </linearGradient>
+    <linearGradient id="adhesive" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b57c28" stop-opacity="0.75"/>
+      <stop offset="0.5" stop-color="#d7a559" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#9a6a1c" stop-opacity="0.7"/>
+    </linearGradient>
+    <linearGradient id="coreTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#fbfbf8"/>
+      <stop offset="0.42" stop-color="#ececea"/>
+      <stop offset="0.75" stop-color="#cfcfcb"/>
+      <stop offset="1" stop-color="#adada8"/>
+    </linearGradient>
+    <linearGradient id="coreWall" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b6b6b1"/>
+      <stop offset="0.35" stop-color="#e8e8e5"/>
+      <stop offset="0.7" stop-color="#cdcdc8"/>
+      <stop offset="1" stop-color="#9d9d98"/>
+    </linearGradient>
+    <linearGradient id="glassSheen" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.16" stop-color="#ffffff" stop-opacity="0.34"/>
+      <stop offset="0.3" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="0.62" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="0.8" stop-color="#ffffff" stop-opacity="0.02"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="rollClip">
+      <path d="M212 410 L212 560 A300 114 0 0 0 812 560 L812 410 Z"/>
+    </clipPath>
+    <clipPath id="boreClip">
+      <ellipse cx="512" cy="410" rx="170" ry="65"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="650" rx="345" ry="76" fill="url(#shadow)"/>
+
+  <!-- free end, peeled up and curling away behind the roll -->
+  <g>
+    <path d="M700 400 C806 360 877 360 890 430 C899 480 870 512 836 500 L836 650 C870 662 899 630 890 580 C877 510 806 510 700 550 Z"
+          fill="url(#filmFree)" opacity="0.94" stroke="#6f4610" stroke-width="2.5"/>
+    <!-- adhesive side, warmer, showing where the film turns back -->
+    <path d="M836 500 C870 512 899 480 890 430 C885 396 862 376 832 368 C863 392 879 424 875 462 C872 490 858 502 836 500 Z"
+          fill="url(#adhesive)"/>
+    <g stroke="#ffffff" stroke-opacity="0.22" stroke-width="2.5" fill="none">
+      <path d="M716 418 C808 382 870 384 882 438"/>
+      <path d="M712 462 C805 428 866 430 877 470"/>
+      <path d="M708 520 C802 484 863 486 879 540"/>
+    </g>
+    <path d="M836 500 L836 650" stroke="#5f3c0c" stroke-width="3" fill="none"/>
+  </g>
+
+  <!-- wound roll body -->
+  <path d="M212 410 L212 560 A300 114 0 0 0 812 560 L812 410 Z" fill="url(#filmBarrel)"/>
+  <g clip-path="url(#rollClip)">
+    <rect x="212" y="380" width="600" height="300" fill="url(#glassSheen)"/>
+    <g stroke="#7a4e10" stroke-opacity="0.35" stroke-width="1.6" fill="none">
+      <path d="M212 452 A300 114 0 0 0 812 452"/>
+      <path d="M212 486 A300 114 0 0 0 812 486"/>
+      <path d="M212 524 A300 114 0 0 0 812 524"/>
+    </g>
+    <path d="M212 560 A300 114 0 0 0 812 560" fill="none" stroke="#5f3c0c" stroke-opacity="0.55" stroke-width="6"/>
+  </g>
+  <path d="M212 410 L212 560 A300 114 0 0 0 812 560 L812 410" fill="none" stroke="#5f3c0c" stroke-width="3"/>
+
+  <!-- annular top face: tightly wound layer edges -->
+  <ellipse cx="512" cy="410" rx="300" ry="114" fill="url(#filmFace)" stroke="#5f3c0c" stroke-width="3"/>
+  <g fill="none">
+    <ellipse cx="512" cy="410" rx="290" ry="110" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+    <ellipse cx="512" cy="410" rx="277" ry="105" stroke="#6b430e" stroke-opacity="0.45" stroke-width="1.6"/>
+    <ellipse cx="512" cy="410" rx="264" ry="100" stroke="#ffffff" stroke-opacity="0.14" stroke-width="1.6"/>
+    <ellipse cx="512" cy="410" rx="251" ry="95" stroke="#6b430e" stroke-opacity="0.45" stroke-width="1.6"/>
+    <ellipse cx="512" cy="410" rx="238" ry="90" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1.6"/>
+    <ellipse cx="512" cy="410" rx="225" ry="86" stroke="#6b430e" stroke-opacity="0.4" stroke-width="1.6"/>
+    <ellipse cx="512" cy="410" rx="213" ry="81" stroke="#ffffff" stroke-opacity="0.13" stroke-width="1.6"/>
+    <ellipse cx="512" cy="410" rx="201" ry="76" stroke="#6b430e" stroke-opacity="0.4" stroke-width="1.6"/>
+    <ellipse cx="512" cy="410" rx="190" ry="72" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1.6"/>
+    <ellipse cx="512" cy="410" rx="180" ry="68" stroke="#6b430e" stroke-opacity="0.4" stroke-width="1.6"/>
+  </g>
+  <!-- key-light sweep across the wound face -->
+  <path d="M280 355 A300 114 0 0 1 512 296 L512 330 A190 72 0 0 0 366 366 Z" fill="#ffffff" opacity="0.16"/>
+  <path d="M640 486 A300 114 0 0 1 760 452 L688 428 A190 72 0 0 0 620 456 Z" fill="#ffffff" opacity="0.07"/>
+
+  <!-- plain white plastic core -->
+  <ellipse cx="512" cy="410" rx="176" ry="67" fill="url(#coreTop)" stroke="#8f8f8a" stroke-width="2"/>
+  <ellipse cx="512" cy="410" rx="170" ry="65" fill="url(#coreWall)"/>
+  <g clip-path="url(#boreClip)">
+    <ellipse cx="512" cy="452" rx="170" ry="65" fill="#4c4a45"/>
+    <ellipse cx="512" cy="470" rx="170" ry="65" fill="#332f2b"/>
+  </g>
+  <ellipse cx="512" cy="410" rx="170" ry="65" fill="none" stroke="#8b8b86" stroke-width="2"/>
+  <path d="M356 392 A170 65 0 0 1 512 347" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="3"/>
+</svg>

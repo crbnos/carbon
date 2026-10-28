@@ -432,6 +432,15 @@ export const sequences = [
     step: 1
   },
   {
+    table: "kanban",
+    name: "Kanban",
+    prefix: "KB",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
     table: "quote",
     name: "Quote",
     prefix: "Q",

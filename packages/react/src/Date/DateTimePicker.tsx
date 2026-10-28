@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { DateValue } from "@internationalized/date";
+import { useLingui } from "@lingui/react/macro";
 import { useDatePicker } from "@react-aria/datepicker";
 import { useDatePickerState } from "@react-stately/datepicker";
 import type { DatePickerProps } from "@react-types/datepicker";
@@ -25,7 +26,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../Tooltip";
 import { FieldButton } from "./components/Button";
 import { Calendar } from "./components/Calendar";
 import DateField from "./components/DateField";
-import TimeField from "./TimePicker";
+import { dateTimePickerOptions } from "./dateTimePickerOptions";
+import { TimeCombobox } from "./TimeCombobox";
 
 const dateTimePickerFieldVariants = cva("flex w-full px-4", {
   variants: {
@@ -49,13 +51,19 @@ const DateTimePicker = (
     helperText?: string;
   }
 ) => {
+  const { t } = useLingui();
+  const timeOptions = dateTimePickerOptions(props.hourCycle);
+
   const state = useDatePickerState({
     ...props,
+    ...timeOptions,
     shouldCloseOnSelect: false
   });
   const ref = useRef<HTMLDivElement>(null);
+  // The same options must reach `useDatePicker`, not just the state: it builds
+  // `fieldProps`, so without them the visible field ignores what the state says.
   const { groupProps, fieldProps, buttonProps, dialogProps, calendarProps } =
-    useDatePicker(props, state, ref);
+    useDatePicker({ ...props, ...timeOptions }, state, ref);
 
   return (
     <Popover open={state.isOpen} onOpenChange={state.setOpen}>
@@ -128,15 +136,15 @@ const DateTimePicker = (
         </HStack>
         <PopoverContent align="end" {...dialogProps}>
           <Calendar {...calendarProps} />
-          <TimeField
-            label="Time"
-            value={state.timeValue}
-            onChange={
-              state.setTimeValue as (
-                value: import("@react-types/datepicker").TimeValue | null
-              ) => void
-            }
-          />
+          <div className="pt-3">
+            <TimeCombobox
+              value={state.timeValue}
+              onChange={state.setTimeValue}
+              isDisabled={props.isDisabled}
+              hour24={props.hourCycle === 24}
+              aria-label={t`Time`}
+            />
+          </div>
           {props.inline && (
             <PopoverFooter>
               <Button onClick={() => state.setValue(null)} variant="secondary">

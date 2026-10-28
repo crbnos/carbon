@@ -4,7 +4,7 @@
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
-import type { Json } from "@carbon/database";
+import { fetchAllByIds, type Json } from "@carbon/database";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -44,7 +44,9 @@ import { resolveJobConfiguration } from "~/modules/sales/sales.utils";
 import {
   inspectionPlanRequired,
   methodItemType,
-  methodType
+  methodType,
+  optionalTiptapDoc,
+  requiredTiptapDoc
 } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
@@ -69,8 +71,11 @@ import {
   getAssemblyModelState,
   getDueDateForColumn,
   isAssemblyPlanRunning,
+  isBatchDissolvable,
+  isJobBulkReleasable,
   isJobEditableFromPlanning,
   isJobLocked,
+  JOB_DELETABLE_STATUSES,
   JOB_LOCKED_MESSAGE,
   JOB_LOCKED_STATUSES,
   jobOperationStatus,
@@ -92,14 +97,19 @@ import {
   productionEventValidator,
   productionOrderValidator,
   productionQuantityValidator,
+  SCHEDULED_JOB_STATUSES,
   salesOrderToJobValidator,
   scheduleJobUpdateValidator,
-  scheduleOperationReorderValidator
+  scheduleOperationReorderValidator,
+  shouldStartAssemblyPlan
 } from "./production.models";
 import type { JobStatus } from "./production.service";
 import * as service from "./production.service";
 import * as utils from "./production.utils";
-import { jobReleaseProblems } from "./ui/Jobs/job-release-logic";
+import {
+  jobReleaseProblems,
+  startingPurchaseOrders
+} from "./ui/Jobs/job-release-logic";
 
 const logger = getLogger("erp", "production");
 
@@ -229,8 +239,9 @@ export const planDraftJob = defineServiceFn({
  *
  * @remarks
  * The step every release path shares (`releaseJobs`, `releaseBatchMemberJobs`).
- * Per job, in order: refresh requirements, run MRP, flip to Ready, put outside
- * operations on purchase orders, stamp releasedDate. Scheduling is the
+ * Per job, in order: refresh requirements, run MRP, flip to Ready, number the
+ * serial units when the item's timing is `jobRelease`, put outside operations
+ * on purchase orders, stamp releasedDate. Scheduling is the
  * caller's (one location run, or a notify, after all jobs are released).
  * Validation (`getJobReleaseReadiness`) is the caller's, BEFORE this runs.
  *
@@ -238,6 +249,10 @@ export const planDraftJob = defineServiceFn({
  * supplier's first "new" PO is reused for the jobs after it, so a batch puts
  * each supplier's outside operations from every member job on one PO. The map
  * is returned with those POs filled in, for a caller releasing job by job.
+ *
+ * Serial numbering at release never stops it: a job whose units could not be
+ * numbered is listed in `warnings` and released, and its units draw their
+ * numbers at their first touch or at completion.
  *
  * It stops at the first job that fails, and that is `failure`, not an error:
  * `releasedJobIds` are the jobs that ARE Ready when this returns. After a
@@ -257,9 +272,11 @@ export const releaseCheckedJobs = defineServiceFn({
     const userId = ctx.auditUserId;
     const purchaseOrders = { ...purchaseOrdersBySupplierId };
     const releasedJobIds: string[] = [];
+    const warnings: { jobId: string; message: string }[] = [];
     const report = (failure: CarbonError<"internal" | "conflict"> | null) => ({
       purchaseOrdersBySupplierId: purchaseOrders,
       releasedJobIds,
+      warnings,
       failure
     });
 
@@ -320,6 +337,22 @@ export const releaseCheckedJobs = defineServiceFn({
         );
       }
       releasedJobIds.push(id);
+
+      // Under the jobRelease serial number timing (the item's, else the
+      // company's) every unit is numbered now. The job is already Ready, so a
+      // failure is a warning, not a refusal.
+      const numbered = await service.assignJobSerialNumbersAtRelease(
+        ctx.asSystem.supabase,
+        ctx.asSystem.pg,
+        { jobId: id, companyId, userId }
+      );
+      if (!numbered) {
+        warnings.push({
+          jobId: id,
+          message:
+            "The job is released, but its serial numbers could not be assigned"
+        });
+      }
 
       const purchaseOrder = await invokeCreate(
         { db: ctx.asSystem.pg, companyId, userId },
@@ -391,9 +424,14 @@ type JobRef = { jobId: string; readableId: string };
  *
  * @param jobIds - The jobs to release.
  * @param supplierProcessByOperationId - The supplier process to use for each outside operation, by operation id.
- * @param purchaseOrdersBySupplierId - For each supplier, `new` or the id of one of its Draft purchase orders to add to.
+ * A release of many jobs can run as several calls: `carriedPurchaseOrders`
+ * passes in the PO each supplier went on in an earlier call, so the jobs of a
+ * later call go on it instead of asking for a choice.
  *
- * @returns `released`, `failed` (each with its reason), `skipped` (not Draft or Planned), `warnings` (released, but a purchase order failed) and the `scheduled` locations.
+ * @param purchaseOrdersBySupplierId - For each supplier, `new` or the id of one of its Draft purchase orders to add to.
+ * @param carriedPurchaseOrders - The PO each supplier went on in an earlier call of the same release, as that call returned it
+ *
+ * @returns `released`, `failed` (each with its reason), `skipped` (not Draft or Planned), `warnings` (released, but a purchase order or its serial numbers failed), whether the locations were `scheduled`, and `purchaseOrdersBySupplierId` for the next call.
  *
  * @mcp
  */
@@ -401,13 +439,19 @@ export const releaseJobs = defineServiceFn({
   input: z.object({
     jobIds: z.array(z.string()).min(1),
     purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional(),
+    carriedPurchaseOrders: z.record(z.string(), z.string()).optional(),
     supplierProcessByOperationId: z.record(z.string(), z.string()).default({})
   }),
   permission: { update: "production" },
 
   async run(
     ctx,
-    { jobIds, purchaseOrdersBySupplierId, supplierProcessByOperationId }
+    {
+      jobIds,
+      purchaseOrdersBySupplierId,
+      carriedPurchaseOrders,
+      supplierProcessByOperationId
+    }
   ) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -438,7 +482,7 @@ export const releaseJobs = defineServiceFn({
     const skipped: (JobRef & { status: string | null })[] = [];
     const releasable = jobs
       .filter((job) => {
-        if (job.status === "Draft" || job.status === "Planned") return true;
+        if (isJobBulkReleasable(job.status)) return true;
         skipped.push({
           jobId: job.id,
           readableId: job.jobId,
@@ -469,29 +513,12 @@ export const releaseJobs = defineServiceFn({
     const readinessByJobId = new Map(
       readiness.data.jobs.map((job) => [job.id, job] as const)
     );
-    const draftPurchaseOrdersBySupplier = new Map(
-      readiness.data.suppliers.map(
-        (supplier) =>
-          [
-            supplier.supplierId,
-            new Set(supplier.draftPurchaseOrders.map((po) => po.id))
-          ] as const
-      )
-    );
-    // Only a Draft PO of that supplier is a valid target; anything else is
-    // "new". A supplier's first new PO is reused by the jobs after it.
-    let purchaseOrders: Record<string, string> = Object.fromEntries(
-      readiness.data.suppliers.map((supplier) => {
-        const picked = purchaseOrdersBySupplierId?.[supplier.supplierId];
-        return [
-          supplier.supplierId,
-          picked &&
-          draftPurchaseOrdersBySupplier.get(supplier.supplierId)?.has(picked)
-            ? picked
-            : "new"
-        ];
-      })
-    );
+    // A supplier's first new PO is reused by the jobs after it.
+    const starting = startingPurchaseOrders(readiness.data.suppliers, {
+      chosen: purchaseOrdersBySupplierId,
+      carried: carriedPurchaseOrders
+    });
+    let purchaseOrders = starting.purchaseOrders;
 
     const released: JobRef[] = [];
     const warnings: (JobRef & { message: string })[] = [];
@@ -503,9 +530,8 @@ export const releaseJobs = defineServiceFn({
         ? [
             ...jobReleaseProblems(ready),
             // With no choice sent there is no dialog to make one in.
-            ...(!purchaseOrdersBySupplierId &&
-            ready.supplierIds.some(
-              (id) => (draftPurchaseOrdersBySupplier.get(id)?.size ?? 0) > 0
+            ...(ready.supplierIds.some((id) =>
+              starting.suppliersToChoose.has(id)
             )
               ? [
                   "choose a purchase order for its outside operations on the job"
@@ -531,6 +557,9 @@ export const releaseJobs = defineServiceFn({
         continue;
       }
       if (failure) warnings.push({ ...ref, message: failure.message });
+      for (const warning of result.data?.warnings ?? []) {
+        warnings.push({ ...ref, message: warning.message });
+      }
       if (job.locationId) locationIds.add(job.locationId);
       released.push(ref);
     }
@@ -557,7 +586,17 @@ export const releaseJobs = defineServiceFn({
       }
     }
 
-    return { released, warnings, failed, skipped, scheduled };
+    return {
+      released,
+      warnings,
+      failed,
+      skipped,
+      scheduled,
+      purchaseOrdersBySupplierId: {
+        ...carriedPurchaseOrders,
+        ...purchaseOrders
+      }
+    };
   }
 });
 /**
@@ -864,9 +903,11 @@ export const closeJob = defineServiceFn({
  * job's own), backflushes materials, rolls up cost and, for a Make to Asset
  * job, creates the fixed assets. It refuses a quantity of zero or below what
  * was received, a fractional quantity on a serial job, and the Make to Asset
- * rules; its message says what to fix (a `rule` error). Then the picked
- * material the job did not consume is returned to the warehouse; a failure
- * there leaves the job completed and is returned as `warning`.
+ * rules; its message says what to fix (a `rule` error). Units it takes that
+ * have no serial number yet (a deferred serial number timing) are numbered by
+ * the same function, so a refused completion spends no numbers. Then the
+ * picked material the job did not consume is returned to the warehouse; a
+ * failure there leaves the job completed and is returned as `warning`.
  *
  * @mcp
  */
@@ -941,16 +982,25 @@ export const completeJob = defineServiceFn({
  * `purchaseOrdersBySupplierId` is the planner's PO choice from the Release
  * dialog; unattended callers (bulk release) send none, and a batch that needs
  * a choice — a supplier with Draft POs to pick from — is refused so the
- * planner can release it from its dialog.
+ * planner can release it from its dialog. An unattended release of several
+ * batches passes `carriedPurchaseOrders`, the PO each supplier went on in an
+ * earlier batch of the same release: that supplier stays on it instead of
+ * being refused (`startingPurchaseOrders`). The PO map is
+ * returned for the next batch, also beside `failure` when a job failed after
+ * the checks (the jobs before it are released).
  */
 export const releaseBatchMemberJobs = defineServiceFn({
   input: z.object({
     jobIds: z.array(z.string()),
-    purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional()
+    purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional(),
+    carriedPurchaseOrders: z.record(z.string(), z.string()).optional()
   }),
   permission: { update: "production" },
 
-  async run(ctx, { jobIds, purchaseOrdersBySupplierId }) {
+  async run(
+    ctx,
+    { jobIds, purchaseOrdersBySupplierId, carriedPurchaseOrders }
+  ) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
 
@@ -968,9 +1018,15 @@ export const releaseBatchMemberJobs = defineServiceFn({
     }
 
     const toRelease = (jobs.data ?? [])
-      .filter((job) => job.status === "Draft" || job.status === "Planned")
+      .filter((job) => isJobBulkReleasable(job.status))
       .map((job) => job.id);
-    if (toRelease.length === 0) return { releasedJobIds: [] as string[] };
+    if (toRelease.length === 0) {
+      return {
+        releasedJobIds: [] as string[],
+        purchaseOrdersBySupplierId: {} as Record<string, string>,
+        failure: null
+      };
+    }
 
     const readiness = await service.getJobReleaseReadiness(
       client,
@@ -995,36 +1051,25 @@ export const releaseBatchMemberJobs = defineServiceFn({
       );
     }
 
-    if (
-      !purchaseOrdersBySupplierId &&
-      readiness.data.suppliers.some((s) => s.draftPurchaseOrders.length > 0)
-    ) {
+    const starting = startingPurchaseOrders(readiness.data.suppliers, {
+      chosen: purchaseOrdersBySupplierId,
+      carried: carriedPurchaseOrders
+    });
+    if (starting.suppliersToChoose.size > 0) {
       return ctx.error(
         "rule",
         "Outside operations need a purchase order choice — open the batch to release it"
       );
     }
 
-    // Only a Draft PO of that supplier is a valid target; anything else is "new".
-    const purchaseOrders = Object.fromEntries(
-      readiness.data.suppliers.map((supplier) => {
-        const picked = purchaseOrdersBySupplierId?.[supplier.supplierId];
-        return [
-          supplier.supplierId,
-          picked && supplier.draftPurchaseOrders.some((po) => po.id === picked)
-            ? picked
-            : "new"
-        ];
-      })
-    );
-
     const released = await releaseCheckedJobs(ctx, {
       jobIds: toRelease,
-      purchaseOrdersBySupplierId: purchaseOrders
+      purchaseOrdersBySupplierId: starting.purchaseOrders
     });
     if (released.error) return released.error;
-    if (released.data.failure) return released.data.failure;
-    return { releasedJobIds: released.data.releasedJobIds };
+    // A failure is returned with the PO map: the jobs released before it
+    // may have made a PO, and the next batch for that supplier must use it.
+    return released.data;
   }
 });
 
@@ -1038,18 +1083,27 @@ export const releaseBatchMemberJobs = defineServiceFn({
  * batch on the floor, then tell the scheduler. A batch that is not Planned is
  * listed in `skipped`. `purchaseOrdersBySupplierId` is the release dialog's
  * choice; without one, a batch whose suppliers have Draft purchase orders is
- * refused.
+ * refused, except for the PO this release itself made: a supplier's
+ * outside operations from every batch go on the one PO the first batch
+ * created. `carriedPurchaseOrders` names the POs an earlier call of the same
+ * release made; the result returns the map for the next call.
+ *
+ * @param carriedPurchaseOrders - The PO each supplier went on in an earlier call of the same release, as that call returned it
  *
  * @mcp
  */
 export const releaseBatches = defineServiceFn({
   input: z.object({
     batchIds: z.array(z.string()).min(1),
-    purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional()
+    purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional(),
+    carriedPurchaseOrders: z.record(z.string(), z.string()).optional()
   }),
   permission: { update: "production" },
 
-  async run(ctx, { batchIds, purchaseOrdersBySupplierId }) {
+  async run(
+    ctx,
+    { batchIds, purchaseOrdersBySupplierId, carriedPurchaseOrders }
+  ) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
     const ids = [...new Set(batchIds)];
@@ -1078,7 +1132,19 @@ export const releaseBatches = defineServiceFn({
       });
       return false;
     });
-    if (planned.length === 0) return { released: [], failed, skipped };
+    // The PO each supplier went on so far: a "new" PO the first batch
+    // creates is the one the batches after it use.
+    const purchaseOrders = {
+      ...(purchaseOrdersBySupplierId ?? carriedPurchaseOrders)
+    };
+    if (planned.length === 0) {
+      return {
+        released: [],
+        failed,
+        skipped,
+        purchaseOrdersBySupplierId: purchaseOrders
+      };
+    }
 
     const members = await client
       .from("jobOperation")
@@ -1105,10 +1171,17 @@ export const releaseBatches = defineServiceFn({
       const ref = { batchId: batch.id, readableId: batch.readableId };
       const jobs = await releaseBatchMemberJobs(ctx, {
         jobIds: (jobIdsByBatch[batch.id] ?? []).map((op) => op.jobId),
-        purchaseOrdersBySupplierId
+        ...(purchaseOrdersBySupplierId
+          ? { purchaseOrdersBySupplierId: purchaseOrders }
+          : { carriedPurchaseOrders: purchaseOrders })
       });
       if (jobs.error) {
         failed.push({ ...ref, message: jobs.error.message });
+        continue;
+      }
+      Object.assign(purchaseOrders, jobs.data.purchaseOrdersBySupplierId);
+      if (jobs.data.failure) {
+        failed.push({ ...ref, message: jobs.data.failure.message });
         continue;
       }
 
@@ -1139,7 +1212,12 @@ export const releaseBatches = defineServiceFn({
       released.push(ref);
     }
 
-    return { released, failed, skipped };
+    return {
+      released,
+      failed,
+      skipped,
+      purchaseOrdersBySupplierId: purchaseOrders
+    };
   }
 });
 
@@ -1295,6 +1373,9 @@ export const reorderScheduleOperations = defineServiceFn({
  * `columnId` is a date (`YYYY-MM-DD`) or one of the board's undated columns,
  * which clears the due date. Writes the due date and priority of a job at
  * `locationId` that is not locked; a job elsewhere or locked is a `conflict`.
+ * The deadline type follows the date: a dated "No Deadline" or "ASAP" job
+ * becomes "Soft Deadline", and an undated Hard or Soft Deadline job becomes
+ * "No Deadline".
  * Then the scheduler is told; the debounced wave regenerates the location in
  * due date, then priority, order. A failed notice is logged and not returned.
  *
@@ -1311,17 +1392,37 @@ export const moveScheduleJob = defineServiceFn({
       return ctx.error("validation", "Invalid form data");
     }
 
+    const current = await ctx.asCaller.supabase
+      .from("job")
+      .select("deadlineType")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .eq("locationId", locationId)
+      .not("status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`)
+      .maybeSingle();
+    if (current.error) {
+      return ctx.error("internal", current.error.message, current.error);
+    }
+    if (current.data === null) {
+      return ctx.error("conflict", "Job unavailable or locked");
+    }
+
     const { data, error } = await ctx.asCaller.supabase
       .from("job")
       .update({
         dueDate,
         priority,
+        deadlineType: service.deadlineTypeForDueDate(
+          current.data.deadlineType,
+          dueDate
+        ),
         updatedBy: ctx.auditUserId,
         updatedAt: datetime.timestamp()
       })
       .eq("id", id)
       .eq("companyId", companyId)
       .eq("locationId", locationId)
+      .eq("deadlineType", current.data.deadlineType)
       .not("status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`)
       .select("id")
       .maybeSingle();
@@ -1338,6 +1439,7 @@ export const moveScheduleJob = defineServiceFn({
     return { id };
   }
 });
+
 /**
  * Record a production event (labor, machine or setup time) on a job operation.
  *
@@ -1378,6 +1480,9 @@ export const createProductionEvent = defineServiceFn({
       createdBy: ctx.auditUserId
     });
     if (insert.error) {
+      if (service.isSecondOpenTimer(insert.error)) {
+        return ctx.error("rule", service.SECOND_OPEN_TIMER_MESSAGE);
+      }
       return ctx.error(
         "internal",
         "Failed to insert production event",
@@ -1416,6 +1521,9 @@ export const updateProductionEvent = defineServiceFn({
       updatedBy: ctx.auditUserId
     });
     if (update.error) {
+      if (service.isSecondOpenTimer(update.error)) {
+        return ctx.error("rule", service.SECOND_OPEN_TIMER_MESSAGE);
+      }
       return ctx.error(
         "internal",
         "Failed to update production event",
@@ -1435,9 +1543,12 @@ const jobIdsInput = z.array(z.string()).min(1);
  * Delete jobs.
  *
  * @remarks
- * Refused, with nothing deleted, when any of the jobs is locked (Completed,
- * Closed or Cancelled). The jobs' methods, materials and operations go with
- * them.
+ * Deletes the Draft and Planned jobs (and old Due Today and Overdue ones) and
+ * skips the rest. The status is part of the DELETE, so a job released since
+ * it was selected stays. Refused when none of the jobs could be deleted. The
+ * jobs' methods, materials and operations go with them.
+ *
+ * @returns `ids`, the jobs deleted, and `skipped`, how many were not.
  *
  * @mcp destructive
  */
@@ -1446,17 +1557,26 @@ export const deleteJobs = defineServiceFn({
   permission: { delete: "production" },
 
   async run(ctx, { ids }) {
-    const jobs = await service.readUnlockedJobs(ctx, ids);
-    if (jobs instanceof CarbonError) return jobs;
-    const deleted = await ctx.asCaller.supabase
-      .from("job")
-      .delete()
-      .in("id", ids)
-      .eq("companyId", ctx.company.id);
-    if (deleted.error) {
-      return ctx.error("internal", deleted.error.message, deleted.error);
+    const unique = [...new Set(ids)];
+    const deleted: string[] = [];
+    // An `in` filter rides in the request URL, so ids go in groups.
+    for (const chunk of chunkArray(unique, 100)) {
+      const result = await ctx.asCaller.supabase
+        .from("job")
+        .delete()
+        .in("id", chunk)
+        .eq("companyId", ctx.company.id)
+        .in("status", [...JOB_DELETABLE_STATUSES])
+        .select("id");
+      if (result.error) {
+        return ctx.error("internal", "Failed to delete the jobs", result.error);
+      }
+      deleted.push(...result.data.map((job) => job.id));
     }
-    return { ids };
+    if (deleted.length === 0) {
+      return ctx.error("rule", "Only Draft and Planned jobs can be deleted");
+    }
+    return { ids: deleted, skipped: unique.length - deleted.length };
   }
 });
 
@@ -1573,7 +1693,10 @@ export const setJobItem = defineServiceFn({
  * Refused when any job is locked. Each job's priority is recalculated among
  * the jobs at its location on the new date (`nextJobPriority`), in one read
  * and one write for every job. A field left out keeps the job's current
- * value; a `dueDate` of null clears it.
+ * value; a `dueDate` of null clears it. The two stay in step
+ * (`nextJobDeadline`): ASAP and No Deadline clear the date, and a date given
+ * to a No Deadline or ASAP job makes it a Soft Deadline. Then the scheduler is
+ * told; a failed notice is logged and not returned.
  *
  * @mcp
  */
@@ -1594,8 +1717,7 @@ export const setJobDeadline = defineServiceFn({
     const moves = jobs.map((job) => ({
       id: job.id,
       locationId: job.locationId,
-      dueDate: dueDate !== undefined ? dueDate || null : job.dueDate,
-      deadlineType: deadlineType ?? job.deadlineType
+      ...service.nextJobDeadline(job, { dueDate, deadlineType })
     }));
 
     // The jobs already on each new date at each location, in one read: a
@@ -1651,6 +1773,15 @@ export const setJobDeadline = defineServiceFn({
         AND j."companyId" = ${companyId}
         AND j."status" NOT IN (${sql.join(JOB_LOCKED_STATUSES.map((status) => sql`${status}`))})
     `.execute(ctx.asSystem.pg);
+
+    // A Draft or Planned job is not on the schedule yet.
+    if (jobs.some((job) => SCHEDULED_JOB_STATUSES.includes(job.status))) {
+      await service.notifyScheduleInputsChanged(
+        companyId,
+        "reorder",
+        "Job deadline changed"
+      );
+    }
     return { ids };
   }
 });
@@ -2267,8 +2398,9 @@ const jobMaterialInput = z.object({
  * @mcp
  */
 export const createJobMaterial = defineServiceFn({
-  // The caller chooses the row's id (the bill of material's new row keeps it).
-  input: jobMaterialInput.extend({ id: z.string() }),
+  // The bill of material sends its new row's id, so the row keeps its key;
+  // without one the table makes it.
+  input: jobMaterialInput.extend({ id: z.string().min(1).optional() }),
   permission: { create: "production" },
 
   async run(ctx, material) {
@@ -2497,12 +2629,16 @@ export const deleteJobMaterials = defineServiceFn({
 // The bill of process form requires times, units and rates; the API fills a
 // new operation's from its work center or process, and an update leaves out
 // what it was not sent.
-const jobOperationInput = baseJobOperationValidator
-  .extend({
-    workCenterId: zfd.text(z.string().optional()),
-    jobId: z.string(),
-    customFields: customFieldsInput
-  })
+const jobOperationFields = baseJobOperationValidator.extend({
+  workCenterId: zfd.text(z.string().optional()),
+  jobId: z.string(),
+  customFields: customFieldsInput
+});
+const jobOperationInput = jobOperationFields.refine(...inspectionPlanRequired);
+// A new operation's id is optional: the table makes one. The bill of process
+// sends its own, so the row it shows before the save keeps its key.
+const newJobOperationInput = jobOperationFields
+  .extend({ id: z.string().min(1).optional() })
   .refine(...inspectionPlanRequired);
 
 /**
@@ -2519,7 +2655,7 @@ const jobOperationInput = baseJobOperationValidator
  * @mcp
  */
 export const createJobOperation = defineServiceFn({
-  input: jobOperationInput,
+  input: newJobOperationInput,
   permission: { create: "production" },
 
   async run(ctx, input) {
@@ -2537,13 +2673,10 @@ export const createJobOperation = defineServiceFn({
       ctx.asSystem.pg,
       { ...operation, companyId: ctx.company.id, createdBy: ctx.auditUserId }
     );
-    if (insert.error || !insert.data?.id) {
-      return ctx.error(
-        "internal",
-        "Failed to insert job operation",
-        insert.error
-      );
-    }
+    const inserted = unwrap(ctx, insert);
+    if (inserted instanceof CarbonError) return inserted;
+    if (!inserted)
+      return ctx.error("internal", "Failed to insert job operation");
 
     const recalculated = await service.recalculateMaterialMethod(ctx, {
       jobId: operation.jobId,
@@ -2551,7 +2684,7 @@ export const createJobOperation = defineServiceFn({
       dependencies: true
     });
     if (recalculated) return recalculated;
-    return { id: insert.data.id };
+    return { id: inserted.id };
   }
 });
 
@@ -3311,6 +3444,7 @@ export const createBatch = defineServiceFn({
         }
         return jobs.error;
       }
+      if (jobs.data.failure) return jobs.data.failure;
 
       const flipped = await service.releaseJobOperationBatch(
         client,
@@ -3423,6 +3557,55 @@ export const updateBatch = defineServiceFn({
       );
     }
     return { batchId: batch.batchId };
+  }
+});
+
+/**
+ * Dissolve operation batches.
+ *
+ * @remarks
+ * Dissolves each Planned or Active batch on its own (`updateBatch`): a batch
+ * that has recorded production is refused and listed in `failed` while the
+ * rest still dissolve. A batch in any other status is skipped.
+ */
+export const dissolveBatches = defineServiceFn({
+  input: z.object({ batchIds: z.array(z.string()).min(1) }),
+  permission: { update: "production" },
+
+  async run(ctx, { batchIds }) {
+    const ids = [...new Set(batchIds)];
+    const batches = await fetchAllByIds(ids, (batch) =>
+      ctx.asCaller.supabase
+        .from("jobOperationBatch")
+        .select("id, readableId, status")
+        .in("id", batch)
+        .eq("companyId", ctx.company.id)
+        .order("id")
+    );
+    if (batches.error) {
+      return ctx.error("internal", "Failed to load the batches", batches.error);
+    }
+
+    const dissolvable = batches.data.filter((batch) =>
+      isBatchDissolvable(batch.status)
+    );
+    let dissolved = 0;
+    const failed: { readableId: string; message: string }[] = [];
+    for (const batch of dissolvable) {
+      const result = await updateBatch(ctx, {
+        batchId: batch.id,
+        type: "dissolve"
+      });
+      if (result.error) {
+        failed.push({
+          readableId: batch.readableId,
+          message: result.error.message || "Failed to dissolve"
+        });
+      } else {
+        dissolved += 1;
+      }
+    }
+    return { dissolved, failed, skipped: ids.length - dissolvable.length };
   }
 });
 
@@ -3698,7 +3881,8 @@ export const setPersonHours = defineServiceFn({
  * @remarks
  * Optionally only a department's work centers or one shift. One UPDATE, so it
  * applies to all or none. Every work center touched is rescheduled. Returns
- * how many assignments were updated.
+ * how many assignments were updated (`updated`), and on how many person-days
+ * (`personDays`: a person split across stations is one).
  *
  * @mcp
  */
@@ -3733,7 +3917,11 @@ export const setPeopleOvertime = defineServiceFn({
       "People overtime changed",
       rows.map((row) => row.workCenterId)
     );
-    return { updated: rows.length };
+    return {
+      updated: rows.length,
+      personDays: new Set(rows.map((row) => `${row.employeeId}:${row.date}`))
+        .size
+    };
   }
 });
 
@@ -3782,7 +3970,11 @@ export const copyPeopleDay = defineServiceFn({
  *
  * @remarks
  * One assignment per working day of their shift (Monday to Friday when it has
- * none) from `weekStart`. Then the work center is rescheduled.
+ * none) from `weekStart`, leaving a day they are off or already booked in that
+ * shift as it is. Then the work center is rescheduled.
+ *
+ * @returns `assigned`, the days written, and `skipped`, the working days left
+ * as they were.
  *
  * @mcp
  */
@@ -3813,7 +4005,11 @@ export const assignPersonWeek = defineServiceFn({
     await service.notifyPeopleChange(ctx, "People week assignment", [
       week.workCenterId
     ]);
-    return { employeeId: week.employeeId };
+    return {
+      employeeId: week.employeeId,
+      assigned: written.assigned,
+      skipped: written.skipped
+    };
   }
 });
 
@@ -4946,22 +5142,14 @@ export const setProcedureFields = defineServiceFn({
   input: z.object({
     ids: z.array(z.string()).min(1),
     name: z.string().optional(),
-    content: z.string().optional(),
+    content: optionalTiptapDoc,
     status: z.enum(procedureStatus).optional(),
     processId: z.string().optional(),
     tags: z.array(z.string()).optional()
   }),
   permission: { update: "production" },
 
-  async run(ctx, { ids, content, ...fields }) {
-    let parsedContent: Json | undefined;
-    if (content !== undefined) {
-      try {
-        parsedContent = JSON.parse(content);
-      } catch {
-        return ctx.error("validation", "Invalid procedure content");
-      }
-    }
+  async run(ctx, { ids, content: parsedContent, ...fields }) {
     let update = ctx.asCaller.supabase
       .from("procedure")
       .update({
@@ -5247,10 +5435,7 @@ export const generateAssemblySteps = defineServiceFn({
           result.modelUploadId
         )
       ]);
-      const isConverting =
-        model.data?.processingStatus === "Queued" ||
-        model.data?.processingStatus === "Processing";
-      if (!isConverting && !isAssemblyPlanRunning(planJob.data)) {
+      if (shouldStartAssemblyPlan(model.data?.processingStatus, planJob.data)) {
         await service.startAssemblyPlan(ctx, result.modelUploadId);
       }
       return { planning: true, created: 0, unmappedComponentCount: 0 };
@@ -6807,6 +6992,35 @@ export const getJobOperationStepRecords = defineServiceFn({
 });
 
 /**
+ * Get step timings for a job operation
+ *
+ * @remarks
+ * Estimates how long each step of a job operation took, from the times its steps were recorded. A step's time is measured from the same operator's previous step record on this operation, or from their latest clock-in to it, whichever is later. Steps recorded at the same instant (a manager's Complete All, or a batch record) are flagged `bulk` and left out of the per-step statistics. A step's time includes any break the operator did not clock out for, and steps recorded together after the work was done read as near zero.
+ *
+ * @param jobOperationId - The job operation whose steps to time.
+ * @returns `steps`: each step in order, with the number of timed units and the average, median, minimum and maximum seconds. `records`: every step record in the order it was made, with its 0-based unit index, the operator, the seconds, what they were measured from (`previousStep`, `clockIn`, or null when there was nothing to measure from) and whether it was a `bulk` record.
+ *
+ * @mcp read
+ */
+export const getJobOperationStepTimings = defineServiceFn({
+  input: z.object({ jobOperationId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    const timings = unwrap(
+      ctx,
+      await service.getJobOperationStepTimings(
+        ctx.asCaller.supabase,
+        input.jobOperationId,
+        ctx.company.id
+      )
+    );
+    if (timings instanceof CarbonError) return timings;
+    if (!timings) return ctx.error("notFound", "Job operation not found");
+    return timings;
+  }
+});
+
+/**
  * Get outside operations by job id
  *
  * @mcp read
@@ -7646,7 +7860,7 @@ export const insertJob = defineServiceFn({
     quoteId: z.string().optional(),
     quoteLineId: z.string().optional(),
     modelUploadId: z.string().optional(),
-    notes: z.string().optional(),
+    notes: optionalTiptapDoc,
     customFields: z.unknown().optional(),
     configuration: z.record(z.string(), z.unknown()).optional(),
     fixedAssetClassId: z.string().nullable().optional(),
@@ -7705,7 +7919,7 @@ export const createJobOperationStep = defineServiceFn({
   input: z.looseObject({
     operationId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().min(1),
+    description: requiredTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -7753,7 +7967,7 @@ export const updateJobOperationStep = defineServiceFn({
     .looseObject({
       operationId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().min(1),
+      description: requiredTiptapDoc,
       type: z.enum([
         "Task",
         "Value",
@@ -8153,7 +8367,7 @@ export const createProcedure = defineServiceFn({
     name: z.string().min(1),
     version: z.number().min(0),
     processId: z.string().optional(),
-    content: z.string().optional(),
+    content: optionalTiptapDoc,
     copyFromId: z.string().optional(),
     id: z
       .string()
@@ -8186,7 +8400,7 @@ export const updateProcedure = defineServiceFn({
       name: z.string().min(1),
       version: z.number().min(0),
       processId: z.string().optional(),
-      content: z.string().optional(),
+      content: optionalTiptapDoc,
       copyFromId: z.string().optional(),
       id: z
         .string()
@@ -8218,7 +8432,7 @@ export const createProcedureStep = defineServiceFn({
   input: z.looseObject({
     procedureId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().optional(),
+    description: optionalTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -8265,7 +8479,7 @@ export const updateProcedureStep = defineServiceFn({
     .looseObject({
       procedureId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().optional(),
+      description: optionalTiptapDoc,
       type: z.enum([
         "Task",
         "Value",
@@ -9407,7 +9621,7 @@ export const upsertAssemblyInstructionStep = defineServiceFn({
         "Inspection"
       ])
       .optional(),
-    description: z.unknown().optional(),
+    description: optionalTiptapDoc,
     required: z.boolean().optional(),
     unitOfMeasureCode: z.string().nullable().optional(),
     minValue: z.number().nullable().optional(),
@@ -9681,7 +9895,7 @@ export const insertAssemblyInstructionStep = defineServiceFn({
         "Inspection"
       ])
       .optional(),
-    description: z.unknown().optional(),
+    description: optionalTiptapDoc,
     required: z.boolean().optional(),
     unitOfMeasureCode: z.string().nullable().optional(),
     minValue: z.number().nullable().optional(),

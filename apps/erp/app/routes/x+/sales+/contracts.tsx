@@ -2,19 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getContracts } from "~/modules/sales/sales.service";
 import { ContractsTable } from "~/modules/sales/ui/Contracts";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { contractsList } from "~/utils/list-registry/sales.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Service Contracts`,
@@ -22,44 +18,21 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
+  return loadListPage(request, contractsList, {
+    dataKey: "contracts",
+    onError: {
+      redirectTo: path.to.authenticatedRoot,
+      message: "Failed to fetch contracts"
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const contracts = await getContracts(client, companyId, {
-    search,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
-
-  if (contracts.error) {
-    throw redirect(
-      path.to.authenticatedRoot,
-      await flash(request, error(contracts.error, "Failed to fetch contracts"))
-    );
-  }
-
-  return {
-    count: contracts.count ?? 0,
-    contracts: contracts.data ?? []
-  };
 }
 
 export default function ContractsRoute() {
-  const { count, contracts } = useLoaderData<typeof loader>();
+  const { count, contracts, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ContractsTable data={contracts} count={count} />
+      <ContractsTable data={contracts} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

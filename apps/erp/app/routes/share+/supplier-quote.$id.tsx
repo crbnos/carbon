@@ -638,6 +638,7 @@ const LinePricing = ({
           <Tr className="whitespace-nowrap">
             <Th className="w-[50px]" />
             <Th className="w-2">Quantity</Th>
+            <Th className="w-[80px]">Unit</Th>
             <Th className="w-[150px]">
               <HStack spacing={4}>
                 <span>Unit Price</span>
@@ -706,6 +707,10 @@ const LinePricing = ({
                   </label>
                 </Td>
                 <Td>{qty}</Td>
+                <Td>
+                  {line.purchaseUnitOfMeasureCode ??
+                    line.inventoryUnitOfMeasureCode}
+                </Td>
                 {isSelected ? (
                   <>
                     <Td className="">

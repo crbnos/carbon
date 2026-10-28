@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -12,7 +13,10 @@ import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getProductionProjections } from "~/modules/production/production.service";
+import {
+  getProductionProjections,
+  PRODUCTION_PROJECTIONS_PAGING
+} from "~/modules/production/production.service";
 import DemandProjectionsTable from "~/modules/production/ui/DemandProjection/DemandProjectionTable";
 import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
 import {
@@ -21,9 +25,13 @@ import {
   resolveLocationId
 } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
+import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
+import { listErrorPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "demand-forecasts");
 
 export const handle: Handle = {
   breadcrumb: msg`Demand Forecasts`,
@@ -42,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   const locationId = await resolveLocationId(client, request, {
@@ -67,13 +75,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     {
       search,
       limit,
-      offset,
+      cursor,
       sorts,
       filters
     }
   );
 
   if (projections.error) {
+    if (cursor) {
+      logger.error("Failed to load a later page of production projections", {
+        companyId,
+        error: projections.error
+      });
+      return listErrorPage("projections");
+    }
     throw redirect(
       path.to.production,
       await flash(
@@ -83,16 +98,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  const page = toPage(
+    projections.data ?? [],
+    { limit, sorts },
+    PRODUCTION_PROJECTIONS_PAGING
+  );
+
   return {
-    projections: projections.data ?? [],
-    count: projections.data?.length ?? 0,
+    projections: page.rows,
+    count: projections.count ?? 0,
+    nextCursor: page.nextCursor,
     locationId,
     periods
   };
 }
 
 export default function DemandProjectionsRoute() {
-  const { projections, count, locationId, periods } =
+  const { projections, count, nextCursor, locationId, periods } =
     useLoaderData<typeof loader>();
 
   const { isGated } = usePlanGate({ feature: "FORECAST" });
@@ -116,6 +138,7 @@ export default function DemandProjectionsRoute() {
       <DemandProjectionsTable
         data={projections}
         count={count}
+        nextCursor={nextCursor}
         locationId={locationId}
         periods={periods}
       />

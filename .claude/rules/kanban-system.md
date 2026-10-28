@@ -18,10 +18,22 @@ stock transfer (`Transfer`). Lives in the inventory module.
 
 ## Data model
 
-Table `kanban` (initial migration `20250909012102_kanban.sql`; newest `20261012232517_kanban-replenishment-level.sql`, plus the generated `20261012232520_kanban-level-check-triggers.sql` for its interceptor).
+Table `kanban` (initial migration `20250909012102_kanban.sql`; newest `20261028191437_kanban-readable-id.sql` (after `20261012232517_kanban-replenishment-level.sql`), plus the generated `20261012232520_kanban-level-check-triggers.sql` for its interceptor).
 **Composite PK `("id", "companyId")`.** Key columns:
 
 - `id` TEXT default `id('kb')`, `itemId` FK→item (CASCADE), `companyId` FK→company
+- `kanbanId` TEXT (nullable) — the readable number (`KB000001`, sequence `kanban`), printed on the
+  label (`20261028191437_kanban-readable-id.sql`). Unique per company. The BEFORE INSERT trigger
+  `set_kanban_readable_id` assigns it from `get_next_sequence` when the insert has none (creating the
+  company's `kanban` sequence row first if it is missing, so no kanban is left unnumbered), so every
+  insert path (form, MCP, datasets, fixtures) is numbered with no call-site code. An insert that
+  names its own number keeps it, and the `sync_advance_document_sequence` interceptor moves the
+  counter past it (`20261028221530`), so a later generated number cannot collide. The BEFORE UPDATE
+  trigger `prevent_kanban_readable_id_change` (`20261028221145`) refuses changing a set number — it
+  is printed on the card — and allows filling a NULL one. `upsertKanban` drops a `kanbanId` the
+  caller sends. Nullable only because a restore loads rows with triggers off, and a pre-migration
+  backup has no number. Not to be confused with
+  `stockTransfer.kanbanId`, the FK to `kanban.id` — the same `job.jobId` / `jobMaterial.jobId` split.
 - `replenishmentSystem` `kanbanReplenishmentSystem` enum (`'Buy' | 'Make' | 'Transfer'`),
   default `'Buy'` — **retyped from `itemReplenishmentSystem`** in `20260908143722_kanban-transfer.sql`
   (Transfer is NOT added to `itemReplenishmentSystem`; that enum drives planning/MRP/demand)
@@ -49,10 +61,15 @@ RLS: SELECT = any employee role; INSERT/UPDATE/DELETE = `inventory_create`/`inve
 `name`, `readableIdWithRevision`, `jobReadableId` (= `j."jobId"`), `locationName`, `storageUnitName`,
 `fromStorageUnitName`, `supplierName`, `thumbnailPath`. Recreated with storageUnit refs in
 `20260417000300_storage-unit-recreate-dependents.sql`, then with the source-bin join in
-`20260908143722_kanban-transfer.sql`.
+`20260908143722_kanban-transfer.sql`, and again for `replenishmentLevel` and `kanbanId`
+(`20261012232517`, `20261028191437`).
 
 `kanbanOutput` setting (enum `('label','qrcode','url')`, default `'qrcode'`) is a per-company column on
-`companySettings` (migration `20251001021231_kanban-settings.sql`), NOT a kanban-specific table.
+`companySettings` (migration `20251001021231_kanban-settings.sql`), NOT a kanban-specific table. Beside it,
+`kanbanLabelSize` (enum `('letter','label4x2','label3x2')`, default `'letter'`,
+`20261028214508_kanban-label-size.sql`) is what a label prints on; the thermal values are `labelSizes` ids
+(`@carbon/utils`). Both are saved by `updateInventorySettings` from the Kanban Output card
+(`x+/settings+/inventory.tsx`), which shows Label Size only while the output is `label`.
 
 ## Code surfaces
 
@@ -69,7 +86,7 @@ RLS: SELECT = any employee role; INSERT/UPDATE/DELETE = `inventory_create`/`inve
 - `file`: `kanbanLabelsPdf(ids, action)` → `/file/kanban/labels/:action.pdf?ids=`; `kanbanQrCode(id, action)` → `/file/kanban/:id/:action.png`
 - `to`: `kanbans`, `kanban(id)`, `newKanban`, `deleteKanban(id)` under `/x/inventory/kanbans`
 
-`action` is always `"order" | "start" | "complete"`.
+`action` is always `"order" | "start" | "complete"`. **One action per card, never several codes on one card** — an operator would scan the wrong one. Create, Start and Complete are separate cards (and separate print links).
 
 ## Replenishment / scan flow
 
@@ -117,9 +134,12 @@ Spec: `.ai/specs/2026-10-06-kanban-internal-replenishment-level.md`.
 ## Labels & QR
 
 - QR PNG route: `apps/erp/app/routes/file+/kanban+/$id.$action[.]png.tsx`, 36px modules, **color-coded by action**: order=black `#000000`, start=emerald `#059669`, complete=blue `#2563eb`. (The old doc claiming "no color differentiation" was stale.)
-- Label PDF route: `apps/erp/app/routes/file+/kanban+/labels.$action[.]pdf.tsx` — takes `?ids=` (comma-separated), fetches kanbans from the `kanbans` view, converts thumbnails to base64, renders `KanbanLabelPDF`.
-- `KanbanLabelPDF`: `packages/documents/src/pdf/KanbanLabelPDF.tsx` (exported via `@carbon/documents/pdf`). Letter page, **2×3 grid = 6 labels/page**; each shows the action-colored QR, item thumbnail, name, readable id, storage-unit/location, `QTY: {quantity} {uom}` (plus `MIN: {replenishmentLevel}` when a level is set — no unit, because `uom` here is the purchase unit and the level is in stock units), and supplier name. QR color matches the PNG route.
-- `KanbansTable` renders Create/Start/Complete affordances per `kanbanOutput`: `label`→PDF links, `qrcode`→hover-card iframes (one open at a time: `KanbanQrCodeHoverCard` reads a table-level `OpenQrCodeContext`), `url`→copyable API links. Start/Complete show for Make only. Bulk "Print Labels" opens the PDF for selected ids (`action: "order"`).
+- Label PDF route: `apps/erp/app/routes/file+/kanban+/labels.$action[.]pdf.tsx` — `?ids=` (comma-separated), one `.in()` read of the `kanbans` view scoped by `companyId`, rendered at the company's `kanbanLabelSize` (`?labelSize=` overrides). Thumbnails are fetched for the letter sheet only.
+- The card is defined once in `packages/documents/src/zpl/KanbanLabelZPL.tsx`: `KanbanLabelItem`, `kanbanLabelCode` (the card's one code for its `action`, with a caption: CREATE, START or COMPLETE), the text helpers, `canHoldKanbanLabel` (3" x 2" and up; 100 x 50 mm passes), `getKanbanLabelLayout` (inches: the code on the right, as large as the label allows (at most 45% of its width), caption under it; a text column on the left — each field cut to the column — the part name up to two lines (`wrapKanbanLabelText`), every other field one line (`fitKanbanLabelText`): name, item ID, bins, `QTY` and `MIN` on their own lines (`kanbanLabelQuantityLines`), supplier — with the kanban ID small at the bottom), `KANBAN_LABEL_COLORS` and `generateKanbanLabelZPL(item, size, baseUrl, action)`. Text is cut by an estimated glyph width (`fitKanbanLabelText`) and escaped with `^FH` (`zplFieldData`, `zpl/utils.ts`). Pinned by `kanbanLabelZPL.test.ts`.
+- `KanbanLabelPDF` (`packages/documents/src/pdf/KanbanLabelPDF.tsx`, via `@carbon/documents/pdf`): takes the `action`; without `labelSize`, a letter page, **2×3 grid = 6 labels/page** — the action-colored code (like the PNG route) with the item thumbnail beside it, name, item readable id, storage unit/location, `QTY: {quantity} {uom}` (plus `MIN: {replenishmentLevel}` — no unit, because `uom` is the purchase unit and the level is in stock units), and a bottom row with the `kanbanId` (bold, left) and supplier (right). With a `labelSize`, one card per page laid out by `getKanbanLabelLayout`, so the PDF and the ZPL print alike; the PDF colors the code and caption by action (black Create, green Start, blue Complete), and the ZPL (black only) relies on the caption.
+- Print job: `resolveKanbanData` (`print-job/resolvers.ts`) returns one `KanbanCardItem` per action — `order`, `start`, `complete` for a Make kanban, `order` only for Buy and Transfer — so each card is its own `printJob` (description ends Create / Start / Complete) and `renderKanbanCard` (`print-job/renderers.tsx`) renders the item's `action`; `kanbanUrl` (BinderyPress data) is that action's scan URL from `kanbanLabelCode`. A printer whose media size holds a card prints one at that size — ZPL, or a one-card PDF. A ZPL printer with smaller media fails the job; a PDF printer with smaller or no media prints the company's `kanbanLabelSize`. `resolveKanbanData` uses the `kanbanId` as the job's readable id.
+- `KanbansTable` renders Create/Start/Complete per `kanbanOutput`: `label`→PDF links (one card per action), `qrcode`→hover-card iframes (one open at a time: `KanbanQrCodeHoverCard` reads a table-level `OpenQrCodeContext`), `url`→copyable API links; Start/Complete show for Make only. Bulk **Print Labels** (and the row menu's **Print Label**) prints each kanban's cards (all three for Make) when it goes to a printer, the Create cards when it falls back to the PDF: it opens a printer picker, pre-selecting the location's `kanban` printer context (Settings → Printing → Kanbans row, falling back to the location default), and POSTs one `Kanban` print job per kanban to `path.to.manualPrint` when the company has printer routes (the storage-unit list's pattern), else opens the PDF.
+- `createKanban` auto-prints the new kanban's cards through `autoPrint` (`inventory.service.ts`, context `kanban`) when the context's Auto-print is on — like a posted receipt or shipment. Update does not print.
 
 ## Gotchas
 

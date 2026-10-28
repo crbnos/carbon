@@ -13,6 +13,7 @@ export { findClobbers, objectRefs } from "./clobber";
 export { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 export { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 export { journalStatusFilter } from "./conformance/journal-status-filter";
+export { linguiMacroMisuse } from "./conformance/lingui-macro-misuse";
 export { moduleShape } from "./conformance/module-shape";
 export { noDbClientInService } from "./conformance/no-db-client-in-service";
 export { noDefaultOnEffects } from "./conformance/no-default-on-effects";
@@ -34,6 +35,8 @@ export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 export { routeActionShape } from "./conformance/route-action-shape";
 export { serviceFnFile } from "./conformance/service-fn-file";
 export { spdxLicenseHeader } from "./conformance/spdx-license-header";
+export { testMocksOwnModule } from "./conformance/test-mocks-own-module";
+export { testReadsSource } from "./conformance/test-reads-source";
 export {
   type Invariant,
   type InvariantResult,
@@ -60,6 +63,7 @@ export {
   STRUCTURE_CHECKS,
   scanAll,
   scanModules,
+  TEST_CHECKS,
   TS_CHECKS
 } from "./run";
 export { loadDbTableColumns } from "./sources/db-columns";
@@ -70,4 +74,5 @@ export {
 } from "./sources/license-files";
 export { loadModules, modulesDir } from "./sources/modules";
 export { loadServerFiles } from "./sources/server-files";
+export { loadTestFiles } from "./sources/test-files";
 export { loadTypescriptFiles } from "./sources/typescript";

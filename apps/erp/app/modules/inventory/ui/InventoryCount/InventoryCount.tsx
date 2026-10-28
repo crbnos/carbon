@@ -49,6 +49,8 @@ type InventoryCountDetailsProps = {
   inventoryCount: InventoryCountType;
   lines: InventoryCountLine[];
   count: number;
+  // The loader's cursor for the next page of lines (infinite scroll).
+  nextCursor: string | null;
   summary: { uncounted: number; variances: number };
   // Ledger adjustments this count has posted (empty for a never-posted Draft).
   movements: StockMovement[];
@@ -64,6 +66,7 @@ const InventoryCountDetails = ({
   inventoryCount,
   lines,
   count,
+  nextCursor,
   summary,
   movements,
   forms,
@@ -193,6 +196,7 @@ const InventoryCountDetails = ({
         <InventoryCountLines
           lines={lines}
           count={count}
+          nextCursor={nextCursor}
           hideSystemQuantity={hideSystemQuantity}
           isReadOnly={isReadOnly}
           locationId={inventoryCount.locationId}

@@ -39,6 +39,8 @@ export function LineItemsBlock({
   const opts = { ...DEFAULT_LINE_ITEMS_OPTIONS, ...block.options };
   const overflow = itemTextOverflowStyle(opts);
   let rowIndex = 0;
+  // Comment lines carry no quantity or price, so they take no line number.
+  let lineNumber = 0;
 
   return (
     <View>
@@ -50,7 +52,8 @@ export function LineItemsBlock({
           { backgroundColor: theme.accent, color: theme.accentForeground }
         ]}
       >
-        <Text style={tw("w-1/2")}>Description</Text>
+        <Text style={tw("w-[6%] text-center")}>#</Text>
+        <Text style={tw("w-[44%]")}>Description</Text>
         <Text style={tw("w-1/6 text-center")}>Qty</Text>
         <Text style={tw("w-1/6 text-center")}>Unit Price</Text>
         <Text style={tw("w-1/6 text-center")}>Total</Text>
@@ -60,6 +63,8 @@ export function LineItemsBlock({
       {salesInvoiceLines.map((line) => {
         const isEven = rowIndex % 2 === 0;
         rowIndex++;
+        const isComment = line.invoiceLineType === "Comment";
+        if (!isComment) lineNumber++;
 
         const lineAddOnCost = line.convertedAddOnCost ?? 0;
         const lineNonTaxableAddOnCost = line.convertedNonTaxableAddOnCost ?? 0;
@@ -89,7 +94,10 @@ export function LineItemsBlock({
                 }
               ]}
             >
-              <View style={tw("w-1/2 pr-2")}>
+              <Text style={tw("w-[6%] text-center text-gray-600")}>
+                {isComment ? "" : lineNumber}
+              </Text>
+              <View style={tw("w-[44%] pr-2")}>
                 <Text style={{ ...tw("text-gray-800"), ...overflow }}>
                   {getLineDescription(line)}
                 </Text>
@@ -197,11 +205,17 @@ export function LineItemsBlock({
               </Text>
             </View>
             {Object.keys(line.externalNotes ?? {}).length > 0 ? (
-              <View style={tw("px-3 py-2 border-b border-gray-200")}>
-                <Note
-                  key={`${line.id}-notes`}
-                  content={line.externalNotes as JSONContent}
-                />
+              // Indented under the description, past the line-number column.
+              <View
+                style={tw("flex flex-row px-3 py-2 border-b border-gray-200")}
+              >
+                <View style={tw("w-[6%]")} />
+                <View style={tw("w-[94%]")}>
+                  <Note
+                    key={`${line.id}-notes`}
+                    content={line.externalNotes as JSONContent}
+                  />
+                </View>
               </View>
             ) : null}
           </View>

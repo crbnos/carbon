@@ -135,6 +135,47 @@ export function jobReleaseProblems(job: {
   ];
 }
 
+/**
+ * The purchase order each supplier's outside operations start on in a
+ * release, and the suppliers whose jobs must be refused because the user has
+ * to choose among their Draft POs.
+ *
+ * `chosen` is the Release dialog's choice: a supplier keeps its pick when it
+ * is one of its Drafts, else starts a new PO, and nobody is asked again.
+ * Without a choice, a supplier with Drafts must choose, unless `carried`
+ * names one of them: a background release runs in slices of 25 jobs, and
+ * `carried` (the map the previous slice returned) is the PO an earlier slice
+ * created, which the supplier keeps.
+ */
+export function startingPurchaseOrders(
+  suppliers: {
+    supplierId: string;
+    draftPurchaseOrders: { id: string }[];
+  }[],
+  {
+    chosen,
+    carried = {}
+  }: { chosen?: Record<string, string>; carried?: Record<string, string> } = {}
+): {
+  purchaseOrders: Record<string, string>;
+  suppliersToChoose: Set<string>;
+} {
+  const purchaseOrders: Record<string, string> = {};
+  const suppliersToChoose = new Set<string>();
+  for (const { supplierId, draftPurchaseOrders } of suppliers) {
+    const kept = (chosen ?? carried)[supplierId];
+    if (kept && draftPurchaseOrders.some((po) => po.id === kept)) {
+      purchaseOrders[supplierId] = kept;
+      continue;
+    }
+    purchaseOrders[supplierId] = "new";
+    if (!chosen && draftPurchaseOrders.length > 0) {
+      suppliersToChoose.add(supplierId);
+    }
+  }
+  return { purchaseOrders, suppliersToChoose };
+}
+
 export type StorageUnitLine = {
   id: string;
   description: string;

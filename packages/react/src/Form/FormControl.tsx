@@ -8,6 +8,7 @@ import {
   forwardRef,
   useCallback,
   useContext,
+  useEffect,
   useId,
   useState
 } from "react";
@@ -83,6 +84,13 @@ export const useFormControlContext = () => {
   return ctx;
 };
 
+/**
+ * The FormControl this element sits in, or `null` outside one. For controls
+ * that are also used on their own, such as the select and combobox triggers.
+ */
+export const useOptionalFormControlContext = () =>
+  useContext(FormControlContext);
+
 function useFormControlProvider(props: FormControlContextType) {
   const {
     id: idProp,
@@ -108,10 +116,22 @@ function useFormControlProvider(props: FormControlContextType) {
   const [hasFeedbackText, setHasFeedbackText] = useState(false);
 
   /**
-   * Track whether the `FormHelperText` has been rendered.
-   * We use this to append its id the `aria-describedby` of the `input`.
+   * How many `FormHelperText`s are on screen. Each registers when it mounts and
+   * unregisters when it unmounts, so helper text that gives way to the error
+   * message also leaves the control's `aria-describedby`.
    */
-  const [hasHelpText, setHasHelpText] = useState(false);
+  const [helpTextCount, setHelpTextCount] = useState(0);
+  const registerHelpText = useCallback(() => {
+    setHelpTextCount((count) => count + 1);
+    return () => setHelpTextCount((count) => count - 1);
+  }, []);
+
+  /**
+   * The id of the rendered `FormLabel`, once it is on screen. Controls that
+   * are not labelable elements (the select and combobox triggers) name
+   * themselves with it through `aria-labelledby`.
+   */
+  const [renderedLabelId, setRenderedLabelId] = useState<string>();
 
   // Track whether the form element (e.g, `input`) has focus.
   const [isFocused, setFocus] = useState(false);
@@ -123,14 +143,7 @@ function useFormControlProvider(props: FormControlContextType) {
     ) => ({
       id: helpTextId,
       ...props,
-      /**
-       * Notify the field context when the help text is rendered on screen,
-       * so we can apply the correct `aria-describedby` to the field (e.g. input, textarea).
-       */
-      ref: mergeRefs(forwardedRef, (node) => {
-        if (!node) return;
-        setHasHelpText(true);
-      })
+      ref: forwardedRef
     }),
     [helpTextId]
   );
@@ -141,13 +154,18 @@ function useFormControlProvider(props: FormControlContextType) {
       forwardedRef: ForwardedRef<HTMLLabelElement> | null = null
     ) => ({
       ...props,
-      ref: forwardedRef,
+      ref: mergeRefs(forwardedRef, (node: HTMLLabelElement | null) => {
+        if (!node) return;
+        setRenderedLabelId(node.id);
+      }),
       "data-focus": dataAttr(isFocused),
       "data-disabled": dataAttr(isDisabled),
       "data-invalid": dataAttr(isInvalid),
       "data-readonly": dataAttr(isReadOnly),
       id: props.id !== undefined ? props.id : labelId,
-      htmlFor: id
+      // The field's own id when the caller names it: the form wrappers give
+      // their input `id={name}` and pass `htmlFor={name}`.
+      htmlFor: props.htmlFor ?? id
     }),
     [id, isDisabled, isFocused, isInvalid, isReadOnly, labelId]
   );
@@ -200,8 +218,9 @@ function useFormControlProvider(props: FormControlContextType) {
     onBlur: () => setFocus(false),
     hasFeedbackText,
     setHasFeedbackText,
-    hasHelpText,
-    setHasHelpText,
+    hasHelpText: helpTextCount > 0,
+    registerHelpText,
+    renderedLabelId,
     id,
     labelId,
     feedbackId,
@@ -263,6 +282,8 @@ export interface FormHelperTextProps extends ComponentProps<"div"> {}
 export const FormHelperText = forwardRef<HTMLDivElement, FormHelperTextProps>(
   function FormHelperText(props, ref) {
     const field = useFormControlContext();
+    const { registerHelpText } = field;
+    useEffect(() => registerHelpText(), [registerHelpText]);
 
     return (
       <div

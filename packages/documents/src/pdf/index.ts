@@ -7,6 +7,7 @@ import { getQuoteDisplayId } from "../utils/quote";
 import type { BatchListMember } from "./BatchListPDF";
 import { BatchListPDF } from "./BatchListPDF";
 import type { JobTravelerMaterial } from "./blocks/jobTraveler";
+import type { PurchaseOrderApproval } from "./blocks/purchaseOrder";
 import { Footer } from "./components";
 import { ensureFont, getSafeFontFamily, registerDocumentFonts } from "./fonts";
 import IssuePDF from "./IssuePDF";
@@ -18,6 +19,7 @@ import PackingSlipPDF from "./PackingSlipPDF";
 import ProductLabelPDF from "./ProductLabelPDF";
 import PurchaseOrderPDF from "./PurchaseOrderPDF";
 import PurchaseReturnOrderPDF from "./PurchaseReturnOrderPDF";
+import PurchasingRfqPDF from "./PurchasingRfqPDF";
 import { DOCUMENT_PDFS } from "./preview-documents";
 import { SAMPLE_PURCHASE_RETURN_ORDER } from "./purchaseReturnOrder.samples";
 import QuotePDF from "./QuotePDF";
@@ -31,7 +33,7 @@ import { SAMPLE_SALES_RETURN_ORDER } from "./salesReturnOrder.samples";
 import { SAMPLE_SALES_INVOICE } from "./samples";
 import { SAMPLE_TRACKING_LABEL } from "./trackingLabel.samples";
 
-export type { BatchListMember, JobTravelerMaterial };
+export type { BatchListMember, JobTravelerMaterial, PurchaseOrderApproval };
 export {
   BatchListPDF,
   DOCUMENT_PDFS,
@@ -48,6 +50,7 @@ export {
   ProductLabelPDF,
   PurchaseOrderPDF,
   PurchaseReturnOrderPDF,
+  PurchasingRfqPDF,
   QuotePDF,
   registerDocumentFonts,
   SAMPLE_ISSUE,

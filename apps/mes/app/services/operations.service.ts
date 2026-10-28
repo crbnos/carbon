@@ -77,6 +77,49 @@ function notFoundResponse(message: string) {
   };
 }
 
+const UNIQUE_VIOLATION = "23505";
+
+function conflictResponse(message: string) {
+  return {
+    data: null,
+    error: {
+      name: "PostgrestError",
+      message,
+      details: "",
+      hint: "",
+      code: "PGRST409"
+    } as PostgrestError,
+    count: null,
+    status: 409,
+    statusText: "Conflict"
+  };
+}
+
+/** Whether a production event already records this serial (its tracked activity output). */
+async function timerRecordsEntity(
+  client: SupabaseClient<Database>,
+  productionEventId: string,
+  trackedEntityId: string,
+  companyId: string
+) {
+  const activities = await client
+    .from("trackedActivity")
+    .select("id")
+    .eq("sourceDocument", "Production Event")
+    .eq("sourceDocumentId", productionEventId)
+    .eq("companyId", companyId);
+  const activityIds = activities.data?.map((activity) => activity.id) ?? [];
+  if (activityIds.length === 0) return false;
+  const output = await client
+    .from("trackedActivityOutput")
+    .select("trackedActivityId")
+    .in("trackedActivityId", activityIds)
+    .eq("trackedEntityId", trackedEntityId)
+    .eq("companyId", companyId)
+    .limit(1);
+  return (output.data?.length ?? 0) > 0;
+}
+
 export async function getOpenJobs(
   client: SupabaseClient<Database>,
   args: { companyId: string; locationId: string }
@@ -255,6 +298,36 @@ export async function getJobOperationDependencies(
     .from("jobOperationDependency")
     .select("operationId, dependsOnId")
     .eq("jobId", jobId);
+}
+
+/**
+ * Is this the first operation of its make method's routing? A serial unit only
+ * earns a printed label when it is completed at its first operation, so this
+ * decides both the label auto-print and how the operation views pick units.
+ *
+ * "First" means no jobOperationDependency whose predecessor shares this op's
+ * jobMakeMethodId. Cross make-method (subassembly) dependencies are ignored: a
+ * parent-assembly op still has no printed label just because a subassembly
+ * finished first. `order` is only a display/sort field, not a precedence signal.
+ *
+ * Fails closed: an errored lookup reads as "not first" — no auto-select, no
+ * label — which is the safe default when we can't confirm there's no predecessor.
+ */
+export async function isFirstOperationOfMakeMethod(
+  client: SupabaseClient<Database>,
+  operationId: string,
+  jobMakeMethodId: string
+): Promise<boolean> {
+  const priorDependency = await client
+    .from("jobOperationDependency")
+    .select(
+      "dependsOn:jobOperation!jobOperationDependency_dependsOnId_fk!inner(jobMakeMethodId)"
+    )
+    .eq("operationId", operationId)
+    .eq("dependsOn.jobMakeMethodId", jobMakeMethodId)
+    .limit(1)
+    .maybeSingle();
+  return !priorDependency.error && !priorDependency.data;
 }
 
 export async function getUpstreamOperations(
@@ -490,6 +563,9 @@ export async function getActiveJobOperationsByLocation(
   });
 }
 
+/**
+ * The member operations of the given batches: quantities and the job number.
+ */
 export async function getJobOperationBatchMembers(
   client: SupabaseClient<Database>,
   batchIds: string[],
@@ -1585,13 +1661,27 @@ export async function getNonConformanceActions(
   }[];
 }
 
-export async function getOperationEligibility(
+export type ProcessAbilityPolicy =
+  Database["public"]["Enums"]["processAbilityPolicy"];
+
+// What an operator lacks to work on an operation whose process requires an
+// ability. getAbilityShortfall returns null when nothing is missing.
+export type AbilityShortfall = {
+  policy: ProcessAbilityPolicy;
+  processName: string;
+  // the qualification's expiry date; null when the operator never held it
+  expiredOn: string | null;
+  // an Active training that grants the ability, when one exists
+  trainingName: string | null;
+};
+
+export async function getAbilityShortfall(
   client: SupabaseClient<Database>,
   args: { operationId: string; employeeId: string; companyId: string }
-): Promise<{ eligible: boolean; reason: string | null }> {
+): Promise<AbilityShortfall | null> {
   const { operationId, employeeId, companyId } = args;
 
-  // NOTE: query failures here FAIL OPEN (eligible: true). An RLS/database
+  // NOTE: query failures here FAIL OPEN (no shortfall). An RLS/database
   // error must not brick the shop floor — the scheduler is the primary
   // enforcement of ability requirements; this gate is a best-effort backstop.
   // The requirement comes from the operation's PROCESS: process.requiresAbility
@@ -1599,90 +1689,84 @@ export async function getOperationEligibility(
   // what the employee must be qualified for.
   const operation = await client
     .from("jobOperation")
-    .select("processId")
+    .select(
+      "process!jobOperation_processId_fkey(name, requiresAbility, abilityPolicy, ability!ability_processId_fkey(id, active))"
+    )
     .eq("id", operationId)
     .eq("companyId", companyId)
     .maybeSingle();
 
-  if (operation.error) {
-    return { eligible: true, reason: null };
+  const process = operation.data?.process;
+  if (operation.error || !process?.requiresAbility) return null;
+
+  // requiresAbility is on but no active linked ability exists — data anomaly,
+  // don't block the floor
+  const ability = process.ability.find((a) => a.active);
+  if (!ability) return null;
+
+  const [employeeAbility, training] = await Promise.all([
+    client
+      .from("employeeAbility")
+      .select("expiresAt")
+      .eq("employeeId", employeeId)
+      .eq("abilityId", ability.id)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    // Read alongside, so a refusal can name what to complete; a failed read
+    // only drops the name.
+    client
+      .from("training")
+      .select("name")
+      .eq("grantsAbilityId", ability.id)
+      .eq("companyId", companyId)
+      .eq("status", "Active")
+      .limit(1)
+      .maybeSingle()
+  ]);
+  if (employeeAbility.error) return null;
+
+  // Qualification is presence-based: the row existing means qualified,
+  // subject only to expiry.
+  const expiresAt = employeeAbility.data?.expiresAt ?? null;
+  if (employeeAbility.data) {
+    if (expiresAt === null) return null;
+    const today = datetime
+      .today(await getCompanyTimeZone(client, companyId))
+      .toString();
+    if (expiresAt > today) return null;
   }
 
-  if (!operation.data?.processId) {
-    return { eligible: true, reason: null };
-  }
+  return {
+    policy: process.abilityPolicy,
+    // The ability's name IS the process's name (abilities no longer store one).
+    processName: process.name,
+    expiredOn: expiresAt,
+    trainingName: training.data?.name ?? null
+  };
+}
 
-  const process = await client
-    .from("process")
-    .select("name, requiresAbility")
-    .eq("id", operation.data.processId)
-    .eq("companyId", companyId)
-    .maybeSingle();
+// English text for the server flash when work is refused. MES routes have no
+// server-side translation; the page banner carries the translated text.
+function abilityRefusalMessage(shortfall: AbilityShortfall): string {
+  const how = shortfall.trainingName
+    ? `Complete the ${shortfall.trainingName} training to get it.`
+    : "Ask a supervisor to add it to your profile.";
+  const expired = shortfall.expiredOn
+    ? ` Your qualification expired on ${shortfall.expiredOn}.`
+    : "";
+  return `You need the ${shortfall.processName} ability to work on this operation.${expired} ${how}`;
+}
 
-  if (process.error) {
-    return { eligible: true, reason: null };
-  }
-
-  if (!process.data?.requiresAbility) {
-    return { eligible: true, reason: null };
-  }
-
-  const ability = await client
-    .from("ability")
-    .select("id")
-    .eq("processId", operation.data.processId)
-    .eq("companyId", companyId)
-    .eq("active", true)
-    .maybeSingle();
-
-  if (ability.error) {
-    return { eligible: true, reason: null };
-  }
-
-  if (!ability.data) {
-    // requiresAbility is on but no linked ability exists — data anomaly,
-    // don't block the floor
-    return { eligible: true, reason: null };
-  }
-
-  // The ability's name IS the process's name (abilities no longer store one).
-  const abilityName = process.data.name ?? "ability";
-
-  const employeeAbility = await client
-    .from("employeeAbility")
-    .select("expiresAt")
-    .eq("employeeId", employeeId)
-    .eq("abilityId", ability.data.id)
-    .eq("companyId", companyId)
-    .maybeSingle();
-
-  if (employeeAbility.error) {
-    return { eligible: true, reason: null };
-  }
-
-  // Qualification is presence-based: the row existing means qualified, subject
-  // only to expiry below.
-  if (!employeeAbility.data) {
-    return {
-      eligible: false,
-      reason: `Requires ${abilityName} — not qualified`
-    };
-  }
-
-  const todayDate = datetime
-    .today(await getCompanyTimeZone(client, companyId))
-    .toString();
-  if (
-    employeeAbility.data.expiresAt !== null &&
-    employeeAbility.data.expiresAt <= todayDate
-  ) {
-    return {
-      eligible: false,
-      reason: `Requires ${abilityName} — qualification expired ${employeeAbility.data.expiresAt}`
-    };
-  }
-
-  return { eligible: true, reason: null };
+// The refusal text when the operator may not do production work on this
+// operation (the process's policy is 'Block'); null when the work may go ahead.
+export async function abilityBlockRefusal(
+  client: SupabaseClient<Database>,
+  args: { operationId: string; employeeId: string; companyId: string }
+): Promise<string | null> {
+  const shortfall = await getAbilityShortfall(client, args);
+  return shortfall?.policy === "Block"
+    ? abilityRefusalMessage(shortfall)
+    : null;
 }
 
 export async function getProcessesList(
@@ -2720,6 +2804,47 @@ export async function startProductionEvent(
   });
   if (!refs.ok) return notFoundResponse(refs.message);
 
+  // A Setup or Labor timer the operator already has running on this operation
+  // is returned, not started again: a double-tap, or a second device, would
+  // otherwise count the labor twice. The partial unique index on open events
+  // refuses an insert that races past this read; that start returns the
+  // running timer too.
+  const isTimer = data.type === "Setup" || data.type === "Labor";
+  const runningTimer = async () => {
+    const running = await client
+      .from("productionEvent")
+      .select("*")
+      .eq("jobOperationId", data.jobOperationId)
+      .eq("type", data.type)
+      .eq("employeeId", data.employeeId)
+      .eq("companyId", data.companyId)
+      .is("endTime", null)
+      .limit(1);
+    if (running.error) return { data: null, error: running.error };
+    const row = running.data[0];
+    if (!row) return null;
+    if (!trackedEntityId) return { data: [row], error: null };
+    // A serial start must record that serial; a timer running for another
+    // unit is refused rather than reported as this unit's start.
+    return (await timerRecordsEntity(
+      client,
+      row.id,
+      trackedEntityId,
+      data.companyId
+    ))
+      ? { data: { id: row.id }, error: null }
+      : conflictResponse(
+          `A ${data.type.toLowerCase()} timer is already running on this operation for another unit. Stop it before starting this one.`
+        );
+  };
+  const raced = (error: PostgrestError | null) =>
+    isTimer && error?.code === UNIQUE_VIOLATION;
+
+  if (isTimer) {
+    const running = await runningTimer();
+    if (running) return running;
+  }
+
   // The tracked entity is the separate argument; productionEvent has no column for it.
   const { trackedEntityId: _trackedEntityId, ...event } = data;
 
@@ -2736,7 +2861,11 @@ export async function startProductionEvent(
         .single()
     ]);
 
-    if (eventInsert.error) return eventInsert;
+    if (eventInsert.error) {
+      if (raced(eventInsert.error))
+        return (await runningTimer()) ?? eventInsert;
+      return eventInsert;
+    }
     if (operation.error) return operation;
 
     const trackedActivityInsert = await client
@@ -2808,6 +2937,8 @@ export async function startProductionEvent(
     .from("productionEvent")
     .insert(event)
     .select("*");
+
+  if (raced(eventInsert.error)) return (await runningTimer()) ?? eventInsert;
 
   if (!eventInsert.error) {
     await autoStartJobAndOperation(client, {

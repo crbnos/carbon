@@ -2,123 +2,94 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  MENU_ITEM_SHORTCUTS,
-  MenuIcon,
-  MenuItem,
-  useDisclosure,
-  VStack
-} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
-import { flushSync } from "react-dom";
+import { memo, useCallback, useMemo } from "react";
 import {
   LuBookMarked,
+  LuBox,
+  LuCalendar,
   LuFileText,
-  LuPencil,
-  LuTarget,
-  LuTrash,
-  LuUser
+  LuTarget
 } from "react-icons/lu";
-import { useNavigate } from "react-router";
-import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
-import { ConfirmDelete } from "~/components/Modals";
+import {
+  DateTime,
+  EmployeeAvatar,
+  exportOnlyColumn,
+  Highlight,
+  Hyperlink,
+  New,
+  searchMatches,
+  Table
+} from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
-import type { InspectionDocument } from "../../types";
+import type { InspectionPlanPart } from "../../types";
 
 type InspectionDocumentTableProps = {
-  data: InspectionDocument[];
+  data: InspectionPlanPart[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
-  createdAt: false,
-  updatedAt: false,
-  updatedBy: false
+  createdAt: false
 };
 
+/** One row per part; its inspection plans are the expanded row, open while a
+ *  search is, with the matches marked. */
 const InspectionDocumentTable = memo(
-  ({ data, count }: InspectionDocumentTableProps) => {
+  ({ data, count, infinite }: InspectionDocumentTableProps) => {
     const [params] = useUrlParams();
-    const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
     const [items] = useItems();
+    const search = params.get("search");
 
-    const deleteDisclosure = useDisclosure();
-    const [selectedDiagram, setSelectedDiagram] =
-      useState<InspectionDocument | null>(null);
-
-    const columns = useMemo<ColumnDef<InspectionDocument>[]>(
+    const columns = useMemo<ColumnDef<InspectionPlanPart>[]>(
       () => [
         {
-          accessorKey: "partId",
+          accessorKey: "partReadableId",
           header: t`Part`,
-          cell: ({ row }) => {
-            const partId = row.original.partId;
-            if (!partId) {
-              return <span className="text-muted-foreground">—</span>;
-            }
-            const item = items.find((i) => i.id === partId);
-            return (
-              <Hyperlink to={path.to.inspectionDocument(row.original.id)}>
-                <VStack spacing={0} className="min-w-[160px] leading-tight">
-                  <span className="truncate font-medium">
-                    {item?.readableIdWithRevision ?? partId}
-                  </span>
-                  {item?.name ? (
-                    <span className="truncate text-xs text-muted-foreground">
-                      {item.name}
-                    </span>
-                  ) : null}
-                </VStack>
-              </Hyperlink>
-            );
-          },
+          cell: ({ row }) => (
+            <Hyperlink to={path.to.part(row.original.id!)}>
+              <div className="flex flex-col gap-0">
+                <span className="text-sm font-medium">
+                  <Highlight
+                    text={row.original.partReadableId}
+                    ranges={searchMatches(row.original.partReadableId, search)}
+                  />
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  <Highlight
+                    text={row.original.partName}
+                    ranges={searchMatches(row.original.partName, search)}
+                  />
+                </span>
+              </div>
+            </Hyperlink>
+          ),
           meta: {
             mobile: "P1",
+            icon: <LuBookMarked />,
             filter: {
               type: "static" as const,
               options: items?.map((item) => ({
-                value: item.id,
+                value: item.readableIdWithRevision,
                 label: item.readableIdWithRevision
               }))
-            },
-            icon: <LuBookMarked />
+            }
           }
         },
         {
-          accessorKey: "name",
-          header: t`Name`,
-          cell: ({ row }) => row.original.name,
-          meta: { mobile: "P3", icon: <LuTarget /> }
-        },
-        {
-          id: "createdBy",
-          header: t`Created By`,
+          accessorKey: "planCount",
+          header: t`Inspection Plans`,
           cell: ({ row }) => (
-            <EmployeeAvatar employeeId={row.original.createdBy} />
+            <span className="tabular-nums">{row.original.planCount}</span>
           ),
-          meta: { icon: <LuUser /> }
-        },
-        {
-          accessorKey: "createdAt",
-          header: t`Created At`,
-          cell: (item) => (
-            <DateTime value={item.getValue<string>()} variant="date" />
-          ),
-          meta: { mobile: "P2", icon: <LuFileText /> }
-        },
-        {
-          id: "updatedBy",
-          header: t`Updated By`,
-          cell: ({ row }) => (
-            <EmployeeAvatar employeeId={row.original.updatedBy} />
-          ),
-          meta: { icon: <LuUser /> }
+          meta: { mobile: "P2", icon: <LuTarget /> }
         },
         {
           accessorKey: "updatedAt",
@@ -126,81 +97,80 @@ const InspectionDocumentTable = memo(
           cell: (item) => (
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
-          meta: { icon: <LuFileText /> }
-        }
+          meta: { icon: <LuCalendar /> }
+        },
+        {
+          accessorKey: "createdAt",
+          header: t`Created At`,
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
+          meta: { icon: <LuCalendar /> }
+        },
+        // The plans live in the expanded row, which the CSV cannot carry.
+        exportOnlyColumn<InspectionPlanPart>({
+          id: "planNames",
+          header: t`Plan Names`,
+          value: (row) => row.plans.map((plan) => plan.name).join(", ")
+        })
       ],
-      [items, t]
+      [items, search, t]
     );
 
-    const renderContextMenu = useCallback(
-      (row: InspectionDocument) => (
-        <>
-          <MenuItem
-            shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "quality")}
-            onClick={() => {
-              navigate(
-                `${path.to.inspectionDocument(row.id)}?${params?.toString()}`
-              );
-            }}
-          >
-            <MenuIcon icon={<LuPencil />} />
-            Edit Diagram
-          </MenuItem>
-          <MenuItem
-            shortcut={MENU_ITEM_SHORTCUTS.delete}
-            destructive
-            disabled={!permissions.can("delete", "quality")}
-            onClick={() => {
-              flushSync(() => {
-                setSelectedDiagram(row);
-              });
-              deleteDisclosure.onOpen();
-            }}
-          >
-            <MenuIcon icon={<LuTrash />} />
-            Delete Diagram
-          </MenuItem>
-        </>
+    const renderExpandedRow = useCallback(
+      (row: InspectionPlanPart) => (
+        <div className="pl-[52px] pr-4">
+          {row.plans.map((plan) => (
+            <div key={plan.id} className="flex gap-3 py-3 text-sm">
+              <div
+                aria-hidden
+                className="w-5 shrink-0 border-l border-border -my-3"
+              />
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                {plan.modelUploadId ? (
+                  <LuBox className="size-4 shrink-0 text-muted-foreground" />
+                ) : (
+                  <LuFileText className="size-4 shrink-0 text-muted-foreground" />
+                )}
+                <Hyperlink to={path.to.inspectionDocument(plan.id)}>
+                  <span className="font-medium">
+                    <Highlight
+                      text={plan.name}
+                      ranges={searchMatches(plan.name, search)}
+                    />
+                  </span>
+                </Hyperlink>
+              </div>
+              <div className="flex shrink-0 items-center gap-3 text-muted-foreground">
+                <EmployeeAvatar employeeId={plan.createdBy} size="xs" />
+                <DateTime value={plan.createdAt} variant="date" />
+              </div>
+            </div>
+          ))}
+        </div>
       ),
-      [permissions, navigate, params, deleteDisclosure]
+      [search]
     );
 
     return (
-      <>
-        <Table<InspectionDocument>
-          data={data}
-          columns={columns}
-          count={count}
-          defaultColumnVisibility={defaultColumnVisibility}
-          primaryAction={
-            permissions.can("create", "quality") && (
-              <New
-                label={t`Inspection Plan`}
-                to={`${path.to.newInspectionDocument}?${params?.toString()}`}
-              />
-            )
-          }
-          renderContextMenu={renderContextMenu}
-          title={t`Inspection Plans`}
-        />
-        {deleteDisclosure.isOpen && selectedDiagram && (
-          <ConfirmDelete
-            action={path.to.deleteInspectionDocument(selectedDiagram.id)}
-            isOpen
-            onCancel={() => {
-              setSelectedDiagram(null);
-              deleteDisclosure.onClose();
-            }}
-            onSubmit={() => {
-              setSelectedDiagram(null);
-              deleteDisclosure.onClose();
-            }}
-            name={selectedDiagram.name}
-            text={t`Are you sure you want to delete this inspection plan?`}
-          />
-        )}
-      </>
+      <Table<InspectionPlanPart>
+        data={data}
+        infinite={infinite}
+        columns={columns}
+        count={count}
+        defaultColumnVisibility={defaultColumnVisibility}
+        renderExpandedRow={renderExpandedRow}
+        expandRowsFor={search}
+        primaryAction={
+          permissions.can("create", "quality") && (
+            <New
+              label={t`Inspection Plan`}
+              to={`${path.to.newInspectionDocument}?${params?.toString()}`}
+            />
+          )
+        }
+        title={t`Inspection Plans`}
+      />
     );
   }
 );

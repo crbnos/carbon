@@ -2,18 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
-import { Confirm } from "~/components/Modals";
-import {
-  deleteProcess,
-  getProcess
-} from "~/modules/resources/resources.service";
+import { ConfirmDelete } from "~/components/Modals";
+import { getProcess } from "~/modules/resources/resources.service";
+import { useResourceReferenceLabels } from "~/modules/resources/ui/useResourceReferenceLabels";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -25,69 +25,63 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { processId } = params;
   if (!processId) throw notFound("processId not found");
 
-  const process = await getProcess(client, processId);
-  if (process.error) {
-    throw redirect(
-      path.to.processes,
-      await flash(request, error(process.error, "Failed to get process"))
-    );
-  }
-
-  return {
-    process: process.data
-  };
-}
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "resources"
-  });
-
-  const { processId } = params;
-  if (!processId) {
-    throw redirect(
-      path.to.processes,
-      await flash(request, error(params, "Failed to get process id"))
-    );
-  }
-
-  const { error: deleteProcessError } = await deleteProcess(client, processId);
-  if (deleteProcessError) {
+  const api = await carbon(request);
+  const [process, references] = await Promise.all([
+    getProcess(client, processId),
+    api.resources.getProcessReferences({ processId })
+  ]);
+  if (process.error || references.error) {
     throw redirect(
       path.to.processes,
       await flash(
         request,
-        error(deleteProcessError, deleteProcessError.details)
+        error(process.error ?? references.error, "Failed to get process")
       )
     );
   }
 
-  throw redirect(
-    path.to.processes,
-    await flash(request, success("Successfully deactivated process"))
-  );
+  return {
+    process: process.data,
+    references: references.data
+  };
+}
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["processId"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.deleteProcess({
+    processId: input.params.processId
+  });
+  return respond(args.request, result).redirect(path.to.processes, {
+    message: "Successfully deleted process"
+  });
 }
 
 export default function DeleteProcessRoute() {
   const { processId } = useParams();
-  const { process } = useLoaderData<typeof loader>();
+  const { process, references } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const { t } = useLingui();
+  const usages = useResourceReferenceLabels(references);
 
   if (!process) return null;
   if (!processId) throw new Error("processId is not found");
 
   const onCancel = () => navigate(path.to.processes);
-  const name = process.name;
+  const name = process.name ?? "";
+
   return (
-    <Confirm
+    <ConfirmDelete
       action={path.to.deleteProcess(processId)}
-      title={t`Deactivate ${name}`}
-      text={t`Are you sure you want to deactivate the process: ${name}? It will no longer appear in dropdowns.`}
-      confirmText={t`Deactivate`}
-      isOpen={true}
+      name={name}
+      text={
+        usages
+          ? t`${name} can't be deleted because it is used by ${usages}. Deactivate it instead.`
+          : t`Are you sure you want to permanently delete the process: ${name}? This cannot be undone.`
+      }
+      isDisabled={!!usages}
       onCancel={onCancel}
-      onSubmit={onCancel}
     />
   );
 }

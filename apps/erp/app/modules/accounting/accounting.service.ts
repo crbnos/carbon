@@ -220,9 +220,14 @@ import {
 } from "~/modules/invoicing/invoicing.service";
 import { getOnRentLineForAsset } from "~/modules/sales/sales.service";
 import { getNextSequence } from "~/modules/settings/settings.service";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { Cursor } from "~/utils/cursor";
+import { decodeCursor, toPage } from "~/utils/cursor";
+import { listErrorPage } from "~/utils/list-registry/list-error";
+import { PAGE_SIZE } from "~/utils/pagination";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
 import {
   LIST_COUNT,
+  listCount,
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
@@ -295,10 +300,16 @@ import {
   depreciationFloor,
   depreciationRunLinesMatch,
   diffJournalLines,
+  fiscalYearPeriodDates,
+  type GeneralLedgerDocument,
+  generalLedgerCounterparty,
   hasAccountingCutover,
+  hidesSupersededJournals,
   isFutureRunPeriod,
   LOCK_PERIOD_TASK_NAME,
   monthEndOf,
+  periodDeletionRefusal,
+  periodPostingRefusal,
   runPostingTargets,
   usageKey
 } from "./accounting.utils";
@@ -313,6 +324,7 @@ import type {
   AccountLedgerLine,
   ChartPeriodSeries,
   GeneralLedgerLine,
+  GeneralLedgerRow,
   PeriodCell,
   Transaction,
   TranslatedBalance
@@ -421,25 +433,34 @@ export async function getTrialBalance(
   });
 }
 
-export async function getAccountLedger(
+// Newest first. `setGenericQueryFilters` breaks ties on `id` ascending.
+export const ACCOUNT_LEDGER_PAGING: Paging = {
+  defaultSorts: [
+    { column: "postingDate", ascending: false },
+    { column: "journalEntryId", ascending: false }
+  ]
+};
+
+type AccountLedgerScope = {
+  accountId: string;
+  companyId: string | null;
+  // Consolidated drill-down: restrict to an explicit set of companies (the
+  // group's operating companies + elimination entities) so a service-role read
+  // doesn't leak across tenants. Ignored when companyId is set.
+  companyIds?: string[];
+  startDate: string | null;
+  endDate: string | null;
+};
+
+function accountLedgerQuery(
   client: SupabaseClient<Database>,
-  args: {
-    accountId: string;
-    companyId: string | null;
-    // Consolidated drill-down: restrict to an explicit set of companies (the
-    // group's operating companies + elimination entities) so a service-role read
-    // doesn't leak across tenants. Ignored when companyId is set.
-    companyIds?: string[];
-    startDate: string | null;
-    endDate: string | null;
-    limit: number;
-    offset: number;
-  }
+  args: AccountLedgerScope,
+  count: "exact" | undefined
 ) {
   // TODO: remove the cast once cloud-generated DB types include the view.
   let query = client
     .from("journalLines" as any)
-    .select("*", { count: "exact" })
+    .select("*", { count })
     .eq("accountId", args.accountId)
     .gte(
       "postingDate",
@@ -452,25 +473,60 @@ export async function getAccountLedger(
   } else if (args.companyIds && args.companyIds.length > 0) {
     query = query.in("companyId", args.companyIds);
   }
+  return query;
+}
 
-  const result = await query
-    .order("postingDate", { ascending: false })
-    .order("journalEntryId", { ascending: false })
-    .order("id", { ascending: false })
-    .range(args.offset, args.offset + args.limit - 1);
+type AccountLedgerResult = {
+  data: AccountLedgerLine[] | null;
+  count: number | null;
+  error: PostgrestError | null;
+};
 
-  return result as unknown as {
-    data: AccountLedgerLine[] | null;
-    count: number | null;
-    error: PostgrestError | null;
-  };
+export async function getAccountLedger(
+  client: SupabaseClient<Database>,
+  args: {
+    accountId: string;
+    companyId: string | null;
+    // Consolidated drill-down: restrict to an explicit set of companies (the
+    // group's operating companies + elimination entities) so a service-role read
+    // doesn't leak across tenants. Ignored when companyId is set.
+    companyIds?: string[];
+    startDate: string | null;
+    endDate: string | null;
+    limit: number;
+    offset?: number;
+  }
+) {
+  const result = await setGenericQueryFilters(
+    accountLedgerQuery(client, args, "exact"),
+    { limit: args.limit, offset: args.offset ?? 0 },
+    ACCOUNT_LEDGER_PAGING
+  );
+  return result as unknown as AccountLedgerResult;
+}
+
+/**
+ * One cursor page of an account's ledger lines (`limit + 1` rows for
+ * `toPage`), for the ledger drawers. Not an MCP tool: MCP and the API page
+ * by offset through `getAccountLedger`. Only the first page counts.
+ */
+export async function getAccountLedgerLines(
+  client: SupabaseClient<Database>,
+  args: AccountLedgerScope & { limit: number; cursor: Cursor | null }
+) {
+  const result = await setGenericQueryFilters(
+    accountLedgerQuery(client, args, args.cursor ? undefined : "exact"),
+    { limit: args.limit, cursor: args.cursor },
+    ACCOUNT_LEDGER_PAGING
+  );
+  return result as unknown as AccountLedgerResult;
 }
 
 // The general ledger report reads the lines of Posted and Reversed journals
 // only — the lines the trial balance sums. The `journalLines` view filters the
 // same statuses; the report states them so it holds if the view changes.
 const GENERAL_LEDGER_LINE_COLUMNS =
-  "id, journalId, journalEntryId, postingDate, status, sourceType, journalDescription, description, amount, accountId, documentType, account(number, name, class)";
+  "id, journalId, journalEntryId, postingDate, status, sourceType, journalDescription, description, amount, accountId, documentType, documentId, documentLineReference, account(number, name, class)";
 
 type GeneralLedgerArgs = Pick<GenericQueryFilters, "sorts" | "filters"> & {
   search: string | null;
@@ -478,18 +534,23 @@ type GeneralLedgerArgs = Pick<GenericQueryFilters, "sorts" | "filters"> & {
   endDate: string;
 };
 
+export const GENERAL_LEDGER_PAGING: Paging = {
+  defaultSorts: [
+    { column: "postingDate", ascending: true },
+    { column: "journalEntryId", ascending: true }
+  ]
+};
+
 function generalLedgerLinesQuery(
   client: SupabaseClient<Database>,
   companyId: string,
-  args: GeneralLedgerArgs,
-  withCount: boolean
+  args: GeneralLedgerArgs &
+    Partial<Pick<GenericQueryFilters, "limit" | "cursor">>,
+  count: ReturnType<typeof listCount>
 ) {
   let query = client
     .from("journalLines")
-    .select(
-      GENERAL_LEDGER_LINE_COLUMNS,
-      withCount ? { count: LIST_COUNT } : undefined
-    )
+    .select(GENERAL_LEDGER_LINE_COLUMNS, count ? { count } : undefined)
     .eq("companyId", companyId)
     .in("status", [...GL_JOURNAL_STATUSES])
     .gte("postingDate", args.startDate)
@@ -501,28 +562,17 @@ function generalLedgerLinesQuery(
     "journalDescription"
   ]);
 
-  query = setGenericQueryFilters(
-    query,
-    { sorts: args.sorts, filters: args.filters },
-    [
-      { column: "postingDate", ascending: true },
-      { column: "journalEntryId", ascending: true }
-    ]
-  );
-
-  // A unique tie-break keeps pages (and the CSV's batches) stable
-  return query.order("id", { ascending: true });
+  // The id breaks ties, so pages (and the CSV's batches) are stable
+  return setGenericQueryFilters(query, args, GENERAL_LEDGER_PAGING);
 }
 
+/** One cursor page of the report (`limit + 1` rows for `toPage`). */
 export async function getGeneralLedgerLines(
   client: SupabaseClient<Database>,
   companyId: string,
-  args: GeneralLedgerArgs & Pick<GenericQueryFilters, "limit" | "offset">
+  args: GeneralLedgerArgs & Pick<GenericQueryFilters, "limit" | "cursor">
 ) {
-  return generalLedgerLinesQuery(client, companyId, args, true).range(
-    args.offset,
-    args.offset + args.limit - 1
-  );
+  return generalLedgerLinesQuery(client, companyId, args, listCount(args));
 }
 
 /** Every line of the report, past PostgREST's row cap — for the CSV export. */
@@ -532,8 +582,193 @@ export async function getAllGeneralLedgerLines(
   args: GeneralLedgerArgs
 ) {
   return fetchAll<GeneralLedgerLine>(() =>
-    generalLedgerLinesQuery(client, companyId, args, false)
+    generalLedgerLinesQuery(client, companyId, args, undefined)
   );
+}
+
+const NO_DOCUMENT: GeneralLedgerDocument = {
+  invoiceNumber: null,
+  supplierInvoiceNumber: null,
+  customerId: null,
+  supplierId: null,
+  merchantName: null
+};
+
+/**
+ * General ledger lines with their customer or supplier name and invoice
+ * numbers, read from the documents they were posted from — the page's and the
+ * CSV's Customer / Supplier, Invoice Number and Supplier Invoice Number.
+ *
+ * "Invoice" ids are tried against both invoice tables: the opening balance
+ * and revenue recognition journals carry no purchase/sales `sourceType` to
+ * tell them apart. A payment line's `documentLineReference` is the invoice it
+ * settles. Lines of other document types (jobs, inventory, manual entries)
+ * have no counterparty and are not read.
+ */
+export async function withGeneralLedgerCounterparties(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lines: GeneralLedgerLine[]
+): Promise<
+  | { data: GeneralLedgerRow[]; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const idsByType = new Map<string, Set<string>>();
+  const addId = (type: string, id: string | null) => {
+    if (!id) return;
+    const ids = idsByType.get(type) ?? new Set<string>();
+    ids.add(id);
+    idsByType.set(type, ids);
+  };
+  for (const line of lines) {
+    if (!line.documentType) continue;
+    addId(line.documentType, line.documentId);
+    if (line.documentType === "Payment") {
+      addId("Invoice", line.documentLineReference);
+    }
+  }
+  const idsOf = (...types: string[]) => [
+    ...new Set(types.flatMap((type) => [...(idsByType.get(type) ?? [])]))
+  ];
+
+  const documents = new Map<string, GeneralLedgerDocument>();
+  const add = (
+    rows: ({ id: string } & Partial<GeneralLedgerDocument>)[] | null
+  ) => {
+    for (const { id, ...document } of rows ?? []) {
+      documents.set(id, { ...NO_DOCUMENT, ...document });
+    }
+  };
+
+  const invoiceIds = idsOf("Invoice");
+  const reads = await Promise.all([
+    fetchAllByIds(invoiceIds, (batch) =>
+      client
+        .from("salesInvoice")
+        .select("id, invoiceNumber:invoiceId, customerId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(invoiceIds, (batch) =>
+      client
+        .from("purchaseInvoice")
+        .select(
+          "id, invoiceNumber:invoiceId, supplierInvoiceNumber:supplierReference, supplierId"
+        )
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Payment"), (batch) =>
+      client
+        .from("payment")
+        .select("id, customerId, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Memo"), (batch) =>
+      client
+        .from("memo")
+        .select("id, customerId, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Receipt"), (batch) =>
+      client
+        .from("receipt")
+        .select("id, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Sales Shipment", "Return Order"), (batch) =>
+      client
+        .from("shipment")
+        .select("id, customerId, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Charge"), (batch) =>
+      client
+        .from("charge")
+        .select("id, supplierId, merchantName")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Contract"), (batch) =>
+      client
+        .from("customerContract")
+        .select("id, customerId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Rental Agreement"), (batch) =>
+      client
+        .from("rentalAgreement")
+        .select("id, customerId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Lease"), (batch) =>
+      client
+        .from("lease")
+        .select("id, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    )
+  ]);
+  for (const read of reads) {
+    if (read.error) return { data: null, error: read.error };
+    add(read.data);
+  }
+
+  const customerIds = new Set<string>();
+  const supplierIds = new Set<string>();
+  for (const document of documents.values()) {
+    if (document.customerId) customerIds.add(document.customerId);
+    if (document.supplierId) supplierIds.add(document.supplierId);
+  }
+  const [customers, suppliers] = await Promise.all([
+    fetchAllByIds([...customerIds], (batch) =>
+      client
+        .from("customer")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds([...supplierIds], (batch) =>
+      client
+        .from("supplier")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    )
+  ]);
+  if (customers.error) return { data: null, error: customers.error };
+  if (suppliers.error) return { data: null, error: suppliers.error };
+
+  const partyNames = new Map<string, string>();
+  for (const party of [...customers.data, ...suppliers.data]) {
+    partyNames.set(party.id, party.name);
+  }
+
+  return {
+    data: lines.map((line) => ({
+      ...line,
+      ...generalLedgerCounterparty(line, documents, partyNames)
+    })),
+    error: null
+  };
 }
 
 export async function getAccountLedgerSummary(
@@ -907,6 +1142,24 @@ export async function applyCtaToReportPeriodSeries(
       }
     };
   }
+  return applyReportCta({ ...args, companyGroupId, ctaAccountId: accountId });
+}
+
+/** Add each bucket's report CTA to the configured Equity account, fill the
+ *  synthetic net income from the translated income statement when the
+ *  translation left it empty, then roll the translated values up. Returns a
+ *  new chart; the input is never mutated. */
+export function applyReportCta(args: {
+  accounts: ChartPeriodSeries[];
+  bucketKeys: string[];
+  ctaByBucket: Record<string, number>;
+  companyGroupId: string;
+  ctaAccountId: string;
+}): {
+  data: ChartPeriodSeries[] | null;
+  error: { message: string } | null;
+} {
+  const { companyGroupId, ctaAccountId: accountId } = args;
   const ctaAccount = args.accounts.find((account) => account.id === accountId);
   if (!ctaAccount) {
     return {
@@ -2710,24 +2963,8 @@ export async function getOrCreateAccountingPeriod(
       (existing.data as unknown as AccountingPeriodCloseColumns).closeStatus ??
       (existing.data.closedAt ? "Closed" : "Open");
 
-    if (closeStatus === "Closed") {
-      return {
-        data: null,
-        error: {
-          message: "Accounting period is closed. Reopen it before posting."
-        }
-      };
-    }
-
-    if (closeStatus === "Locked" && source === "operational") {
-      return {
-        data: null,
-        error: {
-          message:
-            "Accounting period is locked. Post as an accounting adjustment or unlock the period first."
-        }
-      };
-    }
+    const refusal = periodPostingRefusal(closeStatus, source);
+    if (refusal) return { data: null, error: { message: refusal } };
 
     if (existing.data.status === "Inactive" && (await isCurrentMonth())) {
       await client
@@ -2874,14 +3111,7 @@ export async function getAccountingPeriodDeletability(
 
   const journalCount = (journals.count as number | null) ?? 0;
   const closeStatus = period.data.closeStatus;
-  const reason =
-    closeStatus !== "Open"
-      ? `Only open periods can be deleted — this period is ${closeStatus}.`
-      : journalCount > 0
-        ? `This period has ${journalCount} journal ${
-            journalCount === 1 ? "entry" : "entries"
-          } posted to it and cannot be deleted.`
-        : null;
+  const reason = periodDeletionRefusal(closeStatus, journalCount);
 
   return {
     data: {
@@ -3284,10 +3514,6 @@ export async function createFiscalYearPeriods(
     ? (MONTH_NUMBER[settings.data.startMonth] ?? 1)
     : 1;
 
-  // FY is named by its ending calendar year; a non-January start begins in the
-  // prior calendar year.
-  const firstYear = startMonth === 1 ? args.fiscalYear : args.fiscalYear - 1;
-
   const existing = await (client.from("accountingPeriod") as any)
     .select("periodNumber")
     .eq("companyId", args.companyId)
@@ -3299,24 +3525,20 @@ export async function createFiscalYearPeriods(
     )
   );
 
-  const rows = [];
-  for (let p = 1; p <= 12; p++) {
-    if (existingNumbers.has(p)) continue;
-    const monthIndex = (startMonth - 1 + (p - 1)) % 12; // 0-indexed
-    const year = firstYear + Math.floor((startMonth - 1 + (p - 1)) / 12);
-    const startDate = new Date(Date.UTC(year, monthIndex, 1));
-    const endDate = new Date(Date.UTC(year, monthIndex + 1, 0));
-    rows.push({
-      companyId: args.companyId,
-      startDate: startDate.toISOString().split("T")[0],
-      endDate: endDate.toISOString().split("T")[0],
-      status: "Inactive",
-      closeStatus: "Open",
-      fiscalYear: args.fiscalYear,
-      periodNumber: p,
-      createdBy: args.userId
-    });
-  }
+  const rows = fiscalYearPeriodDates(
+    args.fiscalYear,
+    startMonth,
+    existingNumbers
+  ).map((period) => ({
+    companyId: args.companyId,
+    startDate: period.startDate,
+    endDate: period.endDate,
+    status: "Inactive",
+    closeStatus: "Open",
+    fiscalYear: args.fiscalYear,
+    periodNumber: period.periodNumber,
+    createdBy: args.userId
+  }));
 
   if (rows.length === 0) {
     return { data: [], error: null };
@@ -3629,6 +3851,114 @@ function runPreviewer(
  * revenue recognition and depreciation runs for `endDate` would hold
  * (`getPeriodRunPreview`).
  */
+/** The three run checks on the close checklist. Each counts what a new run
+ *  would claim for the period plus what its Draft runs already hold, and
+ *  fails when either is non-zero or the preview could not run. A failed read
+ *  of the Draft runs counts as one, so the check fails closed. */
+export function periodRunChecks(args: {
+  runPreview: PeriodRunPreview;
+  heldRunRows: {
+    data:
+      | {
+          amount: number;
+          run: { id: string; runId: string; periodEnd: string; type: RunType };
+        }[]
+      | null;
+    error: unknown;
+  };
+  draftDepreciationRuns: {
+    data:
+      | {
+          id: string;
+          depreciationRunId: string;
+          periodEnd: string;
+          depreciationRunLine: { amount: number }[];
+        }[]
+      | null;
+    error: unknown;
+  };
+}): PeriodReadinessCheck[] {
+  const { runPreview, heldRunRows, draftDepreciationRuns } = args;
+
+  const heldByType = (type: RunType) => {
+    const draftRuns = new Map<
+      string,
+      { id: string; readableId: string; periodEnd: string }
+    >();
+    let amount = 0;
+    let count = 0;
+    for (const line of heldRunRows.data ?? []) {
+      if (line.run.type !== type) continue;
+      draftRuns.set(line.run.id, {
+        id: line.run.id,
+        readableId: line.run.runId,
+        periodEnd: line.run.periodEnd
+      });
+      amount += Number(line.amount);
+      count += 1;
+    }
+    return { draftRuns, amount, count: heldRunRows.error ? 1 : count };
+  };
+  const heldRevenue = heldByType("Revenue Recognition");
+  const revenueCount = runPreview.revenue.count + heldRevenue.count;
+  const heldLease = heldByType("Lease");
+  const leaseCount = runPreview.lease.count + heldLease.count;
+
+  const depreciationDraftRuns = draftDepreciationRuns.data ?? [];
+  const draftDepreciationAmount = depreciationDraftRuns.reduce(
+    (sum, run) =>
+      sum +
+      run.depreciationRunLine.reduce(
+        (lineSum, line) => lineSum + Number(line.amount),
+        0
+      ),
+    0
+  );
+  const depreciationCount =
+    runPreview.depreciation.count +
+    (draftDepreciationRuns.error ? 1 : depreciationDraftRuns.length);
+
+  return [
+    {
+      autoCheckKey: "draft-depreciation",
+      severity: "Warning",
+      label:
+        "Assets a depreciation run would depreciate for this period, and Draft depreciation runs ending in it",
+      failing: depreciationCount > 0 || runPreview.depreciation.error !== null,
+      count: depreciationCount,
+      amount: round(runPreview.depreciation.amount + draftDepreciationAmount),
+      due: runPreview.depreciation,
+      draftRuns: depreciationDraftRuns.map((run) => ({
+        id: run.id,
+        readableId: run.depreciationRunId,
+        periodEnd: run.periodEnd
+      }))
+    },
+    {
+      autoCheckKey: "unposted-revenue-schedules",
+      severity: "Warning",
+      label:
+        "Revenue a recognition run would recognize by this period end, and revenue Draft runs hold",
+      failing: revenueCount > 0 || runPreview.revenue.error !== null,
+      count: revenueCount,
+      amount: round(runPreview.revenue.amount + heldRevenue.amount),
+      due: runPreview.revenue,
+      draftRuns: [...heldRevenue.draftRuns.values()]
+    },
+    {
+      autoCheckKey: "unposted-lease-schedules",
+      severity: "Warning",
+      label:
+        "Lease and rental entries a lease run would post by this period end, and lease Draft runs hold",
+      failing: leaseCount > 0 || runPreview.lease.error !== null,
+      count: leaseCount,
+      amount: round(runPreview.lease.amount + heldLease.amount),
+      due: runPreview.lease,
+      draftRuns: [...heldLease.draftRuns.values()]
+    }
+  ];
+}
+
 export async function computePeriodReadiness(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3780,48 +4110,11 @@ export async function computePeriodReadiness(
         .order("id")
   );
 
-  // Each run type: what a new run would claim, plus what its Draft runs hold.
-  const heldByType = (type: RunType) => {
-    const draftRuns = new Map<
-      string,
-      { id: string; readableId: string; periodEnd: string }
-    >();
-    let amount = 0;
-    let count = 0;
-    for (const line of heldRunRows.data ?? []) {
-      if (line.run.type !== type) continue;
-      draftRuns.set(line.run.id, {
-        id: line.run.id,
-        readableId: line.run.runId,
-        periodEnd: line.run.periodEnd
-      });
-      amount += Number(line.amount);
-      count += 1;
-    }
-    // A failed read fails both checks closed.
-    return { draftRuns, amount, count: heldRunRows.error ? 1 : count };
-  };
-  const heldRevenue = heldByType("Revenue Recognition");
-  const revenueDraftRuns = heldRevenue.draftRuns;
-  const heldRevenueAmount = heldRevenue.amount;
-  const revenueCount = runPreview.revenue.count + heldRevenue.count;
-  const heldLease = heldByType("Lease");
-  const leaseCount = runPreview.lease.count + heldLease.count;
-
-  // Depreciation: the assets a new run would depreciate, plus Draft runs.
-  const depreciationDraftRuns = draftDepreciationRuns.data ?? [];
-  const draftDepreciationAmount = depreciationDraftRuns.reduce(
-    (sum, run) =>
-      sum +
-      run.depreciationRunLine.reduce(
-        (lineSum, line) => lineSum + Number(line.amount),
-        0
-      ),
-    0
-  );
-  const depreciationCount =
-    runPreview.depreciation.count +
-    (draftDepreciationRuns.error ? 1 : depreciationDraftRuns.length);
+  const runChecks = periodRunChecks({
+    runPreview,
+    heldRunRows,
+    draftDepreciationRuns
+  });
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>
@@ -3930,43 +4223,7 @@ export async function computePeriodReadiness(
       failing: externalGlSync.failing,
       count: externalGlSync.count
     },
-    {
-      autoCheckKey: "draft-depreciation",
-      severity: "Warning",
-      label:
-        "Assets a depreciation run would depreciate for this period, and Draft depreciation runs ending in it",
-      failing: depreciationCount > 0 || runPreview.depreciation.error !== null,
-      count: depreciationCount,
-      amount: round(runPreview.depreciation.amount + draftDepreciationAmount),
-      due: runPreview.depreciation,
-      draftRuns: depreciationDraftRuns.map((run) => ({
-        id: run.id,
-        readableId: run.depreciationRunId,
-        periodEnd: run.periodEnd
-      }))
-    },
-    {
-      autoCheckKey: "unposted-revenue-schedules",
-      severity: "Warning",
-      label:
-        "Revenue a recognition run would recognize by this period end, and revenue Draft runs hold",
-      failing: revenueCount > 0 || runPreview.revenue.error !== null,
-      count: revenueCount,
-      amount: round(runPreview.revenue.amount + heldRevenueAmount),
-      due: runPreview.revenue,
-      draftRuns: [...revenueDraftRuns.values()]
-    },
-    {
-      autoCheckKey: "unposted-lease-schedules",
-      severity: "Warning",
-      label:
-        "Lease and rental entries a lease run would post by this period end, and lease Draft runs hold",
-      failing: leaseCount > 0 || runPreview.lease.error !== null,
-      count: leaseCount,
-      amount: round(runPreview.lease.amount + heldLease.amount),
-      due: runPreview.lease,
-      draftRuns: [...heldLease.draftRuns.values()]
-    },
+    ...runChecks,
     {
       autoCheckKey: "unmatched-ic",
       severity: "Warning",
@@ -4570,6 +4827,10 @@ export async function getPaymentTerm(
     .single();
 }
 
+export const PAYMENT_TERMS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getPaymentTerms(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4580,7 +4841,7 @@ export async function getPaymentTerms(
   let query = client
     .from("paymentTerm")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -4589,9 +4850,7 @@ export async function getPaymentTerms(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PAYMENT_TERMS_PAGING);
   return query;
 }
 
@@ -4897,6 +5156,10 @@ export async function getProject(
     .single();
 }
 
+export const PROJECTS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getProjects(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4904,7 +5167,7 @@ export async function getProjects(
 ) {
   let query = client
     .from("project")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -4912,9 +5175,7 @@ export async function getProjects(
     query = query.or(searchFilter(["name", "description"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PROJECTS_PAGING);
 
   return query;
 }
@@ -4950,6 +5211,10 @@ export async function upsertProject(
     .single();
 }
 
+export const DIMENSIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getDimensions(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -4960,7 +5225,7 @@ export async function getDimensions(
   let query = client
     .from("dimension")
     .select("*, dimensionValue(id, name)", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyGroupId", companyGroupId)
     .eq("active", true);
@@ -4969,9 +5234,7 @@ export async function getDimensions(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, DIMENSIONS_PAGING);
   return query;
 }
 
@@ -5769,6 +6032,10 @@ export async function getConsolidatedBalances(
 
 // -- Intercompany --
 
+export const INTERCOMPANY_TRANSACTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getIntercompanyTransactions(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -5778,7 +6045,7 @@ export async function getIntercompanyTransactions(
     .from("intercompanyTransaction")
     .select(
       "*, sourceCompany:company!intercompanyTransaction_sourceCompanyId_fkey(name), targetCompany:company!intercompanyTransaction_targetCompanyId_fkey(name)",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyGroupId", companyGroupId);
 
@@ -5786,9 +6053,7 @@ export async function getIntercompanyTransactions(
     query = query.eq("status", args.status);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, INTERCOMPANY_TRANSACTIONS_PAGING);
   return query;
 }
 
@@ -5964,6 +6229,15 @@ export async function getExchangeRateHistory(
 // Manual JEs start as Draft and are posted by flipping status to Posted.
 // amount > 0 = debit, amount < 0 = credit.
 
+// The enable writes many journals in one transaction, so they share a
+// createdAt; the entry number breaks the tie.
+export const JOURNAL_ENTRIES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "createdAt", ascending: false },
+    { column: "journalEntryId", ascending: false }
+  ]
+};
+
 export async function getJournalEntries(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5971,7 +6245,7 @@ export async function getJournalEntries(
 ) {
   let query = client
     .from("journalEntries")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -5987,23 +6261,11 @@ export async function getJournalEntries(
     );
   }
 
-  // A Superseded journal is a Provisional one the opening journal replaced at
-  // the cutover. It stays out of the list unless a status filter asks for it.
-  const filtersOnStatus =
-    Boolean(args.status) ||
-    (args.filters ?? []).some(
-      (filter) => filter.column === "status" && Boolean(filter.value)
-    );
-  if (!filtersOnStatus) {
+  if (hidesSupersededJournals(args)) {
     query = query.neq("status", "Superseded");
   }
 
-  // The enable writes many journals in one transaction, so they share a
-  // createdAt; the entry number breaks the tie.
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false },
-    { column: "journalEntryId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, JOURNAL_ENTRIES_PAGING);
 
   return query;
 }
@@ -6930,6 +7192,10 @@ export async function reverseJournalEntry(
 
 // -- Asset Classes --
 
+export const FIXED_ASSET_CLASSES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getFixedAssetClasses(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6939,7 +7205,7 @@ export async function getFixedAssetClasses(
     .from("fixedAssetClass")
     .select(
       "id, name, description, depreciationMethod, usefulLifeMonths, residualValuePercent, taxDepreciationMethod, taxUsefulLifeMonths, macrsPropertyClass",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId);
 
@@ -6952,9 +7218,7 @@ export async function getFixedAssetClasses(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, FIXED_ASSET_CLASSES_PAGING);
   return query;
 }
 
@@ -7013,6 +7277,15 @@ export async function deleteFixedAssetClass(
 
 // -- Fixed Assets --
 
+// `createdAt` and `updatedAt` are selected for a sort the URL can ask for:
+// `toPage` reads every sort column from the row.
+const FIXED_ASSETS_LIST_COLUMNS =
+  "id,fixedAssetId,fixedAssetClassId,name,serialNumber,status,depreciationMethod,acquisitionCost,accumulatedDepreciation,createdAt,updatedAt,fixedAssetClass:fixedAssetClassId(id, name),location:locationId(id, name)" as const;
+
+export const FIXED_ASSETS_PAGING: Paging = {
+  defaultSorts: [{ column: "fixedAssetId", ascending: true }]
+};
+
 export async function getFixedAssets(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -7023,10 +7296,9 @@ export async function getFixedAssets(
 ) {
   let query = client
     .from("fixedAsset")
-    .select(
-      "id, fixedAssetId, fixedAssetClassId, name, serialNumber, status, depreciationMethod, acquisitionCost, accumulatedDepreciation, fixedAssetClass:fixedAssetClassId(id, name), location:locationId(id, name)",
-      { count: LIST_COUNT }
-    )
+    .select(FIXED_ASSETS_LIST_COLUMNS, {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -7039,9 +7311,7 @@ export async function getFixedAssets(
     query = query.eq("status", args.status);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "fixedAssetId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, FIXED_ASSETS_PAGING);
   return query;
 }
 
@@ -7579,6 +7849,10 @@ export async function deleteDepreciationRun(
 
 // -- Depreciation --
 
+export const DEPRECIATION_RUNS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getDepreciationRuns(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -7586,8 +7860,8 @@ export async function getDepreciationRuns(
 ) {
   let query = client
     .from("depreciationRun")
-    .select("id, depreciationRunId, periodEnd, status, postedAt", {
-      count: LIST_COUNT
+    .select("id, depreciationRunId, periodEnd, status, postedAt, createdAt", {
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -7595,9 +7869,7 @@ export async function getDepreciationRuns(
     query = query.ilike("depreciationRunId", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, DEPRECIATION_RUNS_PAGING);
   return query;
 }
 
@@ -7628,6 +7900,33 @@ export async function getDepreciationRunLines(
 }
 
 // -- Revenue Recognition --
+
+export const PERIOD_RUNS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
+export async function getRevenueRecognitionRuns(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  type: Database["public"]["Enums"]["runType"],
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("revenueRecognitionRun")
+    .select(
+      "id, runId, type, periodEnd, status, postedAt, journalId, createdAt",
+      { count: args.cursor ? undefined : "exact" }
+    )
+    .eq("companyId", companyId)
+    .eq("type", type);
+
+  if (args.search) {
+    query = query.ilike("runId", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, PERIOD_RUNS_PAGING);
+  return query;
+}
 
 export async function getRevenueRecognitionRun(
   client: SupabaseClient<Database>,
@@ -8636,6 +8935,10 @@ export async function upsertFixedAssetUsageLog(
 
 // -- Fleet --
 
+export const FLEET_ASSETS_PAGING: Paging = {
+  defaultSorts: [{ column: "fixedAssetId", ascending: true }]
+};
+
 export async function getFleetAssets(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -8646,7 +8949,7 @@ export async function getFleetAssets(
 ) {
   let query = client
     .from("fleetAssets")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -8662,9 +8965,7 @@ export async function getFleetAssets(
     query = query.eq("fleetStatus", args.fleetStatus);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "fixedAssetId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, FLEET_ASSETS_PAGING);
   return query;
 }
 
@@ -9760,47 +10061,104 @@ export function getConsolidatedBalancesForReport(
   );
 }
 
-// Consolidated account drill-down ("All Companies"). Reads via service role so
-// the synthetic elimination entities' journal lines (invisible to the user's
-// RLS session — no user is a member of them) appear in the ledger and the
-// summary ties to the consolidated report. Scoped to the group's own companies
-// so a service-role read cannot cross tenants.
-export async function getConsolidatedAccountLedger(
-  companyGroupId: string,
+/**
+ * One page of an account's ledger lines for the ledger drawers (the chart of
+ * accounts and the three statement reports), with the drawer's summary on
+ * the first page.
+ *
+ * "All Companies" (`consolidated`) reads via service role so the synthetic
+ * elimination entities' journal lines (invisible to the user's RLS session —
+ * no user is a member of them) appear in the ledger and the summary ties to
+ * the consolidated report. It is scoped to the group's own companies so a
+ * service-role read cannot cross tenants.
+ *
+ * A failed later page (`after`) returns `listError` for the drawer's list.
+ */
+export async function getAccountLedgerPage(
+  client: SupabaseClient<Database>,
   args: {
     accountId: string;
+    companyGroupId: string;
+    /** One company's lines; null reads every company the client can see. */
+    companyId: string | null;
+    consolidated?: boolean;
     startDate: string | null;
     endDate: string | null;
-    limit: number;
-    offset: number;
+    /** The `?after=` token; a later page reads its lines only. */
+    after: string | null;
   }
 ) {
-  const serviceRole = getCarbonServiceRole();
-  const { data: groupCompanies } = await serviceRole
-    .from("company")
-    .select("id")
-    .eq("companyGroupId", companyGroupId)
-    .eq("active", true);
-  const companyIds = (groupCompanies ?? []).map((c) => c.id);
+  const cursor = decodeCursor(args.after);
+  const emptySummary = { opening: 0, netChange: 0, closing: 0 };
+  let readClient = client;
+  let companyIds: string[] | undefined;
+  if (args.consolidated) {
+    readClient = getCarbonServiceRole();
+    const { data: groupCompanies, error: groupError } = await readClient
+      .from("company")
+      .select("id")
+      .eq("companyGroupId", args.companyGroupId)
+      .eq("active", true);
+    companyIds = (groupCompanies ?? []).map((c) => c.id);
+    // The service role reads every tenant: with no companies to scope to, the
+    // ledger query would have no company filter at all, so read nothing.
+    if (groupError || companyIds.length === 0) {
+      logger.error("Failed to load the company group for an account ledger", {
+        accountId: args.accountId,
+        companyGroupId: args.companyGroupId,
+        error: groupError
+      });
+      if (cursor) return listErrorPage("lines");
+      return {
+        lines: [],
+        count: 0,
+        nextCursor: null,
+        summary: emptySummary
+      };
+    }
+  }
+  const companyId = args.consolidated ? null : args.companyId;
+  const { accountId, startDate, endDate } = args;
 
   const [ledger, summary] = await Promise.all([
-    getAccountLedger(serviceRole, {
-      accountId: args.accountId,
-      companyId: null,
+    getAccountLedgerLines(readClient, {
+      accountId,
+      companyId,
       companyIds,
-      startDate: args.startDate,
-      endDate: args.endDate,
-      limit: args.limit,
-      offset: args.offset
+      startDate,
+      endDate,
+      limit: PAGE_SIZE,
+      cursor
     }),
-    getAccountLedgerSummary(serviceRole, companyGroupId, null, {
-      accountId: args.accountId,
-      startDate: args.startDate,
-      endDate: args.endDate
-    })
+    cursor
+      ? null
+      : getAccountLedgerSummary(readClient, args.companyGroupId, companyId, {
+          accountId,
+          startDate,
+          endDate
+        })
   ]);
 
-  return { ledger, summary };
+  if (ledger.error) {
+    logger.error("Failed to load an account ledger page", {
+      accountId,
+      companyGroupId: args.companyGroupId,
+      error: ledger.error
+    });
+    if (cursor) return listErrorPage("lines");
+  }
+
+  const page = toPage(
+    ledger.data ?? [],
+    { limit: PAGE_SIZE },
+    ACCOUNT_LEDGER_PAGING
+  );
+  return {
+    lines: page.rows,
+    count: ledger.count ?? 0,
+    nextCursor: page.nextCursor,
+    summary: summary?.data ?? emptySummary
+  };
 }
 
 /**
@@ -11857,31 +12215,6 @@ export async function outOfServiceRefusal(
   return null;
 }
 
-// -- Revenue Recognition --
-
-export async function getRevenueRecognitionRuns(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  type: Database["public"]["Enums"]["runType"],
-  args: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("revenueRecognitionRun")
-    .select("id, runId, type, periodEnd, status, postedAt, journalId", {
-      count: "exact"
-    })
-    .eq("companyId", companyId)
-    .eq("type", type);
-
-  if (args.search) {
-    query = query.ilike("runId", `%${args.search}%`);
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
-  return query;
-}
 /**
  * Input contract and pure helpers for `post-asset-transfer`. No I/O and no
  * imports beyond zod, the generated types and `@carbon/utils`, so the server function's own

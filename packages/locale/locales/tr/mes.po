@@ -113,6 +113,9 @@ msgstr "Önceki bir tamamlanma işlemi bitmedi. Yeniden deneme kalan adımları 
 msgid "About"
 msgstr "Hakkında"
 
+msgid "About this field"
+msgstr "Bu alan hakkında"
+
 msgid "Accept"
 msgstr "Kabul Et"
 
@@ -167,6 +170,9 @@ msgstr "Örnek Ekle"
 
 msgid "Add Spare Part"
 msgstr "Yedek Parça Ekle"
+
+msgid "Add your signature"
+msgstr ""
 
 msgid "Added"
 msgstr "Eklendi"
@@ -226,6 +232,9 @@ msgstr "Bu sayfadan ayrılmak istediğinizden emin misiniz?"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "Bu işlemi tamamlandı olarak işaretlemek istediğinizden emin misiniz? Bu, bu işlem için tüm aktif üretim olaylarını sonlandıracaktır."
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "Montaj adımları"
 
@@ -253,18 +262,8 @@ msgstr "kullanılabilir"
 msgid "Available"
 msgstr "Kullanılabilir"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "Avatar seçeneği {0}"
-
 msgid "Avatar style"
 msgstr "Avatar stili"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "Avatarlar <0>{0}</0> kaynağından {1} tarafından, <1>{2}</1> lisansı altında."
 
 msgid "Back"
 msgstr "Geri"
@@ -286,6 +285,9 @@ msgstr "Parti Detayları"
 
 msgid "Batch is not available"
 msgstr "Parti kullanılabilir değil"
+
+msgid "Batch notes"
+msgstr "Parti Notları"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -315,6 +317,11 @@ msgstr "Pano görünümü"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Ama endişelenmeyin. Yeni bir sihirli bağlantı talep etmek için şifremi unuttum akışını kullanabilirsiniz."
+
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Oturum açarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılıyorsunuz."
@@ -355,6 +362,9 @@ msgstr "E-postanızı kontrol edin"
 msgid "Choose a job"
 msgstr "İş emri seç"
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose an option"
 msgstr "Bir seçenek seçin"
 
@@ -378,6 +388,9 @@ msgstr "Aramayı Temizle"
 
 msgid "Clear station default"
 msgstr "İstasyon varsayılanını temizle"
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Clock In"
 msgstr "İş başlangıcı"
@@ -451,6 +464,9 @@ msgstr "Partiyi Tamamla"
 msgid "Complete passed"
 msgstr "Tamamlanan geçti"
 
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
+
 msgid "Completed"
 msgstr "Tamamlandı"
 
@@ -500,6 +516,9 @@ msgstr "İşlemi Yeniden Oluştur"
 
 msgid "Current work"
 msgstr "Mevcut iş"
+
+msgid "Custom color"
+msgstr ""
 
 msgid "Customer"
 msgstr "Müşteri"
@@ -592,6 +611,15 @@ msgstr "Çizim ve özellikleri yeniden boyutlandırmak için sürükleyin"
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "Taşıma {0} iptal edildi."
+
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Due"
 msgstr "Vade"
@@ -698,6 +726,13 @@ msgstr "Süresi doluyor <0/>"
 msgid "Expiring first"
 msgstr "İlk süresi dolacak"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Failed"
 msgstr "Başarısız"
 
@@ -722,6 +757,9 @@ msgstr "Depolama birimlerini almak başarısız oldu"
 msgid "Failed to get options"
 msgstr "Seçenekler alınamadı"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Ölçüm aleti kaydedilemedi"
 
@@ -744,6 +782,9 @@ msgstr "Dosyayı yüklemede başarısız oldu: {0}"
 
 msgid "Failed to upload image"
 msgstr "Görsel yüklenemedi"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "File size exceeds 10MB limit"
 msgstr "Dosya boyutu 10MB sınırını aşıyor"
@@ -799,6 +840,12 @@ msgstr "İşleme geri dön"
 
 msgid "Go to onboarding"
 msgstr "Başlangıç adımına git"
+
+msgid "Halloween surprise"
+msgstr "Cadılar Bayramı sürprizi"
+
+msgid "Happy Halloween"
+msgstr "Mutlu Cadılar Bayramı"
 
 msgid "Heading {level}"
 msgstr "Başlık {level}"
@@ -977,6 +1024,9 @@ msgstr "Yüklendi: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Ürün detayları yükleniyor..."
+
+msgid "Loading. There's no need to scan again."
+msgstr "Yükleniyor. Tekrar taramanıza gerek yok."
 
 msgid "Loading..."
 msgstr "Yükleniyor..."
@@ -1187,6 +1237,9 @@ msgstr "Bugün planlanmış bakım yok"
 msgid "No matches. Type to create one."
 msgstr "Eşleşme yok. Bir tane oluşturmak için yazın."
 
+msgid "No matching time"
+msgstr "Eşleşen saat yok"
+
 msgid "No materials"
 msgstr "Malzeme yok"
 
@@ -1238,6 +1291,9 @@ msgstr "Örnek gerekli değil."
 msgid "No scheduled time"
 msgstr "Planlanmış zaman yok"
 
+msgid "No serial number"
+msgstr "Seri numarası yok"
+
 msgid "No serial numbers"
 msgstr "Seri numarası yok"
 
@@ -1273,6 +1329,9 @@ msgstr "Hiçbiri"
 
 msgid "Notes"
 msgstr "Notlar"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "Bu sayfada hiçbir şey bu barkodu kullanmıyor"
 
 msgid "Nothing running"
 msgstr "Hiçbir şey çalışmıyor"
@@ -1431,8 +1490,8 @@ msgstr "Topla"
 msgid "Pick {0}"
 msgstr "Toplama {0}"
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "Bir stil ve avatar seçin, veya yenileri için karıştırın."
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "Takip edilen öğeyi seç"
@@ -1482,6 +1541,12 @@ msgstr "Lütfen bir ürün seçin"
 msgid "PM schedule lapsed"
 msgstr "PM zamanlaması süresi doldu"
 
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
+
+msgid "Poke the spider… if you dare"
+msgstr "Örümceği dürt… cesaretin varsa"
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Herhangi bir sayfada bu listeyi açmak için ? tuşuna basın. Bir alan içinde yazarken kısayollar yoksayılır."
 
@@ -1502,6 +1567,12 @@ msgstr "Yazdır"
 
 msgid "Print batch list"
 msgstr "Yazdır parti listesini"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Yazıcı Ayarları"
@@ -1616,6 +1687,9 @@ msgstr "Parçayı kaldır"
 msgid "Remove two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulamayı kaldır"
 
+msgid "Removed signature"
+msgstr ""
+
 msgid "Rename"
 msgstr "Yeniden adlandır"
 
@@ -1627,9 +1701,6 @@ msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan 6 haneli bir kod i
 
 msgid "Required"
 msgstr "Gerekli"
-
-msgid "Reset"
-msgstr "Sıfırla"
 
 msgid "Result"
 msgstr "Sonuç"
@@ -1661,8 +1732,14 @@ msgstr "Her iş emri için aynı"
 msgid "Save"
 msgstr "Kaydet"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Düzenlediğiniz formu kaydetin"
+
+msgid "Saved signature"
+msgstr ""
 
 msgid "Scan"
 msgstr "Tarama"
@@ -1684,6 +1761,12 @@ msgstr "Seri numaras tarayın veya arayın..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Bu lottan izlenen bir varlığı tarayın veya seçin, onu bir örnek sütunu olarak ekleyin ve sonucunu ızgarada kaydedin."
+
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "Birimi tarayın veya seçin, ardından kanban kartını yeniden tarayın"
+
+msgid "Scan received"
+msgstr "Tarama alındı"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Bu QR kodunu kimlik doğrulayıcı uygulamanızla tarayın (örn. Google Authenticator veya 1Password), ardından gösterdiği 6 haneli kodu girin."
@@ -1859,6 +1942,9 @@ msgstr "Klavye kısayollarını göster"
 msgid "Shuffle"
 msgstr "Karıştır"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sihirli bir bağlantı yerine biyometrik veriler ile oturum açın. Geçiş anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
 
@@ -1884,6 +1970,12 @@ msgid "Sign out instead"
 msgstr "Bunun yerine oturumu kapat"
 
 msgid "Sign-in code"
+msgstr ""
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
 msgstr ""
 
 msgid "Signed in as {stationName}"
@@ -1948,6 +2040,9 @@ msgstr "Adımlar eksik"
 msgid "Storage Unit"
 msgstr "Depolama Birimi"
 
+msgid "Style"
+msgstr ""
+
 msgid "Style default"
 msgstr "Varsayılan stil"
 
@@ -1995,6 +2090,10 @@ msgstr "Carbon'da kullanılan vurgu rengi."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'dan azdır."
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "Bu çalıştırmayı oluşturan iş emirleri ve parçalar."
@@ -2045,14 +2144,17 @@ msgstr "Bu parça siparişe göre yapılmıştır. Hurdalaması, bir yedek yapma
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Bu parça stoktan hurdaya ayrılacak. Gerekliliği açık kalacak, böylece bir yedek sağlayabilirsiniz."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numarası oluşturulacaktır."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir birim oluşturulacaktır."
 
 msgid "Thumbnail"
 msgstr "Küçük Resim"
 
 msgid "Tick the jobs this was done for."
 msgstr "Bunun için yapılan iş emirlerini işaretleyin."
+
+msgid "Time"
+msgstr "Saat"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Zaman ve maliyet, miktar ile orantılı olarak iş emirleri arasında bölünür."
@@ -2144,6 +2246,9 @@ msgstr "Bir mesaj yaz..."
 msgid "Unable to unlock"
 msgstr "Kilit açılamıyor"
 
+msgid "Undo"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "Yayımlanmamış seri/parti malzemeleri"
 
@@ -2200,6 +2305,9 @@ msgstr "Yükle"
 
 msgid "Upload completed but no file path returned"
 msgstr "Yükleme tamamlandı ancak dosya yolu döndürülmedi"
+
+msgid "Uploaded signature"
+msgstr ""
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -2263,8 +2371,20 @@ msgstr "Bir not yazın…"
 msgid "Yes"
 msgstr "Evet"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed} saattir zaman kaydı yapıyorsunuz. İş bitişini yapmayı unuttunuz mu?"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Hesabınız henüz bir şirkete ait değildir. Devam etmek için Carbon ERP'de yerleşimi tamamlayın."
@@ -2277,6 +2397,9 @@ msgstr "Profiliniz yüklenemedi."
 
 msgid "Your session was locked after inactivity."
 msgstr "Oturumunuz hareketsizlik nedeniyle kilitlendi."
+
+msgid "Your signature"
+msgstr ""
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

@@ -33,7 +33,7 @@ vi.mock("@carbon/ee/rules.server", () => ({
 // The Stripe API call only: the connected-account and customer-link reads run
 // for real against the fake client. The Stripe SDK module is replaced so
 // loading the real reads does not construct a Stripe or Supabase client.
-vi.mock("../../../stripe/src/connect.server", () => ({
+vi.mock("@carbon/stripe/connect.server", () => ({
   createAndSendConnectInvoice: () => {
     throw new Error("The Stripe API is not reachable in tests");
   }

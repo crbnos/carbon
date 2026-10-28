@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  type CarbonError,
+  CarbonError,
   createServiceContext,
   defineServiceFn
 } from "@carbon/api/service-fn.server";
@@ -51,6 +51,10 @@ import {
   getCompanySettings,
   getNextSequence
 } from "~/modules/settings/settings.service";
+import {
+  booleanField,
+  optionalTiptapDoc
+} from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
@@ -1256,7 +1260,9 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
  * order, a purchase order, a purchase return order, an outbound warehouse
  * transfer or a rental agreement. With no source document it creates an
  * empty shipment. The location is the caller's default location, which a
- * sales order or purchase order shipment requires.
+ * purchase order shipment requires. A sales order shipment ships from the
+ * order's location, or from the caller's default location when one of the
+ * order's lines ships from there.
  *
  * A return order or rental agreement with a Draft shipment already returns
  * that shipment instead of a second one.
@@ -1271,7 +1277,22 @@ export const createShipment = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, { sourceDocument, sourceDocumentId }) {
-    const locationId = await service.defaultLocationOf(ctx);
+    let locationId = await service.defaultLocationOf(ctx);
+    if (sourceDocument === "Sales Order") {
+      const location = await service.salesOrderShipmentLocationOf(
+        ctx,
+        sourceDocumentId,
+        locationId
+      );
+      if (location.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load the sales order's location",
+          location.error
+        );
+      }
+      locationId = location.data ?? undefined;
+    }
 
     if (
       !locationId &&
@@ -1975,7 +1996,7 @@ export const updateShipmentFixedAssetLine = defineServiceFn({
       .from("shipmentFixedAssetLine")
       .update({
         ...(change.field === "shipped"
-          ? { shipped: change.value === "true" }
+          ? { shipped: change.value }
           : change.field === "serialNumber"
             ? { serialNumber: change.value || null }
             : { meter: change.value === "" ? null : Number(change.value) }),
@@ -2954,16 +2975,7 @@ export const postInventoryCount = defineServiceFn({
       service.postInventoryCount
     );
     if (posted.error) {
-      const message = getErrorMessage(
-        posted.error,
-        "Failed to post inventory count"
-      );
-      // The rows to highlight: the count stays Pending.
-      const invalidLineIds = posted.error.body.invalidLineIds;
-      if (Array.isArray(invalidLineIds)) {
-        return { invalidLineIds: invalidLineIds as string[], message };
-      }
-      return service.serverFnFailure(ctx, posted.error, message);
+      return service.inventoryCountPostingFailure(ctx, posted.error);
     }
     return { inventoryCountId };
   }
@@ -3033,16 +3045,12 @@ export const adjustInventory = defineServiceFn({
         locationId: adjustment.locationId ?? null
       }
     ];
-    // The bin surface comes from the type alone: `quantity` is a positive
-    // magnitude, so its sign cannot say which way stock moves.
-    const removes =
-      adjustment.adjustmentType === "Negative Adjmt." ||
-      adjustment.adjustmentType === "Scrap";
     const rules = await service.storageRuleViolations(
       ctx,
-      adjustment.storageUnitId
-        ? ["inventoryAdjustment", removes ? "pick" : "place"]
-        : ["inventoryAdjustment"],
+      service.adjustmentRuleSurfaces(
+        adjustment.adjustmentType,
+        adjustment.storageUnitId
+      ),
       line
     );
     const violations = dedupeViolations(rules.violations);
@@ -3057,14 +3065,11 @@ export const adjustInventory = defineServiceFn({
       service.postInventoryAdjustment
     );
     if (posted.error) {
-      // Below 500 the posting refused the adjustment, in words for the person.
-      return posted.error.status < 500
-        ? service.serverFnFailure(ctx, posted.error, posted.error.message)
-        : ctx.error(
-            "internal",
-            "Failed to create manual inventory adjustment",
-            posted.error
-          );
+      return service.postingFailure(
+        ctx,
+        posted.error,
+        "Failed to create manual inventory adjustment"
+      );
     }
     return { itemLedgerId: posted.data.itemLedger?.id ?? null };
   }
@@ -3263,7 +3268,7 @@ export const updatePickingList = defineServiceFn({
     locationId: z.string().min(1),
     assignee: z.string().optional(),
     dueDate: z.string().optional(),
-    notes: z.string().optional(),
+    notes: optionalTiptapDoc,
     customFields: z.record(z.string(), z.unknown()).optional()
   }),
   permission: { update: "inventory" },
@@ -3525,6 +3530,13 @@ export const scanKanban = defineServiceFn({
           companyId,
           jobId,
           error: failure
+        });
+      }
+      for (const warning of result.data?.warnings ?? []) {
+        logger.warn("A kanban job was released with a warning", {
+          companyId,
+          jobId,
+          warning: warning.message
         });
       }
 
@@ -5809,7 +5821,9 @@ const kanbanInput = z
  *
  * @remarks
  * A Buy kanban needs its supplier; a Transfer kanban needs a from and a to
- * storage unit, and only it can have a replenishment level.
+ * storage unit, and only it can have a replenishment level. When the
+ * location's Kanbans printer auto-prints, the new kanban's Create card is
+ * printed.
  *
  * @mcp
  */
@@ -5817,13 +5831,23 @@ export const createKanban = defineServiceFn({
   input: kanbanInput,
   permission: { create: "inventory" },
   async run(ctx, { id: _id, ...input }) {
-    return unwrap(
+    const created = unwrap(
       ctx,
       await service.upsertKanban(
         ctx.asCaller.supabase,
         payload(ctx, input).forCreate() as never
       )
     );
+    if (created instanceof CarbonError || !created) return created;
+
+    await service.autoPrint(ctx, {
+      sourceDocument: "Kanban",
+      sourceDocumentId: created.id,
+      locationId: input.locationId,
+      context: "kanban"
+    });
+
+    return created;
   }
 });
 
@@ -5999,8 +6023,8 @@ export const createStockTransferLine = defineServiceFn({
     fromStorageUnitId: z.string().optional(),
     toStorageUnitId: z.string().optional(),
     quantity: z.number().min(0),
-    requiresBatchTracking: z.enum(["true", "false"]),
-    requiresSerialTracking: z.enum(["true", "false"])
+    requiresBatchTracking: booleanField(),
+    requiresSerialTracking: booleanField()
   }),
   permission: { create: "inventory" },
   async run(ctx, input) {
@@ -6036,8 +6060,8 @@ export const updateStockTransferLine = defineServiceFn({
       fromStorageUnitId: z.string().optional(),
       toStorageUnitId: z.string().optional(),
       quantity: z.number().min(0),
-      requiresBatchTracking: z.enum(["true", "false"]),
-      requiresSerialTracking: z.enum(["true", "false"]),
+      requiresBatchTracking: booleanField(),
+      requiresSerialTracking: booleanField(),
       id: z.string().describe("The line to update.").optional()
     })
     .required({ id: true }),

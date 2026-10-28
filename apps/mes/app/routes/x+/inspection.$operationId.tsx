@@ -18,6 +18,7 @@ import { useLoaderData, useParams } from "react-router";
 import { InspectionView } from "~/components/Inspection/InspectionView";
 import { getDatabaseClient } from "~/services/database.server";
 import {
+  getAbilityShortfall,
   getJobByOperationId,
   getJobMakeMethod,
   getJobOperationById,
@@ -221,7 +222,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       a.id.localeCompare(b.id)
   );
 
+  const abilityWarning = await getAbilityShortfall(serviceRole, {
+    operationId,
+    employeeId: userId,
+    companyId
+  });
+
   return {
+    abilityWarning,
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     inspection,
@@ -246,7 +254,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobId: job.data.id ?? null,
     balloons: document?.data?.balloons ?? [],
     documentName: document?.data?.name ?? null,
-    pdfUrl: document?.data?.pdfUrl ?? null
+    pdfUrl: document?.data?.pdfUrl ?? null,
+    model: document?.data?.model ?? null
   };
 }
 

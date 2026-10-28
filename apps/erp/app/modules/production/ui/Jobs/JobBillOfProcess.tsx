@@ -64,8 +64,8 @@ import {
   INPUT_FORMAT
 } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { useNumberFormatter } from "@react-aria/i18n";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { useLocale, useNumberFormatter } from "@react-aria/i18n";
 import type { DragControls } from "motion/react";
 import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
@@ -266,10 +266,11 @@ function makeItems(
   tags: { name: string }[],
   temporaryItems: TemporaryItems,
   urlParams: { [key: string]: string },
-  t: ReturnType<typeof useLingui>["t"]
+  t: ReturnType<typeof useLingui>["t"],
+  locale: string
 ): ItemWithData[] {
   return operations.map((operation) =>
-    makeItem(operation, tags, temporaryItems, urlParams, t)
+    makeItem(operation, tags, temporaryItems, urlParams, t, locale)
   );
 }
 
@@ -278,7 +279,8 @@ function makeItem(
   tags: { name: string }[],
   temporaryItems: TemporaryItems,
   urlParams: { [key: string]: string },
-  t: ReturnType<typeof useLingui>["t"]
+  t: ReturnType<typeof useLingui>["t"],
+  locale: string
 ): ItemWithData {
   // Forward forecast vs backward need-by target: calendar-day comparison via
   // parseDate (never JS Date arithmetic). Positive = projected finish is late.
@@ -343,19 +345,23 @@ function makeItem(
                 <TooltipTrigger asChild>
                   <Badge variant="red" className="gap-1">
                     <LuSquareChartGantt className="size-3 shrink-0" />
-                    {formatDate(projectedDate)}
+                    {formatDate(projectedDate, undefined, locale)}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
                   <span>
-                    <Trans>Behind target by {behindDays} day(s)</Trans>
+                    <Plural
+                      value={behindDays}
+                      one="Behind target by # day"
+                      other="Behind target by # days"
+                    />
                   </span>
                 </TooltipContent>
               </Tooltip>
             ) : (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
                 <LuSquareChartGantt className="size-3 shrink-0" />
-                {formatDate(projectedDate)}
+                {formatDate(projectedDate, undefined, locale)}
               </span>
             ))}
           <OperationDueDatePicker
@@ -498,6 +504,7 @@ const JobBillOfProcess = ({
   customerId
 }: JobBillOfProcessProps) => {
   const { t } = useLingui();
+  const { locale } = useLocale();
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { carbon, accessToken } = useCarbon();
   const sortOrderFetcher = useAction();
@@ -585,7 +592,8 @@ const JobBillOfProcess = ({
     tags,
     temporaryItems,
     issueUrlParams,
-    t
+    t,
+    locale
   ).map((item) => ({
     ...item,
     checked: checkedState[item.id] ?? false
@@ -1610,7 +1618,11 @@ function StepsForm({
                 </div>
               )}
               {type === "List" && (
-                <ArrayInput name="listValues" label={t`List Options`} />
+                <ArrayInput
+                  name="listValues"
+                  label={t`List Options`}
+                  isRequired
+                />
               )}
 
               <SlidesEditor
@@ -2263,7 +2275,11 @@ function StepsListItem({
               </div>
             )}
             {type === "List" && (
-              <ArrayInput name="listValues" label={t`List Options`} />
+              <ArrayInput
+                name="listValues"
+                label={t`List Options`}
+                isRequired
+              />
             )}
             <JobStepSlides step={attribute} isDisabled={isDisabled} />
             <JobStepParts

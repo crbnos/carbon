@@ -3,6 +3,8 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { Email } from "./email/config";
+import { Gmail } from "./gmail/config";
+import { GoogleCalendar } from "./google-calendar/config";
 import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Mount } from "./mount/config";
@@ -66,6 +68,8 @@ import {
 export const integrations = [
   // Radan,
   Email,
+  Gmail,
+  GoogleCalendar,
   Jira,
   Linear,
   Mount,
@@ -85,6 +89,8 @@ export const integrations = [
 
 export type IntegrationID = (typeof integrations)[number]["id"];
 
+export { Gmail } from "./gmail/config";
+export { GoogleCalendar } from "./google-calendar/config";
 export { Jira } from "./jira/config";
 export { Mount } from "./mount/config";
 export { beginOAuthPopup } from "./oauth-popup";

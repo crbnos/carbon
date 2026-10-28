@@ -47,6 +47,7 @@ Webhooks without a saved secret remain compatible with older configurations, but
 ## Jira
 
 Connect over **OAuth**. The only setting is an optional webhook secret.
+Step-by-step: [Connect Jira](/docs/integrations/setup/jira).
 
 <Steps>
   <Step>
@@ -55,11 +56,11 @@ Connect over **OAuth**. The only setting is an optional webhook secret.
   Authorize Carbon in Jira.
   </Step>
   <Step>
-  ### Create the webhook in Jira (optional)
+  ### Create the webhook in Jira
 
-  To send Jira changes to Carbon immediately, go to **System → WebHooks** in Jira and create a
+  Changes made in Jira come back to Carbon only through this webhook. To set it up, go to **System → WebHooks** in Jira and create a
   webhook with the URL shown in Carbon's setup instructions (`/api/webhook/jira/<your company id>`),
-  subscribed to **Issue updated** and **Issue deleted**. Fill in the webhook's **Secret** field, and paste
+  subscribed to **Issue updated**. Fill in the webhook's **Secret** field, and paste
   the same value into **Webhook Secret** in Carbon. With it saved, Carbon only accepts webhook requests
   Jira has signed.
   </Step>

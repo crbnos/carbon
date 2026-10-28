@@ -157,6 +157,33 @@ export type OperationType = (typeof operationTypes)[number];
 // The same holds for the work center: Outside Processing runs at the supplier,
 // and a work center left over from an in-house type put the operation on the
 // MES Work Centers board.
+/**
+ * A yes/no field. An API caller sends a JSON boolean and a form posts
+ * `"true"` / `"false"`; both parse to a boolean. Typed as taking a boolean, so
+ * the published API schema says `boolean`: the form's strings are its own.
+ */
+export const booleanField = () =>
+  z.preprocess(
+    (value) => (value === "true" ? true : value === "false" ? false : value),
+    z.boolean()
+  ) as unknown as z.ZodType<boolean, boolean>;
+
+/**
+ * A JSON value. A form posts it as text in a hidden field; an API caller sends
+ * the value itself. Typed as the value, so the published API schema describes
+ * it instead of "anything". Text that is not JSON is left for `schema` to refuse.
+ */
+export const jsonInput = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((value) => {
+    if (typeof value !== "string") return value;
+    if (value.trim() === "") return undefined;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }, schema) as unknown as T;
+
 export function normalizeOperationSourceIds<
   T extends {
     operationType?: string;
@@ -299,6 +326,21 @@ export const optionalTiptapDoc = tiptapDocInput();
  */
 export const optionalPlainTextDoc = tiptapDocInput("text");
 
+/** Required rich text: Markdown, or a Tiptap document. */
+export const requiredTiptapDoc = z
+  .union([z.string().trim().min(1), tiptapDocumentInput])
+  .transform((value): any => toTiptapDoc(value));
+
+/**
+ * A List step's options. Blank rows (the empty row "Add option" leaves) are
+ * dropped before the step's refine runs, so a trailing empty row never blocks a
+ * save and is never stored.
+ */
+export const stepListValues = z
+  .array(z.string())
+  .transform((values) => values.filter((value) => value.trim() !== ""))
+  .optional();
+
 export const operationStepValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -314,7 +356,7 @@ export const operationStepValidator = z
     unitOfMeasureCode: zfd.text(z.string().optional()),
     minValue: zfd.numeric(z.number().min(0).optional()),
     maxValue: zfd.numeric(z.number().min(0).optional()),
-    listValues: z.array(z.string()).optional(),
+    listValues: stepListValues,
     sortOrder: zfd.numeric(z.number().min(0).optional())
   })
   .refine(
@@ -332,17 +374,13 @@ export const operationStepValidator = z
   .refine(
     (data) => {
       if (data.type === "List") {
-        return (
-          Array.isArray(data.listValues) &&
-          data.listValues.length > 0 &&
-          data.listValues.every((option) => option.trim() !== "")
-        );
+        return Array.isArray(data.listValues) && data.listValues.length > 0;
       }
       return true;
     },
     {
       message: "List options are required",
-      path: ["listOptions"]
+      path: ["listValues"]
     }
   )
   .refine(

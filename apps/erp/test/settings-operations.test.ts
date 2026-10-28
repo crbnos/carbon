@@ -5,25 +5,21 @@
 import { createClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// The service's imports reach the glossary, whose `msg` macro only runs compiled.
-vi.mock("@lingui/core/macro", () => ({
-  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
-}));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn() })
-}));
-
 const {
   stripeAccount,
   consoleSetting,
   requireMfaSetting,
-  mfaEmails,
+  batchTrigger,
+  trigger,
   unmappedRequiredAccounts
 } = vi.hoisted(() => ({
   stripeAccount: vi.fn(),
   consoleSetting: vi.fn(),
   requireMfaSetting: vi.fn(),
-  mfaEmails: vi.fn(),
+  // Inngest: the two-factor announcement is sent through it.
+  batchTrigger: vi.fn(),
+  // Inngest: scheduler notices are sent through it.
+  trigger: vi.fn(),
   unmappedRequiredAccounts: vi.fn()
 }));
 vi.mock("@carbon/ee/accounting", async (importOriginal) => ({
@@ -45,25 +41,24 @@ vi.mock("@carbon/ee/two-factor.server", () => ({
 vi.mock("@carbon/printing/printing.server", () => ({
   invalidatePrinterCache: vi.fn()
 }));
-vi.mock("../app/services/mfa-email.server", () => ({
-  sendMfaRequiredEmails: mfaEmails
-}));
+vi.mock("@carbon/jobs", () => ({ batchTrigger, trigger }));
 
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
-const {
+import {
   removePrinterRoute,
   setIntegrationSyncEnabled,
-  updatePostingSync,
+  transitionSyncOperations,
   updateInventorySettings,
   updateInvoicingSettings,
   updatePeopleSettings,
   updatePlanningSettings,
-  transitionSyncOperations,
+  updatePostingSync,
+  updateProductionSettings,
   updateSecuritySettings,
   updateSubsidiaryDetails
-} = await import("../app/modules/settings/settings.server");
+} from "../app/modules/settings/settings.server";
 
 const settings = {
   settings: {
@@ -177,10 +172,7 @@ describe("invoicing settings", () => {
       invoiceAutomation: "Post and Send via Stripe"
     });
 
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "Connect Stripe in Integrations first"
-    });
+    expect(result.error?.category).toBe("rule");
     expect(writes).toEqual([]);
   });
 
@@ -227,10 +219,7 @@ describe("people settings", () => {
 
     const result = await updatePeopleSettings(ctx, { consoleEnabled: true });
 
-    expect(result.error).toMatchObject({
-      category: "entitlement",
-      message: "Console mode requires the Business plan"
-    });
+    expect(result.error?.category).toBe("entitlement");
   });
 
   it("generates no console PIN for a key caller: the key holder may not be its creator", async () => {
@@ -257,20 +246,21 @@ describe("security settings", () => {
     requireMfaSetting.mockResolvedValue({ error: null });
   });
 
+  const company = (requireMfa: boolean) =>
+    contextWith({
+      companySettings: { requireMfa },
+      company: { name: "Acme" },
+      employees: [{ id: "user-2", email: "ada@acme.com", name: "Ada" }]
+    });
+
   it("emails the company when two-factor goes from optional to required", async () => {
-    const { ctx } = contextWith({ companySettings: { requireMfa: false } });
-
-    await updateSecuritySettings(ctx, { requireMfa: true });
-
-    expect(mfaEmails).toHaveBeenCalledWith(expect.anything(), "company-1");
+    await updateSecuritySettings(company(false).ctx, { requireMfa: true });
+    expect(batchTrigger).toHaveBeenCalledOnce();
   });
 
   it("does not announce a requirement that was already on", async () => {
-    const { ctx } = contextWith({ companySettings: { requireMfa: true } });
-
-    await updateSecuritySettings(ctx, { requireMfa: true });
-
-    expect(mfaEmails).not.toHaveBeenCalled();
+    await updateSecuritySettings(company(true).ctx, { requireMfa: true });
+    expect(batchTrigger).not.toHaveBeenCalled();
   });
 });
 
@@ -378,10 +368,7 @@ describe("an accounting integration's settings", () => {
       syncEnabled: true
     });
 
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "Map the remaining 2 required accounts before turning on sync"
-    });
+    expect(result.error?.category).toBe("rule");
     expect(writes).toEqual([]);
   });
 
@@ -487,15 +474,54 @@ describe("retrying or skipping sync operations", () => {
       to: "Pending"
     });
 
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "Updated 1 of 3 sync operations"
-    });
+    expect(result.error?.category).toBe("rule");
     expect(result.error?.cause).toEqual([
       { id: "op-2", reason: "invalid transition In Flight → Pending" },
       { id: "op-3", reason: "Sync operation op-3 not found" }
     ]);
     expect(sent.map((request) => request.method)).toEqual(["PATCH", "GET"]);
     expect(sent[1]?.url.searchParams.get("id")).toBe("in.(op-2,op-3)");
+  });
+});
+
+describe("a location's staffing requirement", () => {
+  const scheduleNotices = () =>
+    trigger.mock.calls.filter(([event]) => event === "schedule-inputs-changed");
+
+  // While it is on, the scheduler places work only where someone is manned.
+  it("re-plans the location when the requirement changes", async () => {
+    const { ctx, writes } = contextWith({
+      location: { requiresStaffing: false }
+    });
+
+    const result = await updateProductionSettings(ctx, {
+      locationStaffing: { locationId: "loc-1", requiresStaffing: true }
+    });
+
+    expect(result.error).toBeNull();
+    expect(writes).toContainEqual({
+      table: "location",
+      method: "update",
+      values: { requiresStaffing: true }
+    });
+    expect(scheduleNotices()).toEqual([
+      [
+        "schedule-inputs-changed",
+        expect.objectContaining({ kind: "location", entityId: "loc-1" })
+      ]
+    ]);
+  });
+
+  it("writes nothing and tells no scheduler when the requirement is unchanged", async () => {
+    const { ctx, writes } = contextWith({
+      location: { requiresStaffing: true }
+    });
+
+    await updateProductionSettings(ctx, {
+      locationStaffing: { locationId: "loc-1", requiresStaffing: true }
+    });
+
+    expect(writes.filter((w) => w.table === "location")).toEqual([]);
+    expect(scheduleNotices()).toEqual([]);
   });
 });

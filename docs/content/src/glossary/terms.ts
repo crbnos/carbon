@@ -1725,8 +1725,8 @@ export const terms = {
     definition: msg`The specific operation on the job above that this PO line is purchasing; only operations marked outside-processing are selectable.`
   },
   "purchase-order-line-required-date": {
-    term: msg`Required Date`,
-    definition: msg`When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling.`
+    term: msg`Requested Date`,
+    definition: msg`When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling.`
   },
   "purchase-order-line-delivery-location": {
     term: msg`Delivery Location`,
@@ -1960,7 +1960,7 @@ export const terms = {
   // ── Resources: Contractors (ContractorForm) ─────────────────────────────
   "contractor-hours-per-week": {
     term: msg`Hours per Week`,
-    definition: msg`The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week.`
+    definition: msg`The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations.`
   },
 
   // ── Resources: Processes (ProcessForm) ──────────────────────────────────

@@ -27,7 +27,11 @@ crates/
 │                # Fusion/SolidWorks export) split into per-solid child components; guarded so any
 │                # sheet/surface geometry beside the solids keeps the merged mesh (nothing vanishes).
 │                # write_test_step generates hermetic multi-solid STEP fixtures for tests.
+│                # pmi.cc: read_pmi — a second, read-only pass over the XCAF doc for the PMI
+│                # (dimensions, geometric tolerances, datums, saved views) in world mm;
+│                # write_test_pmi_step writes a hermetic AP242 fixture with semantic PMI.
 ├── converter/   # STEP → graph.json + GLB. nodeid (sha1), graph (tree/bbox/source-unit), convert, glb.
+│                # pmi: the pmi.json document (contract: packages/viewer/src/pmi.ts).
 ├── thumbnail/   # GLB → PNG preview, on the CPU: reads plain or EXT_meshopt_compression GLBs,
 │                # z-buffer rasteriser through the viewer's camera (45° perspective, Z up; home
 │                # direction unless the caller names one),
@@ -49,7 +53,8 @@ Dependency flow: `apps/assembler → planner → converter → occt-bridge`; `pl
 
 ## Native deps
 
-**Dev (macOS):** `brew install fcl opencascade` (pulls libccd, eigen, octomap).
+**Dev (macOS):** `brew install fcl` (pulls libccd, eigen, octomap). OCCT is not
+Homebrew's: build the patched static one with `scripts/build-occt.sh` (see Run).
 Each bridge's `build.rs` resolves the lib prefix from `<PKG>_PREFIX` env, else a
 fixed per-target default (macOS-arm `/opt/homebrew/opt/<pkg>`, Linux `/usr`) — no
 `brew` shell-out, so the build is reproducible.
@@ -94,6 +99,17 @@ cargo test -p collision -p converter -p planner --tests
 ```bash
 REDIS_URL=redis://localhost:6379 ASSEMBLER_DEV_MODE=true cargo run -p assembler   # listens on 0.0.0.0:8000 (PORT to override)
 ```
+
+Under `crbn up`, the assembler needs Rust (rustup; `crbn` also finds
+`~/.cargo/bin/cargo` when the shell has not sourced `~/.cargo/env`), and both
+slow builds are shared by every worktree on the machine.
+OCCT is built once into `~/.cache/carbon-occt/8.0.0-p1`
+(`brew install cmake ninja`, then `scripts/build-occt.sh`). FCL comes from
+`brew install fcl`. `crbn up` refuses the assembler, naming the install step,
+until Rust, FCL and OCCT are all present. Cargo builds into
+`~/.cache/carbon-cargo-target` (`assemblerCargoTargetDir`,
+`packages/dev/src/services/apps.ts`), so a new worktree compiles only what its
+branch changed. A `CARGO_TARGET_DIR` you set yourself wins.
 
 Env: `REDIS_URL` (required — the job store; boot fails without it),
 `ASSEMBLER_SERVICE_API_KEY` (bearer auth), `ASSEMBLER_DEV_MODE=true` (allow
@@ -363,18 +379,29 @@ lossless `convert` GLB). It replaced a headless-browser screenshot of the viewer
 page. A Draco-compressed GLB is refused (`thumbnail_failed`); textures and vertex
 colours are ignored in favour of the material colour.
 
-## Ingest (optimize with compact and thumbnail)
+## Ingest (optimize with compact, thumbnail and PMI)
 
 A new model is processed by ONE `/v1/optimize` job, which reads the raw once.
-Two optional request fields add outputs:
+Three optional request fields add outputs:
 
 | Field | Output | What it writes |
 |---|---|---|
 | `compact: { path? }` | `raw` (`application/zstd`) | A STEP is converted to BinXCAF once; the optimiser tessellates from that xbf, and the xbf is compressed (`.xbf.zst`). A mesh source is compressed as it is. An xbf source needs nothing. |
 | `thumbnail: { path?, size?, direction? }` | `thumbnail` (`image/png`) | Rendered from the optimised GLB in memory, with the camera of `/v1/thumbnail`. |
+| `pmi: { path? }` | `pmi` (`application/json`) | The STEP's PMI (`pmi.json`, `converter::pmi`), read by `occt_bridge::read_pmi` from the same xbf (or the STEP/xbf source). Only for STEP and xbf sources, and only when the model has PMI; `result.outputs.pmi` carries `{ path, bytes, items, views }`. |
 
-Neither extra can fail the job: a failed compaction or render becomes a warning
-and the output is left out. The caller is `@carbon/jobs` `tasks/model-optimize.ts`.
+No extra can fail the job: a failed compaction, render or PMI read becomes a
+warning and the output is left out.
+
+`read_pmi` opens an xbf from a STREAM and closes it after: `TDocStd_Application`
+keeps every document it opened by path until it is closed, and refuses to open
+the same path again (`PCDM_RS_AlreadyRetrieved`) — `read_xbf` has just opened
+it. Coordinates are world mm in the GLB's frame: a part's PMI is moved to the
+first world placement of the part its first referenced shape belongs to. OCCT
+reads AP242 saved views only when every camera has a draughting model, so an
+edition 3 file such as NIST STC 06 can arrive with none. The NIST MBE PMI models
+(public domain, not committed) run in `converter/tests/pmi.rs` when
+`PMI_FIXTURES` names their directory. The caller is `@carbon/jobs` `tasks/model-optimize.ts`.
 It asks for `compact` only while the raw is still in `temp-staging`; without a
 `raw` output it copies the raw out of staging as it is. `/v1/compact` and
 `/v1/thumbnail` stay for the cases outside ingest: a raw left in staging with the

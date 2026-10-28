@@ -42,6 +42,7 @@ import {
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { useInfiniteRows } from "~/components/Table/useInfiniteRows";
 import {
   useLinkedDrawerItem,
   useMrpScheduleDescription,
@@ -73,6 +74,7 @@ import { splitOrdersByFence } from "~/modules/production/ui/Planning/planning-fe
 import { planningColumns } from "~/modules/production/ui/Planning/planningColumns";
 import { useJobPlanningRelease } from "~/modules/production/ui/Planning/useJobPlanningRelease";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
+import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
 import { usePeople } from "~/stores";
@@ -80,17 +82,22 @@ import { path } from "~/utils/path";
 import type { ProductionPlanningItem } from "../../types";
 import { ProductionPlanningOrderDrawer } from "./ProductionPlanningOrderDrawer";
 
+/** A grid row with its persisted MRP worklist (spec §P1.7), rendered as the
+ *  Actions column + the item's expanded row. Every action is here whatever
+ *  its date; the row's time fence decides what shows. */
+type PlanningRow = ProductionPlanningItem & {
+  planningActions: PlanningAction[];
+};
+
 type ProductionPlanningTableProps = {
-  data: ProductionPlanningItem[];
+  data: PlanningRow[];
   /** The row a `?item=` link opens the drawer on when it is not in `data`. */
-  drawerItem: ProductionPlanningItem | null;
+  drawerItem: PlanningRow | null;
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
-  /** The persisted MRP worklist for the rows on this page (spec §P1.7),
-   *  rendered as the Actions column + each item's expanded row. Every action
-   *  is here whatever its date; the row's time fence decides what shows. */
-  planningActions: PlanningAction[];
   /** The Actions-column filter in effect; null when the grid is not filtered
    *  by action type. */
   actionTypes: string[] | null;
@@ -102,14 +109,15 @@ const ProductionPlanningTable = ({
   data,
   drawerItem,
   count,
+  nextCursor,
   locationId,
   periods,
-  planningActions,
   actionTypes,
   locationToday
 }: ProductionPlanningTableProps) => {
   const permissions = usePermissions();
   const { t, i18n } = useLingui();
+  const weekLabel = usePlanningWeekLabel();
 
   // Memoized on the locale, so it never rebuilds `columns` on its own.
   const formatQuantity = useQuantityFormatter();
@@ -125,11 +133,31 @@ const ProductionPlanningTable = ({
   });
   const mrpScheduleDescription = useMrpScheduleDescription();
 
-  // What the order drawer can open on: the page's rows, plus the row a link
-  // names when it is not on this page.
+  // Every loaded row, each with its own actions. The grid is location-scoped:
+  // no list registry entry, so no `listKey`. The open drawer's param does not
+  // change the list.
+  const infiniteRows = useInfiniteRows({
+    initialRows: data,
+    infinite: {
+      dataKey: "items",
+      nextCursor,
+      ignoreParams: [PLANNING_DRAWER_PARAM]
+    }
+  });
+  const loadedRows = infiniteRows.rows;
+
+  // What the order drawer can open on: the loaded rows, plus the row a link
+  // names when it is not loaded. A loaded row is never counted twice.
   const drawerRows = useMemo(
-    () => (drawerItem ? [...data, drawerItem] : data),
-    [data, drawerItem]
+    () =>
+      drawerItem && !loadedRows.some((row) => row.id === drawerItem.id)
+        ? [...loadedRows, drawerItem]
+        : loadedRows,
+    [loadedRows, drawerItem]
+  );
+  const loadedPlanningActions = useMemo(
+    () => drawerRows.flatMap((row) => row.planningActions),
+    [drawerRows]
   );
 
   // ── Planning actions (the MRP worklist) ──────────────────────────────────
@@ -147,7 +175,7 @@ const ProductionPlanningTable = ({
     submitActions
   } = usePlanningActions({
     data: drawerRows,
-    planningActions,
+    planningActions: loadedPlanningActions,
     actionTypes,
     locationId,
     updatePath: path.to.bulkUpdateProductionPlanning,
@@ -270,7 +298,7 @@ const ProductionPlanningTable = ({
   const ordersByItemId = useMemo(
     () =>
       new Map(
-        data.map((row) => [
+        loadedRows.map((row) => [
           row.id,
           productionOrdersFromActions(
             openNewSupplyActions(actionsByItemId.get(row.id), "Make"),
@@ -278,12 +306,12 @@ const ProductionPlanningTable = ({
           )
         ])
       ),
-    [data, actionsByItemId, locationToday]
+    [loadedRows, actionsByItemId, locationToday]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onBulkUpdate = useCallback(
-    (selectedRows: typeof data, action: "order") => {
+    (selectedRows: ProductionPlanningItem[], action: "order") => {
       const payload = {
         locationId,
         items: selectedRows
@@ -368,7 +396,7 @@ const ProductionPlanningTable = ({
     key: drawerKey,
     open: openDrawer,
     close: closeDrawer
-  } = useLinkedDrawerItem({
+  } = useLinkedDrawerItem<ProductionPlanningItem>({
     param: PLANNING_DRAWER_PARAM,
     rows: drawerRows
   });
@@ -440,6 +468,7 @@ const ProductionPlanningTable = ({
     const shared = planningColumns<ProductionPlanningItem>({
       i18n,
       periods,
+      weekLabel,
       locationToday,
       formatQuantity,
       unitOfMeasures,
@@ -632,13 +661,14 @@ const ProductionPlanningTable = ({
     itemPostingGroups,
     ordersByItemId,
     timeFence,
-    locationToday
+    locationToday,
+    weekLabel
     // Note: ordersMap is intentionally not in deps to avoid column regeneration
     // getOrdersForItem inside the cell will access the latest ordersMap via closure
   ]);
 
   const renderActions = useCallback(
-    (selectedRows: typeof data) => {
+    (selectedRows: ProductionPlanningItem[]) => {
       // inside each row's time fence only — what the row is showing
       const applyableIds = selectedRows.flatMap((row) =>
         (visibleActionsByItemId.get(row.id) ?? [])
@@ -726,6 +756,7 @@ const ProductionPlanningTable = ({
         count={count}
         columns={columns}
         data={data}
+        infiniteRows={infiniteRows}
         defaultColumnVisibility={defaultColumnVisibility}
         defaultColumnPinning={defaultColumnPinning}
         primaryAction={

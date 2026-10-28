@@ -136,7 +136,12 @@ registration handshake, not Carbon-specific. Two independent triggers exist:
   has no `/api/inngest` route to sync. For a workspace with a `project_id`
   (hosted Supabase) it then copies the ERP's `/templates/*.html` into the
   project's Auth emails (`ci/src/auth-emails.ts`): hosted Auth cannot
-  download templates the way self-hosted Auth does.
+  download templates the way self-hosted Auth does. Each ERP deploy starts a
+  run that syncs every workspace, and Inngest answers a PUT that lands with
+  another one with a 400, so the Inngest PUT retries with jittered backoff
+  (`withRetry`, `ci/src/retry.ts`). There is no concurrency group: GitHub
+  keeps one waiting job per group and cancels the rest, which marked the
+  deploy's run cancelled.
 
 Both hit the same handler (`apps/erp/app/routes/api+/inngest.ts`, `serve()`
 from `inngest/remix`) — the registration target URL is fixed by that route's
@@ -156,7 +161,7 @@ Both services get Supabase (`SUPABASE_URL`/`ANON_KEY`/`SERVICE_ROLE_KEY`/`JWT_SE
 `CONTROLLED_ENVIRONMENT`, `DOMAIN`, `ERP_URL`/`MES_URL`,
 `NODE_ENV=production`, `VERCEL_ENV=production`, `VERCEL_URL` (set to the app host —
 there is no real Vercel deploy, this is just an env shim). ERP additionally gets
-`OPENAI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `STRIPE_*`,
+`OPENAI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `GOOGLE_OAUTH_*`, `STRIPE_*`,
 `SLACK_*`, `JIRA_*`, `QUICKBOOKS_*`, `XERO_*`, `ONSHAPE_*`, `RAMP_CLIENT_ID`,
 `RAMP_CLIENT_SECRET`, `AUTH_PROVIDERS`; MES is
 the leaner subset (no Stripe/Slack/Jira/QuickBooks/Xero/OpenAI). Autodesk vars are

@@ -19,6 +19,10 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
 import { Employees, Hidden, Radios, Submit } from "~/components/Form";
 import PermissionMatrix from "~/components/PermissionMatrix";
+import {
+  type AllMatchingSelection,
+  allMatchingRequest
+} from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import {
   fromEmployeeTypePermissions,
@@ -26,18 +30,32 @@ import {
   usePermissionMatrix
 } from "~/hooks/usePermissionMatrix";
 import type { CompanyPermission } from "~/modules/users/types";
-import { bulkPermissionsValidator } from "~/modules/users/users.models";
+import {
+  bulkPermissionsAllMatchingValidator,
+  bulkPermissionsValidator
+} from "~/modules/users/users.models";
 import { path } from "~/utils/path";
+import {
+  AllMatchingUsersNote,
+  type BulkUserActionFetcher
+} from "../components/AllMatchingUsers";
 
 type BulkEditPermissionsProps = {
   userIds: string[];
   isOpen: boolean;
+  /** Set when the action applies to every matching user of the list. */
+  allMatching?: AllMatchingSelection | null;
+  /** Posts the every-matching-user request. The table owns it, so its result
+   *  toast still shows after this drawer closes. */
+  allMatchingFetcher?: BulkUserActionFetcher;
   onClose: () => void;
 };
 
 const BulkEditPermissions = ({
   userIds,
   isOpen,
+  allMatching,
+  allMatchingFetcher,
   onClose
 }: BulkEditPermissionsProps) => {
   const { t } = useLingui();
@@ -95,9 +113,16 @@ const BulkEditPermissions = ({
     >
       <DrawerContent>
         <ValidatedForm
-          validator={bulkPermissionsValidator}
+          validator={
+            allMatching
+              ? bulkPermissionsAllMatchingValidator
+              : bulkPermissionsValidator
+          }
           method="post"
           action={path.to.bulkEditPermissions}
+          // Every matching user runs in the background: the route answers
+          // data, not a redirect, so it posts through a fetcher.
+          fetcher={allMatching ? allMatchingFetcher : undefined}
           onSubmit={onClose}
           defaultValues={{ userIds }}
           className="flex flex-col h-full"
@@ -127,11 +152,21 @@ const BulkEditPermissions = ({
                 />
               </div>
 
-              <Employees
-                name="userIds"
-                selectionsMaxHeight={"calc(100vh - 330px)"}
-                label={t`Users to Update`}
-              />
+              {allMatching ? (
+                <>
+                  <AllMatchingUsersNote />
+                  <Hidden
+                    name="allMatching"
+                    value={JSON.stringify(allMatchingRequest(allMatching))}
+                  />
+                </>
+              ) : (
+                <Employees
+                  name="userIds"
+                  selectionsMaxHeight={"calc(100vh - 330px)"}
+                  label={t`Users to Update`}
+                />
+              )}
 
               {hasModules && (
                 <PermissionMatrix

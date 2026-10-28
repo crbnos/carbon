@@ -239,6 +239,35 @@ describe("variableTree", () => {
     ).toBe(false);
   });
 
+  // A whole object has no operator, so a clause over a list of them is only
+  // writable when one of its fields can be picked.
+  it("opens the current item into its fields, scoped to its card", () => {
+    const event = {
+      kind: "record",
+      fields: { summary: text, attendees: number }
+    } as const;
+    const options = { inLoop: true, itemCard: "c1", itemType: event };
+
+    const [item] = variableTree([], catalog, options);
+    expect(item.children?.map((child) => child.label)).toEqual([
+      "summary",
+      "attendees"
+    ]);
+    expect(decodeTokenId(item.children?.[0].item?.id ?? "")).toEqual({
+      kind: "item",
+      path: ["summary"],
+      card: "c1"
+    });
+
+    expect(
+      variableMenuItems([], catalog, options).map((entry) => entry.label)
+    ).toEqual([
+      "Current item",
+      "Current item › summary",
+      "Current item › attendees"
+    ]);
+  });
+
   // A record prints as its readable id, so a text field offers it alongside its
   // properties. A LIST of records still has no reading in a sentence.
   it("offers the record itself in a text field, and its properties", () => {

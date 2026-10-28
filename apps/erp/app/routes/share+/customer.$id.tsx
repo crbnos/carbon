@@ -6,7 +6,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
 import { Avatar } from "@carbon/react";
-import { SCALE_FORMAT } from "@carbon/utils";
+import { async, SCALE_FORMAT } from "@carbon/utils";
 import { useLocale, useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
@@ -37,6 +37,7 @@ import {
   getBase64ImageFromSupabase,
   getCustomerPortal
 } from "~/modules/shared/shared.service";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -49,6 +50,9 @@ const defaultColumnPinning = {
 };
 
 const logger = getLogger("erp", "share", "customer-portal");
+
+// The thumbnails the page downloads at once.
+const THUMBNAIL_CONCURRENCY = 8;
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const { id } = params;
@@ -83,15 +87,15 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
+  const { sorts, filters } = getGenericQueryFilters(searchParams);
 
   const [company, salesOrderLines] = await Promise.all([
     getCompany(serviceRole, customer.data.companyId),
     getExternalSalesOrderLines(serviceRole, customer.data.customerId, {
       search,
-      limit,
-      offset,
+      // A single-load list: the RPC returns no row id for a cursor to follow.
+      limit: SINGLE_LOAD_LIMIT,
+      offset: 0,
       sorts,
       filters
     })
@@ -117,35 +121,33 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     return acc;
   }, {});
 
-  const [thumbnails, jobOperationAttachments] = await Promise.all([
-    (thumbnailPaths
-      ? await Promise.all(
-          Object.entries(thumbnailPaths).map(([id, path]) => {
-            if (!path) {
-              return null;
-            }
-            return getBase64ImageFromSupabase(serviceRole, path).then(
-              (data) => ({
-                id,
-                data
-              })
-            );
-          })
-        )
-      : []
-    )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+  // Up to 1,000 lines: the thumbnails download a few at a time.
+  const [thumbnailList, jobOperationAttachments] = await Promise.all([
+    async.map(
+      Object.entries(thumbnailPaths ?? {}),
+      async ([id, path]) =>
+        path
+          ? { id, data: await getBase64ImageFromSupabase(serviceRole, path) }
+          : null,
+      { concurrency: THUMBNAIL_CONCURRENCY }
+    ),
+    getJobOperationAttachments(serviceRole, jobOperationIds ?? [])
+  ]);
+  const thumbnails = thumbnailList.reduce<Record<string, string | null>>(
+    (acc, thumbnail) => {
       if (thumbnail) {
         acc[thumbnail.id] = thumbnail.data;
       }
       return acc;
-    }, {}) ?? {},
-    getJobOperationAttachments(serviceRole, jobOperationIds ?? [])
-  ]);
+    },
+    {}
+  );
 
   return {
     customer: customer.data,
     company: company.data,
     salesOrderLines: salesOrderLines.data ?? [],
+    isTruncated: (salesOrderLines.data?.length ?? 0) >= SINGLE_LOAD_LIMIT,
     jobOperationAttachments,
     count: salesOrderLines.count,
     thumbnails
@@ -158,6 +160,7 @@ export default function CustomerPortal() {
     customer,
     company,
     salesOrderLines,
+    isTruncated,
     thumbnails,
     jobOperationAttachments
   } = useLoaderData<typeof loader>();
@@ -390,6 +393,7 @@ export default function CustomerPortal() {
           data={salesOrderLines}
           columns={columns}
           count={count ?? 0}
+          isTruncated={isTruncated}
           compact
           // Signed out: the export names ids from the signed-in company's
           // lists, and there is no company here to read them from.

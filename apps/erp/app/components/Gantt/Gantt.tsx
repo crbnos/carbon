@@ -30,9 +30,10 @@ import {
   useViewport
 } from "@carbon/react";
 import { formatDurationMilliseconds, lerp } from "@carbon/utils";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { plural } from "@lingui/core/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type { Virtualizer } from "@tanstack/react-virtual";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import {
   LuBan,
@@ -62,7 +63,12 @@ import {
   runStatusClassNameColor
 } from "./components/GanttTaskStatus";
 import { eventBackgroundClassName, SpanTitle } from "./components/SpanTitle";
-import { assignTracks } from "./tracks";
+import {
+  type GanttVisibility,
+  rowMatchesFilter,
+  visibleUnderFilter
+} from "./filter";
+import { assignTracks, groupOverlaps, rowNonWorkingIntervals } from "./tracks";
 
 /** The tree list's default width, in px — the timeline takes the remainder. */
 const TREE_DEFAULT_WIDTH = 360;
@@ -106,9 +112,12 @@ type GanttProps = {
   /**
    * Optional content for the toolbar, rendered just before the In Process /
    * Show Durations switches — e.g. the forecast board's resource/reservation
-   * counts and conflict badge.
+   * counts and conflict badge. A function receives the search and switches, so
+   * the counts can follow what is shown.
    */
-  toolbarAccessory?: React.ReactNode;
+  toolbarAccessory?:
+    | React.ReactNode
+    | ((visibility: GanttVisibility) => React.ReactNode);
   totalDuration: number;
   rootSpanStatus: "inprogress" | "completed" | "todo" | "cancelled";
   rootStartedAt: Date | undefined;
@@ -136,6 +145,12 @@ type GanttProps = {
    * only used in `axis === "absolute"` mode.
    */
   nonWorkingIntervals?: { start: number; end: number }[];
+  /**
+   * Non-working intervals of particular rows, by event id — a work center that
+   * keeps its own hours. A row without an entry takes its nearest ancestor's,
+   * else {@link nonWorkingIntervals}. When set, shading is drawn per row.
+   */
+  nonWorkingIntervalsByRow?: Record<string, { start: number; end: number }[]>;
   /**
    * Spacing between axis ticks, in ms, anchored at {@link windowStartMs}. Gives
    * clean clock-aligned gridlines (e.g. every 4h on a day view) instead of the
@@ -169,6 +184,7 @@ const Gantt = ({
   formatAxisTick,
   nowMs,
   nonWorkingIntervals,
+  nonWorkingIntervalsByRow,
   tickIntervalMs,
   axisTickMs
 }: GanttProps) => {
@@ -239,23 +255,17 @@ const Gantt = ({
     parentRef,
     filter: {
       value: { text: filterText, wipOnly },
-      fn: (value, node) => {
-        const isWIP =
-          !value.wipOnly ||
-          node.data.isPartial ||
-          !!node.data.items?.some((item) => item.data.isPartial);
-
-        if (!isWIP) return false;
-
-        if (value.text === "") return true;
-        // A row also matches on its inline bars — a job search finds the lane
-        // it runs on.
-        return [node, ...(node.data.items ?? [])].some((event) =>
-          matchesFilterText(event, value.text)
-        );
-      }
+      // A row also matches on its inline bars — a job search finds the lane
+      // it runs on.
+      fn: rowMatchesFilter
     }
   });
+
+  const visibility = useMemo(
+    () => visibleUnderFilter(events, { text: filterText, wipOnly }),
+    [events, filterText, wipOnly]
+  );
+  const nothingMatches = visibility.active && visibility.rows.size === 0;
 
   const selectItem = (id: string) => {
     if (id === selectedItemId) {
@@ -382,6 +392,7 @@ const Gantt = ({
       formatAxisTick={formatAxisTick}
       nowMs={nowMs}
       nonWorkingIntervals={nonWorkingIntervals}
+      nonWorkingIntervalsByRow={nonWorkingIntervalsByRow}
       tickIntervalMs={tickIntervalMs}
       axisTickMs={axisTickMs}
       parentRef={parentRef}
@@ -395,7 +406,7 @@ const Gantt = ({
       toggleNodeSelection={toggleNodeSelection}
       selectedItemId={selectedItemId}
       onItemSelected={selectItem}
-      filterText={filterText}
+      litBars={visibility.active ? visibility.bars : null}
     />
   );
 
@@ -404,7 +415,9 @@ const Gantt = ({
       <div className="flex items-center justify-between gap-2 border-b border-border max-md:overflow-x-auto max-md:scroll-fade-x">
         <SearchField onChange={setFilterText} />
         <div className="flex items-center gap-3 pr-2 max-md:shrink-0">
-          {toolbarAccessory}
+          {typeof toolbarAccessory === "function"
+            ? toolbarAccessory(visibility)
+            : toolbarAccessory}
           <Switch
             variant="small"
             label={t`In Process Only`}
@@ -422,7 +435,19 @@ const Gantt = ({
           )}
         </div>
       </div>
-      <div ref={panelGroupRef} className="h-full w-full min-h-0">
+      <div ref={panelGroupRef} className="relative h-full w-full min-h-0">
+        {/* The live region stays mounted so a screen reader hears the text
+            appear; one mounted with its text already inside says nothing. */}
+        <div
+          role="status"
+          className="pointer-events-none absolute inset-x-0 top-12 z-10 flex justify-center"
+        >
+          {nothingMatches && (
+            <span className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground shadow-sm">
+              <Trans>Nothing matches the search or filter</Trans>
+            </span>
+          )}
+        </div>
         {/* Phones: a fixed tree column beside the timeline, which keeps its
             own sideways scroll. */}
         {isPhone && (
@@ -524,6 +549,7 @@ type GanttTimelineProps = Pick<
   | "formatAxisTick"
   | "nowMs"
   | "nonWorkingIntervals"
+  | "nonWorkingIntervalsByRow"
   | "tickIntervalMs"
   | "axisTickMs"
 > & {
@@ -539,14 +565,14 @@ type GanttTimelineProps = Pick<
   treeScrollRef: React.RefObject<HTMLDivElement>;
   selectedItemId: string | undefined;
   onItemSelected: (id: string) => void;
-  filterText: string;
+  /** Inline bars the filter keeps lit; null when no filter is on. */
+  litBars: Set<string> | null;
 };
 
-function matchesFilterText(event: GanttEvent, text: string) {
-  return event.data.message.toLowerCase().includes(text.toLowerCase());
-}
-
 const TICK_COUNT = 5;
+const LABEL_MIN_PX = 40;
+/** The axis runs 5% past the last span, so a bar never ends at the edge. */
+const AXIS_PADDING = 1.05;
 
 /**
  * Split a bar's [offset, offset+duration] into its WORKING pieces by removing
@@ -577,6 +603,68 @@ function splitWorkingSegments(
     .map((s) => ({ startMs: s.start, durationMs: s.end - s.start }));
 }
 
+/** Absolute intervals as offsets from the window start (absolute axis only). */
+function toOffsetSpace(
+  intervals: { start: number; end: number }[] | undefined,
+  windowStartMs: number | undefined
+) {
+  return windowStartMs !== undefined && intervals
+    ? intervals.map((interval) => ({
+        start: interval.start - windowStartMs,
+        end: interval.end - windowStartMs
+      }))
+    : null;
+}
+
+function splitOrUndefined(
+  offset: number,
+  duration: number,
+  nonWorking: { start: number; end: number }[] | null
+) {
+  return nonWorking
+    ? splitWorkingSegments(offset, duration, nonWorking)
+    : undefined;
+}
+
+/**
+ * One row's non-working time, shaded behind its bars, with the grid lines
+ * (`children`) drawn over the shading.
+ */
+function RowShading({
+  offsets,
+  duration,
+  selected,
+  children
+}: {
+  offsets: { start: number; end: number }[] | null;
+  duration: number;
+  /** A selected row is already `bg-muted`, so its shading takes a darker tone. */
+  selected: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="pointer-events-none absolute inset-0">
+      {offsets?.map((interval) => {
+        const startMs = Math.max(0, interval.start);
+        const endMs = Math.min(duration, interval.end);
+        if (endMs <= startMs) return null;
+        return (
+          <Timeline.Span
+            key={`nonworking-${interval.start}`}
+            startMs={startMs}
+            durationMs={endMs - startMs}
+            className={cn(
+              "h-full",
+              selected ? "bg-muted-foreground/15" : "bg-muted/50"
+            )}
+          />
+        );
+      })}
+      {children}
+    </div>
+  );
+}
+
 const GanttTimeline = ({
   totalDuration,
   scale,
@@ -587,6 +675,7 @@ const GanttTimeline = ({
   formatAxisTick,
   nowMs,
   nonWorkingIntervals,
+  nonWorkingIntervalsByRow,
   tickIntervalMs,
   axisTickMs,
   parentRef,
@@ -601,7 +690,7 @@ const GanttTimeline = ({
   treeScrollRef,
   selectedItemId,
   onItemSelected,
-  filterText
+  litBars
 }: GanttTimelineProps) => {
   const timelineContainerRef = useRef<HTMLDivElement>(null);
   // Live width (ResizeObserver) so the timeline reflows to fill the panel when
@@ -672,13 +761,79 @@ const GanttTimeline = ({
 
   // Non-working intervals in offset-space (ms from the window start), used to
   // split each bar into its working pieces so nights/weekends read as gaps.
-  const nonWorkingOffsets =
-    isAbsolute && windowStartMs !== undefined && nonWorkingIntervals
-      ? nonWorkingIntervals.map((interval) => ({
-          start: interval.start - windowStartMs,
-          end: interval.end - windowStartMs
-        }))
-      : null;
+  const anchorMs = isAbsolute ? windowStartMs : undefined;
+  const nonWorkingOffsets = toOffsetSpace(nonWorkingIntervals, anchorMs);
+  const rowOffsets = useMemo(() => {
+    if (!nonWorkingIntervalsByRow) return null;
+    const byRow = rowNonWorkingIntervals(
+      events,
+      nonWorkingIntervalsByRow,
+      nonWorkingIntervals
+    );
+    return new Map(
+      [...byRow].map(([id, intervals]) => [
+        id,
+        toOffsetSpace(intervals, anchorMs)
+      ])
+    );
+  }, [events, nonWorkingIntervalsByRow, nonWorkingIntervals, anchorMs]);
+  // Every row has an entry, even when that is none (the location rollup);
+  // `rowNonWorkingIntervals` already gave the plant's hours to the rest.
+  const offsetsFor = (eventId: string) =>
+    rowOffsets ? (rowOffsets.get(eventId) ?? null) : nonWorkingOffsets;
+
+  // The tick lines and the "now" (or end-of-span) line. Drawn behind the
+  // rows, and again inside a row that shades its own non-working time, so the
+  // shading never covers them.
+  const gridLines = (
+    <>
+      {/* The vertical tick lines */}
+      {absoluteTicks ? (
+        absoluteTicks.map((tickMs, index) =>
+          index === 0 ? null : (
+            <Timeline.Point
+              key={tickMs}
+              ms={tickMs}
+              className="h-full border-r border-muted"
+            />
+          )
+        )
+      ) : (
+        <Timeline.EquallyDistribute count={TICK_COUNT}>
+          {(ms: number, index: number) => {
+            if (index === 0) return null;
+            return (
+              <Timeline.Point
+                ms={ms}
+                className={"h-full border-r border-muted"}
+              />
+            );
+          }}
+        </Timeline.EquallyDistribute>
+      )}
+      {/* Absolute mode: the green line is "now", drawn only while now is
+          inside the window. Duration mode keeps the completed/failed
+          end-of-span line. */}
+      {isAbsolute
+        ? showNow && (
+            <Timeline.Point
+              ms={nowOffsetMs as number}
+              className="h-full border-r border-emerald-500/90"
+            />
+          )
+        : rootSpanStatus !== "inprogress" && (
+            <Timeline.Point
+              ms={duration}
+              className={cn(
+                "h-full border-r",
+                rootSpanStatus === "completed"
+                  ? "border-emerald-500/90"
+                  : "border-destructive/30"
+              )}
+            />
+          )}
+    </>
+  );
 
   return (
     <div
@@ -686,7 +841,7 @@ const GanttTimeline = ({
       ref={timelineContainerRef}
     >
       <Timeline.Root
-        durationMs={duration * 1.05}
+        durationMs={duration * AXIS_PADDING}
         scale={scale}
         className="h-full overflow-hidden"
         minWidth={minTimelineWidth}
@@ -828,6 +983,7 @@ const GanttTimeline = ({
                 as 24h/day. Absolute mode only; clamped to the visible window. */}
             {isAbsolute &&
               windowStartMs !== undefined &&
+              !rowOffsets &&
               nonWorkingIntervals?.map((interval) => {
                 const startMs = Math.max(0, interval.start - windowStartMs);
                 const endMs = Math.min(duration, interval.end - windowStartMs);
@@ -841,51 +997,7 @@ const GanttTimeline = ({
                   />
                 );
               })}
-            {/* The vertical tick lines */}
-            {absoluteTicks ? (
-              absoluteTicks.map((tickMs, index) =>
-                index === 0 ? null : (
-                  <Timeline.Point
-                    key={tickMs}
-                    ms={tickMs}
-                    className="h-full border-r border-muted"
-                  />
-                )
-              )
-            ) : (
-              <Timeline.EquallyDistribute count={TICK_COUNT}>
-                {(ms: number, index: number) => {
-                  if (index === 0) return null;
-                  return (
-                    <Timeline.Point
-                      ms={ms}
-                      className={"h-full border-r border-muted"}
-                    />
-                  );
-                }}
-              </Timeline.EquallyDistribute>
-            )}
-            {/* Absolute mode: the green line is "now", drawn only while now is
-                inside the window. Duration mode keeps the completed/failed
-                end-of-span line. */}
-            {isAbsolute
-              ? showNow && (
-                  <Timeline.Point
-                    ms={nowOffsetMs as number}
-                    className="h-full border-r border-emerald-500/90"
-                  />
-                )
-              : rootSpanStatus !== "inprogress" && (
-                  <Timeline.Point
-                    ms={duration}
-                    className={cn(
-                      "h-full border-r",
-                      rootSpanStatus === "completed"
-                        ? "border-emerald-500/90"
-                        : "border-destructive/30"
-                    )}
-                  />
-                )}
+            {gridLines}
             <TreeView
               scrollRef={timelineScrollRef}
               virtualizer={virtualizer}
@@ -915,13 +1027,30 @@ const GanttTimeline = ({
                       toggleNodeSelection(node.id);
                     }}
                   >
+                    {rowOffsets && (
+                      <RowShading
+                        offsets={offsetsFor(node.id)}
+                        duration={duration}
+                        selected={state.selected}
+                      >
+                        {gridLines}
+                      </RowShading>
+                    )}
                     {node.data.items ? (
                       <LaneItems
                         items={node.data.items}
                         selectedItemId={selectedItemId}
                         onItemSelected={onItemSelected}
-                        filterText={filterText}
-                        nonWorkingOffsets={nonWorkingOffsets}
+                        litBars={litBars}
+                        nonWorkingOffsets={offsetsFor(node.id)}
+                        labelMinMs={
+                          // ~40px at the current zoom: narrower bars
+                          // truncate their label to "J." or ","
+                          (LABEL_MIN_PX /
+                            lerp(minTimelineWidth, maxTimelineWidth, scale)) *
+                          duration *
+                          AXIS_PADDING
+                        }
                       />
                     ) : node.data.level === "TRACE" ? (
                       <>
@@ -939,26 +1068,23 @@ const GanttTimeline = ({
                             startMs={node.data.offset}
                             durationMs={node.data.duration}
                             node={node}
-                            segments={
-                              nonWorkingOffsets
-                                ? splitWorkingSegments(
-                                    node.data.offset,
-                                    node.data.duration,
-                                    nonWorkingOffsets
-                                  )
-                                : undefined
-                            }
+                            segments={splitOrUndefined(
+                              node.data.offset,
+                              node.data.duration,
+                              offsetsFor(node.id)
+                            )}
                           />
                         )}
                         {/* Red conflict windows painted over the neutral rollup
                             base — split on working time so they line up with the
                             chopped bar. */}
                         {node.data.conflictSegments?.flatMap((segment, si) => {
-                          const pieces = nonWorkingOffsets
+                          const rowNonWorking = offsetsFor(node.id);
+                          const pieces = rowNonWorking
                             ? splitWorkingSegments(
                                 segment.offset,
                                 segment.duration,
-                                nonWorkingOffsets
+                                rowNonWorking
                               )
                             : [
                                 {
@@ -1312,109 +1438,239 @@ function LaneItems({
   items,
   selectedItemId,
   onItemSelected,
-  filterText,
-  nonWorkingOffsets
+  litBars,
+  nonWorkingOffsets,
+  labelMinMs = 0
 }: {
   items: GanttEvent[];
   selectedItemId: string | undefined;
   onItemSelected: (id: string) => void;
-  filterText: string;
+  litBars: Set<string> | null;
+  /** A bar piece shorter than this is too narrow to label. */
+  labelMinMs?: number;
   nonWorkingOffsets: { start: number; end: number }[] | null;
 }) {
+  const { t } = useLingui();
   const visible = items.filter((item) => item.data.duration > 0);
-  const { tracks, trackCount } = assignTracks(visible.map((item) => item.data));
-  const showLabels = trackCount <= 2;
-  // A search that matches some bar dims the rest; one that only matches the
-  // row's own name leaves every bar lit.
-  const dimUnmatched =
-    filterText !== "" &&
-    visible.some((item) => matchesFilterText(item, filterText));
+  // Work that could not be placed holds no time, so it never shares tracks
+  // with placed work: it gets its own strip at the bottom of the row, where
+  // markers that overlap merge into one.
+  const placed = visible.filter((item) => !item.data.isUnschedulable);
+  const unplaced = visible.filter((item) => item.data.isUnschedulable);
+  const { tracks, trackCount } = assignTracks(placed.map((item) => item.data));
+  const groups = groupOverlaps(unplaced.map((item) => item.data));
+  const stripShare = unplaced.length === 0 ? 0 : placed.length === 0 ? 1 : 0.45;
+  // Two bands in one row leave no room for padding around the text.
+  const dense = stripShare > 0 && stripShare < 1;
+  const placedShare = 1 - stripShare;
+  const isDimmed = (item: GanttEvent) =>
+    litBars !== null && !litBars.has(item.id);
 
   return (
     <div className="pointer-events-none absolute inset-x-0 inset-y-0.5">
-      {visible.map((item, index) => {
-        const { offset, duration } = item.data;
-        const pieces = nonWorkingOffsets
-          ? splitWorkingSegments(offset, duration, nonWorkingOffsets)
-          : [{ startMs: offset, durationMs: duration }];
-        let labelIndex = 0;
-        for (let i = 1; i < pieces.length; i++) {
-          if (
-            (pieces[i]?.durationMs ?? 0) > (pieces[labelIndex]?.durationMs ?? 0)
-          ) {
-            labelIndex = i;
+      {placed.map((item, index) => (
+        <LaneBar
+          key={item.id}
+          item={item}
+          top={((tracks[index] ?? 0) / trackCount) * placedShare}
+          height={placedShare / trackCount}
+          showLabel={trackCount <= 2}
+          dense={dense}
+          textClassName={
+            trackCount === 1 && placedShare === 1 ? "text-xs" : "text-xxs"
           }
+          isSelected={item.id === selectedItemId}
+          isDimmed={isDimmed(item)}
+          onSelect={() => onItemSelected(item.id)}
+          nonWorkingOffsets={nonWorkingOffsets}
+          labelMinMs={labelMinMs}
+        />
+      ))}
+      {groups.map((group) => {
+        const members = group.indices.flatMap((index) => {
+          const item = unplaced[index];
+          return item ? [item] : [];
+        });
+        const [first] = members;
+        if (!first) return null;
+        if (members.length === 1) {
+          return (
+            <LaneBar
+              key={first.id}
+              item={first}
+              top={placedShare}
+              height={stripShare}
+              showLabel
+              dense={dense}
+              textClassName="text-xxs"
+              isSelected={first.id === selectedItemId}
+              isDimmed={isDimmed(first)}
+              onSelect={() => onItemSelected(first.id)}
+              nonWorkingOffsets={nonWorkingOffsets}
+              labelMinMs={labelMinMs}
+            />
+          );
         }
-        const isSelected = item.id === selectedItemId;
-        const isDimmed = dimUnmatched && !matchesFilterText(item, filterText);
-        const title = `${item.data.message} · ${formatDurationMilliseconds(
-          duration,
-          { style: "short", maxDecimalPoints: 1 }
-        )}`;
-        const track = tracks[index] ?? 0;
-
+        const selected =
+          members.find((member) => member.id === selectedItemId) ?? null;
+        const count = members.length;
+        const names = members.map((member) => member.data.message).join(", ");
+        const label = t`${plural(count, {
+          one: `# can't be scheduled: ${names}`,
+          other: `# can't be scheduled: ${names}`
+        })}`;
         return (
           <div
-            key={item.id}
+            key={first.id}
             className="absolute inset-x-0"
             style={{
-              top: `${(track / trackCount) * 100}%`,
-              height: `${100 / trackCount}%`
+              top: `${placedShare * 100}%`,
+              height: `${stripShare * 100}%`
             }}
           >
-            {pieces.map((piece, i) => (
-              <Timeline.Span
-                key={`${piece.startMs}:${piece.durationMs}`}
-                startMs={piece.startMs}
-                durationMs={piece.durationMs}
-                className="h-full px-px py-px"
+            <Timeline.Span
+              startMs={group.offset}
+              durationMs={group.duration}
+              className={cn("h-full px-px", !dense && "py-px")}
+            >
+              <button
+                type="button"
+                title={t`${label} — click to open the next`}
+                aria-label={label}
+                aria-pressed={selected !== null}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Each click opens the next of the merged operations.
+                  const next = selected
+                    ? members[(members.indexOf(selected) + 1) % members.length]
+                    : first;
+                  onItemSelected((next ?? first).id);
+                }}
+                className={cn(
+                  "pointer-events-auto relative flex h-full w-full min-w-[2px] items-center gap-1 overflow-hidden rounded-sm border px-1.5 text-left text-xxs font-medium leading-none",
+                  laneItemClassName(first.data),
+                  selected &&
+                    "ring-2 ring-foreground ring-offset-1 ring-offset-background",
+                  members.every(isDimmed) && "opacity-30"
+                )}
               >
-                <button
-                  type="button"
-                  title={title}
-                  aria-label={title}
-                  aria-pressed={isSelected}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onItemSelected(item.id);
-                  }}
-                  className={cn(
-                    "pointer-events-auto relative flex h-full w-full min-w-[2px] items-center gap-1 overflow-hidden rounded-sm border px-1.5 text-left font-medium transition-[opacity,border-color]",
-                    trackCount === 1 ? "text-xs" : "text-xxs",
-                    laneItemClassName(item.data),
-                    isSelected &&
-                      "ring-2 ring-foreground ring-offset-1 ring-offset-background",
-                    isDimmed && "opacity-30"
-                  )}
-                >
-                  {(item.data.isPartial || item.data.isEstimated) && (
-                    <span
-                      className={cn(
-                        "absolute inset-0 opacity-15",
-                        item.data.isPartial && "animate-tile-scroll"
-                      )}
-                      style={{
-                        backgroundImage: `url(${tileBgPath})`,
-                        backgroundSize: "8px 8px"
-                      }}
-                    />
-                  )}
-                  {showLabels && i === labelIndex && (
-                    <>
-                      {item.data.isUnschedulable && (
-                        <LuBan className="relative size-3 shrink-0" />
-                      )}
-                      <span className="relative truncate">
-                        {item.data.message}
-                      </span>
-                    </>
-                  )}
-                </button>
-              </Timeline.Span>
-            ))}
+                <LuBan className="relative size-3 shrink-0" />
+                <span className="relative truncate">
+                  <Plural
+                    value={members.length}
+                    one="# can't be scheduled"
+                    other="# can't be scheduled"
+                  />
+                </span>
+              </button>
+            </Timeline.Span>
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/** One inline bar, split on non-working time, labelled on its widest piece. */
+function LaneBar({
+  item,
+  top,
+  height,
+  showLabel,
+  dense = false,
+  textClassName,
+  isSelected,
+  isDimmed,
+  onSelect,
+  nonWorkingOffsets,
+  labelMinMs = 0
+}: {
+  item: GanttEvent;
+  /** Fraction of the row above the bar, 0–1. */
+  top: number;
+  /** Fraction of the row the bar takes, 0–1. */
+  height: number;
+  showLabel: boolean;
+  /** No room for padding: the row also holds a placeholder strip. */
+  dense?: boolean;
+  textClassName: string;
+  isSelected: boolean;
+  isDimmed: boolean;
+  onSelect: () => void;
+  nonWorkingOffsets: { start: number; end: number }[] | null;
+  labelMinMs?: number;
+}) {
+  const { offset, duration } = item.data;
+  const pieces = nonWorkingOffsets
+    ? splitWorkingSegments(offset, duration, nonWorkingOffsets)
+    : [{ startMs: offset, durationMs: duration }];
+  let labelIndex = 0;
+  for (let i = 1; i < pieces.length; i++) {
+    if ((pieces[i]?.durationMs ?? 0) > (pieces[labelIndex]?.durationMs ?? 0)) {
+      labelIndex = i;
+    }
+  }
+  const title = `${item.data.message} · ${formatDurationMilliseconds(duration, {
+    style: "short",
+    maxDecimalPoints: 1
+  })}`;
+
+  return (
+    <div
+      className="absolute inset-x-0"
+      style={{ top: `${top * 100}%`, height: `${height * 100}%` }}
+    >
+      {pieces.map((piece, i) => (
+        <Timeline.Span
+          key={`${piece.startMs}:${piece.durationMs}`}
+          startMs={piece.startMs}
+          durationMs={piece.durationMs}
+          className={cn("h-full px-px", !dense && "py-px")}
+        >
+          <button
+            type="button"
+            title={title}
+            aria-label={title}
+            aria-pressed={isSelected}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
+            className={cn(
+              "pointer-events-auto relative flex h-full w-full min-w-[2px] items-center gap-1 overflow-hidden rounded-sm border px-1.5 text-left font-medium transition-[opacity,border-color]",
+              textClassName,
+              dense && "leading-none",
+              laneItemClassName(item.data),
+              isSelected &&
+                "ring-2 ring-foreground ring-offset-1 ring-offset-background",
+              isDimmed && "opacity-30"
+            )}
+          >
+            {(item.data.isPartial || item.data.isEstimated) && (
+              <span
+                className={cn(
+                  "absolute inset-0 opacity-15",
+                  item.data.isPartial && "animate-tile-scroll"
+                )}
+                style={{
+                  backgroundImage: `url(${tileBgPath})`,
+                  backgroundSize: "8px 8px"
+                }}
+              />
+            )}
+            {showLabel &&
+              i === labelIndex &&
+              piece.durationMs >= labelMinMs && (
+                <>
+                  {item.data.isUnschedulable && (
+                    <LuBan className="relative size-3 shrink-0" />
+                  )}
+                  <span className="relative truncate">{item.data.message}</span>
+                </>
+              )}
+          </button>
+        </Timeline.Span>
+      ))}
     </div>
   );
 }

@@ -27,7 +27,7 @@ import { formatDate } from "@carbon/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { parseDate } from "@internationalized/date";
-import { useLingui } from "@lingui/react/macro";
+import { Plural, useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import { memo } from "react";
 import {
@@ -420,7 +420,11 @@ const OperationCardBody = memo(function OperationCardBody({
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="right">
-                  {t`Behind target by ${daysBehindTarget} day(s)`}
+                  <Plural
+                    value={daysBehindTarget}
+                    one="Behind target by # day"
+                    other="Behind target by # days"
+                  />
                 </TooltipContent>
               </Tooltip>
             ) : (

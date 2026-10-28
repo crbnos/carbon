@@ -113,6 +113,9 @@ msgstr "Предыдущее выполнение не завершилось. �
 msgid "About"
 msgstr "О системе"
 
+msgid "About this field"
+msgstr "О данном поле"
+
 msgid "Accept"
 msgstr "Принять"
 
@@ -167,6 +170,9 @@ msgstr "Добавить образец"
 
 msgid "Add Spare Part"
 msgstr "Добавить запасную часть"
+
+msgid "Add your signature"
+msgstr ""
 
 msgid "Added"
 msgstr "Добавлено"
@@ -226,6 +232,9 @@ msgstr "Вы уверены, что хотите покинуть эту стр�
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "Вы уверены, что хотите отметить эту операцию как выполненную? Это завершит все активные производственные события для этой операции."
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "Шаги сборки"
 
@@ -253,18 +262,8 @@ msgstr "доступно"
 msgid "Available"
 msgstr "Доступно"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "Вариант аватара {0}"
-
 msgid "Avatar style"
 msgstr "Стиль аватара"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "Аватары из <0>{0}</0> от {1}, лицензировано под <1>{2}</1>."
 
 msgid "Back"
 msgstr "Назад"
@@ -286,6 +285,9 @@ msgstr "Детали серии"
 
 msgid "Batch is not available"
 msgstr "Партия недоступна"
+
+msgid "Batch notes"
+msgstr "Примечания к серии"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -315,6 +317,11 @@ msgstr "Вид доски"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Но не волнуйтесь. Вы можете использовать функцию восстановления пароля, чтобы запросить новую волшебную ссылку."
+
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Выполняя вход, вы соглашаетесь с <0>Условиями использования</0> и <1>Политикой конфиденциальности.</1>"
@@ -355,6 +362,9 @@ msgstr "Проверьте вашу электронную почту"
 msgid "Choose a job"
 msgstr "Выбрать производственный заказ"
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose an option"
 msgstr "Выберите вариант"
 
@@ -378,6 +388,9 @@ msgstr "Очистить поиск"
 
 msgid "Clear station default"
 msgstr "Очистить станцию по умолчанию"
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Clock In"
 msgstr "Начало работы"
@@ -451,6 +464,9 @@ msgstr "Завершить партию"
 msgid "Complete passed"
 msgstr "Завершить пройденные"
 
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
+
 msgid "Completed"
 msgstr "Завершено"
 
@@ -500,6 +516,9 @@ msgstr "Создать доработку"
 
 msgid "Current work"
 msgstr "Текущая работа"
+
+msgid "Custom color"
+msgstr ""
 
 msgid "Customer"
 msgstr "Покупатель"
@@ -592,6 +611,15 @@ msgstr "Перетащите для изменения размера рисун
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "Перетаскивание {0} отменено."
+
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Due"
 msgstr "Срок"
@@ -698,6 +726,13 @@ msgstr "Истекает <0/>"
 msgid "Expiring first"
 msgstr "Истекает первым"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Failed"
 msgstr "Не пройдено"
 
@@ -722,6 +757,9 @@ msgstr "Не удалось получить единицы хранения"
 msgid "Failed to get options"
 msgstr "Не удалось получить параметры"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Не удалось записать средство измерения"
 
@@ -744,6 +782,9 @@ msgstr "Не удалось загрузить файл: {0}"
 
 msgid "Failed to upload image"
 msgstr "Не удалось загрузить изображение"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "File size exceeds 10MB limit"
 msgstr "Размер файла превышает ограничение в 10 МБ"
@@ -799,6 +840,12 @@ msgstr "Вернуться к операции"
 
 msgid "Go to onboarding"
 msgstr "Перейти к первоначальной настройке"
+
+msgid "Halloween surprise"
+msgstr "Сюрприз на Хэллоуин"
+
+msgid "Happy Halloween"
+msgstr "Счастливого Хэллоуина"
 
 msgid "Heading {level}"
 msgstr "Заголовок {level}"
@@ -977,6 +1024,9 @@ msgstr "Загружена: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Загрузка данных номенклатуры..."
+
+msgid "Loading. There's no need to scan again."
+msgstr "Загрузка. Повторно сканировать не нужно."
 
 msgid "Loading..."
 msgstr "Загрузка..."
@@ -1187,6 +1237,9 @@ msgstr "На сегодня техобслуживание не запланир
 msgid "No matches. Type to create one."
 msgstr "Совпадений не найдено. Введите текст для создания."
 
+msgid "No matching time"
+msgstr "Нет подходящего времени"
+
 msgid "No materials"
 msgstr "Нет материалов"
 
@@ -1238,6 +1291,9 @@ msgstr "Образцы не требуются."
 msgid "No scheduled time"
 msgstr "Нет запланированного времени"
 
+msgid "No serial number"
+msgstr "Нет серийного номера"
+
 msgid "No serial numbers"
 msgstr "Нет серийных номеров"
 
@@ -1273,6 +1329,9 @@ msgstr "Нет"
 
 msgid "Notes"
 msgstr "Примечания"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "На этой странице ничто не использует этот штрихкод"
 
 msgid "Nothing running"
 msgstr "Ничего не работает"
@@ -1431,8 +1490,8 @@ msgstr "Выбрать"
 msgid "Pick {0}"
 msgstr "Отобрать {0}"
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "Выберите стиль и аватар или перемешайте для новых."
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "Выбрать отслеживаемый товар"
@@ -1482,6 +1541,12 @@ msgstr "Пожалуйста, выберите номенклатуру"
 msgid "PM schedule lapsed"
 msgstr "График обслуживания истек"
 
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
+
+msgid "Poke the spider… if you dare"
+msgstr "Ткните паука… если осмелитесь"
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Нажмите ? на любой странице, чтобы открыть этот список. Горячие клавиши отключены при вводе в поле."
 
@@ -1502,6 +1567,12 @@ msgstr "Печать"
 
 msgid "Print batch list"
 msgstr "Печать списка серий"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Настройки принтера"
@@ -1616,6 +1687,9 @@ msgstr "Убрать деталь"
 msgid "Remove two-factor authentication"
 msgstr "Убрать двухфакторную аутентификацию"
 
+msgid "Removed signature"
+msgstr ""
+
 msgid "Rename"
 msgstr "Переименовать"
 
@@ -1627,9 +1701,6 @@ msgstr "Требуется 6-значный код из приложения а�
 
 msgid "Required"
 msgstr "Требуется"
-
-msgid "Reset"
-msgstr "Сбросить"
 
 msgid "Result"
 msgstr "Результат"
@@ -1661,8 +1732,14 @@ msgstr "То же самое для всех производственных з
 msgid "Save"
 msgstr "Сохранить"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Сохранить редактируемую форму"
+
+msgid "Saved signature"
+msgstr ""
 
 msgid "Scan"
 msgstr "Сканировать"
@@ -1684,6 +1761,12 @@ msgstr "Сканировать или найти серийный номер..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Сканировать или выбрать отслеживаемый объект из этой партии, чтобы добавить его как столбец образца, затем записать его результат в таблицу."
+
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "Отсканируйте или выберите единицу, затем снова отсканируйте карточку канбана"
+
+msgid "Scan received"
+msgstr "Скан получен"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Отсканируйте этот QR код с помощью приложения аутентификации (например, Google Authenticator или 1Password), затем введите 6-значный код, который оно покажет."
@@ -1859,6 +1942,9 @@ msgstr "Показать горячие клавиши"
 msgid "Shuffle"
 msgstr "Перемешать"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Войдите с помощью биометрии вместо волшебной ссылки. Ключи доступа защищены с помощью Face ID, Touch ID или PIN вашего устройства."
 
@@ -1884,6 +1970,12 @@ msgid "Sign out instead"
 msgstr "Вместо этого выйдите"
 
 msgid "Sign-in code"
+msgstr ""
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
 msgstr ""
 
 msgid "Signed in as {stationName}"
@@ -1948,6 +2040,9 @@ msgstr "Шаги не заполнены"
 msgid "Storage Unit"
 msgstr "Единица хранения"
 
+msgid "Style"
+msgstr ""
+
 msgid "Style default"
 msgstr "Стиль по умолчанию"
 
@@ -1995,6 +2090,10 @@ msgstr "Цвет акцента, используемый во всём Carbon."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Количество готовой продукции по этой операции меньше требуемого количества {targetQuantity}."
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "Производственные заказы и детали, которые составляют этот запуск."
@@ -2045,14 +2144,17 @@ msgstr "Эта деталь была произведена на заказ. С�
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Эта часть будет списана со склада. Её требование остается открытым, чтобы вы могли выдать замену."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Эта единица будет окончательно списана, и будет создан новый серийный номер замены."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Эта единица будет окончательно списана, и будет создана единица на замену."
 
 msgid "Thumbnail"
 msgstr "Миниатюра"
 
 msgid "Tick the jobs this was done for."
 msgstr "Отметьте производственные заказы, для которых это было сделано."
+
+msgid "Time"
+msgstr "Время"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Время и себестоимость распределяются между производственными заказами пропорционально количеству."
@@ -2144,6 +2246,9 @@ msgstr "Введите сообщение..."
 msgid "Unable to unlock"
 msgstr "Не удалось разблокировать"
 
+msgid "Undo"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "Невыданные серийные/партионные материалы"
 
@@ -2200,6 +2305,9 @@ msgstr "Загрузить"
 
 msgid "Upload completed but no file path returned"
 msgstr "Загрузка завершена, но путь файла не возвращен"
+
+msgid "Uploaded signature"
+msgstr ""
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -2263,8 +2371,20 @@ msgstr "Напишите примечание…"
 msgid "Yes"
 msgstr "Да"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Вы находились на работе {hoursElapsed} часов. Вы забыли записать окончание работы?"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Ваша учетная запись еще не входит ни в одну Организацию. Завершите подготовку к работе в Carbon ERP, чтобы продолжить."
@@ -2277,6 +2397,9 @@ msgstr "Не удалось загрузить ваш профиль."
 
 msgid "Your session was locked after inactivity."
 msgstr "Ваш сеанс был заблокирован после неактивности."
+
+msgid "Your signature"
+msgstr ""
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

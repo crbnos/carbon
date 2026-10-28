@@ -13,7 +13,7 @@ Single source of truth for all environment variable access. Validates at module 
 
 ## Ask First
 
-- Adding a `required: "error"` variable, or flipping `"warn"` to `"error"` — this changes boot requirements for every deployment. `src/deployments.test.ts` must pass for each of them first.
+- Adding a `required: "error"` variable, or flipping `"warn"` to `"error"` — this changes boot requirements for every deployment. the `deployments-set-required-env` check (`@carbon/checks`) must pass for each of them first.
 - Changing `getAppUrl()` / `getMESUrl()` resolution logic — affects cross-app links across all editions.
 
 ## Never
@@ -45,6 +45,12 @@ pnpm --filter @carbon/env test
 - **Logging:** `LOG_LEVEL` (optional, non-secret, browser-safe — consumed by `@carbon/logger`)
 - **Integrations:** Stripe, SMTP email, Slack, Xero, Jira, OnShape, QuickBooks keys (all optional)
 - **Web Push (`@carbon/env/push.server`, server-only — imports `node:crypto`):** `getVapidDetails()`, `isPushConfigured()`, `deriveVapidDetails(secret, appUrl)`. The VAPID pair is derived from `SESSION_SECRET` by HKDF, so there are no push env vars; keep it out of `src/index.ts`, which the browser imports.
+
+- **Feature flags (`@carbon/env/flags` + `@carbon/env/flags.server`):** spec `.ai/specs/2026-10-28-feature-flags.md`.
+  - `./flags` is browser-safe: the registry `FLAGS` (each flag's default and whether it goes to the browser), `flagDefault`, `BrowserFlagKey`. Add a flag there first; a key not in `FLAGS` is a type error. The default is the safe value: it is what an instance does with no flags source.
+  - `./flags.server`: `initFlags({ store, waitUntil, onWarning })` (called once in each app's `entry.server.tsx`), `flags.bool(key, { companyId, userId? })` (never throws, default from `FLAGS`), `evaluateBrowserFlags` (for the layout loaders), `parseHeaders`, and the `FlagsStore` interface that `@carbon/kv`'s `redisFlagsStore` implements (this package cannot import `@carbon/kv`).
+  - `CARBON_FLAGS_ENDPOINT` (`https:` polls through Redis, `http:` only on localhost; `data:` loads once; any other scheme is refused with a warning) and `CARBON_FLAGS_HEADERS` (OTEL headers format, secret).
+  - Read flags only through `flags.*`, `evaluateBrowserFlags` and `useFeatureFlags()` (`@carbon/react`), never with an OpenFeature client: the wrapper requires `companyId` and takes each default from `FLAGS`. Flags are booleans until one needs another type.
 
 ## Cross-References
 

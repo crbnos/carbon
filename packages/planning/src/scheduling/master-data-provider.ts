@@ -26,6 +26,8 @@ import {
   toIsoDate
 } from "./date-utils.ts";
 import {
+  closeHolidays,
+  downtimeOutages,
   type LadderShiftRow,
   resolveLocationWindows,
   resolveWorkCenterWindows,
@@ -145,7 +147,11 @@ export type EmployeeShiftRow = {
 
 // Row types live in people-utils.ts (pure module) so its tests don't pull the
 // DB dependency graph
-import type { PeopleAbsenceRow, PeopleAssignmentRow } from "./people-utils.ts";
+import {
+  type PeopleAbsenceRow,
+  type PeopleAssignmentRow,
+  subtractDates
+} from "./people-utils.ts";
 
 export type { PeopleAbsenceRow, PeopleAssignmentRow };
 
@@ -232,6 +238,12 @@ export interface MasterDataProvider {
     rangeEnd: number,
     timeZone: string
   ): Promise<PeopleAbsenceRow[]>;
+  /**
+   * The company's holiday dates ("YYYY-MM-DD") around [rangeStart, rangeEnd].
+   * A holiday closes every shift-based work center and is a day off for
+   * every person.
+   */
+  getHolidayDates(rangeStart: number, rangeEnd: number): Promise<Set<string>>;
 }
 
 function toJob<
@@ -1238,12 +1250,16 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       this.expandShiftDays(r).map((d) => ({ ...d, locationId: r.locationId }))
     );
 
-    const windowsMap = resolveWorkCenterWindows({
+    const windowsMap = closeHolidays({
+      windowsByWorkCenter: resolveWorkCenterWindows({
+        workCenters,
+        workCenterShiftRows,
+        locationShiftRows,
+        rangeStart,
+        rangeEnd
+      }),
       workCenters,
-      workCenterShiftRows,
-      locationShiftRows,
-      rangeStart,
-      rangeEnd
+      holidayDates: await this.getHolidayDates(rangeStart, rangeEnd)
     });
 
     // Machine downtime: subtract open maintenance dispatches flagged
@@ -1303,38 +1319,12 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         dispatches.map((d) => d.id)
       )
       .execute();
-    const joinByDispatch = new Map<string, string[]>();
-    for (const j of joinRows) {
-      const list = joinByDispatch.get(j.maintenanceDispatchId) ?? [];
-      list.push(j.workCenterId);
-      joinByDispatch.set(j.maintenanceDispatchId, list);
-    }
-
-    const wcIdSet = new Set(workCenterIds);
-    const toMs = (v: unknown) => toInstantMs(v as unknown as Date | string);
-    for (const d of dispatches) {
-      const start = toMs(
-        d.actualStartTime ?? d.plannedStartTime ?? d.createdAt
-      );
-      const end = d.actualEndTime
-        ? toMs(d.actualEndTime)
-        : d.plannedEndTime
-          ? toMs(d.plannedEndTime)
-          : rangeEnd; // no end estimate = down until further notice
-      const affected = new Set<string>();
-      if (d.workCenterId && wcIdSet.has(d.workCenterId)) {
-        affected.add(d.workCenterId);
-      }
-      for (const wcId of joinByDispatch.get(d.id) ?? []) {
-        if (wcIdSet.has(wcId)) affected.add(wcId);
-      }
-      for (const wcId of affected) {
-        const list = outagesByWc.get(wcId) ?? [];
-        list.push({ start, end });
-        outagesByWc.set(wcId, list);
-      }
-    }
-    return outagesByWc;
+    return downtimeOutages({
+      dispatches,
+      dispatchWorkCenters: joinRows,
+      workCenterIds,
+      rangeEnd
+    });
   }
 
   async getLocationCalendarWindows(
@@ -1386,12 +1376,17 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       timezone = loc?.timezone ?? "UTC";
     }
 
-    return resolveLocationWindows({
-      timezone: timezone ?? "UTC",
-      locationShiftRows,
-      rangeStart,
-      rangeEnd
-    });
+    // A holiday closes the plant for people with no shift of their own too.
+    return subtractDates(
+      resolveLocationWindows({
+        timezone: timezone ?? "UTC",
+        locationShiftRows,
+        rangeStart,
+        rangeEnd
+      }),
+      await this.getHolidayDates(rangeStart, rangeEnd),
+      timezone ?? "UTC"
+    );
   }
 
   async getPeopleAssignments(
@@ -1481,5 +1476,35 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
           ]
         : [];
     });
+  }
+
+  async getHolidayDates(
+    rangeStart: number,
+    rangeEnd: number
+  ): Promise<Set<string>> {
+    return this.cached(`holidays:${rangeStart}:${rangeEnd}`, () =>
+      this.loadHolidayDates(rangeStart, rangeEnd)
+    );
+  }
+
+  private async loadHolidayDates(
+    rangeStart: number,
+    rangeEnd: number
+  ): Promise<Set<string>> {
+    // Holidays are company-wide calendar days; pad one day each side so every
+    // timezone's local day inside the range is covered.
+    const rows = await this.db
+      .selectFrom("holiday")
+      .select("date")
+      .where("companyId", "=", this.companyId)
+      .where("date", ">=", peopleDateLowerBound(rangeStart, "UTC"))
+      .where("date", "<=", peopleDateUpperBound(rangeEnd, "UTC"))
+      .execute();
+    return new Set(
+      rows.flatMap((r) => {
+        const date = toIsoDate(r.date);
+        return date ? [date] : [];
+      })
+    );
   }
 }

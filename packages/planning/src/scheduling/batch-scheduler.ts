@@ -11,7 +11,10 @@ import { nextWorkingInstant } from "./calendar-utils.ts";
 import { composeBatchNoEstimatesConflict } from "./conflict-messages.ts";
 import { msToInstantIso, toInstantMs } from "./date-utils.ts";
 import { calculateDurationBreakdown } from "./duration-calculator.ts";
-import type { KyselyMasterDataProvider } from "./master-data-provider.ts";
+import type {
+  KyselyMasterDataProvider,
+  LiveReservation
+} from "./master-data-provider.ts";
 import { allocateOperation, isConflict } from "./slot-allocator.ts";
 
 /**
@@ -324,6 +327,38 @@ export function planBatchPlacements(args: {
 }
 
 /**
+ * The work-center bookings a released batch places around. The pre-pass runs
+ * before the per-job passes, so the stored bookings of jobs this run re-plans
+ * are about to be replaced and must not block the batch. This location's own
+ * batch rows are rewritten here; other batches' rows always block.
+ */
+export function batchBlockingReservations(args: {
+  reservations: LiveReservation[];
+  batchIds: string[];
+  rerunJobIds: string[];
+}): Map<string, WorkCenterReservationInterval[]> {
+  const batchIds = new Set(args.batchIds);
+  const rerunJobIds = new Set(args.rerunJobIds);
+  const byWorkCenter = new Map<string, WorkCenterReservationInterval[]>();
+  for (const r of args.reservations) {
+    if (r.resourceKind !== "WorkCenter") continue;
+    if (r.jobOperationBatchId) {
+      if (batchIds.has(r.jobOperationBatchId)) continue;
+    } else if (rerunJobIds.has(r.jobId)) {
+      continue;
+    }
+    const list = byWorkCenter.get(r.resourceId) ?? [];
+    list.push({
+      startAt: r.startAt,
+      endAt: r.endAt,
+      readableJobId: r.readableJobId
+    });
+    byWorkCenter.set(r.resourceId, list);
+  }
+  return byWorkCenter;
+}
+
+/**
  * I/O wrapper: load Released batches + members + predecessors + availability,
  * run the pure core, and (when `persist`) rewrite the batch-tagged
  * `capacityReservation` rows in one transaction.
@@ -573,25 +608,11 @@ export async function placeReleasedBatches(args: {
       .executeTakeFirst()
   ]);
 
-  // Existing reservations per work center, MINUS this location's own batch
-  // rows (they are being rewritten below and must not block themselves).
-  const reservationsByWorkCenter = new Map<
-    string,
-    WorkCenterReservationInterval[]
-  >();
-  for (const r of liveReservations) {
-    if (r.resourceKind !== "WorkCenter") continue;
-    if (r.jobOperationBatchId && batchIds.includes(r.jobOperationBatchId)) {
-      continue;
-    }
-    const list = reservationsByWorkCenter.get(r.resourceId) ?? [];
-    list.push({
-      startAt: r.startAt,
-      endAt: r.endAt,
-      readableJobId: r.readableJobId
-    });
-    reservationsByWorkCenter.set(r.resourceId, list);
-  }
+  const reservationsByWorkCenter = batchBlockingReservations({
+    reservations: liveReservations,
+    batchIds,
+    rerunJobIds: orderedJobIds
+  });
 
   const { placements, reservations, selectedWorkCenters } = planBatchPlacements(
     {

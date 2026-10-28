@@ -22,6 +22,7 @@ import {
   Hyperlink,
   Table
 } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { useUrlParams } from "~/hooks";
 import {
   inspectionSourceDocuments,
@@ -35,6 +36,7 @@ import { getInspectionStatusVariant } from "./InspectionStatus";
 type InspectionsTableProps = {
   data: Inspection[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 function computeProgress(row: Inspection): {
@@ -49,7 +51,8 @@ function computeProgress(row: Inspection): {
   return { inspected, total: (row as any).sampleSize ?? 0 };
 }
 
-const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
+const InspectionsTable = memo((props: InspectionsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const [items] = useItems();
@@ -202,6 +205,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
   return (
     <Table<Inspection>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count ?? 0}
       title={t`Inspections`}

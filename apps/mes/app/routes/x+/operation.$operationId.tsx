@@ -13,6 +13,7 @@ import { useLoaderData, useParams } from "react-router";
 import { JobOperation } from "~/components/JobOperation";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
+  getAbilityShortfall,
   getBatchMaterialTotals,
   getBatchWorkInstructions,
   getJobByOperationId,
@@ -33,6 +34,7 @@ import {
   getThumbnailPathByItemId,
   getTrackedEntitiesByMakeMethodId,
   getWorkCenter,
+  isFirstOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
@@ -244,7 +246,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobMakeMethod,
     kanban,
     bomIdMap,
-    companySettings
+    companySettings,
+    abilityWarning
   ] = await Promise.all([
     getThumbnailPathByItemId(serviceRole, operation.data?.[0].itemId),
     getTrackedEntitiesByMakeMethodId(
@@ -255,7 +258,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getJobMakeMethod(serviceRole, operation.data?.[0].jobMakeMethodId),
     getKanbanByJobId(serviceRole, job.data.id),
     getJobMethodBomIdMap(serviceRole, job.data.id!),
-    getCompanySettings(serviceRole, companyId)
+    getCompanySettings(serviceRole, companyId),
+    getAbilityShortfall(serviceRole, {
+      operationId,
+      employeeId: userId,
+      companyId
+    })
   ]);
 
   const inventoryShelfLife = (companySettings.data?.inventoryShelfLife ??
@@ -271,26 +279,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   //    (auto-select here on arrival, and in the client after each completion);
   //  - later operations: every unit already has a label → the operator
   //    scans/selects each unit (no auto-select, here or in the client).
-  // An operation is "first" when nothing precedes it in THIS make method's
-  // routing — i.e. it has no jobOperationDependency whose predecessor lives in
-  // the same jobMakeMethod. Dependencies also model subassembly ordering (a
-  // parent-assembly op waits on its child subassembly's ops), and those cross
-  // make-method dependencies must NOT count: the parent serial still has no
-  // printed label just because a subassembly finished first. `order` is only a
-  // display/sort field and isn't a reliable precedence signal, so it's not used.
-  const priorDependency = await serviceRole
-    .from("jobOperationDependency")
-    .select(
-      "dependsOn:jobOperation!jobOperationDependency_dependsOnId_fk!inner(jobMakeMethodId)"
-    )
-    .eq("operationId", operationId)
-    .eq("dependsOn.jobMakeMethodId", op.jobMakeMethodId)
-    .limit(1)
-    .maybeSingle();
-  // Fail closed: a query error also returns null data, so treat an errored lookup
-  // as "not first" — later ops require scan/select, which is the safe default when
-  // we can't confirm the operation has no predecessor.
-  const isFirstOperation = !priorDependency.error && !priorDependency.data;
+  const isFirstOperation = await isFirstOperationOfMakeMethod(
+    serviceRole,
+    operationId,
+    op.jobMakeMethodId
+  );
 
   // On the first operation only, auto-select the first incomplete unit when none
   // is in the URL. Later operations leave it unset so the client presents the
@@ -364,6 +357,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId
     }),
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
+    abilityWarning,
     expiredEntityPolicy,
     autoSelectMaterialWithoutPickingList,
     procedure: getJobOperationProcedure(serviceRole, operation.data?.[0].id),
@@ -388,6 +382,7 @@ export default function OperationRoute() {
   if (!operationId) throw new Error("Operation ID is required");
 
   const {
+    abilityWarning,
     batch,
     batchMaterialTotals,
     batchWorkInstructions,
@@ -411,6 +406,7 @@ export default function OperationRoute() {
   return (
     <JobOperation
       key={`job-operation-${operationId}`}
+      abilityWarning={abilityWarning}
       batch={batch}
       batchMaterialTotals={batchMaterialTotals}
       batchWorkInstructions={batchWorkInstructions}

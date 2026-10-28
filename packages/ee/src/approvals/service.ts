@@ -6,7 +6,11 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
-import { getPurchaseOrderStatus, sanitize } from "@carbon/utils";
+import {
+  getPurchaseOrderStatus,
+  isOwnSignaturePath,
+  sanitize
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "../entitlements.server";
 import { companyHasFeature } from "../plan.server";
@@ -60,6 +64,34 @@ export async function approveRequest(
   const { documentType, documentId, companyId } = approvalRequest;
   const now = new Date().toISOString();
 
+  // The approver's signature on file now is the one the document prints from
+  // here on, whatever they change it to later.
+  const approver = await db
+    .selectFrom("user")
+    .select("signaturePath")
+    .where("id", "=", userId)
+    .executeTakeFirst();
+  const onFile = approver?.signaturePath;
+  const signaturePath = isOwnSignaturePath(userId, onFile) ? onFile : null;
+
+  if (documentType === "purchaseOrder" && !signaturePath) {
+    const settings = await db
+      .selectFrom("companySettings")
+      .select("requirePurchaseOrderApprovalSignature")
+      .where("id", "=", companyId)
+      .executeTakeFirst();
+    if (settings?.requirePurchaseOrderApprovalSignature) {
+      return {
+        error: {
+          code: "signature-required" as const,
+          message:
+            "Add your signature in Account → Profile before you approve purchase orders"
+        },
+        data: null
+      };
+    }
+  }
+
   try {
     const result = await db.transaction().execute(async (trx) => {
       // 1. Update approval request to "Approved"
@@ -70,6 +102,7 @@ export async function approveRequest(
           decisionBy: userId,
           decisionAt: now,
           decisionNotes: notes || null,
+          decisionSignaturePath: signaturePath,
           updatedBy: userId,
           updatedAt: now
         })
@@ -733,6 +766,63 @@ export async function getLatestApprovalRequestForDocument(
       documentDescription: viewData.data?.documentDescription ?? null
     },
     error: null
+  };
+}
+
+/**
+ * Who approved a document and when, for printing on it. Reads the latest
+ * request that was not cancelled, so a later Pending or Rejected request
+ * clears an earlier approval. Takes the service role: approvalRequest has no
+ * RLS policies.
+ */
+export async function getDocumentApproval(
+  serviceRole: SupabaseClient<Database>,
+  documentType: (typeof approvalDocumentType)[number],
+  documentId: string,
+  companyId: string
+): Promise<{
+  approvedBy: string | null;
+  approvedById: string | null;
+  approvedAt: string;
+  /** The approver's signature file in the `signatures` bucket, if any. */
+  signaturePath: string | null;
+} | null> {
+  const latest = await serviceRole
+    .from("approvalRequest")
+    .select(
+      "status, decisionAt, decisionBy, decisionSignaturePath, decider:user!approvalRequest_decisionBy_fkey(fullName)"
+    )
+    .eq("documentType", documentType)
+    .eq("documentId", documentId)
+    .eq("companyId", companyId)
+    .neq("status", "Cancelled")
+    .order("requestedAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latest.error) {
+    logger.error("Failed to read the document approval", {
+      documentType,
+      documentId,
+      error: latest.error
+    });
+    return null;
+  }
+
+  if (latest.data?.status !== "Approved" || !latest.data.decisionAt) {
+    return null;
+  }
+
+  return {
+    approvedBy: latest.data.decider?.fullName ?? null,
+    approvedById: latest.data.decisionBy,
+    approvedAt: latest.data.decisionAt,
+    signaturePath: isOwnSignaturePath(
+      latest.data.decisionBy,
+      latest.data.decisionSignaturePath
+    )
+      ? latest.data.decisionSignaturePath
+      : null
   };
 }
 

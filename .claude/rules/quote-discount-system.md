@@ -72,7 +72,7 @@ Standalone rules, `id` default `id('pr')`, scoped to a company. Columns: `name`,
      `applyRulesOnTop=false` skips discounts and markups but still applies the
      configuration prices (`applyPriceRules(..., { configurationOnly: true })`).
    - Final price clamped to ≥ 0.
-   Each step is recorded as a `PriceTraceStep` (`{ step, source, amount, adjustment?, ruleId? }`).
+   Each step is recorded as a `PriceTraceStep` (`{ step, source, amount, adjustment?, ruleId?, overrideId? }`; an override step's `overrideId` is the override it applied, linked from `PriceTraceModal`).
    The trace is a **snapshot stored with the price** — pricing rules are edited
    in place, so re-running today's rules cannot explain yesterday's price.
    - `quoteLinePrice.priceTrace` (migration `20261001125824`), one per quantity

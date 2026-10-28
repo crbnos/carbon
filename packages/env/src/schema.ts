@@ -10,6 +10,7 @@ export type Group =
   | "email"
   | "stripe"
   | "slack"
+  | "google"
   | "xero"
   | "quickbooks"
   | "jira"
@@ -27,6 +28,7 @@ export const FEATURES = {
   email: "Email",
   stripe: "Stripe",
   slack: "Slack",
+  google: "Google",
   xero: "Xero",
   quickbooks: "QuickBooks",
   jira: "Jira",
@@ -49,7 +51,8 @@ export type EnvVar = {
   browser?: boolean;
   /**
    * "error" stops startup. "warn" is reported and becomes an error in the next
-   * release; do not flip one without updating deployments.test.ts.
+   * release; do not flip one until every deployment sets it (the
+   * `deployments-set-required-env` check in @carbon/checks).
    */
   required?: "error" | "warn";
   /** Lifts `required` when it returns true. */
@@ -137,7 +140,25 @@ export const schema = define({
   INTEGRATION_EARLY_ACCESS_USER_IDS: {
     group: "core",
     description:
-      "Comma-separated user ids that can install Coming soon integrations on Cloud"
+      "Comma-separated user ids that can install Coming soon integrations on Cloud. A fallback beside the integration-early-access feature flag until a flags source is live"
+  },
+  CARBON_FLAGS_ENDPOINT: {
+    group: "core",
+    description:
+      "Feature flags document (flagd JSON): an https: URL to poll (http: only on localhost), or a data: URL loaded once",
+    type: url
+  },
+  CARBON_COMMIT_SHA: {
+    group: "core",
+    description:
+      "Git commit of this build, sent to the flags source as X-Carbon-Commit. Vercel sets it; AWS deploys forward IMAGE_TAG",
+    aliases: ["VERCEL_GIT_COMMIT_SHA"]
+  },
+  CARBON_FLAGS_HEADERS: {
+    group: "core",
+    description:
+      "Request headers for CARBON_FLAGS_ENDPOINT, as k=v pairs separated by commas (the OTEL headers format)",
+    secret: true
   },
   DEFAULT_LANGUAGE: {
     group: "core",
@@ -221,6 +242,24 @@ export const schema = define({
     group: "core",
     description: "Google Places key for address autocomplete",
     browser: true
+  },
+  GOOGLE_CLIENT_ID: {
+    group: "google",
+    description: "Google OAuth app client id for workflow integrations",
+    browser: true,
+    needed: true
+  },
+  GOOGLE_CLIENT_SECRET: {
+    group: "google",
+    description: "Google OAuth app client secret for workflow integrations",
+    secret: true,
+    needed: true
+  },
+  GOOGLE_OAUTH_REDIRECT_URL: {
+    group: "google",
+    description: "Google OAuth callback URL for workflow integrations",
+    type: url,
+    needed: true
   },
   BINDERY_PRESS_API_KEY: {
     group: "core",
@@ -353,11 +392,6 @@ export const schema = define({
   SLACK_SIGNING_SECRET: {
     group: "slack",
     description: "Slack request signing secret",
-    secret: true
-  },
-  SLACK_STATE_SECRET: {
-    group: "slack",
-    description: "Secret that signs the Slack OAuth state",
     secret: true
   },
   SLACK_OAUTH_REDIRECT_URL: {

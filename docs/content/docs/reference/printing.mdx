@@ -12,14 +12,14 @@ This system is separate from generated PDFs such as invoices, purchase orders, q
 A print job renders in one of two formats, chosen by the printer it's routed to:
 
 - **ZPL** is the text command language thermal label printers speak. It's the default for part and storage labels. A ZPL label needs a media size with ZPL dimensions configured, or it can't render.
-- **PDF** is a real document, rendered by the same React-PDF engine that produces invoices and travelers. Kanban cards are **PDF only**, so a kanban card sent to a ZPL-only printer fails unless a template covers it.
+- **PDF** is a real document, rendered by the same React-PDF engine that produces invoices and travelers. A kanban card prints as ZPL on a label of 3" x 2" or larger; a smaller ZPL medium fails the job.
 
 Three document types exist (`packages/printing/src/registry.ts:10`):
 
 <FieldTable>
 <Field name="productLabel" type="zpl default">Labels for <Term id="tracked-entity">tracked entities</Term> (serial or batch numbers). Printed from a `Receipt`, `Shipment`, `Operation`, `Entity`, `Job`, `Split`, or `StockTransfer`.</Field>
 <Field name="storageUnitLabel" type="zpl default">Labels for shelves, bins, and storage locations. Printed from a `StorageUnit`.</Field>
-<Field name="kanbanCard" type="pdf only">Replenishment cards for <Term>kanban</Term> bins. Printed from a `Kanban`.</Field>
+<Field name="kanbanCard" type="zpl or pdf">Replenishment cards for <Term>kanban</Term> bins. Printed from a `Kanban`: one card per action, so a `Make` kanban prints its create, start and complete cards and any other kanban its create card. Each card at the printer's media size when it is 3" x 2" or larger; otherwise a PDF printer prints the company's kanban **Label Size**.</Field>
 </FieldTable>
 
 The source document is what maps to the doc types worth printing. Posting a shipment yields product labels; scanning a storage unit yields a storage label. `getDocumentTypesForSource` does that lookup (`registry.ts:49`).
@@ -53,6 +53,7 @@ A route is the printer; an **assignment** decides when it's used. Assignments li
 <Field name="shipping">Used when the source document is a `Shipment`.</Field>
 <Field name="receiving">Used when the source document is a `Receipt`.</Field>
 <Field name="inventory">Used for a `StockTransfer` or a `StorageUnit`.</Field>
+<Field name="kanban">Used when the source document is a `Kanban`: the kanban's create card.</Field>
 <Field name="workCenter">Per work center, for labels printed from a job operation. A work center with no assignment inherits the location default outright.</Field>
 </FieldTable>
 
@@ -95,6 +96,7 @@ The wired-in events:
 | Post a receipt | receiving | Product labels for received tracked entities. |
 | Post a shipment | shipping | Product labels, plus `Split` labels for batch splits. |
 | Split a stock-transfer line | inventory | A `Split` label, and an `Entity` reprint of the original batch. |
+| Create a kanban | kanban | The new kanban's cards (create, plus start and complete for a `Make` kanban). |
 | Complete the first operation on a job (MES) | work center | The job's product label. |
 
 To stop a station auto-printing, turn off Auto-print on that location's context row. To trigger a print by hand instead, use the **Print** button on the relevant screen, or send a source document to the manual print route (`/x/print`), which validates the request and enqueues the same kind of job.
@@ -146,7 +148,7 @@ An automatic print job for the same source document ID was created within 30 sec
 The job's document type has no built-in renderer and the route has no `templateId` (or no BinderyPress key is configured). Either assign a route whose format Carbon can render built-in, or set a BinderyPress `templateId` on the printer route.
 
 ### "Rendering failed: …"
-The job's content couldn't be generated. A common cause: a ZPL label routed to a media size that has no ZPL dimensions (built-in ZPL requires a ZPL-capable label size). Check the printer route's media size, or that a kanban card (PDF only) isn't being sent to a ZPL-only printer.
+The job's content couldn't be generated. A common cause: a ZPL label routed to a media size that has no ZPL dimensions (built-in ZPL requires a ZPL-capable label size). Check the printer route's media size, or that a kanban card isn't being sent to a ZPL printer whose media is smaller than 3" x 2".
 
 ### "Delivery timed out — content may have been printed. …"
 ProxyBox didn't answer in time. This is intentionally **not retried** because the label may already have printed — retrying would print a duplicate. Verify at the printer; if it didn't print, reprint from the jobs list.
