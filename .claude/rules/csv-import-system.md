@@ -27,8 +27,15 @@ a transaction. Imports are idempotent via the `externalIntegrationMapping` table
 
 - `ImportCSVModal.tsx` — modal orchestrating the wizard.
 - `UploadCSV.tsx` — drag-drop upload; PapaParse; uploads to the company bucket (see path above).
-- `FieldMappings.tsx` — column/enum mapping UI; `enumMatch.ts` does fuzzy enum matching;
-  `useCreateLookup.ts` creates missing lookup values inline.
+- `FieldMappings.tsx` — column/enum mapping UI; `useCreateLookup.ts` creates missing
+  lookup values inline.
+- `enumMatch.ts` — value auto-matching, tested by `enumMatch.test.ts`. A CSV value
+  matches an option's label or aliases (a supplier's name and readableId; an
+  employee's email only), then the option's value, case- and whitespace-insensitive.
+  The value tier is what matches a code: the unit-of-measure and country fetchers
+  return the code as the id (`{ name, id: code }`), so `EA` finds Each and `US` the
+  United States. A label or alias wins over a value it collides with. A value nothing
+  matches takes the Default row.
 - `columnMatch.ts` — column matching, tested by `columnMatch.test.ts`.
   `matchColumnsExactly` maps a field to the column whose header equals its label or
   its name (case- and whitespace-insensitive, label first); the wizard sets those as

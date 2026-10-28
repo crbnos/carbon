@@ -55,6 +55,37 @@ describe("buildOptionLookup / matchCsvValue", () => {
   });
 });
 
+describe("matching a lookup keyed by a code", () => {
+  // Unit of measure and country fetchers return the code as the id.
+  const units = buildOptionLookup(
+    [
+      { id: "EA", name: "Each" },
+      { id: "KG", name: "Kilogram" }
+    ].map((item) => toMatchableOption(item, false))
+  );
+
+  it("matches the code as well as the name, ignoring case", () => {
+    expect(matchCsvValue(units, "ea")).toBe("EA");
+    expect(matchCsvValue(units, "KG")).toBe("KG");
+    expect(matchCsvValue(units, "Each")).toBe("EA");
+  });
+
+  it("matches a country by its alpha-2 code", () => {
+    const countries = buildOptionLookup([
+      toMatchableOption({ id: "US", name: "United States" }, false)
+    ]);
+    expect(matchCsvValue(countries, "us")).toBe("US");
+  });
+
+  it("prefers an option whose name is the value over another option's code", () => {
+    const lookup = buildOptionLookup([
+      { label: "Box", value: "BX" },
+      { label: "BX", value: "BOX" }
+    ]);
+    expect(matchCsvValue(lookup, "bx")).toBe("BOX");
+  });
+});
+
 describe("toMatchableOption", () => {
   it("employees match by email only (name is not a match key)", () => {
     const option = toMatchableOption(
