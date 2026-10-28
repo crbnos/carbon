@@ -3471,9 +3471,6 @@ msgstr "この変更通知を削除してもよろしいですか？"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "この測定器を削除してもよろしいですか?"
 
-msgid "Are you sure you want to delete this inspection plan?"
-msgstr "この検査計画を削除しますか？"
-
 msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
 msgstr "この検査計画を削除してもよろしいですか?これは元に戻せません。"
 
@@ -6114,9 +6111,6 @@ msgstr "手順書の識別子をコピー"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "仕入先請求書の一意識別子をコピー"
-
-msgid "Copy purchase order number"
-msgstr "発注書番号をコピー"
 
 msgid "Copy purchase order unique identifier"
 msgstr "発注書の一意識別子をコピー"
@@ -15329,9 +15323,6 @@ msgstr "残業予定なし"
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "親ソースはまだ記録されていません。計画ページの「再計算」をクリックして属性を更新してください。"
 
-msgid "No part"
-msgstr ""
-
 msgid "No part ID"
 msgstr "パーツIDなし"
 
@@ -17245,6 +17236,9 @@ msgstr "計画"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "品目と拠点ごとの所要量を予測して先行計画を立て、MRP とスケジューリングに直接フィードします。"
+
+msgid "Plan Names"
+msgstr "検査計画名"
 
 msgid "Plan the work"
 msgstr "作業を計画する"

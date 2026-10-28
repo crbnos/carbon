@@ -3471,9 +3471,6 @@ msgstr "确定要删除此变更通知吗？"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "确定要删除此量具吗？"
 
-msgid "Are you sure you want to delete this inspection plan?"
-msgstr "你确定要删除此检验计划吗?"
-
 msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
 msgstr "你确定要删除此检验计划吗？此操作无法撤销。"
 
@@ -6114,9 +6111,6 @@ msgstr "复制程序文件唯一标识符"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "复制采购发票唯一标识符"
-
-msgid "Copy purchase order number"
-msgstr "复制采购订单编号"
 
 msgid "Copy purchase order unique identifier"
 msgstr "复制采购订单唯一标识符"
@@ -15329,9 +15323,6 @@ msgstr "没有安排加班"
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "尚未记录任何父源。点击计划页面上的\"重新计算\"以刷新归因。"
 
-msgid "No part"
-msgstr ""
-
 msgid "No part ID"
 msgstr "无零件ID"
 
@@ -17245,6 +17236,9 @@ msgstr "计划"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "通过按物料和地点投影需求进行超前规划，然后将其直接送入MRP和排程。"
+
+msgid "Plan Names"
+msgstr "检验计划名称"
 
 msgid "Plan the work"
 msgstr "规划工作"

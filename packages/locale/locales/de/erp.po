@@ -3471,9 +3471,6 @@ msgstr "Sind Sie sicher, dass Sie diese Änderungsmitteilung löschen möchten?"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Sind Sie sicher, dass Sie dieses Prüfmittel löschen möchten?"
 
-msgid "Are you sure you want to delete this inspection plan?"
-msgstr "Sind Sie sicher, dass Sie diesen Prüfplan löschen möchten?"
-
 msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie diesen Prüfplan löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
@@ -6114,9 +6111,6 @@ msgstr "Eindeutige Kennung der Verfahrensanweisung kopieren"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Eindeutige Kennung der Eingangsrechnung kopieren"
-
-msgid "Copy purchase order number"
-msgstr "Bestellnummer kopieren"
 
 msgid "Copy purchase order unique identifier"
 msgstr "Bestellnummer kopieren"
@@ -15329,9 +15323,6 @@ msgstr "Keine Überstunden geplant"
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Noch keine übergeordneten Quellen aufgezeichnet. Klicken Sie auf der Planungsseite auf Neu berechnen, um die Zuordnung zu aktualisieren."
 
-msgid "No part"
-msgstr ""
-
 msgid "No part ID"
 msgstr "Keine Teile-ID"
 
@@ -17245,6 +17236,9 @@ msgstr "Plan"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Planen Sie voraus, indem Sie den Bedarf pro Artikel und Standort projizieren und ihn dann direkt in MRP und Planung einspeisen."
+
+msgid "Plan Names"
+msgstr "Namen der Prüfpläne"
 
 msgid "Plan the work"
 msgstr "Planen Sie die Arbeit"

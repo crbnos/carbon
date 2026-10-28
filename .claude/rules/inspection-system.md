@@ -191,8 +191,15 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   like a hand-made plan. `deleteUnusedPmiInspectionPlans` runs as the system
   inside the item delete, so `parts_delete` alone can remove an unused PMI plan.
 - Recreating the `inspectionDocuments` view also added the six `sampling*`
-  columns added after it was first created (`d.*` is fixed at creation), so the
-  plan list now reads the document's sampling default.
+  columns added after it was first created (`d.*` is fixed at creation), so
+  `getInspectionDocuments` (the `quality_getInspectionDocuments` tool) reads the
+  document's sampling default.
+- The Inspection Plans list (`/x/quality/inspection-plans`) is one row per part,
+  read from the `inspectionPlanParts` view (`getInspectionPlanParts`,
+  `20261028161842_inspection-plan-parts-view.sql`): the part, its plan count and
+  a `plans` jsonb rollup the expanded row lists, as the Change Notices list
+  lists a notice's affected items. A search expands every row and marks the
+  matches (`expandRowsFor` on the Table, `Highlight` / `searchMatches`).
 - PMI ids are per-kind counters in file order, stable for one file. An extractor
   change that reorders items would point an old plan's features at other items.
 

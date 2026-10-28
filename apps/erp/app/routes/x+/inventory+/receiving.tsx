@@ -129,21 +129,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     rows,
-    count: lines.count ?? 0,
     draftReceiptByOrder
   };
 }
 
 export default function ReceivingRoute() {
-  const { rows, count, draftReceiptByOrder } = useLoaderData<typeof loader>();
+  const { rows, draftReceiptByOrder } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ReceivingTable
-        rows={rows}
-        count={count}
-        draftReceiptByOrder={draftReceiptByOrder}
-      />
+      <ReceivingTable rows={rows} draftReceiptByOrder={draftReceiptByOrder} />
     </VStack>
   );
 }

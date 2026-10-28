@@ -26,11 +26,19 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import {
+  DateTime,
+  EmployeeAvatar,
+  Highlight,
+  Hyperlink,
+  New,
+  searchMatches,
+  Table
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useRealtime } from "~/hooks/useRealtime";
 import { useItems } from "~/stores/items";
@@ -68,6 +76,8 @@ const ChangeNoticesTable = memo(
   ({ data, types, count, infinite }: ChangeNoticesTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
+    const [params] = useUrlParams();
+    const search = params.get("search");
     const permissions = usePermissions();
     const deleteDisclosure = useDisclosure();
     const [selectedChangeNotice, setSelectedChangeNotice] =
@@ -97,10 +107,16 @@ const ChangeNoticesTable = memo(
             <Hyperlink to={path.to.changeNotice(row.original.id!)}>
               <div className="flex flex-col gap-0">
                 <span className="text-sm font-medium">
-                  {row.original.changeOrderId}
+                  <Highlight
+                    text={row.original.changeOrderId}
+                    ranges={searchMatches(row.original.changeOrderId, search)}
+                  />
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {row.original.name}
+                  <Highlight
+                    text={row.original.name}
+                    ranges={searchMatches(row.original.name, search)}
+                  />
                 </span>
               </div>
             </Hyperlink>
@@ -235,7 +251,7 @@ const ChangeNoticesTable = memo(
         }
       ];
       return [...defaultColumns, ...customColumns];
-    }, [customColumns, people, items, resolveItemId, types, t]);
+    }, [customColumns, people, items, resolveItemId, search, types, t]);
 
     const canExpandRow = useCallback(
       (row: ChangeNoticeListItem) => (row.itemIds?.length ?? 0) > 0,
@@ -255,6 +271,7 @@ const ChangeNoticesTable = memo(
               // successor worth arrowing to.
               const hasDistinctSuccessor =
                 !!affected.newItemId && affected.newItemId !== affected.itemId;
+              const readableId = resolveItemId(affected.itemId);
               const newReadableId = hasDistinctSuccessor
                 ? resolveItemId(affected.newItemId)
                 : null;
@@ -266,12 +283,20 @@ const ChangeNoticesTable = memo(
                   />
                   <div className="flex items-center gap-2">
                     <span className="font-medium">
-                      {resolveItemId(affected.itemId)}
+                      <Highlight
+                        text={readableId}
+                        ranges={searchMatches(readableId, search)}
+                      />
                     </span>
                     {newReadableId && (
                       <span className="flex items-center gap-1 text-muted-foreground">
                         <LuArrowRight className="size-3.5 shrink-0" />
-                        <span>{newReadableId}</span>
+                        <span>
+                          <Highlight
+                            text={newReadableId}
+                            ranges={searchMatches(newReadableId, search)}
+                          />
+                        </span>
                       </span>
                     )}
                     <ChangeTypeBadge changeType={affected.changeType} />
@@ -282,7 +307,7 @@ const ChangeNoticesTable = memo(
           </div>
         );
       },
-      [resolveItemId]
+      [resolveItemId, search]
     );
 
     const renderContextMenu = useCallback(
@@ -334,6 +359,7 @@ const ChangeNoticesTable = memo(
           renderContextMenu={renderContextMenu}
           renderExpandedRow={renderExpandedRow}
           canExpandRow={canExpandRow}
+          expandRowsFor={search}
           defaultColumnVisibility={{ itemIds: false }}
           title={t`Change Notices`}
           table="changeOrder"

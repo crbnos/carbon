@@ -205,8 +205,7 @@ export function getEffectiveSorts(
   args: Pick<Partial<GenericQueryFilters>, "sorts">,
   paging?: Paging | DefaultSort[]
 ): KeysetSort[] {
-  const { defaultSorts, leadingSorts } = toPaging(paging);
-  return resolveSorts(args.sorts, defaultSorts, leadingSorts).keyset;
+  return resolveSorts(args.sorts, toPaging(paging).defaultSorts).keyset;
 }
 
 /**
@@ -231,7 +230,7 @@ export function setGenericQueryFilters<
   paging?: Paging | DefaultSort[]
   // @ts-expect-error TS2707 - TODO: fix type
 ): PostgrestFilterBuilder<T, U, V> {
-  const { defaultSorts, leadingSorts, idColumn = "id" } = toPaging(paging);
+  const { defaultSorts, idColumn = "id" } = toPaging(paging);
 
   args.filters?.forEach((filter) => {
     if (!filter.value) return;
@@ -243,11 +242,7 @@ export function setGenericQueryFilters<
     );
   });
 
-  const { orders, keyset } = resolveSorts(
-    args.sorts,
-    defaultSorts,
-    leadingSorts
-  );
+  const { orders, keyset } = resolveSorts(args.sorts, defaultSorts);
 
   if (args.cursor) {
     query = query.or(

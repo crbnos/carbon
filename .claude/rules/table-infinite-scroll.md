@@ -204,7 +204,6 @@ Rules for the query:
 | Every sortable column, the default sorts and the id column are in the select | `toPage` reads the cursor values from the row. A missing one ends the list after the page and logs a warning. |
 | Never put an `.order()` before `setGenericQueryFilters` | The cursor follows only the sorts that `setGenericQueryFilters` applies. A fixed first order breaks it. |
 | A default sort on a `foreignTable` orders the embedded rows only | `resolveSorts` keeps it out of the keyset. |
-| A list grouped by a column (`groupRowsBy`) names it in `leadingSorts` | `resolveSorts` puts it before the user's sort, for the query AND for `toPage`'s cursor, so the groups stay together across pages. Prefixing the sort inside the service orders the query but not the cursor, and the list ends after page 1. Example: inspection plans by `partReadableId`. |
 | A list with no unique `id` names `idColumn` in its `X_PAGING` | Examples: contractors (`supplierContactId`), custom field tables (`table`), the price list (`itemId`). |
 | `args.cursor !== undefined` means cursor paging | Without it, `limit` + `offset` page exactly (MCP, v1 API). |
 

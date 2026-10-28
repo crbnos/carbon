@@ -2495,9 +2495,7 @@ function mapInspectionDocument(row: Record<string, unknown>) {
   };
 }
 
-// The table groups plans under their part, so the part leads every order.
 export const INSPECTION_DOCUMENTS_PAGING: Paging = {
-  leadingSorts: [{ column: "partReadableId", ascending: true }],
   defaultSorts: [{ column: "drawingNumber", ascending: true }]
 };
 
@@ -2524,11 +2522,56 @@ export async function getInspectionDocuments(
   const result = await query;
 
   return {
-    // The cursor reads the sort columns from the row.
+    // The cursor reads the default sort column from the row.
     data: (result.data ?? []).map((row: Record<string, unknown>) => ({
       ...mapInspectionDocument(row),
-      drawingNumber: (row.drawingNumber as string | null) ?? null,
-      partReadableId: (row.partReadableId as string | null) ?? null
+      drawingNumber: (row.drawingNumber as string | null) ?? null
+    })),
+    count: result.count ?? 0,
+    error: result.error
+  };
+}
+
+export const INSPECTION_PLAN_PARTS_PAGING: Paging = {
+  defaultSorts: [{ column: "partReadableId", ascending: true }]
+};
+
+/** One plan in a part's `plans` rollup (the `inspectionPlanParts` view). */
+export type InspectionPlanSummary = {
+  id: string;
+  name: string | null;
+  modelUploadId: string | null;
+  createdBy: string;
+  createdAt: string;
+};
+
+/** The Inspection Plans list: one row per part, with its plans. */
+export async function getInspectionPlanParts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: { search: string | null } & GenericQueryFilters
+) {
+  let query = client
+    .from("inspectionPlanParts")
+    .select("*", { count: listCount(args) })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      searchFilter(["partReadableId", "partName", "planNames"], args.search)
+    );
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, INSPECTION_PLAN_PARTS_PAGING);
+  }
+
+  const result = await query;
+
+  return {
+    data: (result.data ?? []).map((row) => ({
+      ...row,
+      plans: (row.plans as InspectionPlanSummary[] | null) ?? []
     })),
     count: result.count ?? 0,
     error: result.error

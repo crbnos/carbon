@@ -200,6 +200,10 @@ interface TableProps<T extends object> {
   // + toggle). Defaults to all rows. Use it so only parents with children get an
   // affordance, like a tree's `hasChildren`.
   canExpandRow?: (row: T) => boolean;
+  // While set, every expandable row starts expanded: a list's search, so the
+  // matches in the expanded rows show, or `true` for always. A row the user
+  // toggles keeps their choice until the value changes.
+  expandRowsFor?: string | true | null;
   // Renders a full-width header row above each run of consecutive rows that
   // share a key (e.g. a report grouped by date). Grouping follows `data`'s
   // order, so the caller sorts by the key; `header` receives the run's rows.
@@ -368,6 +372,7 @@ const Table = <T extends object>({
   renderExpandedRow,
   pinExpandedRows = false,
   canExpandRow,
+  expandRowsFor,
   groupRowsBy,
   mobileLayout = "list",
   mobileMenuItems
@@ -394,15 +399,30 @@ const Table = <T extends object>({
 
   const { currentView, view } = useSavedViews();
 
-  /* Expandable Rows (keyed by row id) */
+  /* Expandable Rows (keyed by row id): the rows the user toggled, over
+     `expandRowsFor` */
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const expandRowsByDefault = !!expandRowsFor;
+  const [expandedRowsFor, setExpandedRowsFor] = useState(expandRowsFor);
+  if (expandedRowsFor !== expandRowsFor) {
+    setExpandedRowsFor(expandRowsFor);
+    setExpandedRows({});
+  }
 
-  const toggleRowExpanded = useCallback((rowId: string) => {
-    setExpandedRows((prev) => ({
-      ...prev,
-      [rowId]: !prev[rowId]
-    }));
-  }, []);
+  const isRowExpanded = useCallback(
+    (rowId: string) => expandedRows[rowId] ?? expandRowsByDefault,
+    [expandedRows, expandRowsByDefault]
+  );
+
+  const toggleRowExpanded = useCallback(
+    (rowId: string) => {
+      setExpandedRows((prev) => ({
+        ...prev,
+        [rowId]: !(prev[rowId] ?? expandRowsByDefault)
+      }));
+    },
+    [expandRowsByDefault]
+  );
 
   /* Rows: the loader's rows, then the pages loaded on scroll (`infinite`).
      With `infiniteRows` the parent runs the hook, and this one stays off. */
@@ -541,7 +561,7 @@ const Table = <T extends object>({
     if (renderExpandedRow) {
       result.push(
         ...getExpandColumn<T>(
-          expandedRows,
+          isRowExpanded,
           toggleRowExpanded,
           {
             expand: t`Expand`,
@@ -566,7 +586,7 @@ const Table = <T extends object>({
     withSelectableRows,
     renderExpandedRow,
     canExpandRow,
-    expandedRows,
+    isRowExpanded,
     toggleRowExpanded,
     t
   ]);
@@ -1597,7 +1617,7 @@ const Table = <T extends object>({
                 const rowExpandable =
                   !!renderExpandedRow &&
                   (!canExpandRow || canExpandRow(row.original));
-                const isRowExpanded = rowExpandable && !!expandedRows[row.id];
+                const rowIsExpanded = rowExpandable && isRowExpanded(row.id);
                 const handleRowClick = rowExpandable
                   ? () => toggleRowExpanded(row.id)
                   : undefined;
@@ -1686,7 +1706,7 @@ const Table = <T extends object>({
                       </Tr>
                     )}
                     {rowContent}
-                    {isRowExpanded && (
+                    {rowIsExpanded && (
                       <Tr>
                         <Td
                           colSpan={visibleColumns.length}

@@ -3471,9 +3471,6 @@ msgstr "Are you sure you want to delete this change notice?"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Are you sure you want to delete this gauge?"
 
-msgid "Are you sure you want to delete this inspection plan?"
-msgstr "Are you sure you want to delete this inspection plan?"
-
 msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
 msgstr "Are you sure you want to delete this inspection plan? This cannot be undone."
 
@@ -6114,9 +6111,6 @@ msgstr "Copy procedure unique identifier"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Copy purchase invoice unique identifier"
-
-msgid "Copy purchase order number"
-msgstr "Copy purchase order number"
 
 msgid "Copy purchase order unique identifier"
 msgstr "Copy purchase order unique identifier"
@@ -15329,9 +15323,6 @@ msgstr "No overtime scheduled"
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 
-msgid "No part"
-msgstr "No part"
-
 msgid "No part ID"
 msgstr "No part ID"
 
@@ -17245,6 +17236,9 @@ msgstr "Plan"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
+
+msgid "Plan Names"
+msgstr "Plan Names"
 
 msgid "Plan the work"
 msgstr "Plan the work"

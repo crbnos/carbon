@@ -10,10 +10,10 @@ import type {
   getGauges,
   getGaugeTypes,
   getInspection,
-  getInspectionDocuments,
   getInspectionGauges,
   getInspectionIssues,
   getInspectionMeasurements,
+  getInspectionPlanParts,
   getInspectionSamplingPlans,
   getInspections,
   getIssueActionTasks,
@@ -214,8 +214,8 @@ export type IssueTypeListItem = NonNullable<
 
 // --- Inspection Documents -----------------------------------------------
 
-export type InspectionDocument = NonNullable<
-  Awaited<ReturnType<typeof getInspectionDocuments>>["data"]
+export type InspectionPlanPart = NonNullable<
+  Awaited<ReturnType<typeof getInspectionPlanParts>>["data"]
 >[number];
 
 export type BalloonFeature = {

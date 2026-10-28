@@ -335,33 +335,6 @@ describe("toPage", () => {
     });
   });
 
-  it("puts the paging's leading sorts before the user's sort", () => {
-    const paging = {
-      leadingSorts: [{ column: "group", ascending: true }],
-      defaultSorts: [{ column: "name", ascending: true }]
-    };
-    const grouped = rows(4).map((row) => ({ ...row, group: "A" }));
-
-    const fromDefaults = toPage(grouped, { limit: 3 }, paging);
-    expect(decodeCursor(fromDefaults.nextCursor)?.keys).toEqual([
-      "group:asc",
-      "name:asc"
-    ]);
-
-    // The cursor must be cut for the order the query used, or the next
-    // page's `cursorMatchesSorts` fails and the list ends after page 1.
-    const fromUser = toPage(
-      grouped,
-      { limit: 3, sorts: [{ sortBy: "id", sortAsc: false }] },
-      paging
-    );
-    expect(decodeCursor(fromUser.nextCursor)).toEqual({
-      values: ["A", "it_2"],
-      id: "it_2",
-      keys: ["group:asc", "id:desc"]
-    });
-  });
-
   it("does not require a custom-field sort column to be a top-level key", () => {
     const page = toPage(
       [
