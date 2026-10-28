@@ -37,7 +37,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyGroupId, companyId, email, userId } = await requirePermissions(
+  const { companyGroupId, companyId, email } = await requirePermissions(
     request,
     {
       view: "settings"
@@ -48,7 +48,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // `multi-company-management` flag turns it on for.
   if (
     !isInternalEmail(email) &&
-    !(await flags.bool("multi-company-management", { companyId, userId }))
+    !(await flags.bool("multi-company-management", { companyId, email }))
   ) {
     throw redirect(path.to.settings);
   }

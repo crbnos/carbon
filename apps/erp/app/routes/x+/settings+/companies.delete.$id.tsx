@@ -21,18 +21,15 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "settings-companies-delete");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, email, userId } = await requirePermissions(
-    request,
-    {
-      view: "settings"
-    }
-  );
+  const { client, companyId, email } = await requirePermissions(request, {
+    view: "settings"
+  });
 
   // Multi-company management: Carbon staff, and the companies the
   // `multi-company-management` flag turns it on for.
   if (
     !isInternalEmail(email) &&
-    !(await flags.bool("multi-company-management", { companyId, userId }))
+    !(await flags.bool("multi-company-management", { companyId, email }))
   ) {
     throw redirect(path.to.settings);
   }
@@ -52,7 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { companyGroupId, companyId, email, userId } = await requirePermissions(
+  const { companyGroupId, companyId, email } = await requirePermissions(
     request,
     {
       delete: "settings"
@@ -63,7 +60,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // `multi-company-management` flag turns it on for.
   if (
     !isInternalEmail(email) &&
-    !(await flags.bool("multi-company-management", { companyId, userId }))
+    !(await flags.bool("multi-company-management", { companyId, email }))
   ) {
     throw redirect(path.to.settings);
   }
