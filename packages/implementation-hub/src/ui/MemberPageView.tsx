@@ -36,6 +36,10 @@ import {
   splitPageQuestions,
   unmetReadiness
 } from "../logic/page";
+import {
+  priorityProgress,
+  priorityStateFromFields
+} from "../logic/priority-set";
 import type { MemberPage } from "../models";
 import type { ImplementationRowData } from "../types";
 import { PageQuestions } from "./PageQuestions";
@@ -54,6 +58,7 @@ import {
   useCheckMap,
   useCheckRowMap,
   useCounts,
+  useFieldMap,
   useHub,
   useHubActions,
   useIsInternal,
@@ -198,7 +203,10 @@ function PageCardView({
   const group = card.kind === "objective" ? undefined : text(card.group);
   const checkRow = card.tick ? checkRows.get(card.tick.itemKey) : undefined;
   const hasBody =
-    Boolean(card.missing) || Boolean(card.note) || waitingFor.length > 0;
+    Boolean(card.missing) ||
+    Boolean(card.note) ||
+    waitingFor.length > 0 ||
+    card.kind === "priority";
   const hasFooter =
     Boolean(card.due) ||
     card.evidence.length > 0 ||
@@ -251,6 +259,7 @@ function PageCardView({
               <Trans>Needs {waitingFor.join(", ")} first.</Trans>
             </p>
           ) : null}
+          {card.kind === "priority" ? <PriorityProgress /> : null}
           {hasFooter ? (
             <div className="mt-auto flex flex-wrap items-center gap-2 text-xs">
               {card.due ? (
@@ -348,5 +357,21 @@ function CardStatus({
         actions.setCheck(tick.itemKey, tick.kind, on ? tick.off : tick.on)
       }
     />
+  );
+}
+
+// How far the company is through the priority set questionnaire.
+function PriorityProgress() {
+  const fields = useFieldMap();
+  const { answered, total } = useMemo(
+    () => priorityProgress(priorityStateFromFields(fields)),
+    [fields]
+  );
+  return (
+    <p className="text-xs text-muted-foreground">
+      <Trans>
+        {answered} of {total} questions answered
+      </Trans>
+    </p>
   );
 }

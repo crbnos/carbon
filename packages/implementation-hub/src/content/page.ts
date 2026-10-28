@@ -19,6 +19,7 @@ export type PageCardKind =
   | "objective"
   | "question"
   | "customization"
+  | "priority"
   | "custom";
 
 export type PageItemKind = Exclude<PageCardKind, "custom">;
@@ -34,6 +35,7 @@ export const PAGE_CARD_KIND_LABEL: Record<PageCardKind, MessageDescriptor> = {
   objective: msg`Objective`,
   question: msg`Open question`,
   customization: msg`Customization`,
+  priority: msg`Priority set`,
   custom: msg`Task`
 };
 
@@ -49,6 +51,16 @@ export const READINESS_LABEL: Partial<
   routingOperations: msg`an operation in a bill of process`,
   workCenters: msg`a work center`,
   jobsReleased: msg`a released job`
+};
+
+// The priority set questionnaire as a card: answered on its own page, ticked
+// done by hand like every other card.
+export const PRIORITY_CARD = {
+  item: "priority:questionnaire",
+  title: msg`Answer the priority set questionnaire`,
+  detail: msg`Which Carbon features your company needs before go-live, and which can wait.`,
+  // The hub resolves this to the questionnaire page (resolveScreenUrl).
+  screenKey: "get-started:priority-set"
 };
 
 // The evidence label next to a setup item's count ("4 in Carbon").

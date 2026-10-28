@@ -31,7 +31,7 @@ import { isInternalEmail, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo } from "react";
-import { LuSettings, LuUser } from "react-icons/lu";
+import { LuListChecks, LuSettings, LuUser } from "react-icons/lu";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
@@ -124,6 +124,8 @@ const SETUP_SCREEN_PATHS: Record<string, string> = {
   "first-sales-order": path.to.salesOrders,
   "first-job": path.to.jobs,
   "first-job-completed": path.to.jobs,
+  // The priority set questionnaire card on a person's page.
+  "get-started:priority-set": path.to.implementationPrioritySet,
   // Nested product steps (by step key): where the step is done.
   "prod:configure-bom": path.to.parts,
   "prod:configure-builtins": path.to.production,
@@ -156,6 +158,11 @@ function ImplementationSidebar() {
           to: path.to.implementation,
           icon: <LuUser />,
           isActive: (pathname) => pathname === path.to.implementation
+        },
+        {
+          name: t`Priority Set`,
+          to: path.to.implementationPrioritySet,
+          icon: <LuListChecks />
         }
       ]
     },
@@ -299,7 +306,7 @@ export default function ImplementationHubLayout() {
 
   return (
     // Each page owns its scroll and padding: the hub page scrolls a padded
-    // column.
+    // column, the priority set is a document page with its own side panel.
     <div className="relative min-w-0 h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden bg-card">
       <HubProvider
         data={hubData}

@@ -8,6 +8,8 @@ import {
   applyHubMutation,
   parseItemKeys,
   parseJsonObject,
+  parsePriorityWrites,
+  priorityFieldValues,
   questionChange,
   refusalFor,
   rowSource,
@@ -265,6 +267,120 @@ describe("questionChange", () => {
   it("refuses a malformed or missing change", () => {
     expect(questionChange({ selected: "[1]" })).toBeNull();
     expect(questionChange({})).toBeNull();
+  });
+});
+
+describe("priority set writes", () => {
+  const answer = {
+    fieldKey: "priority.answer.orderStart",
+    value: '["quote"]'
+  };
+  const override = {
+    fieldKey: "priority.override.sales.quotes",
+    value: '{"category":0}'
+  };
+  const setPriority = (writes: unknown[]): StateAction => ({
+    intent: "setPriority",
+    writes: JSON.stringify(writes)
+  });
+
+  it("lets anyone answer, an agent included", () => {
+    expect(refusalFor(customer, setPriority([answer]))).toBeNull();
+    expect(refusalFor(agent, setPriority([answer]))).toBeNull();
+  });
+
+  it("refuses an override from anyone but Carbon staff", () => {
+    expect(refusalFor(customer, setPriority([answer, override]))).toBe(
+      "Only Carbon staff can set a feature by hand"
+    );
+    expect(refusalFor(agent, setPriority([override]))).toBe(
+      "Only Carbon staff can set a feature by hand"
+    );
+    expect(refusalFor(staff, setPriority([override]))).toBeNull();
+  });
+
+  it("parses a list of field writes and refuses anything else", () => {
+    expect(parsePriorityWrites(JSON.stringify([answer]))).toEqual([answer]);
+    expect(parsePriorityWrites("[]")).toEqual([]);
+    expect(parsePriorityWrites('[{"fieldKey":"x"}]')).toBeNull();
+    expect(parsePriorityWrites('{"fieldKey":"x","value":""}')).toBeNull();
+    expect(parsePriorityWrites("not json")).toBeNull();
+    expect(
+      parsePriorityWrites(
+        JSON.stringify(Array.from({ length: 201 }, () => answer))
+      )
+    ).toBeNull();
+  });
+
+  const at = "2026-10-14T09:00:00.000Z";
+  const stored = (
+    writes: { fieldKey: string; value: string }[],
+    source: "customer" | "staff" | "mcp"
+  ) => {
+    const result = priorityFieldValues(writes, { userId: "u1", source }, at);
+    if ("error" in result) throw new Error(result.error);
+    return Object.fromEntries(
+      result.values.map(({ fieldKey, value }) => [fieldKey, value])
+    );
+  };
+
+  it("marks an answer an AI assistant entered over MCP", () => {
+    expect(stored([answer], "mcp")).toEqual({
+      [answer.fieldKey]: answer.value,
+      "priority.via.answer.orderStart": "assistant"
+    });
+  });
+
+  it("clears the mark when a person answers, or when the answer is cleared", () => {
+    expect(stored([answer], "customer")["priority.via.answer.orderStart"]).toBe(
+      ""
+    );
+    expect(stored([answer], "staff")["priority.via.answer.orderStart"]).toBe(
+      ""
+    );
+    expect(
+      stored([{ ...answer, value: "" }], "mcp")[
+        "priority.via.answer.orderStart"
+      ]
+    ).toBe("");
+  });
+
+  it("marks the tool list, never overrides or the start", () => {
+    const values = stored(
+      [
+        {
+          fieldKey: "priority.tools",
+          value: '[{"id":"t1","name":"JobBOSS"}]'
+        },
+        override,
+        { fieldKey: "priority.start", value: "defaults" }
+      ],
+      "mcp"
+    );
+    expect(values["priority.via.tools"]).toBe("assistant");
+    expect(
+      Object.keys(values).filter((key) => key.startsWith("priority.via."))
+    ).toHaveLength(1);
+    expect(JSON.parse(values[override.fieldKey] ?? "")).toEqual({
+      category: 0,
+      by: "u1",
+      at
+    });
+  });
+
+  it("keeps the last write of a key and refuses an invalid one", () => {
+    expect(
+      stored([answer, { ...answer, value: '["priceList"]' }], "customer")[
+        answer.fieldKey
+      ]
+    ).toBe('["priceList"]');
+    expect(
+      priorityFieldValues(
+        [{ fieldKey: "priority.via.answer.orderStart", value: "assistant" }],
+        { userId: "u1", source: "mcp" },
+        at
+      )
+    ).toEqual({ error: "Not a priority set answer" });
   });
 });
 

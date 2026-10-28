@@ -38,14 +38,14 @@ export const UNENROLLED_HUB: {
   contacts: {}
 };
 
-// The hub writes that touch only Personal Pages records: page files and their
-// assignments. Every other write changes records the Company Plan hub also
-// reads (ticks, fill-in fields, rows, the hub row), so it is refused until the
-// company uses Personal Pages, and a company on Company Plan keeps exactly the
-// hub it had.
+// The hub writes that touch only Personal Pages records: page files, their
+// assignments and the priority set's own field values. Every other write
+// changes records the Company Plan hub also reads (ticks, fill-in fields, rows,
+// the hub row), so it is refused until the company uses Personal Pages, and a
+// company on Company Plan keeps exactly the hub it had.
 const PERSONAL_PAGES_ONLY_INTENTS: ReadonlySet<StateAction["intent"]> = new Set<
   StateAction["intent"]
->(["setMemberPage", "deleteMemberPage", "setAssignee"]);
+>(["setMemberPage", "deleteMemberPage", "setAssignee", "setPriority"]);
 
 export function changesCompanyPlanHub(intent: StateAction["intent"]): boolean {
   return !PERSONAL_PAGES_ONLY_INTENTS.has(intent);

@@ -207,7 +207,11 @@ export const stateActionValidator = z.discriminatedUnion("intent", [
   z.object({
     intent: z.literal("deleteMemberPage"),
     userId: z.string().min(1)
-  })
+  }),
+  // Answers and overrides of the priority set questionnaire, stored as field
+  // values. JSON-encoded { fieldKey, value }[]: every write the page has not
+  // seen confirmed yet, so a save the shared fetcher cancels loses nothing.
+  z.object({ intent: z.literal("setPriority"), writes: z.string().min(2) })
 ]);
 
 export type StateAction = z.infer<typeof stateActionValidator>;

@@ -22,6 +22,7 @@ import {
   OBJECTIVE_EVIDENCE_LABEL,
   type PageCardKind,
   type PageItemKind,
+  PRIORITY_CARD,
   SETUP_EVIDENCE_LABEL
 } from "../content/page";
 import { REQUIREMENTS } from "../content/requirements";
@@ -269,6 +270,16 @@ function templateEntries(): PageCatalogueEntry[] {
     }
   }
 
+  entries.push({
+    item: PRIORITY_CARD.item,
+    kind: "priority",
+    title: PRIORITY_CARD.title,
+    detail: PRIORITY_CARD.detail,
+    tick: doneCheck(checkKey("priority", "questionnaire")),
+    evidence: [],
+    screenKey: PRIORITY_CARD.screenKey
+  });
+
   return entries;
 }
 
@@ -506,7 +517,8 @@ const kindOf = (item: string): PageItemKind => {
     "requirement",
     "objective",
     "question",
-    "customization"
+    "customization",
+    "priority"
   ];
   return kinds.find((kind) => kind === prefix) ?? "task";
 };
@@ -689,7 +701,7 @@ export function groupHubPeople(
 }
 
 // Pure: the smallest page file for a person who has none, for staff to edit
-// before loading: the kickoff task under one section.
+// before loading: the priority set questionnaire under one section.
 export function starterMemberPage(
   email: string,
   sectionTitle: string
@@ -697,6 +709,6 @@ export function starterMemberPage(
   return {
     version: 1,
     user: email,
-    sections: [{ title: sectionTitle, cards: [{ item: "task:kickoff" }] }]
+    sections: [{ title: sectionTitle, cards: [{ item: PRIORITY_CARD.item }] }]
   };
 }

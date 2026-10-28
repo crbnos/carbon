@@ -536,6 +536,29 @@ export function deleteFieldValue(
     .select("id");
 }
 
+// Several field values in one statement (a priority set save).
+export function upsertFieldValues(
+  client: Client,
+  args: {
+    companyId: string;
+    userId: string;
+    values: { fieldKey: string; value: string }[];
+  }
+) {
+  const updatedAt = datetime.timestamp();
+  return client.from("implementationFieldValue").upsert(
+    args.values.map(({ fieldKey, value }) => ({
+      companyId: args.companyId,
+      fieldKey,
+      value,
+      createdBy: args.userId,
+      updatedBy: args.userId,
+      updatedAt
+    })),
+    { onConflict: "companyId, fieldKey" }
+  );
+}
+
 export function insertImplementationRow(
   client: Client,
   args: {

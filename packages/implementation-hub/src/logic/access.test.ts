@@ -18,10 +18,11 @@ describe("hubAccess", () => {
 });
 
 describe("changesCompanyPlanHub", () => {
-  it("lets page files and assignments through before a switch", () => {
+  it("lets page files, assignments and the priority set through before a switch", () => {
     expect(changesCompanyPlanHub("setMemberPage")).toBe(false);
     expect(changesCompanyPlanHub("deleteMemberPage")).toBe(false);
     expect(changesCompanyPlanHub("setAssignee")).toBe(false);
+    expect(changesCompanyPlanHub("setPriority")).toBe(false);
   });
 
   it("holds back every write the Company Plan hub reads", () => {
