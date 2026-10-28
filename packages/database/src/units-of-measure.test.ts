@@ -2,14 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import {
-  isUnitOfMeasureActiveByDefault,
-  seedUnitsOfMeasure,
-  unitOfMeasureCatalog
-} from "./units-of-measure";
+import { seedUnitsOfMeasure, unitOfMeasureCatalog } from "./units-of-measure";
 
 const key = (value: string) => value.replace(/\s+/g, "").toLowerCase();
 
@@ -114,36 +108,5 @@ describe("seedUnitsOfMeasure", () => {
     expect(
       new Set(seedUnitsOfMeasure(true).map((unit) => unit.createdBy))
     ).toEqual(new Set(["system"]));
-  });
-});
-
-describe("units-of-measure-master-list migration", () => {
-  const sql = readFileSync(
-    fileURLToPath(
-      new URL(
-        "../supabase/migrations/20261024044646_units-of-measure-master-list.sql",
-        import.meta.url
-      )
-    ),
-    "utf8"
-  );
-  const rows = [
-    ...sql.matchAll(/\('([^']+)', '([^']+)', (true|false), (true|false)\)/g)
-  ].map(([, code, name, metric, imperial]) => ({
-    code,
-    name,
-    activeWhenMetric: metric === "true",
-    activeWhenImperial: imperial === "true"
-  }));
-
-  it("gives existing companies the catalog, active as a new company gets it", () => {
-    expect(rows).toEqual(
-      unitOfMeasureCatalog.map((unit) => ({
-        code: unit.code,
-        name: unit.name,
-        activeWhenMetric: isUnitOfMeasureActiveByDefault(unit, true),
-        activeWhenImperial: isUnitOfMeasureActiveByDefault(unit, false)
-      }))
-    );
   });
 });

@@ -32,7 +32,7 @@ Branch `feat/regional-unit-defaults`. Goal: a company outside the US starts with
 - [x] 4. Datasets: `ensureUnitsOfMeasure`; the validator checks unit codes against the catalog
 - [x] 5. Revision 2 removes the Add Standard Units drawer, its route and its 2 service functions. The master list replaces them.
 - [x] 6. Revision 2: the master list (D1, D2, D3), the backfill migration (D5), the Active flag in the form, the list and the picker (D8), the code interceptor (D9)
-- [x] 7. Database tests: `seed-company.test.ts` (6 countries and currencies, every catalog unit and its active flag), `metric-company.test.ts` (a dataset on a metric company), `units-of-measure-backfill.test.ts` (the migration on 3 companies, and the interceptor)
+- [x] 7. Database tests: `seed-company.test.ts` (6 countries and currencies, every catalog unit and its active flag), `metric-company.test.ts` (a dataset on a metric company), `units-of-measure-unique-code.test.ts` (the interceptor). The migration was proven on 3 companies by a database test that ran its SQL (d76fd029da); it was removed after main added the `test-reads-source` conformance check
 - [x] 8. Docs (`onboarding.mdx`, `company-settings.mdx`, `items.mdx`), items and database `AGENTS.md`, `onboarding-company-templates.md`, a lesson
 - [x] 9. Generated files: MCP digest (1618 operations), Lingui catalogs (4 new messages), the authz migration `20261024045237_unit-of-measure-unique-code.sql`
 - [ ] 10. Browser pass on the Units of Measure list, the unit picker and a new metric company: not done. The local login refuses a scripted sign-in (bot check), and browser use waits for the user.
