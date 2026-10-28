@@ -69,6 +69,7 @@ import {
 } from "~/hooks/useImplementationNavItem";
 import { useModuleLinks } from "~/hooks/useModuleSubmodules";
 import type { RecentDocument } from "~/hooks/useRecentlyViewed";
+import { usesPersonalPages } from "~/modules/shared/shared.models";
 import { useUIStore } from "~/stores/ui";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
@@ -123,6 +124,9 @@ function ImplementationSummary({ data }: { data: ImplementationHubData }) {
   if (!hub || hub.status === "complete" || hub.status === "archived") {
     return null;
   }
+  // The card counts the Company Plan hub's gates. A Personal Pages hub is
+  // reached from its nav item.
+  if (usesPersonalPages(hub)) return null;
   const map = stateMap(data.implementationCheckStates);
   const signals = data.implementationSignals ?? NO_SIGNALS;
   const spine = spineForTier(SPINE, hub.tier);

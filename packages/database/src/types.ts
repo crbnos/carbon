@@ -23383,6 +23383,173 @@ export type Database = {
           }
         ]
       }
+      implementationAssignment: {
+        Row: {
+          assigneeId: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          itemKey: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          assigneeId: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          itemKey: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          assigneeId?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          itemKey?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "implementationAssignment_assigneeId_fkey"
+            columns: ["assigneeId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_assigneeId_fkey"
+            columns: ["assigneeId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_assigneeId_fkey"
+            columns: ["assigneeId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_assigneeId_fkey"
+            columns: ["assigneeId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_assigneeId_fkey"
+            columns: ["assigneeId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       implementationCheckState: {
         Row: {
           companyId: string
@@ -23391,9 +23558,12 @@ export type Database = {
           id: string
           itemKey: string
           kind: Database["public"]["Enums"]["implementationStateKind"]
+          source: Database["public"]["Enums"]["implementationSource"] | null
           updatedAt: string | null
           updatedBy: string | null
           value: string
+          verifiedAt: string | null
+          verifiedBy: string | null
         }
         Insert: {
           companyId: string
@@ -23402,9 +23572,12 @@ export type Database = {
           id?: string
           itemKey: string
           kind: Database["public"]["Enums"]["implementationStateKind"]
+          source?: Database["public"]["Enums"]["implementationSource"] | null
           updatedAt?: string | null
           updatedBy?: string | null
           value: string
+          verifiedAt?: string | null
+          verifiedBy?: string | null
         }
         Update: {
           companyId?: string
@@ -23413,9 +23586,12 @@ export type Database = {
           id?: string
           itemKey?: string
           kind?: Database["public"]["Enums"]["implementationStateKind"]
+          source?: Database["public"]["Enums"]["implementationSource"] | null
           updatedAt?: string | null
           updatedBy?: string | null
           value?: string
+          verifiedAt?: string | null
+          verifiedBy?: string | null
         }
         Relationships: [
           {
@@ -23512,6 +23688,41 @@ export type Database = {
           {
             foreignKeyName: "implementationCheckState_updatedBy_fkey"
             columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "implementationCheckState_verifiedBy_fkey"
+            columns: ["verifiedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationCheckState_verifiedBy_fkey"
+            columns: ["verifiedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationCheckState_verifiedBy_fkey"
+            columns: ["verifiedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationCheckState_verifiedBy_fkey"
+            columns: ["verifiedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationCheckState_verifiedBy_fkey"
+            columns: ["verifiedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -23657,6 +23868,7 @@ export type Database = {
           createdBy: string
           exclusions: Json
           id: string
+          layout: Database["public"]["Enums"]["implementationLayout"]
           signedAt: string | null
           signedBy: string | null
           status: Database["public"]["Enums"]["implementationStatus"]
@@ -23672,6 +23884,7 @@ export type Database = {
           createdBy: string
           exclusions?: Json
           id: string
+          layout?: Database["public"]["Enums"]["implementationLayout"]
           signedAt?: string | null
           signedBy?: string | null
           status?: Database["public"]["Enums"]["implementationStatus"]
@@ -23687,6 +23900,7 @@ export type Database = {
           createdBy?: string
           exclusions?: Json
           id?: string
+          layout?: Database["public"]["Enums"]["implementationLayout"]
           signedAt?: string | null
           signedBy?: string | null
           status?: Database["public"]["Enums"]["implementationStatus"]
@@ -23832,6 +24046,173 @@ export type Database = {
           }
         ]
       }
+      implementationMember: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          page: Json
+          updatedAt: string | null
+          updatedBy: string | null
+          userId: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          page: Json
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userId: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          page?: Json
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "implementationMember_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "implementationMember_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "implementationMember_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "implementationMember_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "implementationMember_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementationMember_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       implementationRow: {
         Row: {
           collection: string
@@ -23841,6 +24222,8 @@ export type Database = {
           id: string
           payload: Json
           sortOrder: number
+          source: Database["public"]["Enums"]["implementationSource"] | null
+          sourceRef: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -23852,6 +24235,8 @@ export type Database = {
           id?: string
           payload?: Json
           sortOrder?: number
+          source?: Database["public"]["Enums"]["implementationSource"] | null
+          sourceRef?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -23863,6 +24248,8 @@ export type Database = {
           id?: string
           payload?: Json
           sortOrder?: number
+          source?: Database["public"]["Enums"]["implementationSource"] | null
+          sourceRef?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -111144,6 +111531,13 @@ export type Database = {
       glAccountClass: "Asset" | "Liability" | "Equity" | "Revenue" | "Expense"
       glConsolidatedRate: "Average" | "Current" | "Historical"
       glIncomeBalance: "Balance Sheet" | "Income Statement"
+      implementationLayout: "Company Plan" | "Personal Pages"
+      implementationSource:
+        | "customer"
+        | "staff"
+        | "mcp"
+        | "handover"
+        | "interview"
       implementationStateKind:
         | "gate"
         | "task"

@@ -732,6 +732,11 @@ export const manifest = {
   gaugeType: company("quality"),
   group: company("users"),
   holiday: company("people"),
+  implementationAssignment: company("settings", {
+    create: "employee",
+    update: "employee",
+    delete: "employee"
+  }),
   implementationCheckState: company("settings", {
     create: "employee",
     update: "employee"
@@ -741,6 +746,11 @@ export const manifest = {
     update: "employee"
   }),
   implementationHub: company("settings", { update: "employee", column: "id" }),
+  implementationMember: company("settings", {
+    create: "employee",
+    update: "employee",
+    delete: "employee"
+  }),
   implementationRow: policies({ all: inCompany("companyId", "employee") }),
   // Government contracting Phase 5b. The rate run writes the statement, the
   // runs and the Actual rates with Kysely; nothing writes them through the API.

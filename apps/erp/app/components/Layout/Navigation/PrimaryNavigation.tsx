@@ -123,6 +123,7 @@ const PrimaryNavigation = () => {
   const pendingIsModule =
     pendingModule !== committedModule &&
     (pendingModule === "get-started" ||
+      pendingModule === "implementation" ||
       [...links, settingsModule].some(
         (link) => link && getModule(link.to) === pendingModule
       ));
@@ -210,7 +211,7 @@ const PrimaryNavigation = () => {
             {(data) => {
               const item = getImplementationNavItem(data, i18n);
               return item
-                ? renderLink(item, currentModule === "get-started")
+                ? renderLink(item, currentModule === getModule(item.to))
                 : null;
             }}
           </ImplementationData>

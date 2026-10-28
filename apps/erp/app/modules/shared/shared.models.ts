@@ -10,6 +10,7 @@ import type {
   SupplierPriceMap
 } from "@carbon/database/supplier-part-price";
 import { TiptapText } from "@carbon/files/markdown";
+import { msg } from "@lingui/core/macro";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
@@ -541,6 +542,37 @@ export type SupplierPartPricing = {
   supplierUnitPrice: number | null;
   currency: CurrencyRate;
 };
+
+/**
+ * The Implementation Hub layouts a company can use: the hub's pages and sidebar
+ * (Company Plan) or one page per person (Personal Pages).
+ */
+export const implementationLayouts = [
+  "Company Plan",
+  "Personal Pages"
+] as const satisfies readonly Database["public"]["Enums"]["implementationLayout"][];
+
+export type ImplementationLayout = (typeof implementationLayouts)[number];
+
+export const implementationLayoutValidator = z.object({
+  layout: z.enum(implementationLayouts)
+});
+
+/**
+ * Whether a company gets the Personal Pages hub. Every check that sends a
+ * company to one hub or the other goes through here, so a per-company rollout
+ * rule can replace the stored layout in one place. Anything other than an
+ * enrolled hub on Personal Pages gets the Company Plan hub, exactly as before
+ * the layouts existed.
+ */
+export function usesPersonalPages(
+  hub: { layout?: string | null } | null | undefined
+): boolean {
+  return hub?.layout === "Personal Pages";
+}
+
+// The Personal Pages hub's one name: nav, breadcrumb and title.
+export const personalPagesHubName = msg`Implementation`;
 
 export type NoteField = "internalNotes" | "externalNotes" | "notes";
 type PublicTables = Database["public"]["Tables"];

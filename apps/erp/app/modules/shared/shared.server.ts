@@ -60,7 +60,12 @@ import {
   importRequiresCreate,
   importSchemas
 } from "./imports.models";
-import { assignableTables, noteFields, noteTables } from "./shared.models";
+import {
+  assignableTables,
+  implementationLayoutValidator,
+  noteFields,
+  noteTables
+} from "./shared.models";
 import * as service from "./shared.service";
 import { invokeCreate } from "./shared.service";
 import type { MethodRowsAdded } from "./types";
@@ -423,6 +428,96 @@ export const enrollImplementationHub = defineServiceFn({
 
     await service.notifyImplementationHubAdmins(ctx);
     return { enrolled: true };
+  }
+});
+
+/**
+ * Enroll the company in the Implementation Hub as Carbon staff, and tell its
+ * admins.
+ *
+ * @remarks
+ * What `enrollImplementationHub` does, for Carbon staff (an internal email):
+ * they may enroll any company they belong to, settings permission or not,
+ * since they open an unenrolled hub to set it up. Anyone else is refused.
+ */
+export const enrollImplementationHubAsStaff = defineServiceFn({
+  input: z.object({}),
+  // Who is staff is not a permission: the gate admits members, `run` decides.
+  permission: {},
+
+  async run(ctx) {
+    if (!(await service.isInternalCaller(ctx))) {
+      return ctx.error(
+        "forbidden",
+        "Only Carbon staff can enroll a company from the hub"
+      );
+    }
+    const enrolled = await enrollImplementationHub(ctx, {});
+    if (enrolled.error) return enrolled.error;
+    // Staff enroll from the Personal Pages hub, so the company starts on it.
+    if (enrolled.data.enrolled) {
+      const layout = await service.setImplementationLayout(
+        ctx.asSystem.supabase,
+        {
+          companyId: ctx.company.id,
+          layout: "Personal Pages",
+          userId: ctx.auditUserId
+        }
+      );
+      if (layout.error) {
+        return ctx.error(
+          "internal",
+          "Failed to set the hub layout",
+          layout.error
+        );
+      }
+    }
+    return enrolled.data;
+  }
+});
+
+/**
+ * Choose the company's Implementation Hub layout.
+ *
+ * @remarks
+ * Company Plan is the hub's pages and sidebar; Personal Pages is one page per
+ * person. Both layouts read the same hub records, so a switch moves and loses
+ * nothing. Only Carbon staff (an internal email) who can update settings
+ * choose it, and only for an enrolled company.
+ */
+export const setImplementationLayout = defineServiceFn({
+  input: implementationLayoutValidator,
+  permission: { update: "settings" },
+
+  async run(ctx, input) {
+    if (!(await service.isInternalCaller(ctx))) {
+      return ctx.error(
+        "forbidden",
+        "Only Carbon staff can change the Implementation Hub layout"
+      );
+    }
+    const result = await service.setImplementationLayout(
+      ctx.asSystem.supabase,
+      {
+        companyId: ctx.company.id,
+        layout: input.layout,
+        userId: ctx.auditUserId
+      }
+    );
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to change the hub layout",
+        result.error
+      );
+    }
+    if (!result.data) {
+      return ctx.error(
+        "notFound",
+        "Enroll the company in the Implementation Hub before choosing its layout"
+      );
+    }
+    return { layout: result.data.layout };
   }
 });
 /**

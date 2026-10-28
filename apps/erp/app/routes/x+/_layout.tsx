@@ -96,6 +96,7 @@ import {
   employeeCompaniesOf,
   getEmployeeCompanies
 } from "~/modules/settings/settings.service";
+import { usesPersonalPages } from "~/modules/shared/shared.models";
 import {
   getAppShell,
   getCustomFieldsSchemas,
@@ -132,6 +133,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = deferRootActionPost(
       currentUrl.pathname.startsWith("/refresh-session") ||
       currentUrl.pathname.startsWith("/x/acknowledge") ||
       currentUrl.pathname.startsWith("/x/get-started") ||
+      currentUrl.pathname.startsWith("/x/implementation") ||
       currentUrl.pathname.startsWith("/x/shared/views")
     ) {
       return true;
@@ -177,8 +179,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // home card + nav badge count gates the same way the hub page does.
   const implementationSignalsPromise = shellPromise.then(({ data }) => {
     const hub = data?.implementationHub;
-    // A finished hub shows no badge and no card, so it needs no signals.
-    return hub && hub.status !== "complete" && hub.status !== "archived"
+    // A finished hub shows no badge and no card, so it needs no signals; nor
+    // does a Personal Pages hub, which shows neither.
+    return hub &&
+      hub.status !== "complete" &&
+      hub.status !== "archived" &&
+      !usesPersonalPages(hub)
       ? getImplementationSignals(client, companyId)
       : null;
   });

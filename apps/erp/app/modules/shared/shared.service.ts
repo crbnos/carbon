@@ -121,6 +121,7 @@ import {
 } from "@carbon/files";
 import { parseCsv } from "@carbon/files/csv";
 import { TiptapText } from "@carbon/files/markdown";
+import { getSetupCounts } from "@carbon/implementation-hub/server";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -143,6 +144,7 @@ import {
   getReadableIdWithRevision,
   groupBy,
   indexByMapped,
+  isInternalEmail,
   type LeasePaymentRowInput,
   pluckUnique,
   redirect,
@@ -217,6 +219,7 @@ import type { CustomFieldsTableType } from "../settings/types";
 import { importPayrollTotals } from "./payroll-total-import";
 import {
   type assignableTables,
+  type ImplementationLayout,
   methodItemType,
   type NoteField,
   type NoteTable,
@@ -1609,6 +1612,22 @@ const implementationSignalsKey = (companyId: string) =>
   `implementation:signals:${companyId}`;
 
 /**
+ * Whether the caller is Carbon staff: the email of the user it acts as (a
+ * signed-in user, or an API key's creator) is internal. The system actor is
+ * not.
+ */
+export async function isInternalCaller(ctx: ServiceContext): Promise<boolean> {
+  if (ctx.actor.type === "system") return false;
+  const user = await ctx.asSystem.supabase
+    .from("user")
+    .select("email")
+    .eq("id", ctx.auditUserId)
+    .maybeSingle();
+  // An unreadable email is never staff.
+  return isInternalEmail(user.data?.email ?? "");
+}
+
+/**
  * The hub's product signals, probing only the ones not already seen true.
  *
  * The app shell loads these on every page for an enrolled company — five
@@ -1731,6 +1750,60 @@ export async function projectElementLinkRefusal(
     .eq("companyId", companyId)
     .maybeSingle();
   return project.data?.status === "Closed" ? "The project is closed" : null;
+}
+
+// Short on purpose: the counts are evidence a person reads right after doing
+// the work, so a minute-old "0" would read as the step not having happened.
+const IMPLEMENTATION_COUNTS_TTL_SECONDS = 30;
+
+const implementationCountsKey = (companyId: string) =>
+  `implementation:counts:${companyId}`;
+
+/**
+ * The hub's setup counts, cached for a few seconds per company.
+ *
+ * The hub layout loads these on every hub page and on every realtime
+ * revalidation — two dozen head counts each time. Several revalidations
+ * arrive together when someone ticks a batch of rows, so a short cache turns
+ * that burst into one round of queries. A failed count stays null and is not
+ * cached as zero.
+ */
+export async function getImplementationCounts(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<Awaited<ReturnType<typeof getSetupCounts>>["counts"]> {
+  try {
+    const cached = await redis.get(implementationCountsKey(companyId));
+    if (cached) {
+      return JSON.parse(cached) as Awaited<
+        ReturnType<typeof getSetupCounts>
+      >["counts"];
+    }
+  } catch (error) {
+    signalsLogger.warn("Could not read cached implementation counts", {
+      companyId,
+      error
+    });
+  }
+
+  const { counts, unavailable } = await getSetupCounts(client, companyId);
+  // Never cache a failed read: the next load retries it.
+  if (unavailable.length === 0) {
+    try {
+      await redis.set(
+        implementationCountsKey(companyId),
+        JSON.stringify(counts),
+        "EX",
+        IMPLEMENTATION_COUNTS_TTL_SECONDS
+      );
+    } catch (error) {
+      signalsLogger.warn("Could not cache implementation counts", {
+        companyId,
+        error
+      });
+    }
+  }
+  return counts;
 }
 
 export type ActionTaskWithParent = {
@@ -1909,6 +1982,26 @@ export function assignmentEvent(table: string): NotificationEvent | null {
 
 export const normalizeLookupName = (value: string) =>
   value.toLowerCase().trim();
+
+/**
+ * Set the company's Implementation Hub layout. Null data when the company is
+ * not enrolled: a layout belongs to the hub row.
+ */
+export async function setImplementationLayout(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; layout: ImplementationLayout; userId: string }
+) {
+  return client
+    .from("implementationHub")
+    .update({
+      layout: args.layout,
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", args.companyId)
+    .select("id, layout")
+    .maybeSingle();
+}
 
 /** Email the company's active admins that their hub is ready. Never throws. */
 export async function notifyImplementationHubAdmins(ctx: ServiceContext) {
