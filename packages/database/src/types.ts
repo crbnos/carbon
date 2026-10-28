@@ -79040,6 +79040,7 @@ export type Database = {
           quantityComplete: number | null
           quantityReworked: number | null
           quantityScrapped: number | null
+          readyAt: string | null
           reworkId: string | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
@@ -79092,6 +79093,7 @@ export type Database = {
           quantityComplete?: number | null
           quantityReworked?: number | null
           quantityScrapped?: number | null
+          readyAt?: string | null
           reworkId?: string | null
           setupTime?: number | null
           setupUnit?: Database["public"]["Enums"]["factor"] | null
@@ -79144,6 +79146,7 @@ export type Database = {
           quantityComplete?: number | null
           quantityReworked?: number | null
           quantityScrapped?: number | null
+          readyAt?: string | null
           reworkId?: string | null
           setupTime?: number | null
           setupUnit?: Database["public"]["Enums"]["factor"] | null
@@ -79466,6 +79469,7 @@ export type Database = {
           quantityComplete: number | null
           quantityReworked: number | null
           quantityScrapped: number | null
+          readyAt: string | null
           reworkId: string | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
@@ -95018,10 +95022,6 @@ export type Database = {
         Returns: undefined
       }
       reconcile_item_stock_quantities: { Args: never; Returns: undefined }
-      refresh_storage_unit_nettable: {
-        Args: { p_location_ids: string[] }
-        Returns: undefined
-      }
       resolve_shelf_life_start_for_receipt: {
         Args: { p_item_id: string; p_receipt_id: string }
         Returns: string

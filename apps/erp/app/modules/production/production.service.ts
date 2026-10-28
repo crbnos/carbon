@@ -1643,7 +1643,8 @@ export async function getJobMaterialShortfallByItem(
   );
   // On-hand is the nettable figure, like the job's own lines
   // (get_job_quantity_on_hand): stock in a non-nettable storage unit cannot
-  // cover the remainder. get_inventory_quantities counts it.
+  // cover the remainder. The RPC row above is physical on-hand, so only its
+  // incoming supply is used.
   const successorStock =
     successorIds.length > 0
       ? await client

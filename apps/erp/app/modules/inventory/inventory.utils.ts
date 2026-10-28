@@ -187,7 +187,9 @@ export async function getDefaultStorageUnitForJob(
           .in("id", stockedIds)
           .eq("companyId", companyId)
           .eq("effectiveNettable", false)
-      : { data: [] };
+      : { data: [], error: null };
+  // Without the flags any bin could be a quarantine bin: guess none.
+  if (nonNettable.error) return null;
   const excluded = new Set((nonNettable.data ?? []).map((row) => row.id));
   const candidates = (itemStorageUnitQuantities.data ?? []).filter(
     (row) => !row.storageUnitId || !excluded.has(row.storageUnitId)

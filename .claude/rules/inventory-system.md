@@ -163,7 +163,7 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
 ## Non-nettable storage
 
 Stock in a non-nettable unit (a quarantine or MRB hold area) is on hand and valued, but it is
-not supply (migration `20261027181718_non-nettable-storage.sql`). The form field is
+not supply (migration `20261029090412_non-nettable-storage.sql`). The form field is
 "Non-nettable" (`nonNettable`); the columns are positive (`nettable`, default true), and
 `upsertStorageUnit` / `upsertStorageType` convert, leaving the column alone when
 `nonNettable` is omitted.
@@ -172,12 +172,13 @@ not supply (migration `20261027181718_non-nettable-storage.sql`). The form field
   storage types has `nettable` false, or when its parent is non-nettable. No override: a child
   cannot opt back in. Stock in no unit (NULL `storageUnitId`) is nettable.
 - **Stored, not walked.** `storageUnit.effectiveNettable` holds the result, written only by
-  `refresh_storage_unit_nettable(locationIds)`, which recomputes a location's units top-down
-  from the roots. The after-interceptors `sync_storage_unit_nettable` (on a change to
-  `nettable`, `parentId`, `storageTypeIds`, `locationId` or `effectiveNettable` itself, and on
-  an INSERT that is not a plain root unit) and `sync_storage_type_nettable` (on `nettable`
-  change and DELETE) call it. The refresh marks its own writes with the transaction GUC
-  `app.storage_unit_nettable_refresh`, so they do not refresh again; any other write of
+  `util.refresh_storage_unit_nettable(locationIds)` (in `util`, out of the API), which
+  recomputes a location's units top-down from the roots. The after-interceptors call it:
+  `sync_storage_unit_nettable` on an INSERT that is or inherits non-nettable, and on a change
+  to `nettable`, `storageTypeIds`, `locationId`, `effectiveNettable` itself, or `parentId`
+  when the old and new parent disagree; `sync_storage_type_nettable` on a `nettable` change
+  and on deleting a non-nettable type. The refresh marks its own writes with the transaction
+  GUC `app.storage_unit_nettable_refresh`, so they do not refresh again; any other write of
   `effectiveNettable` is recomputed back. `upsertStorageUnit` never writes it. Lineside is
   the opposite pattern (`get_effective_work_center_id`, walked per row); don't copy that for
   planning reads.
@@ -192,33 +193,39 @@ not supply (migration `20261027181718_non-nettable-storage.sql`). The form field
   a flip can leave `quantityNonNettable` stale; the next flip or the nightly reconcile
   corrects it.
 - **Who reads nettable stock** (`quantityOnHand - quantityNonNettable`): `runMrp`,
-  `generatePlanningActions`, `get_purchasing_planning` / `get_production_planning` (which
-  also stopped counting Rejected lots), job-creation Consume First (`loadSupersessionRedirect`,
+  `generatePlanningActions`, `get_purchasing_planning` / `get_production_planning` (Rejected lots
+  excluded too), job-creation Consume First (`loadSupersessionRedirect`,
   `settleConsumeFirstLines`), the quote lead time, the job materials page
   (`get_job_quantity_on_hand` filters the unit) and its Order Status successor read, and the
   item planning chart's projection (the "Quantity on Hand" card stays physical and notes the
   non-nettable part).
-- **Picking never sources from it.** `get_warehouse_storage_unit_ids(ids)` (not lineside AND
+- **Picking never offers it.** `get_warehouse_storage_unit_ids(ids)` (not lineside AND
   nettable) backs `resolveWarehouseSource` / `getWarehouseOnHand` / `hasWarehouseStock`;
   `get_picking_schedule`, `get_picking_list_availability` and
   `get_picking_list_tracked_available` add `storage_unit_is_nettable(il."storageUnitId")`
   beside the lineside test. `get_available_tracked_entities` has its own
   `p_exclude_non_nettable` switch: picking (ERP and MES) and MES suggested allocation pass it,
-  a stock transfer does not, since moving stock out is how it is released.
+  a stock transfer does not, since moving stock out is how it is released. `postPicking`
+  itself does not re-check a tracked line's source bin (nor lineside), so this holds for
+  every path the UI and the generator take.
 - **A guessed bin is never non-nettable.** When no bin was chosen, consumption (the
   completion backflush and manual issue in `issueJobOperationMaterials` / `issueMaterial`,
   the maintenance spare-part issue) and a new job material (`getStorageUnitId`) fall back to
   `getStorageUnitWithHighestQuantity` (`shared.service.ts`), which only considers nettable
-  units; `getDefaultStorageUnitForJob` (`inventory.utils.ts`) skips them the same way. A bin
+  units; the backflush's second fallback (the fullest bin when the proposed one is short) and
+  `getDefaultStorageUnitForJob` (`inventory.utils.ts`) skip them the same way. A bin
   someone named (the material's own, the item's `pickMethod.defaultStorageUnitId`) is still
   used as named. Pinned by `apps/erp/test/database/non-nettable-fullest-bin.test.ts`.
 - **CSV import** has a "Non-nettable" column for storage units and storage types
-  (`parseCsvNonNettable`, `shared.service.ts`): blank leaves an existing unit's flag alone.
+  (`parseCsvNonNettable`, `shared.service.ts`): blank leaves an existing unit's flag alone, and
+  anything but true/false is a row error.
 - **Kanbans refuse it.** `createKanban` / `updateKanban` call
   `refuseNonNettableKanbanUnits` (`inventory.service.ts`) and refuse a To or From storage unit
   that is non-nettable (`ctx.error("rule", …)`), since replenishing into one builds stock
   nothing may use and a Transfer from one would release quarantined stock on every scan.
-  A unit that becomes non-nettable later does not touch its existing kanbans.
+  `updateKanban` checks only a unit the update sets, so a kanban whose unit became
+  non-nettable later stays editable; `replenishKanban` refuses its scans and level checks
+  (`KANBAN_REPLENISH_REASONS.nonNettableStorageUnit`).
 - **The form says why.** When a unit's own flag is on but `effectiveNettable` is false, the
   edit route resolves the cause with the pure `nonNettableSource` (`inventory.utils.ts`:
   the unit's own storage type first, then the nearest parent that is non-nettable by its

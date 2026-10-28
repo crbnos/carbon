@@ -14,10 +14,7 @@ import {
   getEffectiveWorkCenterId,
   getStorageUnit
 } from "~/modules/inventory/inventory.service";
-import {
-  type NonNettableUnit,
-  nonNettableSource
-} from "~/modules/inventory/inventory.utils";
+import { nonNettableSource } from "~/modules/inventory/inventory.utils";
 import { StorageUnitForm } from "~/modules/inventory/ui";
 import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -54,32 +51,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const unit = storageUnit?.data;
   let inheritedNonNettable: ReturnType<typeof nonNettableSource> = null;
   if (unit?.nettable === true && unit.effectiveNettable === false) {
-    const [tree, types] = await Promise.all([
+    // The location's units (a few thousand at most) hold every ancestor.
+    const [units, types] = await Promise.all([
       client
-        .from("storageUnits_recursive")
-        .select("ancestorPath")
-        .eq("id", storageUnitId)
-        .maybeSingle(),
+        .from("storageUnit")
+        .select("id, name, parentId, nettable, storageTypeIds")
+        .eq("locationId", unit.locationId)
+        .eq("companyId", companyId),
       client
         .from("storageType")
         .select("id, name")
         .eq("companyId", companyId)
         .eq("nettable", false)
     ]);
-    const ancestorIds = (tree.data?.ancestorPath ?? []).filter(
-      (id) => id !== storageUnitId
-    );
-    const ancestors =
-      ancestorIds.length > 0
-        ? await client
-            .from("storageUnit")
-            .select("id, name, parentId, nettable, storageTypeIds")
-            .in("id", ancestorIds)
-            .eq("companyId", companyId)
-        : { data: [] as NonNettableUnit[] };
     inheritedNonNettable = nonNettableSource(
       unit,
-      new Map((ancestors.data ?? []).map((u) => [u.id, u])),
+      new Map((units.data ?? []).map((u) => [u.id, u])),
       new Map((types.data ?? []).map((t) => [t.id, t.name]))
     );
   }

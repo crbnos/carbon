@@ -303,8 +303,8 @@ export async function runMrp(
     // rows, where the previous full-ledger GROUP BY grew with total history
     // (~6-8s of an 8M-row tenant's run). Semantics deliberately follow the
     // aggregate: Rejected tracked stock is NOT available to plan against,
-    // matching get_inventory_quantities — the raw ledger sum counted it. Nor
-    // is stock in a non-nettable storage unit (a quarantine area).
+    // matching get_inventory_quantities — the raw ledger sum counted it. The
+    // nettable figure also leaves out stock in non-nettable storage units.
     const inventoryRows = await db
       .selectFrom("itemStockQuantities")
       .select((eb) => [

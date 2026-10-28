@@ -8645,7 +8645,9 @@ export const KANBAN_REPLENISH_REASONS = {
   foreignStorageUnit: "Storage unit does not belong to the kanban location",
   missingItem: "Failed to get item",
   notTransfer: "Kanban is not a transfer kanban",
-  notArmed: "Kanban has no replenishment level"
+  notArmed: "Kanban has no replenishment level",
+  nonNettableStorageUnit:
+    "A kanban cannot replenish into or from a non-nettable storage unit"
 } as const;
 
 type KanbanReplenishReason =
@@ -8752,7 +8754,7 @@ export async function replenishKanban(
       storageUnitIds.length > 0
         ? await trx
             .selectFrom("storageUnit")
-            .select(["id", "name", "locationId"])
+            .select(["id", "name", "locationId", "effectiveNettable"])
             .where("companyId", "=", companyId)
             .where("id", "in", storageUnitIds)
             .execute()
@@ -8769,6 +8771,12 @@ export async function replenishKanban(
         to.locationId !== kanban.locationId
       ) {
         invalid(kanban.id, KANBAN_REPLENISH_REASONS.foreignStorageUnit);
+        return false;
+      }
+      // A unit made non-nettable after the kanban was saved: a scan would
+      // release its stock, or stock a unit nothing may use.
+      if (!from.effectiveNettable || !to.effectiveNettable) {
+        invalid(kanban.id, KANBAN_REPLENISH_REASONS.nonNettableStorageUnit);
         return false;
       }
       return true;
@@ -21755,13 +21763,26 @@ async function issueJobOperationMaterials(
         .where("storageUnitId", "=", proposedStorageUnitId ?? "")
         .executeTakeFirst();
 
+      // The fallback when the proposed bin is short: the fullest bin that is
+      // not non-nettable (no bin counts as nettable).
       const allStorageUnitQuantities = await trx
         .selectFrom("itemLedger")
-        .select(["storageUnitId", (eb) => eb.fn.sum("quantity").as("quantity")])
-        .where("itemId", "=", material.itemId)
-        .where("locationId", "=", job.locationId!)
-        .groupBy("storageUnitId")
-        .having((eb) => eb.fn.sum("quantity"), ">", 0)
+        .leftJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
+        .select([
+          "itemLedger.storageUnitId",
+          (eb) => eb.fn.sum("itemLedger.quantity").as("quantity")
+        ])
+        .where("itemLedger.itemId", "=", material.itemId)
+        .where("itemLedger.locationId", "=", job.locationId!)
+        .where("itemLedger.companyId", "=", companyId)
+        .where((eb) =>
+          eb.or([
+            eb("itemLedger.storageUnitId", "is", null),
+            eb("storageUnit.effectiveNettable", "=", true)
+          ])
+        )
+        .groupBy("itemLedger.storageUnitId")
+        .having((eb) => eb.fn.sum("itemLedger.quantity"), ">", 0)
         .execute();
 
       let finalStorageUnitId = proposedStorageUnitId;

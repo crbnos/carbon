@@ -1,4 +1,4 @@
--- Non-nettable storage (20261027181718_non-nettable-storage.sql and the
+-- Non-nettable storage (20261029090412_non-nettable-storage.sql and the
 -- storage unit / storage type interceptors): which units are non-nettable, and
 -- itemStockQuantities."quantityNonNettable" as stock moves and flags change.
 -- Run from the repository root against an existing local database that has at

@@ -5843,9 +5843,24 @@ export const updateKanban = defineServiceFn({
   }),
   permission: { update: "inventory" },
   async run(ctx, input) {
+    // Only a unit the update sets: a kanban whose unit became non-nettable
+    // later stays editable (its scans are refused instead).
+    const current = await ctx.asCaller.supabase
+      .from("kanban")
+      .select("storageUnitId, fromStorageUnitId")
+      .eq("id", input.id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (current.error) {
+      return ctx.error("internal", "Failed to load kanban", current.error);
+    }
     const refused = await service.refuseNonNettableKanbanUnits(ctx, [
-      input.storageUnitId,
-      input.fromStorageUnitId
+      input.storageUnitId !== current.data?.storageUnitId
+        ? input.storageUnitId
+        : null,
+      input.fromStorageUnitId !== current.data?.fromStorageUnitId
+        ? input.fromStorageUnitId
+        : null
     ]);
     if (refused) return refused;
     return unwrap(

@@ -154,13 +154,19 @@ BEGIN
     RETURN;
   END IF;
 
-  -- A deleted type no longer counts, so its units are refreshed as well.
+  -- Deleting a nettable type changes no unit.
+  IF p_operation = 'DELETE'
+    AND COALESCE((p_old->>'nettable')::boolean, true) THEN
+    RETURN;
+  END IF;
+
   SELECT array_agg(DISTINCT su."locationId")
   INTO v_location_ids
   FROM "storageUnit" su
-  WHERE su."storageTypeIds" @> ARRAY[p_old->>'id'];
+  WHERE su."companyId" = p_old->>'companyId'
+    AND su."storageTypeIds" @> ARRAY[p_old->>'id'];
 
-  PERFORM refresh_storage_unit_nettable(v_location_ids);
+  PERFORM util.refresh_storage_unit_nettable(v_location_ids);
 END;
 $function$;
 
@@ -170,7 +176,7 @@ CREATE OR REPLACE FUNCTION public.sync_storage_unit_nettable(p_table text, p_ope
  SET search_path TO 'public', 'extensions'
 AS $function$
 BEGIN
-  -- refresh_storage_unit_nettable's own write of effectiveNettable.
+  -- util.refresh_storage_unit_nettable's own write of effectiveNettable.
   IF current_setting('app.storage_unit_nettable_refresh', true) = 'on' THEN
     RETURN;
   END IF;
@@ -178,8 +184,8 @@ BEGIN
   IF p_operation = 'INSERT' THEN
     -- A new unit has no children and no stock, so only its own row can be
     -- wrong, and only when it is non-nettable (the column defaults to true) or
-    -- arrives saying it is. Checking that here keeps a bulk import from
-    -- recomputing the whole location once per row.
+    -- arrives saying it is. A nettable insert, the usual row of a bulk import,
+    -- recomputes nothing.
     IF COALESCE((p_new->>'nettable')::boolean, true)
       AND COALESCE((p_new->>'effectiveNettable')::boolean, true)
       AND NOT EXISTS (
@@ -195,7 +201,7 @@ BEGIN
       ) THEN
       RETURN;
     END IF;
-    PERFORM refresh_storage_unit_nettable(ARRAY[p_new->>'locationId']);
+    PERFORM util.refresh_storage_unit_nettable(ARRAY[p_new->>'locationId']);
     RETURN;
   END IF;
 
@@ -213,7 +219,23 @@ BEGIN
     RETURN;
   END IF;
 
-  PERFORM refresh_storage_unit_nettable(
+  -- A move between two parents that agree changes nothing below the unit:
+  -- the parent pass of a bulk import moves every row this way.
+  IF (p_new->'nettable') IS NOT DISTINCT FROM (p_old->'nettable')
+    AND (p_new->'storageTypeIds') IS NOT DISTINCT FROM (p_old->'storageTypeIds')
+    AND (p_new->'locationId') IS NOT DISTINCT FROM (p_old->'locationId')
+    AND (p_new->'effectiveNettable') IS NOT DISTINCT FROM (p_old->'effectiveNettable')
+    AND COALESCE((
+      SELECT parent."effectiveNettable" FROM "storageUnit" parent
+      WHERE parent."id" = p_new->>'parentId'
+    ), true) = COALESCE((
+      SELECT parent."effectiveNettable" FROM "storageUnit" parent
+      WHERE parent."id" = p_old->>'parentId'
+    ), true) THEN
+    RETURN;
+  END IF;
+
+  PERFORM util.refresh_storage_unit_nettable(
     ARRAY[p_new->>'locationId', p_old->>'locationId']
   );
 END;

@@ -2545,16 +2545,19 @@ const requireName = (r: Rec) => (!r.name?.trim() ? "Name is required" : null);
 
 /**
  * A CSV "Non-nettable" cell: true or false when it says so, undefined when it
- * is blank or unrecognised, so an update leaves the stored flag alone.
+ * is blank (an update leaves the stored flag alone), "invalid" otherwise.
  */
 export function parseCsvNonNettable(
   value: string | undefined
-): boolean | undefined {
+): boolean | undefined | "invalid" {
   const v = (value ?? "").trim().toLowerCase();
+  if (v === "") return undefined;
   if (["true", "yes", "1", "y", "on"].includes(v)) return true;
   if (["false", "no", "0", "n", "off"].includes(v)) return false;
-  return undefined;
+  return "invalid";
 }
+
+const NON_NETTABLE_CELL_ERROR = "Non-nettable must be true or false";
 
 type TableConfig = {
   // Row-level validation. Returns a reason string, or null when the row is fine.
@@ -2615,13 +2618,17 @@ export const CONFIGS: Record<ConfigLookupTable, TableConfig> = {
     }
   },
   storageType: {
-    validate: requireName,
+    validate: (r) =>
+      requireName(r) ??
+      (parseCsvNonNettable(r.nonNettable) === "invalid"
+        ? NON_NETTABLE_CELL_ERROR
+        : null),
     keysOf: (r) => [norm(r.name)],
     keysOfExisting: (r) => [norm(r.name ?? "")],
     values: (r) => {
       const values: Record<string, string | boolean> = { name: r.name!.trim() };
       const nonNettable = parseCsvNonNettable(r.nonNettable);
-      if (nonNettable !== undefined) values.nettable = !nonNettable;
+      if (typeof nonNettable === "boolean") values.nettable = !nonNettable;
       return values;
     }
   },
@@ -8539,6 +8546,14 @@ export async function importCsvTable(
           }
           const existingEntityId = matchedByCsvId ?? matchedByName;
 
+          if (parseCsvNonNettable(record.nonNettable) === "invalid") {
+            summary.errors.push({
+              row: rowIndex,
+              reason: NON_NETTABLE_CELL_ERROR
+            });
+            continue;
+          }
+
           // Row is valid — claim its dedup slots now (after the guards, so a
           // rejected row never blocks a later legitimate row with the same
           // name/id from being processed).
@@ -8552,7 +8567,7 @@ export async function importCsvTable(
           // Blank leaves an existing unit's flag alone; a new unit is nettable.
           const nonNettable = parseCsvNonNettable(record.nonNettable);
           const nettable =
-            nonNettable === undefined ? {} : { nettable: !nonNettable };
+            typeof nonNettable === "boolean" ? { nettable: !nonNettable } : {};
 
           if (parentName) {
             parentIntents.push({

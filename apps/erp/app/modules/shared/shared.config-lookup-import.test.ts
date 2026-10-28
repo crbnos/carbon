@@ -85,9 +85,15 @@ it.each([
   ["no", false],
   ["0", false],
   ["", undefined],
-  ["maybe", undefined]
+  ["maybe", "invalid"]
 ])("reads a Non-nettable cell %j as %j", (cell, expected) => {
   expect(parseCsvNonNettable(cell)).toBe(expected);
+});
+
+it("refuses a storage type row whose Non-nettable cell is not true or false", () => {
+  expect(
+    CONFIGS.storageType.validate({ name: "Quarantine", nonNettable: "maybe" })
+  ).toEqual("Non-nettable must be true or false");
 });
 
 it("imports a storage type as non-nettable only when the cell says so", () => {

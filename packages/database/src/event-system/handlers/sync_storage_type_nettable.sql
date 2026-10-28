@@ -15,12 +15,18 @@ BEGIN
     RETURN;
   END IF;
 
-  -- A deleted type no longer counts, so its units are refreshed as well.
+  -- Deleting a nettable type changes no unit.
+  IF p_operation = 'DELETE'
+    AND COALESCE((p_old->>'nettable')::boolean, true) THEN
+    RETURN;
+  END IF;
+
   SELECT array_agg(DISTINCT su."locationId")
   INTO v_location_ids
   FROM "storageUnit" su
-  WHERE su."storageTypeIds" @> ARRAY[p_old->>'id'];
+  WHERE su."companyId" = p_old->>'companyId'
+    AND su."storageTypeIds" @> ARRAY[p_old->>'id'];
 
-  PERFORM refresh_storage_unit_nettable(v_location_ids);
+  PERFORM util.refresh_storage_unit_nettable(v_location_ids);
 END;
 $function$;

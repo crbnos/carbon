@@ -13,7 +13,7 @@
 -- storage types has "nettable" false, or when its parent is non-nettable.
 -- That result is stored in storageUnit."effectiveNettable" and kept current by
 -- the storageUnit and storageType interceptors (sync_storage_unit_nettable,
--- sync_storage_type_nettable), which call refresh_storage_unit_nettable.
+-- sync_storage_type_nettable), which call util.refresh_storage_unit_nettable.
 -- Storing it, instead of walking the tree on every read like the lineside
 -- test does, lets the ledger handler and the planning reads use a plain join.
 --
@@ -28,22 +28,22 @@
 -- ---------------------------------------------------------------------------
 
 ALTER TABLE "storageType"
-  ADD COLUMN "nettable" BOOLEAN NOT NULL DEFAULT TRUE;
+  ADD COLUMN IF NOT EXISTS "nettable" BOOLEAN NOT NULL DEFAULT TRUE;
 
 ALTER TABLE "storageUnit"
-  ADD COLUMN "nettable" BOOLEAN NOT NULL DEFAULT TRUE,
-  -- Derived. Written only by refresh_storage_unit_nettable.
-  ADD COLUMN "effectiveNettable" BOOLEAN NOT NULL DEFAULT TRUE;
+  ADD COLUMN IF NOT EXISTS "nettable" BOOLEAN NOT NULL DEFAULT TRUE,
+  -- Derived. Written only by util.refresh_storage_unit_nettable.
+  ADD COLUMN IF NOT EXISTS "effectiveNettable" BOOLEAN NOT NULL DEFAULT TRUE;
 
 -- Every unit is nettable today, so every row's non-nettable part is 0.
 ALTER TABLE "itemStockQuantities"
-  ADD COLUMN "quantityNonNettable" NUMERIC NOT NULL DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS "quantityNonNettable" NUMERIC NOT NULL DEFAULT 0;
 
--- Changing a unit's flag re-reads that unit's ledger rows, and deleting a
--- non-nettable unit releases them. Neither had an index to use.
+-- A unit's ledger rows: read when its flag flips, and released when a
+-- non-nettable unit is deleted.
 CREATE INDEX IF NOT EXISTS "itemLedger_storageUnitId_idx"
   ON "itemLedger" ("storageUnitId")
-  INCLUDE ("itemId", "locationId", "quantity", "trackedEntityStatus")
+  INCLUDE ("itemId", "companyId", "locationId", "quantity", "trackedEntityStatus")
   WHERE "storageUnitId" IS NOT NULL;
 
 -- ---------------------------------------------------------------------------
@@ -64,12 +64,10 @@ CREATE INDEX IF NOT EXISTS "itemLedger_storageUnitId_idx"
 -- The function's own writes to storageUnit set app.storage_unit_nettable_refresh,
 -- which tells sync_storage_unit_nettable not to refresh again for them.
 --
--- SECURITY INVOKER: the interceptors run it as the owner. Called through the
--- API it runs under the caller's RLS, and itemStockQuantities has no write
--- policy, so it can change nothing there.
+-- In util, which the API cannot reach: the interceptors run it as the owner.
 -- ---------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION refresh_storage_unit_nettable(p_location_ids TEXT[])
+CREATE OR REPLACE FUNCTION util.refresh_storage_unit_nettable(p_location_ids TEXT[])
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY INVOKER
@@ -135,11 +133,12 @@ BEGIN
         FILTER (WHERE su."effectiveNettable" = false), 0) AS "quantityNonNettable"
     FROM "itemLedger" il
     LEFT JOIN "storageUnit" su ON su."id" = il."storageUnitId"
-    WHERE (il."itemId", COALESCE(il."locationId", '')) IN (
-      SELECT DISTINCT moved."itemId", COALESCE(moved."locationId", '')
-      FROM "itemLedger" moved
-      WHERE moved."storageUnitId" = ANY (v_flipped)
-    )
+    WHERE il."locationId" = ANY (p_location_ids)
+      AND (il."itemId", il."locationId") IN (
+        SELECT DISTINCT moved."itemId", moved."locationId"
+        FROM "itemLedger" moved
+        WHERE moved."storageUnitId" = ANY (v_flipped)
+      )
     GROUP BY il."itemId", il."companyId", COALESCE(il."locationId", '')
   ) t
   WHERE isq."itemId" = t."itemId"
@@ -184,7 +183,7 @@ AS $$
 $$;
 
 -- ---------------------------------------------------------------------------
--- 4. Nightly reconciliation, now for both columns
+-- 4. Nightly reconciliation of both columns
 --
 -- Forked from 20260812002454_item-stock-quantities-incremental.sql
 -- (SECURITY INVOKER since 20260925121735_rpc-function-guards.sql).
@@ -240,8 +239,8 @@ $$;
 -- ---------------------------------------------------------------------------
 -- 5. Planning RPCs read nettable on-hand
 --
--- Both summed every itemLedger row, so they counted Rejected lots that runMrp
--- does not. They now read the same aggregate runMrp reads. Forked from
+-- On-hand is the nettable aggregate runMrp reads: Rejected lots and stock in
+-- non-nettable units are not supply. Forked from
 -- 20261013004600_planning-rpcs-include-open-supply.sql; only the on-hand
 -- subquery changes. The grid wrappers (20261006205037) select from them.
 -- ---------------------------------------------------------------------------
