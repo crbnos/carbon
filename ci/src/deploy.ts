@@ -5,6 +5,7 @@
 import { $ } from "execa";
 
 import { client } from "./client";
+import { fetchFlagsDocument } from "./flags";
 
 export type Workspace = {
   id: number;
@@ -91,6 +92,10 @@ export type Workspace = {
   xero_client_id: string | null;
   xero_client_secret: string | null;
   xero_webhook_secret: string | null;
+
+  // Feature flags, fetched at deploy time (fetchFlagsDocument).
+  flags_endpoint: string | null;
+  flags_token: string | null;
 };
 
 async function deploy(): Promise<void> {
@@ -139,6 +144,8 @@ async function deploy(): Promise<void> {
         database_url,
         domain_name,
         exchange_rates_api_key,
+        flags_endpoint,
+        flags_token,
         google_client_id,
         google_client_secret,
         google_oauth_redirect_url,
@@ -290,6 +297,12 @@ async function deploy(): Promise<void> {
           : `https://${assembler_domain}`
         : undefined;
 
+      // Feature flags are fixed at deploy time. A failed fetch fails this
+      // workspace's deploy, and the running release keeps its flags.
+      const carbon_flags_endpoint = flags_endpoint
+        ? await fetchFlagsDocument(flags_endpoint, flags_token, imageTag)
+        : undefined;
+
       const $$ = $({
         // @ts-ignore
         env: {
@@ -300,6 +313,7 @@ async function deploy(): Promise<void> {
           ASSEMBLER_SERVICE_URL: assembler_service_url,
           AUTH_PROVIDERS: auth_providers ?? undefined,
           CARBON_EDITION: carbon_edition ?? "enterprise",
+          CARBON_FLAGS_ENDPOINT: carbon_flags_endpoint,
           CERT_ARN_ERP: cert_arn_erp,
           CERT_ARN_MES: cert_arn_mes,
           CLOUDFLARE_TURNSTILE_SECRET_KEY:
