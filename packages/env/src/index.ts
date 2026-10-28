@@ -127,9 +127,10 @@ export const SINGLE_TENANT = getEnv("TENANT_TYPE") === "single";
 
 export const SYSTEM_STATUS_URL = getEnv("SYSTEM_STATUS_URL");
 
-export const INTEGRATION_EARLY_ACCESS_USER_IDS = getEnv(
-  "INTEGRATION_EARLY_ACCESS_USER_IDS"
-);
+// Feature flags (`@carbon/env/flags.server`). Unset means every flag answers
+// its registry default.
+export const CARBON_FLAGS_ENDPOINT = getEnv("CARBON_FLAGS_ENDPOINT");
+export const CARBON_FLAGS_HEADERS = getEnv("CARBON_FLAGS_HEADERS");
 
 // Carbon GovCloud Rider metadata. These are the authoritative `docVersion` /
 // `docHash` stamped onto every ITAR certification, and the target of the

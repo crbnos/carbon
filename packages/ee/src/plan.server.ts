@@ -2,24 +2,19 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import {
-  CarbonEdition,
-  error,
-  INTEGRATION_EARLY_ACCESS_USER_IDS,
-  STRIPE_BYPASS_COMPANY_IDS
-} from "@carbon/auth";
+import { CarbonEdition, error, STRIPE_BYPASS_COMPANY_IDS } from "@carbon/auth";
 import {
   getCompanyPlanId,
   isCarbonOwnedCompany
 } from "@carbon/auth/company.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
+import { flags } from "@carbon/env/flags.server";
 import { Edition, normalizePlanId, Plan, redirect } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   defaultUpgradeMessage,
   type GateSpec,
-  isListedUserId,
   planMeetsRequirement,
   resolveRequirement
 } from "./plan";
@@ -33,12 +28,16 @@ function isBypassCompany(companyId: string): boolean {
 
 /**
  * Whether this user may install an `internalOnly` integration on Carbon Cloud
- * without a Carbon email (`isIntegrationComingSoon`): their id is listed in
- * `INTEGRATION_EARLY_ACCESS_USER_IDS`. The list is deployment configuration,
- * so no customer's id is in the code.
+ * without a Carbon email (`isIntegrationComingSoon`): the
+ * `integration-early-access` flag is on for them in this company. Its rules
+ * name the users and their company, because each user also needs access to
+ * the app on the provider's side (the Onshape app, in Onshape).
  */
-export function hasIntegrationEarlyAccess(userId: string): boolean {
-  return isListedUserId(INTEGRATION_EARLY_ACCESS_USER_IDS, userId);
+export function hasIntegrationEarlyAccess(context: {
+  companyId: string;
+  userId: string;
+}): Promise<boolean> {
+  return flags.bool("integration-early-access", context);
 }
 
 // The plan read is `getCompanyPlanId` (`@carbon/auth`): service role, cached, and

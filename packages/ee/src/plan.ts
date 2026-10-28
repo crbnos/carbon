@@ -79,20 +79,6 @@ export function isIntegrationComingSoon(
   );
 }
 
-/**
- * Whether `userId` is an entry of a comma-separated id list. Spaces and quotes
- * around an entry are ignored, so a list pasted with them still matches.
- */
-export function isListedUserId(
-  list: string | null | undefined,
-  userId: string | null | undefined
-): boolean {
-  if (!list || !userId) return false;
-  return list
-    .split(",")
-    .some((entry) => entry.replace(/^[\s"']+|[\s"']+$/g, "") === userId);
-}
-
 export type PlanRequirement = Plan | Plan[];
 
 export type GateSpec =

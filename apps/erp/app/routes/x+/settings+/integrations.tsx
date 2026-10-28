@@ -77,8 +77,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return data({
     integrations: items,
     activeRoles,
-    // Decided here so the early access list never reaches the browser.
-    hasEarlyAccess: hasIntegrationEarlyAccess(userId)
+    // Decided here so the flag's rules never reach the browser.
+    hasEarlyAccess: await hasIntegrationEarlyAccess({ companyId, userId })
     // No OAuth state here. Every OAuth install now starts at
     // `api+/integrations.$id.connect`, which issues a SIGNED, browser-bound,
     // single-use state — strictly better than the unsigned correlation value this

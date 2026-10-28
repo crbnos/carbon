@@ -89,7 +89,66 @@ export type Workspace = {
   xero_client_id: string | null;
   xero_client_secret: string | null;
   xero_webhook_secret: string | null;
+
+  // Feature flags, fetched at deploy time (fetchFlagsDocument).
+  flags_endpoint: string | null;
+  flags_token: string | null;
 };
+
+// The data: URL rides in the ECS task definition, which AWS caps at 64 KiB in
+// total, so the document gets a much smaller cap than the provider's 1 MB.
+const MAX_FLAGS_DOCUMENT_BYTES = 32 * 1024;
+
+/**
+ * The workspace's feature flags document as a `data:` URL for
+ * `CARBON_FLAGS_ENDPOINT`. The instance loads it once and never calls the
+ * source at runtime. Throws on any failure.
+ */
+async function fetchFlagsDocument(
+  endpoint: string,
+  token: string | null
+): Promise<string> {
+  const res = await fetch(endpoint, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) {
+    throw new Error(`The flags source answered ${res.status}`);
+  }
+  const body = await res.text();
+  if (Buffer.byteLength(body) > MAX_FLAGS_DOCUMENT_BYTES) {
+    throw new Error("The flags document is larger than 32 KiB");
+  }
+  assertFlagdDocument(JSON.parse(body));
+  return `data:application/json;base64,${Buffer.from(body).toString("base64")}`;
+}
+
+// The provider (`@carbon/env/flags.server`) validates with flagd-core at boot.
+// This catches the same mistakes here, so a bad document fails the deploy
+// instead of running a whole release on code defaults.
+function assertFlagdDocument(doc: unknown): void {
+  const flags = (doc as { flags?: unknown } | null)?.flags;
+  if (!flags || typeof flags !== "object") {
+    throw new Error("The flags document has no flags object");
+  }
+  for (const [key, flag] of Object.entries(flags)) {
+    const { state, variants, defaultVariant } = (flag ?? {}) as {
+      state?: unknown;
+      variants?: Record<string, unknown>;
+      defaultVariant?: unknown;
+    };
+    if (state !== "ENABLED" && state !== "DISABLED") {
+      throw new Error(`Flag "${key}" has an invalid state`);
+    }
+    if (
+      !variants ||
+      typeof defaultVariant !== "string" ||
+      !(defaultVariant in variants)
+    ) {
+      throw new Error(`Flag "${key}" has no valid defaultVariant`);
+    }
+  }
+}
 
 async function deploy(): Promise<void> {
   console.log("✅ 🌱 Starting deployment");
@@ -137,6 +196,8 @@ async function deploy(): Promise<void> {
         database_url,
         domain_name,
         exchange_rates_api_key,
+        flags_endpoint,
+        flags_token,
         google_places_api_key,
         inngest_base_url,
         inngest_event_key,
@@ -286,6 +347,12 @@ async function deploy(): Promise<void> {
           : `https://${assembler_domain}`
         : undefined;
 
+      // Feature flags are fixed at deploy time. A failed fetch fails this
+      // workspace's deploy, and the running release keeps its flags.
+      const carbon_flags_endpoint = flags_endpoint
+        ? await fetchFlagsDocument(flags_endpoint, flags_token)
+        : undefined;
+
       const $$ = $({
         // @ts-ignore
         env: {
@@ -296,6 +363,7 @@ async function deploy(): Promise<void> {
           ASSEMBLER_SERVICE_URL: assembler_service_url,
           AUTH_PROVIDERS: auth_providers ?? undefined,
           CARBON_EDITION: carbon_edition ?? "enterprise",
+          CARBON_FLAGS_ENDPOINT: carbon_flags_endpoint,
           CERT_ARN_ERP: cert_arn_erp,
           CERT_ARN_MES: cert_arn_mes,
           CLOUDFLARE_TURNSTILE_SECRET_KEY:

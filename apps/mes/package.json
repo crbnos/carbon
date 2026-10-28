@@ -2,6 +2,7 @@
   "name": "mes",
   "type": "module",
   "dependencies": {
+    "@carbon/env": "workspace:*",
     "@carbon/serve": "workspace:*"
   },
   "devDependencies": {

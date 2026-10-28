@@ -631,7 +631,7 @@ export async function isIntegrationInstallWithheld(
     !isIntegrationComingSoon(integration, {
       edition: CarbonEdition,
       email,
-      hasEarlyAccess: hasIntegrationEarlyAccess(userId)
+      hasEarlyAccess: await hasIntegrationEarlyAccess({ companyId, userId })
     })
   ) {
     return false;

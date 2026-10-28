@@ -38,13 +38,12 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import type { AuthenticatedRouteGroup, Role } from "~/types";
 import { path } from "~/utils/path";
 
-const internalOnlyRoutes = new Set<string>([path.to.companies]);
-
 export default function useSettingsSubmodules() {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const { isCloud, isControlledEnvironment, isInternal, isLocalDev } =
+  const { feature, isCloud, isControlledEnvironment, isInternal, isLocalDev } =
     useFlags();
+  const canManageCompanies = isInternal || feature("multi-company-management");
   // Enterprise: backups are a Business plan feature, but internal staff and
   // local dev keep access (mirrors the server `canManageBackups`).
   const { isGated: backupsGated } = usePlanGate({ feature: "BACKUPS" });
@@ -263,7 +262,7 @@ export default function useSettingsSubmodules() {
     if (route.requiresCloudEnvironment && !isCloud) return false;
     if (route.requiresControlledEnvironment && !isControlledEnvironment)
       return false;
-    if (!isInternal && internalOnlyRoutes.has(route.to)) return false;
+    if (route.to === path.to.companies && !canManageCompanies) return false;
     // Backups: visible to Business/Enterprise, internal staff, or local dev.
     if (
       route.to === path.to.backups &&

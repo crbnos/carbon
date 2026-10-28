@@ -4,7 +4,7 @@
 
 import { Edition } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
-import { isIntegrationComingSoon, isListedUserId } from "./plan";
+import { isIntegrationComingSoon } from "./plan";
 
 const internalOnly = { id: "cad", internalOnly: true };
 const customer = "buyer@example.com";
@@ -83,35 +83,5 @@ describe("isIntegrationComingSoon", () => {
         hasEarlyAccess: true
       })
     ).toBe(false);
-  });
-});
-
-describe("isListedUserId", () => {
-  const list = "user-a, user-b ,user-c";
-
-  it("finds an id anywhere in the list, ignoring spaces", () => {
-    for (const id of ["user-a", "user-b", "user-c"]) {
-      expect(isListedUserId(list, id)).toBe(true);
-    }
-  });
-
-  it("ignores quotes left around the value", () => {
-    expect(isListedUserId('"user-a,user-b"', "user-a")).toBe(true);
-    expect(isListedUserId('"user-a,user-b"', "user-b")).toBe(true);
-    expect(isListedUserId("'user-a'", "user-a")).toBe(true);
-    expect(isListedUserId('" user-a "', "user-a")).toBe(true);
-    expect(isListedUserId('"user-a" , " user-b"', "user-b")).toBe(true);
-  });
-
-  it("matches whole ids only", () => {
-    expect(isListedUserId(list, "user")).toBe(false);
-    expect(isListedUserId(list, "user-a, user-b")).toBe(false);
-  });
-
-  it("matches nothing for an empty list or an empty id", () => {
-    expect(isListedUserId(undefined, "user-a")).toBe(false);
-    expect(isListedUserId("", "user-a")).toBe(false);
-    expect(isListedUserId("user-a,,", "")).toBe(false);
-    expect(isListedUserId("user-a", null)).toBe(false);
   });
 });

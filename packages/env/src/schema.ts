@@ -135,10 +135,17 @@ export const schema = define({
       "URL of a JSON document with the latest version and an announcement",
     type: url
   },
-  INTEGRATION_EARLY_ACCESS_USER_IDS: {
+  CARBON_FLAGS_ENDPOINT: {
     group: "core",
     description:
-      "Comma-separated user ids that can install Coming soon integrations on Cloud"
+      "Feature flags document (flagd JSON): an https: URL to poll, or a data: or file: URL loaded once",
+    type: url
+  },
+  CARBON_FLAGS_HEADERS: {
+    group: "core",
+    description:
+      "Request headers for CARBON_FLAGS_ENDPOINT, as k=v pairs separated by commas (the OTEL headers format)",
+    secret: true
   },
   DEFAULT_LANGUAGE: {
     group: "core",
