@@ -29,7 +29,7 @@ import {
 } from "../logic/question";
 import type { ImplementationRowData } from "../types";
 import { EditableInput, SourceBadge } from "./primitives";
-import { useCheckMap, useHubActions, useIsInternal } from "./state";
+import { useCheckMap, useHubActions, useShowsStaffDetail } from "./state";
 
 export function PageQuestions({
   questions,
@@ -93,7 +93,7 @@ function QuestionCard({
 }) {
   const { t, i18n } = useLingui();
   const actions = useHubActions();
-  const isInternal = useIsInternal();
+  const showsStaffDetail = useShowsStaffDetail();
   const question = readQuestion(row.payload);
   const chosen = question.selected ?? [];
   // Not sure leaves the question open; the badge says so in the list.
@@ -106,7 +106,7 @@ function QuestionCard({
   // Where an answer came from is shown to Carbon staff when it was not typed
   // on this page.
   const fromElsewhere =
-    isInternal &&
+    showsStaffDetail &&
     (row.source === "mcp" ||
       row.source === "handover" ||
       row.source === "interview");

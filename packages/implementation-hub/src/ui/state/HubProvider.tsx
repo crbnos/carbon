@@ -93,6 +93,10 @@ export function useHub<T>(selector: (s: HubState) => T): T {
 export const useCanEdit = () => useHub((s) => s.canEdit);
 export const usePreviewing = () => useHub((s) => s.previewing);
 export const useIsInternal = () => useHub((s) => s.isInternal);
+// Carbon staff not previewing the customer's view: what only staff see, such
+// as where a row came from.
+export const useShowsStaffDetail = () =>
+  useHub((s) => s.isInternal && !s.previewing);
 export const useTier = () => useHub((s) => s.tier);
 export const useHubStatus = () => useHub((s) => s.status);
 // The staff-editable exclusions every view filters by.

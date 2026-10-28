@@ -8,6 +8,7 @@ import {
   applyHubMutation,
   parseItemKeys,
   parseJsonObject,
+  parsePlacement,
   parsePriorityWrites,
   priorityFieldValues,
   questionChange,
@@ -462,5 +463,155 @@ describe("clearField", () => {
     );
     expect(result.error?.forbidden).toBe(true);
     expect(requests).toHaveLength(0);
+  });
+});
+
+describe("addRow placed on a page", () => {
+  const page = {
+    version: 1,
+    user: "ops@example.com",
+    sections: [
+      { title: "Before go-live", cards: [{ item: "setup:locations" }] }
+    ]
+  };
+  const place = (target: unknown) => JSON.stringify({ page, target });
+  const question: StateAction = {
+    intent: "addRow",
+    collection: "question",
+    payload: JSON.stringify({ question: "Who approves purchase orders?" }),
+    place: place({ section: 0 })
+  };
+  const staffActor = {
+    companyId: "company_1",
+    userId: "staff_1",
+    isInternal: true,
+    source: "staff" as const
+  };
+
+  // The tables the write reads and writes, kept as rows.
+  let tables: Record<string, Record<string, unknown>[]>;
+  let sent: number;
+  const pageClient = createClient("http://postgrest.test", "anon-key", {
+    global: {
+      fetch: async (input, init) => {
+        sent += 1;
+        const url = new URL(String(input));
+        const table = url.pathname.replace("/rest/v1/", "");
+        const rows = (tables[table] ??= []);
+        const method = init?.method ?? "GET";
+        let body: unknown = [];
+        if (method === "POST") {
+          const written = JSON.parse(String(init?.body));
+          const row =
+            table === "implementationRow"
+              ? { id: "row_new", ...written }
+              : written;
+          rows.push(row);
+          body = [row];
+        } else {
+          const filters = [...url.searchParams].filter(
+            ([key]) => !["select", "limit", "order"].includes(key)
+          );
+          body = rows.filter((row) =>
+            filters.every(([key, value]) => `eq.${row[key]}` === value)
+          );
+        }
+        const accept = new Headers(init?.headers).get("Accept") ?? "";
+        if (accept.includes("vnd.pgrst.object")) {
+          body = (body as unknown[])[0] ?? null;
+        }
+        return new Response(JSON.stringify(body), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+    }
+  });
+
+  beforeEach(() => {
+    sent = 0;
+    tables = {
+      employees: [
+        { id: "user_ops", email: "ops@example.com", companyId: "company_1" }
+      ],
+      implementationRow: [],
+      implementationMember: []
+    };
+  });
+
+  it("writes the row and the person's page with the new card", async () => {
+    const result = await applyHubMutation(
+      pageClient as never,
+      staffActor,
+      question
+    );
+    expect(result.error).toBeNull();
+    expect(result.memberId).toBe("user_ops");
+    expect(tables.implementationRow).toEqual([
+      expect.objectContaining({
+        id: "row_new",
+        collection: "question",
+        payload: { question: "Who approves purchase orders?" }
+      })
+    ]);
+    expect(tables.implementationMember).toEqual([
+      expect.objectContaining({
+        userId: "user_ops",
+        page: {
+          ...page,
+          sections: [
+            {
+              title: "Before go-live",
+              cards: [{ item: "setup:locations" }, { item: "question:row_new" }]
+            }
+          ]
+        }
+      })
+    ]);
+  });
+
+  it("writes no row when the section is not on the page", async () => {
+    const result = await applyHubMutation(pageClient as never, staffActor, {
+      ...question,
+      place: place({ section: 3 })
+    } as StateAction);
+    expect(result.error?.forbidden).toBe(false);
+    expect(tables.implementationRow).toEqual([]);
+  });
+
+  it("refuses a customer before anything is sent", async () => {
+    const result = await applyHubMutation(
+      pageClient as never,
+      { ...staffActor, isInternal: false, source: "customer" },
+      { ...question, collection: "objective" } as StateAction
+    );
+    expect(result.error).toEqual({
+      message: "Only Carbon staff can set up a person's hub page",
+      forbidden: true
+    });
+    expect(sent).toBe(0);
+  });
+
+  it("reads a target section, or a new section by its title", () => {
+    expect(parsePlacement(place({ section: 0 }))).toEqual({
+      page,
+      target: { section: 0 }
+    });
+    expect(parsePlacement(place({ newSection: "Data" }))).toEqual({
+      page,
+      target: { newSection: "Data" }
+    });
+  });
+
+  it.each([
+    ["a section past the end", place({ section: 1 })],
+    ["an untitled new section", place({ newSection: " " })],
+    [
+      "a page that is not a page",
+      JSON.stringify({ page: {}, target: { section: 0 } })
+    ],
+    ["text that is not JSON", "{"]
+  ])("refuses %s", (_, json) => {
+    expect(parsePlacement(json)).toHaveProperty("error");
   });
 });

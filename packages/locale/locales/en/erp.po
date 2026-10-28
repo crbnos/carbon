@@ -2159,6 +2159,8 @@ msgstr "A new revision will be created using a copy of the current revision"
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
+msgid "A new section at the end of the page, with its first card."
+msgstr "A new section at the end of the page, with its first card."
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "A new size will be created using a copy of the current size"
@@ -2192,6 +2194,11 @@ msgstr "A number or sign next to a figure changes what it says. Put a word betwe
 
 msgid "A part"
 msgstr "A part"
+msgid "A note for this person (optional)"
+msgstr "A note for this person (optional)"
+
+msgid "A page needs one card. Remove page in the staff bar removes the whole page."
+msgstr "A page needs one card. Remove page in the staff bar removes the whole page."
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "A part contains the information about a specific item that can be purchased or manufactured."
@@ -3195,6 +3202,8 @@ msgstr "Add & Issue"
 
 msgid "Add a charge number to start logging time."
 msgstr "Add a charge number to start logging time."
+msgid "Add a card"
+msgstr "Add a card"
 
 msgid "Add a column below to sort the view"
 msgstr "Add a column below to sort the view"
@@ -3246,6 +3255,8 @@ msgstr "Add a row"
 
 msgid "Add a row for each charge number you worked on."
 msgstr "Add a row for each charge number you worked on."
+msgid "Add a section"
+msgstr "Add a section"
 
 msgid "Add a step"
 msgstr "Add a step"
@@ -3321,6 +3332,8 @@ msgstr "Add Calibration Record"
 
 msgid "Add Ceiling"
 msgstr "Add Ceiling"
+msgid "Add card"
+msgstr "Add card"
 
 msgid "Add Characteristic"
 msgstr "Add Characteristic"
@@ -3577,6 +3590,9 @@ msgstr "Add rule from library"
 
 msgid "Add Sample"
 msgstr "Add Sample"
+
+msgid "Add section"
+msgstr "Add section"
 
 msgid "Add Selector"
 msgstr "Add Selector"
@@ -4232,6 +4248,12 @@ msgstr "An integration or a custom change — the small slice that's actually cu
 
 msgid "An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code."
 msgstr "An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code."
+
+msgid "An introduction for this person (optional)"
+msgstr "An introduction for this person (optional)"
+
+msgid "An introduction for this section (optional)"
+msgstr "An introduction for this section (optional)"
 
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "An invitation is pending. They become active once they accept it."
@@ -7114,8 +7136,17 @@ msgstr "Carbon's shop-floor app where operators run operations, report quantitie
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 
+msgid "Card"
+msgstr "Card"
+
 msgid "Card Holder"
 msgstr "Card Holder"
+
+msgid "Card options"
+msgstr "Card options"
+
+msgid "Card title"
+msgstr "Card title"
 
 msgid "Cards"
 msgstr "Cards"
@@ -7540,6 +7571,8 @@ msgstr "Choose a customer"
 
 msgid "Choose a labor category or an employee"
 msgstr "Choose a labor category or an employee"
+msgid "Choose a hub item"
+msgstr "Choose a hub item"
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
@@ -7735,6 +7768,9 @@ msgstr "Clear search query"
 
 msgid "Clear selection"
 msgstr "Clear selection"
+
+msgid "Clear the due date"
+msgstr "Clear the due date"
 
 msgid "Clear value"
 msgstr "Clear value"
@@ -9993,6 +10029,9 @@ msgstr "Custom add-ons"
 msgid "Custom attributes you track against your people"
 msgstr "Custom attributes you track against your people"
 
+msgid "Custom card"
+msgstr "Custom card"
+
 msgid "Custom color"
 msgstr "Custom color"
 
@@ -10836,6 +10875,8 @@ msgstr "Delete"
 #. placeholder {0}: deleting.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
 #. placeholder {0}: row.account?.number ?? ""
+#. placeholder {0}: titleValue || text(card.title) || ""
+#. placeholder {0}: view.name
 msgid "Delete {0}"
 msgstr "Delete {0}"
 
@@ -10985,6 +11026,9 @@ msgstr "Delete Issue"
 
 msgid "Delete Item Group"
 msgstr "Delete Item Group"
+
+msgid "Delete item…"
+msgstr "Delete item…"
 
 msgid "Delete Job"
 msgstr "Delete Job"
@@ -11520,6 +11564,9 @@ msgstr "Detailed"
 
 msgid "Details"
 msgstr "Details"
+
+msgid "Details (optional)"
+msgstr "Details (optional)"
 
 msgid "Detected by the motion planner"
 msgstr "Detected by the motion planner"
@@ -13617,6 +13664,8 @@ msgstr "Every element keeps its current WBS code, even when it moves. Do this wh
 
 msgid "Every entry in the range and every change made to it"
 msgstr "Every entry in the range and every change made to it"
+msgid "Every hub item is on this page"
+msgstr "Every hub item is on this page"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Every in-scope test passes in your configured system, with your data."
@@ -13793,6 +13842,9 @@ msgstr "Existing mappings. Pick a different provider option to re-map."
 
 msgid "Existing Stripe customer"
 msgstr "Existing Stripe customer"
+
+msgid "Exit preview"
+msgstr "Exit preview"
 
 msgid "Exp. <0/>"
 msgstr "Exp. <0/>"
@@ -14631,6 +14683,10 @@ msgstr "Fill"
 msgid "Files on items, jobs and orders"
 msgstr "Files on items, jobs and orders"
 
+#. placeholder {0}: titleLabel[kind]
+msgid "Fill in the {0}"
+msgstr "Fill in the {0}"
+
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 
@@ -15414,6 +15470,8 @@ msgstr "Give the lease a <0>fixed duration on its Details step</0>."
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "Give the milestone a start and an end date to see its burn."
+msgid "Give the new section a title"
+msgstr "Give the new section a title"
 
 msgid "GL"
 msgstr "GL"
@@ -16194,6 +16252,9 @@ msgstr "How your quotes, orders, and invoices look when they go out"
 
 msgid "How your team is organized into departments"
 msgstr "How your team is organized into departments"
+
+msgid "Hub item"
+msgstr "Hub item"
 
 msgid "Hub Settings"
 msgstr "Hub Settings"
@@ -18512,6 +18573,9 @@ msgstr "Lineside"
 msgid "Link"
 msgstr "Link"
 
+msgid "Link (optional)"
+msgstr "Link (optional)"
+
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Link (optional) — e.g. /x/settings/…"
 
@@ -19956,6 +20020,12 @@ msgstr "Move item"
 msgid "Move Out of Sub-Assembly"
 msgstr "Move Out of Sub-Assembly"
 
+msgid "Move section down"
+msgstr "Move section down"
+
+msgid "Move section up"
+msgstr "Move section up"
+
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 
@@ -19976,6 +20046,8 @@ msgstr "Move to Group"
 
 msgid "Move to tax codes"
 msgstr "Move to tax codes"
+msgid "Move to section"
+msgstr "Move to section"
 
 msgid "Move to Trash"
 msgstr "Move to Trash"
@@ -19988,6 +20060,9 @@ msgstr "Move up"
 
 msgid "Moved"
 msgstr "Moved"
+
+msgid "Move up"
+msgstr "Move up"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -20376,6 +20451,15 @@ msgstr "New Customer Part"
 msgid "New Customer Rental Rates"
 msgstr "New Customer Rental Rates"
 
+msgid "New customization"
+msgstr "New customization"
+
+msgid "New cutover step"
+msgstr "New cutover step"
+
+msgid "New data item"
+msgstr "New data item"
+
 msgid "New Demand Forecast"
 msgstr "New Demand Forecast"
 
@@ -20515,6 +20599,12 @@ msgstr "New Milestone"
 msgid "New Non Conformance Type"
 msgstr "New Non Conformance Type"
 
+msgid "New objective"
+msgstr "New objective"
+
+msgid "New open question"
+msgstr "New open question"
+
 msgid "New Owner"
 msgstr "New Owner"
 
@@ -20592,6 +20682,8 @@ msgstr "New Rental Agreement"
 
 msgid "New Request"
 msgstr "New Request"
+msgid "New requirement"
+msgstr "New requirement"
 
 msgid "New Revision"
 msgstr "New Revision"
@@ -20637,6 +20729,8 @@ msgstr "New Service"
 
 msgid "New Service Job"
 msgstr "New Service Job"
+msgid "New setup item"
+msgstr "New setup item"
 
 msgid "New Shift"
 msgstr "New Shift"
@@ -23279,6 +23373,8 @@ msgstr "Options"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "Options for {0}"
+msgid "Options, one per line (leave empty for a typed answer)"
+msgstr "Options, one per line (leave empty for a typed answer)"
 
 msgid "or"
 msgstr "or"
@@ -23626,6 +23722,9 @@ msgstr "Page {pdfViewPage} of {documentPageCount}"
 
 msgid "Page file contents"
 msgstr "Page file contents"
+
+msgid "Page title"
+msgstr "Page title"
 
 msgid "Pages"
 msgstr "Pages"
@@ -24260,6 +24359,9 @@ msgstr "Pick Order"
 msgid "Pick serials/batches to return"
 msgstr "Pick serials/batches to return"
 
+msgid "Pick several"
+msgstr "Pick several"
+
 msgid "Pick the batches on hand that were received from this supplier."
 msgstr "Pick the batches on hand that were received from this supplier."
 
@@ -24806,6 +24908,9 @@ msgstr "Preventive maintenance schedules for your equipment"
 
 msgid "Preview"
 msgstr "Preview"
+
+msgid "Preview as customer"
+msgstr "Preview as customer"
 
 msgid "Preview failed: {error}"
 msgstr "Preview failed: {error}"
@@ -26840,6 +26945,9 @@ msgstr "Remove"
 #. placeholder {0}: action.name
 #. placeholder {0}: attachment.name
 #. placeholder {0}: deleting.account?.number ?? ""
+#. placeholder {0}: domain.domain
+#. placeholder {0}: item.label
+#. placeholder {0}: page.sections[removingSection]?.title ?? ""
 msgid "Remove {0}"
 msgstr "Remove {0}"
 
@@ -26946,6 +27054,9 @@ msgstr "Remove from batch"
 msgid "Remove from board"
 msgstr "Remove from board"
 
+msgid "Remove from page"
+msgstr "Remove from page"
+
 msgid "Remove from Price List"
 msgstr "Remove from Price List"
 
@@ -26981,6 +27092,9 @@ msgstr "Remove PDF"
 
 msgid "Remove row"
 msgstr "Remove row"
+
+msgid "Remove section"
+msgstr "Remove section"
 
 msgid "Remove slide"
 msgstr "Remove slide"
@@ -29081,6 +29195,9 @@ msgstr "Section E line 38, officers' wage QREs: {0}"
 
 msgid "Section saved"
 msgstr "Section saved"
+
+msgid "Section title"
+msgstr "Section title"
 
 msgid "Secure your account with 2FA"
 msgstr "Secure your account with 2FA"
@@ -32474,6 +32591,8 @@ msgstr "Text"
 
 msgid "Text color"
 msgstr "Text color"
+msgid "Text (optional)"
+msgstr "Text (optional)"
 
 msgid "Text size"
 msgstr "Text size"
@@ -32680,6 +32799,9 @@ msgstr "The Carbon user responsible for this supplier relationship; emails and r
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
+
+msgid "The card goes at the end of the section."
+msgstr "The card goes at the end of the section."
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
@@ -33188,6 +33310,8 @@ msgstr "The item has no made components at this depth. Include bought components
 
 msgid "The item has no serial or batch tracking"
 msgstr "The item has no serial or batch tracking"
+msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
+msgstr "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
 
 msgid "The item's rental rate"
 msgstr "The item's rental rate"
@@ -33783,6 +33907,9 @@ msgstr "The schedule used to spread this asset's cost over its useful life (stra
 
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
+
+msgid "The section and its cards leave this page. Items on it stay in the hub and can be added again."
+msgstr "The section and its cards leave this page. Items on it stay in the hub and can be added again."
 
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
@@ -34424,6 +34551,9 @@ msgstr "This item is built via a configurator and resolves its components per-or
 
 msgid "This item was removed from the hub."
 msgstr "This item was removed from the hub."
+
+msgid "This item was removed from the hub. Remove it from the page to save other changes."
+msgstr "This item was removed from the hub. Remove it from the page to save other changes."
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
@@ -36265,6 +36395,8 @@ msgstr "Use {earliest}"
 
 msgid "Use {suggestedName}"
 msgstr "Use {suggestedName}"
+msgid "Use a Carbon path starting with /x/, or an https link"
+msgstr "Use a Carbon path starting with /x/, or an https link"
 
 msgid "Use a different account"
 msgstr "Use a different account"

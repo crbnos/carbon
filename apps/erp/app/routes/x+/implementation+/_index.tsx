@@ -11,6 +11,7 @@ import {
   type HubPagePerson,
   type HubPeopleGroups,
   type HubPersonStatus,
+  type MemberPage,
   memberPageValidator,
   starterMemberPage
 } from "@carbon/implementation-hub";
@@ -18,6 +19,7 @@ import { getImplementationMembers } from "@carbon/implementation-hub/server";
 import {
   MemberPageEmpty,
   MemberPageView,
+  type PageEditor,
   toFormFields,
   useHub
 } from "@carbon/implementation-hub/ui";
@@ -43,16 +45,28 @@ import {
   PopoverContent,
   PopoverTrigger,
   Textarea,
+  toast,
   useDisclosure
 } from "@carbon/react";
 import { isInternalEmail } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
-import { LuCheck, LuDownload, LuFileUp, LuTrash2 } from "react-icons/lu";
+import {
+  LuCheck,
+  LuDownload,
+  LuEye,
+  LuEyeOff,
+  LuFileUp,
+  LuTrash2
+} from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData, useSearchParams } from "react-router";
 import { FileDropzone } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import {
+  setImplementationPreview,
+  useImplementationPreview
+} from "~/hooks/useImplementationPreview";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -176,6 +190,54 @@ export default function GetStartedRoute() {
   const parsed = member ? memberPageValidator.safeParse(member.page) : null;
   const page = parsed?.success ? parsed.data : null;
 
+  // Staff edit the page in place. Each edit saves the whole page on a fetcher
+  // of its own, so a tick on the hub's shared fetcher never cancels it, and a
+  // newer save carries every earlier edit. Until a save settles the page shows
+  // the edits; then it shows what the server kept.
+  const pageFetcher = useFetcher<{ success: boolean; message?: string }>();
+  const [draft, setDraft] = useState<{
+    memberId: string;
+    page: MemberPage;
+  } | null>(null);
+  const shownPage =
+    pageFetcher.state !== "idle" && draft && draft.memberId === selectedId
+      ? draft.page
+      : page;
+  const pageResult = pageFetcher.data;
+  useEffect(() => {
+    if (pageResult && !pageResult.success && pageResult.message) {
+      toast.error(pageResult.message);
+    }
+  }, [pageResult]);
+  const submitPage = pageFetcher.submit;
+  const editor = useMemo<PageEditor | undefined>(() => {
+    if (!isInternal || !selectedId) return undefined;
+    const submit = (fields: Record<string, string>) =>
+      submitPage(fields, {
+        method: "post",
+        action: path.to.implementationState
+      });
+    return {
+      save: (next) => {
+        setDraft({ memberId: selectedId, page: next });
+        submit(
+          toFormFields({ intent: "setMemberPage", page: JSON.stringify(next) })
+        );
+      },
+      addItem: (collection, payload, next, target) => {
+        setDraft({ memberId: selectedId, page: next });
+        submit(
+          toFormFields({
+            intent: "addRow",
+            collection,
+            payload,
+            place: { page: next, target }
+          })
+        );
+      }
+    };
+  }, [isInternal, selectedId, submitPage]);
+
   const select = (id: string) =>
     setParams(
       (current) => {
@@ -199,11 +261,12 @@ export default function GetStartedRoute() {
             onLoad={() => setLoadText("")}
           />
         ) : null}
-        {page && selectedId ? (
+        {shownPage && selectedId ? (
           <MemberPageView
-            page={page}
+            page={shownPage}
             memberId={selectedId}
             memberName={nameOf(selectedId)}
+            editor={editor}
           />
         ) : member && isInternal ? (
           <p className="w-full max-w-xl mx-auto py-24 text-center text-sm text-muted-foreground">
@@ -466,6 +529,7 @@ function StaffBar({
     if (selectedId) closeRemove();
   }, [selectedId, closeRemove]);
   const rows = useHub((s) => s.rows);
+  const previewing = useImplementationPreview();
   const selectedName =
     [...groups.carbon, ...groups.configured, ...groups.unconfigured].find(
       (person) => person.id === selectedId
@@ -512,6 +576,18 @@ function StaffBar({
         onSelect={onSelect}
       />
       <div className="ml-auto flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          variant={previewing ? "primary" : "secondary"}
+          leftIcon={previewing ? <LuEyeOff /> : <LuEye />}
+          onClick={() => setImplementationPreview(!previewing)}
+        >
+          {previewing ? (
+            <Trans>Exit preview</Trans>
+          ) : (
+            <Trans>Preview as customer</Trans>
+          )}
+        </Button>
         <Button
           size="sm"
           variant="secondary"

@@ -17,6 +17,7 @@ import {
   catalogueByItem,
   checkMemberPage
 } from "./logic/page";
+import { type PageTarget, placeCard, rowItem } from "./logic/page-edit";
 import {
   checkPriorityWrite,
   isPriorityAnswerKey,
@@ -26,7 +27,11 @@ import {
   stampPriorityOverride
 } from "./logic/priority-set";
 import { answerQuestionPayload } from "./logic/question";
-import type { StateAction } from "./models";
+import {
+  type MemberPage,
+  memberPageValidator,
+  type StateAction
+} from "./models";
 import {
   deleteFieldValue,
   deleteImplementationAssignment,
@@ -128,6 +133,8 @@ export function refusalFor(
       // added, gate per the field's ownership instead of isInternal.
       return "Only Carbon staff can edit this field";
     case "addRow":
+      if (action.place)
+        return "Only Carbon staff can set up a person's hub page";
       return CUSTOMER_COLLECTIONS.has(action.collection)
         ? null
         : "Only Carbon staff can add rows";
@@ -257,6 +264,30 @@ export function questionChange(action: {
     return selected ? { selected } : null;
   }
   return action.answer !== undefined ? { answer: action.answer } : null;
+}
+
+// Pure: where an addRow puts its new row: the page as the editor had it, and
+// the section. The page is checked against the format before the row is
+// written, so a page that could never be saved writes no row either.
+export function parsePlacement(
+  json: string
+): { page: MemberPage; target: PageTarget } | { error: string } {
+  const value = parseJsonObject(json);
+  const page = memberPageValidator.safeParse(value?.page);
+  if (!page.success)
+    return { error: "The page to add the item to is not valid" };
+  const target = value?.target as Record<string, unknown> | undefined;
+  if (typeof target?.newSection === "string" && target.newSection.trim()) {
+    return { page: page.data, target: { newSection: target.newSection } };
+  }
+  if (
+    typeof target?.section === "number" &&
+    Number.isInteger(target.section) &&
+    page.data.sections[target.section]
+  ) {
+    return { page: page.data, target: { section: target.section } };
+  }
+  return { error: "The section to add the item to is not on the page" };
 }
 
 // Pure: parse a JSON-encoded object; null when it is not one.
@@ -393,6 +424,15 @@ export async function applyHubMutation(
     case "addRow": {
       const payload = parseJsonObject(action.payload);
       if (!payload) return failed({ message: "Invalid row" });
+      // Placed rows are checked first: a row that cannot go on the page is
+      // not written.
+      const placement = action.place ? parsePlacement(action.place) : null;
+      if (placement && "error" in placement) {
+        return failed({ message: placement.error });
+      }
+      if (placement && !rowItem(action.collection, "row")) {
+        return failed({ message: "This kind of item cannot go on a page" });
+      }
       const result = await insertImplementationRow(client, {
         companyId,
         collection: action.collection,
@@ -413,7 +453,16 @@ export async function applyHubMutation(
         });
         if (assigned.error) return failed(assigned.error);
       }
-      return ok();
+      if (!placement) return ok();
+      // The new row goes on the page in the same write, as answering a
+      // question sets its tick. If the page then fails, the row stays and can
+      // be added to a page from the catalogue.
+      const item = rowItem(action.collection, result.data.id);
+      const page = item
+        ? placeCard(placement.page, { item }, placement.target)
+        : null;
+      if (!page) return failed({ message: "The item could not be placed" });
+      return saveMemberPage(client, actor, page);
     }
 
     case "updateRow": {
@@ -586,42 +635,8 @@ export async function applyHubMutation(
       return result.error ? failed(result.error) : ok();
     }
 
-    case "setMemberPage": {
-      // The catalogue includes the company's own rows, so a page can place an
-      // objective or a custom setup item by its row id.
-      const rows = await getImplementationRows(client, companyId);
-      if (rows.error) return failed(rows.error);
-      const items = catalogueByItem(
-        buildPageCatalogue(rows.data as unknown as ImplementationRowData[])
-      );
-      const { page, problems } = checkMemberPage(action.page, items);
-      if (!page) return failed({ message: problems.join("\n") });
-
-      // The page belongs to an employee of this company, found by email,
-      // whatever their status: an invited person's page waits for their
-      // first sign-in, an inactive person's for a new invite.
-      const person = await client
-        .from("employees")
-        .select("id")
-        .eq("companyId", companyId)
-        .eq("email", page.user)
-        .maybeSingle();
-      if (person.error) return failed(person.error);
-      if (!person.data?.id) {
-        return failed({
-          message: `user: ${page.user} is not an employee of this company`
-        });
-      }
-
-      const result = await upsertImplementationMember(client, {
-        companyId,
-        memberId: person.data.id,
-        page,
-        userId
-      });
-      if (result.error) return failed(result.error);
-      return { error: null, toggled: [], memberId: person.data.id };
-    }
+    case "setMemberPage":
+      return saveMemberPage(client, actor, action.page);
 
     case "deleteMemberPage": {
       const result = await deleteImplementationMember(client, {
@@ -644,4 +659,48 @@ export async function applyHubMutation(
       return result.error ? failed(result.error) : ok();
     }
   }
+}
+
+// Check a person's page and save it: the setMemberPage write, and the second
+// half of an addRow that places its row.
+async function saveMemberPage(
+  client: Client,
+  actor: HubActor,
+  input: unknown
+): Promise<HubMutationResult> {
+  const { companyId, userId } = actor;
+  // The catalogue includes the company's own rows, so a page can place an
+  // objective or a custom setup item by its row id.
+  const rows = await getImplementationRows(client, companyId);
+  if (rows.error) return failed(rows.error);
+  const items = catalogueByItem(
+    buildPageCatalogue(rows.data as unknown as ImplementationRowData[])
+  );
+  const { page, problems } = checkMemberPage(input, items);
+  if (!page) return failed({ message: problems.join("\n") });
+
+  // The page belongs to an employee of this company, found by email,
+  // whatever their status: an invited person's page waits for their
+  // first sign-in, an inactive person's for a new invite.
+  const person = await client
+    .from("employees")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("email", page.user)
+    .maybeSingle();
+  if (person.error) return failed(person.error);
+  if (!person.data?.id) {
+    return failed({
+      message: `user: ${page.user} is not an employee of this company`
+    });
+  }
+
+  const result = await upsertImplementationMember(client, {
+    companyId,
+    memberId: person.data.id,
+    page,
+    userId
+  });
+  if (result.error) return failed(result.error);
+  return { error: null, toggled: [], memberId: person.data.id };
 }

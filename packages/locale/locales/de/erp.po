@@ -2160,6 +2160,8 @@ msgstr "Eine neue Revision wird erstellt, indem eine Kopie der aktuellen Revisio
 
 msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 msgstr "Ein neuer Dienstleistungsauftrag kopiert den Abrechnungssatz. Jeder Zeiteintrag bucht seine Kosten zum Kostensatz."
+msgid "A new section at the end of the page, with its first card."
+msgstr ""
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "Eine neue Größe wird erstellt, indem eine Kopie der aktuellen Größe verwendet wird"
@@ -2193,6 +2195,11 @@ msgstr "Eine Zahl oder ein Zeichen direkt neben einem Wert verändert dessen Aus
 
 msgid "A part"
 msgstr "Ein Teil"
+msgid "A note for this person (optional)"
+msgstr ""
+
+msgid "A page needs one card. Remove page in the staff bar removes the whole page."
+msgstr ""
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "Ein Teil enthält die Informationen über einen bestimmten Artikel, der gekauft oder hergestellt werden kann."
@@ -3196,6 +3203,8 @@ msgstr "Hinzufügen & Ausgeben"
 
 msgid "Add a charge number to start logging time."
 msgstr "Fügen Sie eine Kostenträgernummer hinzu, um mit der Zeiterfassung zu beginnen."
+msgid "Add a card"
+msgstr ""
 
 msgid "Add a column below to sort the view"
 msgstr "Spalte unten hinzufügen, um die Anzeige zu sortieren"
@@ -3247,6 +3256,8 @@ msgstr "Zeile hinzufügen"
 
 msgid "Add a row for each charge number you worked on."
 msgstr "Für jede Kostenstelle, die Sie bearbeitet haben, eine Position hinzufügen."
+msgid "Add a section"
+msgstr ""
 
 msgid "Add a step"
 msgstr "Einen Schritt hinzufügen"
@@ -3322,6 +3333,8 @@ msgstr "Kalibrierprotokoll hinzufügen"
 
 msgid "Add Ceiling"
 msgstr "Obergrenze hinzufügen"
+msgid "Add card"
+msgstr ""
 
 msgid "Add Characteristic"
 msgstr "Merkmal hinzufügen"
@@ -3578,6 +3591,9 @@ msgstr "Regel aus Bibliothek hinzufügen"
 
 msgid "Add Sample"
 msgstr "Beispiel hinzufügen"
+
+msgid "Add section"
+msgstr ""
 
 msgid "Add Selector"
 msgstr "Selektor hinzufügen"
@@ -4233,6 +4249,12 @@ msgstr "Eine Integration oder eine benutzerdefinierte Änderung — der kleine T
 
 msgid "An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code."
 msgstr "Eine Internationale Bankkontonummer: eine Zeichenkette, die Land, Bank, Filiale und Konto mit zwei Prüfziffern enthält. Da diese die Bank bereits identifiziert, benötigen Länder, die sie nutzen, keinen separaten Routing-Code."
+
+msgid "An introduction for this person (optional)"
+msgstr ""
+
+msgid "An introduction for this section (optional)"
+msgstr ""
 
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "Eine Einladung ist ausstehend. Sie werden aktiv, sobald sie diese annehmen."
@@ -7115,8 +7137,17 @@ msgstr "Carbons Werkstatt-App, auf der Werker Arbeitsgänge durchführen, Mengen
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbons einzelner Datensatz für alles mit einer Teilenummer – Teil, Werkstoff, Werkzeug, Dienstleistung, Verbrauchsmaterial oder Vorrichtung – auf den alle Fertigungsaufträge, Methoden, Bestellungen und Bestände verweisen."
 
+msgid "Card"
+msgstr ""
+
 msgid "Card Holder"
 msgstr "Karteninhaber"
+
+msgid "Card options"
+msgstr ""
+
+msgid "Card title"
+msgstr ""
 
 msgid "Cards"
 msgstr "Karten"
@@ -7542,6 +7573,8 @@ msgstr "Wählen Sie einen Kunden"
 
 msgid "Choose a labor category or an employee"
 msgstr "Wählen Sie eine Personalkategorie oder einen Mitarbeiter"
+msgid "Choose a hub item"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Wählen Sie ein Teil aus, das {itemReadableId} ersetzt. Die Regel wird auf diesem Teil mit {itemReadableId} als Nachfolger gespeichert."
@@ -7740,6 +7773,9 @@ msgstr "Suchanfrage löschen"
 
 msgid "Clear selection"
 msgstr "Auswahl löschen"
+
+msgid "Clear the due date"
+msgstr ""
 
 msgid "Clear value"
 msgstr "Wert löschen"
@@ -9998,6 +10034,9 @@ msgstr "Benutzerdefinierte Zusatzoptionen"
 msgid "Custom attributes you track against your people"
 msgstr "Benutzerdefinierte Attribute für Ihr Personal"
 
+msgid "Custom card"
+msgstr ""
+
 msgid "Custom color"
 msgstr "Benutzerdefinierte Farbe"
 
@@ -10840,6 +10879,8 @@ msgstr "Löschen"
 #. placeholder {0}: deleting.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
 #. placeholder {0}: row.account?.number ?? ""
+#. placeholder {0}: titleValue || text(card.title) || ""
+#. placeholder {0}: view.name
 msgid "Delete {0}"
 msgstr "{0} löschen"
 
@@ -10989,6 +11030,9 @@ msgstr "Problem löschen"
 
 msgid "Delete Item Group"
 msgstr "Artikelgruppe löschen"
+
+msgid "Delete item…"
+msgstr ""
 
 msgid "Delete Job"
 msgstr "Fertigungsauftrag löschen"
@@ -11524,6 +11568,9 @@ msgstr "Detailliert"
 
 msgid "Details"
 msgstr "Details"
+
+msgid "Details (optional)"
+msgstr ""
 
 msgid "Detected by the motion planner"
 msgstr "Erkannt vom Bewegungsplaner"
@@ -13622,6 +13669,8 @@ msgstr "Jedes Element behält seinen aktuellen WBS-Code, auch wenn es sich beweg
 
 msgid "Every entry in the range and every change made to it"
 msgstr "Jeden Eintrag im Bereich und jede daran vorgenommene Änderung"
+msgid "Every hub item is on this page"
+msgstr ""
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Jeder Test im Umfang wird in Ihrem konfigurierten System mit Ihren Daten bestanden."
@@ -13798,6 +13847,9 @@ msgstr "Vorhandene Zuordnungen. Wählen Sie eine andere Provider-Option zum Neu-
 
 msgid "Existing Stripe customer"
 msgstr "Bestehender Stripe-Kunde"
+
+msgid "Exit preview"
+msgstr ""
 
 msgid "Exp. <0/>"
 msgstr "Gültig bis <0/>"
@@ -14636,6 +14688,10 @@ msgstr "Befüllen"
 msgid "Files on items, jobs and orders"
 msgstr ""
 
+#. placeholder {0}: titleLabel[kind]
+msgid "Fill in the {0}"
+msgstr ""
+
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "Füllen Sie dieses Unternehmen mit einer realistischen Branchengeschichte, damit jeder Bildschirm etwas hat. Sie können wiederherstellen, was vorher hier war."
 
@@ -15420,6 +15476,8 @@ msgstr "Geben Sie dem Mietvertrag eine <0>feste Laufzeit in seinem Schritt „Ei
 
 msgid "Give the milestone a start and an end date to see its burn."
 msgstr "Geben Sie dem Meilenstein ein Start- und Enddatum an, um seinen Verbrauch zu sehen."
+msgid "Give the new section a title"
+msgstr ""
 
 msgid "GL"
 msgstr "Hauptbuch"
@@ -16200,6 +16258,9 @@ msgstr "Wie Ihre Angebote, Bestellungen und Rechnungen aussehen, wenn sie versen
 
 msgid "How your team is organized into departments"
 msgstr "Wie Ihr Team in Abteilungen organisiert ist"
+
+msgid "Hub item"
+msgstr ""
 
 msgid "Hub Settings"
 msgstr ""
@@ -18519,6 +18580,9 @@ msgstr "Linienlager"
 msgid "Link"
 msgstr "Verknüpfung"
 
+msgid "Link (optional)"
+msgstr ""
+
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Link (optional) — z. B. /x/settings/…"
 
@@ -19946,6 +20010,8 @@ msgstr "Spalte verschieben: {0}"
 
 msgid "Move down"
 msgstr "Nach unten verschieben"
+msgid "Move down"
+msgstr ""
 
 msgid "Move entities"
 msgstr "Entitäten verschieben"
@@ -19961,6 +20027,12 @@ msgstr "Element verschieben"
 
 msgid "Move Out of Sub-Assembly"
 msgstr "Aus Baugruppe auslagern"
+
+msgid "Move section down"
+msgstr ""
+
+msgid "Move section up"
+msgstr ""
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Lagern Sie einen Teil der Menge in eine neue Verwendungsentscheid-Zeile um, damit die MRB jeden Teil separat entscheiden kann (z. B. etwas Ausschuss, etwas Nacharbeit)."
@@ -19982,6 +20054,8 @@ msgstr "In Gruppe verschieben"
 
 msgid "Move to tax codes"
 msgstr "Zu Steuercodes verschieben"
+msgid "Move to section"
+msgstr ""
 
 msgid "Move to Trash"
 msgstr "In den Papierkorb verschieben"
@@ -19994,6 +20068,8 @@ msgstr "Nach oben verschieben"
 
 msgid "Moved"
 msgstr "Umgelagert"
+msgid "Move up"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -20383,6 +20459,15 @@ msgstr "Neuer Kundenteil"
 msgid "New Customer Rental Rates"
 msgstr "Neue Kundenmietsätze"
 
+msgid "New customization"
+msgstr ""
+
+msgid "New cutover step"
+msgstr ""
+
+msgid "New data item"
+msgstr ""
+
 msgid "New Demand Forecast"
 msgstr "Neue Bedarfsprognose"
 
@@ -20522,6 +20607,12 @@ msgstr "Neuer Meilenstein"
 msgid "New Non Conformance Type"
 msgstr "Neuer Nichtkonformitätstyp"
 
+msgid "New objective"
+msgstr ""
+
+msgid "New open question"
+msgstr ""
+
 msgid "New Owner"
 msgstr "Neuer Verantwortlicher"
 
@@ -20599,6 +20690,8 @@ msgstr "Neue Mietvereinbarung"
 
 msgid "New Request"
 msgstr "Neue Anfrage"
+msgid "New requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "Neue Revision"
@@ -20644,6 +20737,8 @@ msgstr "Neue Dienstleistung"
 
 msgid "New Service Job"
 msgstr "Neuer Dienstleistungsauftrag"
+msgid "New setup item"
+msgstr ""
 
 msgid "New Shift"
 msgstr "Neue Schicht"
@@ -23284,6 +23379,8 @@ msgstr "Optionen"
 #. placeholder {0}: child.documentReadableId
 msgid "Options for {0}"
 msgstr "Optionen für {0}"
+msgid "Options, one per line (leave empty for a typed answer)"
+msgstr ""
 
 msgid "or"
 msgstr "oder"
@@ -23630,6 +23727,9 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Seite {pdfViewPage} von {documentPageCount}"
 
 msgid "Page file contents"
+msgstr ""
+
+msgid "Page title"
 msgstr ""
 
 msgid "Pages"
@@ -24265,6 +24365,9 @@ msgstr "Entnahmereihenfol­ge"
 msgid "Pick serials/batches to return"
 msgstr "Seriennummern/Chargen zur Rückgabe auswählen"
 
+msgid "Pick several"
+msgstr ""
+
 msgid "Pick the batches on hand that were received from this supplier."
 msgstr "Wählen Sie die verfügbaren Lose aus, die von diesem Lieferanten eingegangen sind."
 
@@ -24811,6 +24914,9 @@ msgstr "Vorbeugende Instandhaltungspläne für Ihre Anlagen"
 
 msgid "Preview"
 msgstr "Vorschau"
+
+msgid "Preview as customer"
+msgstr ""
 
 msgid "Preview failed: {error}"
 msgstr "Vorschau fehlgeschlagen: {error}"
@@ -26844,6 +26950,9 @@ msgstr "Entfernen"
 #. placeholder {0}: action.name
 #. placeholder {0}: attachment.name
 #. placeholder {0}: deleting.account?.number ?? ""
+#. placeholder {0}: domain.domain
+#. placeholder {0}: item.label
+#. placeholder {0}: page.sections[removingSection]?.title ?? ""
 msgid "Remove {0}"
 msgstr "Entfernen {0}"
 
@@ -26950,6 +27059,9 @@ msgstr "Aus Batch entfernen"
 msgid "Remove from board"
 msgstr "Vom Board entfernen"
 
+msgid "Remove from page"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "Aus Preisliste entfernen"
 
@@ -26985,6 +27097,9 @@ msgstr "PDF entfernen"
 
 msgid "Remove row"
 msgstr "Zeile entfernen"
+
+msgid "Remove section"
+msgstr ""
 
 msgid "Remove slide"
 msgstr "Folie entfernen"
@@ -29084,6 +29199,9 @@ msgstr "Abschnitt E Zeile 38, Offizierslöhne QREs: {0}"
 
 msgid "Section saved"
 msgstr "Bereich gespeichert"
+
+msgid "Section title"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Schützen Sie Ihr Konto mit 2FA"
@@ -32477,6 +32595,8 @@ msgstr "Text"
 
 msgid "Text color"
 msgstr "Textfarbe"
+msgid "Text (optional)"
+msgstr ""
 
 msgid "Text size"
 msgstr "Textgröße"
@@ -32683,6 +32803,9 @@ msgstr "Der Carbon-Benutzer, der für diese Lieferantenbeziehung verantwortlich 
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "Der Carbon-Benutzer, der diese RFQ besitzt; Lieferantenantworten und Erinnerungen werden an ihn weitergeleitet."
+
+msgid "The card goes at the end of the section."
+msgstr ""
 
 msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 msgstr "Der Spediteur und die Dienstleistung, mit der eine Lieferung erfolgt, mit Angabe der Tracking-URL-Vorlage, die eine Trackingnummer in einen Link umwandelt, und des Kontos, auf das Frachtkosten gebucht werden."
@@ -33191,6 +33314,8 @@ msgstr "Der Artikel hat auf dieser Ebene keine gefertigten Komponenten. Beziehen
 
 msgid "The item has no serial or batch tracking"
 msgstr "Der Artikel hat keine Serien- oder Los-Verfolgung"
+msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "Der Mietpreis des Artikels"
@@ -33786,6 +33911,9 @@ msgstr "Der Zeitplan, der verwendet wird, um die Kosten dieses Vermögenswerts �
 
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "Der Scheduler verwendet zuerst die zutreffende Regel unten, dann subtrahiert er Stillstandszeit und Besetzung."
+
+msgid "The section and its cards leave this page. Items on it stay in the hub and can be added again."
+msgstr ""
 
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
 msgstr "Die vordefinierte Anlagenklasse für Einheiten, die Sie bauen oder kapitalisieren, um sie zu vermieten statt zu verkaufen; sie wird zu ihren eigenen Mietflotten-Anlagekonten und kumulierten Abschreibungskonten gebucht, und jedes Anlagegut, das mit einem Artikel verknüpft ist, erscheint im Flottenregister."
@@ -34426,6 +34554,9 @@ msgid "This item is built via a configurator and resolves its components per-ord
 msgstr "Dieser Artikel wird über einen Konfigurator gebaut und löst seine Komponenten pro Bestellung auf; für ihn erstellte Fertigungsaufträge erben den aufgelösten BOM des Konfigurators."
 
 msgid "This item was removed from the hub."
+msgstr ""
+
+msgid "This item was removed from the hub. Remove it from the page to save other changes."
 msgstr ""
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
@@ -36267,6 +36398,8 @@ msgstr "{earliest} verwenden"
 
 msgid "Use {suggestedName}"
 msgstr "Verwenden Sie {suggestedName}"
+msgid "Use a Carbon path starting with /x/, or an https link"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "Verwenden Sie ein anderes Konto"
