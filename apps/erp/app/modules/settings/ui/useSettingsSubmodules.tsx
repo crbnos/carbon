@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useFeatureFlags } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import {
@@ -41,8 +42,9 @@ import { path } from "~/utils/path";
 export default function useSettingsSubmodules() {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const { feature, isCloud, isControlledEnvironment, isInternal, isLocalDev } =
+  const { isCloud, isControlledEnvironment, isInternal, isLocalDev } =
     useFlags();
+  const { feature } = useFeatureFlags();
   const canManageCompanies = isInternal || feature("multi-company-management");
   // Enterprise: backups are a Business plan feature, but internal staff and
   // local dev keep access (mirrors the server `canManageBackups`).

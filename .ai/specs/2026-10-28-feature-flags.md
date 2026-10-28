@@ -76,7 +76,6 @@ values. The parser skips a malformed pair and logs it. It never throws.
 |-------------------------------|---------|----------|
 | `https://…` (console or CSA dashboard) | Carbon Cloud | Load at boot, then poll |
 | `data:application/json;base64,…` | BYOC, Carbon-managed AWS workspaces | Load once at boot. No poll. |
-| `file:///…` | Air-gapped installs | Load once at boot. No poll. |
 | Unset | Community self-host, local dev | Code defaults only |
 
 Both variables are server-only. They never go into `getBrowserEnv()`.
@@ -177,7 +176,7 @@ exports, never through `process.env` (`packages/env/AGENTS.md`).
 | `CarbonFlagsProvider` | An OpenFeature provider. It loads the document and evaluates with `FlagdCore`. |
 | `initFlags({ store, waitUntil })` | Sets the provider. Each app calls it once in `app/entry.server.tsx`. |
 | `FlagsStore` (type) | The interface of the shared cache. `@carbon/kv` implements it with Redis. |
-| `flags.bool(key, ctx)`, `flags.string(key, ctx)`, `flags.number(key, ctx)` | The only API that call sites use. `ctx` is `{ companyId, userId? }`, and `companyId` is required. The provider adds `tenancy` and `edition`. |
+| `flags.bool(key, ctx)` | The only API that call sites use. `ctx` is `{ companyId, userId? }`, and `companyId` is required. The provider adds `tenancy` and `edition`. |
 | `evaluateBrowserFlags(ctx)` | Returns the value of every registry flag with `browser: true`, for the layout loaders. |
 | `parseHeaders(raw)` | The `CARBON_FLAGS_HEADERS` parser. |
 
@@ -219,7 +218,7 @@ returns the reasons in the table (checked in a scratch test).
 So `DISABLED` is the switch that gives control back to the code. Use it to
 stop a flag without deleting it.
 
-The browser follows the same rules. `useFlags().feature(key)` returns the
+The browser follows the same rules. `useFeatureFlags().feature(key)` returns the
 loader's value, else the registry default.
 
 During a rollout, the two defaults move in this order:
@@ -278,7 +277,7 @@ Redis never mix their documents.
 11. A missing flag, a wrong type, or no loaded document returns the registry
     default.
 
-A `data:` or `file://` endpoint loads once at boot. It never reads or writes
+A `data:` endpoint loads once at boot. It never reads or writes
 Redis, because its document never changes.
 
 Sync on read, not on a timer, because Vercel pauses the process between
@@ -314,13 +313,11 @@ A flag with `browser: true` in the registry can reach React components.
    (`packages/react/src/hooks/useFeatureFlags.tsx`). Its `feature(key)` reads
    `flags` from the `/x` route data and falls back to the registry default.
    It follows `usePlan`, which reads the same route in both apps.
-4. The existing ERP hook `useFlags` (`apps/erp/app/hooks/useFlags.tsx`)
-   returns that `feature`. The MES calls `useFeatureFlags()` directly.
+4. Both apps call `useFeatureFlags()` directly. The ERP's `useFlags` does
+   not change: it keeps the edition and environment booleans.
 
-`useFlags` already returns the edition and environment booleans (`isCloud`,
-`isInternal`). With `feature(key)` added, it is the one ERP hook that says
-what is on for this user. The hook lives in `@carbon/react` because the
-`no-duplicated-app-file` check refuses a hook that both apps copy.
+The hook lives in `@carbon/react` because the `no-duplicated-app-file`
+check refuses a hook that both apps copy.
 
 Only evaluated values reach the browser. Rules, company lists and the token
 never do.
@@ -451,7 +448,7 @@ Both systems survive an outage the same way:
 | | Licensing (spec 2026-08-19) | Flags |
 |---|---|---|
 | Online | Check-in every 24 h, 30-day term | Poll every 60 s on Carbon Cloud |
-| Offline | Air-gapped license, 1-year term | `data:` or `file://` endpoint set at deploy |
+| Offline | Air-gapped license, 1-year term | `data:` endpoint set at deploy |
 | Source down | Keeps the entitlements until expiry | Keeps the last good document |
 | Request path | Never calls out | Evaluates in process |
 
@@ -486,7 +483,7 @@ companies to the staff. So with no source, behavior stays as it is today.
 | Today | With the flag |
 |-------|---------------|
 | The loaders of `x+/settings+/companies.tsx`, `companies.$id.tsx` and `companies.delete.$id.tsx` redirect every user without a Carbon email | They redirect when the user has no Carbon email and the flag is off for the company |
-| `internalOnlyRoutes` in `useSettingsSubmodules.tsx` hides the nav entry from users without a Carbon email | The entry shows when `isInternal` is true or `useFlags().feature("multi-company-management")` is true |
+| `internalOnlyRoutes` in `useSettingsSubmodules.tsx` hides the nav entry from users without a Carbon email | The entry shows when `isInternal` is true or `useFeatureFlags().feature("multi-company-management")` is true |
 
 **`integration-early-access`** — install of an integration with
 `internalOnly: true` on Carbon Cloud. Today only `onshape-v2` has it.
@@ -546,7 +543,7 @@ Each one becomes a flag when its rollout starts:
 | Who controls a flag per company | Carbon staff only, with a `companyIds` rule | Answer to Q13. Customers never see flags. |
 | User targeting | A `userIds` condition, used with `companyIds` | Answer to Q16. A grant to a person stays inside the company that the rule names. |
 | Tenancy and edition | Fields in the evaluation context that a rule can test | Answer to Q14. Company rules work the same on single-tenant and multi-tenant instances. |
-| Browser flags | Evaluated in the authenticated layout loader, read with `useFlags().feature(key)` | Answer to Q4. Rules never reach the browser. The existing `useFlags` hook grows; no second hook. |
+| Browser flags | Evaluated in the authenticated layout loader, read with `useFeatureFlags().feature(key)` | Answer to Q4. Rules never reach the browser. One hook in `@carbon/react` for both apps. |
 | Readers | ERP and MES only | Answer to Q7. |
 | Package home | `@carbon/env/flags.server` + `@carbon/env/flags` | Answer to Q12. The `.server` suffix follows the repo convention for server-only modules. |
 | Provider setup | `initFlags` in `app/entry.server.tsx` | It already holds `waitUntil` and tracing setup, and it runs in dev and in production. |
@@ -558,7 +555,9 @@ Each one becomes a flag when its rollout starts:
 | Flag delete guard | Archive first. `metadata.archived` makes the instance warn. Hard delete waits 30 days. | Answer to Q5 and Q10. CI needs no console token. |
 | Code defaults | One registry, `FLAGS` | Two call sites cannot disagree on a default. |
 | v1 flags | `multi-company-management`, `integration-early-access` | Answer to Q15 and Q16. Both replace an `isInternalEmail` or user-list stand-in, and staff keep their access. |
-| Direct OpenFeature use | Forbidden outside `packages/env` by a `@carbon/checks` rule | Every call site goes through the typed `flags.*` API, which requires `companyId`. |
+| Direct OpenFeature use | No check. `flags.bool` is the only read API `@carbon/env` exports. | A check guarded an import nobody makes. Add one if code starts to import `@openfeature/*` directly. |
+| Flag types | Booleans only | Every v1 flag is a boolean. Add string or number support with the first flag that needs it. |
+| Endpoint schemes | `https:` and `data:` | Nothing produces a `file:` endpoint: the CI deploy and the planned BYOC step both write `data:`. |
 | H1 Multi-tenancy | No new Carbon tables. Targeting keys on `companyId`, and the typed wrapper requires it. | The flag data lives in the sources, not in Carbon's database. |
 | H2 Service shape | N/A | No service functions. `flags.*` returns a value and never throws. |
 | H3 RLS | N/A | No Carbon tables. Each source protects its tables with its own admin auth. |
@@ -590,12 +589,10 @@ and `flags_token` (text, secret). Both are nullable.
 | `packages/kv/src/flags-store.ts` | New. `redisFlagsStore`, the Redis `FlagsStore`. Export it from `src/index.ts`. It is glue, so it has no unit test (`.claude/rules/testing.md`); the provider tests cover the store contract with an in-memory store. |
 | `apps/erp/app/entry.server.tsx`, `apps/mes/app/entry.server.tsx` | Call `initFlags` with `redisFlagsStore`, `waitUntil` and `onWarning` (the app's logger, scope `flags`). |
 | `apps/erp/app/routes/x+/_layout.tsx` | Return `flags` from `evaluateBrowserFlags`. |
-| `apps/erp/app/hooks/useFlags.tsx` | Add `feature(key)`. |
 | `packages/react/src/hooks/useFeatureFlags.tsx` | New. `useFeatureFlags()` for both apps. `@carbon/env` moves from a dev dependency to a dependency of `@carbon/react`. |
 | `apps/mes/package.json` | Add `@carbon/env`, for the `flags.server` import in the entry and the layout. |
-| `packages/checks/src/conformance/flags-through-env.ts` | New check `flags-through-env`: no `@openfeature/*` import outside `packages/env`. Register it in `src/index.ts` and `src/run.ts`. |
 | `apps/erp/app/routes/x+/settings+/companies.tsx`, `companies.$id.tsx`, `companies.delete.$id.tsx` | Redirect only when the user has no Carbon email and `multi-company-management` is off (section 10). |
-| `apps/erp/app/modules/settings/ui/useSettingsSubmodules.tsx` | Show the Companies entry when `isInternal` or `feature("multi-company-management")` is true. |
+| `apps/erp/app/modules/settings/ui/useSettingsSubmodules.tsx` | Show the Companies entry when `isInternal` or `useFeatureFlags().feature("multi-company-management")` is true. |
 | `packages/ee/src/plan.server.ts` | `hasIntegrationEarlyAccess({ companyId, userId })` reads `integration-early-access`. Delete `isListedUserId` if nothing else uses it. |
 | `apps/erp/app/modules/settings/settings.service.ts`, `apps/erp/app/routes/x+/settings+/integrations.tsx` | Pass `{ companyId, userId }` to `hasIntegrationEarlyAccess` and await it. |
 | `packages/ee/src/plan.test.ts` | Keep the `isIntegrationComingSoon` cases. They test a boolean, so they do not change. |
@@ -628,7 +625,7 @@ Deviations:
 
 | Deviation | Why |
 |-----------|-----|
-| A `data:` or `file:` endpoint is valid | BYOC and AWS workspaces fix their flags at deploy time. |
+| A `data:` endpoint is valid | BYOC and AWS workspaces fix their flags at deploy time. |
 | The module lives in `@carbon/env`, not `@carbon/logger` | The user's choice. Flags are configuration. |
 
 For browser flags, the sibling is the existing `useFlags` hook
@@ -659,8 +656,7 @@ None in the ERP or the MES. The admin form is in each source (section 6).
 - [ ] A BYOC deploy with the console down fails before rollout, and the old release keeps serving.
 - [ ] `ci/src/deploy.ts` on a `workspaces` row with `flags_endpoint` set passes a `data:` `CARBON_FLAGS_ENDPOINT` to `sst deploy`. A row without it passes none.
 - [ ] Evaluating a flag with `metadata.archived = true` logs one warning per key per process.
-- [ ] A component that calls `useFeatureFlags().feature("x")` (or `useFlags().feature("x")` in the ERP) for a browser flag gets the value for the session's company. The page source contains no rules and no company ids other than the session's own.
-- [ ] An `@openfeature/server-sdk` import in `apps/erp` fails the new `@carbon/checks` rule.
+- [ ] A component that calls `useFeatureFlags().feature("x")` for a browser flag gets the value for the session's company. The page source contains no rules and no company ids other than the session's own.
 - [ ] A user without a Carbon email opens `/x/settings/companies` while `multi-company-management` is off for the company. The loader redirects to Settings. With the flag on for the company, the page loads and the Companies entry shows in Settings.
 - [ ] A user with a Carbon email opens `/x/settings/companies` with the flag off, and the page loads as it does today.
 - [ ] On Carbon Cloud, a user without a Carbon email sees Onshape V2 as "Coming soon" while `integration-early-access` is off for the company. With the flag on, the user can install it.
@@ -715,3 +711,4 @@ None in the ERP or the MES. The admin form is in each source (section 6).
 - 2026-10-28: Review fixes. The provider keeps the lease after a failed fetch, fetches for itself when it cannot load the Redis copy, sends structured warnings to `onWarning`, and keeps the boot sync alive with `waitUntil`. The MES layout sends no flags. `ci/src/deploy.ts` checks the document's shape.
 - 2026-10-28: Added the `X-Carbon-Commit` header from `CARBON_COMMIT_SHA` (alias `VERCEL_GIT_COMMIT_SHA`; `IMAGE_TAG` on AWS), so each source records which build every instance runs.
 - 2026-10-29: Review fixes. A process that rejects the Redis copy keeps its fetch in memory. The Redis hash expires after 1 day without a write. `X-Carbon-Commit` is 12 characters everywhere. `flagStatus()` is gone; monitoring reads the `onWarning` log lines. `lastCommit` means the most recent commit seen.
+- 2026-10-29: Simplified. Flags are booleans only (`flags.bool`). No `file:` endpoints. No `flags-through-env` check. Both apps read browser flags with `useFeatureFlags()`, and the ERP's `useFlags` is unchanged.

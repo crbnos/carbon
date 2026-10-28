@@ -194,14 +194,14 @@ request headers in the `OTEL_EXPORTER_OTLP_HEADERS` format (`secret: true`, it
 carries the token). An `https:` endpoint is the Carbon Cloud source: each ERP
 and MES process reads the shared copy in Redis (`redisFlagsStore`, `@carbon/kv`,
 hash `flags:<scope>`) every 10 s and, when that copy is older than 60 s, one
-process fetches the source under a lease. A `data:` or `file:` endpoint loads
+process fetches the source under a lease. A `data:` endpoint loads
 once: `ci/src/deploy.ts` fetches each AWS workspace's document at deploy time
 (`workspaces.flags_endpoint` / `flags_token`, 32 KiB cap for the task
 definition) and passes it as a `data:` URL, and `sst.config.ts` forwards it.
 Unset means every flag answers its registry default (`packages/env/src/flags.ts`).
 Read flags only with `flags.*` / `evaluateBrowserFlags` and, in React,
-`useFlags().feature(key)`; the `flags-through-env` check refuses an
-`@openfeature/*` import anywhere else.
+`useFeatureFlags().feature(key)` (`@carbon/react`), never with an
+OpenFeature client.
 
 **Tracing (all optional)** — the standard OpenTelemetry variables, read raw by
 the OTel SDK (not `@carbon/env`): `OTEL_EXPORTER_OTLP_ENDPOINT` (or

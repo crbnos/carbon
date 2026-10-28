@@ -2,12 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { mkdtemp, writeFile } from "node:fs/promises";
 /// <reference types="node" />
 import { createServer, type Server } from "node:http";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 import { OpenFeature } from "@openfeature/server-sdk";
 import {
   afterAll,
@@ -388,16 +384,6 @@ describe("CarbonFlagsProvider", () => {
     expect(await read("cmp_123")).toBe(true);
     await read("cmp_123");
     expect(requests).toHaveLength(0);
-  });
-
-  it("loads a file: endpoint", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "flags-"));
-    const path = join(dir, "flags.json");
-    await writeFile(path, doc);
-    const read = await start(
-      new CarbonFlagsProvider({ endpoint: pathToFileURL(path).href })
-    );
-    expect(await read("cmp_123")).toBe(true);
   });
 
   it("warns once per archived flag that the code reads", async () => {

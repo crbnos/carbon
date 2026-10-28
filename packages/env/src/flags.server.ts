@@ -4,8 +4,6 @@
 
 /// <reference types="node" />
 import { createHash } from "node:crypto";
-import { readFile, stat } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import { FlagdCore } from "@openfeature/flagd-core";
 import {
   type Client,
@@ -19,8 +17,7 @@ import {
 import {
   BROWSER_FLAG_KEYS,
   type BrowserFlags,
-  FLAGS,
-  type FlagKeyOf,
+  type FlagKey,
   flagDefault
 } from "./flags";
 import {
@@ -145,7 +142,7 @@ async function readCapped(res: Response): Promise<string> {
  * An OpenFeature provider over a flagd JSON document, in three layers: the
  * document parsed in process memory (every evaluation, no I/O), the copy in
  * the store (re-read every 10 s), and the source (fetched under a lease when
- * the store's copy is older than 60 s). A `data:` or `file:` endpoint is
+ * the store's copy is older than 60 s). A `data:` endpoint is
  * loaded once and never touches the store.
  */
 export class CarbonFlagsProvider implements Provider {
@@ -204,7 +201,8 @@ export class CarbonFlagsProvider implements Provider {
     if (this.mode === "none") return;
     if (this.mode === "static") {
       try {
-        this.apply(await this.readStatic(), "static");
+        // Node's fetch reads data: URLs.
+        this.apply(await readCapped(await fetch(this.endpoint)), "static");
         this.confirmedAt = Date.now();
       } catch (error) {
         this.fail(error);
@@ -253,18 +251,6 @@ export class CarbonFlagsProvider implements Provider {
       confirmedAt: this.confirmedAt ?? null,
       ageMs: this.confirmedAt ? Date.now() - this.confirmedAt : null
     });
-  }
-
-  private async readStatic(): Promise<string> {
-    if (this.endpoint.startsWith("file:")) {
-      const path = fileURLToPath(this.endpoint);
-      if ((await stat(path)).size > MAX_BODY_BYTES) {
-        throw new Error("the flags document is larger than 1 MB");
-      }
-      return readFile(path, "utf8");
-    }
-    // Node's fetch reads data: URLs.
-    return readCapped(await fetch(this.endpoint));
   }
 
   private async loadFromStore(): Promise<boolean> {
@@ -544,42 +530,20 @@ const toContext = ({ companyId, userId }: FlagContext): EvaluationContext => ({
  * (`FLAGS`), so two call sites cannot disagree on it. Never throws.
  */
 export const flags = {
-  bool: (key: FlagKeyOf<"boolean">, context: FlagContext): Promise<boolean> =>
-    getClient().getBooleanValue(
-      key,
-      flagDefault(key) as boolean,
-      toContext(context)
-    ),
-  string: (key: FlagKeyOf<"string">, context: FlagContext): Promise<string> =>
-    getClient().getStringValue(
-      key,
-      flagDefault(key) as string,
-      toContext(context)
-    ),
-  number: (key: FlagKeyOf<"number">, context: FlagContext): Promise<number> =>
-    getClient().getNumberValue(
-      key,
-      flagDefault(key) as number,
-      toContext(context)
-    )
+  bool: (key: FlagKey, context: FlagContext): Promise<boolean> =>
+    getClient().getBooleanValue(key, flagDefault(key), toContext(context))
 };
 
 /** The value of every flag with `browser: true`, for the layout loaders. */
 export async function evaluateBrowserFlags(
   context: FlagContext
 ): Promise<BrowserFlags> {
-  const byType = {
-    boolean: flags.bool,
-    string: flags.string,
-    number: flags.number
-  } as unknown as Record<
-    "boolean" | "string" | "number",
-    (key: string, context: FlagContext) => Promise<boolean | string | number>
-  >;
-  const evaluated = await Promise.all(
-    BROWSER_FLAG_KEYS.map(
-      async (key) => [key, await byType[FLAGS[key].type](key, context)] as const
+  return Object.fromEntries(
+    await Promise.all(
+      BROWSER_FLAG_KEYS.map(async (key) => [
+        key,
+        await flags.bool(key, context)
+      ])
     )
   );
-  return Object.fromEntries(evaluated) as BrowserFlags;
 }

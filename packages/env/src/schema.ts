@@ -140,7 +140,7 @@ export const schema = define({
   CARBON_FLAGS_ENDPOINT: {
     group: "core",
     description:
-      "Feature flags document (flagd JSON): an https: URL to poll, or a data: or file: URL loaded once",
+      "Feature flags document (flagd JSON): an https: URL to poll, or a data: URL loaded once",
     type: url
   },
   CARBON_COMMIT_SHA: {

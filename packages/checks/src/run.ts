@@ -26,7 +26,6 @@ import {
   EVENT_IGNORED_COLUMNS,
   findIgnoredColumnDrift
 } from "./conformance/event-ignored-columns";
-import { flagsThroughEnv } from "./conformance/flags-through-env";
 import {
   FUNCTION_REDEFINITION_KEEPS_CHANGES,
   findDroppedFunctionChanges
@@ -149,7 +148,6 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noDefaultOnEffects,
   noUnroundedTrackedQuantity,
   noIntegrationIdBranching,
-  flagsThroughEnv,
   noUnscopedKyselyWrite,
   noUnguardedSubmit,
   noNoopOpenChange,

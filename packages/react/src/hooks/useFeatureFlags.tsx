@@ -5,7 +5,6 @@
 import {
   type BrowserFlagKey,
   type BrowserFlags,
-  type FlagValue,
   flagDefault
 } from "@carbon/env/flags";
 import { useRouteData } from "./useRouteData";
@@ -18,7 +17,6 @@ import { useRouteData } from "./useRouteData";
 export function useFeatureFlags() {
   const flags = useRouteData<{ flags?: BrowserFlags }>("/x")?.flags;
   return {
-    feature: <K extends BrowserFlagKey>(key: K): FlagValue<K> =>
-      (flags?.[key] as FlagValue<K> | undefined) ?? flagDefault(key)
+    feature: (key: BrowserFlagKey): boolean => flags?.[key] ?? flagDefault(key)
   };
 }
