@@ -116,6 +116,7 @@ export default function EditSalesInvoiceLineRoute() {
         title={t`Notes`}
         subTitle={getItemReadableId(items, salesInvoiceLine?.itemId) ?? ""}
         internalNotes={salesInvoiceLine?.internalNotes as JSONContent}
+        externalNotes={salesInvoiceLine?.externalNotes as JSONContent}
       />
 
       <DeferredFiles resolve={files}>

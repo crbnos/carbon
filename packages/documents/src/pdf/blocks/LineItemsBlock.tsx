@@ -205,11 +205,17 @@ export function LineItemsBlock({
               </Text>
             </View>
             {Object.keys(line.externalNotes ?? {}).length > 0 ? (
-              <View style={tw("px-3 py-2 border-b border-gray-200")}>
-                <Note
-                  key={`${line.id}-notes`}
-                  content={line.externalNotes as JSONContent}
-                />
+              // Indented under the description, past the line-number column.
+              <View
+                style={tw("flex flex-row px-3 py-2 border-b border-gray-200")}
+              >
+                <View style={tw("w-[6%]")} />
+                <View style={tw("w-[94%]")}>
+                  <Note
+                    key={`${line.id}-notes`}
+                    content={line.externalNotes as JSONContent}
+                  />
+                </View>
               </View>
             ) : null}
           </View>
