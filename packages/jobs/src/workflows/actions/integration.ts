@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { ActionOutcome, RuntimeValue } from "@carbon/ee/workflows";
+import {
+  type ActionOutcome,
+  MAX_LIST_ITEMS,
+  type RuntimeValue
+} from "@carbon/ee/workflows";
 import { redactForLog } from "../engine/ledger";
 import { allowlistEntry } from "../integrations/allowlist";
 import { buildPieceContext } from "../integrations/context";
@@ -11,7 +15,7 @@ import {
   type PieceAuthFailure,
   resolvePieceAuth
 } from "../integrations/piece-auth";
-import { projectOutputs } from "../integrations/project";
+import { droppedItems, projectOutputs } from "../integrations/project";
 import { toPropsValue } from "../integrations/properties";
 import { getPieceAction } from "../integrations/registry";
 
@@ -222,18 +226,25 @@ export async function runIntegrationAction(
     };
   }
 
+  const projected = projectOutputs(action.outputSchema, result, {
+    sortItemsBy: allowlistEntry(pieceName)?.sortItemsBy?.[actionName]
+  });
+  // Said on the step itself: otherwise "count 250" beside "100 items" reads as a bug,
+  // and a filter downstream quietly misses what was cut.
+  const dropped = droppedItems(projected);
   return {
     ok: true,
     outputs: {
-      ...projectOutputs(action.outputSchema, result, {
-        sortItemsBy: allowlistEntry(pieceName)?.sortItemsBy?.[actionName]
-      }),
+      ...projected,
       result: {
         kind: "primitive",
         of: "string",
         value: serializeResult(result)
       }
     },
-    summary: `${label}: ${action.displayName} ran.`
+    summary:
+      dropped > 0
+        ? `${label}: ${action.displayName} ran. ${MAX_LIST_ITEMS + dropped} came back; only the first ${MAX_LIST_ITEMS} are used.`
+        : `${label}: ${action.displayName} ran.`
   };
 }

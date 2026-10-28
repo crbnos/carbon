@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getPath } from "@carbon/ee/integrations/secrets";
-import { fromJson, type RuntimeValue } from "@carbon/ee/workflows";
+import {
+  fromJson,
+  MAX_LIST_ITEMS,
+  type RuntimeValue
+} from "@carbon/ee/workflows";
 import { getLogger } from "@carbon/logger";
 import { describeOutputs, readField } from "./outputs";
 import type { PieceOutputSchema } from "./types";
@@ -103,6 +107,14 @@ function sortRows(
       return a.moment - b.moment;
     })
     .map(({ row }) => row);
+}
+
+/** How many items came back that a later step will never see: `count` is what the
+ * vendor returned, but a list keeps only the first `MAX_LIST_ITEMS`. */
+export function droppedItems(outputs: Record<string, RuntimeValue>): number {
+  const count = outputs.count;
+  if (count?.kind !== "primitive" || typeof count.value !== "number") return 0;
+  return Math.max(0, count.value - MAX_LIST_ITEMS);
 }
 
 /** How many items came back: a list's length, else 1 for a single response. */

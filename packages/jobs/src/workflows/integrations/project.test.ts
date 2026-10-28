@@ -4,7 +4,7 @@
 
 import { MAX_LIST_ITEMS } from "@carbon/ee/workflows";
 import { describe, expect, it } from "vitest";
-import { projectOutputs } from "./project";
+import { droppedItems, projectOutputs } from "./project";
 import type { PieceOutputSchema } from "./types";
 
 /** The `get_events` shape: a remapped list, with per-element remapped reads. */
@@ -97,6 +97,22 @@ describe("projectOutputs", () => {
       of: "number",
       value: 0
     });
+  });
+
+  it("reports how many returned items the list cap left out", () => {
+    // 250 came back, the list keeps 100: a filter after it must be told 150 were cut.
+    const outputs = projectOutputs(
+      GET_EVENTS,
+      response(Array.from({ length: 250 }, () => ONE_EVENT))
+    );
+    expect(items(outputs)).toHaveLength(100);
+    expect(droppedItems(outputs)).toBe(150);
+  });
+
+  it("reports nothing left out when the list fits", () => {
+    expect(
+      droppedItems(projectOutputs(GET_EVENTS, response([ONE_EVENT])))
+    ).toBe(0);
   });
 
   it("counts a single-object response as one", () => {
