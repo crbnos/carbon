@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { isKanbanCompleteScan } from "./kanban";
+import { isKanbanCompleteScan, kanbanCompleteTarget } from "./kanban";
 
 const kanban = { id: "kbn_8f3k2m1q", completedBarcodeOverride: null };
 
@@ -42,5 +42,62 @@ describe("isKanbanCompleteScan", () => {
 
   it("refuses text that is not a URL", () => {
     expect(isKanbanCompleteScan("kbn_8f3k2m1q", kanban)).toBe(false);
+  });
+});
+
+describe("kanbanCompleteTarget", () => {
+  const serial = { requiresSerialTracking: true };
+
+  it("completes the unit on screen when it is still open here", () => {
+    expect(
+      kanbanCompleteTarget({
+        ...serial,
+        isFirstOperation: false,
+        selectedEntityId: "te_2",
+        selectedIsIncomplete: true
+      })
+    ).toEqual({ action: "complete", trackedEntityId: "te_2" });
+  });
+
+  it("asks for a unit at a later operation when none is held", () => {
+    expect(
+      kanbanCompleteTarget({
+        ...serial,
+        isFirstOperation: false,
+        selectedEntityId: null,
+        selectedIsIncomplete: false
+      })
+    ).toEqual({ action: "select" });
+    // The unit on screen is already done here: never complete it twice.
+    expect(
+      kanbanCompleteTarget({
+        ...serial,
+        isFirstOperation: false,
+        selectedEntityId: "te_1",
+        selectedIsIncomplete: false
+      })
+    ).toEqual({ action: "select" });
+  });
+
+  it("lets the first operation take the next unit in order", () => {
+    expect(
+      kanbanCompleteTarget({
+        ...serial,
+        isFirstOperation: true,
+        selectedEntityId: "te_1",
+        selectedIsIncomplete: false
+      })
+    ).toEqual({ action: "complete" });
+  });
+
+  it("names no unit for a batch or untracked part", () => {
+    expect(
+      kanbanCompleteTarget({
+        requiresSerialTracking: false,
+        isFirstOperation: false,
+        selectedEntityId: "lot_1",
+        selectedIsIncomplete: true
+      })
+    ).toEqual({ action: "complete" });
   });
 });

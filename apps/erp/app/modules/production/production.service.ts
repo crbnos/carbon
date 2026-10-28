@@ -2156,6 +2156,187 @@ export async function getJobOperationStepRecords(
   return query;
 }
 
+type StepTimingStep = {
+  id: string;
+  name: string;
+  sortOrder: number;
+  assemblyInstructionStepId: string | null;
+  jobOperationStepRecord:
+    | { index: number; createdAt: string; createdBy: string }[]
+    | null;
+};
+
+type StepTimingClockIn = { employeeId: string | null; startTime: string };
+
+export type StepTimingRecord = {
+  jobOperationStepId: string;
+  name: string;
+  unitIndex: number;
+  recordedAt: string;
+  recordedBy: string;
+  seconds: number | null;
+  measuredFrom: "previousStep" | "clockIn" | null;
+  bulk: boolean;
+};
+
+export type StepTimingSummary = {
+  jobOperationStepId: string;
+  name: string;
+  sortOrder: number;
+  assemblyInstructionStepId: string | null;
+  timedUnits: number;
+  averageSeconds: number | null;
+  medianSeconds: number | null;
+  minSeconds: number | null;
+  maxSeconds: number | null;
+};
+
+/**
+ * How long each step of an operation took, estimated from when its records
+ * were made. Each operator's records form one timeline: a record's time is
+ * measured from that operator's previous record on the operation, or from
+ * their latest clock-in to it, whichever is later. Records that share an
+ * instant were written together (a manager's Complete All, a batch record),
+ * so they are flagged `bulk` and left out of the per-step statistics.
+ */
+export function computeStepTimings(
+  steps: StepTimingStep[],
+  clockIns: StepTimingClockIn[]
+): { steps: StepTimingSummary[]; records: StepTimingRecord[] } {
+  const sortOrderByStepId = new Map(steps.map((s) => [s.id, s.sortOrder]));
+  const records = steps
+    .flatMap((step) =>
+      (step.jobOperationStepRecord ?? []).map((record) => ({
+        jobOperationStepId: step.id,
+        name: step.name,
+        unitIndex: record.index,
+        recordedAt: record.createdAt,
+        recordedBy: record.createdBy,
+        at: Date.parse(record.createdAt)
+      }))
+    )
+    .sort(
+      (a, b) =>
+        a.at - b.at ||
+        (sortOrderByStepId.get(a.jobOperationStepId) ?? 0) -
+          (sortOrderByStepId.get(b.jobOperationStepId) ?? 0)
+    );
+
+  const recordsAtInstant = new Map<number, number>();
+  for (const record of records) {
+    recordsAtInstant.set(record.at, (recordsAtInstant.get(record.at) ?? 0) + 1);
+  }
+
+  const clockInsByEmployee = new Map<string, number[]>();
+  for (const event of clockIns) {
+    if (!event.employeeId) continue;
+    const starts = clockInsByEmployee.get(event.employeeId) ?? [];
+    starts.push(Date.parse(event.startTime));
+    clockInsByEmployee.set(event.employeeId, starts);
+  }
+
+  const previousByOperator = new Map<string, number>();
+  const timed: StepTimingRecord[] = records.map((record) => {
+    const previous = previousByOperator.get(record.recordedBy) ?? null;
+    previousByOperator.set(record.recordedBy, record.at);
+
+    const clockIn = (clockInsByEmployee.get(record.recordedBy) ?? [])
+      .filter((start) => start <= record.at)
+      .reduce<number | null>(
+        (latest, start) => (latest === null || start > latest ? start : latest),
+        null
+      );
+
+    const measuredFrom =
+      previous !== null && (clockIn === null || previous >= clockIn)
+        ? "previousStep"
+        : clockIn !== null
+          ? "clockIn"
+          : null;
+    const from = measuredFrom === "previousStep" ? previous : clockIn;
+
+    return {
+      jobOperationStepId: record.jobOperationStepId,
+      name: record.name,
+      unitIndex: record.unitIndex,
+      recordedAt: record.recordedAt,
+      recordedBy: record.recordedBy,
+      seconds: from === null ? null : (record.at - from) / 1000,
+      measuredFrom,
+      bulk: (recordsAtInstant.get(record.at) ?? 0) > 1
+    };
+  });
+
+  const secondsByStep = groupBy(
+    timed.filter((r) => r.seconds !== null && !r.bulk),
+    (r) => r.jobOperationStepId
+  );
+
+  const summaries = [...steps]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((step) => {
+      const seconds = (secondsByStep[step.id] ?? [])
+        .map((r) => r.seconds as number)
+        .sort((a, b) => a - b);
+      const middle = seconds.length >> 1;
+      return {
+        jobOperationStepId: step.id,
+        name: step.name,
+        sortOrder: step.sortOrder,
+        assemblyInstructionStepId: step.assemblyInstructionStepId,
+        timedUnits: seconds.length,
+        averageSeconds: seconds.length
+          ? round(seconds.reduce((sum, s) => sum + s, 0) / seconds.length)
+          : null,
+        medianSeconds: seconds.length
+          ? seconds.length % 2
+            ? seconds[middle]
+            : round((seconds[middle - 1] + seconds[middle]) / 2)
+          : null,
+        minSeconds: seconds.length ? seconds[0] : null,
+        maxSeconds: seconds.length ? seconds[seconds.length - 1] : null
+      };
+    });
+
+  return { steps: summaries, records: timed };
+}
+
+export async function getJobOperationStepTimings(
+  client: SupabaseClient<Database>,
+  jobOperationId: string,
+  companyId: string
+) {
+  const [operation, steps, clockIns] = await Promise.all([
+    client
+      .from("jobOperation")
+      .select("id")
+      .eq("id", jobOperationId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("jobOperationStep")
+      .select(
+        "id, name, sortOrder, assemblyInstructionStepId, jobOperationStepRecord(index, createdAt, createdBy)"
+      )
+      .eq("operationId", jobOperationId)
+      .eq("companyId", companyId),
+    client
+      .from("productionEvent")
+      .select("employeeId, startTime")
+      .eq("jobOperationId", jobOperationId)
+      .eq("companyId", companyId)
+  ]);
+
+  const error = operation.error ?? steps.error ?? clockIns.error;
+  if (error) return { data: null, error };
+  if (!operation.data) return { data: null, error: null };
+
+  return {
+    data: computeStepTimings(steps.data ?? [], clockIns.data ?? []),
+    error: null
+  };
+}
+
 export async function getOutsideOperationsByJobId(
   client: SupabaseClient<Database>,
   jobId: string,

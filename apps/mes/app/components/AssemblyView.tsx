@@ -116,7 +116,7 @@ import type {
   OperationWithDetails,
   ProductionEvent as ProductionEventType
 } from "~/services/types";
-import { isKanbanCompleteScan } from "~/utils/kanban";
+import { isKanbanCompleteScan, kanbanCompleteTarget } from "~/utils/kanban";
 import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
 import { deriveUnits } from "~/utils/units";
@@ -597,11 +597,36 @@ export function AssemblyView({
 
   // Kanban barcode scan → complete the operation (matches the operation view).
   // The wedge takes a scan's Enter in the capture phase, so the Enter/Space
-  // shortcut below never sees it.
+  // shortcut below never sees it. A serial scan completes the unit on screen
+  // (the ?trackedEntityId the operator scanned or selected), never one the
+  // server picks: at a later operation that pick need not be the unit in hand.
+  const selectedEntityParam = searchParams.get("trackedEntityId");
   const completeFetcher = useFetcher();
   useKeyboardWedge({
     test: (input) => !!kanban && isKanbanCompleteScan(input, kanban),
-    callback: () => completeFetcher.load(path.to.endOperation(operationId)),
+    callback: () => {
+      const selected = selectedEntityParam
+        ? trackedEntities.find((entity) => entity.id === selectedEntityParam)
+        : undefined;
+      const target = kanbanCompleteTarget({
+        requiresSerialTracking,
+        isFirstOperation,
+        selectedEntityId: selected?.id ?? null,
+        selectedIsIncomplete:
+          !!selected && isUnitIncompleteForOperation(selected, operationId)
+      });
+      if (target.action === "select") {
+        toast.info(t`Scan or select the unit, then scan the kanban card again`);
+        serialModal.onOpen();
+        return;
+      }
+      const endPath = path.to.endOperation(operationId);
+      return completeFetcher.load(
+        target.trackedEntityId
+          ? `${endPath}?trackedEntityId=${target.trackedEntityId}`
+          : endPath
+      );
+    },
     inTextFields: true,
     active: !!kanban?.id
   });
@@ -1537,6 +1562,39 @@ export function AssemblyView({
       else serialModal.onOpen();
     }
   }, [completeUnitFetcher.state, completeUnitFetcher.data]);
+
+  // Later operations: when the unit the operator holds becomes complete here —
+  // by a kanban scan, which leaves it in the URL, or by any other completion —
+  // ask for the next one. Edge-triggered off the held unit, so a dismissed
+  // picker stays closed across revalidations.
+  const heldEntityRef = useRef<string | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: edge-detect on the held unit
+  useEffect(() => {
+    if (!navigatesByEntity || isFirstOperation) return;
+    const selected = selectedEntityParam
+      ? unitEntities.find((entity) => entity.id === selectedEntityParam)
+      : undefined;
+    if (selected && isUnitIncompleteForOperation(selected, operationId)) {
+      heldEntityRef.current = selected.id;
+      return;
+    }
+    const heldJustCompleted =
+      !!heldEntityRef.current && heldEntityRef.current === selectedEntityParam;
+    heldEntityRef.current = null;
+    if (
+      heldJustCompleted &&
+      unitEntities.some((entity) =>
+        isUnitIncompleteForOperation(entity, operationId)
+      )
+    ) {
+      serialModal.onOpen();
+    }
+  }, [
+    navigatesByEntity,
+    isFirstOperation,
+    trackedEntities,
+    selectedEntityParam
+  ]);
 
   // Later operations: prompt the operator to scan/select the unit on arrival. Every
   // unit already carries a printed label (labels print at the first operation's

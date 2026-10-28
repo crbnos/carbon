@@ -34,6 +34,7 @@ import { useLocations } from "~/components/Form/Location";
 import ItemThumbnail from "~/components/ItemThumbnail";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
+import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
 import { path } from "~/utils/path";
 import type { DemandProjection } from "../../types";
 
@@ -66,6 +67,7 @@ const DemandProjectionsTable = memo(
     });
     const [params] = useUrlParams();
     const { t } = useLingui();
+    const weekLabel = usePlanningWeekLabel();
     const { isPhone } = useViewport();
     const permissions = usePermissions();
     const locations = useLocations();
@@ -76,9 +78,8 @@ const DemandProjectionsTable = memo(
     const columns = useMemo<ColumnDef<DemandProjection>[]>(() => {
       const periodColumns: ColumnDef<DemandProjection>[] = periods.map(
         (period, index) => {
-          const isCurrentWeek = index === 0;
-          const weekNumber = index + 1;
-          const weekKey = `week${weekNumber}` as keyof DemandProjection;
+          const weekKey = `week${index + 1}` as keyof DemandProjection;
+          const label = weekLabel(period.startDate, index);
           const startDate = parseDate(period.startDate).toDate(
             getLocalTimeZone()
           );
@@ -88,9 +89,7 @@ const DemandProjectionsTable = memo(
             accessorKey: weekKey,
             header: () => (
               <VStack spacing={0}>
-                <div>
-                  {isCurrentWeek ? "Present Week" : `Week ${weekNumber}`}
-                </div>
+                <div>{label}</div>
                 <div className="text-xs text-muted-foreground">
                   {dateFormatter.format(startDate)} -{" "}
                   {dateFormatter.format(endDate)}
@@ -104,9 +103,7 @@ const DemandProjectionsTable = memo(
               return <span>{numberFormatter.format(value)}</span>;
             },
             meta: {
-              filterHeader: isCurrentWeek
-                ? t`Present Week`
-                : t`Week ${weekNumber}`,
+              filterHeader: label,
               exportValue: (row: DemandProjection) => {
                 const value = row[weekKey] as number | undefined | null;
                 return value === undefined || value === null || value === 0
@@ -208,7 +205,15 @@ const DemandProjectionsTable = memo(
           }
         }
       ];
-    }, [periods, dateFormatter, numberFormatter, locationId, permissions, t]);
+    }, [
+      periods,
+      dateFormatter,
+      numberFormatter,
+      locationId,
+      permissions,
+      t,
+      weekLabel
+    ]);
 
     return (
       <>

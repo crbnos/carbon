@@ -525,8 +525,12 @@ never offered a Cancel, Defer or Expedite.
   `planning-week-geometry.ts`, unit-tested): heights compare along a row, not
   between rows. One tooltip per row follows the hovered week (the shared
   `TooltipContent` takes an `anchor` for this) and shows the week label, its
-  date range and the projected quantity; the hovered week is marked by an
-  overlay band that is cleared on `pointerleave` — it used to stay on the last
+  date range and the projected quantity; the week label (strip tooltip, CSV
+  headers, Demand Forecasts table) comes from `usePlanningWeekLabel`
+  (`ui/Planning/usePlanningWeekLabel.ts`): "Present Week", "Week 2", … or, with
+  `companySettings.useCalendarWeeks`, the ISO week of each period
+  (`planningWeekNumber`, read three days into the Sunday-start period,
+  tested). The hovered week is marked by an overlay band that is cleared on `pointerleave` — it used to stay on the last
   week touched. The per-week numbers stay in the CSV as
   `exportOnlyColumn`s keyed `week1`…`weekN`, so an export is unchanged.
 - **Suggested orders ARE the Order / Make actions.** The order drawer's
@@ -695,8 +699,10 @@ never offered a Cancel, Defer or Expedite.
   default on: a PO the planning Order button created — `purchaseOrder.createdFromPlanning`,
   cleared by any manual line change — finalizes without the approval rule), `PlanningHorizonCard`
   (`setPlanningHorizon`, `planningHorizonValidator`), `ForecastConsumptionCard`
-  (`setForecastConsumption`, `forecastConsumptionValidator`, 0–52 weeks each)
-  and `MrpScheduleCard` (`setMrpSchedule`, `mrpScheduleValidator`). An employee
+  (`setForecastConsumption`, `forecastConsumptionValidator`, 0–52 weeks each),
+  `MrpScheduleCard` (`setMrpSchedule`, `mrpScheduleValidator`) and
+  `CalendarWeeksCard` (`setCalendarWeeks` → `companySettings.useCalendarWeeks`,
+  default off: display only, see the week strip above). An employee
   id is saved only after `isActiveCompanyEmployee`; a bad value answers 400.
 - **Planning horizon (time fence).** `itemPlanning.planningHorizonDays` (per
   item + location, Part → Planning) else `companySettings.defaultPlanningHorizonDays`

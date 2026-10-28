@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildAssemblyToolStepLinks,
+  computeStepTimings,
   maxToolQuantityByItem,
   planAssemblyStepMarkerRemap,
   planAssemblyStepMarkerSync,
@@ -220,5 +221,122 @@ describe("buildAssemblyToolStepLinks", () => {
     expect(link([["src-1", [{ itemId: "T1" }]]])).toEqual([
       { jobOperationToolId: "row-T1", jobOperationStepId: "job-1" }
     ]);
+  });
+});
+
+describe("computeStepTimings", () => {
+  const step = (
+    id: string,
+    sortOrder: number,
+    records: { index: number; createdAt: string; createdBy: string }[]
+  ) => ({
+    id,
+    name: id,
+    sortOrder,
+    assemblyInstructionStepId: null,
+    jobOperationStepRecord: records
+  });
+
+  it("measures each record from the operator's clock-in, then their previous record", () => {
+    const { records, steps } = computeStepTimings(
+      [
+        step("a", 1, [
+          { index: 0, createdAt: "2026-10-28T10:01:00Z", createdBy: "u1" },
+          { index: 1, createdAt: "2026-10-28T10:05:00Z", createdBy: "u1" }
+        ]),
+        step("b", 2, [
+          { index: 0, createdAt: "2026-10-28T10:03:00Z", createdBy: "u1" },
+          { index: 1, createdAt: "2026-10-28T10:09:00Z", createdBy: "u1" }
+        ])
+      ],
+      [{ employeeId: "u1", startTime: "2026-10-28T10:00:00Z" }]
+    );
+
+    expect(
+      records.map((r) => [r.jobOperationStepId, r.seconds, r.measuredFrom])
+    ).toEqual([
+      ["a", 60, "clockIn"],
+      ["b", 120, "previousStep"],
+      ["a", 120, "previousStep"],
+      ["b", 240, "previousStep"]
+    ]);
+    expect(steps.map((s) => [s.jobOperationStepId, s.averageSeconds])).toEqual([
+      ["a", 90],
+      ["b", 180]
+    ]);
+  });
+
+  it("restarts the clock at a later clock-in, so time clocked out is not counted", () => {
+    const { records } = computeStepTimings(
+      [
+        step("a", 1, [
+          { index: 0, createdAt: "2026-10-28T10:01:00Z", createdBy: "u1" }
+        ]),
+        step("b", 2, [
+          { index: 0, createdAt: "2026-10-28T13:02:00Z", createdBy: "u1" }
+        ])
+      ],
+      [
+        { employeeId: "u1", startTime: "2026-10-28T10:00:00Z" },
+        { employeeId: "u1", startTime: "2026-10-28T13:00:00Z" }
+      ]
+    );
+
+    expect(records.map((r) => [r.seconds, r.measuredFrom])).toEqual([
+      [60, "clockIn"],
+      [120, "clockIn"]
+    ]);
+  });
+
+  it("keeps each operator's timeline separate", () => {
+    const { records } = computeStepTimings(
+      [
+        step("a", 1, [
+          { index: 0, createdAt: "2026-10-28T10:02:00Z", createdBy: "u1" },
+          { index: 1, createdAt: "2026-10-28T10:03:00Z", createdBy: "u2" }
+        ]),
+        step("b", 2, [
+          { index: 0, createdAt: "2026-10-28T10:06:00Z", createdBy: "u1" }
+        ])
+      ],
+      []
+    );
+
+    expect(
+      records.map((r) => [r.recordedBy, r.seconds, r.measuredFrom])
+    ).toEqual([
+      ["u1", null, null],
+      ["u2", null, null],
+      ["u1", 240, "previousStep"]
+    ]);
+  });
+
+  it("flags records written at one instant as bulk and leaves them out of the statistics", () => {
+    const { records, steps } = computeStepTimings(
+      [
+        step("a", 1, [
+          { index: 0, createdAt: "2026-10-28T10:01:00Z", createdBy: "u1" }
+        ]),
+        step("b", 2, [
+          { index: 0, createdAt: "2026-10-28T10:05:00Z", createdBy: "m1" }
+        ]),
+        step("c", 3, [
+          { index: 0, createdAt: "2026-10-28T10:05:00Z", createdBy: "m1" }
+        ])
+      ],
+      [{ employeeId: "u1", startTime: "2026-10-28T10:00:00Z" }]
+    );
+
+    expect(records.map((r) => [r.jobOperationStepId, r.bulk])).toEqual([
+      ["a", false],
+      ["b", true],
+      ["c", true]
+    ]);
+    expect(steps.map((s) => [s.jobOperationStepId, s.timedUnits])).toEqual([
+      ["a", 1],
+      ["b", 0],
+      ["c", 0]
+    ]);
+    expect(steps[1].averageSeconds).toBeNull();
   });
 });

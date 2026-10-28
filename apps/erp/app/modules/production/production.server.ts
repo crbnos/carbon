@@ -6937,6 +6937,35 @@ export const getJobOperationStepRecords = defineServiceFn({
 });
 
 /**
+ * Get step timings for a job operation
+ *
+ * @remarks
+ * Estimates how long each step of a job operation took, from the times its steps were recorded. A step's time is measured from the same operator's previous step record on this operation, or from their latest clock-in to it, whichever is later. Steps recorded at the same instant (a manager's Complete All, or a batch record) are flagged `bulk` and left out of the per-step statistics. A step's time includes any break the operator did not clock out for, and steps recorded together after the work was done read as near zero.
+ *
+ * @param jobOperationId - The job operation whose steps to time.
+ * @returns `steps`: each step in order, with the number of timed units and the average, median, minimum and maximum seconds. `records`: every step record in the order it was made, with its 0-based unit index, the operator, the seconds, what they were measured from (`previousStep`, `clockIn`, or null when there was nothing to measure from) and whether it was a `bulk` record.
+ *
+ * @mcp read
+ */
+export const getJobOperationStepTimings = defineServiceFn({
+  input: z.object({ jobOperationId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    const timings = unwrap(
+      ctx,
+      await service.getJobOperationStepTimings(
+        ctx.asCaller.supabase,
+        input.jobOperationId,
+        ctx.company.id
+      )
+    );
+    if (timings instanceof CarbonError) return timings;
+    if (!timings) return ctx.error("notFound", "Job operation not found");
+    return timings;
+  }
+});
+
+/**
  * Get outside operations by job id
  *
  * @mcp read
