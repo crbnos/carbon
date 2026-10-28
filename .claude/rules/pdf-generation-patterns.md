@@ -19,7 +19,7 @@ print-queue/ZPL side in [printing-system.md](printing-system.md).
 1. **Block-registry driven** (customizable docs + tracking label): the PDF file is
    a thin driver that resolves a `documentTemplate` and renders an ordered list of
    block components. Files: `SalesInvoicePDF`, `SalesOrderPDF`, `PurchaseOrderPDF`,
-   `QuotePDF`, `PackingSlipPDF`, `StockTransferPDF`, `JobTravelerPDF`, `IssuePDF`,
+   `PurchaseReturnOrderPDF`, `PurchasingRfqPDF`, `QuotePDF`, `PackingSlipPDF`, `StockTransferPDF`, `JobTravelerPDF`, `IssuePDF`,
    `ProductLabelPDF` (trackingLabel). Add new ones via the template engine — see
    document-template-customizer.md. Every one is registered in
    `pdf/preview-documents.tsx` `DOCUMENT_PDFS[type] = { Component, sample }`.
