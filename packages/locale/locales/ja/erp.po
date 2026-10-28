@@ -8990,8 +8990,8 @@ msgstr "CSVカラム"
 msgid "CSV file"
 msgstr "CSVファイル"
 
-msgid "CSV file must have at least 2 rows."
-msgstr "CSVファイルは最低2行必要です。"
+msgid "CSV file has no data rows."
+msgstr "CSVファイルにデータ行がありません。"
 
 msgid "Cumulative"
 msgstr "累積"

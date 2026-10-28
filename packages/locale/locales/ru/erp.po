@@ -8990,8 +8990,8 @@ msgstr "Столбец CSV"
 msgid "CSV file"
 msgstr "CSV файл"
 
-msgid "CSV file must have at least 2 rows."
-msgstr "CSV файл должен содержать минимум 2 строки."
+msgid "CSV file has no data rows."
+msgstr "CSV файл не содержит строк данных."
 
 msgid "Cumulative"
 msgstr "Нарастающий итог"

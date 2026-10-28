@@ -8990,8 +8990,8 @@ msgstr "CSV 열"
 msgid "CSV file"
 msgstr "CSV 파일"
 
-msgid "CSV file must have at least 2 rows."
-msgstr "CSV 파일에는 최소 2개 행이 있어야 합니다."
+msgid "CSV file has no data rows."
+msgstr "CSV 파일에 데이터 행이 없습니다."
 
 msgid "Cumulative"
 msgstr "누적"

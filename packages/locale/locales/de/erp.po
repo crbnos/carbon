@@ -8990,8 +8990,8 @@ msgstr "CSV-Spalte"
 msgid "CSV file"
 msgstr "CSV-Datei"
 
-msgid "CSV file must have at least 2 rows."
-msgstr "CSV-Datei muss mindestens 2 Zeilen enthalten."
+msgid "CSV file has no data rows."
+msgstr "Die CSV-Datei enthält keine Datenzeilen."
 
 msgid "Cumulative"
 msgstr "Kumulativ"

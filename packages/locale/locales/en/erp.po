@@ -8990,8 +8990,8 @@ msgstr "CSV column"
 msgid "CSV file"
 msgstr "CSV file"
 
-msgid "CSV file must have at least 2 rows."
-msgstr "CSV file must have at least 2 rows."
+msgid "CSV file has no data rows."
+msgstr "CSV file has no data rows."
 
 msgid "Cumulative"
 msgstr "Cumulative"

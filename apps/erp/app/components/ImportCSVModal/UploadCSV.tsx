@@ -99,8 +99,9 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
     }
     const { rows: data, fields } = parsed;
 
-    if (!data || data.length < 2) {
-      setError(t`CSV file must have at least 2 rows.`);
+    // `rows` excludes the header row, so a header plus one record is one row.
+    if (!data || data.length < 1) {
+      setError(t`CSV file has no data rows.`);
       setFileColumns(null);
       setFirstRows(null);
       setLoading(false);

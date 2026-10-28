@@ -8990,8 +8990,8 @@ msgstr "CSV 列"
 msgid "CSV file"
 msgstr "CSV文件"
 
-msgid "CSV file must have at least 2 rows."
-msgstr "CSV 文件必须至少有 2 行。"
+msgid "CSV file has no data rows."
+msgstr "CSV 文件没有数据行。"
 
 msgid "Cumulative"
 msgstr "累计"

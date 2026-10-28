@@ -8990,8 +8990,8 @@ msgstr "CSV कॉलम"
 msgid "CSV file"
 msgstr "CSV फ़ाइल"
 
-msgid "CSV file must have at least 2 rows."
-msgstr "CSV फ़ाइल में कम से कम 2 पंक्तियाँ होनी चाहिए।"
+msgid "CSV file has no data rows."
+msgstr "CSV फ़ाइल में कोई डेटा पंक्ति नहीं है।"
 
 msgid "Cumulative"
 msgstr "संचयी"

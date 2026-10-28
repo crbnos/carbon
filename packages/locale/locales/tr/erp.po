@@ -8990,8 +8990,8 @@ msgstr "CSV sütunu"
 msgid "CSV file"
 msgstr "CSV dosyası"
 
-msgid "CSV file must have at least 2 rows."
-msgstr "CSV dosyası en az 2 satır içermelidir."
+msgid "CSV file has no data rows."
+msgstr "CSV dosyasında veri satırı yok."
 
 msgid "Cumulative"
 msgstr "Kümülatif"
