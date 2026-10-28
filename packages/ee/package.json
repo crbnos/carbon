@@ -54,6 +54,7 @@
     "./rillet/hooks.server": "./src/rillet/hooks.server.ts",
     "./sense/hooks.server": "./src/sense/hooks.server.ts",
     "./sense/webhook": "./src/sense/webhook.ts",
+    "./sense/webhook.server": "./src/sense/webhook.server.ts",
     "./xero/hooks.server": "./src/xero/hooks.server.ts",
     "./stripe-connect.server": "./src/stripe-connect/payment.server.ts",
     "./two-factor.server": "./src/two-factor.server.ts",

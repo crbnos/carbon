@@ -141,6 +141,7 @@ test("passes a script the Postgres URL and not the database password", () => {
     }),
     {
       SUPABASE_URL: "https://example.supabase.co",
+      ERP_URL: undefined,
       SUPABASE_DB_URL: "postgresql://pooler"
     }
   );
@@ -157,6 +158,17 @@ test("passes a script the Postgres URL and not the database password", () => {
       .SUPABASE_DB_URL,
     undefined
   );
+});
+
+test("passes a script the app's origin from the workspace's ERP host", () => {
+  const urls = { poolerUrl: null, connectionString: null };
+  assert.equal(
+    oneOffScriptEnv({}, { ...urls, erpHost: "app.carbon.ms" }).ERP_URL,
+    "https://app.carbon.ms"
+  );
+  // No host: no origin, and a script that needs one defers.
+  assert.equal(oneOffScriptEnv({}, { ...urls, erpHost: null }).ERP_URL, undefined);
+  assert.equal(oneOffScriptEnv({}, urls).ERP_URL, undefined);
 });
 
 test("builds the IPv4 Supavisor URL of the primary database", () => {

@@ -203,17 +203,27 @@ export function supavisorUrl(
  * pooler URL the app gets (deploy.ts), else a self-hosted connection string.
  * A workspace with none passes no `SUPABASE_DB_URL`, and a script that needs
  * one defers (`ONE_OFF_SCRIPT_DEFERRED`).
+ *
+ * `ERP_URL` is the app's public origin, built from the workspace's `url_erp`
+ * host as the deployed app gets it (`sst.config.ts`), so `getAppUrl()` in a
+ * script names the real app. A workspace with no `url_erp` passes none.
  */
 export function oneOffScriptEnv(
   env: Record<string, string | undefined>,
   {
     poolerUrl,
-    connectionString
-  }: { poolerUrl: string | null; connectionString: string | null }
+    connectionString,
+    erpHost = null
+  }: {
+    poolerUrl: string | null;
+    connectionString: string | null;
+    erpHost?: string | null;
+  }
 ): Record<string, string | undefined> {
   const { SUPABASE_DB_PASSWORD: _password, ...scriptEnv } = env;
   return {
     ...scriptEnv,
+    ERP_URL: erpHost ? `https://${erpHost}` : undefined,
     SUPABASE_DB_URL:
       poolerUrl ??
       (connectionString?.startsWith("postgresql://")
