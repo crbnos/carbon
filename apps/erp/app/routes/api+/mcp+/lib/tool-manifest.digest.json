@@ -768,7 +768,7 @@
     {"name":"production_getJobOperationStepTimings","classification":"READ","schema":"4676545cc6cc","response":"b215280a3520","permission":"production:view","paginates":false},
     {"name":"production_getJobOrderStatusMap","classification":"READ","schema":"fd8ab5d4a146","response":"5a380f81ad00","permission":"production:view","paginates":false},
     {"name":"production_getJobPurchaseOrderLines","classification":"READ","schema":"36d5dd3462f8","response":"f0dff75b384d","permission":"production:view","paginates":false},
-    {"name":"production_getJobReceiptSnapshot","classification":"READ","schema":"36d5dd3462f8","response":"60e9609498b0","permission":"production:view","paginates":false},
+    {"name":"production_getJobReceiptSnapshot","classification":"READ","schema":"36d5dd3462f8","response":"8a546297512e","permission":"production:view","paginates":false},
     {"name":"production_getJobReleaseReadiness","classification":"READ","schema":"1ec10853e1fe","response":"f5f114b3f417","permission":"production:view","paginates":false},
     {"name":"production_getJobs","classification":"READ","schema":"cd40ae40fad5","response":"418c2732d3b9","permission":"production:view","paginates":true},
     {"name":"production_getJobsByDateRange","classification":"READ","schema":"9dde5c03d4b1","response":"94688560d7de","permission":"production:view","paginates":false},

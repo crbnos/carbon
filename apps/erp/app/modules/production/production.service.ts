@@ -3258,6 +3258,9 @@ export async function getTrackedEntitiesByJobId(
  * same snapshot and a receipt committing mid-read cannot pair a new quantity
  * with old units. Kysely because itemLedger is readable only with inventory or
  * accounting view, and production users need the answer; the route authorizes.
+ *
+ * `issuedTrackedEntityIds` are the job's Consumed units booked out of stock
+ * (issued or shipped), which complete_job_to_inventory still receives.
  */
 export async function getJobReceiptSnapshot(
   db: Kysely<KyselyDatabase>,
@@ -3278,7 +3281,26 @@ export async function getJobReceiptSnapshot(
         string[]
       >`COALESCE(array_agg("itemLedger"."trackedEntityId") FILTER (WHERE "itemLedger"."trackedEntityId" IS NOT NULL), '{}')`.as(
         "trackedEntityIds"
-      )
+      ),
+      // complete_job_to_inventory's rule for a Consumed unit it receives.
+      sql<string[]>`COALESCE((
+        SELECT array_agg(te.id ORDER BY te.id)
+        FROM "jobMakeMethod" jmm
+        JOIN "trackedEntity" te
+          ON te.attributes->>'Job Make Method' = jmm.id
+          AND te."companyId" = jmm."companyId"
+        WHERE jmm."jobId" = "job".id
+          AND jmm."companyId" = "job"."companyId"
+          AND jmm."parentMaterialId" IS NULL
+          AND te.status = 'Consumed'
+          AND EXISTS (
+            SELECT 1
+            FROM "itemLedger" il
+            WHERE il."trackedEntityId" = te.id
+              AND il."companyId" = te."companyId"
+              AND il.quantity < 0
+          )
+      ), '{}')`.as("issuedTrackedEntityIds")
     ])
     .where("job.id", "=", jobId)
     .where("job.companyId", "=", companyId)
