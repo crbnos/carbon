@@ -10,9 +10,9 @@ import {
 import { useRouteData } from "./useRouteData";
 
 /**
- * The feature flags the authenticated layout loader (`/x`, in the ERP and the
- * MES) evaluated for this user and company. `feature(key)` falls back to the
- * flag's registry default (`@carbon/env/flags`).
+ * The feature flags the authenticated layout loader (`/x`) evaluated for this
+ * user and company. The ERP sends them; the MES sends none yet, so there
+ * `feature(key)` answers the flag's registry default (`@carbon/env/flags`).
  */
 export function useFeatureFlags() {
   const flags = useRouteData<{ flags?: BrowserFlags }>("/x")?.flags;

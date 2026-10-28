@@ -347,7 +347,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     auditLogEnabled,
     company,
     companies: companies.data ?? [],
-    // Feature flags with `browser: true`, read with `useFlags().feature(key)`.
+    // Feature flags with `browser: true`, read with `useFeatureFlags().feature(key)`.
     flags: await evaluateBrowserFlags({ companyId, userId }),
     companySettings: companySettings.data ?? null,
     customFields: customFields.data ?? [],

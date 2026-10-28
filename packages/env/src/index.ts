@@ -133,6 +133,12 @@ export const SINGLE_TENANT = getEnv("TENANT_TYPE") === "single";
 
 export const SYSTEM_STATUS_URL = getEnv("SYSTEM_STATUS_URL");
 
+// A fallback beside the `integration-early-access` flag until a flags source
+// is live (`hasIntegrationEarlyAccess`, `@carbon/ee/plan.server`).
+export const INTEGRATION_EARLY_ACCESS_USER_IDS = getEnv(
+  "INTEGRATION_EARLY_ACCESS_USER_IDS"
+);
+
 // Feature flags (`@carbon/env/flags.server`). Unset means every flag answers
 // its registry default.
 export const CARBON_FLAGS_ENDPOINT = getEnv("CARBON_FLAGS_ENDPOINT");

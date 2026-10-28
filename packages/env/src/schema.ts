@@ -137,6 +137,11 @@ export const schema = define({
       "URL of a JSON document with the latest version and an announcement",
     type: url
   },
+  INTEGRATION_EARLY_ACCESS_USER_IDS: {
+    group: "core",
+    description:
+      "Comma-separated user ids that can install Coming soon integrations on Cloud. A fallback beside the integration-early-access feature flag until a flags source is live"
+  },
   CARBON_FLAGS_ENDPOINT: {
     group: "core",
     description:

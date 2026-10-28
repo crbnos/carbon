@@ -500,7 +500,7 @@ companies to the staff. So with no source, behavior stays as it is today.
    still takes `hasEarlyAccess: boolean`.
 3. Its 2 callers pass the new value: `isIntegrationInstallWithheld`
    (`settings.service.ts`) and the `x+/settings+/integrations.tsx` loader.
-4. Remove `INTEGRATION_EARLY_ACCESS_USER_IDS` from `schema.ts` and `index.ts`.
+4. Keep `INTEGRATION_EARLY_ACCESS_USER_IDS` as a fallback: `hasIntegrationEarlyAccess` answers true when the user is in the list or the flag is on. Remove the list once a flags source is live and its users have rules.
 
 Before the deploy that removes the variable, do these steps:
 
@@ -554,7 +554,7 @@ Each one becomes a flag when its rollout starts:
 | Deploy fetch failure | The deploy fails | Answer to Q6. The old release keeps running. |
 | Flag delete guard | Archive first. `metadata.archived` makes the instance warn. Hard delete waits 30 days. | Answer to Q5 and Q10. CI needs no console token. |
 | Code defaults | One registry, `FLAGS` | Two call sites cannot disagree on a default. |
-| v1 flags | `multi-company-management`, `integration-early-access` | Answer to Q15 and Q16. Both replace an `isInternalEmail` or user-list stand-in, and staff keep their access. |
+| v1 flags | `multi-company-management`, `integration-early-access` | Answer to Q15 and Q16. Staff keep their access. The early-access env list stays as a fallback until a flags source is live, so no current user loses access at merge. |
 | Direct OpenFeature use | No check. `flags.bool` is the only read API `@carbon/env` exports. | A check guarded an import nobody makes. Add one if code starts to import `@openfeature/*` directly. |
 | Flag types | Booleans only | Every v1 flag is a boolean. Add string or number support with the first flag that needs it. |
 | Endpoint schemes | `https:` and `data:` | Nothing produces a `file:` endpoint: the CI deploy and the planned BYOC step both write `data:`. |
@@ -590,18 +590,18 @@ and `flags_token` (text, secret). Both are nullable.
 | `apps/erp/app/entry.server.tsx`, `apps/mes/app/entry.server.tsx` | Call `initFlags` with `redisFlagsStore`, `waitUntil` and `onWarning` (the app's logger, scope `flags`). |
 | `apps/erp/app/routes/x+/_layout.tsx` | Return `flags` from `evaluateBrowserFlags`. |
 | `packages/react/src/hooks/useFeatureFlags.tsx` | New. `useFeatureFlags()` for both apps. `@carbon/env` moves from a dev dependency to a dependency of `@carbon/react`. |
-| `apps/mes/package.json` | Add `@carbon/env`, for the `flags.server` import in the entry and the layout. |
+| `apps/mes/package.json` | Add `@carbon/env` (dev dependency, like the other `@carbon/*` packages), for the `flags.server` import in the entry. |
 | `apps/erp/app/routes/x+/settings+/companies.tsx`, `companies.$id.tsx`, `companies.delete.$id.tsx` | Redirect only when the user has no Carbon email and `multi-company-management` is off (section 10). |
 | `apps/erp/app/modules/settings/ui/useSettingsSubmodules.tsx` | Show the Companies entry when `isInternal` or `useFeatureFlags().feature("multi-company-management")` is true. |
 | `packages/ee/src/plan.server.ts` | `hasIntegrationEarlyAccess({ companyId, userId })` reads `integration-early-access`. Delete `isListedUserId` if nothing else uses it. |
 | `apps/erp/app/modules/settings/settings.service.ts`, `apps/erp/app/routes/x+/settings+/integrations.tsx` | Pass `{ companyId, userId }` to `hasIntegrationEarlyAccess` and await it. |
 | `packages/ee/src/plan.test.ts` | Keep the `isIntegrationComingSoon` cases. They test a boolean, so they do not change. |
-| `packages/env/src/schema.ts`, `packages/env/src/index.ts` | Remove `INTEGRATION_EARLY_ACCESS_USER_IDS`. |
+| `packages/env/src/schema.ts`, `packages/env/src/index.ts` | Keep `INTEGRATION_EARLY_ACCESS_USER_IDS`, described as a fallback until a flags source is live. |
 | `.claude/rules/onshape-panel.md`, `.claude/rules/environment-configuration.md`, `packages/ee/AGENTS.md` | Replace `INTEGRATION_EARLY_ACCESS_USER_IDS` with the `integration-early-access` flag. |
 | `.env.example` | Document both variables, next to `SYSTEM_STATUS_URL`. |
 | `contrib/deploying/simple-docker-caddy/docker-compose.prod.yml` | Pass both variables to the ERP and MES services. |
 | `sst.config.ts` | Forward `CARBON_FLAGS_ENDPOINT`, and `IMAGE_TAG` as `CARBON_COMMIT_SHA`, in the ERP and MES environment blocks. |
-| `ci/src/deploy.ts` | Read `flags_endpoint` and `flags_token`, fetch the flags, set `CARBON_FLAGS_ENDPOINT` to a `data:` URL. |
+| `ci/src/deploy.ts`, `ci/src/flags.ts`, `ci/src/flags.test.ts` | Read `flags_endpoint` and `flags_token`, fetch and validate the flags (`fetchFlagsDocument`, `assertFlagdDocument`), set `CARBON_FLAGS_ENDPOINT` to a `data:` URL. |
 | `.claude/rules/environment-configuration.md` | Add a flags section next to the maintenance and status section. |
 | `packages/env/AGENTS.md` | Document the flags exports and the lifecycle. |
 | byoc repo deploy step | Fetch the flags and set `CARBON_FLAGS_ENDPOINT` to a `data:` URL. |
@@ -660,7 +660,7 @@ None in the ERP or the MES. The admin form is in each source (section 6).
 - [ ] A user without a Carbon email opens `/x/settings/companies` while `multi-company-management` is off for the company. The loader redirects to Settings. With the flag on for the company, the page loads and the Companies entry shows in Settings.
 - [ ] A user with a Carbon email opens `/x/settings/companies` with the flag off, and the page loads as it does today.
 - [ ] On Carbon Cloud, a user without a Carbon email sees Onshape V2 as "Coming soon" while `integration-early-access` is off for the company. With the flag on, the user can install it.
-- [ ] `INTEGRATION_EARLY_ACCESS_USER_IDS` no longer exists in `packages/env/src/schema.ts`, and `pnpm --filter @carbon/ee test` passes.
+- [ ] A user listed in `INTEGRATION_EARLY_ACCESS_USER_IDS` can still install Onshape V2 with no flags source, and `pnpm --filter @carbon/ee test` passes.
 - [ ] Instance B's response from a source contains no rule scoped to instance A.
 - [ ] A source refuses to send a document that `FlagdCore.setConfigurations` rejects.
 - [ ] `pnpm exec turbo run typecheck --filter=@carbon/env`, `--filter=erp` and `--filter=mes` pass.
@@ -713,3 +713,4 @@ None in the ERP or the MES. The admin form is in each source (section 6).
 - 2026-10-29: Review fixes. A process that rejects the Redis copy keeps its fetch in memory. The Redis hash expires after 1 day without a write. `X-Carbon-Commit` is 12 characters everywhere. `flagStatus()` is gone; monitoring reads the `onWarning` log lines. `lastCommit` means the most recent commit seen.
 - 2026-10-29: Simplified. Flags are booleans only (`flags.bool`). No `file:` endpoints. No `flags-through-env` check. Both apps read browser flags with `useFeatureFlags()`, and the ERP's `useFlags` is unchanged.
 - 2026-10-29: PR review. Subsidiary create and update follow `multi-company-management` like the Companies pages. Header names are case-insensitive. The Redis scope includes the flagd-core version, so a process that rejects the copy on its own key repairs it. `ci/src/deploy.ts` validates with flagd-core strict mode and the boolean registry, and sends `flags_token` only over https.
+- 2026-10-29: Self-review. `INTEGRATION_EARLY_ACCESS_USER_IDS` stays as a fallback beside the flag, so merging before a flags source exists takes nobody's early access away. The CI fetch and validator moved to `ci/src/flags.ts` with tests.

@@ -319,8 +319,8 @@ export class CarbonFlagsProvider implements Provider {
       }
 
       const meta = await this.store.readMeta(this.scope);
-      // A copy this process cannot load (another version of flagd-core wrote
-      // it) must not block the source: fetch a full document for itself.
+      // A copy this process cannot load (corrupt, or written by a bug) must
+      // not block the source: fetch a full document and replace it.
       let storeRejected = false;
       if (meta && meta.etag !== this.loadedEtag) {
         const body = await this.store.readBody(this.scope);

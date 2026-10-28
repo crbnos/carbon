@@ -6,7 +6,8 @@ import type { FlagsStore } from "@carbon/env/flags.server";
 import redis from "./client";
 import { acquireLease, releaseLease } from "./lease";
 
-// One hash per flags source (`scope` hashes the endpoint and headers): the
+// One hash per flags source (`scope` hashes the endpoint, the headers and the
+// flagd-core version): the
 // document every ERP and MES process of the instance shares. The provider
 // caps the document at 1 MB.
 const key = (scope: string) => `flags:${scope}`;

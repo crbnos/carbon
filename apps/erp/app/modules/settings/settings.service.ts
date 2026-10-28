@@ -3398,7 +3398,7 @@ export async function saveCompanySettings(
   return error ? ctx.error("internal", failure, error) : null;
 }
 
-/** Multi-company management is open to internal (Carbon) users only, for now. */
+/** Multi-company management: Carbon staff, and the companies the `multi-company-management` flag turns it on for. */
 export async function refuseUnlessCanManageCompanies(
   ctx: ServiceContext
 ): Promise<CarbonError | null> {
