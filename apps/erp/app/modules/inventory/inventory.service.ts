@@ -5148,33 +5148,38 @@ export async function salesOrderShipmentLocationOf(
   salesOrderId: string,
   callerLocationId: string | undefined
 ) {
-  const [salesOrder, lines] = await Promise.all([
+  const [salesOrder, callerLine] = await Promise.all([
     ctx.asSystem.supabase
       .from("salesOrder")
       .select("locationId")
       .eq("id", salesOrderId)
       .eq("companyId", ctx.company.id)
       .maybeSingle(),
-    ctx.asSystem.supabase
-      .from("salesOrderLine")
-      .select("locationId")
-      .eq("salesOrderId", salesOrderId)
-      .eq("companyId", ctx.company.id)
-      .in("salesOrderLineType", [
-        "Part",
-        "Material",
-        "Tool",
-        "Fixture",
-        "Consumable"
-      ])
+    callerLocationId
+      ? ctx.asSystem.supabase
+          .from("salesOrderLine")
+          .select("id")
+          .eq("salesOrderId", salesOrderId)
+          .eq("companyId", ctx.company.id)
+          .eq("locationId", callerLocationId)
+          .in("salesOrderLineType", [
+            "Part",
+            "Material",
+            "Tool",
+            "Fixture",
+            "Consumable"
+          ])
+          .limit(1)
+      : { data: [], error: null }
   ]);
-  if (
-    callerLocationId &&
-    lines.data?.some((line) => line.locationId === callerLocationId)
-  ) {
-    return callerLocationId;
-  }
-  return salesOrder.data?.locationId ?? callerLocationId;
+  const error = salesOrder.error ?? callerLine.error;
+  if (error) return { data: null, error };
+  return {
+    data: callerLine.data?.length
+      ? callerLocationId
+      : (salesOrder.data?.locationId ?? callerLocationId),
+    error: null
+  };
 }
 
 /** Print a document's labels when its location's printer auto-prints. */

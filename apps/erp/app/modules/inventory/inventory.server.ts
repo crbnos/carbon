@@ -1277,15 +1277,22 @@ export const createShipment = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, { sourceDocument, sourceDocumentId }) {
-    const defaultLocationId = await service.defaultLocationOf(ctx);
-    const locationId =
-      sourceDocument === "Sales Order"
-        ? await service.salesOrderShipmentLocationOf(
-            ctx,
-            sourceDocumentId,
-            defaultLocationId
-          )
-        : defaultLocationId;
+    let locationId = await service.defaultLocationOf(ctx);
+    if (sourceDocument === "Sales Order") {
+      const location = await service.salesOrderShipmentLocationOf(
+        ctx,
+        sourceDocumentId,
+        locationId
+      );
+      if (location.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load the sales order's location",
+          location.error
+        );
+      }
+      locationId = location.data ?? undefined;
+    }
 
     if (
       !locationId &&
