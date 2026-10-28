@@ -34,7 +34,7 @@ Export subpaths (`package.json`): `.` (`index.ts`), `./auth.server`, `./session.
 ## Login (`apps/erp/app/routes/_public+/login.tsx`)
 
 Magic link is the primary flow. The action rate-limits by IP (Upstash via `@carbon/kv`,
-`RATE_LIMIT` env default **5 / hour**), runs the bot check (`verifyBotProtection`), then:
+`RATE_LIMIT` env default **10 per 5 minutes**, shared by login, MFA and unlock), runs the bot check (`verifyBotProtection`), then:
 
 **Bot protection.** `botProtection` (`bot-protection.server.ts`, re-exported from
 `auth.server.ts`) picks ONE provider per process from `BOT_PROTECTION`: `"botid"` (only
