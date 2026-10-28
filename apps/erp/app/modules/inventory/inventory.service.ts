@@ -5137,6 +5137,51 @@ export async function defaultLocationOf(ctx: ServiceContext) {
   return defaults.data?.locationId ?? undefined;
 }
 
+/**
+ * The location a new shipment from a sales order ships from: the order's own
+ * location, unless one of its lines ships from the caller's default location
+ * (as a receipt from a purchase order does). The shipment only takes the lines
+ * at its location, so a caller defaulted elsewhere got an empty shipment.
+ */
+export async function salesOrderShipmentLocationOf(
+  ctx: ServiceContext,
+  salesOrderId: string,
+  callerLocationId: string | undefined
+) {
+  const [salesOrder, callerLine] = await Promise.all([
+    ctx.asSystem.supabase
+      .from("salesOrder")
+      .select("locationId")
+      .eq("id", salesOrderId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle(),
+    callerLocationId
+      ? ctx.asSystem.supabase
+          .from("salesOrderLine")
+          .select("id")
+          .eq("salesOrderId", salesOrderId)
+          .eq("companyId", ctx.company.id)
+          .eq("locationId", callerLocationId)
+          .in("salesOrderLineType", [
+            "Part",
+            "Material",
+            "Tool",
+            "Fixture",
+            "Consumable"
+          ])
+          .limit(1)
+      : { data: [], error: null }
+  ]);
+  const error = salesOrder.error ?? callerLine.error;
+  if (error) return { data: null, error };
+  return {
+    data: callerLine.data?.length
+      ? callerLocationId
+      : (salesOrder.data?.locationId ?? callerLocationId),
+    error: null
+  };
+}
+
 /** Print a document's labels when its location's printer auto-prints. */
 export async function autoPrint(
   ctx: ServiceContext,

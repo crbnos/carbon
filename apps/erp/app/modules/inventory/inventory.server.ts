@@ -1260,7 +1260,9 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
  * order, a purchase order, a purchase return order, an outbound warehouse
  * transfer or a rental agreement. With no source document it creates an
  * empty shipment. The location is the caller's default location, which a
- * sales order or purchase order shipment requires.
+ * purchase order shipment requires. A sales order shipment ships from the
+ * order's location, or from the caller's default location when one of the
+ * order's lines ships from there.
  *
  * A return order or rental agreement with a Draft shipment already returns
  * that shipment instead of a second one.
@@ -1275,7 +1277,22 @@ export const createShipment = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, { sourceDocument, sourceDocumentId }) {
-    const locationId = await service.defaultLocationOf(ctx);
+    let locationId = await service.defaultLocationOf(ctx);
+    if (sourceDocument === "Sales Order") {
+      const location = await service.salesOrderShipmentLocationOf(
+        ctx,
+        sourceDocumentId,
+        locationId
+      );
+      if (location.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load the sales order's location",
+          location.error
+        );
+      }
+      locationId = location.data ?? undefined;
+    }
 
     if (
       !locationId &&
