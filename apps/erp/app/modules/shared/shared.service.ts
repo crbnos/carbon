@@ -8546,7 +8546,9 @@ export async function importCsvTable(
           }
           const existingEntityId = matchedByCsvId ?? matchedByName;
 
-          if (parseCsvNonNettable(record.nonNettable) === "invalid") {
+          // Blank leaves an existing unit's flag alone; a new unit is nettable.
+          const nonNettable = parseCsvNonNettable(record.nonNettable);
+          if (nonNettable === "invalid") {
             summary.errors.push({
               row: rowIndex,
               reason: NON_NETTABLE_CELL_ERROR
@@ -8564,8 +8566,6 @@ export async function importCsvTable(
             parseTypeNames(record.storageTypeNames)
           );
           const active = parseActive(record.active);
-          // Blank leaves an existing unit's flag alone; a new unit is nettable.
-          const nonNettable = parseCsvNonNettable(record.nonNettable);
           const nettable =
             typeof nonNettable === "boolean" ? { nettable: !nonNettable } : {};
 

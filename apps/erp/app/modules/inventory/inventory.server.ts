@@ -3445,6 +3445,15 @@ export const scanKanban = defineServiceFn({
     }
     const card = kanban.data;
 
+    // A Transfer card is refused by replenishKanban, which also serves the
+    // level checks.
+    if (card.replenishmentSystem !== "Transfer") {
+      const refused = await service.refuseNonNettableKanbanUnits(ctx, [
+        card.storageUnitId
+      ]);
+      if (refused) return refused;
+    }
+
     /** No one at a kanban card can choose a purchase order, so unlike
      *  `releaseJobs` a supplier's newest Draft PO is reused rather than a
      *  blocker. */
@@ -5844,7 +5853,7 @@ export const updateKanban = defineServiceFn({
   permission: { update: "inventory" },
   async run(ctx, input) {
     // Only a unit the update sets: a kanban whose unit became non-nettable
-    // later stays editable (its scans are refused instead).
+    // later stays editable; scanKanban and replenishKanban refuse its scans.
     const current = await ctx.asCaller.supabase
       .from("kanban")
       .select("storageUnitId, fromStorageUnitId")

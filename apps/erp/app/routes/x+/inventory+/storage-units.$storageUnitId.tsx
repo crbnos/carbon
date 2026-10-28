@@ -5,6 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { fetchAllFromTable } from "@carbon/database";
 import { validator } from "@carbon/form";
 import { RecordOutlet, useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -14,7 +15,10 @@ import {
   getEffectiveWorkCenterId,
   getStorageUnit
 } from "~/modules/inventory/inventory.service";
-import { nonNettableSource } from "~/modules/inventory/inventory.utils";
+import {
+  type NonNettableUnit,
+  nonNettableSource
+} from "~/modules/inventory/inventory.utils";
 import { StorageUnitForm } from "~/modules/inventory/ui";
 import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -51,13 +55,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const unit = storageUnit?.data;
   let inheritedNonNettable: ReturnType<typeof nonNettableSource> = null;
   if (unit?.nettable === true && unit.effectiveNettable === false) {
-    // The location's units (a few thousand at most) hold every ancestor.
+    // Every ancestor is in the unit's location, inactive ones included.
     const [units, types] = await Promise.all([
-      client
-        .from("storageUnit")
-        .select("id, name, parentId, nettable, storageTypeIds")
-        .eq("locationId", unit.locationId)
-        .eq("companyId", companyId),
+      fetchAllFromTable<NonNettableUnit>(
+        client,
+        "storageUnit",
+        "id, name, parentId, nettable, storageTypeIds",
+        (query) =>
+          query
+            .eq("locationId", unit.locationId)
+            .eq("companyId", companyId)
+            .order("id")
+      ),
       client
         .from("storageType")
         .select("id, name")

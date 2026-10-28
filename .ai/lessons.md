@@ -4284,7 +4284,6 @@ the error set against an untouched checkout of `main`.
 
 **Applies to:** Any worktree; typecheck, vitest and `crbn up` runs.
 
-
 ## A derived flag on a row that `ON DELETE SET NULL` points at must be released before the delete
 
 **Context:** `itemStockQuantities.quantityNonNettable` counts the stock in storage units whose `effectiveNettable` is false. `itemLedger.storageUnitId` references `storageUnit` with `ON DELETE SET NULL` (2026-10-28).

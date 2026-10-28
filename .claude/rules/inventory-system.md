@@ -207,7 +207,8 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   `p_exclude_non_nettable` switch: picking (ERP and MES) and MES suggested allocation pass it,
   a stock transfer does not, since moving stock out is how it is released. `postPicking`
   itself does not re-check a tracked line's source bin (nor lineside), so this holds for
-  every path the UI and the generator take.
+  every path the UI and the generator take. Shipments are not restricted: a shipment line can
+  name a non-nettable bin.
 - **A guessed bin is never non-nettable.** When no bin was chosen, consumption (the
   completion backflush and manual issue in `issueJobOperationMaterials` / `issueMaterial`,
   the maintenance spare-part issue) and a new job material (`getStorageUnitId`) fall back to
@@ -224,8 +225,9 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   that is non-nettable (`ctx.error("rule", …)`), since replenishing into one builds stock
   nothing may use and a Transfer from one would release quarantined stock on every scan.
   `updateKanban` checks only a unit the update sets, so a kanban whose unit became
-  non-nettable later stays editable; `replenishKanban` refuses its scans and level checks
-  (`KANBAN_REPLENISH_REASONS.nonNettableStorageUnit`).
+  non-nettable later stays editable and its scans are refused instead: `scanKanban` refuses a
+  Buy or Make card with the same check, and `replenishKanban` refuses a Transfer scan or level
+  check (`KANBAN_REPLENISH_REASONS.nonNettableStorageUnit`).
 - **The form says why.** When a unit's own flag is on but `effectiveNettable` is false, the
   edit route resolves the cause with the pure `nonNettableSource` (`inventory.utils.ts`:
   the unit's own storage type first, then the nearest parent that is non-nettable by its
