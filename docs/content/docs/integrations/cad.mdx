@@ -331,17 +331,32 @@ company's custom properties) onto Carbon. A property can set an **item field** o
 open, but the mappings belong to the company and apply to every push. It lives in
 the panel because Onshape lists properties only from inside a document.
 
-The page starts with the values every push reads. Part number, Revision, Name and
-Description come from Onshape's own properties unless you pick another text or list
-property; Name and Description each have a mode (below). Pushes match parts to Carbon
+The page starts with **Manual Mapping**, a closed group of the seven fields every
+Carbon item needs: Part ID, Revision, Short Description, Replenishment, Default Method
+Type, Tracking Type and Unit of Measure. Every push fills them without setup. A change
+here applies to every push for the company, so it is meant to be changed only on
+instruction from Carbon: opening the group shows a warning first, where **I understand**
+shows the fields and **Back** closes the group. A save the group
+refuses keeps it open. **Reset to defaults** puts the group's fields and the Item and
+Quantity column choices back to their defaults; **Save** applies it. The group ends
+with **What Onshape sends**: on an assembly, the column each of Item and Quantity is
+read from, then the BOM columns and properties of the open element, spelled as
+Onshape sends them, for checking why the panel can't find a field.
+
+Part number, Revision, Name and Description come from Onshape's own properties unless
+you pick another text or list property; Name and Description each have a mode (below). Pushes match parts to Carbon
 items by part number, so the page warns when you change the Part number or Revision
 source while items are linked. Release pushes always read Onshape's own Part number
 and Revision.
 
-On an assembly, the page also shows the BOM's Item and Quantity columns. The panel
-finds Onshape's own columns whatever your BOM template or language calls them, and
-shows them as **Found**. When it can't, pick the column that holds each one; **None**
-clears the choice.
+On an assembly, the panel finds the BOM's Item and Quantity columns whatever your BOM
+template or language calls them. When it can't find one, the page shows a row for it:
+pick the column that holds it, or type the column's name and choose **Use a column
+named**. A typed name is looked for in every BOM, in any case, so one choice covers
+templates that name the column the same way. To read another column than the one the
+panel found, choose **Change** beside it under What Onshape sends. **None**, or the
+found column, clears the choice. The Item column must hold Onshape's item numbers
+(1, 1.1, 1.2): the panel builds the assembly's levels from them.
 
 Then come the item fields with their **push defaults**, the values a new item gets
 when no property sets them:

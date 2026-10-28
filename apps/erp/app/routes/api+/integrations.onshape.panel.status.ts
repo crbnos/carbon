@@ -39,6 +39,9 @@ import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
+// The root's own part number and name as Onshape stores them, spaces kept.
+const ROOT_TEXT = { trim: false };
+
 export const config = {
   runtime: "nodejs"
 };
@@ -171,8 +174,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
       const properties = parseProperties(metadata);
       rootPartNumber =
-        identityValue(properties, "partNumber", sources) ?? rootPartNumber;
-      rootName = identityValue(properties, "name", sources) ?? rootName;
+        identityValue(properties, "partNumber", sources, ROOT_TEXT) ??
+        rootPartNumber;
+      rootName =
+        identityValue(properties, "name", sources, ROOT_TEXT) ?? rootName;
     } catch {
       rootIdentityUnavailable = true;
     }

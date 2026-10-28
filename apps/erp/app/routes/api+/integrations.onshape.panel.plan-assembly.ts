@@ -46,6 +46,9 @@ import { data } from "react-router";
 import { z } from "zod";
 import { loadMethodWriteRefusals } from "~/modules/settings/settings.service";
 
+// The root's own part number and name as Onshape stores them, spaces kept.
+const ROOT_TEXT = { trim: false };
+
 export const config = {
   runtime: "nodejs"
 };
@@ -165,10 +168,13 @@ export async function action({ request }: ActionFunctionArgs) {
     );
     const properties = parseProperties(elementMetadata);
     rootPartNumber =
-      identityValue(properties, "partNumber", sources) ?? rootPartNumber;
-    rootName = identityValue(properties, "name", sources) ?? rootName;
+      identityValue(properties, "partNumber", sources, ROOT_TEXT) ??
+      rootPartNumber;
+    rootName =
+      identityValue(properties, "name", sources, ROOT_TEXT) ?? rootName;
     rootDescription =
-      identityValue(properties, "description", sources) ?? rootDescription;
+      identityValue(properties, "description", sources, ROOT_TEXT) ??
+      rootDescription;
   } catch (error) {
     metadataError = error;
   }

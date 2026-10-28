@@ -5,11 +5,16 @@
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import type { ComboboxOption } from "@carbon/react";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
   Alert,
   AlertDescription,
   AlertTitle,
   Button,
   Combobox,
+  CreatableCombobox,
   cn,
   DisabledReason,
   HStack,
@@ -47,9 +52,9 @@ import {
   LuCopy,
   LuInfo,
   LuListChecks,
-  LuLock,
   LuPlus,
   LuRefreshCw,
+  LuRotateCcw,
   LuTrash,
   LuTriangleAlert,
   LuX
@@ -77,7 +82,7 @@ import {
   VALID_METHOD_TYPES_BY_REPLENISHMENT
 } from "./plan";
 import type { OnshapePushDefaults } from "./preferences";
-import { reconcilePushDefaults } from "./preferences";
+import { DEFAULT_PUSH_DEFAULTS, reconcilePushDefaults } from "./preferences";
 import type {
   DescriptionModes,
   MappingMode,
@@ -144,12 +149,14 @@ import {
 import {
   BOM_LINE_FIELDS,
   type BomLineField,
-  IDENTITY_FIELDS,
+  chosenBomColumn,
   IDENTITY_VALUE_TYPES,
   type IdentityField,
   isIdentityProperty,
+  namedColumnId,
   ONSHAPE_PROPERTIES,
-  onshapePropertyField
+  onshapePropertyField,
+  standardSourceErrors
 } from "./standard-sources";
 import type { PanelPartStatus } from "./status";
 
@@ -251,6 +258,14 @@ type PanelFieldsProperty = {
   options?: string[];
 };
 
+type PanelBomColumn = Pick<
+  PanelFieldsProperty,
+  "propertyId" | "name" | "valueType"
+> & {
+  /** Onshape's id for its own columns, whatever the template labels them. */
+  propertyName?: string;
+};
+
 type PanelFieldsData = {
   properties: PanelFieldsProperty[];
   map: PropertyMapEntry[];
@@ -261,7 +276,7 @@ type PanelFieldsData = {
   pushDefaults: OnshapePushDefaults;
   /** An assembly's BOM columns; null on a Part Studio or an unread BOM. */
   bom?: {
-    columns: Pick<PanelFieldsProperty, "propertyId" | "name" | "valueType">[];
+    columns: PanelBomColumn[];
     /** The column the panel finds on its own, per line field. */
     detected: Record<BomLineField, string | null>;
   } | null;
@@ -2727,6 +2742,14 @@ function FieldsSection({
 }) {
   const [adding, setAdding] = useState(false);
   const [confirmingRefresh, setConfirmingRefresh] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  // Manual Mapping changes every push for the company: its fields show only
+  // after "I understand", once per page load.
+  const [manualConfirmed, setManualConfirmed] = useState(false);
+  // Closed by the user while a refused save kept it open; the next save reopens it.
+  const [manualDismissed, setManualDismissed] = useState(false);
+  // Item and Quantity rows the user opened to change the column found.
+  const [changingColumns, setChangingColumns] = useState<BomLineField[]>([]);
   // Unsaved edits: Refresh replaces the draft with the saved map, so it asks.
   const dirty =
     state.status === "ready" &&
@@ -2888,6 +2911,116 @@ function FieldsSection({
       : candidates;
   };
 
+  const identityRow = (field: IdentityField) => {
+    const target: PropertyMapTarget = { kind: "identity", field };
+    const entry = mappedFrom.get(targetKey(target));
+    return (
+      <IdentityRow
+        key={field}
+        field={field}
+        entry={entry}
+        saved={savedSource(target)}
+        candidates={candidatesFor(target, entry)}
+        mappingOf={mappingOf}
+        definitions={data.definitions}
+        linkedItems={data.linkedItems ?? 0}
+        errors={entry ? state.fieldErrors[entry.onshapePropertyId] : undefined}
+        disabled={busy}
+        control={
+          field === "name" || field === "description" ? (
+            <ModeSelect
+              mode={state.descriptionModes[field]}
+              label={`${STANDARD_TARGET_LABEL[field]}: when Onshape writes it`}
+              disabled={busy}
+              onChange={(mode) => onDescriptionMode(field, mode)}
+            />
+          ) : (
+            // Pushes match items by these, so a push never rewrites them.
+            <ModeSelect
+              mode="create"
+              label={`${STANDARD_TARGET_LABEL[field]}: when Onshape writes it`}
+              disabled
+            />
+          )
+        }
+        onSource={(property) => onTargetSource(target, property)}
+      />
+    );
+  };
+  const itemFieldRow = (row: (typeof ITEM_FIELD_ROWS)[number]) => {
+    const target: PropertyMapTarget | null = row.field
+      ? { kind: "item", field: row.field }
+      : null;
+    const entry = target ? mappedFrom.get(targetKey(target)) : undefined;
+    return (
+      <ItemFieldRow
+        key={row.key}
+        row={row}
+        defaults={state.pushDefaults}
+        entry={entry}
+        property={entry ? propertyById.get(entry.onshapePropertyId) : undefined}
+        candidates={target ? candidatesFor(target, entry) : []}
+        mappingOf={mappingOf}
+        definitions={data.definitions}
+        units={data.units}
+        errors={entry ? state.fieldErrors[entry.onshapePropertyId] : undefined}
+        disabled={busy}
+        onSource={(property) => target && onTargetSource(target, property)}
+        onDefault={onPushDefaults}
+        onEdit={(patch) => entry && onEdit(entry.onshapePropertyId, patch)}
+      />
+    );
+  };
+  // The column each BOM line field reads, as a push would read it.
+  const bomReading = bom
+    ? BOM_LINE_FIELDS.map((field) => {
+        const entry = mappedFrom.get(
+          targetKey({ kind: "bomLine", field } satisfies PropertyMapTarget)
+        );
+        const detected = bom.detected[field];
+        const found = detected
+          ? bom.columns.find((column) => column.propertyId === detected)
+          : undefined;
+        return {
+          field,
+          column: (chosenColumn(bom.columns, entry) ?? found)?.name ?? null,
+          rowShown: !found || !!entry || changingColumns.includes(field)
+        };
+      })
+    : [];
+  // Manual Mapping's fields: each Reset clears to its default.
+  const manualTargets: PropertyMapTarget[] = [
+    ...REQUIRED_IDENTITY_FIELDS.map(
+      (field) => ({ kind: "identity", field }) as const
+    ),
+    ...ITEM_FIELD_ROWS.flatMap((row) =>
+      row.field ? [{ kind: "item", field: row.field } as const] : []
+    ),
+    ...BOM_LINE_FIELDS.map((field) => ({ kind: "bomLine", field }) as const)
+  ];
+  const manualKeys = new Set(manualTargets.map(targetKey));
+  const manualIsDefault =
+    !state.entries.some((entry) => manualKeys.has(targetKey(entry.target))) &&
+    state.descriptionModes.name === "create" &&
+    pushDefaultsEqual(state.pushDefaults, DEFAULT_PUSH_DEFAULTS);
+  // In the draft, like every other change: Save applies it.
+  const resetManual = () => {
+    for (const target of manualTargets) onTargetSource(target, null);
+    onDescriptionMode("name", "create");
+    onPushDefaults(DEFAULT_PUSH_DEFAULTS);
+    setChangingColumns([]);
+  };
+  // A refused save inside the group keeps it open, so the error is seen.
+  const manualHasErrors = state.entries.some((entry) => {
+    if (!state.fieldErrors[entry.onshapePropertyId]?.length) return false;
+    const { target } = entry;
+    return (
+      (target.kind === "identity" &&
+        REQUIRED_IDENTITY_FIELDS.includes(target.field)) ||
+      (target.kind === "item" && ITEM_FIELD_ROW_FIELDS.has(target.field))
+    );
+  });
+
   return (
     <VStack spacing={3} className="w-full">
       {header}
@@ -2923,40 +3056,104 @@ function FieldsSection({
         </p>
       ))}
 
+      <Accordion
+        type="single"
+        collapsible
+        value={
+          manualOpen || (manualHasErrors && !manualDismissed) ? "manual" : ""
+        }
+        onValueChange={(value) => {
+          setManualOpen(value === "manual");
+          setManualDismissed(value !== "manual");
+        }}
+        className="w-full"
+      >
+        <AccordionItem value="manual" className="border-none">
+          <AccordionTrigger className="py-2 text-sm font-medium hover:no-underline">
+            <span className="flex flex-1 items-baseline gap-2">
+              Manual Mapping
+              <span className="text-xs font-normal text-muted-foreground">
+                7 fields
+              </span>
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="flex flex-col gap-2 pb-1">
+            {manualConfirmed ? (
+              <>
+                <Alert variant="warning">
+                  <LuTriangleAlert />
+                  <AlertTitle>Danger zone</AlertTitle>
+                  <AlertDescription>
+                    Change these only on instruction from a Carbon employee.
+                    Every push for the company reads them.
+                  </AlertDescription>
+                </Alert>
+                <p className="px-1 text-xs text-muted-foreground">
+                  Every push fills these: from the Onshape property when one is
+                  chosen, otherwise from Onshape's own property or the push
+                  default.
+                </p>
+                <FieldListHeader />
+                <ul className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
+                  {REQUIRED_IDENTITY_FIELDS.map(identityRow)}
+                  {ITEM_FIELD_ROWS.map(itemFieldRow)}
+                </ul>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="self-start"
+                  leftIcon={<LuRotateCcw />}
+                  isDisabled={busy || manualIsDefault}
+                  onClick={resetManual}
+                >
+                  Reset to defaults
+                </Button>
+                <OnshapeNames
+                  bom={bom}
+                  properties={data.properties}
+                  reading={bomReading}
+                  onChange={(field) =>
+                    setChangingColumns((fields) => [...fields, field])
+                  }
+                />
+              </>
+            ) : (
+              <Alert variant="warning">
+                <LuTriangleAlert />
+                <AlertTitle>Danger zone</AlertTitle>
+                <AlertDescription className="flex flex-col gap-2">
+                  <p>
+                    Manual Mapping sets where every push reads Part ID,
+                    Revision, Short Description, the item defaults and the BOM's
+                    Item and Quantity columns, for the whole company. A wrong
+                    change can link parts to the wrong Carbon items or stop
+                    pushes. Use it only when a Carbon employee asks you to.
+                  </p>
+                  <HStack spacing={2}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setManualOpen(false);
+                        setManualDismissed(true);
+                      }}
+                    >
+                      Back
+                    </Button>
+                    <Button size="sm" onClick={() => setManualConfirmed(true)}>
+                      I understand
+                    </Button>
+                  </HStack>
+                </AlertDescription>
+              </Alert>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      <FieldListHeader />
       <ul className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
-        {IDENTITY_FIELDS.map((field) => {
-          const target: PropertyMapTarget = { kind: "identity", field };
-          const entry = mappedFrom.get(targetKey(target));
-          return (
-            <IdentityRow
-              key={field}
-              field={field}
-              entry={entry}
-              saved={savedSource(target)}
-              candidates={candidatesFor(target, entry)}
-              mappingOf={mappingOf}
-              definitions={data.definitions}
-              linkedItems={data.linkedItems ?? 0}
-              errors={
-                entry ? state.fieldErrors[entry.onshapePropertyId] : undefined
-              }
-              disabled={busy}
-              control={
-                field === "name" || field === "description" ? (
-                  <ModeSelect
-                    mode={state.descriptionModes[field]}
-                    label={`${STANDARD_TARGET_LABEL[field]}: when Onshape writes it`}
-                    disabled={busy}
-                    onChange={(mode) => onDescriptionMode(field, mode)}
-                  />
-                ) : (
-                  <AlwaysTag />
-                )
-              }
-              onSource={(property) => onTargetSource(target, property)}
-            />
-          );
-        })}
+        {identityRow("description")}
         {bom
           ? BOM_LINE_FIELDS.map((field) => {
               const target: PropertyMapTarget = { kind: "bomLine", field };
@@ -2968,6 +3165,7 @@ function FieldsSection({
                   entry={entry}
                   columns={bom.columns}
                   detected={bom.detected[field]}
+                  changing={changingColumns.includes(field)}
                   mappingOf={mappingOf}
                   definitions={data.definitions}
                   errors={
@@ -2986,38 +3184,6 @@ function FieldsSection({
               );
             })
           : null}
-        {ITEM_FIELD_ROWS.map((row) => {
-          const target: PropertyMapTarget | null = row.field
-            ? { kind: "item", field: row.field }
-            : null;
-          const entry = target ? mappedFrom.get(targetKey(target)) : undefined;
-          return (
-            <ItemFieldRow
-              key={row.key}
-              row={row}
-              defaults={state.pushDefaults}
-              entry={entry}
-              property={
-                entry ? propertyById.get(entry.onshapePropertyId) : undefined
-              }
-              candidates={target ? candidatesFor(target, entry) : []}
-              mappingOf={mappingOf}
-              definitions={data.definitions}
-              units={data.units}
-              errors={
-                entry ? state.fieldErrors[entry.onshapePropertyId] : undefined
-              }
-              disabled={busy}
-              onSource={(property) =>
-                target && onTargetSource(target, property)
-              }
-              onDefault={onPushDefaults}
-              onEdit={(patch) =>
-                entry && onEdit(entry.onshapePropertyId, patch)
-              }
-            />
-          );
-        })}
         {otherEntries.map((entry) => (
           <MappingRow
             key={entry.onshapePropertyId}
@@ -3063,7 +3229,10 @@ function FieldsSection({
       <PanelActionBar>
         <Button
           className="w-full"
-          onClick={onSave}
+          onClick={() => {
+            setManualDismissed(false);
+            onSave();
+          }}
           isDisabled={!dirty || busy}
           isLoading={state.saving}
         >
@@ -3093,6 +3262,95 @@ const DEFAULT_UNIT_AUTOMATIC = "__automatic__";
 const SOURCE_DEFAULT = "__default__";
 const SOURCE_NONE = "__none__";
 const SOURCE_PROPERTY = "property:";
+
+// Identity fields Carbon requires on every item. Long Description is optional.
+const REQUIRED_IDENTITY_FIELDS: IdentityField[] = [
+  "partNumber",
+  "revision",
+  "name"
+];
+
+/** Names the columns: the right one is when a property's value is written, or
+ * the push default when the row reads no property. */
+function FieldListHeader() {
+  return (
+    <div
+      className={cn(
+        FIELD_ROW_GRID,
+        "px-3 text-xs font-medium text-muted-foreground"
+      )}
+    >
+      <span className="px-1">Onshape property</span>
+      <span aria-hidden />
+      <span className="px-1">Carbon field</span>
+      <span className="px-1">On push</span>
+      <span aria-hidden />
+    </div>
+  );
+}
+
+/** The names Onshape sends for this element, spelled as Onshape sends them:
+ * for troubleshooting a field the panel can't find. */
+function OnshapeNames({
+  bom,
+  properties,
+  reading,
+  onChange
+}: {
+  bom: PanelFieldsData["bom"];
+  properties: PanelFieldsProperty[];
+  /** The column each BOM line field reads; its row may be hidden. */
+  reading: { field: BomLineField; column: string | null; rowShown: boolean }[];
+  /** Shows a hidden Item or Quantity row. */
+  onChange: (field: BomLineField) => void;
+}) {
+  const propertyNames = properties
+    .map((property) => property.name)
+    .sort((a, b) => a.localeCompare(b));
+  return (
+    <div className="flex flex-col gap-1 px-1 text-xs text-muted-foreground">
+      <span className="font-medium">What Onshape sends</span>
+      {reading.map(({ field, column, rowShown }) => (
+        <p key={field} className="break-words">
+          {ONSHAPE_PROPERTIES[field].label} column:{" "}
+          {column ? (
+            <span className="text-foreground">{column}</span>
+          ) : (
+            <span className="text-destructive">none</span>
+          )}
+          {rowShown ? null : (
+            <>
+              {" "}
+              <Button
+                variant="link"
+                size="sm"
+                // Underlined: beside a column name, plain text reads as part of it.
+                className="h-auto p-0 text-xs underline"
+                onClick={() => onChange(field)}
+              >
+                Change
+              </Button>
+            </>
+          )}
+        </p>
+      ))}
+      {bom ? (
+        <p className="break-words">
+          BOM columns:{" "}
+          <span className="text-foreground">
+            {bom.columns.map((column) => column.name).join(", ") || "None"}
+          </span>
+        </p>
+      ) : null}
+      <p className="break-words">
+        Properties:{" "}
+        <span className="text-foreground">
+          {propertyNames.join(", ") || "None"}
+        </span>
+      </p>
+    </div>
+  );
+}
 
 // Item fields a push always fills: a mapped property, else the push default
 // under `key`. The Buy items method is a default only.
@@ -3190,12 +3448,15 @@ function defaultPatch(
 function FieldRow({
   source,
   carbon,
+  required = false,
   control,
   action,
   notes
 }: {
   source: ReactNode;
   carbon: ReactNode;
+  /** Marked as the custom fields list marks a required field. */
+  required?: boolean;
   control?: ReactNode;
   action?: ReactNode;
   notes?: ReactNode;
@@ -3208,12 +3469,17 @@ function FieldRow({
           aria-hidden
           className="size-3.5 justify-self-center text-muted-foreground"
         />
-        <div className="min-w-0 text-sm">
+        <div className="flex min-w-0 items-center justify-between gap-2 text-sm">
           {typeof carbon === "string" ? (
             <FieldName>{carbon}</FieldName>
           ) : (
             carbon
           )}
+          {required ? (
+            <span className="shrink-0 text-xxs text-muted-foreground">
+              Required
+            </span>
+          ) : null}
         </div>
         <div className="min-w-0">{control}</div>
         <div className="flex size-8 items-center justify-center">{action}</div>
@@ -3255,14 +3521,19 @@ function SourceText({ children }: { children: string }) {
   return <FieldName emphasis>{children}</FieldName>;
 }
 
-/** Options another field holds (disabled) are left out. */
+/**
+ * Options another field holds (disabled) are left out. With `onCreate`, a typed
+ * text that matches no option can be chosen too.
+ */
 function SourceSelect({
   value,
   label,
   groups,
   disabled,
   placeholder,
-  onChange
+  onChange,
+  onCreate,
+  createText
 }: {
   value: string | undefined;
   label: string;
@@ -3273,6 +3544,8 @@ function SourceSelect({
   disabled: boolean;
   placeholder?: string;
   onChange: (value: string) => void;
+  onCreate?: (text: string) => void;
+  createText?: (search: string) => string;
 }) {
   const options: ComboboxOption[] = groups.flatMap((group) =>
     group.options
@@ -3286,16 +3559,31 @@ function SourceSelect({
   );
   return (
     <div className="w-full min-w-0">
-      <Combobox
-        size="sm"
-        value={value}
-        options={options}
-        placeholder={placeholder}
-        disabled={disabled}
-        aria-label={label}
-        className={`w-full min-w-0 ${PANEL_CONTROL}`}
-        onChange={onChange}
-      />
+      {onCreate ? (
+        <CreatableCombobox
+          size="sm"
+          value={value}
+          options={options}
+          placeholder={placeholder}
+          disabled={disabled}
+          aria-label={label}
+          className={`w-full min-w-0 ${PANEL_CONTROL}`}
+          onChange={onChange}
+          onCreateOption={onCreate}
+          createOptionText={createText}
+        />
+      ) : (
+        <Combobox
+          size="sm"
+          value={value}
+          options={options}
+          placeholder={placeholder}
+          disabled={disabled}
+          aria-label={label}
+          className={`w-full min-w-0 ${PANEL_CONTROL}`}
+          onChange={onChange}
+        />
+      )}
     </div>
   );
 }
@@ -3320,15 +3608,6 @@ function propertyOptions(
   });
 }
 
-function AlwaysTag() {
-  return (
-    <span className="flex items-center gap-1.5 px-1 text-sm text-muted-foreground">
-      <LuLock aria-hidden className="size-3.5" />
-      Always
-    </span>
-  );
-}
-
 function ModeSelect({
   mode,
   label,
@@ -3340,12 +3619,12 @@ function ModeSelect({
   label: string;
   disabled: boolean;
   cascades?: boolean;
-  onChange: (mode: MappingMode) => void;
+  onChange?: (mode: MappingMode) => void;
 }) {
   return (
     <Select
       value={mode}
-      onValueChange={(value) => onChange(value as MappingMode)}
+      onValueChange={(value) => onChange?.(value as MappingMode)}
       disabled={disabled}
     >
       <SelectTrigger
@@ -3621,15 +3900,34 @@ function IdentityRow({
   );
 }
 
+/** The column a draft Item or Quantity choice reads in this BOM (`chosenBomColumn`). */
+function chosenColumn(
+  columns: PanelBomColumn[],
+  entry: FieldsDraftEntry | undefined
+): PanelBomColumn | undefined {
+  if (!entry) return undefined;
+  const id = chosenBomColumn(
+    columns.map((column) => ({
+      id: column.propertyId,
+      name: column.name,
+      propertyName: column.propertyName
+    })),
+    { headerId: entry.onshapePropertyId, name: entry.onshapeName }
+  );
+  return id ? columns.find((column) => column.propertyId === id) : undefined;
+}
+
 /**
- * Item or Quantity: the BOM column the panel finds on its own, or, when it
- * finds none, the column chosen here.
+ * Item or Quantity: shown when the panel finds no column on its own, one is
+ * saved, or the user asks to change the one found. The picker takes a column
+ * of this BOM or a typed name, which every BOM is searched for.
  */
 function BomLineRow({
   field,
   entry,
   columns,
   detected,
+  changing,
   mappingOf,
   definitions,
   errors,
@@ -3638,8 +3936,10 @@ function BomLineRow({
 }: {
   field: BomLineField;
   entry: FieldsDraftEntry | undefined;
-  columns: Pick<PanelFieldsProperty, "propertyId" | "name" | "valueType">[];
+  columns: PanelBomColumn[];
   detected: string | null;
+  /** The user asked to change the column found. */
+  changing: boolean;
   mappingOf: Map<string, FieldsDraftEntry>;
   definitions: PlanCustomFieldDefinition[];
   errors: string[] | undefined;
@@ -3656,50 +3956,45 @@ function BomLineRow({
   const found = detected
     ? columns.find((column) => column.propertyId === detected)
     : undefined;
-  if (found && !entry) {
-    return (
-      <FieldRow
-        source={<SourceText>{found.name}</SourceText>}
-        carbon={carbon}
-        control={
-          <span className="flex items-center gap-1.5 px-1 text-sm text-muted-foreground">
-            <LuCircleCheck aria-hidden className="size-3.5" />
-            Found
-          </span>
-        }
-      />
-    );
-  }
+  // A found column needs no choice, so the row stays hidden until asked for.
+  if (found && !entry && !changing) return null;
+  const chosen = chosenColumn(columns, entry);
+  // What the save would refuse, said before the save; its own errors replace it.
+  const refused = entry && !errors?.length ? standardSourceErrors(entry) : [];
+  // The map is company-wide: the saved column may be on another template only.
+  const savedElsewhere =
+    entry !== undefined &&
+    !columns.some((column) => column.propertyId === entry.onshapePropertyId);
   // Onshape's own columns are never another field's source (`standardSourceErrors`).
   const candidates: PanelFieldsProperty[] = columns
     .filter(
       (column) =>
-        onshapePropertyField({ propertyId: column.propertyId }) === null
+        onshapePropertyField({
+          propertyId: column.propertyId,
+          propertyName: column.propertyName
+        }) === null &&
+        !(savedElsewhere && column.propertyId === chosen?.propertyId)
     )
-    .map((column) => ({ ...column, mappable: true }));
-  // The map is company-wide: the chosen column may belong to another template.
-  const chosenMissing =
-    entry !== undefined &&
-    !columns.some((column) => column.propertyId === entry.onshapePropertyId);
-  if (entry && chosenMissing) {
-    candidates.push({
-      propertyId: entry.onshapePropertyId,
-      name: entry.onshapeName,
-      valueType: entry.valueType,
+    .map(({ propertyName: _propertyName, ...column }) => ({
+      ...column,
       mappable: true
-    });
-  }
+    }));
+  const nameKey = (name: string) => name.trim().toLowerCase();
   return (
     <FieldRow
       source={
         <SourceSelect
           value={
-            entry ? `${SOURCE_PROPERTY}${entry.onshapePropertyId}` : undefined
+            entry
+              ? `${SOURCE_PROPERTY}${entry.onshapePropertyId}`
+              : found
+                ? SOURCE_DEFAULT
+                : undefined
           }
           label={`${carbon}: source`}
-          placeholder={`Choose the ${own} column`}
+          placeholder={`Choose or type the ${own} column`}
           groups={[
-            ...(entry
+            ...(entry || found
               ? [
                   {
                     options: [
@@ -3726,7 +4021,22 @@ function BomLineRow({
                 mappingOf,
                 definitions
               )
-            }
+            },
+            ...(entry && savedElsewhere
+              ? [
+                  {
+                    options: [
+                      {
+                        value: `${SOURCE_PROPERTY}${entry.onshapePropertyId}`,
+                        label: entry.onshapeName,
+                        helper: chosen
+                          ? "Found by name in this BOM"
+                          : "Not in this BOM"
+                      }
+                    ]
+                  }
+                ]
+              : [])
           ]}
           disabled={disabled}
           onChange={(value) => {
@@ -3734,33 +4044,72 @@ function BomLineRow({
               if (entry) onSource(null);
               return;
             }
-            const chosen = candidates.find(
+            const chosenCandidate = candidates.find(
               (c) => c.propertyId === value.slice(SOURCE_PROPERTY.length)
             );
-            if (chosen) onSource(chosen);
+            if (chosenCandidate) onSource(chosenCandidate);
+          }}
+          createText={(search) => `Use a column named "${search}"`}
+          onCreate={(typed) => {
+            const name = typed.trim();
+            if (name === "") return;
+            // Onshape's own column is the default, not a choice.
+            if (found && nameKey(found.name) === nameKey(name)) {
+              if (entry) onSource(null);
+              return;
+            }
+            // A name this BOM has picks that column.
+            const column = candidates.find(
+              (c) => nameKey(c.name) === nameKey(name)
+            );
+            onSource(
+              column ?? {
+                propertyId: namedColumnId(name),
+                name,
+                valueType: "STRING"
+              }
+            );
           }}
         />
       }
       carbon={carbon}
-      control={<AlwaysTag />}
+      required
+      control={
+        // Every assembly push rewrites the BOM lines.
+        <ModeSelect
+          mode="everyPush"
+          label={`${carbon}: when Onshape writes it`}
+          disabled
+        />
+      }
       notes={
         <>
-          {!entry ? (
-            <p className="text-xs text-destructive">
-              This BOM has no {own} column the panel recognises. Choose the
-              column that holds it.
-            </p>
-          ) : chosenMissing && !found ? (
-            <p className="text-xs text-destructive">
-              This BOM has no {entry.onshapeName} column. Choose the column that
-              holds {own}.
-            </p>
-          ) : chosenMissing && found ? (
+          {refused.length > 0 ? (
+            rowErrors(refused)
+          ) : errors?.length ? null : !entry ? (
+            found ? (
+              <p className="text-xs text-muted-foreground">
+                Pushes read {found.name}, Onshape's {own} column. Choose or type
+                another column to read {own} from.
+              </p>
+            ) : (
+              <p className="text-xs text-destructive">
+                This BOM has no {own} column the panel recognises. Choose the
+                column that holds it, or type its name. Manual Mapping lists
+                every column Onshape sends.
+              </p>
+            )
+          ) : chosen ? null : found ? (
             <p className="text-xs text-muted-foreground">
               This BOM has no {entry.onshapeName} column, so pushes read{" "}
               {found.name}.
             </p>
-          ) : null}
+          ) : (
+            <p className="text-xs text-destructive">
+              This BOM has no {entry.onshapeName} column. Choose the column that
+              holds {own}, or type its name.
+            </p>
+          )}
           {rowErrors(errors)}
         </>
       }

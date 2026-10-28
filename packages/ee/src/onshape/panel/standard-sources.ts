@@ -227,12 +227,50 @@ export type BomColumnField = IdentityField | BomLineField | "bomBehavior";
 
 type BomHeaderLike = { id: string; name?: unknown; propertyName?: unknown };
 
+/** An Item or Quantity column typed by name: no BOM has a column with this id. */
+const NAMED_COLUMN_PREFIX = "name:";
+
+export function namedColumnId(name: string): string {
+  return `${NAMED_COLUMN_PREFIX}${name.trim()}`;
+}
+
+export function isNamedColumnId(id: string): boolean {
+  return id.startsWith(NAMED_COLUMN_PREFIX);
+}
+
+/**
+ * The column a saved Item or Quantity choice reads: by id, then by name in any
+ * case. The name match skips Onshape's own columns, which detection finds, so a
+ * name never moves Item onto Onshape's Quantity.
+ */
+export function chosenBomColumn(
+  headers: readonly BomHeaderLike[],
+  choice: { headerId: string; name: string }
+): string | null {
+  if (headers.some((header) => header.id === choice.headerId)) {
+    return choice.headerId;
+  }
+  const name = labelKey(choice.name);
+  if (name === "") return null;
+  return (
+    headers.find(
+      (header) =>
+        typeof header.name === "string" &&
+        labelKey(header.name) === name &&
+        onshapePropertyField({
+          id: header.id,
+          propertyName: header.propertyName
+        }) === null
+    )?.id ?? null
+  );
+}
+
 /**
  * The BOM column id for each field the parser reads, null when the BOM has
  * none. An identity override names its own column (by id, then its label) and
  * never falls back to Onshape's: a part number read from another property
- * would link other items. A line override whose column is gone falls back to
- * Onshape's own.
+ * would link other items. A line override is found by id, then by name
+ * (`chosenBomColumn`); one this BOM lacks falls back to Onshape's own.
  */
 export function bomColumnIds(
   headers: readonly BomHeaderLike[],
@@ -242,7 +280,9 @@ export function bomColumnIds(
   const own = new Map<OnshapePropertyField, string>();
   // Property name first: a custom column may carry a standard label. The exact
   // label before the label in any case: "Part number" beats a custom "PART NUMBER".
+  // Within a pass the last match wins, as it did before overrides existed.
   for (const pass of ["propertyName", "id", "exactLabel", "label"] as const) {
+    const matched = new Map<OnshapePropertyField, string>();
     for (const header of headers) {
       const field =
         pass === "propertyName"
@@ -256,7 +296,10 @@ export function bomColumnIds(
               : pass === "exactLabel"
                 ? FIELD_BY_EXACT_LABEL.get(header.name)
                 : FIELD_BY_LABEL.get(labelKey(header.name));
-      if (field && !own.has(field)) own.set(field, header.id);
+      if (field) matched.set(field, header.id);
+    }
+    for (const [field, id] of matched) {
+      if (!own.has(field)) own.set(field, id);
     }
   }
   const identity = (field: IdentityField) => {
@@ -277,8 +320,8 @@ export function bomColumnIds(
   };
   const line = (field: BomLineField) => {
     const override = sources.bomLine[field];
-    if (override && ids.has(override.headerId)) return override.headerId;
-    return own.get(field) ?? null;
+    const chosen = override ? chosenBomColumn(headers, override) : null;
+    return chosen ?? own.get(field) ?? null;
   };
   return {
     partNumber: identity("partNumber"),
@@ -291,10 +334,11 @@ export function bomColumnIds(
   };
 }
 
-function textValue(value: unknown): string | null {
+function textValue(value: unknown, trim = true): string | null {
   if (typeof value === "string") {
     const text = value.trim();
-    return text === "" ? null : text;
+    if (text === "") return null;
+    return trim ? text : value;
   }
   if (typeof value === "number") return String(value);
   if (value && typeof value === "object") {
@@ -311,19 +355,22 @@ type PropertyLike = { propertyId?: unknown; name?: unknown; value?: unknown };
 /**
  * An identity value from Onshape metadata: the override's property, else
  * Onshape's own (by id, then by label in any case). An override never falls
- * back to Onshape's own property.
+ * back to Onshape's own property. `trim: false` keeps surrounding spaces, as an
+ * assembly's own part number and name were always read: an item pushed with
+ * them must still match.
  */
 export function identityValue(
   properties: readonly PropertyLike[],
   field: IdentityField,
-  sources: StandardSources = DEFAULT_STANDARD_SOURCES
+  sources: StandardSources = DEFAULT_STANDARD_SOURCES,
+  { trim = true }: { trim?: boolean } = {}
 ): string | null {
   const override = sources.identity[field];
   if (override) {
     const property = properties.find(
       (p) => p.propertyId === override.propertyId
     );
-    return property ? textValue(property.value) : null;
+    return property ? textValue(property.value, trim) : null;
   }
   const own = ONSHAPE_PROPERTIES[field];
   const property =
@@ -332,7 +379,7 @@ export function identityValue(
       (p) =>
         typeof p.name === "string" && labelKey(p.name) === labelKey(own.label)
     );
-  return property ? textValue(property.value) : null;
+  return property ? textValue(property.value, trim) : null;
 }
 
 /** The parts API's identity fields, with each override read from metadata. */
@@ -377,13 +424,24 @@ export function withIdentitySources<
  * neither case.
  */
 export function standardSourceErrors(
-  entry: Pick<PropertyMapEntry, "onshapePropertyId" | "valueType" | "target">
+  entry: Pick<
+    PropertyMapEntry,
+    "onshapePropertyId" | "onshapeName" | "valueType" | "target"
+  >
 ): string[] {
   const { target } = entry;
   if (target.kind !== "identity" && target.kind !== "bomLine") return [];
   const label = ONSHAPE_PROPERTIES[target.field].label;
-  const own = onshapePropertyField({ propertyId: entry.onshapePropertyId });
+  // A typed column is known only by its name.
+  const named =
+    target.kind === "bomLine" && isNamedColumnId(entry.onshapePropertyId);
+  const own = named
+    ? (FIELD_BY_LABEL.get(labelKey(entry.onshapeName)) ?? null)
+    : onshapePropertyField({ propertyId: entry.onshapePropertyId });
   const errors: string[] = [];
+  if (named && labelKey(entry.onshapeName) === "") {
+    errors.push(`Type the name of the column that holds ${label}.`);
+  }
   if (own && own !== target.field) {
     errors.push(
       `That is Onshape's ${ONSHAPE_PROPERTIES[own].label}. Choose the ${

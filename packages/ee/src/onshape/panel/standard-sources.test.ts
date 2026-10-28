@@ -8,9 +8,11 @@ import type { PropertyMapEntry } from "./properties";
 import { resolveMappedFields } from "./properties";
 import {
   bomColumnIds,
+  chosenBomColumn,
   DEFAULT_STANDARD_SOURCES,
   identityValue,
   isIdentityProperty,
+  namedColumnId,
   ONSHAPE_PROPERTIES,
   onshapePropertyField,
   releaseSources,
@@ -293,6 +295,105 @@ describe("bomColumnIds and parseBomTree", () => {
     );
   });
 
+  it("takes the last of two columns with one label, as before overrides", () => {
+    const columns = [
+      { id: "col-a", name: "Item", propertyName: "col-a" },
+      { id: "col-b", name: "Item", propertyName: "col-b" },
+      { id: "col-c", name: "QUANTITY", propertyName: "col-c" },
+      { id: "col-d", name: "quantity", propertyName: "col-d" }
+    ];
+    const ids = bomColumnIds(columns);
+    expect(ids.item).toBe("col-b");
+    expect(ids.quantity).toBe("col-d");
+  });
+
+  it("reads a typed Item column by its name in any case", () => {
+    // A template whose item numbers live in a custom column, with Onshape's
+    // own Item column removed.
+    const custom = [
+      { id: "col-list", name: "ITEM List", propertyName: "col-list" },
+      {
+        id: P.quantity.propertyId,
+        name: "Quantity",
+        propertyName: "quantity"
+      },
+      {
+        id: P.partNumber.propertyId,
+        name: "Part number",
+        propertyName: "partNumber"
+      }
+    ];
+    const rows = [
+      {
+        headerIdToValue: {
+          "col-list": "1",
+          [P.quantity.propertyId]: 2,
+          [P.partNumber.propertyId]: "PRT-1"
+        }
+      }
+    ];
+    expect(parseBomTree({ headers: custom, rows }).missingColumns).toEqual([
+      "Item"
+    ]);
+    const sources = standardSources([
+      entry({
+        onshapePropertyId: namedColumnId(" item list "),
+        onshapeName: " item list ",
+        target: { kind: "bomLine", field: "item" }
+      })
+    ]);
+    const { lines, missingColumns } = parseBomTree(
+      { headers: custom, rows },
+      sources
+    );
+    expect(missingColumns).toEqual([]);
+    expect(lines.map((line) => [line.index, line.quantity])).toEqual([
+      ["1", 2]
+    ]);
+  });
+
+  it("finds a chosen column by name on a BOM where its id differs", () => {
+    const sources = standardSources([
+      entry({
+        onshapePropertyId: "col-on-another-template",
+        onshapeName: "Position",
+        target: { kind: "bomLine", field: "item" }
+      })
+    ]);
+    const columns = [
+      ...headers(LABEL_SETS.default),
+      { id: "col-pos", name: "position", propertyName: "col-pos" }
+    ];
+    expect(bomColumnIds(columns, sources).item).toBe("col-pos");
+  });
+
+  it("reads a chosen column over Onshape's own, hidden or not", () => {
+    const sources = standardSources([
+      entry({
+        onshapePropertyId: "col-list",
+        onshapeName: "ITEM List",
+        target: { kind: "bomLine", field: "item" }
+      })
+    ]);
+    const columns = [
+      ...headers(LABEL_SETS.default),
+      { id: "col-list", name: "ITEM List", propertyName: "col-list" }
+    ];
+    expect(bomColumnIds(columns).item).toBe(P.item.propertyId);
+    expect(bomColumnIds(columns, sources).item).toBe("col-list");
+  });
+
+  it("never matches a typed name to another of Onshape's own columns", () => {
+    // "Qty" is Onshape's Quantity, relabelled: Item must not read it.
+    const columns = headers({ ...LABEL_SETS.default, quantity: "Qty" });
+    expect(
+      chosenBomColumn(columns, { headerId: namedColumnId("Qty"), name: "Qty" })
+    ).toBeNull();
+    expect(
+      chosenBomColumn(columns, { headerId: P.quantity.propertyId, name: "" })
+    ).toBe(P.quantity.propertyId);
+  });
+
   it("names the Fields page in the missing-columns message", () => {
     expect(missingBomColumnsMessage(["Item", "Quantity"])).toContain(
       "on the Fields page"
@@ -310,6 +411,15 @@ describe("identityValue", () => {
     { propertyId: P.name.propertyId, name: "NAME", value: " Bracket " },
     { propertyId: ERP_NUMBER_ID, name: "ERP number", value: "E-1" }
   ];
+
+  it("keeps surrounding spaces when asked, as an assembly's root was read", () => {
+    expect(identityValue(metadata, "name")).toBe("Bracket");
+    expect(
+      identityValue(metadata, "name", DEFAULT_STANDARD_SOURCES, {
+        trim: false
+      })
+    ).toBe(" Bracket ");
+  });
 
   it("reads Onshape's own property by id, whatever its label", () => {
     expect(identityValue(metadata, "partNumber")).toBe("PRT-1");
@@ -517,6 +627,25 @@ describe("standardSourceErrors", () => {
       )
     ).toEqual([
       "That is Onshape's Part number. Choose the column that holds Item."
+    ]);
+  });
+
+  it("takes a typed column name unless it is another of Onshape's own", () => {
+    const typed = (name: string, field: "item" | "quantity") =>
+      standardSourceErrors(
+        entry({
+          onshapePropertyId: namedColumnId(name),
+          onshapeName: name,
+          target: { kind: "bomLine", field }
+        })
+      );
+    expect(typed("ITEM List", "item")).toEqual([]);
+    expect(typed("item", "item")).toEqual([]);
+    expect(typed(" QUANTITY ", "item")).toEqual([
+      "That is Onshape's Quantity. Choose the column that holds Item."
+    ]);
+    expect(typed("  ", "quantity")).toEqual([
+      "Type the name of the column that holds Quantity."
     ]);
   });
 

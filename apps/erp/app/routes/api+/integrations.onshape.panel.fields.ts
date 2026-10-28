@@ -126,7 +126,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // detected, or offer the columns when none is. Non-fatal: the rest of the
   // page needs no BOM.
   let bom: {
-    columns: { propertyId: string; name: string; valueType: string }[];
+    columns: {
+      propertyId: string;
+      name: string;
+      valueType: string;
+      propertyName?: string;
+    }[];
     detected: { item: string | null; quantity: string | null };
   } | null = null;
   if (isAssembly) {
@@ -158,7 +163,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
         columns: headers.map((header) => ({
           propertyId: header.id,
           name: header.name,
-          valueType: header.valueType
+          valueType: header.valueType,
+          ...(typeof header.propertyName === "string"
+            ? { propertyName: header.propertyName }
+            : {})
         })),
         detected: { item: detected.item, quantity: detected.quantity }
       };
