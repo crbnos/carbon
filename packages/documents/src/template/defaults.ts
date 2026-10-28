@@ -312,6 +312,27 @@ export const BLOCK_META: Record<DocumentBlockType, BlockMeta> = {
 };
 
 /** Block types a user may append, in menu order. */
+/** The Approval block's heading when the template sets none. */
+export const DEFAULT_APPROVAL_HEADING = "Approved By";
+
+/**
+ * The Approval block's caption under the signature line when the template
+ * sets none: the approver, then the approval date.
+ */
+export const DEFAULT_APPROVAL_CAPTION: JSONContent = {
+  type: "doc",
+  content: [
+    {
+      type: "paragraph",
+      content: [
+        { type: "text", text: "{order.approvedBy}" },
+        { type: "hardBreak" },
+        { type: "text", text: "{order.approvedDate}" }
+      ]
+    }
+  ]
+};
+
 export const ADDABLE_BLOCK_TYPES = (
   Object.keys(BLOCK_META) as DocumentBlockType[]
 ).filter((type) => BLOCK_META[type].addable);

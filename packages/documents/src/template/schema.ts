@@ -129,8 +129,20 @@ const issueDetailsBlock = builtInBlock("issueDetails");
 const associationsBlock = builtInBlock("associations");
 const actionTasksBlock = builtInBlock("actionTasks");
 const reviewersBlock = builtInBlock("reviewers");
-/** Who approved the document: signature, name and date. Empty until approved. */
-const approvalBlock = builtInBlock("approval");
+/**
+ * Who approved the document: a heading, the approver's signature over a line,
+ * and a rich-text caption with merge fields (the approver and the date by
+ * default). Prints nothing until the document is approved.
+ */
+const approvalBlock = z.object({
+  ...baseFields,
+  type: z.literal("approval"),
+  /** Absent: "Approved By". An empty string prints no heading. */
+  heading: z.string().optional(),
+  showSignature: z.boolean().optional(),
+  /** Empty: `DEFAULT_APPROVAL_CAPTION`. */
+  content: jsonContentSchema.optional()
+});
 /** Tracking-label fields (data-bound; one per label element). */
 const labelHeadingBlock = builtInBlock("labelHeading");
 /** A label field whose printed name (the prefix before the value) is editable. */
@@ -516,6 +528,7 @@ export type AssociationsBlock = Extract<
 >;
 export type ActionTasksBlock = Extract<DocumentBlock, { type: "actionTasks" }>;
 export type ReviewersBlock = Extract<DocumentBlock, { type: "reviewers" }>;
+export type ApprovalBlock = Extract<DocumentBlock, { type: "approval" }>;
 export type LabelHeadingBlock = Extract<
   DocumentBlock,
   { type: "labelHeading" }

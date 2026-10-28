@@ -32,7 +32,10 @@ export const purchaseOrderBlockRegistry: Partial<
     ) : null,
   terms: ({ block, data }) =>
     block.type === "terms" ? <TermsBlock block={block} data={data} /> : null,
-  approval: ({ data }) => <ApprovalBlock data={data} />,
+  approval: ({ block, data }) =>
+    block.type === "approval" ? (
+      <ApprovalBlock block={block} data={data} />
+    ) : null,
   customField: ({ block, data }) =>
     block.type === "customField" ? (
       <CustomFieldBlock

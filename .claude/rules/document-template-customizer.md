@@ -103,8 +103,14 @@ registries + a `BLOCK_META` entry + (if built-in) a `DEFAULT_TEMPLATES` entry.
 ## Approval block (purchase orders)
 
 The built-in `approval` block (`pdf/blocks/purchaseOrder/ApprovalBlock.tsx`)
-prints the approver's signature (max 40 pt high), name and approval date, and
-nothing while the order is unapproved. It is last in the default PO layout and
+prints a heading, the approver's signature (max 40 pt high) over a line, and a
+caption, and nothing while the order is unapproved. Its options, set in the
+editor's `ApprovalConfig`: `heading` (absent = `DEFAULT_APPROVAL_HEADING`,
+"Approved By"; an empty string prints none), `showSignature` (default true)
+and `content`, a rich-text caption with merge fields (empty =
+`DEFAULT_APPROVAL_CAPTION`: `{order.approvedBy}`, a line break,
+`{order.approvedDate}`). "Approved by … on …" text belongs in this caption,
+not in a separate Rich Text block, or the PDF prints it twice. It is last in the default PO layout and
 is appended visible to saved templates. Its data is `PurchaseOrderData.approval`
 from `getPurchaseOrderApproval(…, { withSignature: true })`
 (`purchasing.service.ts`), which reads the file recorded on the approval
