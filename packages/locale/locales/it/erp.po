@@ -8106,6 +8106,9 @@ msgstr "Connetti il gestore Otherwise a un nodo per eseguire quando nessuna cond
 msgid "Connect the outside tools your company already runs on"
 msgstr "Collega gli strumenti esterni su cui la tua azienda è già in esecuzione"
 
+msgid "Connect your AI assistant to Carbon"
+msgstr ""
+
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "Connetti il tuo provider di identità incollando l'URL dei metadati o il file XML dei metadati grezzo — esattamente uno dei due."
 
@@ -8425,6 +8428,9 @@ msgstr "Prompt di configurazione copiato negli appunti"
 msgid "Copied the priority set"
 msgstr ""
 
+msgid "Copied the prompt to your clipboard"
+msgstr ""
+
 msgid "Copied to clipboard"
 msgstr "Copiato negli appunti"
 
@@ -8607,6 +8613,8 @@ msgstr "Copia identificatore univoco della procedura"
 
 msgid "Copy project"
 msgstr "Copia progetto"
+msgid "Copy Prompt"
+msgstr ""
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Copia identificatore univoco fattura di acquisto"
@@ -22836,6 +22844,9 @@ msgid "Paste the metadata XML if your identity provider does not publish a metad
 msgstr "Incolla l'XML dei metadati se il tuo provider di identità non pubblica un URL di metadati"
 
 msgid "Paste the page file here"
+msgstr ""
+
+msgid "Paste this prompt into your assistant. It connects the assistant to Carbon, so it can enter data for you."
 msgstr ""
 
 msgid "Path"

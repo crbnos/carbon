@@ -8101,6 +8101,9 @@ msgstr "Connect the Otherwise handle to a node to run when no condition matches.
 msgid "Connect the outside tools your company already runs on"
 msgstr "Connect the outside tools your company already runs on"
 
+msgid "Connect your AI assistant to Carbon"
+msgstr "Connect your AI assistant to Carbon"
+
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 
@@ -8420,6 +8423,9 @@ msgstr "Copied setup prompt to your clipboard"
 msgid "Copied the priority set"
 msgstr "Copied the priority set"
 
+msgid "Copied the prompt to your clipboard"
+msgstr "Copied the prompt to your clipboard"
+
 msgid "Copied to clipboard"
 msgstr "Copied to clipboard"
 
@@ -8602,6 +8608,8 @@ msgstr "Copy procedure unique identifier"
 
 msgid "Copy project"
 msgstr "Copy project"
+msgid "Copy Prompt"
+msgstr "Copy Prompt"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Copy purchase invoice unique identifier"
@@ -22829,6 +22837,9 @@ msgstr "Paste the metadata XML if your identity provider does not publish a meta
 
 msgid "Paste the page file here"
 msgstr "Paste the page file here"
+
+msgid "Paste this prompt into your assistant. It connects the assistant to Carbon, so it can enter data for you."
+msgstr "Paste this prompt into your assistant. It connects the assistant to Carbon, so it can enter data for you."
 
 msgid "Path"
 msgstr "Path"

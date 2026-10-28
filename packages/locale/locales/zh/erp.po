@@ -8106,6 +8106,9 @@ msgstr "将 Otherwise 句柄连接到节点，以便在没有条件匹配时运�
 msgid "Connect the outside tools your company already runs on"
 msgstr "连接您的公司已在使用的外部工具"
 
+msgid "Connect your AI assistant to Carbon"
+msgstr ""
+
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "通过粘贴身份提供商的元数据 URL 或原始元数据 XML(两者中恰好一个)来连接您的身份提供商。"
 
@@ -8425,6 +8428,9 @@ msgstr "已将换型提示复制到剪贴板"
 msgid "Copied the priority set"
 msgstr ""
 
+msgid "Copied the prompt to your clipboard"
+msgstr ""
+
 msgid "Copied to clipboard"
 msgstr "已复制到剪贴板"
 
@@ -8607,6 +8613,8 @@ msgstr "复制程序文件唯一标识符"
 
 msgid "Copy project"
 msgstr "复制项目"
+msgid "Copy Prompt"
+msgstr ""
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "复制采购发票唯一标识符"
@@ -22836,6 +22844,9 @@ msgid "Paste the metadata XML if your identity provider does not publish a metad
 msgstr "如果您的身份提供商未发布元数据 URL,请粘贴元数据 XML"
 
 msgid "Paste the page file here"
+msgstr ""
+
+msgid "Paste this prompt into your assistant. It connects the assistant to Carbon, so it can enter data for you."
 msgstr ""
 
 msgid "Path"

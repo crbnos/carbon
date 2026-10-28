@@ -8106,6 +8106,9 @@ msgstr "条件に一致しないときに実行するノードにOtherwiseハン
 msgid "Connect the outside tools your company already runs on"
 msgstr "会社がすでに実行している外部ツールに接続"
 
+msgid "Connect your AI assistant to Carbon"
+msgstr ""
+
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "IDプロバイダーのメタデータURLまたは生のメタデータXMLを貼り付けて接続します。どちらか一つだけを入力してください。"
 
@@ -8425,6 +8428,9 @@ msgstr "セットアップ プロンプトをクリップボードにコピー�
 msgid "Copied the priority set"
 msgstr ""
 
+msgid "Copied the prompt to your clipboard"
+msgstr ""
+
 msgid "Copied to clipboard"
 msgstr "クリップボードにコピーしました"
 
@@ -8607,6 +8613,8 @@ msgstr "手順書の識別子をコピー"
 
 msgid "Copy project"
 msgstr "プロジェクトをコピー"
+msgid "Copy Prompt"
+msgstr ""
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "仕入先請求書の一意識別子をコピー"
@@ -22836,6 +22844,9 @@ msgid "Paste the metadata XML if your identity provider does not publish a metad
 msgstr "IDプロバイダーがメタデータURLを公開していない場合は、メタデータXMLを貼り付けてください"
 
 msgid "Paste the page file here"
+msgstr ""
+
+msgid "Paste this prompt into your assistant. It connects the assistant to Carbon, so it can enter data for you."
 msgstr ""
 
 msgid "Path"

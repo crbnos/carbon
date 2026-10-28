@@ -8106,6 +8106,9 @@ msgstr "कोई शर्त मेल नहीं खाने पर चल
 msgid "Connect the outside tools your company already runs on"
 msgstr "उन बाहरी उपकरणों को कनेक्ट करें जो आपकी कंपनी पहले से चला रही है"
 
+msgid "Connect your AI assistant to Carbon"
+msgstr ""
+
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "अपने आइडेंटिटी प्रदाता को जोड़ें इसके मेटाडेटा URL या इसके कच्चे मेटाडेटा XML को पेस्ट करके — इन दोनों में से केवल एक।"
 
@@ -8425,6 +8428,9 @@ msgstr "सेटअप प्रॉम्प्ट आपके क्लिप
 msgid "Copied the priority set"
 msgstr ""
 
+msgid "Copied the prompt to your clipboard"
+msgstr ""
+
 msgid "Copied to clipboard"
 msgstr "क्लिपबोर्ड पर कॉपी किया गया"
 
@@ -8607,6 +8613,8 @@ msgstr "कार्यविधि की अद्वितीय पहचा
 
 msgid "Copy project"
 msgstr "परियोजना की प्रतिलिपि बनाएँ"
+msgid "Copy Prompt"
+msgstr ""
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "क्रय चालान की विशिष्ट पहचान नकल करें"
@@ -22836,6 +22844,9 @@ msgid "Paste the metadata XML if your identity provider does not publish a metad
 msgstr "मेटाडेटा XML को पेस्ट करें यदि आपका आइडेंटिटी प्रदाता मेटाडेटा URL प्रकाशित नहीं करता है"
 
 msgid "Paste the page file here"
+msgstr ""
+
+msgid "Paste this prompt into your assistant. It connects the assistant to Carbon, so it can enter data for you."
 msgstr ""
 
 msgid "Path"

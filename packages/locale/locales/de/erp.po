@@ -8106,6 +8106,9 @@ msgstr "Verbinden Sie das Otherwise-Handle mit einem Knoten, um auszuführen, we
 msgid "Connect the outside tools your company already runs on"
 msgstr "Verbinden Sie die externen Tools, die Ihr Unternehmen bereits nutzt"
 
+msgid "Connect your AI assistant to Carbon"
+msgstr ""
+
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "Verbinden Sie Ihren Identitätsanbieter, indem Sie entweder seine Metadaten-URL oder sein Rohmetadaten-XML einfügen — genau eins von beiden."
 
@@ -8425,6 +8428,9 @@ msgstr "Rüst-Ansage in die Zwischenablage kopiert"
 msgid "Copied the priority set"
 msgstr ""
 
+msgid "Copied the prompt to your clipboard"
+msgstr ""
+
 msgid "Copied to clipboard"
 msgstr "In Zwischenablage kopiert"
 
@@ -8607,6 +8613,8 @@ msgstr "Eindeutige Kennung der Verfahrensanweisung kopieren"
 
 msgid "Copy project"
 msgstr "Projekt kopieren"
+msgid "Copy Prompt"
+msgstr ""
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Eindeutige Kennung der Eingangsrechnung kopieren"
@@ -22836,6 +22844,9 @@ msgid "Paste the metadata XML if your identity provider does not publish a metad
 msgstr "Fügen Sie die Metadaten-XML ein, wenn Ihr Identitätsanbieter keine Metadaten-URL veröffentlicht"
 
 msgid "Paste the page file here"
+msgstr ""
+
+msgid "Paste this prompt into your assistant. It connects the assistant to Carbon, so it can enter data for you."
 msgstr ""
 
 msgid "Path"
