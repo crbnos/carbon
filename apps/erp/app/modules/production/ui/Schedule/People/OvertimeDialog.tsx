@@ -16,7 +16,7 @@ import {
   VStack
 } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { useSubmit } from "react-router";
 import { DateTime } from "~/components";
@@ -201,6 +201,7 @@ export function OvertimeDialog({
             )}
             <Input
               type="number"
+              aria-label={t`Overtime hours`}
               min={0}
               max={16}
               step={0.5}
@@ -209,17 +210,19 @@ export function OvertimeDialog({
             />
             <p className="text-xs text-muted-foreground">
               {range === "day" ? (
-                <Trans>
-                  This will set +{hoursInput}h of overtime for {previewCount}{" "}
-                  people.
-                </Trans>
+                <Plural
+                  value={previewCount}
+                  one={`This will set +${hoursInput}h of overtime for # person.`}
+                  other={`This will set +${hoursInput}h of overtime for # people.`}
+                />
               ) : weekIsLoaded ? (
                 // person-days, not people — the same person assigned Mon–Fri is
                 // five separate authorizations
-                <Trans>
-                  This will set +{hoursInput}h of overtime on {previewCount}{" "}
-                  person-days.
-                </Trans>
+                <Plural
+                  value={previewCount}
+                  one={`This will set +${hoursInput}h of overtime on # person-day.`}
+                  other={`This will set +${hoursInput}h of overtime on # person-days.`}
+                />
               ) : (
                 // that week's people isn't loaded, so any number here would be
                 // invented

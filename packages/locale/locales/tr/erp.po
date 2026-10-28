@@ -19,6 +19,12 @@ msgstr "Bir tedarikçi, size parça veya hizmet satan bir işletme veya kişidir
 msgid "— last checked {0}"
 msgstr "— son kontrol {0}"
 
+msgid "— not on the manning board"
+msgstr "— manning board üzerinde değil"
+
+msgid "— on the manning board at {stations}"
+msgstr ""
+
 msgid ", {residual}% residual"
 msgstr ", {residual}% kalıntı"
 
@@ -60,6 +66,13 @@ msgstr "(birden fazla Carbon hesabına eşleştirildi)"
 msgid "(not an Equity posting account)"
 msgstr "(Özkaynak muhasebeleştirme hesabı değildir)"
 
+msgid "(outside this department)"
+msgstr ""
+
+#. placeholder {0}: impact.unschedulable
+msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
+msgstr "{0, plural, =0 {Prosesi yeterli nitelikli bir operatör gerektiriyor, bu nedenle operasyonları biri eklenene kadar planlanamıyor.} one {Prosesi yeterli nitelikli bir operatör gerektiriyor: # operasyon biri eklenene kadar planlanamıyor.} other {Prosesi yeterli nitelikli bir operatör gerektiriyor: # operasyon biri eklenene kadar planlanamıyor.}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# engelleme kaydı} other {# engelleme kaydı}}"
@@ -68,9 +81,18 @@ msgstr "{0, plural, one {# engelleme kaydı} other {# engelleme kaydı}}"
 msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
 msgstr ""
 
+#. placeholder {0}: counts.unschedulable
+#. placeholder {0}: members.length
+msgid "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
+msgstr "{0, plural, one {# planlanamıyor} other {# planlanamıyor}}"
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {# bileşen bu grupta} other {# bileşen bu grupta}}"
+
+#. placeholder {0}: counts.conflicts
+msgid "{0, plural, one {# conflict} other {# conflicts}}"
+msgstr "{0, plural, one {# çakışma} other {# çakışma}}"
 
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
@@ -80,9 +102,17 @@ msgstr "{0, plural, one {# gün esneklik payı} other {# gün esneklik payı}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# gün gecikme} other {# gün gecikme}}"
 
+#. placeholder {0}: counts.jobs
+msgid "{0, plural, one {# job} other {# jobs}}"
+msgstr "{0, plural, one {# iş emri} other {# iş emri}}"
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operasyon için zaman standardı yok} other {# operasyon için zaman standardı yok}}"
+
+#. placeholder {0}: impact.unschedulable
+msgid "{0, plural, one {# operation of this process can't be scheduled. The Forecast shows why, and who is qualified.} other {# operations of this process can't be scheduled. The Forecast shows why, and who is qualified.}}"
+msgstr "{0, plural, one {Bu prosesin # operasyonu planlanamıyor. Tahmin neden olduğunu ve yeterli nitelikli kişileri gösteriyor.} other {Bu prosesin # operasyonu planlanamıyor. Tahmin neden olduğunu ve yeterli nitelikli kişileri gösteriyor.}}"
 
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
@@ -95,6 +125,14 @@ msgstr ""
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# kayıt dikkat gerektiriyor} other {# kayıt dikkat gerektiriyor}}"
+
+#. placeholder {0}: counts.reservations
+msgid "{0, plural, one {# reservation} other {# reservations}}"
+msgstr "{0, plural, one {# ayırma} other {# ayırma}}"
+
+#. placeholder {0}: counts.resources
+msgid "{0, plural, one {# resource} other {# resources}}"
+msgstr "{0, plural, one {# kaynak} other {# kaynak}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -124,9 +162,17 @@ msgstr "Eşleşen satırların tümü seçildi (yaklaşık #)"
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {Carbon maliyetleri kaydetmeden önce maliyet oluşan # iş emrini tamamla veya iptal et.} other {Carbon maliyetleri kaydetmeden önce maliyet oluşan # iş emirlerini tamamla veya iptal et.}}"
 
+#. placeholder {0}: counts.copied ?? 0
+msgid "{0, plural, one {Copied # assignment} other {Copied # assignments}}"
+msgstr "{0, plural, one {# görevlendirme kopyalandı} other {# görevlendirme kopyalandı}}"
+
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
 msgstr "{0, plural, one {# kıymet için} other {# kıymetler için}}"
+
+#. placeholder {0}: counts.created ?? 0
+msgid "{0, plural, one {Marked absent for # day} other {Marked absent for # days}}"
+msgstr "{0, plural, one {# gün için devamsız işaretlendi} other {# gün için devamsız işaretlendi}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
@@ -454,6 +500,10 @@ msgstr "{0}g"
 msgid "{0}d early"
 msgstr "{0}g erken"
 
+#. placeholder {0}: item.daysElsewhere
+msgid "{0}d elsewhere"
+msgstr "{0}g başka yerde"
+
 #. placeholder {0}: slack.absDays
 msgid "{0}d late"
 msgstr "{0}g geç"
@@ -500,6 +550,15 @@ msgstr "{asset}: {dueDate}'de vadesi gelen ödeme Atlandı (Carbon dışında ö
 msgid "{assetCount} Assets"
 msgstr "{assetCount} Sabit Kıymet"
 
+msgid "{assigned, plural, one {Assigned for # working day} other {Assigned for # working days}}"
+msgstr ""
+
+msgid "{assigned, plural, one {Assigned for # working day} other {Assigned for # working days}}; {skipped, plural, one {# day already booked or off was kept} other {# days already booked or off were kept}}"
+msgstr ""
+
+msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{behindDays, plural, one {Hedeften # gün geride} other {Hedeften # gün geride}}"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Bu parçayı doğrudan nihai ardıla yönlendirmeyi düşünün."
 
@@ -509,11 +568,11 @@ msgstr "{completedLines}/{lines} satır tamamlandı"
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# bileşen} other {# bileşen}}"
 
-msgid "{conflictCount} conflicts"
-msgstr "{conflictCount} çakışma"
-
 msgid "{count, plural, one {# asset} other {# assets}}"
 msgstr "{count, plural, one {# kıymet} other {# kıymetler}}"
+
+msgid "{count, plural, one {# can't be scheduled: {names}} other {# can't be scheduled: {names}}}"
+msgstr ""
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
@@ -535,6 +594,12 @@ msgstr "{count, plural, one {# partiyi çöz} other {# partileri çöz}}"
 
 msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
 msgstr "{count, plural, one {# parti çözüldü} other {# partiler çözüldü}}"
+
+msgid "{count, plural, one {Overtime set for # person} other {Overtime set for # people}}"
+msgstr ""
+
+msgid "{count, plural, one {Overtime set on # person-day} other {Overtime set on # person-days}}"
+msgstr ""
 
 msgid "{count, plural, one {Release # batch} other {Release # batches}}"
 msgstr "{count, plural, one {# partiyi serbest bırak} other {# partileri serbest bırak}}"
@@ -563,8 +628,17 @@ msgstr "{created} oluşturuldu, {updated} güncellendi."
 msgid "{days}d"
 msgstr "{days}g"
 
+msgid "{daysBehindTarget, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{daysBehindTarget, plural, one {Hedeften # gün geride} other {Hedeften # gün geride}}"
+
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} bunu muhasebe defterinize gönderir, bu nedenle Carbon onu göndermez. Kaydedilen seçiminiz değişmesi durumunda korunur."
+
+msgid "{departmentName} has no work centers at {locationName}. Pick another department or location."
+msgstr ""
+
+msgid "{departmentName} has no work centers at this location. Pick another department or location."
+msgstr ""
 
 msgid "{discount} off"
 msgstr "{discount} indirim"
@@ -606,6 +680,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {# açık iş emirinin depolama bir
 
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {# değer alındı.} other {# değer alındı.}}"
+
+msgid "{label} — click to open the next"
+msgstr "{label} — sonrakini açmak için tıklayın"
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} belgeler, muhasebe fişleri veya varsayılan hesaplar tarafından kullanıldığından silinemez."
@@ -720,6 +797,12 @@ msgstr "{percent} toplandı"
 msgid "{position} of {total}"
 msgstr "{position} / {total}"
 
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime for # person.} other {This will set +{hoursInput}h of overtime for # people.}}"
+msgstr "{previewCount, plural, one {Bu # kişi için +{hoursInput}s fazla mesai ayarlayacaktır.} other {Bu # kişi için +{hoursInput}s fazla mesai ayarlayacaktır.}}"
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime on # person-day.} other {This will set +{hoursInput}h of overtime on # person-days.}}"
+msgstr "{previewCount, plural, one {Bu # kişi-gün için +{hoursInput}s fazla mesai ayarlayacaktır.} other {Bu # kişi-gün için +{hoursInput}s fazla mesai ayarlayacaktır.}}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# satırı kalıcı olarak sil?} other {# satırı kalıcı olarak sil?}}"
 
@@ -728,9 +811,6 @@ msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
 
 msgid "{removed} planned invoices are removed."
 msgstr "{removed} planlanan fatura kaldırıldı."
-
-msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
-msgstr "{resourceCount} Kaynaklar · {reservationCount} rezervasyonlar · {jobCount} İş emirleri"
 
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} planlama için sonraki revizyonu olarak yeniden açılacak. Tedarikçiye gönderilen belge, siparişi sonuçlandırana ve yeniden gönderene kadar değişmeden kalır."
@@ -804,9 +884,6 @@ msgstr "{unmappedRequiredCount, plural, one {Önce kalan # gerekli hesabı eşle
 msgid "{unread} unread"
 msgstr "{unread} okunmamış"
 
-msgid "{unschedulableCount} can't be scheduled"
-msgstr "{unschedulableCount} planlanmıyor"
-
 msgid "{updated, plural, one {# part updated} other {# parts updated}}"
 msgstr ""
 
@@ -877,12 +954,6 @@ msgstr "1 amortisman yapılacak kıymet · {amount}"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 partiye alınabilir operasyon partide değil — partiye alınıncaya kadar tek tek çalışır"
-
-msgid "1 can't be scheduled"
-msgstr "1 planlanmıyor"
-
-msgid "1 conflict"
-msgstr "1 çakışma"
 
 msgid "1 day"
 msgstr "1 gün"
@@ -3255,6 +3326,10 @@ msgstr "{0} öznitelik kategorisini devre dışı bırakmak istediğinizden emin
 msgid "Are you sure you want to deactivate the {0} attribute?"
 msgstr "{0} özniteliğini devre dışı bırakmak istediğinizden emin misiniz?"
 
+#. placeholder {0}: workCenter.name
+msgid "Are you sure you want to deactivate the {0} work center?"
+msgstr "{0} iş merkezini devre dışı bırakmak istediğinizden emin misiniz?"
+
 msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "{label} yapılandırma kuralını devre dışı bırakmak istediğinizden emin misiniz?"
 
@@ -3845,9 +3920,6 @@ msgstr "Atanmış"
 msgid "Assigned {changed} planning actions"
 msgstr ""
 
-msgid "Assigned {employeeName} to {targetName} for the week"
-msgstr "{employeeName} öğesi hafta boyunca {targetName} için atandı"
-
 msgid "Assigned 1 planning action"
 msgstr ""
 
@@ -3883,6 +3955,9 @@ msgstr "Varsayımlar"
 
 msgid "At {locationName}"
 msgstr "{locationName}'da"
+
+msgid "At a station outside this department"
+msgstr "Bu departmanın dışındaki bir istasyonda"
 
 msgid "At Commencement"
 msgstr "Başlangıçta"
@@ -4266,12 +4341,6 @@ msgstr "Onaylamadan Önce"
 
 msgid "Beginning"
 msgstr "Başlangıç"
-
-msgid "Behind target by {behindDays} day(s)"
-msgstr "Hedef {behindDays} gün geride"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "Hedef {daysBehindTarget} gün geride"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -6046,10 +6115,6 @@ msgstr "Dönüştürülüyor…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satırında envanter biriminize dönüştürür — 12'lik kutularda satın alın, birimlerde stok yapın."
-
-#. placeholder {0}: counts.copied ?? 0
-msgid "Copied {0} assignments"
-msgstr ""
 
 msgid "Copied ID to clipboard"
 msgstr "ID panoya kopyalandı"
@@ -11935,6 +12000,12 @@ msgstr "Fazla parçaları sevkiyata dahil et"
 msgid "Include Inactive"
 msgstr "Pasifleri Dahil Et"
 
+msgid "Include materials on the traveler"
+msgstr "İş takip kartında malzeme dahil et"
+
+msgid "Include operations on the traveler"
+msgstr "İş takip kartında operasyonlar dahil et"
+
 msgid "Included"
 msgstr "Dahil"
 
@@ -13861,10 +13932,6 @@ msgstr "Az eksik olarak işaretle"
 msgid "Mark to delete"
 msgstr "Silmek için işaretle"
 
-#. placeholder {0}: counts.created ?? 0
-msgid "Marked absent for {0} day(s)"
-msgstr ""
-
 msgid "Market rate"
 msgstr "Piyasa kuru"
 
@@ -14451,6 +14518,9 @@ msgstr "Alt Montajdan Taşı"
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Miktarın bir kısmını yeni bir karar satırına taşıyın, böylece MRB her bölümü ayrı ayrı karar verebilir (örneğin, bazılarını fire edin, bazılarını yeniden işleyin)."
 
+msgid "Move these operations to another work center, or finish them, before you deactivate it."
+msgstr "Bunları devre dışı bırakmadan önce bu operasyonları başka bir iş merkezine taşıyın veya tamamlayın."
+
 msgid "Move to"
 msgstr "Taşış"
 
@@ -14562,8 +14632,8 @@ msgstr "Doğru sütunlara ihtiyacınız var mı?"
 msgid "Need-by target"
 msgstr "Gerek duyulan hedef"
 
-msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
-msgstr "Gerekli olan, o gün vadesi gelen iş saatleri {personDayHours}s'ye bölünmüş, yuvarlanmıştır — filtrelediğiniz vardiya veya bu konumdaki en yaygın vardiya uzunluğu."
+msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. With a shift selected, only the hours booked inside that shift count. Machine time needs nobody, and neither does a lights-out station unless its process needs a qualified operator."
+msgstr "Gerekli olan, o gün istasyonda program tarafından ayrılan hazırlık ve işçilik saatleridir, {personDayHours}s'ye bölünür ve yukarı yuvarlanır — filtrelediğiniz vardiya veya bu lokasyondaki en yaygın vardiya uzunluğu. Bir vardiya seçildiğinde, sadece o vardiya içinde ayrılan saatler sayılır. Makine süresi kimseyi gerektirmez ve ışıksız istasyonlar da gerektirmez; ancak prosesi yeterli nitelikli bir operatör gerektirirse gerekir."
 
 msgid "Needs a Business or Partner plan."
 msgstr "Business veya Partner planı gereklidir."
@@ -15072,6 +15142,9 @@ msgstr "{0} senkronizasyon işlemi yok"
 msgid "No {0} yet"
 msgstr "Henüz {0} yok"
 
+msgid "No {departmentName} work is scheduled at this location."
+msgstr ""
+
 msgid "No {title} yet"
 msgstr "Henüz {title} yok"
 
@@ -15171,9 +15244,6 @@ msgstr "Önizlemek için CAD modeli yok."
 
 msgid "No calibration records found"
 msgstr "Kalibrasyon kaydı bulunamadı"
-
-msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
-msgstr "Görselleştirilecek kapasite rezervasyonu yok. İş merkezi yükünü görmek için bir işi planlayın."
 
 msgid "No changes recorded"
 msgstr "Değişiklik kaydedilmedi"
@@ -15844,6 +15914,22 @@ msgstr "Bu lokasyonda İş merkezi yok"
 msgid "No work centers exist"
 msgstr "İş merkezi bulunmamaktadır"
 
+msgid "No work centers in {departmentName}"
+msgstr ""
+
+msgid "No work centers in this department"
+msgstr ""
+
+msgid "No work for this department is scheduled at this location."
+msgstr ""
+
+#. placeholder {0}: ability.name
+msgid "Nobody is qualified for {0}"
+msgstr "{0} için yeterli nitelikli kimse yok"
+
+msgid "Nobody is qualified. Add someone to the process's ability."
+msgstr "Yeterli nitelikli kimse yok. Bu prosesin yetkinliğine birisi ekleyin."
+
 msgid "Nom"
 msgstr "Nom"
 
@@ -15982,6 +16068,9 @@ msgstr "Notlar (isteğe bağlı)"
 msgid "Nothing"
 msgstr "Hiçbir şey"
 
+msgid "Nothing assigned: every working day this week is already booked or off"
+msgstr ""
+
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "Bu konumda \"{0}\" ile eşleşen hiçbir şey yok."
@@ -16015,6 +16104,9 @@ msgstr "Eşitlemeyi açana kadar hiçbir şey eşitlenmez."
 
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "Senkronizasyonu açana kadar hiçbir şey senkronize edilmez. Tüm gerekli hesaplar eşleştirilmiştir."
+
+msgid "Nothing matches the search or filter"
+msgstr "Arama veya filtreyle eşleşen hiçbir şey yok"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Hiçbir şey zamanlanmadı — aşağıya bir istasyon ekleyin."
@@ -16051,6 +16143,10 @@ msgstr "Bildirimler"
 
 msgid "Notifications are blocked for Carbon in this browser's site settings."
 msgstr "Bu tarayıcının site ayarlarında Carbon için bildirimler engellendi."
+
+#. placeholder {0}: unreadNotifications.length
+msgid "Notifications, {0} unread"
+msgstr "Bildirimler, {0} okunmamış"
 
 msgid "Notify"
 msgstr "Bildir"
@@ -16903,9 +16999,8 @@ msgstr "{label} üzerindeki son kullanmayı geçersiz kıl."
 msgid "Overtime"
 msgstr "Fazla Mesai"
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "Overtime set for {0} assignments"
-msgstr ""
+msgid "Overtime hours"
+msgstr "Fazla mesai saatleri"
 
 msgid "Overview"
 msgstr "Genel bakış"
@@ -17746,6 +17841,9 @@ msgstr "Potansiyel Veri Kaybı"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Son kullanma tarihi Sabit Süre olduğunda yeni bir ürün için önceden doldurulur."
 
+msgid "Pre-select material"
+msgstr "Malzemeyi önceden seç"
+
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 msgstr "Satış satırlarında çalışan koşul tabanlı korumalar. Hatayla engelle veya kabul ederek devam etmek için uyar."
 
@@ -18493,6 +18591,9 @@ msgstr ""
 
 msgid "Qualified Employees"
 msgstr "Nitelikli Çalışanlar"
+
+msgid "Qualified to run it"
+msgstr "Bunu çalıştırmaya yeterli nitelikli"
 
 msgid "quality"
 msgstr "kalite"
@@ -19740,6 +19841,10 @@ msgstr "Eşleştirme Gerekli"
 
 msgid "Require SAML SSO"
 msgstr "SAML SSO Gerekli"
+
+#. placeholder {0}: location.name
+msgid "Require staffing at {0}"
+msgstr "{0} konumunda personel gerektir"
 
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "Satın alma siparişleri, kalite belgeleri, tedarikçiler ve değişiklik bildirimleri üzerinde tutar eşikleri ve onaylayan grupları temel alan katmanlı imza gerekir."
@@ -22177,6 +22282,9 @@ msgstr "PDF'den çıkarılan bazı satırlar stok kartlarınıza otomatik olarak
 msgid "Some lines recognize more or less than they bill. Place what is left before confirming."
 msgstr "Bazı satırlar, faturalandırdığından daha fazla veya daha az tanıyor. Onaylamadan önce kalanı yerleştirin."
 
+msgid "Some of this process's work can't be scheduled"
+msgstr "Bu prosesin bazı işleri planlanamıyor"
+
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Bazı kayıtlar geri gelmeyecek. Devam etmek için <0>{CONFIRM_WORD}</0> yazın."
 
@@ -22399,6 +22507,9 @@ msgstr "Vergi Yılı Başlangıcı"
 
 msgid "Start Receipt Quantities at Zero"
 msgstr "Mal Kabul Miktarlarını Sıfırdan Başlat"
+
+msgid "Start the timer automatically"
+msgstr "Saati otomatik olarak başlat"
 
 msgid "Start Time"
 msgstr "Başlangıç Saati"
@@ -23996,8 +24107,8 @@ msgstr "O listedeki stok kartlarının alınacak alanı yok."
 msgid "The items in that list have no reading as text."
 msgstr "Bu listedeki öğeler metin olarak okunamıyor."
 
-msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "o gün vadesi olan iş saatleri (çalışmanın çalıştığı günü değil, vade tarihine göre), gecikmiş iş Gecikmede."
+msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr "o gün süresi dolacak olan yapılacak iş saatleri (bir son tarih esası, işin yürütüldüğü gün değil), gecikmiş işler «Gecikmiş» alanında."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Bu dış işleme satırının kapsadığı işlem, işi; satırın alındığı bu işi karşı operasyonu kapatır."
@@ -24145,9 +24256,14 @@ msgstr "Nakliye yaptığınız ve kapattığınız aylık dönemler"
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "İstekçinin şüphelendiği en olası hata modu; teknisyen bunu kapatırken doğrular veya değiştirir ve şüphelenilen ile gerçek arasındaki fark güvenilirlik raporlarını besler."
 
-#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
-msgid "The most recent scheduled work at this location was {0}."
-msgstr "Bu lokasyon'daki en son zamanlanmış iş {0} idi."
+msgid "The most recent {departmentName} work at this location was {nextWorkDate}."
+msgstr ""
+
+msgid "The most recent scheduled work at this location was {nextWorkDate}."
+msgstr "Bu lokasyonda en yakın planlanan iş {nextWorkDate} idi."
+
+msgid "The most recent work for this department at this location was {nextWorkDate}."
+msgstr ""
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "Bu satırda müzakere edilen birim fiyat; satır içi izleme simgesi, hangi fiyatlandırma kuralı veya geçersiz kılmanın onu ürettiğini gösterir."
@@ -24164,9 +24280,14 @@ msgstr "metodun yeni sürüm numarası"
 msgid "The new version number of the procedure"
 msgstr "Prosedürün yeni sürüm numarası"
 
-#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
-msgid "The next scheduled work at this location starts {0}."
-msgstr "Bu lokasyondaki bir sonraki planlanan çalışma {0} başlayacak."
+msgid "The next {departmentName} work at this location starts {nextWorkDate}."
+msgstr ""
+
+msgid "The next scheduled work at this location starts {nextWorkDate}."
+msgstr "Bu lokasyonda sonraki planlanan iş {nextWorkDate} başlıyor."
+
+msgid "The next work for this department at this location starts {nextWorkDate}."
+msgstr ""
 
 msgid "The night shift suits you, {name}."
 msgstr "Gece vardiyası sana yakışıyor, {name}."
@@ -24495,8 +24616,8 @@ msgstr "Bu teklif satırının durumu — Taslak, Teklif Yok, Tamamlandı; Tekli
 msgid "The statement bucket all accounts under this group will use."
 msgstr "Bu grup altındaki tüm hesapların kullanacağı beyan grubu."
 
-msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
-msgstr "İstasyonun Vardiyalarından takvim saatleri. Atanan Personel saatleri (atadığınız kişiler) aşağıda gösterilir."
+msgid "the station's working hours from its shifts, less holidays and maintenance that takes it offline. Staffed hours (the people you've assigned) show beneath."
+msgstr "istasyonun vardiyalarından çalışma saatleri, eksi tatiller ve çevrimdışı olması gereken bakım. Atanan saatler (atadığınız personel) aşağıda gösterilir."
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "Adımın ayarları — bu çalıştırma, kullanılan değerleri kaydetmekten öncedir."
@@ -24838,6 +24959,12 @@ msgstr "Bu müşteri türü'nün oranı"
 
 msgid "This customer's rate"
 msgstr "Bu müşteri'nin oranı"
+
+msgid "This department has no work centers at {locationName}. Pick another department or location."
+msgstr ""
+
+msgid "This department has no work centers at this location. Pick another department or location."
+msgstr ""
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Bu indirme bağlantısı geçersiz veya değiştirilmiş."
@@ -25184,14 +25311,8 @@ msgstr "Bu işlem {0}'un muhasebe fişlerini tersine çevirecek ve Taslak durumu
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
 msgstr "Bu işlem {0}'un muhasebe fişlerini tersine çevirecek, varlıkların amortismanını geri alacak ve Taslak durumuna döndürecektir. Daha sonra yeniden hesaplayabilir, muhasebeleştirebilir veya silebilirsiniz."
 
-msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
-msgstr "Bu, {previewCount} personel için +{hoursInput}s fazla mesai ayarlayacaktır."
-
 msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "Bu, o hafta görevli herkes için +{hoursInput}h fazla mesai ayarlayacak."
-
-msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
-msgstr "Bu, {previewCount} kişi-güne +{hoursInput}h fazla mesai ayarlayacak."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "Bu, üretim yönteminin mevcut sürümünü Etkin olarak ayarlayacak ve salt okunur hale getirecektir."
@@ -27621,6 +27742,9 @@ msgstr "İş akışı çalışması"
 
 msgid "Workflows"
 msgstr "İş akışları"
+
+msgid "working at {elsewhereStationNames}"
+msgstr ""
 
 msgid "Working sessions on configuration and data"
 msgstr "Yapılandırma ve veri üzerinde çalışma oturumları"

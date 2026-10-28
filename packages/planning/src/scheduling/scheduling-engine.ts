@@ -43,6 +43,7 @@ import { calendarAdapters, computeNeedByDates } from "./need-by-calculator.ts";
 import {
   applyPriorities,
   calculatePrioritiesByWorkCenter,
+  committedDueDate,
   toOperationWithJobInfo
 } from "./priority-calculator.ts";
 import {
@@ -525,7 +526,7 @@ export class SchedulingEngine {
     this.needByByOperation = computeNeedByDates({
       operations,
       graph,
-      jobDueDate: this.job?.dueDate ?? null,
+      jobDueDate: this.job ? committedDueDate(this.job) : null,
       calendarHoursPerDay,
       workingDayTest
     });
@@ -575,7 +576,7 @@ export class SchedulingEngine {
     const operations = Array.from(this.scheduledOperations.values());
     const selections =
       await this.workCenterSelector.selectWorkCentersForOperations(operations, {
-        jobDueDate: this.job?.dueDate ?? null,
+        jobDueDate: this.job ? committedDueDate(this.job) : null,
         batchPlacements: this.batchPlacements
       });
 
@@ -803,7 +804,7 @@ export class SchedulingEngine {
     // business day now exceeds the due date. Edge-triggered by construction, so
     // a second identical regen produces no entry. Jobs with no due date are
     // never late. Computed on the FACTORY calendar (location tz).
-    const dueDate = this.job?.dueDate ?? null;
+    const dueDate = this.job ? committedDueDate(this.job) : null;
     const tz = this.job?.timezone ?? "UTC";
     if (dueDate && this.projectedCompletionAt) {
       const priorProjected = this.job?.projectedCompletionAt ?? null;
@@ -887,7 +888,7 @@ export class SchedulingEngine {
    * per-op conflicts (targets are outputs, not constraints).
    */
   private composeBehindTargetSentence(): string | null {
-    const dueDate = this.job?.dueDate ?? null;
+    const dueDate = this.job ? committedDueDate(this.job) : null;
     if (!dueDate || !this.projectedCompletionAt) return null;
     const tz = this.job?.timezone ?? "UTC";
     if (businessDay(this.projectedCompletionAt, tz) <= dueDate) return null;

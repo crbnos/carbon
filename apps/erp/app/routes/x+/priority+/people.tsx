@@ -27,20 +27,25 @@ import {
   getShiftsWithTimesByIds
 } from "~/modules/people/people.service";
 import {
+  attendedHoursByDay,
   buildPeopleCapacityBuckets,
   getActiveEmployeeAbilities,
   getHolidayDates,
   getLocationEmployees,
+  getOperationAttendedShares,
   getPeopleAbsences,
   getPeopleAbsencesRange,
   getPeopleAssignments,
   getPeopleAssignmentsRange,
   getPeopleCapacityOperations,
-  getWorkCenterCalendarHoursByDay,
+  getShiftWorkingWindows,
+  getWorkCenterOutages,
   getWorkCenterRequiredAbilities,
   getWorkCenterReservationsRange,
   getWorkCenterShifts,
-  getWorkCenterWorkingWindows
+  getWorkCenterWorkingWindows,
+  withoutOutages,
+  workingHoursByDay
 } from "~/modules/production/production.service";
 import { OvertimeDialog } from "~/modules/production/ui/Schedule/People/OvertimeDialog";
 import { PeopleBoard } from "~/modules/production/ui/Schedule/People/PeopleBoard";
@@ -111,7 +116,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const dateParam = searchParams.get("date");
-  const shiftId = searchParams.get("shift") || null;
+  const requestedShiftId = searchParams.get("shift") || null;
 
   // department scope: URL param wins, cookie remembers the last choice
   const departmentParam = searchParams.get("department");
@@ -196,6 +201,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const shiftRows = shifts.data ?? [];
+  // An inactive, deleted or other-location shift from an old link reads as
+  // All shifts, like the department: every view would otherwise count it
+  // differently (Coverage as the whole day, the board as nobody).
+  const shiftId =
+    requestedShiftId && shiftRows.some((shift) => shift.id === requestedShiftId)
+      ? requestedShiftId
+      : null;
   const shiftHoursById: Record<string, number> = {};
   const shiftStartById: Record<string, string> = {};
   const shiftEndById: Record<string, string> = {};
@@ -265,13 +277,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  // shift scope resolves through the ladder (the row's stamped shift, else the
-  // person's own shift) — an exact match on the stamped shift alone would hide
-  // every assignment created before the person's shift was set
-  const dayAssignments = (assignments.data ?? []).filter((assignment) =>
-    assignmentMatchesShift(assignment, shiftId, employeeShiftId)
-  );
-
   // week-scoped data for the matrix and capacity views
   let weekAssignments: {
     id: string;
@@ -294,8 +299,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let calendarHoursByWorkCenter: Record<string, Record<string, number>> = {};
   const capacityRungByWorkCenter: Record<string, number> = {};
   let capacityHolidayDates: string[] = [];
+  // hands-on hours booked per station per day — the Matrix's Coverage
+  let attendedByWorkCenter: Record<string, Record<string, number>> = {};
 
   if (view !== "board" || range === "week") {
+    // Capacity and Coverage both read the stations' working time.
+    const needsCalendar = view === "capacity" || view === "matrix";
     const weekStartDate = weekDates[0];
     const weekEndDate = weekDates[weekDates.length - 1];
     // reservation window on the plant's calendar, matching the day bucketing
@@ -306,12 +315,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .add({ days: 1 })
       .toDate(timezone);
 
-    const capacityWorkCenterIds =
-      view === "capacity"
-        ? (workCenters.data ?? []).flatMap((workCenter) =>
-            workCenter.id ? [workCenter.id as string] : []
-          )
-        : [];
+    const capacityWorkCenterIds = needsCalendar
+      ? (workCenters.data ?? []).flatMap((workCenter) =>
+          workCenter.id ? [workCenter.id as string] : []
+        )
+      : [];
 
     const [
       rangeAssignments,
@@ -329,56 +337,65 @@ export async function loader({ request }: LoaderFunctionArgs) {
         startDate: weekStartDate,
         endDate: weekEndDate
       }),
-      // the week board doesn't show demand — skip the heavy operation scan.
+      // only Capacity shows due-date demand — skip the heavy operation scan.
       // Null start = no floor: Past due spans back to the earliest open op.
-      view !== "board"
+      view === "capacity"
         ? getPeopleCapacityOperations(client, companyId, {
             locationId,
             startDate: null,
             endDate: weekEndDate
           })
         : Promise.resolve({ data: [], error: null }),
-      view === "capacity"
+      needsCalendar
         ? getWorkCenterReservationsRange(client, companyId, {
             startAt: weekWindowStart.toISOString(),
             endAt: weekWindowEnd.toISOString()
           })
         : Promise.resolve({ data: [], error: null }),
-      view === "capacity" && capacityWorkCenterIds.length > 0
+      capacityWorkCenterIds.length > 0
         ? getWorkCenterShifts(client, companyId, capacityWorkCenterIds)
         : Promise.resolve({ data: [], error: null })
     ]);
 
+    for (const [read, message] of [
+      [rangeAssignments, "Failed to load people assignments"],
+      [rangeAbsences, "Failed to load absences"],
+      [capacityOperations, "Failed to load operations"],
+      [reservations, "Failed to load the schedule"],
+      [workCenterShiftRows, "Failed to load work center shifts"]
+    ] as const) {
+      if (read.error) {
+        throw redirect(
+          path.to.production,
+          await flash(request, error(read.error, message))
+        );
+      }
+    }
     weekAssignments = rangeAssignments.data ?? [];
     weekAbsences = rangeAbsences.data ?? [];
 
-    // The engine (@carbon/planning) owns the authoritative machine-availability
-    // ladder; this resolves the same rungs at day granularity for display.
+    // The stations' working windows, resolved by the scheduler's own ladder
+    // (shifts, holidays, open maintenance downtime): Available, the share of
+    // a booking each day gets, and Coverage all read them.
     let calendarHoursMap = new Map<string, Map<string, number>>();
     let workingWindowsByWorkCenter:
       | ReturnType<typeof getWorkCenterWorkingWindows>
       | undefined;
-    if (view === "capacity") {
+    // Only this location's stations: the read spans the company.
+    const stationIds = new Set(capacityWorkCenterIds);
+    const stationReservations = (reservations.data ?? []).filter(
+      (reservation) => stationIds.has(reservation.resourceId)
+    );
+    if (needsCalendar) {
       const wcShiftLinks = workCenterShiftRows.data ?? [];
       // A booking can run past the week on either side; its working windows
       // (and holidays) are needed across its whole span to divide its hours.
       let spanStartMs = weekWindowStart.getTime();
       let spanEndMs = weekWindowEnd.getTime();
-      for (const reservation of reservations.data ?? []) {
+      for (const reservation of stationReservations) {
         spanStartMs = Math.min(spanStartMs, Date.parse(reservation.startAt));
         spanEndMs = Math.max(spanEndMs, Date.parse(reservation.endAt));
       }
-      const holidays = await getHolidayDates(client, companyId, {
-        from: toCalendarDate(fromAbsolute(spanStartMs, timezone)).toString(),
-        to: toCalendarDate(fromAbsolute(spanEndMs, timezone)).toString()
-      });
-      if (holidays.error) {
-        throw redirect(
-          path.to.production,
-          await flash(request, error(holidays.error, "Failed to load holidays"))
-        );
-      }
-      const holidayDates = holidays.data;
       // A station can be linked to a shift of another location.
       const locationShiftIds = new Set(shiftRows.map((shift) => shift.id));
       const otherShiftIds = [
@@ -388,20 +405,46 @@ export async function loader({ request }: LoaderFunctionArgs) {
             .filter((id) => !locationShiftIds.has(id))
         )
       ];
-      const otherShifts =
-        otherShiftIds.length > 0
-          ? await getShiftsWithTimesByIds(client, companyId, otherShiftIds)
-          : { data: [], error: null };
-      if (otherShifts.error) {
-        throw redirect(
-          path.to.production,
-          await flash(
-            request,
-            error(otherShifts.error, "Failed to load shifts")
-          )
-        );
+      const [holidays, otherShifts, outages, attendedShares] =
+        await Promise.all([
+          getHolidayDates(client, companyId, {
+            from: toCalendarDate(
+              fromAbsolute(spanStartMs, timezone)
+            ).toString(),
+            to: toCalendarDate(fromAbsolute(spanEndMs, timezone)).toString()
+          }),
+          otherShiftIds.length > 0
+            ? getShiftsWithTimesByIds(client, companyId, otherShiftIds)
+            : Promise.resolve({ data: [], error: null }),
+          getWorkCenterOutages(client, companyId, {
+            workCenterIds: capacityWorkCenterIds,
+            rangeEnd: spanEndMs
+          }),
+          view === "matrix"
+            ? getOperationAttendedShares(
+                client,
+                companyId,
+                stationReservations.map((r) => r.operationId)
+              )
+            : Promise.resolve({
+                data: new Map<string, { share: number; gated: boolean }>(),
+                error: null
+              })
+        ]);
+      for (const [read, message] of [
+        [holidays, "Failed to load holidays"],
+        [otherShifts, "Failed to load shifts"],
+        [outages, "Failed to load maintenance downtime"],
+        [attendedShares, "Failed to load operations"]
+      ] as const) {
+        if (read.error) {
+          throw redirect(
+            path.to.production,
+            await flash(request, error(read.error, message))
+          );
+        }
       }
-      const linkedShiftRows = otherShifts.data ?? [];
+      const holidayDates = holidays.data;
       capacityHolidayDates = [...holidayDates];
       const ladderWorkCenters = (workCenters.data ?? []).flatMap(
         (workCenter) =>
@@ -414,50 +457,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
               ]
             : []
       );
-      const locationLadderShifts = shiftRows.map((shift) => ({
-        id: shift.id,
-        hours: shiftHoursById[shift.id] ?? defaultShiftHours,
-        runsOn: [
-          shift.sunday,
-          shift.monday,
-          shift.tuesday,
-          shift.wednesday,
-          shift.thursday,
-          shift.friday,
-          shift.saturday
-        ]
-      }));
-      calendarHoursMap = getWorkCenterCalendarHoursByDay({
-        workCenters: ladderWorkCenters,
-        workCenterShifts: wcShiftLinks,
-        locationShifts: locationLadderShifts,
-        linkedShifts: linkedShiftRows.map((shift) => ({
-          id: shift.id,
-          hours:
-            shiftDurationHours(shift.startTime, shift.endTime) ??
-            defaultShiftHours,
-          runsOn: [
-            shift.sunday,
-            shift.monday,
-            shift.tuesday,
-            shift.wednesday,
-            shift.thursday,
-            shift.friday,
-            shift.saturday
-          ]
-        })),
+      const windows = withoutOutages(
+        getWorkCenterWorkingWindows({
+          workCenters: ladderWorkCenters,
+          workCenterShifts: wcShiftLinks,
+          shifts: shiftRows,
+          linkedShifts: otherShifts.data ?? [],
+          timeZone: timezone,
+          holidayDates,
+          rangeStart: spanStartMs,
+          rangeEnd: spanEndMs
+        }),
+        outages.data
+      );
+      workingWindowsByWorkCenter = windows;
+      calendarHoursMap = workingHoursByDay({
+        windowsByWorkCenter: windows,
         weekDates,
-        holidayDates
-      });
-      workingWindowsByWorkCenter = getWorkCenterWorkingWindows({
-        workCenters: ladderWorkCenters,
-        workCenterShifts: wcShiftLinks,
-        shifts: shiftRows,
-        linkedShifts: linkedShiftRows,
-        timeZone: timezone,
-        holidayDates,
-        rangeStart: spanStartMs,
-        rangeEnd: spanEndMs
+        timezone
       });
       const wcHasOwnShifts = new Set(
         wcShiftLinks.map((link) => link.workCenterId)
@@ -466,7 +483,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         capacityRungByWorkCenter[workCenter.id] =
           workCenter.alwaysOn || wcHasOwnShifts.has(workCenter.id)
             ? 1
-            : locationLadderShifts.length > 0
+            : shiftRows.length > 0
               ? 2
               : 3;
       }
@@ -476,13 +493,38 @@ export async function loader({ request }: LoaderFunctionArgs) {
           Object.fromEntries(byDay)
         ])
       );
+      if (view === "matrix") {
+        attendedByWorkCenter = attendedHoursByDay({
+          weekDates,
+          timezone,
+          reservations: stationReservations,
+          attendedShareByOperation: attendedShares.data,
+          windowsByWorkCenter: windows,
+          lightsOut: new Set(
+            ladderWorkCenters.flatMap((wc) => (wc.alwaysOn ? [wc.id] : []))
+          ),
+          // A shift tab compares the shift's people with the work booked in
+          // that shift's own hours, not the whole day's.
+          within: shiftId
+            ? (getShiftWorkingWindows({
+                shiftId,
+                shifts: shiftRows,
+                linkedShifts: otherShifts.data ?? [],
+                timeZone: timezone,
+                holidayDates,
+                rangeStart: spanStartMs,
+                rangeEnd: spanEndMs
+              }) ?? undefined)
+            : undefined
+        });
+      }
     }
 
     const buckets = buildPeopleCapacityBuckets({
       weekDates,
       timezone,
       operations: capacityOperations.data ?? [],
-      reservations: reservations.data ?? [],
+      reservations: stationReservations,
       calendarHoursByWorkCenter: calendarHoursMap,
       workingWindowsByWorkCenter
     });
@@ -499,6 +541,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       startDate: date,
       endDate: date
     });
+    if (dayOperations.error) {
+      throw redirect(
+        path.to.production,
+        await flash(
+          request,
+          error(dayOperations.error, "Failed to load operations")
+        )
+      );
+    }
     const { demandByWorkCenter: dayDemand } = buildPeopleCapacityBuckets({
       weekDates: [date],
       timezone,
@@ -556,7 +607,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     scheduledByWorkCenter,
     requiredHoursByWorkCenter,
     employeeShiftHours,
-    assignments: dayAssignments,
+    // every shift: the board filters by shift, and its day editor needs the
+    // person's own shift whatever the page shows
+    assignments: assignments.data ?? [],
     absences: absences.data ?? [],
     employees: (employees.data ?? []).flatMap((employee) =>
       employee.id
@@ -590,7 +643,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     defaultShiftHours,
     calendarHoursByWorkCenter,
     capacityRungByWorkCenter,
-    capacityHolidayDates
+    capacityHolidayDates,
+    attendedByWorkCenter
   };
 }
 
@@ -630,7 +684,8 @@ export default function SchedulePeopleRoute() {
     defaultShiftHours,
     calendarHoursByWorkCenter,
     capacityRungByWorkCenter,
-    capacityHolidayDates
+    capacityHolidayDates,
+    attendedByWorkCenter
   } = useLoaderData<typeof loader>();
   const { locale } = useLocale();
   const [overtimeOpen, setOvertimeOpen] = useState(false);
@@ -660,14 +715,23 @@ export default function SchedulePeopleRoute() {
     [displayedWorkCenters]
   );
 
+  // shift scope resolves through the ladder (the row's stamped shift, else the
+  // person's own shift) — an exact match on the stamped shift alone would hide
+  // every assignment created before the person's shift was set
   const boardAssignments = useMemo(
     () =>
-      departmentId
-        ? assignments.filter((assignment) =>
-            displayedWorkCenterIds.has(assignment.workCenterId)
-          )
-        : assignments,
-    [assignments, departmentId, displayedWorkCenterIds]
+      assignments.filter(
+        (assignment) =>
+          assignmentMatchesShift(assignment, shiftId, employeeShiftId) &&
+          (!departmentId || displayedWorkCenterIds.has(assignment.workCenterId))
+      ),
+    [
+      assignments,
+      shiftId,
+      employeeShiftId,
+      departmentId,
+      displayedWorkCenterIds
+    ]
   );
   const matrixAssignments = useMemo(
     () =>
@@ -710,14 +774,46 @@ export default function SchedulePeopleRoute() {
         : list,
     [shiftId, employeeShiftId]
   );
-  const employeesForBoard = useMemo(() => {
-    const assigned = new Set(boardAssignments.map((a) => a.employeeId));
-    return orderDepartmentFirst(filterByShift(employees, assigned));
-  }, [employees, boardAssignments, filterByShift, orderDepartmentFirst]);
-  const employeesForMatrix = useMemo(() => {
-    const assigned = new Set(matrixAssignments.map((a) => a.employeeId));
-    return orderDepartmentFirst(filterByShift(employees, assigned));
-  }, [employees, matrixAssignments, filterByShift, orderDepartmentFirst]);
+  // Assigned in the shift at ANY station: someone booked only at stations the
+  // department hides still shows (the board's "working at" card, the
+  // Matrix's greyed chip).
+  const assignedInShift = useCallback(
+    (rows: { employeeId: string; shiftId: string | null }[]) =>
+      new Set(
+        rows
+          .filter((row) =>
+            assignmentMatchesShift(row, shiftId, employeeShiftId)
+          )
+          .map((row) => row.employeeId)
+      ),
+    [shiftId, employeeShiftId]
+  );
+  const employeesForBoard = useMemo(
+    () =>
+      orderDepartmentFirst(
+        filterByShift(employees, assignedInShift(assignments))
+      ),
+    [
+      employees,
+      assignments,
+      assignedInShift,
+      filterByShift,
+      orderDepartmentFirst
+    ]
+  );
+  const employeesForMatrix = useMemo(
+    () =>
+      orderDepartmentFirst(
+        filterByShift(employees, assignedInShift(weekAssignments))
+      ),
+    [
+      employees,
+      weekAssignments,
+      assignedInShift,
+      filterByShift,
+      orderDepartmentFirst
+    ]
+  );
 
   const shortDate = (value: string) =>
     formatDate(value, { month: "short", day: "numeric" }, locale);
@@ -784,6 +880,14 @@ export default function SchedulePeopleRoute() {
               employees={employeesForMatrix}
               workCenters={displayedWorkCenters}
               assignments={matrixAssignments}
+              assignmentsElsewhere={
+                departmentId
+                  ? weekAssignments.filter(
+                      (assignment) =>
+                        !displayedWorkCenterIds.has(assignment.workCenterId)
+                    )
+                  : undefined
+              }
               absences={weekAbsences}
               employeeShiftId={employeeShiftId}
               employeeAbilityNames={employeeAbilityNames}
@@ -797,6 +901,8 @@ export default function SchedulePeopleRoute() {
               employees={employeesForBoard}
               workCenters={displayedWorkCenters}
               assignments={boardAssignments}
+              dayAssignments={assignments}
+              allWorkCenters={workCenters}
               absences={absences}
               requiredAbilities={requiredAbilities}
               requiredHoursByWorkCenter={requiredHoursByWorkCenter}
@@ -822,9 +928,10 @@ export default function SchedulePeopleRoute() {
             departmentId={departmentId}
             employeeDepartments={employeeDepartments}
             workCenters={displayedWorkCenters}
-            assignments={matrixAssignments}
+            allWorkCenters={workCenters}
+            assignments={weekAssignments}
             absences={weekAbsences}
-            demandByWorkCenter={demandByWorkCenter}
+            attendedByWorkCenter={attendedByWorkCenter}
             shiftId={shiftId}
             locationId={locationId}
             shiftHoursById={shiftHoursById}

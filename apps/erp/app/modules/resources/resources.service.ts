@@ -615,6 +615,43 @@ export async function getAbilitiesList(
     .order("name");
 }
 
+/**
+ * Whether an ability's process gates scheduling on it, and how many
+ * operations of that process the scheduler could not place.
+ */
+export async function getAbilityScheduleImpact(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  processId: string
+) {
+  const [process, unplaced] = await Promise.all([
+    client
+      .from("process")
+      .select("requiresAbility")
+      .eq("id", processId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("capacityReservation")
+      .select("id, jobOperation!inner(processId)", {
+        count: "exact",
+        head: true
+      })
+      .eq("companyId", companyId)
+      .eq("resourceKind", "WorkCenter")
+      .eq("isPlaceholder", true)
+      .is("scenarioId", null)
+      .eq("jobOperation.processId", processId)
+  ]);
+  return {
+    data: {
+      requiresAbility: process.data?.requiresAbility ?? false,
+      unschedulable: unplaced.count ?? 0
+    },
+    error: process.error ?? unplaced.error
+  };
+}
+
 export async function getAbility(
   client: SupabaseClient<Database>,
   abilityId: string
@@ -1175,7 +1212,7 @@ export async function getProcessesList(
 ) {
   return client
     .from("process")
-    .select(`id, name`)
+    .select(`id, name, processType`)
     .eq("companyId", companyId)
     .eq("active", true)
     .order("name");
@@ -1544,11 +1581,13 @@ export async function getProcessesWithoutAbility(
       .filter((id): id is string => Boolean(id))
   );
 
+  // Outside Processing runs at a supplier: no employee needs an ability for it.
   const processes = await client
     .from("process")
     .select("id, name")
     .eq("companyId", companyId)
     .eq("active", true)
+    .neq("processType", "Outside Processing")
     .order("name");
   if (processes.error) return processes;
 
@@ -2168,6 +2207,32 @@ export async function insertProcess(
   return processInsert;
 }
 
+/** Another process of the company already holding `name` (unique per company). */
+export async function findProcessNamed(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  name: string,
+  exceptId?: string
+) {
+  let query = client
+    .from("process")
+    .select("id, active")
+    .eq("companyId", companyId)
+    .eq("name", name);
+  if (exceptId) query = query.neq("id", exceptId);
+  return query.limit(1).maybeSingle();
+}
+
+/**
+ * The name is unique across every process, deactivated ones included, so
+ * say which: a deactivated one is not in the process list.
+ */
+export function processNameTakenMessage(name: string, active = true) {
+  return active
+    ? `A process named ${name} already exists`
+    : `A deactivated process named ${name} already exists. Reactivate it, or choose another name`;
+}
+
 /**
  * The bare write under `resources.updateProcess`: the process and the work
  * centers it replaces, in one transaction. Kysely bypasses RLS, so every
@@ -2181,7 +2246,7 @@ export async function updateProcess(
     updatedBy: string;
     customFields?: Json;
   }
-): Promise<{ error: string | null }> {
+): Promise<{ error: string | null; code?: string }> {
   const { batchRules, rest: withoutRules } = extractBatchRules(process);
   const { workCenters, id, companyId, ...update } = withoutRules;
   try {
@@ -2227,7 +2292,9 @@ export async function updateProcess(
     return { error: null };
   } catch (err) {
     return {
-      error: err instanceof Error ? err.message : "Failed to update process"
+      error: err instanceof Error ? err.message : "Failed to update process",
+      // the database's code, so a caller can tell a duplicate name (23505)
+      code: (err as { code?: string }).code
     };
   }
 }

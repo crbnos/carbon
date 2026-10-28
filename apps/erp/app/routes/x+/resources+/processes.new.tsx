@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon, respond } from "@carbon/api/carbon.server";
-import { validator } from "@carbon/form";
+import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import {
@@ -22,6 +22,10 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     customFields: input.formData && setCustomFields(input.formData)
   });
+  // A taken name stays on the form, as a field error.
+  if (result.error?.category === "conflict") {
+    return validationError({ fieldErrors: { name: result.error.message } });
+  }
   // The modal form reads the result and closes itself.
   if (input.formData?.get("type") === "modal") return result;
   return respond(args.request, result).redirect(path.to.processes, {

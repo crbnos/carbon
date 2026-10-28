@@ -7,17 +7,20 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import { workCenterValidator } from "~/modules/resources/resources.models";
+import {
+  withoutOperatingHours,
+  workCenterFormValidator
+} from "~/modules/resources/resources.models";
 import { WorkCenterForm } from "~/modules/resources/ui";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(workCenterValidator).request(args);
+  const input = await validator(workCenterFormValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.resources.createWorkCenter({
-    ...input.data,
+    ...withoutOperatingHours(input.data),
     customFields: input.formData && setCustomFields(input.formData)
   });
   // The modal form reads the result and closes itself.

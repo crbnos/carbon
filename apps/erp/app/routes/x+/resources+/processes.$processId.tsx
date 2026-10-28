@@ -6,7 +6,7 @@ import { carbon, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validator } from "@carbon/form";
+import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import type { BatchRules } from "@carbon/utils";
 import { redirect } from "@carbon/utils";
@@ -54,6 +54,10 @@ export async function action(args: ActionFunctionArgs) {
     id: input.params.processId,
     customFields: input.formData && setCustomFields(input.formData)
   });
+  // A taken name stays on the form, as a field error.
+  if (result.error?.category === "conflict") {
+    return validationError({ fieldErrors: { name: result.error.message } });
+  }
   // The modal form reads the result and closes itself.
   if (input.formData?.get("type") === "modal") return result;
   return respond(args.request, result).redirect(path.to.processes);
