@@ -679,14 +679,16 @@ export class OnshapeClient {
     );
   }
 
+  /** `topLevelOnly`: the assembly's own lines, under the same headers. */
   async getBillOfMaterialsIn(
     document: OnshapeDocument,
     elementId: string,
-    configuration?: string | null
+    configuration?: string | null,
+    { topLevelOnly = false }: { topLevelOnly?: boolean } = {}
   ): Promise<Record<string, unknown>> {
     return this.request<Record<string, unknown>>(
       "GET",
-      `/api/v10/assemblies/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=true&includeTopLevelAssemblyRow=true&thumbnail=false${configurationQuery(configuration)}`
+      `/api/v10/assemblies/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/bom?indented=true&multiLevel=${!topLevelOnly}&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=true&includeTopLevelAssemblyRow=true&thumbnail=false${configurationQuery(configuration)}`
     );
   }
 

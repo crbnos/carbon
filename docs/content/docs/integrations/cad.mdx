@@ -331,14 +331,13 @@ company's custom properties) onto Carbon. A property can set an **item field** o
 open, but the mappings belong to the company and apply to every push. It lives in
 the panel because Onshape lists properties only from inside a document.
 
-The page starts with **Manual Mapping**, a closed group of the seven fields every
-Carbon item needs: Part ID, Revision, Short Description, Replenishment, Default Method
-Type, Tracking Type and Unit of Measure. Every push fills them without setup. A change
-here applies to every push for the company, so it is meant to be changed only on
-instruction from Carbon: opening the group shows a warning first, where **I understand**
-shows the fields and **Back** closes the group. A save the group
-refuses keeps it open. **Reset to defaults** puts the group's fields and the Item and
-Quantity column choices back to their defaults; **Save** applies it. The group ends
+The page starts with **Manual Mapping**, a closed group holding Part ID and Revision.
+Pushes link parts to Carbon items by these, so a wrong change here links parts to the
+wrong items for the whole company. It is meant to be changed only on instruction from
+Carbon: opening the group shows a warning first, where **I understand** shows the
+fields and **Back** closes the group. A save the group refuses keeps it open. **Reset
+to defaults** puts Part ID, Revision and the Item and Quantity column choices back to
+Onshape's own; **Save** applies it. The group ends
 with **What Onshape sends**: on an assembly, the column each of Item and Quantity is
 read from, then the BOM columns and properties of the open element, spelled as
 Onshape sends them, for checking why the panel can't find a field.
@@ -358,8 +357,9 @@ panel found, choose **Change** beside it under What Onshape sends. **None**, or 
 found column, clears the choice. The Item column must hold Onshape's item numbers
 (1, 1.1, 1.2): the panel builds the assembly's levels from them.
 
-Then come the item fields with their **push defaults**, the values a new item gets
-when no property sets them:
+Short Description and Long Description head the list below the group. The item fields
+follow, each with its **push default**, the value a new item gets when no property
+sets it:
 
 | Item field | Values | Push default |
 | --- | --- | --- |

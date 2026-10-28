@@ -82,7 +82,7 @@ import {
   VALID_METHOD_TYPES_BY_REPLENISHMENT
 } from "./plan";
 import type { OnshapePushDefaults } from "./preferences";
-import { DEFAULT_PUSH_DEFAULTS, reconcilePushDefaults } from "./preferences";
+import { reconcilePushDefaults } from "./preferences";
 import type {
   DescriptionModes,
   MappingMode,
@@ -1532,6 +1532,10 @@ export function OnshapePanel({
           wvId: context.wvId as string,
           elementId: context.elementId as string
         });
+        // An assembly's BOM columns are read in the configuration a push reads.
+        if (context.configuration) {
+          query.set("configuration", context.configuration);
+        }
         const response = await panelFetch(token, `${paths.fields}?${query}`);
         const body = (await response.json()) as
           | PanelFieldsData
@@ -2988,38 +2992,29 @@ function FieldsSection({
         };
       })
     : [];
-  // Manual Mapping's fields: each Reset clears to its default.
+  // What Manual Mapping sets: Reset clears each to Onshape's own.
   const manualTargets: PropertyMapTarget[] = [
-    ...REQUIRED_IDENTITY_FIELDS.map(
+    ...MANUAL_IDENTITY_FIELDS.map(
       (field) => ({ kind: "identity", field }) as const
-    ),
-    ...ITEM_FIELD_ROWS.flatMap((row) =>
-      row.field ? [{ kind: "item", field: row.field } as const] : []
     ),
     ...BOM_LINE_FIELDS.map((field) => ({ kind: "bomLine", field }) as const)
   ];
   const manualKeys = new Set(manualTargets.map(targetKey));
-  const manualIsDefault =
-    !state.entries.some((entry) => manualKeys.has(targetKey(entry.target))) &&
-    state.descriptionModes.name === "create" &&
-    pushDefaultsEqual(state.pushDefaults, DEFAULT_PUSH_DEFAULTS);
+  const manualIsDefault = !state.entries.some((entry) =>
+    manualKeys.has(targetKey(entry.target))
+  );
   // In the draft, like every other change: Save applies it.
   const resetManual = () => {
     for (const target of manualTargets) onTargetSource(target, null);
-    onDescriptionMode("name", "create");
-    onPushDefaults(DEFAULT_PUSH_DEFAULTS);
     setChangingColumns([]);
   };
   // A refused save inside the group keeps it open, so the error is seen.
-  const manualHasErrors = state.entries.some((entry) => {
-    if (!state.fieldErrors[entry.onshapePropertyId]?.length) return false;
-    const { target } = entry;
-    return (
-      (target.kind === "identity" &&
-        REQUIRED_IDENTITY_FIELDS.includes(target.field)) ||
-      (target.kind === "item" && ITEM_FIELD_ROW_FIELDS.has(target.field))
-    );
-  });
+  const manualHasErrors = state.entries.some(
+    (entry) =>
+      !!state.fieldErrors[entry.onshapePropertyId]?.length &&
+      entry.target.kind === "identity" &&
+      MANUAL_IDENTITY_FIELDS.includes(entry.target.field)
+  );
 
   return (
     <VStack spacing={3} className="w-full">
@@ -3073,7 +3068,7 @@ function FieldsSection({
             <span className="flex flex-1 items-baseline gap-2">
               Manual Mapping
               <span className="text-xs font-normal text-muted-foreground">
-                {MANUAL_FIELD_COUNT} fields
+                {MANUAL_IDENTITY_FIELDS.length} fields
               </span>
             </span>
           </AccordionTrigger>
@@ -3089,14 +3084,12 @@ function FieldsSection({
                   </AlertDescription>
                 </Alert>
                 <p className="px-1 text-xs text-muted-foreground">
-                  Every push fills these: from the Onshape property when one is
-                  chosen, otherwise from Onshape's own property or the push
-                  default.
+                  Pushes link parts to Carbon items by these: read from the
+                  Onshape property chosen here, otherwise from Onshape's own.
                 </p>
                 <FieldListHeader />
                 <ul className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
-                  {REQUIRED_IDENTITY_FIELDS.map(identityRow)}
-                  {ITEM_FIELD_ROWS.map(itemFieldRow)}
+                  {MANUAL_IDENTITY_FIELDS.map(identityRow)}
                 </ul>
                 <Button
                   variant="secondary"
@@ -3123,11 +3116,11 @@ function FieldsSection({
                 <AlertTitle>Danger zone</AlertTitle>
                 <AlertDescription className="flex flex-col gap-2">
                   <p>
-                    Manual Mapping sets where every push reads Part ID,
-                    Revision, Short Description, the item defaults and the BOM's
-                    Item and Quantity columns, for the whole company. A wrong
-                    change can link parts to the wrong Carbon items or stop
-                    pushes. Use it only when a Carbon employee asks you to.
+                    Manual Mapping sets where every push reads Part ID and
+                    Revision, and which BOM columns hold Item and Quantity, for
+                    the whole company. A wrong change can link parts to the
+                    wrong Carbon items or stop pushes. Use it only when a Carbon
+                    employee asks you to.
                   </p>
                   <HStack spacing={2}>
                     <Button
@@ -3153,7 +3146,9 @@ function FieldsSection({
 
       <FieldListHeader />
       <ul className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
+        {identityRow("name")}
         {identityRow("description")}
+        {ITEM_FIELD_ROWS.map(itemFieldRow)}
         {bom
           ? BOM_LINE_FIELDS.map((field) => {
               const target: PropertyMapTarget = { kind: "bomLine", field };
@@ -3263,12 +3258,8 @@ const SOURCE_DEFAULT = "__default__";
 const SOURCE_NONE = "__none__";
 const SOURCE_PROPERTY = "property:";
 
-// Identity fields Carbon requires on every item. Long Description is optional.
-const REQUIRED_IDENTITY_FIELDS: IdentityField[] = [
-  "partNumber",
-  "revision",
-  "name"
-];
+// Identity fields pushes link parts to Carbon items by: behind Manual Mapping.
+const MANUAL_IDENTITY_FIELDS: IdentityField[] = ["partNumber", "revision"];
 
 /** Names the columns: the right one is when a property's value is written, or
  * the push default when the row reads no property. */
@@ -3390,11 +3381,6 @@ const ITEM_FIELD_ROWS: {
 const ITEM_FIELD_ROW_FIELDS = new Set<string>(
   ITEM_FIELD_ROWS.flatMap((row) => (row.field ? [row.field] : []))
 );
-
-// Fields in Manual Mapping. The Buy items row sets Default Method Type, which
-// the Make items row already counts.
-const MANUAL_FIELD_COUNT =
-  REQUIRED_IDENTITY_FIELDS.length + ITEM_FIELD_ROW_FIELDS.size;
 
 type SelectOption = { value: string; label: string; helper?: string };
 
@@ -3956,6 +3942,8 @@ function BomLineRow({
     > | null
   ) => void;
 }) {
+  // The column a typed name matched while another field reads it.
+  const [typedTaken, setTypedTaken] = useState<string | null>(null);
   const own = ONSHAPE_PROPERTIES[field].label;
   const carbon = STANDARD_TARGET_LABEL[field];
   const found = detected
@@ -3964,8 +3952,24 @@ function BomLineRow({
   // A found column needs no choice, so the row stays hidden until asked for.
   if (found && !entry && !changing) return null;
   const chosen = chosenColumn(columns, entry);
+  // Refused as the picker disables it: taking it would drop that mapping.
+  const takenBy = typedTaken ? mappingOf.get(typedTaken) : undefined;
+  const taken =
+    takenBy && takenBy !== entry
+      ? `${
+          columns.find((column) => column.propertyId === typedTaken)?.name ??
+          takenBy.onshapeName
+        } is mapped to ${targetLabel(
+          takenBy.target,
+          definitions
+        )}. Choose another column, or change that mapping first.`
+      : null;
   // What the save would refuse, said before the save; its own errors replace it.
-  const refused = entry && !errors?.length ? standardSourceErrors(entry) : [];
+  const refused = taken
+    ? [taken]
+    : entry && !errors?.length
+      ? standardSourceErrors(entry)
+      : [];
   // The map is company-wide: the saved column may be on another template only.
   const savedElsewhere =
     entry !== undefined &&
@@ -4045,6 +4049,7 @@ function BomLineRow({
           ]}
           disabled={disabled}
           onChange={(value) => {
+            setTypedTaken(null);
             if (value === SOURCE_DEFAULT) {
               if (entry) onSource(null);
               return;
@@ -4058,6 +4063,7 @@ function BomLineRow({
           onCreate={(typed) => {
             const name = typed.trim();
             if (name === "") return;
+            setTypedTaken(null);
             // Onshape's own column is the default, not a choice.
             if (found && nameKey(found.name) === nameKey(name)) {
               if (entry) onSource(null);
@@ -4067,6 +4073,11 @@ function BomLineRow({
             const column = candidates.find(
               (c) => nameKey(c.name) === nameKey(name)
             );
+            const elsewhere = column && mappingOf.get(column.propertyId);
+            if (column && elsewhere && elsewhere !== entry) {
+              setTypedTaken(column.propertyId);
+              return;
+            }
             onSource(
               column ?? {
                 propertyId: namedColumnId(name),

@@ -471,10 +471,6 @@ export function propertyMapEqual(
 }
 
 /**
- * `matchByName` is for a BOM row: its cells are keyed by column, and a column
- * whose id is not the property id still matches by the property's name.
- */
-/**
  * Whether the map writes a field from part properties. Identity and BOM line
  * sources are read by the push itself, so a map of only those costs no
  * property read.
@@ -486,6 +482,10 @@ export function mapsPartProperties(map: readonly PropertyMapEntry[]): boolean {
   );
 }
 
+/**
+ * `matchByName` is for a BOM row: its cells are keyed by column, and a column
+ * whose id is not the property id still matches by the property's name.
+ */
 export function resolveMappedFields({
   properties,
   map,

@@ -39,7 +39,8 @@ const querySchema = z.object({
   documentId: z.string().min(1),
   wv: z.enum(["w", "v", "m"]),
   wvId: z.string().min(1),
-  elementId: z.string().min(1)
+  elementId: z.string().min(1),
+  configuration: z.string().nullish()
 });
 
 /** Fields page data for the element the panel is open on. */
@@ -54,12 +55,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     documentId: url.searchParams.get("documentId"),
     wv: url.searchParams.get("wv"),
     wvId: url.searchParams.get("wvId"),
-    elementId: url.searchParams.get("elementId")
+    elementId: url.searchParams.get("elementId"),
+    configuration: url.searchParams.get("configuration")
   });
   if (!parsed.success) {
     return data({ error: "Missing Onshape context" }, { status: 400 });
   }
-  const { documentId, wv, wvId, elementId } = parsed.data;
+  const { documentId, wv, wvId, elementId, configuration } = parsed.data;
 
   const onshape = await getOnshapeClient(
     client,
@@ -136,10 +138,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   } | null = null;
   if (isAssembly) {
     try {
+      // Only the headers are used, and the top level has them all. The
+      // configuration is the one a push of this element reads.
       const payload = (await onshape.client.getBillOfMaterialsIn(
         document,
         elementId,
-        null
+        configuration,
+        { topLevelOnly: true }
       )) as { headers?: unknown };
       const headers = (
         Array.isArray(payload?.headers) ? payload.headers : []
