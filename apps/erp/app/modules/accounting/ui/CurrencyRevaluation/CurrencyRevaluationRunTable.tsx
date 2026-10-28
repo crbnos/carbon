@@ -16,6 +16,7 @@ import { LuCalendar, LuEye, LuHash, LuStar, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type { CurrencyRevaluationRunListItem } from "../../types";
@@ -24,11 +25,17 @@ import CurrencyRevaluationRunStatus from "./CurrencyRevaluationRunStatus";
 type CurrencyRevaluationRunTableProps = {
   data: CurrencyRevaluationRunListItem[];
   count: number;
+  infinite: InfiniteOptions;
   primaryAction?: ReactNode;
 };
 
 const CurrencyRevaluationRunTable = memo(
-  ({ data, count, primaryAction }: CurrencyRevaluationRunTableProps) => {
+  ({
+    data,
+    count,
+    primaryAction,
+    infinite
+  }: CurrencyRevaluationRunTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -126,6 +133,7 @@ const CurrencyRevaluationRunTable = memo(
     return (
       <>
         <Table<CurrencyRevaluationRunListItem>
+          infinite={infinite}
           data={data}
           columns={columns}
           count={count}

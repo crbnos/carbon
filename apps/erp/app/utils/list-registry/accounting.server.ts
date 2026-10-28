@@ -4,11 +4,13 @@
 
 import type { RunType } from "@carbon/database/run-type";
 import {
+  CURRENCY_REVALUATION_RUNS_PAGING,
   DEPRECIATION_RUNS_PAGING,
   DIMENSIONS_PAGING,
   FIXED_ASSET_CLASSES_PAGING,
   FIXED_ASSETS_PAGING,
   FLEET_ASSETS_PAGING,
+  getCurrencyRevaluationRuns,
   getDepreciationRuns,
   getDimensions,
   getFixedAssetClasses,
@@ -64,6 +66,13 @@ export const depreciationRunsList = searchList({
   permission: ACCOUNTING_PERMISSION,
   paging: DEPRECIATION_RUNS_PAGING,
   service: getDepreciationRuns
+});
+
+export const currencyRevaluationRunsList = searchList({
+  key: "currency-revaluation-runs",
+  permission: ACCOUNTING_PERMISSION,
+  paging: CURRENCY_REVALUATION_RUNS_PAGING,
+  service: getCurrencyRevaluationRuns
 });
 
 export const fleetAssetsList = searchList({
@@ -179,6 +188,7 @@ export const accountingLists: Record<string, ListDefinition> = {
   [fixedAssetsList.key]: fixedAssetsList,
   [assetClassesList.key]: assetClassesList,
   [depreciationRunsList.key]: depreciationRunsList,
+  [currencyRevaluationRunsList.key]: currencyRevaluationRunsList,
   [fleetAssetsList.key]: fleetAssetsList,
   [dimensionsList.key]: dimensionsList,
   [intercompanyTransactionsList.key]: intercompanyTransactionsList,

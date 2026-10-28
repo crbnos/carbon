@@ -5,11 +5,14 @@
 // The currency revaluation run's reads and Undo against a real database:
 // what counts as an account's booked balance, which accounts are this
 // company's exposures, when a posted run is stale, and when Undo refuses.
-// Plus the CTA posting's refusal of a non-Equity account.
+// Posting a run end to end, and the CTA posting: what counts as posted, and
+// its refusal of a non-Equity account.
 
+import { sql } from "kysely";
 import { expect } from "vitest";
 import {
   insertCurrencyTranslationJournal,
+  postCurrencyRevaluationRun,
   previewCurrencyRevaluation,
   RunReversalError,
   readRevaluationExposures,
@@ -226,3 +229,260 @@ databaseTest(
     }
   }
 );
+
+/** A November period, for the reversal a revaluation dates the next day. */
+async function addNovemberPeriod(
+  f: Awaited<ReturnType<typeof currencyRevaluationFixture>>
+) {
+  const period = await f.db
+    .insertInto("accountingPeriod")
+    .values({
+      startDate: "2026-11-01",
+      endDate: "2026-11-30",
+      companyId: f.companyId,
+      createdBy: "system"
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return period.id;
+}
+
+async function draftRun(
+  f: Awaited<ReturnType<typeof currencyRevaluationFixture>>,
+  readableId: string
+) {
+  const run = await f.db
+    .insertInto("currencyRevaluationRun")
+    .values({
+      currencyRevaluationRunId: readableId,
+      companyId: f.companyId,
+      periodEnd: PERIOD_END,
+      createdBy: "system"
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return run.id;
+}
+
+databaseTest(
+  "a run with nothing to revalue posts without writing empty journals",
+  async () => {
+    const f = await currencyRevaluationFixture();
+    try {
+      const { db, companyId, periodId, accounts } = f;
+      const novemberId = await addNovemberPeriod(f);
+      const runId = await draftRun(f, "FXR-TEST-EMPTY");
+
+      const result = await postCurrencyRevaluationRun(db, {
+        runId,
+        valuationPeriod: { accountingPeriodId: periodId, postingDate: PERIOD_END },
+        reversalPeriod: {
+          accountingPeriodId: novemberId,
+          postingDate: "2026-11-01"
+        },
+        gainAccountId: accounts.gain,
+        lossAccountId: accounts.loss,
+        companyId,
+        userId: "system"
+      });
+
+      expect(result).toEqual({ journalId: null, reversalJournalId: null });
+      const run = await db
+        .selectFrom("currencyRevaluationRun")
+        .select(["status", "journalId", "reversalJournalId"])
+        .where("id", "=", runId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirstOrThrow();
+      expect(run).toEqual({
+        status: "Posted",
+        journalId: null,
+        reversalJournalId: null
+      });
+      const journals = await db
+        .selectFrom("journal")
+        .select("id")
+        .where("companyId", "=", companyId)
+        .where("sourceType", "=", "Currency Revaluation")
+        .execute();
+      expect(journals).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "posting a run books the gain at period end and reverses it the next day; Undo nets both away",
+  async () => {
+    const f = await currencyRevaluationFixture();
+    try {
+      const { db, companyId, periodId, accounts } = f;
+      const novemberId = await addNovemberPeriod(f);
+      // EUR 100 booked at $100. At 0.8 EUR per USD it is worth $125.
+      await f.postJournal({
+        sourceType: "Manual",
+        postingDate: "2026-10-15",
+        lines: [
+          { accountId: accounts.eurBank, amount: 100 },
+          { accountId: accounts.misc, amount: -100 }
+        ]
+      });
+      const runId = await draftRun(f, "FXR-TEST-POST");
+      await db
+        .insertInto("currencyRevaluationRate")
+        .values({
+          companyId,
+          runId,
+          currencyCode: "EUR",
+          rate: 0.8,
+          rateSource: "Manual",
+          createdBy: "system"
+        })
+        .execute();
+      await db
+        .insertInto("currencyRevaluationLine")
+        .values({
+          companyId,
+          runId,
+          exposureType: "Account Balance",
+          accountId: accounts.eurBank,
+          currencyCode: "EUR",
+          openAmount: 100,
+          bookedBaseAmount: 100,
+          revaluedBaseAmount: 125,
+          differenceAmount: 25,
+          createdBy: "system"
+        })
+        .execute();
+
+      const posted = await postCurrencyRevaluationRun(db, {
+        runId,
+        valuationPeriod: { accountingPeriodId: periodId, postingDate: PERIOD_END },
+        reversalPeriod: {
+          accountingPeriodId: novemberId,
+          postingDate: "2026-11-01"
+        },
+        gainAccountId: accounts.gain,
+        lossAccountId: accounts.loss,
+        companyId,
+        userId: "system"
+      });
+      if (!posted.journalId || !posted.reversalJournalId) {
+        throw new Error("Expected both journals");
+      }
+
+      const lines = await db
+        .selectFrom("journalLine as l")
+        .innerJoin("journal as j", "j.id", "l.journalId")
+        .select([
+          "j.id as journalId",
+          sql<string>`j."postingDate"::text`.as("postingDate"),
+          "l.accountId",
+          "l.amount"
+        ])
+        .where("j.id", "in", [posted.journalId, posted.reversalJournalId])
+        .orderBy("j.postingDate")
+        .orderBy("l.accountId")
+        .execute();
+      // Natural-signed: +25 debits the bank (Asset) and credits the gain.
+      expect(
+        lines.map((l) => [l.postingDate, l.accountId, Number(l.amount)])
+      ).toEqual(
+        [
+          [PERIOD_END, accounts.eurBank, 25],
+          [PERIOD_END, accounts.gain, 25],
+          ["2026-11-01", accounts.eurBank, -25],
+          ["2026-11-01", accounts.gain, -25]
+        ].sort((a, b) =>
+          `${a[0]}${a[1]}`.localeCompare(`${b[0]}${b[1]}`)
+        )
+      );
+
+      await reverseCurrencyRevaluationRun(db, {
+        runId,
+        periods: new Map([
+          [PERIOD_END, { accountingPeriodId: periodId, postingDate: PERIOD_END }],
+          [
+            "2026-11-01",
+            { accountingPeriodId: novemberId, postingDate: "2026-11-01" }
+          ]
+        ]),
+        companyId,
+        userId: "system"
+      });
+      const net = await db
+        .selectFrom("journalLine as l")
+        .innerJoin("journal as j", "j.id", "l.journalId")
+        .select(sql<number>`SUM(l."amount")`.as("total"))
+        .where("j.companyId", "=", companyId)
+        .where("j.sourceType", "=", "Currency Revaluation")
+        .where("l.accountId", "=", accounts.eurBank)
+        .executeTakeFirstOrThrow();
+      expect(Number(net.total)).toBe(0);
+      const run = await db
+        .selectFrom("currencyRevaluationRun")
+        .select("status")
+        .where("id", "=", runId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirstOrThrow();
+      expect(run.status).toBe("Draft");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the CTA posts the movement once, reading what is posted from its own journals",
+  async () => {
+    const f = await currencyRevaluationFixture();
+    try {
+      const { db, companyId, companyGroupId, accounts } = f;
+      const post = (liveCta: number) =>
+        insertCurrencyTranslationJournal(db, {
+          companyGroupId,
+          eliminationCompanyId: companyId,
+          periodEnd: PERIOD_END,
+          liveCta,
+          ctaAccountId: accounts.cta,
+          offsetAccountId: accounts.ctaOffset,
+          userId: "system"
+        });
+
+      const first = await post(50);
+      expect(first?.movement).toBe(50);
+      const lines = await db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("journalId", "=", first!.journalId)
+        .where("companyId", "=", companyId)
+        .orderBy("amount", "desc")
+        .execute();
+      // Cr CTA 50, Dr offset 50 (both Equity, natural-signed).
+      expect(lines.map((l) => [l.accountId, Number(l.amount)])).toEqual([
+        [accounts.cta, 50],
+        [accounts.ctaOffset, -50]
+      ]);
+
+      // Posted again with nothing new: no movement.
+      expect(await post(50)).toBeNull();
+
+      // A manual entry on the offset account does not change what is posted.
+      await f.postJournal({
+        sourceType: "Manual",
+        postingDate: "2026-10-20",
+        lines: [
+          { accountId: accounts.ctaOffset, amount: -7 },
+          { accountId: accounts.cta, amount: 7 }
+        ]
+      });
+      expect(await post(50)).toBeNull();
+
+      // The consolidated CTA grows by 10: only the 10 posts.
+      expect((await post(60))?.movement).toBe(10);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+

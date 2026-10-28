@@ -233,7 +233,7 @@ msgid "Are you sure you want to mark this operation as done? This will end all a
 msgstr "Möchten Sie diesen Arbeitsgang wirklich als erledigt markieren? Dies beendet alle aktiven Produktionsereignisse für diesen Arbeitsgang."
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
-msgstr "Bitten Sie einen Vorgesetzten, die {processName}-Qualifikation zu Ihrem Profil hinzuzufügen."
+msgstr "Wenden Sie sich an einen Vorgesetzten: Er kann Ihrem Profil die {processName}-Qualifikation hinzufügen."
 
 msgid "Assembly steps"
 msgstr "Montageschritte"

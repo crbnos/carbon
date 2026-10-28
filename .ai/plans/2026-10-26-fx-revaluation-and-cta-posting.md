@@ -3,7 +3,7 @@
 **Spec:** .ai/specs/2026-10-26-fx-revaluation-and-cta-posting.md
 **Research:** .ai/research/2026-10-26-fx-revaluation-and-cta-posting.md
 **Closest sibling:** the depreciation run (routes `x+/accounting+/depreciation-runs*.tsx`, `x+/depreciation-run+/`, UI `modules/accounting/ui/FixedAssets/DepreciationRun*.tsx`)
-**Branch:** tianjin
+**Branch:** `consolidation-exchange-rates`
 
 ## Plan decisions not in the spec
 
@@ -1034,7 +1034,7 @@ args: { companyGroupId: string; rootCompanyId: string; periodStart: string; peri
    2. Call `getConsolidatedPeriodSeries` with every operating company, the root's base currency, one bucket `{ key: "cta", start: periodStart, end: periodEnd }` and `systemClient` as `eliminationClient`.
    3. Read `liveCta` from `ctaByBucket.cta`.
    4. Find the elimination entity with `parentCompanyId = rootCompanyId` and `isEliminationEntity = true`. If none exists, return an error "The group has no elimination entity".
-   5. Read the offset account's balance on that entity at `periodEnd` with `accountTreeBalancesByCompany`.
+   5. Read the CTA posted on that entity by `periodEnd`: the CTA account's lines in its Posted `Currency Translation` journals (`readPostedCta`). (Changed in the 2026-10-28 self-review; the first version read the offset account's balance.)
    6. Call `ctaMovement`.
    7. List the subsidiaries whose `fx-revaluation` preview count is above 0.
 3. Write `insertCurrencyTranslationJournal(db, args)`:

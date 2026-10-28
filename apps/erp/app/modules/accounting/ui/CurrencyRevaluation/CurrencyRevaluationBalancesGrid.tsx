@@ -11,7 +11,7 @@ import { DateTime, EmployeeAvatar, Table } from "~/components";
 import { EditableNumber } from "~/components/Editable";
 import Money from "~/components/Money";
 import { setupGridHeight, useCellSave } from "~/components/Setup";
-import { usePermissions } from "~/hooks";
+import { useCurrencyDecimalsLookup, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 
 type CurrencyRevaluationRun =
@@ -43,6 +43,7 @@ const CurrencyRevaluationBalancesGrid = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const save = useCellSave();
+  const currencyDecimals = useCurrencyDecimalsLookup();
 
   const runId = run.id;
   const canEdit =
@@ -126,12 +127,18 @@ const CurrencyRevaluationBalancesGrid = ({
 
   const editableComponents = useMemo(
     () => ({
-      openAmount: EditableNumber<BalanceRow>(onCellEdit, {
-        step: INPUT_STEP.quantity,
-        formatOptions: INPUT_FORMAT.quantity
+      // A statement balance is money in the account's own currency, so it is
+      // entered at that currency's settlement decimals (a JPY balance takes
+      // no fraction), as the read-only cell displays it.
+      openAmount: EditableNumber<BalanceRow>(onCellEdit, (row) => {
+        const decimals = currencyDecimals(row.currencyCode);
+        return {
+          step: INPUT_STEP.money(decimals),
+          formatOptions: INPUT_FORMAT.money(row.currencyCode, decimals)
+        };
       })
     }),
-    [onCellEdit]
+    [currencyDecimals, onCellEdit]
   );
 
   return (

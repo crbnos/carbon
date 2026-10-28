@@ -3881,7 +3881,7 @@ msgid "Asset account for advance payments made to suppliers before goods or serv
 msgstr "供应商在收到商品或服务前预先支付的预付款的资产科目"
 
 msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
-msgstr "资产账户，用于列示未结外币应收款的期末重估，以便应收款账户仍与其未结发票相符"
+msgstr "资产账户，用于列示未结外币应收款项的期末重估，以便应收款项账户仍与其未结发票相符"
 
 msgid "Asset Acquisition Cost"
 msgstr "资产购置成本"
@@ -9893,7 +9893,7 @@ msgid "Every check must pass before accounting can be enabled."
 msgstr "启用会计之前，每个检查都必须通过。"
 
 msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
-msgstr "组内每个公司都使用此公司的货币，因此不存在汇兑调整。"
+msgstr "集团内每家公司都使用本公司的货币，因此不存在外币折算调整。"
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "公司范围内的所有记录。凭据、集成令牌和 Webhook 永不包含在内。"
@@ -11347,7 +11347,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "累积针对固定资产折旧的资产对冲类总账科目。"
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
-msgstr "权益类总账科目（汇兑储备），存放期末重新转换外币余额产生的未实现汇兑差异；与损益表中已实现汇兑差益分开。"
+msgstr "所有者权益总账科目（折算储备，CTA），存放期末重新折算外币余额产生的未实现汇兑差异；与损益表中已实现的汇兑损益分开。"
 
 msgid "GL equity account where net income closes at fiscal year-end."
 msgstr "财政年末净收益结转的权益类总账科目。"
@@ -16902,7 +16902,7 @@ msgid "Optional context for this rule"
 msgstr "此规则的可选上下文"
 
 msgid "Optional fixed rate used when translating equity balances per IAS 21 (instead of the period rate)."
-msgstr "在根据IAS 21转换所有者权益余额时使用的可选固定汇率（而不是期间汇率）。"
+msgstr "根据 IAS 21 折算所有者权益余额时使用的可选固定汇率（而不是期间汇率）。"
 
 msgid "Optional pages & sections"
 msgstr "可选页面和部分"
@@ -26316,7 +26316,7 @@ msgid "Units"
 msgstr "单位"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
-msgstr "基础货币单位对该货币一个单位的比率;用于过账时金额的转换。"
+msgstr "该货币一个单位折合的基础货币单位数；用于过账时折算金额。"
 
 msgid "units of measure"
 msgstr "计量单位"

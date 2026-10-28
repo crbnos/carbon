@@ -208,6 +208,9 @@ export const REFERENCE_POLICY: readonly AccountReference[] = [
     parentColumn: "journalId",
     statuses: ["Draft", "Provisional"]
   },
+  // A revaluation run needs the cutover, so none exists while an import
+  // can run; repoint keeps the column classified.
+  { table: "currencyRevaluationLine", column: "accountId", policy: "repoint" },
   { table: "accountingPeriodBalance", column: "accountId", policy: "history" },
   { table: "accountingSyncTieOut", column: "accountId", policy: "history" }
 ];

@@ -113,7 +113,7 @@
     {"name":"accounting_postDepreciationRun","classification":"WRITE","schema":"e83946bf5ea7","response":"20eda0d52ae4","permission":"accounting:update","paginates":false},
     {"name":"accounting_postJournalEntry","classification":"WRITE","schema":"7f8214d1083f","response":"3797626bd17e","permission":"accounting:update","paginates":false},
     {"name":"accounting_postRevenueRecognitionRun","classification":"WRITE","schema":"8245d2d4cee4","response":"3797626bd17e","permission":"accounting:update","paginates":false},
-    {"name":"accounting_previewCurrencyTranslation","classification":"READ","schema":"7e5905ac5974","response":"cf637f9e6558","permission":"accounting:view","paginates":false},
+    {"name":"accounting_previewCurrencyTranslation","classification":"READ","schema":"7e5905ac5974","response":"1582f7f3b5f2","permission":"accounting:view","paginates":false},
     {"name":"accounting_purchaseFixedAsset","classification":"WRITE","schema":"0ef013992fdf","response":"28cffcd9d6e8","permission":"purchasing:create","paginates":false},
     {"name":"accounting_recalculateCurrencyRevaluationRun","classification":"WRITE","schema":"8245d2d4cee4","response":"7edea74b73d3","permission":"accounting:update","paginates":false},
     {"name":"accounting_recalculateDepreciationRun","classification":"WRITE","schema":"e83946bf5ea7","response":"d325c86b5677","permission":"accounting:update","paginates":false},

@@ -124,7 +124,10 @@ Worked example (USD company, rate = EUR per 1 USD):
 
 **Stale run.** Post re-reads the exposures and refuses with `RunOutOfDateError` when they differ from the Draft lines (the depreciation precedent). If a user posts a back-dated document into the period after the run posts, the close check fails. The user then runs Undo and posts again.
 
-**Undo.** Undo calls `reverseRunJournals` on both journals, with `resolveReversalPeriods`, then sets the run to Draft. Undo refuses once the run's own period is Closed. Each reversal would move to the company's today on its own, so the two would land on different dates and leave a revaluation on the books between them. The Draft could also never post again into a Closed month.
+**Undo.** Undo calls `reverseRunJournals` on both journals, with `resolveReversalPeriods`, then sets the run to Draft. Undo refuses once the run's own period is Closed, for two reasons:
+
+1. The valuation's reversal would move to the company's today. The day-1 reversal's own reversal would stay in the next period. Between the two dates, a revaluation would stay on the books.
+2. The Draft could never post again into a Closed month.
 
 **Close checklist.** A new definition, seeded for every company:
 
@@ -137,12 +140,11 @@ Worked example (USD company, rate = EUR per 1 USD):
 | `required` | true |
 | `sortOrder` | before `unmatched-ic` (NetSuite order: revaluation before elimination) |
 
-The check passes when one of two conditions is true:
+The check passes when a Posted run exists for `periodEnd`, and its lines equal a fresh exposure read at the run's rates, within `EPSILON` (`isCurrencyRevaluationRunCurrent`).
 
-- The company has no foreign-currency exposure at `periodEnd`.
-- A Posted run exists for `periodEnd`, and its lines equal a fresh exposure read at the run's rates, within `EPSILON`.
+If the company has no foreign-currency exposure at `periodEnd` and no run for it, the task does not apply. The checklist hides it. A hidden task never gates the close, and `evaluateCloseChecklist` stores it as Done.
 
-The check reuses the run preview (`getPeriodRunPreview` pattern, `accounting.service.ts:3726`). The close page shows a Create Run button for it, as it does for depreciation.
+The check reuses the run preview (`previewCurrencyRevaluation`, the `getPeriodRunPreview` pattern). The close page shows a Create Run button for it, as it does for depreciation.
 
 ### Phase 2 — Foreign-currency balance accounts (bank, cash, loans)
 
@@ -177,19 +179,19 @@ When the bank reconciliation spec adds `journalLine.sourceAmount`, Recalculate c
 The steps:
 
 1. `liveCta` = the CTA that `getConsolidatedPeriodSeries` calculates for one bucket, with every operating company selected. The bucket is the accounting period itself: `start` = the period's start date, `end` = `periodEnd`. It uses the same code path as the consolidated balance sheet.
-2. `postedCta` = −1 × the balance of the offset account on the elimination entity at `periodEnd`. Only CTA journals post to the offset account, so its balance is the posted CTA with the opposite sign.
+2. `postedCta` = the sum of the CTA account's lines in the elimination entity's Posted `Currency Translation` journals dated on or before `periodEnd` (`readPostedCta`). The offset account's balance is not used. A changed offset default or a manual entry on the offset account would move that balance.
 3. `movement = liveCta − postedCta`. If `movement` rounds to 0 at the root currency's `decimalPlaces`, post nothing.
 
 **No table.** The ledger holds the posted CTA. After a late change, the next posting writes another movement. SAP Group Reporting reruns post deltas the same way. No Undo is needed, because the next posting corrects the balance.
 
 **Why an offset account.** A balanced journal cannot carry a one-sided plug. A full per-account consolidation ledger (SAP group journal) is out of scope. The offset account keeps the entry balanced. The consolidated report hides the offset account, so equity shows the CTA once.
 
-**Consolidated reports.** `applyReportCta` gets the offset account id. If the offset row is absent, or its balance is 0 in every bucket, `applyReportCta` behaves as it does today. Otherwise, per bucket:
+**Consolidated reports.** `readCtaJournalBalances` reads the same journals as of each bucket's end. It gives `applyReportCta` the amount they put on each account (`ctaJournalBalances`). If they put nothing on any account, `applyReportCta` behaves as it does today. Otherwise, per bucket:
 
 1. The CTA row keeps its booked balance. That balance already holds the posted CTA, because the elimination entity's ledger is in the consolidation.
-2. `residual = liveCta − postedCta`.
+2. `residual = liveCta − postedCta`, where `postedCta` is what the CTA journals put on the CTA account.
 3. If `residual` is not 0 in any bucket, add a synthetic leaf "Unposted translation adjustment" (`id = UNPOSTED_CTA_ACCOUNT_ID`) beside the CTA row, with `translatedBalance = residual`.
-4. Remove the offset row before the translated rollup.
+4. Take the CTA journals' amounts off every other account they posted to (the offset account). Remove that row before the translated rollup if nothing is left on it. A manual entry on the offset account stays visible.
 
 The CTA row plus the synthetic row equals `liveCta`, so the statement still balances. A report on one company translated alone does not include the elimination entity, so its behavior does not change.
 
@@ -208,12 +210,11 @@ The posting uses a one-month bucket. A quarterly or yearly report column takes i
 | `required` | true |
 | `sortOrder` | after `unmatched-ic` |
 
-The check passes in two cases:
+The check passes when the movement rounds to 0.
 
-- The company is not the root of a group with an active company in another base currency.
-- The movement rounds to 0.
+If the company is not the root of a group with an active company in another base currency, the task does not apply. The checklist hides it and stores it as Done, as it does for `fx-revaluation`.
 
-The CTA preview lists each subsidiary whose `fx-revaluation` check fails for the period. It warns, and it does not block (NetSuite order: revaluation first).
+The CTA preview lists each foreign-currency subsidiary with no Posted revaluation run for the period. It warns, and it does not block (NetSuite order: revaluation first).
 
 **Rate types fix (prerequisite).** The posted CTA depends on each account's `consolidatedRate`. `ChartOfAccountForm` always submits `"Average"`, so an edited balance-sheet account silently moves to the average rate. The form changes:
 
@@ -254,7 +255,7 @@ The CTA preview lists each subsidiary whose `fx-revaluation` check fails for the
 | 14 | Multi-tenancy (heuristic 1) | New tables: `id('prefix')`, `companyId`, PK `("id", "companyId")`, audit columns. `account.currencyCode` is group-scoped like `account`. | House convention. |
 | 15 | Service shape (heuristic 2) | Operations in `accounting.server.ts` (`defineServiceFn`). Building blocks in `accounting.service.ts` take `db` or `trx`. Models in `accounting.models.ts`. | `.claude/rules/module-files.md`. The depreciation run's split. |
 | 16 | RLS (heuristic 3) | Run tables through the authz manifest, `company("accounting", { read: "accounting_view" })` | The revenue recognition run precedent (`packages/database/src/authz/manifest.ts:436`). |
-| 17 | Permissions (heuristic 4) | Create and recalculate: `accounting_create`. Post, Undo, rate and balance edits: `accounting_update`. Delete: `accounting_delete`. CTA post: `accounting_update` on the root. | Matches `createRunForPeriod` and the depreciation routes. |
+| 17 | Permissions (heuristic 4) | Create: `accounting_create`. Recalculate, Post, Undo, rate and balance edits: `accounting_update`. Delete: `accounting_delete`. CTA preview: `accounting_view`. CTA post: `accounting_update` on the root. | Matches `createRunForPeriod` and the depreciation routes. |
 | 18 | Forms (heuristic 5) | Rate edits and balance entries use `ValidatedForm` + zod validators, posted to route actions with an `intent` | `.claude/rules/conventions-forms.md`. |
 | 19 | Module layout (heuristic 6) | All code in `modules/accounting/`. Routes in `x+/accounting+/` and `x+/currency-revaluation-run+/`. No barrel. | `.claude/rules/module-files.md`. |
 | 20 | Backward compatibility (heuristic 7) | Additive: two enum values, one nullable column, five `accountDefault` columns (backfilled), three tables. `applyReportCta` changes output only when a CTA journal exists. | No FROZEN surface changes. |
@@ -410,19 +411,34 @@ Each new source type also goes into these places:
 | `postCurrencyRevaluationRun` | drift check, then posts both journals in one transaction |
 | `reverseCurrencyRevaluationRun` | Undo, back to Draft |
 | `deleteCurrencyRevaluationRun` | deletes a Draft |
-| `previewCurrencyTranslation` | per-company CTA contribution, `liveCta`, `postedCta`, movement, subsidiaries with a failing `fx-revaluation` check |
+| `previewCurrencyTranslation` | `liveCta`, `postedCta`, movement, the foreign-currency subsidiaries with no Posted revaluation run, and the asset and liability accounts at the Average rate |
 | `postCurrencyTranslation` | posts the movement journal on the root's elimination entity |
+
+`packages/database/src/currency-revaluation.ts` (pure, unit-tested in `currency-revaluation.test.ts`):
+
+| Function | Does |
+|---|---|
+| `exposureSide(exposure)` | the balance side of an exposure: +1 or −1 |
+| `revalueExposure(exposure, rate)` | `revaluedBaseAmount` and `differenceAmount` for one line. Both are null while `openAmount` is null. |
+| `buildCurrencyRevaluationJournals({ readableId, lines, gainAccountId, lossAccountId })` | the valuation journal and its reversal. Throws when either journal does not balance. |
 
 `accounting.service.ts` (building blocks):
 
 | Building block | Does |
 |---|---|
-| `buildCurrencyRevaluationLines(db, args)` | pure over the exposure reads and the rates, unit-tested |
-| `readRevaluationExposures(db, companyId, periodEnd)` | calls the AR/AP RPCs, the unapplied-cash read and the flagged accounts |
-| `insertCurrencyRevaluationJournals(trx, args)` | writes both journals |
-| `getCurrencyRevaluationPreview` | feeds the `fx-revaluation` close check |
-| `getPostedCta(db, eliminationCompanyId, accountId, periodEnd)` | the posted CTA balance |
-| `applyReportCta` | subtracts `postedCta`, hides the offset row |
+| `readRevaluationExposures(db, { companyId, periodEnd, defaults })` | calls the AR/AP RPCs, the unapplied-cash read and the flagged accounts. Returns `{ exposures, notRevalued }`. |
+| `createCurrencyRevaluationRun(db, { companyId, periodEnd, userId })` | creates the Draft, its rates and its lines |
+| `createCurrencyRevaluationRunAt(ctx, periodEnd)` | the future-period and one-run-per-period checks, then `createCurrencyRevaluationRun`. New Run and the period close both call it. |
+| `recalculateCurrencyRevaluationRun`, `updateCurrencyRevaluationRate`, `updateCurrencyRevaluationBalance`, `deleteCurrencyRevaluationRun` | the Draft edits |
+| `isCurrencyRevaluationRunCurrent(db, { runId, companyId })` | the drift check that Post and the close check share |
+| `postCurrencyRevaluationRun(db, args)` | the drift check under the run's lock, then both journals |
+| `reverseCurrencyRevaluationRun(db, args)` | Undo |
+| `previewCurrencyRevaluation(db, { companyId, periodEnd })` | feeds the `fx-revaluation` close check. Sets `applicable: false` when the task does not apply. |
+| `computeCurrencyTranslationPreview(args)` | `liveCta`, `postedCta` (the CTA already posted on the root's elimination entity), movement, `unrevaluedCompanies`, `averageRateAccounts` |
+| `previewCurrencyTranslationAt(ctx, periodId)` | `computeCurrencyTranslationPreview` for one of the caller company's periods |
+| `insertCurrencyTranslationJournal(db, args)` | re-reads the posted CTA under a lock, then writes the movement journal |
+| `postCurrencyTranslationAt(ctx, periodId)` | recomputes the preview, then calls `insertCurrencyTranslationJournal` |
+| `applyReportCta` | shows the unposted rest of the CTA on a synthetic row. Equity counts the posted CTA once, because the offset row does not show it. |
 
 ## Closest Sibling
 
@@ -459,7 +475,7 @@ The run pages copy the depreciation run archetype (a list page plus a detail pag
    - The rates grid has one row per currency: rate, source and an edit action on Draft.
    - The lines table has columns for exposure type, document link, currency, open amount, booked base, revalued base and difference. An `Account Balance` line has an editable open amount on Draft and shows who entered it.
    - The table totals gains and losses.
-3. **Period close page.** The `fx-revaluation` row gets a Create Run button. The `cta-posted` row on the root company gets a Preview CTA button. The button opens a modal with the per-company contributions, the warning list and a Post button.
+3. **Period close page.** The `fx-revaluation` row gets a Create Run button. The `cta-posted` row on the root company gets a Preview CTA button. The button opens a modal with the consolidated CTA, the CTA already posted, the amount to post, two warning lists and a Post CTA button.
 4. **Account form.** Add an "Account Currency" select for Asset and Liability posting accounts. Make `consolidatedRate` a visible select, defaulted by class on create.
 5. **Account defaults form.** Add the five new accounts. The four revaluation accounts go in their sections. The offset goes beside Currency Translation in Equity.
 6. **Consolidated balance sheet.** Hide the offset row. Show "Unposted translation adjustment" under the CTA row when the residual is not 0.
@@ -468,40 +484,40 @@ The run pages copy the depreciation run archetype (a list page plus a detail pag
 
 Phase 1:
 
-- [ ] A USD company has one open EUR invoice of €1,000 booked at 0.90 and a closing rate of 0.85. Its July run shows one Receivable line: booked $1,111.11, revalued $1,176.47, difference $65.36.
-- [ ] Post creates a valuation journal dated July 31: Dr AR Revaluation Adjustment $65.36, Cr Unrealized Exchange Gain $65.36. It also creates a reversal journal dated August 1. Both journals are Posted, with `sourceType` Currency Revaluation.
-- [ ] `get_ar_tie_out` for July 31 reports no difference after the post.
-- [ ] A payment of €1,000 on August 15 at 0.88 posts a realized gain of $25.25. August profit or loss for the item is −$40.11.
-- [ ] An open EUR supplier invoice produces a Payable line. A rate rise gives a loss on Unrealized Exchange Loss.
-- [ ] An unapplied EUR customer payment produces an Unapplied Receipt line. A EUR customer deposit on a sales order produces no line.
-- [ ] Editing the EUR rate on a Draft sets the source to Manual and recalculates every EUR line.
-- [ ] Posting a back-dated EUR invoice into July after the run posted makes the `fx-revaluation` check fail. Undo then Post makes it pass.
-- [ ] Undo reverses both journals. The run returns to Draft, and July and August net to 0.
-- [ ] The service refuses a second run for the same company and period end.
-- [ ] A company with no foreign-currency items passes `fx-revaluation` without a run.
-- [ ] The service refuses a run for a company before its accounting cutover, with `ACCOUNTING_NOT_STARTED`.
+- [x] A USD company has one open EUR invoice of €1,000 booked at 0.90 and a closing rate of 0.85. Its July run shows one Receivable line: booked $1,111.11, revalued $1,176.47, difference $65.36.
+- [x] Post creates a valuation journal dated July 31: Dr AR Revaluation Adjustment $65.36, Cr Unrealized Exchange Gain $65.36. It also creates a reversal journal dated August 1. Both journals are Posted, with `sourceType` Currency Revaluation.
+- [x] `get_ar_tie_out` for July 31 reports no difference after the post.
+- [x] A payment of €1,000 on August 15 at 0.88 posts a realized gain of $25.25. August profit or loss for the item is −$40.11.
+- [x] An open EUR supplier invoice produces a Payable line. A rate rise gives a loss on Unrealized Exchange Loss.
+- [x] An unapplied EUR customer payment produces an Unapplied Receipt line. A EUR customer deposit on a sales order produces no line.
+- [x] Editing the EUR rate on a Draft sets the source to Manual and recalculates every EUR line.
+- [x] Posting a back-dated EUR invoice into July after the run posted makes the `fx-revaluation` check fail. Undo, Recalculate, then Post makes it pass. Post refuses a stale Draft: "The run is out of date. Recalculate it, then post."
+- [x] Undo reverses both journals. The run returns to Draft, and July and August net to 0.
+- [x] The service refuses a second run for the same company and period end.
+- [x] For a company with no foreign-currency items and no run, the checklist hides `fx-revaluation` and stores it as Done.
+- [x] The service refuses a run for a company before its accounting cutover, with `ACCOUNTING_NOT_STARTED`.
 
 Phase 2:
 
-- [ ] A USD company has a Bank account with Account Currency EUR. The run shows it as an Account Balance line with its July 31 GL balance.
-- [ ] Post refuses while that line has no statement balance.
-- [ ] After the accountant enters €50,000, Post writes the difference directly to the bank account and the gain or loss account.
-- [ ] Recalculate keeps the entered balance.
+- [x] A USD company has a Bank account with Account Currency EUR. The run shows it as an Account Balance line with its July 31 GL balance.
+- [x] Post refuses while that line has no statement balance.
+- [x] After the accountant enters €50,000, Post writes the difference directly to the bank account and the gain or loss account.
+- [x] Recalculate keeps the entered balance.
 
 Phase 3:
 
 - [ ] A USD root has a EUR subsidiary, and the consolidated July balance sheet shows CTA $38,400. Post CTA writes Dr Offset / Cr CTA $38,400 on the root's elimination entity, dated July 31.
 - [ ] After that post, the consolidated balance sheet shows CTA $38,400, no offset row, no residual line, and it balances.
 - [ ] In August the live CTA is $41,000. The preview shows posted $38,400 and a movement of $2,600. Post writes only $2,600.
-- [ ] A user on a subsidiary cannot post the CTA. A user with `accounting_update` on the root can.
-- [ ] The `cta-posted` check passes on a company that is not a group root, and on a root whose group has one currency.
-- [ ] Creating a new Asset account defaults `consolidatedRate` to Current. Editing a Historical equity account keeps Historical.
+- [x] A user on a subsidiary cannot post the CTA. A user with `accounting_update` on the root can.
+- [x] The checklist hides `cta-posted` and stores it as Done on a company that is not a group root. It does the same on a root whose group has one currency.
+- [x] Creating a new Asset account defaults `consolidatedRate` to Current. Editing a Historical equity account keeps Historical.
 
 ## Risks
 
 | Risk | Severity | Mitigation |
 |---|---|---|
-| Revalued intercompany balances are not eliminated, so a residual IC revaluation adjustment can show in the consolidated balance sheet | Med | IAS 21.45 keeps the profit or loss effect. The balance-sheet residual is listed in the CTA preview. Elimination is in the intercompany-maturity spec. |
+| Revalued intercompany balances are not eliminated, so a residual IC revaluation adjustment can show in the consolidated balance sheet | Med | IAS 21.45 keeps the profit or loss effect. Known gap: nothing eliminates or lists the residual. The CTA preview lists only the subsidiaries with no Posted run (`unrevaluedCompanies`) and the asset and liability accounts at the Average rate (`averageRateAccounts`). Elimination is in the intercompany-maturity spec. |
 | The posted CTA inherits the report's known errors: life-to-date income at a trailing average rate, and one historical rate per currency | Med | Rule #11 keeps one definition. The July spec §4–§5 fixes the calculation, and the next posting corrects the balance. |
 | A wrong `consolidatedRate` on an edited account posts a wrong CTA | High | The Phase 3 form fix. Audit existing accounts in the migration: list (do not change) balance-sheet accounts set to Average. |
 | An entered bank balance is wrong | Med | The run shows who entered it and when. Undo and re-post correct it. |
@@ -523,6 +539,13 @@ Phase 3:
 
 ## Changelog
 
+- 2026-10-28: Self-review (strict) fixes.
+  - The posted CTA comes from the CTA account's lines in the elimination entity's Posted `Currency Translation` journals (`readPostedCta`, `readCtaJournalBalances`), not from the offset account's balance. Reports take only the CTA journals' amounts off the offset account.
+  - The CTA post refuses once the root's own period is Locked or Closed. The cutover check runs after the applicability check. A missing currency row refuses instead of falling back to 2 decimals.
+  - A revaluation run with no difference posts without journals. Lines insert 500 per statement. The staleness check runs inside the post's transaction after the row lock. An entered statement balance is keyed by account and currency.
+  - `currencyRevaluationLine.accountId` is in the chart import's `REFERENCE_POLICY`.
+  - The run list uses the list registry (cursor paging, infinite scroll, CSV export). Statement balances are edited in the money format of the line's currency.
+  - The bulk translation fill's glossary violations were corrected.
 - 2026-10-28: CodeRabbit review fixes.
   - The CTA preview and post read the group's balances with the service role. A root accountant who cannot read a subsidiary still posts the full CTA.
   - The CTA preview and post refuse unless the two CTA defaults are two different Equity accounts. The journal amounts are natural-signed, so an offset account of another class posts an unbalanced journal.

@@ -5963,7 +5963,7 @@ msgid "Console Operator Created"
 msgstr "Operador de console criado"
 
 msgid "Consolidated CTA"
-msgstr "CTA consolidada"
+msgstr "CTA consolidado"
 
 msgid "Consolidation Rate"
 msgstr "Taxa de consolidação"
@@ -9893,7 +9893,7 @@ msgid "Every check must pass before accounting can be enabled."
 msgstr "Cada verificação deve passar antes que a contabilidade possa ser ativada."
 
 msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
-msgstr "Toda empresa do grupo usa a moeda desta empresa, portanto não há ajuste de tradução."
+msgstr "Todas as empresas do grupo usam a moeda desta empresa, portanto não há ajuste de conversão."
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Todos os registros da empresa. Credenciais, tokens de integração e webhooks nunca são incluídos."
@@ -11347,7 +11347,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "Conta contra-ativo contábil que acumula depreciação contabilizada contra ativos fixos."
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
-msgstr "Conta de patrimônio líquido contábil (reserva CTA) que mantém diferenças FX não realizadas de retradução de saldos em moeda estrangeira no fechamento do período; separada de ganho/perda FX realizado na DRE."
+msgstr "Conta contábil de patrimônio líquido (reserva CTA) que mantém as diferenças cambiais não realizadas da reconversão de saldos em moeda estrangeira no fim do período; separada do ganho/perda cambial realizado na DRE."
 
 msgid "GL equity account where net income closes at fiscal year-end."
 msgstr "Conta de patrimônio líquido contábil onde a receita líquida é fechada no final do ano fiscal."
@@ -16419,7 +16419,7 @@ msgid "On Storage Unit"
 msgstr "Na Unidade de Armazenamento"
 
 msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
-msgstr "Na Empresa raiz do grupo, compara a Conversão de moeda consolidada para este período com a Conversão de moeda já Contabilizada na Empresa de eliminação. Visualize e contabilize a diferença para que o Patrimônio líquido carregue a Conversão de moeda no razão. Reavalie as Subsidiárias primeiro. Outras Empresas passam automaticamente."
+msgstr "Na empresa raiz do grupo, compara o ajuste de conversão de moeda (CTA) consolidado deste período com o CTA já contabilizado na empresa de eliminação. Visualize e contabilize a diferença para que o patrimônio líquido registre o CTA no razão. Reavalie primeiro as subsidiárias. As demais empresas passam automaticamente."
 
 msgid "On this operation"
 msgstr "Nesta operação"
@@ -16902,7 +16902,7 @@ msgid "Optional context for this rule"
 msgstr "Contexto opcional para esta regra"
 
 msgid "Optional fixed rate used when translating equity balances per IAS 21 (instead of the period rate)."
-msgstr "Taxa fixa opcional usada ao traduzir saldos de patrimônio líquido de acordo com IAS 21 (em vez da taxa do período)."
+msgstr "Taxa fixa opcional usada ao converter saldos de patrimônio líquido de acordo com o IAS 21 (em vez da taxa do período)."
 
 msgid "Optional pages & sections"
 msgstr "Páginas e seções opcionais"
@@ -17918,7 +17918,7 @@ msgid "Post Comment"
 msgstr "Postar Comentário"
 
 msgid "Post CTA"
-msgstr "Contabilizar Conversão de moeda"
+msgstr "Contabilizar CTA"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
@@ -17982,7 +17982,7 @@ msgid "Posting Date"
 msgstr "Data de contabilização"
 
 msgid "Posts the change in the consolidated CTA to equity on the elimination company."
-msgstr "Contabiliza a mudança na Conversão de moeda consolidada para Patrimônio líquido na Empresa de eliminação."
+msgstr "Contabiliza a variação do CTA consolidado no patrimônio líquido da empresa de eliminação."
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Contabiliza a fatura e a envia através de sua conta Stripe conectada com um link de pagamento. Uma fatura para um cliente sem cliente Stripe vinculado é contabilizada e marcada como não enviada."
@@ -18057,7 +18057,7 @@ msgid "Preview"
 msgstr "Visualizar"
 
 msgid "Preview CTA"
-msgstr "Visualizar Conversão de moeda"
+msgstr "Visualizar CTA"
 
 msgid "Preview failed: {error}"
 msgstr "Falha na visualização: {error}"
@@ -26316,7 +26316,7 @@ msgid "Units"
 msgstr "Unidades"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
-msgstr "Unidades de moeda base por uma unidade desta moeda; usado para traduzir valores ao contabilizar."
+msgstr "Unidades de moeda base por uma unidade desta moeda; usado para converter valores ao contabilizar."
 
 msgid "units of measure"
 msgstr "unidades de medida"

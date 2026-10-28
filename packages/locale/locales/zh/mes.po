@@ -2384,7 +2384,7 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "您已打卡 {hoursElapsed} 小时。您是否忘记收工？"
 
 msgid "Your {processName} qualification expired on {expiredDate}."
-msgstr "您的 {processName} 认证已于 {expiredDate} 过期。"
+msgstr "您的 {processName} 资格认证已过期，过期日期：{expiredDate}。"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "您的账户尚未属于任何公司。完成 Carbon ERP 入职流程以继续。"

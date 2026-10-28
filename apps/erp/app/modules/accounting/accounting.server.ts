@@ -687,31 +687,10 @@ export const postCurrencyRevaluationRun = defineServiceFn({
     if (futureError) return ctx.error("rule", futureError);
 
     try {
-      const current = await service.isCurrencyRevaluationRunCurrent(
-        ctx.asSystem.pg,
-        { runId, companyId }
-      );
-      if (!current) {
-        return ctx.error(
-          "conflict",
-          "The run is out of date. Recalculate it, then post."
-        );
-      }
-      const [defaults, lines, periods] = await Promise.all([
+      const [defaults, periods] = await Promise.all([
         service.readRevaluationDefaults(ctx.asSystem.pg, companyId),
-        fetchAllRecords(() =>
-          client
-            .from("currencyRevaluationLine")
-            .select("id")
-            .eq("runId", runId)
-            .eq("companyId", companyId)
-            .order("id")
-        ),
         service.resolveRevaluationPeriods(client, companyId, periodEnd)
       ]);
-      if (lines.error || !lines.data) {
-        return ctx.error("internal", "Failed to load the run", lines.error);
-      }
       if (!periods.data) {
         return ctx.error("rule", periods.error.message);
       }
@@ -719,7 +698,6 @@ export const postCurrencyRevaluationRun = defineServiceFn({
         runId,
         valuationPeriod: periods.data.valuationPeriod,
         reversalPeriod: periods.data.reversalPeriod,
-        expectedLineIds: lines.data.map((line) => line.id),
         gainAccountId: defaults.unrealizedExchangeGainAccount,
         lossAccountId: defaults.unrealizedExchangeLossAccount,
         companyId,

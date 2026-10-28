@@ -9893,7 +9893,7 @@ msgid "Every check must pass before accounting can be enabled."
 msgstr "Cada verificación debe cumplirse antes de que se pueda habilitar Contabilidad."
 
 msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
-msgstr "Todas las empresas del grupo utilizan la moneda de esta empresa, por lo que no hay ajuste de traducción."
+msgstr "Todas las empresas del grupo utilizan la moneda de esta empresa, por lo que no hay ajuste por conversión."
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Todos los registros de la empresa. Las credenciales, los tokens de integración y los webhooks nunca se incluyen."
@@ -11347,7 +11347,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "Cuenta de activo de contrapartida del Libro mayor que acumula depreciación contabilizada contra Activos fijos."
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
-msgstr "Cuenta de Patrimonio del Libro mayor (reserva CTA) que mantiene diferencias de cambio no realizadas por la retradución de saldos en moneda extranjera al final del período; separada de las ganancias/pérdidas de cambio realizadas en P&L."
+msgstr "Cuenta de patrimonio del libro mayor (reserva CTA) que recoge las diferencias de cambio no realizadas por la reconversión de saldos en moneda extranjera al cierre del período; separada de las ganancias/pérdidas de cambio realizadas en la cuenta de resultados."
 
 msgid "GL equity account where net income closes at fiscal year-end."
 msgstr "Cuenta de Patrimonio del Libro mayor donde se cierran los ingresos netos al fin del año fiscal."
@@ -16902,7 +16902,7 @@ msgid "Optional context for this rule"
 msgstr "Contexto opcional para esta regla"
 
 msgid "Optional fixed rate used when translating equity balances per IAS 21 (instead of the period rate)."
-msgstr "Tasa fija opcional utilizada al traducir saldos de patrimonio según IAS 21 (en lugar de la tasa del período)."
+msgstr "Tasa fija opcional utilizada al convertir saldos de patrimonio según la NIC 21 (en lugar de la tasa del período)."
 
 msgid "Optional pages & sections"
 msgstr "Páginas y secciones opcionales"
@@ -24924,7 +24924,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "Las unidades de medida en las que compras, almacenas y vendes"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
-msgstr "La carga de <0>{name}</0> se detuvo en {stopped}%. Suelte el mismo archivo de nuevo para continuar."
+msgstr "La subida de <0>{name}</0> se detuvo en el {stopped}%. Vuelva a soltar el mismo archivo para continuar."
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "El sistema de depreciación fiscal de EE.UU. con tablas de clase de propiedad del IRS, ejecutado como un programa fiscal separado junto al programa contable."
@@ -26316,7 +26316,7 @@ msgid "Units"
 msgstr "Unidades"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
-msgstr "Unidades de moneda base por una unidad de esta moneda; se utiliza para traducir importes al contabilizar."
+msgstr "Unidades de moneda base por una unidad de esta moneda; se utiliza para convertir importes al contabilizar."
 
 msgid "units of measure"
 msgstr "unidades de medida"

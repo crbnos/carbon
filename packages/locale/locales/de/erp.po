@@ -3944,7 +3944,7 @@ msgid "Assign machine run time that no loaded operation claimed to the right job
 msgstr "Weisen Sie die Maschinenbearbeitungszeit, die kein geladener Arbeitsgang beansprucht hat, dem richtigen Fertigungsauftrag zu oder lehnen Sie sie ab."
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
-msgstr "Weisen Sie Druckern Standorte zu. Versand, Wareneingang und Arbeitsplätze erben die Standort-Standardeinstellungen, sofern nicht manuell überschrieben."
+msgstr "Drucker den Standorten zuweisen. Versand, Wareneingang und Arbeitsplätze übernehmen die Standardeinstellung des Standorts, sofern sie nicht überschrieben wird."
 
 msgid "Assign To"
 msgstr "Zuweisen an"
@@ -5963,7 +5963,7 @@ msgid "Console Operator Created"
 msgstr "Konsolenbediener erstellt"
 
 msgid "Consolidated CTA"
-msgstr "Konsolidierte Währungsumrechnung"
+msgstr "Konsolidierte Währungsumrechnungsdifferenz"
 
 msgid "Consolidation Rate"
 msgstr "Konsolidierungskurs"
@@ -7054,7 +7054,7 @@ msgid "Currency Translation (default)"
 msgstr "Währungsumrechnung (Standard)"
 
 msgid "Currency Translation Adjustment"
-msgstr "Währungsumrechnungsanpassung"
+msgstr "Währungsumrechnungsdifferenz"
 
 msgid "Currency Translation Offset"
 msgstr "Währungsumrechnungsausgleich"
@@ -7141,10 +7141,10 @@ msgid "Customer Contact"
 msgstr "Kundenkontakt"
 
 msgid "Customer contact requirement disabled"
-msgstr "Erfordernis für Kundenkontakt deaktiviert"
+msgstr "Kundenkontaktanforderung deaktiviert"
 
 msgid "Customer contact requirement enabled"
-msgstr "Erfordernis für Kundenkontakt aktiviert"
+msgstr "Kundenkontaktanforderung aktiviert"
 
 msgid "Customer contacts"
 msgstr "Kundenkontakte"
@@ -9730,10 +9730,10 @@ msgid "Equity account for accumulated profits or losses"
 msgstr "Eigenkapitalkonto für angesammelte Gewinne oder Verluste"
 
 msgid "Equity account for currency translation adjustments (CTA)"
-msgstr "Eigenkapitalkonto für Währungsumrechnungsanpassungen (CTA)"
+msgstr "Eigenkapitalkonto für Währungsumrechnungsdifferenzen (CTA)"
 
 msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
-msgstr "Eigenkapitalkonto, das die gebuchte Währungsumrechnung im Eliminierungsunternehmen ausgleicht; konsolidierte Berichte blenden es aus"
+msgstr "Eigenkapitalkonto, das die gebuchte Währungsumrechnungsdifferenz (CTA) im Eliminierungsunternehmen ausgleicht; konsolidierte Berichte blenden es aus"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Eigenkapitalskonto, das die Eröffnungssalden ausgleicht, wenn die Buchhaltung eingerichtet ist. Es muss insgesamt null sein."
@@ -9893,7 +9893,7 @@ msgid "Every check must pass before accounting can be enabled."
 msgstr "Alle Prüfungen müssen erfolgreich sein, bevor die Buchhaltung aktiviert werden kann."
 
 msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
-msgstr "Jedes Unternehmen in der Gruppe nutzt die Währung dieses Unternehmens, daher ist keine Übersetzungsanpassung erforderlich."
+msgstr "Jedes Unternehmen in der Gruppe verwendet die Währung dieses Unternehmens, daher entsteht keine Währungsumrechnungsdifferenz."
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Alle unternehmensbezogenen Datensätze. Zugangsdaten, Integrations-Tokens und Webhooks sind nie enthalten."
@@ -11347,7 +11347,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "Gegenpositions-Sachkonto zur Bilanzaktiva, das die kumulierte Abschreibung gegen Anlagegüter sammelt."
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
-msgstr "Eigenkapital-Sachkonto (CTA-Rückstellung), das nicht realisierte Wechselkursdifferenzen aus der Neuumrechnung von Fremdwährungssalden am Periodenende hält; getrennt vom realisierten Wechselkursgewinn/-verlust in der Gewinn- und Verlustrechnung."
+msgstr "Eigenkapital-Sachkonto (CTA-Rücklage), das nicht realisierte Wechselkursdifferenzen aus der Neuumrechnung von Fremdwährungssalden am Periodenende enthält; getrennt vom realisierten Wechselkursgewinn/-verlust in der Gewinn- und Verlustrechnung."
 
 msgid "GL equity account where net income closes at fiscal year-end."
 msgstr "Eigenkapital-Sachkonto, auf dem der Nettogewinn am Ende des Geschäftsjahres abgeschlossen wird."
@@ -16419,7 +16419,7 @@ msgid "On Storage Unit"
 msgstr "Auf Lagereinheit"
 
 msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
-msgstr "Im Hauptunternehmen der Gruppe wird die konsolidierte Währungsumrechnung (CTA) für diese Periode mit der bereits auf dem Eliminierungsunternehmen gebuchten Währungsumrechnung (CTA) verglichen. Zeigen Sie die Differenz in der Vorschau an und buchen Sie sie, damit das Eigenkapital die Währungsumrechnung im Kontenplan trägt. Bewerten Sie zuerst die Tochterunternehmen neu. Andere Unternehmen werden automatisch verarbeitet."
+msgstr "Vergleicht im obersten Unternehmen der Gruppe die konsolidierte Währungsumrechnungsdifferenz (CTA) dieser Periode mit der bereits im Eliminierungsunternehmen gebuchten CTA. Zeigen Sie die Differenz in der Vorschau an und buchen Sie sie, damit das Eigenkapital die CTA im Hauptbuch ausweist. Bewerten Sie zuerst die Tochterunternehmen neu. Andere Unternehmen bestehen die Prüfung automatisch."
 
 msgid "On this operation"
 msgstr "Bei diesem Arbeitsgang"
@@ -18869,10 +18869,10 @@ msgstr "In Warteschlange"
 
 #. placeholder {0}: printIds.length
 msgid "Queued {0} labels for printing"
-msgstr "{0} Etiketten zum Drucken eingereiht"
+msgstr "{0} Etiketten in die Druckwarteschlange gestellt"
 
 msgid "Queued {count} sync operations for sync"
-msgstr "In Warteschlange: {count} Synchronisierungsvorgänge zur Synchronisierung"
+msgstr "{count} Synchronisierungsvorgänge in die Warteschlange gestellt"
 
 msgid "Queued finish"
 msgstr "Fertigstellung in Warteschlange"
@@ -20931,7 +20931,7 @@ msgid "Sampling Standard"
 msgstr "Stichprobenstandard"
 
 msgid "Sampling standard updated"
-msgstr "Normalprüfung aktualisiert"
+msgstr "Standard für Stichprobenprüfung aktualisiert"
 
 msgid "Saturday"
 msgstr "Samstag"
@@ -26316,7 +26316,7 @@ msgid "Units"
 msgstr "Einheiten"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
-msgstr "Einheiten der Basiswährung pro einer Einheit dieser Währung; wird verwendet, um Beträge bei der Buchung umzuwandeln."
+msgstr "Einheiten der Basiswährung pro Einheit dieser Währung; wird verwendet, um Beträge bei der Buchung umzurechnen."
 
 msgid "units of measure"
 msgstr "Maßeinheiten"

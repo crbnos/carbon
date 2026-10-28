@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { Button, DatePicker, useDisclosure, VStack } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
@@ -14,12 +13,12 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
-import { getCurrencyRevaluationRuns } from "~/modules/accounting/accounting.service";
 import { getNextPeriodEnd } from "~/modules/accounting/accounting.utils";
 import { CurrencyRevaluationRunTable } from "~/modules/accounting/ui/CurrencyRevaluation";
 import type { Handle } from "~/utils/handle";
+import { currencyRevaluationRunsList } from "~/utils/list-registry/accounting.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Currency Revaluation`,
@@ -27,46 +26,29 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  return loadListPage(request, currencyRevaluationRunsList, {
+    dataKey: "data",
+    firstPage: async ({ client, companyId }) => {
+      const lastRun = await client
+        .from("currencyRevaluationRun")
+        .select("periodEnd")
+        .eq("companyId", companyId)
+        .order("periodEnd", { ascending: false })
+        .limit(1);
+
+      const lastRunData =
+        lastRun.data && lastRun.data.length > 0 ? lastRun.data[0] : null;
+
+      return {
+        lastPeriodEnd: lastRunData?.periodEnd ?? null,
+        nextPeriodEnd: getNextPeriodEnd(lastRunData?.periodEnd ?? null)
+      };
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [runs, lastRun] = await Promise.all([
-    getCurrencyRevaluationRuns(client, companyId, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    client
-      .from("currencyRevaluationRun")
-      .select("periodEnd")
-      .eq("companyId", companyId)
-      .order("periodEnd", { ascending: false })
-      .limit(1)
-  ]);
-
-  const lastRunData =
-    lastRun.data && lastRun.data.length > 0 ? lastRun.data[0] : null;
-
-  return {
-    data: runs.data ?? [],
-    count: runs.count ?? 0,
-    lastPeriodEnd: lastRunData?.periodEnd ?? null,
-    nextPeriodEnd: getNextPeriodEnd(lastRunData?.periodEnd ?? null)
-  };
 }
 
 export default function CurrencyRevaluationRunsRoute() {
-  const { data, count, lastPeriodEnd, nextPeriodEnd } =
+  const { data, count, infinite, lastPeriodEnd, nextPeriodEnd } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -84,6 +66,7 @@ export default function CurrencyRevaluationRunsRoute() {
       <CurrencyRevaluationRunTable
         data={data}
         count={count}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "accounting") && (
             <Button

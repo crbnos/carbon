@@ -3845,7 +3845,7 @@ msgid "Asks revenue recognition what a new run for this period would recognize n
 msgstr "Спросите признание выручки, что новое выполнение за этот период было бы признано теперь — отложенная выручка по счету и выручка по контракту — и проверьте черновики выполнения, содержащие выручку, подлежащую оплате к концу периода. Создайте выполнение и проведите его, чтобы выручка попала в главную книгу. Пропустите с причиной, если ничего не должно быть признано."
 
 msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "Запрашивает у запуска переоценки валютных позиций, что остается открытым в иностранной валюте на конец этого периода — открытые счета-фактуры и меморандумы, неприменные поступления от клиентов и платежи поставщикам, а также остатки счетов, которые ведутся в иностранной валюте, например банковских и кредитных счетов — и проверяет наличие черновика запуска, заканчивающегося в периоде. Создайте запуск и проведите его, чтобы баланс отражал эти позиции по курсу на конец периода с разницей в нереализованном обменном прибыле или убытке. Пропустите с причиной, если в иностранной валюте ничего не остается открытым."
+msgstr "Запрашивает у запуска переоценки валюты, что остается открытым в иностранной валюте на конец этого периода — каждый открытый счет-фактура и мемо, неразнесенные поступления от покупателей и платежи поставщикам, а также остатки счетов, которые ведутся в иностранной валюте, например банковских и кредитных счетов, — и проверяет наличие черновика запуска, заканчивающегося в этом периоде. Создайте запуск и проведите его, чтобы бухгалтерский баланс отражал эти позиции по курсу закрытия, а разница относилась на нереализованную курсовую прибыль или убыток. Пропустите с указанием причины, если в иностранной валюте ничего не открыто."
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Проверяет, что новая операция аренды для этого периода проводила бы сейчас — процент по аренде и амортизацию актива права пользования, плату по аренде для отсрочки или начисления, и процент по аренде типа продажи — и проверяет черновики операций аренды с записями, которые должны быть обработаны к концу периода. Создайте операцию и проведите ее, чтобы записи попали в главную книгу. Пропустите с указанием причины, если ничего не нужно проводить."
@@ -3881,7 +3881,7 @@ msgid "Asset account for advance payments made to suppliers before goods or serv
 msgstr "Счет активов для авансовых платежей поставщикам до получения товаров или услуг"
 
 msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
-msgstr "Счет активов, который отражает переоценку открытой дебиторской задолженности в иностранной валюте на конец периода, поэтому счет дебиторской задолженности остается связан со своими открытыми счетами-фактурами"
+msgstr "Счет активов, отражающий переоценку открытой дебиторской задолженности в иностранной валюте на конец периода, чтобы каждый открытый счет-фактура по-прежнему сходился со счетом дебиторской задолженности"
 
 msgid "Asset Acquisition Cost"
 msgstr "Стоимость приобретения основного средства"
@@ -9893,7 +9893,7 @@ msgid "Every check must pass before accounting can be enabled."
 msgstr "Каждая проверка должна пройти перед включением бухгалтерии."
 
 msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
-msgstr "Все организации в группе используют валюту этой организации, поэтому корректировка обменного курса не требуется."
+msgstr "Все организации в группе используют валюту этой организации, поэтому корректировка пересчета валют не требуется."
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Все записи компании. Учётные данные, токены интеграций и вебхуки никогда не включаются."
@@ -19556,7 +19556,7 @@ msgid "Release Control"
 msgstr "Управление запуском в работу"
 
 msgid "Release control setting updated"
-msgstr "Настройка контроля запуска обновлена"
+msgstr "Настройка управления запуском в работу обновлена"
 
 msgid "Release date"
 msgstr "Дата освобождения"
@@ -25017,7 +25017,7 @@ msgid "These accounts need a replacement"
 msgstr "Эти счета требуют замены"
 
 msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
-msgstr "Эти счета активов и обязательств пересчитываются по курсу «Среднее», что изменяет курсовую разницу от пересчёта (CTA). Балансовые счета обычно пересчитываются по курсу «Текущее»:"
+msgstr "Эти счета активов и обязательств пересчитываются по курсу «Среднее», что изменяет курсовую разницу от пересчёта (CTA). Счета бухгалтерского баланса обычно пересчитываются по курсу «Текущее»:"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Эти пользовательские поля будут доступны только для объектов с одинаковыми тегами"

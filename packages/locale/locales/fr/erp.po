@@ -3845,7 +3845,7 @@ msgid "Asks revenue recognition what a new run for this period would recognize n
 msgstr "Demande à la reconnaissance des revenus ce qu'une nouvelle exécution pour cette période reconnaîtrait maintenant — revenus de facture différés et revenus de contrat — et vérifie les exécutions en Brouillon détenant les revenus dus à la fin de la période. Créez l'exécution et comptabilisez-la afin que les revenus atteignent le grand livre. Ignorez avec une raison si rien ne devrait être reconnu."
 
 msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "Demande au calcul de réévaluation de devise ce qui est toujours ouvert en devise étrangère à la fin de cette période — factures et mémos ouverts, reçus clients et paiements fournisseurs non appliqués, et soldes des comptes tenus en devise étrangère, comme les comptes bancaires et d'emprunt — et vérifie une exécution Brouillon se terminant dans la période. Créez l'exécution et comptabilisez-la pour que le bilan porte ces articles au taux de clôture, avec la différence en gain ou perte de change non réalisé. Ignorez avec une raison si rien n'est ouvert en devise étrangère."
+msgstr "Demande à l'exécution de réévaluation de devise ce qui reste ouvert en devise étrangère à la fin de cette période — factures et mémos ouverts, encaissements clients et paiements fournisseurs non lettrés, et soldes des comptes tenus en devise étrangère, comme les comptes bancaires et d'emprunt — et vérifie s'il existe une exécution Brouillon se terminant dans la période. Créez l'exécution et comptabilisez-la pour que le bilan présente ces éléments au taux de clôture, la différence étant constatée en gain ou perte de change latent. Ignorez avec un motif si rien n'est ouvert en devise étrangère."
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Demande au cycle de contrat de location ce qu'un nouveau cycle pour cette période comptabiliserait maintenant – les intérêts de contrat de location et l'amortissement du droit d'utilisation, la rente locative à reporter ou comptabiliser, et les intérêts de contrat de location-vente – et vérifie les cycles de contrat de location en Brouillon contenant des écritures dues à la fin de la période. Créez le cycle et comptabilisez-le pour que les écritures atteignent le grand livre. Ignorez avec une raison si rien ne doit être comptabilisé."
@@ -16902,7 +16902,7 @@ msgid "Optional context for this rule"
 msgstr "Contexte optionnel pour cette règle"
 
 msgid "Optional fixed rate used when translating equity balances per IAS 21 (instead of the period rate)."
-msgstr "Taux fixe optionnel utilisé lors de la traduction des soldes des capitaux propres selon IAS 21 (au lieu du taux de période)."
+msgstr "Taux fixe facultatif utilisé lors de la conversion des soldes de capitaux propres selon IAS 21 (au lieu du taux de la période)."
 
 msgid "Optional pages & sections"
 msgstr "Pages et sections optionnelles"
@@ -18869,7 +18869,7 @@ msgstr "En file d'attente"
 
 #. placeholder {0}: printIds.length
 msgid "Queued {0} labels for printing"
-msgstr "{0} étiquettes mises en file d'impression"
+msgstr "{0} étiquettes mises en file d'attente d'impression"
 
 msgid "Queued {count} sync operations for sync"
 msgstr "En file d'attente {count} opérations de synchronisation pour la synchronisation"
@@ -24924,7 +24924,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "Les unités de mesure dans lesquelles vous achetez, stockez et vendez"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
-msgstr "Le téléchargement de <0>{name}</0> s'est arrêté à {stopped} %. Déposer le même fichier à nouveau pour continuer."
+msgstr "Le téléversement de <0>{name}</0> s'est arrêté à {stopped} %. Déposez à nouveau le même fichier pour reprendre."
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "Le système d'amortissement fiscal américain avec des tables de classe de propriété IRS, exécuté comme un planning fiscal distinct aux côtés du planning comptable."
@@ -25065,7 +25065,7 @@ msgid "They are not in your chart, but documents or journals use them. Pick the 
 msgstr "Ils ne figurent pas dans votre plan comptable, mais des documents ou des écritures les utilisent. Sélectionnez le compte dans votre plan comptable qui remplace chacun d'eux."
 
 msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
-msgstr "Ils n'ont pas d'opération d'ajustement pour variation de change comptabilisée pour cette période, donc leurs soldes ne sont pas au taux de clôture :"
+msgstr "Elles n'ont pas d'exécution de réévaluation de devise comptabilisée pour cette période ; leurs soldes ne sont donc pas au taux de clôture :"
 
 msgid "this ability"
 msgstr "cette compétence"
@@ -25424,7 +25424,7 @@ msgstr "Cette semaine"
 
 #. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft currency revaluation run for the period ending {0}. Every open foreign-currency item will be revalued at the exchange rate on that date."
-msgstr "Ceci créera un brouillon d'opération d'ajustement pour variation de change pour la période se terminant le {0}. Chaque article en devise étrangère ouvert sera réévalué au taux de change de cette date."
+msgstr "Ceci créera une exécution de réévaluation de devise en brouillon pour la période se terminant le {0}. Chaque élément ouvert en devise étrangère sera réévalué au taux de change de cette date."
 
 #. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
@@ -26316,7 +26316,7 @@ msgid "Units"
 msgstr "Unités"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
-msgstr "Unités de devise de base par une unité de cette devise ; utilisé pour traduire les montants lors de la comptabilisation."
+msgstr "Unités de devise de base pour une unité de cette devise ; utilisé pour convertir les montants lors de la comptabilisation."
 
 msgid "units of measure"
 msgstr "unités de mesure"

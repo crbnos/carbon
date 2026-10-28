@@ -16419,7 +16419,7 @@ msgid "On Storage Unit"
 msgstr "보관 단위에"
 
 msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
-msgstr "그룹의 루트 회사에서 이 기간의 통합된 통화 환산(CTA)을 제거 회사에 이미 전기된 CTA와 비교합니다. 차이를 미리보고 전기하여 자본이 원장에서 CTA를 전달하도록 합니다. 먼저 자회사를 재평가하세요. 다른 회사는 자동으로 통과합니다."
+msgstr "그룹의 루트 회사에서 이 기간의 통합 통화 환산 조정(CTA)을 제거 회사에 이미 전기된 CTA와 비교합니다. 차이를 미리 보고 전기하여 자본이 원장에 CTA를 반영하도록 합니다. 먼저 자회사를 재평가하세요. 다른 회사는 자동으로 통과합니다."
 
 msgid "On this operation"
 msgstr "이 작업 시"
@@ -23456,7 +23456,7 @@ msgstr "동기화됨"
 #. placeholder {3}: data.slidesSynced
 #. placeholder {4}: data.toolsLinked
 msgid "Synced {synced} steps to the BOP ({0} new, {1} updated, {2} removed, {3} slides, {4} tool links)"
-msgstr "공정 {synced}개를 BOP로 동기화했습니다 ({0}개 신규, {1}개 업데이트됨, {2}개 제거됨, {3}개 슬라이드, {4}개 공구 링크)"
+msgstr "단계 {synced}개를 BOP로 동기화했습니다 ({0}개 신규, {1}개 업데이트됨, {2}개 제거됨, {3}개 슬라이드, {4}개 공구 링크)"
 
 msgid "System"
 msgstr "시스템"

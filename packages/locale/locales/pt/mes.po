@@ -2384,7 +2384,7 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "Você está apontando há {hoursElapsed} horas. Você esqueceu de apontar fim?"
 
 msgid "Your {processName} qualification expired on {expiredDate}."
-msgstr "Sua qualificação {processName} venceu em {expiredDate}."
+msgstr "Sua qualificação {processName} está vencida desde {expiredDate}."
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Sua conta ainda não faz parte de uma empresa. Conclua o onboarding no Carbon ERP para continuar."

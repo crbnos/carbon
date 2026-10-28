@@ -22,7 +22,9 @@ export type RevaluationFixtureAccount =
   | "gain"
   | "loss"
   | "eurBank"
-  | "siblingEurBank";
+  | "siblingEurBank"
+  | "cta"
+  | "ctaOffset";
 
 export async function currencyRevaluationFixture(): Promise<{
   db: Kysely<KyselyDatabase>;
@@ -48,7 +50,10 @@ export async function currencyRevaluationFixture(): Promise<{
 
   const accountSpecs: Record<
     RevaluationFixtureAccount,
-    { class: "Asset" | "Liability" | "Revenue" | "Expense"; currency?: string }
+    {
+      class: "Asset" | "Liability" | "Equity" | "Revenue" | "Expense";
+      currency?: string;
+    }
   > = {
     misc: { class: "Asset" },
     ar: { class: "Asset" },
@@ -59,7 +64,9 @@ export async function currencyRevaluationFixture(): Promise<{
     loss: { class: "Expense" },
     eurBank: { class: "Asset", currency: "EUR" },
     // Flagged EUR in the shared chart, but this company never posts to it.
-    siblingEurBank: { class: "Asset", currency: "EUR" }
+    siblingEurBank: { class: "Asset", currency: "EUR" },
+    cta: { class: "Equity" },
+    ctaOffset: { class: "Equity" }
   };
   const accounts = Object.fromEntries(
     Object.keys(accountSpecs).map((key) => [key, `${prefix}-acct-${key}`])
@@ -107,9 +114,9 @@ export async function currencyRevaluationFixture(): Promise<{
           name: `${prefix} ${key}`,
           class: spec.class,
           incomeBalance:
-            spec.class === "Asset" || spec.class === "Liability"
-              ? ("Balance Sheet" as const)
-              : ("Income Statement" as const),
+            spec.class === "Revenue" || spec.class === "Expense"
+              ? ("Income Statement" as const)
+              : ("Balance Sheet" as const),
           currencyCode: spec.currency ?? null,
           companyGroupId: groupId,
           createdBy: USER
@@ -131,6 +138,19 @@ export async function currencyRevaluationFixture(): Promise<{
         unrealizedExchangeGainAccount: accounts.gain,
         unrealizedExchangeLossAccount: accounts.loss
       } as unknown as Insertable<KyselyDatabase["accountDefault"]>)
+      .execute();
+    // The run and CTA journals take their numbers from it.
+    await trx
+      .insertInto("sequence")
+      .values({
+        table: "journalEntry",
+        name: "Journal Entry",
+        prefix: "JE",
+        next: 0,
+        size: 6,
+        step: 1,
+        companyId
+      })
       .execute();
     await trx
       .insertInto("accountingPeriod")

@@ -3845,7 +3845,7 @@ msgid "Asks revenue recognition what a new run for this period would recognize n
 msgstr "राजस्व स्वीकृति से पूछता है कि इस अवधि के लिए एक नया रन अब क्या स्वीकार करेगा - स्थगित चालान राजस्व और अनुबंध राजस्व - और अवधि के अंत तक राजस्व के लिए ड्राफ्ट रन को धारण करने के लिए जांचता है। रन बनाएँ और पोस्ट करें ताकि राजस्व सामान्य खाता बही तक पहुंचे। यदि कुछ भी स्वीकार नहीं किया जाना चाहिए तो कारण के साथ छोड़ दें।"
 
 msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
-msgstr "मुद्रा पुनर्मूल्यांकन रन से पूछता है कि इस अवधि के अंत में एक विदेशी मुद्रा में क्या अभी भी खुला है — खुले चालान और मेमो, लागू नहीं किए गए ग्राहक प्राप्तियाँ और आपूर्तिकर्ता भुगतान, और विदेशी मुद्रा में रखे गए खातों की शेष राशि, जैसे बैंक और ऋण खाते — और अवधि में समाप्त होने वाले ड्राफ्ट रन की जांच करता है। रन बनाएँ और पोस्ट करें ताकि बैलेंस शीट उन आइटम को समापन दर पर ले जाए, अप्राप्त विनिमय लाभ या हानि के अंतर के साथ। यदि विदेशी मुद्रा में कुछ भी खुला नहीं है तो कारण के साथ छोड़ें।"
+msgstr "मुद्रा पुनर्मूल्यांकन रन से पूछता है कि इस अवधि के अंत में विदेशी मुद्रा में क्या अभी भी खुला है — खुले चालान और मेमो, लागू न की गई ग्राहक प्राप्तियाँ और आपूर्तिकर्ता भुगतान, और विदेशी मुद्रा में रखे गए खातों की शेष राशि, जैसे बैंक और ऋण खाते — और जाँचता है कि अवधि में समाप्त होने वाला कोई ड्राफ्ट रन है या नहीं। रन बनाएँ और पोस्ट करें ताकि तुलन पत्र इन मदों को समापन दर पर दर्शाए, और अंतर साकार न हुए विनिमय लाभ या हानि में जाए। यदि विदेशी मुद्रा में कुछ भी खुला नहीं है, तो कारण बताकर छोड़ें।"
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "पट्टा रन से पूछता है कि इस अवधि के लिए एक नया रन अब क्या पोस्ट करेगा — पट्टा ब्याज और उपयोग अधिकार परिशोधन, किराये का किराया स्थगित या अर्जित करने के लिए, और बिक्रय-प्रकार पट्टा ब्याज — और अवधि के अंत तक भुगतान के लिए प्रविष्टियों को पकड़े हुए ड्राफ्ट पट्टा रन के लिए जाँच करता है। रन बनाएँ और इसे पोस्ट करें ताकि प्रविष्टियाँ खाता तक पहुँचें। यदि कुछ भी पोस्ट न किया जाना चाहिए तो एक कारण के साथ छोड़ दें।"
@@ -3881,7 +3881,7 @@ msgid "Asset account for advance payments made to suppliers before goods or serv
 msgstr "आपूर्तिकर्ताओं को माल या सेवाएं प्राप्त करने से पहले किए गए अग्रिम भुगतान के लिए संपत्ति खाता"
 
 msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
-msgstr "खाता जो खुली विदेशी-मुद्रा प्राप्य का अवधि-अंत पुनर्मूल्यांकन ले जाता है, ताकि प्राप्य खाता अभी भी अपने खुले चालान से जुड़ा रहे"
+msgstr "परिसंपत्ति खाता जो खुली विदेशी-मुद्रा प्राप्य राशि का अवधि-अंत पुनर्मूल्यांकन दर्शाता है, ताकि प्राप्य राशि खाता अपने खुले चालानों से मेल खाता रहे"
 
 msgid "Asset Acquisition Cost"
 msgstr "परिसंपत्ति अधिग्रहण लागत"
@@ -9893,7 +9893,7 @@ msgid "Every check must pass before accounting can be enabled."
 msgstr "लेखांकन सक्षम होने से पहले हर जांच पास होनी चाहिए।"
 
 msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
-msgstr "समूह की प्रत्येक कंपनी इस कंपनी की मुद्रा का उपयोग करती है, इसलिए कोई अनुवाद समायोजन नहीं है।"
+msgstr "समूह की प्रत्येक कंपनी इस कंपनी की मुद्रा का उपयोग करती है, इसलिए कोई मुद्रा रूपांतरण समायोजन नहीं है।"
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "हर कंपनी-स्कोप्ड रिकॉर्ड। साख, एकीकरण टोकन और वेबहुक कभी शामिल नहीं होते हैं।"
@@ -11347,7 +11347,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "लेजर विरोधी-संपत्ति खाता जो अचल संपत्तियों के विरुद्ध बुक किए गए मूल्यह्रास को जमा करता है।"
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
-msgstr "सामान्य खाता बही इक्विटी खाता (CTA रिजर्व) जो विदेशी मुद्रा शेषों को अवधि-अंत में पुनः-अनुवाद करने से अप्राप्त FX अंतर रखता है; P&L में साकार FX लाभ/हानि से अलग।"
+msgstr "सामान्य खाता बही इक्विटी खाता (CTA रिज़र्व) जो अवधि-अंत में विदेशी मुद्रा शेषों के पुनः-रूपांतरण से उत्पन्न साकार न हुए FX अंतर रखता है; P&L में साकार FX लाभ/हानि से अलग।"
 
 msgid "GL equity account where net income closes at fiscal year-end."
 msgstr "सामान्य खाता बही इक्विटी खाता जहां शुद्ध आय वित्तीय वर्ष-अंत में बंद होती है।"
@@ -25017,7 +25017,7 @@ msgid "These accounts need a replacement"
 msgstr "इन खातों को एक प्रतिस्थापन की आवश्यकता है"
 
 msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
-msgstr "ये परिसंपत्ति और देयता खाते औसत दर पर रूपांतरित होते हैं, जिससे मुद्रा रूपांतरण समायोजन (CTA) बदलता है। बैलेंस शीट खाते आमतौर पर वर्तमान दर पर रूपांतरित होते हैं:"
+msgstr "ये परिसंपत्ति और देयता खाते औसत दर पर रूपांतरित होते हैं, जिससे मुद्रा रूपांतरण समायोजन (CTA) बदलता है। तुलन पत्र खाते आमतौर पर वर्तमान दर पर रूपांतरित होते हैं:"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "ये कस्टम फ़ील्ड केवल समान टैग वाली संस्थाओं के लिए उपलब्ध होंगी"
@@ -26316,7 +26316,7 @@ msgid "Units"
 msgstr "इकाइयाँ"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
-msgstr "मूल मुद्रा की इकाइयाँ प्रति इस मुद्रा की एक इकाई; पोस्टिंग पर राशि का अनुवाद करने के लिए उपयोग किया जाता है।"
+msgstr "इस मुद्रा की एक इकाई के बदले मूल मुद्रा की इकाइयाँ; पोस्टिंग पर राशियों के रूपांतरण के लिए उपयोग की जाती हैं।"
 
 msgid "units of measure"
 msgstr "माप की इकाइयाँ"

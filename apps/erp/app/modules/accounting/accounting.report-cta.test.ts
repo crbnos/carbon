@@ -91,6 +91,7 @@ function base(overrides: Partial<Parameters<typeof applyReportCta>[0]> = {}) {
     ctaByBucket: { "2026-07": 40, "2026-08": 20 },
     companyGroupId: "group",
     ctaAccountId: "custom-cta",
+    ctaJournalBalances: {},
     ...overrides
   };
 }
@@ -222,10 +223,21 @@ function postedChart(posted: [number, number]): ChartPeriodSeries[] {
   ];
 }
 
+// What the CTA journals posted per bucket: Cr the CTA account, Dr the offset.
+function ctaJournals(posted: [number, number]) {
+  return {
+    "2026-07": { "custom-cta": posted[0], "cta-offset": -posted[0] },
+    "2026-08": { "custom-cta": posted[1], "cta-offset": -posted[1] }
+  };
+}
+
 describe("applyReportCta with a posted CTA", () => {
   it("shows the posted CTA once and hides the offset when it is fully posted", () => {
     const { data, error } = applyReportCta(
-      base({ accounts: postedChart([40, 20]), offsetAccountId: "cta-offset" })
+      base({
+        accounts: postedChart([40, 20]),
+        ctaJournalBalances: ctaJournals([40, 20])
+      })
     );
     expect(error).toBeNull();
     expect(translated(data, "custom-cta")).toEqual([40, 20]);
@@ -238,7 +250,10 @@ describe("applyReportCta with a posted CTA", () => {
   it("shows the unposted rest on its own line", () => {
     // Report CTA 40 / 20 against 30 posted in both buckets: 10 / −10 unposted.
     const { data } = applyReportCta(
-      base({ accounts: postedChart([30, 30]), offsetAccountId: "cta-offset" })
+      base({
+        accounts: postedChart([30, 30]),
+        ctaJournalBalances: ctaJournals([30, 30])
+      })
     );
     expect(translated(data, "custom-cta")).toEqual([30, 30]);
     expect(translated(data, UNPOSTED_CTA_ACCOUNT_ID)).toEqual([10, -10]);
@@ -246,24 +261,67 @@ describe("applyReportCta with a posted CTA", () => {
     expect(translated(data, "balance-sheet")).toEqual([0, 0]);
   });
 
-  it("behaves as before when the offset account has no balance", () => {
+  it("shows only the unposted rest in a bucket before the first posting", () => {
+    // Nothing posted by July's end; 20 posted in August.
+    const accounts = [
+      ...chart().map((row) =>
+        row.id === "custom-cta"
+          ? account("custom-cta", "reserves", "Equity", [0, 20])
+          : row
+      ),
+      account("cta-offset", "reserves", "Equity", [0, -20])
+    ];
+    const { data } = applyReportCta(
+      base({
+        accounts,
+        ctaJournalBalances: {
+          "2026-07": {},
+          "2026-08": { "custom-cta": 20, "cta-offset": -20 }
+        }
+      })
+    );
+    expect(translated(data, "custom-cta")).toEqual([0, 20]);
+    expect(translated(data, UNPOSTED_CTA_ACCOUNT_ID)).toEqual([40, 0]);
+    expect(data?.some((row) => row.id === "cta-offset")).toBe(false);
+    expect(translated(data, "balance-sheet")).toEqual([0, 0]);
+  });
+
+  it("keeps a manual entry on the offset account visible", () => {
+    // 5 posted to the offset account by a manual journal, beside the CTA.
+    const accounts = postedChart([40, 20]).map((row) =>
+      row.id === "cta-offset"
+        ? account("cta-offset", "reserves", "Equity", [-40 + 5, -20 + 5])
+        : row.id === "cash"
+          ? account("cash", "assets", "Asset", [165, 85])
+          : row
+    );
+    const { data } = applyReportCta(
+      base({ accounts, ctaJournalBalances: ctaJournals([40, 20]) })
+    );
+    expect(translated(data, "cta-offset")).toEqual([5, 5]);
+    expect(translated(data, "custom-cta")).toEqual([40, 20]);
+  });
+
+  it("behaves as before, keeping the offset row, when nothing is posted", () => {
     const withOffset = applyReportCta(
       base({
         accounts: [
           ...chart(),
           account("cta-offset", "reserves", "Equity", [0, 0])
-        ],
-        offsetAccountId: "cta-offset"
+        ]
       })
     );
     expect(translated(withOffset.data, "custom-cta")).toEqual([40, 20]);
+    expect(withOffset.data?.some((row) => row.id === "cta-offset")).toBe(true);
     expect(translated(withOffset.data, "balance-sheet")).toEqual([0, 0]);
   });
 
   it("never changes its input", () => {
     const accounts = postedChart([30, 30]);
     const before = structuredClone(accounts);
-    applyReportCta(base({ accounts, offsetAccountId: "cta-offset" }));
+    applyReportCta(
+      base({ accounts, ctaJournalBalances: ctaJournals([30, 30]) })
+    );
     expect(accounts).toEqual(before);
   });
 });

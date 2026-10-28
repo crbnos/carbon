@@ -2501,7 +2501,7 @@ msgstr "Aggiunte {0} righe"
 
 #. placeholder {0}: data.materialsCreated
 msgid "added {0} step materials"
-msgstr "aggiunti {0} materiali della fase"
+msgstr "aggiunti {0} materiali del passo"
 
 msgid "Added {name} · {quantity} × {rate}"
 msgstr "Aggiunto {name} · {quantity} × {rate}"
@@ -3074,7 +3074,7 @@ msgid "AP Overdue"
 msgstr "Debiti verso fornitori in ritardo"
 
 msgid "AP Revaluation Adjustment"
-msgstr "Rettifica rivalutazione AP"
+msgstr "Rettifica rivalutazione debiti verso fornitori"
 
 msgid "API Docs"
 msgstr "Documentazione API"
@@ -3268,7 +3268,7 @@ msgid "AR Overdue"
 msgstr "Crediti verso clienti in ritardo"
 
 msgid "AR Revaluation Adjustment"
-msgstr "Rettifica rivalutazione AR"
+msgstr "Rettifica rivalutazione crediti verso clienti"
 
 msgid "AR/AP"
 msgstr "Crediti verso clienti/Debiti verso fornitori"
@@ -7054,7 +7054,7 @@ msgid "Currency Translation (default)"
 msgstr "Conversione valuta (predefinita)"
 
 msgid "Currency Translation Adjustment"
-msgstr "Adeguamento di conversione valuta"
+msgstr "Rettifica di conversione valuta"
 
 msgid "Currency Translation Offset"
 msgstr "Offset di conversione valuta"
@@ -9733,7 +9733,7 @@ msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Conto di Patrimonio netto per rettifiche di Conversione valuta (CTA)"
 
 msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
-msgstr "Conto del patrimonio netto che bilancia il CTA registrato nella società di eliminazione; i report consolidati lo nascondono"
+msgstr "Conto di patrimonio netto che bilancia la CTA registrata nell'azienda di eliminazione; i report consolidati lo nascondono"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Account di patrimonio netto che compensa i saldi di apertura quando la contabilità è configurata. Deve totalizzare zero."
@@ -9893,7 +9893,7 @@ msgid "Every check must pass before accounting can be enabled."
 msgstr "Ogni controllo deve passare prima che la contabilità possa essere abilitata."
 
 msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
-msgstr "Ogni azienda del gruppo utilizza la valuta di questa azienda, quindi non c'è nessun aggiustamento di traduzione."
+msgstr "Ogni azienda del gruppo utilizza la valuta di questa azienda, quindi non c'è alcuna rettifica di conversione."
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Tutti i record dell'azienda. Credenziali, token di integrazione e webhook non sono mai inclusi."
@@ -16419,7 +16419,7 @@ msgid "On Storage Unit"
 msgstr "Su Unità di Stoccaggio"
 
 msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
-msgstr "Nella società madre del gruppo, confronta l'adeguamento della conversione valuta consolidata (CTA) per questo periodo con la CTA già registrata nella società di eliminazione. Anteprima e registra la differenza affinché il patrimonio netto porti la CTA nel registro. Rivaluta prima le filiali. Le altre società passano automaticamente."
+msgstr "Nell'azienda capogruppo, confronta la rettifica di conversione valuta (CTA) consolidata di questo periodo con la CTA già registrata nell'azienda di eliminazione. Visualizza l'anteprima e registra la differenza affinché il patrimonio netto riporti la CTA in contabilità generale. Rivaluta prima le controllate. Le altre aziende superano il controllo automaticamente."
 
 msgid "On this operation"
 msgstr "Su questa operazione"
@@ -16902,7 +16902,7 @@ msgid "Optional context for this rule"
 msgstr "Contesto facoltativo per questa regola"
 
 msgid "Optional fixed rate used when translating equity balances per IAS 21 (instead of the period rate)."
-msgstr "Tasso fisso opzionale utilizzato quando si traducono i saldi del patrimonio netto secondo IAS 21 (al posto del tasso del periodo)."
+msgstr "Tasso fisso opzionale utilizzato per convertire i saldi del patrimonio netto secondo lo IAS 21 (al posto del tasso del periodo)."
 
 msgid "Optional pages & sections"
 msgstr "Pagine e sezioni opzionali"
@@ -17982,7 +17982,7 @@ msgid "Posting Date"
 msgstr "Data di registrazione"
 
 msgid "Posts the change in the consolidated CTA to equity on the elimination company."
-msgstr "Registra il cambiamento nella CTA consolidata al patrimonio netto nella società di eliminazione."
+msgstr "Registra la variazione della CTA consolidata nel patrimonio netto dell'azienda di eliminazione."
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Registra la fattura e la invia tramite il tuo account Stripe collegato con un link di pagamento. Una fattura per un cliente senza un cliente Stripe collegato viene registrata e contrassegnata come non inviata."
@@ -23293,7 +23293,7 @@ msgid "Supplier Quote ID"
 msgstr "ID offerta del fornitore"
 
 msgid "Supplier quote notification setting updated"
-msgstr "Impostazione di notifica offerta fornitore aggiornata"
+msgstr "Impostazione di notifica per offerta del fornitore aggiornata"
 
 msgid "Supplier Quote Notifications"
 msgstr "Notifiche offerta del fornitore"
@@ -26316,7 +26316,7 @@ msgid "Units"
 msgstr "Unità"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
-msgstr "Unità di valuta base per una unità di questa valuta; utilizzato per tradurre gli importi al momento della registrazione."
+msgstr "Unità di valuta base per una unità di questa valuta; utilizzato per convertire gli importi al momento della registrazione."
 
 msgid "units of measure"
 msgstr "unità di misura"
@@ -28020,7 +28020,7 @@ msgstr "Ha scritto la prima nota mancante di 1 documento"
 
 #. placeholder {0}: data.documents
 msgid "Wrote the missing journals of {0} documents"
-msgstr "Ha scritto le prime note mancanti di {0} documenti"
+msgstr "Create le registrazioni di prima nota mancanti di {0} documenti"
 
 msgid "Year"
 msgstr "Anno"

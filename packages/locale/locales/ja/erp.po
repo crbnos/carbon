@@ -7141,10 +7141,10 @@ msgid "Customer Contact"
 msgstr "得意先担当者"
 
 msgid "Customer contact requirement disabled"
-msgstr "得意先担当者要件が無効になりました"
+msgstr "得意先担当者要求事項を無効にしました"
 
 msgid "Customer contact requirement enabled"
-msgstr "得意先担当者要件が有効になりました"
+msgstr "得意先担当者要求事項を有効にしました"
 
 msgid "Customer contacts"
 msgstr "得意先担当者"
@@ -9893,7 +9893,7 @@ msgid "Every check must pass before accounting can be enabled."
 msgstr "会計を有効にする前に、すべてのチェックに合格する必要があります。"
 
 msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
-msgstr "グループ内のすべての会社がこの会社の通貨を使用しているため、翻訳調整はありません。"
+msgstr "グループ内のすべての会社がこの会社の通貨を使用しているため、換算調整は発生しません。"
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "会社に属するすべてのレコード。認証情報、連携トークン、Webhookは含まれません。"

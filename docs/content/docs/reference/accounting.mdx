@@ -80,6 +80,49 @@ Two monthly runs post the entries that revenue and leases schedule ahead. Each r
 
 On the first day of each month Carbon proposes a draft run of each type for the month that just ended. Posting a run stays a manual step. A period holds at most one draft run of each type. The period close checklist checks each type separately, with the tasks **"Recognize revenue for the period"** and **"Post lease journals"**. To undo a posted run, reverse the run: its journals cannot be reversed one at a time.
 
+## Currency revaluation runs
+
+A foreign-currency invoice stays at its posting-date rate until it is paid. A **currency revaluation run** restates everything still open in a foreign currency at a period end's <Term id="exchange-rate">exchange rate</Term>, so the balance sheet carries it at the closing rate.
+
+Open **Accounting → Closing → Currency Revaluation**, choose the **Period end** and press **New Run**, or press **Create Run** on the **"Revalue foreign currency balances"** task of the [period close](/docs/reference/period-close) checklist. A company has one run per period end.
+
+The run revalues:
+
+- Open sales and purchase invoices and memos in a foreign currency.
+- The unapplied part of foreign-currency customer receipts and supplier payments. Customer deposits are never revalued.
+- The balance of each account with an **Account Currency** (see below) that the company has posted to.
+
+**Rates.** The run stores one rate per currency: the company's override from **Accounting → Exchange Rates** when there is one, else the market rate on the period end. On a Draft run you can edit a rate in the **Exchange Rates** grid. Its source then reads **Manual**, and the run revalues that currency's lines.
+
+**Statement balances.** Carbon's journals hold base-currency amounts only, so it cannot know an account's balance in the account's own currency. Enter it from the bank or loan statement in the **Statement Balances** grid. Post refuses while one is missing, and **Recalculate** keeps what you entered.
+
+<Screenshot label="Currency revaluation run: a Draft run with the Exchange Rates grid, the Statement Balances grid and the Revaluation Lines table with total gains and losses" caption="Rates and statement balances are editable while the run is Draft." />
+
+**Post** writes two Posted journals with source type Currency Revaluation: the valuation on the period end, and its reversal on the first day of the next period.
+
+Each difference posts to the AR or AP revaluation adjustment account, or to the account itself for a statement balance. The other side is Unrealized Exchange Gain or Unrealized Exchange Loss, posted gross, never netted. Because the revaluation reverses the next day, the realized gain or loss at payment is the same as without the run.
+
+**Undo** reverses both journals and returns the run to Draft, so you can recalculate, edit and post it again. Undo refuses once the run's period is Closed. If someone posts a document into the period after the run, the close task fails again: Undo the run, press **Recalculate**, and post it. Post refuses a Draft that no longer matches what is open.
+
+## The posted currency translation adjustment
+
+When the companies of a group use different base currencies, the consolidated balance sheet has a currency translation adjustment (CTA). Carbon posts it to the ledger from the root company's period close.
+
+On the **"Post currency translation adjustment"** task, press **Preview CTA**. The preview shows the consolidated CTA for the period, the CTA already posted and the amount to post. It warns about foreign-currency subsidiaries with no posted revaluation run for the period, and about asset and liability accounts that translate at the Average rate.
+
+**Post CTA** posts the amount to the Currency Translation account against the Currency Translation Offset account, on the group's <Term id="elimination-entity">elimination company</Term>, with source type Currency Translation. Only the root company posts it, and both account defaults must be different Equity accounts.
+
+Each posting writes only the movement since the last one, so after a late change you post again. On the [consolidated balance sheet](/docs/reference/financial-reports), equity counts the posted CTA once, because the offset account does not show it. Any CTA not posted yet shows as **Unposted translation adjustment** beside the CTA account.
+
+## Account currency and consolidation rate
+
+The account form in **Accounting → Chart of Accounts** has two currency fields:
+
+<FieldTable>
+  <Field name="Account Currency" type="currency">Shown for Asset and Liability accounts, optional. The currency the account's balance is held in, such as a EUR bank account. A company whose base currency differs revalues it in its currency revaluation runs, once it has posted to the account.</Field>
+  <Field name="Consolidation Rate" type="select">The rate the account translates at in a consolidation: **Average**, **Current** or **Historical**. A new account defaults by class: Asset and Liability take Current, Equity takes Historical, Revenue and Expense take Average. Editing an account keeps its stored rate. A balance sheet account at Average moves the posted CTA.</Field>
+</FieldTable>
+
 ## Setting up accounting
 
 Setting up accounting opens your books in Carbon at a **cutover date**. Carbon takes the open items it already knows (for example invoices, unapplied payments, goods received but not invoiced, open jobs, stock and fixed assets) and your prior system's trial balance, and posts one opening journal from them. Open it from **Settings → Accounting** with **Set up accounting**. Until it is done, the **Reporting**, **Journal Entries**, **Intercompany**, **Accounting Periods**, **Depreciation** and **Assets** pages are blurred behind an overlay that reads "Accounting is not set up for this company." and has a **Set up accounting** button. You need permission to view accounting to open the wizard, and to update accounting to save a step or enable. Editing an item's unit cost on the Inventory step needs permission to update parts.
@@ -266,6 +309,27 @@ The only state change allowed on a posted journal is reversal. To correct an ent
 
 ### "Journal line … is immutable because journal … is posted"
 Lines of a posted journal can't be edited. Reverse the journal and re-enter it.
+
+### "Nothing is open in a foreign currency on …, so there is nothing to revalue"
+New Run found no foreign-currency invoice, memo, unapplied payment or Account Currency balance at that period end. No run is needed, and the close checklist hides the "Revalue foreign currency balances" task.
+
+### "… is already a draft for this period. Recalculate it instead." / "… is already posted for this period. Undo it to change it."
+A company has one currency revaluation run per period end (`currencyRevaluationRun`, unique on company and `periodEnd`). Open the existing run. Undo returns a posted run to Draft.
+
+### "Enter the statement balance for every account before posting"
+The run has an Account Balance line (an account with an Account Currency) with no statement balance. Enter it in the Statement Balances grid, then post.
+
+### "The run is out of date. Recalculate it, then post."
+What is open in a foreign currency at the period end changed after the Draft was built, for example a back-dated invoice or payment. Press Recalculate (rates and entered statement balances are kept), then Post.
+
+### "The period of currency revaluation run … is closed, so the run can no longer be undone"
+Once the run's period is Closed, the valuation's reversal would move to today while the day-1 reversal's reversal stays in the next period, leaving a revaluation on the books between them. So Undo refuses. Reopen the period first.
+
+### "Only the group's root company posts the currency translation adjustment"
+The CTA posts from the root company (no parent) of the group, on the root's elimination company. Switch to the root company and use Preview CTA on its period close.
+
+### "The Currency Translation and Currency Translation Offset account defaults must be two different Equity accounts"
+Set both under Accounting → Default Accounts. The CTA journal is natural-signed, so an offset account of another class would post an unbalanced journal.
 
 ### "Cannot post to a group account"
 A journal line references a heading/group account in the chart of accounts. Only leaf (posting) accounts accept entries — pick a detailed account instead.

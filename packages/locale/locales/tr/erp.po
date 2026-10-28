@@ -5963,7 +5963,7 @@ msgid "Console Operator Created"
 msgstr "Konsol operatörü oluşturuldu"
 
 msgid "Consolidated CTA"
-msgstr "Konsolidasyonlu Kur Çevrimi Ayarlaması"
+msgstr "Konsolide Kur Çevrimi Düzeltmesi"
 
 msgid "Consolidation Rate"
 msgstr "Konsolidasyon Oranı"
@@ -7054,7 +7054,7 @@ msgid "Currency Translation (default)"
 msgstr "Kur çevrimi (varsayılan)"
 
 msgid "Currency Translation Adjustment"
-msgstr "Kur Çevrimi Ayarlaması"
+msgstr "Kur Çevrimi Düzeltmesi"
 
 msgid "Currency Translation Offset"
 msgstr "Kur Çevrimi Dengesi"
@@ -9733,7 +9733,7 @@ msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Kur çevrimi düzeltmeleri (CTA) için özkaynak hesabı"
 
 msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
-msgstr "Ortadan kaldırma şirketi üzerinde muhasebeleştirildi kur çevrimi ayarlamasını dengeleyen Özkaynak hesabı; konsolidasyonlu raporlar bunu gizler"
+msgstr "Eliminasyon şirketinde muhasebeleştirilmiş kur çevrimi düzeltmesini (CTA) dengeleyen özkaynak hesabı; konsolide raporlar bunu gizler"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Muhasebe kurulduğunda açılış bakiyelerini dengelemek için özkaynak hesabı. Toplam sıfır olması gerekir."
@@ -9893,7 +9893,7 @@ msgid "Every check must pass before accounting can be enabled."
 msgstr "Muhasebeleştirme etkinleştirilmeden önce her kontrolün başarılı olması gerekir."
 
 msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
-msgstr "Grupdaki her şirket bu şirketin para birimini kullanır, bu nedenle çevrim ayarlaması yoktur."
+msgstr "Gruptaki her şirket bu şirketin para birimini kullanır, bu nedenle kur çevrimi düzeltmesi yoktur."
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Şirket kapsamındaki tüm kayıtlar. Kimlik bilgileri, entegrasyon belirteçleri ve webhook'lar asla dahil edilmez."
@@ -11347,7 +11347,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "Sabit kıymetlere karşı muhasebeleştirilen amortismanı tahakkuk ettiren muhasebe kontra-varlık hesabı."
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
-msgstr "Dönem sonunda yabancı para bakiyelerinin yeniden çevirisi sonucu oluşan gerçekleşmemiş döviz farklarını tutan muhasebe özkaynaklar hesabı (CTA yedek); kar/zarar tablosundaki gerçekleşmiş döviz kazanç/zararından ayrıdır."
+msgstr "Dönem sonunda yabancı para bakiyelerinin yeniden çevrimi sonucu oluşan gerçekleşmemiş kur farklarını tutan özkaynak hesabı (CTA yedeği); kâr/zarar tablosundaki gerçekleşmiş kur kazanç/zararından ayrıdır."
 
 msgid "GL equity account where net income closes at fiscal year-end."
 msgstr "Mali yılın sonunda net gelirin kapatıldığı muhasebe özkaynaklar hesabı."
@@ -16419,7 +16419,7 @@ msgid "On Storage Unit"
 msgstr "Depolama biriminde"
 
 msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
-msgstr "Grup'un kök şirketi üzerinde, bu dönem için konsolidasyonlu kur çevrimi ayarlaması (CTA), ortadan kaldırma şirketi üzerinde zaten muhasebeleştirilen CTA ile karşılaştırılır. Farkı önizleyin ve muhasebeleştirin, böylece özkaynak defter de CTA'yı taşır. Önce bağlı kuruluşları yeniden değerlendirin. Diğer şirketler otomatik olarak uygunlaştırılır."
+msgstr "Grubun ana şirketinde, bu dönemin konsolide kur çevrimi düzeltmesini (CTA), eliminasyon şirketinde zaten muhasebeleştirilmiş CTA ile karşılaştırır. Farkı önizleyin ve muhasebeleştirin; böylece özkaynak, CTA'yı defterde taşır. Önce bağlı ortaklıkları yeniden değerleyin. Diğer şirketler otomatik olarak geçer."
 
 msgid "On this operation"
 msgstr "Bu operasyonda"
@@ -17982,7 +17982,7 @@ msgid "Posting Date"
 msgstr "Muhasebeleştirme Tarihi"
 
 msgid "Posts the change in the consolidated CTA to equity on the elimination company."
-msgstr "Konsolidasyonlu CTA'deki değişikliği ortadan kaldırma şirketi üzerinde özkaynak'a muhasebeleştirir."
+msgstr "Konsolide CTA'daki değişikliği eliminasyon şirketinde özkaynağa muhasebeleştirir."
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Faturayı muhasebeleştirir ve bağlı Stripe hesabınız üzerinden bir ödeme linki ile gönderir. Bağlı Stripe müşterisi olmayan bir müşteri için fatura muhasebeleştirilir ve gönderilmedi olarak işaretlenir."
@@ -22176,7 +22176,7 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "Tedarikçi listesinde, tedarikçi formlarında ve açılır menülerde okunabilir bir Tedarikçi Kimliği sütunu gösterir. Tedarikçiler her iki durumda da dahili olarak tanımlanmaya devam eder."
 
 msgid "Show a warning on the shop floor, but let them work."
-msgstr "Atelye'de uyarı göster, ancak çalışmalarına izin ver."
+msgstr "Atölyede uyarı göster, ancak çalışmalarına izin ver."
 
 msgid "Show All"
 msgstr "Tümünü göster"
