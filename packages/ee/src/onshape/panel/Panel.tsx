@@ -3073,7 +3073,7 @@ function FieldsSection({
             <span className="flex flex-1 items-baseline gap-2">
               Manual Mapping
               <span className="text-xs font-normal text-muted-foreground">
-                7 fields
+                {MANUAL_FIELD_COUNT} fields
               </span>
             </span>
           </AccordionTrigger>
@@ -3390,6 +3390,11 @@ const ITEM_FIELD_ROWS: {
 const ITEM_FIELD_ROW_FIELDS = new Set<string>(
   ITEM_FIELD_ROWS.flatMap((row) => (row.field ? [row.field] : []))
 );
+
+// Fields in Manual Mapping. The Buy items row sets Default Method Type, which
+// the Make items row already counts.
+const MANUAL_FIELD_COUNT =
+  REQUIRED_IDENTITY_FIELDS.length + ITEM_FIELD_ROW_FIELDS.size;
 
 type SelectOption = { value: string; label: string; helper?: string };
 
