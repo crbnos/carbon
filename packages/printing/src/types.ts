@@ -13,6 +13,7 @@ export type LocationAssignment = {
   shipping: ContextAssignment;
   receiving: ContextAssignment;
   inventory: ContextAssignment;
+  kanban: ContextAssignment;
   workCenters: Record<string, ContextAssignment>;
 };
 

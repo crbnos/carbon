@@ -3924,8 +3924,8 @@ msgstr "Assets, liabilities and equity as of a date"
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 
-msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
-msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
+msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
+msgstr "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
 
 msgid "Assign To"
 msgstr "Assign To"
@@ -18063,6 +18063,9 @@ msgid "Print"
 msgstr "Print"
 
 #. placeholder {0}: printIds.length
+msgid "Print {0} Kanbans"
+msgstr "Print {0} Kanbans"
+
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "Print {0} Labels"
@@ -18771,8 +18774,8 @@ msgid "Queued"
 msgstr "Queued"
 
 #. placeholder {0}: printIds.length
-msgid "Queued {0} labels for printing"
-msgstr "Queued {0} labels for printing"
+msgid "Queued {0} kanbans for printing"
+msgstr "Queued {0} kanbans for printing"
 
 msgid "Queued {count} sync operations for sync"
 msgstr "Queued {count} sync operations for sync"

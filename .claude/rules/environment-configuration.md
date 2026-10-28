@@ -166,7 +166,7 @@ vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 
 **Analytics / config** — `POSTHOG_API_HOST`, `POSTHOG_PROJECT_PUBLIC_KEY`
 (optional, public), `CARBON_EDITION` (`community|cloud|enterprise|test` →
-`CarbonEdition`), `CONTROLLED_ENVIRONMENT` (ITAR flag), `INTEGRATION_EARLY_ACCESS_USER_IDS` (server-only, comma-separated user ids that can install an `internalOnly` integration on Cloud), `DEFAULT_LANGUAGE`
+`CarbonEdition`), `CONTROLLED_ENVIRONMENT` (ITAR flag), `INTEGRATION_EARLY_ACCESS_USER_IDS` (server-only, comma-separated user ids that can install an `internalOnly` integration on Cloud; a fallback beside the `integration-early-access` flag until a flags source is live), `DEFAULT_LANGUAGE`
 (default `en`), `GTM_URL`, `GTM_EVENTS_API_SECRET_KEY`.
 
 **Maintenance and status (both optional, server-only)** — `MAINTENANCE_MODE=true`
@@ -186,6 +186,22 @@ with `AnnouncementBar` (`@carbon/react`). `latestVersion` is returned but not
 shown — Carbon has no version to compare it with. Neither variable is on the
 `workspaces` row, so `ci/src/deploy.ts` does not set them; `sst.config.ts`
 forwards them from the deploying process's environment.
+
+**Feature flags (both optional, server-only)** — `CARBON_FLAGS_ENDPOINT` is a
+flagd JSON document (`@carbon/env/flags.server`, spec
+`.ai/specs/2026-10-28-feature-flags.md`); `CARBON_FLAGS_HEADERS` holds its
+request headers in the `OTEL_EXPORTER_OTLP_HEADERS` format (`secret: true`, it
+carries the token). An `https:` endpoint is the Carbon Cloud source: each ERP
+and MES process reads the shared copy in Redis (`redisFlagsStore`, `@carbon/kv`,
+hash `flags:<scope>`) every 10 s and, when that copy is older than 60 s, one
+process fetches the source under a lease. A `data:` endpoint loads
+once: `ci/src/deploy.ts` fetches each AWS workspace's document at deploy time
+(`workspaces.flags_endpoint` / `flags_token`, 32 KiB cap for the task
+definition) and passes it as a `data:` URL, and `sst.config.ts` forwards it.
+Unset means every flag answers its registry default (`packages/env/src/flags.ts`).
+Read flags only with `flags.*` / `evaluateBrowserFlags` and, in React,
+`useFeatureFlags().feature(key)` (`@carbon/react`), never with an
+OpenFeature client.
 
 **Tracing (all optional)** — the standard OpenTelemetry variables, read raw by
 the OTel SDK (not `@carbon/env`): `OTEL_EXPORTER_OTLP_ENDPOINT` (or

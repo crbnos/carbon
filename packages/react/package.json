@@ -3,6 +3,7 @@
   "dependencies": {
     "@base-ui/react": "1.6.0",
     "@carbon/content": "workspace:*",
+    "@carbon/env": "workspace:*",
     "@carbon/files": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/tiptap": "workspace:*",
@@ -75,7 +76,6 @@
   "devDependencies": {
     "@carbon/config": "workspace:*",
     "@carbon/database": "workspace:*",
-    "@carbon/env": "workspace:*",
     "@radix-ui/react-avatar": "1.1.11",
     "@react-types/button": "3.15.1",
     "@react-types/calendar": "3.8.3",

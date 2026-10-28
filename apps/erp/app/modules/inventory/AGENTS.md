@@ -66,7 +66,7 @@ Each operation is one `defineServiceFn` const in `inventory.server.ts`. A route 
 
 | Operation | Route | What it holds |
 |---|---|---|
-| `createReceipt` / `createShipment` | `receipt+/new.tsx`, `shipment+/new.tsx` | The `create` posting for the source document; a return order or rental agreement with a Draft document returns that one. A sales or purchase order shipment needs the caller's default location |
+| `createReceipt` / `createShipment` | `receipt+/new.tsx`, `shipment+/new.tsx` | The `create` posting for the source document; a return order or rental agreement with a Draft document returns that one. A purchase order shipment needs the caller's default location; a sales order shipment ships from the order's location, or the caller's default location when one of its lines ships from there |
 | `updateReceipt` / `updateShipment` | `$receiptId.details.tsx`, `$shipmentId.details.tsx` | A changed source or location rebuilds the lines; a rental document keeps its agreement |
 | `postReceipt` / `postShipment` | `$receiptId.post.tsx`, `$shipmentId.post.tsx` | Storage rules (and over-receipt, and the order's sales rules), Pending, the posting, back to Draft on failure, labels, lead times, the workflow moment. A shipment also applies the expired-batch policy and saves the packing slip (`packing-slip.pdf.tsx`, shared with `file+/shipment+/$id[.]pdf.tsx`) |
 | `voidReceipt` / `voidShipment` | `$receiptId.void.tsx`, `$shipmentId.void.tsx` | Posted only; not a receipt a purchase invoice created. A receipt void also refuses stock that has left its bin since posting and an untracked lot an inspection rejected; the refusal reaches the caller in its own words |

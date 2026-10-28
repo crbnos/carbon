@@ -1512,7 +1512,7 @@
     {"name":"sales_upsertQuoteShipment","classification":"WRITE","schema":"9f413dd10f89","response":"3797626bd17e","permission":"sales:create+update","paginates":false},
     {"name":"sales_upsertSalesOrderPayment","classification":"WRITE","schema":"d637b4fad42f","response":"3797626bd17e","permission":"sales:create+update","paginates":false},
     {"name":"sales_upsertSalesOrderShipment","classification":"WRITE","schema":"c91b5d79606d","response":"3797626bd17e","permission":"sales:create+update","paginates":false},
-    {"name":"settings_assignPrinter","classification":"WRITE","schema":"e396a6d7690b","response":"de371a276a58","permission":"settings:update","paginates":false},
+    {"name":"settings_assignPrinter","classification":"WRITE","schema":"29c891c20e8b","response":"de371a276a58","permission":"settings:update","paginates":false},
     {"name":"settings_createItemSerialSequence","classification":"WRITE","schema":"544565accbe4","response":"3797626bd17e","permission":"settings:create","paginates":false},
     {"name":"settings_deactivateCompanyIntegration","classification":"DESTRUCTIVE","schema":"3797626bd17e","response":"f06d2d858884","permission":"settings:update","paginates":false},
     {"name":"settings_deleteItemSerialSequence","classification":"DESTRUCTIVE","schema":"7f8214d1083f","response":"bcde375ebd4c","permission":"settings:delete","paginates":false},

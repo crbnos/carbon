@@ -3924,8 +3924,8 @@ msgstr "Ativos, passivos e patrimônio líquido em uma data"
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Atribua o tempo de execução de máquina que nenhuma operação carregada reivindicou para a ordem de produção correta, ou descarte-o."
 
-msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
-msgstr "Atribua impressoras a locais. Envio, recebimento e centros de trabalho herdam o padrão do local, a menos que sejam substituídos."
+msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
+msgstr "Atribua impressoras a locais. Envio, recebimento, inventário, kanbans e centros de trabalho herdam o padrão do local, a menos que sejam substituídos."
 
 msgid "Assign To"
 msgstr "Atribuir a"
@@ -18063,6 +18063,9 @@ msgid "Print"
 msgstr "Imprimir"
 
 #. placeholder {0}: printIds.length
+msgid "Print {0} Kanbans"
+msgstr "Imprimir {0} kanbans"
+
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "Imprimir {0} Etiquetas"
@@ -18771,8 +18774,8 @@ msgid "Queued"
 msgstr "Na fila"
 
 #. placeholder {0}: printIds.length
-msgid "Queued {0} labels for printing"
-msgstr "{0} etiquetas na fila de impressão"
+msgid "Queued {0} kanbans for printing"
+msgstr "{0} kanbans na fila de impressão"
 
 msgid "Queued {count} sync operations for sync"
 msgstr ""

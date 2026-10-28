@@ -195,9 +195,8 @@ function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
 }
 
 /**
- * A kanban's Create card (a print job has no action; Start and Complete
- * cards print from the kanbans list) at the printer's media size when the
- * medium holds one
+ * One kanban card, for the item's action (Create, Start or Complete), at the
+ * printer's media size when the medium holds one
  * (3" x 2" and up): ZPL for a Zebra, else a one-card PDF. A PDF printer with
  * a smaller or no medium (an office printer) prints the company's Kanban
  * Label Size setting, the letter sheet by default.
@@ -235,7 +234,12 @@ async function renderKanbanCard(
     }
     requireZplCapable(cardSize);
     return {
-      content: generateKanbanLabelZPL(label, cardSize, ERP_URL ?? ""),
+      content: generateKanbanLabelZPL(
+        label,
+        cardSize,
+        ERP_URL ?? "",
+        item.action
+      ),
       contentType: "zpl"
     };
   }
@@ -261,7 +265,7 @@ async function renderKanbanCard(
     <KanbanLabelPDF
       baseUrl={ERP_URL ?? ""}
       labels={[label]}
-      action="order"
+      action={item.action}
       labelSize={labelSize}
     />
   );

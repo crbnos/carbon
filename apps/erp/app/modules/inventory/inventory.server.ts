@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  type CarbonError,
+  CarbonError,
   createServiceContext,
   defineServiceFn
 } from "@carbon/api/service-fn.server";
@@ -1260,7 +1260,9 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
  * order, a purchase order, a purchase return order, an outbound warehouse
  * transfer or a rental agreement. With no source document it creates an
  * empty shipment. The location is the caller's default location, which a
- * sales order or purchase order shipment requires.
+ * purchase order shipment requires. A sales order shipment ships from the
+ * order's location, or from the caller's default location when one of the
+ * order's lines ships from there.
  *
  * A return order or rental agreement with a Draft shipment already returns
  * that shipment instead of a second one.
@@ -1275,7 +1277,22 @@ export const createShipment = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, { sourceDocument, sourceDocumentId }) {
-    const locationId = await service.defaultLocationOf(ctx);
+    let locationId = await service.defaultLocationOf(ctx);
+    if (sourceDocument === "Sales Order") {
+      const location = await service.salesOrderShipmentLocationOf(
+        ctx,
+        sourceDocumentId,
+        locationId
+      );
+      if (location.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load the sales order's location",
+          location.error
+        );
+      }
+      locationId = location.data ?? undefined;
+    }
 
     if (
       !locationId &&
@@ -5815,7 +5832,8 @@ const kanbanInput = z
  * @remarks
  * A Buy kanban needs its supplier; a Transfer kanban needs a from and a to
  * storage unit, and only it can have a replenishment level. Neither storage
- * unit may be non-nettable.
+ * unit may be non-nettable. When the location's Kanbans printer auto-prints,
+ * the new kanban's Create card is printed.
  *
  * @mcp
  */
@@ -5828,13 +5846,23 @@ export const createKanban = defineServiceFn({
       input.fromStorageUnitId
     ]);
     if (refused) return refused;
-    return unwrap(
+    const created = unwrap(
       ctx,
       await service.upsertKanban(
         ctx.asCaller.supabase,
         payload(ctx, input).forCreate() as never
       )
     );
+    if (created instanceof CarbonError || !created) return created;
+
+    await service.autoPrint(ctx, {
+      sourceDocument: "Kanban",
+      sourceDocumentId: created.id,
+      locationId: input.locationId,
+      context: "kanban"
+    });
+
+    return created;
   }
 });
 

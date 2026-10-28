@@ -630,6 +630,71 @@ const KanbansTable = memo(
       [formatQuantity, items, kanbanOutput, params, people, suppliers, t]
     );
 
+    /* Printing kanban cards (one row, or the selection): to a configured
+       printer, the location's Kanbans printer first (a Zebra prints at its own
+       media size), one card per action, so a Make kanban prints Create, Start
+       and Complete. With no printer, the Create cards' PDF at the company's
+       Label Size. */
+    const { printerRoutes, resolvePrinterRoute } = usePrinting();
+    const printerModal = useDisclosure();
+    const defaultPrinter = resolvePrinterRoute(locationId, "kanban");
+    const [printIds, setPrintIds] = useState<string[]>([]);
+    const [selectedPrinterId, setSelectedPrinterId] = useState<string>("");
+    const [isPrinting, setIsPrinting] = useState(false);
+
+    const handlePrintLabels = useCallback(
+      (ids: string[]) => {
+        if (ids.length === 0) return;
+        if (printerRoutes.length > 0) {
+          setPrintIds(ids);
+          setSelectedPrinterId(
+            defaultPrinter?.id ?? printerRoutes[0]?.id ?? ""
+          );
+          printerModal.onOpen();
+        } else {
+          window.open(path.to.file.kanbanLabelsPdf(ids, "order"), "_blank");
+        }
+      },
+      [printerRoutes, defaultPrinter?.id, printerModal]
+    );
+
+    // Raw fetch (not a fetcher): parallel submissions don't abort each other
+    // and nothing revalidates, so the selection stays intact.
+    const handleConfirmPrint = useCallback(async () => {
+      if (printIds.length === 0 || !selectedPrinterId) return;
+
+      setIsPrinting(true);
+      try {
+        const results = await Promise.allSettled(
+          printIds.map((id) =>
+            fetch(path.to.manualPrint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sourceDocument: "Kanban",
+                sourceDocumentId: id,
+                locationId,
+                printerRouteId: selectedPrinterId
+              })
+            })
+          )
+        );
+
+        const failed = results.filter(
+          (r) => r.status === "rejected" || !r.value.ok
+        ).length;
+
+        if (failed > 0) {
+          toast.error(t`${failed} of ${printIds.length} print jobs failed`);
+        } else {
+          toast.success(t`Queued ${printIds.length} kanbans for printing`);
+        }
+      } finally {
+        setIsPrinting(false);
+        printerModal.onClose();
+      }
+    }, [printIds, selectedPrinterId, locationId, printerModal, t]);
+
     const renderContextMenu = useCallback(
       (row: KanbanRow) => {
         const canUpdate = permissions.can("update", "inventory");
@@ -646,6 +711,10 @@ const KanbansTable = memo(
                 </Link>
               </MenuItem>
             )}
+            <MenuItem onClick={() => handlePrintLabels([row.id!])}>
+              <LuPrinter className="mr-2 size-4" />
+              <Trans>Print Label</Trans>
+            </MenuItem>
             {/* Phone rows drop the label links column; keep them reachable here */}
             {isPhone && kanbanOutput === "label" && (
               <>
@@ -727,70 +796,15 @@ const KanbansTable = memo(
           </>
         );
       },
-      [params, permissions, items.find, isPhone, kanbanOutput]
+      [
+        params,
+        permissions,
+        items.find,
+        isPhone,
+        kanbanOutput,
+        handlePrintLabels
+      ]
     );
-
-    /* Bulk printing of Create cards: to a configured printer (a Zebra prints
-       at its own media size), else the PDF at the company's Label Size. */
-    const { printerRoutes, resolvePrinterRoute } = usePrinting();
-    const printerModal = useDisclosure();
-    const defaultPrinter = resolvePrinterRoute(locationId, "default");
-    const [printIds, setPrintIds] = useState<string[]>([]);
-    const [selectedPrinterId, setSelectedPrinterId] = useState<string>("");
-    const [isPrinting, setIsPrinting] = useState(false);
-
-    const handlePrintLabels = useCallback(
-      (ids: string[]) => {
-        if (ids.length === 0) return;
-        if (printerRoutes.length > 0) {
-          setPrintIds(ids);
-          setSelectedPrinterId(
-            defaultPrinter?.id ?? printerRoutes[0]?.id ?? ""
-          );
-          printerModal.onOpen();
-        } else {
-          window.open(path.to.file.kanbanLabelsPdf(ids, "order"), "_blank");
-        }
-      },
-      [printerRoutes, defaultPrinter?.id, printerModal]
-    );
-
-    // Raw fetch (not a fetcher): parallel submissions don't abort each other
-    // and nothing revalidates, so the selection stays intact.
-    const handleConfirmPrint = useCallback(async () => {
-      if (printIds.length === 0 || !selectedPrinterId) return;
-
-      setIsPrinting(true);
-      try {
-        const results = await Promise.allSettled(
-          printIds.map((id) =>
-            fetch(path.to.manualPrint, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                sourceDocument: "Kanban",
-                sourceDocumentId: id,
-                locationId,
-                printerRouteId: selectedPrinterId
-              })
-            })
-          )
-        );
-
-        const failed = results.filter(
-          (r) => r.status === "rejected" || !r.value.ok
-        ).length;
-
-        if (failed > 0) {
-          toast.error(t`${failed} of ${printIds.length} print jobs failed`);
-        } else {
-          toast.success(t`Queued ${printIds.length} labels for printing`);
-        }
-      } finally {
-        setIsPrinting(false);
-        printerModal.onClose();
-      }
-    }, [printIds, selectedPrinterId, locationId, printerModal, t]);
 
     const renderActions = useCallback(
       (selectedRows: typeof data) => (
@@ -908,7 +922,7 @@ const KanbansTable = memo(
                     disabled={!selectedPrinterId || isPrinting}
                     onClick={handleConfirmPrint}
                   >
-                    <Trans>Print {printIds.length} Labels</Trans>
+                    <Trans>Print {printIds.length} Kanbans</Trans>
                   </Button>
                   <Button variant="solid" onClick={printerModal.onClose}>
                     <Trans>Cancel</Trans>

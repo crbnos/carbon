@@ -3924,8 +3924,8 @@ msgstr "एक तारीख तक संपत्ति, देनदार�
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "असाइन करें मशीन रन समय जो किसी लोड किए गए ऑपरेशन ने क्लेम नहीं किया, सही जॉब को, या इसे खारिज करें।"
 
-msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
-msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
+msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
+msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग, इन्वेंटरी, कानबान और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
 
 msgid "Assign To"
 msgstr "को असाइन करें"
@@ -18063,6 +18063,9 @@ msgid "Print"
 msgstr "प्रिंट करें"
 
 #. placeholder {0}: printIds.length
+msgid "Print {0} Kanbans"
+msgstr "{0} कानबान प्रिंट करें"
+
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "{0} लेबल प्रिंट करें"
@@ -18771,8 +18774,8 @@ msgid "Queued"
 msgstr "कतार में"
 
 #. placeholder {0}: printIds.length
-msgid "Queued {0} labels for printing"
-msgstr "{0} लेबल प्रिंट के लिए कतार में लगाए गए"
+msgid "Queued {0} kanbans for printing"
+msgstr "{0} कानबान प्रिंट के लिए कतार में लगाए गए"
 
 msgid "Queued {count} sync operations for sync"
 msgstr ""
