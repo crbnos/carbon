@@ -1762,6 +1762,9 @@ msgstr "Seri numaras tarayın veya arayın..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Bu lottan izlenen bir varlığı tarayın veya seçin, onu bir örnek sütunu olarak ekleyin ve sonucunu ızgarada kaydedin."
 
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "Birimi tarayın veya seçin, ardından kanban kartını yeniden tarayın"
+
 msgid "Scan received"
 msgstr "Tarama alındı"
 

@@ -33,6 +33,7 @@ type CompanySettings = Partial<
     | "showCurrencyTrailingZeros"
     | "showCustomerReadableId"
     | "showSupplierReadableId"
+    | "useCalendarWeeks"
   >
 >;
 

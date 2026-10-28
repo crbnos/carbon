@@ -661,6 +661,10 @@ msgstr ""
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# строка исключена} other {# строк исключено}}"
 
+#. placeholder {0}: printIds.length
+msgid "{failed} of {0} print jobs failed"
+msgstr "Не удалось выполнить {failed} из {0} заданий печати"
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {Еще # запись.} other {Еще # записей.}}"
 
@@ -1036,6 +1040,9 @@ msgstr "2ч"
 msgid "3 years"
 msgstr "3 года"
 
+msgid "3\" x 2\" label"
+msgstr "Этикетка 3\" x 2\""
+
 msgid "30D"
 msgstr "30 дней"
 
@@ -1047,6 +1054,9 @@ msgstr "3ч"
 
 msgid "4 years"
 msgstr "4 года"
+
+msgid "4\" x 2\" label"
+msgstr "Этикетка 4\" x 2\""
 
 msgid "4h"
 msgstr "4ч"
@@ -1089,6 +1099,9 @@ msgstr "3D-модель, которую оператор может вращат
 
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "4-значный PIN создается при создании оператора."
+
+msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
+msgstr "Этикетка 4\" x 2\" или 3\" x 2\" печатает одну карточку на этикетку, для термопринтера, например Zebra."
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "Серия должна содержать по крайней мере одну операцию. Чтобы разделить всю серию, используйте вместо этого «Растворить»."
@@ -4691,6 +4704,9 @@ msgstr "Метод расчета"
 
 msgid "Calendar"
 msgstr "Календарь"
+
+msgid "Calendar Weeks"
+msgstr "Календарные недели"
 
 msgid "Calibration"
 msgstr "Калибровка"
@@ -8873,6 +8889,9 @@ msgstr "Внешние операции каждого поставщика из
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "Справедливая стоимость и экономический срок службы каждой единицы определяют, покрывает ли срок большую часть ее. Нажмите на ячейку, чтобы изменить ее."
 
+msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
+msgstr "Каждая неделя подписывается номером недели года по ISO 8601: Неделя 44, Неделя 45, Неделя 46."
+
 msgid "Each, lb, ft…"
 msgstr "Каждый, фунт, фут…"
 
@@ -11696,6 +11715,9 @@ msgstr "Как определяется объем выборки — прове
 msgid "How the unit price of each quantity was calculated."
 msgstr "Как была рассчитана цена за единицу для каждого количества."
 
+msgid "How the weekly columns of Material Planning, Production Planning and Demand Forecasts are numbered."
+msgstr "Как нумеруются недельные столбцы в Планировании материалов, Планировании производства и Прогнозах потребностей."
+
 msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
 msgstr "Как вся сборка повернута на шаге, например перевернута, чтобы установить детали на её нижней стороне. Следующие шаги этой сборки сохраняют положение, пока какой-либо шаг снова не повернёт сборку."
 
@@ -12857,6 +12879,9 @@ msgstr "Канбан"
 msgid "Kanban for {kanbanName}"
 msgstr "Канбан для {kanbanName}"
 
+msgid "Kanban ID"
+msgstr "ID канбана"
+
 msgid "Kanban Output"
 msgstr "Выпуск Канбана"
 
@@ -12928,6 +12953,9 @@ msgstr "Комплект"
 
 msgid "Label"
 msgstr "Метка"
+
+msgid "Label Size"
+msgstr "Размер этикетки"
 
 msgid "Label to complete the current operation for this kanban"
 msgstr "Этикетка для завершения текущей операции для этого канбана"
@@ -13243,6 +13271,9 @@ msgstr "Давайте настроим вашу учетную запись"
 
 msgid "Letter"
 msgstr "Буква"
+
+msgid "Letter, 6 per page"
+msgstr "Letter, 6 на страницу"
 
 msgid "Liability"
 msgstr "Обязательство"
@@ -16175,6 +16206,12 @@ msgstr "Количество открытых задач"
 msgid "Number of operations"
 msgstr "Количество операций"
 
+msgid "Number weeks by calendar week"
+msgstr "Нумеровать недели по календарной неделе"
+
+msgid "Number weeks from the present week"
+msgstr "Нумеровать недели от текущей недели"
+
 msgid "Numbering sequence"
 msgstr "Нумерационная последовательность"
 
@@ -18004,6 +18041,7 @@ msgstr "Собрана основная сумма"
 msgid "Print"
 msgstr "Печать"
 
+#. placeholder {0}: printIds.length
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "Печать {0} этикеток"
@@ -18710,6 +18748,10 @@ msgstr "Вопросы"
 
 msgid "Queued"
 msgstr "В очереди"
+
+#. placeholder {0}: printIds.length
+msgid "Queued {0} labels for printing"
+msgstr "{0} этикеток поставлено в очередь печати"
 
 msgid "Queued {count} sync operations for sync"
 msgstr ""
@@ -27092,12 +27134,11 @@ msgstr "Неделя"
 msgid "Week {0}"
 msgstr "Неделя {0}"
 
-#. placeholder {0}: i + 1
-msgid "Week {0} ({formattedDate})"
-msgstr "Неделя {0} ({formattedDate})"
-
 msgid "Week {weekNumber}"
 msgstr "Неделя {weekNumber}"
+
+msgid "Week {weekNumber} ({formattedDate})"
+msgstr "Неделя {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "Неделя 8 переход"
@@ -27134,6 +27175,15 @@ msgstr "Недели 5–7"
 
 msgid "Weeks 7 to 8"
 msgstr "Недели 7–8"
+
+msgid "Weeks are counted from today: Present Week, Week 2, Week 3."
+msgstr "Недели отсчитываются от сегодняшнего дня: Текущая неделя, Неделя 2, Неделя 3."
+
+msgid "Weeks are numbered by calendar week"
+msgstr "Недели нумеруются по календарной неделе"
+
+msgid "Weeks are numbered from the present week"
+msgstr "Недели нумеруются от текущей недели"
 
 msgid "Weeks Open"
 msgstr "Недель открыто"

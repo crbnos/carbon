@@ -160,6 +160,8 @@ export async function action({ request }: ActionFunctionArgs) {
       await autoPrintFirstOperationLabel({
         serviceRole,
         trackedEntityId: printEntityId,
+        jobOperationId: jobOperation.data.id,
+        jobMakeMethodId: jobOperation.data.jobMakeMethodId,
         workCenterId: jobOperation.data.workCenterId ?? undefined,
         companyId,
         userId
@@ -236,6 +238,8 @@ export async function action({ request }: ActionFunctionArgs) {
       await autoPrintFirstOperationLabel({
         serviceRole,
         trackedEntityId: validation.data.trackedEntityId,
+        jobOperationId: jobOperation.data.id,
+        jobMakeMethodId: jobOperation.data.jobMakeMethodId,
         workCenterId: jobOperation.data.workCenterId ?? undefined,
         companyId,
         userId

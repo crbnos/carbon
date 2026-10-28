@@ -1762,6 +1762,9 @@ msgstr "시리얼 번호를 스캔하거나 검색하세요..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "이 로트에서 추적 대상을 스캔하거나 선택하여 샘플 열로 추가한 다음 그리드에 결과를 기록하세요."
 
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "단위를 스캔하거나 선택한 다음 칸반 카드를 다시 스캔하세요"
+
 msgid "Scan received"
 msgstr "스캔을 받았습니다"
 

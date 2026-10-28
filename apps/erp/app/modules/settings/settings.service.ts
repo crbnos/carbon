@@ -700,7 +700,7 @@ export async function getKanbanOutputSetting(
 ) {
   return client
     .from("companySettings")
-    .select("kanbanOutput")
+    .select("kanbanOutput, kanbanLabelSize")
     .eq("id", companyId)
     .single();
 }

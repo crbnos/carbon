@@ -661,6 +661,10 @@ msgstr ""
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 
+#. placeholder {0}: printIds.length
+msgid "{failed} of {0} print jobs failed"
+msgstr "{0} 个打印任务中有 {failed} 个失败"
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {还有 # 条记录。} other {还有 # 条记录。}}"
 
@@ -1036,6 +1040,9 @@ msgstr "2小时"
 msgid "3 years"
 msgstr "3 年"
 
+msgid "3\" x 2\" label"
+msgstr "3\" x 2\" 标签"
+
 msgid "30D"
 msgstr "30天"
 
@@ -1047,6 +1054,9 @@ msgstr "3小时"
 
 msgid "4 years"
 msgstr "4 年"
+
+msgid "4\" x 2\" label"
+msgstr "4\" x 2\" 标签"
 
 msgid "4h"
 msgstr "4小时"
@@ -1089,6 +1099,9 @@ msgstr "操作员可以旋转查看的 3D 模型"
 
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "创建操作员时会生成4位数PIN。"
+
+msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
+msgstr "4\" x 2\" 或 3\" x 2\" 标签每张打印一张卡片，适用于 Zebra 等热敏打印机。"
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "生产批次需要至少一个工序。要分解整个生产批次，请改用\"分解\"。"
@@ -4691,6 +4704,9 @@ msgstr "计算方法"
 
 msgid "Calendar"
 msgstr "日历"
+
+msgid "Calendar Weeks"
+msgstr "日历周"
 
 msgid "Calibration"
 msgstr "校准"
@@ -8873,6 +8889,9 @@ msgstr "每个供应商的外协工序从每个工单转至一份新采购订单
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "每件的公允价值和经济生命周期决定该条款是否涵盖大部分。点击单元格进行更改。"
 
+msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
+msgstr "每周以其 ISO 8601 年度周数作为标题：第 44 周、第 45 周、第 46 周。"
+
 msgid "Each, lb, ft…"
 msgstr "每个、磅、英尺…"
 
@@ -11696,6 +11715,9 @@ msgstr "样本量如何确定——检验全部、检验前N个、批次百分�
 msgid "How the unit price of each quantity was calculated."
 msgstr "每个数量的单价是如何计算的。"
 
+msgid "How the weekly columns of Material Planning, Production Planning and Demand Forecasts are numbered."
+msgstr "物料规划、生产规划和需求预测中每周列的编号方式。"
+
 msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
 msgstr "在某一步骤中整个组件的转动方式，例如翻面以便将零件装在其底面。同一组件的后续步骤会保持该方向，直到某一步骤再次转动组件。"
 
@@ -12857,6 +12879,9 @@ msgstr "看板"
 msgid "Kanban for {kanbanName}"
 msgstr "看板 {kanbanName}"
 
+msgid "Kanban ID"
+msgstr "看板ID"
+
 msgid "Kanban Output"
 msgstr "看板输出"
 
@@ -12928,6 +12953,9 @@ msgstr "套件"
 
 msgid "Label"
 msgstr "标签"
+
+msgid "Label Size"
+msgstr "标签尺寸"
 
 msgid "Label to complete the current operation for this kanban"
 msgstr "用于完成此看板当前操作的标签"
@@ -13243,6 +13271,9 @@ msgstr "让我们设置您的账户"
 
 msgid "Letter"
 msgstr "字母"
+
+msgid "Letter, 6 per page"
+msgstr "Letter，每页 6 张"
 
 msgid "Liability"
 msgstr "负债"
@@ -16175,6 +16206,12 @@ msgstr "未结任务数"
 msgid "Number of operations"
 msgstr "工序数量"
 
+msgid "Number weeks by calendar week"
+msgstr "按日历周为周编号"
+
+msgid "Number weeks from the present week"
+msgstr "从本周开始为周编号"
+
 msgid "Numbering sequence"
 msgstr "编号规则"
 
@@ -18004,6 +18041,7 @@ msgstr "已收本金"
 msgid "Print"
 msgstr "打印"
 
+#. placeholder {0}: printIds.length
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "打印 {0} 个标签"
@@ -18710,6 +18748,10 @@ msgstr "问题"
 
 msgid "Queued"
 msgstr "排队中"
+
+#. placeholder {0}: printIds.length
+msgid "Queued {0} labels for printing"
+msgstr "已将 {0} 个标签加入打印队列"
 
 msgid "Queued {count} sync operations for sync"
 msgstr ""
@@ -27092,12 +27134,11 @@ msgstr "周"
 msgid "Week {0}"
 msgstr "第{0}周"
 
-#. placeholder {0}: i + 1
-msgid "Week {0} ({formattedDate})"
-msgstr "第 {0} 周 ({formattedDate})"
-
 msgid "Week {weekNumber}"
 msgstr "第 {weekNumber} 周"
+
+msgid "Week {weekNumber} ({formattedDate})"
+msgstr "第 {weekNumber} 周 ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "第8周切换"
@@ -27134,6 +27175,15 @@ msgstr "第5至7周"
 
 msgid "Weeks 7 to 8"
 msgstr "第7至8周"
+
+msgid "Weeks are counted from today: Present Week, Week 2, Week 3."
+msgstr "周从今天开始计数：本周、第 2 周、第 3 周。"
+
+msgid "Weeks are numbered by calendar week"
+msgstr "周按日历周编号"
+
+msgid "Weeks are numbered from the present week"
+msgstr "周从本周开始编号"
 
 msgid "Weeks Open"
 msgstr "未结周数"

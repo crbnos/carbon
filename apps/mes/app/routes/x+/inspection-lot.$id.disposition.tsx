@@ -258,6 +258,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const completions = await postSerialCompletions(serviceRole, {
         candidates: completionCandidates,
         jobOperationId: state.jobOperationId,
+        jobMakeMethodId: state.operation.jobMakeMethodId,
         workCenterId: state.operation.workCenterId,
         inspectionId: id,
         eventIds,

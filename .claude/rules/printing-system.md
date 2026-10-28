@@ -20,15 +20,16 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
   - `./ui` (`src/ui/index.ts`) — `PrintingProvider`/`usePrinting`, `PrintButton`, `LabelDownloadModal`
 - **`@carbon/documents`** (`packages/documents/`) — actual renderers. PDFs via `@react-pdf/renderer`
   React components (`pdf/ProductLabelPDF`, `pdf/StorageUnitLabelPDF`, `pdf/KanbanLabelPDF`, plus
-  invoice/PO/quote/traveler docs); ZPL via `zpl/ProductLabelZPL`, `zpl/StorageUnitLabelZPL`
-  (`generateProductLabelZPL`, `generateStorageUnitLabelZPL`).
+  invoice/PO/quote/traveler docs); ZPL via `zpl/ProductLabelZPL`, `zpl/StorageUnitLabelZPL`,
+  `zpl/KanbanLabelZPL` (`generateProductLabelZPL`, `generateStorageUnitLabelZPL`,
+  `generateKanbanLabelZPL`).
 
 ## Document type registry — `packages/printing/src/registry.ts`
 
 `documentTypeRegistry` entries (`id`, `sourceDocuments[]`, `builtInRenderer: "zpl"|"pdf"|null`,
 `defaultFormat`):
 - `productLabel` — sources `Receipt, Shipment, Operation, Entity, Job, Split, StockTransfer`; default zpl
-- `kanbanCard` — source `Kanban`; pdf (built-in renderer only supports PDF)
+- `kanbanCard` — source `Kanban`; default pdf, ZPL on media of 3" x 2" and up (see `kanban-system.md` → Labels)
 - `storageUnitLabel` — source `StorageUnit`; default zpl
 
 `getDocumentTypesForSource(sourceDocument)` maps a source doc → the doc-type ids to print.
@@ -63,7 +64,9 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 - `renderItemBuiltIn` — used when no template but `builtInRenderer !== null`. PDF path renders the
   React-PDF component via `renderToStream` → base64. `productLabel` loads the company's
   `documentTemplate` (`documentType="trackingLabel"`) + logo so queued jobs match the customizer.
-  ZPL requires a `labelSize.zpl` config (`requireZplCapable`); kanban built-in is PDF-only.
+  ZPL requires a `labelSize.zpl` config (`requireZplCapable`). A kanban card needs media that
+  `canHoldKanbanLabel` accepts for ZPL; a PDF printer with smaller media prints the company's
+  `kanbanLabelSize` instead.
 - If neither (`builtInRenderer === null`, no template) → job fails asking for a BinderyPress template.
 
 ## Printer routing & assignments
@@ -131,12 +134,15 @@ wrapped in try/catch that never blocks the parent op, then `trigger("print-job",
   every completion path: the Complete form (`x+/complete.tsx`), the QR / kanban Complete scan
   (`x+/end.$operationId.tsx`), and inspection lots (`postSerialCompletions` / `postBulkCompletion`
   in `services/quality.server.ts`). A new path that completes a tracked unit must call it too, or that
-  path mints serials with no label.
+  path mints serials with no label. "First" is the routing's answer, `isFirstOperationOfMakeMethod`
+  (`services/operations.service.ts`: no `jobOperationDependency` predecessor in the same make method),
+  the check the operation and assembly views use. Counting the unit's `Operation <id>` markers
+  reprinted a label at every later operation whenever the unit completed there had one or none.
 
 ## Gotchas
 
-- Built-in **ZPL** needs `labelSize.zpl`; kanban built-in is **PDF only** — printing kanban to a ZPL
-  printer fails unless a BinderyPress template handles it.
+- Built-in **ZPL** needs `labelSize.zpl`; a kanban card also needs media of at least 3" x 2"
+  (`label3x2`, `label4x2`, `label100x50mm`), or the job fails.
 - Both Inngest fns use `retries: 0`; delivery timeouts are intentionally non-retriable to avoid dupes.
 - `print-job/` is a **directory** (`index.tsx` / `renderers.tsx` / `resolvers.ts`), not a single file.
   `.tsx` because renderers instantiate React-PDF components.

@@ -94,6 +94,7 @@ import {
   expiredEntityPolicies,
   incompletePickingListPolicies,
   invoiceAutomations,
+  kanbanLabelSizes,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
   returnPickedMaterialTimings,
@@ -228,7 +229,8 @@ export const writeMissingJournals = defineServiceFn({
  *
  * @remarks
  * Writes the fields sent and leaves the rest: what a kanban card prints
- * (label, QR code or URL), the shelf-life and expiry policy (the near-expiry
+ * (label, QR code or URL) and the size its label prints at (a letter sheet of
+ * six, or a 4" x 2" or 3" x 2" thermal label), the shelf-life and expiry policy (the near-expiry
  * warning in days, null to turn the badges off; the default shelf life of a
  * new item; which inputs a calculated expiry reads; and what consuming an
  * expired entity does), whether finishing a picking list with unpicked
@@ -242,6 +244,7 @@ export const writeMissingJournals = defineServiceFn({
 export const updateInventorySettings = defineServiceFn({
   input: z.object({
     kanbanOutput: z.enum(kanbanOutputTypes).optional(),
+    kanbanLabelSize: z.enum(kanbanLabelSizes).optional(),
     inventoryShelfLife: z
       .object({
         nearExpiryWarningDays: z.number().int().min(0).max(365).nullable(),
@@ -782,9 +785,11 @@ const employeeOrNone = z.string().min(1).nullable();
  * resources update permission it is refused. Then whether purchase orders
  * the planning pages raise skip approval, the reschedule tolerance in days,
  * the default planning horizon in days (null for no time fence), the forecast
- * consumption window in weekly periods back and forward, and the time of day
+ * consumption window in weekly periods back and forward, the time of day
  * scheduled MRP runs on the company's clock ("HH:MM" or "HH:MM:SS"; null runs
- * it every 3 hours).
+ * it every 3 hours), and whether the planning grids and demand forecasts head
+ * their weeks by calendar week (ISO 8601 week of the year) rather than
+ * counting from the present week.
  *
  * @mcp
  */
@@ -805,6 +810,7 @@ export const updatePlanningSettings = defineServiceFn({
       })
       .optional(),
     skipApprovalForPlanningPurchaseOrders: z.boolean().optional(),
+    useCalendarWeeks: z.boolean().optional(),
     rescheduleToleranceDays: z.number().int().min(0).max(365).optional(),
     defaultPlanningHorizonDays: z
       .number()

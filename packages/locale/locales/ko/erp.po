@@ -661,6 +661,10 @@ msgstr ""
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 행 제외됨} other {# 행 제외됨}}"
 
+#. placeholder {0}: printIds.length
+msgid "{failed} of {0} print jobs failed"
+msgstr "인쇄 작업 {0}개 중 {failed}개가 실패했습니다"
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {그리고 # 개 이상의 기록.} other {그리고 # 개 이상의 기록.}}"
 
@@ -1036,6 +1040,9 @@ msgstr "2시간"
 msgid "3 years"
 msgstr "3년"
 
+msgid "3\" x 2\" label"
+msgstr "3\" x 2\" 라벨"
+
 msgid "30D"
 msgstr "30일"
 
@@ -1047,6 +1054,9 @@ msgstr "3시간"
 
 msgid "4 years"
 msgstr "4년"
+
+msgid "4\" x 2\" label"
+msgstr "4\" x 2\" 라벨"
 
 msgid "4h"
 msgstr "4시간"
@@ -1089,6 +1099,9 @@ msgstr "작업자가 회전할 수 있는 3D 모델"
 
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "작업자를 생성할 때 4자리 PIN이 생성됩니다."
+
+msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
+msgstr "4\" x 2\" 또는 3\" x 2\" 라벨은 Zebra 같은 감열 프린터용으로 라벨당 카드 한 장을 인쇄합니다."
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "배치는 최소한 하나의 공정이 필요합니다. 전체 배치를 분할하려면 대신 Dissolve를 사용하세요."
@@ -4691,6 +4704,9 @@ msgstr "계산 방법"
 
 msgid "Calendar"
 msgstr "달력"
+
+msgid "Calendar Weeks"
+msgstr "달력 주"
 
 msgid "Calibration"
 msgstr "교정"
@@ -8873,6 +8889,9 @@ msgstr "각 공급업체의 외주 공정은 모든 작업 지시에서 새로�
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "각 단위의 공정가액과 경제수명이 약관이 대부분을 포함하는지 결정합니다. 셀을 클릭하여 변경하세요."
 
+msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
+msgstr "각 주의 제목은 ISO 8601 연간 주차로 표시됩니다: 44주차, 45주차, 46주차."
+
 msgid "Each, lb, ft…"
 msgstr "개, lb, ft…"
 
@@ -11696,6 +11715,9 @@ msgstr "샘플 크기를 결정하는 방식 — 전수 검사, 처음 N개 검�
 msgid "How the unit price of each quantity was calculated."
 msgstr "각 수량의 단가를 계산한 방법"
 
+msgid "How the weekly columns of Material Planning, Production Planning and Demand Forecasts are numbered."
+msgstr "물질 계획, 생산 계획 및 소요량 예측의 주별 열 번호를 매기는 방식입니다."
+
 msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
 msgstr "단계에서 전체 빌드를 돌리는 방향입니다(예: 아랫면에 부품을 끼우기 위해 뒤집기). 같은 빌드의 이후 단계는 다른 단계에서 빌드를 다시 돌릴 때까지 이 방향을 유지합니다."
 
@@ -12857,6 +12879,9 @@ msgstr "칸반"
 msgid "Kanban for {kanbanName}"
 msgstr "{kanbanName}의 칸반"
 
+msgid "Kanban ID"
+msgstr "칸반 ID"
+
 msgid "Kanban Output"
 msgstr "칸반 산출물"
 
@@ -12928,6 +12953,9 @@ msgstr "키트"
 
 msgid "Label"
 msgstr "라벨"
+
+msgid "Label Size"
+msgstr "라벨 크기"
 
 msgid "Label to complete the current operation for this kanban"
 msgstr "이 칸반의 현재 공정작업을 완료하는 라벨"
@@ -13243,6 +13271,9 @@ msgstr "계정을 설정해봅시다"
 
 msgid "Letter"
 msgstr "레터"
+
+msgid "Letter, 6 per page"
+msgstr "레터, 페이지당 6개"
 
 msgid "Liability"
 msgstr "부채"
@@ -16175,6 +16206,12 @@ msgstr "열린 작업 수"
 msgid "Number of operations"
 msgstr "공정의 수"
 
+msgid "Number weeks by calendar week"
+msgstr "달력 주 기준으로 주 번호 매기기"
+
+msgid "Number weeks from the present week"
+msgstr "현재 주부터 주 번호 매기기"
+
 msgid "Numbering sequence"
 msgstr "채번 규칙"
 
@@ -18004,6 +18041,7 @@ msgstr "수집된 원금"
 msgid "Print"
 msgstr "인쇄"
 
+#. placeholder {0}: printIds.length
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "{0} 라벨 인쇄"
@@ -18710,6 +18748,10 @@ msgstr "질문"
 
 msgid "Queued"
 msgstr "대기열"
+
+#. placeholder {0}: printIds.length
+msgid "Queued {0} labels for printing"
+msgstr "라벨 {0}개를 인쇄 대기열에 추가했습니다"
 
 msgid "Queued {count} sync operations for sync"
 msgstr ""
@@ -27092,12 +27134,11 @@ msgstr "주"
 msgid "Week {0}"
 msgstr "{0}주차"
 
-#. placeholder {0}: i + 1
-msgid "Week {0} ({formattedDate})"
-msgstr "{0}주차 ({formattedDate})"
-
 msgid "Week {weekNumber}"
 msgstr "{weekNumber}주차"
+
+msgid "Week {weekNumber} ({formattedDate})"
+msgstr "{weekNumber}주차 ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "8주차 전환"
@@ -27134,6 +27175,15 @@ msgstr "5~7주"
 
 msgid "Weeks 7 to 8"
 msgstr "7~8주"
+
+msgid "Weeks are counted from today: Present Week, Week 2, Week 3."
+msgstr "주는 오늘부터 셉니다: 현재 주, 2주차, 3주차."
+
+msgid "Weeks are numbered by calendar week"
+msgstr "주 번호가 달력 주 기준으로 매겨집니다"
+
+msgid "Weeks are numbered from the present week"
+msgstr "주 번호가 현재 주부터 매겨집니다"
 
 msgid "Weeks Open"
 msgstr "미결 주수"

@@ -507,7 +507,9 @@ export async function postSerialCompletions(
       inspectionSampleId: string | null;
     }[];
     jobOperationId: string;
-    // The operation's work center, for the first-operation label auto-print.
+    // The operation's make method and work center, for the first-operation
+    // label auto-print.
+    jobMakeMethodId: string | null;
     workCenterId: string | null;
     inspectionId: string;
     eventIds: ProductionEventIds;
@@ -547,6 +549,8 @@ export async function postSerialCompletions(
     await autoPrintFirstOperationLabel({
       serviceRole,
       trackedEntityId,
+      jobOperationId: args.jobOperationId,
+      jobMakeMethodId: args.jobMakeMethodId,
       workCenterId: args.workCenterId ?? undefined,
       companyId: args.companyId,
       userId: args.userId
@@ -600,6 +604,8 @@ export async function postBulkCompletion(
     await autoPrintFirstOperationLabel({
       serviceRole,
       trackedEntityId: state.batchTrackedEntityId,
+      jobOperationId: state.jobOperationId,
+      jobMakeMethodId: state.operation.jobMakeMethodId,
       workCenterId: state.operation.workCenterId ?? undefined,
       companyId: args.companyId,
       userId: args.userId
