@@ -29,6 +29,7 @@ import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { JournalEntrySourceTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { usePeople } from "~/stores/people";
@@ -43,6 +44,7 @@ import JournalEntryStatus from "./JournalEntryStatus";
 type JournalEntriesTableProps = {
   data: JournalEntryListItem[];
   count: number;
+  infinite: InfiniteOptions;
   primaryAction?: ReactNode;
 };
 
@@ -55,7 +57,7 @@ const defaultColumnVisibility = {
 };
 
 const JournalEntriesTable = memo(
-  ({ data, count, primaryAction }: JournalEntriesTableProps) => {
+  ({ data, count, primaryAction, infinite }: JournalEntriesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -279,6 +281,7 @@ const JournalEntriesTable = memo(
     return (
       <>
         <Table<JournalEntryListItem>
+          infinite={infinite}
           data={data}
           columns={columns}
           count={count}

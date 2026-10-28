@@ -2,19 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getPurchaseInvoices } from "~/modules/invoicing/invoicing.service";
 import { PurchaseInvoicesTable } from "~/modules/invoicing/ui";
 import type { Handle } from "~/utils/handle";
+import { purchaseInvoicesList } from "~/utils/list-registry/invoicing.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   realtime: ["purchaseInvoice"],
@@ -24,49 +20,25 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "invoicing"
+  return loadListPage(request, purchaseInvoicesList, {
+    dataKey: "purchaseInvoices",
+    onError: {
+      redirectTo: path.to.invoicing,
+      message: "Failed to fetch purchase invoices"
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const supplierId = searchParams.get("supplierId");
-
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const purchaseInvoices = await getPurchaseInvoices(client, companyId, {
-    search,
-    supplierId,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
-
-  if (purchaseInvoices.error) {
-    redirect(
-      path.to.invoicing,
-      await flash(
-        request,
-        error(purchaseInvoices.error, "Failed to fetch purchase invoices")
-      )
-    );
-  }
-
-  return {
-    count: purchaseInvoices.count ?? 0,
-    purchaseInvoices: purchaseInvoices.data ?? []
-  };
 }
 
 export default function InvoicingPurchaseInvoicesRoute() {
-  const { count, purchaseInvoices } = useLoaderData<typeof loader>();
+  const { count, purchaseInvoices, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <PurchaseInvoicesTable data={purchaseInvoices} count={count} />
+      <PurchaseInvoicesTable
+        data={purchaseInvoices}
+        count={count}
+        infinite={infinite}
+      />
       <RecordOutlet />
     </VStack>
   );

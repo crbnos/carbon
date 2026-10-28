@@ -81,6 +81,9 @@ import InspectionMeasurementMatrix from "./InspectionMeasurementMatrix";
 import ScanInspectionSample from "./ScanInspectionSample";
 
 const InspectionDrawingPane = lazy(() => import("./InspectionDrawingPane"));
+const ModelUploadPreview = lazy(
+  () => import("@carbon/viewer/model-upload-preview")
+);
 
 // Vertical-stack sizing, mirrored from the ERP quality InspectionView: the PDF
 // pane keeps a pinned height while the features table is expanded; a draggable
@@ -139,6 +142,8 @@ type InspectionViewProps = {
   balloons: DrawingBalloonRow[];
   documentName: string | null;
   pdfUrl: string | null;
+  /** A plan made from a model's PMI: the drawing pane shows the model. */
+  model: { modelUploadId: string; modelPath: string | null } | null;
   issueTypes: IssueTypeListItem[];
   trackedEntities: TrackedEntity[];
   requiresSerialTracking: boolean;
@@ -171,6 +176,7 @@ export function InspectionView({
   balloons,
   documentName,
   pdfUrl,
+  model,
   issueTypes,
   trackedEntities,
   requiresSerialTracking,
@@ -198,7 +204,7 @@ export function InspectionView({
     [features]
   );
   const hasFeatures = liveFeatures.length > 0;
-  const showDrawing = pdfUrl != null;
+  const showDrawing = pdfUrl != null || model != null;
 
   const scannerDisclosure = useDisclosure();
   const rejectDisclosure = useDisclosure();
@@ -499,11 +505,12 @@ export function InspectionView({
     ? Math.max(1, ...liveFeatures.map((f) => f.sampleSize))
     : inspection.sampleSize;
 
-  // Gating mirrors the server-side disposition guards: feature-driven lots
-  // gate per feature; lots without features gate at the lot level on
-  // the "Overall result" pass/fail counts.
+  // Accept gating: feature-driven lots gate per feature; lots without
+  // features gate at the lot level on the "Overall result" pass/fail counts.
+  // Reject is open at any time — an inspector can condemn a lot for reasons
+  // no characteristic captures (damage, wrong part, contamination).
   let canAccept: boolean;
-  let canReject: boolean;
+  let failedStatistically: boolean;
   if (hasFeatures) {
     const allFeaturesSatisfied = liveFeatures.every((feature) => {
       const counts = featureCounts.get(feature.inspectionFeatureId) ?? {
@@ -520,14 +527,15 @@ export function InspectionView({
       return counts != null && counts.failed >= feature.rejectionNumber;
     });
     canAccept = !isLocked && allFeaturesSatisfied;
-    canReject = !isLocked && (anyFeatureRejectable || fails > 0);
+    failedStatistically = anyFeatureRejectable || fails > 0;
   } else {
     canAccept =
       !isLocked &&
       inspected >= inspection.sampleSize &&
       fails <= inspection.acceptanceNumber;
-    canReject = !isLocked && fails > inspection.acceptanceNumber;
+    failedStatistically = fails > inspection.acceptanceNumber;
   }
+  const canReject = !isLocked;
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
     if (!hasFeatures) return [];
@@ -554,6 +562,14 @@ export function InspectionView({
       .filter(Boolean) as FailedFeatureSummary[];
   }, [hasFeatures, liveFeatures, effectiveMeasurements]);
 
+  const pmiLinks = useMemo(
+    () =>
+      liveFeatures.map((f) => ({
+        id: f.inspectionFeatureId,
+        pmiItemId: f.inspectionFeature!.pmiItemId ?? null
+      })),
+    [liveFeatures]
+  );
   const drawingBalloons = useMemo(() => {
     const labelByFeatureId = new Map(
       liveFeatures.map((f) => [
@@ -841,12 +857,24 @@ export function InspectionView({
                         </div>
                       }
                     >
-                      <InspectionDrawingPane
-                        pdfUrl={pdfUrl!}
-                        balloons={drawingBalloons}
-                        activeFeatureId={activeFeatureId}
-                        onBalloonClick={setActiveFeatureId}
-                      />
+                      {model ? (
+                        <ModelUploadPreview
+                          modelUploadId={model.modelUploadId}
+                          modelPath={model.modelPath}
+                          companyId={user.company.id}
+                          pmiLinks={pmiLinks}
+                          selectedLinkId={activeFeatureId}
+                          onLinkSelect={setActiveFeatureId}
+                          className="h-full rounded-none"
+                        />
+                      ) : (
+                        <InspectionDrawingPane
+                          pdfUrl={pdfUrl!}
+                          balloons={drawingBalloons}
+                          activeFeatureId={activeFeatureId}
+                          onBalloonClick={setActiveFeatureId}
+                        />
+                      )}
                     </Suspense>
                   )}
                 </ClientOnly>
@@ -1041,7 +1069,11 @@ export function InspectionView({
           maxAllocatable={opRemaining}
           completions={0}
           issueTypes={issueTypes}
-          summary={t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s). Route the units below to scrap or rework, or record the verdict only.`}
+          summary={
+            failedStatistically
+              ? t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s). Route the units below to scrap or rework, or record the verdict only.`
+              : t`The entire lot of ${inspection.lotSize} will be rejected as non-conforming — ${passes} sampled pass(es) and ${fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only.`
+          }
           failedFeatureSummary={failedFeatureSummary}
           eventIds={eventIds}
           onCancel={rejectDisclosure.onClose}

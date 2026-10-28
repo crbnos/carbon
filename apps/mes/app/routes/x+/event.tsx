@@ -20,6 +20,7 @@ import {
   startMachineProductionEvent,
   startProductionEvent
 } from "~/services/operations.service";
+import { assignSerialNumberOnFirstTouch } from "~/services/serial-number.server";
 import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -168,6 +169,15 @@ async function productionEventAction({ request }: ActionFunctionArgs) {
     }
     if (startEvent.data && "endedEventIds" in startEvent.data) {
       await postEnded(startEvent.data.endedEventIds);
+    }
+
+    // First touch: number the unit if it has no serial number yet.
+    if (trackedEntityId) {
+      await assignSerialNumberOnFirstTouch({
+        trackedEntityId,
+        jobOperationId: d.jobOperationId,
+        companyId
+      });
     }
 
     return data(

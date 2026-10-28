@@ -4,7 +4,12 @@
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
-import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
+import {
+  type Database,
+  fetchAllByIds,
+  getCompanyTimeZone,
+  type Json
+} from "@carbon/database";
 import {
   convertUnitPrice,
   supplierPartCurrency
@@ -37,8 +42,10 @@ import {
   datetime,
   deriveRate,
   escapeHTMLChars,
+  groupBy,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   SCALE,
+  sanitize,
   taxableBase,
   tiptapToHTML,
   unchecked
@@ -59,6 +66,7 @@ import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
+import { incoterms, optionalTiptapDoc } from "~/modules/shared/shared.models";
 import {
   getLocationTimeZone,
   invokePosting,
@@ -71,6 +79,8 @@ import { fromServerFn } from "../shared/shared.service";
 import {
   canCreatePurchaseOrderRevision,
   findPlanningPurchaseOrder,
+  isIsoDate,
+  isPurchaseOrderDateField,
   isPurchaseOrderEditableFromPlanning,
   isPurchaseOrderLocked,
   isPurchaseReturnOrderLocked,
@@ -85,6 +95,9 @@ import {
   plannedOrderValidator,
   planningPurchaseOrderWeek,
   purchaseOrderDeleteRefusal,
+  purchaseOrderLineDateFields,
+  purchaseOrderLineDateRefusal,
+  purchaseOrderPromisedDateRefusal,
   purchaseOrderStatusType,
   purchaseReturnOrderLineValidator,
   purchasingRfqFinalizeValidator,
@@ -96,6 +109,7 @@ import {
 } from "./purchasing.models";
 import { renderPurchaseReturnOrderPdf } from "./purchasing.pdf";
 import * as service from "./purchasing.service";
+import type { PurchaseOrderStatus } from "./types";
 
 // ── Operations ──────────────────────────────────────────────────────────────
 // `defineServiceFn` operations: what the routes, the API and MCP call, so each
@@ -1834,9 +1848,11 @@ const purchaseOrderDeliveryFields = [
  * (an empty `supplierId` changes nothing). A new `supplierId` on one order
  * takes the supplier's currency and today's rate; a new `currencyCode` takes
  * today's rate (refused when there is none). `receiptRequestedDate`,
- * `locationId` and `deliveryDate` are the delivery's. `receiptPromisedDate`
- * also fills every line that has no promised date of its own. Refused when
- * any order is released, except for `deliveryDate`.
+ * `receiptPromisedDate`, `locationId` and `deliveryDate` are the delivery's;
+ * a new date also moves the lines still on the order's previous one. Refused
+ * when any order is released, except for `deliveryDate`, and for
+ * `receiptPromisedDate` until the order is fully received (To Invoice,
+ * Completed or Closed).
  *
  * @mcp
  */
@@ -1862,7 +1878,14 @@ export const updatePurchaseOrders = defineServiceFn({
       updatedAt: datetime.timestamp()
     });
 
-    if (field !== "deliveryDate") {
+    if (field === "receiptPromisedDate") {
+      const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
+      if (statuses instanceof CarbonError) return statuses;
+      const refusal = statuses
+        .map(purchaseOrderPromisedDateRefusal)
+        .find((message) => message !== null);
+      if (refusal) return ctx.error("rule", refusal);
+    } else if (field !== "deliveryDate") {
       const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
       if (statuses instanceof CarbonError) return statuses;
       if (statuses.some(isPurchaseOrderLocked)) {
@@ -1873,20 +1896,31 @@ export const updatePurchaseOrders = defineServiceFn({
     const failed = (error: unknown) =>
       ctx.error("internal", "Failed to update the purchase order", error);
 
-    if (field === "receiptPromisedDate") {
-      const lines = await client
-        .from("purchaseOrderLine")
-        .update({ promisedDate: value ?? undefined, ...stamp() })
-        .in("purchaseOrderId", ids)
-        .eq("companyId", companyId)
-        .is("promisedDate", null);
-      if (lines.error) return failed(lines.error);
+    if (isPurchaseOrderDateField(field)) {
+      // One transaction: the lines compare against the order's previous date,
+      // so they are written before the delivery row changes it.
+      const saved = await ctx
+        .transaction(async (tx) => {
+          const db = tx.asSystem.pg;
+          await service.cascadePurchaseOrderDateToLines(db, {
+            companyId,
+            userId: ctx.auditUserId,
+            purchaseOrderIds: ids,
+            field,
+            value
+          });
+          await db
+            .updateTable("purchaseOrderDelivery")
+            .set({ [field]: value, ...stamp() })
+            .where("id", "in", ids)
+            .where("companyId", "=", companyId)
+            .execute();
+        })
+        .catch(failed);
+      return saved instanceof CarbonError ? saved : { ids };
     }
 
-    if (
-      field === "receiptPromisedDate" ||
-      (purchaseOrderDeliveryFields as readonly string[]).includes(field)
-    ) {
+    if ((purchaseOrderDeliveryFields as readonly string[]).includes(field)) {
       const delivery = await client
         .from("purchaseOrderDelivery")
         .update(unchecked({ [field]: value, ...stamp() }))
@@ -1930,13 +1964,145 @@ export const updatePurchaseOrders = defineServiceFn({
 });
 
 /**
+ * Change one date of a purchase order line.
+ *
+ * @remarks
+ * The requested date is refused once the order is released, the promised date
+ * once the line or the order is received; the delivery date can always be
+ * corrected.
+ *
+ * @param lineId - The purchase order line's id.
+ * @param field - Which date: `requiredDate`, `promisedDate` or `receivedDate`.
+ * @param value - The date, `YYYY-MM-DD`, or null to clear it.
+ * @mcp
+ */
+export const updatePurchaseOrderLineDate = defineServiceFn({
+  input: z.object({
+    lineId: z.string().min(1),
+    field: z.enum(purchaseOrderLineDateFields),
+    value: z.string().refine(isIsoDate, "Use a YYYY-MM-DD date").nullable()
+  }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { lineId, field, value }) {
+    const companyId = ctx.company.id;
+    const db = ctx.asSystem.pg;
+    const failed = (error: unknown) =>
+      ctx.error("internal", "Failed to update the purchase order line", error);
+
+    const line = await db
+      .selectFrom("purchaseOrderLine")
+      .innerJoin("purchaseOrder", (join) =>
+        join
+          .onRef("purchaseOrder.id", "=", "purchaseOrderLine.purchaseOrderId")
+          .onRef("purchaseOrder.companyId", "=", "purchaseOrderLine.companyId")
+      )
+      .select(["purchaseOrderLine.receivedComplete", "purchaseOrder.status"])
+      .where("purchaseOrderLine.id", "=", lineId)
+      .where("purchaseOrderLine.companyId", "=", companyId)
+      .executeTakeFirst()
+      .catch(failed);
+    if (line instanceof CarbonError) return line;
+    if (!line) return ctx.error("notFound", "Purchase order line not found");
+
+    const refusal = purchaseOrderLineDateRefusal(field, line);
+    if (refusal) return ctx.error("rule", refusal);
+
+    const updated = await db
+      .updateTable("purchaseOrderLine")
+      .set({
+        [field]: value,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", lineId)
+      .where("companyId", "=", companyId)
+      .execute()
+      .catch(failed);
+    return updated instanceof CarbonError ? updated : { lineId };
+  }
+});
+
+/**
+ * Save a purchase order's Shipping card. Refused once the order is released.
+ * A new date also moves the lines still on the order's previous one.
+ */
+export const updatePurchaseOrderDelivery = defineServiceFn({
+  input: z.object({
+    id: z.string().min(1),
+    locationId: z.string().optional(),
+    shippingMethodId: z.string().optional(),
+    trackingNumber: z.string(),
+    deliveryDate: z.string().optional(),
+    receiptRequestedDate: z.string().optional(),
+    receiptPromisedDate: z.string().optional(),
+    dropShipment: z.boolean(),
+    customerId: z.string().optional(),
+    customerLocationId: z.string().optional(),
+    supplierShippingCost: z.number().optional(),
+    notes: z.string().optional(),
+    incoterm: z.enum(incoterms).optional(),
+    incotermLocation: z.string().optional(),
+    customFields: z.record(z.string(), z.unknown()).optional()
+  }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { id, customFields, ...delivery }) {
+    const companyId = ctx.company.id;
+    const statuses = await service.statusesOf(ctx, "purchaseOrder", [id]);
+    if (statuses instanceof CarbonError) return statuses;
+    if (statuses.length === 0) {
+      return ctx.error("notFound", "Purchase order not found");
+    }
+    if (statuses.some(isPurchaseOrderLocked)) {
+      return ctx.error("rule", "Cannot modify a confirmed purchase order.");
+    }
+
+    const saved = await ctx
+      .transaction(async (tx) => {
+        const db = tx.asSystem.pg;
+        for (const field of [
+          "receiptRequestedDate",
+          "receiptPromisedDate",
+          "deliveryDate"
+        ] as const) {
+          await service.cascadePurchaseOrderDateToLines(db, {
+            companyId,
+            userId: ctx.auditUserId,
+            purchaseOrderIds: [id],
+            field,
+            value: delivery[field] ?? null
+          });
+        }
+        await db
+          .updateTable("purchaseOrderDelivery")
+          .set({
+            ...sanitize(delivery),
+            customFields: (customFields ?? null) as Json,
+            updatedBy: ctx.auditUserId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", id)
+          .where("companyId", "=", companyId)
+          .execute();
+      })
+      .catch((error: unknown) =>
+        ctx.error("internal", "Failed to update purchase order delivery", error)
+      );
+    return saved instanceof CarbonError ? saved : { id };
+  }
+});
+
+/**
  * Delete purchase orders.
  *
  * @remarks
- * Only Draft, Planned or Needs Approval orders. An order that needs approval
- * can be deleted only by the person who requested it (an approver rejects
- * instead), and its pending approval requests are cancelled first. Every
- * order is checked before anything is deleted.
+ * Deletes the Draft and Planned orders, and the Needs Approval orders the
+ * caller requested (their pending approval requests are cancelled first),
+ * and skips the rest: an approver rejects an order instead of deleting it.
+ * Refused, with the first order's reason, when none could be deleted.
+ *
+ * @returns `purchaseOrderIds`, the orders deleted, and `skipped`, how many were not.
  *
  * @mcp destructive
  */
@@ -1950,31 +2116,38 @@ export const deletePurchaseOrders = defineServiceFn({
     const userId = ctx.auditUserId;
     const ids = [...new Set(purchaseOrderIds)];
 
-    const orders = await system
-      .from("purchaseOrder")
-      .select("id, status")
-      .in("id", ids)
-      .eq("companyId", companyId);
+    const orders = await fetchAllByIds(ids, (batch) =>
+      system
+        .from("purchaseOrder")
+        .select("id, status")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    );
     if (orders.error) {
-      return ctx.error("internal", "Purchase order not found", orders.error);
-    }
-    if (orders.data.length !== ids.length) {
-      return ctx.error("notFound", "Purchase order not found");
+      return ctx.error(
+        "internal",
+        "Failed to read the purchase orders",
+        orders.error
+      );
     }
 
-    const needsApproval = orders.data
+    const inApproval = orders.data
       .filter((order) => order.status === "Needs Approval")
       .map((order) => order.id);
     const pending =
-      needsApproval.length > 0
-        ? await system
-            .from("approvalRequest")
-            .select("documentId, requestedBy, amount, requestedAt")
-            .eq("documentType", "purchaseOrder")
-            .in("documentId", needsApproval)
-            .eq("companyId", companyId)
-            .eq("status", "Pending")
-            .order("requestedAt", { ascending: false })
+      inApproval.length > 0
+        ? await fetchAllByIds(inApproval, (batch) =>
+            system
+              .from("approvalRequest")
+              .select("id, documentId, requestedBy, amount, requestedAt")
+              .eq("documentType", "purchaseOrder")
+              .in("documentId", batch)
+              .eq("companyId", companyId)
+              .eq("status", "Pending")
+              .order("requestedAt", { ascending: false })
+              .order("id")
+          )
         : null;
     if (pending?.error) {
       return ctx.error(
@@ -1984,6 +2157,12 @@ export const deletePurchaseOrders = defineServiceFn({
       );
     }
 
+    const deletable: string[] = [];
+    let refused: {
+      status: string | null;
+      refusal: "status" | "notRequester";
+      amount: number | null;
+    } | null = null;
     for (const order of orders.data) {
       const latest = pending?.data.find((r) => r.documentId === order.id);
       const refusal = purchaseOrderDeleteRefusal({
@@ -1991,51 +2170,86 @@ export const deletePurchaseOrders = defineServiceFn({
         requestedBy: latest?.requestedBy,
         userId
       });
-      if (refusal === "status") {
-        return ctx.error(
-          "rule",
-          `Cannot delete purchase order with status "${order.status ?? "unknown"}". Only Draft, Planned, or Needs Approval (if you're the requester) purchase orders can be deleted.`
-        );
-      }
-      if (refusal === "notRequester") {
-        const isApprover = await canApproveRequest(
-          system,
-          {
-            amount: latest?.amount ?? null,
-            documentType: "purchaseOrder",
-            companyId
-          },
-          userId
-        );
-        return ctx.error(
-          "forbidden",
-          isApprover
-            ? "Please reject the approval request instead of deleting"
-            : "You do not have permission to delete this purchase order"
-        );
+      if (refusal) {
+        refused ??= {
+          status: order.status,
+          refusal,
+          amount: latest?.amount ?? null
+        };
+      } else {
+        deletable.push(order.id);
       }
     }
 
+    if (deletable.length === 0) {
+      if (!refused) return ctx.error("notFound", "Purchase order not found");
+      if (refused.refusal === "status") {
+        return ctx.error(
+          "rule",
+          `Cannot delete purchase order with status "${refused.status ?? "unknown"}". Only Draft, Planned, or Needs Approval (if you're the requester) purchase orders can be deleted.`
+        );
+      }
+      const isApprover = await canApproveRequest(
+        system,
+        {
+          amount: refused.amount,
+          documentType: "purchaseOrder",
+          companyId
+        },
+        userId
+      );
+      return ctx.error(
+        "forbidden",
+        isApprover
+          ? "Please reject the approval request instead of deleting"
+          : "You do not have permission to delete this purchase order"
+      );
+    }
+
+    // Each order is deleted only in the status it was checked in: one sent
+    // for approval since it was read as a Draft stays, with its request.
+    const deletableByStatus = groupBy(
+      orders.data.filter((order) => deletable.includes(order.id)),
+      (order) => order.status!
+    );
     // One transaction: a delete that fails (an invoice line still names the
     // order) must leave its approval requests pending.
     const removed = await ctx
       .transaction(async (tx) => {
+        const rows = await tx.asSystem.pg
+          .deleteFrom("purchaseOrder")
+          .where("companyId", "=", companyId)
+          .where((eb) =>
+            eb.or(
+              Object.entries(deletableByStatus).map(([status, group]) =>
+                eb.and([
+                  eb(
+                    "id",
+                    "in",
+                    group.map((order) => order.id)
+                  ),
+                  eb("status", "=", status as PurchaseOrderStatus)
+                ])
+              )
+            )
+          )
+          .returning(["id", "status"])
+          .execute();
         await service.cancelPendingApprovals(tx.asSystem.pg, {
           companyId,
           userId,
-          purchaseOrderIds: needsApproval
+          purchaseOrderIds: rows
+            .filter((row) => row.status === "Needs Approval")
+            .map((row) => row.id)
         });
-        await tx.asSystem.pg
-          .deleteFrom("purchaseOrder")
-          .where("id", "in", ids)
-          .where("companyId", "=", companyId)
-          .execute();
+        return rows;
       })
       .catch((err) =>
         ctx.error("internal", "Failed to delete purchase orders", err)
       );
     if (removed instanceof CarbonError) return removed;
-    return { purchaseOrderIds: ids };
+    const deleted = (removed.data ?? []).map((order) => order.id);
+    return { purchaseOrderIds: deleted, skipped: ids.length - deleted.length };
   }
 });
 
@@ -2588,6 +2802,9 @@ export const decidePurchaseOrderApproval = defineServiceFn({
       decision === "Approved"
         ? await approveRequest(ctx.asSystem.pg, approvalRequestId, userId)
         : await rejectRequest(ctx.asSystem.pg, approvalRequestId, userId);
+    if (decided.error && "code" in decided.error) {
+      return ctx.error("validation", decided.error.message);
+    }
     if (decided.error) {
       return ctx.error(
         "internal",
@@ -4118,6 +4335,61 @@ export const getPurchaseOrder = defineServiceFn({
 });
 
 /**
+ * Get who approved a purchase order and when.
+ *
+ * @remarks
+ * Reads the order's latest approval request that was not cancelled. When it
+ * is Approved, answers the approver (`approvedBy` is the name, `approvedById`
+ * the user id) and `approvedDate`, the business day of the decision in the
+ * company's timezone. All three are null when the order was never approved,
+ * is waiting on a decision, or its latest request was rejected.
+ *
+ * @param purchaseOrderId - The purchase order's id (`po_…`), not its number.
+ * @mcp read
+ */
+export const getPurchaseOrderApproval = defineServiceFn({
+  input: z.object({ purchaseOrderId: z.string().min(1) }),
+  permission: { view: "purchasing" },
+  async run(ctx, { purchaseOrderId }) {
+    // approvalRequest has no RLS policies: prove the caller can see the order.
+    const order = await ctx.asCaller.supabase
+      .from("purchaseOrder")
+      .select("id")
+      .eq("id", purchaseOrderId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (order.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load purchase order",
+        order.error
+      );
+    }
+    if (!order.data) {
+      return ctx.error("notFound", "Purchase order not found");
+    }
+
+    const approval = await service.getPurchaseOrderApproval(
+      ctx.asSystem.supabase,
+      {
+        companyId: ctx.company.id,
+        purchaseOrderId,
+        timezone: await getCompanyTimeZone(
+          ctx.asSystem.supabase,
+          ctx.company.id
+        )
+      }
+    );
+    return {
+      purchaseOrderId,
+      approvedBy: approval?.approvedBy ?? null,
+      approvedById: approval?.approvedById ?? null,
+      approvedDate: approval?.approvedDate ?? null
+    };
+  }
+});
+
+/**
  * Get purchase orders
  *
  * @mcp read
@@ -4800,7 +5072,7 @@ export const insertSupplierContact = defineServiceFn({
     return unwrap(
       ctx,
       await service.insertSupplierContact(
-        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         payload(ctx, input).forUpsert() as never
       )
     );
@@ -5154,8 +5426,8 @@ export const insertPurchaseOrder = defineServiceFn({
     supplierQuoteId: z.string().optional(),
     receiptRequestedDate: z.string().optional(),
     supplierReference: z.string().optional(),
-    notes: z.unknown().optional(),
-    externalNotes: z.unknown().optional(),
+    notes: optionalTiptapDoc,
+    externalNotes: optionalTiptapDoc,
     customFields: z.unknown().optional()
   }),
   permission: { create: "purchasing" },

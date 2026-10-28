@@ -20,11 +20,22 @@ import { onShapeDataValidator } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { datetime, isUniqueViolation, pluckUnique } from "@carbon/utils";
+import {
+  chunkArray,
+  datetime,
+  isUniqueViolation,
+  pluckUnique
+} from "@carbon/utils";
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
 import { replanAfterItemChange } from "~/modules/production/production.server";
-import { methodType, sourcingType } from "~/modules/shared/shared.models";
+import {
+  booleanField,
+  methodType,
+  optionalTiptapDoc,
+  requiredTiptapDoc,
+  sourcingType
+} from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   isActiveCompanyEmployee,
@@ -49,6 +60,7 @@ import {
   changeNoticeValidator,
   deriveItemMethodUpdate,
   getMethodValidator,
+  itemBulkUpdateValidator,
   itemManufacturingValidator,
   itemPlanningValidator,
   itemReplenishmentSystems,
@@ -332,6 +344,69 @@ export const setItemPostingGroup = defineServiceFn({
       }
     }
     return { ids };
+  }
+});
+
+/**
+ * Set one field on many items.
+ *
+ * @remarks
+ * The items tables' Update and its background job. 100 items at a time, each
+ * through the field's own operation (`setItemTrackingType`, `setItemSourcing`,
+ * `setItemPostingGroup`), so the value is checked and the cascades run as for
+ * one item. Ids that are not the company's items are skipped. A chunk commits
+ * on its own: when one fails, the chunks before it stay applied.
+ *
+ * @returns `done` (items updated) and `skipped` (ids that are not the company's items).
+ */
+export const updateItems = defineServiceFn({
+  input: z.object({ ids: itemIdsInput, change: itemBulkUpdateValidator }),
+  permission: { update: "parts" },
+
+  async run(ctx, { ids, change }) {
+    const unique = [...new Set(ids)];
+    let done = 0;
+    for (const chunk of chunkArray(unique, 100)) {
+      // The item group write inserts a cost row for each id, so keep only the
+      // company's own items.
+      const items = await ctx.asCaller.supabase
+        .from("item")
+        .select("id")
+        .in("id", chunk)
+        .eq("companyId", ctx.company.id);
+      if (items.error) {
+        return ctx.error("internal", "Failed to read the items", items.error);
+      }
+      const owned = items.data.map((item) => item.id);
+      if (owned.length === 0) continue;
+
+      const update =
+        change.field === "itemTrackingType"
+          ? await setItemTrackingType(ctx, {
+              ids: owned,
+              itemTrackingType: change.value
+            })
+          : change.field === "itemPostingGroupId"
+            ? await setItemPostingGroup(ctx, {
+                ids: owned,
+                itemPostingGroupId: change.value || null
+              })
+            : await setItemSourcing(ctx, {
+                ids: owned,
+                [change.field]: change.value
+              });
+      if (update.error) {
+        return done > 0
+          ? ctx.error(
+              "internal",
+              `Updated ${done} items, then the update failed: ${update.error.message}`,
+              update.error
+            )
+          : update.error;
+      }
+      done += owned.length;
+    }
+    return { done, skipped: unique.length - done };
   }
 });
 
@@ -1334,6 +1409,8 @@ export const recalculateItemCost = defineServiceFn({
 export const createChangeNotice = defineServiceFn({
   input: changeNoticeValidator.omit({ id: true, type: true }).extend({
     openDate: z.string().optional(),
+    reasonForChange: optionalTiptapDoc,
+    description: optionalTiptapDoc,
     customFields: customFieldsInput
   }),
   permission: { create: "parts" },
@@ -1346,8 +1423,8 @@ export const createChangeNotice = defineServiceFn({
     const created = await service.insertChangeNotice(client, {
       changeNoticeId: input.changeOrderId || undefined,
       name: input.name,
-      reasonForChange: service.toRichText(input.reasonForChange),
-      description: service.toRichText(input.description),
+      reasonForChange: input.reasonForChange,
+      description: input.description,
       priority: input.priority,
       changeNoticeTypeId: input.changeOrderTypeId || undefined,
       nonConformanceId: input.nonConformanceId || undefined,
@@ -4226,6 +4303,11 @@ export const resolveItemIdFromExtractedText = defineServiceFn({
 /**
  * Update item
  *
+ * @remarks
+ * Writes the item's own fields. Refused when the item is not of `type`, or
+ * when `readableId` differs from the item's: change the number with
+ * `setItemReadableId`, which also renames the type row keyed by it.
+ *
  * @mcp
  */
 export const updateItem = defineServiceFn({
@@ -4524,13 +4606,13 @@ export const createMethodMaterial = defineServiceFn({
   input: z.looseObject({
     id: z
       .string()
-      .describe(
-        "Updates the existing record with this key; creates one when there is none."
-      ),
+      .min(1)
+      .optional()
+      .describe("The new material's id; the table makes one when left out."),
     makeMethodId: z.string().min(1),
     order: z.number().min(0),
     itemType: z.enum(["Part", "Material", "Consumable"]),
-    kit: z.enum(["true", "false"]).optional(),
+    kit: booleanField().optional(),
     methodType: z.enum([
       "Purchase to Order",
       "Pull from Inventory",
@@ -4584,7 +4666,7 @@ export const updateMethodMaterial = defineServiceFn({
       makeMethodId: z.string().min(1),
       order: z.number().min(0),
       itemType: z.enum(["Part", "Material", "Consumable"]),
-      kit: z.enum(["true", "false"]).optional(),
+      kit: booleanField().optional(),
       methodType: z.enum([
         "Purchase to Order",
         "Pull from Inventory",
@@ -4892,7 +4974,7 @@ export const createMethodOperationStep = defineServiceFn({
   input: z.looseObject({
     operationId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().min(1),
+    description: requiredTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -4955,7 +5037,7 @@ export const updateMethodOperationStep = defineServiceFn({
     .looseObject({
       operationId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().min(1),
+      description: requiredTiptapDoc,
       type: z.enum([
         "Task",
         "Value",
@@ -6182,8 +6264,8 @@ export const updateChangeNotice = defineServiceFn({
     changeOrderTypeId: z.string().nullable().optional(),
     nonConformanceId: z.string().nullable().optional(),
     openDate: z.string().optional(),
-    reasonForChange: z.unknown().optional(),
-    description: z.unknown().optional(),
+    reasonForChange: optionalTiptapDoc,
+    description: optionalTiptapDoc,
     dueDate: z.string().nullable().optional(),
     assignee: z.string().nullable().optional(),
     customFields: z.unknown().optional()

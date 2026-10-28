@@ -185,9 +185,11 @@ import {
 import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
 import { getUser, getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
+import type { Paging } from "~/utils/query";
 import {
   type GenericQueryFilters,
   LIST_COUNT,
+  listCount,
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
@@ -464,6 +466,10 @@ export async function upsertExternalLink(
     .single();
 }
 
+export const CUSTOMER_PORTALS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getCustomerPortals(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -473,7 +479,7 @@ export async function getCustomerPortals(
   // has its customer (the form requires one), so the inner join drops none.
   let query = client
     .from("externalLink")
-    .select("*, customer!inner(id)", { count: LIST_COUNT })
+    .select("*, customer!inner(id)", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("documentType", "Customer");
 
@@ -482,9 +488,7 @@ export async function getCustomerPortals(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, CUSTOMER_PORTALS_PAGING);
   }
 
   return query;
@@ -11648,6 +11652,8 @@ export async function createDocument(
             many(db, "purchaseOrderLine", {
               companyId,
               purchaseOrderId,
+              // The `purchaseOrderLinesToReceive` view (Inventory →
+              // Receiving) lists the same types: change both together.
               purchaseOrderLineType: [
                 "Part",
                 "Material",

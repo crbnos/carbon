@@ -10,6 +10,7 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -18,9 +19,11 @@ import type { ItemPostingGroup } from "../../types";
 type ItemGroupsTableProps = {
   data: ItemPostingGroup[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
+const ItemGroupsTable = memo((props: ItemGroupsTableProps) => {
+  const { data, count, infinite } = props;
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -97,6 +100,7 @@ const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
   return (
     <Table<(typeof rows)[number]>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count}
       importCSV={[

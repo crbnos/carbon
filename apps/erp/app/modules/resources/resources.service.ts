@@ -31,6 +31,7 @@ import {
   searchFilter
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
@@ -41,8 +42,8 @@ import {
   resolveAccountingPeriod,
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "~/modules/shared/shared.service";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { invokePosting } from "../shared/shared.service";
 import type {
@@ -149,11 +150,320 @@ export async function processDeactivate(
   return client.from("process").update({ active: false }).eq("id", processId);
 }
 
-export async function deleteProcess(
-  client: SupabaseClient<Database>,
-  processId: string
+/**
+ * A table whose rows point at a work center or process. Deleting the record
+ * would block on some of these (RESTRICT) and silently take others with it
+ * (CASCADE: procedures, trainings, maintenance history), so a delete is
+ * refused while any of them has a row. Link rows that only describe the
+ * record itself — work center processes, shifts, people assignments, rule
+ * assignments, load history — are not listed and go with it.
+ */
+type ReferenceCheck = {
+  key: string;
+  /** English, for the API and MCP refusal; the ERP translates by `key`. */
+  label: string;
+  table: keyof KyselyDatabase;
+  column: string;
+  /** Match through the process's ability instead of the process itself. */
+  viaAbility?: boolean;
+};
+
+export const workCenterReferenceChecks = [
+  {
+    key: "methodOperation",
+    label: "method operations",
+    table: "methodOperation",
+    column: "workCenterId"
+  },
+  {
+    key: "quoteOperation",
+    label: "quote operations",
+    table: "quoteOperation",
+    column: "workCenterId"
+  },
+  {
+    key: "jobOperation",
+    label: "job operations",
+    table: "jobOperation",
+    column: "workCenterId"
+  },
+  {
+    key: "jobOperationBatch",
+    label: "operation batches",
+    table: "jobOperationBatch",
+    column: "workCenterId"
+  },
+  {
+    key: "productionEvent",
+    label: "production events",
+    table: "productionEvent",
+    column: "workCenterId"
+  },
+  {
+    key: "maintenanceSchedule",
+    label: "maintenance schedules",
+    table: "maintenanceSchedule",
+    column: "workCenterId"
+  },
+  {
+    key: "maintenanceDispatch",
+    label: "maintenance dispatches",
+    table: "maintenanceDispatch",
+    column: "workCenterId"
+  },
+  {
+    key: "maintenanceDispatchWorkCenter",
+    label: "maintenance dispatch work centers",
+    table: "maintenanceDispatchWorkCenter",
+    column: "workCenterId"
+  },
+  {
+    key: "maintenanceDispatchEvent",
+    label: "maintenance events",
+    table: "maintenanceDispatchEvent",
+    column: "workCenterId"
+  },
+  {
+    key: "workCenterReplacementPart",
+    label: "replacement parts",
+    table: "workCenterReplacementPart",
+    column: "workCenterId"
+  },
+  {
+    key: "storageUnit",
+    label: "storage units",
+    table: "storageUnit",
+    column: "workCenterId"
+  },
+  {
+    key: "fixedAsset",
+    label: "fixed assets",
+    table: "fixedAsset",
+    column: "workCenterId"
+  },
+  {
+    key: "workCenterDevice",
+    label: "machine devices",
+    table: "workCenterDevice",
+    column: "workCenterId"
+  },
+  {
+    key: "machineStateChange",
+    label: "machine state changes",
+    table: "machineStateChange",
+    column: "workCenterId"
+  },
+  {
+    key: "unattributedMachineTime",
+    label: "unattributed machine time entries",
+    table: "unattributedMachineTime",
+    column: "workCenterId"
+  }
+] as const satisfies readonly ReferenceCheck[];
+
+export const processReferenceChecks = [
+  {
+    key: "methodOperation",
+    label: "method operations",
+    table: "methodOperation",
+    column: "processId"
+  },
+  {
+    key: "quoteOperation",
+    label: "quote operations",
+    table: "quoteOperation",
+    column: "processId"
+  },
+  {
+    key: "jobOperation",
+    label: "job operations",
+    table: "jobOperation",
+    column: "processId"
+  },
+  {
+    key: "jobOperationBatch",
+    label: "operation batches",
+    table: "jobOperationBatch",
+    column: "processId"
+  },
+  {
+    key: "procedure",
+    label: "procedures",
+    table: "procedure",
+    column: "processId"
+  },
+  {
+    key: "training",
+    label: "trainings",
+    table: "training",
+    column: "processId"
+  },
+  {
+    key: "nonConformanceActionProcess",
+    label: "issue actions",
+    table: "nonConformanceActionProcess",
+    column: "processId"
+  },
+  {
+    key: "supplierProcess",
+    label: "supplier processes",
+    table: "supplierProcess",
+    column: "processId"
+  },
+  {
+    key: "itemShelfLife",
+    label: "item shelf life rules",
+    table: "itemShelfLife",
+    column: "triggerProcessId"
+  },
+  {
+    key: "employeeAbility",
+    label: "qualified employees",
+    table: "employeeAbility",
+    column: "abilityId",
+    viaAbility: true
+  },
+  {
+    key: "contractorAbility",
+    label: "contractors",
+    table: "contractorAbility",
+    column: "abilityId",
+    viaAbility: true
+  },
+  {
+    key: "partner",
+    label: "partners",
+    table: "partner",
+    column: "abilityId",
+    viaAbility: true
+  },
+  {
+    key: "requiredAbility",
+    label: "work centers requiring its ability",
+    table: "workCenter",
+    column: "requiredAbilityId",
+    viaAbility: true
+  }
+] as const satisfies readonly ReferenceCheck[];
+
+export type WorkCenterReferenceKey =
+  (typeof workCenterReferenceChecks)[number]["key"];
+export type ProcessReferenceKey =
+  (typeof processReferenceChecks)[number]["key"];
+export type ResourceReference<K extends string = string> = {
+  key: K;
+  label: string;
+  count: number;
+};
+
+/** The refusal a delete answers while `references` is not empty. */
+export function referencedRefusal(
+  record: string,
+  references: ResourceReference[]
 ) {
-  return client.from("process").delete().eq("id", processId);
+  const usages = references
+    .map((reference) => `${reference.label} (${reference.count})`)
+    .join(", ");
+  return `This ${record} is used by ${usages}. Deactivate it instead.`;
+}
+
+/** Every check in one statement; only the tables with rows come back. */
+async function countReferences<C extends ReferenceCheck>(
+  db: Kysely<KyselyDatabase>,
+  checks: readonly C[],
+  { id, companyId }: { id: string; companyId: string }
+): Promise<ResourceReference<C["key"]>[]> {
+  const result = await sql<Record<string, number>>`SELECT ${sql.join(
+    checks.map(
+      (check) =>
+        sql`(SELECT count(*)::int FROM ${sql.table(check.table)} WHERE ${sql.ref(
+          check.column
+        )} ${
+          check.viaAbility
+            ? sql`IN (SELECT "id" FROM "ability" WHERE "processId" = ${id} AND "companyId" = ${companyId})`
+            : sql`= ${id}`
+        } AND "companyId" = ${companyId}) AS ${sql.ref(check.key)}`
+    )
+  )}`.execute(db);
+  const row = result.rows[0] ?? {};
+  return checks
+    .map((check) => ({
+      key: check.key as C["key"],
+      label: check.label,
+      count: Number(row[check.key] ?? 0)
+    }))
+    .filter((reference) => reference.count > 0);
+}
+
+export async function getWorkCenterReferences(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string }
+) {
+  return countReferences(db, workCenterReferenceChecks, args);
+}
+
+export async function getProcessReferences(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string }
+) {
+  return countReferences(db, processReferenceChecks, args);
+}
+
+/**
+ * Lock the row, then delete it only when nothing references it. The lock
+ * conflicts with the key-share lock every referencing insert takes, so no
+ * reference can land between the count and the delete. A process's ability
+ * rows are locked too: a qualification, contractor, partner or required
+ * ability locks the ability, not the process, and deleting the process
+ * cascades through it. Run it inside a transaction.
+ */
+async function deleteIfUnreferenced<C extends ReferenceCheck>(
+  db: Kysely<KyselyDatabase>,
+  table: "workCenter" | "process",
+  checks: readonly C[],
+  args: { id: string; companyId: string }
+): Promise<
+  | { found: false }
+  | { found: true; deleted: boolean; references: ResourceReference<C["key"]>[] }
+> {
+  const locked = await db
+    .selectFrom(table)
+    .select("id")
+    .where("id", "=", args.id)
+    .where("companyId", "=", args.companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!locked) return { found: false };
+
+  if (table === "process") {
+    await db
+      .selectFrom("ability")
+      .select("id")
+      .where("processId", "=", args.id)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .execute();
+  }
+
+  const references = await countReferences(db, checks, args);
+  if (references.length > 0) {
+    return { found: true, deleted: false, references };
+  }
+
+  await db
+    .deleteFrom(table)
+    .where("id", "=", args.id)
+    .where("companyId", "=", args.companyId)
+    .execute();
+  return { found: true, deleted: true, references };
+}
+
+/** The bare delete under `resources.deleteProcess`. */
+export async function deleteProcess(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string }
+) {
+  return deleteIfUnreferenced(db, "process", processReferenceChecks, args);
 }
 
 export async function deleteShift(
@@ -198,12 +508,29 @@ export async function deleteTrainingQuestion(
 }
 
 /** The bare write under `deactivateWorkCenter`, which also tells the scheduler. */
-export async function deleteWorkCenter(
+export async function deactivateWorkCenter(
   client: SupabaseClient<Database>,
   id: string
 ) {
   return client.from("workCenter").update({ active: false }).eq("id", id);
 }
+
+/** The bare delete under `resources.deleteWorkCenter`. */
+export async function deleteWorkCenter(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string }
+) {
+  return deleteIfUnreferenced(
+    db,
+    "workCenter",
+    workCenterReferenceChecks,
+    args
+  );
+}
+
+export const ABILITIES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
 
 export async function getAbilities(
   client: SupabaseClient<Database>,
@@ -222,7 +549,7 @@ export async function getAbilities(
   // rather than embedded, so the read never depends on a view→table embed.
   let query = client
     .from("abilities")
-    .select(`*`, { count: LIST_COUNT })
+    .select(`*`, { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -244,9 +571,7 @@ export async function getAbilities(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, { ...args, filters }, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, { ...args, filters }, ABILITIES_PAGING);
 
   const result = await query;
   if (result.error || !result.data) return result;
@@ -334,6 +659,12 @@ export async function getContractor(
     .single();
 }
 
+// The `contractors` view has no `id`; a contractor is one supplier contact.
+export const CONTRACTORS_PAGING: Paging = {
+  defaultSorts: [{ column: "lastName", ascending: true }],
+  idColumn: "supplierContactId"
+};
+
 export async function getContractors(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -341,7 +672,7 @@ export async function getContractors(
 ) {
   let query = client
     .from("contractors")
-    .select("*")
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -350,9 +681,7 @@ export async function getContractors(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "lastName", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, CONTRACTORS_PAGING);
   }
 
   return query;
@@ -392,6 +721,10 @@ export async function getFailureMode(
     .single();
 }
 
+export const FAILURE_MODES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getFailureModes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -399,7 +732,7 @@ export async function getFailureModes(
 ) {
   let query = client
     .from("maintenanceFailureMode")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -407,9 +740,7 @@ export async function getFailureModes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, FAILURE_MODES_PAGING);
   }
 
   return query;
@@ -433,6 +764,10 @@ export async function getLocation(
   return client.from("location").select("*").eq("id", locationId).single();
 }
 
+export const LOCATIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getLocations(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -440,7 +775,7 @@ export async function getLocations(
 ) {
   let query = client
     .from("location")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -448,9 +783,7 @@ export async function getLocations(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, LOCATIONS_PAGING);
   }
 
   return query;
@@ -565,6 +898,10 @@ export async function getMaintenanceDispatches(
   return query;
 }
 
+export const MAINTENANCE_DISPATCHES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getMaintenanceDispatchesByLocation(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -577,7 +914,7 @@ export async function getMaintenanceDispatchesByLocation(
       p_company_id: companyId,
       p_location_id: locationId
     },
-    { count: LIST_COUNT }
+    { count: listCount(args) }
   );
 
   if (args?.search) {
@@ -585,9 +922,7 @@ export async function getMaintenanceDispatchesByLocation(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, MAINTENANCE_DISPATCHES_PAGING);
   }
 
   return query;
@@ -660,6 +995,10 @@ export async function getMaintenanceSchedules(
   return query;
 }
 
+export const MAINTENANCE_SCHEDULES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getMaintenanceSchedulesByLocation(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -672,7 +1011,7 @@ export async function getMaintenanceSchedulesByLocation(
       p_company_id: companyId,
       p_location_id: locationId
     },
-    { count: LIST_COUNT }
+    { count: listCount(args) }
   );
 
   if (args?.search) {
@@ -684,9 +1023,7 @@ export async function getMaintenanceSchedulesByLocation(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MAINTENANCE_SCHEDULES_PAGING);
   }
 
   return query;
@@ -807,6 +1144,10 @@ export async function getProcess(
   return client.from("processes").select("*").eq("id", processId).single();
 }
 
+export const PROCESSES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getProcesses(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -814,7 +1155,7 @@ export async function getProcesses(
 ) {
   let query = client
     .from("processes")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -822,9 +1163,7 @@ export async function getProcesses(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, PROCESSES_PAGING);
   }
 
   return query;
@@ -849,6 +1188,10 @@ export async function getSuggestion(
   return client.from("suggestions").select("*").eq("id", suggestionId).single();
 }
 
+export const SUGGESTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getSuggestions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -856,7 +1199,7 @@ export async function getSuggestions(
 ) {
   let query = client
     .from("suggestions")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -864,9 +1207,7 @@ export async function getSuggestions(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, SUGGESTIONS_PAGING);
   }
 
   return query;
@@ -987,7 +1328,7 @@ export async function getTrainingAssignmentStatus(
     return 0;
   });
 
-  // Apply pagination
+  // The RPC returns every row, so `limit` + `offset` cut the list in memory.
   const count = filteredData.length;
   if (args?.limit) {
     const offset = args.offset ?? 0;
@@ -1017,6 +1358,10 @@ export async function getTrainingQuestions(
     .order("sortOrder", { ascending: true });
 }
 
+export const TRAININGS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getTrainings(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1025,7 +1370,7 @@ export async function getTrainings(
   let query = client
     .from("trainings")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1034,9 +1379,7 @@ export async function getTrainings(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, TRAININGS_PAGING);
   }
 
   return query;
@@ -1087,6 +1430,10 @@ export async function getWorkCenter(
   };
 }
 
+export const WORK_CENTERS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getWorkCenters(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1095,7 +1442,7 @@ export async function getWorkCenters(
   let query = client
     .from("workCenters")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1104,9 +1451,7 @@ export async function getWorkCenters(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, WORK_CENTERS_PAGING);
   }
 
   return query;
@@ -1410,13 +1755,17 @@ export async function updateTrainingQuestionOrder(
   return Promise.all(updatePromises);
 }
 
+/**
+ * `abilities` replaces the contractor's abilities when sent; left out, they are
+ * kept (the contractor form has no abilities field).
+ */
 export async function upsertContractor(
   client: SupabaseClient<Database>,
   contractorWithAbilities:
     | {
         id: string;
         hoursPerWeek?: number;
-        abilities: string[];
+        abilities?: string[];
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -1424,7 +1773,7 @@ export async function upsertContractor(
     | {
         id: string;
         hoursPerWeek?: number;
-        abilities: string[];
+        abilities?: string[];
         companyId: string;
         updatedBy: string;
         customFields?: Json;
@@ -1439,6 +1788,7 @@ export async function upsertContractor(
     if (updateContractor.error) {
       return updateContractor;
     }
+    if (abilities === undefined) return updateContractor;
     const deleteContractorAbilities = await client
       .from("contractorAbility")
       .delete()
@@ -1453,9 +1803,10 @@ export async function upsertContractor(
     if (createContractor.error) {
       return createContractor;
     }
+    if (abilities === undefined) return createContractor;
   }
 
-  const contractorAbilities = abilities.map((ability) => {
+  const contractorAbilities = (abilities ?? []).map((ability) => {
     return {
       contractorId: contractor.id,
       abilityId: ability,

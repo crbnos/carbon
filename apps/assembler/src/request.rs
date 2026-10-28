@@ -62,7 +62,7 @@ pub fn parse(action: &str, req: &Value) -> Result<ActionReq, ApiError> {
             optimize: req["options"]["optimize"].as_bool().unwrap_or(true),
         }),
         "optimize" => {
-            let (compact, thumbnail) = optimize_ingest(req);
+            let (compact, thumbnail, pmi) = optimize_ingest(req);
             ActionReq::Optimize(actions::optimize::OptimizeReq {
                 source_url,
                 // `auto` content-detects the format in the action.
@@ -71,6 +71,7 @@ pub fn parse(action: &str, req: &Value) -> Result<ActionReq, ApiError> {
                 opts: optimize_opts(&req["output"], &req["quality"]),
                 compact,
                 thumbnail,
+                pmi,
             })
         }
         "plan" => ActionReq::Plan(actions::plan::PlanReq {
@@ -194,11 +195,16 @@ fn parse_ladder(quality: &Value) -> Vec<Option<f32>> {
 }
 
 /// The ingest outputs an optimize may also write: `compact: { path? }` (the
-/// retained raw's compact form, output `raw`) and `thumbnail: { path?, size?,
-/// direction? }` (output `thumbnail`).
+/// retained raw's compact form, output `raw`), `thumbnail: { path?, size?,
+/// direction? }` (output `thumbnail`) and `pmi: { path? }` (output `pmi`).
+#[allow(clippy::type_complexity)]
 fn optimize_ingest(
     req: &Value,
-) -> (Option<Option<String>>, Option<actions::optimize::ThumbnailOut>) {
+) -> (
+    Option<Option<String>>,
+    Option<actions::optimize::ThumbnailOut>,
+    Option<Option<String>>,
+) {
     let compact = req["compact"]
         .is_object()
         .then(|| req["compact"]["path"].as_str().map(str::to_string));
@@ -210,7 +216,10 @@ fn optimize_ingest(
             direction: t.direction,
         }
     });
-    (compact, thumbnail)
+    let pmi = req["pmi"]
+        .is_object()
+        .then(|| req["pmi"]["path"].as_str().map(str::to_string));
+    (compact, thumbnail, pmi)
 }
 
 /// `output: { path?, size?, direction? }`. `direction` is `[x, y, z]`, model
@@ -268,6 +277,24 @@ mod tests {
     fn a_bad_compact_mode_is_refused_before_a_job_exists() {
         let body = json!({ "source": { "url": "https://storage.test/m.step" }, "mode": "gzip" });
         assert!(parse("compact", &body).is_err());
+    }
+
+    #[test]
+    fn an_optimize_reads_pmi_only_when_asked() {
+        let asked = json!({
+            "source": { "url": "https://storage.test/m.step" },
+            "pmi": { "path": "co/models/m/pmi.json" }
+        });
+        let ActionReq::Optimize(req) = parse("optimize", &asked).unwrap() else {
+            panic!("not an optimize");
+        };
+        assert_eq!(req.pmi, Some(Some("co/models/m/pmi.json".to_string())));
+
+        let plain = json!({ "source": { "url": "https://storage.test/m.step" } });
+        let ActionReq::Optimize(req) = parse("optimize", &plain).unwrap() else {
+            panic!("not an optimize");
+        };
+        assert_eq!(req.pmi, None);
     }
 
     #[test]

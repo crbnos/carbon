@@ -778,10 +778,10 @@ export const createPurchaseInvoice = defineServiceFn({
     lines: z
       .array(
         z.object({
-          partNumber: z.coerce.string().nullish(),
-          description: z.coerce.string().nullish(),
-          quantity: z.coerce.number().nullish(),
-          unitPrice: z.coerce.number().nullish()
+          partNumber: z.coerce.string<string>().nullish(),
+          description: z.coerce.string<string>().nullish(),
+          quantity: z.coerce.number<number>().nullish(),
+          unitPrice: z.coerce.number<number>().nullish()
         })
       )
       .default([]),

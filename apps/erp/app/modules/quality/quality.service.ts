@@ -19,8 +19,8 @@ import {
 import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 
 const logger = getLogger("erp", "quality");
@@ -306,6 +306,10 @@ export async function getGauge(
   return client.from("gauges").select("*").eq("id", gaugeId).single();
 }
 
+export const GAUGES_PAGING: Paging = {
+  defaultSorts: [{ column: "gaugeId", ascending: false }]
+};
+
 export async function getGauges(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -313,7 +317,7 @@ export async function getGauges(
 ) {
   let query = client
     .from("gauges")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -326,9 +330,7 @@ export async function getGauges(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "gaugeId", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, GAUGES_PAGING);
   }
 
   return query;
@@ -359,6 +361,13 @@ export async function getGaugeCalibrationRecord(
     .single();
 }
 
+export const GAUGE_CALIBRATION_RECORDS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "createdAt", ascending: false },
+    { column: "dateCalibrated", ascending: false }
+  ]
+};
+
 export async function getGaugeCalibrationRecords(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -366,7 +375,7 @@ export async function getGaugeCalibrationRecords(
 ) {
   let query = client
     .from("gaugeCalibrationRecords")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -374,10 +383,11 @@ export async function getGaugeCalibrationRecords(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false },
-      { column: "dateCalibrated", ascending: false }
-    ]);
+    query = setGenericQueryFilters(
+      query,
+      args,
+      GAUGE_CALIBRATION_RECORDS_PAGING
+    );
   }
 
   return query;
@@ -412,6 +422,10 @@ export async function getGaugeType(
   return client.from("gaugeType").select("*").eq("id", gaugeTypeId).single();
 }
 
+export const GAUGE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getGaugeTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -419,7 +433,7 @@ export async function getGaugeTypes(
 ) {
   let query = client
     .from("gaugeType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -427,9 +441,7 @@ export async function getGaugeTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, GAUGE_TYPES_PAGING);
   }
 
   return query;
@@ -446,6 +458,10 @@ export async function getIssue(
     .single();
 }
 
+export const ISSUES_PAGING: Paging = {
+  defaultSorts: [{ column: "nonConformanceId", ascending: false }]
+};
+
 export async function getIssues(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -453,7 +469,7 @@ export async function getIssues(
 ) {
   let query = client
     .from("issues")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -461,9 +477,7 @@ export async function getIssues(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "nonConformanceId", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, ISSUES_PAGING);
   }
 
   return query;
@@ -995,6 +1009,10 @@ export async function getIssueTypeByName(
   return query.limit(1).maybeSingle();
 }
 
+export const ISSUE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getIssueTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1002,7 +1020,7 @@ export async function getIssueTypes(
 ) {
   let query = client
     .from("nonConformanceType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1010,13 +1028,15 @@ export async function getIssueTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, ISSUE_TYPES_PAGING);
   }
 
   return query;
 }
+
+export const ISSUE_WORKFLOWS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
 
 export async function getIssueWorkflows(
   client: SupabaseClient<Database>,
@@ -1025,7 +1045,7 @@ export async function getIssueWorkflows(
 ) {
   let query = client
     .from("nonConformanceWorkflow")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -1034,9 +1054,7 @@ export async function getIssueWorkflows(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, ISSUE_WORKFLOWS_PAGING);
   }
 
   return query;
@@ -1065,6 +1083,10 @@ export async function getIssueTypesList(
     .order("name");
 }
 
+export const QUALITY_ACTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getQualityActions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1072,7 +1094,7 @@ export async function getQualityActions(
 ) {
   let query = client
     .from("qualityActions")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1085,9 +1107,7 @@ export async function getQualityActions(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, QUALITY_ACTIONS_PAGING);
   }
 
   return query;
@@ -1128,6 +1148,10 @@ export async function getQualityDocumentVersions(
     .order("version", { ascending: false });
 }
 
+export const QUALITY_DOCUMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getQualityDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1136,7 +1160,7 @@ export async function getQualityDocuments(
   let query = client
     .from("qualityDocuments")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1145,9 +1169,7 @@ export async function getQualityDocuments(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, QUALITY_DOCUMENTS_PAGING);
   }
 
   return query;
@@ -1176,6 +1198,10 @@ export async function getRequiredActionsList(
     .order("name");
 }
 
+export const REQUIRED_ACTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getRequiredActions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1183,7 +1209,7 @@ export async function getRequiredActions(
 ) {
   let query = client
     .from("nonConformanceRequiredAction")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1191,9 +1217,7 @@ export async function getRequiredActions(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, REQUIRED_ACTIONS_PAGING);
   }
 
   return query;
@@ -1217,6 +1241,10 @@ export async function getRisk(
   return client.from("riskRegister").select("*").eq("id", riskId).single();
 }
 
+export const RISKS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getRisks(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1231,7 +1259,7 @@ export async function getRisks(
   let query = client
     .from("riskRegisters")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1252,9 +1280,7 @@ export async function getRisks(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, RISKS_PAGING);
   }
 
   return query;
@@ -2149,6 +2175,10 @@ export async function upsertRisk(
 // Inbound Inspections (lot-based)
 // -------------------------------------------------------------
 
+export const INSPECTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getInspections(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2164,7 +2194,7 @@ export async function getInspections(
     .from("inspection")
     .select(
       "*, item(readableId, name), supplier(name), inspectionSample(status)",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId);
 
@@ -2188,9 +2218,7 @@ export async function getInspections(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, INSPECTIONS_PAGING);
   }
 
   return query;
@@ -2290,7 +2318,7 @@ export async function getInspectionSamplingPlans(
   return client
     .from("inspectionSamplingPlan")
     .select(
-      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, gaugeType(name))"
+      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, pmiItemId, gaugeType(name))"
     )
     .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
@@ -2441,6 +2469,17 @@ function mapInspectionDocument(row: Record<string, unknown>) {
       annotations: [],
       features: []
     },
+    // A plan made from a model's PMI holds the model instead of a PDF.
+    // `modelPath` comes from the `modelUpload(modelPath)` embed when the read
+    // asked for it.
+    model: row.modelUploadId
+      ? {
+          modelUploadId: String(row.modelUploadId),
+          modelPath:
+            ((row.modelUpload as { modelPath?: string | null } | null)
+              ?.modelPath as string | null) ?? null
+        }
+      : null,
     // The document's default sampling rule (feature rule -> document default
     // -> All). NUMERIC columns arrive as strings from PostgREST — coerce.
     sampling: {
@@ -2456,6 +2495,10 @@ function mapInspectionDocument(row: Record<string, unknown>) {
   };
 }
 
+export const INSPECTION_DOCUMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "drawingNumber", ascending: true }]
+};
+
 export async function getInspectionDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2463,7 +2506,7 @@ export async function getInspectionDocuments(
 ) {
   let query = client
     .from("inspectionDocuments")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -2473,17 +2516,17 @@ export async function getInspectionDocuments(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "drawingNumber", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, INSPECTION_DOCUMENTS_PAGING);
   }
 
   const result = await query;
 
   return {
-    data: (result.data ?? []).map((row: Record<string, unknown>) =>
-      mapInspectionDocument(row)
-    ),
+    // The cursor reads the default sort column from the row.
+    data: (result.data ?? []).map((row: Record<string, unknown>) => ({
+      ...mapInspectionDocument(row),
+      drawingNumber: (row.drawingNumber as string | null) ?? null
+    })),
     count: result.count ?? 0,
     error: result.error
   };
@@ -2509,7 +2552,7 @@ export async function getInspectionDocument(
 ) {
   const result = await client
     .from("inspectionDocument")
-    .select("*")
+    .select("*, modelUpload(modelPath)")
     .eq("id", id)
     .eq("companyId", companyId)
     .single();
@@ -2757,6 +2800,7 @@ function mapInspectionFeature(row: Record<string, unknown>) {
       (row.samplingInspectionLevel as string | null) ?? null,
     samplingSeverity: (row.samplingSeverity as string | null) ?? null,
     gaugeTypeId: (row.gaugeTypeId as string | null) ?? null,
+    pmiItemId: (row.pmiItemId as string | null) ?? null,
     balloonId:
       typeof balloonIdRaw === "string"
         ? balloonIdRaw

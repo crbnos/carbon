@@ -56,6 +56,7 @@ import {
 import type { TrainingAssignmentStatusItem } from "~/modules/resources/types";
 import type { action as completeAction } from "~/routes/x+/resources+/assignments.complete";
 import type { Handle } from "~/utils/handle";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { getPrivateUrl, path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -83,7 +84,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       trainingAssignmentId: assignmentId,
       status: undefined,
       search: undefined,
-      limit: 10000,
+      limit: SINGLE_LOAD_LIMIT,
       offset: 0,
       sorts: [],
       filters: []

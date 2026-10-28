@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261027155643",
+  "schemaVersion": "20261028162039",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-27T16:00:24.743Z",
+  "exportedAt": "2026-10-28T13:08:34.703Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -312,7 +312,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "decisionSignaturePath"
       ]
     },
     {
@@ -490,7 +491,9 @@
         "leaseReminderDays",
         "requireBackflushStorageUnit",
         "preventNegativeBackflush",
-        "receiptQuantitiesStartAtZero"
+        "receiptQuantitiesStartAtZero",
+        "requirePurchaseOrderApprovalSignature",
+        "serialNumberTiming"
       ]
     },
     {
@@ -1462,7 +1465,8 @@
         "optimizedAt",
         "optimizedSize",
         "originalSize",
-        "originalPath"
+        "originalPath",
+        "pmiPath"
       ]
     },
     {
@@ -2922,7 +2926,8 @@
         "samplingPercentage",
         "samplingAql",
         "samplingInspectionLevel",
-        "samplingSeverity"
+        "samplingSeverity",
+        "modelUploadId"
       ]
     },
     {
@@ -2950,7 +2955,8 @@
         "samplingAql",
         "samplingInspectionLevel",
         "samplingSeverity",
-        "gaugeTypeId"
+        "gaugeTypeId",
+        "pmiItemId"
       ]
     },
     {
@@ -3092,7 +3098,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "serialNumberTiming"
       ]
     },
     {

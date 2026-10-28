@@ -96,6 +96,13 @@ export interface BlockMeta {
   hideable: boolean;
   /** Whether the block appears in the "Add block" menu. */
   addable: boolean;
+  /**
+   * Whether a built-in block missing from a stored template is appended
+   * visible. Others are appended hidden so a new block never changes a layout
+   * the user already arranged; only a block that prints nothing until its
+   * data exists may opt in.
+   */
+  showWhenAppended?: boolean;
 }
 
 export const BLOCK_META: Record<DocumentBlockType, BlockMeta> = {
@@ -197,6 +204,14 @@ export const BLOCK_META: Record<DocumentBlockType, BlockMeta> = {
     hideable: true,
     addable: false
   },
+  approval: {
+    label: "Approval",
+    isBuiltIn: true,
+    removable: false,
+    hideable: true,
+    addable: false,
+    showWhenAppended: true
+  },
   labelHeading: {
     label: "Item ID",
     isBuiltIn: true,
@@ -297,6 +312,27 @@ export const BLOCK_META: Record<DocumentBlockType, BlockMeta> = {
 };
 
 /** Block types a user may append, in menu order. */
+/** The Approval block's heading when the template sets none. */
+export const DEFAULT_APPROVAL_HEADING = "Approved By";
+
+/**
+ * The Approval block's caption under the signature line when the template
+ * sets none: the approver, then the approval date.
+ */
+export const DEFAULT_APPROVAL_CAPTION: JSONContent = {
+  type: "doc",
+  content: [
+    {
+      type: "paragraph",
+      content: [
+        { type: "text", text: "{order.approvedBy}" },
+        { type: "hardBreak" },
+        { type: "text", text: "{order.approvedDate}" }
+      ]
+    }
+  ]
+};
+
 export const ADDABLE_BLOCK_TYPES = (
   Object.keys(BLOCK_META) as DocumentBlockType[]
 ).filter((type) => BLOCK_META[type].addable);
@@ -467,7 +503,10 @@ export const DEFAULT_TEMPLATES: Record<DocumentTemplateType, DocumentTemplate> =
     purchaseOrder: {
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
       documentType: "purchaseOrder",
-      blocks: transactionalBlocks(),
+      blocks: [
+        ...transactionalBlocks(),
+        { id: "approval", type: "approval", visible: true }
+      ],
       theme: { ...DEFAULT_THEME },
       settings: { ...DEFAULT_DOCUMENT_SETTINGS },
       headerSectionId: BUILT_IN_SECTION_IDS.header,
@@ -622,7 +661,10 @@ export function resolveTemplate(
   const present = new Set(storedBlocks.map((b) => b.type));
   const missingBuiltIns = fallback.blocks
     .filter((b) => BLOCK_META[b.type].isBuiltIn && !present.has(b.type))
-    .map((b) => ({ ...b, visible: false }));
+    .map((b) => ({
+      ...b,
+      visible: b.visible && !!BLOCK_META[b.type].showWhenAppended
+    }));
 
   return {
     formatVersion,

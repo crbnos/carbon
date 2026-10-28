@@ -26,7 +26,7 @@
     "kysely": "catalog:",
     "nanoid": "catalog:",
     "react-email": "catalog:",
-    "undici": "^8.10.2",
+    "undici": "^8.12.3",
     "web-push": "^3.6.7",
     "zod": "catalog:"
   },

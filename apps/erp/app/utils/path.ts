@@ -164,6 +164,11 @@ export const path = {
         ),
       inspectionDocuments: (itemId: string) =>
         generatePath(`${api}/quality/inspection-documents/${itemId}`),
+      // The Sync Activity pages after the first; the tab adds `after`.
+      integrationSyncActivity: (id: string, status?: string | null) =>
+        `${generatePath(`${api}/integrations/${id}/sync-activity`)}${
+          status ? `?${new URLSearchParams({ status })}` : ""
+        }`,
       integrationSyncActivityCsv: (id: string, status?: string | null) =>
         `${generatePath(`${api}/integrations/${id}/sync-activity.csv`)}${
           status ? `?${new URLSearchParams({ status })}` : ""
@@ -391,6 +396,7 @@ export const path = {
         generatePath(`${api}/purchasing/supplier-processes/${id}`),
       supplierTypes: `${api}/purchasing/supplier-types`,
       systemStatus: `${api}/system-status`,
+      tableExport: `${api}/table/export`,
       tags: (table?: string) =>
         generatePath(`${api}/shared/tags?table=${table}`),
       timecard: `${api}/people/timecard`,
@@ -2098,6 +2104,8 @@ export const path = {
       generatePath(`${x}/purchase-order/${id}/finalize`),
     purchaseOrderLine: (orderId: string, id: string) =>
       generatePath(`${x}/purchase-order/${orderId}/${id}/details`),
+    purchaseOrderLineDate: (orderId: string, id: string) =>
+      generatePath(`${x}/purchase-order/${orderId}/${id}/date`),
     purchaseOrderLineOrder: (orderId: string) =>
       generatePath(`${x}/purchase-order/${orderId}/line-order`),
     purchaseOrderLineReceiving: (orderId: string, id: string) =>
@@ -2240,6 +2248,7 @@ export const path = {
     receiptVoid: (id: string) => generatePath(`${x}/receipt/${id}/void`),
     receivables: `${x}/invoicing/receivables`,
     receivablesAdjust: `${x}/invoicing/receivables/adjust`,
+    receiving: `${x}/inventory/receiving`,
     refreshSession: "/refresh-session",
     // Reimbursements — employee expense payables imported from a spend tool.
     // The list lives under invoicing (it is an AP nav entry); the document is a
@@ -2653,6 +2662,8 @@ export const path = {
       generatePath(`${x}/resources/work-centers/${id}`),
     workCenterActivate: (id: string) =>
       generatePath(`${x}/resources/work-centers/activate/${id}`),
+    workCenterDeactivate: (id: string) =>
+      generatePath(`${x}/resources/work-centers/deactivate/${id}`),
     workCenters: `${x}/resources/work-centers`,
     workflow: (id: string) => generatePath(`${x}/workflow/${id}`),
     workflowCanvas: (id: string) => generatePath(`${x}/workflow/${id}/canvas`),

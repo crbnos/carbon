@@ -27,6 +27,7 @@ import {
 } from "@carbon/react";
 import { getFileSizeLimit, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { ModelPreview } from "@carbon/viewer/model-preview";
+import { modelPreviewUrls } from "@carbon/viewer/model-upload-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -37,7 +38,7 @@ import { useModelUpload, useUser } from "~/hooks";
 import type { ModelUpload } from "~/types";
 import type { ViewDirection } from "~/utils/model-thumbnail";
 import { regenerateModelThumbnail } from "~/utils/model-thumbnail";
-import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 import type { InterruptedUpload } from "~/utils/resumable-upload";
 import { InterruptedUploadNotice, UploadProgress } from "./UploadProgress";
 
@@ -277,36 +278,9 @@ const CadModel = ({
                 optimizing={backgroundOptimizing}
                 optimizeFailed={optimizeFailed}
                 sourceMissing={artifacts?.sourceAvailable === false}
-                optimizedUrl={
-                  artifacts?.optimizedModelPath
-                    ? // ?v= busts the immutable preview cache on the STABLE
-                      // optimized.glb path when a re-optimise lands.
-                      `${getPrivateUrl(artifacts.optimizedModelPath)}${
-                        artifacts.optimizedAt
-                          ? `?v=${encodeURIComponent(artifacts.optimizedAt)}`
-                          : ""
-                      }`
-                    : null
-                }
-                glbUrl={
-                  artifacts?.glbPath ? getPrivateUrl(artifacts.glbPath) : null
-                }
-                lodUrl={
-                  artifacts?.lodPath ? getPrivateUrl(artifacts.lodPath) : null
-                }
-                rawUrl={
-                  artifacts?.rawPath &&
-                  (artifacts.size ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES
-                    ? getRawModelUrl(artifacts.rawBucket, artifacts.rawPath)
-                    : null
-                }
+                {...modelPreviewUrls(artifacts)}
                 rawFile={
                   file && file.size <= MODEL_RAW_KEEP_MAX_BYTES ? file : null
-                }
-                thumbnailUrl={
-                  artifacts?.thumbnailPath
-                    ? getPrivateUrl(artifacts.thumbnailPath)
-                    : null
                 }
                 mode={mode}
                 className={viewerClassName}

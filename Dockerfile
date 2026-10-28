@@ -32,11 +32,6 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
 
 FROM deps AS build
 ARG APP
-# CDN base for client assets, baked into the build (vite base is build-time;
-# apps/*/vite.config.ts normalizes the trailing slash). Empty keeps assets
-# same-origin — the controlled/air-gapped variant is this default, not a flag.
-ARG ASSETS_URL
-ENV ASSETS_URL=${ASSETS_URL}
 RUN --mount=type=cache,id=turbo,target=/repo/.turbo,sharing=locked \
     pnpm run build:${APP}
 # Build scratch `runner` must not inherit: .vite is the dep-optimizer cache,

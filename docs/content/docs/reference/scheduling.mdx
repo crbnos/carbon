@@ -23,7 +23,7 @@ Due dates, dispatch order, and manning are all set in the ERP. The MES board ref
 
 The engine schedules **forward**: each operation is placed at the earliest feasible moment after *now* and after its predecessors in the [routing](/docs/reference/routings) finish. There is no backward pass that anchors work on the due date; the projected finish that falls out of placement *is* the forecast, and slack is real. Two finite resources gate every placement:
 
-1. **The work center.** One operation at a time, placed only inside its operating hours. Hours come from a ladder: a **lights-out (24×7)** work center is always open; otherwise its own assigned shifts apply; otherwise the location's shifts; otherwise a stock Mon–Fri, 8-hour day. Open [maintenance](/docs/reference/maintenance) dispatches that take a work center offline subtract their downtime from those hours, lights-out machines included.
+1. **The work center.** One operation at a time, placed only inside its operating hours. Hours come from a ladder: a **lights-out (24×7)** work center is always open; otherwise its own assigned shifts apply; otherwise the location's shifts; otherwise a stock Mon–Fri, 8-hour day. Open [maintenance](/docs/reference/maintenance) dispatches that take a work center offline subtract their downtime from those hours, lights-out machines included. A company [holiday](/docs/reference/people#holidays) closes every work center for the day, except lights-out ones.
 2. **Qualified people**, when the operation's process requires an ability. See [the next section](#people-are-part-of-capacity).
 
 When a process can run on more than one work center, the engine picks the candidate that **finishes earliest**, so work naturally routes around a backed-up or unstaffed machine. An operation that has already started stays on its work center, and only the *remaining* work is reserved: labor and machine time are scaled by the quantity still open, and setup counts as done once any production event exists.
@@ -82,7 +82,7 @@ The engine always produces a complete answer. Late work is placed and flagged, u
 
 ## When the schedule recomputes
 
-Scheduling reacts to its inputs. Editing anything the engine reads — a due date on the Priorities board, a manning assignment, a shift, a work center's hours or active flag, an operator qualification, a process's ability requirement, machine downtime — stamps the affected jobs **schedule outdated** and queues a **replan wave**. The wave is debounced about 30 seconds, so a burst of edits triggers a single regeneration of each affected location rather than one run per keystroke. The Forecast's **Regenerate** button runs the same whole-location regeneration on demand.
+Scheduling reacts to its inputs. Editing anything the engine reads — a due date on the Priorities board, a manning assignment, a shift, a work center's hours or active flag, an operator qualification, a process's ability requirement, machine downtime, a company holiday — stamps the affected jobs **schedule outdated** and queues a **replan wave**. The wave is debounced about 30 seconds, so a burst of edits triggers a single regeneration of each affected location rather than one run per keystroke. The Forecast's **Regenerate** button runs the same whole-location regeneration on demand.
 
 Job release or status changes and the kanban auto-release flow reschedule immediately. A nightly pass also recalculates schedules whose planned start is in the past.
 

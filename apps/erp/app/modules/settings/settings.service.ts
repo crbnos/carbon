@@ -254,6 +254,7 @@ import {
 import { insertEmployeeJob } from "~/modules/people/people.service";
 import {
   getPurchaseOrder,
+  getPurchaseOrderApproval,
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
   getPurchasingTerms
@@ -283,8 +284,8 @@ import * as sharedService from "~/modules/shared/shared.service";
 import { getPermissionCacheKey } from "~/modules/users/users.service";
 import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
@@ -334,6 +335,26 @@ export async function deleteSubsidiary(
   return client.from("company").delete().eq("id", companyId);
 }
 
+// The key hash never leaves the server.
+export async function getApiKey(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("apiKey")
+    .select(
+      "id, name, expiresAt, scopes, keyPreview, lastUsedAt, rateLimit, rateLimitWindow, createdAt, createdBy, updatedBy, companyId"
+    )
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export const API_KEYS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: true }]
+};
+
 export async function getApiKeys(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -341,7 +362,7 @@ export async function getApiKeys(
 ) {
   let query = client
     .from("apiKey")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -349,9 +370,7 @@ export async function getApiKeys(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, API_KEYS_PAGING);
   }
 
   return query;
@@ -549,6 +568,12 @@ export async function getCustomFields(
     .single();
 }
 
+// The `customFieldTables` view has no `id`; one row is one table.
+export const CUSTOM_FIELD_TABLES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }],
+  idColumn: "table"
+};
+
 export async function getCustomFieldsTables(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -559,7 +584,7 @@ export async function getCustomFieldsTables(
   let query = client
     .from("customFieldTables")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -567,9 +592,7 @@ export async function getCustomFieldsTables(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, CUSTOM_FIELD_TABLES_PAGING);
   return query;
 }
 
@@ -679,6 +702,10 @@ export async function getSequence(
     .single();
 }
 
+export const SEQUENCES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getSequences(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -689,7 +716,7 @@ export async function getSequences(
   let query = client
     .from("sequence")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -697,9 +724,7 @@ export async function getSequences(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SEQUENCES_PAGING);
   return query;
 }
 
@@ -716,6 +741,10 @@ export async function getSequencesList(
     .order("table");
 }
 
+export const ITEM_SERIAL_SEQUENCES_PAGING: Paging = {
+  defaultSorts: [{ column: "itemReadableId", ascending: true }]
+};
+
 export async function getItemSerialSequences(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -726,7 +755,7 @@ export async function getItemSerialSequences(
   let query = client
     .from("itemSerialSequences")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -734,9 +763,7 @@ export async function getItemSerialSequences(
     query = query.or(searchFilter(["itemReadableId", "itemName"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "itemReadableId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, ITEM_SERIAL_SEQUENCES_PAGING);
   return query;
 }
 
@@ -862,9 +889,15 @@ export async function getDocumentTemplateConfig(
   return toDocumentTemplate(stored.data, documentType);
 }
 
-/** The template row only: `settings.documentTemplate.save` also saves the header layout onto its section. */
+/**
+ * The template row and, when given, its header section's layout, in one
+ * transaction: `settings.documentTemplate.save` is the operation. The header
+ * row is inserted when the company has none under that id (a built-in header
+ * is forked into the company's copy); an existing row takes only the new
+ * `config`.
+ */
 export async function upsertDocumentTemplate(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   documentTemplate: {
     companyId: string;
     documentType: DocumentTemplateType;
@@ -873,19 +906,66 @@ export async function upsertDocumentTemplate(
     settings: DocumentSettings;
     headerSectionId: string | null;
     footerSectionId: string | null;
-    createdBy: string;
-    updatedBy: string;
+    userId: string;
+  },
+  header?: {
+    id: string;
+    name: string;
+    content: JSONContent;
+    config: Record<string, unknown>;
   }
 ) {
-  return client.from("documentTemplate").upsert(
-    {
-      ...documentTemplate,
+  const { companyId, userId } = documentTemplate;
+  const now = datetime.timestamp();
+  const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
+
+  await withTransaction(db, async (trx) => {
+    if (header) {
+      await trx
+        .insertInto("documentSection")
+        .values({
+          id: header.id,
+          companyId,
+          name: header.name,
+          placement: "header",
+          content: jsonb(header.content),
+          config: jsonb(header.config),
+          createdBy: userId
+        })
+        .onConflict((oc) =>
+          oc.columns(["id", "companyId"]).doUpdateSet({
+            config: jsonb(header.config),
+            updatedBy: userId,
+            updatedAt: now
+          })
+        )
+        .execute();
+    }
+
+    const template = {
+      blocks: jsonb(documentTemplate.blocks),
+      theme: jsonb(documentTemplate.theme),
+      settings: jsonb(documentTemplate.settings),
+      headerSectionId: documentTemplate.headerSectionId,
+      footerSectionId: documentTemplate.footerSectionId,
       // Always persist the current schema version of the JSON we're writing.
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
-      updatedAt: new Date().toISOString()
-    },
-    { onConflict: "companyId,documentType" }
-  );
+      updatedBy: userId,
+      updatedAt: now
+    };
+    await trx
+      .insertInto("documentTemplate")
+      .values({
+        ...template,
+        companyId,
+        documentType: documentTemplate.documentType,
+        createdBy: userId
+      })
+      .onConflict((oc) =>
+        oc.columns(["companyId", "documentType"]).doUpdateSet(template)
+      )
+      .execute();
+  });
 }
 
 export async function getDocumentSections(
@@ -1036,6 +1116,10 @@ export async function getWebhook(client: SupabaseClient<Database>, id: string) {
   return client.from("webhook").select("*").eq("id", id).single();
 }
 
+export const WEBHOOKS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: true }]
+};
+
 export async function getWebhooks(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1044,7 +1128,7 @@ export async function getWebhooks(
   let query = client
     .from("webhook")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1053,9 +1137,7 @@ export async function getWebhooks(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, WEBHOOKS_PAGING);
   }
 
   return query;
@@ -1815,17 +1897,25 @@ export async function buildPreviewProps(
       };
     }
     case "purchaseOrder": {
-      const [order, lines, locations, terms, payment, ap] = await Promise.all([
-        getPurchaseOrder(client, id),
-        getPurchaseOrderLines(client, id),
-        getPurchaseOrderLocations(client, id),
-        getPurchasingTerms(client, companyId),
-        getPaymentTermsList(client, companyId),
-        getAccountsPayableBillingAddress(client, companyId)
-      ]);
+      const [order, lines, locations, terms, payment, ap, approval] =
+        await Promise.all([
+          getPurchaseOrder(client, id),
+          getPurchaseOrderLines(client, id),
+          getPurchaseOrderLocations(client, id),
+          getPurchasingTerms(client, companyId),
+          getPaymentTermsList(client, companyId),
+          getAccountsPayableBillingAddress(client, companyId),
+          getPurchaseOrderApproval(getCarbonServiceRole(), {
+            companyId,
+            purchaseOrderId: id,
+            timezone: company.data.timezone,
+            withSignature: true
+          })
+        ]);
       if (!order.data) return null;
       return {
         ...base,
+        approval,
         purchaseOrder: order.data,
         purchaseOrderLines: lines.data ?? [],
         purchaseOrderLocations: locations.data,
@@ -3022,6 +3112,28 @@ export async function getSyncOperationReadableIds(
   );
 
   return Object.fromEntries(results.flat());
+}
+
+/**
+ * Each operation with its `reference` (`getSyncOperationReadableIds`), or
+ * null when it has none. Every page of the Sync Activity tab carries its own.
+ */
+export async function withSyncOperationReferences<
+  T extends SyncOperationReference
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operations: T[]
+): Promise<(T & { reference: { label: string; recordId: string } | null })[]> {
+  const readableIds = await getSyncOperationReadableIds(
+    client,
+    companyId,
+    operations
+  );
+  return operations.map((operation) => ({
+    ...operation,
+    reference: readableIds[syncOperationReadableIdKey(operation)] ?? null
+  }));
 }
 
 /** One provider analytics target with its selectable option values. */

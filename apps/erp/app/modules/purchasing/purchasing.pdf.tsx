@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
   ensureFont,
@@ -34,6 +35,7 @@ import {
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import {
   getPurchaseOrder,
+  getPurchaseOrderApproval,
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
   getPurchaseReturnOrder,
@@ -194,13 +196,23 @@ export async function renderPurchaseOrderPdf(
 
   // Settlement decimals from the document currency's row (authoritative over
   // CLDR); null keeps the PDF's historical 2dp fallback.
-  const currencyRow = purchaseOrder.data?.currencyCode
-    ? await getCurrencyByCode(
-        client,
-        companyGroupId,
-        purchaseOrder.data.currencyCode
-      )
-    : null;
+  const [currencyRow, approval] = await Promise.all([
+    purchaseOrder.data?.currencyCode
+      ? getCurrencyByCode(
+          client,
+          companyGroupId,
+          purchaseOrder.data.currencyCode
+        )
+      : null,
+    // approvalRequest is service-only; the order read above already proved
+    // this caller can see the order.
+    getPurchaseOrderApproval(getCarbonServiceRole(), {
+      companyId,
+      purchaseOrderId,
+      timezone: company.data.timezone,
+      withSignature: true
+    })
+  ]);
   const currencyDecimals = currencyRow?.data?.decimalPlaces ?? null;
 
   const body = await collect(
@@ -215,6 +227,7 @@ export async function renderPurchaseOrderPdf(
         }
         locale={locale}
         currencyDecimals={currencyDecimals}
+        approval={approval}
         paymentTerms={paymentTerms.data ?? []}
         purchaseOrder={purchaseOrder.data}
         purchaseOrderLines={purchaseOrderLines.data ?? []}

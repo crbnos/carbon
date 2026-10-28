@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { isOperationStarted } from "./apply-work-center-selections.ts";
 import type { BatchPlacement } from "./batch-scheduler.ts";
 import {
   type CalendarWindow,
@@ -26,6 +27,7 @@ import {
 } from "./duration-calculator.ts";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
+  clipToQualification,
   isEligibleOperator,
   type QualifiedEmployee
 } from "./operator-eligibility.ts";
@@ -513,10 +515,7 @@ export class WorkCenterSelector {
       // process has no mapped centers, fall back to the op's assigned center so
       // a misconfigured pool (or one deactivated since assignment) never strands
       // the op.
-      const started =
-        op.status === "In Progress" ||
-        op.status === "Paused" ||
-        (op.quantityComplete ?? 0) > 0;
+      const started = isOperationStarted(op);
       const assignedWorkCenter =
         op.workCenterId && ctx.capacityByWorkCenter.has(op.workCenterId)
           ? op.workCenterId
@@ -955,7 +954,11 @@ export class WorkCenterSelector {
     const employees = ctx.employeesByAbility.get(requirement.abilityId) ?? [];
     return employees
       .filter((e) => isEligibleOperator(e, earliestStart, ctx.timeZone))
-      .map((e) => ({ employeeId: e.employeeId, windows: e.windows }));
+      .map((e) => ({
+        employeeId: e.employeeId,
+        windows: clipToQualification(e.windows, e.expiresAt, ctx.timeZone)
+      }))
+      .filter((m) => m.windows.length > 0);
   }
 }
 

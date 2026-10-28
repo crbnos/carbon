@@ -29,7 +29,9 @@
     "./steps": "./src/steps.ts",
     "./canvas": "./src/ModelCanvas.tsx",
     "./model-preview": "./src/ModelPreview.tsx",
+    "./model-upload-preview": "./src/ModelUploadPreview.tsx",
     "./optimize-progress": "./src/OptimizeProgress.tsx",
+    "./pmi": "./src/pmi.ts",
     "./use-optimized-model": "./src/useOptimizedModel.ts"
   },
   "peerDependencies": {

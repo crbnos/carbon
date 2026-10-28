@@ -58,6 +58,70 @@ export function isShippableEntityStatus(
   );
 }
 
+const NOT_ALPHANUMERIC = /[^\p{L}\p{N}]+/gu;
+
+/**
+ * The words of a Receiving search, as `purchaseOrderLinesToReceive.searchText`
+ * stores its values: lower-cased, with everything but letters and digits
+ * removed. A packing slip prints RAB-514 where Carbon holds RAB514, and both
+ * read rab514. Every word must match.
+ */
+export function receivingSearchTerms(
+  search: string | null | undefined
+): string[] {
+  if (!search) return [];
+  return search
+    .split(/\s+/)
+    .map((word) => word.toLowerCase().replace(NOT_ALPHANUMERIC, ""))
+    .filter(Boolean);
+}
+
+/**
+ * Where the search terms occur in `text`, matched the way the search matches
+ * (case, spaces and punctuation ignored): sorted, merged `[start, end)` ranges
+ * of `text`, so a highlight covers RAB-514 for the term rab514.
+ */
+export function receivingSearchMatches(
+  text: string,
+  terms: string[]
+): [number, number][] {
+  if (!text || terms.length === 0) return [];
+
+  // The normalized text, and for each of its characters the index in `text`
+  // it came from.
+  let normalized = "";
+  const source: number[] = [];
+  for (let i = 0; i < text.length; i++) {
+    const lower = text[i]!.toLowerCase().replace(NOT_ALPHANUMERIC, "");
+    for (const char of lower) {
+      normalized += char;
+      source.push(i);
+    }
+  }
+
+  const ranges: [number, number][] = [];
+  for (const term of terms) {
+    let from = normalized.indexOf(term);
+    while (from !== -1) {
+      const end = from + term.length;
+      ranges.push([source[from]!, source[end - 1]! + 1]);
+      from = normalized.indexOf(term, end);
+    }
+  }
+
+  ranges.sort((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [];
+  for (const range of ranges) {
+    const last = merged[merged.length - 1];
+    if (last && range[0] <= last[1]) {
+      last[1] = Math.max(last[1], range[1]);
+    } else {
+      merged.push([...range]);
+    }
+  }
+  return merged;
+}
+
 export async function getReceiptTracking(
   client: SupabaseClient<Database>,
   receiptId: string,

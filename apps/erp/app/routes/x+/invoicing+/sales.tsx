@@ -2,19 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getSalesInvoices } from "~/modules/invoicing/invoicing.service";
 import SalesInvoicesTable from "~/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable";
 import type { Handle } from "~/utils/handle";
+import { salesInvoicesList } from "~/utils/list-registry/invoicing.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   realtime: ["salesInvoice"],
@@ -24,49 +20,25 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "invoicing"
+  return loadListPage(request, salesInvoicesList, {
+    dataKey: "salesInvoices",
+    onError: {
+      redirectTo: path.to.invoicing,
+      message: "Failed to fetch sales invoices"
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const customerId = searchParams.get("customerId");
-
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const salesInvoices = await getSalesInvoices(client, companyId, {
-    search,
-    customerId,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
-
-  if (salesInvoices.error) {
-    redirect(
-      path.to.invoicing,
-      await flash(
-        request,
-        error(salesInvoices.error, "Failed to fetch sales invoices")
-      )
-    );
-  }
-
-  return {
-    count: salesInvoices.count ?? 0,
-    salesInvoices: salesInvoices.data ?? []
-  };
 }
 
 export default function InvoicingSalesInvoicesRoute() {
-  const { count, salesInvoices } = useLoaderData<typeof loader>();
+  const { count, salesInvoices, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <SalesInvoicesTable data={salesInvoices} count={count} />
+      <SalesInvoicesTable
+        data={salesInvoices}
+        count={count}
+        infinite={infinite}
+      />
       <RecordOutlet />
     </VStack>
   );

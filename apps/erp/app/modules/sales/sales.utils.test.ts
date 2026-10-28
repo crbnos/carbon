@@ -12,6 +12,8 @@ import {
   leaseCommencementPreview,
   leaseTermMonths,
   previewLeaseClassification,
+  priceListOverrideScopes,
+  priceOverrideScopeError,
   readLeaseClassification,
   reconcileQuantityBreaks,
   rentalEquipmentStatus,
@@ -769,5 +771,69 @@ describe("rentalLineDocuments", () => {
       []
     );
     expect(result.shipment).toBeNull();
+  });
+});
+
+describe("priceOverrideScopeError", () => {
+  it("refuses an override with no scope", () => {
+    expect(priceOverrideScopeError({})).toBe(
+      "Choose a customer, a customer type, or All Customers"
+    );
+  });
+
+  it("refuses All Customers together with a customer or a type", () => {
+    const message = "All Customers cannot also name a customer or type";
+    expect(
+      priceOverrideScopeError({ allCustomers: true, customerId: "c" })
+    ).toBe(message);
+    expect(
+      priceOverrideScopeError({ allCustomers: true, customerTypeId: "t" })
+    ).toBe(message);
+  });
+
+  it("refuses a customer together with a type", () => {
+    expect(
+      priceOverrideScopeError({ customerId: "c", customerTypeId: "t" })
+    ).toBe("Cannot set both Customer and Customer Type");
+  });
+
+  it("accepts exactly one scope", () => {
+    expect(priceOverrideScopeError({ customerId: "c" })).toBeNull();
+    expect(priceOverrideScopeError({ customerTypeId: "t" })).toBeNull();
+    expect(priceOverrideScopeError({ allCustomers: true })).toBeNull();
+  });
+});
+
+describe("priceListOverrideScopes", () => {
+  it("lists a customer's own, its type's and the all-customers overrides", () => {
+    expect(priceListOverrideScopes({ customerId: "c" }, "t")).toEqual([
+      { customerId: "c" },
+      { customerTypeId: "t" },
+      { allCustomers: true }
+    ]);
+  });
+
+  it("skips the type of a customer that has none", () => {
+    expect(priceListOverrideScopes({ customerId: "c" }, null)).toEqual([
+      { customerId: "c" },
+      { allCustomers: true }
+    ]);
+  });
+
+  it("lists a type's own and the all-customers overrides", () => {
+    expect(priceListOverrideScopes({ customerTypeId: "t" }, null)).toEqual([
+      { customerTypeId: "t" },
+      { allCustomers: true }
+    ]);
+  });
+
+  it("lists only the all-customers overrides for All Customers", () => {
+    expect(priceListOverrideScopes({ allCustomers: true }, null)).toEqual([
+      { allCustomers: true }
+    ]);
+  });
+
+  it("lists nothing without a scope", () => {
+    expect(priceListOverrideScopes({}, null)).toEqual([]);
   });
 });

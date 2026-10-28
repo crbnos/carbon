@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type {
+  ApprovalBlock,
   CustomFieldBlock,
   DocumentBlockType,
   KeyValueBlock,
@@ -17,6 +18,8 @@ import type {
 import {
   BLOCK_META,
   BUILT_IN_SECTION_IDS,
+  DEFAULT_APPROVAL_CAPTION,
+  DEFAULT_APPROVAL_HEADING,
   DEFAULT_LINE_ITEMS_OPTIONS,
   DEFAULT_SUMMARY_OPTIONS,
   getMergeFields
@@ -141,6 +144,7 @@ export function BlockConfig() {
     block.type === "lineItems" ||
     block.type === "summary" ||
     block.type === "terms" ||
+    block.type === "approval" ||
     block.type === "labelRevision" ||
     block.type === "labelQuantity" ||
     block.type === "labelTracking" ||
@@ -173,6 +177,7 @@ export function BlockConfig() {
       {block.type === "operations" && <OperationsConfig block={block} />}
       {block.type === "summary" && <SummaryConfig block={block} />}
       {block.type === "terms" && <TermsConfig block={block} />}
+      {block.type === "approval" && <ApprovalConfig block={block} />}
       {(block.type === "labelRevision" ||
         block.type === "labelQuantity" ||
         block.type === "labelTracking") && (
@@ -566,6 +571,60 @@ function TermsConfig({ block }: { block: TermsBlock }) {
           key={`${block.id}-${nonce}`}
           className="min-h-[160px] w-full rounded-md border bg-background p-3"
           initialValue={initialValue}
+          onChange={(content) => updateBlock(block.id, { content })}
+          highlightTokens={knownTokens}
+          disableFileUpload
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The Approval block: its heading, whether the signature prints, and the
+ * caption under the line. The caption starts as the approver and the date, so
+ * "Approved by … on …" is written here rather than in a separate block.
+ */
+function ApprovalConfig({ block }: { block: ApprovalBlock }) {
+  const { updateBlock, documentType } = useDocumentTemplate();
+  const [nonce, setNonce] = useState(0);
+  const knownTokens = getMergeFields(documentType).map((f) => f.token);
+  const caption = hasDocContent(block.content)
+    ? (block.content as JSONContent)
+    : DEFAULT_APPROVAL_CAPTION;
+
+  const insertField = (snippet: string) => {
+    updateBlock(block.id, { content: appendText(caption, snippet) });
+    setNonce((n) => n + 1);
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-muted-foreground">
+        Prints once the order is approved.
+      </p>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="approval-heading">Heading</Label>
+        <Input
+          id="approval-heading"
+          value={block.heading ?? DEFAULT_APPROVAL_HEADING}
+          onChange={(e) => updateBlock(block.id, { heading: e.target.value })}
+        />
+      </div>
+      <ToggleRow
+        label="Show signature"
+        checked={block.showSignature ?? true}
+        onChange={(v) => updateBlock(block.id, { showSignature: v })}
+      />
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <Label>Caption</Label>
+          <MergeFieldMenu onInsert={insertField} label="Insert field" />
+        </div>
+        <Editor
+          key={`${block.id}-${nonce}`}
+          className="min-h-[96px] w-full rounded-md border bg-background p-3"
+          initialValue={caption}
           onChange={(content) => updateBlock(block.id, { content })}
           highlightTokens={knownTokens}
           disableFileUpload

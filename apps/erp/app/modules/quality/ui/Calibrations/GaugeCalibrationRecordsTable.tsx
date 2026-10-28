@@ -40,6 +40,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import {
   usePercentFormatter,
   usePermissions,
@@ -57,6 +58,7 @@ type GaugeCalibrationRecordsTableProps = {
   data: GaugeCalibrationRecord[];
   types: ListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -70,7 +72,7 @@ const defaultColumnVisibility = {
 };
 
 const GaugeCalibrationRecordsTable = memo(
-  ({ data, types, count }: GaugeCalibrationRecordsTableProps) => {
+  ({ data, types, count, infinite }: GaugeCalibrationRecordsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -398,6 +400,7 @@ const GaugeCalibrationRecordsTable = memo(
       <>
         <Table<GaugeCalibrationRecord>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           defaultColumnVisibility={defaultColumnVisibility}

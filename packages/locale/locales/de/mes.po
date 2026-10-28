@@ -168,6 +168,9 @@ msgstr "Probe hinzufügen"
 msgid "Add Spare Part"
 msgstr "Ersatzteil hinzufügen"
 
+msgid "Add your signature"
+msgstr ""
+
 msgid "Added"
 msgstr "Hinzugefügt"
 
@@ -256,18 +259,8 @@ msgstr "verfügbar"
 msgid "Available"
 msgstr "Verfügbar"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "Avatar-Option {0}"
-
 msgid "Avatar style"
 msgstr "Avatar-Stil"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "Avatare von <0>{0}</0> von {1}, lizenziert unter <1>{2}</1>."
 
 msgid "Back"
 msgstr "Zurück"
@@ -322,6 +315,11 @@ msgstr "Boardansicht"
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Aber machen Sie sich keine Sorgen. Sie können den Passwort-Zurücksetzen-Ablauf verwenden, um einen neuen Magic Link anzufordern."
 
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Mit der Anmeldung stimmen Sie den <0>Nutzungsbedingungen</0> und der <1>Datenschutzrichtlinie</1> zu."
 
@@ -361,6 +359,9 @@ msgstr "Prüfen Sie Ihre E-Mail"
 msgid "Choose a job"
 msgstr "Wählen Sie einen Fertigungsauftrag"
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose an option"
 msgstr "Wähle eine Option"
 
@@ -384,6 +385,9 @@ msgstr "Suche löschen"
 
 msgid "Clear station default"
 msgstr "Standardstation löschen"
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Clock In"
 msgstr "Einstempeln"
@@ -510,6 +514,9 @@ msgstr "Nacharbeit erstellen"
 msgid "Current work"
 msgstr "Aktuelle Arbeit"
 
+msgid "Custom color"
+msgstr ""
+
 msgid "Customer"
 msgstr "Kunde"
 
@@ -601,6 +608,15 @@ msgstr "Zum Ändern der Größe von Zeichnung und Merkmalen ziehen"
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "Ziehen von {0} storniert."
+
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Due"
 msgstr "Fällig"
@@ -707,6 +723,13 @@ msgstr "Läuft ab <0/>"
 msgid "Expiring first"
 msgstr "Verfällt zuerst"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Failed"
 msgstr "Fehlgeschlagen"
 
@@ -731,6 +754,9 @@ msgstr "Fehler beim Abrufen von Lagerbereichen"
 msgid "Failed to get options"
 msgstr "Fehler beim Abrufen von Optionen"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Prüfmittel konnte nicht aufgezeichnet werden"
 
@@ -753,6 +779,9 @@ msgstr "Fehler beim Hochladen der Datei: {0}"
 
 msgid "Failed to upload image"
 msgstr "Fehler beim Hochladen des Bildes"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "File size exceeds 10MB limit"
 msgstr "Dateigröße überschreitet das Limit von 10 MB"
@@ -808,6 +837,12 @@ msgstr "Zurück zur Operation"
 
 msgid "Go to onboarding"
 msgstr "Gehen Sie zum Onboarding"
+
+msgid "Halloween surprise"
+msgstr "Halloween-Überraschung"
+
+msgid "Happy Halloween"
+msgstr "Fröhliches Halloween"
 
 msgid "Heading {level}"
 msgstr "Überschrift {level}"
@@ -986,6 +1021,9 @@ msgstr "Beladen: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Artikeldetails werden geladen..."
+
+msgid "Loading. There's no need to scan again."
+msgstr "Wird geladen. Sie müssen nicht erneut scannen."
 
 msgid "Loading..."
 msgstr "Wird geladen..."
@@ -1247,6 +1285,9 @@ msgstr "Keine Proben erforderlich."
 msgid "No scheduled time"
 msgstr "Keine geplante Zeit"
 
+msgid "No serial number"
+msgstr "Keine Seriennummer"
+
 msgid "No serial numbers"
 msgstr "Keine Seriennummern"
 
@@ -1282,6 +1323,9 @@ msgstr "Keine"
 
 msgid "Notes"
 msgstr "Notizen"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "Nichts auf dieser Seite verwendet diesen Barcode"
 
 msgid "Nothing running"
 msgstr "Nichts läuft"
@@ -1440,8 +1484,8 @@ msgstr "Kommissionieren"
 msgid "Pick {0}"
 msgstr "Kommissionieren {0}"
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "Wählen Sie einen Stil und einen Avatar oder mischen Sie für neue."
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "Verfolgtes Element auswählen"
@@ -1491,6 +1535,12 @@ msgstr "Bitte wählen Sie einen Artikel aus"
 msgid "PM schedule lapsed"
 msgstr "Wartungsplan abgelaufen"
 
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
+
+msgid "Poke the spider… if you dare"
+msgstr "Stupsen Sie die Spinne an… wenn Sie sich trauen"
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Drücken Sie ? auf jeder Seite, um diese Liste zu öffnen. Tastaturverknüpfungen werden ignoriert, während Sie in einem Feld tippen."
 
@@ -1511,6 +1561,12 @@ msgstr "Drucken"
 
 msgid "Print batch list"
 msgstr "Los-Liste drucken"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Druckereinstellungen"
@@ -1625,6 +1681,9 @@ msgstr "Teil entfernen"
 msgid "Remove two-factor authentication"
 msgstr "Zwei-Faktor-Authentifizierung entfernen"
 
+msgid "Removed signature"
+msgstr ""
+
 msgid "Rename"
 msgstr "Umbenennen"
 
@@ -1636,9 +1695,6 @@ msgstr "Einen 6-stelligen Code aus einer Authentifizierungs-App bei der Anmeldun
 
 msgid "Required"
 msgstr "Erforderlich"
-
-msgid "Reset"
-msgstr "Zurücksetzen"
 
 msgid "Result"
 msgstr "Ergebnis"
@@ -1670,8 +1726,14 @@ msgstr "Gleich für jeden Fertigungsauftrag"
 msgid "Save"
 msgstr "Speichern"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Speichern Sie das Formular, das Sie bearbeiten"
+
+msgid "Saved signature"
+msgstr ""
 
 msgid "Scan"
 msgstr "Scannen"
@@ -1693,6 +1755,9 @@ msgstr "Seriennummer scannen oder suchen..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scannen oder wählen Sie eine Verfolgte Einheit aus dieser Charge, um sie als Probenspalte hinzuzufügen, dann erfassen Sie das Ergebnis in der Tabelle."
+
+msgid "Scan received"
+msgstr "Scan empfangen"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Scannen Sie diesen QR-Code mit Ihrer Authentifizierungs-App (z. B. Google Authenticator oder 1Password), und geben Sie dann den 6-stelligen Code ein, den sie anzeigt."
@@ -1868,6 +1933,9 @@ msgstr "Tastaturkürzel anzeigen"
 msgid "Shuffle"
 msgstr "Mischen"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Melden Sie sich mit Biometrie anstelle eines Magic Link an. Passkeys werden durch Face ID, Touch ID oder Ihre Geräte-PIN geschützt."
 
@@ -1894,6 +1962,12 @@ msgstr "Stattdessen abmelden"
 
 msgid "Sign-in code"
 msgstr "Anmeldecode"
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "Angemeldet als {stationName}"
@@ -1957,6 +2031,9 @@ msgstr "Schritte fehlen"
 msgid "Storage Unit"
 msgstr "Lagereinheit"
 
+msgid "Style"
+msgstr ""
+
 msgid "Style default"
 msgstr "Standard-Stil"
 
@@ -2004,6 +2081,10 @@ msgstr "Die in Carbon verwendete Akzentfarbe."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Die abgeschlossene Menge für diesen Arbeitsgang ist geringer als die erforderliche Menge von {targetQuantity}."
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "Die Fertigungsaufträge und Teile, die diesen Durchlauf ausmachen."
@@ -2054,8 +2135,8 @@ msgstr "Dieses Teil wurde auf Bestellung gefertigt. Es als Ausschuss zu kennzeic
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Dieses Teil wird als Ausschuss aus dem Bestand verbucht. Seine Anforderung bleibt offen, damit Sie einen Ersatz entnehmen können."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Diese Einheit wird endgültig verschrottet und es wird eine neue Seriennummer erstellt."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Diese Einheit wird endgültig verschrottet und es wird eine Ersatzeinheit erstellt."
 
 msgid "Thumbnail"
 msgstr "Vorschaubild"
@@ -2153,6 +2234,9 @@ msgstr "Nachricht eingeben..."
 msgid "Unable to unlock"
 msgstr "Entsperrung nicht möglich"
 
+msgid "Undo"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "Nicht ausgegebene Serien-/Chargenmaterialien"
 
@@ -2209,6 +2293,9 @@ msgstr "Hochladen"
 
 msgid "Upload completed but no file path returned"
 msgstr "Upload abgeschlossen, aber kein Dateipfad zurückgegeben"
+
+msgid "Uploaded signature"
+msgstr ""
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -2298,6 +2385,9 @@ msgstr "Ihr Profil konnte nicht geladen werden."
 
 msgid "Your session was locked after inactivity."
 msgstr "Ihre Sitzung wurde nach Inaktivität gesperrt."
+
+msgid "Your signature"
+msgstr ""
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

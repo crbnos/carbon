@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   canCreatePurchaseOrderRevision,
+  isPurchaseOrderBulkDeletable,
   isPurchaseOrderLocked,
+  isPurchaseOrderPromisedDateEditable,
   leaseDetailsValidator,
   leaseDurationOf,
   leaseEndDate,
@@ -20,6 +22,7 @@ import {
   lockedReturnLineField,
   PURCHASE_ORDER_LOCKED_STATUSES,
   purchaseOrderDeleteRefusal,
+  purchaseOrderLineDateRefusal,
   purchaseOrderStatusType,
   purchaseOrderValidator,
   resolveLeaseDates,
@@ -440,6 +443,18 @@ describe("lease action validators", () => {
   });
 });
 
+describe("isPurchaseOrderBulkDeletable", () => {
+  it("accepts Draft and Planned only", () => {
+    expect(isPurchaseOrderBulkDeletable("Draft")).toBe(true);
+    expect(isPurchaseOrderBulkDeletable("Planned")).toBe(true);
+    for (const status of purchaseOrderStatusType) {
+      if (status === "Draft" || status === "Planned") continue;
+      expect(isPurchaseOrderBulkDeletable(status)).toBe(false);
+    }
+    expect(isPurchaseOrderBulkDeletable(null)).toBe(false);
+  });
+});
+
 describe("purchaseOrderDeleteRefusal", () => {
   it("allows a Draft or Planned order whoever asks", () => {
     for (const status of ["Draft", "Planned"]) {
@@ -535,5 +550,70 @@ describe("splitRfqModelAttachments", () => {
     const { attach, link } = splitRfqModelAttachments([model("a", 1)], -5);
     expect(attach).toEqual([]);
     expect(link.map((m) => m.id)).toEqual(["a"]);
+  });
+});
+
+describe("isPurchaseOrderPromisedDateEditable", () => {
+  it("stays editable on a confirmed order until every line is received", () => {
+    const editable = purchaseOrderStatusType.filter(
+      isPurchaseOrderPromisedDateEditable
+    );
+    expect(editable).toEqual([
+      "Draft",
+      "Planned",
+      "Needs Approval",
+      "To Review",
+      "To Receive",
+      "To Receive and Invoice",
+      "Rejected"
+    ]);
+  });
+
+  it("is editable on an order with no status yet", () => {
+    expect(isPurchaseOrderPromisedDateEditable(null)).toBe(true);
+  });
+});
+
+describe("purchaseOrderLineDateRefusal", () => {
+  const editable = (
+    field: Parameters<typeof purchaseOrderLineDateRefusal>[0],
+    receivedComplete = false
+  ) =>
+    purchaseOrderStatusType.filter(
+      (status) =>
+        purchaseOrderLineDateRefusal(field, { status, receivedComplete }) ===
+        null
+    );
+
+  it("fixes the required date once the order is released", () => {
+    expect(editable("requiredDate")).toEqual([
+      "Draft",
+      "Planned",
+      "Needs Approval",
+      "To Review",
+      "Rejected"
+    ]);
+  });
+
+  it("keeps an open line's promised date editable until the order is fully received", () => {
+    expect(editable("promisedDate")).toEqual([
+      "Draft",
+      "Planned",
+      "Needs Approval",
+      "To Review",
+      "To Receive",
+      "To Receive and Invoice",
+      "Rejected"
+    ]);
+  });
+
+  it("fixes the promised date of a line received complete", () => {
+    expect(editable("promisedDate", true)).toEqual([]);
+  });
+
+  it("always lets the delivery date be corrected", () => {
+    expect(editable("receivedDate", true)).toEqual([
+      ...purchaseOrderStatusType
+    ]);
   });
 });

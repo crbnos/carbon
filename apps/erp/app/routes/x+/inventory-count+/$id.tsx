@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
 import { pluckUnique, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -16,7 +17,8 @@ import {
   getInventoryCountLines,
   getInventoryCountMovements,
   getStorageTypesList,
-  getStorageUnitsListForLocation
+  getStorageUnitsListForLocation,
+  INVENTORY_COUNT_LINES_PAGING
 } from "~/modules/inventory/inventory.service";
 import { InventoryCountDetails } from "~/modules/inventory/ui";
 import {
@@ -24,9 +26,13 @@ import {
   getMaterialSubstancesList
 } from "~/modules/items/items.service";
 import { getTagsList } from "~/modules/shared/shared.service";
+import { toPage } from "~/utils/cursor";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { listErrorPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "inventory-count");
 
 export const handle: Handle = {
   realtime: [
@@ -62,18 +68,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
+  // A later page (`?after=`) is read for its rows only: skip the summary,
+  // the movements and the option lists.
+  const isFirstPage = !cursor;
 
   // True blind counting: the system quantity (and the variance it can be
   // derived from) must not reach the client until the count is Posted. That
   // includes filtering on them — a crafted ?filter=systemQuantity:gt:0 would
-  // reveal which lines have stock — so drop those filters while blind.
+  // reveal which lines have stock — so drop those filters while blind. The
+  // same goes for sorts: the next-page cursor holds the last row's sort values.
   const isBlindEntry =
     inventoryCount.data.isBlind && inventoryCount.data.status !== "Posted";
+  const isWithheld = (column: string) =>
+    ["systemQuantity", "variance"].includes(column);
   const allowedFilters = isBlindEntry
-    ? filters?.filter((f) => !["systemQuantity", "variance"].includes(f.column))
+    ? filters?.filter((f) => !isWithheld(f.column))
     : filters;
+  const allowedSorts = isBlindEntry
+    ? sorts?.filter((s) => !isWithheld(s.sortBy))
+    : sorts;
 
   const [
     lines,
@@ -88,30 +103,46 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getInventoryCountLines(client, id, companyId, {
       search,
       limit,
-      offset,
-      sorts,
+      cursor,
+      sorts: allowedSorts,
       filters: allowedFilters
     }),
-    getInventoryCountLineSummary(client, id, companyId),
+    isFirstPage ? getInventoryCountLineSummary(client, id, companyId) : null,
     // Adjustments this count has posted (empty for a never-posted Draft).
-    getInventoryCountMovements(client, companyId, id),
+    isFirstPage ? getInventoryCountMovements(client, companyId, id) : null,
     // Option lists for the count-line column filters (same set the quantities
     // screen loads).
-    getMaterialFormsList(client, companyId),
-    getMaterialSubstancesList(client, companyId),
-    getTagsList(client, companyId),
-    getStorageTypesList(client, companyId),
-    getStorageUnitsListForLocation(
-      client,
-      companyId,
-      inventoryCount.data.locationId
-    )
+    isFirstPage ? getMaterialFormsList(client, companyId) : null,
+    isFirstPage ? getMaterialSubstancesList(client, companyId) : null,
+    isFirstPage ? getTagsList(client, companyId) : null,
+    isFirstPage ? getStorageTypesList(client, companyId) : null,
+    isFirstPage
+      ? getStorageUnitsListForLocation(
+          client,
+          companyId,
+          inventoryCount.data.locationId
+        )
+      : null
   ]);
+
+  if (lines.error && cursor) {
+    logger.error("Failed to load a later page of inventory count lines", {
+      companyId,
+      error: lines.error
+    });
+    return listErrorPage("lines");
+  }
+
+  const page = toPage(
+    lines.data ?? [],
+    { limit, sorts: allowedSorts },
+    INVENTORY_COUNT_LINES_PAGING
+  );
 
   // Hiding the columns client-side isn't enough — the values would ship in the
   // loader payload and CSV export. Strip them server-side through Draft AND
   // Pending; they are revealed only once Posted.
-  const lineData = (lines.data ?? []).map((line) =>
+  const lineData = page.rows.map((line) =>
     isBlindEntry
       ? // Withhold System Qty (and the variance it can be derived from). Use null,
         // not 0, so it reads as "not available" (blank / "—" in the UI and CSV)
@@ -124,13 +155,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     inventoryCount: inventoryCount.data,
     lines: lineData,
     count: lines.count ?? 0,
-    summary,
-    movements: movements.data ?? [],
-    forms: forms.data ?? [],
-    substances: substances.data ?? [],
-    tags: pluckUnique(tags.data, (tag) => tag.name),
-    storageTypes: storageTypes.data ?? [],
-    storageUnits: storageUnits.data ?? []
+    nextCursor: page.nextCursor,
+    summary: summary ?? { uncounted: 0, variances: 0 },
+    movements: movements?.data ?? [],
+    forms: forms?.data ?? [],
+    substances: substances?.data ?? [],
+    tags: pluckUnique(tags?.data, (tag) => tag.name),
+    storageTypes: storageTypes?.data ?? [],
+    storageUnits: storageUnits?.data ?? []
   };
 }
 
@@ -139,6 +171,7 @@ export default function InventoryCountDetailRoute() {
     inventoryCount,
     lines,
     count,
+    nextCursor,
     summary,
     movements,
     forms,
@@ -155,6 +188,7 @@ export default function InventoryCountDetailRoute() {
           inventoryCount={inventoryCount}
           lines={lines}
           count={count}
+          nextCursor={nextCursor}
           summary={summary}
           movements={movements}
           forms={forms}

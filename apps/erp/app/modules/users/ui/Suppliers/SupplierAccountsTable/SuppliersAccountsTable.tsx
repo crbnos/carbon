@@ -39,6 +39,8 @@ import { path } from "~/utils/path";
 type SupplierAccountsTableProps = {
   data: Supplier[];
   count: number;
+  // The loader read SINGLE_LOAD_LIMIT rows: more may match.
+  isTruncated?: boolean;
   supplierTypes: ListItem[];
   unrevokedInviteEmails: string[];
 };
@@ -52,6 +54,7 @@ const SupplierAccountsTable = memo(
   ({
     data,
     count,
+    isTruncated,
     supplierTypes,
     unrevokedInviteEmails
   }: SupplierAccountsTableProps) => {
@@ -280,29 +283,35 @@ const SupplierAccountsTable = memo(
                 <MenuIcon icon={<LuBan />} />
                 <Trans>Deactivate Account</Trans>
               </MenuItem>
-            ) : hasUnrevokedInvite ? (
-              permissions.can("delete", "users") && (
+            ) : (
+              <>
                 <MenuItem
+                  disabled={!permissions.can("create", "users")}
                   onClick={() => {
                     setSelectedUserIds([row.user.id]);
-                    revokeInviteModal.onOpen();
+                    resendInviteModal.onOpen();
                   }}
-                  destructive
                 >
-                  <MenuIcon icon={<LuBan />} />
-                  <Trans>Revoke Invite</Trans>
+                  <MenuIcon icon={<LuMailCheck />} />
+                  {hasUnrevokedInvite ? (
+                    <Trans>Resend Invite</Trans>
+                  ) : (
+                    <Trans>Send Invite</Trans>
+                  )}
                 </MenuItem>
-              )
-            ) : (
-              <MenuItem
-                onClick={() => {
-                  setSelectedUserIds([row.user.id]);
-                  resendInviteModal.onOpen();
-                }}
-              >
-                <MenuIcon icon={<LuMailCheck />} />
-                <Trans>Send Invite</Trans>
-              </MenuItem>
+                {hasUnrevokedInvite && permissions.can("delete", "users") && (
+                  <MenuItem
+                    onClick={() => {
+                      setSelectedUserIds([row.user.id]);
+                      revokeInviteModal.onOpen();
+                    }}
+                    destructive
+                  >
+                    <MenuIcon icon={<LuBan />} />
+                    <Trans>Revoke Invite</Trans>
+                  </MenuItem>
+                )}
+              </>
             )}
           </>
         );
@@ -320,6 +329,7 @@ const SupplierAccountsTable = memo(
       <>
         <Table<(typeof rows)[number]>
           count={count}
+          isTruncated={isTruncated}
           columns={columns}
           data={rows}
           defaultColumnVisibility={defaultColumnVisibility}

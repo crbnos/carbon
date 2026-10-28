@@ -756,6 +756,97 @@ export function isPurchaseOrderLocked(
   );
 }
 
+/** The statuses the purchase orders table's bulk Delete acts on. */
+export function isPurchaseOrderBulkDeletable(
+  status: string | null | undefined
+): boolean {
+  return status === "Draft" || status === "Planned";
+}
+
+/** Statuses reached once every line is received; the promised date locks here. */
+export const PURCHASE_ORDER_RECEIVED_STATUSES = [
+  "To Invoice",
+  "Completed",
+  "Closed"
+] as const satisfies readonly (typeof purchaseOrderStatusType)[number][];
+
+export function isPurchaseOrderPromisedDateEditable(
+  status: (typeof purchaseOrderStatusType)[number] | string | null | undefined
+): boolean {
+  return !PURCHASE_ORDER_RECEIVED_STATUSES.some(
+    (received) => received === status
+  );
+}
+
+/** Why an order's status refuses a promised date, or null when it allows one.
+ *  A Closed order may still have lines nothing was received on. */
+export function purchaseOrderPromisedDateRefusal(
+  status: (typeof purchaseOrderStatusType)[number] | string | null | undefined
+): string | null {
+  if (status === "Closed") {
+    return "Cannot change the promised date of a closed purchase order.";
+  }
+  return isPurchaseOrderPromisedDateEditable(status)
+    ? null
+    : "Cannot change the promised date of a fully received purchase order.";
+}
+
+/** A line's own dates. `receivedDate` is its delivery date. */
+export const purchaseOrderLineDateFields = [
+  "requiredDate",
+  "promisedDate",
+  "receivedDate"
+] as const;
+
+export type PurchaseOrderLineDateField =
+  (typeof purchaseOrderLineDateFields)[number];
+
+/** The order date each line date starts from. */
+export const purchaseOrderLineDateOfOrderDate = {
+  receiptRequestedDate: "requiredDate",
+  receiptPromisedDate: "promisedDate",
+  deliveryDate: "receivedDate"
+} as const satisfies Record<string, PurchaseOrderLineDateField>;
+
+export type PurchaseOrderDateField =
+  keyof typeof purchaseOrderLineDateOfOrderDate;
+
+export function isPurchaseOrderDateField(
+  field: string
+): field is PurchaseOrderDateField {
+  return field in purchaseOrderLineDateOfOrderDate;
+}
+
+/** Why a line date cannot change, or null when it can. */
+export function purchaseOrderLineDateRefusal(
+  field: PurchaseOrderLineDateField,
+  line: {
+    status: (typeof purchaseOrderStatusType)[number] | string | null;
+    receivedComplete: boolean;
+  }
+): string | null {
+  switch (field) {
+    case "requiredDate":
+      return isPurchaseOrderLocked(line.status)
+        ? "Cannot change the requested date of a confirmed purchase order."
+        : null;
+    case "promisedDate":
+      return (
+        purchaseOrderPromisedDateRefusal(line.status) ??
+        (line.receivedComplete
+          ? "Cannot change the promised date of a received line."
+          : null)
+      );
+    case "receivedDate":
+      return null;
+  }
+}
+
+export const purchaseOrderLineDateValidator = z.object({
+  field: z.enum(purchaseOrderLineDateFields),
+  value: zfd.text(z.string().optional())
+});
+
 /**
  * The PO statuses planning may change: Apply on a planning action, the order
  * drawer's inline edits, and Cancel's line delete. An allowlist on purpose —
@@ -1193,7 +1284,7 @@ function isOnOrAfter(later: string, earlier: string): boolean {
 
 /** A real calendar date written `YYYY-MM-DD` — what a DATE column takes and
  *  what the lease's month arithmetic parses. */
-function isIsoDate(value: string): boolean {
+export function isIsoDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   try {
     return parseDate(value).toString() === value;

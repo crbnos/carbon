@@ -5,6 +5,8 @@
 import { describe, expect, it } from "vitest";
 import {
   isShippableEntityStatus,
+  receivingSearchMatches,
+  receivingSearchTerms,
   shippableEntityStatuses,
   writeOffRestoreQuantity
 } from "./inventory.utils";
@@ -70,5 +72,42 @@ describe("writeOffRestoreQuantity", () => {
     expect(
       writeOffRestoreQuantity({ shipped: 5, writtenOff: 2, shippedBefore: 0 })
     ).toBe(2);
+  });
+});
+
+// The Receiving search filters on the view's normalized values and highlights
+// with the same rule, so what matched is what is marked.
+describe("receivingSearchTerms", () => {
+  it("ignores case, spaces and punctuation inside a word", () => {
+    expect(receivingSearchTerms("RAB-514")).toEqual(["rab514"]);
+    expect(receivingSearchTerms("  Monton   P-0000071.01 ")).toEqual([
+      "monton",
+      "p000007101"
+    ]);
+  });
+
+  it("drops words that are only punctuation", () => {
+    expect(receivingSearchTerms("- / .")).toEqual([]);
+    expect(receivingSearchTerms(null)).toEqual([]);
+  });
+});
+
+describe("receivingSearchMatches", () => {
+  it("marks the original characters a normalized term matched", () => {
+    expect(receivingSearchMatches("RAB-514", ["rab514"])).toEqual([[0, 7]]);
+    expect(receivingSearchMatches("TI  -200", ["ti200"])).toEqual([[0, 8]]);
+  });
+
+  it("merges overlapping matches of several terms", () => {
+    expect(
+      receivingSearchMatches("BEARING, 7000", ["bear", "ring", "7000"])
+    ).toEqual([
+      [0, 7],
+      [9, 13]
+    ]);
+  });
+
+  it("marks nothing without a match", () => {
+    expect(receivingSearchMatches("MTSV708", ["7000"])).toEqual([]);
   });
 });

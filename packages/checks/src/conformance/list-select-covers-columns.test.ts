@@ -10,10 +10,20 @@ import {
 
 const PARTS_TABLE = LIST_TABLES.PARTS_LIST_COLUMNS as string;
 
-const service = (constants: Record<string, string>) => ({
+const ID_PAGING = `{ defaultSorts: [{ column: "id", ascending: true }] }`;
+
+// Each constant with an `X_PAGING` beside it; `paging` overrides its body.
+const service = (
+  constants: Record<string, string>,
+  paging: Record<string, string> = {}
+) => ({
   file: "apps/erp/app/modules/items/items.service.ts",
   contents: Object.entries(constants)
-    .map(([name, list]) => `const ${name} =\n  "${list}" as const;`)
+    .map(([name, list]) => {
+      const pagingName = name.replace(/_LIST_COLUMNS$/, "_PAGING");
+      const body = paging[pagingName] ?? ID_PAGING;
+      return `const ${name} =\n  "${list}" as const;\nexport const ${pagingName}: Paging = ${body};`;
+    })
     .join("\n")
 });
 
@@ -78,5 +88,66 @@ describe("findUnselectedListColumns", () => {
 
   it("flags a mapped constant that no service defines any more", () => {
     expect(snippets(null, "")).toEqual(["PARTS_LIST_COLUMNS"]);
+  });
+
+  it("flags a sort or id column of X_PAGING the select dropped", () => {
+    const { services, tables } = others();
+    expect(
+      findUnselectedListColumns(
+        [
+          ...services,
+          service(
+            { PARTS_LIST_COLUMNS: "id,name" },
+            {
+              PARTS_PAGING: `{
+                defaultSorts: [
+                  { column: "createdAt", ascending: false },
+                  { column: "name", foreignTable: "supplier", ascending: true }
+                ],
+                idColumn: "readableIdWithRevision"
+              }`
+            }
+          )
+        ],
+        [...tables, table("")]
+      ).map((v) => v.snippet)
+    ).toEqual([
+      "PARTS_LIST_COLUMNS lacks cursor column createdAt",
+      "PARTS_LIST_COLUMNS lacks cursor column readableIdWithRevision"
+    ]);
+  });
+
+  it("flags a list constant with no X_PAGING beside it", () => {
+    const { services, tables } = others();
+    expect(
+      findUnselectedListColumns(
+        [
+          ...services,
+          {
+            file: "apps/erp/app/modules/items/items.service.ts",
+            contents: `const PARTS_LIST_COLUMNS = "id" as const;`
+          }
+        ],
+        [...tables, table("")]
+      ).map((v) => v.snippet)
+    ).toEqual(["PARTS_LIST_COLUMNS has no PARTS_PAGING"]);
+  });
+
+  it("checks a sort-only list for its cursor columns but not its table", () => {
+    const { services, tables } = others();
+    expect(
+      findUnselectedListColumns(
+        [
+          ...services,
+          service(
+            { PARTS_LIST_COLUMNS: "id", FIXED_ASSETS_LIST_COLUMNS: "id" },
+            {
+              FIXED_ASSETS_PAGING: `{ defaultSorts: [{ column: "fixedAssetId", ascending: true }] }`
+            }
+          )
+        ],
+        [...tables, table("")]
+      ).map((v) => v.snippet)
+    ).toEqual(["FIXED_ASSETS_LIST_COLUMNS lacks cursor column fixedAssetId"]);
   });
 });

@@ -3,5 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 export { purchaseOrderBlockRegistry } from "./registry";
-export type { BlockRenderer, PurchaseOrderData } from "./types";
+export type {
+  BlockRenderer,
+  PurchaseOrderApproval,
+  PurchaseOrderData
+} from "./types";
 export { buildPurchaseOrderVars } from "./vars";

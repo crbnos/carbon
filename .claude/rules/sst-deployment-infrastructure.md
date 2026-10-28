@@ -136,9 +136,12 @@ registration handshake, not Carbon-specific. Two independent triggers exist:
   has no `/api/inngest` route to sync. For a workspace with a `project_id`
   (hosted Supabase) it then copies the ERP's `/templates/*.html` into the
   project's Auth emails (`ci/src/auth-emails.ts`): hosted Auth cannot
-  download templates the way self-hosted Auth does. One sync at a time
-  (job-level `concurrency: post-deploy-sync`): each ERP deploy starts a run
-  that syncs every workspace, and two concurrent PUTs to one ERP collide.
+  download templates the way self-hosted Auth does. Each ERP deploy starts a
+  run that syncs every workspace, and Inngest answers a PUT that lands with
+  another one with a 400, so the Inngest PUT retries with jittered backoff
+  (`withRetry`, `ci/src/retry.ts`). There is no concurrency group: GitHub
+  keeps one waiting job per group and cancels the rest, which marked the
+  deploy's run cancelled.
 
 Both hit the same handler (`apps/erp/app/routes/api+/inngest.ts`, `serve()`
 from `inngest/remix`) — the registration target URL is fixed by that route's

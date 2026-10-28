@@ -1324,7 +1324,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     acknowledgedITAR: { kind: "primitive", of: "boolean" },
     flags: { kind: "primitive", of: "string" },
     isConsoleOperator: { kind: "primitive", of: "boolean" },
-    phone: { kind: "primitive", of: "string" }
+    phone: { kind: "primitive", of: "string" },
+    signaturePath: { kind: "primitive", of: "string" }
   }
 };
 

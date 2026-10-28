@@ -4,6 +4,7 @@
 
 import { it } from "vitest";
 import { applyWorkCenterSelections } from "./apply-work-center-selections.ts";
+import { placementWrites } from "./run-overlay.ts";
 import { assert, assertEquals } from "./test-helpers.ts";
 import type { ScheduledOperation, WorkCenterSelection } from "./types.ts";
 
@@ -178,4 +179,123 @@ it("placed start is recorded as the factory's calendar day; the projected finish
   assertEquals(ist.projectedCompletionAt, "2026-07-20T21:34:00.000Z");
   // The stored need-by target survives in every zone.
   assertEquals(ist.dueDate, "2026-07-14");
+});
+
+const PLACED = {
+  priority: 0,
+  placedStart: "2026-07-13T13:00:00.000Z",
+  placedEnd: "2026-07-13T15:00:00.000Z"
+};
+
+function appliedWorkCenter(
+  op: Partial<ScheduledOperation>,
+  selection: WorkCenterSelection
+): string | null | undefined {
+  return applyWorkCenterSelections(
+    new Map([["op-1", makeOp(op)]]),
+    new Map([["op-1", selection]])
+  ).get("op-1")?.workCenterId;
+}
+
+it("an unstarted op is stored on the work center the plan placed it on", () => {
+  assertEquals(
+    appliedWorkCenter(
+      { workCenterId: "wc-cnc", status: "Ready" },
+      { workCenterId: "wc-tig", ...PLACED }
+    ),
+    "wc-tig"
+  );
+});
+
+it.each([
+  ["In Progress", 0],
+  ["Paused", 0],
+  ["Ready", 2]
+])(
+  "a started op (status %s, %i complete) keeps its work center",
+  (status, quantityComplete) => {
+    assertEquals(
+      appliedWorkCenter(
+        {
+          workCenterId: "wc-cnc",
+          status: status as ScheduledOperation["status"],
+          quantityComplete
+        },
+        { workCenterId: "wc-tig", ...PLACED }
+      ),
+      "wc-cnc"
+    );
+  }
+);
+
+it("a placeholder keeps its stored work center; its fallback is only where it would run", () => {
+  assertEquals(
+    appliedWorkCenter(
+      { workCenterId: "wc-clean-room", status: "Ready" },
+      {
+        workCenterId: "wc-potting",
+        priority: 0,
+        conflict: "No qualified operator available"
+      }
+    ),
+    "wc-clean-room"
+  );
+});
+
+it("an op with no work center takes the selected one, placed or not", () => {
+  assertEquals(
+    appliedWorkCenter(
+      { workCenterId: null },
+      { workCenterId: "wc-potting", priority: 0, conflict: "No slot" }
+    ),
+    "wc-potting"
+  );
+});
+
+it("the run writes the work center the plan placed an unstarted op on", () => {
+  // Stored on CNC Mill, placed on TIG Welder Cell: the write must say TIG, or
+  // the op stays on a station its booking is not on.
+  const original = makeOp({ workCenterId: "wc-cnc", status: "Ready" });
+  const applied = applyWorkCenterSelections(
+    new Map([["op-1", original]]),
+    new Map([["op-1", { workCenterId: "wc-tig", ...PLACED }]])
+  );
+
+  const [write] = placementWrites({
+    scheduled: applied.values(),
+    originals: [original],
+    needByByOperation: new Map([["op-1", "2026-07-14"]])
+  });
+
+  assertEquals(write?.placement.workCenterId, "wc-tig");
+});
+
+it("the run never writes the need-by of a pinned op, nor an unchanged one", () => {
+  const pinned = makeOp({
+    id: "op-pinned",
+    workCenterId: "wc-cnc",
+    dueDate: "2026-07-20",
+    manuallyScheduled: true
+  });
+  const unchanged = makeOp({ id: "op-same", workCenterId: "wc-cnc" });
+  const moved = makeOp({ id: "op-moved", workCenterId: "wc-cnc" });
+
+  const writes = placementWrites({
+    scheduled: [pinned, unchanged, moved],
+    originals: [pinned, unchanged, moved],
+    needByByOperation: new Map([
+      ["op-pinned", "2026-07-10"],
+      ["op-same", "2026-07-14"],
+      ["op-moved", "2026-07-11"]
+    ])
+  });
+
+  assertEquals(
+    writes.map((w) => [w.id, w.placement.dueDate]),
+    [
+      ["op-pinned", undefined],
+      ["op-same", undefined],
+      ["op-moved", "2026-07-11"]
+    ]
+  );
 });

@@ -1,57 +1,60 @@
-# Dependabot configuration for automated dependency updates.
+# Dependabot: security updates only.
 # Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 #
-# One npm entry with directory "/" covers the whole pnpm workspace via the
-# root pnpm-lock.yaml; one cargo entry likewise covers the Rust workspace via
-# Cargo.lock. Updates are grouped to keep PR volume manageable in this monorepo.
-# npm version updates are off; see the npm entry.
+# Version updates are off everywhere (open-pull-requests-limit: 0). They
+# opened weekly bump PRs that were mostly closed unmerged, and npm's never
+# finished: Dependabot runs `pnpm update -r` per direct dependency (~340),
+# about 2.5 hours against a 55-minute job limit.
+#
+# Security updates come from the repository setting "Dependabot security
+# updates" (Settings → Code security), not from this file, and the limit
+# above does not apply to them. This file only groups them: one PR per
+# ecosystem for the advisories open at the time, not one PR per advisory.
+# There are no `ignore` rules, because they apply to security updates too
+# and would skip a fix that needs a major version.
 version: 2
 updates:
-  # JavaScript/TypeScript — pnpm workspace (root lockfile covers all packages/apps)
-  # Version updates are off (limit 0). The workspace has ~340 direct
-  # dependencies and Dependabot runs `pnpm update -r` for each, about 2.5 hours,
-  # while a job is killed at 55 minutes. Every weekly run timed out, and a run
-  # started by a change to this file blocked the release of that commit.
-  # Vulnerable npm dependencies come from Dependabot security updates, which
-  # run per advisory and are unaffected by this limit.
+  # JavaScript/TypeScript — the root pnpm-lock.yaml covers every package and app
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
     open-pull-requests-limit: 0
     labels:
       - "dependencies"
+    groups:
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
-  # Rust — cargo workspace (root Cargo.lock covers all crates + assembler)
+  # Rust — the root Cargo.lock covers every crate, the assembler included
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     labels:
       - "dependencies"
     groups:
-      cargo:
-        update-types:
-          - "minor"
-          - "patch"
+      cargo-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
-  # GitHub Actions used by workflows in .github/workflows
+  # GitHub Actions used by .github/workflows
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     labels:
       - "dependencies"
     groups:
-      github-actions:
-        update-types:
-          - "minor"
-          - "patch"
+      actions-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
   # Docker base images
   - package-ecosystem: "docker"
@@ -61,15 +64,14 @@ updates:
       - "/packages/database/supabase/edge-runtime"
     schedule:
       interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     labels:
       - "dependencies"
-    # Major image versions (a new Node or Postgres line) are upgraded on purpose,
-    # not by a weekly bot PR.
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+    groups:
+      docker-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
   # Images pinned in the dev and self-host compose files
   - package-ecosystem: "docker-compose"
@@ -78,12 +80,11 @@ updates:
       - "/contrib/deploying/simple-docker-caddy"
     schedule:
       interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     labels:
       - "dependencies"
-    # Major image versions (a new Node or Postgres line) are upgraded on purpose,
-    # not by a weekly bot PR.
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+    groups:
+      compose-security:
+        applies-to: security-updates
+        patterns:
+          - "*"

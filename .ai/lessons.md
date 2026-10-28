@@ -3640,6 +3640,15 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 
 **Applies to:** `apps/erp/app/routes/api+/v1+/lib/base.server.ts`, `apps/erp/app/routes/api+/mcp+/_index.ts`, every `@mcp`-tagged service taking `db: Kysely<KyselyDatabase>`.
 
+## A constant between `/** @mcp read */` and its function drops the MCP tool
+
+**Context:** Cursor paging (2026-10-13) gave each paged list service an exported `*_DEFAULT_SORTS` constant. The list registry and the loaders read it, so it sits next to the service function.
+
+**Problem:** Twice during that work, the constant went between the doc block and the function. TypeScript attaches a doc comment to the declaration directly under it, so the `@mcp read` tag then belonged to the constant. The generator reads the doc block of exported functions only (`getJsDocs()` in `scripts/lib/service-ast.ts`); it skips a constant that is not a function. The function silently stopped being a tool and left `tool-manifest.digest.json`. Typecheck, tests and the build all passed.
+
+**Rule:** Put a new constant ABOVE the doc block of a service function, never between the block and the function. After you edit a `*.service.ts` file, run `pnpm run generate:mcp`. Then diff the tool names in `tool-manifest.digest.json`. A tool name that disappears is a displaced tag until you prove otherwise.
+
+**Applies to:** `apps/erp/app/modules/*/*.service.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`.
 
 ## A cookie that was only ever written is not a stored preference
 
@@ -4060,6 +4069,26 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** every table in `fieldMappings` (`apps/erp/app/modules/shared/imports.models.ts`) whose importer has a fallback for a blank cell.
 
+## A temporary override lives in the thing it overrides, not in its callers
+
+**Context:** Halloween had to be the theme for everyone while in season (2026-10). The first cut replaced the cookie read in all three apps' `getTheme` (`services/theme.server.ts`) with `resolveTheme(halloweenTheme.name)`.
+
+**Problem:** Undoing it meant rewriting three deleted cookie reads from memory, and nothing pointed at them: deleting `halloween-theme.ts` would just break the imports. The mesh colors in `MeshGradientBackground.tsx` (a `Record<string, …>`, so no compile error) and a test that imported the theme directly had the same shape. The removal checklist went stale twice as pieces were added.
+
+**Rule:** Put a seasonal or temporary behaviour on the removable unit itself (its `available` window and `mesh` on the `SeasonalTheme`, read by the shared resolver) and keep callers generic, so deleting the unit turns the behaviour off. Test the mechanism on a fixture, not on the instance. Keep ONE removal checklist, next to the code, and make every other comment point to it.
+
+**Applies to:** `packages/utils/src/themes.ts` seasonal themes, `packages/react/src/Halloween/`, any feature flag, promo or seasonal UI.
+
+## The theme a page renders is not the theme the user picked
+
+**Context:** A seasonal theme made `getTheme` (`services/theme.server.ts`) return the seasonal name for everyone in season (2026-10).
+
+**Problem:** The ERP's onboarding theme step and `x+/account+/theme.tsx` also read `getTheme` to seed and post back the user's own pick. In season they posted the seasonal name, `themeColorValidator` refused it, and onboarding could not get past the theme step. The theme pickers meanwhile painted a chosen theme onto `<body>` while the server kept rendering the seasonal one.
+
+**Rule:** Keep "what to render" (`getTheme` → `resolveTheme`) and "what the user chose" (`getStoredTheme` → `storedTheme`) as two reads, and decide the season once, in the root loader (`Document` renders the name with `themeByName`). A picker that cannot take effect is disabled and says why (`useSeasonalTheme`, `SeasonalThemeNotice`).
+
+**Applies to:** `packages/utils/src/themes.ts`, every app's `services/theme.server.ts` and `root.tsx`, every theme picker.
+
 ## Registering on `load` from entry.client never registers in dev
 
 **Context:** The ERP and MES service workers were registered from `entry.client.tsx` with `window.addEventListener("load", register)`, the pattern most guides show (2026-10-22).
@@ -4099,3 +4128,65 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Do not promise a closed-app badge on macOS Chrome. Test the badge with the app hidden (⌘H), not closed, and test the closed case on a platform meant to keep it (an iPhone Home Screen app) before calling it broken.
 
 **Applies to:** `apps/erp/app/hooks/useAppBadge.ts`, `apps/erp/public/service-worker.js`, the `send-push` badge count.
+
+## A scheduler decision is only stored when every write-back guard agrees
+
+**Context:** The scheduler balances an operation that has not started onto any work center of its process (F10, 2026-10-26).
+
+**Problem:** Two separate "never overwrite a stored work center" guards sat between the decision and the database: one in `applyWorkCenterSelections`, one in the engine's `buildWrites`. Fixing the first one alone changed nothing in the database. The `capacityReservation` row named the chosen station while `jobOperation.workCenterId` kept the old one, and every unit test still passed.
+
+**Rule:** When you change what the scheduler decides, trace the value to the write (`placementWrites`, `run-overlay.ts`). Test the decision and the write together, then remove the write fix and confirm a test goes red.
+
+**Applies to:** `packages/planning/src/scheduling/` — `apply-work-center-selections.ts`, `run-overlay.ts`, `scheduling-engine.ts`.
+
+## An SQL test that inserts an employee needs the company's root group first
+
+**Context:** Seeding employees in a `supabase/tests/*.test.sql` file (`rpc-privileges.test.sql`, 2026-10-26).
+
+**Problem:** The `employee` insert fires the employee-type group interceptor, which needs the company's "All Employees" root group. A test company made by hand has no root group, so the insert fails. `SET session_replication_role` is not permitted there.
+
+**Rule:** Insert the root group first, with the id `getGroupId` builds: `'00000000-0000-' || substr(c,1,4) || '-' || substr(c,5,4) || '-' || substr(c,9,12)` for company id `c`. Then insert the employee type and the employee.
+
+**Applies to:** SQL tests under `packages/database/supabase/tests/` that create employees.
+
+## `setGenericQueryFilters` erases a query's row type
+
+**Context:** Inventory → Receiving read a view through `setGenericQueryFilters` and its route annotated the rows with a hand-written type (2026-10-26).
+
+**Problem:** The helper's signature is typed loosely (it carries `@ts-expect-error`), so whatever it returns awaits to rows of type `any`. An annotation on those rows is an unchecked cast: renaming a column in the select string, or dropping it from the view, compiles clean and renders blank. Types in `types.ts` derived through `ReturnType<typeof getX>` are `any` the same way.
+
+**Rule:** Keep the typed builder. Assign the helper's result back to the query variable (`query = setGenericQueryFilters(query, { filters })`), which keeps the variable's declared type, then apply the sort and `.range()` on it directly. Derive the row type from that function in `types.ts`, and narrow a view's never-null keys once at the loader boundary rather than guarding them in components.
+
+**Applies to:** list reads in `apps/erp/app/modules/*/*.service.ts` that call `setGenericQueryFilters`, and the `types.ts` row types derived from them.
+
+
+## OCCT keeps every document it opened by path, and refuses to open it again
+
+**Context:** The optimize ingest gained a PMI pass (`read_pmi`, `crates/occt-bridge/src/pmi.cc`) that reads the same `.xbf` the optimiser had just tessellated with `read_xbf` (2026-10-26).
+
+**Problem:** `TDocStd_Application::Open(path, doc)` registers the document with the application until `Close(doc)`. `read_xbf` never closes it, so the second open of the same path failed with `PCDM_RS_AlreadyRetrieved` ("could not open XBF document"). The hermetic converter test passed, because it opened the `.xbf` only once; only the assembler's ingest test, which runs both passes, showed it.
+
+**Rule:** A second reader of an `.xbf` opens it from a stream (`Open(std::istream&, doc)`), which skips the path check, and calls `xcaf_app()->Close(doc)` when done. Test any new pass over the ingest's xbf through `run_ingest`, not only through the converter.
+
+**Applies to:** `crates/occt-bridge/src/*.cc` (any function that opens a BinXCAF document), `apps/assembler/src/actions/optimize.rs` (`run_ingest`).
+
+
+## A new table handler's generated migration fails locally with "must be owner"
+
+**Context:** A new statement handler (`queue_pmi_inspection_plans`) was added to `event-system/handlers/` and `attachments.ts`. `pnpm db:migrate` synced it, then `authz migration` wrote the generated migration that ships it (2026-10-27).
+
+**Problem:** The next `pnpm db:migrate` failed on that migration with `must be owner of function queue_pmi_inspection_plans`. The sync had created the function as `supabase_admin`. Every older handler is owned by `postgres`, the role the migration runs its `CREATE OR REPLACE` as. Production never syncs, so only a local database that synced first is affected.
+
+**Rule:** If the generated migration of a new managed function fails locally with "must be owner", run `ALTER FUNCTION public.<name>() OWNER TO postgres;` as `supabase_admin`, then run `pnpm db:migrate` again. Do not edit the generated migration.
+
+**Applies to:** `packages/database/src/event-system/handlers/*.sql`, `packages/database/src/event-system/functions/*.sql`, `pnpm --filter @carbon/database authz migration`.
+
+## A form validator is not an API contract
+
+**Context:** `production_createJobOperation` answered a bare 500 "Failed to insert job operation" to an API caller (2026-10-27).
+
+**Problem:** Operations moved from routes kept the route's input and error handling. The form sent a fresh client-made `id` for each new row, so the create input required one and an API caller had to invent it; a reused id failed the insert. The route's toast-only `ctx.error("internal", "Failed to …", error)` (448 of them) then hid the database's reason, so a duplicate key or a reference to nothing read as our failure.
+
+**Rule:** A create input leaves the new row's `id` optional when the table has a default (`mcp-create-inputs.test.ts` fails otherwise). A database refusal the caller can fix is reported as itself: `defineServiceFn` maps an `internal` error whose cause is one (`databaseRefusal`), so don't swallow the cause. A yes/no field is a real boolean that also parses the form's `"true"` / `"false"` (`booleanField`, `shared.models.ts`), so the API publishes `boolean`. A rich-text (JSON) column takes `optionalTiptapDoc` / `requiredTiptapDoc`, never `z.string()` or `z.unknown()`: a raw string is stored as a JSON scalar the editor cannot read. A JSON value a form posts as text takes `jsonInput(schema)`. Never `z.preprocess` / `z.coerce` / `z.any()` bare in an operation's input: the manifest publishes those as "anything".
+
+**Applies to:** every `defineServiceFn` in `apps/erp/app/modules/*/*.server.ts`, and any validator reused as an operation's input.
