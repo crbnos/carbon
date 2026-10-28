@@ -18871,8 +18871,6 @@ msgid "Queued"
 msgstr "En file d'attente"
 
 #. placeholder {0}: printIds.length
-msgid "Queued {0} labels for printing"
-msgstr "{0} étiquettes mises en file d'attente d'impression"
 msgid "Queued {0} kanbans for printing"
 msgstr "{0} kanbans mis en file d'impression"
 

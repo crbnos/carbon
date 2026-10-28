@@ -3943,8 +3943,6 @@ msgstr "Vermögenswerte, Verbindlichkeiten und Eigenkapital an einem bestimmten 
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Weisen Sie die Maschinenbearbeitungszeit, die kein geladener Arbeitsgang beansprucht hat, dem richtigen Fertigungsauftrag zu oder lehnen Sie sie ab."
 
-msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
-msgstr "Drucker den Standorten zuweisen. Versand, Wareneingang und Arbeitsplätze übernehmen die Standardeinstellung des Standorts, sofern sie nicht überschrieben wird."
 msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
 msgstr "Weisen Sie Druckern Standorte zu. Versand, Wareneingang, Bestände, Kanbans und Arbeitsplätze erben die Standort-Standardeinstellungen, sofern nicht manuell überschrieben."
 
@@ -18873,8 +18871,6 @@ msgid "Queued"
 msgstr "In Warteschlange"
 
 #. placeholder {0}: printIds.length
-msgid "Queued {0} labels for printing"
-msgstr "{0} Etiketten in die Druckwarteschlange gestellt"
 msgid "Queued {0} kanbans for printing"
 msgstr "{0} Kanbans zum Drucken eingereiht"
 
