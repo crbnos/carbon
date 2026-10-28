@@ -48,7 +48,7 @@ pnpm --filter @carbon/env test
 
 - **Feature flags (`@carbon/env/flags` + `@carbon/env/flags.server`):** spec `.ai/specs/2026-10-28-feature-flags.md`.
   - `./flags` is browser-safe: the registry `FLAGS` (each flag's type, its default and whether it goes to the browser), `flagDefault`, `BrowserFlagKey`. Add a flag there first; a key not in `FLAGS` is a type error. The default is the safe value: it is what an instance does with no flags source.
-  - `./flags.server`: `initFlags({ store, waitUntil })` (called once in each app's `entry.server.tsx`), `flags.bool/string/number(key, { companyId, userId? })` (never throws, default from `FLAGS`), `evaluateBrowserFlags` (for the layout loaders), `flagStatus()`, `parseHeaders`, and the `FlagsStore` interface that `@carbon/kv`'s `redisFlagsStore` implements (this package cannot import `@carbon/kv`).
+  - `./flags.server`: `initFlags({ store, waitUntil, onWarning })` (called once in each app's `entry.server.tsx`), `flags.bool/string/number(key, { companyId, userId? })` (never throws, default from `FLAGS`), `evaluateBrowserFlags` (for the layout loaders), `parseHeaders`, and the `FlagsStore` interface that `@carbon/kv`'s `redisFlagsStore` implements (this package cannot import `@carbon/kv`).
   - `CARBON_FLAGS_ENDPOINT` (`https:` polls through Redis; `data:`/`file:` loads once) and `CARBON_FLAGS_HEADERS` (OTEL headers format, secret).
   - Never import `@openfeature/*` outside this package; the `flags-through-env` check refuses it.
 

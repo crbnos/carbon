@@ -174,9 +174,12 @@ describe("CarbonFlagsProvider", () => {
     expect(requests[0]?.authorization).toBe("Bearer tok+1");
   });
 
-  it("sends the build's commit as X-Carbon-Commit", async () => {
+  it("sends the first 12 characters of the build's commit as X-Carbon-Commit", async () => {
     await start(
-      new CarbonFlagsProvider({ endpoint: url, commit: "abc123def456" })
+      new CarbonFlagsProvider({
+        endpoint: url,
+        commit: "abc123def4567890abc123def4567890abc12345"
+      })
     );
     expect(requests[0]?.commit).toBe("abc123def456");
   });
@@ -348,6 +351,9 @@ describe("CarbonFlagsProvider", () => {
     }
     const read = await start(new CarbonFlagsProvider({ endpoint: url, store }));
     expect(await read("cmp_123")).toBe(true);
+    // It keeps its fetch to itself: the shared copy belongs to the processes
+    // that can read it.
+    for (const value of store.data.values()) expect(value.etag).toBe('"bad"');
   });
 
   it("sends warnings to onWarning with structured properties", async () => {

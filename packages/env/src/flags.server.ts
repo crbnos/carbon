@@ -180,7 +180,11 @@ export class CarbonFlagsProvider implements Provider {
         : "static";
     // The source sees which build each instance runs. Configured headers win.
     this.headers = {
-      ...(options.commit ? { "X-Carbon-Commit": options.commit } : {}),
+      // 12 characters on every platform, the length BYOC's release
+      // versions carry, so the source can compare them.
+      ...(options.commit
+        ? { "X-Carbon-Commit": options.commit.slice(0, 12) }
+        : {}),
       ...parseHeaders(options.headers)
     };
     this.scope = createHash("sha256")
@@ -293,9 +297,8 @@ export class CarbonFlagsProvider implements Provider {
       throw new Error(`the flags source answered ${res.status}`);
     }
     const body = await readCapped(res);
-    // Validate before the body reaches the store, so a bad document never
-    // spreads to the other processes.
-    new FlagdCore().setConfigurations(body);
+    // Callers apply() the body before they write it to the store. apply()
+    // throws on an invalid document, so a bad one never spreads.
     const responseEtag =
       res.headers.get("etag") ??
       `"${createHash("sha256").update(body).digest("hex").slice(0, 32)}"`;
@@ -363,12 +366,17 @@ export class CarbonFlagsProvider implements Provider {
       const fetchedAt = Date.now();
       if (result.status === 200) {
         this.apply(result.body, result.etag);
-        await this.store.write(this.scope, {
-          body: result.body,
-          etag: result.etag,
-          fetchedAt
-        });
-      } else {
+        // A process that cannot read the shared copy keeps its own document
+        // in memory: the processes that can read it own the store. Writing
+        // here made two versions overwrite each other on every sync.
+        if (!storeRejected) {
+          await this.store.write(this.scope, {
+            body: result.body,
+            etag: result.etag,
+            fetchedAt
+          });
+        }
+      } else if (!storeRejected) {
         await this.store.write(this.scope, { fetchedAt });
       }
       this.confirmedAt = fetchedAt;
@@ -510,15 +518,6 @@ export async function initFlags(
   });
   globalThis.__carbonFlags = provider;
   await OpenFeature.setProviderAndWait(provider);
-}
-
-/** For monitoring: when the source last confirmed the flags, and the last error. */
-export function flagStatus() {
-  const provider = globalThis.__carbonFlags;
-  return {
-    confirmedAt: provider?.confirmedAt ?? null,
-    lastError: provider?.lastError ?? null
-  };
 }
 
 /**

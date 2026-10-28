@@ -11,6 +11,10 @@ import { acquireLease, releaseLease } from "./lease";
 // caps the document at 1 MB.
 const key = (scope: string) => `flags:${scope}`;
 
+// Every 200 and 304 refreshes it, so only a scope nothing reads any more (an
+// old token, a changed endpoint, a deleted worktree) runs out.
+const DOCUMENT_TTL_SECONDS = 24 * 60 * 60;
+
 // Long enough for one fetch from the source (5 s timeout) and the write.
 const REFRESH_LEASE_MS = 10_000;
 
@@ -42,6 +46,7 @@ export const redisFlagsStore: FlagsStore = {
     if (value.body !== undefined) fields.body = value.body;
     if (value.etag !== undefined) fields.etag = value.etag;
     await redis.hset(key(scope), fields);
+    await redis.expire(key(scope), DOCUMENT_TTL_SECONDS);
   },
 
   async tryLease(scope) {

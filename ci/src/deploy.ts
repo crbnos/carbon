@@ -111,7 +111,8 @@ async function fetchFlagsDocument(
 ): Promise<string> {
   const res = await fetch(endpoint, {
     headers: {
-      "X-Carbon-Commit": commit,
+      // 12 characters, as the apps send it.
+      "X-Carbon-Commit": commit.slice(0, 12),
       ...(token ? { Authorization: `Bearer ${token}` } : {})
     },
     signal: AbortSignal.timeout(10_000),
@@ -119,10 +120,20 @@ async function fetchFlagsDocument(
   if (!res.ok) {
     throw new Error(`The flags source answered ${res.status}`);
   }
-  const body = await res.text();
-  if (Buffer.byteLength(body) > MAX_FLAGS_DOCUMENT_BYTES) {
+  if (Number(res.headers.get("content-length") ?? 0) > MAX_FLAGS_DOCUMENT_BYTES) {
     throw new Error("The flags document is larger than 32 KiB");
   }
+  // Read through a cap, so a wrong endpoint never downloads a large file.
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for await (const chunk of res.body ?? []) {
+    size += chunk.byteLength;
+    if (size > MAX_FLAGS_DOCUMENT_BYTES) {
+      throw new Error("The flags document is larger than 32 KiB");
+    }
+    chunks.push(chunk);
+  }
+  const body = Buffer.concat(chunks).toString("utf8");
   assertFlagdDocument(JSON.parse(body));
   return `data:application/json;base64,${Buffer.from(body).toString("base64")}`;
 }

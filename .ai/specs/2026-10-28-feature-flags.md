@@ -95,7 +95,7 @@ request also sends `If-None-Match` when the instance has an ETag, and
 | Header | Set by | Use in the source |
 |--------|--------|-------------------|
 | `Authorization` | `CARBON_FLAGS_HEADERS` | The instance token. It is the only identity. |
-| `X-Carbon-Commit` | `CARBON_COMMIT_SHA` (alias `VERCEL_GIT_COMMIT_SHA`; `sst.config.ts` forwards `IMAGE_TAG`), and `ci/src/deploy.ts` at deploy time | Record which build each instance runs, next to `lastFetchAt`. |
+| `X-Carbon-Commit` | `CARBON_COMMIT_SHA` (alias `VERCEL_GIT_COMMIT_SHA`; `sst.config.ts` forwards `IMAGE_TAG`), and `ci/src/deploy.ts` at deploy time | Record the most recent build seen for each instance, next to `lastFetchAt`. Only the process that holds the lease fetches, so during a rolling deploy the value can alternate between the old and the new build. The value is the first 12 characters of the commit on every platform. |
 | `If-None-Match` | The provider | Answer `304` when the document has not changed. |
 
 The headers carry no company id, user id or other tenant data.
@@ -179,7 +179,6 @@ exports, never through `process.env` (`packages/env/AGENTS.md`).
 | `FlagsStore` (type) | The interface of the shared cache. `@carbon/kv` implements it with Redis. |
 | `flags.bool(key, ctx)`, `flags.string(key, ctx)`, `flags.number(key, ctx)` | The only API that call sites use. `ctx` is `{ companyId, userId? }`, and `companyId` is required. The provider adds `tenancy` and `edition`. |
 | `evaluateBrowserFlags(ctx)` | Returns the value of every registry flag with `browser: true`, for the layout loaders. |
-| `flagStatus()` | Returns `{ confirmedAt, lastError }` for monitoring. |
 | `parseHeaders(raw)` | The `CARBON_FLAGS_HEADERS` parser. |
 
 `initFlags` goes in `app/entry.server.tsx`, not in `server/app.ts`.
@@ -365,7 +364,7 @@ Each source has:
 |------|---------------|
 | Flag table | `key`, `description`, `variants` (JSON), `defaultVariant`, `archivedAt`, audit columns |
 | Rule table | `flagKey`, `order`, `variant`, and the conditions: `companyIds`, `userIds`, `percent`, `tenancy` (`single`, `multi` or empty), `editions`, `instanceIds` (empty = every instance) |
-| Instance token table | `instanceId`, `tokenHash` (SHA-256), `createdAt`, `revokedAt`, `lastFetchAt`, `lastCommit` (from `X-Carbon-Commit`) |
+| Instance token table | `instanceId`, `tokenHash` (SHA-256), `createdAt`, `revokedAt`, `lastFetchAt`, `lastCommit` (the most recent `X-Carbon-Commit` seen; during a rolling deploy it can show the old or the new build until every process runs the new one) |
 | Change log | One row per save: who, when, the flag before and after |
 | Admin form | Staff edit variants, default, rules and archive state |
 | Endpoint | Section 2. It hashes the bearer token, finds the instance, compiles the rules into one `if` chain per flag and validates the result. It sets `lastFetchAt`. |
@@ -584,7 +583,7 @@ and `flags_token` (text, secret). Both are nullable.
 | `packages/env/src/schema.ts` | Add `CARBON_FLAGS_ENDPOINT` (type `url`) and `CARBON_FLAGS_HEADERS` (`secret: true`). |
 | `packages/env/src/index.ts` | Export both variables and `CARBON_COMMIT_SHA`. |
 | `packages/env/src/flags.ts` | New. The `FLAGS` registry and its types. Client-safe. |
-| `packages/env/src/flags.server.ts` | New. Provider, `initFlags`, `flags.*`, `evaluateBrowserFlags`, `flagStatus`, `parseHeaders`. |
+| `packages/env/src/flags.server.ts` | New. Provider, `initFlags`, `flags.*`, `evaluateBrowserFlags`, `parseHeaders`. |
 | `packages/env/src/flags.server.test.ts` | New. The tests for the acceptance criteria of the provider. |
 | `packages/env/package.json` | Add the `./flags` and `./flags.server` exports and the two dependencies. |
 | `pnpm-workspace.yaml` | Add the two dependencies to the catalog. |
@@ -676,7 +675,7 @@ None in the ERP or the MES. The admin form is in each source (section 6).
 |------|----------|------------|
 | Two processes hold different documents for a short time | Low | Every process syncs from Redis every 10 s ± 20%. Rule 9.3: no flag gates an irreversible write alone. |
 | Redis is down | Low | Each process fetches the source directly, once a minute, and keeps its loaded document. |
-| A revoked or wrong token keeps an instance on old flags without anyone noticing | Med | `flagStatus()` and the 10-minute age monitor. The source records `lastFetchAt` per instance. |
+| A revoked or wrong token keeps an instance on old flags without anyone noticing | Med | The `onWarning` log line (`ageMs`) and the 10-minute age monitor. The source records `lastFetchAt` per instance. |
 | The console and the CSA dashboard compile rules differently | Med | Both validate with `FlagdCore`. Both run the acceptance criteria for the contract. |
 | A flag turns into a permanent configuration switch | Low | The lifecycle in section 6. The archive warning shows code that still reads an old flag. |
 | A browser flag leaks targeting data | Low | Only evaluated values reach the browser. An acceptance criterion checks the page source. |
@@ -715,3 +714,4 @@ None in the ERP or the MES. The admin form is in each source (section 6).
 - 2026-10-28: Built on `feat/feature-flags`. Changes from the build: the browser hook moved to `@carbon/react` (`useFeatureFlags`), the Redis store has no unit test, and the AWS `data:` URL has a 32 KiB cap.
 - 2026-10-28: Review fixes. The provider keeps the lease after a failed fetch, fetches for itself when it cannot load the Redis copy, sends structured warnings to `onWarning`, and keeps the boot sync alive with `waitUntil`. The MES layout sends no flags. `ci/src/deploy.ts` checks the document's shape.
 - 2026-10-28: Added the `X-Carbon-Commit` header from `CARBON_COMMIT_SHA` (alias `VERCEL_GIT_COMMIT_SHA`; `IMAGE_TAG` on AWS), so each source records which build every instance runs.
+- 2026-10-29: Review fixes. A process that rejects the Redis copy keeps its fetch in memory. The Redis hash expires after 1 day without a write. `X-Carbon-Commit` is 12 characters everywhere. `flagStatus()` is gone; monitoring reads the `onWarning` log lines. `lastCommit` means the most recent commit seen.
