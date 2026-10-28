@@ -65,20 +65,23 @@ describe("sameAccount", () => {
     ).toBe(true);
   });
 
-  // The label read is best-effort; a failed read must not lose a consent.
-  it("accepts when either side cannot be identified", () => {
+  it("accepts any account for a row that was never identified", () => {
     expect(
       sameAccount(
         { accountLabel: null, metadata: {} },
         { accountLabel: "ops@example.com" }
       )
     ).toBe(true);
+  });
+
+  // A failed label read must not let another account take over the row.
+  it("refuses an unidentified consent on an identified row", () => {
     expect(
       sameAccount(
         { accountLabel: "ops@example.com", metadata: {} },
         { accountLabel: null }
       )
-    ).toBe(true);
+    ).toBe(false);
   });
 });
 

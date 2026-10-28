@@ -183,6 +183,10 @@ export const integrationErrors = {
       title: msg`That's a different account`,
       description: msg`Reconnect with the account this connection already uses, or use Add account to connect the other one.`
     },
+    "account-unverified": {
+      title: msg`Couldn't confirm the account`,
+      description: msg`The integration didn't say which account signed in, so this connection was left unchanged. Try again.`
+    },
     "workspace-taken": {
       title: msg`That workspace is connected to another company`,
       description: msg`A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace.`
@@ -215,7 +219,7 @@ export type IntegrationErrorCode<T extends IntegrationWithErrors> =
 /** The query string an OAuth callback redirects to the integrations page with. */
 export function integrationErrorSearch<T extends IntegrationWithErrors>(
   integration: T,
-  error: IntegrationErrorCode<T>
+  error: IntegrationErrorCode<T> | SharedIntegrationErrorCode
 ) {
   return `?integration=${integration}&error=${error}`;
 }
@@ -226,8 +230,14 @@ const sharedErrors = {
   "coming-soon": {
     title: msg`This integration isn't available yet`,
     description: msg`It is coming soon. Contact Carbon to have it set up for your company.`
+  },
+  "plan-required": {
+    title: msg`Integrations aren't included in your plan`,
+    description: msg`Upgrade your plan to connect this integration.`
   }
 } satisfies Record<string, IntegrationErrorMessage>;
+
+export type SharedIntegrationErrorCode = keyof typeof sharedErrors;
 
 /** Resolves those params back to copy. Unknown integration or code → nothing. */
 export function getIntegrationError(

@@ -197,7 +197,10 @@ import {
   patchOnshapeOAuthGrant,
   patchOnshapeSettings
 } from "@carbon/ee/onshape.server";
-import { isIntegrationComingSoon } from "@carbon/ee/plan";
+import {
+  isIntegrationComingSoon,
+  isIntegrationWhitelisted
+} from "@carbon/ee/plan";
 import {
   companyHasFeature,
   hasIntegrationEarlyAccess
@@ -298,7 +301,10 @@ import {
   type CompanyBackupSummary,
   listCompanyBackupFolders
 } from "./backups.service";
-import type { IntegrationErrorCode } from "./integration-errors";
+import type {
+  IntegrationErrorCode,
+  SharedIntegrationErrorCode
+} from "./integration-errors";
 import { integrationErrorSearch } from "./integration-errors";
 import type { OAuthPopupOutcome, OAuthPopupResult } from "./oauth-popup";
 import { OAUTH_POPUP_MESSAGE } from "./oauth-popup";
@@ -616,6 +622,32 @@ export async function getIntegration(
 }
 
 const integrationInstallLogger = getLogger("erp", "settings", "integrations");
+
+/** The install action's checks, for the piece connect route and callback, which install without it. */
+export async function pieceConnectRefusal(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    integrationId: string;
+    email: string;
+    userId: string;
+  }
+): Promise<"unavailable" | SharedIntegrationErrorCode | null> {
+  const integration = availableIntegrations.find(
+    (i) => i.id === args.integrationId
+  );
+  if (!integration?.active) return "unavailable";
+  if (
+    !isIntegrationWhitelisted(args.integrationId) &&
+    !(await companyHasFeature(client, args.companyId, {
+      feature: "INTEGRATIONS"
+    }))
+  ) {
+    return "plan-required";
+  }
+  if (await isIntegrationInstallWithheld(client, args)) return "coming-soon";
+  return null;
+}
 
 /**
  * Whether a new install is refused: an `internalOnly` integration this user

@@ -85,6 +85,16 @@ export class ConnectionAccountMismatchError extends Error {
   }
 }
 
+/** Reconnect's identity read failed on an identified row: it may be another account. */
+export class ConnectionAccountUnverifiedError extends Error {
+  constructor(connectionId: string) {
+    super(
+      `The authorized account for connection ${connectionId} could not be verified.`
+    );
+    this.name = "ConnectionAccountUnverifiedError";
+  }
+}
+
 export class ConnectionNameTakenError extends Error {
   constructor(name: string) {
     super(`A connection called "${name}" already exists.`);
@@ -267,7 +277,8 @@ export function accountIdentity(
   return accountLabel ? `label:${accountLabel}` : null;
 }
 
-/** Best-effort: when either side cannot be identified, the consent is accepted. */
+/** A stored row with no identity accepts any account. A stored identity must be
+ * matched: an unidentified consent (the label read failed) is not the same account. */
 export function sameAccount(
   stored: { accountLabel: string | null; metadata: unknown },
   incoming: {
@@ -280,7 +291,7 @@ export function sameAccount(
     stored.metadata as Record<string, unknown> | null
   );
   const after = accountIdentity(incoming.accountLabel, incoming.metadata);
-  return before === null || after === null || before === after;
+  return before === null || before === after;
 }
 
 export async function createConnection(
@@ -345,7 +356,9 @@ export async function createConnection(
   let revive = existing.data;
   if (existing.data !== null && !sameAccount(existing.data, args)) {
     if (args.connectionId !== undefined) {
-      throw new ConnectionAccountMismatchError(existing.data.id);
+      throw accountIdentity(args.accountLabel, args.metadata) === null
+        ? new ConnectionAccountUnverifiedError(existing.data.id)
+        : new ConnectionAccountMismatchError(existing.data.id);
     }
     if (!args.renameIfTaken) throw new ConnectionNameTakenError(args.name);
     name = await freeConnectionName(

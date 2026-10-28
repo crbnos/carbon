@@ -7,6 +7,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { consumeOAuthStateByValue } from "@carbon/auth/oauth-state.server";
 import {
   ConnectionAccountMismatchError,
+  ConnectionAccountUnverifiedError,
   ConnectionNameTakenError,
   ConnectionWorkspaceTakenError,
   createConnection,
@@ -24,12 +25,16 @@ import {
 } from "@carbon/jobs/integrations";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
+import type {
+  IntegrationErrorCode,
+  SharedIntegrationErrorCode
+} from "~/modules/settings/integration-errors";
 import { integrationErrorSearch } from "~/modules/settings/integration-errors";
 import {
   invalidateIntegrationHealthCache,
   markIntegrationInstalled,
   oauthPopupResponse,
+  pieceConnectRefusal,
   withCookie
 } from "~/modules/settings/settings.service";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
@@ -51,7 +56,7 @@ const logger = getLogger("erp", "integrations", "connections");
 function connectionReply(
   integration: string,
   cookie: string,
-  reason?: IntegrationErrorCode<"connection">
+  reason?: IntegrationErrorCode<"connection"> | SharedIntegrationErrorCode
 ) {
   return withCookie(
     oauthPopupResponse(
@@ -67,9 +72,10 @@ function connectionReply(
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
+  const { client, companyId, userId, email } = await requirePermissions(
+    request,
+    { update: "settings" }
+  );
 
   const url = new URL(request.url);
   const searchParams = Object.fromEntries(url.searchParams.entries());
@@ -87,8 +93,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const state = consumed.payload;
   // Which card the reply is for, so the right card shows a refusal.
   const replyTo = state?.integrationId ?? "connection";
-  const connectionFailed = (reason: IntegrationErrorCode<"connection">) =>
-    connectionReply(replyTo, consumed.cookie, reason);
+  const connectionFailed = (
+    reason: IntegrationErrorCode<"connection"> | SharedIntegrationErrorCode
+  ) => connectionReply(replyTo, consumed.cookie, reason);
 
   if (searchParams.error) {
     logger.error("Integration authorization refused", {
@@ -119,6 +126,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (entry === undefined) {
     return connectionFailed("invalid-state");
   }
+
+  // Checked again here, before the code is exchanged: the state may have been
+  // issued before the card was switched off or the plan changed.
+  const refusal = await pieceConnectRefusal(client, {
+    companyId,
+    integrationId: pieceName,
+    email,
+    userId
+  });
+  if (refusal !== null) return connectionFailed(refusal);
 
   let app: ReturnType<typeof resolveOAuthApp>;
   let auth: Awaited<ReturnType<typeof getPieceOAuth2Auth>>;
@@ -175,6 +192,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   } catch (err) {
     if (err instanceof ConnectionAccountMismatchError) {
       return connectionFailed("account-mismatch");
+    }
+    if (err instanceof ConnectionAccountUnverifiedError) {
+      logger.error("Integration reconnect account not identified", {
+        companyId,
+        pieceName
+      });
+      return connectionFailed("account-unverified");
     }
     if (err instanceof ConnectionNameTakenError) {
       return connectionFailed("duplicate-name");

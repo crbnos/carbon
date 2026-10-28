@@ -14,7 +14,11 @@ import {
 } from "@carbon/jobs/integrations";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
+import type {
+  IntegrationErrorCode,
+  SharedIntegrationErrorCode
+} from "~/modules/settings/integration-errors";
+import { pieceConnectRefusal } from "~/modules/settings/settings.service";
 
 export const config = {
   runtime: "nodejs"
@@ -34,15 +38,24 @@ export const config = {
  * account authorizes. `?name=` is Add account.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
+  const { client, companyId, userId, email } = await requirePermissions(
+    request,
+    { update: "settings" }
+  );
 
   const pieceName = params.piece;
   const entry = pieceName ? allowlistEntry(pieceName) : undefined;
   if (!pieceName || entry === undefined) {
     return connectError("unavailable");
   }
+
+  const refusal = await pieceConnectRefusal(client, {
+    companyId,
+    integrationId: pieceName,
+    email,
+    userId
+  });
+  if (refusal !== null) return connectError(refusal);
 
   let app: ReturnType<typeof resolveOAuthApp>;
   try {
@@ -81,6 +94,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 }
 
-function connectError(error: IntegrationErrorCode<"connection">) {
+function connectError(
+  error: IntegrationErrorCode<"connection"> | SharedIntegrationErrorCode
+) {
   return { error };
 }
