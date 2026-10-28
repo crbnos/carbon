@@ -520,6 +520,7 @@ Phase 3:
 
 ## Changelog
 
+- 2026-10-28: The two FX close tasks show only where they apply. `fx-revaluation` is hidden when nothing is open in a foreign currency at the period end and no run exists. `cta-posted` is hidden unless the company is the root of a group with a company in another base currency. A hidden task never gates the close and is stored as Done. An account counts as a balance exposure only after the company posts to it outside a revaluation journal. Migrations renamed past main's newest after merging main.
 - 2026-10-27: Self-review fixes. An `Account Balance` line is booked without Currency Revaluation journals, so a posted run is never stale against its own valuation. Only accounts the company has posted to are its exposures. The close check counts an out-of-date Posted run even when nothing is open. Undo refuses a run whose period is Closed. The CTA post re-reads the posted CTA under a lock.
 - 2026-10-27: Implemented on branch `consolidation-exchange-rates` (plan Tasks 1–22). Four deviations from the plan:
   - The statement balances are a separate editable grid, not a cell in the lines table.

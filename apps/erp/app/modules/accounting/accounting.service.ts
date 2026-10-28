@@ -3629,6 +3629,10 @@ export type PeriodReadinessCheck = {
   due?: RunPreview;
   /** Run checks only: the Draft runs the check is waiting on. */
   draftRuns?: { id: string; readableId: string; periodEnd: string }[];
+  /** False when the task does not apply to this company and period (no
+   *  foreign-currency items to revalue; not the root of a multi-currency
+   *  group). The checklist then hides the task. Absent means it applies. */
+  applicable?: boolean;
 };
 
 // An operational document (receipt, shipment, invoice) that has not posted to
@@ -3792,6 +3796,9 @@ export type RunPreview = {
   count: number;
   amount: number;
   error: string | null;
+  /** False when a run of this kind does not apply to the company at all.
+   *  Absent means it applies. */
+  applicable?: boolean;
 };
 
 /**
@@ -3958,7 +3965,8 @@ async function previewCurrencyTranslationMovement(
     .select("parentCompanyId")
     .where("id", "=", companyId)
     .executeTakeFirst();
-  if (!company || company.parentCompanyId !== null) return nothing;
+  const notApplicable: RunPreview = { ...nothing, applicable: false };
+  if (!company || company.parentCompanyId !== null) return notApplicable;
 
   const period = await db
     .selectFrom("accountingPeriod")
@@ -3979,10 +3987,11 @@ async function previewCurrencyTranslationMovement(
   });
   if (preview.error) {
     return preview.error.category === "forbidden"
-      ? nothing
+      ? notApplicable
       : { count: 0, amount: 0, error: preview.error.message };
   }
-  if (!preview.data.applicable || preview.data.movement === 0) return nothing;
+  if (!preview.data.applicable) return notApplicable;
+  if (preview.data.movement === 0) return nothing;
   return {
     count: 1,
     amount: round(Math.abs(preview.data.movement)),
@@ -4110,6 +4119,9 @@ export function periodRunChecks(args: {
         "Open foreign-currency balances a revaluation run would revalue at this period end, and Draft revaluation runs ending in it",
       failing:
         revaluationCount > 0 || runPreview.currencyRevaluation.error !== null,
+      applicable:
+        runPreview.currencyRevaluation.applicable !== false ||
+        revaluationCount > 0,
       count: revaluationCount,
       amount: runPreview.currencyRevaluation.amount,
       due: runPreview.currencyRevaluation,
@@ -4127,6 +4139,7 @@ export function periodRunChecks(args: {
       failing:
         runPreview.currencyTranslation.count > 0 ||
         runPreview.currencyTranslation.error !== null,
+      applicable: runPreview.currencyTranslation.applicable !== false,
       count: runPreview.currencyTranslation.count,
       amount: runPreview.currencyTranslation.amount,
       due: runPreview.currencyTranslation,
@@ -4567,38 +4580,53 @@ export function evaluateCloseChecklist(
 } {
   const checkByKey = new Map(checks.map((c) => [c.autoCheckKey, c]));
 
-  const views: PeriodCloseTaskView[] = tasks.map((task) => {
-    if (task.taskType === "Auto" && task.autoCheckKey) {
-      // An Auto task whose autoCheckKey has no registered evaluator cannot be
-      // verified, so it fails closed instead of silently passing: synthesize a
-      // failing check (inheriting the task's declared severity, defaulting to
-      // Blocker) so the close is gated and the reason is visible rather than a
-      // quiet Done. Every seeded key has an evaluator; this guards future
-      // custom Auto tasks added without one.
-      const autoCheck: PeriodReadinessCheck = checkByKey.get(
-        task.autoCheckKey
-      ) ?? {
-        autoCheckKey: task.autoCheckKey,
-        severity: task.severity ?? "Blocker",
-        label: `No automated check is implemented for "${task.autoCheckKey}"`,
-        failing: true,
-        count: 0
-      };
-      const effectiveStatus =
-        task.status === "Skipped"
-          ? "Skipped"
-          : autoCheck.failing
-            ? "Open"
-            : "Done";
-      return { ...task, autoCheck, effectiveStatus };
-    }
-    if (task.taskType === "Action" && task.name === LOCK_PERIOD_TASK_NAME) {
-      const effectiveStatus =
-        closeStatus === "Locked" || closeStatus === "Closed" ? "Done" : "Open";
-      return { ...task, autoCheck: null, effectiveStatus };
-    }
-    return { ...task, autoCheck: null, effectiveStatus: task.status };
-  });
+  // A task whose check says it does not apply here (a company with nothing in
+  // a foreign currency has no revaluation to do) is not shown and never gates
+  // the close; its stored state is flushed to Done.
+  const notApplicable = tasks.filter(
+    (task) =>
+      task.taskType === "Auto" &&
+      !!task.autoCheckKey &&
+      checkByKey.get(task.autoCheckKey)?.applicable === false
+  );
+  const hidden = new Set(notApplicable.map((task) => task.id));
+
+  const views: PeriodCloseTaskView[] = tasks
+    .filter((task) => !hidden.has(task.id))
+    .map((task) => {
+      if (task.taskType === "Auto" && task.autoCheckKey) {
+        // An Auto task whose autoCheckKey has no registered evaluator cannot be
+        // verified, so it fails closed instead of silently passing: synthesize a
+        // failing check (inheriting the task's declared severity, defaulting to
+        // Blocker) so the close is gated and the reason is visible rather than a
+        // quiet Done. Every seeded key has an evaluator; this guards future
+        // custom Auto tasks added without one.
+        const autoCheck: PeriodReadinessCheck = checkByKey.get(
+          task.autoCheckKey
+        ) ?? {
+          autoCheckKey: task.autoCheckKey,
+          severity: task.severity ?? "Blocker",
+          label: `No automated check is implemented for "${task.autoCheckKey}"`,
+          failing: true,
+          count: 0
+        };
+        const effectiveStatus =
+          task.status === "Skipped"
+            ? "Skipped"
+            : autoCheck.failing
+              ? "Open"
+              : "Done";
+        return { ...task, autoCheck, effectiveStatus };
+      }
+      if (task.taskType === "Action" && task.name === LOCK_PERIOD_TASK_NAME) {
+        const effectiveStatus =
+          closeStatus === "Locked" || closeStatus === "Closed"
+            ? "Done"
+            : "Open";
+        return { ...task, autoCheck: null, effectiveStatus };
+      }
+      return { ...task, autoCheck: null, effectiveStatus: task.status };
+    });
 
   const failingBlocker = views.find(
     (v) =>
@@ -4619,9 +4647,14 @@ export function evaluateCloseChecklist(
 
   // Auto tasks whose derived state differs from what is persisted get flushed
   // to the DB at close time (acceptance criterion 10).
-  const autoTaskStates = views
-    .filter((v) => v.taskType === "Auto" && v.status !== v.effectiveStatus)
-    .map((v) => ({ id: v.id, status: v.effectiveStatus }));
+  const autoTaskStates = [
+    ...views
+      .filter((v) => v.taskType === "Auto" && v.status !== v.effectiveStatus)
+      .map((v) => ({ id: v.id, status: v.effectiveStatus })),
+    ...notApplicable
+      .filter((task) => task.status !== "Done" && task.status !== "Skipped")
+      .map((task) => ({ id: task.id, status: "Done" as const }))
+  ];
 
   return { tasks: views, canClose, blockingReason, autoTaskStates };
 }
@@ -12506,8 +12539,10 @@ export async function readRevaluationExposures(
   // Balance accounts held in a foreign currency (bank, cash, loans). Their
   // foreign balance comes from the statement: the accountant enters it on
   // the run, so openAmount starts empty. The chart is shared by the group,
-  // so only the accounts THIS company has posted to count — a sibling's EUR
-  // bank account is not this company's exposure.
+  // so only the accounts THIS company has posted to by `periodEnd` count — a
+  // sibling's EUR bank account is not this company's exposure. Revaluation
+  // journals do not count as activity: an account they alone touch holds no
+  // foreign currency.
   const balanceAccounts = await db
     .selectFrom("account")
     .select(["id", "number", "name", "class", "currencyCode"])
@@ -12521,9 +12556,14 @@ export async function readRevaluationExposures(
       eb.exists(
         eb
           .selectFrom("journalLine as jl")
+          .innerJoin("journal as j", "j.id", "jl.journalId")
           .select("jl.id")
           .whereRef("jl.accountId", "=", "account.id")
           .where("jl.companyId", "=", companyId)
+          .where("j.companyId", "=", companyId)
+          .where("j.sourceType", "<>", "Currency Revaluation")
+          .where("j.status", "in", [...GL_JOURNAL_STATUSES])
+          .where("j.postingDate", "<=", periodEnd)
       )
     )
     .orderBy("number")
@@ -13573,6 +13613,7 @@ export async function previewCurrencyRevaluation(
     .where("companyId", "=", companyId)
     .where("periodEnd", "=", periodEnd)
     .executeTakeFirst();
+  // A run for the period means the task applies, even once its items close.
   if (run?.status === "Draft") return nothing;
   if (
     run?.status === "Posted" &&
@@ -13595,8 +13636,11 @@ export async function previewCurrencyRevaluation(
     }
   });
   if (exposures.length === 0) {
-    // Only reached with no run, or a Posted run that is out of date.
-    return run ? { count: 1, amount: 0, error: null } : nothing;
+    // Only reached with no run, or a Posted run that is out of date. With no
+    // run and nothing open in a foreign currency, revaluation does not apply.
+    return run
+      ? { count: 1, amount: 0, error: null }
+      : { ...nothing, applicable: false };
   }
 
   const rates = await resolveRevaluationRates(db, {

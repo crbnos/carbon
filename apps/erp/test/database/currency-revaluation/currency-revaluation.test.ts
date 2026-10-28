@@ -33,6 +33,15 @@ databaseTest(
           { accountId: accounts.misc, amount: -100 }
         ]
       });
+      // A revaluation alone on the sibling's account is not activity.
+      await f.postJournal({
+        sourceType: "Currency Revaluation",
+        postingDate: PERIOD_END,
+        lines: [
+          { accountId: accounts.siblingEurBank, amount: 5 },
+          { accountId: accounts.gain, amount: 5 }
+        ]
+      });
       // The run's own valuation: +20 straight onto the account at period end.
       await f.postJournal({
         sourceType: "Currency Revaluation",
@@ -160,6 +169,23 @@ databaseTest(
         .where("companyId", "=", companyId)
         .executeTakeFirstOrThrow();
       expect(after.status).toBe("Posted");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "revaluation does not apply to a company with nothing in a foreign currency",
+  async () => {
+    const f = await currencyRevaluationFixture();
+    try {
+      expect(
+        await previewCurrencyRevaluation(f.db, {
+          companyId: f.companyId,
+          periodEnd: PERIOD_END
+        })
+      ).toEqual({ count: 0, amount: 0, error: null, applicable: false });
     } finally {
       await f.cleanup();
     }

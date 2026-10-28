@@ -78,6 +78,38 @@ describe("checklistTasksToCreate", () => {
 });
 
 describe("evaluateCloseChecklist", () => {
+  it("hides a task that does not apply, never gates on it and flushes it to Done", () => {
+    // A company with nothing in a foreign currency: the revaluation task's
+    // check says it does not apply, even though it is required and Open.
+    const fxTask = task({
+      id: "fx1",
+      taskType: "Auto",
+      autoCheckKey: "fx-revaluation",
+      severity: "Warning",
+      name: "Revalue foreign currency balances"
+    });
+    const result = evaluateCloseChecklist(
+      [fxTask],
+      [
+        {
+          autoCheckKey: "fx-revaluation",
+          severity: "Warning",
+          label: "Open foreign-currency balances",
+          failing: false,
+          count: 0,
+          applicable: false
+        }
+      ],
+      "Locked"
+    );
+    expect(result).toEqual({
+      tasks: [],
+      canClose: true,
+      blockingReason: null,
+      autoTaskStates: [{ id: "fx1", status: "Done" }]
+    });
+  });
+
   it("blocks the close while a required manual task is Open, naming it", () => {
     const result = evaluateCloseChecklist(
       [task({ name: "Review financials" })],
@@ -449,6 +481,42 @@ describe("periodRunChecks", () => {
       failing: false,
       count: 0
     });
+  });
+
+  it("marks the FX checks not applicable when their previews say so, unless a Draft run waits", () => {
+    const notApplicable = {
+      count: 0,
+      amount: 0,
+      error: null,
+      applicable: false
+    };
+    const runPreview = {
+      ...nothingDue,
+      currencyRevaluation: notApplicable,
+      currencyTranslation: notApplicable
+    };
+    expect(check(base({ runPreview }), "fx-revaluation")?.applicable).toBe(
+      false
+    );
+    expect(check(base({ runPreview }), "cta-posted")?.applicable).toBe(false);
+    expect(
+      check(
+        base({
+          runPreview,
+          draftCurrencyRevaluationRuns: {
+            data: [
+              {
+                id: "F1",
+                currencyRevaluationRunId: "FXR000001",
+                periodEnd: "2026-10-31"
+              }
+            ],
+            error: null
+          }
+        }),
+        "fx-revaluation"
+      )?.applicable
+    ).toBe(true);
   });
 
   it("fails the CTA check closed when the preview fails", () => {
