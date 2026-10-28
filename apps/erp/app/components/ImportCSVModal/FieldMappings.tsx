@@ -55,6 +55,7 @@ import type { action } from "~/routes/api+/ai+/csv+/$table.columns";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
+import { matchColumnsExactly, mergeSuggestedColumns } from "./columnMatch";
 import {
   buildOptionLookup,
   type MatchableOption,
@@ -96,27 +97,21 @@ export function FieldMapping({
   const initialized = useRef(false);
   const { validate } = useFormContext(formId);
   const { fileColumns, filePath, firstRows } = useCsvContext();
+  const mappableFields = fieldMappings[table];
+  // The AI's answer only fills fields that are still unmapped: a header match
+  // or a column the user picked is never replaced or removed.
   const fetcher = useAction<typeof action>({
     onSettled: (data) => {
-      if (data && Object.keys(data).length > 0 && !initialized.current) {
-        initialized.current = true;
-        setColumnMappings((prevMappings) => {
-          if (!data || !fileColumns) return prevMappings;
-
-          return Object.entries(data).reduce(
-            (acc, [key, value]) => {
-              if (fileColumns.includes(value)) {
-                acc[key] = value;
-              }
-              return acc;
-            },
-            {} as Record<string, string>
-          );
-        });
-      }
+      if (!data || !fileColumns) return;
+      setColumnMappings((current) =>
+        mergeSuggestedColumns({
+          current,
+          suggested: data,
+          fileColumns
+        })
+      );
     }
   });
-  const mappableFields = fieldMappings[table];
   const [currentStep, setCurrentStep] = useState(0);
   const [columnMappings, setColumnMappings] = useState<Record<string, string>>(
     {}
@@ -137,31 +132,15 @@ export function FieldMapping({
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (!fileColumns || !firstRows || initialized.current) return;
+    initialized.current = true;
 
-    // Try exact matching by label and field name before calling the LLM
-    const fileColumnsLower = fileColumns.map((c) => c.toLowerCase().trim());
-    const exactMatches: Record<string, string> = {};
-
-    for (const [fieldName, fieldDef] of Object.entries(mappableFields)) {
-      // Match by label (e.g., "Process Type" === "Process Type")
-      const labelIdx = fileColumnsLower.indexOf(fieldDef.label.toLowerCase());
-      if (labelIdx !== -1) {
-        exactMatches[fieldName] = fileColumns[labelIdx];
-        continue;
-      }
-      // Match by field name (e.g., "processType" === "processtype")
-      const nameIdx = fileColumnsLower.indexOf(fieldName.toLowerCase());
-      if (nameIdx !== -1) {
-        exactMatches[fieldName] = fileColumns[nameIdx];
-      }
-    }
-
-    // If all fields matched exactly, skip the LLM call
+    // Columns whose header is a field's label or name are mapped at once. The
+    // AI is asked only when fields are left over, and only fills those.
+    const exactMatches = matchColumnsExactly(mappableFields, fileColumns);
+    setColumnMappings(exactMatches);
     if (
       Object.keys(exactMatches).length === Object.keys(mappableFields).length
     ) {
-      initialized.current = true;
-      setColumnMappings(exactMatches);
       return;
     }
 

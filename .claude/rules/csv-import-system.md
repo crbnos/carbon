@@ -29,6 +29,15 @@ a transaction. Imports are idempotent via the `externalIntegrationMapping` table
 - `UploadCSV.tsx` — drag-drop upload; PapaParse; uploads to the company bucket (see path above).
 - `FieldMappings.tsx` — column/enum mapping UI; `enumMatch.ts` does fuzzy enum matching;
   `useCreateLookup.ts` creates missing lookup values inline.
+- `columnMatch.ts` — column matching, tested by `columnMatch.test.ts`.
+  `matchColumnsExactly` maps a field to the column whose header equals its label or
+  its name (case- and whitespace-insensitive, label first); the wizard sets those as
+  soon as the file is read. Only when fields are left over does it ask the AI route
+  (`api+/ai+/csv+/$table.columns.tsx`, which runs the same exact pass server-side and
+  prompts only for the rest), and `mergeSuggestedColumns` lets the answer fill only
+  fields that are still unmapped, with a column of the file no field uses yet. A header
+  match or a user pick is never replaced or removed, and a failed AI call leaves the
+  header matches in place.
 - `useCsvContext.tsx` — shared state (`file`, `filePath`, `fileColumns`, `firstRows`).
 
 Mounted from exactly one place: `apps/erp/app/components/Table/components/TableHeader.tsx`
