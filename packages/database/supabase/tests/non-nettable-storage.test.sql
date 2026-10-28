@@ -113,6 +113,12 @@ BEGIN
   UPDATE "storageType" SET "nettable" = false WHERE "id" = t;
   PERFORM pg_temp.check('4. type off', 22, 22, item, location, base_on_hand, base_non_nettable);
 
+  -- 4b. A unit inserted with a non-nettable type is non-nettable at once.
+  INSERT INTO "storageUnit" ("name", "locationId", "companyId", "createdBy", "storageTypeIds")
+  VALUES ('NN-TEST-D', location, company, usr, ARRAY[t]) RETURNING "id" INTO e;
+  PERFORM pg_temp.expect_bool('4b. inserted with a non-nettable type',
+    (SELECT "effectiveNettable" FROM "storageUnit" WHERE "id" = e), false);
+
   -- 5. Back on.
   UPDATE "storageUnit" SET "nettable" = true WHERE "id" = a;
   PERFORM pg_temp.check('5. parent on', 22, 3, item, location, base_on_hand, base_non_nettable);

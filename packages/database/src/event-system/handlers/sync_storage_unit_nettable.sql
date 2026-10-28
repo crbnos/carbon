@@ -10,13 +10,23 @@ BEGIN
   END IF;
 
   IF p_operation = 'INSERT' THEN
-    -- A unit with no parent, no storage types and its own flag on is nettable,
-    -- which the column default already says. Skipping it keeps a bulk import
-    -- from recomputing the whole location once per row.
+    -- A new unit has no children and no stock, so only its own row can be
+    -- wrong, and only when it is non-nettable (the column defaults to true) or
+    -- arrives saying it is. Checking that here keeps a bulk import from
+    -- recomputing the whole location once per row.
     IF COALESCE((p_new->>'nettable')::boolean, true)
       AND COALESCE((p_new->>'effectiveNettable')::boolean, true)
-      AND p_new->>'parentId' IS NULL
-      AND COALESCE(p_new->'storageTypeIds', '[]'::jsonb) = '[]'::jsonb THEN
+      AND NOT EXISTS (
+        SELECT 1 FROM "storageType" st
+        WHERE st."id" IN (SELECT jsonb_array_elements_text(
+                COALESCE(p_new->'storageTypeIds', '[]'::jsonb)))
+          AND st."nettable" = false
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM "storageUnit" parent
+        WHERE parent."id" = p_new->>'parentId'
+          AND parent."effectiveNettable" = false
+      ) THEN
       RETURN;
     END IF;
     PERFORM refresh_storage_unit_nettable(ARRAY[p_new->>'locationId']);

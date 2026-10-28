@@ -205,6 +205,15 @@ not supply (migration `20261027181718_non-nettable-storage.sql`). The form field
   beside the lineside test. `get_available_tracked_entities` has its own
   `p_exclude_non_nettable` switch: picking (ERP and MES) and MES suggested allocation pass it,
   a stock transfer does not, since moving stock out is how it is released.
+- **A guessed bin is never non-nettable.** When no bin was chosen, consumption (the
+  completion backflush and manual issue in `issueJobOperationMaterials` / `issueMaterial`,
+  the maintenance spare-part issue) and a new job material (`getStorageUnitId`) fall back to
+  `getStorageUnitWithHighestQuantity` (`shared.service.ts`), which only considers nettable
+  units; `getDefaultStorageUnitForJob` (`inventory.utils.ts`) skips them the same way. A bin
+  someone named (the material's own, the item's `pickMethod.defaultStorageUnitId`) is still
+  used as named. Pinned by `apps/erp/test/database/non-nettable-fullest-bin.test.ts`.
+- **CSV import** has a "Non-nettable" column for storage units and storage types
+  (`parseCsvNonNettable`, `shared.service.ts`): blank leaves an existing unit's flag alone.
 - **Kanbans refuse it.** `createKanban` / `updateKanban` call
   `refuseNonNettableKanbanUnits` (`inventory.service.ts`) and refuse a To or From storage unit
   that is non-nettable (`ctx.error("rule", …)`), since replenishing into one builds stock

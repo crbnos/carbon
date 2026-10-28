@@ -2543,6 +2543,19 @@ const norm = (s: string | undefined) => (s ?? "").trim().toLowerCase();
 
 const requireName = (r: Rec) => (!r.name?.trim() ? "Name is required" : null);
 
+/**
+ * A CSV "Non-nettable" cell: true or false when it says so, undefined when it
+ * is blank or unrecognised, so an update leaves the stored flag alone.
+ */
+export function parseCsvNonNettable(
+  value: string | undefined
+): boolean | undefined {
+  const v = (value ?? "").trim().toLowerCase();
+  if (["true", "yes", "1", "y", "on"].includes(v)) return true;
+  if (["false", "no", "0", "n", "off"].includes(v)) return false;
+  return undefined;
+}
+
 type TableConfig = {
   // Row-level validation. Returns a reason string, or null when the row is fine.
   validate: (r: Rec) => string | null;
@@ -2556,7 +2569,7 @@ type TableConfig = {
     code?: string | null;
   }) => string[];
   // The columns to read off the mapped record, beyond the audit fields.
-  values: (r: Rec) => Record<string, string>;
+  values: (r: Rec) => Record<string, string | boolean>;
   // Set when the table carries a self-referencing parent applied in a second
   // pass (see `applyParents` below).
   parentField?: "parentDepartmentId";
@@ -2605,7 +2618,12 @@ export const CONFIGS: Record<ConfigLookupTable, TableConfig> = {
     validate: requireName,
     keysOf: (r) => [norm(r.name)],
     keysOfExisting: (r) => [norm(r.name ?? "")],
-    values: (r) => ({ name: r.name!.trim() })
+    values: (r) => {
+      const values: Record<string, string | boolean> = { name: r.name!.trim() };
+      const nonNettable = parseCsvNonNettable(r.nonNettable);
+      if (nonNettable !== undefined) values.nettable = !nonNettable;
+      return values;
+    }
   },
   scrapReason: {
     validate: requireName,
@@ -8531,6 +8549,10 @@ export async function importCsvTable(
             parseTypeNames(record.storageTypeNames)
           );
           const active = parseActive(record.active);
+          // Blank leaves an existing unit's flag alone; a new unit is nettable.
+          const nonNettable = parseCsvNonNettable(record.nonNettable);
+          const nettable =
+            nonNettable === undefined ? {} : { nettable: !nonNettable };
 
           if (parentName) {
             parentIntents.push({
@@ -8550,6 +8572,7 @@ export async function importCsvTable(
                 name,
                 storageTypeIds,
                 active,
+                ...nettable,
                 updatedAt: datetime.timestamp(),
                 updatedBy: userId
               }
@@ -8577,6 +8600,7 @@ export async function importCsvTable(
               locationId,
               storageTypeIds,
               active,
+              ...nettable,
               companyId,
               createdBy: userId,
               createdAt: datetime.timestamp()
@@ -17123,7 +17147,12 @@ export async function getTrackedEntityOnHandInBin(
   return Number(row?.onHand ?? 0);
 }
 
-// Utility function to get the storage unit with the highest quantity
+/**
+ * The nettable storage unit holding the most of an item at a location: the
+ * guess a consumption (issue, backflush, maintenance) or a new job material
+ * falls back to when no bin was chosen. A non-nettable unit (quarantine) is
+ * never guessed, so its stock is only consumed when someone names it.
+ */
 export async function getStorageUnitWithHighestQuantity(
   trx: Transaction<DB>,
   itemId: string,
@@ -17131,15 +17160,16 @@ export async function getStorageUnitWithHighestQuantity(
 ): Promise<string | null> {
   const storageUnitWithHighestQuantity = await trx
     .selectFrom("itemLedger")
-    .where("itemId", "=", itemId)
-    .where("locationId", "=", locationId)
-    .where("storageUnitId", "is not", null)
-    .groupBy("storageUnitId")
+    .innerJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
+    .where("itemLedger.itemId", "=", itemId)
+    .where("itemLedger.locationId", "=", locationId)
+    .where("storageUnit.effectiveNettable", "=", true)
+    .groupBy("itemLedger.storageUnitId")
     .select([
-      "storageUnitId",
-      (eb) => eb.fn.sum("quantity").as("totalQuantity")
+      "itemLedger.storageUnitId",
+      (eb) => eb.fn.sum("itemLedger.quantity").as("totalQuantity")
     ])
-    .having((eb) => eb.fn.sum("quantity"), ">", 0)
+    .having((eb) => eb.fn.sum("itemLedger.quantity"), ">", 0)
     .orderBy("totalQuantity", "desc")
     .executeTakeFirst();
 

@@ -171,12 +171,33 @@ export async function getDefaultStorageUnitForJob(
     locationId
   );
 
-  if (itemStorageUnitQuantities.data?.length) {
+  // A non-nettable unit (quarantine) is never the guessed default.
+  const stockedIds = Array.from(
+    new Set(
+      (itemStorageUnitQuantities.data ?? [])
+        .map((row) => row.storageUnitId)
+        .filter((id): id is string => !!id)
+    )
+  );
+  const nonNettable =
+    stockedIds.length > 0
+      ? await client
+          .from("storageUnit")
+          .select("id")
+          .in("id", stockedIds)
+          .eq("companyId", companyId)
+          .eq("effectiveNettable", false)
+      : { data: [] };
+  const excluded = new Set((nonNettable.data ?? []).map((row) => row.id));
+  const candidates = (itemStorageUnitQuantities.data ?? []).filter(
+    (row) => !row.storageUnitId || !excluded.has(row.storageUnitId)
+  );
+
+  if (candidates.length) {
     // Find the storage unit with the highest quantity
-    const storageUnitWithHighestQuantity =
-      itemStorageUnitQuantities.data.reduce((max, current) => {
-        return (current.quantity ?? 0) > (max.quantity ?? 0) ? current : max;
-      });
+    const storageUnitWithHighestQuantity = candidates.reduce((max, current) => {
+      return (current.quantity ?? 0) > (max.quantity ?? 0) ? current : max;
+    });
 
     return storageUnitWithHighestQuantity.storageUnitId;
   }

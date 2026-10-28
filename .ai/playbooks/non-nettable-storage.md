@@ -66,6 +66,12 @@ Routes: /x/inventory/storage-types, /x/inventory/storage-units,
   The same form with a nettable unit creates the kanban; editing it to the non-nettable
   unit ("Update Kanban") is refused the same way.
 
+### 7. CSV import
+- Storage Units list → "Table actions" → "Import Storage Units CSV". Upload with
+  `agent-browser upload "input[type=file]" <file>`; the "Non-nettable" header maps on its
+  own. Next → Confirm Import. `yes` makes a unit non-nettable; a blank cell on an
+  existing unit leaves its flag alone.
+
 ## Selector Notes
 - The switch: `document.querySelector('form button[role=switch]')`.
 - Storage unit list scrolls an inner container — use `?search=` instead.
