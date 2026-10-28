@@ -3133,6 +3133,7 @@ export type Database = {
           decisionAt: string | null
           decisionBy: string | null
           decisionNotes: string | null
+          decisionSignaturePath: string | null
           documentId: string
           documentType: Database["public"]["Enums"]["approvalDocumentType"]
           id: string
@@ -3150,6 +3151,7 @@ export type Database = {
           decisionAt?: string | null
           decisionBy?: string | null
           decisionNotes?: string | null
+          decisionSignaturePath?: string | null
           documentId: string
           documentType: Database["public"]["Enums"]["approvalDocumentType"]
           id?: string
@@ -3167,6 +3169,7 @@ export type Database = {
           decisionAt?: string | null
           decisionBy?: string | null
           decisionNotes?: string | null
+          decisionSignaturePath?: string | null
           documentId?: string
           documentType?: Database["public"]["Enums"]["approvalDocumentType"]
           id?: string
@@ -8373,6 +8376,7 @@ export type Database = {
           requireBackflushStorageUnit: boolean
           requireCustomerContactAndLocation: boolean
           requireMfa: boolean
+          requirePurchaseOrderApprovalSignature: boolean
           requireSupplierContactAndLocation: boolean
           rescheduleToleranceDays: number
           returnPickedMaterialTiming: string
@@ -8450,6 +8454,7 @@ export type Database = {
           requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
+          requirePurchaseOrderApprovalSignature?: boolean
           requireSupplierContactAndLocation?: boolean
           rescheduleToleranceDays?: number
           returnPickedMaterialTiming?: string
@@ -8527,6 +8532,7 @@ export type Database = {
           requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
+          requirePurchaseOrderApprovalSignature?: boolean
           requireSupplierContactAndLocation?: boolean
           rescheduleToleranceDays?: number
           returnPickedMaterialTiming?: string
@@ -21989,6 +21995,7 @@ export type Database = {
           drawingNumber: string | null
           fileName: string | null
           id: string
+          modelUploadId: string | null
           pageCount: number | null
           partId: string
           samplingAql: number | null
@@ -22018,6 +22025,7 @@ export type Database = {
           drawingNumber?: string | null
           fileName?: string | null
           id?: string
+          modelUploadId?: string | null
           pageCount?: number | null
           partId: string
           samplingAql?: number | null
@@ -22047,6 +22055,7 @@ export type Database = {
           drawingNumber?: string | null
           fileName?: string | null
           id?: string
+          modelUploadId?: string | null
           pageCount?: number | null
           partId?: string
           samplingAql?: number | null
@@ -22130,6 +22139,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
           },
           {
             foreignKeyName: "inspectionDocument_partId_fkey"
@@ -22257,6 +22287,7 @@ export type Database = {
           label: string
           nominalValue: string | null
           pageNumber: number
+          pmiItemId: string | null
           samplingAql: number | null
           samplingInspectionLevel:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -22287,6 +22318,7 @@ export type Database = {
           label: string
           nominalValue?: string | null
           pageNumber: number
+          pmiItemId?: string | null
           samplingAql?: number | null
           samplingInspectionLevel?:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -22317,6 +22349,7 @@ export type Database = {
           label?: string
           nominalValue?: string | null
           pageNumber?: number
+          pmiItemId?: string | null
           samplingAql?: number | null
           samplingInspectionLevel?:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -70527,6 +70560,7 @@ export type Database = {
           isConsoleOperator: boolean
           lastName: string
           phone: string | null
+          signaturePath: string | null
           updatedAt: string | null
         }
         Insert: {
@@ -70545,6 +70579,7 @@ export type Database = {
           isConsoleOperator?: boolean
           lastName?: string
           phone?: string | null
+          signaturePath?: string | null
           updatedAt?: string | null
         }
         Update: {
@@ -70563,6 +70598,7 @@ export type Database = {
           isConsoleOperator?: boolean
           lastName?: string
           phone?: string | null
+          signaturePath?: string | null
           updatedAt?: string | null
         }
         Relationships: []
@@ -77174,9 +77210,22 @@ export type Database = {
           drawingNumber: string | null
           fileName: string | null
           id: string | null
+          modelUploadId: string | null
           pageCount: number | null
           partId: string | null
           partReadableId: string | null
+          samplingAql: number | null
+          samplingInspectionLevel:
+            | Database["public"]["Enums"]["inspectionLevel"]
+            | null
+          samplingPercentage: number | null
+          samplingPlanType:
+            | Database["public"]["Enums"]["samplingPlanType"]
+            | null
+          samplingSampleSize: number | null
+          samplingSeverity:
+            | Database["public"]["Enums"]["inspectionSeverity"]
+            | null
           storagePath: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -77246,6 +77295,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
           },
           {
             foreignKeyName: "inspectionDocument_partId_fkey"
@@ -94907,6 +94977,10 @@ export type Database = {
         Returns: undefined
       }
       sync_delete_tracked_entity_on_job_make_method: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      sync_delete_unlinked_contact: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }

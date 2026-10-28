@@ -5,6 +5,7 @@
 import type { DocumentBlockType } from "../../../template";
 import { CustomFieldBlock } from "../CustomFieldBlock";
 import { extensionBlocks } from "../extensionRegistry";
+import { ApprovalBlock } from "./ApprovalBlock";
 import { HeaderBlock } from "./HeaderBlock";
 import { LineItemsBlock } from "./LineItemsBlock";
 import { NotesBlock } from "./NotesBlock";
@@ -31,6 +32,10 @@ export const purchaseOrderBlockRegistry: Partial<
     ) : null,
   terms: ({ block, data }) =>
     block.type === "terms" ? <TermsBlock block={block} data={data} /> : null,
+  approval: ({ block, data }) =>
+    block.type === "approval" ? (
+      <ApprovalBlock block={block} data={data} />
+    ) : null,
   customField: ({ block, data }) =>
     block.type === "customField" ? (
       <CustomFieldBlock

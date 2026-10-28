@@ -49,7 +49,14 @@ import {
   notificationPreferenceCompanyId
 } from "@carbon/notifications";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
-import { chunkArray, datetime, Edition, getClientIp } from "@carbon/utils";
+import {
+  chunkArray,
+  datetime,
+  Edition,
+  getClientIp,
+  isOwnSignaturePath,
+  SIGNATURES_BUCKET
+} from "@carbon/utils";
 import { now, parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -2746,6 +2753,62 @@ export async function updateAvatar(
       })
     )
     .eq("id", userId);
+}
+
+/**
+ * Save a user's signature path, and delete the file it replaces unless an
+ * approval recorded it: an approved document keeps printing the signature its
+ * approver had on file when they approved it.
+ */
+export async function updateSignature(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  userId: string,
+  signaturePath: string | null
+) {
+  const previous = await client
+    .from("user")
+    .select("signaturePath")
+    .eq("id", userId)
+    .single();
+  if (previous.error) {
+    logger.error("Failed to read the signature being replaced", {
+      userId,
+      error: previous.error
+    });
+  }
+
+  const saved = await client
+    .from("user")
+    .update({ signaturePath, updatedAt: datetime.timestamp() })
+    .eq("id", userId);
+  if (saved.error) return saved;
+
+  const replaced = previous.data?.signaturePath;
+  if (!isOwnSignaturePath(userId, replaced) || replaced === signaturePath) {
+    return saved;
+  }
+
+  const recorded = await db
+    .selectFrom("approvalRequest")
+    .select("id")
+    .where("decisionSignaturePath", "=", replaced)
+    .limit(1)
+    .executeTakeFirst();
+  if (recorded) return saved;
+
+  // The bucket lets a user add files but not delete them.
+  const removal = await getCarbonServiceRole()
+    .storage.from(SIGNATURES_BUCKET)
+    .remove([replaced]);
+  if (removal.error) {
+    logger.error("Failed to remove the replaced signature", {
+      userId,
+      path: replaced,
+      error: removal.error
+    });
+  }
+  return saved;
 }
 
 export async function updatePublicAccount(

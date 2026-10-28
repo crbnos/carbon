@@ -177,6 +177,18 @@ export type Events = {
     };
   };
 
+  // Make an inspection plan from a model's PMI (`pmi-inspection-plan`). Sent
+  // by model-optimize when a run wrote `pmi.json` (every item on the model),
+  // and by the `queue_pmi_inspection_plans` handler on `item` when an item
+  // starts using a model that has PMI (that item only).
+  "carbon/pmi-inspection-plan": {
+    data: {
+      companyId: string;
+      modelUploadId: string;
+      itemId?: string;
+    };
+  };
+
   // Compact the retained raw (STEP → BinXCAF `.xbf.zst`, mesh → `.{ext}.zst`)
   // so it never lingers as the fat upload. A successful optimise compacts
   // inline; this fires when model-optimize skips (already optimised, a format

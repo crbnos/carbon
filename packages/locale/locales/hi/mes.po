@@ -168,6 +168,9 @@ msgstr "नमूना जोड़ें"
 msgid "Add Spare Part"
 msgstr "स्पेयर पार्ट जोड़ें"
 
+msgid "Add your signature"
+msgstr ""
+
 msgid "Added"
 msgstr "जोड़ा गया"
 
@@ -256,18 +259,8 @@ msgstr "उपलब्ध"
 msgid "Available"
 msgstr "उपलब्ध"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "अवतार विकल्प {0}"
-
 msgid "Avatar style"
 msgstr "अवतार शैली"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "<0>{0}</0> से अवतार {1} द्वारा, <1>{2}</1> के अंतर्गत लाइसेंस प्राप्त।"
 
 msgid "Back"
 msgstr "वापस"
@@ -322,6 +315,11 @@ msgstr "बोर्ड दृश्य"
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "लेकिन चिंता न करें। आप नया जादुई लिंक अनुरोध करने के लिए भूल गए पासवर्ड प्रवाह का उपयोग कर सकते हैं।"
 
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "साइन इन करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
 
@@ -361,6 +359,9 @@ msgstr "अपना ईमेल जांचें"
 msgid "Choose a job"
 msgstr "एक जॉब चुनें"
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose an option"
 msgstr "एक विकल्प चुनें"
 
@@ -384,6 +385,9 @@ msgstr "खोज साफ़ करें"
 
 msgid "Clear station default"
 msgstr "स्टेशन डिफ़ॉल्ट को साफ़ करें"
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Clock In"
 msgstr "कार्य प्रारंभ"
@@ -510,6 +514,9 @@ msgstr "पुनः कार्य बनाएँ"
 msgid "Current work"
 msgstr "वर्तमान कार्य"
 
+msgid "Custom color"
+msgstr ""
+
 msgid "Customer"
 msgstr "ग्राहक"
 
@@ -601,6 +608,15 @@ msgstr "ड्राइंग और विशेषताओं को पु�
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "\"{0}\" को ड्रैग करना रद्द किया गया।"
+
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Due"
 msgstr "अंतिम तारीख"
@@ -707,6 +723,13 @@ msgstr "समाप्त होता है <0/>"
 msgid "Expiring first"
 msgstr "पहले समाप्त होने वाले"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Failed"
 msgstr "विफल"
 
@@ -731,6 +754,9 @@ msgstr "storageUnits को प्राप्त करने में वि�
 msgid "Failed to get options"
 msgstr "विकल्प प्राप्त करने में विफल"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "गेज रिकॉर्ड करने में विफल"
 
@@ -753,6 +779,9 @@ msgstr "फाइल अपलोड करने में विफल: {0}"
 
 msgid "Failed to upload image"
 msgstr "इमेज अपलोड करने में विफल"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "File size exceeds 10MB limit"
 msgstr "फ़ाइल का आकार 10MB की सीमा से अधिक है"
@@ -808,6 +837,12 @@ msgstr "ऑपरेशन पर वापस जाएं"
 
 msgid "Go to onboarding"
 msgstr "ऑनबोर्डिंग पर जाएं"
+
+msgid "Halloween surprise"
+msgstr "हैलोवीन सरप्राइज़"
+
+msgid "Happy Halloween"
+msgstr "हैप्पी हैलोवीन"
 
 msgid "Heading {level}"
 msgstr "शीर्षक {level}"
@@ -986,6 +1021,9 @@ msgstr "लोड किया गया: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
+
+msgid "Loading. There's no need to scan again."
+msgstr "लोड हो रहा है। दोबारा स्कैन करने की ज़रूरत नहीं है।"
 
 msgid "Loading..."
 msgstr "लोड हो रहा है..."
@@ -1286,6 +1324,9 @@ msgstr "कोई नहीं"
 msgid "Notes"
 msgstr "नोट्स"
 
+msgid "Nothing on this page uses that barcode"
+msgstr "इस पेज पर कुछ भी उस बारकोड का उपयोग नहीं करता"
+
 msgid "Nothing running"
 msgstr "कुछ नहीं चल रहा"
 
@@ -1443,8 +1484,8 @@ msgstr "चुनें"
 msgid "Pick {0}"
 msgstr "पिकिंग {0}"
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "एक शैली और अवतार चुनें, या नए के लिए शफल करें।"
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
@@ -1494,6 +1535,12 @@ msgstr "कृपया एक आइटम चुनें"
 msgid "PM schedule lapsed"
 msgstr "PM शेड्यूल समाप्त"
 
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
+
+msgid "Poke the spider… if you dare"
+msgstr "मकड़ी को छुएँ… अगर हिम्मत है"
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "किसी भी पृष्ठ पर ? दबाएँ इस सूची को खोलने के लिए। जब आप किसी फील्ड में टाइप करते हैं, तो शॉर्टकट को अनदेखा किया जाता है।"
 
@@ -1514,6 +1561,12 @@ msgstr "प्रिंट करें"
 
 msgid "Print batch list"
 msgstr "बैच सूची प्रिंट करें"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "प्रिंटर सेटिंग्स"
@@ -1628,6 +1681,9 @@ msgstr "पार्ट निकालें"
 msgid "Remove two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण निकालें"
 
+msgid "Removed signature"
+msgstr ""
+
 msgid "Rename"
 msgstr "नाम बदलें"
 
@@ -1639,9 +1695,6 @@ msgstr "साइन इन करते समय प्रमाणकर्�
 
 msgid "Required"
 msgstr "आवश्यक"
-
-msgid "Reset"
-msgstr "रीसेट करें"
 
 msgid "Result"
 msgstr "परिणाम"
@@ -1673,8 +1726,14 @@ msgstr "हर जॉब के लिए समान"
 msgid "Save"
 msgstr "सहेजें"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "जो फॉर्म आप संपादित कर रहे हैं उसे सहेजें"
+
+msgid "Saved signature"
+msgstr ""
 
 msgid "Scan"
 msgstr "स्कैन करें"
@@ -1696,6 +1755,9 @@ msgstr "सीरियल नंबर स्कैन करें या ख�
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "इस लॉट से एक ट्रैक की गई इकाई को स्कैन या चुनें, इसे नमूना कॉलम के रूप में जोड़ें, और फिर ग्रिड में इसका परिणाम रिकॉर्ड करें।"
+
+msgid "Scan received"
+msgstr "स्कैन प्राप्त हुआ"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "इस QR कोड को अपने प्रमाणकर्ता ऐप्लिकेशन (जैसे Google Authenticator या 1Password) के साथ स्कैन करें, फिर इसके द्वारा दिया गया 6-अंकीय कोड दर्ज करें।"
@@ -1871,6 +1933,9 @@ msgstr "कीबोर्ड शॉर्टकट दिखाएं"
 msgid "Shuffle"
 msgstr "शफल करें"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "जादुई लिंक के बजाय बायोमेट्रिक्स से साइन इन करें। पासकी को Face ID, Touch ID, या आपकी डिवाइस PIN द्वारा सुरक्षित किया जाता है।"
 
@@ -1896,6 +1961,12 @@ msgid "Sign out instead"
 msgstr "इसके बजाय साइन आउट करें"
 
 msgid "Sign-in code"
+msgstr ""
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
 msgstr ""
 
 msgid "Signed in as {stationName}"
@@ -1960,6 +2031,9 @@ msgstr "चरण गायब हैं"
 msgid "Storage Unit"
 msgstr "भंडारण इकाई"
 
+msgid "Style"
+msgstr ""
+
 msgid "Style default"
 msgstr "शैली डिफ़ॉल्ट"
 
@@ -2007,6 +2081,10 @@ msgstr "Carbon में उपयोग किया जाने वाला 
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {targetQuantity} से कम है।"
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "जॉब्स और पार्ट्स जो इस रन को बनाते हैं।"
@@ -2156,6 +2234,9 @@ msgstr "एक संदेश लिखें..."
 msgid "Unable to unlock"
 msgstr "अनलॉक करने में असमर्थ"
 
+msgid "Undo"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "अजारी सीरीज़/बैच सामग्री"
 
@@ -2212,6 +2293,9 @@ msgstr "अपलोड करें"
 
 msgid "Upload completed but no file path returned"
 msgstr "अपलोड पूर्ण लेकिन कोई फाइल पथ नहीं दिया गया"
+
+msgid "Uploaded signature"
+msgstr ""
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -2301,6 +2385,9 @@ msgstr "आपकी प्रोफाइल को लोड नहीं क�
 
 msgid "Your session was locked after inactivity."
 msgstr "आपका सत्र निष्क्रियता के बाद लॉक किया गया था।"
+
+msgid "Your signature"
+msgstr ""
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

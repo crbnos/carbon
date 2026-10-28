@@ -154,6 +154,7 @@ export default function BalloonDetailRoute() {
               gaugeTypes={gaugeTypes}
               sampling={(diagram.sampling as SamplingRule | null) ?? null}
               samplingStandard={samplingStandard}
+              model={diagram.model}
             />
           </Suspense>
         )}

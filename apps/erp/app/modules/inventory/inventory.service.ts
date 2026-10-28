@@ -5186,12 +5186,20 @@ export async function printEntityLabels(
   }
 }
 
+// Omitted per member, so `field` still tells the `value` types apart.
+type ReceiptFixedAssetLineChange =
+  z.output<typeof receiptFixedAssetLineUpdateValidator> extends infer Change
+    ? Change extends unknown
+      ? Omit<Change, "id">
+      : never
+    : never;
+
 export function receiptFixedAssetLineChange(
-  change: Omit<z.output<typeof receiptFixedAssetLineUpdateValidator>, "id">
+  change: ReceiptFixedAssetLineChange
 ) {
   switch (change.field) {
     case "received":
-      return { received: change.value === "true" };
+      return { received: change.value };
     case "serialNumber":
       return { serialNumber: change.value || null };
     case "meter":

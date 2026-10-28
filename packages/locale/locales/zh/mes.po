@@ -168,6 +168,9 @@ msgstr "添加样本"
 msgid "Add Spare Part"
 msgstr "添加备件"
 
+msgid "Add your signature"
+msgstr ""
+
 msgid "Added"
 msgstr "已添加"
 
@@ -256,18 +259,8 @@ msgstr "可用"
 msgid "Available"
 msgstr "可用"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "头像选项 {0}"
-
 msgid "Avatar style"
 msgstr "头像样式"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "头像来自 <0>{0}</0>,由 {1} 创建,许可证为 <1>{2}</1>。"
 
 msgid "Back"
 msgstr "返回"
@@ -322,6 +315,11 @@ msgstr "看板视图"
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "但别担心。您可以使用忘记密码流程来请求新的魔法链接。"
 
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "登录即表示您同意<0>服务条款</0>和<1>隐私政策。</1>"
 
@@ -361,6 +359,9 @@ msgstr "请查收邮件"
 msgid "Choose a job"
 msgstr "选择工单"
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose an option"
 msgstr "选择一个选项"
 
@@ -384,6 +385,9 @@ msgstr "清除搜索"
 
 msgid "Clear station default"
 msgstr "清除工作站默认值"
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Clock In"
 msgstr "开工"
@@ -510,6 +514,9 @@ msgstr "创建返工"
 msgid "Current work"
 msgstr "当前工作"
 
+msgid "Custom color"
+msgstr ""
+
 msgid "Customer"
 msgstr "客户"
 
@@ -601,6 +608,15 @@ msgstr "拖动调整图形和特性的大小"
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "拖拽 {0} 已取消。"
+
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Due"
 msgstr "应交期"
@@ -707,6 +723,13 @@ msgstr "过期于 <0/>"
 msgid "Expiring first"
 msgstr "即将过期优先"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Failed"
 msgstr "失败"
 
@@ -731,6 +754,9 @@ msgstr "获取存储单位失败"
 msgid "Failed to get options"
 msgstr "获取选项失败"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "无法记录量具"
 
@@ -753,6 +779,9 @@ msgstr "文件上传失败：{0}"
 
 msgid "Failed to upload image"
 msgstr "图片上传失败"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "File size exceeds 10MB limit"
 msgstr "文件大小超过 10MB 限制"
@@ -808,6 +837,12 @@ msgstr "返回操作"
 
 msgid "Go to onboarding"
 msgstr "前往入门"
+
+msgid "Halloween surprise"
+msgstr "万圣节惊喜"
+
+msgid "Happy Halloween"
+msgstr "万圣节快乐"
 
 msgid "Heading {level}"
 msgstr "标题 {level}"
@@ -986,6 +1021,9 @@ msgstr "已加载: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "正在加载物料详情..."
+
+msgid "Loading. There's no need to scan again."
+msgstr "正在加载，无需再次扫码。"
 
 msgid "Loading..."
 msgstr "加载中..."
@@ -1286,6 +1324,9 @@ msgstr "无"
 msgid "Notes"
 msgstr "备注"
 
+msgid "Nothing on this page uses that barcode"
+msgstr "此页面上没有使用该条码的内容"
+
 msgid "Nothing running"
 msgstr "没有运行"
 
@@ -1443,8 +1484,8 @@ msgstr "拣货"
 msgid "Pick {0}"
 msgstr "拣货 {0}"
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "选择一个风格和头像，或者随机生成新的。"
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
@@ -1494,6 +1535,12 @@ msgstr "请选择一个物料"
 msgid "PM schedule lapsed"
 msgstr "PM排程已逾期"
 
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
+
+msgid "Poke the spider… if you dare"
+msgstr "戳一下蜘蛛……如果你敢的话"
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "在任何页面按 ? 打开此列表。在字段中输入时快捷键不可用。"
 
@@ -1514,6 +1561,12 @@ msgstr "打印"
 
 msgid "Print batch list"
 msgstr "打印生产批次列表"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "打印机设置"
@@ -1628,6 +1681,9 @@ msgstr "移除零件"
 msgid "Remove two-factor authentication"
 msgstr "移除双因素认证"
 
+msgid "Removed signature"
+msgstr ""
+
 msgid "Rename"
 msgstr "重命名"
 
@@ -1639,9 +1695,6 @@ msgstr "登录时需要输入身份验证应用中的6位数代码。"
 
 msgid "Required"
 msgstr "必填"
-
-msgid "Reset"
-msgstr "重置"
 
 msgid "Result"
 msgstr "结果"
@@ -1673,8 +1726,14 @@ msgstr "对所有工单相同"
 msgid "Save"
 msgstr "保存"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "保存您正在编辑的表单"
+
+msgid "Saved signature"
+msgstr ""
 
 msgid "Scan"
 msgstr "扫码"
@@ -1696,6 +1755,9 @@ msgstr "扫码或搜索序列号..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "从此批次中扫码或选择追踪实体并将其添加为样本列，然后在网格中记录其结果。"
+
+msgid "Scan received"
+msgstr "已收到扫码"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "使用身份验证应用（如 Google Authenticator 或 1Password）扫码此 QR 代码，然后输入它显示的6位数代码。"
@@ -1871,6 +1933,9 @@ msgstr "显示键盘快捷键"
 msgid "Shuffle"
 msgstr "随机生成"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "使用生物识别功能而非魔法链接登录。通行密钥由 Face ID、Touch ID 或设备 PIN 保护。"
 
@@ -1896,6 +1961,12 @@ msgid "Sign out instead"
 msgstr "改为登出"
 
 msgid "Sign-in code"
+msgstr ""
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
 msgstr ""
 
 msgid "Signed in as {stationName}"
@@ -1960,6 +2031,9 @@ msgstr "缺少步骤"
 msgid "Storage Unit"
 msgstr "存储单元"
 
+msgid "Style"
+msgstr ""
+
 msgid "Style default"
 msgstr "默认风格"
 
@@ -2007,6 +2081,10 @@ msgstr "整个 Carbon 中使用的强调色。"
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "组成此次运行的工单和零件。"
@@ -2156,6 +2234,9 @@ msgstr "输入消息..."
 msgid "Unable to unlock"
 msgstr "无法解锁"
 
+msgid "Undo"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "未领料的序列号/生产批次物料"
 
@@ -2212,6 +2293,9 @@ msgstr "上传"
 
 msgid "Upload completed but no file path returned"
 msgstr "上传完成但未返回文件路径"
+
+msgid "Uploaded signature"
+msgstr ""
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -2301,6 +2385,9 @@ msgstr "无法加载您的资料。"
 
 msgid "Your session was locked after inactivity."
 msgstr "您的会话因不活动而被锁定。"
+
+msgid "Your signature"
+msgstr ""
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

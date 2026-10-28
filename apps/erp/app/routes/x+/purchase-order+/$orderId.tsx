@@ -16,7 +16,11 @@ import {
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { getPreferenceHeaders, redirect } from "@carbon/utils";
+import {
+  getPreferenceHeaders,
+  isOwnSignaturePath,
+  redirect
+} from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -178,6 +182,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Check if user can approve the request
   let canApprove = false;
+  let approvalNeedsSignature = false;
   let canReopen = true; // Default to true (no approval request = can reopen)
   let canDelete = true; // Default to true (no approval request = can delete)
 
@@ -199,6 +204,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       },
       userId
     );
+
+    // With the setting on, an approver with no signature is sent to add one
+    // first. approveRequest refuses them anyway; this only spares the round trip.
+    if (
+      canApprove &&
+      companySettings.data?.requirePurchaseOrderApprovalSignature
+    ) {
+      const approver = await client
+        .from("user")
+        .select("signaturePath")
+        .eq("id", userId)
+        .single();
+      approvalNeedsSignature = !isOwnSignaturePath(
+        userId,
+        approver.data?.signaturePath
+      );
+    }
 
     // Check if user can reopen: must be requester OR approver
     const isRequester = canCancelRequest(
@@ -283,6 +305,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     approvalRequest: approvalRequest.data,
     approval,
     canApprove,
+    approvalNeedsSignature,
     canReopen,
     canDelete,
     defaultCc,

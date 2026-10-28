@@ -11,6 +11,7 @@ import {
   type PmiItem,
   type PmiTolerance,
   parsePmiDocument,
+  pmiInspectionCharacteristics,
   pmiItemBounds,
   pmiViewBounds,
   visibleItemIds
@@ -440,5 +441,151 @@ describe("bounds", () => {
       min: [0, -3, -5],
       max: [21, 21, 21]
     });
+  });
+});
+
+describe("pmiInspectionCharacteristics", () => {
+  const characteristics = (items: PmiItem[], sourceUnit: "mm" | "in" = "mm") =>
+    pmiInspectionCharacteristics(doc({ items, sourceUnit }));
+
+  it("takes a ± dimension's nominal and deviations", () => {
+    const [row] = characteristics([
+      dimension({ type: "diameter", value: 10, upper: 0.05, lower: -0.02 })
+    ]);
+    expect(row).toMatchObject({
+      pmiItemId: "d1",
+      label: "1",
+      nominalValue: "10",
+      tolerancePlus: "0.05",
+      toleranceMinus: "0.02",
+      unit: "mm"
+    });
+    expect(row?.description).toContain("Diameter");
+    expect(row?.description).toContain("⌀10");
+  });
+
+  it("re-centres a deviation that lies wholly below the nominal", () => {
+    const [row] = characteristics([
+      dimension({ type: "diameter", value: 10, upper: -0.013, lower: -0.028 })
+    ]);
+    // The band is 9.972–9.987: centre 9.9795, half width 0.0075.
+    expect(row).toMatchObject({
+      nominalValue: "9.9795",
+      tolerancePlus: "0.0075",
+      toleranceMinus: "0.0075"
+    });
+  });
+
+  it("re-centres a deviation that lies wholly above the nominal", () => {
+    const [row] = characteristics([
+      dimension({ value: 10, upper: 0.05, lower: 0.02 })
+    ]);
+    expect(row).toMatchObject({
+      nominalValue: "10.035",
+      tolerancePlus: "0.015",
+      toleranceMinus: "0.015"
+    });
+  });
+
+  it("centres a limit dimension between its limits", () => {
+    const [row] = characteristics([
+      dimension({ value: 10.05, upperBound: 10.1, lowerBound: 10 })
+    ]);
+    expect(row).toMatchObject({
+      nominalValue: "10.05",
+      tolerancePlus: "0.05",
+      toleranceMinus: "0.05"
+    });
+  });
+
+  it("records a dimension with no numeric limits as Pass or Fail", () => {
+    const [row] = characteristics([
+      dimension({
+        type: "diameter",
+        value: 8,
+        fitClass: { hole: true, formVariance: "H", grade: "IT7" }
+      })
+    ]);
+    expect(row).toMatchObject({
+      nominalValue: null,
+      tolerancePlus: null,
+      toleranceMinus: null
+    });
+  });
+
+  it("leaves out labels, dimensions with no value, datums and notes", () => {
+    const rows = characteristics([
+      dimension({ type: "presentation" }),
+      dimension({ value: null, upper: 0.1, lower: -0.1 }),
+      item({
+        id: "a1",
+        kind: "datum",
+        datum: { name: "A", modifiers: [], target: null }
+      }),
+      item({ id: "n1", kind: "note" })
+    ]);
+    expect(rows).toEqual([]);
+  });
+
+  it("keeps an angle in degrees in an inch model", () => {
+    const [row] = characteristics(
+      [dimension({ type: "angular", value: 45, upper: 0.5, lower: -0.5 })],
+      "in"
+    );
+    expect(row).toMatchObject({
+      nominalValue: "45",
+      tolerancePlus: "0.5",
+      unit: "deg"
+    });
+  });
+
+  it("converts lengths to inches for an inch model", () => {
+    const [row] = characteristics(
+      [dimension({ value: 25.4, upper: 0.127, lower: -0.127 })],
+      "in"
+    );
+    expect(row).toMatchObject({
+      nominalValue: "1",
+      tolerancePlus: "0.005",
+      toleranceMinus: "0.005",
+      unit: "in"
+    });
+  });
+
+  it("measures a geometric tolerance as a deviation within its zone", () => {
+    const [row] = characteristics([
+      tolerance({ type: "flatness", value: 0.02 })
+    ]);
+    expect(row).toMatchObject({
+      pmiItemId: "t1",
+      nominalValue: "0",
+      tolerancePlus: "0.02",
+      toleranceMinus: "0",
+      unit: "mm"
+    });
+    expect(row?.description).toBe("Flatness ⏥ | 0.02");
+  });
+
+  it("records a geometric tolerance with no zone as Pass or Fail", () => {
+    const [row] = characteristics([tolerance({ value: null })]);
+    expect(row?.nominalValue).toBeNull();
+  });
+
+  it("numbers characteristics in file order, skipping what it leaves out", () => {
+    const rows = characteristics([
+      { ...dimension({ value: 5, upper: 0.1, lower: -0.1 }), id: "d1" },
+      item({
+        id: "a1",
+        kind: "datum",
+        datum: { name: "A", modifiers: [], target: null }
+      }),
+      { ...tolerance({ value: 0.1 }), id: "t1" },
+      { ...dimension({ value: 7, upper: 0.1, lower: -0.1 }), id: "d2" }
+    ]);
+    expect(rows.map((r) => [r.label, r.pmiItemId])).toEqual([
+      ["1", "d1"],
+      ["2", "t1"],
+      ["3", "d2"]
+    ]);
   });
 });

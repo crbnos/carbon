@@ -642,6 +642,9 @@ msgstr "{missingCount} prima nota mancanti nel provider"
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} prima nota mancanti e {mismatchCount} mesi non corrispondenti"
 
+msgid "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} eliminato"
 
@@ -1234,6 +1237,9 @@ msgstr "Un nome è obbligatorio per salvare una vista"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Un prezzo negoziato fissato per un articolo specifico — per cliente, tipo di cliente o tutti i clienti — che sostituisce completamente il prezzo base, facoltativamente con scaglioni di quantità."
 
+msgid "A new invite link is sent. A link sent before stops working."
+msgstr "Viene inviato un nuovo link di invito. Un link inviato in precedenza smette di funzionare."
+
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Un nuovo ordine di acquisto verrà creato per ogni fornitore. In alternativa, puoi scegliere un ordine di acquisto in bozza esistente per il fornitore per aggiungere le operazioni esterne."
 
@@ -1566,6 +1572,12 @@ msgstr "Un bene a breve termine non registra nessuna prima nota all'attivazione.
 
 msgid "A short-term lease has no schedule. Each invoice is expensed."
 msgstr "Una locazione a breve termine non ha un programma. Ogni fattura viene contabilizzata come spesa."
+
+msgid "A signature is optional to approve"
+msgstr ""
+
+msgid "A signature is required to approve"
+msgstr ""
 
 msgid "A step needs a name."
 msgstr "Un passaggio ha bisogno di un nome."
@@ -2272,6 +2284,9 @@ msgstr "Aggiungi Spedizione"
 msgid "Add Shipping"
 msgstr "Aggiungi Spedizione"
 
+msgid "Add Signature"
+msgstr ""
+
 msgid "Add Slide"
 msgstr "Aggiungi diapositiva"
 
@@ -2338,6 +2353,9 @@ msgstr "Aggiungi unità"
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
 msgstr "Aggiungi il tuo primo {0}"
+
+msgid "Add your signature"
+msgstr ""
 
 msgid "Add-On"
 msgstr "Componente aggiuntivo"
@@ -2650,6 +2668,12 @@ msgstr "Un avviso che qualcosa ha bisogno dell'attenzione di una persona, distri
 
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "Un requisito di approvazione su una non conformità i cui revisori (seeded Engineering and Quality) devono firmare prima che il problema possa chiudersi."
+
+msgid "An approver must have a signature in Account → Profile before they can approve a purchase order. The purchase order PDF prints the signature of the person who approved it."
+msgstr ""
+
+msgid "An approver with no signature on file is asked to add one before they approve."
+msgstr ""
 
 msgid "An asset is a finance lease when any of these is true, and an operating lease when none is."
 msgstr "Un bene è una locazione finanziaria quando uno di questi è vero, ed una locazione operativa quando nessuno lo è."
@@ -3037,6 +3061,12 @@ msgstr "Requisiti di Approvazione"
 
 msgid "Approval Rules"
 msgstr "Regole di Approvazione"
+
+msgid "Approval signature requirement disabled"
+msgstr ""
+
+msgid "Approval signature requirement enabled"
+msgstr ""
 
 msgid "Approvals"
 msgstr "Approvazioni"
@@ -3516,8 +3546,14 @@ msgstr "Sei sicuro di voler superare questo checkpoint? La fase {0} ha ancora at
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "Sei sicuro di voler eliminare permanentemente {0}?"
 
+msgid "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "Sei sicuro di voler eliminare permanentemente il processo del fornitore?"
+
+msgid "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to permanently delete this bank account?"
 msgstr "Sei sicuro di voler eliminare definitivamente questo conto bancario?"
@@ -3979,21 +4015,11 @@ msgstr "Ore disponibili"
 msgid "Available on the Business plan"
 msgstr "Disponibile nel piano Business"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "Opzione avatar {0}"
-
 msgid "Avatar style"
 msgstr "Stile avatar"
 
 msgid "Avatar url"
 msgstr "URL avatar"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "Avatar da <0>{0}</0> di {1}, con licenza <1>{2}</1>."
 
 msgid "Average"
 msgstr "Media"
@@ -4478,6 +4504,11 @@ msgstr "Buyer, Pianificatore"
 
 msgid "by {byUser}"
 msgstr "da {byUser}"
+
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Accettando l'invito, accetti i <0>Termini di Servizio</0> e l'<1>Informativa sulla Privacy</1>."
@@ -5059,6 +5090,9 @@ msgstr "Scegli un processo raggruppabile per vedere le operazioni che possono es
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Scegli un componente che {itemReadableId} sostituisce. La regola è salvata su quel componente con {itemReadableId} come suo successore."
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Scegli una riga a sinistra per vedere da dove può provenire il suo stock."
 
@@ -5173,6 +5207,9 @@ msgstr "Fai clic di nuovo per disconnettere"
 
 msgid "Click components in the viewer to add them. Shift-click adds several."
 msgstr "Fai clic sui componenti nel visualizzatore per aggiungerli. Maiusc+clic aggiunge più di uno."
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Click to rename"
 msgstr "Fai clic per rinominare"
@@ -5839,6 +5876,9 @@ msgstr "Contrazione"
 
 msgid "Contractor"
 msgstr "Collaboratore esterno"
+
+msgid "contractors"
+msgstr ""
 
 msgid "Contractors"
 msgstr "Collaboratori esterni"
@@ -6790,6 +6830,9 @@ msgstr "Personalizzato {label}"
 
 msgid "Custom attributes you track against your people"
 msgstr "Attributi personalizzati che traccia per le tue persone"
+
+msgid "Custom color"
+msgstr ""
 
 msgid "Custom development beyond what's listed"
 msgstr "Sviluppo personalizzato oltre quanto elencato"
@@ -7804,6 +7847,9 @@ msgstr "Elimina Trasferimento deposito"
 msgid "Delete Webhook"
 msgstr "Elimina Webhook"
 
+msgid "Delete Work Center"
+msgstr ""
+
 msgid "Delete Workflow"
 msgstr "Elimina flusso di lavoro"
 
@@ -8349,6 +8395,12 @@ msgstr "Trascina per ridimensionare il disegno e le caratteristiche"
 msgid "Drag to zoom"
 msgstr "Trascina per ingrandire"
 
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
 msgid "Drawing"
 msgstr "Prelievo"
 
@@ -8357,6 +8409,9 @@ msgstr "Numero di Disegno"
 
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Disegno sostituito. I posizionamenti dei palloni sono stati rimossi; le righe caratteristiche rimangono invariate."
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Drop Ship"
 msgstr "Spedizione diretta"
@@ -9121,6 +9176,9 @@ msgstr "Abilita per consentire caratteri minuscoli negli ID degli articoli."
 msgid "Enable to allow shared workstation mode."
 msgstr "Abilita per consentire la modalità workstation condivisa."
 
+msgid "Enable to block approval from anyone with no signature on file."
+msgstr ""
+
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "Attiva per bloccare l'emissione o la registrazione per un cliente senza contatto o senza ubicazione."
 
@@ -9874,6 +9932,13 @@ msgstr "Informazioni aggiuntive inviate con la richiesta, come una chiave di aut
 msgid "Extra tags for slicing your GL reporting"
 msgstr "Tag aggiuntivi per suddividere la rendicontazione della contabilità generale"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Fail"
 msgstr "Non conforme"
 
@@ -10133,6 +10198,9 @@ msgstr "Impossibile caricare le entità tracciate"
 msgid "Failed to plan job"
 msgstr "Impossibile pianificare l'ordine di produzione"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Impossibile registrare lo strumento di misura"
 
@@ -10273,6 +10341,9 @@ msgstr "Caricamento del modello non riuscito"
 
 msgid "Failed to upload PDF"
 msgstr "Caricamento PDF non riuscito"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "Failed to upload thumbnail"
 msgstr "Impossibile caricare la miniatura"
@@ -10532,6 +10603,9 @@ msgid "Fixed Asset Class"
 msgstr "Classe di cespiti"
 
 msgid "Fixed asset settings updated"
+msgstr ""
+
+msgid "fixed assets"
 msgstr ""
 
 msgid "Fixed Assets"
@@ -11099,6 +11173,9 @@ msgstr "Guidato"
 msgid "Guided implementation"
 msgstr "Implementazione guidata"
 
+msgid "Halloween surprise"
+msgstr "Sorpresa di Halloween"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Gestisci registrazioni di prima nota ricorrenti e di storno"
 
@@ -11110,6 +11187,9 @@ msgstr "Pratico"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Supporto pratico e a risposta rapida per le prime 3–4 settimane"
+
+msgid "Happy Halloween"
+msgstr "Buon Halloween"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Difficile vedere il vero costo o margine su un lavoro"
@@ -12214,6 +12294,9 @@ msgstr "Problema"
 msgid "Issue (material)"
 msgstr "Uscita (materiale)"
 
+msgid "issue actions"
+msgstr ""
+
 msgid "Issue Credit"
 msgstr "Emettere Accredito"
 
@@ -12349,6 +12432,9 @@ msgstr "Pagine degli Articoli"
 msgid "Item Scope"
 msgstr "Ambito Articolo"
 
+msgid "item shelf life rules"
+msgstr ""
+
 msgid "Item Type"
 msgstr "Tipo di articolo"
 
@@ -12429,6 +12515,9 @@ msgstr "Operazione dell'ordine"
 
 msgid "Job operation batch"
 msgstr "Lotto di operazione dell'ordine"
+
+msgid "job operations"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "Operazioni dell'ordine"
@@ -13261,6 +13350,9 @@ msgstr "Macchina"
 msgid "Machine Costs"
 msgstr "Costi macchina"
 
+msgid "machine devices"
+msgstr ""
+
 msgid "Machine Hours"
 msgstr "Ore di macchina"
 
@@ -13275,6 +13367,9 @@ msgstr "Tariffa Macchina"
 
 msgid "Machine Rate (Hourly)"
 msgstr "Tariffa Macchina (Oraria)"
+
+msgid "machine state changes"
+msgstr ""
 
 msgid "Machine time"
 msgstr "Tempo macchina"
@@ -13327,8 +13422,17 @@ msgstr ""
 msgid "Maintenance Dispatch Notifications"
 msgstr "Notifiche interventi di manutenzione"
 
+msgid "maintenance dispatch work centers"
+msgstr ""
+
+msgid "maintenance dispatches"
+msgstr ""
+
 msgid "Maintenance Dispatches"
 msgstr "Interventi di manutenzione"
+
+msgid "maintenance events"
+msgstr ""
 
 msgid "Maintenance Expense"
 msgstr "Spese di Manutenzione"
@@ -13338,6 +13442,9 @@ msgstr "Spese di Manutenzione (predefinite)"
 
 msgid "Maintenance parts"
 msgstr "Componenti di manutenzione"
+
+msgid "maintenance schedules"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "Programmi di Manutenzione"
@@ -13843,6 +13950,9 @@ msgstr "ID Metodo"
 
 msgid "Method Materials"
 msgstr "Materiali del Metodo"
+
+msgid "method operations"
+msgstr ""
 
 msgid "Method Operations"
 msgstr "Operazioni Metodo"
@@ -16213,6 +16323,9 @@ msgstr "Operazione"
 msgid "Operation batch"
 msgstr "Lotto di Operazioni"
 
+msgid "operation batches"
+msgstr ""
+
 msgid "Operation created"
 msgstr ""
 
@@ -16537,6 +16650,9 @@ msgstr "Forzatura prezzo per un singolo cliente"
 msgid "Override price for all customers of a type"
 msgstr "Forzatura prezzo per tutti i clienti di un tipo"
 
+msgid "Override price for every customer"
+msgstr "Sovrascrivi il prezzo per tutti i clienti"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "Motivo della forzatura: {0}"
@@ -16710,6 +16826,9 @@ msgstr "Parzialmente riconosciuto"
 
 msgid "Partner"
 msgstr "Partner"
+
+msgid "partners"
+msgstr ""
 
 msgid "Partners"
 msgstr "Partner"
@@ -17004,8 +17123,8 @@ msgstr "Scegli una dimensione Carbon e il target provider su cui viene contabili
 msgid "Pick a column to sort by"
 msgstr "Scegli una colonna per ordinare"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "Seleziona un cliente o un tipo di cliente per visualizzare i loro prezzi."
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "Scegli un cliente, un tipo di cliente o Tutti i clienti per visualizzare i loro prezzi."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Scegli una data o lascia vuoto per cancellarla."
@@ -17028,8 +17147,8 @@ msgstr "Scegli un tipo di record…"
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "Seleziona un passo dall'elenco per modificare i dettagli, i componenti e i materiali."
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "Scegli uno stile e un avatar, o mescola per vederne di nuovi."
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick a target date to compare."
 msgstr "Seleziona una data di destinazione da confrontare."
@@ -17269,6 +17388,9 @@ msgstr "Seleziona un articolo"
 msgid "Please upload a CSV file of your data"
 msgstr "Si prega di caricare un file CSV dei tuoi dati"
 
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
+
 msgid "PO"
 msgstr "PO"
 
@@ -17277,6 +17399,9 @@ msgstr "Numero OD"
 
 msgid "PO PDF"
 msgstr "PDF OdA"
+
+msgid "Poke the spider… if you dare"
+msgstr "Tocca il ragno… se hai il coraggio"
 
 msgid "Policy"
 msgstr "Politica"
@@ -17558,6 +17683,12 @@ msgstr "Stampa Etichetta"
 msgid "Print Output ({0})"
 msgstr "Output di stampa ({0})"
 
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
+
 msgid "Printer route created"
 msgstr ""
 
@@ -17650,6 +17781,9 @@ msgstr "Evento di produzione"
 
 msgid "Production Event"
 msgstr "Evento di Produzione"
+
+msgid "production events"
+msgstr ""
 
 msgid "Production events"
 msgstr "Eventi di produzione"
@@ -18102,6 +18236,9 @@ msgstr "La qualificazione scade dopo tanti giorni di formazione; vuoto = mai"
 msgid "Qualified"
 msgstr "Qualificato"
 
+msgid "qualified employees"
+msgstr ""
+
 msgid "Qualified Employees"
 msgstr "Dipendenti Qualificati"
 
@@ -18274,6 +18411,9 @@ msgstr "Preventivo non trovato"
 
 msgid "Quote Number"
 msgstr "Numero Preventivo"
+
+msgid "quote operations"
+msgstr ""
 
 msgid "Quote to cash"
 msgstr "Dalla offerta al pagamento"
@@ -19063,6 +19203,9 @@ msgstr "Rimosso"
 msgid "Removed line"
 msgstr "Riga rimossa"
 
+msgid "Removed signature"
+msgstr ""
+
 #. placeholder {0}: count > 1 ? "s" : ""
 msgid "Removing this path will also disconnect {count} connection{0}. Continue?"
 msgstr "La rimozione di questo percorso disconnetterà anche {count} connessione{0}. Continuare?"
@@ -19217,6 +19360,9 @@ msgstr "Sostituisci con"
 msgid "Replacement Order"
 msgstr "Ordine di Sostituzione"
 
+msgid "replacement parts"
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 msgstr "La sostituzione del PDF rimuove tutti i posizionamenti dei palloni su questo documento. Le righe caratteristiche e i loro valori rimangono; puoi posizionare di nuovo i palloni sul nuovo disegno."
 
@@ -19274,6 +19420,9 @@ msgstr "Richiedi un codice a 6 cifre dall'app autenticatore al momento dell'acce
 
 msgid "Require a Customer Contact and Location"
 msgstr "Richiedi un contatto cliente e un'ubicazione"
+
+msgid "Require a Signature to Approve Purchase Orders"
+msgstr ""
 
 msgid "Require a Supplier Contact and Location"
 msgstr "Richiedi un contatto fornitore e un'ubicazione"
@@ -19370,6 +19519,9 @@ msgstr "Tolleranza di Riprogrammazione"
 
 msgid "Reschedule tolerance updated"
 msgstr ""
+
+msgid "Resend Invite"
+msgstr "Reinvia Invito"
 
 msgid "Reserve floor"
 msgstr "Limite di riserva"
@@ -20251,6 +20403,9 @@ msgstr "Salva bozza"
 msgid "Save Method"
 msgstr "Salva Metodo"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Salva il modulo che stai modificando"
 
@@ -20283,6 +20438,9 @@ msgid "Saved dimension value mapping"
 msgstr ""
 
 msgid "Saved document layout"
+msgstr ""
+
+msgid "Saved signature"
 msgstr ""
 
 msgid "Saved view"
@@ -21520,6 +21678,9 @@ msgstr "Mostrato all'utente quando questa regola fallisce."
 msgid "Shuffle"
 msgstr "Mescola"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in here instead"
 msgstr ""
 
@@ -21558,6 +21719,15 @@ msgstr "Revisione di approvazione prima di passare al passaggio successivo"
 
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "Autorizzazioni che devono essere registrate prima che questo problema possa essere chiuso; oltre a quelle richieste dal flusso di lavoro."
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
+msgstr ""
+
+msgid "Signature path"
+msgstr ""
 
 msgid "Signed in as {name}"
 msgstr "Accesso effettuato come {name}"
@@ -22170,6 +22340,9 @@ msgstr "Stripe non ha ancora un cliente per questo cliente Carbon. La registrazi
 
 msgid "Structure"
 msgstr "Struttura"
+
+msgid "Style"
+msgstr ""
 
 msgid "Style default"
 msgstr "Predefinito dello stile"
@@ -25031,6 +25204,9 @@ msgstr ""
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Formazione del tuo team tramite l'Academy e le guide in-app"
 
+msgid "trainings"
+msgstr ""
+
 msgid "Trainings"
 msgstr "Corsi di formazione"
 
@@ -25223,6 +25399,9 @@ msgstr "Annulla assegnazione regola"
 
 msgid "Unassigned"
 msgstr "Non assegnato"
+
+msgid "unattributed machine time entries"
+msgstr ""
 
 msgid "Unattributed Time"
 msgstr "Tempo non attribuito"
@@ -25644,6 +25823,9 @@ msgstr "Carica PDF"
 
 msgid "Uploaded model"
 msgstr "Modello caricato"
+
+msgid "Uploaded signature"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
@@ -26573,8 +26755,8 @@ msgstr "Quando si prevede che i fornitori rispondano; i fornitori vedono questa 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
 msgstr "Quando il buyer ha richiesto la merce; il fornitore può promettere qualcosa di diverso sulla data promessa e consegnare qualcosa di diverso di nuovo sulla data di consegna."
 
-msgid "When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "Quando il Buyer ha bisogno dei beni di questa riga sulla banchina; la pianificazione utilizza questa data per la disponibilità della giacenza e la pianificazione della lavorazione esterna."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr "Quando il Buyer richiede la merce di questa riga in banchina. Una nuova riga parte dalla Data richiesta dell'ordine; la Pianificazione usa questa data per la verifica della disponibilità di magazzino e per la programmazione delle lavorazioni esterne."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Quando il contratto è in corso e cosa accade al completamento."
@@ -26926,6 +27108,9 @@ msgstr "Centri di lavoro"
 msgid "Work Centers"
 msgstr "Centri di Lavoro"
 
+msgid "work centers requiring its ability"
+msgstr ""
+
 msgid "Work in process (WIP)"
 msgstr "Lavoro in corso (WIP)"
 
@@ -27119,6 +27304,9 @@ msgstr "I tuoi libri e come scorre il denaro."
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Le tue modifiche vengono inserite in una nuova versione bozza rilasciata con questo avviso di modifica."
 
+msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
+msgstr ""
+
 msgid "Your Console PIN"
 msgstr "Il tuo PIN Console"
 
@@ -27199,6 +27387,9 @@ msgstr "I tuoi dati reali sono caricati e hai controllato un campione e lo hai a
 
 msgid "Your session was locked after inactivity."
 msgstr "La tua sessione è stata bloccata per inattività."
+
+msgid "Your signature"
+msgstr ""
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "I tuoi dati di origine sono accessibili e ragionevolmente puliti"

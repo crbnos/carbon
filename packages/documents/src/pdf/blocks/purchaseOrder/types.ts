@@ -21,6 +21,8 @@ export interface PurchaseOrderApproval {
   approvedBy: string | null;
   /** The business day of the decision, `YYYY-MM-DD`. */
   approvedDate: string;
+  /** The approver's signature as a data URL, when one was on file. */
+  signature?: string | null;
 }
 
 /** Everything a Purchase Order block renderer might need. */

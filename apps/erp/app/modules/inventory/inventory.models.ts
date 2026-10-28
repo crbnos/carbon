@@ -16,6 +16,7 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { batchPropertyDataTypes } from "../items/items.models";
+import { booleanField } from "../shared/shared.models";
 
 export const demandPeriodTypes = ["Week", "Day", "Month"] as const;
 export const demandSourceTypes = ["Sales Order", "Job Material"] as const;
@@ -428,7 +429,7 @@ export const shipmentFixedAssetLineUpdateValidator = z.discriminatedUnion(
     z.object({
       id: z.string().min(1),
       field: z.literal("shipped"),
-      value: z.enum(["true", "false"])
+      value: booleanField()
     }),
     z.object({
       id: z.string().min(1),
@@ -449,7 +450,7 @@ export const receiptFixedAssetLineUpdateValidator = z.discriminatedUnion(
     z.object({
       id: z.string().min(1),
       field: z.literal("received"),
-      value: z.enum(["true", "false"])
+      value: booleanField()
     }),
     z.object({
       id: z.string().min(1),

@@ -56,7 +56,11 @@ export function CalendarRangeCell({
   const isRoundedRight = isSelected && isSelectionEnd;
 
   return (
-    <td className="text-center relative" {...cellProps}>
+    <td
+      className="text-center relative"
+      data-date={date.toString()}
+      {...cellProps}
+    >
       <Button
         {...buttonProps}
         ref={ref}

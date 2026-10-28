@@ -938,3 +938,52 @@ export async function getDefaultRentalRates(
   }
   return { data: result, error: null };
 }
+
+// Who a price override applies to: one customer, one customer type, or every
+// customer. A row with neither id applies to every customer, so writing one
+// must be asked for (`allCustomers`), never reached by leaving both ids out.
+export type PriceOverrideScope = {
+  customerId?: string;
+  customerTypeId?: string;
+  allCustomers?: boolean;
+};
+
+export function priceOverrideScopeError(
+  scope: PriceOverrideScope
+): string | null {
+  if (scope.allCustomers) {
+    return scope.customerId || scope.customerTypeId
+      ? "All Customers cannot also name a customer or type"
+      : null;
+  }
+  if (scope.customerId && scope.customerTypeId) {
+    return "Cannot set both Customer and Customer Type";
+  }
+  if (!scope.customerId && !scope.customerTypeId) {
+    return "Choose a customer, a customer type, or All Customers";
+  }
+  return null;
+}
+
+// The override scopes whose items a price list shows: the scope's own, and
+// the broader ones it inherits (a customer's type, then all customers), so
+// every item whose price differs for that scope is listed.
+export function priceListOverrideScopes(
+  scope: PriceOverrideScope,
+  customerTypeIdOfCustomer: string | null
+): PriceOverrideScope[] {
+  if (scope.customerId) {
+    return [
+      { customerId: scope.customerId },
+      ...(customerTypeIdOfCustomer
+        ? [{ customerTypeId: customerTypeIdOfCustomer }]
+        : []),
+      { allCustomers: true }
+    ];
+  }
+  if (scope.customerTypeId) {
+    return [{ customerTypeId: scope.customerTypeId }, { allCustomers: true }];
+  }
+  if (scope.allCustomers) return [{ allCustomers: true }];
+  return [];
+}

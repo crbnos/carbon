@@ -44,7 +44,9 @@ import { resolveJobConfiguration } from "~/modules/sales/sales.utils";
 import {
   inspectionPlanRequired,
   methodItemType,
-  methodType
+  methodType,
+  optionalTiptapDoc,
+  requiredTiptapDoc
 } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
@@ -2354,8 +2356,9 @@ const jobMaterialInput = z.object({
  * @mcp
  */
 export const createJobMaterial = defineServiceFn({
-  // The caller chooses the row's id (the bill of material's new row keeps it).
-  input: jobMaterialInput.extend({ id: z.string() }),
+  // The bill of material sends its new row's id, so the row keeps its key;
+  // without one the table makes it.
+  input: jobMaterialInput.extend({ id: z.string().min(1).optional() }),
   permission: { create: "production" },
 
   async run(ctx, material) {
@@ -2584,12 +2587,16 @@ export const deleteJobMaterials = defineServiceFn({
 // The bill of process form requires times, units and rates; the API fills a
 // new operation's from its work center or process, and an update leaves out
 // what it was not sent.
-const jobOperationInput = baseJobOperationValidator
-  .extend({
-    workCenterId: zfd.text(z.string().optional()),
-    jobId: z.string(),
-    customFields: customFieldsInput
-  })
+const jobOperationFields = baseJobOperationValidator.extend({
+  workCenterId: zfd.text(z.string().optional()),
+  jobId: z.string(),
+  customFields: customFieldsInput
+});
+const jobOperationInput = jobOperationFields.refine(...inspectionPlanRequired);
+// A new operation's id is optional: the table makes one. The bill of process
+// sends its own, so the row it shows before the save keeps its key.
+const newJobOperationInput = jobOperationFields
+  .extend({ id: z.string().min(1).optional() })
   .refine(...inspectionPlanRequired);
 
 /**
@@ -2606,7 +2613,7 @@ const jobOperationInput = baseJobOperationValidator
  * @mcp
  */
 export const createJobOperation = defineServiceFn({
-  input: jobOperationInput,
+  input: newJobOperationInput,
   permission: { create: "production" },
 
   async run(ctx, input) {
@@ -2624,13 +2631,10 @@ export const createJobOperation = defineServiceFn({
       ctx.asSystem.pg,
       { ...operation, companyId: ctx.company.id, createdBy: ctx.auditUserId }
     );
-    if (insert.error || !insert.data?.id) {
-      return ctx.error(
-        "internal",
-        "Failed to insert job operation",
-        insert.error
-      );
-    }
+    const inserted = unwrap(ctx, insert);
+    if (inserted instanceof CarbonError) return inserted;
+    if (!inserted)
+      return ctx.error("internal", "Failed to insert job operation");
 
     const recalculated = await service.recalculateMaterialMethod(ctx, {
       jobId: operation.jobId,
@@ -2638,7 +2642,7 @@ export const createJobOperation = defineServiceFn({
       dependencies: true
     });
     if (recalculated) return recalculated;
-    return { id: insert.data.id };
+    return { id: inserted.id };
   }
 });
 
@@ -5083,22 +5087,14 @@ export const setProcedureFields = defineServiceFn({
   input: z.object({
     ids: z.array(z.string()).min(1),
     name: z.string().optional(),
-    content: z.string().optional(),
+    content: optionalTiptapDoc,
     status: z.enum(procedureStatus).optional(),
     processId: z.string().optional(),
     tags: z.array(z.string()).optional()
   }),
   permission: { update: "production" },
 
-  async run(ctx, { ids, content, ...fields }) {
-    let parsedContent: Json | undefined;
-    if (content !== undefined) {
-      try {
-        parsedContent = JSON.parse(content);
-      } catch {
-        return ctx.error("validation", "Invalid procedure content");
-      }
-    }
+  async run(ctx, { ids, content: parsedContent, ...fields }) {
     let update = ctx.asCaller.supabase
       .from("procedure")
       .update({
@@ -7780,7 +7776,7 @@ export const insertJob = defineServiceFn({
     quoteId: z.string().optional(),
     quoteLineId: z.string().optional(),
     modelUploadId: z.string().optional(),
-    notes: z.string().optional(),
+    notes: optionalTiptapDoc,
     customFields: z.unknown().optional(),
     configuration: z.record(z.string(), z.unknown()).optional(),
     fixedAssetClassId: z.string().nullable().optional(),
@@ -7839,7 +7835,7 @@ export const createJobOperationStep = defineServiceFn({
   input: z.looseObject({
     operationId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().min(1),
+    description: requiredTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -7887,7 +7883,7 @@ export const updateJobOperationStep = defineServiceFn({
     .looseObject({
       operationId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().min(1),
+      description: requiredTiptapDoc,
       type: z.enum([
         "Task",
         "Value",
@@ -8287,7 +8283,7 @@ export const createProcedure = defineServiceFn({
     name: z.string().min(1),
     version: z.number().min(0),
     processId: z.string().optional(),
-    content: z.string().optional(),
+    content: optionalTiptapDoc,
     copyFromId: z.string().optional(),
     id: z
       .string()
@@ -8320,7 +8316,7 @@ export const updateProcedure = defineServiceFn({
       name: z.string().min(1),
       version: z.number().min(0),
       processId: z.string().optional(),
-      content: z.string().optional(),
+      content: optionalTiptapDoc,
       copyFromId: z.string().optional(),
       id: z
         .string()
@@ -8352,7 +8348,7 @@ export const createProcedureStep = defineServiceFn({
   input: z.looseObject({
     procedureId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().optional(),
+    description: optionalTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -8399,7 +8395,7 @@ export const updateProcedureStep = defineServiceFn({
     .looseObject({
       procedureId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().optional(),
+      description: optionalTiptapDoc,
       type: z.enum([
         "Task",
         "Value",
@@ -9541,7 +9537,7 @@ export const upsertAssemblyInstructionStep = defineServiceFn({
         "Inspection"
       ])
       .optional(),
-    description: z.unknown().optional(),
+    description: optionalTiptapDoc,
     required: z.boolean().optional(),
     unitOfMeasureCode: z.string().nullable().optional(),
     minValue: z.number().nullable().optional(),
@@ -9815,7 +9811,7 @@ export const insertAssemblyInstructionStep = defineServiceFn({
         "Inspection"
       ])
       .optional(),
-    description: z.unknown().optional(),
+    description: optionalTiptapDoc,
     required: z.boolean().optional(),
     unitOfMeasureCode: z.string().nullable().optional(),
     minValue: z.number().nullable().optional(),

@@ -53,7 +53,8 @@ Dependency flow: `apps/assembler → planner → converter → occt-bridge`; `pl
 
 ## Native deps
 
-**Dev (macOS):** `brew install fcl opencascade` (pulls libccd, eigen, octomap).
+**Dev (macOS):** `brew install fcl` (pulls libccd, eigen, octomap). OCCT is not
+Homebrew's: build the patched static one with `scripts/build-occt.sh` (see Run).
 Each bridge's `build.rs` resolves the lib prefix from `<PKG>_PREFIX` env, else a
 fixed per-target default (macOS-arm `/opt/homebrew/opt/<pkg>`, Linux `/usr`) — no
 `brew` shell-out, so the build is reproducible.
@@ -98,6 +99,17 @@ cargo test -p collision -p converter -p planner --tests
 ```bash
 REDIS_URL=redis://localhost:6379 ASSEMBLER_DEV_MODE=true cargo run -p assembler   # listens on 0.0.0.0:8000 (PORT to override)
 ```
+
+Under `crbn up`, the assembler needs Rust (rustup; `crbn` also finds
+`~/.cargo/bin/cargo` when the shell has not sourced `~/.cargo/env`), and both
+slow builds are shared by every worktree on the machine.
+OCCT is built once into `~/.cache/carbon-occt/8.0.0-p1`
+(`brew install cmake ninja`, then `scripts/build-occt.sh`). FCL comes from
+`brew install fcl`. `crbn up` refuses the assembler, naming the install step,
+until Rust, FCL and OCCT are all present. Cargo builds into
+`~/.cache/carbon-cargo-target` (`assemblerCargoTargetDir`,
+`packages/dev/src/services/apps.ts`), so a new worktree compiles only what its
+branch changed. A `CARGO_TARGET_DIR` you set yourself wins.
 
 Env: `REDIS_URL` (required — the job store; boot fails without it),
 `ASSEMBLER_SERVICE_API_KEY` (bearer auth), `ASSEMBLER_DEV_MODE=true` (allow

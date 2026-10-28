@@ -11,7 +11,12 @@ import {
   sectionConfigSchema,
   themeSchema
 } from "@carbon/documents/template";
-import { isValidTimeZone, labelSizes } from "@carbon/utils";
+import {
+  isValidTimeZone,
+  labelSizes,
+  type ThemeName,
+  themeColorValidator
+} from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
@@ -527,23 +532,10 @@ export const itemSerialSequenceValidator = z.object({
   serialNumberTiming: zfd.text(z.enum(serialNumberTimings).optional())
 });
 
-export const themes = [
-  "zinc",
-  "neutral",
-  "red",
-  "orange",
-  "yellow",
-  "green",
-  "blue",
-  "violet"
-] as const;
-export type Theme = (typeof themes)[number];
+export type Theme = ThemeName;
 
-export const themeValidator = z.object({
-  next: zfd.text(z.string().optional()),
-  theme: z.enum(themes, {
-    error: "Theme is required"
-  })
+export const themeValidator = themeColorValidator.extend({
+  next: zfd.text(z.string().optional())
 });
 
 export const webhookValidator = z

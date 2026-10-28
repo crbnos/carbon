@@ -2092,6 +2092,8 @@ export const path = {
       generatePath(`${x}/purchase-order/${id}/finalize`),
     purchaseOrderLine: (orderId: string, id: string) =>
       generatePath(`${x}/purchase-order/${orderId}/${id}/details`),
+    purchaseOrderLineDate: (orderId: string, id: string) =>
+      generatePath(`${x}/purchase-order/${orderId}/${id}/date`),
     purchaseOrderLineOrder: (orderId: string) =>
       generatePath(`${x}/purchase-order/${orderId}/line-order`),
     purchaseOrderLineReceiving: (orderId: string, id: string) =>
@@ -2644,6 +2646,8 @@ export const path = {
       generatePath(`${x}/resources/work-centers/${id}`),
     workCenterActivate: (id: string) =>
       generatePath(`${x}/resources/work-centers/activate/${id}`),
+    workCenterDeactivate: (id: string) =>
+      generatePath(`${x}/resources/work-centers/deactivate/${id}`),
     workCenters: `${x}/resources/work-centers`,
     workflow: (id: string) => generatePath(`${x}/workflow/${id}`),
     workflowCanvas: (id: string) => generatePath(`${x}/workflow/${id}/canvas`),

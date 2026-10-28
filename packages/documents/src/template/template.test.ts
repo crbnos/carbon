@@ -81,6 +81,20 @@ describe("resolveTemplate", () => {
       "summary"
     ]);
   });
+
+  it("appends the approval block visible to a stored purchase order", () => {
+    const stored = [
+      { id: "lineItems", type: "lineItems" as const, visible: true },
+      { id: "summary", type: "summary" as const, visible: true }
+    ];
+    const { blocks } = resolveTemplate("purchaseOrder", { blocks: stored });
+    expect(blocks.at(-1)).toEqual({
+      id: "approval",
+      type: "approval",
+      visible: true
+    });
+    expect(blocks.find((b) => b.type === "header")?.visible).toBe(false);
+  });
 });
 
 describe("block metadata invariants", () => {
