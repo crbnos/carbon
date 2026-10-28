@@ -3915,8 +3915,8 @@ msgstr "Активы, обязательства и собственный ка�
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Назначьте машинное время обработки, которое ни одна загруженная операция не требовала, правильному производственному заказу, или отклоните его."
 
-msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
-msgstr "Назначьте принтеры местоположениям. Доставка, получение и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
+msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
+msgstr "Назначьте принтеры местоположениям. Доставка, получение, запасы, канбаны и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
 
 msgid "Assign To"
 msgstr "Назначить"
@@ -18042,6 +18042,9 @@ msgid "Print"
 msgstr "Печать"
 
 #. placeholder {0}: printIds.length
+msgid "Print {0} Kanbans"
+msgstr "Печать {0} канбанов"
+
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "Печать {0} этикеток"
@@ -18750,8 +18753,8 @@ msgid "Queued"
 msgstr "В очереди"
 
 #. placeholder {0}: printIds.length
-msgid "Queued {0} labels for printing"
-msgstr "{0} этикеток поставлено в очередь печати"
+msgid "Queued {0} kanbans for printing"
+msgstr "{0} канбанов поставлено в очередь печати"
 
 msgid "Queued {count} sync operations for sync"
 msgstr ""

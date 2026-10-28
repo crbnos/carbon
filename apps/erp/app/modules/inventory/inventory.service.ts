@@ -5182,7 +5182,7 @@ export async function salesOrderShipmentLocationOf(
   };
 }
 
-/** Print a document's labels when its location's printer auto-prints. */
+/** Print a document's labels (or a new kanban's cards) when its location's printer auto-prints. */
 export async function autoPrint(
   ctx: ServiceContext,
   {
@@ -5191,10 +5191,10 @@ export async function autoPrint(
     locationId,
     context
   }: {
-    sourceDocument: "Receipt" | "Shipment";
+    sourceDocument: "Receipt" | "Shipment" | "Kanban";
     sourceDocumentId: string;
     locationId: string | null;
-    context: "receiving" | "shipping";
+    context: "receiving" | "shipping" | "kanban";
   }
 ) {
   if (!locationId) return;

@@ -3915,8 +3915,8 @@ msgstr "특정 날짜 기준 자산, 부채 및 자본"
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "로드된 공정이 청구하지 않은 기계 시간을 올바른 작업 지시에 할당하거나 거부하세요."
 
-msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
-msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
+msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
+msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 재고 관리, 칸반 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
 
 msgid "Assign To"
 msgstr "할당"
@@ -18042,6 +18042,9 @@ msgid "Print"
 msgstr "인쇄"
 
 #. placeholder {0}: printIds.length
+msgid "Print {0} Kanbans"
+msgstr "칸반 {0}개 인쇄"
+
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "{0} 라벨 인쇄"
@@ -18750,8 +18753,8 @@ msgid "Queued"
 msgstr "대기열"
 
 #. placeholder {0}: printIds.length
-msgid "Queued {0} labels for printing"
-msgstr "라벨 {0}개를 인쇄 대기열에 추가했습니다"
+msgid "Queued {0} kanbans for printing"
+msgstr "칸반 {0}개를 인쇄 대기열에 추가했습니다"
 
 msgid "Queued {count} sync operations for sync"
 msgstr ""

@@ -76,9 +76,11 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
   name)`. (`20260326000000_print-manager.sql`; `templateId` added `20260509000000`.)
 - **Assignments** live in `companySettings.printing` JSONB (`PrintingSettings` →
   `assignments[locationId]: LocationAssignment`). Contexts (`printerContexts`, `assignments.ts`):
-  `default | shipping | receiving | inventory | workCenter`. `getPrinterContextForSource` maps
-  Shipment→shipping, Receipt→receiving, StockTransfer/StorageUnit→inventory, else workCenter if a
-  workCenterId is present, else default.
+  `default | shipping | receiving | inventory | kanban | workCenter`. `getPrinterContextForSource` maps
+  Shipment→shipping, Receipt→receiving, StockTransfer/StorageUnit→inventory, Kanban→kanban, else
+  workCenter if a workCenterId is present, else default. Stored settings written before a context
+  existed have no key for it; every reader uses `?.` and resolution falls back to the default.
+  `removePrinterRoute` clears the deleted route from every context.
 - **Resolution** is shared via `resolveContextAssignment(assignment, context, workCenterId?)` in
   `assignments.ts` — called by both the server cache (`cache.server.ts`) and the client
   (`ui/PrintingProvider.tsx` `usePrinting`), so they stay in sync. A context with no printer falls back
@@ -128,7 +130,8 @@ Realtime-enabled. RLS gated on `printing_*` permissions (Printing module). Clean
 After a business event, code checks `getCachedPrinterConfig(...).autoPrint` (default `true` when null),
 wrapped in try/catch that never blocks the parent op, then `trigger("print-job", ...)`:
 - Receipt post `postReceipt` (receiving); Shipment post `postShipment` (shipping; also prints
-  `Split` entities); Stock-transfer split, from the line pick operations (Split + Entity reprint) —
+  `Split` entities); Kanban create `createKanban` (kanban; one card per action, three for Make) — these three through
+  `autoPrint` in `inventory.service.ts`; Stock-transfer split, from the line pick operations (Split + Entity reprint) —
   all in `apps/erp/app/modules/inventory/inventory.server.ts`; MES first-operation completion of a serial or batch unit,
   `autoPrintFirstOperationLabel` (`apps/mes/app/services/printing.server.ts`, workCenter), called by
   every completion path: the Complete form (`x+/complete.tsx`), the QR / kanban Complete scan

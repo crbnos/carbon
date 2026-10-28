@@ -3915,8 +3915,8 @@ msgstr "特定の日付時点での資産、負債および純資産"
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "読み込まれた工程に割り当てられていない機械加工時間を正しい製造指図に割り当てるか、却下してください。"
 
-msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
-msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
+msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
+msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、在庫管理、かんばん、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
 
 msgid "Assign To"
 msgstr "割り当て先"
@@ -18042,6 +18042,9 @@ msgid "Print"
 msgstr "印刷"
 
 #. placeholder {0}: printIds.length
+msgid "Print {0} Kanbans"
+msgstr "{0}件のかんばんを印刷"
+
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "{0}個のラベルを印刷"
@@ -18750,8 +18753,8 @@ msgid "Queued"
 msgstr "キュー待ち"
 
 #. placeholder {0}: printIds.length
-msgid "Queued {0} labels for printing"
-msgstr "{0} 枚のラベルを印刷キューに追加しました"
+msgid "Queued {0} kanbans for printing"
+msgstr "{0} 件のかんばんを印刷キューに追加しました"
 
 msgid "Queued {count} sync operations for sync"
 msgstr ""

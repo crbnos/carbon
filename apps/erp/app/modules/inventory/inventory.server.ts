@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  type CarbonError,
+  CarbonError,
   createServiceContext,
   defineServiceFn
 } from "@carbon/api/service-fn.server";
@@ -5821,7 +5821,9 @@ const kanbanInput = z
  *
  * @remarks
  * A Buy kanban needs its supplier; a Transfer kanban needs a from and a to
- * storage unit, and only it can have a replenishment level.
+ * storage unit, and only it can have a replenishment level. When the
+ * location's Kanbans printer auto-prints, the new kanban's Create card is
+ * printed.
  *
  * @mcp
  */
@@ -5829,13 +5831,23 @@ export const createKanban = defineServiceFn({
   input: kanbanInput,
   permission: { create: "inventory" },
   async run(ctx, { id: _id, ...input }) {
-    return unwrap(
+    const created = unwrap(
       ctx,
       await service.upsertKanban(
         ctx.asCaller.supabase,
         payload(ctx, input).forCreate() as never
       )
     );
+    if (created instanceof CarbonError || !created) return created;
+
+    await service.autoPrint(ctx, {
+      sourceDocument: "Kanban",
+      sourceDocumentId: created.id,
+      locationId: input.locationId,
+      context: "kanban"
+    });
+
+    return created;
   }
 });
 
