@@ -34,8 +34,6 @@ export const EXEMPT_COUNTERS: Record<string, string> = {
     "no form or API write takes its transferId (the transferId tools are warehouse transfers)",
   inspection: "no form or API write takes inspectionId",
   jobOperationBatch: "no form or API write takes a batch's readableId",
-  kanban:
-    "the set_kanban_readable_id trigger numbers every insert; upsertKanban drops a kanbanId the caller sends",
   leaseRun:
     "a lease run is a revenueRecognitionRun of type Lease; no form or API write takes runId",
   reimbursement:

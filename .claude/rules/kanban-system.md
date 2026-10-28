@@ -26,10 +26,13 @@ Table `kanban` (initial migration `20250909012102_kanban.sql`; newest `202610281
   label (`20261028191437_kanban-readable-id.sql`). Unique per company. The BEFORE INSERT trigger
   `set_kanban_readable_id` assigns it from `get_next_sequence` when the insert has none (creating the
   company's `kanban` sequence row first if it is missing, so no kanban is left unnumbered), so every
-  insert path (form, MCP, datasets, fixtures) is numbered with no call-site code; `upsertKanban`
-  drops a `kanbanId` the caller sends, so the number never changes and the counter is exempt from
-  `sync_advance_document_sequence` (`EXEMPT_COUNTERS`). Nullable only because a restore loads rows
-  with triggers off, and a pre-migration backup has no number. Not to be confused with
+  insert path (form, MCP, datasets, fixtures) is numbered with no call-site code. An insert that
+  names its own number keeps it, and the `sync_advance_document_sequence` interceptor moves the
+  counter past it (`20261028221530`), so a later generated number cannot collide. The BEFORE UPDATE
+  trigger `prevent_kanban_readable_id_change` (`20261028221145`) refuses changing a set number — it
+  is printed on the card — and allows filling a NULL one. `upsertKanban` drops a `kanbanId` the
+  caller sends. Nullable only because a restore loads rows with triggers off, and a pre-migration
+  backup has no number. Not to be confused with
   `stockTransfer.kanbanId`, the FK to `kanban.id` — the same `job.jobId` / `jobMaterial.jobId` split.
 - `replenishmentSystem` `kanbanReplenishmentSystem` enum (`'Buy' | 'Make' | 'Transfer'`),
   default `'Buy'` — **retyped from `itemReplenishmentSystem`** in `20260908143722_kanban-transfer.sql`
