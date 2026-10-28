@@ -11867,6 +11867,9 @@ msgstr "На каждый период выставляется счет в ег
 msgid "Each period is one month, for the month rate."
 msgstr "Каждый период — один месяц, по месячной ставке."
 
+msgid "Each person has their own page there. This page stays available for reference."
+msgstr ""
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Каждая физическая единица получает свой отслеживаемый объект и уникальный номер — один объект, одна единица."
 
@@ -21944,6 +21947,9 @@ msgstr "Дата открытия"
 
 msgid "Open Dispatches"
 msgstr "Открыть Заявки на техобслуживание"
+
+msgid "Open Implementation"
+msgstr ""
 
 msgid "Open in Carbon"
 msgstr "Открыть в Carbon"
@@ -36493,6 +36499,9 @@ msgstr "Ваша организация"
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr "Ваша организация требует подпись для утверждения заказов поставщику. Добавьте подпись в свой профиль, затем утвердите заказ. Она печатается на утверждаемом заказе поставщику."
+
+msgid "Your company uses the new Implementation hub"
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "Ваш PIN консоли"

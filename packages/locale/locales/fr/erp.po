@@ -11867,6 +11867,9 @@ msgstr "Chaque période est facturée le dernier jour, après que les unités on
 msgid "Each period is one month, for the month rate."
 msgstr "Chaque période dure un mois, pour le tarif mensuel."
 
+msgid "Each person has their own page there. This page stays available for reference."
+msgstr ""
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Chaque unité physique obtient sa propre entité suivie et un numéro unique — une entité, une unité."
 
@@ -21944,6 +21947,9 @@ msgstr "Date d'ouverture"
 
 msgid "Open Dispatches"
 msgstr "Interventions de maintenance ouvertes"
+
+msgid "Open Implementation"
+msgstr ""
 
 msgid "Open in Carbon"
 msgstr "Ouvrir dans Carbon"
@@ -36493,6 +36499,9 @@ msgstr "Votre société"
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr "Votre société exige une signature pour approuver les bons de commande. Ajoutez-en une à votre profil, puis approuvez la commande. Elle s'imprime sur le bon de commande que vous approuvez."
+
+msgid "Your company uses the new Implementation hub"
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "Votre PIN Console"

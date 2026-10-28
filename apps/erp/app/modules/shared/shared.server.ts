@@ -439,6 +439,7 @@ export const enrollImplementationHub = defineServiceFn({
  * What `enrollImplementationHub` does, for Carbon staff (an internal email):
  * they may enroll any company they belong to, settings permission or not,
  * since they open an unenrolled hub to set it up. Anyone else is refused.
+ * The company starts on Personal Pages, and the email links to that hub.
  */
 export const enrollImplementationHubAsStaff = defineServiceFn({
   input: z.object({}),
@@ -452,27 +453,38 @@ export const enrollImplementationHubAsStaff = defineServiceFn({
         "Only Carbon staff can enroll a company from the hub"
       );
     }
-    const enrolled = await enrollImplementationHub(ctx, {});
-    if (enrolled.error) return enrolled.error;
-    // Staff enroll from the Personal Pages hub, so the company starts on it.
-    if (enrolled.data.enrolled) {
-      const layout = await service.setImplementationLayout(
-        ctx.asSystem.supabase,
-        {
-          companyId: ctx.company.id,
-          layout: "Personal Pages",
-          userId: ctx.auditUserId
-        }
-      );
-      if (layout.error) {
-        return ctx.error(
-          "internal",
-          "Failed to set the hub layout",
-          layout.error
-        );
-      }
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+
+    const existing = await getImplementationHub(serviceRole, companyId);
+    if (existing.data) return { enrolled: false };
+
+    const enrolled = await enrollImplementation(serviceRole, {
+      companyId,
+      userId: ctx.auditUserId,
+      tier: "self_serve"
+    });
+    if (enrolled.error) {
+      return ctx.error("internal", "Failed to enroll company", enrolled.error);
     }
-    return enrolled.data;
+
+    // Staff enroll from the Personal Pages hub, so the company starts on it,
+    // and the admins' email links there rather than to the Company Plan hub.
+    const layout = await service.setImplementationLayout(serviceRole, {
+      companyId,
+      layout: "Personal Pages",
+      userId: ctx.auditUserId
+    });
+    if (layout.error) {
+      return ctx.error(
+        "internal",
+        "Failed to set the hub layout",
+        layout.error
+      );
+    }
+
+    await service.notifyImplementationHubAdmins(ctx, path.to.implementation);
+    return { enrolled: true };
   }
 });
 

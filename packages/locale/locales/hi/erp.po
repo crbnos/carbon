@@ -11867,6 +11867,9 @@ msgstr "प्रत्येक अवधि को इसके अंति�
 msgid "Each period is one month, for the month rate."
 msgstr "प्रत्येक अवधि एक महीना है, मासिक दर के लिए।"
 
+msgid "Each person has their own page there. This page stays available for reference."
+msgstr ""
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "प्रत्येक भौतिक इकाई को अपनी खुद की ट्रैक की गई इकाई और अद्वितीय संख्या मिलती है — एक इकाई, एक इकाई।"
 
@@ -21944,6 +21947,9 @@ msgstr "खुली तारीख"
 
 msgid "Open Dispatches"
 msgstr "खुले रखरखाव कार्य"
+
+msgid "Open Implementation"
+msgstr ""
 
 msgid "Open in Carbon"
 msgstr "Carbon में खोलें"
@@ -36496,6 +36502,9 @@ msgstr "आपकी कंपनी"
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr "आपकी कंपनी क्रय आदेशों को अनुमोदित करने के लिए एक हस्ताक्षर की आवश्यकता है। एक को अपनी प्रोफ़ाइल में जोड़ें, फिर आदेश को अनुमोदित करें। यह आपके द्वारा अनुमोदित क्रय आदेश पर प्रिंट होता है।"
+
+msgid "Your company uses the new Implementation hub"
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "आपका कंसोल PIN"

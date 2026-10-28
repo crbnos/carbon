@@ -11861,6 +11861,9 @@ msgstr "Each period is invoiced on its last day, after the units are used."
 msgid "Each period is one month, for the month rate."
 msgstr "Each period is one month, for the month rate."
 
+msgid "Each person has their own page there. This page stays available for reference."
+msgstr "Each person has their own page there. This page stays available for reference."
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 
@@ -21936,6 +21939,9 @@ msgstr "Open Date"
 
 msgid "Open Dispatches"
 msgstr "Open Dispatches"
+
+msgid "Open Implementation"
+msgstr "Open Implementation"
 
 msgid "Open in Carbon"
 msgstr "Open in Carbon"
@@ -36489,6 +36495,9 @@ msgstr "Your company"
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
+
+msgid "Your company uses the new Implementation hub"
+msgstr "Your company uses the new Implementation hub"
 
 msgid "Your Console PIN"
 msgstr "Your Console PIN"

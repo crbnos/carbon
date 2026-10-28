@@ -11867,6 +11867,9 @@ msgstr "每个周期在其最后一天开具发票，在单位使用之后。"
 msgid "Each period is one month, for the month rate."
 msgstr "每个周期为一个月,按月费率计算。"
 
+msgid "Each person has their own page there. This page stays available for reference."
+msgstr ""
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个实体，一个件。"
 
@@ -21944,6 +21947,9 @@ msgstr "打开日期"
 
 msgid "Open Dispatches"
 msgstr "未结维护工单"
+
+msgid "Open Implementation"
+msgstr ""
 
 msgid "Open in Carbon"
 msgstr "在 Carbon 中打开"
@@ -36496,6 +36502,9 @@ msgstr "您的公司"
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr "您的公司要求签名审批采购订单。将一个添加到您的档案，然后审批订单。它将打印在您审批的采购订单上。"
+
+msgid "Your company uses the new Implementation hub"
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "您的控制台PIN"

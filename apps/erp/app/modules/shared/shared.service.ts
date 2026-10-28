@@ -2003,8 +2003,14 @@ export async function setImplementationLayout(
     .maybeSingle();
 }
 
-/** Email the company's active admins that their hub is ready. Never throws. */
-export async function notifyImplementationHubAdmins(ctx: ServiceContext) {
+/**
+ * Email the company's active admins that their hub is ready, linking to
+ * `hubPath` (the Company Plan hub unless given). Never throws.
+ */
+export async function notifyImplementationHubAdmins(
+  ctx: ServiceContext,
+  hubPath: string = path.to.getStarted
+) {
   const serviceRole = ctx.asSystem.supabase;
   const companyId = ctx.company.id;
   try {
@@ -2031,7 +2037,7 @@ export async function notifyImplementationHubAdmins(ctx: ServiceContext) {
       .in("employeeTypeId", adminTypeIds);
     if (admins.error) throw admins.error;
 
-    const hubUrl = `${ERP_URL}${path.to.getStarted}`;
+    const hubUrl = `${ERP_URL}${hubPath}`;
     for (const admin of admins.data ?? []) {
       if (!admin.email) continue;
       try {

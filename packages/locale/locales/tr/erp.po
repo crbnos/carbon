@@ -11867,6 +11867,9 @@ msgstr "Her dönem son gününde faturalandırılır, adetler kullanıldıktan s
 msgid "Each period is one month, for the month rate."
 msgstr "Her dönem bir aydır, aylık oran için."
 
+msgid "Each person has their own page there. This page stays available for reference."
+msgstr ""
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını alır — bir varlık, bir birim."
 
@@ -21944,6 +21947,9 @@ msgstr "Açılış Tarihi"
 
 msgid "Open Dispatches"
 msgstr "Açık Bakım emirleri"
+
+msgid "Open Implementation"
+msgstr ""
 
 msgid "Open in Carbon"
 msgstr "Carbon'da Aç"
@@ -36493,6 +36499,9 @@ msgstr "Şirketiniz"
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr "Şirketiniz satın alma siparişlerini onaylamak için bir imza gerektirir. Profilinize bir tane ekleyin, ardından siparişi onaylayın. Onayladığınız satın alma siparişine yazdırılır."
+
+msgid "Your company uses the new Implementation hub"
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "Konsol PIN'iniz"

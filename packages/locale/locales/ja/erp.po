@@ -11867,6 +11867,9 @@ msgstr "各期間は最後の日に請求され、個が使用された後です
 msgid "Each period is one month, for the month rate."
 msgstr "各期間は1ヶ月で、月額レートが適用されます。"
 
+msgid "Each person has their own page there. This page stays available for reference."
+msgstr ""
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理的な個が独自の追跡対象と一意番号を取得します。1 追跡対象 = 1 個。"
 
@@ -21944,6 +21947,9 @@ msgstr "開始日"
 
 msgid "Open Dispatches"
 msgstr "オープン保全指示"
+
+msgid "Open Implementation"
+msgstr ""
 
 msgid "Open in Carbon"
 msgstr "Carbonで開く"
@@ -36493,6 +36499,9 @@ msgstr "自社"
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr "企業は発注書を承認するために署名が必要です。プロフィールに署名を追加してから、注文を承認してください。承認した発注書に印刷されます。"
+
+msgid "Your company uses the new Implementation hub"
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "あなたのコンソールPIN"

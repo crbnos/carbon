@@ -38,6 +38,7 @@ import {
   useNavigate
 } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
+import { NewImplementationHubNotice } from "~/components/NewImplementationHubNotice";
 import { useUser } from "~/hooks";
 import {
   isCustomerPreview,
@@ -252,6 +253,7 @@ export default function GetStartedLayout() {
       <div ref={scrollRef} className="relative z-10 h-full overflow-y-auto">
         {isInternal ? <PreviewBar previewing={previewingAsCustomer} /> : null}
         <div className="p-8">
+          <NewImplementationHubNotice hub={loaderData.hub} />
           <HubProvider
             data={hubData}
             flags={flags}

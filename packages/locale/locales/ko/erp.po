@@ -11867,6 +11867,9 @@ msgstr "각 기간은 마지막 날에 송장이 발행되며, 단위를 사용�
 msgid "Each period is one month, for the month rate."
 msgstr "각 기간은 1개월이며, 월별 요금으로 청구됩니다."
 
+msgid "Each person has their own page there. This page stays available for reference."
+msgstr ""
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "각 물리적 개는 자신의 추적 대상과 고유 번호를 받습니다 — 하나의 추적 대상, 하나의 개."
 
@@ -21944,6 +21947,9 @@ msgstr "개설일"
 
 msgid "Open Dispatches"
 msgstr "미결 유지보수 지시"
+
+msgid "Open Implementation"
+msgstr ""
 
 msgid "Open in Carbon"
 msgstr "Carbon에서 열기"
@@ -36493,6 +36499,9 @@ msgstr "내 회사"
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr "회사는 발주서를 승인하려면 서명이 필요합니다. 프로필에 추가한 후 주문을 승인하세요. 승인한 발주서에 인쇄됩니다."
+
+msgid "Your company uses the new Implementation hub"
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "콘솔 PIN"
