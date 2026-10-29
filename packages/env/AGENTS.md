@@ -5,13 +5,15 @@ Single source of truth for all environment variable access. Validates at module 
 ## Always
 
 - Import env constants from `@carbon/env` (or `@carbon/auth` which re-exports it) — never read `process.env` directly.
-- Use `getEnv(name, { isRequired, isSecret })` for any new env var. `isSecret: true` returns `""` in browser context.
-- Add browser-safe vars to both the export AND `getBrowserEnv()` + the `Window.env` interface declaration.
-- Required vars crash at **module load** if missing — verify `.env` / `.env.local` has them before boot.
+- Declare a new variable once in `src/schema.ts` (group, description, `type`, `secret`, `browser`, `required`, `aliases`), then export it from `src/index.ts` with `getEnv("NAME")`. `secret: true` reads as `""` in the browser.
+- A `browser: true` variable must also be returned by `getBrowserEnv()` — the `satisfies` there fails typecheck until it is — AND added to each app's root-loader `env` object. The `Window.env` type is derived from the schema.
+- `validateEnv` runs once at **module load** on the server and reports every problem together (`formatReport`). `required: "error"` stops startup; `required: "warn"`, an invalid type and a half-configured feature are printed and become errors in the next release.
+- Rename a variable by adding the old name to the new one's `aliases`; keep the old export as a `@deprecated` constant.
+- Tests are not validated (`VITEST`); mock the module or stub `process.env`. `SKIP_ENV_VALIDATION=1` does the same for a script.
 
 ## Ask First
 
-- Adding new required env vars — this changes boot requirements for all environments (dev, CI, prod).
+- Adding a `required: "error"` variable, or flipping `"warn"` to `"error"` — this changes boot requirements for every deployment. the `deployments-set-required-env` check (`@carbon/checks`) must pass for each of them first.
 - Changing `getAppUrl()` / `getMESUrl()` resolution logic — affects cross-app links across all editions.
 
 ## Never
@@ -24,20 +26,31 @@ Single source of truth for all environment variable access. Validates at module 
 
 ```bash
 pnpm --filter @carbon/env typecheck
+pnpm --filter @carbon/env test
 ```
 
 ## Key Exports
 
-All from `src/index.ts` (single file):
+`src/schema.ts` declares the variables, `src/validate.ts` checks and reports them, `src/index.ts` exports the values:
 
-- **`getEnv(name, opts)`** — accessor with required/secret validation
-- **Supabase:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `SUPABASE_JWT_SECRET`
+- **`schema`, `validateEnv(source)`, `formatReport(report)`** — the declaration and the startup report
+- **`getEnv(name)`** — reads one schema variable (its own name, then its aliases)
+- **Deployment:** `APP_URL` (this app's origin; alias `VERCEL_URL`), `APP_ENV` (alias `VERCEL_ENV`, defaults to `NODE_ENV`)
+- **Database / Supabase:** `DATABASE_URL` (alias `SUPABASE_DB_URL`), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`
 - **Redis/Jobs:** `REDIS_URL`, `INNGEST_SIGNING_KEY`, `INNGEST_EVENT_KEY`
 - **Auth:** `SESSION_SECRET`, `SESSION_MAX_AGE`, `RATE_LIMIT`, `AUTH_PROVIDERS`, `isAuthProviderEnabled()`
 - **Edition:** `CarbonEdition` (Community/Cloud/Enterprise/Test), `CONTROLLED_ENVIRONMENT` (ITAR flag)
+- **Maintenance and status:** `MAINTENANCE_MODE` (every request but `/health` answers 503), `SYSTEM_STATUS_URL` (optional status/announcement document)
 - **URLs:** `getAppUrl()`, `getMESUrl()`, `getBrowserEnv()`
 - **Logging:** `LOG_LEVEL` (optional, non-secret, browser-safe — consumed by `@carbon/logger`)
-- **Integrations:** Stripe, Resend, Slack, Xero, Jira, OnShape, QuickBooks keys (all optional)
+- **Integrations:** Stripe, SMTP email, Slack, Xero, Jira, OnShape, QuickBooks keys (all optional)
+- **Web Push (`@carbon/env/push.server`, server-only — imports `node:crypto`):** `getVapidDetails()`, `isPushConfigured()`, `deriveVapidDetails(secret, appUrl)`. The VAPID pair is derived from `SESSION_SECRET` by HKDF, so there are no push env vars; keep it out of `src/index.ts`, which the browser imports.
+
+- **Feature flags (`@carbon/env/flags` + `@carbon/env/flags.server`):** spec `.ai/specs/2026-10-28-feature-flags.md`.
+  - `./flags` is browser-safe: the registry `FLAGS` (each flag's default and whether it goes to the browser), `flagDefault`, `BrowserFlagKey`. Add a flag there first; a key not in `FLAGS` is a type error. The default is the safe value: it is what an instance does with no flags source.
+  - `./flags.server`: `initFlags({ store, waitUntil, onWarning })` (called once in each app's `entry.server.tsx`), `flags.bool(key, { companyId, email? })` (never throws, default from `FLAGS`; rules match the email in lower case), `evaluateBrowserFlags` (for the layout loaders), `parseHeaders`, and the `FlagsStore` interface that `@carbon/kv`'s `redisFlagsStore` implements (this package cannot import `@carbon/kv`).
+  - `CARBON_FLAGS_ENDPOINT` (`https:` polls through Redis, `http:` only on localhost; `data:` loads once; any other scheme is refused with a warning) and `CARBON_FLAGS_HEADERS` (OTEL headers format, secret).
+  - Read flags only through `flags.*`, `evaluateBrowserFlags` and `useFeatureFlags()` (`@carbon/react`), never with an OpenFeature client: the wrapper requires `companyId` and takes each default from `FLAGS`. Flags are booleans until one needs another type.
 
 ## Cross-References
 

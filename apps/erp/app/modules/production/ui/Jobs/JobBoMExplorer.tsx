@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { HStack, Spinner, VStack } from "@carbon/react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useFetchers, useParams, useSearchParams } from "react-router";
@@ -14,7 +18,7 @@ import {
 import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
 import { path } from "~/utils/path";
-import type { JobMethod } from "../../production.service";
+import type { JobMethod } from "../../production.utils";
 import type { ItemOrderStatus } from "../../types";
 import { JobOrderStatusBadge } from "./JobOrderStatus";
 

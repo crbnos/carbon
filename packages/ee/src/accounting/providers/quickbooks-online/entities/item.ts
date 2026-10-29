@@ -1,7 +1,14 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { KyselyTx } from "@carbon/database/client";
+import { createMappingService } from "../../../core/external-mapping";
 import { JournalEntrySyncError } from "../../../core/posting";
 import type { Accounting } from "../../../core/types";
+import { withTriggersDisabled } from "../../../core/utils";
 import type { Qbo, QboCreatePayload } from "../models";
+import { isQboDuplicateNameError } from "../provider";
 import {
   escapeQboQueryValue,
   loadQboAccountRefsById,
@@ -143,6 +150,150 @@ export function mapItemToQboItem(args: {
 }
 
 export class QboItemSyncer extends QboEntitySyncer<Accounting.Item, Qbo.Item> {
+  private helperItems = new Map<string, Promise<string>>();
+
+  /**
+   * A QBO Service item that stands for a REVENUE ACCOUNT, not a Carbon item.
+   *
+   * A QBO invoice revenue line is `SalesItemLineDetail` and an item's account is
+   * the item's own config — there is no per-line GL override — so an invoice
+   * cannot direct revenue without an item. Referencing the real Carbon item
+   * meant mirroring the manufacturing parts catalog into Products & Services,
+   * and it bought nothing: Carbon has no per-item revenue account
+   * (`post-sales-invoice` credits `accountDefault.salesAccount` for ALL
+   * merchandise). One item per revenue account reproduces the same GL exactly —
+   * two items per company instead of thousands.
+   */
+  public ensureShippingItem(args: {
+    shippingAccountId: string;
+  }): Promise<string> {
+    return this.ensureHelperItem("shipping", args.shippingAccountId);
+  }
+
+  public ensureSalesItem(args: { revenueAccountId: string }): Promise<string> {
+    return this.ensureHelperItem("sales", args.revenueAccountId);
+  }
+
+  private async ensureHelperItem(
+    kind: "shipping" | "sales",
+    revenueAccountId: string
+  ): Promise<string> {
+    const cacheKey = `${kind}:${revenueAccountId}`;
+    let pending = this.helperItems.get(cacheKey);
+    if (!pending) {
+      pending = this.resolveHelperItem(kind, revenueAccountId).catch(
+        (error) => {
+          this.helperItems.delete(cacheKey);
+          throw error;
+        }
+      );
+      this.helperItems.set(cacheKey, pending);
+    }
+    return pending;
+  }
+
+  private async resolveHelperItem(
+    kind: "shipping" | "sales",
+    shippingAccountId: string
+  ): Promise<string> {
+    const shipping = kind === "shipping";
+    const label = shipping ? "Shipping" : "Sales";
+    const description = shipping ? "Customer shipping charges" : "Sales";
+    const incomeRef = (await this.getAccountRefsById()).get(shippingAccountId);
+    const fail = (reason: string): never => {
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        message: `Cannot provision ${label} Revenue item: ${reason}`,
+        metadata: { accountId: shippingAccountId, kind }
+      });
+    };
+    if (!incomeRef) fail(`the ${kind} account has no QuickBooks mapping`);
+    const name = `Carbon ${label} ${shippingAccountId}`;
+    if (name.length > QBO_NAME_MAX_LENGTH)
+      throw qboNameTooLongError({ entityLabel: `${kind} item`, name });
+    const payload: QboCreatePayload<Qbo.Item> = {
+      Name: name,
+      Description: description,
+      Type: "Service",
+      Active: true,
+      UnitPrice: 0,
+      IncomeAccountRef: incomeRef
+    };
+    const compatible = (item: Qbo.Item, requireAccount = true) => {
+      if (
+        item.Name !== name ||
+        item.Type !== "Service" ||
+        item.Active === false ||
+        (requireAccount && item.IncomeAccountRef?.value !== incomeRef!.value)
+      ) {
+        fail(
+          "an existing helper has an incompatible name, type, active state or revenue account"
+        );
+      }
+      return item;
+    };
+    const mappingEntityType = shipping ? "shippingItem" : "salesItem";
+    const mappedId = await this.mappingService.getExternalId(
+      mappingEntityType,
+      shippingAccountId,
+      this.provider.id
+    );
+    if (mappedId) {
+      const current = await this.qboProvider.getItem(mappedId);
+      if (!current) fail("the mapped helper no longer exists in QuickBooks");
+      compatible(current!, false);
+      if (
+        current!.IncomeAccountRef?.value !== incomeRef!.value ||
+        current!.UnitPrice !== 0
+      ) {
+        // Only an explicitly owned mapping may be reconverged. An unowned name
+        // match below is validated and never overwritten.
+        const updated = await updateWithSyncTokenRetry({
+          entityLabel: `${kind} item`,
+          remoteId: mappedId,
+          fetchCurrent: () => this.qboProvider.getItem(mappedId),
+          update: (syncToken) =>
+            this.qboProvider.updateItem({
+              ...payload,
+              Id: mappedId,
+              SyncToken: syncToken
+            })
+        });
+        return compatible(updated).Id;
+      }
+      return current!.Id;
+    }
+    const lookup = async () => {
+      const matches = await this.qboProvider.query<Qbo.Item>(
+        "Item",
+        `Name = '${escapeQboQueryValue(name)}'`
+      );
+      if (matches.length > 1) fail("the exact remote helper name is ambiguous");
+      return matches[0] ? compatible(matches[0]) : undefined;
+    };
+    let remote = await lookup();
+    if (!remote) {
+      try {
+        remote = compatible(await this.qboProvider.createItem(payload));
+      } catch (error) {
+        if (!isQboDuplicateNameError(error)) throw error;
+        remote = await lookup();
+        if (!remote) throw error;
+      }
+    }
+    await withTriggersDisabled(this.database, async (tx) => {
+      await createMappingService(tx, this.companyId).link(
+        mappingEntityType,
+        shippingAccountId,
+        this.provider.id,
+        remote!.Id,
+        { metadata: { accountId: shippingAccountId, kind } }
+      );
+    });
+    return remote.Id;
+  }
+
   // Cached per instance — a drain reuses one syncer across its claimed
   // operations, so mappings and account defaults are fetched at most once
   private accountRefsByIdPromise?: Promise<Map<string, Qbo.Ref>>;

@@ -1,8 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ColumnDef } from "@tanstack/react-table";
 import { describe, expect, it } from "vitest";
 import {
   buildColumnMaps,
   exportOnlyColumn,
+  hasUniqueRowIds,
+  isServerSortable,
   selectExportColumns
 } from "./utils";
 
@@ -13,34 +19,37 @@ type Row = {
   tags: string[];
 };
 
-const upper = (value: string) => value.toUpperCase();
-
 const cols = (...columns: ColumnDef<Row, unknown>[]) => columns;
 
 describe("buildColumnMaps", () => {
   it("keeps today's behavior: accessorKey + string header -> accessors + sortKey", () => {
     const { accessors, exportValues, sortKeyToLabel } = buildColumnMaps(
-      cols({ accessorKey: "type", header: "Type" }),
-      upper
+      cols({ accessorKey: "type", header: "Type" })
     );
-    expect(accessors).toEqual({ type: "TYPE" });
+    expect(accessors).toEqual({ type: "Type" });
     expect(exportValues).toEqual({});
-    expect(sortKeyToLabel).toEqual({ type: "TYPE" });
+    expect(sortKeyToLabel).toEqual({ type: "Type" });
   });
 
   it("throws when an accessorKey contains an underscore", () => {
     expect(() =>
-      buildColumnMaps(cols({ accessorKey: "a_b", header: "X" }), upper)
+      buildColumnMaps(cols({ accessorKey: "a_b", header: "X" }))
     ).toThrow(/Cannot contain '_'/);
+  });
+
+  it("allows an underscore in a custom-field accessor (generated id)", () => {
+    const { accessors } = buildColumnMaps(
+      cols({ accessorKey: "customFields->>qzAx_-vk3", header: "Color" })
+    );
+    expect(accessors).toEqual({ "customFields->>qzAx_-vk3": "Color" });
   });
 
   it("includes a display column (id, no accessor) that has exportValue", () => {
     const exportValue = (row: Row) => row.tags.join(", ");
     const { accessors, exportValues, sortKeyToLabel } = buildColumnMaps(
-      cols({ id: "labels", header: "Labels", meta: { exportValue } }),
-      upper
+      cols({ id: "labels", header: "Labels", meta: { exportValue } })
     );
-    expect(accessors).toEqual({ labels: "LABELS" });
+    expect(accessors).toEqual({ labels: "Labels" });
     expect(exportValues.labels).toBe(exportValue);
     // a display column is not sortable on the server
     expect(sortKeyToLabel).toEqual({});
@@ -53,10 +62,9 @@ describe("buildColumnMaps", () => {
         id: "week1",
         header: () => null,
         meta: { filterHeader: "Week 1", exportValue }
-      }),
-      upper
+      })
     );
-    expect(accessors).toEqual({ week1: "WEEK 1" });
+    expect(accessors).toEqual({ week1: "Week 1" });
     // JSX-header columns never enter the sort picker
     expect(sortKeyToLabel).toEqual({});
   });
@@ -68,18 +76,16 @@ describe("buildColumnMaps", () => {
         accessorKey: "type",
         header: "",
         meta: { filterHeader: "Unit of Measure", exportValue }
-      }),
-      upper
+      })
     );
-    expect(accessors).toEqual({ type: "UNIT OF MEASURE" });
+    expect(accessors).toEqual({ type: "Unit of Measure" });
     // an empty string header still yields a (blank) sort-picker label, unchanged
     expect(sortKeyToLabel).toEqual({ type: "" });
   });
 
   it("ignores a JSX-header column with no exportValue and no filterHeader", () => {
     const { accessors, exportValues, sortKeyToLabel } = buildColumnMaps(
-      cols({ id: "week1", header: () => null }),
-      upper
+      cols({ id: "week1", header: () => null })
     );
     expect(accessors).toEqual({});
     expect(exportValues).toEqual({});
@@ -93,13 +99,72 @@ describe("buildColumnMaps", () => {
         accessorKey: "supplierTypeId",
         header: "Type",
         meta: { sortBy: "type", exportValue }
-      }),
-      upper
+      })
     );
     // value + filter stay on the id; export + sort move to the name
-    expect(accessors).toEqual({ supplierTypeId: "TYPE" });
+    expect(accessors).toEqual({ supplierTypeId: "Type" });
     expect(exportValues.supplierTypeId).toBe(exportValue);
-    expect(sortKeyToLabel).toEqual({ type: "TYPE" });
+    expect(sortKeyToLabel).toEqual({ type: "Type" });
+  });
+
+  it("leaves a sort on another table's column out of the sort picker", () => {
+    const { accessors, sortKeyToLabel } = buildColumnMaps(
+      cols(
+        { accessorKey: "customer.name", header: "Customer" },
+        {
+          accessorKey: "supplierTypeId",
+          header: "Type",
+          meta: { sortBy: "supplierType.name" }
+        },
+        { accessorKey: "type", header: "Kind" }
+      )
+    );
+    // the columns still export
+    expect(accessors).toEqual({
+      "customer.name": "Customer",
+      supplierTypeId: "Type",
+      type: "Kind"
+    });
+    expect(sortKeyToLabel).toEqual({ type: "Kind" });
+  });
+
+  it("leaves an enableSorting: false column out of the sort picker", () => {
+    const { accessors, sortKeyToLabel } = buildColumnMaps(
+      cols({ accessorKey: "type", header: "Type", enableSorting: false })
+    );
+    expect(accessors).toEqual({ type: "Type" });
+    expect(sortKeyToLabel).toEqual({});
+  });
+});
+
+describe("isServerSortable", () => {
+  it("is true for a plain accessor column", () => {
+    expect(isServerSortable<Row>({ accessorKey: "type", header: "Type" })).toBe(
+      true
+    );
+  });
+
+  it("is false for a display column, a dotted sort key and enableSorting: false", () => {
+    expect(isServerSortable<Row>({ id: "labels", header: "Labels" })).toBe(
+      false
+    );
+    expect(
+      isServerSortable<Row>({ accessorKey: "customer.id", header: "Customer" })
+    ).toBe(false);
+    expect(
+      isServerSortable<Row>({
+        accessorKey: "supplierTypeId",
+        header: "Type",
+        meta: { sortBy: "supplierType.name" }
+      })
+    ).toBe(false);
+    expect(
+      isServerSortable<Row>({
+        accessorKey: "type",
+        header: "Type",
+        enableSorting: false
+      })
+    ).toBe(false);
   });
 });
 
@@ -113,9 +178,9 @@ describe("exportOnlyColumn", () => {
     });
 
     const { accessors, exportValues, sortKeyToLabel, exportOnlyColumns } =
-      buildColumnMaps(cols(column), upper);
+      buildColumnMaps(cols(column));
 
-    expect(accessors).toEqual({ itemName: "ITEM NAME" });
+    expect(accessors).toEqual({ itemName: "Item Name" });
     expect(exportValues.itemName).toBe(value);
     expect(exportOnlyColumns).toEqual(["itemName"]);
     // no accessorKey, so it can never reach the server-sort picker
@@ -169,5 +234,27 @@ describe("selectExportColumns", () => {
         exportOnlyColumns: []
       })
     ).toEqual(["type"]);
+  });
+});
+
+describe("hasUniqueRowIds", () => {
+  it("is true when every row has its own id", () => {
+    expect(hasUniqueRowIds([{ id: "a" }, { id: "b" }, { id: 3 }])).toBe(true);
+    expect(hasUniqueRowIds([])).toBe(true);
+  });
+
+  it("is false when an id repeats, is missing or is null", () => {
+    expect(hasUniqueRowIds([{ id: "a" }, { id: "a" }])).toBe(false);
+    expect(hasUniqueRowIds([{ id: "a" }, { name: "b" }])).toBe(false);
+    expect(hasUniqueRowIds([{ id: null }])).toBe(false);
+  });
+
+  it("reads another id column", () => {
+    expect(hasUniqueRowIds([{ itemId: "a" }, { itemId: "b" }], "itemId")).toBe(
+      true
+    );
+    expect(hasUniqueRowIds([{ itemId: "a" }, { itemId: "a" }], "itemId")).toBe(
+      false
+    );
   });
 });

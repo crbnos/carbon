@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { TiptapText } from "@carbon/files/markdown";
 import { Mention } from "@carbon/tiptap";
 import TextStyle from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
@@ -5,18 +10,32 @@ import type { JSONContent } from "@tiptap/react";
 import { generateHTML as DefaultGenerateHTML } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import pkg from "dompurify";
+import type { ReactNode } from "react";
 import { defaultExtensions } from "./Editor/extensions";
+import { useHydrated } from "./hooks";
+import { cn } from "./utils/cn";
 
 const { sanitize } = pkg;
+
+// Rows written before the API stored documents can hold a JSON string scalar.
+// `"type" in "text"` throws and crashes the page, so read strings as documents.
+// Objects pass as they are: `isRichTextEmpty` walks child nodes through here.
+const toRichTextDoc = (content: unknown): JSONContent | null =>
+  typeof content === "string"
+    ? content.trim()
+      ? TiptapText(content).toDocument()
+      : null
+    : ((content as JSONContent | null | undefined) ?? null);
 
 const generateHTML = (content: JSONContent) => {
   if (typeof window === "undefined") {
     return "";
   }
-  if (!content || !("type" in content)) {
+  const doc = toRichTextDoc(content);
+  if (!doc || !("type" in doc)) {
     return "";
   }
-  const raw = DefaultGenerateHTML(content, [
+  const raw = DefaultGenerateHTML(doc, [
     ...defaultExtensions,
     TextStyle,
     StarterKit,
@@ -48,4 +67,64 @@ const HTML = ({ text }: HTMLProps) => {
   );
 };
 
-export { generateHTML, HTML };
+// Nodes that only hold other nodes: empty unless something inside is not.
+const CONTAINER_NODES = new Set([
+  "doc",
+  "paragraph",
+  "heading",
+  "hardBreak",
+  "bulletList",
+  "orderedList",
+  "listItem",
+  "blockquote"
+]);
+
+/**
+ * True when rich text holds nothing to show: no text, image, mention or
+ * other leaf. Reads the JSON, not the HTML, so the server (where
+ * `generateHTML` returns "") agrees with the browser.
+ */
+const isRichTextEmpty = (value?: JSONContent | null): boolean => {
+  const content = toRichTextDoc(value);
+  if (!content) return true;
+  if (content.type === "text") return !content.text?.trim();
+  if (content.type && !CONTAINER_NODES.has(content.type)) return false;
+  return (content.content ?? []).every(isRichTextEmpty);
+};
+
+/**
+ * Read-only rich text (notes on a locked document). Phones show `empty` when
+ * there is nothing, so the card does not read as broken; desktop keeps the
+ * blank body it always had.
+ */
+const RichTextView = ({
+  content,
+  empty,
+  className
+}: {
+  content?: JSONContent | null;
+  empty: ReactNode;
+  className?: string;
+}) => {
+  // The server sends the body empty (`generateHTML` needs the DOM), and
+  // hydration keeps a server `dangerouslySetInnerHTML` as it is, so the HTML
+  // is set only once the page has hydrated.
+  const hydrated = useHydrated();
+  if (isRichTextEmpty(content)) {
+    return (
+      <p className="hidden text-sm text-muted-foreground max-md:block">
+        {empty}
+      </p>
+    );
+  }
+  return (
+    <div
+      className={cn("prose dark:prose-invert", className)}
+      dangerouslySetInnerHTML={{
+        __html: hydrated ? generateHTML(content as JSONContent) : ""
+      }}
+    />
+  );
+};
+
+export { generateHTML, HTML, isRichTextEmpty, RichTextView };

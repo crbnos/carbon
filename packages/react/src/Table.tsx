@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from "react";
 import { forwardRef } from "react";
 
@@ -17,7 +21,7 @@ const Table = forwardRef<
     </div>
   ) : (
     <div className="rounded-md w-full overflow-hidden">
-      <div className="relative w-full overflow-auto">
+      <div className="relative w-full overflow-auto max-md:scroll-fade-x">
         <table
           ref={ref}
           className={cn("w-full caption-bottom text-sm", className)}

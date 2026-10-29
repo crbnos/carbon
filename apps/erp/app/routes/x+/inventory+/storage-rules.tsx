@@ -1,17 +1,24 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
+import StorageRulesGroups from "~/modules/inventory/ui/StorageRules/StorageRulesGroups";
+import StorageRulesUpgradeOverlay from "~/modules/inventory/ui/StorageRules/StorageRulesUpgradeOverlay";
 import {
-  getRuleAssignmentCounts,
-  getStorageRules
-} from "~/modules/storage-rules";
-import StorageRulesGroups from "~/modules/storage-rules/ui/StorageRulesGroups";
-import StorageRulesUpgradeOverlay from "~/modules/storage-rules/ui/StorageRulesUpgradeOverlay";
+  getEnforcementRuleAssignmentCounts,
+  getEnforcementRules
+} from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -25,9 +32,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     role: "employee"
   });
 
-  const rules = await getStorageRules(client, companyId, {
+  const rules = await getEnforcementRules(client, "storage", companyId, {
     search: null,
-    limit: 1000,
+    limit: SINGLE_LOAD_LIMIT,
     offset: 0,
     sorts: []
   });
@@ -40,7 +47,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const ids = (rules.data ?? []).map((r) => r.id);
-  const counts = await getRuleAssignmentCounts(client, ids);
+  const counts = await getEnforcementRuleAssignmentCounts(client, ids);
 
   const countsData = (counts.data ?? {}) as Record<string, number>;
   const rows = (rules.data ?? []).map((r) => ({
@@ -62,7 +69,7 @@ export default function StorageRulesRoute() {
   return (
     <>
       <StorageRulesGroups rules={rows as never} />
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

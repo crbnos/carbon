@@ -1,10 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import type { ReactElement } from "react";
-import { forwardRef, isValidElement } from "react";
-
+import {
+  createContext,
+  forwardRef,
+  isValidElement,
+  useContext,
+  useEffect,
+  useId,
+  useState
+} from "react";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
 /**
  * Base UI Tooltip wrapped to preserve the Radix-compatible API the codebase
@@ -20,13 +32,18 @@ import { cn } from "./utils/cn";
  * Provider whose `delay` defaults to 0 to keep the original snappy behavior.
  */
 
+const DEFAULT_DELAY = 50;
+
 type ProviderProps = TooltipPrimitive.Provider.Props & {
   /** Radix-compat alias for Base UI's `delay`. */
   delayDuration?: number;
 };
 
 const TooltipProvider = ({ delayDuration, delay, ...props }: ProviderProps) => (
-  <TooltipPrimitive.Provider delay={delay ?? delayDuration ?? 0} {...props} />
+  <TooltipPrimitive.Provider
+    delay={delay ?? delayDuration ?? DEFAULT_DELAY}
+    {...props}
+  />
 );
 TooltipProvider.displayName = "TooltipProvider";
 
@@ -35,11 +52,71 @@ type RootProps = TooltipPrimitive.Root.Props & {
   delayDuration?: number;
 };
 
-const Tooltip = ({ delayDuration = 50, ...props }: RootProps) => (
-  <TooltipPrimitive.Provider delay={delayDuration}>
+/**
+ * Phones cannot hover. On compact an uncontrolled tooltip opens on tap
+ * instead, but only when the tap does not land on a control the trigger wraps,
+ * so icons, badges and ⓘ reveal their text while buttons and links keep doing
+ * their job and keep their aria-label. Desktop is unchanged.
+ */
+const TapToggleContext = createContext<{
+  id: string;
+  toggle: () => void;
+} | null>(null);
+
+const INTERACTIVE =
+  'a[href],button,input,select,textarea,[role="button"],[role="link"],[role="menuitem"],[role="checkbox"],[role="switch"],[role="tab"],[role="combobox"]';
+
+const TapToggleRoot = ({
+  onOpenChange,
+  ...props
+}: TooltipPrimitive.Root.Props) => {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      if (!target?.closest?.(`[data-tooltip-tap="${id}"]`)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [id, open]);
+
+  return (
+    <TapToggleContext.Provider value={{ id, toggle: () => setOpen((o) => !o) }}>
+      <TooltipPrimitive.Root
+        {...props}
+        open={open}
+        onOpenChange={(next, ...rest) => {
+          // Only a tap opens it; dismissals (Escape, blur) still close it.
+          if (!next) setOpen(false);
+          onOpenChange?.(next, ...rest);
+        }}
+      />
+    </TapToggleContext.Provider>
+  );
+};
+
+const TooltipRoot = (props: TooltipPrimitive.Root.Props) => {
+  const { isPhone } = useViewport();
+  return isPhone && props.open === undefined ? (
+    <TapToggleRoot {...props} />
+  ) : (
     <TooltipPrimitive.Root {...props} />
-  </TooltipPrimitive.Provider>
-);
+  );
+};
+
+// Without its own delay a tooltip joins the surrounding provider, so once one is
+// open its neighbours open at once instead of each waiting out the delay again.
+const Tooltip = ({ delayDuration, ...props }: RootProps) =>
+  delayDuration === undefined ? (
+    <TooltipRoot {...props} />
+  ) : (
+    <TooltipPrimitive.Provider delay={delayDuration}>
+      <TooltipRoot {...props} />
+    </TooltipPrimitive.Provider>
+  );
 Tooltip.displayName = "Tooltip";
 
 type TriggerProps = TooltipPrimitive.Trigger.Props & {
@@ -48,7 +125,25 @@ type TriggerProps = TooltipPrimitive.Trigger.Props & {
 };
 
 const TooltipTrigger = forwardRef<HTMLButtonElement, TriggerProps>(
-  ({ asChild, children, ...props }, ref) => {
+  ({ asChild, children, ...rest }, ref) => {
+    const tap = useContext(TapToggleContext);
+    const props = tap
+      ? {
+          ...rest,
+          "data-tooltip-tap": tap.id,
+          onClick: (
+            event: Parameters<NonNullable<TriggerProps["onClick"]>>[0]
+          ) => {
+            rest.onClick?.(event);
+            const hit = (event.target as Element).closest(INTERACTIVE);
+            // Base UI's own trigger button (no asChild) is not a wrapped control.
+            const isOwnButton = !asChild && hit === event.currentTarget;
+            if (hit && !isOwnButton && event.currentTarget.contains(hit))
+              return;
+            tap.toggle();
+          }
+        }
+      : rest;
     if (asChild && isValidElement(children)) {
       return (
         <TooltipPrimitive.Trigger
@@ -67,10 +162,15 @@ const TooltipTrigger = forwardRef<HTMLButtonElement, TriggerProps>(
 );
 TooltipTrigger.displayName = "TooltipTrigger";
 
+/**
+ * `anchor` positions the popup against a different element than the trigger.
+ * Use it when one tooltip serves many small hover targets inside its trigger
+ * (a strip of bars): the content follows the hovered target, not the strip.
+ */
 type ContentProps = TooltipPrimitive.Popup.Props &
   Pick<
     TooltipPrimitive.Positioner.Props,
-    "side" | "sideOffset" | "align" | "alignOffset"
+    "side" | "sideOffset" | "align" | "alignOffset" | "anchor"
   > & {
     /**
      * Portal to `document.body` and paint above other overlays. Opt in only for a
@@ -111,37 +211,50 @@ const TooltipContent = forwardRef<HTMLDivElement, ContentProps>(
       sideOffset = 4,
       align = "center",
       alignOffset = 0,
+      anchor,
       elevated = false,
       ...props
     },
     ref
-  ) => (
-    <TooltipPrimitive.Portal
-      container={
-        elevated && typeof document !== "undefined" ? document.body : undefined
-      }
-    >
-      <TooltipPrimitive.Positioner
-        side={side}
-        sideOffset={sideOffset}
-        align={align}
-        alignOffset={alignOffset}
-        className={elevated ? "z-[9999]" : "z-50"}
+  ) => {
+    // Phones have no hover: a tooltip shows only when tapped open (see
+    // TapToggleRoot); controlled tooltips stay hidden.
+    const { isPhone } = useViewport();
+    const tap = useContext(TapToggleContext);
+    if (isPhone && !tap) return null;
+    return (
+      <TooltipPrimitive.Portal
+        container={
+          elevated && typeof document !== "undefined"
+            ? document.body
+            : undefined
+        }
       >
-        <TooltipPrimitive.Popup
-          ref={ref}
-          className={cn(
-            "z-50 w-fit max-w-xs overflow-hidden rounded-md border border-border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md",
-            "origin-[var(--transform-origin)] transition-[transform,opacity] duration-150",
-            "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
-            "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
-            className
-          )}
-          {...props}
-        />
-      </TooltipPrimitive.Positioner>
-    </TooltipPrimitive.Portal>
-  )
+        <TooltipPrimitive.Positioner
+          side={side}
+          sideOffset={sideOffset}
+          align={align}
+          alignOffset={alignOffset}
+          anchor={anchor}
+          className={elevated ? "z-[9999]" : "z-50"}
+        >
+          <TooltipPrimitive.Popup
+            ref={ref}
+            data-tooltip-tap={tap?.id}
+            className={cn(
+              "z-50 w-fit max-w-xs overflow-hidden rounded-md border border-border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md",
+              "origin-[var(--transform-origin)] transition-[transform,opacity] duration-150",
+              "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
+              "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
+              "max-md:max-w-[calc(100vw-32px)] max-md:text-[15px]",
+              className
+            )}
+            {...props}
+          />
+        </TooltipPrimitive.Positioner>
+      </TooltipPrimitive.Portal>
+    );
+  }
 );
 TooltipContent.displayName = "TooltipContent";
 

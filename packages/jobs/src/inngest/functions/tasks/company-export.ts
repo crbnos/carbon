@@ -1,7 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
+import { listBucketFilesRecursive } from "../../../backups/storage";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";
 import { inngest } from "../../client";
 import type { Manifest } from "./company-backup";
@@ -22,7 +29,6 @@ import {
   mapWithConcurrency,
   type ScopeExclusions,
   type ScopeViolation,
-  STORAGE_BUCKET,
   selectExportableTables,
   serializeTable,
   writeBackupManifest
@@ -242,7 +248,7 @@ export async function buildCompanyBackup(
     let totalBytes = 0;
     const paths = await listBucketFilesRecursive(
       client,
-      STORAGE_BUCKET,
+      getCompanyPrivateBucket(companyId),
       companyId
     );
     for (const file of paths) {
@@ -354,9 +360,11 @@ export const companyExportFunction = inngest.createFunction(
     const { companyId, userId, label, includeStorage, skipCorrupted } =
       event.data;
 
+    await requireBackupsEntitlement(companyId);
+
     return await step.run("export-company", async () => {
       const client = getCarbonServiceRole();
-      const db = getJobDatabaseClient(TABLE_CONCURRENCY);
+      const db = getJobDatabaseClient();
 
       // Live-progress marker (cleared on success, flipped to "failed" on error).
       // Throttled so a fast parallel dump doesn't hammer the row.
@@ -404,6 +412,7 @@ export const companyExportFunction = inngest.createFunction(
         const assets = await copyAssetsToBackup(
           client,
           {
+            companyId,
             sourcePaths: assetSourcePaths,
             destBucket: companyId,
             destPrefix: backupAssetsDir(name)
@@ -457,29 +466,3 @@ export const companyExportFunction = inngest.createFunction(
     });
   }
 );
-
-async function listBucketFilesRecursive(
-  client: ServiceRole,
-  bucket: string,
-  prefix = ""
-): Promise<Array<{ path: string; size: number }>> {
-  const files: Array<{ path: string; size: number }> = [];
-  const { data, error } = await client.storage.from(bucket).list(prefix, {
-    limit: 1000
-  });
-  if (error || !data) return files;
-
-  for (const entry of data) {
-    const path = prefix ? `${prefix}/${entry.name}` : entry.name;
-    if (entry.id === null) {
-      // folder
-      files.push(...(await listBucketFilesRecursive(client, bucket, path)));
-    } else {
-      files.push({
-        path,
-        size: (entry.metadata as { size?: number } | null)?.size ?? 0
-      });
-    }
-  }
-  return files;
-}

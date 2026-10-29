@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -5,10 +9,12 @@ import { validationError, validator } from "@carbon/form";
 import {
   Badge,
   cn,
+  Heading,
   IconButton,
   Input,
   InputGroup,
   InputLeftElement,
+  PrefetchLink,
   Subheading
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -20,9 +26,11 @@ import {
   LuArrowUpDown,
   LuBanknote,
   LuBookmark,
+  LuBookOpen,
   LuBoxes,
   LuBriefcase,
   LuFileSpreadsheet,
+  LuGauge,
   LuHandCoins,
   LuPin,
   LuRecycle,
@@ -38,14 +46,14 @@ import type {
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import { data, Link, useFetcher, useLoaderData } from "react-router";
+import { data, useFetcher, useLoaderData } from "react-router";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import { reportPinValidator } from "~/modules/accounting/accounting.models";
 import {
   getReportPins,
   getReportViews,
-  reportPinValidator,
   upsertReportPin
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -176,11 +184,47 @@ export default function ReportsIndexRoute() {
         defaultPinned: true
       },
       {
+        key: "general-ledger",
+        name: t`General Ledger`,
+        description: t`Every posted journal line in a period`,
+        to: path.to.generalLedger,
+        icon: LuBookOpen,
+        category: t`Close Reports`,
+        defaultPinned: false
+      },
+      {
         key: "inventory-valuation",
         name: t`Inventory Valuation`,
         description: t`On-hand value by location or item, with GL tie-out`,
         to: path.to.inventoryValuation,
         icon: LuBoxes,
+        category: t`Close Reports`,
+        defaultPinned: false
+      },
+      {
+        key: "revenue-waterfall",
+        name: t`Deferred Revenue Waterfall`,
+        description: t`When deferred, accrued and lease-interest revenue will be recognized`,
+        to: path.to.revenueWaterfall,
+        icon: LuFileSpreadsheet,
+        category: t`Close Reports`,
+        defaultPinned: false
+      },
+      {
+        key: "lease-net-investment",
+        name: t`Net Investment in Leases`,
+        description: t`Sales-type lease balances, the next interest and payments due by fiscal year`,
+        to: path.to.leaseNetInvestment,
+        icon: LuScale,
+        category: t`Close Reports`,
+        defaultPinned: false
+      },
+      {
+        key: "lease-liabilities",
+        name: t`Lease Liabilities`,
+        description: t`Lessee lease balances, maturity analysis and lease cost`,
+        to: path.to.leaseLiabilities,
+        icon: LuScale,
         category: t`Close Reports`,
         defaultPinned: false
       },
@@ -226,6 +270,15 @@ export default function ReportsIndexRoute() {
         description: t`What drove inventory up or down, by any dimension`,
         to: path.to.analyticsReport("inventory-change"),
         icon: LuArrowUpDown,
+        category: t`Analytics`,
+        defaultPinned: false
+      },
+      {
+        key: "rental-utilization",
+        name: t`Rental Utilization`,
+        description: t`Time and dollar utilization of the rental fleet by asset and class`,
+        to: path.to.rentalUtilization,
+        icon: LuGauge,
         category: t`Analytics`,
         defaultPinned: false
       },
@@ -320,12 +373,13 @@ export default function ReportsIndexRoute() {
 
   return (
     <div className="h-[calc(100dvh-var(--header-height))] w-full overflow-y-auto bg-card">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-8">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-8 max-md:gap-6 max-md:p-4">
+        {/* Phones: the app bar already titles the page. */}
+        <div className="flex items-center justify-between gap-4 max-md:[&>h1]:hidden">
+          <Heading as="h1" size="h1">
             <Trans>Reporting</Trans>
-          </h1>
-          <InputGroup size="sm" className="w-64">
+          </Heading>
+          <InputGroup size="sm" className="w-64 max-md:w-full">
             <InputLeftElement>
               <LuSearch className="h-4 w-4 text-muted-foreground" />
             </InputLeftElement>
@@ -384,17 +438,18 @@ export default function ReportsIndexRoute() {
                 <SectionHeading>{category}</SectionHeading>
                 <div className="overflow-hidden rounded-lg border border-border">
                   {categoryReports.map((report, index) => (
-                    <Link
+                    <PrefetchLink
                       key={report.key}
                       to={report.to}
-                      prefetch="intent"
                       className={
                         "flex cursor-pointer items-center gap-3 bg-card/70 px-4 py-2.5 transition-colors hover:bg-accent/40" +
                         (index > 0 ? " border-t border-border" : "")
                       }
                     >
                       <report.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="text-sm font-medium">{report.name}</span>
+                      <span className="text-sm font-medium max-md:shrink-0 max-md:whitespace-nowrap">
+                        {report.name}
+                      </span>
                       <span className="truncate text-sm text-muted-foreground">
                         {report.description}
                       </span>
@@ -406,7 +461,7 @@ export default function ReportsIndexRoute() {
                           pinLabel={t`Pin ${report.name}`}
                         />
                       </span>
-                    </Link>
+                    </PrefetchLink>
                   ))}
                 </div>
               </div>
@@ -418,10 +473,9 @@ export default function ReportsIndexRoute() {
                   </SectionHeading>
                   <div className="overflow-hidden rounded-lg border border-border">
                     {categoryViews.map((view, index) => (
-                      <Link
+                      <PrefetchLink
                         key={view.id}
                         to={`${path.to.analyticsReport(view.reportKey)}?view=${view.id}`}
-                        prefetch="intent"
                         className={
                           "flex cursor-pointer items-center gap-3 bg-card/70 px-4 py-2.5 transition-colors hover:bg-accent/40" +
                           (index > 0 ? " border-t border-border" : "")
@@ -463,7 +517,7 @@ export default function ReportsIndexRoute() {
                             />
                           )}
                         </span>
-                      </Link>
+                      </PrefetchLink>
                     ))}
                   </div>
                 </div>
@@ -509,9 +563,8 @@ const PinnedCard = ({
   pinLabel: string;
   unpinLabel: string;
 }) => (
-  <Link
+  <PrefetchLink
     to={to}
-    prefetch="intent"
     className="group flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-border bg-card/70 p-4 backdrop-blur-md transition-colors duration-200 hover:border-foreground/20 hover:bg-accent/40"
   >
     <span className="flex items-center gap-3 overflow-hidden">
@@ -528,7 +581,7 @@ const PinnedCard = ({
       pinLabel={pinLabel}
       unpinLabel={unpinLabel}
     />
-  </Link>
+  </PrefetchLink>
 );
 
 // Sits inside the card/row Link, so it must not trigger navigation. Pinned

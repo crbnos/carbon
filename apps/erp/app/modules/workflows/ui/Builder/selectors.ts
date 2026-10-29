@@ -1,4 +1,8 @@
-import { REFERENCE_ISSUE_CODES } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { REFERENCE_ISSUE_CODES } from "@carbon/ee/workflows";
 import type { BuilderState } from "./store";
 
 // Primitives and stable references only: `nodes` is replaced on every drag frame,

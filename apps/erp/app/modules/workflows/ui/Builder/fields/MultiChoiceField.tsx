@@ -1,6 +1,10 @@
-import type { TermId } from "@carbon/glossary";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
+import type { ValueOrRef, ValueType } from "@carbon/ee/workflows";
 import { ChoiceSelect, type ChoiceSelectOption } from "@carbon/react";
-import type { ValueOrRef, ValueType } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
 import { Field } from "./Field";
 import { choiceState, writeChoices } from "./multiChoice";
@@ -10,6 +14,9 @@ export type MultiChoiceFieldProps = {
   type: ValueType;
   required?: boolean;
   helpTermId?: TermId;
+  help?: string;
+  /** Advisory one-liner, muted, under the control. */
+  hint?: string;
   /** Titles, descriptions and per-option availability, in the order to offer them. */
   options: ChoiceSelectOption[];
   /** Always ticked and never togglable, whatever is stored — a channel the platform
@@ -31,6 +38,8 @@ export function MultiChoiceField({
   type,
   required,
   helpTermId,
+  help,
+  hint,
   options,
   locked,
   value,
@@ -51,7 +60,9 @@ export function MultiChoiceField({
       label={label}
       required={required}
       helpTermId={helpTermId}
+      help={help}
       issue={issue}
+      hint={hint}
     >
       <div className="min-w-0 flex-1">
         <ChoiceSelect

@@ -1,12 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ShouldRevalidateFunction } from "react-router";
 
 /**
- * Skips revalidation for navigations that only open/close a child drawer or
- * page through it (`offset` param) — report loaders depend on the remaining
- * search params only, and their balance RPCs are expensive. Mutations and any
- * other param change revalidate as usual.
+ * Skips revalidation for navigations that keep the search params, such as
+ * opening or closing a child drawer. Report loaders depend on the search params
+ * only, and their balance RPCs are expensive. Mutations and any param change
+ * revalidate as usual.
  */
-export const revalidateIgnoringOffset: ShouldRevalidateFunction = ({
+export const revalidateOnSearchChange: ShouldRevalidateFunction = ({
   currentUrl,
   nextUrl,
   formMethod,
@@ -16,8 +20,6 @@ export const revalidateIgnoringOffset: ShouldRevalidateFunction = ({
 
   const current = new URLSearchParams(currentUrl.search);
   const next = new URLSearchParams(nextUrl.search);
-  current.delete("offset");
-  next.delete("offset");
   current.sort();
   next.sort();
 

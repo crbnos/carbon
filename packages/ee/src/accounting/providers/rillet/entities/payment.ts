@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { NormalizedPayment } from "../../../core/payment-application";
 import {
+  PAYMENT_TARGET_LABELS,
   type PaymentPushContext,
   PaymentSyncerBase
 } from "../../../core/payment-syncer";
@@ -7,8 +12,10 @@ import { JournalEntrySyncError } from "../../../core/posting";
 import type { ShouldSyncContext } from "../../../core/types";
 import type { Rillet, RilletLocalPayment } from "../models";
 import { buildRilletIdempotencyKey, type RilletProvider } from "../provider";
+import { RILLET_LEGACY_REIMBURSEMENT_REMOTE_KIND } from "./bill";
 import {
   loadCompanyBaseCurrency,
+  loadCurrencyDecimalPlaces,
   loadRilletAccountCodesById,
   RILLET_CARBON_REFERENCE_TYPE,
   toRilletMoney
@@ -16,14 +23,13 @@ import {
 
 // Re-exported for the payment tests (moved to the family-agnostic core, where
 // the runtime document-status boundary now lives — post-payment owns status).
-export { getSettledInvoiceStatus } from "../../../core/payment-application";
 
 /**
  * RilletPaymentSyncer — the AR payment syncer for Rillet, on the shared
- * `PaymentSyncerBase`. Rillet invoice payments (recorded against pushed AR_ONLY
+ * `PaymentSyncerBase`. Rillet invoice payments (recorded against pushed native
  * invoices) settle Carbon sales invoices; the base writes a Draft `payment` +
- * `invoiceSettlement` and then invokes the native `post-payment` edge function
- * (GL journal + Posted/Voided status). Pushing is a rejection stub.
+ * `invoiceSettlement` and then invokes the native `post-payment` server function
+ * (GL journal + Posted/Voided status). Carbon-originated payments push and void through native payment endpoints.
  *
  * Entity-id contract: the sync operation's entityId is a COMPOSITE. AR keeps
  * the prefix-less `"<invoiceRemoteId>:<paymentRemoteId>"` form (back-compat with
@@ -36,12 +42,23 @@ export { getSettledInvoiceStatus } from "../../../core/payment-application";
  * branches on (and the shape later QBO/Xero payment syncers mirror).
  *
  * v1 simplification (documented): exchange rates are recorded as 1 (Rillet
- * payments settle same-currency AR_ONLY invoices / AP bills).
+ * payments settle same-currency native invoices / AP bills).
  */
 
 const SYNC_ID_SEPARATOR = ":";
-/** AP composite-id family discriminator prefix. AR is prefix-less. */
+/** AP composite-id document discriminator prefix. AR is prefix-less. */
 const BILL_PREFIX = "bill:";
+/**
+ * AP composite-id prefix for an employee-reimbursement payout. A second AP
+ * prefix rather than a second family: the reimbursement IS an AP document, but
+ * its payments live under `/reimbursements/{id}/payments`, a different id space
+ * from `/bills/{id}/payments` — so the prefix is what stops a void deleting
+ * the wrong provider object.
+ */
+const REIMBURSEMENT_PREFIX = "reimbursement:";
+
+/** Which Rillet document a composite payment id hangs off. */
+export type RilletPaymentDocumentKind = "invoice" | "bill" | "reimbursement";
 
 /** Composite sync entity id for one Rillet invoice payment (AR, prefix-less). */
 export function getRilletPaymentSyncEntityId(
@@ -60,33 +77,60 @@ export function getRilletBillPaymentSyncEntityId(
 }
 
 /**
- * Split a composite payment entity id into its family, document remote id, and
- * payment remote id. A `bill:` prefix marks the AP form; anything else is the
- * back-compat AR form. Throws on a malformed id.
+ * Composite sync entity id for one Rillet reimbursement payment
+ * (AP, `reimbursement:` prefix).
+ */
+export function getRilletReimbursementPaymentSyncEntityId(
+  reimbursementRemoteId: string,
+  paymentRemoteId: string
+): string {
+  return `${REIMBURSEMENT_PREFIX}${reimbursementRemoteId}${SYNC_ID_SEPARATOR}${paymentRemoteId}`;
+}
+
+/**
+ * Split a composite payment entity id into its family, the KIND of document it
+ * hangs off, the document remote id and the payment remote id. A `bill:`
+ * prefix marks an AP bill payment and `reimbursement:` an AP reimbursement
+ * payout; anything else is the back-compat AR form. Throws on a malformed id.
  */
 export function parseRilletPaymentSyncEntityId(entityId: string): {
   family: "ar" | "ap";
+  kind: RilletPaymentDocumentKind;
   documentRemoteId: string;
   paymentRemoteId: string;
 } {
-  const isBill = entityId.startsWith(BILL_PREFIX);
-  const remainder = isBill ? entityId.slice(BILL_PREFIX.length) : entityId;
+  const kind: RilletPaymentDocumentKind = entityId.startsWith(BILL_PREFIX)
+    ? "bill"
+    : entityId.startsWith(REIMBURSEMENT_PREFIX)
+      ? "reimbursement"
+      : "invoice";
+  const prefixLength =
+    kind === "bill"
+      ? BILL_PREFIX.length
+      : kind === "reimbursement"
+        ? REIMBURSEMENT_PREFIX.length
+        : 0;
+  const remainder = entityId.slice(prefixLength);
 
   const separatorIndex = remainder.indexOf(SYNC_ID_SEPARATOR);
   if (separatorIndex <= 0 || separatorIndex === remainder.length - 1) {
     throw new Error(
-      `Invalid Rillet payment sync entity id "${entityId}" — expected "<invoiceRemoteId>:<paymentRemoteId>" or "bill:<billRemoteId>:<billPaymentRemoteId>"`
+      `Invalid Rillet payment sync entity id "${entityId}" — expected "<invoiceRemoteId>:<paymentRemoteId>", "bill:<billRemoteId>:<billPaymentRemoteId>" or "reimbursement:<reimbursementRemoteId>:<paymentRemoteId>"`
     );
   }
   return {
-    family: isBill ? "ap" : "ar",
+    family: kind === "invoice" ? "ar" : "ap",
+    kind,
     documentRemoteId: remainder.slice(0, separatorIndex),
     paymentRemoteId: remainder.slice(separatorIndex + 1)
   };
 }
 
 /** A payment object carrying the shared amount/currency wire shape. */
-type RilletPaymentAmountLike = Rillet.InvoicePayment | Rillet.BillPayment;
+type RilletPaymentAmountLike =
+  | Rillet.InvoicePayment
+  | Rillet.BillPayment
+  | Rillet.ReimbursementPayment;
 
 /**
  * Numeric amount from either wire shape: the list endpoint's
@@ -141,8 +185,15 @@ export function mapRilletPaymentToLocal(
   };
 }
 
-/** Either Rillet payment wire shape the syncer handles (AR invoice / AP bill). */
-type RilletPayment = Rillet.InvoicePayment | Rillet.BillPayment;
+/**
+ * Every Rillet payment wire shape the syncer handles: AR invoice, AP bill and
+ * the AP employee-reimbursement payout. All three carry the same
+ * amount/currency/date shape, differing only in their parent-link field.
+ */
+type RilletPayment =
+  | Rillet.InvoicePayment
+  | Rillet.BillPayment
+  | Rillet.ReimbursementPayment;
 
 export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
   private get rilletProvider(): RilletProvider {
@@ -151,6 +202,30 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
 
   /** Rillet accepts Carbon-born payments back out (Phase G). */
   protected supportsPaymentPush = true;
+  protected supportsPaymentVoidPush = true;
+
+  protected async voidRemotePayment(compositeId: string): Promise<void> {
+    const { kind, documentRemoteId, paymentRemoteId } =
+      parseRilletPaymentSyncEntityId(compositeId);
+    if (kind === "reimbursement") {
+      await this.rilletProvider.deleteReimbursementPayment(
+        documentRemoteId,
+        paymentRemoteId
+      );
+      return;
+    }
+    if (kind === "bill") {
+      await this.rilletProvider.deleteBillPayment(
+        documentRemoteId,
+        paymentRemoteId
+      );
+      return;
+    }
+    await this.rilletProvider.deleteInvoicePayment(
+      documentRemoteId,
+      paymentRemoteId
+    );
+  }
 
   /** company.baseCurrencyCode, read once per syncer instance (FX gate). */
   private baseCurrencyPromise?: Promise<string>;
@@ -163,6 +238,29 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
       );
     }
     return this.baseCurrencyPromise;
+  }
+
+  /**
+   * `currency.decimalPlaces` per currency code, read once per code per syncer
+   * instance. A payment is a SETTLEMENT amount, so its scale is the currency's
+   * own: JPY settles at 0 decimals, BHD/KWD at 3. `PaymentPushContext` carries
+   * the currency code but no precision, so the syncer resolves it here.
+   */
+  private currencyDecimalsPromises = new Map<string, Promise<number>>();
+
+  private getCurrencyDecimals(currencyCode: string): Promise<number> {
+    let pending = this.currencyDecimalsPromises.get(currencyCode);
+    if (!pending) {
+      pending = loadCurrencyDecimalPlaces(this.database, {
+        companyId: this.companyId,
+        currencyCode
+      }).catch((error) => {
+        this.currencyDecimalsPromises.delete(currencyCode);
+        throw error;
+      });
+      this.currencyDecimalsPromises.set(currencyCode, pending);
+    }
+    return pending;
   }
 
   /** Carbon account.id → Rillet account code, read once per syncer instance. */
@@ -183,14 +281,25 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
   // =================================================================
 
   async fetchRemote(entityId: string): Promise<RilletPayment | null> {
-    const { family, documentRemoteId, paymentRemoteId } =
+    const { kind, documentRemoteId, paymentRemoteId } =
       parseRilletPaymentSyncEntityId(entityId);
 
-    const payments =
-      family === "ap"
-        ? await this.rilletProvider.listBillPayments(documentRemoteId)
-        : await this.rilletProvider.listInvoicePayments(documentRemoteId);
+    const payments = await this.listPaymentsForDocument(kind, documentRemoteId);
     return payments.find((payment) => payment.id === paymentRemoteId) ?? null;
+  }
+
+  /** The document's payment list, routed by the composite id's kind. */
+  private listPaymentsForDocument(
+    kind: RilletPaymentDocumentKind,
+    documentRemoteId: string
+  ): Promise<RilletPayment[]> {
+    if (kind === "reimbursement") {
+      return this.rilletProvider.listReimbursementPayments(documentRemoteId);
+    }
+    if (kind === "bill") {
+      return this.rilletProvider.listBillPayments(documentRemoteId);
+    }
+    return this.rilletProvider.listInvoicePayments(documentRemoteId);
   }
 
   /**
@@ -206,19 +315,16 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
     const paymentsByDocument = new Map<string, RilletPayment[]>();
 
     for (const entityId of ids) {
-      const { family, documentRemoteId, paymentRemoteId } =
+      const { kind, documentRemoteId, paymentRemoteId } =
         parseRilletPaymentSyncEntityId(entityId);
 
-      // The family-qualified document id is the cache key, so an AR invoice and
-      // an AP bill that happen to share a remote id never collide.
-      const cacheKey =
-        (family === "ap" ? "bill:" : "invoice:") + documentRemoteId;
+      // The KIND-qualified document id is the cache key, so an AR invoice, an
+      // AP bill and a reimbursement that happen to share a remote id never
+      // collide.
+      const cacheKey = `${kind}:${documentRemoteId}`;
       let payments = paymentsByDocument.get(cacheKey);
       if (!payments) {
-        payments =
-          family === "ap"
-            ? await this.rilletProvider.listBillPayments(documentRemoteId)
-            : await this.rilletProvider.listInvoicePayments(documentRemoteId);
+        payments = await this.listPaymentsForDocument(kind, documentRemoteId);
         paymentsByDocument.set(cacheKey, payments);
       }
 
@@ -334,7 +440,7 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
         paymentRemoteId,
         amount: getRilletPaymentAmount(bill),
         currencyCode: getRilletPaymentCurrency(bill),
-        exchangeRate: 1,
+        exchangeRate: null,
         paidDate,
         // The Rillet bill-payment id is the human/provider reference.
         reference: paymentRemoteId,
@@ -350,7 +456,7 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
       paymentRemoteId,
       amount: local.amount ?? 0,
       currencyCode: local.currencyCode ?? null,
-      exchangeRate: 1,
+      exchangeRate: null,
       paidDate: local.date ?? new Date().toISOString().slice(0, 10),
       reference: paymentRemoteId,
       status:
@@ -375,21 +481,41 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
   protected async pushRemotePayment(
     context: PaymentPushContext
   ): Promise<{ remoteId: string; compositeEntityId: string }> {
-    const documentRemoteId = await this.mappingService.getExternalId(
-      context.family === "ar" ? "invoice" : "bill",
+    const documentLabel = PAYMENT_TARGET_LABELS[context.targetEntityType];
+    // `getByEntity`, not `getExternalId`: same row, same single query (it is a
+    // `selectAll` of the identical WHERE), and the legacy `remoteKind` stamp
+    // below is on that row. Reading the id without the metadata is what lost
+    // the legacy branch.
+    const documentMapping = await this.mappingService.getByEntity(
+      context.targetEntityType,
       context.targetDocumentId,
       this.provider.id
     );
+    const documentRemoteId = documentMapping?.externalId;
     if (!documentRemoteId) {
       throw new JournalEntrySyncError({
         errorCode: "UNSYNCED_DOCUMENT",
-        message: `The settled ${
-          context.family === "ar" ? "invoice" : "bill"
-        } has not synced to Rillet yet — sync it, then retry the payment`,
+        message: `The settled ${documentLabel} has not synced to Rillet yet — sync it, then retry the payment`,
         warning: true,
         metadata: { targetDocumentId: context.targetDocumentId }
       });
     }
+
+    // A native `reimbursement` target — OR a LEGACY `bill` whose remote id
+    // lives in the `/reimbursements` id space. Between #1503 (2026-09-20) and
+    // the native reimbursement entity the bill syncer wrote an
+    // employee-supplier purchase invoice to `/reimbursements` and stamped
+    // `remoteKind: "reimbursement"` on the mapping; that stamp is the ONLY
+    // record of which id space the remote id belongs to, and
+    // `RilletBillSyncer.deleteRemote` reads the same one for the void.
+    // Without this the payout POSTs `/bills/{reimbursementId}/payments`,
+    // which 404s and throws (`writeEntity` → `throwRilletApiError`) — visible
+    // as a Failed ledger row, but a Failed payout is still a payout that
+    // never closed, and the endpoint to close it correctly now exists.
+    const paysReimbursement =
+      context.targetEntityType === "reimbursement" ||
+      documentMapping?.metadata?.remoteKind ===
+        RILLET_LEGACY_REIMBURSEMENT_REMOTE_KIND;
 
     const accountCode = (await this.getAccountCodesById()).get(
       context.bankAccountId
@@ -403,8 +529,14 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
       });
     }
 
+    const decimalPlaces = await this.getCurrencyDecimals(context.currencyCode);
+
     const payload = {
-      amount: toRilletMoney(context.amount, context.currencyCode),
+      amount: toRilletMoney(
+        context.amount,
+        context.currencyCode,
+        decimalPlaces
+      ),
       date: context.paidDate,
       account_code: accountCode,
       external_references: [
@@ -414,12 +546,28 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
 
     const idempotencyKey = buildRilletIdempotencyKey({
       companyId: this.companyId,
-      operation:
-        context.family === "ar"
+      operation: paysReimbursement
+        ? "create reimbursement payment"
+        : context.family === "ar"
           ? "create invoice payment"
           : "create bill payment",
       localId: `${context.carbonPaymentId}:${context.targetDocumentId}`
     });
+
+    if (paysReimbursement) {
+      const created = await this.rilletProvider.createReimbursementPayment(
+        documentRemoteId,
+        payload,
+        idempotencyKey
+      );
+      return {
+        remoteId: created.id,
+        compositeEntityId: getRilletReimbursementPaymentSyncEntityId(
+          documentRemoteId,
+          created.id
+        )
+      };
+    }
 
     const created =
       context.family === "ar"

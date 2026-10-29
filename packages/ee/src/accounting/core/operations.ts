@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Database } from "@carbon/database";
+import { isUniqueViolation, quoteFilterValue } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SYNC_OPERATION_ALLOWED_TRANSITIONS } from "./models";
 import type {
@@ -28,7 +33,6 @@ export const SYNC_OPERATION_STALE_IN_FLIGHT_MS = 10 * 60_000;
 
 const DEFAULT_CLAIM_LIMIT = 20;
 const DEFAULT_PAGE_SIZE = 25;
-const UNIQUE_VIOLATION = "23505";
 
 /**
  * Live operations hold the partial unique index on
@@ -242,7 +246,7 @@ export async function enqueueSyncOperation(
     .single();
 
   if (inserted.error) {
-    if (inserted.error.code === UNIQUE_VIOLATION) {
+    if (isUniqueViolation(inserted.error)) {
       // A concurrent enqueue won the race on one of the unique indexes —
       // absorb by returning whichever row now holds it
       const byKey = await getOperationByIdempotencyKey(client, op);
@@ -334,7 +338,7 @@ export async function insertTerminalSyncOperation(
     .single();
 
   if (inserted.error) {
-    if (inserted.error.code === UNIQUE_VIOLATION) {
+    if (isUniqueViolation(inserted.error)) {
       const byKey = await getOperationByIdempotencyKey(client, op);
       if (byKey.data) return byKey;
 
@@ -346,6 +350,42 @@ export async function insertTerminalSyncOperation(
   }
 
   return { data: inserted.data as SyncOperation, error: null };
+}
+
+/**
+ * Delete terminal disposition rows for entities that have since synced
+ * successfully. Accounting journals get a permanent disposition, but a
+ * re-evaluating INBOUND family (Ramp) can fail an entity one run — a charge
+ * coded to an unrecognized account records a Warning — and succeed the next,
+ * once it is recoded. Without this the resolved failure lingers in the Sync
+ * Activity inbox and keeps the tab badge lit, so on every successful sync the
+ * caller clears any prior disposition for those (entityType, entityId,
+ * direction) tuples. Defaults to `Warning` (the only status the Ramp recorder
+ * writes); a no-op when `entityIds` is empty. Service-role only (the table has
+ * no DELETE policy — jobs delete via service role).
+ */
+export async function clearResolvedSyncOperations(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    integration: string;
+    entityType: string;
+    direction: SyncOperationDirection;
+    entityIds: string[];
+    statuses?: SyncOperationStatus[];
+  }
+): Promise<{ error: string | null }> {
+  if (args.entityIds.length === 0) return { error: null };
+  const statuses = args.statuses ?? ["Warning"];
+  const { error } = await syncOperationTable(client)
+    .delete()
+    .eq("companyId", args.companyId)
+    .eq("integration", args.integration)
+    .eq("entityType", args.entityType)
+    .eq("direction", args.direction)
+    .in("entityId", args.entityIds)
+    .in("status", statuses);
+  return { error: error ? (error as { message: string }).message : null };
 }
 
 /**
@@ -365,6 +405,9 @@ export async function insertTerminalSyncOperation(
  * `entityTypes` is the include-only counterpart (the consolidation cron
  * claims ONLY journalEntry operations). Mutually exclusive with
  * `excludeEntityTypes` — see getClaimEntityTypeFilterError.
+ *
+ * `direction` claims only operations going that way (a master-data import
+ * claims only its own pulls).
  */
 export async function claimPendingOperations(
   client: SupabaseClient<Database>,
@@ -383,6 +426,7 @@ export async function claimPendingOperations(
      * transitional consolidation flag.
      */
     holdDailySummaryJournalEntries?: boolean;
+    direction?: SyncOperationDirection;
   }
 ): Promise<{ data: SyncOperation[]; error: string | null }> {
   const filterError = getClaimEntityTypeFilterError(args);
@@ -414,6 +458,9 @@ export async function claimPendingOperations(
   if (args.holdDailySummaryJournalEntries) {
     pendingQuery = pendingQuery.or(dailySummaryHold);
   }
+  if (args.direction) {
+    pendingQuery = pendingQuery.eq("direction", args.direction);
+  }
 
   const pending = await pendingQuery
     .order("createdAt", { ascending: true })
@@ -435,6 +482,9 @@ export async function claimPendingOperations(
   }
   if (args.holdDailySummaryJournalEntries) {
     staleQuery = staleQuery.or(dailySummaryHold);
+  }
+  if (args.direction) {
+    staleQuery = staleQuery.eq("direction", args.direction);
   }
 
   const stale = await staleQuery
@@ -740,11 +790,25 @@ export async function transitionOperation(
 }
 
 /**
+ * The rows after a cursor of the sync operation lists: newest first, `id`
+ * ascending breaking `createdAt` ties, matching the index. Quoted: a
+ * timestamp carries `.`, `:` and `+`, all reserved in an or-filter, and the
+ * cursor comes from the URL.
+ */
+function afterSyncOperation(after: { createdAt: string; id: string }) {
+  const createdAt = quoteFilterValue(after.createdAt);
+  const id = quoteFilterValue(after.id);
+  return `createdAt.lt.${createdAt},and(createdAt.eq.${createdAt},id.gt.${id})`;
+}
+
+/**
  * List sync operations for the activity/error-inbox UI, newest first, with
  * an optional status filter and offset pagination. `count` is the total for
  * the current filter. `entityType` narrows to one entity type — the
  * consolidation and reconciliation crons page journalEntry operations
- * without wading through every other entity's history.
+ * without wading through every other entity's history. `after` reads the
+ * rows after a previous page's last row instead (keyset on createdAt DESC,
+ * id), like `getSyncOperationsExportPage`.
  */
 export async function getSyncOperations(
   client: SupabaseClient<Database>,
@@ -755,6 +819,7 @@ export async function getSyncOperations(
     entityType?: string;
     limit?: number;
     offset?: number;
+    after?: SyncOperationCursor;
   }
 ): Promise<{
   data: SyncOperation[];
@@ -765,7 +830,11 @@ export async function getSyncOperations(
   const offset = args.offset ?? 0;
 
   let query = syncOperationTable(client)
-    .select("*", { count: "exact" })
+    // Only the first page counts: a later page (`after`, or an offset) does
+    // not need the total again.
+    .select("*", {
+      count: args.after || offset > 0 ? undefined : "exact"
+    })
     .eq("companyId", args.companyId)
     .eq("integration", args.integration);
 
@@ -779,8 +848,12 @@ export async function getSyncOperations(
     query = query.eq("entityType", args.entityType);
   }
 
+  if (args.after) query = query.or(afterSyncOperation(args.after));
+
+  // `id` ascending breaks createdAt ties, so every row has one place.
   const result = await query
     .order("createdAt", { ascending: false })
+    .order("id", { ascending: true })
     .range(offset, offset + limit - 1);
 
   if (result.error) {
@@ -792,4 +865,70 @@ export async function getSyncOperations(
     count: result.count ?? null,
     error: null
   };
+}
+
+/** The columns the Sync Activity CSV export reads, and nothing heavier. */
+const SYNC_OPERATION_EXPORT_COLUMNS =
+  "id, integration, entityType, entityId, direction, trigger, status, attemptCount, lastAttemptAt, completedAt, errorCode, errorMessage, externalId, createdAt";
+
+export type SyncOperationExportRow = Pick<
+  SyncOperation,
+  | "id"
+  | "integration"
+  | "entityType"
+  | "entityId"
+  | "direction"
+  | "trigger"
+  | "status"
+  | "attemptCount"
+  | "lastAttemptAt"
+  | "completedAt"
+  | "errorCode"
+  | "errorMessage"
+  | "externalId"
+  | "createdAt"
+>;
+
+/** Where the previous page ended: its last row's sort key. */
+export type SyncOperationCursor = Pick<SyncOperation, "createdAt" | "id">;
+
+/**
+ * One page of sync operations for the Sync Activity CSV export, newest first,
+ * under the same filters as `getSyncOperations`. Keyset-paged on
+ * (createdAt DESC, id) — served by `accountingSyncOperation_createdAt_idx` —
+ * so the caller can stream an unbounded history one page at a time instead
+ * of holding it in memory, and page N costs the same as page 1. Pass the
+ * previous page's last row as `after`; a page shorter than `limit` is the
+ * last one.
+ */
+export async function getSyncOperationsExportPage(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    integration: string;
+    status?: SyncOperationStatus | SyncOperationStatus[];
+    after?: SyncOperationCursor;
+    limit: number;
+  }
+): Promise<{ data: SyncOperationExportRow[]; error: string | null }> {
+  let query = syncOperationTable(client)
+    .select(SYNC_OPERATION_EXPORT_COLUMNS)
+    .eq("companyId", args.companyId)
+    .eq("integration", args.integration);
+
+  if (args.status) {
+    query = Array.isArray(args.status)
+      ? query.in("status", args.status)
+      : query.eq("status", args.status);
+  }
+
+  if (args.after) query = query.or(afterSyncOperation(args.after));
+
+  const result = await query
+    .order("createdAt", { ascending: false })
+    .order("id", { ascending: true })
+    .limit(args.limit);
+
+  if (result.error) return { data: [], error: result.error.message };
+  return { data: (result.data ?? []) as SyncOperationExportRow[], error: null };
 }

@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { operationTypes } from "~/modules/shared";
+import type { InfiniteOptions } from "~/components/Table";
+import { operationTypes } from "~/modules/shared/shared.models";
 import { useParts, useTools } from "~/stores";
 import type { MethodOperation } from "../../types";
 import { getPathToMakeMethod } from "./utils";
@@ -11,10 +16,11 @@ import { getPathToMakeMethod } from "./utils";
 type MethodOperationsTableProps = {
   data: MethodOperation[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const MethodOperationsTable = memo(
-  ({ data, count }: MethodOperationsTableProps) => {
+  ({ data, count, infinite }: MethodOperationsTableProps) => {
     const { t } = useLingui();
     const parts = useParts();
     const tools = useTools();
@@ -29,27 +35,27 @@ const MethodOperationsTable = memo(
           cell: ({ row }) => (
             <Hyperlink
               to={getPathToMakeMethod(
-                // @ts-ignore
+                // @ts-expect-error
                 row.original.makeMethod?.item?.type,
-                // @ts-ignore
                 row.original.makeMethod?.item?.id,
-                // @ts-ignore
+                // @ts-expect-error
                 row.original.makeMethod?.id
               )}
               className="max-w-[260px] truncate"
             >
               {row.original.description}
             </Hyperlink>
-          )
+          ),
+          meta: { mobile: "P1" }
         },
         {
           accessorKey: "makeMethod.item.readableIdWithRevision",
           header: t`Item ID`,
           cell: ({ row }) => {
-            // @ts-ignore
             return row.original.makeMethod?.item?.readableIdWithRevision;
           },
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: items?.map((item) => ({
@@ -66,6 +72,7 @@ const MethodOperationsTable = memo(
             <Enumerable value={item.getValue<string>() ?? null} />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: operationTypes.map((value) => ({
@@ -104,6 +111,7 @@ const MethodOperationsTable = memo(
         count={count}
         columns={columns}
         data={data}
+        infinite={infinite}
         title={t`Method Operations`}
       />
     );

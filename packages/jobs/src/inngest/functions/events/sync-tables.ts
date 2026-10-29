@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { AccountingEntityType } from "@carbon/ee/accounting";
 
 /**
@@ -21,11 +25,42 @@ export const TABLE_TO_ENTITY_MAP: Partial<
   salesInvoice: "invoice",
   salesOrder: "salesOrder",
   journal: "journalEntry",
-  payment: "payment"
+  payment: "payment",
+  charge: "charge",
+  reimbursement: "reimbursement"
 };
 
+/**
+ * Tables that route to MORE THAN ONE entity type, resolved per ROW.
+ *
+ * `memo` is the only one: a customer memo is a `creditMemo`, a supplier memo a
+ * `supplierCredit`, in both directions. Direction does NOT decide it — that was the
+ * misclassification bug fixed in the posting policy, and the same rule applies here.
+ */
+export const MULTI_ENTITY_TABLES: Partial<
+  Record<string, AccountingEntityType[]>
+> = {
+  memo: ["creditMemo", "supplierCredit"]
+};
+
+/** Every entity type a table can route to. Used by the subscriptions invariant test. */
+export function getEntityTypesForTable(table: string): AccountingEntityType[] {
+  const multi = MULTI_ENTITY_TABLES[table];
+  if (multi) return multi;
+  const single = TABLE_TO_ENTITY_MAP[table];
+  return single ? [single] : [];
+}
+
 export function getEntityTypeFromTable(
-  table: string
+  table: string,
+  row?: Record<string, unknown> | null
 ): AccountingEntityType | null {
+  if (table === "memo") {
+    // Party, not direction. Without the row we cannot tell — return null so the
+    // caller records "no entity mapping" rather than guessing a side.
+    if (row?.customerId) return "creditMemo";
+    if (row?.supplierId) return "supplierCredit";
+    return null;
+  }
   return TABLE_TO_ENTITY_MAP[table] ?? null;
 }

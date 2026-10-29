@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Entity-Centric Audit Log Configuration
  *
@@ -44,8 +48,8 @@ export type ColumnOf<T extends TableName> = Extract<
 /**
  * `createFields` controls which columns appear in the diff for INSERT events.
  * By default, INSERT audit entries carry a null diff (rendered as "Created").
- * List columns here to surface their initial values. Only meaningful on
- * tables that log INSERTs (today: root tables).
+ * List columns here to surface their initial values. Every table logs its
+ * INSERTs except extension tables (created 1:1 with their parent).
  *
  * `snapshotFields` declares FK columns whose target row's display values
  * should be captured into the diff at write time. The audit handler resolves
@@ -91,7 +95,13 @@ type ExtensionTable<T extends TableName> = {
 };
 
 type ChildTable<T extends TableName> = {
-  entityIdColumn: ColumnOf<T>;
+  /**
+   * The column naming the parent entity. A list attributes the row to every
+   * distinct, non-null parent it names (a settlement row belongs to the
+   * payment that made it, the one it was applied through, and the prior
+   * credit it draws on).
+   */
+  entityIdColumn: ColumnOf<T> | readonly ColumnOf<T>[];
   createFields?: readonly ColumnOf<T>[];
   snapshotFields?: SnapshotFields<T>;
 };
@@ -154,6 +164,7 @@ export const auditConfig = {
         customerPayment: { role: "extension" }, // PK = customerId
         customerShipping: { role: "extension" }, // PK = customerId
         customerTax: { role: "extension" }, // PK = customerId
+        customerBankAccount: { entityIdColumn: "customerId" },
         contact: {
           resolve: {
             junction: "customerContact",
@@ -183,6 +194,7 @@ export const auditConfig = {
         supplierPayment: { role: "extension" }, // PK = supplierId
         supplierShipping: { role: "extension" }, // PK = supplierId
         supplierTax: { role: "extension" }, // PK = supplierId
+        supplierBankAccount: { entityIdColumn: "supplierId" },
         contact: {
           resolve: {
             junction: "supplierContact",
@@ -267,6 +279,27 @@ export const auditConfig = {
             }
           }
         }
+      }
+    },
+
+    // A lease classification override is audit-logged against its agreement
+    // (spec §4); the agreement's own edits come along with it.
+    rentalAgreement: {
+      label: "Rental Agreement",
+      tables: {
+        rentalAgreement: { role: "root" },
+        rentalAgreementLine: { entityIdColumn: "rentalAgreementId" }
+      }
+    },
+
+    // A lessee lease, with its assets and payment rows; a classification
+    // override is audit-logged against it.
+    lease: {
+      label: "Lease",
+      tables: {
+        lease: { role: "root" },
+        leaseLine: { entityIdColumn: "leaseId" },
+        leasePayment: { entityIdColumn: "leaseId" }
       }
     },
 
@@ -603,6 +636,77 @@ export const auditConfig = {
           createFields: ["startDate", "endDate", "status"]
         }
       }
+    },
+
+    journalEntry: {
+      label: "Journal Entry",
+      tables: {
+        journal: { role: "root" },
+        journalLine: {
+          entityIdColumn: "journalId",
+          createFields: ["accountId", "description", "amount"],
+          snapshotFields: {
+            accountId: { table: "account", displayColumns: ["number", "name"] }
+          }
+        }
+      }
+    },
+
+    // A settlement row is shown under every payment it involves — the one
+    // that made it, the one a memo was applied through, and the prior credit
+    // it draws on — and under the memo it applies; a null column is skipped.
+    payment: {
+      label: "Payment",
+      tables: {
+        payment: { role: "root" },
+        invoiceSettlement: {
+          entityIdColumn: [
+            "paymentId",
+            "appliedViaPaymentId",
+            "sourcePaymentId"
+          ]
+        }
+      }
+    },
+
+    memo: {
+      label: "Memo",
+      tables: {
+        memo: { role: "root" },
+        invoiceSettlement: { entityIdColumn: "memoId" }
+      }
+    },
+
+    reimbursement: {
+      label: "Reimbursement",
+      tables: {
+        reimbursement: { role: "root" },
+        reimbursementLine: { entityIdColumn: "reimbursementId" }
+      }
+    },
+
+    pickingList: {
+      label: "Picking List",
+      tables: {
+        pickingList: { role: "root" },
+        pickingListLine: { entityIdColumn: "pickingListId" }
+      }
+    },
+
+    depreciationRun: {
+      label: "Depreciation Run",
+      tables: {
+        depreciationRun: { role: "root" },
+        depreciationRunLine: { entityIdColumn: "depreciationRunId" }
+      }
+    },
+
+    revenueRecognitionRun: {
+      label: "Revenue Recognition Run",
+      tables: {
+        revenueRecognitionRun: { role: "root" },
+        revenueRecognitionRunLine: { entityIdColumn: "runId" }
+      }
     }
   } satisfies Record<string, EntityConfig>,
 
@@ -612,16 +716,21 @@ export const auditConfig = {
    * Tables not listed here fall back to a camelCase → Title Case conversion.
    */
   tableLabels: {
+    journal: "Journal Entry",
+    invoiceSettlement: "Settlement",
+    revenueRecognitionRunLine: "Recognition Line",
     customer: "Customer",
     customerPayment: "Payment",
     customerShipping: "Shipping",
     customerTax: "Tax",
+    customerBankAccount: "Bank Account",
     contact: "Contact",
     address: "Address",
     supplier: "Supplier",
     supplierPayment: "Payment",
     supplierShipping: "Shipping",
     supplierTax: "Tax",
+    supplierBankAccount: "Bank Account",
     supplierPart: "Supplier Part",
     item: "Item",
     itemShelfLife: "Shelf Life",
@@ -634,6 +743,11 @@ export const auditConfig = {
     salesOrderLine: "Line Item",
     salesOrderPayment: "Payment",
     salesOrderShipment: "Shipment",
+    rentalAgreement: "Rental Agreement",
+    rentalAgreementLine: "Unit",
+    lease: "Lease",
+    leaseLine: "Asset",
+    leasePayment: "Payment",
     purchaseOrder: "Purchase Order",
     purchaseOrderLine: "Line Item",
     purchaseOrderPayment: "Payment",
@@ -692,11 +806,9 @@ export const auditConfig = {
   /** Retention period before archival (days) */
   retentionDays: 30,
 
-  /** Archive storage path template */
-  archivePath: "audit-logs/{companyId}/{year}/{month}.jsonl.gz",
-
-  /** Storage bucket name for archives */
-  archiveBucket: "private"
+  /** Archive storage path template (company-bucket keys keep the companyId
+   * prefix) */
+  archivePath: "{companyId}/audit-logs/{year}/{month}.jsonl.gz"
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -722,7 +834,8 @@ export const auditConfig = {
 export const fkDisplayRegistry: {
   [T in TableName]?: readonly ColumnOf<T>[];
 } = {
-  ability: ["name"],
+  // ability has no name of its own — it displays via the process one hop away
+  // (see fkDisplayHops below).
   account: ["number", "name"],
   address: ["addressLine1", "city"],
   assemblyInstruction: ["name"],
@@ -816,6 +929,11 @@ export const fkDisplayHops: {
     };
   }[TableName];
 } = {
+  ability: {
+    column: "processId",
+    table: "process",
+    displayColumns: ["name"]
+  },
   customerContact: {
     column: "contactId",
     table: "contact",
@@ -977,7 +1095,13 @@ export function getEntityLabel(entityType: AuditEntityType): string {
 /** Get human-readable label for a table name */
 export function getTableLabel(tableName: string): string {
   const labels = auditConfig.tableLabels as Record<string, string | undefined>;
-  return labels[tableName] ?? tableName.replace(/([A-Z])/g, " $1").trim();
+  return (
+    labels[tableName] ??
+    tableName
+      .replace(/([A-Z])/g, " $1")
+      .trim()
+      .replace(/^./, (c) => c.toUpperCase())
+  );
 }
 
 /**

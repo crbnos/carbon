@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -9,6 +13,7 @@ import {
   TooltipTrigger,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -51,11 +56,11 @@ import { useLocations } from "~/components/Form/Location";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
-import { useUrlParams } from "~/hooks";
+import { useMrpScheduleDescription, useUrlParams } from "~/hooks";
 import {
   itemReorderingPolicies,
   itemReplenishmentSystems
-} from "~/modules/items";
+} from "~/modules/items/items.models";
 import {
   getReorderPolicyDescription,
   ItemReorderPolicy
@@ -69,6 +74,8 @@ import type { InventoryItem } from "../../types";
 type InventoryTableProps = {
   data: InventoryItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
   forms: ListItem[];
   substances: ListItem[];
@@ -81,6 +88,7 @@ const InventoryTable = memo(
   ({
     data,
     count,
+    nextCursor,
     locationId,
     forms,
     substances,
@@ -129,14 +137,20 @@ const InventoryTable = memo(
               >
                 <VStack spacing={0}>
                   {row.original.readableIdWithRevision}
-                  <div className="w-full truncate text-muted-foreground text-xs">
-                    {row.original.name}
-                  </div>
+                  {distinctItemText(
+                    row.original.readableIdWithRevision,
+                    row.original.name
+                  ) && (
+                    <div className="w-full truncate text-muted-foreground text-xs">
+                      {row.original.name}
+                    </div>
+                  )}
                 </VStack>
               </Hyperlink>
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -156,6 +170,7 @@ const InventoryTable = memo(
               formatNumber(row.original.quantityOnHand)
             ),
           meta: {
+            mobile: "P2",
             icon: <LuBlocks />,
             renderTotal: true,
             formatter: formatNumber
@@ -637,14 +652,31 @@ const InventoryTable = memo(
     };
 
     const mrpFetcher = useFetcher<typeof mrpAction>();
+    const mrpScheduleDescription = useMrpScheduleDescription();
 
     return (
       <Table<InventoryItem>
         count={count}
         columns={columns}
         data={data}
+        // Location-scoped: no list registry entry, so no `listKey`.
+        infinite={{ dataKey: "inventoryItems", nextCursor }}
         defaultColumnVisibility={defaultColumnVisibility}
         defaultColumnPinning={defaultColumnPinning}
+        importCSV={[
+          {
+            table: "inventoryQuantity" as const,
+            label: t`Inventory Quantities`
+          },
+          {
+            table: "batchQuantity" as const,
+            label: t`Batch Quantities`
+          },
+          {
+            table: "serialQuantity" as const,
+            label: t`Serial Quantities`
+          }
+        ]}
         primaryAction={
           <div className="flex items-center gap-2">
             <Combobox
@@ -670,9 +702,7 @@ const InventoryTable = memo(
                     <Trans>Recalculate</Trans>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  {t`MRP runs automatically every 3 hours, but you can run it manually here.`}
-                </TooltipContent>
+                <TooltipContent>{mrpScheduleDescription}</TooltipContent>
               </Tooltip>
             </mrpFetcher.Form>
           </div>

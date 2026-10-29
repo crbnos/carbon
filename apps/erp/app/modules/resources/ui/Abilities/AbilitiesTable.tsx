@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -12,8 +16,9 @@ import {
 import { useNavigate } from "react-router";
 import { EmployeeAvatarGroup, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useUrlParams } from "~/hooks";
-import type { Abilities } from "~/modules/resources";
+import type { InfiniteOptions } from "~/components/Table";
+import { useCompanyToday, usePermissions, useUrlParams } from "~/hooks";
+import type { Abilities } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -22,14 +27,18 @@ type Ability = Abilities[number];
 type AbilitiesTableProps = {
   data: Abilities;
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
+const AbilitiesTable = memo((props: AbilitiesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const permissions = usePermissions();
   const [people] = usePeople();
+  // The company's day, not the viewer's: the list spans every location.
+  const todayDate = useCompanyToday();
 
   const employeeOptions = useMemo(
     () => people.map((person) => ({ value: person.id, label: person.name })),
@@ -47,6 +56,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuAward />
         }
       },
@@ -59,6 +69,8 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
           </span>
         ),
         meta: {
+          mobile: "P3",
+          mobileLabel: true,
           icon: <LuCalendarClock />
         }
       },
@@ -68,9 +80,10 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         cell: ({ row }) => {
           // Qualified = has an ability row ∧ not expired. Presence of the row
           // is the qualification — there is no separate training gate.
-          const today = new Date().toISOString().slice(0, 10);
           const employeeIds = (row.original.employeeAbility ?? [])
-            .filter((ea) => !ea.expiresAt || ea.expiresAt >= today)
+            .filter(
+              (ea) => !ea.expiresAt || ea.expiresAt.slice(0, 10) > todayDate
+            )
             .map((ea) => ea.employeeId);
           return employeeIds.length > 0 ? (
             <EmployeeAvatarGroup employeeIds={employeeIds} />
@@ -88,12 +101,13 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         }
       }
     ];
-  }, [t, employeeOptions]);
+  }, [t, employeeOptions, todayDate]);
 
   const renderContextMenu = useCallback<(row: Ability) => JSX.Element>(
     (row) => (
       <>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.view}
           onClick={() => {
             navigate(`${path.to.ability(row.id!)}?${params?.toString()}`);
           }}
@@ -119,6 +133,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
   return (
     <Table<Ability>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count ?? 0}
       primaryAction={

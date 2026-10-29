@@ -1,21 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { HandlerType, QueueMessage } from "@carbon/database/event";
 import { sql } from "kysely";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import { packBySize } from "./pack";
 
 const QUEUE_NAME = "event_system"; // Name of the PGMQ queue
 const BATCH_SIZE = 100; // Number of messages to process per pass
 const VISIBILITY_TIMEOUT = 30; // Seconds a message is hidden after being read
-const CHUNK_SIZE = 10; // Max events per sendEvent call (keeps under 256KB limit)
+const MAX_EVENT_BYTES = 200_000; // Inngest caps an event at 256KB
+const MAX_RECORDS = 50; // Records per batched handler event
+const MAX_SLOW_RECORDS = 10; // ...for handlers that call an external service per record
 const MAX_PASSES = 10; // Max read/dispatch/delete passes per run (~1000 msgs)
-
-function chunk<T>(arr: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) {
-    chunks.push(arr.slice(i, i + size));
-  }
-  return chunks;
-}
 
 type QueueJob = {
   msg_id: number;
@@ -26,7 +25,7 @@ type QueueJob = {
  * Event queue drainer - woken by `carbon/event-queue.process` and routes
  * queued PGMQ events to handlers. The database pushes the wake: the
  * dispatch_event_batch() trigger (and a pg_cron sweeper while messages are
- * pending) POSTs to the event-wake edge function, which sends the wake event.
+ * pending) sends the wake event through util.send_inngest_event.
  * The drain loops until the queue is empty, so a single run absorbs a burst.
  * `concurrency: 1` serializes runs; bulk writes are coalesced upstream — the
  * trigger wakes at most once per transaction (carbon.event_wake_sent GUC).
@@ -134,7 +133,7 @@ export const eventQueueFunction = inngest.createFunction(
           }
         }));
 
-        const chunks = chunk(events, CHUNK_SIZE);
+        const chunks = packBySize(events, MAX_EVENT_BYTES);
         for (let i = 0; i < chunks.length; i++) {
           await step.sendEvent(`dispatch-webhooks-${pass}-${i}`, chunks[i]!);
         }
@@ -153,7 +152,7 @@ export const eventQueueFunction = inngest.createFunction(
           }
         }));
 
-        const chunks = chunk(events, CHUNK_SIZE);
+        const chunks = packBySize(events, MAX_EVENT_BYTES);
         for (let i = 0; i < chunks.length; i++) {
           await step.sendEvent(`dispatch-workflows-${pass}-${i}`, chunks[i]!);
         }
@@ -167,7 +166,7 @@ export const eventQueueFunction = inngest.createFunction(
           handlerConfig: job.message.handlerConfig
         }));
 
-        const chunks = chunk(records, CHUNK_SIZE);
+        const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_SLOW_RECORDS);
         for (let i = 0; i < chunks.length; i++) {
           await step.sendEvent(`dispatch-syncs-${pass}-${i}`, {
             name: "carbon/event-sync" as const,
@@ -183,7 +182,7 @@ export const eventQueueFunction = inngest.createFunction(
           companyId: job.message.companyId
         }));
 
-        const chunks = chunk(records, CHUNK_SIZE);
+        const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_RECORDS);
         for (let i = 0; i < chunks.length; i++) {
           await step.sendEvent(`dispatch-searches-${pass}-${i}`, {
             name: "carbon/event-search" as const,
@@ -201,7 +200,7 @@ export const eventQueueFunction = inngest.createFunction(
           handlerConfig: job.message.handlerConfig
         }));
 
-        const chunks = chunk(records, CHUNK_SIZE);
+        const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_RECORDS);
         for (let i = 0; i < chunks.length; i++) {
           await step.sendEvent(`dispatch-audits-${pass}-${i}`, {
             name: "carbon/event-audit" as const,
@@ -217,7 +216,7 @@ export const eventQueueFunction = inngest.createFunction(
           companyId: job.message.companyId
         }));
 
-        const chunks = chunk(records, CHUNK_SIZE);
+        const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_SLOW_RECORDS);
         for (let i = 0; i < chunks.length; i++) {
           await step.sendEvent(`dispatch-embeddings-${pass}-${i}`, {
             name: "carbon/event-embedding" as const,

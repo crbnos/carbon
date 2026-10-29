@@ -1,36 +1,45 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useRouteData } from "@carbon/react";
 import { useSyncExternalStore } from "react";
+import { path } from "~/utils/path";
 
 // Customer preview lets an internal Carbon user render the hub as the customer
-// sees it — carbon-only pages hidden, carbon-owned fields locked. Persisted in
-// sessionStorage so it survives navigation + reloads within the tab/session
-// (scoped to that session, not leaked across tabs or restarts).
-const KEY = "carbon:hub:previewAsCustomer";
-// sessionStorage fires no `storage` event in the same tab, so the setter
-// broadcasts this custom event to sync every live hook instance.
+// sees it — carbon-only pages hidden, carbon-owned fields locked.
+//
+// It lives in a session cookie scoped to the hub, not sessionStorage: the
+// server has to know it too. Rendered without it, a reload painted the staff
+// view first and swapped to the preview on hydration — the internal pages and
+// the bar flashed, and the page moved.
+const COOKIE = "hubPreviewAsCustomer";
 const EVENT = "carbon:hub:previewAsCustomer";
 
+/** Whether the request carries the preview cookie (for the hub's loader). */
+export function isCustomerPreview(cookieHeader: string | null): boolean {
+  return (cookieHeader ?? "").split(/;\s*/).includes(`${COOKIE}=1`);
+}
+
 function read(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.sessionStorage.getItem(KEY) === "1";
+  return isCustomerPreview(document.cookie);
 }
 
 function subscribe(onChange: () => void): () => void {
   window.addEventListener(EVENT, onChange);
-  window.addEventListener("storage", onChange);
-  return () => {
-    window.removeEventListener(EVENT, onChange);
-    window.removeEventListener("storage", onChange);
-  };
+  return () => window.removeEventListener(EVENT, onChange);
 }
 
 export function useCustomerPreview(): boolean {
-  // Server snapshot is always false — preview is a client-only, internal-only view.
-  return useSyncExternalStore(subscribe, read, () => false);
+  const server =
+    useRouteData<{ previewAsCustomer?: boolean }>(path.to.getStarted)
+      ?.previewAsCustomer ?? false;
+  return useSyncExternalStore(subscribe, read, () => server);
 }
 
 export function setCustomerPreview(on: boolean): void {
   if (typeof window === "undefined") return;
-  if (on) window.sessionStorage.setItem(KEY, "1");
-  else window.sessionStorage.removeItem(KEY);
+  // No expiry: gone when the browser closes, like the sessionStorage flag was.
+  document.cookie = `${COOKIE}=${on ? "1" : ""}; path=${path.to.getStarted}; SameSite=Lax${on ? "" : "; max-age=0"}`;
   window.dispatchEvent(new Event(EVENT));
 }

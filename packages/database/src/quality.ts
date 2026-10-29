@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Inspection execution engine — the transactional core of the quality
  * inspection system, shared by the ERP routes (`x+/inspection+/*`) and the MES
@@ -8,17 +12,23 @@
  * its own `getDatabaseClient()` singleton). Kysely bypasses RLS — the calling
  * route's `requirePermissions` is the auth gate.
  */
-import type { Transaction } from "kysely";
+import type { NotNull, Transaction } from "kysely";
 import { sql } from "kysely";
-
-import { getNextSequence } from "../supabase/functions/shared/get-next-sequence.ts";
 import type { Kysely, KyselyDatabase } from "./client.ts";
+import {
+  computeLotStatus,
+  deriveSampleStatus,
+  valuateMeasurement
+} from "./inspection-verdict.ts";
 import type { SamplingPlanInput, SamplingStandard } from "./sampling.ts";
 import { resolveFeatureSamplingPlan, resolveSamplingPlan } from "./sampling.ts";
+import { getNextSequence } from "./sequence.ts";
 
 type Ok<T> = { data: T; error: null };
 type Err = { data: null; error: { message: string; blockers?: unknown } };
 export type Result<T> = Ok<T> | Err;
+
+export { valuateMeasurement };
 
 export function errResult(message: string, blockers?: unknown): Err {
   return { data: null, error: { message, ...(blockers ? { blockers } : {}) } };
@@ -47,6 +57,11 @@ export type InspectionDispositionInput = {
   id: string;
   decision: "Accept" | "Reject" | "Partial";
   notes?: string;
+  // Why a lot is rejected when no characteristic reached its rejection number
+  // and no sample failed — a suspected counterfeit, the wrong part, transit
+  // damage. A Reject with a reason needs no failure; it is stored as the lot's
+  // notes when `notes` is empty.
+  reason?: string;
   companyId: string;
   dispositionedBy: string;
   // One-shot mode: refuse to disposition a lot that is already terminal
@@ -114,6 +129,29 @@ function isInspectionClosed(status: string): boolean {
   return (INSPECTION_CLOSED_STATUSES as readonly string[]).includes(status);
 }
 
+// A receipt lot is closed once its receipt is voided: the stock it inspects was
+// never received. Accepting it made the voided serials and batches Available
+// again, and rejecting an untracked lot wrote the reversed stock off a second
+// time. FOR SHARE waits for a void that is running, which locks the receipt.
+async function assertReceiptNotVoided(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  inspection: { sourceDocument: string; sourceDocumentId: string | null }
+): Promise<void> {
+  if (inspection.sourceDocument !== "Receipt" || !inspection.sourceDocumentId)
+    return;
+  const receipt = await trx
+    .selectFrom("receipt")
+    .select("status")
+    .where("id", "=", inspection.sourceDocumentId)
+    .where("companyId", "=", companyId)
+    .forShare()
+    .executeTakeFirst();
+  if (receipt?.status === "Voided") {
+    throw new Error("The receipt of this inspection was voided");
+  }
+}
+
 // A sample whose verdict already drove a production posting (MES verdict-driven
 // completion links productionQuantity.inspectionSampleId) is locked — changing
 // it would desync the posted quantity. Deleting the productionQuantity row in
@@ -132,16 +170,6 @@ async function assertSampleNotLinked(
       "Sample is locked: its unit was already completed from this verdict"
     );
   }
-}
-
-// Mirrors the old in-service helper. Terminal states (Passed/Failed/Partial)
-// are owned by the disposition path, so the per-sample recompute only flips
-// between Pending and In Progress.
-function computeLotStatus(
-  samples: { status: string }[]
-): "Pending" | "In Progress" {
-  const inspected = samples.filter((s) => s.status !== "Pending").length;
-  return inspected > 0 ? "In Progress" : "Pending";
 }
 
 // Entity-level side effects of a sample verdict (serial parts only): flip the
@@ -239,6 +267,7 @@ export async function upsertInspectionSample(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, sample.companyId, inspection);
 
       // Serial parts carry a tracked entity that may only be sampled once, so we
       // upsert by it. Anonymous (batch / inventory / non-inventory) columns have
@@ -363,6 +392,28 @@ export async function upsertInspectionSample(
 //   - inspection (status, dispositionedBy/At, notes)
 //   - inspectionHistory (1 row for future plan auto-switching)
 
+/**
+ * Whether a lot has failed inspection, so it can be rejected with no reason
+ * given. A document-driven lot fails when a characteristic reaches its
+ * rejection number or a sample fails; a lot with no characteristics when its
+ * failed samples pass the acceptance number. Anything else — a suspected
+ * counterfeit, the wrong part — needs a reason. The ERP and MES Reject
+ * buttons apply the same rule.
+ */
+export function isRejectableWithoutReason(lot: {
+  features: { rejectionNumber: number; failed: number }[];
+  failedSamples: number;
+  acceptanceNumber: number;
+}): boolean {
+  if (lot.features.length > 0) {
+    return (
+      lot.features.some((f) => f.failed >= f.rejectionNumber) ||
+      lot.failedSamples > 0
+    );
+  }
+  return lot.failedSamples > lot.acceptanceNumber;
+}
+
 export async function dispositionInspection(
   db: Kysely<KyselyDatabase>,
   args: InspectionDispositionInput
@@ -399,7 +450,8 @@ export async function dispositionInspection(
           "inspectionLevel",
           "aql",
           "lotSize",
-          "sampleSize"
+          "sampleSize",
+          "acceptanceNumber"
         ])
         .where("id", "=", args.id)
         .where("companyId", "=", args.companyId)
@@ -416,6 +468,7 @@ export async function dispositionInspection(
       if (args.requireOpen && isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is already dispositioned");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
       const isReceiptSource = inspection.sourceDocument === "Receipt";
 
       const item = await trx
@@ -484,16 +537,16 @@ export async function dispositionInspection(
         .where("inspectionId", "=", args.id)
         .execute();
 
+      const countsByFeature = new Map<
+        string,
+        { recorded: number; failed: number }
+      >();
       if (lotFeatures.length > 0) {
         const measurements = await trx
           .selectFrom("inspectionMeasurement")
           .select(["inspectionFeatureId", "status"])
           .where("inspectionId", "=", args.id)
           .execute();
-        const countsByFeature = new Map<
-          string,
-          { recorded: number; failed: number }
-        >();
         for (const m of measurements) {
           const counts = countsByFeature.get(m.inspectionFeatureId) ?? {
             recorded: 0,
@@ -521,19 +574,23 @@ export async function dispositionInspection(
             );
           }
         }
+      }
 
-        if (args.decision === "Reject") {
-          const rejectable =
-            lotFeatures.some((f) => {
-              const counts = countsByFeature.get(f.inspectionFeatureId);
-              return counts != null && counts.failed >= f.rejectionNumber;
-            }) || existingSamples.some((s) => s.status === "Failed");
-          if (!rejectable) {
-            throw new Error(
-              "Cannot reject: no feature has reached its rejection number and no sample has failed"
-            );
-          }
-        }
+      if (
+        args.decision === "Reject" &&
+        !args.reason?.trim() &&
+        !isRejectableWithoutReason({
+          features: lotFeatures.map((f) => ({
+            rejectionNumber: f.rejectionNumber,
+            failed: countsByFeature.get(f.inspectionFeatureId)?.failed ?? 0
+          })),
+          failedSamples: failures,
+          acceptanceNumber: inspection.acceptanceNumber
+        })
+      ) {
+        throw new Error(
+          "Cannot reject: the lot has not failed inspection. Give a reason to reject it anyway."
+        );
       }
 
       // Reject = entire lot non-conforming (ISO 9001:2015 §8.7). Accept
@@ -574,8 +631,8 @@ export async function dispositionInspection(
       // received quantity sits in itemLedger with no per-row status to exclude
       // it from on-hand. Rejecting the lot posts a compensating write-off —
       // itemLedger Negative Adjmt. + cost relief + GL — through the
-      // post-nonconformance edge function, which the route invokes AFTER this
-      // transaction commits (cost/GL logic is Deno-only). The `inspection.status
+      // post-nonconformance operation, which the route runs AFTER this
+      // transaction commits. The `inspection.status
       // !== "Failed"` guard is intentionally dropped: post-nonconformance is
       // idempotent per (documentType, documentId), so a re-reject / retry is
       // safe. Tracked items are handled by the status flip above; Non-Inventory
@@ -596,7 +653,7 @@ export async function dispositionInspection(
         .updateTable("inspection")
         .set({
           status: lotStatus,
-          notes: args.notes ?? null,
+          notes: args.notes || args.reason?.trim() || null,
           dispositionedBy: args.dispositionedBy,
           dispositionedAt: nowIso,
           updatedBy: args.dispositionedBy,
@@ -656,46 +713,6 @@ export async function dispositionInspection(
 // 3. Measurements (document-driven lots)
 // -------------------------------------------------------------
 
-function parseSpecNumber(value: string | null | undefined): number | null {
-  if (value == null) return null;
-  const trimmed = value.trim();
-  if (trimmed === "") return null;
-  const parsed = Number(trimmed.replace(/^\+/, ""));
-  return Number.isNaN(parsed) ? null : parsed;
-}
-
-// Pure valuation of one reading against the live feature spec. Measurement
-// features with a parseable nominal are judged numerically inside
-// [nominal - |tol-|, nominal + |tol+|]; everything else (attribute features,
-// GD&T strings that don't parse) is a pass/fail toggle.
-export function valuateMeasurement(
-  feature: {
-    type: string;
-    nominalValue: string | null;
-    tolerancePlus: string | null;
-    toleranceMinus: string | null;
-  },
-  value: number | null,
-  passed?: boolean | null
-): "Pending" | "Passed" | "Failed" {
-  const nominal =
-    feature.type === "Measurement"
-      ? parseSpecNumber(feature.nominalValue)
-      : null;
-
-  if (feature.type === "Measurement" && nominal !== null) {
-    if (value == null) return "Pending";
-    const tolPlus = Math.abs(parseSpecNumber(feature.tolerancePlus) ?? 0);
-    const tolMinus = Math.abs(parseSpecNumber(feature.toleranceMinus) ?? 0);
-    return value >= nominal - tolMinus && value <= nominal + tolPlus
-      ? "Passed"
-      : "Failed";
-  }
-
-  if (passed == null) return "Pending";
-  return passed ? "Passed" : "Failed";
-}
-
 // Records one cell of the features x samples grid. Valuates the reading,
 // upserts the measurement, derives the sample's status from its required
 // measurements (strict: no override), applies serial-entity side effects on
@@ -726,6 +743,7 @@ export async function upsertInspectionMeasurement(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
 
       const feature = await trx
         .selectFrom("inspectionFeature")
@@ -832,12 +850,6 @@ export async function upsertInspectionMeasurement(
         measurementId = inserted.id;
       }
 
-      // Derive the sample's status. Sampling is count-based, not positional —
-      // a feature's n is the minimum number of readings across ANY samples
-      // (per-feature gating at disposition enforces the counts), so a sample's
-      // own verdict is: Failed the moment any of its readings fails, Passed
-      // once every plan feature has a passing reading on it (a fully-inspected
-      // unit), otherwise Pending (partially inspected).
       const lotFeatures = await trx
         .selectFrom("inspectionSamplingPlan")
         .select(["inspectionFeatureId", "sampleSize"])
@@ -849,20 +861,10 @@ export async function upsertInspectionMeasurement(
         .where("inspectionSampleId", "=", sample.id)
         .execute();
 
-      const anyFailed = sampleMeasurements.some((m) => m.status === "Failed");
-      const allFeaturesPassed =
-        lotFeatures.length > 0 &&
-        lotFeatures.every(
-          (f) =>
-            sampleMeasurements.find(
-              (m) => m.inspectionFeatureId === f.inspectionFeatureId
-            )?.status === "Passed"
-        );
-      const derivedStatus: "Pending" | "Passed" | "Failed" = anyFailed
-        ? "Failed"
-        : allFeaturesPassed
-          ? "Passed"
-          : "Pending";
+      const derivedStatus = deriveSampleStatus(
+        lotFeatures.map((f) => f.inspectionFeatureId),
+        sampleMeasurements
+      );
 
       if (derivedStatus !== sample.status) {
         await trx
@@ -1069,7 +1071,7 @@ export async function changeInspectionDocument(
     const result = await db.transaction().execute(async (trx) => {
       const inspection = await trx
         .selectFrom("inspection")
-        .select(["id", "status"])
+        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
         .where("id", "=", args.inspectionId)
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
@@ -1077,6 +1079,7 @@ export async function changeInspectionDocument(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
 
       const measurement = await trx
         .selectFrom("inspectionMeasurement")
@@ -1112,6 +1115,178 @@ export async function changeInspectionDocument(
   } catch (err) {
     return errResult(
       err instanceof Error ? err.message : "Failed to change document"
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// 5b. recordInspectionGauge
+// -------------------------------------------------------------
+// Records (or clears) the gauge used to inspect one feature of a lot, on the
+// lot's per-feature plan row. When the feature names a gauge type, only a
+// gauge of that type is accepted. Inactive gauges are refused; calibration
+// status is shown to the inspector but does not block (the gauge's status is
+// the calibration program's call, not the inspector's).
+
+export async function recordInspectionGauge(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    inspectionId: string;
+    inspectionFeatureId: string;
+    gaugeId: string | null;
+    companyId: string;
+    userId: string;
+  }
+): Promise<Result<{ inspectionFeatureId: string; gaugeId: string | null }>> {
+  try {
+    const result = await db.transaction().execute(async (trx) => {
+      const inspection = await trx
+        .selectFrom("inspection")
+        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
+        .where("id", "=", args.inspectionId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (!inspection) throw new Error("Inspection not found");
+      if (isInspectionClosed(inspection.status)) {
+        throw new Error("Inspection is closed");
+      }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
+
+      const plan = await trx
+        .selectFrom("inspectionSamplingPlan")
+        .innerJoin("inspectionFeature", (join) =>
+          join
+            .onRef(
+              "inspectionFeature.id",
+              "=",
+              "inspectionSamplingPlan.inspectionFeatureId"
+            )
+            .onRef(
+              "inspectionFeature.companyId",
+              "=",
+              "inspectionSamplingPlan.companyId"
+            )
+        )
+        .select(["inspectionSamplingPlan.id", "inspectionFeature.gaugeTypeId"])
+        .where("inspectionSamplingPlan.inspectionId", "=", args.inspectionId)
+        .where(
+          "inspectionSamplingPlan.inspectionFeatureId",
+          "=",
+          args.inspectionFeatureId
+        )
+        .where("inspectionSamplingPlan.companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (!plan) throw new Error("Inspection feature not found");
+
+      if (args.gaugeId) {
+        const gauge = await trx
+          .selectFrom("gauge")
+          .select(["id", "gaugeTypeId", "gaugeStatus"])
+          .where("id", "=", args.gaugeId)
+          .where("companyId", "=", args.companyId)
+          .executeTakeFirst();
+        if (!gauge) throw new Error("Gauge not found");
+        if (gauge.gaugeStatus === "Inactive") {
+          throw new Error("Gauge is inactive");
+        }
+        if (plan.gaugeTypeId && gauge.gaugeTypeId !== plan.gaugeTypeId) {
+          throw new Error("Gauge is not of the type this feature requires");
+        }
+      }
+
+      await trx
+        .updateTable("inspectionSamplingPlan")
+        .set({
+          gaugeId: args.gaugeId,
+          gaugeRecordedAt: args.gaugeId ? sql<string>`now()` : null,
+          updatedBy: args.userId,
+          updatedAt: sql<string>`now()`
+        })
+        .where("id", "=", plan.id)
+        .execute();
+
+      return {
+        inspectionFeatureId: args.inspectionFeatureId,
+        gaugeId: args.gaugeId
+      };
+    });
+
+    return { data: result, error: null };
+  } catch (err) {
+    return errResult(
+      err instanceof Error ? err.message : "Failed to record gauge"
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// 5c. getRecentInspectionGauges
+// -------------------------------------------------------------
+// The gauges most recently recorded on inspections at the same "station" as
+// this lot, newest first — the execution view lists them above the rest. A Job
+// Operation lot's station is its operation's work center; receipts are one
+// station of their own. A work-centerless operation has no history.
+
+export const RECENT_INSPECTION_GAUGE_LIMIT = 10;
+
+export async function getRecentInspectionGauges(
+  db: Kysely<KyselyDatabase>,
+  args: { inspectionId: string; companyId: string }
+): Promise<Result<string[]>> {
+  try {
+    // One round trip: `lot` is this inspection, `used` is the inspection the
+    // gauge was recorded on, and each is joined to its operation's work center
+    // (null for a receipt lot).
+    const rows = await db
+      .selectFrom("inspectionSamplingPlan")
+      .innerJoin("inspection as used", (join) =>
+        join
+          .onRef("used.id", "=", "inspectionSamplingPlan.inspectionId")
+          .onRef("used.companyId", "=", "inspectionSamplingPlan.companyId")
+      )
+      .innerJoin("inspection as lot", (join) =>
+        join
+          .onRef("lot.sourceDocument", "=", "used.sourceDocument")
+          .on("lot.id", "=", args.inspectionId)
+          .on("lot.companyId", "=", args.companyId)
+      )
+      .leftJoin("jobOperation as usedOperation", (join) =>
+        join
+          .onRef("usedOperation.id", "=", "used.sourceDocumentLineId")
+          .onRef("usedOperation.companyId", "=", "used.companyId")
+      )
+      .leftJoin("jobOperation as lotOperation", (join) =>
+        join
+          .onRef("lotOperation.id", "=", "lot.sourceDocumentLineId")
+          .onRef("lotOperation.companyId", "=", "lot.companyId")
+      )
+      .select("inspectionSamplingPlan.gaugeId")
+      .where("inspectionSamplingPlan.companyId", "=", args.companyId)
+      .where("inspectionSamplingPlan.gaugeId", "is not", null)
+      .where("inspectionSamplingPlan.gaugeRecordedAt", "is not", null)
+      .where((eb) =>
+        eb.or([
+          eb("lot.sourceDocument", "=", "Receipt"),
+          eb(
+            "usedOperation.workCenterId",
+            "=",
+            eb.ref("lotOperation.workCenterId")
+          )
+        ])
+      )
+      .groupBy("inspectionSamplingPlan.gaugeId")
+      .orderBy(
+        (eb) => eb.fn.max("inspectionSamplingPlan.gaugeRecordedAt"),
+        "desc"
+      )
+      .limit(RECENT_INSPECTION_GAUGE_LIMIT)
+      .$narrowType<{ gaugeId: NotNull }>()
+      .execute();
+
+    return { data: rows.map((row) => row.gaugeId), error: null };
+  } catch (err) {
+    return errResult(
+      err instanceof Error ? err.message : "Failed to load recent gauges"
     );
   }
 }
@@ -1345,4 +1520,183 @@ export async function getOrCreateJobOperationInspection(
       err instanceof Error ? err.message : "Failed to create inspection"
     );
   }
+}
+
+// -------------------------------------------------------------
+// Issue disposition lock
+// -------------------------------------------------------------
+
+/**
+ * Serializes writes to an issue's disposition rows. Every writer that inserts
+ * `nonConformanceItemTrackedEntity` or `nonConformanceInspection` rows, or
+ * changes `nonConformanceItem.quantity`, takes this lock first inside its
+ * transaction — before touching any item row, so the lock order is always
+ * issue → item and writers cannot deadlock each other.
+ *
+ * It holds a `FOR NO KEY UPDATE` lock on the `nonConformance` row, which
+ * conflicts with other holders of the same lock but not with the FK checks of
+ * unrelated child inserts. Returns the issue status for the caller's
+ * locked-issue check; throws when the issue does not exist in the company.
+ */
+export async function lockIssueDispositions(
+  trx: Transaction<KyselyDatabase>,
+  args: { nonConformanceId: string; companyId: string }
+): Promise<{ status: string }> {
+  const issue = await trx
+    .selectFrom("nonConformance")
+    .select(["status"])
+    .where("id", "=", args.nonConformanceId)
+    .where("companyId", "=", args.companyId)
+    .forNoKeyUpdate()
+    .executeTakeFirst();
+  if (!issue) throw new Error("Issue not found");
+  return { status: issue.status };
+}
+
+/** One characteristic of a plan made from a model's PMI (`pmiInspectionCharacteristics`). */
+export type PmiPlanCharacteristic = {
+  pmiItemId: string;
+  label: string;
+  description: string;
+  nominalValue: string | null;
+  tolerancePlus: string | null;
+  toleranceMinus: string | null;
+  unit: string;
+};
+
+/**
+ * Makes the inspection plan for an item from its model's PMI: a plan that
+ * holds the model and no PDF, with one Measurement feature per
+ * characteristic. Runs in the caller's transaction. Returns the new plan's
+ * id, or null when the item already has a plan for this model — the partial
+ * unique index `inspectionDocument_part_model_key` decides, so two runs for
+ * one model never make two plans and an edited plan is never rewritten.
+ *
+ * The drawing number follows the editor's rule for a plan created without
+ * one: the item's `readableIdWithRevision`, with ` (1)`, ` (2)` … when taken.
+ */
+export async function createPmiInspectionPlan(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    itemId: string;
+    modelUploadId: string;
+    characteristics: readonly PmiPlanCharacteristic[];
+    createdBy: string;
+  }
+): Promise<string | null> {
+  const { companyId, itemId, modelUploadId, characteristics, createdBy } = args;
+
+  const item = await trx
+    .selectFrom("item")
+    .select(["readableIdWithRevision"])
+    .where("id", "=", itemId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!item) return null;
+
+  const base = item.readableIdWithRevision?.trim() || null;
+  let drawingNumber = base;
+  if (base) {
+    const taken = new Set(
+      (
+        await trx
+          .selectFrom("inspectionDocument")
+          .select(["drawingNumber"])
+          .where("companyId", "=", companyId)
+          .where((eb) =>
+            eb.or([
+              eb("drawingNumber", "=", base),
+              eb("drawingNumber", "like", `${base} (%)`)
+            ])
+          )
+          .execute()
+      ).map((row) => row.drawingNumber)
+    );
+    let suffix = 0;
+    while (drawingNumber && taken.has(drawingNumber)) {
+      suffix += 1;
+      drawingNumber = `${base} (${suffix})`;
+    }
+  }
+
+  const plan = await trx
+    .insertInto("inspectionDocument")
+    .values({
+      companyId,
+      partId: itemId,
+      modelUploadId,
+      drawingNumber,
+      createdBy
+    })
+    .onConflict((oc) =>
+      oc
+        .columns(["companyId", "partId", "modelUploadId"])
+        .where("modelUploadId", "is not", null)
+        .doNothing()
+    )
+    .returning(["id"])
+    .executeTakeFirst();
+  if (!plan) return null;
+
+  if (characteristics.length > 0) {
+    await trx
+      .insertInto("inspectionFeature")
+      .values(
+        characteristics.map((c) => ({
+          companyId,
+          inspectionDocumentId: plan.id,
+          // A model plan has one "page": the save RPC defaults to 1 as well,
+          // and the label trigger keeps labels unique across the plan.
+          pageNumber: 1,
+          label: c.label,
+          description: c.description,
+          nominalValue: c.nominalValue,
+          tolerancePlus: c.tolerancePlus,
+          toleranceMinus: c.toleranceMinus,
+          unit: c.unit,
+          type: "Measurement" as const,
+          pmiItemId: c.pmiItemId,
+          createdBy
+        }))
+      )
+      .execute();
+  }
+
+  return plan.id;
+}
+
+/**
+ * Deletes the plans made from the items' model PMI that no inspection used,
+ * in the caller's transaction, ahead of an item delete. A plan made for the
+ * item, not by a person, must not block the delete through
+ * `inspectionDocument.partId`'s RESTRICT. A used one is inspection history and
+ * still refuses it, as a plan made by hand does. Returns how many it deleted.
+ */
+export async function deleteUnusedPmiInspectionPlans(
+  trx: Transaction<KyselyDatabase>,
+  args: { companyId: string; itemIds: readonly string[] }
+): Promise<number> {
+  if (args.itemIds.length === 0) return 0;
+  const result = await trx
+    .deleteFrom("inspectionDocument")
+    .where("companyId", "=", args.companyId)
+    .where("partId", "in", [...args.itemIds])
+    .where("modelUploadId", "is not", null)
+    .where((eb) =>
+      eb.not(
+        eb.exists(
+          eb
+            .selectFrom("inspection")
+            .select("inspection.id")
+            .whereRef(
+              "inspection.inspectionDocumentId",
+              "=",
+              "inspectionDocument.id"
+            )
+        )
+      )
+    )
+    .executeTakeFirst();
+  return Number(result.numDeletedRows);
 }

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { cn, Tr } from "@carbon/react";
 import type { Column, Row as RowType } from "@tanstack/react-table";
 import type { ComponentProps, CSSProperties } from "react";
@@ -73,7 +77,7 @@ const Row = <T extends object>({
             key={cell.id}
             cell={cell}
             columnIndex={columnIndex}
-            // @ts-ignore
+            // @ts-expect-error
             editableComponents={editableComponents}
             editedCells={editedCells}
             isRowSelected={isRowSelected}

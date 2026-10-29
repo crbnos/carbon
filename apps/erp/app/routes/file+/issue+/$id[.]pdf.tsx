@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ensureFont, IssuePDF } from "@carbon/documents/pdf";
 import {
@@ -18,12 +22,12 @@ import {
   getIssueReviewers,
   getIssueTypes,
   getRequiredActionsList
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import {
   getCompany,
   getDocumentTemplate,
   resolveSections
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "issue", "pdf");
 

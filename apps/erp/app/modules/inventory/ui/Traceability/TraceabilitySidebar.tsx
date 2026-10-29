@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -19,7 +23,7 @@ import {
   LuLink
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
-import type { Activity, TrackedEntity } from "~/modules/inventory";
+import type { Activity, TrackedEntity } from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 import { capitalize, copyToClipboard } from "~/utils/string";
 import { AttributeList, hasRenderedAttributes } from "./attributeRenderers";
@@ -296,7 +300,7 @@ export function TraceabilitySidebar({
   const hasMultiSelect = selectedIds && selectedIds.length > 1;
 
   return (
-    <aside className="w-[426px] flex-shrink-0 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm">
+    <aside className="w-[426px] flex-shrink-0 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm max-md:w-full max-md:h-[45%] max-md:border-l-0 max-md:border-t">
       {hasMultiSelect && (
         <div className="flex items-center justify-between gap-2 bg-muted/40 mx-3 mt-3 rounded-md px-2 py-1">
           <div className="flex items-center gap-2 min-w-0">

@@ -1,4 +1,14 @@
-import { Badge, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Badge,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -15,6 +25,8 @@ import type { ProductionQuantity, ScrapReason } from "../../types";
 type ProductionQuantitiesTableProps = {
   data: ProductionQuantity[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   operations: { id: string; description: string | null }[];
   scrapReasons: ScrapReason[];
 };
@@ -23,6 +35,7 @@ const ProductionQuantitiesTable = memo(
   ({
     data,
     count,
+    nextCursor,
     operations,
     scrapReasons
   }: ProductionQuantitiesTableProps) => {
@@ -42,6 +55,7 @@ const ProductionQuantitiesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             filter: {
               type: "static",
               options: operations.map((operation) => ({
@@ -66,6 +80,7 @@ const ProductionQuantitiesTable = memo(
             <EmployeeAvatar employeeId={row.original.createdBy} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -92,6 +107,7 @@ const ProductionQuantitiesTable = memo(
             </Badge>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: ["Production", "Rework", "Scrap"].map((type) => ({
@@ -116,7 +132,8 @@ const ProductionQuantitiesTable = memo(
         {
           accessorKey: "quantity",
           header: t`Quantity`,
-          cell: ({ row }) => row.original.quantity
+          cell: ({ row }) => row.original.quantity,
+          meta: { mobile: "P2" }
         },
         {
           accessorKey: "scrapReasonId",
@@ -182,6 +199,7 @@ const ProductionQuantitiesTable = memo(
       (row) => (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "production")}
             onClick={() => navigate(row.id)}
           >
@@ -189,6 +207,7 @@ const ProductionQuantitiesTable = memo(
             Edit Quantity
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "production")}
             onClick={() => onDelete(row)}
@@ -207,6 +226,8 @@ const ProductionQuantitiesTable = memo(
         <Table<ProductionQuantity>
           compact
           count={count}
+          // Scoped to one job: no list registry entry, so no `listKey`.
+          infinite={{ dataKey: "events", nextCursor }}
           columns={columns}
           data={data}
           primaryAction={

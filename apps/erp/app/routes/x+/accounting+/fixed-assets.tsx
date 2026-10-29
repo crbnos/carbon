@@ -1,15 +1,21 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { Button, VStack } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { Button, RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCirclePlus } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
+import { NewAction } from "~/components/New";
 import { usePermissions } from "~/hooks";
-import { getFixedAssetClassesList, getFixedAssets } from "~/modules/accounting";
+import { getFixedAssetClassesList } from "~/modules/accounting/accounting.service";
 import { FixedAssetsTable } from "~/modules/accounting/ui/FixedAssets";
 import type { Handle } from "~/utils/handle";
+import { fixedAssetsList } from "~/utils/list-registry/accounting.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Fixed Assets`,
@@ -17,44 +23,19 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  return loadListPage(request, fixedAssetsList, {
+    dataKey: "data",
+    firstPage: async ({ client, companyId }) => {
+      const assetClasses = await getFixedAssetClassesList(client, companyId);
+      return { assetClasses: assetClasses.data ?? [] };
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const status = searchParams.get("status") as
-    | "Draft"
-    | "Active"
-    | "Fully Depreciated"
-    | "Disposed"
-    | null;
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [assets, assetClasses] = await Promise.all([
-    getFixedAssets(client, companyId, {
-      search,
-      status,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    getFixedAssetClassesList(client, companyId)
-  ]);
-
-  return {
-    data: assets.data ?? [],
-    count: assets.count ?? 0,
-    assetClasses: assetClasses.data ?? []
-  };
 }
 
 export default function FixedAssetsRoute() {
-  const { data, count, assetClasses } = useLoaderData<typeof loader>();
+  const { data, count, infinite, assetClasses } =
+    useLoaderData<typeof loader>();
+  const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
 
@@ -63,20 +44,23 @@ export default function FixedAssetsRoute() {
       <FixedAssetsTable
         data={data}
         count={count}
+        infinite={infinite}
         assetClasses={assetClasses}
         primaryAction={
           permissions.can("create", "accounting") && (
-            <Button
-              leftIcon={<LuCirclePlus />}
-              variant="primary"
-              onClick={() => navigate(path.to.newFixedAsset)}
-            >
-              Add Fixed Asset
-            </Button>
+            <NewAction label={t`Add Fixed Asset`} to={path.to.newFixedAsset}>
+              <Button
+                leftIcon={<LuCirclePlus />}
+                variant="primary"
+                onClick={() => navigate(path.to.newFixedAsset)}
+              >
+                <Trans>Add Fixed Asset</Trans>
+              </Button>
+            </NewAction>
           )
         }
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

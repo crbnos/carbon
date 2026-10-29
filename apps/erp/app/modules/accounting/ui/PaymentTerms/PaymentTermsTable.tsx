@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -13,6 +17,7 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -22,9 +27,11 @@ import type { PaymentTerm } from "../../types";
 type PaymentTermsTableProps = {
   data: PaymentTerm[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
+const PaymentTermsTable = memo((props: PaymentTermsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -42,6 +49,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -50,6 +58,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
         header: t`Days Due`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P2",
           icon: <LuCalendar />
         }
       },
@@ -74,6 +83,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
         header: t`Calculation Method`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: paymentTermsCalculationMethod.map((v) => ({
@@ -93,6 +103,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "accounting")}
             onClick={() => {
               navigate(`${path.to.paymentTerm(row.id)}?${params.toString()}`);
@@ -102,6 +113,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
             <Trans>Edit Payment Term</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={!permissions.can("delete", "accounting")}
             onClick={() => {
               navigate(
@@ -120,6 +132,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
 
   return (
     <Table<PaymentTerm>
+      infinite={infinite}
       data={data}
       columns={columns}
       count={count}

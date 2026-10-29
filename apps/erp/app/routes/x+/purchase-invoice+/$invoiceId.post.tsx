@@ -1,135 +1,25 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { trackWorkEvent } from "@carbon/lib/telemetry";
-import { raiseMoment } from "@carbon/lib/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { getCompanySettings } from "~/modules/settings";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "invoicing"
+const postForm = z.object({
+  skipReceiptPost: zfd.checkbox({ trueValue: "true" })
+});
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(postForm).request(args, {
+    params: ["invoiceId"]
   });
-
-  const { invoiceId } = params;
-  if (!invoiceId) throw new Error("invoiceId not found");
-
-  const formData = await request.formData();
-  const skipReceiptPost = formData.get("skipReceiptPost") === "true";
-
-  const setPendingState = await client
-    .from("purchaseInvoice")
-    .update({
-      status: "Pending"
-    })
-    .eq("id", invoiceId);
-
-  if (setPendingState.error) {
-    return {
-      success: false,
-      message: "Failed to post purchase invoice"
-    };
-  }
-
-  let receiptIds: string[] | undefined;
-
-  try {
-    const serviceRole = await getCarbonServiceRole();
-    const postPurchaseInvoice = await serviceRole.functions.invoke<{
-      receiptIds?: string[];
-    }>("post-purchase-invoice", {
-      body: {
-        invoiceId: invoiceId,
-        userId: userId,
-        companyId: companyId,
-        skipReceiptPost: skipReceiptPost
-      }
-    });
-
-    if (postPurchaseInvoice.error) {
-      await client
-        .from("purchaseInvoice")
-        .update({
-          status: "Draft"
-        })
-        .eq("id", invoiceId);
-
-      return {
-        success: false,
-        message: "Failed to post purchase invoice"
-      };
-    }
-
-    receiptIds = postPurchaseInvoice.data?.receiptIds;
-
-    // Check if we should update prices on invoice post
-    const companySettings = await getCompanySettings(serviceRole, companyId);
-    if (
-      !companySettings.data?.purchasePriceUpdateTiming ||
-      companySettings.data.purchasePriceUpdateTiming === "Purchase Invoice Post"
-    ) {
-      const priceUpdate = await serviceRole.functions.invoke(
-        "update-purchased-prices",
-        {
-          body: {
-            invoiceId: invoiceId,
-            companyId: companyId,
-            userId: userId,
-            source: "purchaseInvoice",
-            updatePrices: true,
-            updateLeadTimes: false
-          }
-        }
-      );
-
-      if (priceUpdate.error) {
-        await client
-          .from("purchaseInvoice")
-          .update({
-            status: "Draft"
-          })
-          .eq("id", invoiceId);
-
-        return {
-          success: false,
-          message: "Failed to update prices"
-        };
-      }
-    }
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  } catch (error) {
-    await client
-      .from("purchaseInvoice")
-      .update({
-        status: "Draft"
-      })
-      .eq("id", invoiceId);
-
-    return {
-      success: false,
-      message: "Failed to post purchase invoice"
-    };
-  }
-
-  // Must stay below the rollback catch above — a post that got reverted to
-  // Draft must not fire workflows.
-  await raiseMoment("invoicing.purchaseInvoicePosted", {
-    outputs: { purchaseInvoice: { id: invoiceId }, postedBy: { id: userId } },
-    companyId,
-    actorId: userId
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.invoicing.postPurchaseInvoice({
+    invoiceId: input.params.invoiceId,
+    skipReceiptPost: input.data.skipReceiptPost
   });
-
-  trackWorkEvent("purchase_invoice_posted", {
-    companyId,
-    userId,
-    purchaseInvoiceId: invoiceId
-  });
-
-  const receiptId =
-    skipReceiptPost && receiptIds?.[0] ? receiptIds[0] : undefined;
-
-  return {
-    success: true,
-    message: "Purchase invoice posted successfully",
-    receiptId
-  };
 }

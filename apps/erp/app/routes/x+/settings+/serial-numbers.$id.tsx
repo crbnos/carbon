@@ -1,15 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData } from "react-router";
+import { data, useLoaderData } from "react-router";
+import {
+  itemSerialSequenceValidator,
+  type SerialNumberTiming
+} from "~/modules/settings/settings.models";
 import {
   getItemSerialSequence,
-  ItemSerialSequenceForm,
-  itemSerialSequenceValidator,
   upsertItemSerialSequence
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service";
+import { ItemSerialSequenceForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -87,7 +95,10 @@ export default function EditSerialNumberRoute() {
     suffix: itemSerialSequence.suffix ?? "",
     next: itemSerialSequence.next ?? 0,
     size: itemSerialSequence.size ?? 5,
-    step: itemSerialSequence.step ?? 1
+    step: itemSerialSequence.step ?? 1,
+    serialNumberTiming:
+      (itemSerialSequence.serialNumberTiming as SerialNumberTiming | null) ??
+      undefined
   };
 
   return (

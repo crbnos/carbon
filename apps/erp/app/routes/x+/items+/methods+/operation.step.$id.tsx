@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -6,10 +10,10 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
   assertMethodOperationIsDraft,
+  checkRevisionLock,
   upsertMethodOperationStep
-} from "~/modules/items";
-import { checkRevisionLock } from "~/modules/items/items.server";
-import { operationStepValidator } from "~/modules/shared";
+} from "~/modules/items/items.service";
+import { operationStepValidator } from "~/modules/shared/shared.models";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

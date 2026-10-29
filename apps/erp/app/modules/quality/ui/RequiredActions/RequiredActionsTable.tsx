@@ -1,4 +1,14 @@
-import { Checkbox, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Checkbox,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -8,6 +18,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { RequiredAction } from "../../types";
@@ -15,10 +26,11 @@ import type { RequiredAction } from "../../types";
 type RequiredActionsTableProps = {
   data: RequiredAction[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const RequiredActionsTable = memo(
-  ({ data, count }: RequiredActionsTableProps) => {
+  ({ data, count, infinite }: RequiredActionsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -38,13 +50,17 @@ const RequiredActionsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuSquareCheck />
           }
         },
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: ({ row }) => <Checkbox checked={row.original.active} />
+          cell: ({ row }) => <Checkbox checked={row.original.active} />,
+          meta: {
+            mobile: "P2"
+          }
         }
       ];
       return defaultColumns;
@@ -55,6 +71,7 @@ const RequiredActionsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               onClick={() => {
                 navigate(
                   `${path.to.requiredAction(row.id)}?${params.toString()}`
@@ -65,6 +82,7 @@ const RequiredActionsTable = memo(
               Edit Action
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "quality")}
               onClick={() => {
@@ -87,6 +105,7 @@ const RequiredActionsTable = memo(
       <>
         <Table<RequiredAction>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           primaryAction={

@@ -1,23 +1,36 @@
-import { Avatar, HStack, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Avatar,
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, SupplierAvatar, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Contractor } from "~/modules/resources";
+import type { Contractor } from "~/modules/resources/types";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
 type ContractorsTableProps = {
   data: Contractor[];
   count: number;
+  infinite: InfiniteOptions;
   // abilities: Partial<Ability>[];
 };
 
-const ContractorsTable = memo(({ data, count }: ContractorsTableProps) => {
+const ContractorsTable = memo((props: ContractorsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -44,7 +57,8 @@ const ContractorsTable = memo(({ data, count }: ContractorsTableProps) => {
               {row.original.fullName ?? row.original.email ?? "Unknown"}
             </Hyperlink>
           </HStack>
-        )
+        ),
+        meta: { mobile: "P1" }
       },
       {
         id: "supplierId",
@@ -53,6 +67,7 @@ const ContractorsTable = memo(({ data, count }: ContractorsTableProps) => {
           <SupplierAvatar supplierId={row.original.supplierId} />
         ),
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: suppliers.map((supplier) => ({
@@ -99,7 +114,8 @@ const ContractorsTable = memo(({ data, count }: ContractorsTableProps) => {
       {
         accessorKey: "hoursPerWeek",
         header: t`Hours per Week`,
-        cell: (item) => item.getValue()
+        cell: (item) => item.getValue(),
+        meta: { mobile: "P2" }
       }
     ];
 
@@ -111,6 +127,7 @@ const ContractorsTable = memo(({ data, count }: ContractorsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(
                 `${path.to.contractor(
@@ -123,6 +140,7 @@ const ContractorsTable = memo(({ data, count }: ContractorsTableProps) => {
             <Trans>Edit Contractor</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {
@@ -147,6 +165,8 @@ const ContractorsTable = memo(({ data, count }: ContractorsTableProps) => {
       data={data}
       count={count}
       columns={columns}
+      infinite={infinite}
+      getRowId={(row) => String(row.supplierContactId)}
       primaryAction={
         permissions.can("create", "resources") && (
           <New label={t`Contractor`} to={`new?${params.toString()}`} />

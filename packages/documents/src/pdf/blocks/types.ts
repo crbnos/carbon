@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
 import type {
@@ -16,6 +20,9 @@ export type SalesInvoiceLocations =
   Database["public"]["Views"]["salesInvoiceLocations"]["Row"] & {
     customerTaxId?: string | null;
     customerVatNumber?: string | null;
+    /** The invoice's contact (`invoiceCustomerContactId`), resolved by the loader. */
+    contactName?: string | null;
+    contactEmail?: string | null;
   };
 
 /**

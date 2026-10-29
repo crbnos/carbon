@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   FormControl,
@@ -13,13 +18,14 @@ import {
   ModalDrawerHeader,
   ModalDrawerProvider,
   ModalDrawerTitle,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { PrintButton } from "~/components";
 import {
+  Boolean,
   Hidden,
   Input,
   Location,
@@ -28,7 +34,7 @@ import {
   WorkCenter
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { storageUnitValidator } from "~/modules/inventory";
+import { storageUnitValidator } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 import { StorageUnitParentSelect } from "./StorageUnitParentSelect";
 
@@ -42,6 +48,8 @@ type StorageUnitFormProps = {
     workCenterId: string;
     workCenterName: string | null;
   } | null;
+  /** What makes this unit non-nettable when its own flag says nettable. */
+  inheritedNonNettable?: { via: "storageType" | "parent"; name: string } | null;
 };
 
 const StorageUnitForm = ({
@@ -50,16 +58,50 @@ const StorageUnitForm = ({
   open = true,
   type = "drawer",
   onClose,
-  inheritedWorkCenter
+  inheritedWorkCenter,
+  inheritedNonNettable = null
 }: StorageUnitFormProps) => {
-  const fetcher = useFetcher<{}>();
+  // A modal closes once the unit exists, so the picker that opened it can
+  // select it; an error is toasted and the form stays.
+  const fetcher = useAction({
+    onSuccess: () => {
+      if (type === "modal") onClose?.();
+    }
+  });
   const { t } = useLingui();
+  const sourceName = inheritedNonNettable?.name;
 
   const permissions = usePermissions();
   const isEditing = !!initialValues?.id;
   const isDisabled = isEditing
     ? !permissions.can("update", "parts")
     : !permissions.can("create", "parts");
+
+  // Phones, edit only: a full-height sheet with Save in its header.
+  const { isPhone } = useViewport();
+  const isPhoneEdit = isEditing && isPhone;
+
+  const saveButton = (
+    <Submit isDisabled={isDisabled}>
+      <Trans>Save</Trans>
+    </Submit>
+  );
+  const printButton =
+    isEditing && initialValues.id ? (
+      <PrintButton
+        sourceDocument="StorageUnit"
+        sourceDocumentId={initialValues.id}
+        locationId={locationId || undefined}
+        context="inventory"
+        fileRoutes={{
+          pdf: (id: string, opts?: { labelSize?: string }) =>
+            path.to.file.storageUnitLabelsPdf(id, opts),
+          zpl: (id: string, opts?: { labelSize?: string }) =>
+            path.to.file.storageUnitLabelsZpl(id, opts)
+        }}
+        label={isPhoneEdit ? t`Print label` : undefined}
+      />
+    ) : null;
 
   return (
     <ModalDrawerProvider type={type}>
@@ -69,7 +111,7 @@ const StorageUnitForm = ({
           if (!open) onClose?.();
         }}
       >
-        <ModalDrawerContent>
+        <ModalDrawerContent size={isPhoneEdit ? "full" : undefined}>
           <ValidatedForm
             validator={storageUnitValidator}
             method="post"
@@ -80,17 +122,22 @@ const StorageUnitForm = ({
             }
             defaultValues={initialValues}
             fetcher={fetcher}
-            onSubmit={() => {
-              if (type === "modal") {
-                onClose?.();
-              }
-            }}
             className="flex flex-col h-full"
           >
-            <ModalDrawerHeader>
+            <ModalDrawerHeader
+              className={
+                isPhoneEdit
+                  ? "max-md:flex-row max-md:items-center max-md:justify-between max-md:gap-3"
+                  : undefined
+              }
+            >
               <ModalDrawerTitle>
                 {isEditing ? t`Edit Storage Unit` : t`New Storage Unit`}
               </ModalDrawerTitle>
+              {/* Last in the row, so it sits left of the sheet's × */}
+              {isPhoneEdit ? (
+                <div className="order-last shrink-0">{saveButton}</div>
+              ) : null}
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <Hidden name="id" />
@@ -141,31 +188,34 @@ const StorageUnitForm = ({
                     helperText={t`Assigns this storage unit to a work center (lineside)`}
                   />
                 )}
+                <Boolean
+                  name="nonNettable"
+                  label={t`Non-nettable`}
+                  termId="non-nettable"
+                  bordered
+                  description={
+                    inheritedNonNettable?.via === "storageType"
+                      ? t`Already non-nettable through its storage type ${sourceName}`
+                      : inheritedNonNettable?.via === "parent"
+                        ? t`Already non-nettable through its parent ${sourceName}`
+                        : t`MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas.`
+                  }
+                />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
-              <HStack>
-                <Submit isDisabled={isDisabled}>
-                  <Trans>Save</Trans>
-                </Submit>
-                <Button size="md" variant="solid" onClick={onClose}>
-                  <Trans>Cancel</Trans>
-                </Button>
-                {isEditing && initialValues.id && (
-                  <PrintButton
-                    sourceDocument="StorageUnit"
-                    sourceDocumentId={initialValues.id}
-                    locationId={locationId || undefined}
-                    context="inventory"
-                    fileRoutes={{
-                      pdf: (id: string, opts?: { labelSize?: string }) =>
-                        path.to.file.storageUnitLabelsPdf(id, opts),
-                      zpl: (id: string, opts?: { labelSize?: string }) =>
-                        path.to.file.storageUnitLabelsZpl(id, opts)
-                    }}
-                  />
-                )}
-              </HStack>
+              {isPhoneEdit ? (
+                // Save is in the header; × and the overlay close the sheet.
+                <div className="w-full [&>button]:w-full">{printButton}</div>
+              ) : (
+                <HStack>
+                  {saveButton}
+                  <Button size="md" variant="solid" onClick={onClose}>
+                    <Trans>Cancel</Trans>
+                  </Button>
+                  {printButton}
+                </HStack>
+              )}
             </ModalDrawerFooter>
           </ValidatedForm>
         </ModalDrawerContent>

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
     "ignoreUnknown": false,
@@ -13,6 +13,10 @@
       "!**/mcp*/lib/server.ts",
       "**/*.json",
       "!**/mcp*/lib/tool-metadata.json",
+      // Generated, and its ONE-LINE-PER-OPERATION layout is the point: formatting
+      // it to nine lines an operation turns a single changed schema into a
+      // nine-line hunk, which is exactly what this file exists to avoid.
+      "!**/mcp*/lib/tool-manifest.digest.json",
       "contrib/building/examples/**/*"
     ]
   },
@@ -20,7 +24,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": false,
+      "preset": "none",
       "a11y": {
         "noAccessKey": "warn",
         "noAriaUnsupportedElements": "warn",

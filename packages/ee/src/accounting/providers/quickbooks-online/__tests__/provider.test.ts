@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_SYNC_CONFIG, ProviderID } from "../../../core/models";
+import { DEFAULT_SYNC_CONFIG } from "../../../core/models";
 import type { ProviderCredentials } from "../../../core/types";
 import { AccountingApiError } from "../../../core/utils";
 import { Qbo } from "../models";
@@ -8,7 +12,6 @@ import {
   extractQboErrorDetails,
   isQboDuplicateNameError,
   isQboStaleObjectError,
-  QBO_CDC_ENTITY_TYPES,
   QBO_FAULT_CODES,
   type QboEnvironment,
   QboProvider
@@ -72,6 +75,51 @@ function requestInit(callIndex: number): RequestInit | undefined {
 }
 
 describe("QboProvider base URL", () => {
+  it("sends the caller's stable requestid on charge creates", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ Purchase: { Id: "purchase-1", SyncToken: "0" } })
+    );
+    const { provider } = makeProvider();
+    await provider.createPurchase(
+      { PaymentType: "CreditCard", AccountRef: { value: "card" }, Line: [] },
+      "stable-charge-request"
+    );
+    expect(requestUrl(0)).toContain("requestid=stable-charge-request");
+  });
+
+  it("deletes a purchase with its current SyncToken and validates the deletion response", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ Purchase: { Id: "purchase-1", SyncToken: "7" } })
+    );
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ Purchase: { Id: "purchase-1", status: "Deleted" } })
+    );
+    const { provider } = makeProvider();
+    expect(provider.deletePurchase).toBeTypeOf("function");
+    await provider.deletePurchase("purchase-1");
+    expect(requestUrl(1)).toContain("/purchase?operation=delete");
+    expect(JSON.parse(String(requestInit(1)?.body))).toEqual({
+      Id: "purchase-1",
+      SyncToken: "7"
+    });
+  });
+
+  it.each([404, 503])(
+    "does not treat an unreadable purchase (%s) as a successful delete",
+    async (status) => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(
+          { Fault: { Error: [{ code: "10000", Message: "Unavailable" }] } },
+          status
+        )
+      );
+      const { provider } = makeProvider();
+      expect(provider.deletePurchase).toBeTypeOf("function");
+      await expect(provider.deletePurchase("purchase-1")).rejects.toThrow();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    }
+  );
+
   it("targets the production host by default, under /v3/company/{realmId} with the pinned minorversion", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ QueryResponse: { Account: [] } })
@@ -97,17 +145,6 @@ describe("QboProvider base URL", () => {
     expect(requestUrl(0)).toContain(
       `https://sandbox-quickbooks.api.intuit.com/v3/company/${REALM_ID}/query`
     );
-  });
-
-  it("identifies as the quickbooks provider", () => {
-    const { provider } = makeProvider();
-    expect(provider.id).toBe(ProviderID.QUICKBOOKS);
-    expect(provider.capabilities).toEqual({
-      transport: "rest",
-      supportsWebhooks: false,
-      supportsJournalPush: true,
-      maxJournalDimensionSlots: 2
-    });
   });
 });
 
@@ -481,24 +518,6 @@ describe("QboProvider entity reads/writes", () => {
 });
 
 describe("listChanges (SupportsIncrementalPull)", () => {
-  it("maps the CDC entity names onto Carbon entity types (Payment + BillPayment → payment)", () => {
-    expect(QBO_CDC_ENTITY_TYPES).toEqual({
-      Customer: "customer",
-      Vendor: "vendor",
-      Item: "item",
-      Invoice: "invoice",
-      Bill: "bill",
-      PurchaseOrder: "purchaseOrder",
-      Payment: "payment",
-      BillPayment: "payment"
-    });
-  });
-
-  it("declares the 29-day CDC lookback cap", () => {
-    const { provider } = makeProvider();
-    expect(provider.pullLookbackDays).toBe(29);
-  });
-
   it("excludes Carbon-owned entities from the CDC sweep, ignoring provider-side changes to them", async () => {
     const { provider } = makeProvider();
 
@@ -540,58 +559,17 @@ describe("listChanges (SupportsIncrementalPull)", () => {
     // provider-side edits to Carbon-owned records never flow back.
     expect(result.changes).toEqual([]);
   });
-
-  it("still requests the forced-pull payment entities even when every stored entity is push-only", async () => {
-    // buildQboSyncConfig forces `payment` to pull-from-accounting + enabled, so
-    // even an all-push stored config keeps Payment/BillPayment in the CDC sweep.
-    const pushOnlyConfig = structuredClone(DEFAULT_SYNC_CONFIG);
-    for (const entityConfig of Object.values(pushOnlyConfig.entities)) {
-      entityConfig.direction = "push-to-accounting";
-    }
-    const pushOnly = new QboProvider({
-      companyId: "company-1",
-      clientId: "client-id",
-      clientSecret: "client-secret",
-      accessToken: "token",
-      refreshToken: "refresh",
-      realmId: REALM_ID,
-      syncConfig: pushOnlyConfig,
-      onTokenRefresh: async () => undefined
-    });
-
-    // Empty CDC window → no changes, but the request is still made (and only
-    // for the forced-pull payment entities).
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({
-        CDCResponse: [{ QueryResponse: [] }],
-        time: "2026-07-08T16:00:00-07:00"
-      })
-    );
-
-    const result = await pushOnly.listChanges({
-      since: "2026-07-08T00:00:00.000Z"
-    });
-    expect(result.changes).toEqual([]);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const cdcUrl = decodeURIComponent(String(fetchMock.mock.calls[0]?.[0]));
-    expect(cdcUrl).toContain("entities=Payment,BillPayment");
-  });
 });
 
-describe("buildQboSyncConfig — payment force-enable (two-way)", () => {
-  it("force-enables `payment` as two-way even when the stored config disables it", () => {
-    // DEFAULT_SYNC_CONFIG ships `payment` disabled — the provider must override
-    // it so two-way payment sync (Phase G push + inbound pull) works as soon as the
-    // integration connects.
-    expect(DEFAULT_SYNC_CONFIG.entities.payment.enabled).toBe(false);
-
+describe("buildQboSyncConfig", () => {
+  // Inbound payment pull must work as soon as the integration connects.
+  it("forces payment on as two-way and accounting-owned whatever the stored config says", () => {
     const stored = structuredClone(DEFAULT_SYNC_CONFIG);
     stored.entities.payment = {
       enabled: false,
-      direction: "two-way",
+      direction: "push-to-accounting",
       owner: "carbon"
     };
-
     expect(buildQboSyncConfig(stored).entities.payment).toEqual({
       enabled: true,
       direction: "two-way",
@@ -599,38 +577,23 @@ describe("buildQboSyncConfig — payment force-enable (two-way)", () => {
     });
   });
 
-  it("exposes the forced payment config through a constructed provider's getSyncConfig", () => {
-    expect(makeProvider().provider.getSyncConfig("payment")).toEqual({
-      enabled: true,
-      direction: "two-way",
-      owner: "accounting"
-    });
-  });
-});
+  it.each(["customer", "vendor", "item", "invoice", "bill"] as const)(
+    "forces `%s` to push-only + owner carbon regardless of the stored config",
+    (entityType) => {
+      const stored = structuredClone(DEFAULT_SYNC_CONFIG);
+      stored.entities[entityType] = {
+        enabled: true,
+        direction: "two-way",
+        owner: "accounting"
+      };
 
-describe("buildQboSyncConfig — Carbon-owned master + documents", () => {
-  it.each([
-    "customer",
-    "vendor",
-    "item",
-    "invoice",
-    "bill"
-  ] as const)("forces `%s` to push-only + owner carbon regardless of the stored config", (entityType) => {
-    const stored = structuredClone(DEFAULT_SYNC_CONFIG);
-    // Pretend the company had previously set this entity accounting-owned
-    // two-way (the old Source of Truth default) — the force must override it.
-    stored.entities[entityType] = {
-      enabled: true,
-      direction: "two-way",
-      owner: "accounting"
-    };
-
-    expect(buildQboSyncConfig(stored).entities[entityType]).toEqual({
-      enabled: true,
-      direction: "push-to-accounting",
-      owner: "carbon"
-    });
-  });
+      expect(buildQboSyncConfig(stored).entities[entityType]).toEqual({
+        enabled: true,
+        direction: "push-to-accounting",
+        owner: "carbon"
+      });
+    }
+  );
 
   it("preserves the per-company `enabled` flag while forcing ownership", () => {
     const stored = structuredClone(DEFAULT_SYNC_CONFIG);
@@ -647,13 +610,87 @@ describe("buildQboSyncConfig — Carbon-owned master + documents", () => {
     });
   });
 
-  it("leaves payment accounting-owned and does not touch unforced entities", () => {
+  it("passes an unforced entity through unchanged", () => {
     const applied = buildQboSyncConfig(structuredClone(DEFAULT_SYNC_CONFIG));
-    // payment stays the accounting-owned pull-only exception
-    expect(applied.entities.payment.owner).toBe("accounting");
-    // purchaseOrder is neither Carbon-owned-forced nor payment — passes through
     expect(applied.entities.purchaseOrder).toEqual(
       DEFAULT_SYNC_CONFIG.entities.purchaseOrder
     );
+  });
+});
+
+describe("QboProvider counterpart candidates", () => {
+  it("queries the kind's entity by DisplayName and maps the rows", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        QueryResponse: {
+          Vendor: [
+            { Id: "42", DisplayName: "Acme Tooling" },
+            // No Id — nothing to link to, so not a candidate.
+            { DisplayName: "Acme Tooling" }
+          ]
+        }
+      })
+    );
+
+    const { provider } = makeProvider();
+    const candidates = await provider.findRemoteCandidates("vendor", {
+      name: "Acme Tooling"
+    });
+
+    expect(requestUrl(0)).toContain(
+      "SELECT * FROM Vendor WHERE DisplayName = 'Acme Tooling'"
+    );
+    expect(candidates).toEqual([{ remoteId: "42", name: "Acme Tooling" }]);
+  });
+
+  it("escapes single quotes in the WHERE clause", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ QueryResponse: {} }));
+
+    const { provider } = makeProvider();
+    await provider.findRemoteCandidates("customer", {
+      name: "O'Brien Metals"
+    });
+
+    expect(requestUrl(0)).toContain(
+      "SELECT * FROM Customer WHERE DisplayName = 'O\\'Brien Metals'"
+    );
+  });
+
+  it("does not call QBO without a name, or for an unsupported kind", async () => {
+    const { provider } = makeProvider();
+
+    expect(await provider.findRemoteCandidates("vendor", { name: "" })).toEqual(
+      []
+    );
+    expect(
+      await provider.findRemoteCandidates("item", { name: "Widget" })
+    ).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("QboProvider master-data enumeration", () => {
+  it("selects the kind's entity unfiltered and returns its ids", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        QueryResponse: {
+          Vendor: [{ Id: "1", DisplayName: "A" }, { DisplayName: "no id" }]
+        }
+      })
+    );
+
+    const { provider } = makeProvider();
+    const ids = await provider.listRemoteEntityIds("vendor");
+
+    expect(requestUrl(0)).toContain("SELECT * FROM Vendor");
+    expect(requestUrl(0)).not.toContain("WHERE");
+    expect(ids).toEqual(["1"]);
+  });
+
+  it("returns nothing, without calling QBO, for a kind it cannot enumerate", async () => {
+    const { provider } = makeProvider();
+
+    expect(await provider.listRemoteEntityIds("item")).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

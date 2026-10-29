@@ -1,21 +1,17 @@
-import { describe, expect, it, vi } from "vitest";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// diffMethod now lives in items.service. Importing the real module drags in the
-// items.service graph, which transitively loads @carbon/glossary — whose
-// module-load-time Lingui `msg` macro isn't transformed under plain vitest and
-// throws. The pure diffMethod under test needs none of it, so stub glossary; the
-// diffMethod under test stays the genuine implementation.
-vi.mock("@carbon/glossary", () => ({
-  terms: {},
-  getEntry: vi.fn(),
-  lookupEntry: vi.fn(),
-  hasEntry: vi.fn(),
-  termSlug: vi.fn()
-}));
-
-const { diffMethod, duplicateMethodOperationStep } = await import(
-  "./items.service"
-);
+import { describe, expect, it } from "vitest";
+import {
+  diffMethod,
+  duplicateMethodOperationStep,
+  getItemDemand,
+  getLockVerdict,
+  getUnreleasedChangeOrderIssue,
+  getUnreleasedChangeOrderItems,
+  LOCKED_REVISION_MESSAGE
+} from "./items.service";
 
 // A minimal live methodMaterial row (only the fields diffMethod compares + id).
 function baseMaterial(over: Record<string, unknown> = {}) {
@@ -465,6 +461,89 @@ describe("duplicateMethodOperationStep", () => {
   });
 });
 
+// A supplierPart row as the diff reads it (every column, as `select("*")`).
+function supplierPart(over: Record<string, unknown> = {}) {
+  return {
+    id: "sp-1",
+    itemId: "item-a",
+    supplierId: "sup-1",
+    supplierPartId: "ACME-100",
+    supplierUnitOfMeasureCode: "BOX",
+    minimumOrderQuantity: 10,
+    orderMultiple: 5,
+    conversionFactor: 12,
+    currencyCode: "USD",
+    supplierUnitPrice: 4.5,
+    active: true,
+    customFields: null,
+    tags: null,
+    companyId: "c1",
+    createdBy: "u1",
+    createdAt: "2026-01-01T00:00:00Z",
+    updatedBy: null,
+    updatedAt: null,
+    ...over
+  };
+}
+
+describe("diffMethod — supplier parts", () => {
+  it("reads a revision's copied supplier parts as unchanged", () => {
+    const { supplierParts } = diffMethod({
+      ...EMPTY,
+      baseSupplierParts: [
+        supplierPart(),
+        supplierPart({ id: "sp-2", supplierId: "sup-2" })
+      ],
+      // The copy is a different row on a different item, created later.
+      targetSupplierParts: [
+        supplierPart({
+          id: "sp-9",
+          itemId: "item-b",
+          createdBy: "u2",
+          createdAt: "2026-02-01T00:00:00Z"
+        }),
+        supplierPart({ id: "sp-10", itemId: "item-b", supplierId: "sup-2" })
+      ]
+    });
+    expect(supplierParts.map((e) => e.status)).toEqual([
+      "unchanged",
+      "unchanged"
+    ]);
+  });
+
+  it("reports an edited, a dropped and a new supplier on the draft", () => {
+    const { supplierParts } = diffMethod({
+      ...EMPTY,
+      baseSupplierParts: [
+        supplierPart(),
+        supplierPart({ id: "sp-2", supplierId: "sup-2" })
+      ],
+      targetSupplierParts: [
+        supplierPart({ id: "sp-9", itemId: "item-b", supplierUnitPrice: 5 }),
+        supplierPart({ id: "sp-11", itemId: "item-b", supplierId: "sup-3" })
+      ]
+    });
+    expect(
+      supplierParts.map((e) => [e.status, (e.after ?? e.before)?.supplierId])
+    ).toEqual([
+      ["modified", "sup-1"],
+      ["added", "sup-3"],
+      ["removed", "sup-2"]
+    ]);
+    expect(supplierParts[0].changedFields).toEqual({
+      supplierUnitPrice: { before: 4.5, after: 5 }
+    });
+  });
+
+  it("reads every supplier part as added when the draft has no source", () => {
+    const { supplierParts } = diffMethod({
+      ...EMPTY,
+      targetSupplierParts: [supplierPart({ id: "sp-9", itemId: "item-b" })]
+    });
+    expect(supplierParts.map((e) => e.status)).toEqual(["added"]);
+  });
+});
+
 describe("diffMethod — attributes", () => {
   it("reports one entry per changed attribute column", () => {
     const { attributes } = diffMethod({
@@ -510,5 +589,339 @@ describe("diffMethod — attributes", () => {
     expect(attributes[0].status).toBe("added");
     expect(attributes[0].before).toBeNull();
     expect(attributes[0].after).toEqual(target);
+  });
+});
+
+describe("getItemDemand", () => {
+  // Answers every table with its rows, or with the error given for it.
+  function mockClient(
+    rowsByTable: Record<string, unknown[]>,
+    errorsByTable: Record<string, unknown> = {}
+  ) {
+    return {
+      client: {
+        from: (table: string) => {
+          const builder: any = {
+            select: () => builder,
+            eq: () => builder,
+            in: () => builder,
+            order: () => builder,
+            then: (resolve: (v: unknown) => void) =>
+              resolve(
+                errorsByTable[table]
+                  ? { data: null, error: errorsByTable[table] }
+                  : { data: rowsByTable[table] ?? [], error: null }
+              )
+          };
+          return builder;
+        }
+      } as any
+    };
+  }
+
+  const args = {
+    itemId: "item_1",
+    locationId: "loc_1",
+    companyId: "co_1",
+    periods: ["p1", "p2"]
+  };
+
+  it("returns the projection rows as `projections`, defaulting every series to []", async () => {
+    const projectionRow = {
+      id: "dp_1",
+      itemId: "item_1",
+      locationId: "loc_1",
+      periodId: "p1",
+      forecastQuantity: 40
+    };
+    const { client } = mockClient({ demandProjection: [projectionRow] });
+
+    const demand = await getItemDemand(client, args);
+
+    expect(demand).toEqual({
+      actuals: [],
+      forecasts: [],
+      projections: [projectionRow],
+      error: null
+    });
+  });
+
+  it("tells an item with no demand apart from a failed read", async () => {
+    const empty = await getItemDemand(mockClient({}).client, args);
+    expect(empty.error).toBeNull();
+
+    const failure = { message: "permission denied for table demandForecast" };
+    const failed = await getItemDemand(
+      mockClient({}, { demandForecast: failure }).client,
+      args
+    );
+    expect(failed.error).toBe(failure);
+  });
+});
+
+describe("getLockVerdict", () => {
+  it.each(["off", "warn", "enforce"] as const)(
+    "allows edits on an unlocked revision under release control %s",
+    (releaseControl) => {
+      expect(getLockVerdict({ isLocked: false, releaseControl })).toEqual({
+        ok: true,
+        warn: false
+      });
+    }
+  );
+
+  it.each([
+    ["off", { ok: true, warn: false }],
+    ["warn", { ok: true, warn: true, message: LOCKED_REVISION_MESSAGE }],
+    ["enforce", { ok: false, warn: false, message: LOCKED_REVISION_MESSAGE }]
+  ] as const)(
+    "gives a locked revision under release control %s the matching verdict",
+    (releaseControl, verdict) => {
+      expect(getLockVerdict({ isLocked: true, releaseControl })).toEqual(
+        verdict
+      );
+    }
+  );
+});
+
+type Row = Record<string, unknown> | null;
+
+// PostgREST's `max_rows`, mirrored so a read that asks for too much silently
+// comes back short — exactly the failure the batching exists to avoid.
+const MAX_ROWS = 1000;
+
+// Stands in for the two list reads the batch guard makes. Supabase builders are
+// thenables, so the chain resolves on await without a terminal method. Each
+// read is answered from the ids its own `in` filter carries, sliced to the
+// `range` page fetchAllByIds asks for and truncated at MAX_ROWS, so a guard
+// that stopped batching or paging visibly drops rows.
+function fakeListClient(
+  rows: { item?: Row[]; changeOrder?: Row[] },
+  errors: { item?: boolean; changeOrder?: boolean } = {}
+) {
+  return {
+    from(table: string) {
+      const failed = errors[table as keyof typeof errors] === true;
+      const all = rows[table as keyof typeof rows] ?? [];
+      let requested: string[] | null = null;
+      let page: [number, number] | null = null;
+      const builder = {
+        select: () => builder,
+        in: (_column: string, ids: string[]) => {
+          requested = ids;
+          return builder;
+        },
+        eq: () => builder,
+        order: () => builder,
+        range: (from: number, to: number) => {
+          page = [from, to];
+          return builder;
+        },
+        then: (
+          resolve: (value: {
+            data: Row[] | null;
+            error: { message: string } | null;
+          }) => unknown
+        ) =>
+          resolve({
+            data: failed
+              ? null
+              : all
+                  .filter(
+                    (row) => !requested || requested.includes(row?.id as string)
+                  )
+                  .slice(page?.[0] ?? 0, page ? page[1] + 1 : undefined)
+                  .slice(0, MAX_ROWS),
+            error: failed ? { message: `failed to read ${table}` } : null
+          })
+      };
+      return builder;
+    }
+  } as never;
+}
+
+const companyId = "company_1";
+const args = { itemId: "item_1", companyId };
+
+describe("getUnreleasedChangeOrderItems", () => {
+  it("reads nothing when given no ids", async () => {
+    const client = fakeListClient({ item: [{ id: "item_1" }] });
+
+    expect(
+      await getUnreleasedChangeOrderItems(client, { itemIds: [], companyId })
+    ).toEqual({ data: [], error: null });
+  });
+
+  it("passes items that no change order owns", async () => {
+    const client = fakeListClient({
+      item: [
+        {
+          id: "item_1",
+          readableIdWithRevision: "P000001",
+          changeOrderId: null
+        }
+      ]
+    });
+
+    expect(
+      await getUnreleasedChangeOrderItems(client, {
+        itemIds: ["item_1"],
+        companyId
+      })
+    ).toEqual({ data: [], error: null });
+  });
+
+  // Release leaves changeOrderId in place as a provenance link, so the column
+  // alone cannot answer "is this still a draft" — the status decides.
+  it("returns only the items whose change order is unreleased", async () => {
+    const client = fakeListClient({
+      item: [
+        {
+          id: "item_1",
+          readableIdWithRevision: "P000001.A",
+          changeOrderId: "co_open"
+        },
+        {
+          id: "item_2",
+          readableIdWithRevision: "P000002.B",
+          changeOrderId: "co_done"
+        }
+      ],
+      changeOrder: [
+        {
+          id: "co_open",
+          changeOrderId: "ECO-000001",
+          status: "Implementation"
+        },
+        { id: "co_done", changeOrderId: "ECO-000002", status: "Done" }
+      ]
+    });
+
+    expect(
+      await getUnreleasedChangeOrderItems(client, {
+        itemIds: ["item_1", "item_2"],
+        companyId
+      })
+    ).toEqual({
+      data: [
+        {
+          itemId: "item_1",
+          itemName: "P000001.A",
+          changeOrderReadableId: "ECO-000001"
+        }
+      ],
+      error: null
+    });
+  });
+
+  // PostgREST caps a response at 1000 rows, so the guard walks the ids in
+  // batches. Without that, an item past the cap reads as unowned and activates.
+  it("finds an offending item past the response cap", async () => {
+    const itemIds = Array.from({ length: 1200 }, (_, i) => `item_${i}`);
+    const client = fakeListClient({
+      item: itemIds.map((id) => ({
+        id,
+        readableIdWithRevision: id,
+        changeOrderId: id === "item_1100" ? "co_open" : null
+      })),
+      changeOrder: [
+        { id: "co_open", changeOrderId: "ECO-000001", status: "Draft" }
+      ]
+    });
+
+    expect(
+      await getUnreleasedChangeOrderItems(client, { itemIds, companyId })
+    ).toEqual({
+      data: [
+        {
+          itemId: "item_1100",
+          itemName: "item_1100",
+          changeOrderReadableId: "ECO-000001"
+        }
+      ],
+      error: null
+    });
+  });
+
+  // A read that did not answer says nothing about the items, so callers block
+  // rather than wave the write through on a database blip.
+  it("reports an error when the item read fails", async () => {
+    const client = fakeListClient({}, { item: true });
+
+    expect(
+      await getUnreleasedChangeOrderItems(client, {
+        itemIds: ["item_1"],
+        companyId
+      })
+    ).toEqual({
+      data: [],
+      error: "These items could not be checked against their change orders."
+    });
+  });
+
+  it("reports an error when the change order read fails", async () => {
+    const client = fakeListClient(
+      {
+        item: [
+          {
+            id: "item_1",
+            readableIdWithRevision: "P000001.A",
+            changeOrderId: "co_open"
+          }
+        ]
+      },
+      { changeOrder: true }
+    );
+
+    expect(
+      await getUnreleasedChangeOrderItems(client, {
+        itemIds: ["item_1"],
+        companyId
+      })
+    ).toEqual({
+      data: [],
+      error: "These items could not be checked against their change orders."
+    });
+  });
+});
+
+describe("getUnreleasedChangeOrderIssue", () => {
+  it("names the change order still holding the item", async () => {
+    const client = fakeListClient({
+      item: [
+        {
+          id: "item_1",
+          readableIdWithRevision: "P000001.A",
+          changeOrderId: "co_open"
+        }
+      ],
+      changeOrder: [
+        { id: "co_open", changeOrderId: "ECO-000001", status: "Draft" }
+      ]
+    });
+
+    expect(await getUnreleasedChangeOrderIssue(client, args)).toBe(
+      "P000001.A was created by change order ECO-000001, which has not been released yet."
+    );
+  });
+
+  // Narrow on purpose — the guard does not judge `active`. Inactive items are
+  // allowed onto these documents today, and that is a separate decision.
+  it("passes an inactive item that no change order owns", async () => {
+    const client = fakeListClient({
+      item: [
+        { id: "item_1", readableIdWithRevision: "P000001", changeOrderId: null }
+      ]
+    });
+
+    expect(await getUnreleasedChangeOrderIssue(client, args)).toBeNull();
+  });
+
+  it("blocks when the check could not be made", async () => {
+    const client = fakeListClient({}, { item: true });
+
+    expect(await getUnreleasedChangeOrderIssue(client, args)).toBe(
+      "These items could not be checked against their change orders."
+    );
   });
 });

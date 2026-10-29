@@ -1,16 +1,22 @@
-import { error, notFound, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
+import { isSalesInvoiceLocked } from "~/modules/invoicing/invoicing.models";
 import {
-  deleteSalesInvoiceLine,
   getSalesInvoice,
-  getSalesInvoiceLine,
-  isSalesInvoiceLocked
-} from "~/modules/invoicing";
+  getSalesInvoiceLine
+} from "~/modules/invoicing/invoicing.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -44,40 +50,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { salesInvoiceLine: salesInvoiceLine.data };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "invoicing"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["invoiceId", "lineId"]
   });
-
-  const { lineId, invoiceId } = params;
-  if (!lineId) throw notFound("Could not find lineId");
-  if (!invoiceId) throw notFound("Could not find invoiceId");
-
-  const invoice = await getSalesInvoice(client, invoiceId);
-  await requireUnlocked({
-    request,
-    isLocked: isSalesInvoiceLocked(invoice.data?.status),
-    redirectTo: path.to.salesInvoiceDetails(invoiceId),
-    message: "Cannot delete lines on a locked sales invoice."
-  });
-
-  const { error: deleteTypeError } = await deleteSalesInvoiceLine(
-    client,
+  if ("invalid" in input) return input.invalid;
+  const { invoiceId, lineId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.invoicing.deleteDraftSalesInvoiceLine({
+    invoiceId,
     lineId
-  );
-  if (deleteTypeError) {
-    throw redirect(
-      path.to.salesInvoiceDetails(invoiceId),
-      await flash(
-        request,
-        error(deleteTypeError, "Failed to delete sales invoice line")
-      )
-    );
-  }
-
-  throw redirect(
+  });
+  return respond(args.request, result).redirect(
     path.to.salesInvoiceDetails(invoiceId),
-    await flash(request, success("Successfully deleted sales invoice line"))
+    { message: "Successfully deleted sales invoice line" }
   );
 }
 

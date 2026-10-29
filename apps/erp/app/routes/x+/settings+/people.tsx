@@ -1,6 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -10,7 +17,6 @@ import {
   CardHeader,
   CardTitle,
   Copy,
-  Heading,
   HStack,
   Modal,
   ModalBody,
@@ -24,17 +30,18 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
-
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useCallback, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
-import {
-  getCompanySettings,
-  updateConsoleSetting,
-  updateTimeCardSetting
-} from "~/modules/settings";
+import { useLoaderData } from "react-router";
+import { z } from "zod";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
+import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
+import { usePlanGate } from "~/hooks/usePlanGate";
+import { settingsToggle } from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -61,78 +68,46 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { companySettings: companySettings.data };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// One switch per setting, told apart by its intent.
+const peopleSettingsForm = z.discriminatedUnion("intent", [
+  settingsToggle("timeCard", "timeCardEnabled"),
+  settingsToggle("console", "consoleEnabled")
+]);
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-  const enabled = formData.get("enabled") === "true";
-
-  if (intent === "timeCard") {
-    const update = await updateTimeCardSetting(client, companyId, enabled);
-    if (update.error) return { success: false, message: update.error.message };
-    return { success: true, message: "Timecard settings updated" };
-  }
-
-  if (intent === "console") {
-    const update = await updateConsoleSetting(
-      client,
-      companyId,
-      enabled,
-      userId
-    );
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    // Check if a PIN was auto-generated for the user
-    if (enabled) {
-      const userPin = await client
-        .from("employee")
-        .select("pin" as any)
-        .eq("id", userId)
-        .eq("companyId", companyId)
-        .maybeSingle();
-
-      const pin = (userPin.data as any)?.pin;
-      if (pin) {
-        return {
-          success: true,
-          message: "Console mode enabled",
-          pin
-        };
-      }
-    }
-
-    return { success: true, message: "Console mode settings updated" };
-  }
-
-  return { success: false, message: "Unknown intent" };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(peopleSettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updatePeopleSettings(input.data);
 }
 
 export default function PeopleSettingsRoute() {
   const { companySettings } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
+  const { t } = useLingui();
+  // Enterprise: console (kiosk) mode is gated to the Business plan.
+  const { isGated: consoleGated } = usePlanGate({ feature: "PERMISSIONS" });
   const [showPinModal, setShowPinModal] = useState(false);
   const [generatedPin, setGeneratedPin] = useState<string | null>(null);
-
-  const isToggling = fetcher.state !== "idle";
-
-  useEffect(() => {
-    if (fetcher.data?.success === true) {
-      if ((fetcher.data as any)?.pin) {
-        setGeneratedPin((fetcher.data as any).pin);
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.pin) {
+        // Shown once: the PIN is stored hashed and can never be read back.
+        setGeneratedPin(data.pin);
         setShowPinModal(true);
-      } else if (fetcher.data?.message) {
-        toast.success(fetcher.data.message);
+      } else if (data.pinError) {
+        toast.error(
+          t`Console mode enabled, but ${data.pinError.toLowerCase()}. Set one from Users → Employees → Set Console PIN.`
+        );
+      } else if (data.consoleEnabled !== undefined) {
+        toast.success(t`Console mode settings updated`);
+      } else {
+        toast.success(t`Timecard settings updated`);
       }
     }
+  });
 
-    if (fetcher.data?.success === false && fetcher?.data?.message) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data]);
+  const isToggling = fetcher.state !== "idle";
 
   const handleConsoleToggle = useCallback(
     (checked: boolean) => {
@@ -156,13 +131,10 @@ export default function PeopleSettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>People</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <Card>
           <CardHeader>
@@ -179,7 +151,7 @@ export default function PeopleSettingsRoute() {
           <CardContent>
             <HStack className="justify-between items-center">
               <VStack className="items-start" spacing={1}>
-                <HStack className="items-center gap-2">
+                <HStack className="items-center gap-2 max-md:flex-wrap">
                   <span className="font-medium">
                     {(companySettings as any).consoleEnabled ? (
                       <Trans>Console mode is enabled</Trans>
@@ -187,13 +159,15 @@ export default function PeopleSettingsRoute() {
                       <Trans>Console mode is disabled</Trans>
                     )}
                   </span>
-                  <Badge variant="yellow">
+                  <Badge variant="yellow" className="max-md:shrink-0">
                     <Trans>Beta</Trans>
                   </Badge>
                 </HStack>
 
                 <span className="text-sm text-muted-foreground">
-                  {(companySettings as any).consoleEnabled ? (
+                  {consoleGated ? (
+                    <Trans>Available on the Business plan</Trans>
+                  ) : (companySettings as any).consoleEnabled ? (
                     <Trans>
                       Operators can use shared workstations with PIN
                       authentication.
@@ -203,11 +177,15 @@ export default function PeopleSettingsRoute() {
                   )}
                 </span>
               </VStack>
-              <Switch
-                checked={(companySettings as any).consoleEnabled ?? false}
-                onCheckedChange={handleConsoleToggle}
-                disabled={isToggling}
-              />
+              {consoleGated ? (
+                <UpgradeOverlayUpgradeButton />
+              ) : (
+                <Switch
+                  checked={(companySettings as any).consoleEnabled ?? false}
+                  onCheckedChange={handleConsoleToggle}
+                  disabled={isToggling}
+                />
+              )}
             </HStack>
           </CardContent>
         </Card>
@@ -224,7 +202,7 @@ export default function PeopleSettingsRoute() {
           <CardContent>
             <HStack className="justify-between items-center">
               <VStack className="items-start" spacing={1}>
-                <HStack className="items-center gap-2">
+                <HStack className="items-center gap-2 max-md:flex-wrap">
                   <span className="font-medium">
                     {companySettings.timeCardEnabled ? (
                       <Trans>Timecards are enabled</Trans>
@@ -232,7 +210,7 @@ export default function PeopleSettingsRoute() {
                       <Trans>Timecards are disabled</Trans>
                     )}
                   </span>
-                  <Badge variant="yellow">
+                  <Badge variant="yellow" className="max-md:shrink-0">
                     <Trans>Beta</Trans>
                   </Badge>
                 </HStack>
@@ -253,7 +231,7 @@ export default function PeopleSettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
-      </VStack>
+      </SettingsPage>
 
       {showPinModal && generatedPin && (
         <Modal open onOpenChange={(open) => !open && setShowPinModal(false)}>
@@ -280,8 +258,8 @@ export default function PeopleSettingsRoute() {
                 </div>
                 <p className="text-xs text-muted-foreground text-center">
                   <Trans>
-                    Remember this PIN. You will need it to exit console mode on
-                    MES terminals.
+                    This PIN will not be shown again. You will need it to exit
+                    console mode on MES terminals.
                   </Trans>
                 </p>
               </VStack>

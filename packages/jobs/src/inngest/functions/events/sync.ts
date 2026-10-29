@@ -1,3 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { EventSchema } from "@carbon/database/event";
+import {
+  isAccountingSyncEnabled,
+  ProviderID,
+  SpendProviderID
+} from "@carbon/ee/accounting";
+import { groupBy } from "@carbon/utils";
+import { z } from "zod";
 /**
  * SYNC event handler — v5 reconciler shape
  * (.ai/specs/2026-08-12-accounting-sync-reconciler-unification.md, D3).
@@ -19,20 +32,7 @@
  * DELETEs remain logged-and-skipped (DELETE sync is unimplemented; a
  * deleted row also reconciles to nothing by construction).
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import { EventSchema } from "@carbon/database/event";
-import {
-  getAccountingIntegration,
-  getProviderIntegration,
-  ProviderID
-} from "@carbon/ee/accounting";
-import { groupBy } from "@carbon/utils";
-import { PostgresDriver } from "kysely";
-import { z } from "zod";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {
   type DrainSummary,
@@ -44,13 +44,17 @@ import {
   type ReconcileSummary,
   reconcileEntities
 } from "../integrations/reconcile-executor";
+import { resolveSyncProvider } from "../integrations/sync-provider";
+import { loadIntegrationTopology } from "../integrations/topology";
 import { getEntityTypeFromTable } from "./sync-tables";
 
 const SyncRecordSchema = z.object({
   event: EventSchema,
   companyId: z.string(),
   handlerConfig: z.object({
-    provider: z.nativeEnum(ProviderID)
+    // Any sync provider, not just accounting: Ramp's outbound pushes run on
+    // this handler too (its subscriptions carry `provider: "ramp"`).
+    provider: z.union([z.nativeEnum(ProviderID), z.nativeEnum(SpendProviderID)])
   })
 });
 
@@ -95,12 +99,9 @@ export const syncFunction = inngest.createFunction(
       return `${companyId}:${provider}`;
     });
 
-    const pool = getPostgresConnectionPool(10);
-    const kysely = getPostgresClient(pool, PostgresDriver);
+    const kysely = getJobDatabaseClient();
     const client = getCarbonServiceRole();
 
-    // NOTE: the pool from getPostgresConnectionPool is a process-lifetime
-    // singleton (see lib/postgres) — do NOT end it per invocation.
     for (const [key, records] of Object.entries(byCompanyProvider)) {
       const [companyId, provider] = key.split(":");
 
@@ -135,16 +136,42 @@ export const syncFunction = inngest.createFunction(
           };
 
           try {
-            const integration = await getAccountingIntegration(
+            const resolved = await resolveSyncProvider(
               client,
               companyId,
-              provider as ProviderID
+              provider
             );
+            if (!resolved) {
+              for (const r of records) {
+                stepSummary.skipped.push({
+                  recordId: r.event.recordId,
+                  reason: `Integration '${provider}' is not connected`
+                });
+              }
+              return stepSummary;
+            }
+            // Sync is still off on this integration (it is being set up):
+            // record nothing, so turning it on starts from a clean ledger.
+            if (!isAccountingSyncEnabled(resolved.metadata)) {
+              for (const r of records) {
+                stepSummary.skipped.push({
+                  recordId: r.event.recordId,
+                  reason: `Sync is turned off for '${provider}'`
+                });
+              }
+              return stepSummary;
+            }
 
             const seen = new Set<string>();
             const refs: ReconcileRef[] = [];
             for (const r of records) {
-              const entityType = getEntityTypeFromTable(r.event.table);
+              const entityType = getEntityTypeFromTable(
+                r.event.table,
+                (r.event.new ?? r.event.old ?? null) as Record<
+                  string,
+                  unknown
+                > | null
+              );
               if (!entityType) {
                 stepSummary.skipped.push({
                   recordId: r.event.recordId,
@@ -176,16 +203,23 @@ export const syncFunction = inngest.createFunction(
 
             stepSummary.summary = await reconcileEntities({
               client,
+              topology: await loadIntegrationTopology(client, companyId),
               database: kysely,
               companyId,
               providerId: provider,
-              integrationMetadata: integration.metadata,
-              createdBy: getSyncOperationActor(integration),
+              integrationMetadata: resolved.metadata,
+              // A spend provider's effective config lives on the provider, not
+              // under `metadata.syncConfig` — see `reconcileEntities`.
+              provider: resolved.provider,
+              createdBy: getSyncOperationActor({
+                updatedBy: resolved.updatedBy
+              }),
               scope: reconcileScope,
               refs
             });
           } catch (error) {
-            logger.error(`Failed to reconcile sync events for ${key}`, {
+            logger.error("Failed to reconcile sync events for {key}", {
+              key,
               error
             });
             stepSummary.aborted = true;
@@ -223,26 +257,27 @@ export const syncFunction = inngest.createFunction(
       const drainSummary = (await step.run(
         `drain-${companyId}-${provider}`,
         async () => {
-          const integration = await getAccountingIntegration(
+          const resolved = await resolveSyncProvider(
             client,
             companyId,
-            provider as ProviderID
+            provider
           );
-
-          const providerInstance = getProviderIntegration(
-            client,
-            companyId,
-            provider as ProviderID,
-            integration.metadata
-          );
+          if (!resolved)
+            return {
+              claimed: 0,
+              completed: 0,
+              failed: 0,
+              skipped: 0,
+              groups: []
+            };
 
           return drainSyncOperations({
             client,
             database: kysely,
             companyId,
             integration: provider,
-            provider: providerInstance,
-            integrationMetadata: integration.metadata
+            provider: resolved.provider,
+            integrationMetadata: resolved.metadata
           });
         }
       )) as DrainSummary;

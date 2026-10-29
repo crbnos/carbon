@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 
 import {
@@ -83,9 +87,8 @@ export function PinInOverlay({
     (person: Person, pinValue: string) => {
       addRecentOperator(companyId, person.id);
       const formData = new FormData();
+      // The server looks up name and avatar itself; only the id is trusted.
       formData.append("userId", person.id);
-      formData.append("name", person.name);
-      formData.append("avatarUrl", person.avatarUrl ?? "");
       if (pinValue) formData.append("pin", pinValue);
       pinInFetcher.submit(formData, {
         method: "POST",

@@ -1,10 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { ScrollArea } from "@carbon/react";
+import { ScrollArea, useCloseRoute, useViewport } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import { useLingui } from "@lingui/react/macro";
+import { useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
+import { useSetAppBarOverride } from "~/components/Layout/Mobile";
 import { issueWorkflowValidator } from "~/modules/quality/quality.models";
 import {
   getRequiredActionsList,
@@ -64,7 +72,25 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function NewIssueWorkflowRoute() {
   const { requiredActions } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
+  const { isPhone } = useViewport();
+  const { t } = useLingui();
+
+  // Phones show this create screen as a pushed screen: Back returns to the
+  // workflow list (the route has no breadcrumb of its own).
+  const appBarOverride = useMemo(
+    () =>
+      isPhone
+        ? {
+            kind: "pushed" as const,
+            title: t`Issue Workflows`,
+            backTo: path.to.issueWorkflows
+          }
+        : null,
+    [isPhone, t]
+  );
+  useSetAppBarOverride(appBarOverride);
+
   const initialValues = {
     name: "",
     content: "{}",
@@ -79,7 +105,7 @@ export default function NewIssueWorkflowRoute() {
       <IssueWorkflowForm
         initialValues={initialValues}
         requiredActions={requiredActions}
-        onClose={() => navigate(-1)}
+        onClose={() => closeRoute()}
       />
     </ScrollArea>
   );

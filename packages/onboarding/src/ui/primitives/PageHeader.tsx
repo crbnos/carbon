@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The page title block every hub surface opens with: H1 + intro lead, optional
 // right-aligned aside (usually a <ProgressPill>). Feed `title`/`lead` from
 // PAGE_COPY so the wording lives in the content layer.

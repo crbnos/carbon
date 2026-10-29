@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { readWorkflowVersion } from "@carbon/ee/workflows";
 import { Alert, AlertDescription, AlertTitle, Badge, cn } from "@carbon/react";
 import { formatDateTime, formatDurationMilliseconds } from "@carbon/utils";
-import { readWorkflowVersion } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuCircleAlert, LuCircleSlash, LuTriangle } from "react-icons/lu";
@@ -11,11 +15,12 @@ import type {
   WorkflowRunDetail as WorkflowRunDetailType,
   WorkflowRunStep
 } from "../../workflows.service";
-import { useWorkflowEventLabel, useWorkflowLabel } from "../Builder/catalog";
+import { useWorkflowEventLabel } from "../Builder/catalog";
 import { EntityRecordLink } from "./EntityRecordLink";
 import { RunLiveUpdates } from "./RunLiveUpdates";
 import { RunStatus, TestRunBadge } from "./RunStatus";
 import { runOutcome } from "./runOutcome";
+import { useNodeLabel } from "./useNodeLabel";
 import { WorkflowRunSteps } from "./WorkflowRunSteps";
 
 type WorkflowRunDetailProps = {
@@ -53,7 +58,7 @@ function RunIdentifiers({ run }: { run: WorkflowRunDetailType }) {
     <div className="space-y-1">
       <button
         type="button"
-        className="text-xs text-muted-foreground underline underline-offset-2"
+        className="text-xs text-muted-foreground underline underline-offset-2 max-md:hit-area"
         onClick={() => setRaw((p) => !p)}
       >
         {raw ? t`Hide raw` : t`Show raw`}
@@ -96,7 +101,7 @@ export function WorkflowRunDetail({
   const workflowName =
     (run.workflow as { name?: string } | null)?.name ?? run.workflowId;
 
-  const label = useWorkflowLabel();
+  const nodeLabel = useNodeLabel();
   const triggerLabel = useWorkflowEventLabel();
   const eventLabel = run.eventId
     ? triggerLabel(run.eventId, run.eventId)
@@ -105,7 +110,12 @@ export function WorkflowRunDetail({
   const isInFlight = run.status === "Queued" || run.status === "Running";
   const compacted = run.compactedAt !== null;
   const stepsPurged = steps.length === 0 && run.compactedAt !== null;
-  const outcome = runOutcome(run, steps, definition, label);
+  const outcome = runOutcome(
+    run,
+    steps,
+    definition,
+    (node) => nodeLabel(node).title
+  );
 
   return (
     <div className="flex flex-col h-full overflow-auto">

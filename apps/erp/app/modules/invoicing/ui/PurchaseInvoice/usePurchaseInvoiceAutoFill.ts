@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -8,13 +12,13 @@ import type {
   ExtractedDocumentData,
   PurchaseInvoiceExtraction,
   PurchaseInvoiceLineItem
-} from "~/modules/documents";
+} from "~/modules/documents/documents.models";
 import {
   findMatchingContactId,
   findMatchingLocationId,
   getExtractionMatchCandidates
-} from "~/modules/documents";
-import type { purchaseInvoiceValidator } from "~/modules/invoicing";
+} from "~/modules/documents/documents.models";
+import type { purchaseInvoiceValidator } from "~/modules/invoicing/invoicing.models";
 
 type PurchaseInvoiceFormValues = z.infer<typeof purchaseInvoiceValidator>;
 
@@ -113,7 +117,6 @@ export function usePurchaseInvoiceAutoFill(
       });
 
       const [supplierDetails, paymentTermData] = await Promise.all([
-        // @ts-ignore Supabase composite key issue
         carbon
           .from("supplier")
           .select(

@@ -1,4 +1,8 @@
-import { Body, Html, Preview, Text } from "@react-email/components";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { Body, Html, Preview, Text } from "react-email";
 
 export const WelcomeEmail = () => {
   return (

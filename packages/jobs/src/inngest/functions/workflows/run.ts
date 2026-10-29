@@ -1,4 +1,8 @@
-import { runTriggerSchema } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { runTriggerSchema } from "@carbon/ee/workflows";
 import { z } from "zod";
 import { getJobDatabaseClient } from "../../../db";
 import {
@@ -28,7 +32,10 @@ export const workflowRunFunction = inngest.createFunction(
     idempotency: "event.data.runId",
     onFailure: async ({ event, logger }) => {
       const { runId, companyId } = event.data.event.data;
-      logger.error(`Workflow run ${runId} failed`, event.data.error);
+      logger.error("Workflow run {runId} failed", {
+        runId,
+        error: event.data.error
+      });
 
       await failCrashedRun(
         getJobDatabaseClient(),

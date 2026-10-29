@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useState } from "react";
 import { useCustomFieldLabels } from "../catalog";
 import { useBuilderStoreApi } from "../context";
@@ -17,7 +21,11 @@ export function ValueField({
   accepts,
   required,
   helpTermId,
+  help,
+  hint,
+  defaultValue,
   choices,
+  precision,
   value,
   onChange,
   context,
@@ -47,7 +55,9 @@ export function ValueField({
         label={label}
         required={required}
         helpTermId={helpTermId}
+        help={help}
         issue={issue}
+        hint={hint}
       >
         <InlineValueEditor
           accepts={acceptsFilter}
@@ -76,7 +86,9 @@ export function ValueField({
       label={label}
       required={required}
       helpTermId={helpTermId}
+      help={help}
       issue={issue}
+      hint={hint}
     >
       {/* The popup anchors to the control itself. A field is either a value you write
           or a variable you pick — never a box with a second way in bolted to its edge. */}
@@ -112,12 +124,15 @@ export function ValueField({
             <LiteralControl
               type={type}
               choices={choices}
+              precision={precision}
+              defaultValue={defaultValue}
               value={
                 value?.kind === "literal"
                   ? (value.value as
                       | string
                       | number
                       | boolean
+                      | string[]
                       | null
                       | undefined)
                   : undefined

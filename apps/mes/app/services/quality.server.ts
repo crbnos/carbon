@@ -1,13 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getLocationTimeZone } from "@carbon/database";
+import { lockIssueDispositions } from "@carbon/database/quality";
+import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import {
   getJobMakeMethod,
   getTrackedEntitiesByMakeMethodId,
   insertProductionQuantity
 } from "~/services/operations.service";
+import { autoPrintFirstOperationLabel } from "~/services/printing.server";
 import {
   getInspection,
   getInspectionMeasurements,
@@ -15,6 +24,8 @@ import {
 } from "~/services/quality.service";
 
 type ServiceRole = Awaited<ReturnType<typeof getCarbonServiceRole>>;
+
+const logger = getLogger("mes", "quality");
 
 export type ProductionEventIds = {
   setupProductionEventId?: string;
@@ -54,11 +65,14 @@ export type CreateQualityIssueArgs = {
   nonConformanceTypeId?: string;
   priority?: "Low" | "Medium" | "High" | "Critical";
   quantity?: number;
+  // Links the source inspection in the same locked transaction as the
+  // disposition row, so the row is never visible without its inspection link.
+  inspectionId?: string;
 };
 
 // MES-owned NCR creation for a job operation: sequence, nonConformance insert,
 // the nonConformanceJobOperation / item / tracked-entity links, and the
-// follow-up tasks edge function — with compensating deletes on failure.
+// follow-up tasks posting — with compensating deletes on failure.
 // Extracted from the quality-issue.new route so the inspection reject route
 // can create the same job-operation-aware issue.
 export async function createQualityIssue(
@@ -82,6 +96,51 @@ export async function createQualityIssue(
 
   if (!context.ok) {
     return { data: null, error: context.error, message: context.message };
+  }
+
+  // Caller-supplied references written with the service role: each must
+  // belong to this company, or the issue would link another tenant's rows.
+  const [issueType, inspection] = await Promise.all([
+    args.nonConformanceTypeId
+      ? serviceRole
+          .from("nonConformanceType")
+          .select("id")
+          .eq("id", args.nonConformanceTypeId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    args.inspectionId
+      ? serviceRole
+          .from("inspection")
+          .select("id")
+          .eq("id", args.inspectionId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+  if (issueType && (issueType.error || !issueType.data)) {
+    logger.warn("Quality issue type not found for company", {
+      companyId,
+      nonConformanceTypeId: args.nonConformanceTypeId,
+      error: issueType.error
+    });
+    return {
+      data: null,
+      error: issueType.error,
+      message: "Quality issue type not found"
+    };
+  }
+  if (inspection && (inspection.error || !inspection.data)) {
+    logger.warn("Inspection not found for company", {
+      companyId,
+      inspectionId: args.inspectionId,
+      error: inspection.error
+    });
+    return {
+      data: null,
+      error: inspection.error,
+      message: "Inspection not found"
+    };
   }
 
   const nextSequence = await serviceRole.rpc("get_next_sequence", {
@@ -153,7 +212,8 @@ export async function createQualityIssue(
       itemId: context.itemId,
       jobMakeMethodId: context.jobMakeMethodId,
       trackedEntityId: args.trackedEntityId,
-      quantity
+      quantity,
+      inspectionId: args.inspectionId
     })
   ]);
   const associationError =
@@ -170,14 +230,14 @@ export async function createQualityIssue(
     };
   }
 
-  const tasks = await serviceRole.functions.invoke("create", {
-    body: {
+  const tasks = await erpPosting(
+    "create",
+    { companyId, userId },
+    {
       type: "nonConformanceTasks",
-      id: nonConformanceId,
-      companyId,
-      userId
+      id: nonConformanceId
     }
-  });
+  );
 
   if (tasks.error) {
     await serviceRole
@@ -249,6 +309,18 @@ export async function getInspectionOutcomeState(
     };
   }
   const inspection = inspectionResult.data as any;
+  // getInspection reads with the service role by id alone.
+  if (inspection.companyId !== args.companyId) {
+    logger.warn("Inspection not found for company", {
+      companyId: args.companyId,
+      inspectionId: args.inspectionId
+    });
+    return {
+      data: null,
+      error: null,
+      message: "Failed to load inspection"
+    };
+  }
   const jobOperationId = inspection.sourceDocumentLineId as string | null;
   if (inspection.sourceDocument !== "Job Operation" || !jobOperationId) {
     return {
@@ -297,7 +369,8 @@ export async function getInspectionOutcomeState(
     requiresSerialTracking && operation.jobMakeMethodId
       ? await getTrackedEntitiesByMakeMethodId(
           serviceRole,
-          operation.jobMakeMethodId
+          operation.jobMakeMethodId,
+          args.companyId
         )
       : null;
 
@@ -434,16 +507,23 @@ export async function postSerialCompletions(
       inspectionSampleId: string | null;
     }[];
     jobOperationId: string;
+    // The operation's make method and work center, for the first-operation
+    // label auto-print.
+    jobMakeMethodId: string | null;
+    workCenterId: string | null;
     inspectionId: string;
     eventIds: ProductionEventIds;
     companyId: string;
     userId: string;
   }
 ): Promise<{ completed: number; error: unknown | null }> {
-  let completed = 0;
+  const completedEntityIds: string[] = [];
+  let error: unknown | null = null;
   for (const candidate of args.candidates) {
-    const response = await serviceRole.functions.invoke("issue", {
-      body: {
+    const response = await erpPosting(
+      "issue",
+      { companyId: args.companyId, userId: args.userId },
+      {
         type: "jobOperationSerialComplete",
         trackedEntityId: candidate.trackedEntityId,
         quantity: 1,
@@ -452,19 +532,36 @@ export async function postSerialCompletions(
         ...(candidate.inspectionSampleId
           ? { inspectionSampleId: candidate.inspectionSampleId }
           : {}),
-        ...args.eventIds,
-        companyId: args.companyId,
-        userId: args.userId
+        ...args.eventIds
       }
-    });
-    if (response.error) return { completed, error: response.error };
-    completed += 1;
+    );
+    if (response.error) {
+      error = response.error;
+      break;
+    }
+    completedEntityIds.push(candidate.trackedEntityId);
   }
-  return { completed, error: null };
+
+  // Labels go out after the postings, so a slow print enqueue never delays
+  // a unit's completion. Units completed before a failure still get theirs.
+  for (const trackedEntityId of completedEntityIds) {
+    // Auto-print label on first operation only (entity was just minted)
+    await autoPrintFirstOperationLabel({
+      serviceRole,
+      trackedEntityId,
+      jobOperationId: args.jobOperationId,
+      jobMakeMethodId: args.jobMakeMethodId,
+      workCenterId: args.workCenterId ?? undefined,
+      companyId: args.companyId,
+      userId: args.userId
+    });
+  }
+
+  return { completed: completedEntityIds.length, error };
 }
 
 // Non-serial completion: one bulk Production posting (batch entities
-// accumulate via the issue edge fn; untracked inserts + backflushes here).
+// accumulate via the issue posting; untracked inserts + backflushes here).
 // The row links the inspection plus the lowest unlinked passed sample as a
 // serializing representative — concurrent posts collide on the sample link's
 // UNIQUE index instead of double-counting.
@@ -484,22 +581,35 @@ export async function postBulkCompletion(
   );
 
   if (state.requiresBatchTracking && state.batchTrackedEntityId) {
-    const response = await serviceRole.functions.invoke("issue", {
-      body: {
+    const response = await erpPosting(
+      "issue",
+      { companyId: args.companyId, userId: args.userId },
+      {
         type: "jobOperationBatchComplete",
         trackedEntityId: state.batchTrackedEntityId,
         quantity: args.quantity,
         jobOperationId: state.jobOperationId,
         inspectionId: state.inspection.id,
         ...(watermark ? { inspectionSampleId: watermark.id } : {}),
-        ...args.eventIds,
-        companyId: args.companyId,
-        userId: args.userId
+        ...args.eventIds
       }
-    });
+    );
     if (response.error) {
-      return { error: response.error, message: "Failed to complete units" };
+      return {
+        error: response.error,
+        message: response.error.message || "Failed to complete units"
+      };
     }
+    // Auto-print label on first operation only (batch entity was just minted)
+    await autoPrintFirstOperationLabel({
+      serviceRole,
+      trackedEntityId: state.batchTrackedEntityId,
+      jobOperationId: state.jobOperationId,
+      jobMakeMethodId: state.operation.jobMakeMethodId,
+      workCenterId: state.operation.workCenterId ?? undefined,
+      companyId: args.companyId,
+      userId: args.userId
+    });
     return { error: null, message: null };
   }
 
@@ -519,22 +629,49 @@ export async function postBulkCompletion(
     };
   }
 
-  const issue = await serviceRole.functions.invoke("issue", {
-    body: {
+  const issued = await erpPosting(
+    "issue",
+    { companyId: args.companyId, userId: args.userId },
+    {
       id: state.jobOperationId,
       type: "jobOperation",
-      quantity: args.quantity,
-      companyId: args.companyId,
-      userId: args.userId
+      quantity: args.quantity
     }
-  });
-  if (issue.error) {
+  );
+  if (issued.error) {
     return {
-      error: issue.error,
-      message: "Units completed, but failed to issue materials"
+      error: issued.error,
+      message: `Units completed, but ${issued.error.message || "failed to issue materials"}`
     };
   }
 
+  return { error: null, message: null };
+}
+
+/** Strict backflush dry run of the operation's backflush. Call it before a
+ *  completion's first write; a no-op when the setting is off. */
+export async function checkStrictBackflush(args: {
+  jobOperationId: string;
+  quantity: number;
+  companyId: string;
+  userId: string;
+}): Promise<{ error: unknown | null; message: string | null }> {
+  if (args.quantity <= 0) return { error: null, message: null };
+  const check = await erpPosting(
+    "issue",
+    { companyId: args.companyId, userId: args.userId },
+    {
+      id: args.jobOperationId,
+      type: "jobOperationDryRun",
+      quantity: args.quantity
+    }
+  );
+  if (check.error) {
+    return {
+      error: check.error,
+      message: check.error.message || "Failed to issue materials"
+    };
+  }
   return { error: null, message: null };
 }
 
@@ -563,6 +700,14 @@ export async function createInspectionRejectionIssue(
     };
   }
   const insp = inspection.data as any;
+  // getInspection reads with the service role by id alone, and the issue this
+  // creates links the inspection — so the lot must belong to this company.
+  if (insp.companyId !== companyId) {
+    return {
+      error: new Error("Inspection is not in this company"),
+      message: "Failed to load the lot for the quality issue"
+    };
+  }
   const jobOperationId = insp.sourceDocumentLineId as string | null;
   if (!jobOperationId) {
     return { error: null, message: "Lot has no job operation to link" };
@@ -630,28 +775,16 @@ export async function createInspectionRejectionIssue(
     name: issueTitle,
     description: `Auto-created from inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}.${failedFeaturesBlock}`,
     priority: "Medium",
-    quantity: Number(insp.lotSize ?? 1)
+    quantity: Number(insp.lotSize ?? 1),
+    // Link the source inspection to the issue so the ERP issue explorer can
+    // surface the origin and deep-link back to the inspection lot.
+    inspectionId
   });
 
   if (issue.error || !issue.data) {
     return {
       error: issue.error,
       message: issue.message ?? "Failed to create quality issue"
-    };
-  }
-
-  // Link the source inspection to the issue so the ERP issue explorer can
-  // surface the origin and deep-link back to the inspection lot.
-  const link = await serviceRole.from("nonConformanceInspection").insert({
-    nonConformanceId: issue.data.id,
-    inspectionId,
-    companyId,
-    createdBy: userId
-  });
-  if (link.error) {
-    return {
-      error: link.error,
-      message: "Quality issue created, but failed to link the inspection"
     };
   }
 
@@ -759,6 +892,10 @@ async function getIssueContext(
   };
 }
 
+// Writes the issue's disposition row, its entity links and (optionally) the
+// source inspection link in one transaction under the issue lock shared by
+// every disposition writer, so a concurrent quantity edit in the ERP can never
+// see the row without its links or inspection.
 async function linkIssueDispositionContext(
   client: ServiceRole,
   args: {
@@ -769,6 +906,7 @@ async function linkIssueDispositionContext(
     jobMakeMethodId: string | null;
     trackedEntityId?: string;
     quantity: number;
+    inspectionId?: string;
   }
 ): Promise<{ error: unknown | null }> {
   const {
@@ -778,16 +916,19 @@ async function linkIssueDispositionContext(
     itemId,
     jobMakeMethodId,
     trackedEntityId,
-    quantity
+    quantity,
+    inspectionId
   } = args;
 
-  if (!itemId) return { error: null };
+  if (!itemId && !inspectionId) return { error: null };
 
-  const trackedEntities = await getTrackedEntitiesForIssue(client, {
-    companyId,
-    jobMakeMethodId,
-    trackedEntityId
-  });
+  const trackedEntities = itemId
+    ? await getTrackedEntitiesForIssue(client, {
+        companyId,
+        jobMakeMethodId,
+        trackedEntityId
+      })
+    : { data: [], error: null };
 
   if (trackedEntities.error) {
     return { error: trackedEntities.error };
@@ -801,56 +942,72 @@ async function linkIssueDispositionContext(
         )
       : quantity;
 
-  const item = await client
-    .from("nonConformanceItem")
-    .insert({
-      nonConformanceId,
-      itemId,
-      quantity: itemQuantity,
-      disposition: "Pending",
-      companyId,
-      createdBy: userId
-    })
-    .select("id")
-    .single();
+  try {
+    await getDatabaseClient()
+      .transaction()
+      .execute(async (trx) => {
+        await lockIssueDispositions(trx, { nonConformanceId, companyId });
 
-  if (item.error || !item.data?.id) {
-    return { error: item.error ?? new Error("Failed to create issue item") };
+        if (inspectionId) {
+          await trx
+            .insertInto("nonConformanceInspection")
+            .values({
+              nonConformanceId,
+              inspectionId,
+              companyId,
+              createdBy: userId
+            })
+            .execute();
+        }
+
+        if (!itemId) return;
+
+        const item = await trx
+          .insertInto("nonConformanceItem")
+          .values({
+            nonConformanceId,
+            itemId,
+            quantity: itemQuantity,
+            disposition: "Pending",
+            companyId,
+            createdBy: userId
+          })
+          .returning(["id"])
+          .executeTakeFirstOrThrow();
+
+        if (trackedEntities.data.length === 0) return;
+
+        await trx
+          .insertInto("nonConformanceTrackedEntity")
+          .values(
+            trackedEntities.data.map((entity) => ({
+              nonConformanceId,
+              trackedEntityId: entity.id,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+
+        await trx
+          .insertInto("nonConformanceItemTrackedEntity")
+          .values(
+            trackedEntities.data.map((entity) => ({
+              nonConformanceItemId: item.id,
+              nonConformanceId,
+              trackedEntityId: entity.id,
+              quantity: Number(entity.quantity ?? quantity),
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      });
+  } catch (err) {
+    return { error: err };
   }
 
-  if (trackedEntities.data.length === 0) {
-    return { error: null };
-  }
-
-  const trackedEntityLinks = await client
-    .from("nonConformanceTrackedEntity")
-    .insert(
-      trackedEntities.data.map((entity) => ({
-        nonConformanceId,
-        trackedEntityId: entity.id,
-        companyId,
-        createdBy: userId
-      }))
-    );
-
-  if (trackedEntityLinks.error) {
-    return { error: trackedEntityLinks.error };
-  }
-
-  const dispositionLinks = await client
-    .from("nonConformanceItemTrackedEntity")
-    .insert(
-      trackedEntities.data.map((entity) => ({
-        nonConformanceItemId: item.data.id,
-        nonConformanceId,
-        trackedEntityId: entity.id,
-        quantity: Number(entity.quantity ?? quantity),
-        companyId,
-        createdBy: userId
-      }))
-    );
-
-  return { error: dispositionLinks.error };
+  return { error: null };
 }
 
 async function getTrackedEntitiesForIssue(

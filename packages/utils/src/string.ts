@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 export function parseBoolean<T>(
   value: string | undefined,
   defaultValue: T
@@ -38,6 +42,7 @@ export function pluralize(
 }
 
 export function stripSpecialCharacters(inputString: string) {
-  // Keep only characters that are valid for S3 keys
-  return inputString?.replace(/[^a-zA-Z0-9/!_\-.*'() &$@=;:+,?]/g, "");
+  // Keep only characters that are valid for S3 keys. `?` is not: it ends the
+  // storage URL's path, so "what?.pdf" was stored as "what".
+  return inputString?.replace(/[^a-zA-Z0-9/!_\-.*'() &$@=;:+,]/g, "");
 }

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import {
   type ActionOutcome,
@@ -8,8 +12,9 @@ import {
   type SearchOutcome,
   type WorkflowCatalog,
   type WorkflowServices
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { OwnerPermissions } from "../engine/owner";
 import { runCreateAction } from "./create";
 import { getWorkflowDispatch } from "./dispatcher";
 import { runNotifyAction } from "./notify";
@@ -29,6 +34,7 @@ export function createWorkflowServices(params: {
   companyId: string;
   companyGroupId: string;
   ownerId: string;
+  permissions: OwnerPermissions;
   runId: string;
   workflowId: string;
 }): WorkflowServices {
@@ -38,9 +44,26 @@ export function createWorkflowServices(params: {
     companyId,
     companyGroupId,
     ownerId,
+    permissions,
     runId,
     workflowId
   } = params;
+
+  /** An integration step names its piece on its own catalog entry, so this never
+   * parses an id and the action path above never learns what a piece is. */
+  async function runIntegration(
+    piece: { name: string; action: string },
+    inputs: Record<string, RuntimeValue>
+  ): Promise<ActionOutcome> {
+    // Lazy: `./integration` imports `@carbon/auth`, which validates the server env on load.
+    const { runIntegrationAction } = await import("./integration");
+    return runIntegrationAction({
+      companyId,
+      pieceName: piece.name,
+      actionName: piece.action,
+      inputs
+    });
+  }
 
   async function runAction(
     actionId: string,
@@ -83,7 +106,13 @@ export function createWorkflowServices(params: {
 
       return runCreateAction({
         dispatch,
-        context: { client, companyId, companyGroupId, userId: ownerId },
+        context: {
+          client,
+          companyId,
+          companyGroupId,
+          userId: ownerId,
+          permissions
+        },
         call: route.call,
         entity: record.of,
         inputs
@@ -95,6 +124,7 @@ export function createWorkflowServices(params: {
 
   return {
     runAction,
+    runIntegration,
     runOperation: (
       operationId: string,
       inputs: Record<string, RuntimeValue>

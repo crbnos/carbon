@@ -1,4 +1,8 @@
-import type { TermId } from "@carbon/glossary";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
 import type { InputProps } from "@carbon/react";
 import {
   Button,
@@ -123,7 +127,7 @@ const ArrayNumericInput = ({
     <FormControl isInvalid={!!error} isRequired>
       <HStack className="w-full content-between">
         <NumberField
-          // @ts-ignore
+          // @ts-expect-error
           {...getInputProps({
             id: name,
             ...rest

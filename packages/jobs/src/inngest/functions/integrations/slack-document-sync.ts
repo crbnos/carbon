@@ -1,6 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { resolveIntegrationSecrets } from "@carbon/ee";
 import {
   type DocumentType,
   formatAssignmentUpdate,
@@ -12,6 +15,7 @@ import {
   type IssueTaskUpdate,
   type NonConformanceData
 } from "@carbon/ee/slack/messages";
+import { getSlackWorkspace } from "@carbon/ee/slack.server";
 import { VERCEL_URL } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
 import { WebClient } from "@slack/web-api";
@@ -47,26 +51,11 @@ export const slackDocumentCreatedFunction = inngest.createFunction(
         throw new Error(`${documentType} ${documentId} not found`);
       }
 
-      const { data: integration } = await serviceRole
-        .from("companyIntegration")
-        .select("metadata, secretRef")
-        .eq("id", "slack")
-        .eq("companyId", companyId)
-        .single();
-
-      if (!integration?.metadata) {
+      const workspace = await getSlackWorkspace(serviceRole, companyId);
+      if (workspace === null) {
         throw new Error("Slack integration not found");
       }
-
-      const slackToken = (
-        (await resolveIntegrationSecrets(
-          serviceRole,
-          companyId,
-          "slack",
-          integration.metadata,
-          integration.secretRef
-        )) as any
-      ).access_token as string;
+      const slackToken = workspace.token;
       const baseUrl = VERCEL_URL || "http://localhost:3000";
 
       await postToSlackThread({
@@ -78,7 +67,10 @@ export const slackDocumentCreatedFunction = inngest.createFunction(
 
       return { success: true };
     } catch (error) {
-      logger.error(`Error posting ${documentType} to Slack`, { error });
+      logger.error("Error posting {documentType} to Slack", {
+        documentType,
+        error
+      });
       throw error;
     }
   }
@@ -121,26 +113,11 @@ export const slackDocumentStatusUpdateFunction = inngest.createFunction(
         return { success: true, message: "No Slack thread found" };
       }
 
-      const { data: integration } = await serviceRole
-        .from("companyIntegration")
-        .select("metadata, secretRef")
-        .eq("id", "slack")
-        .eq("companyId", companyId)
-        .single();
-
-      if (!integration?.metadata) {
+      const workspace = await getSlackWorkspace(serviceRole, companyId);
+      if (workspace === null) {
         throw new Error("Slack integration not found");
       }
-
-      const slackToken = (
-        (await resolveIntegrationSecrets(
-          serviceRole,
-          companyId,
-          "slack",
-          integration.metadata,
-          integration.secretRef
-        )) as any
-      ).access_token as string;
+      const slackToken = workspace.token;
 
       const documentData = await getDocumentData(
         serviceRole,
@@ -173,7 +150,8 @@ export const slackDocumentStatusUpdateFunction = inngest.createFunction(
 
       return { success: true };
     } catch (error) {
-      logger.error(`Error posting ${documentType} status update to Slack`, {
+      logger.error("Error posting {documentType} status update to Slack", {
+        documentType,
         error
       });
       throw error;
@@ -220,26 +198,11 @@ export const slackDocumentTaskUpdateFunction = inngest.createFunction(
         return { success: true, message: "No Slack thread found" };
       }
 
-      const { data: integration } = await serviceRole
-        .from("companyIntegration")
-        .select("metadata, secretRef")
-        .eq("id", "slack")
-        .eq("companyId", companyId)
-        .single();
-
-      if (!integration?.metadata) {
+      const workspace = await getSlackWorkspace(serviceRole, companyId);
+      if (workspace === null) {
         throw new Error("Slack integration not found");
       }
-
-      const slackToken = (
-        (await resolveIntegrationSecrets(
-          serviceRole,
-          companyId,
-          "slack",
-          integration.metadata,
-          integration.secretRef
-        )) as any
-      ).access_token as string;
+      const slackToken = workspace.token;
 
       const documentData = await getDocumentData(
         serviceRole,
@@ -273,7 +236,8 @@ export const slackDocumentTaskUpdateFunction = inngest.createFunction(
 
       return { success: true };
     } catch (error) {
-      logger.error(`Error posting ${documentType} task update to Slack`, {
+      logger.error("Error posting {documentType} task update to Slack", {
+        documentType,
         error
       });
       throw error;
@@ -316,26 +280,11 @@ export const slackDocumentAssignmentUpdateFunction = inngest.createFunction(
         return { success: true, message: "No Slack thread found" };
       }
 
-      const { data: integration } = await serviceRole
-        .from("companyIntegration")
-        .select("metadata, secretRef")
-        .eq("id", "slack")
-        .eq("companyId", companyId)
-        .single();
-
-      if (!integration?.metadata) {
+      const workspace = await getSlackWorkspace(serviceRole, companyId);
+      if (workspace === null) {
         throw new Error("Slack integration not found");
       }
-
-      const slackToken = (
-        (await resolveIntegrationSecrets(
-          serviceRole,
-          companyId,
-          "slack",
-          integration.metadata,
-          integration.secretRef
-        )) as any
-      ).access_token as string;
+      const slackToken = workspace.token;
 
       const documentData = await getDocumentData(
         serviceRole,
@@ -367,7 +316,8 @@ export const slackDocumentAssignmentUpdateFunction = inngest.createFunction(
 
       return { success: true };
     } catch (error) {
-      logger.error(`Error posting ${documentType} assignment update to Slack`, {
+      logger.error("Error posting {documentType} assignment update to Slack", {
+        documentType,
         error
       });
       throw error;

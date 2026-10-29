@@ -3,9 +3,9 @@ title: Intercompany accounting
 description: "Match a sale in one company against the purchase in its sibling, then eliminate the pair for consolidated reporting."
 ---
 
-When two companies under the same owner trade with each other, each books its own side: one records a receivable, the other a payable. On a consolidated statement those two entries are the same money counted twice. Intercompany accounting is how Carbon pairs them up and cancels them out.
+Intercompany accounting pairs reciprocal transactions between companies in the same group and eliminates them from consolidated reporting. One company records a receivable and the other a payable; elimination removes the duplicated group-level balance.
 
-The whole feature is scoped to a **<Term>company group</Term>**, and it only appears once a group has more than one company. If you run a single company, there is nothing here to do. Set up the group and its members first (see [Companies](#prerequisite-a-multi-company-group)); everything below assumes they exist.
+The feature is scoped to a **<Term>company group</Term>** and appears only when the group has multiple companies. Configure the group and its members before using it; see [Companies](#prerequisite-a-multi-company-group).
 
 ## What a transaction is
 
@@ -34,7 +34,7 @@ The source and target are picked from the group's active companies, and **elimin
 
 Every intercompany transaction carries a **status**. It starts life at **"Unmatched"**, is paired to its counterpart by matching, and is retired by elimination.
 
-<StatusFlow>
+<StatusFlow entity="intercompanyTransaction">
   <Status name="Unmatched">The transaction has been created and posted on its source company, but Carbon has not yet found the mirror-image transaction on the other company. This is the default on creation.</Status>
   <Status name="Matched" accent>Matching found the counterpart: a transaction in the reverse direction (its source is this one's target, and vice versa) for the **same amount** in the same group. Both sides flip to Matched together and each records the other's journal line.</Status>
   <Status name="Eliminated" terminal>Elimination has generated the reversing journal that cancels the pair for consolidation. The transaction is retired and stops counting toward the intercompany balance.</Status>
@@ -44,7 +44,7 @@ These are the only three values, enforced by a database check constraint on the 
 
 ## How a pair gets matched
 
-Matching is a manual, run-on-demand step, not something that happens as you post. On the Intercompany screen, **Run Matching** sweeps the whole group.
+Matching is a manual group-wide operation. Select **Run Matching** on the Intercompany screen.
 
 The rule is deliberately strict. Two **Unmatched** transactions match only when they are true mirror images: company A → B pairs with company B → A, for the **exact same amount**, within the same group. When Carbon finds such a pair it sets both to **"Matched"** in one step and links each to the other's journal line. The result toast tells you how many matched and how many are still unmatched.
 
@@ -56,7 +56,7 @@ Matching pairs the two sides. It does **not** post anything new or touch either 
 
 ## Elimination
 
-Matching sets the stage. **Elimination** is what actually removes the double-count for consolidated reporting. It, too, is a manual sweep: **Generate Eliminations** processes every **Matched** pair in the group.
+**Elimination** removes matched balances from consolidated reporting. Select **Generate Eliminations** to process every **Matched** pair in the group.
 
 For each matched pair, Carbon posts a single **elimination journal** that reverses the intercompany control-account entries on both sides. Each transaction points at one control line; from it, Carbon takes that line's account and document and reverses every line the same invoice posted to that account — the seller's **Inter-Company Receivables** and the buyer's **Inter-Company Payables** — booking the sign-reversed amounts. Because it reverses the actual ledger lines for the whole document, a multi-line invoice is cleared in full, not just its first line, and both control accounts clear to their exact balance with no rounding residual. The seller's receivable and the buyer's payable are equal and opposite, so the elimination journal balances. Each reciprocal pair is processed once.
 

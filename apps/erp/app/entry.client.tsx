@@ -1,18 +1,20 @@
-import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { startTransition } from "react";
-import { pdfjs } from "react-pdf";
-
-pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
   CONTROLLED_ENVIRONMENT,
   POSTHOG_API_HOST,
   POSTHOG_PROJECT_PUBLIC_KEY
 } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import { ensureLoggingConfigured } from "@carbon/logger/config.client";
 import posthog from "posthog-js";
+import { startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
+import { preloadCatalog } from "~/services/lingui";
+import { SERVICE_WORKER_URL } from "~/utils/service-worker";
 
 ensureLoggingConfigured();
 
@@ -30,7 +32,15 @@ ensureLoggingConfigured();
 // U.S.-Persons-only environment leaves it, even if the key is set.
 if (POSTHOG_PROJECT_PUBLIC_KEY?.startsWith("phc_") && !CONTROLLED_ENVIRONMENT) {
   posthog.init(POSTHOG_PROJECT_PUBLIC_KEY, {
-    api_host: POSTHOG_API_HOST
+    api_host: POSTHOG_API_HOST,
+    // LCP, INP and CLS from real sessions: the only way to know which pages are
+    // slow for the people using them.
+    capture_performance: { web_vitals: true },
+    // Remote config, web vitals and the recorder load as <script> tags. The
+    // default puts them in <body> ahead of React Router's scripts, a node the
+    // server never sent, and the whole document fails hydration (#418/#423).
+    // React 18 ignores extra nodes at the end of <head>.
+    external_scripts_inject_target: "head"
   });
 }
 
@@ -43,6 +53,28 @@ if (CONTROLLED_ENVIRONMENT && posthog.__loaded) {
   );
 }
 
-startTransition(() => {
-  hydrateRoot(document, <HydratedRouter />);
+// Shows an offline page when a page load finds no network, and carries Web
+// Push (public/service-worker.js). Registered for everyone, not only when push
+// is on: the offline page is for every user. After the page has loaded, so
+// the worker's own download does not compete with the page's; this module can
+// run after "load" has fired (the dev server imports it late), so check first.
+if ("serviceWorker" in navigator) {
+  const register = () => {
+    navigator.serviceWorker
+      .register(SERVICE_WORKER_URL, { scope: "/" })
+      .catch((error) =>
+        getLogger("erp", "service-worker").warn("not registered", { error })
+      );
+  };
+  if (document.readyState === "complete") register();
+  else window.addEventListener("load", register, { once: true });
+}
+
+// The catalog is no longer in loader data, so fetch the active language's
+// chunk before hydrating — otherwise a non-en page hydrates against an empty
+// catalog and mismatches the server markup.
+preloadCatalog(document.documentElement.lang).then(() => {
+  startTransition(() => {
+    hydrateRoot(document, <HydratedRouter />);
+  });
 });

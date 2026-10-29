@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
 import {
   LuArrowDownUp,
@@ -7,6 +11,7 @@ import {
   LuHandCoins,
   LuListChecks,
   LuNetwork,
+  LuPackageSearch,
   LuQrCode,
   LuScanQrCode,
   LuShieldCheck,
@@ -15,6 +20,7 @@ import {
   LuTruck,
   LuWarehouse
 } from "react-icons/lu";
+import { GroupedContentSidebar } from "~/components/Layout";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
@@ -27,8 +33,22 @@ export default function useInventorySubmodules() {
 
   const inventoryRoutes: AuthenticatedRouteGroup[] = [
     {
-      name: t`Manage`,
+      name: t`Stock`,
       routes: [
+        {
+          name: t`Quantities`,
+          to: path.to.inventory,
+          role: "employee",
+          icon: <LuTally5 />,
+          table: "inventory"
+        },
+        {
+          name: t`Movements`,
+          to: path.to.stockMovements,
+          role: "employee",
+          icon: <LuArrowDownUp />,
+          table: "itemLedger"
+        },
         {
           name: t`Inventory Count`,
           to: path.to.inventoryCounts,
@@ -36,9 +56,22 @@ export default function useInventorySubmodules() {
           table: "inventoryCount"
         },
         {
-          name: t`Picking Lists`,
-          to: path.to.pickingLists,
-          icon: <LuClipboardList />
+          name: t`Kanbans`,
+          to: path.to.kanbans,
+          role: "employee",
+          icon: <LuScanQrCode />
+        }
+      ]
+    },
+    {
+      name: t`Shipping & Receiving`,
+      routes: [
+        {
+          name: t`Receiving`,
+          to: path.to.receiving,
+          icon: <LuPackageSearch />,
+          // Open purchase order lines are only readable with purchasing view.
+          permission: "purchasing"
         },
         {
           name: t`Receipts`,
@@ -51,6 +84,16 @@ export default function useInventorySubmodules() {
           to: path.to.shipments,
           icon: <LuTruck />,
           table: "shipment"
+        }
+      ]
+    },
+    {
+      name: t`Transfers`,
+      routes: [
+        {
+          name: t`Picking Lists`,
+          to: path.to.pickingLists,
+          icon: <LuClipboardList />
         },
         {
           name: t`Stock Transfers`,
@@ -67,28 +110,8 @@ export default function useInventorySubmodules() {
       ]
     },
     {
-      name: t`Track`,
+      name: t`Traceability`,
       routes: [
-        {
-          name: t`Kanbans`,
-          to: path.to.kanbans,
-          role: "employee",
-          icon: <LuScanQrCode />
-        },
-        {
-          name: t`Movements`,
-          to: path.to.stockMovements,
-          role: "employee",
-          icon: <LuArrowDownUp />,
-          table: "itemLedger"
-        },
-        {
-          name: t`Quantities`,
-          to: path.to.inventory,
-          role: "employee",
-          icon: <LuTally5 />,
-          table: "inventory"
-        },
         {
           name: t`Tracked Entities`,
           to: path.to.trackedEntities,
@@ -136,30 +159,25 @@ export default function useInventorySubmodules() {
     }
   ];
 
+  const isVisible = (route: AuthenticatedRouteGroup["routes"][number]) => {
+    if (route.role) return permissions.is(route.role);
+    if (route.permission) return permissions.can("view", route.permission);
+    return true;
+  };
+
   return {
     groups: inventoryRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
-          }
-        });
-
-        return filteredRoutes.length > 0;
-      })
       .map((group) => ({
         ...group,
-        routes: group.routes
-          .filter((route) => {
-            if (route.role) {
-              return permissions.is(route.role);
-            } else {
-              return true;
-            }
-          })
-          .map(addSavedViewsToRoutes)
+        routes: group.routes.filter(isVisible).map(addSavedViewsToRoutes)
       }))
+      .filter((group) => group.routes.length > 0)
   };
+}
+
+/** Phones: the module's section switcher, for routes outside the module's
+ *  own layout (`handle.compactSidebar`). */
+export function InventorySections() {
+  const { groups } = useInventorySubmodules();
+  return <GroupedContentSidebar groups={groups} />;
 }

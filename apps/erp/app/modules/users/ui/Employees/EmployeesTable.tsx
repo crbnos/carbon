@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Checkbox,
   DropdownMenuContent,
   DropdownMenuItem,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Tooltip,
@@ -29,21 +34,29 @@ import {
 import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type {
+  AllMatchingSelection,
+  BulkActionScope,
+  InfiniteOptions
+} from "~/components/Table";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
-import type { Employee } from "~/modules/users";
+import type { Employee } from "~/modules/users/types";
 import {
   BulkEditPermissionsForm,
   DeactivateUsersModal,
   ResendInviteModal,
   RevokeInviteModal
-} from "~/modules/users";
+} from "~/modules/users/ui";
+import { canBulkActOnUser } from "~/modules/users/users.models";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
+import { useBulkUserActionFetcher } from "../components/AllMatchingUsers";
 
 type EmployeesTableProps = {
   data: Employee[];
   count: number;
+  infinite: InfiniteOptions;
   employeeTypes: ListItem[];
   unrevokedInviteEmails: string[];
   mfaEnrolledUserIds: string[];
@@ -58,6 +71,7 @@ const EmployeesTable = memo(
   ({
     data,
     count,
+    infinite,
     employeeTypes,
     unrevokedInviteEmails,
     mfaEnrolledUserIds
@@ -91,6 +105,10 @@ const EmployeesTable = memo(
     );
 
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    // Set when a bulk action applies to every matching user of the list.
+    const [bulkAllMatching, setBulkAllMatching] =
+      useState<AllMatchingSelection | null>(null);
+    const allMatchingFetcher = useBulkUserActionFetcher();
 
     const bulkEditDrawer = useDisclosure();
     const deactivateEmployeeModal = useDisclosure();
@@ -116,6 +134,7 @@ const EmployeesTable = memo(
           ),
 
           meta: {
+            mobile: "P1",
             icon: <LuUser />
           }
         },
@@ -151,6 +170,7 @@ const EmployeesTable = memo(
             return email;
           },
           meta: {
+            mobile: "P3",
             icon: <LuMail />
           }
         },
@@ -165,6 +185,7 @@ const EmployeesTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: employeeTypes.map((type) => ({
@@ -189,6 +210,7 @@ const EmployeesTable = memo(
             return <Badge variant="secondary">{t`Inactive`}</Badge>;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: [
@@ -268,21 +290,34 @@ const EmployeesTable = memo(
     }, [params, mfaEnrolledSet, requireMfa]);
 
     const renderActions = useCallback(
-      (selectedRows: typeof data) => {
+      (selectedRows: typeof data, scope?: BulkActionScope) => {
+        // Every matching user: the background job applies the same rules
+        // (`canBulkActOnUser`) to each matching row and skips the rest.
+        const allMatching = scope?.allMatching ?? null;
+        const rules = {
+          actorId: currentUserId,
+          unrevokedInviteEmails: unrevokedInviteSet
+        };
+        const usersFor = (action: "permissions" | "invite" | "deactivate") =>
+          selectedRows
+            .filter((row) => canBulkActOnUser(action, row, rules))
+            .map((row) => row.id!);
+        const open = (
+          action: "permissions" | "invite" | "deactivate",
+          onOpen: () => void
+        ) => {
+          setBulkAllMatching(allMatching);
+          setSelectedUserIds(allMatching ? [] : usersFor(action));
+          onOpen();
+        };
         return (
           <DropdownMenuContent>
             <DropdownMenuItem
-              onClick={() => {
-                setSelectedUserIds(
-                  selectedRows
-                    .filter((row) => row.active === true)
-                    .map((row) => row.id!)
-                );
-                bulkEditDrawer.onOpen();
-              }}
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
+              onClick={() => open("permissions", bulkEditDrawer.onOpen)}
               disabled={
                 !permissions.can("update", "users") ||
-                selectedRows.every((row) => row.active === false)
+                (!allMatching && usersFor("permissions").length === 0)
               }
             >
               <LuShield className="mr-2 h-4 w-4" />
@@ -291,27 +326,10 @@ const EmployeesTable = memo(
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => {
-                setSelectedUserIds(
-                  selectedRows
-                    .filter(
-                      (row) =>
-                        row.active === false &&
-                        !!row.email &&
-                        !unrevokedInviteSet.has(row.email)
-                    )
-                    .map((row) => row.id!)
-                );
-                resendInviteModal.onOpen();
-              }}
+              onClick={() => open("invite", resendInviteModal.onOpen)}
               disabled={
                 !permissions.can("create", "users") ||
-                !selectedRows.some(
-                  (row) =>
-                    row.active === false &&
-                    !!row.email &&
-                    !unrevokedInviteSet.has(row.email)
-                )
+                (!allMatching && usersFor("invite").length === 0)
               }
             >
               <LuMailCheck className="mr-2 h-4 w-4" />
@@ -320,21 +338,10 @@ const EmployeesTable = memo(
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => {
-                setSelectedUserIds(
-                  selectedRows
-                    .filter(
-                      (row) => row.active === true && row.id !== currentUserId
-                    )
-                    .map((row) => row.id!)
-                );
-                deactivateEmployeeModal.onOpen();
-              }}
+              onClick={() => open("deactivate", deactivateEmployeeModal.onOpen)}
               disabled={
                 !permissions.can("delete", "users") ||
-                !selectedRows.some(
-                  (row) => row.active === true && row.id !== currentUserId
-                )
+                (!allMatching && usersFor("deactivate").length === 0)
               }
             >
               <LuBan className="mr-2 h-4 w-4" />
@@ -365,6 +372,7 @@ const EmployeesTable = memo(
             {row.active === true ? (
               <>
                 <MenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
                   onClick={() =>
                     navigate(
                       `${path.to.employeeAccount(row.id!)}?${params.toString()}`
@@ -374,18 +382,24 @@ const EmployeesTable = memo(
                   <MenuIcon icon={<LuPencil />} />
                   <Trans>Edit Permissions</Trans>
                 </MenuItem>
-                {settings.consoleEnabled && (
-                  <MenuItem
-                    onClick={() =>
-                      navigate(
-                        `${path.to.operatorResetPin(row.id!)}?${params.toString()}`
-                      )
-                    }
-                  >
-                    <MenuIcon icon={<LuShield />} />
-                    <Trans>Set Console PIN</Trans>
-                  </MenuItem>
-                )}
+                {/* Resetting a PIN hands over that person's console identity:
+                    console operators need users_update, anyone else also
+                    settings_update (enforced again by the route). */}
+                {settings.consoleEnabled &&
+                  permissions.can("update", "users") &&
+                  (permissions.can("update", "settings") ||
+                    row.email?.endsWith("@console.internal")) && (
+                    <MenuItem
+                      onClick={() =>
+                        navigate(
+                          `${path.to.operatorResetPin(row.id!)}?${params.toString()}`
+                        )
+                      }
+                    >
+                      <MenuIcon icon={<LuShield />} />
+                      <Trans>Set Console PIN</Trans>
+                    </MenuItem>
+                  )}
                 <MenuItem
                   onClick={() =>
                     navigate(
@@ -409,29 +423,35 @@ const EmployeesTable = memo(
                   </MenuItem>
                 )}
               </>
-            ) : hasUnrevokedInvite ? (
-              permissions.can("delete", "users") && (
+            ) : (
+              <>
                 <MenuItem
+                  disabled={!permissions.can("create", "users")}
                   onClick={() => {
                     setSelectedUserIds([row.id!]);
-                    revokeInviteModal.onOpen();
+                    resendInviteModal.onOpen();
                   }}
-                  destructive
                 >
-                  <MenuIcon icon={<LuBan />} />
-                  <Trans>Revoke Invite</Trans>
+                  <MenuIcon icon={<LuMailCheck />} />
+                  {hasUnrevokedInvite ? (
+                    <Trans>Resend Invite</Trans>
+                  ) : (
+                    <Trans>Send Invite</Trans>
+                  )}
                 </MenuItem>
-              )
-            ) : (
-              <MenuItem
-                onClick={() => {
-                  setSelectedUserIds([row.id!]);
-                  resendInviteModal.onOpen();
-                }}
-              >
-                <MenuIcon icon={<LuMailCheck />} />
-                <Trans>Send Invite</Trans>
-              </MenuItem>
+                {hasUnrevokedInvite && permissions.can("delete", "users") && (
+                  <MenuItem
+                    onClick={() => {
+                      setSelectedUserIds([row.id!]);
+                      revokeInviteModal.onOpen();
+                    }}
+                    destructive
+                  >
+                    <MenuIcon icon={<LuBan />} />
+                    <Trans>Revoke Invite</Trans>
+                  </MenuItem>
+                )}
+              </>
             )}
           </>
         );
@@ -455,6 +475,7 @@ const EmployeesTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infinite={infinite}
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
             permissions.can("create", "users") && (
@@ -470,21 +491,36 @@ const EmployeesTable = memo(
           <BulkEditPermissionsForm
             userIds={selectedUserIds}
             isOpen={bulkEditDrawer.isOpen}
-            onClose={bulkEditDrawer.onClose}
+            allMatching={bulkAllMatching}
+            allMatchingFetcher={allMatchingFetcher}
+            onClose={() => {
+              bulkEditDrawer.onClose();
+              setBulkAllMatching(null);
+            }}
           />
         )}
         {deactivateEmployeeModal.isOpen && (
           <DeactivateUsersModal
             userIds={selectedUserIds}
             isOpen={deactivateEmployeeModal.isOpen}
-            onClose={deactivateEmployeeModal.onClose}
+            allMatching={bulkAllMatching}
+            allMatchingFetcher={allMatchingFetcher}
+            onClose={() => {
+              deactivateEmployeeModal.onClose();
+              setBulkAllMatching(null);
+            }}
           />
         )}
         {resendInviteModal.isOpen && (
           <ResendInviteModal
             userIds={selectedUserIds}
             isOpen={resendInviteModal.isOpen}
-            onClose={resendInviteModal.onClose}
+            allMatching={bulkAllMatching}
+            allMatchingFetcher={allMatchingFetcher}
+            onClose={() => {
+              resendInviteModal.onClose();
+              setBulkAllMatching(null);
+            }}
           />
         )}
         {revokeInviteModal.isOpen && (

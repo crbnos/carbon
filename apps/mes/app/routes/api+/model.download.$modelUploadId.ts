@@ -1,8 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { isModelRawDownloadable } from "@carbon/utils";
+import { findStorageObjectBuckets } from "@carbon/database/storage-objects";
+import { getCompanyPrivateBucket, TEMP_STAGING_BUCKET } from "@carbon/files";
+import { isModelRawDownloadable } from "@carbon/files/cad";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 // Resolves the DOWNLOADABLE bytes for a model — always the customer's original
@@ -39,21 +45,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Original model file is not available", { status: 404 });
   }
 
-  // Retained raws live in `private` once persisted, or `temp-staging` before
-  // compaction settles / when oversized — probe both (same resolution as the
-  // model.artifacts route).
-  const serviceRole = getCarbonServiceRole();
-  const probe = (bucket: "private" | "temp-staging") =>
-    serviceRole.storage
-      .from(bucket)
-      .info(candidate)
-      .catch(() => ({ data: null, error: true as const }));
-  const durable = await probe("private");
-  let bucket: string | null = !durable.error && durable.data ? "private" : null;
-  if (!bucket) {
-    const staged = await probe("temp-staging");
-    if (!staged.error && staged.data) bucket = "temp-staging";
-  }
+  // A retained raw lives in the company's own bucket once it is durable, or
+  // in `temp-staging` before compaction settles (and when it is too big for
+  // the company bucket). The row is companyId-scoped, so the session's own
+  // bucket is the right one — never derive it from the path.
+  const buckets = await findStorageObjectBuckets(getDatabaseClient(), {
+    names: [candidate],
+    buckets: [getCompanyPrivateBucket(companyId), TEMP_STAGING_BUCKET]
+  });
+  const bucket = buckets.get(candidate);
   if (!bucket) {
     throw new Response("Original model file is not available", { status: 404 });
   }

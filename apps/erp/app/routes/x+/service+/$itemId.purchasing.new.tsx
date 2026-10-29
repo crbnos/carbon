@@ -1,76 +1,36 @@
-import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { validator } from "@carbon/form";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
-import type { ServiceSummary } from "~/modules/items";
-import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
+import { supplierPartFormValidator } from "~/modules/items/items.models";
+import type { ServiceSummary } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(supplierPartFormValidator).request(args, {
+    params: ["itemId"]
   });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const formData = await request.formData();
-  const validation = await validator(supplierPartValidator).validate(formData);
-
-  if (validation.error) {
-    return {
-      success: false,
-      message: "Invalid form data"
-    };
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  const createServiceSupplier = await upsertSupplierPart(client, {
-    ...d,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
+  if ("invalid" in input) return input.invalid;
+  const { id: _id, ...supplierPart } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.items.createSupplierPart({
+    ...supplierPart,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  if (createServiceSupplier.error) {
-    return {
-      success: false,
-      message: "Failed to create service supplier"
-    };
+  // One supplier part per item and supplier: shown under the Supplier field.
+  if (result.error?.category === "conflict") {
+    return validationError({
+      fieldErrors: { supplierId: result.error.message }
+    });
   }
-
-  const newSupplierPartId = createServiceSupplier.data?.id;
-  const priceBreaksRaw = formData.get("priceBreaks");
-  if (newSupplierPartId && priceBreaksRaw) {
-    const priceBreaks = JSON.parse(priceBreaksRaw as string) as {
-      quantity: number;
-      unitPrice: number;
-      leadTime: number;
-    }[];
-    if (priceBreaks.length > 0) {
-      await client.from("supplierPartPrice").insert(
-        priceBreaks.map((pb) => ({
-          supplierPartId: newSupplierPartId,
-          quantity: pb.quantity,
-          unitPrice: pb.unitPrice,
-          leadTime: pb.leadTime ?? 0,
-          sourceType: "Manual Entry" as const,
-          companyId,
-          createdBy: userId,
-          updatedBy: userId
-        }))
-      );
-    }
-  }
-
-  return { success: true, message: "Service supplier created" };
+  return result;
 }
 
 export default function NewServiceSupplierRoute() {
@@ -89,7 +49,7 @@ export default function NewServiceSupplierRoute() {
     itemId: itemId,
     supplierId: "",
     supplierPartId: "",
-    unitPrice: 0,
+    supplierUnitPrice: 0,
     supplierUnitOfMeasureCode: "EA",
     minimumOrderQuantity: 1,
     orderMultiple: 1,

@@ -1,14 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBox,
   LuChartLine,
   LuClipboardCheck,
   LuFileText,
+  LuReceipt,
   LuShoppingCart,
   LuTags
 } from "react-icons/lu";
 import { useParams } from "react-router";
 import { usePermissions, useRouteData } from "~/hooks";
+import { DETAIL_TAB_SHORTCUTS } from "~/shortcuts";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
 import type { ConsumableSummary } from "../../types";
@@ -32,7 +38,7 @@ export function useConsumableNavigation() {
       name: t`Details`,
       to: path.to.consumableDetails(itemId),
       icon: LuFileText,
-      shortcut: "Command+Shift+d"
+      shortcut: DETAIL_TAB_SHORTCUTS.details
     },
     {
       name: t`Purchasing`,
@@ -40,7 +46,7 @@ export function useConsumableNavigation() {
       role: ["employee", "supplier"],
       permission: "purchasing",
       icon: LuShoppingCart,
-      shortcut: "Command+Shift+p"
+      shortcut: DETAIL_TAB_SHORTCUTS.purchasing
     },
     {
       name: t`Accounting`,
@@ -48,7 +54,7 @@ export function useConsumableNavigation() {
       role: ["employee"],
       permission: "purchasing",
       icon: LuTags,
-      shortcut: "Command+Shift+a"
+      shortcut: DETAIL_TAB_SHORTCUTS.accounting
     },
     {
       name: t`Planning`,
@@ -56,7 +62,7 @@ export function useConsumableNavigation() {
       isDisabled: itemTrackingType === "Non-Inventory",
       role: ["employee"],
       icon: LuChartLine,
-      shortcut: "Command+Shift+p"
+      shortcut: DETAIL_TAB_SHORTCUTS.planning
     },
     {
       name: t`Inventory`,
@@ -64,7 +70,14 @@ export function useConsumableNavigation() {
       isDisabled: itemTrackingType === "Non-Inventory",
       role: ["employee", "supplier"],
       icon: LuBox,
-      shortcut: "Command+Shift+i"
+      shortcut: DETAIL_TAB_SHORTCUTS.inventory
+    },
+    {
+      name: t`Sales`,
+      to: path.to.consumableSales(itemId),
+      role: ["employee"],
+      icon: LuReceipt,
+      shortcut: DETAIL_TAB_SHORTCUTS.sales
     },
     {
       name: t`Quality`,
@@ -72,7 +85,7 @@ export function useConsumableNavigation() {
       role: ["employee"],
       permission: "quality",
       icon: LuClipboardCheck,
-      shortcut: "Command+Shift+q"
+      shortcut: DETAIL_TAB_SHORTCUTS.quality
     }
   ].filter(
     (item) =>

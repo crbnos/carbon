@@ -1,19 +1,10 @@
-import { Status } from "@carbon/react";
-import type { ChangeNoticeStatus as ChangeNoticeStatusType } from "../../types";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Stage → badge color. Done is success (green); the open stages step through
-// gray → blue → yellow → orange as work progresses; Cancelled is red.
-const CHANGE_ORDER_STATUS_COLOR_MAP: Record<
-  string,
-  "green" | "orange" | "red" | "yellow" | "blue" | "gray" | "purple"
-> = {
-  Draft: "gray",
-  Start: "blue",
-  "Engineering Complete": "yellow",
-  Implementation: "orange",
-  Done: "green",
-  Cancelled: "red"
-};
+import { Status } from "@carbon/react";
+import { CHANGE_ORDER_STATUS_COLOR_MAP } from "@carbon/utils";
+import type { ChangeNoticeStatus as ChangeNoticeStatusType } from "../../types";
 
 type ChangeNoticeStatusProps = {
   status?: ChangeNoticeStatusType | null;

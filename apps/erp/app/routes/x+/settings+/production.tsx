@@ -1,8 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { Submit, ValidatedForm, validator } from "@carbon/form";
+import {
+  Hidden,
+  Submit,
+  useControlField,
+  ValidatedForm,
+  validator
+} from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -10,7 +21,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Heading,
+  ChoiceSelect,
   HStack,
   Label,
   ScrollArea,
@@ -19,19 +30,25 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
-import { LuMapPin } from "react-icons/lu";
+import { useCallback } from "react";
+import { LuFactory, LuMapPin, LuSend, LuTicket } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { z } from "zod";
 import { Users } from "~/components/Form";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import {
-  getCompanySettings,
   jobCompletedValidator,
-  updateAutoSelectMaterialWithoutPickingListSetting,
-  updateIncludeMaterialsOnTravelerSetting
-} from "~/modules/settings";
+  type SerialNumberTiming,
+  serialNumberTimingValidator,
+  settingsToggle
+} from "~/modules/settings/settings.models";
+import type { updateProductionSettings } from "~/modules/settings/settings.server";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { useSerialNumberTimingLabels } from "~/modules/settings/ui/SerialNumbers/useSerialNumberTimingLabels";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -68,136 +85,109 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// One form per card, told apart by its intent: each becomes the fields of
+// `settings.production.update` it saves.
+const productionSettingsForm = z.discriminatedUnion("intent", [
+  jobCompletedValidator
+    .extend({ intent: z.literal("jobCompleted") })
+    .transform((form) => ({
+      inventoryJobCompletedNotificationGroup:
+        form.inventoryJobCompletedNotificationGroup ?? [],
+      salesJobCompletedNotificationGroup:
+        form.salesJobCompletedNotificationGroup ?? []
+    })),
+  settingsToggle("operationTimer", "autoStartOperationTimer"),
+  settingsToggle("jobTravelerMaterials", "includeMaterialsOnTraveler"),
+  settingsToggle("jobTravelerOperations", "includeOperationsOnTraveler"),
+  settingsToggle(
+    "autoSelectMaterialWithoutPickingListToggle",
+    "autoSelectMaterialWithoutPickingList"
+  ),
+  serialNumberTimingValidator.extend({
+    intent: z.literal("serialNumberTiming")
+  }),
+  z
+    .object({
+      intent: z.literal("locationRequiresStaffing"),
+      locationId: z.string().min(1, { message: "Missing location" }),
+      enabled: z.string().optional()
+    })
+    .transform(({ locationId, enabled }) => ({
+      locationStaffing: { locationId, requiresStaffing: enabled === "true" }
+    }))
+]);
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
+type ProductionSettingsSaved = z.output<typeof updateProductionSettings.input>;
 
-  if (intent === "jobCompleted") {
-    const validation = await validator(jobCompletedValidator).validate(
-      formData
-    );
-
-    if (validation.error) {
-      return { success: false, message: "Invalid form data" };
-    }
-
-    const update = await client
-      .from("companySettings")
-      .update({
-        inventoryJobCompletedNotificationGroup:
-          validation.data.inventoryJobCompletedNotificationGroup ?? [],
-        salesJobCompletedNotificationGroup:
-          validation.data.salesJobCompletedNotificationGroup ?? []
-      })
-      .eq("id", companyId);
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return { success: true, message: "Job notification settings updated" };
-  }
-
-  if (intent === "operationTimer") {
-    const autoStartOperationTimer = formData.get("enabled") === "true";
-
-    const update = await client
-      .from("companySettings")
-      .update({ autoStartOperationTimer })
-      .eq("id", companyId);
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return {
-      success: true,
-      message: `Operation timer auto-start ${
-        autoStartOperationTimer ? "enabled" : "disabled"
-      }`
-    };
-  }
-
-  if (intent === "jobTravelerMaterials") {
-    const includeMaterialsOnTraveler = formData.get("enabled") === "true";
-
-    const update = await updateIncludeMaterialsOnTravelerSetting(
-      client,
-      companyId,
-      includeMaterialsOnTraveler
-    );
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return {
-      success: true,
-      message: `Traveler materials ${
-        includeMaterialsOnTraveler ? "enabled" : "disabled"
-      }`
-    };
-  }
-
-  if (intent === "autoSelectMaterialWithoutPickingListToggle") {
-    const autoSelectMaterialWithoutPickingList =
-      formData.get("enabled") === "true";
-    const result = await updateAutoSelectMaterialWithoutPickingListSetting(
-      client,
-      companyId,
-      autoSelectMaterialWithoutPickingList
-    );
-
-    if (result.error) return { success: false, message: result.error.message };
-
-    return {
-      success: true,
-      message: `Material pre-selection ${
-        autoSelectMaterialWithoutPickingList ? "enabled" : "disabled"
-      }`
-    };
-  }
-
-  if (intent === "locationRequiresStaffing") {
-    const locationId = String(formData.get("locationId") ?? "");
-    const requiresStaffing = formData.get("enabled") === "true";
-    if (!locationId) {
-      return { success: false, message: "Missing location" };
-    }
-    // "Require staffing to schedule" is a scheduling policy owned by production
-    // settings, but it lives on the `location` row whose UPDATE RLS wants
-    // resources_update. Write it service-role (company-scoped) so a settings
-    // admin without resources_update can still set it.
-    const serviceRole = getCarbonServiceRole();
-    const update = await serviceRole
-      .from("location")
-      .update({ requiresStaffing })
-      .eq("id", locationId)
-      .eq("companyId", companyId);
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return {
-      success: true,
-      message: `Staffing requirement ${
-        requiresStaffing ? "enabled" : "disabled"
-      }`
-    };
-  }
-
-  return { success: false, message: "Unknown intent" };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(productionSettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updateProductionSettings(input.data);
 }
 
 export default function ProductionSettingsRoute() {
   const { t } = useLingui();
   const { companySettings, locations } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-  const notificationsFetcher = useFetcher<typeof action>();
-  const staffingFetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (data) toast.success(productionSettingsMessage(data));
+    }
+  });
+  const notificationsFetcher = useAction<typeof action>({
+    onSuccess: () => toast.success(t`Job notification settings updated`)
+  });
+  const staffingFetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (data) toast.success(productionSettingsMessage(data));
+    }
+  });
+
+  function productionSettingsMessage(data: ProductionSettingsSaved) {
+    if (data.autoStartOperationTimer !== undefined) {
+      return data.autoStartOperationTimer
+        ? t`Operation timer auto-start enabled`
+        : t`Operation timer auto-start disabled`;
+    }
+    if (data.includeMaterialsOnTraveler !== undefined) {
+      return data.includeMaterialsOnTraveler
+        ? t`Traveler materials enabled`
+        : t`Traveler materials disabled`;
+    }
+    if (data.includeOperationsOnTraveler !== undefined) {
+      return data.includeOperationsOnTraveler
+        ? t`Traveler operations enabled`
+        : t`Traveler operations disabled`;
+    }
+    if (data.autoSelectMaterialWithoutPickingList !== undefined) {
+      return data.autoSelectMaterialWithoutPickingList
+        ? t`Material pre-selection enabled`
+        : t`Material pre-selection disabled`;
+    }
+    if (data.serialNumberTiming !== undefined) {
+      if (data.serialNumberTiming === "production") {
+        return t`Serial numbers are drawn when a unit is produced`;
+      }
+      return data.serialNumberTiming === "jobRelease"
+        ? t`Serial numbers are drawn when the job is released`
+        : t`Serial numbers are drawn when the job is created`;
+    }
+    if (data.locationStaffing) {
+      return data.locationStaffing.requiresStaffing
+        ? t`Staffing requirement enabled`
+        : t`Staffing requirement disabled`;
+    }
+    return t`Production settings updated`;
+  }
 
   const isToggling = fetcher.state !== "idle";
 
   const includeMaterialsOnTraveler =
     (companySettings as { includeMaterialsOnTraveler?: boolean | null })
       .includeMaterialsOnTraveler ?? false;
+  const includeOperationsOnTraveler =
+    (companySettings as { includeOperationsOnTraveler?: boolean | null })
+      .includeOperationsOnTraveler ?? true;
   const autoStartOperationTimer =
     companySettings.autoStartOperationTimer ?? false;
   const autoSelectMaterialWithoutPickingList =
@@ -207,6 +197,16 @@ export default function ProductionSettingsRoute() {
     (checked: boolean) => {
       fetcher.submit(
         { intent: "jobTravelerMaterials", enabled: String(checked) },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
+  const handleTravelerOperationsToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        { intent: "jobTravelerOperations", enabled: String(checked) },
         { method: "POST" }
       );
     },
@@ -250,56 +250,12 @@ export default function ProductionSettingsRoute() {
     [staffingFetcher]
   );
 
-  useEffect(() => {
-    if (
-      staffingFetcher.data?.success === true &&
-      staffingFetcher.data.message
-    ) {
-      toast.success(staffingFetcher.data.message);
-    }
-    if (
-      staffingFetcher.data?.success === false &&
-      staffingFetcher.data.message
-    ) {
-      toast.error(staffingFetcher.data.message);
-    }
-  }, [staffingFetcher.data?.message, staffingFetcher.data?.success]);
-
-  useEffect(() => {
-    if (fetcher.data?.success === true && fetcher?.data?.message) {
-      toast.success(fetcher.data.message);
-    }
-
-    if (fetcher.data?.success === false && fetcher?.data?.message) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data?.message, fetcher.data?.success]);
-
-  useEffect(() => {
-    if (
-      notificationsFetcher.data?.success === true &&
-      notificationsFetcher?.data?.message
-    ) {
-      toast.success(notificationsFetcher.data.message);
-    }
-
-    if (
-      notificationsFetcher.data?.success === false &&
-      notificationsFetcher?.data?.message
-    ) {
-      toast.error(notificationsFetcher.data.message);
-    }
-  }, [notificationsFetcher.data?.message, notificationsFetcher.data?.success]);
-
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Production</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <Card>
           <CardHeader>
@@ -311,35 +267,71 @@ export default function ProductionSettingsRoute() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <HStack className="justify-between items-center">
-              <VStack className="items-start" spacing={1}>
-                <span className="font-medium">
-                  {includeMaterialsOnTraveler ? (
-                    <Trans>Materials are included</Trans>
-                  ) : (
-                    <Trans>Materials are not included</Trans>
-                  )}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {includeMaterialsOnTraveler ? (
-                    <Trans>
-                      The traveler lists each item on the bill of materials with
-                      its quantity.
-                    </Trans>
-                  ) : (
-                    <Trans>
-                      Add a materials section that lists each item on the bill
-                      of materials with its quantity.
-                    </Trans>
-                  )}
-                </span>
-              </VStack>
-              <Switch
-                checked={includeMaterialsOnTraveler}
-                onCheckedChange={handleTravelerMaterialsToggle}
-                disabled={isToggling}
-              />
-            </HStack>
+            <VStack spacing={4}>
+              <HStack className="justify-between items-center w-full">
+                <VStack className="items-start" spacing={1}>
+                  <span className="font-medium">
+                    {includeOperationsOnTraveler ? (
+                      <Trans>Operations are included</Trans>
+                    ) : (
+                      <Trans>Operations are not included</Trans>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {includeOperationsOnTraveler ? (
+                      <Trans>
+                        The traveler lists each routing operation with its
+                        expected times and scan barcodes.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Add an operations section that lists each routing
+                        operation with its expected times and scan barcodes.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+                <Switch
+                  checked={includeOperationsOnTraveler}
+                  aria-label={t`Include operations on the traveler`}
+                  onCheckedChange={handleTravelerOperationsToggle}
+                  disabled={isToggling}
+                />
+              </HStack>
+
+              <Separator />
+
+              <HStack className="justify-between items-center w-full">
+                <VStack className="items-start" spacing={1}>
+                  <span className="font-medium">
+                    {includeMaterialsOnTraveler ? (
+                      <Trans>Materials are included</Trans>
+                    ) : (
+                      <Trans>Materials are not included</Trans>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {includeMaterialsOnTraveler ? (
+                      <Trans>
+                        The traveler lists each item on the bill of materials
+                        with its quantity.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Add a materials section that lists each item on the bill
+                        of materials with its quantity.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+                <Switch
+                  checked={includeMaterialsOnTraveler}
+                  aria-label={t`Include materials on the traveler`}
+                  onCheckedChange={handleTravelerMaterialsToggle}
+                  disabled={isToggling}
+                />
+              </HStack>
+            </VStack>
           </CardContent>
         </Card>
 
@@ -382,6 +374,7 @@ export default function ProductionSettingsRoute() {
                 </VStack>
                 <Switch
                   checked={autoStartOperationTimer}
+                  aria-label={t`Start the timer automatically`}
                   onCheckedChange={handleOperationTimerToggle}
                   disabled={isToggling}
                 />
@@ -414,12 +407,54 @@ export default function ProductionSettingsRoute() {
                 </VStack>
                 <Switch
                   checked={autoSelectMaterialWithoutPickingList}
+                  aria-label={t`Pre-select material`}
                   onCheckedChange={handleAutoSelectMaterialToggle}
                   disabled={isToggling}
                 />
               </HStack>
             </VStack>
           </CardContent>
+        </Card>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={serialNumberTimingValidator}
+            defaultValues={{
+              serialNumberTiming:
+                (companySettings.serialNumberTiming as
+                  | SerialNumberTiming
+                  | null
+                  | undefined) ?? "jobCreation"
+            }}
+            fetcher={fetcher}
+          >
+            <CardHeader>
+              <CardTitle>
+                <Trans>Serial Numbers</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Decide when a produced unit draws its number from the item's
+                  serial sequence. Items without a sequence are unaffected.
+                </Trans>{" "}
+                <Trans>
+                  An item's serial number sequence can override this choice.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Hidden name="intent" value="serialNumberTiming" />
+              <div className="flex flex-col gap-3 max-w-[640px]">
+                <SerialNumberTimingChoice />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit>
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
         </Card>
 
         <Card>
@@ -462,6 +497,7 @@ export default function ProductionSettingsRoute() {
                       </span>
                       <Switch
                         checked={location.requiresStaffing ?? false}
+                        aria-label={t`Require staffing at ${location.name}`}
                         onCheckedChange={(checked) =>
                           handleStaffingToggle(location.id, checked)
                         }
@@ -536,7 +572,47 @@ export default function ProductionSettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
+  );
+}
+
+// ChoiceSelect for when a produced unit draws its serial number. Mirrors the
+// timing choices in Settings → Inventory: a compact trigger plus a hidden input
+// so the value posts with the surrounding ValidatedForm.
+function SerialNumberTimingChoice() {
+  const { t } = useLingui();
+  const labels = useSerialNumberTimingLabels();
+  const [value, setValue] =
+    useControlField<SerialNumberTiming>("serialNumberTiming");
+  const current: SerialNumberTiming = value ?? "jobCreation";
+  return (
+    <>
+      <ChoiceSelect<SerialNumberTiming>
+        value={current}
+        onChange={setValue}
+        options={[
+          {
+            value: "jobCreation",
+            title: labels.jobCreation,
+            description: t`Every unit is numbered up front, so serials can be printed before work starts.`,
+            icon: <LuTicket />
+          },
+          {
+            value: "jobRelease",
+            title: labels.jobRelease,
+            description: t`Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none.`,
+            icon: <LuSend />
+          },
+          {
+            value: "production",
+            title: labels.production,
+            description: t`A unit draws its number the first time it is worked on, scrapped or received, so cancelled jobs burn none.`,
+            icon: <LuFactory />
+          }
+        ]}
+      />
+      <input type="hidden" name="serialNumberTiming" value={current} />
+    </>
   );
 }

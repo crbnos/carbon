@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -9,6 +13,7 @@ import {
   DrawerTitle,
   HStack,
   Kbd,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Select,
@@ -44,8 +49,9 @@ import {
 } from "react-icons/lu";
 import { Outlet, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
-import type { Webhook } from "~/modules/settings";
+import type { Webhook } from "~/modules/settings/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { useWebhookTables } from "./WebhookForm";
@@ -53,9 +59,11 @@ import { useWebhookTables } from "./WebhookForm";
 type WebhooksTableProps = {
   data: Webhook[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
+const WebhooksTable = memo((props: WebhooksTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const [params] = useUrlParams();
@@ -84,6 +92,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuTag />
         }
       },
@@ -111,6 +120,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuDatabase />,
           filter: {
             type: "static",
@@ -128,6 +138,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <LuPercent />
         }
       },
@@ -167,6 +178,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.webhook(row.id!)}?${params?.toString()}`);
             }}
@@ -175,6 +187,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
             <Trans>Edit Webhook</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             onClick={() => {
               navigate(
@@ -198,6 +211,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
     <>
       <Table<Webhook>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count ?? 0}
         defaultColumnVisibility={{

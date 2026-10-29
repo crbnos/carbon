@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
 import {
   LuClock,
@@ -7,7 +11,7 @@ import {
   LuStickyNote,
   LuUser
 } from "react-icons/lu";
-import type { PublicAttributes } from "~/modules/account";
+import type { PublicAttributes } from "~/modules/users/types";
 
 export function usePersonSidebar(
   attributeCategories: PublicAttributes[],

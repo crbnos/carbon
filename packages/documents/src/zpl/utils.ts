@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { LabelSize } from "@carbon/utils";
 
 export type ZplLabelGeometry = {
@@ -37,4 +41,16 @@ export function zplLabelHeader({
   heightDots
 }: ZplLabelGeometry): string {
   return `^XA^PW${widthDots}^LL${heightDots}^MNW^CI28`;
+}
+
+/**
+ * A text field's data, hex-escaped with ^FH so a `^` or `~` in user text
+ * cannot end the field or start a command (`_` is the escape character).
+ */
+export function zplFieldData(value: string): string {
+  const escaped = value.replace(
+    /[_^~]/g,
+    (c) => `_${c.charCodeAt(0).toString(16).toUpperCase()}`
+  );
+  return `^FH^FD${escaped}^FS`;
 }

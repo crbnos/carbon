@@ -1,13 +1,18 @@
-import { assertIsPost, error } from "@carbon/auth";
-import { hashApiKey, requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
-import { validationError, validator } from "@carbon/form";
-import { nanoid } from "nanoid";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useNavigate } from "react-router";
 import { useRouteData } from "~/hooks";
-import { ApiKeyForm, apiKeyValidator, upsertApiKey } from "~/modules/settings";
+import {
+  apiKeyFields,
+  apiKeyValidator
+} from "~/modules/settings/settings.models";
+import { ApiKeyForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -18,71 +23,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return null;
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "users"
-  });
-
-  await requirePlan({
-    request,
-    client,
-    companyId,
-    feature: "API_KEYS",
-    redirectTo: path.to.apiKeys
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(apiKeyValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, scopes: scopesJson, expiresAt, ...d } = validation.data;
-
-  // Parse scopes from JSON string
-  const scopes = scopesJson ? JSON.parse(scopesJson) : {};
-
-  // Generate key + hash in the route action (server-only context)
-  const rawKey = `crbn_${nanoid()}`;
-  const keyHash = hashApiKey(rawKey);
-  const keyPreview = rawKey.slice(-5);
-
-  const insertApiKey = await upsertApiKey(client, {
-    ...d,
-    scopes,
-    expiresAt: expiresAt || undefined,
-    rawKey,
-    keyHash,
-    keyPreview,
-    companyId,
-    createdBy: userId
-  });
-  if (insertApiKey.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(insertApiKey.error, "Failed to create API key")
-      )
-    );
-  }
-
-  const key = insertApiKey.data?.key;
-  if (!key) {
-    return data(
-      {},
-      await flash(request, error(insertApiKey, "Failed to create API key"))
-    );
-  }
-
-  return data({ key }, { status: 201 });
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(apiKeyValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.createApiKey(apiKeyFields(input.data));
 }
 
 export default function NewApiKeyRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const routeData = useRouteData<{ companyId: string }>(path.to.apiKeys);
 
   const initialValues = {
@@ -91,7 +40,7 @@ export default function NewApiKeyRoute() {
 
   return (
     <ApiKeyForm
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       initialValues={initialValues}
       companyId={routeData?.companyId}
     />

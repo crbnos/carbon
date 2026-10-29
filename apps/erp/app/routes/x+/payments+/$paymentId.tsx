@@ -1,33 +1,51 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
+import type { FundingSource } from "@carbon/utils";
+import { fundingScopeOf, getErrorMessage, redirect } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData } from "react-router";
+import { data, useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
-  AvailableCreditsTable,
+  isPaymentLocked,
+  paymentValidator
+} from "~/modules/invoicing/invoicing.models";
+import {
+  checkDepositDocument,
   getAvailableCreditsForParty,
-  getAvailableOnAccountCredit,
+  getAvailableOnAccountCreditSources,
+  getDepositDocuments,
   getInvoiceSettlements,
   getOpenPurchaseInvoicesForSupplier,
+  getOpenReimbursementsForEmployee,
   getOpenSalesInvoicesForCustomer,
   getPayment,
+  getPaymentCurrencyConfiguration,
+  getSettlementRelatedItems,
   getStagedCreditsForPayment,
-  isPaymentLocked,
+  upsertPayment
+} from "~/modules/invoicing/invoicing.service";
+import {
+  AvailableCreditsTable,
   PaymentApplications,
   PaymentApplyTable,
+  PaymentDocuments,
   PaymentForm,
-  paymentValidator,
-  upsertPayment
-} from "~/modules/invoicing";
+  PaymentHeader
+} from "~/modules/invoicing/ui";
 import { setCustomFields } from "~/utils/form";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
-    { breadcrumb: "Payments", to: path.to.payments },
+    { breadcrumb: msg`Payments`, to: path.to.payments },
     (data) => data?.payment?.paymentId
   ),
   module: "invoicing"
@@ -39,114 +57,189 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
   const { paymentId } = params;
   if (!paymentId) throw notFound("Missing paymentId");
-
   const [payment, applications] = await Promise.all([
-    getPayment(client, paymentId),
+    getPayment(client, paymentId, companyId),
     getInvoiceSettlements(client, companyId, paymentId)
   ]);
-
-  if (payment.error || !payment.data) {
+  if (payment.error || !payment.data)
     throw redirect(
       path.to.payments,
       await flash(request, error(payment.error, "Failed to load payment"))
     );
-  }
-
-  // Apply table needs the counterparty's open invoices. Only fetched
-  // for Draft payments to keep the Posted/Voided detail render lean.
-  // Cast to a common shape — sales and purchase status enums differ
-  // ('Submitted' vs 'Open') so TypeScript can't unify the two without
-  // help.
-  type OpenInvoiceRow = {
-    id: string;
-    invoiceId: string | null;
-    dateDue: string | null;
-    currencyCode: string;
-    exchangeRate: number;
-    totalAmount: number;
-    balance: number;
-    status: string | null;
-  };
-  // Available on-account credit (base ccy) the counterparty can draw on when
-  // this payment applies more than its cash. Only needed while editing a Draft.
-  // Posted credits (balance-reducing memos) the party can apply to open invoices
-  // alongside this payment's cash — the credits half of the settlement composer.
-  type AvailableCreditRow = {
-    id: string;
-    memoId: string;
-    direction: string;
-    currencyCode: string;
-    exchangeRate: number;
-    remaining: number;
-  };
-  let availableCreditBase = 0;
-  let openInvoices: OpenInvoiceRow[] = [];
-  let availableCredits: AvailableCreditRow[] = [];
-  let stagedCredits: { memoId: string; invoiceId: string; amount: number }[] =
-    [];
-  if (payment.data.status === "Draft") {
-    if (payment.data.customerId) {
-      const [res, credit, credits, staged] = await Promise.all([
-        getOpenSalesInvoicesForCustomer(
+  try {
+    if (applications.error) throw new Error(applications.error.message);
+    const [configuration, depositDocuments] = await Promise.all([
+      getPaymentCurrencyConfiguration(
+        client,
+        companyId,
+        payment.data.currencyCode
+      ),
+      // The payment's own document stays listed even once it is closed.
+      getDepositDocuments(client, companyId, [payment.data.salesOrderId])
+    ]);
+    let openInvoices: NonNullable<
+      Awaited<ReturnType<typeof getOpenSalesInvoicesForCustomer>>["data"]
+    > = [];
+    let funding = {
+      sources: [] as FundingSource[],
+      availableDocumentAmount: 0,
+      availableBaseAmount: 0
+    };
+    let availableCredits: NonNullable<
+      Awaited<ReturnType<typeof getAvailableCreditsForParty>>["data"]
+    > = [];
+    let stagedCredits: NonNullable<
+      Awaited<ReturnType<typeof getStagedCreditsForPayment>>["data"]
+    > = [];
+    // An employee payee settles Posted reimbursements, never invoices or memos:
+    // it is resolved BEFORE the customer-XOR-supplier check below, which a
+    // three-way party can no longer satisfy. There is no on-account credit and
+    // no credit memo to draw on, so `funding`, `availableCredits` and
+    // `stagedCredits` all stay empty — exactly what
+    // `replaceInvoiceSettlements`' employee arm assumes.
+    if (payment.data.status === "Draft" && payment.data.employeeId) {
+      const reimbursements = await getOpenReimbursementsForEmployee(
+        client,
+        companyId,
+        payment.data.employeeId,
+        payment.data.currencyCode
+      );
+      if (reimbursements.error) throw reimbursements.error;
+      openInvoices = (reimbursements.data ?? []).map((reimbursement) => ({
+        id: reimbursement.id,
+        invoiceId: reimbursement.reimbursementId,
+        dateDue: null,
+        dateIssued: null,
+        paymentTermId: null,
+        currencyCode: reimbursement.currencyCode,
+        exchangeRate: reimbursement.exchangeRate,
+        totalAmount: reimbursement.totalAmount,
+        balance: reimbursement.balance,
+        remainingDocument: reimbursement.remainingDocument,
+        status: "Posted",
+        rentalAgreementIds: [],
+        salesOrderIds: []
+      }));
+    } else if (payment.data.status === "Draft") {
+      const isAR = Boolean(payment.data.customerId);
+      const isRefund = isAR !== (payment.data.paymentType === "Receipt");
+      const partyId = isAR ? payment.data.customerId : payment.data.supplierId;
+      if (
+        !partyId ||
+        Boolean(payment.data.customerId) === Boolean(payment.data.supplierId)
+      )
+        throw new Error("Payment requires exactly one customer or supplier");
+      if (isRefund) {
+        const memos = await getAvailableCreditsForParty(
           client,
           companyId,
-          payment.data.customerId
-        ),
-        getAvailableOnAccountCredit(client, companyId, {
-          paymentType: "Receipt",
-          customerId: payment.data.customerId
-        }),
-        getAvailableCreditsForParty(
-          client,
-          companyId,
-          { side: "sales", customerId: payment.data.customerId },
-          paymentId
-        ),
-        getStagedCreditsForPayment(client, paymentId, "sales")
-      ]);
-      openInvoices = (res.data ?? []) as OpenInvoiceRow[];
-      availableCreditBase = credit;
-      availableCredits = (credits.data ?? []) as AvailableCreditRow[];
-      stagedCredits = staged.data ?? [];
-    } else if (payment.data.supplierId) {
-      const [res, credit, credits, staged] = await Promise.all([
-        getOpenPurchaseInvoicesForSupplier(
-          client,
-          companyId,
-          payment.data.supplierId
-        ),
-        getAvailableOnAccountCredit(client, companyId, {
-          paymentType: "Disbursement",
-          supplierId: payment.data.supplierId
-        }),
-        getAvailableCreditsForParty(
-          client,
-          companyId,
-          { side: "purchase", supplierId: payment.data.supplierId },
-          paymentId
-        ),
-        getStagedCreditsForPayment(client, paymentId, "purchase")
-      ]);
-      openInvoices = (res.data ?? []) as OpenInvoiceRow[];
-      availableCreditBase = credit;
-      availableCredits = (credits.data ?? []) as AvailableCreditRow[];
-      stagedCredits = staged.data ?? [];
+          isAR
+            ? { side: "sales", customerId: partyId }
+            : { side: "purchase", supplierId: partyId },
+          paymentId,
+          payment.data.currencyCode
+        );
+        if (memos.error) throw memos.error;
+        openInvoices = (memos.data ?? []).map((memo) => ({
+          id: memo.id,
+          invoiceId: memo.memoId,
+          dateDue: null,
+          dateIssued: null,
+          paymentTermId: null,
+          currencyCode: memo.currencyCode,
+          exchangeRate: memo.exchangeRate,
+          totalAmount: memo.amount,
+          balance: memo.remaining,
+          remainingDocument: memo.remainingDocument,
+          status: "Posted",
+          rentalAgreementIds: [],
+          salesOrderIds: []
+        }));
+      } else {
+        const [invoices, credit, credits, staged] = await Promise.all([
+          isAR
+            ? getOpenSalesInvoicesForCustomer(
+                client,
+                companyId,
+                partyId,
+                payment.data.currencyCode
+              )
+            : getOpenPurchaseInvoicesForSupplier(
+                client,
+                companyId,
+                partyId,
+                payment.data.currencyCode
+              ),
+          getAvailableOnAccountCreditSources(
+            client,
+            companyId,
+            isAR
+              ? { paymentType: "Receipt", customerId: partyId }
+              : { paymentType: "Disbursement", supplierId: partyId },
+            payment.data.currencyCode
+          ),
+          getAvailableCreditsForParty(
+            client,
+            companyId,
+            isAR
+              ? { side: "sales", customerId: partyId }
+              : { side: "purchase", supplierId: partyId },
+            paymentId,
+            payment.data.currencyCode
+          ),
+          getStagedCreditsForPayment(
+            client,
+            paymentId,
+            isAR ? "sales" : "purchase",
+            companyId
+          )
+        ]);
+        const loadError =
+          invoices.error ?? credit.error ?? credits.error ?? staged.error;
+        if (loadError) throw loadError;
+        if (!credit.data) throw new Error("Unable to load payment funding");
+        openInvoices = invoices.data ?? [];
+        funding = credit.data;
+        availableCredits = credits.data ?? [];
+        stagedCredits = staged.data ?? [];
+      }
     }
+    return {
+      payment: payment.data,
+      applications: applications.data ?? [],
+      openInvoices,
+      funding,
+      availableCredits,
+      stagedCredits,
+      depositDocuments,
+      ...configuration,
+      relatedItems: getSettlementRelatedItems(client, companyId, {
+        journalId: payment.data.journalId,
+        targets: applications.data ?? [],
+        appliedViaPaymentId: payment.data.id,
+        appliedViaPaymentStaged: payment.data.status === "Draft"
+      })
+    };
+  } catch (e) {
+    throw redirect(
+      path.to.payments,
+      await flash(
+        request,
+        // The log keeps the fixed text so occurrences group as one error;
+        // the person sees the cause, which a service returns as a plain
+        // `{ message }` object rather than an `Error`.
+        {
+          ...error(e, "Failed to load payment balances"),
+          message: getErrorMessage(e, "Failed to load payment balances")
+        }
+      )
+    );
   }
-
-  return {
-    payment: payment.data,
-    applications: applications.data ?? [],
-    openInvoices: openInvoices ?? [],
-    availableCreditBase,
-    availableCredits,
-    stagedCredits
-  };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "invoicing"
   });
   const { paymentId } = params;
@@ -159,7 +252,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Only Draft payments are editable; Posted/Voided are immutable.
-  const existing = await getPayment(client, paymentId);
+  const existing = await getPayment(client, paymentId, companyId);
   if (existing.error || !existing.data) {
     throw redirect(
       path.to.payments,
@@ -170,6 +263,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw redirect(
       path.to.payment(paymentId),
       await flash(request, error(null, "Only draft payments can be edited"))
+    );
+  }
+
+  // The deposit ids arrive as hidden fields: never trust them to name this
+  // company's, this customer's, open document. The payment's own saved link
+  // stays valid after its document closes.
+  const depositError = await checkDepositDocument(
+    client,
+    companyId,
+    validation.data,
+    existing.data
+  );
+  if (depositError) {
+    return validationError({
+      fieldErrors: { depositDocument: depositError }
+    });
+  }
+
+  try {
+    await getPaymentCurrencyConfiguration(
+      client,
+      companyId,
+      validation.data.currencyCode
+    );
+  } catch (e) {
+    throw redirect(
+      path.to.payment(paymentId),
+      await flash(request, {
+        ...error(e, "Invalid currency configuration"),
+        message: getErrorMessage(e, "Invalid currency configuration")
+      })
     );
   }
 
@@ -198,17 +322,31 @@ export default function PaymentDetailRoute() {
     payment,
     applications,
     openInvoices,
-    availableCreditBase,
+    funding,
+    baseCurrencyCode,
+    currencyDecimals,
     availableCredits,
-    stagedCredits
+    stagedCredits,
+    depositDocuments
   } = useLoaderData<typeof loader>();
   const locked = isPaymentLocked(payment.status);
+  const isReimbursement = Boolean(payment.employeeId);
   const side: "sales" | "purchase" = payment.customerId ? "sales" : "purchase";
-
-  // Convert the base-currency credit pool into the payment's currency so the
-  // apply table can compare it against amounts entered in payment currency.
-  const exchangeRate = Number(payment.exchangeRate ?? 1) || 1;
-  const availableCredit = (availableCreditBase ?? 0) / exchangeRate;
+  // A reimbursement payout is always cash OUT against the employee-payable
+  // control account — never a refund, whatever the trade-side arithmetic says.
+  const isRefund =
+    !isReimbursement &&
+    (side === "sales") !== (payment.paymentType === "Receipt");
+  // A deposit receipt applies only to its own document's invoices; a deposit
+  // REFUND (a disbursement) targets memos and is not scoped.
+  const depositScope =
+    side === "sales" && !isRefund ? fundingScopeOf(payment) : null;
+  const paymentScope = depositScope && {
+    ...depositScope,
+    readableId:
+      depositDocuments.find((document) => document.id === depositScope.id)
+        ?.readableId ?? null
+  };
 
   const initialValues = {
     id: payment.id,
@@ -216,45 +354,82 @@ export default function PaymentDetailRoute() {
     paymentType: payment.paymentType,
     customerId: payment.customerId ?? "",
     supplierId: payment.supplierId ?? "",
+    employeeId: payment.employeeId ?? "",
     paymentDate: payment.paymentDate,
     currencyCode: payment.currencyCode ?? "",
-    exchangeRate: Number(payment.exchangeRate ?? 1),
+    exchangeRate: Number(payment.exchangeRate),
     totalAmount: Number(payment.totalAmount ?? 0),
     bankAccount: payment.bankAccount ?? "",
     reference: payment.reference ?? "",
     memo: payment.memo ?? "",
+    salesOrderId: payment.salesOrderId ?? "",
+    rentalAgreementId: payment.rentalAgreementId ?? "",
     status: payment.status ?? undefined
   };
 
   return (
-    <VStack spacing={4} className="p-6 max-w-6xl w-full mx-auto">
-      <PaymentForm initialValues={initialValues} />
+    <DocumentPage
+      header={<PaymentHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<PaymentDocuments />}
+          activity={{
+            entityType: "payment",
+            entityId: payment.id,
+            refreshKey: `${payment.updatedAt ?? ""}:${payment.status}`
+          }}
+        />
+      }
+    >
+      <PaymentForm
+        key={payment.id}
+        initialValues={initialValues}
+        depositDocuments={depositDocuments}
+      />
       <PaymentApplications
         applications={applications}
         paymentTotal={Number(payment.totalAmount)}
+        paymentCurrency={payment.currencyCode}
+        baseCurrency={baseCurrencyCode}
+        isRefund={isRefund}
+        isReimbursement={isReimbursement}
       />
 
       {!locked && (
         <PaymentApplyTable
+          key={`${payment.id}:${side}:${payment.customerId ?? payment.supplierId ?? payment.employeeId}:${payment.currencyCode}:${payment.paymentType}`}
+          isRefund={isRefund}
+          isReimbursement={isReimbursement}
           paymentId={payment.id}
           paymentType={payment.paymentType}
           paymentCurrency={payment.currencyCode}
+          baseCurrency={baseCurrencyCode}
+          currencyDecimals={currencyDecimals}
+          priorSources={funding.sources}
+          paymentScope={paymentScope}
           paymentTotal={Number(payment.totalAmount)}
           paymentExchangeRate={Number(payment.exchangeRate)}
-          availableCredit={availableCredit}
+          availableCredit={funding.availableDocumentAmount}
           openInvoices={(openInvoices ?? []).map((inv) => ({
             id: inv.id,
             invoiceId: inv.invoiceId ?? inv.id,
             dateDue: inv.dateDue,
             currencyCode: inv.currencyCode,
-            exchangeRate: Number(inv.exchangeRate ?? 1),
+            exchangeRate: Number(inv.exchangeRate),
             totalAmount: Number(inv.totalAmount ?? 0),
             balance: Number(inv.balance ?? 0),
-            status: inv.status
+            remainingDocument: inv.remainingDocument,
+            status: inv.status,
+            rentalAgreementIds: inv.rentalAgreementIds,
+            salesOrderIds: inv.salesOrderIds
           }))}
           existingApplications={applications.map((a) => ({
             targetSalesInvoiceId: a.targetSalesInvoiceId,
             targetPurchaseInvoiceId: a.targetPurchaseInvoiceId,
+            targetMemoId: a.targetMemoId,
+            targetReimbursementId: a.targetReimbursementId,
+            sourceAmount: a.sourceAmount,
+            sourcePaymentId: a.sourcePaymentId,
             appliedAmount: Number(a.appliedAmount),
             discountAmount: Number(a.discountAmount),
             writeOffAmount: Number(a.writeOffAmount),
@@ -265,28 +440,35 @@ export default function PaymentDetailRoute() {
         />
       )}
 
-      {!locked && availableCredits.length > 0 && (
+      {!locked && !isRefund && availableCredits.length > 0 && (
         <AvailableCreditsTable
+          // The rows are the user's draft over these credits: another party,
+          // currency or set of credits on the same payment starts a new one.
+          key={`${side}:${payment.customerId ?? payment.supplierId ?? payment.employeeId}:${payment.currencyCode}:${availableCredits.map((c) => `${c.id}=${c.remaining}`).join(",")}`}
           paymentId={payment.id}
           side={side}
-          currency={payment.currencyCode}
+          currency={baseCurrencyCode}
+          documentCurrency={payment.currencyCode}
+          documentDecimals={currencyDecimals}
           credits={availableCredits.map((c) => ({
             id: c.id,
             memoId: c.memoId,
             direction: c.direction,
             currencyCode: c.currencyCode,
             exchangeRate: Number(c.exchangeRate),
-            remaining: Number(c.remaining)
+            remaining: Number(c.remaining),
+            remainingDocument: c.remainingDocument
           }))}
           openInvoices={(openInvoices ?? []).map((inv) => ({
             id: inv.id,
             invoiceId: inv.invoiceId ?? inv.id,
-            exchangeRate: Number(inv.exchangeRate ?? 1),
-            balance: Number(inv.balance ?? 0)
+            exchangeRate: Number(inv.exchangeRate),
+            balance: Number(inv.balance ?? 0),
+            remainingDocument: inv.remainingDocument
           }))}
           staged={stagedCredits}
         />
       )}
-    </VStack>
+    </DocumentPage>
   );
 }

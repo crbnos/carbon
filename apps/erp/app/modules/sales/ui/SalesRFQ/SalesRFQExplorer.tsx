@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Alert,
   AlertDescription,
@@ -11,26 +15,22 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Kbd,
+  MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   Spinner,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   useDisclosure,
-  useKeyboardShortcuts,
-  usePrettifyShortcut,
   VStack
 } from "@carbon/react";
 import { useDroppable } from "@dnd-kit/core";
 import { Trans } from "@lingui/react/macro";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
   LuSettings2,
   LuTrash
 } from "react-icons/lu";
-import { Link, useFetchers, useParams } from "react-router";
+import { useFetchers, useParams } from "react-router";
 import type { z } from "zod";
 import { Empty, ItemThumbnail } from "~/components";
 import type { DragHandleBindings } from "~/components/LineReorder";
@@ -41,7 +41,8 @@ import {
   useLineOrderEditMode
 } from "~/components/LineReorder";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
+import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import { isSalesRfqLocked, salesRfqDragValidator } from "../../sales.models";
 import type { SalesRFQ, SalesRFQLine } from "../../types";
@@ -49,8 +50,8 @@ import DeleteSalesRFQLine from "./DeleteSalesRFQLine";
 import MapExtractedLinesModal from "./MapExtractedLinesModal";
 import SalesRFQLineForm from "./SalesRFQLineForm";
 import { useOptimisticDocumentDrag } from "./useOptimiticDocumentDrag";
+
 export default function SalesRFQExplorer() {
-  const prettifyShortcut = usePrettifyShortcut();
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
   const salesRfqData = useRouteData<{
@@ -59,9 +60,12 @@ export default function SalesRFQExplorer() {
   }>(path.to.salesRfq(rfqId));
   const permissions = usePermissions();
 
+  const modelPaths = (salesRfqData?.lines ?? [])
+    .map((d) => d.modelPath)
+    .filter(Boolean);
   useRealtime(
     "modelUpload",
-    `modelPath=in.(${salesRfqData?.lines.map((d) => d.modelPath).join(",")})`
+    modelPaths.length ? `modelPath=in.(${modelPaths.join(",")})` : undefined
   );
 
   const newSalesRFQLineDisclosure = useDisclosure();
@@ -81,14 +85,6 @@ export default function SalesRFQExplorer() {
     setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
-
-  const newButtonRef = useRef<HTMLButtonElement>(null);
-  useKeyboardShortcuts({
-    "Command+Shift+l": (event: KeyboardEvent) => {
-      event.stopPropagation();
-      newButtonRef.current?.click();
-    }
-  });
 
   const salesRfqLineInitialValues = {
     salesRfqId: rfqId,
@@ -228,30 +224,16 @@ export default function SalesRFQExplorer() {
             />
           ) : (
             <>
-              <Tooltip>
-                <TooltipTrigger className="flex-1">
-                  <Button
-                    ref={newButtonRef}
-                    className="w-full"
-                    isDisabled={
-                      isDisabled || !permissions.can("update", "sales")
-                    }
-                    leftIcon={<LuCirclePlus />}
-                    variant="secondary"
-                    onClick={newSalesRFQLineDisclosure.onOpen}
-                  >
-                    <Trans>Add Line Item</Trans>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <HStack>
-                    <span>
-                      <Trans>New Line Item</Trans>
-                    </span>
-                    <Kbd>{prettifyShortcut("Command+Shift+l")}</Kbd>
-                  </HStack>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                className="flex-1"
+                shortcut={EXPLORER_SHORTCUTS.addLine}
+                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                leftIcon={<LuCirclePlus />}
+                variant="secondary"
+                onClick={newSalesRFQLineDisclosure.onOpen}
+              >
+                <Trans>Add Line Item</Trans>
+              </Button>
               {canReorder && realLines.length > 0 && (
                 <IconButton
                   aria-label="Reorder lines"
@@ -399,9 +381,8 @@ function SalesRFQLineItem({
 
   return (
     <VStack spacing={0} className="border-b">
-      <Link
+      <PrefetchLink
         className="w-full"
-        prefetch="intent"
         to={path.to.salesRfqLine(rfqId, line.id!)}
       >
         <HStack
@@ -431,7 +412,7 @@ function SalesRFQLineItem({
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label="More"
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   variant="solid"
                   onClick={(e) => e.stopPropagation()}
@@ -439,6 +420,7 @@ function SalesRFQLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={isDisabled || !permissions.can("update", "sales")}
                   onClick={(e) => {
@@ -453,7 +435,7 @@ function SalesRFQLineItem({
             </DropdownMenu>
           </div>
         </HStack>
-      </Link>
+      </PrefetchLink>
     </VStack>
   );
 }

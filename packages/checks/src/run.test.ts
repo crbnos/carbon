@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import { newViolations, scanAll } from "./run";
 
@@ -16,20 +20,19 @@ describe("scanAll", () => {
 });
 
 describe("conformance gate (real migrations vs baseline)", () => {
-  // Whole-repo filesystem scan (migrations + both apps' route trees) — a cold
-  // CI runner takes several seconds, so the 5s vitest default is too tight.
-  it(
-    "introduces no NEW deprecated patterns beyond the committed baseline",
-    { timeout: 30_000 },
-    () => {
-      const fresh = newViolations();
-      const detail = fresh
-        .map(
-          (f) =>
-            `  ${f.checkId}  ${f.violation.file}:${f.violation.line}  ${f.violation.snippet}`
-        )
-        .join("\n");
-      expect(fresh, `New conformance violations:\n${detail}`).toHaveLength(0);
-    }
-  );
+  // Whole-repo filesystem scan (migrations + both apps' route trees): ~3s alone,
+  // but 20-38s inside CI's `pnpm test`, where it shares the runner's CPU with
+  // every other package's suite.
+  it("introduces no NEW deprecated patterns beyond the committed baseline", {
+    timeout: 120_000
+  }, () => {
+    const fresh = newViolations();
+    const detail = fresh
+      .map(
+        (f) =>
+          `  ${f.checkId}  ${f.violation.file}:${f.violation.line}  ${f.violation.snippet}`
+      )
+      .join("\n");
+    expect(fresh, `New conformance violations:\n${detail}`).toHaveLength(0);
+  });
 });

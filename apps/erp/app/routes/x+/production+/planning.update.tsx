@@ -1,415 +1,102 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getLogger } from "@carbon/logger";
-import { scrapAllowance } from "@carbon/utils";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import {
-  insertJob,
-  productionOrderValidator,
-  recalculateJobRequirements,
-  upsertJobMethod
-} from "~/modules/production";
 
-const logger = getLogger("erp", "production", "planning");
-
-const itemsValidator = z
-  .object({
-    id: z.string(),
-    orders: z.array(productionOrderValidator)
+// Production planning: the grid's Make button and bulk actions, the order
+// drawer and the worklist lines post JSON here. One operation per `action`;
+// each validates the rest of its body.
+const locationId = z.string();
+const planningActionIds = z.array(z.string());
+const planningForm = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("order"), locationId, items: z.any() }),
+  z.object({ action: z.literal("updateJob"), locationId, job: z.any() }),
+  z.object({
+    action: z.literal("planJob"),
+    locationId,
+    job: z.object({ id: z.string() })
+  }),
+  z.object({
+    action: z.enum([
+      "apply",
+      "expedite",
+      "defer",
+      "increase",
+      "decrease",
+      "cancel"
+    ]),
+    locationId,
+    planningActionIds
+  }),
+  z.object({
+    action: z.enum(["dismiss", "reopen"]),
+    locationId,
+    planningActionIds
+  }),
+  z.object({
+    action: z.literal("assign"),
+    locationId,
+    planningActionIds,
+    assignee: z.string().nullish()
   })
-  .array();
+]);
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "production",
-    role: "employee",
-    bypassRls: true
-  });
+// A type-specific apply keeps only the actions of that type.
+const APPLY_TYPE = {
+  apply: undefined,
+  expedite: "Expedite",
+  defer: "Defer",
+  increase: "Increase",
+  decrease: "Decrease",
+  cancel: "Cancel"
+} as const;
 
-  const { items, action, locationId } = await request.json();
-
-  if (typeof locationId !== "string") {
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(planningForm).request(args);
+  // The screens toast `message`; they show no field errors.
+  if ("invalid" in input) {
     return data(
-      {
-        success: false,
-        message: "Location ID is required and must be a valid string"
-      },
-      { status: 500 }
+      { success: false, message: "The planning request is not valid" },
+      { status: 400 }
     );
   }
+  const form = input.data;
+  const planning = (await carbon(args.request)).production;
 
-  if (typeof action !== "string") {
-    return data(
-      {
-        success: false,
-        message: "Action parameter is required and must be a valid string"
-      },
-      { status: 500 }
-    );
-  }
-
-  switch (action) {
+  switch (form.action) {
     case "order":
-      const parsedItems = itemsValidator.safeParse(items);
-
-      if (!parsedItems.success) {
-        const errorMessages = parsedItems.error.issues.map((error) => {
-          const path = error.path;
-          const field = path[path.length - 1];
-
-          // Create more readable error messages based on the field and context
-          if (field === "orders" && path.length === 2) {
-            return "No orders provided for item";
-          }
-          if (field === "quantity") {
-            return "Invalid quantity specified";
-          }
-          if (field === "periodId") {
-            return "No period specified";
-          }
-          if (field === "startDate") {
-            return "Invalid start date";
-          }
-          if (field === "dueDate") {
-            return "Invalid due date";
-          }
-
-          // Fallback to original message for unhandled cases
-          return error.message;
-        });
-
-        logger.error("Validation errors", { errors: parsedItems.error.issues });
-        return data(
-          {
-            success: false,
-            message: `Validation failed: ${errorMessages.join(", ")}`,
-            errors: errorMessages
-          },
-          { status: 500 }
-        );
-      }
-
-      const itemsToOrder = parsedItems.data;
-      if (itemsToOrder.length === 0) {
-        return data(
-          {
-            success: false,
-            message: "No items were provided to create production orders"
-          },
-          { status: 500 }
-        );
-      }
-
-      try {
-        const allJobIds: string[] = [];
-        const createdJobs: { id: string; readableId: string }[] = [];
-        const itemsWithoutOrders: string[] = [];
-        let updatedJobCount = 0;
-        const allSupplyForecasts: Array<{
-          itemId: string;
-          locationId: string;
-          sourceType: "Production Order";
-          forecastQuantity: number;
-          periodId: string;
-          companyId: string;
-          createdBy: string;
-          updatedBy: string;
-        }> = [];
-
-        let processedItems = 0;
-        let errors: string[] = [];
-
-        for (const item of itemsToOrder) {
-          const orders = item.orders;
-
-          // Nothing to make for this item — existing supply already covers demand
-          if (orders.length === 0) {
-            itemsWithoutOrders.push(item.id);
-            continue;
-          }
-
-          const jobIds: string[] = [];
-          const supplyForecastByPeriod: Record<string, number> = {};
-
-          // Get manufacturing data for this item
-          const manufacturing = await client
-            .from("itemReplenishment")
-            .select(
-              "manufacturingBlocked, scrapPercentage, requiresConfiguration"
-            )
-            .eq("itemId", item.id)
-            .single();
-
-          if (manufacturing.error) {
-            const errorMsg = `Failed to retrieve manufacturing data for item ${item.id}: ${manufacturing.error.message}`;
-            logger.error(errorMsg);
-            errors.push(errorMsg);
-            continue;
-          }
-
-          if (manufacturing.data?.manufacturingBlocked) {
-            const errorMsg = `Manufacturing is blocked for item ${item.id}`;
-            logger.warning(errorMsg);
-            errors.push(errorMsg);
-            continue;
-          }
-
-          if (manufacturing.data?.requiresConfiguration) {
-            const errorMsg = `Manufacturing requires configuration for item ${item.id}`;
-            logger.warning(errorMsg);
-            errors.push(errorMsg);
-            continue;
-          }
-
-          let itemProcessed = false;
-
-          // Process each order for this item
-          for (const order of orders) {
-            if (!order.existingId) {
-              // Create new job
-              const createJob = await insertJob(
-                client,
-                {
-                  itemId: item.id,
-                  quantity: order.quantity,
-                  startDate: order.startDate ?? undefined,
-                  dueDate: order.dueDate ?? undefined,
-                  deadlineType: order.isASAP ? "ASAP" : "Soft Deadline",
-                  status: "Planned",
-                  locationId,
-                  companyId,
-                  createdBy: userId,
-                  unitOfMeasureCode: "EA"
-                },
-                { skipMethod: true, skipRecalculate: true, source: "mrp" }
-              );
-
-              if (createJob.error) {
-                const errorMsg = `Failed to create job for item ${item.id}: ${createJob.error.message}`;
-                logger.error(errorMsg);
-                errors.push(errorMsg);
-                continue;
-              }
-
-              const id = createJob.data?.id;
-              const readableId = createJob.data?.jobId ?? "";
-              if (!id) {
-                const errorMsg = `Job was not returned after creation for item ${item.id}`;
-                logger.error(errorMsg);
-                errors.push(errorMsg);
-                continue;
-              }
-
-              const upsertMethod = await upsertJobMethod(client, "itemToJob", {
-                sourceId: item.id,
-                targetId: id,
-                companyId,
-                userId
-              });
-
-              if (upsertMethod.error) {
-                const errorMsg = `Failed to create job method for item ${item.id}: ${upsertMethod.error.message}`;
-                logger.error(errorMsg);
-                errors.push(errorMsg);
-                continue;
-              }
-
-              jobIds.push(id);
-              createdJobs.push({ id, readableId });
-              itemProcessed = true;
-            } else {
-              // Update existing job
-              jobIds.push(order.existingId);
-
-              // Calculate scrap quantity based on scrap percentage
-              const updateScrapPercentage =
-                manufacturing.data?.scrapPercentage ?? 0;
-              const updateScrapQuantity = scrapAllowance(
-                order.quantity,
-                updateScrapPercentage
-              );
-
-              const updateJob = await client
-                .from("job")
-                .update({
-                  dueDate: order.dueDate ?? undefined,
-                  deadlineType: order.isASAP ? "ASAP" : "Soft Deadline",
-                  quantity: order.quantity,
-                  scrapQuantity: updateScrapQuantity,
-                  startDate: order.startDate ?? undefined,
-                  status: "Planned",
-                  updatedAt: new Date().toISOString(),
-                  updatedBy: userId
-                })
-                .eq("id", order.existingId);
-
-              if (updateJob.error) {
-                const errorMsg = `Failed to update job ${order.existingId} for item ${item.id}: ${updateJob.error.message}`;
-                logger.error(errorMsg);
-                errors.push(errorMsg);
-                continue;
-              }
-
-              updatedJobCount++;
-              itemProcessed = true;
-            }
-
-            // Track supply forecast by period
-            const periodId = order.periodId;
-            supplyForecastByPeriod[periodId] =
-              (supplyForecastByPeriod[periodId] || 0) +
-              (order.quantity - (order.existingQuantity ?? 0));
-          }
-
-          if (itemProcessed) {
-            processedItems++;
-            // Add job IDs to the overall list
-            allJobIds.push(...jobIds);
-
-            // Add supply forecasts for this item
-            Object.entries(supplyForecastByPeriod).forEach(
-              ([periodId, quantity]) => {
-                allSupplyForecasts.push({
-                  itemId: item.id,
-                  locationId,
-                  sourceType: "Production Order" as const,
-                  forecastQuantity: quantity,
-                  periodId,
-                  companyId,
-                  createdBy: userId,
-                  updatedBy: userId
-                });
-              }
-            );
-          }
-        }
-
-        // Insert all supply forecasts using upsert to handle duplicates
-        if (allSupplyForecasts.length > 0) {
-          // Group supply forecasts by unique key to avoid duplicate conflicts
-          const forecastMap = new Map<string, (typeof allSupplyForecasts)[0]>();
-
-          for (const forecast of allSupplyForecasts) {
-            const key = `${forecast.itemId}-${forecast.locationId}-${forecast.periodId}`;
-            const existing = forecastMap.get(key);
-
-            if (existing) {
-              // Combine quantities for the same key
-              existing.forecastQuantity += forecast.forecastQuantity;
-            } else {
-              forecastMap.set(key, { ...forecast });
-            }
-          }
-
-          const uniqueSupplyForecasts = Array.from(forecastMap.values());
-
-          const insertForecasts = await client
-            .from("supplyForecast")
-            .upsert(uniqueSupplyForecasts, {
-              onConflict: "itemId,locationId,periodId",
-              ignoreDuplicates: false
-            });
-
-          if (insertForecasts.error) {
-            const errorMsg = `Failed to insert supply forecasts: ${insertForecasts.error.message}`;
-            logger.error(errorMsg);
-            errors.push(errorMsg);
-          }
-        }
-
-        // Trigger recalculation for all jobs
-        if (allJobIds.length > 0) {
-          for (const jobId of allJobIds) {
-            await recalculateJobRequirements(client, {
-              id: jobId,
-              companyId,
-              userId
-            });
-          }
-        }
-
-        // Split the skipped items into "a job already covers it" vs "nothing to make"
-        // so the client can say which, instead of reporting them as failures
-        const alreadyPlannedItemIds = new Set<string>();
-        if (itemsWithoutOrders.length > 0) {
-          const openJobs = await client
-            .from("job")
-            .select("itemId")
-            .eq("companyId", companyId)
-            .eq("locationId", locationId)
-            .in("itemId", itemsWithoutOrders)
-            .in("status", [
-              "Draft",
-              "Planned",
-              "Ready",
-              "In Progress",
-              "Paused"
-            ]);
-
-          openJobs.data?.forEach((job) => {
-            if (job.itemId) alreadyPlannedItemIds.add(job.itemId);
-          });
-        }
-
-        if (errors.length > 0 && processedItems === 0) {
-          return data(
-            {
-              success: false,
-              message: `Failed to process any items. Errors: ${errors
-                .slice(0, 3)
-                .join("; ")}${
-                errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
-              }`,
-              errors: errors
-            },
-            { status: 500 }
-          );
-        }
-
-        const message =
-          processedItems === itemsToOrder.length
-            ? `Successfully processed all ${processedItems} items with ${allJobIds.length} jobs`
-            : `Processed ${processedItems} of ${itemsToOrder.length} items. ${
-                errors.length
-              } errors occurred: ${errors.slice(0, 2).join("; ")}${
-                errors.length > 2 ? "..." : ""
-              }`;
-
-        return {
-          success: processedItems > 0 || errors.length === 0,
-          message,
-          jobs: createdJobs,
-          updatedJobCount,
-          alreadyPlannedItemCount: alreadyPlannedItemIds.size,
-          noDemandItemCount:
-            itemsWithoutOrders.length - alreadyPlannedItemIds.size,
-          processedItems,
-          totalItems: itemsToOrder.length,
-          errors: errors.length > 0 ? errors : undefined
-        };
-      } catch (error) {
-        logger.error("Unexpected error processing production orders", {
-          error
-        });
-        return data(
-          {
-            success: false,
-            message: `Unexpected error occurred while processing production orders: ${
-              error instanceof Error ? error.message : "Unknown error"
-            }`
-          },
-          { status: 500 }
-        );
-      }
-
+      return planning.orderPlannedJobs({
+        locationId: form.locationId,
+        items: form.items
+      });
+    case "updateJob":
+      return planning.updatePlannedJob({
+        locationId: form.locationId,
+        job: form.job
+      });
+    case "planJob":
+      return planning.planJobFromPlanning({
+        locationId: form.locationId,
+        jobId: form.job.id
+      });
+    case "dismiss":
+      return planning.dismissProductionPlanningActions(form);
+    case "reopen":
+      return planning.reopenProductionPlanningActions(form);
+    case "assign":
+      return planning.assignProductionPlanningActions({
+        planningActionIds: form.planningActionIds,
+        assignee: form.assignee ?? undefined
+      });
     default:
-      return data(
-        {
-          success: false,
-          message: `Unknown action '${action}'. Expected action: 'order'`
-        },
-        { status: 500 }
-      );
+      return planning.applyPlanningActions({
+        planningActionIds: form.planningActionIds,
+        type: APPLY_TYPE[form.action]
+      });
   }
 }

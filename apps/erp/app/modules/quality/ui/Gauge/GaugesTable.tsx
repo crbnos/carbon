@@ -1,4 +1,13 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -32,6 +41,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores/people";
@@ -50,6 +60,7 @@ type GaugesTableProps = {
   data: Gauge[];
   types: ListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -58,7 +69,8 @@ const defaultColumnVisibility = {
   updatedBy: false
 };
 
-const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
+const GaugesTable = memo((props: GaugesTableProps) => {
+  const { data, types, count, infinite } = props;
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -93,6 +105,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -103,6 +116,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           return <SupplierAvatar supplierId={row.original.supplierId} />;
         },
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: suppliers?.map((supplier) => ({
@@ -126,6 +140,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <LuShapes />,
           filter: {
             type: "static",
@@ -145,6 +160,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <LuCircleGauge />,
           filter: {
             type: "static",
@@ -209,6 +225,10 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           <DateTime value={row.original.nextCalibrationDate} variant="date" />
         ),
         meta: {
+          mobile: "P2",
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -219,6 +239,9 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           <DateTime value={row.original.lastCalibrationDate} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -308,6 +331,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "quality")}
             onClick={() => {
               navigate(`${path.to.gauge(row.id!)}?${params?.toString()}`);
@@ -345,6 +369,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
             </MenuItem>
           )}
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "quality")}
             onClick={() => {
@@ -374,6 +399,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
     <>
       <Table<Gauge>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         defaultColumnVisibility={defaultColumnVisibility}

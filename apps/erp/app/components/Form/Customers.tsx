@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
@@ -5,6 +9,7 @@ import { useMemo, useRef, useState } from "react";
 import { useUser } from "~/hooks";
 import CustomerForm from "~/modules/sales/ui/Customer/CustomerForm";
 import { useCustomers } from "~/stores";
+import CustomerAvatar from "../CustomerAvatar";
 import { useEmptyState } from "./emptyStates";
 
 type CustomerSelectProps = Omit<CreatableMultiSelectProps, "options">;
@@ -22,7 +27,8 @@ const Customers = (props: CustomerSelectProps) => {
     () =>
       customers.map((c) => ({
         value: c.id,
-        label: c.name
+        label: <CustomerAvatar customerId={c.id} />,
+        keywords: c.name
       })) ?? [],
     [customers]
   );

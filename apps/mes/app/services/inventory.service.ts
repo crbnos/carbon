@@ -1,6 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
-import { getLocationTimeZone } from "@carbon/database";
+import {
+  getLocationTimeZone,
+  getNonNettableTrackedEntityIds
+} from "@carbon/database";
 import type {
   DocumentTemplate,
   DocumentTemplateType
@@ -10,6 +17,7 @@ import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { erpPosting } from "~/services/erp";
 import type { SuggestedAllocationLot } from "./allocation";
 import { greedyFillAllocation, sortLotsByPickMethod } from "./allocation";
 
@@ -56,6 +64,7 @@ export async function getBatchNumbersForItem(
     .from("item")
     .select("*")
     .eq("id", args.itemId)
+    .eq("companyId", args.companyId)
     .single();
   if (item.data?.type === "Material") {
     const items = await client
@@ -70,15 +79,43 @@ export async function getBatchNumbersForItem(
 
   // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
   // first (FIFO).
-  return client
-    .from("trackedEntity")
-    .select("*")
-    .eq("sourceDocument", "Item")
-    .in("sourceDocumentId", itemIds)
-    .eq("companyId", args.companyId)
-    .gt("quantity", 0)
-    .order("expirationDate", { ascending: true, nullsFirst: false })
-    .order("createdAt", { ascending: true });
+  return withoutNonNettableLots(
+    client,
+    args.companyId,
+    await client
+      .from("trackedEntity")
+      .select("*")
+      .eq("sourceDocument", "Item")
+      .in("sourceDocumentId", itemIds)
+      .eq("companyId", args.companyId)
+      .gt("quantity", 0)
+      .order("expirationDate", { ascending: true, nullsFirst: false })
+      .order("createdAt", { ascending: true })
+  );
+}
+
+/** Issue pickers never offer a lot held in a non-nettable (quarantine) unit. */
+async function withoutNonNettableLots<
+  T extends { id: string },
+  E extends { message: string } | null
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lots: { data: T[] | null; error: E }
+) {
+  if (lots.error || !lots.data) return lots;
+  const quarantined = await getNonNettableTrackedEntityIds(
+    client,
+    companyId,
+    lots.data.map((lot) => lot.id)
+  );
+  if (quarantined.error) {
+    return { ...lots, data: null, error: quarantined.error as unknown as E };
+  }
+  return {
+    ...lots,
+    data: lots.data.filter((lot) => !quarantined.data?.has(lot.id))
+  };
 }
 
 export async function getCompanySettings(
@@ -132,6 +169,7 @@ export async function getSerialNumbersForItem(
     .from("item")
     .select("*")
     .eq("id", args.itemId)
+    .eq("companyId", args.companyId)
     .single();
   if (item.data?.type === "Material") {
     const items = await client
@@ -146,23 +184,28 @@ export async function getSerialNumbersForItem(
 
   // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
   // first (FIFO).
-  return client
-    .from("trackedEntity")
-    .select("*")
-    .eq("sourceDocument", "Item")
-    .in("sourceDocumentId", itemIds)
-    .eq("companyId", args.companyId)
-    .eq("status", "Available")
-    .gt("quantity", 0)
-    .order("expirationDate", { ascending: true, nullsFirst: false })
-    .order("createdAt", { ascending: true });
+  return withoutNonNettableLots(
+    client,
+    args.companyId,
+    await client
+      .from("trackedEntity")
+      .select("*")
+      .eq("sourceDocument", "Item")
+      .in("sourceDocumentId", itemIds)
+      .eq("companyId", args.companyId)
+      .eq("status", "Available")
+      .gt("quantity", 0)
+      .order("expirationDate", { ascending: true, nullsFirst: false })
+      .order("createdAt", { ascending: true })
+  );
 }
 
 /**
  * Available tracked entities for an item at a location, one row per entity, with
  * its bin, on-hand, and FEFO/FIFO order keys — for the shared TrackedEntityPicker.
- * `excludeLineside` drops lineside (work-center) bins; `excludeAllocated` nets out
- * quantities already allocated to other non-cancelled picking lines.
+ * `excludeLineside` drops lineside (work-center) bins; `excludeNonNettable` drops
+ * non-nettable bins (a quarantine area); `excludeAllocated` nets out quantities
+ * already allocated to other non-cancelled picking lines.
  */
 export async function getAvailableTrackedEntities(
   client: SupabaseClient<Database>,
@@ -171,6 +214,7 @@ export async function getAvailableTrackedEntities(
     companyId: string;
     locationId: string;
     excludeLineside?: boolean;
+    excludeNonNettable?: boolean;
     excludeAllocated?: boolean;
     excludeLineId?: string | null;
     sortMethod?: Database["public"]["Enums"]["pickMethodSortMethod"];
@@ -183,7 +227,8 @@ export async function getAvailableTrackedEntities(
     p_exclude_lineside: args.excludeLineside ?? false,
     p_exclude_allocated: args.excludeAllocated ?? false,
     p_exclude_line_id: args.excludeLineId ?? undefined,
-    p_sort_method: args.sortMethod ?? undefined
+    p_sort_method: args.sortMethod ?? undefined,
+    p_exclude_non_nettable: args.excludeNonNettable ?? false
   });
 }
 
@@ -315,6 +360,7 @@ export async function getSuggestedAllocationForMaterial(
     companyId: args.companyId,
     locationId: args.locationId,
     excludeLineside: true,
+    excludeNonNettable: true,
     excludeAllocated: true,
     sortMethod
   });
@@ -350,9 +396,17 @@ export async function getSuggestedAllocationForMaterial(
   return greedyFillAllocation(ordered, args.quantity);
 }
 
+export type JobMaterialPickedItem = {
+  itemId: string;
+  itemReadableId: string;
+  quantityPicked: number;
+  quantityToPick: number;
+};
+
 export type JobMaterialPickedQuantity = {
   quantityPicked: number;
   quantityToPick: number;
+  pickedByItem: JobMaterialPickedItem[];
 };
 
 /**
@@ -375,7 +429,7 @@ export async function getPickedQuantitiesByJobMaterial(
   const { data, error } = await client
     .from("pickingListLine")
     .select(
-      "jobMaterialId, quantityToPick, quantityPicked, quantityReturned, pickingList!inner(status)"
+      "jobMaterialId, itemId, quantityToPick, quantityPicked, quantityReturned, pickingList!inner(status), item(readableIdWithRevision)"
     )
     .in("jobMaterialId", jobMaterialIds)
     .neq("status", "Cancelled")
@@ -387,16 +441,33 @@ export async function getPickedQuantitiesByJobMaterial(
     if (!line.jobMaterialId) continue;
     const entry = (picked[line.jobMaterialId] ??= {
       quantityPicked: 0,
-      quantityToPick: 0
+      quantityToPick: 0,
+      pickedByItem: []
     });
     // Net of returns: quantityPicked is gross (returns book quantityReturned
     // instead of decrementing it), and consumers of this map reason about what
     // is still staged at lineside.
-    entry.quantityPicked += Math.max(
+    const quantityPicked = Math.max(
       0,
       Number(line.quantityPicked ?? 0) - Number(line.quantityReturned ?? 0)
     );
-    entry.quantityToPick += Number(line.quantityToPick ?? 0);
+    const quantityToPick = Number(line.quantityToPick ?? 0);
+    entry.quantityPicked += quantityPicked;
+    entry.quantityToPick += quantityToPick;
+
+    if (!line.itemId) continue;
+    let byItem = entry.pickedByItem.find((p) => p.itemId === line.itemId);
+    if (!byItem) {
+      byItem = {
+        itemId: line.itemId,
+        itemReadableId: line.item?.readableIdWithRevision ?? line.itemId,
+        quantityPicked: 0,
+        quantityToPick: 0
+      };
+      entry.pickedByItem.push(byItem);
+    }
+    byItem.quantityPicked += quantityPicked;
+    byItem.quantityToPick += quantityToPick;
   }
 
   return picked;
@@ -462,9 +533,9 @@ export async function getPickedTrackedEntitiesForMaterial(
   return [...byEntity.values()];
 }
 
-// Thin wrapper over the post-inventory-adjustment edge function — the same
-// unified write path the ERP uses. The edge function books the item ledger,
-// cost layers, and (when companySettings.accountingEnabled) the GL journal in
+// Thin wrapper over the post-inventory-adjustment operation — the same
+// unified write path the ERP uses. It books the item ledger, cost layers, and
+// the GL journal (Provisional before the accounting cutover, Posted after) in
 // one transaction, and owns the insufficient-quantity guard.
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
@@ -476,34 +547,24 @@ export async function insertManualInventoryAdjustment(
   const { companyId, createdBy, entryType, ...adjustment } =
     inventoryAdjustment;
 
-  const result = await client.functions.invoke<{
-    success: boolean;
-    itemLedger: { id: string } | null;
-  }>("post-inventory-adjustment", {
-    body: {
+  const result = await erpPosting(
+    "post-inventory-adjustment",
+    { client, companyId, userId: createdBy },
+    {
       ...adjustment,
-      adjustmentType: entryType,
-      companyId,
-      userId: createdBy
+      adjustmentType: entryType
     }
-  });
+  );
 
   if (result.error) {
-    // Supabase wraps non-2xx edge-fn responses in FunctionsHttpError with the
-    // body on error.context — pull the real message out so the route's string
-    // match on "Insufficient quantity..." keeps working (same pattern as
-    // x+/issue-tracked-entity.tsx).
-    let message = "Failed to create manual inventory adjustment";
-    const ctx = (result.error as { context?: Response })?.context;
-    if (ctx && typeof ctx.clone === "function") {
-      try {
-        const body = await ctx.clone().json();
-        if (body && typeof body.message === "string") message = body.message;
-      } catch {
-        // body wasn't JSON — keep the fallback
+    // The route string-matches "Insufficient quantity..." on this message.
+    return {
+      data: null,
+      error: {
+        message:
+          result.error.message || "Failed to create manual inventory adjustment"
       }
-    }
-    return { data: null, error: { message } };
+    };
   }
 
   return { data: result.data?.itemLedger ?? null, error: null };

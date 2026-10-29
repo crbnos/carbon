@@ -1,4 +1,8 @@
-import type { WorkflowNodeType } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { WorkflowNodeType } from "@carbon/ee/workflows";
 
 // Per-kind facts that layout and store code need. Kept apart from `meta.ts`
 // because that module reaches the translation catalog, which the unit-test
@@ -9,6 +13,7 @@ export const NODE_CARD_WIDTH: Record<WorkflowNodeType, number> = {
   trigger: 360,
   condition: 612,
   action: 420,
+  integration: 420,
   compute: 420,
   lookup: 500,
   filter: 500
@@ -23,6 +28,7 @@ export const NODE_CARD_HEIGHT: Record<WorkflowNodeType, number> = {
   trigger: 180,
   condition: 320,
   action: 260,
+  integration: 300,
   compute: 260,
   lookup: 280,
   filter: 280
@@ -38,6 +44,7 @@ export const NODE_ACCEPTS_INCOMING: Record<WorkflowNodeType, boolean> = {
   trigger: false,
   condition: true,
   action: true,
+  integration: true,
   compute: true,
   lookup: true,
   filter: true

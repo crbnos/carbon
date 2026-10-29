@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getAppUrl } from "@carbon/env";
+import { getRequestOrigin } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const url = new URL(request.url);
-  const issuer = getAppUrl() || url.origin;
+  const issuer =
+    getAppUrl() || getRequestOrigin(request) || new URL(request.url).origin;
 
   const metadata = {
     issuer,

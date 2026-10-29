@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { readWorkflowVersion } from "@carbon/ee/workflows";
 import {
   Alert,
   AlertDescription,
@@ -7,7 +12,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { readWorkflowVersion } from "@carbon/workflows";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -18,14 +23,8 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunctionArgs
 } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { usePermissions } from "~/hooks";
-import {
-  getWorkflow,
-  getWorkflowVersion,
-  getWorkflowVersions,
-  workflowCanvasStateSchema
-} from "~/modules/workflows";
 import { Autosave } from "~/modules/workflows/ui/Builder/Autosave";
 import { BuilderHeader } from "~/modules/workflows/ui/Builder/BuilderHeader";
 import { WorkflowBuilderProvider } from "~/modules/workflows/ui/Builder/context";
@@ -36,6 +35,12 @@ import { LiveValidation } from "~/modules/workflows/ui/Builder/LiveValidation";
 import { TestRunDialog } from "~/modules/workflows/ui/Builder/TestRun/TestRunDialog";
 import { WorkflowBuilder } from "~/modules/workflows/ui/Builder/WorkflowBuilder";
 import WorkflowLockModal from "~/modules/workflows/ui/WorkflowLockModal";
+import { workflowCanvasStateSchema } from "~/modules/workflows/workflows.models";
+import {
+  getWorkflow,
+  getWorkflowVersion,
+  getWorkflowVersions
+} from "~/modules/workflows/workflows.service";
 import type { Handle } from "~/utils/handle";
 import { detailBreadcrumb } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -68,7 +73,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "workflows",
     role: "employee"
   });
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
@@ -90,10 +95,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const all = versions.data ?? [];
 
   const requested = new URL(request.url).searchParams.get("version");
+  // Ranked by `versionNumber`, which is what "latest" MEANS here and is never null.
+  // Sorting on `updatedAt` alone read a never-edited version as epoch 0, so creating
+  // a new version left the builder still showing the older one that happened to have
+  // been edited — and a test run then posted that stale id.
   const mostRecent = [...all].sort(
-    (a, b) =>
-      new Date(b.updatedAt ?? 0).getTime() -
-      new Date(a.updatedAt ?? 0).getTime()
+    (a, b) => (b.versionNumber ?? 0) - (a.versionNumber ?? 0)
   )[0];
   const versionId =
     (requested && all.some((version) => version.id === requested)

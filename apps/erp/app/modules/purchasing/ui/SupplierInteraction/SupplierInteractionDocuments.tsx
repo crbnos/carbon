@@ -1,11 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import {
+  convertKbToString,
+  downloadUrl,
+  getDocumentType,
+  storage
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Card,
   CardAction,
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -13,6 +25,7 @@ import {
   File,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -21,17 +34,15 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
-import { Outlet, useFetchers, useRevalidator, useSubmit } from "react-router";
+import { Outlet, useFetchers, useSubmit } from "react-router";
 import { DateTime, DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import { usePermissions, useUser } from "~/hooks";
-import { getDocumentType } from "~/modules/shared";
+import { useFileUpload, usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
@@ -80,7 +91,7 @@ const SupplierInteractionDocuments = ({
               <Trans>Files</Trans>
             </CardTitle>
           </CardHeader>
-          <CardAction>
+          <CardAction className="max-md:hidden">
             {!isReadOnly && (
               <SupplierInteractionDocumentForm
                 interactionId={interactionId}
@@ -92,7 +103,7 @@ const SupplierInteractionDocuments = ({
         </HStack>
         <CardContent>
           <Table>
-            <Thead>
+            <Thead className={cn(attachments.length === 0 && "max-md:hidden")}>
               <Tr>
                 <Th>Name</Th>
                 <Th>Size</Th>
@@ -117,7 +128,7 @@ const SupplierInteractionDocuments = ({
                             <DocumentPreview
                               bucket="private"
                               pathToFile={getPath(attachment)}
-                              // @ts-ignore
+                              // @ts-expect-error
                               type={getDocumentType(attachment.name)}
                             >
                               {attachment.name}
@@ -152,6 +163,7 @@ const SupplierInteractionDocuments = ({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
                             <DropdownMenuItem
+                              shortcut={MENU_ITEM_SHORTCUTS.download}
                               onClick={() => download(attachment)}
                             >
                               <Trans>Download</Trans>
@@ -227,35 +239,30 @@ export const useSupplierInteractionDocuments = ({
 
   const deleteAttachment = useCallback(
     async (attachment: FileObject) => {
-      const result = await carbon?.storage
-        .from("private")
+      if (!carbon) {
+        toast.error("Error deleting file");
+        return;
+      }
+      const { error } = await storage(carbon)
+        .company(company.id)
         .remove([getPath(attachment)]);
 
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error deleting file");
+      if (error) {
+        toast.error(error.message || "Error deleting file");
         return;
       }
 
       toast.success(`${attachment.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon?.storage, getPath, revalidator]
+    [carbon, getPath, revalidator, company.id]
   );
 
   const download = useCallback(
     async (attachment: FileObject) => {
       const url = path.to.file.previewFile(`private/${getPath(attachment)}`);
       try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = attachment.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        await downloadUrl(url, attachment.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });
@@ -291,38 +298,23 @@ export const useSupplierInteractionDocuments = ({
     [id, submit, type]
   );
 
+  const { upload: uploadFiles } = useFileUpload();
   const upload = useCallback(
     async (files: File[]) => {
-      if (!carbon) {
-        toast.error(t`Carbon client not available`);
-        return;
-      }
-
-      for (const file of files) {
-        const fileName = getPath(file);
-        toast.info(`Uploading ${file.name}`);
-
-        const fileUpload = await carbon.storage
-          .from("private")
-          .upload(fileName, file, {
-            cacheControl: `${12 * 60 * 60}`,
-            upsert: true
-          });
-
-        if (fileUpload.error) {
-          toast.error(`Failed to upload file: ${file.name}`);
-        } else if (fileUpload.data?.path) {
-          toast.success(`Uploaded: ${file.name}`);
+      await uploadFiles(files, {
+        getPath,
+        onSuccess: (file, uploadedPath) => {
+          toast.success(t`Uploaded: ${file.name}`);
           createDocumentRecord({
-            path: fileUpload.data.path,
+            path: uploadedPath,
             name: file.name,
             size: file.size
           });
         }
-      }
+      });
       revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, carbon, revalidator, t]
+    [uploadFiles, getPath, createDocumentRecord, revalidator, t]
   );
 
   return {
@@ -365,8 +357,13 @@ export default SupplierInteractionDocuments;
 
 type OptimisticFileObject = Omit<
   FileObject,
-  "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"
->;
+  | "owner"
+  | "updated_at"
+  | "created_at"
+  | "last_accessed_at"
+  | "buckets"
+  | "metadata"
+> & { metadata: { size: number; mimetype: string } };
 export const usePendingItems = () => {
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;

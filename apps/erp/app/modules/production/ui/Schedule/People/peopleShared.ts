@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Logic and styling shared by the people views (Board, Matrix, Capacity, the
  * Working-hours editor). The shift ladders here are BUSINESS rules — every
@@ -78,6 +82,30 @@ export function assignmentMatchesShift(
   if (!shiftId) return true;
   return (
     (assignment.shiftId ?? employeeShiftId[assignment.employeeId]) === shiftId
+  );
+}
+
+/**
+ * The rows the day editor opens with: every row of the person's day whose
+ * effective shift is the one its save is scoped to (null = every row), at any
+ * station. `setPeopleDay` deletes the rows of that scope it is not sent, so
+ * the editor must see each of them, whatever the page's shift or department
+ * filter hides.
+ */
+export function editorDayRows<
+  T extends { employeeId: string; date: string; shiftId: string | null }
+>(
+  rows: T[],
+  employeeId: string,
+  date: string,
+  shiftId: string | null,
+  employeeShiftId: Record<string, string>
+): T[] {
+  return rows.filter(
+    (row) =>
+      row.employeeId === employeeId &&
+      row.date === date &&
+      assignmentMatchesShift(row, shiftId, employeeShiftId)
   );
 }
 

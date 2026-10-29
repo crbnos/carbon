@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getStorageRulesDataForTarget } from "@carbon/ee/storage-rules.server";
+import { getStorageRulesDataForTarget } from "@carbon/ee/rules.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import RuleAssignmentsList from "~/modules/storage-rules/ui/RuleAssignmentsList";
+import RuleAssignmentsList from "~/modules/inventory/ui/StorageRules/RuleAssignmentsList";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

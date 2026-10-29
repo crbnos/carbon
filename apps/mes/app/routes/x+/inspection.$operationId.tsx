@@ -1,16 +1,24 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   getOrCreateJobOperationInspection,
+  getRecentInspectionGauges,
   reconcileInspectionSamplingPlans
 } from "@carbon/database/quality";
+import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { InspectionView } from "~/components/Inspection/InspectionView";
 import { getDatabaseClient } from "~/services/database.server";
 import {
+  getAbilityShortfall,
   getJobByOperationId,
   getJobMakeMethod,
   getJobOperationById,
@@ -21,14 +29,36 @@ import {
 import {
   getInspection,
   getInspectionDocumentWithBalloons,
+  getInspectionGauges,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getIssueTypesList
 } from "~/services/quality.service";
 import type { InspectionSample, OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
+import type { Handle } from "~/utils/handle";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: [
+    {
+      table: "inspection",
+      filter: ({ data }) =>
+        data?.inspection?.id ? `id=eq.${data.inspection.id}` : undefined
+    },
+    {
+      table: "inspectionSample",
+      filter: ({ data }) =>
+        data?.inspection?.id
+          ? `inspectionId=eq.${data.inspection.id}`
+          : undefined
+    },
+    { table: "jobOperation", column: "id", param: "operationId" }
+  ]
+};
+
+const logger = getLogger("mes", "inspection");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
@@ -38,6 +68,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const serviceRole = await getCarbonServiceRole();
+
+  // Every read below uses the service role, so prove the operation belongs to
+  // this company before any of them runs.
+  const scopedOperation = await serviceRole
+    .from("jobOperation")
+    .select("id")
+    .eq("id", operationId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (scopedOperation.error || !scopedOperation.data) {
+    logger.warn("Job operation not found for company", {
+      companyId,
+      operationId,
+      error: scopedOperation.error
+    });
+    throw redirect(
+      path.to.operations,
+      await flash(
+        request,
+        error(scopedOperation.error, "Failed to fetch operation")
+      )
+    );
+  }
 
   const [job, operation] = await Promise.all([
     getJobByOperationId(serviceRole, operationId),
@@ -111,12 +164,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     events,
     quantities,
     linkedQuantities,
-    document
+    document,
+    gauges,
+    recentGauges
   ] = await Promise.all([
     getInspectionSamplingPlans(serviceRole, lot.data.id, companyId),
     getInspectionMeasurements(serviceRole, lot.data.id, companyId),
     getIssueTypesList(serviceRole, companyId),
-    getTrackedEntitiesByMakeMethodId(serviceRole, op.jobMakeMethodId),
+    getTrackedEntitiesByMakeMethodId(
+      serviceRole,
+      op.jobMakeMethodId,
+      companyId
+    ),
     getJobMakeMethod(serviceRole, op.jobMakeMethodId),
     getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
     getProductionQuantitiesForJobOperation(serviceRole, operationId),
@@ -131,7 +190,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           serviceRole,
           inspection.inspectionDocumentId
         )
-      : Promise.resolve(null)
+      : Promise.resolve(null),
+    getInspectionGauges(serviceRole, companyId, lot.data.id),
+    getRecentInspectionGauges(getDatabaseClient(), {
+      inspectionId: lot.data.id,
+      companyId
+    })
   ]);
 
   const linkedProductionRows = (linkedQuantities.data ?? []).filter(
@@ -158,13 +222,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       a.id.localeCompare(b.id)
   );
 
+  const abilityWarning = await getAbilityShortfall(serviceRole, {
+    operationId,
+    employeeId: userId,
+    companyId
+  });
+
   return {
+    abilityWarning,
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     inspection,
     samples,
     features: features.data ?? [],
     measurements: measurements.data ?? [],
+    gauges: gauges.data ?? [],
+    recentGaugeIds: recentGauges.data ?? [],
     issueTypes: issueTypes.data ?? [],
     trackedEntities: trackedEntities.data ?? [],
     requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
@@ -181,7 +254,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobId: job.data.id ?? null,
     balloons: document?.data?.balloons ?? [],
     documentName: document?.data?.name ?? null,
-    pdfUrl: document?.data?.pdfUrl ?? null
+    pdfUrl: document?.data?.pdfUrl ?? null,
+    model: document?.data?.model ?? null
   };
 }
 

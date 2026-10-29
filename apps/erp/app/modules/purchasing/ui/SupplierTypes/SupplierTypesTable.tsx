@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -7,17 +11,20 @@ import { LuPencil, LuShapes, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { SupplierType } from "~/modules/purchasing";
+import type { SupplierType } from "~/modules/purchasing/types";
 import { path } from "~/utils/path";
 
 type SupplierTypesTableProps = {
   data: SupplierType[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const SupplierTypesTable = memo(({ data, count }: SupplierTypesTableProps) => {
+const SupplierTypesTable = memo((props: SupplierTypesTableProps) => {
+  const { data, count, infinite } = props;
   const [params] = useUrlParams();
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -37,6 +44,7 @@ const SupplierTypesTable = memo(({ data, count }: SupplierTypesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P1",
           icon: <LuShapes />
         }
       }
@@ -49,6 +57,7 @@ const SupplierTypesTable = memo(({ data, count }: SupplierTypesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.view}
             onClick={() => {
               navigate(`${path.to.suppliers}?filter=type:eq:${row.name}`);
             }}
@@ -57,6 +66,7 @@ const SupplierTypesTable = memo(({ data, count }: SupplierTypesTableProps) => {
             <Trans>View Suppliers</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={row.protected || !permissions.can("update", "purchasing")}
             onClick={() => {
               navigate(`${path.to.supplierType(row.id)}?${params.toString()}`);
@@ -66,6 +76,7 @@ const SupplierTypesTable = memo(({ data, count }: SupplierTypesTableProps) => {
             <Trans>Edit Supplier Type</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={row.protected || !permissions.can("delete", "purchasing")}
             onClick={() => {
@@ -88,6 +99,7 @@ const SupplierTypesTable = memo(({ data, count }: SupplierTypesTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={infinite}
       primaryAction={
         permissions.can("create", "purchasing") && (
           <New

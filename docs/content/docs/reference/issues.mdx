@@ -3,15 +3,15 @@ title: Issues (non-conformances)
 description: How Carbon logs a non-conformance, drives it through a configurable workflow of actions and approvals, and dispositions the affected material before closing.
 ---
 
-An **issue** is Carbon's non-conformance record, an NCR: a logged defect or deviation plus the work to resolve it. This page is the deep dive behind the [quality overview](/docs/reference/quality#issues). It lives in the `quality` module (there is no separate `issue` module), and every issue carries an `nc`-prefixed internal id plus a readable `nonConformanceId` you see in the UI.
+An **issue** is a non-conformance record containing a defect or deviation and the work required to resolve it. Issues belong to the `quality` module and carry an `nc`-prefixed internal ID plus the user-facing `nonConformanceId`. See the [quality overview](/docs/reference/quality#issues) for broader module context.
 
-An issue opens several ways: by hand from the issues list, from the shop floor in MES, from Slack, or **automatically** when an [inbound inspection](/docs/reference/quality#inbound-inspection) rejects a lot. Whichever door it comes through, it lands in the same lifecycle.
+Create an issue from the issue list, MES, or Slack. Carbon can also create one automatically when an [inbound inspection](/docs/reference/quality#inbound-inspection) rejects a lot. All sources use the same lifecycle.
 
 ## The lifecycle
 
 A `nonConformanceStatus` has three values. A new issue defaults to **"Registered"**; **"Closed"** is terminal and locks the record.
 
-<StatusFlow>
+<StatusFlow entity="issue">
   <Status name="Registered">The issue exists but no one has picked it up. The DB default for a new `nonConformance`. Editable.</Status>
   <Status name="In Progress" accent>Someone is working it. An issue auto-advances here the first time a user types into a task note while still Registered, or when you click **"Start"** in the header.</Status>
   <Status name="Closed" terminal>Resolved and locked. `isIssueLocked(status)` is true only for Closed, which blocks edits to the issue and its task assignments. Closing clears the assignee and stamps `closeDate`. **"Reopen"** sends it back to Registered.</Status>
@@ -39,9 +39,9 @@ Every issue carries a small set of classification fields. Type and location are 
 
 ## Workflows: the 8D and its cousins
 
-A **workflow** is a reusable template, not a rigid state machine. It stores a rich-text **issue template** (the investigation write-up you start from) plus a preset priority, source, a list of required actions, and approval requirements. Picking a workflow when you raise an issue copies those presets in and drops the template into the issue's content.
+A **workflow** is a reusable template, not a state machine. It defines initial rich-text content, priority, source, required actions, and approval requirements. Selecting a workflow copies those values into the new issue.
 
-This is how Carbon models the <Term id="8d">8D</Term> method: an "8D workflow" is just a workflow whose required actions cover the eight disciplines. A "containment workflow" is a lighter one. Nothing about 8D is hard-coded. You compose it from the same action building blocks as any other workflow, and you can build your own.
+Carbon models <Term id="8d">8D</Term> as a workflow whose required actions cover the eight disciplines. 8D behavior is not hard-coded; custom workflows use the same action model.
 
 ## Required actions and their system categories
 
@@ -67,6 +67,8 @@ The `issues` view computes a **containment status** from the action tasks. It re
 
 Action tasks run their own small lifecycle: **"Pending"** → **"In Progress"** → **"Completed"**, with **"Skipped"** as an off-path exit. Tasks start Pending and do *not* auto-start. Completing a task stamps its completed date. A completed or skipped task can be reopened back to Pending. Tasks can be reordered, given due dates, and tied to specific processes, and a supplier-facing action task can be shared externally as a **SCAR** (Supplier Corrective Action Request) report.
 
+The SCAR is a private, login-free link the supplier opens to respond. They see the non-conformance details, the current status, and the action tasks assigned to them — not the rest of the issue: dispositions, approvals, and closure stay internal. For each task the supplier can update the status and write notes in an editor that auto-saves as they type; entering notes on a **"Pending"** task promotes it to **"In Progress"** automatically. Once the issue is **"Closed"**, the SCAR locks and the supplier can no longer make changes. Whoever holds the URL can open it, so send it only to the supplier contact.
+
 ## Approvals and the Material Review Board
 
 Beyond actions, an issue can require **approvals**. The only approval requirement Carbon ships is <Term id="mrb">MRB (Material Review Board)</Term>. Adding it materializes an approval task and, when MRB is newly required, seeds two **reviewers** with titles **"Engineering"** and **"Quality"**. Remove MRB and those seeded reviewers are cleared; reviewers you added by hand are left alone. A reviewer is just a title on the issue. You manage the list inline on the issue.
@@ -89,7 +91,7 @@ Closing an issue is where the affected material gets resolved. Each `nonConforma
 
 ## What an issue can point at
 
-An issue links to the documents and records it concerns through typed association tables. There are ten association types: **items**, **customers**, **suppliers**, **job operations**, **purchase-order lines**, **sales-order lines**, **shipment lines**, **receipt lines**, **tracked entities**, and **inbound inspections**. These are what let quality trace a defect back to exactly where it came from — a specific received lot, a specific job operation, a specific supplier — and what makes supplier quality a *derived* number rather than a scorecard you maintain by hand.
+Typed associations link an issue to **items**, **customers**, **suppliers**, **job operations**, **purchase-order lines**, **sales-order lines**, **shipment lines**, **receipt lines**, **tracked entities**, and **inbound inspections**. These links provide traceability to the source record and support derived supplier-quality metrics.
 
 From the issue header you can also spin up a [change notice](/docs/reference/change-orders) directly, carrying the issue across as its source, when the fix is an engineering change rather than a one-off disposition.
 
@@ -144,4 +146,7 @@ When an issue requires **MRB** approval, an approval task and reviewer rows (Eng
 
 ### Permission-gated: you can't create, edit, close, or delete an issue
 Listing issues needs `quality` **view**; creating needs `quality` **create**; editing, closing, splitting, and moving entities all need `quality` **update**; deleting needs `quality` **delete**. If an action is blocked, your role is missing the corresponding quality permission (Settings → Roles).
+
+### "Issue has been closed already. Unable to make changes" (SCAR)
+A supplier tried to update a SCAR action task after the parent issue was set to `Closed`. Once the issue is Closed the SCAR is read-only. Reopen the issue internally if further supplier action is needed.
 </AgentContext>

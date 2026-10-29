@@ -1,9 +1,14 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
   LuArrowRight,
+  LuClock,
   LuHash,
   LuMaximize,
   LuPackage,
@@ -15,23 +20,29 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { ItemSerialSequence } from "~/modules/settings";
+import type { SerialNumberTiming } from "~/modules/settings/settings.models";
+import { serialNumberTimings } from "~/modules/settings/settings.models";
+import type { ItemSerialSequence } from "~/modules/settings/types";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
+import { useSerialNumberTimingLabels } from "./useSerialNumberTimingLabels";
 
 type ItemSerialSequencesTableProps = {
   data: ItemSerialSequence[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const ItemSerialSequencesTable = memo(
-  ({ data, count }: ItemSerialSequencesTableProps) => {
+  ({ data, count, infinite }: ItemSerialSequencesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
     const [items] = useItems();
+    const timingLabels = useSerialNumberTimingLabels();
 
     const columns = useMemo<ColumnDef<(typeof data)[number]>[]>(() => {
       return [
@@ -44,6 +55,7 @@ const ItemSerialSequencesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuPackage />,
             filter: {
               type: "static",
@@ -59,6 +71,7 @@ const ItemSerialSequencesTable = memo(
           header: t`Name`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P3",
             icon: <LuText />
           }
         },
@@ -67,6 +80,7 @@ const ItemSerialSequencesTable = memo(
           header: t`Prefix`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P2",
             icon: <LuTextCursor />
           }
         },
@@ -101,15 +115,45 @@ const ItemSerialSequencesTable = memo(
           meta: {
             icon: <LuHash />
           }
+        },
+        {
+          accessorKey: "serialNumberTiming",
+          header: t`Timing`,
+          cell: ({ row }) => {
+            const timing = row.original
+              .serialNumberTiming as SerialNumberTiming | null;
+            return timing ? (
+              timingLabels[timing]
+            ) : (
+              <span className="text-muted-foreground">
+                <Trans>Company default</Trans>
+              </span>
+            );
+          },
+          meta: {
+            icon: <LuClock />,
+            filter: {
+              type: "static",
+              options: serialNumberTimings.map((timing) => ({
+                value: timing,
+                label: timingLabels[timing]
+              }))
+            },
+            exportValue: (row) =>
+              row.serialNumberTiming
+                ? timingLabels[row.serialNumberTiming as SerialNumberTiming]
+                : t`Company default`
+          }
         }
       ];
-    }, [items, t]);
+    }, [items, t, timingLabels]);
 
     const renderContextMenu = useCallback(
       (row: (typeof data)[number]) => {
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!permissions.can("update", "settings")}
               onClick={() => {
                 navigate(
@@ -121,6 +165,7 @@ const ItemSerialSequencesTable = memo(
               <Trans>Edit</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={!permissions.can("delete", "settings")}
               onClick={() => {
                 navigate(
@@ -140,6 +185,7 @@ const ItemSerialSequencesTable = memo(
     return (
       <Table<(typeof data)[number]>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

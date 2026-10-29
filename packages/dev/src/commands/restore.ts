@@ -1,15 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { existsSync } from "node:fs";
-import { cancel, intro, log, outro, tasks } from "@clack/prompts";
+import { cancel, intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { execa } from "execa";
 import { isAbsolute, join, resolve } from "pathe";
 import { requireNumberEnv, tryConnect } from "../helpers.js";
 import { confirmRestore } from "../prompts.js";
+import { wakeIfAsleep } from "../services/hibernate.js";
 import {
   applyMigrations,
-  serviceSchemasReady
+  serviceSchemasReady,
+  syncAuthz
 } from "../services/migrations.js";
-import { getWorktreeRoot } from "../worktree.js";
+import { tasks } from "../ui.js";
+import { getWorktreeRoot, resolveSlug } from "../worktree.js";
 
 export type RestoreMode = "local" | "prod";
 
@@ -110,6 +117,7 @@ export async function restore(opts: RestoreOptions) {
   // postgres-only stack the dump's `CREATE TABLE auth.users` no-ops onto the
   // image's stub, and the restore fails late — after the data has landed but
   // before the email scrub — leaving unscrubbed production addresses on disk.
+  await wakeIfAsleep(resolveSlug(root));
   if (!(await tryConnect("127.0.0.1", portDb, 500))) {
     cancel("postgres is not reachable — run `crbn up` first, then retry");
     process.exit(1);
@@ -167,6 +175,16 @@ async function runRestore(
               await execa("pnpm", ["db:types"], { cwd: root });
               return "types refreshed";
             }
+          }
+        ]
+      : []),
+    ...(shouldMigrate
+      ? [
+          {
+            // The snapshot carries the source environment's policies; the
+            // manifest is what this branch expects.
+            title: "Sync RLS policies with the authz manifest",
+            task: () => syncAuthz(root, portDb)
           }
         ]
       : [])

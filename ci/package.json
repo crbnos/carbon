@@ -4,6 +4,9 @@
   "version": "0.0.1",
   "description": "Deployment scripts for Carbon",
   "dependencies": {
+    "@carbon/env": "workspace:*",
+    "@openfeature/core": "catalog:",
+    "@openfeature/flagd-core": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "dotenv": "16.3.1",
     "execa": "8.0.1",
@@ -13,9 +16,8 @@
     "ci:migrations": "tsx src/migrations.ts",
     "ci:deploy": "tsx src/deploy.ts",
     "ci:assembler": "tsx src/assembler.ts",
-    "ci:jobs": "tsx src/jobs.ts",
-    "ci:upload-backup-templates": "tsx src/upload-backup-templates.ts",
-    "test": "echo \"no tests\""
+    "ci:post-deploy": "tsx src/post-deploy.ts",
+    "test": "tsx --test src/*.test.ts"
   },
   "devDependencies": {
     "sst": "catalog:"

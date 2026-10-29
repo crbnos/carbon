@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
 import { Fragment } from "react";
@@ -14,7 +18,10 @@ import {
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
-import type { PurchaseOrderData } from "./blocks/purchaseOrder";
+import type {
+  PurchaseOrderApproval,
+  PurchaseOrderData
+} from "./blocks/purchaseOrder";
 import {
   buildPurchaseOrderVars,
   purchaseOrderBlockRegistry
@@ -38,10 +45,13 @@ interface PurchaseOrderPDFProps extends PDF {
   sections?: Record<string, ResolvedSection>;
   /** Settlement decimals from the document currency's row; null/omitted falls back to 2. */
   currencyDecimals?: number | null;
+  /** The approval that released the order; null when it was not approved. */
+  approval?: PurchaseOrderApproval | null;
 }
 
 const PurchaseOrderPDF = ({
   accountsPayableBillingAddress,
+  approval,
   company,
   companySettings,
   meta,
@@ -76,7 +86,9 @@ const PurchaseOrderPDF = ({
     purchaseOrder,
     purchaseOrderLocations,
     company,
-    currencyCode
+    currencyCode,
+    approval,
+    locale
   });
 
   const registration = resolveRegistrationLine({
@@ -106,6 +118,7 @@ const PurchaseOrderPDF = ({
     theme,
     sections,
     currencyCode,
+    approval,
     numberFormatter,
     rateFormatter,
     vars,

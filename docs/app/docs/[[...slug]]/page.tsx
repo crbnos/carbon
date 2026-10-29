@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { createRelativeLink } from "fumadocs-ui/mdx";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -82,7 +86,7 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
   if (!page) notFound();
 
   return pageSeo({
-    title: `${page.data.title} — Carbon`,
+    title: `${page.data.title} | Carbon`,
     ogTitle: page.data.title,
     description: page.data.description,
     path: page.url,

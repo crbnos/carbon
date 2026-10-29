@@ -1,16 +1,26 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
+import {
+  priceOverrideBreaksValidator,
+  priceOverrideValidator
+} from "~/modules/sales/sales.models";
 import {
   getCustomerItemPriceOverrideById,
-  priceOverrideBreaksValidator,
-  priceOverrideValidator,
   upsertCustomerItemPriceOverride
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import PriceOverrideForm from "~/modules/sales/ui/Pricing/PriceOverrideForm";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 
@@ -71,6 +81,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const {
     customerId,
     customerTypeId,
+    allCustomers,
     itemId,
     active,
     applyRulesOnTop,
@@ -78,6 +89,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     validFrom,
     validTo
   } = validation.data;
+
+  // The override is written through Kysely (RLS bypassed) and references the
+  // item, customer and customer type by the form's ids.
+  const serviceRole = getCarbonServiceRole();
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "item", companyId, { id: itemId }),
+    customerId
+      ? requireCompanyRecord(serviceRole, "customer", companyId, {
+          id: customerId
+        })
+      : null,
+    customerTypeId
+      ? requireCompanyRecord(serviceRole, "customerType", companyId, {
+          id: customerTypeId
+        })
+      : null
+  ]);
 
   const result = await upsertCustomerItemPriceOverride(
     getDatabaseClient(),
@@ -87,6 +115,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       id: overrideId,
       customerId: customerId || undefined,
       customerTypeId: customerTypeId || undefined,
+      allCustomers,
       itemId,
       breaks,
       active,
@@ -115,7 +144,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditPriceOverrideRoute() {
   const { override } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   if (!override) return null;
 
@@ -127,6 +156,7 @@ export default function EditPriceOverrideRoute() {
         itemId: override.itemId,
         customerId: override.customerId ?? undefined,
         customerTypeId: override.customerTypeId ?? undefined,
+        allCustomers: !override.customerId && !override.customerTypeId,
         active: override.active,
         applyRulesOnTop: override.applyRulesOnTop ?? true,
         validFrom: override.validFrom ?? undefined,
@@ -143,7 +173,7 @@ export default function EditPriceOverrideRoute() {
             }[])
           : []
       }
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

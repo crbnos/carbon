@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
   cn,
@@ -5,8 +10,6 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuTrigger,
   IconButton,
   Input,
@@ -21,52 +24,43 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  useDebounce,
+  toast,
   useInterval,
   VStack
 } from "@carbon/react";
 import type { AssemblyGraphIndex } from "@carbon/viewer";
 import {
+  arrivalIndexByNode,
   describeStep,
   groupComponentNodeIds,
   synthesizeFallbackMotion
 } from "@carbon/viewer";
-import type { DragControls } from "framer-motion";
-import { MotionConfig, Reorder, useDragControls } from "framer-motion";
-import type { ReactNode } from "react";
+import { useLingui } from "@lingui/react/macro";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  LuChevronDown,
   LuCirclePlus,
-  LuEllipsisVertical,
-  LuGripVertical,
-  LuHand,
   LuSearch,
   LuSparkles,
-  LuTrash,
   LuTriangleAlert,
   LuWaypoints
 } from "react-icons/lu";
-import {
-  useFetcher,
-  useParams,
-  useRevalidator,
-  useSearchParams
-} from "react-router";
+import { useFetcher, useParams, useSearchParams } from "react-router";
 import { Empty } from "~/components";
-import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRealtime } from "~/hooks";
+import type { action as replanAction } from "~/routes/x+/assembly+/$id.plan.rerun";
+import type { action as generateAction } from "~/routes/x+/assembly+/$id.steps.generate";
 import { path } from "~/utils/path";
 import { isAssemblyPlanRunning } from "../../production.models";
 import type { FlattenedBomMaterial } from "../../production.service";
-import { toViewerStep } from "../../production.service";
+import { toViewerStep } from "../../production.utils";
 import type {
   AssemblyComponentMapping,
   AssemblyInstructionStepRow,
   AssemblyUnit
 } from "../../types";
 import AssemblyBomTree from "./AssemblyBomTree";
+import AssemblyStepList from "./AssemblyStepList";
 
 type AssemblyInstructionExplorerProps = {
   steps: AssemblyInstructionStepRow[];
@@ -96,7 +90,12 @@ type AssemblyInstructionExplorerProps = {
   /** Double-click a step — preview (play) its insertion motion */
   onPreviewStep: (stepId: string) => void;
   onHighlightComponents: (nodeIds: string[]) => void;
-  onHideComponents: (nodeIds: string[]) => void;
+  hasSelectedStep: boolean;
+  ownNodeIds: string[];
+  hiddenNodeIds: string[];
+  onSetHiddenComponents: (nodeIds: string[]) => void;
+  /** Header id of the open sub-assembly, which Add Step adds to. */
+  openSubAssemblyId: string | null;
 };
 
 // Memoized: the parent route re-renders on every motion-drag frame
@@ -119,20 +118,42 @@ function AssemblyInstructionExplorer({
   onSelectStep,
   onPreviewStep,
   onHighlightComponents,
-  onHideComponents
+  hasSelectedStep,
+  ownNodeIds,
+  hiddenNodeIds,
+  onSetHiddenComponents,
+  openSubAssemblyId
 }: AssemblyInstructionExplorerProps) {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
+  const { t } = useLingui();
   const permissions = usePermissions();
   const revalidator = useRevalidator();
 
-  const sortOrderFetcher = useFetcher<{ success: boolean }>();
   const newStepFetcher = useFetcher<{ success: boolean; id?: string }>();
-  const generateFetcher = useFetcher<{
-    success: boolean;
-    planning?: boolean;
-  }>();
+  const generateFetcher = useAction<typeof generateAction>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.planning) {
+        setIsAwaitingPlan(true);
+        return;
+      }
+      setIsAwaitingPlan(false);
+      const created = data.created;
+      const unmapped = data.unmappedComponentCount;
+      const generated =
+        generateModeRef.current === "regenerate"
+          ? t`Regenerated ${created} steps from the motion plan`
+          : t`Generated ${created} steps from the motion plan`;
+      // Some geometry has no BOM match, so those parts got no material.
+      toast.success(
+        unmapped > 0
+          ? `${generated}. ${t`${unmapped} components have no BOM match — use Match BOM to link their materials.`}`
+          : generated
+      );
+    }
+  });
 
   // Generate Steps needs a motion plan. Planning is lazy (nothing runs until
   // the user asks), so the first click usually lands before plan.json exists —
@@ -214,14 +235,6 @@ function AssemblyInstructionExplorer({
     planJob?.status === "Failed" &&
     planJob.id !== ignoredFailedJobId.current;
 
-  useEffect(() => {
-    if (generateFetcher.data?.planning) {
-      setIsAwaitingPlan(true);
-    } else if (generateFetcher.data?.success) {
-      setIsAwaitingPlan(false);
-    }
-  }, [generateFetcher.data]);
-
   const [showRerunConfirm, setShowRerunConfirm] = useState(false);
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   // Which generate mode the pending click asked for — the awaiting-plan effect
@@ -284,7 +297,18 @@ function AssemblyInstructionExplorer({
     solveElapsedSeconds % 60
   ).padStart(2, "0")}`;
 
-  const rerunPlanFetcher = useFetcher<{ success: boolean }>();
+  const rerunPlanFetcher = useAction<typeof replanAction>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      toast.success(
+        data.mode === "remotion"
+          ? t`Re-planning motions in the current step order — steps update when it finishes`
+          : data.mode === "fresh"
+            ? t`Re-planning from scratch — steps rebuild automatically when it finishes`
+            : t`Motion planning started — steps generate when it finishes`
+      );
+    }
+  });
   // Any planner work in flight — a re-motion run, a regenerate solve, or the
   // submit round-trips themselves. Drives the footer's planner-menu spinner.
   const isPlannerBusy =
@@ -315,7 +339,13 @@ function AssemblyInstructionExplorer({
     if (steps.length > 0 || !permissions.can("update", "production")) return;
     submitGenerate("generate");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [
+    searchParams,
+    permissions.can,
+    setSearchParams,
+    steps.length,
+    submitGenerate
+  ]);
 
   // The user's click is waiting on a plan. When it lands, generate the steps —
   // no second click. If the wait stalls with nothing running (the click raced
@@ -345,46 +375,11 @@ function AssemblyInstructionExplorer({
     generateFetcher,
     rerunPlanFetcher.state,
     submitGenerate,
-    id
+    setIsAwaitingPlan
   ]);
 
   const [stepToDelete, setStepToDelete] =
     useState<AssemblyInstructionStepRow | null>(null);
-
-  const [sortOrder, setSortOrder] = useState<string[]>(
-    steps.map((step) => step.id)
-  );
-  // A local reorder saves on a 2500ms debounce; until it lands, a revalidation
-  // still carries the PRE-reorder server order. Track the pending save so the
-  // sync effect below doesn't snap the user's drag back.
-  const orderSavePendingRef = useRef(false);
-
-  useEffect(() => {
-    setSortOrder((prev) => {
-      const nextIds = steps.map((step) => step.id);
-      const prevSet = new Set(prev);
-      const sameSet =
-        prev.length === nextIds.length &&
-        nextIds.every((id) => prevSet.has(id));
-      if (sameSet) {
-        // Same steps, possibly reordered upstream. Keep the local order while a
-        // save is in flight; otherwise adopt the server order (source of truth).
-        const savePending =
-          orderSavePendingRef.current || sortOrderFetcher.state !== "idle";
-        if (savePending) return prev;
-        const sameOrder = nextIds.every((id, i) => prev[i] === id);
-        return sameOrder ? prev : nextIds;
-      }
-      // Steps added or removed — resync to the server list.
-      return nextIds;
-    });
-  }, [steps, sortOrderFetcher.state]);
-
-  useEffect(() => {
-    if (sortOrderFetcher.state === "idle" && sortOrderFetcher.data?.success) {
-      orderSavePendingRef.current = false;
-    }
-  }, [sortOrderFetcher.state, sortOrderFetcher.data]);
 
   // Select the newly created step
   useEffect(() => {
@@ -392,11 +387,6 @@ function AssemblyInstructionExplorer({
       onSelectStep(newStepFetcher.data.id);
     }
   }, [newStepFetcher.data, onSelectStep]);
-
-  const stepMap = useMemo(
-    () => new Map(steps.map((step) => [step.id, step])),
-    [steps]
-  );
 
   // Authored subassembly units, normalized for step-title derivation: a step
   // whose components are exactly a unit is titled by its name, not by every component.
@@ -411,28 +401,33 @@ function AssemblyInstructionExplorer({
 
   // Derive the viewer shape once — both stepTitles and searchText need it, and
   // toViewerStep otherwise runs twice per step per render.
+  const viewerSteps = useMemo(() => steps.map(toViewerStep), [steps]);
   const viewerStepMap = useMemo(
-    () => new Map(steps.map((step) => [step.id, toViewerStep(step)])),
-    [steps]
+    () => new Map(viewerSteps.map((step) => [step.id, step])),
+    [viewerSteps]
   );
 
+  // A sub-assembly is named by the author (it installs nothing to derive a
+  // name from); a step derives one from its components when left blank.
   const stepTitles = useMemo(
     () =>
       new Map(
         steps.map((step) => [
           step.id,
-          describeStep(
-            viewerStepMap.get(step.id) ?? toViewerStep(step),
-            graphIndex,
-            namedUnits
-          ) ?? "Untitled step"
+          step.isSubAssembly
+            ? step.title || t`Sub-Assembly`
+            : (describeStep(
+                viewerStepMap.get(step.id) ?? toViewerStep(step),
+                graphIndex,
+                namedUnits
+              ) ?? t`Untitled step`)
         ])
       ),
-    [steps, viewerStepMap, graphIndex, namedUnits]
+    [steps, viewerStepMap, graphIndex, namedUnits, t]
   );
 
   const [search, setSearch] = useState("");
-  const isSearching = search.trim().length > 0;
+  const needle = search.trim().toLowerCase();
 
   /** stepId → lowercase haystack of title, component names, and fastener spec */
   const searchText = useMemo(() => {
@@ -460,52 +455,20 @@ function AssemblyInstructionExplorer({
     return map;
   }, [steps, viewerStepMap, graphIndex, stepTitles]);
 
-  const visibleOrder = useMemo(() => {
-    if (!isSearching) return sortOrder;
-    const needle = search.trim().toLowerCase();
-    return sortOrder.filter((stepId) =>
-      searchText.get(stepId)?.includes(needle)
-    );
-  }, [sortOrder, isSearching, search, searchText]);
-
-  const updateSortOrder = useDebounce(
-    (updates: Record<string, number>) => {
-      const formData = new FormData();
-      formData.append("updates", JSON.stringify(updates));
-      sortOrderFetcher.submit(formData, {
-        method: "post",
-        action: path.to.assemblyInstructionStepOrder(id)
-      });
-    },
-    2500,
-    true
-  );
-
-  const onReorder = (newOrder: string[]) => {
-    if (isDisabled || isSearching) return;
-
-    const updates: Record<string, number> = {};
-    newOrder.forEach((stepId, index) => {
-      updates[stepId] = index + 1;
-    });
-    orderSavePendingRef.current = true;
-    setSortOrder(newOrder);
-    updateSortOrder(updates);
-  };
-
   const onAddStep = () => {
     const formData = new FormData();
     formData.append("assemblyInstructionId", id);
+    if (openSubAssemblyId) formData.append("parentStepId", openSubAssemblyId);
 
     // When components are selected, seed the new step with the components and a
     // basic synthesized insertion animation. Otherwise create an empty
     // process-only step. The title is left blank on purpose — it derives live
     // from the components (describeStep) everywhere it is displayed.
     if (selectedNodeIds.length > 0) {
-      // The new step appends after every existing step, so its obstacle world
-      // is everything those steps install ("none" fades in when blocked)
+      // The new step comes last in its build, so its obstacle world is
+      // everything that build already holds ("none" fades in when blocked)
       const present = new Set(
-        steps.flatMap((step) => step.componentNodeIds ?? [])
+        arrivalIndexByNode(viewerSteps, openSubAssemblyId).keys()
       );
       const motion = graphIndex
         ? synthesizeFallbackMotion(graphIndex, selectedNodeIds, present)
@@ -559,41 +522,18 @@ function AssemblyInstructionExplorer({
             spacing={0}
           >
             {steps.length > 0 ? (
-              <MotionConfig reducedMotion="user">
-                <Reorder.Group
-                  axis="y"
-                  values={visibleOrder}
-                  onReorder={onReorder}
-                  className="w-full"
-                  disabled={isDisabled || isSearching}
-                >
-                  {visibleOrder.map((stepId) => {
-                    const step = stepMap.get(stepId);
-                    if (!step) return null;
-                    return (
-                      <DraggableStepItem
-                        key={stepId}
-                        stepId={stepId}
-                        isDisabled={isDisabled || isSearching}
-                      >
-                        {(dragControls) => (
-                          <StepItem
-                            step={step}
-                            title={stepTitles.get(stepId) ?? "Untitled step"}
-                            index={sortOrder.indexOf(stepId)}
-                            isDisabled={isDisabled || isSearching}
-                            isSelected={stepId === selectedStepId}
-                            dragControls={dragControls}
-                            onSelect={() => onSelectStep(stepId)}
-                            onPreview={() => onPreviewStep(stepId)}
-                            onDelete={() => setStepToDelete(step)}
-                          />
-                        )}
-                      </DraggableStepItem>
-                    );
-                  })}
-                </Reorder.Group>
-              </MotionConfig>
+              <AssemblyStepList
+                steps={steps}
+                viewerStepMap={viewerStepMap}
+                stepTitles={stepTitles}
+                search={needle}
+                searchText={searchText}
+                selectedStepId={selectedStepId}
+                isDisabled={isDisabled}
+                onSelectStep={onSelectStep}
+                onPreviewStep={onPreviewStep}
+                onDeleteStep={setStepToDelete}
+              />
             ) : permissions.can("update", "production") ? (
               <div className="flex h-full w-full flex-col items-center justify-center px-6 py-10">
                 <div className="flex w-full max-w-[280px] flex-col items-center text-center">
@@ -679,11 +619,6 @@ function AssemblyInstructionExplorer({
               </div>
             ) : (
               <Empty />
-            )}
-            {steps.length > 0 && isSearching && visibleOrder.length === 0 && (
-              <p className="w-full px-4 py-3 text-center text-xs text-muted-foreground">
-                No steps match "{search.trim()}"
-              </p>
             )}
           </VStack>
           {steps.length > 0 && (
@@ -777,7 +712,10 @@ function AssemblyInstructionExplorer({
             isActive={tab === "components"}
             isAddingStep={newStepFetcher.state !== "idle"}
             onHighlightComponents={onHighlightComponents}
-            onHideComponents={onHideComponents}
+            hasSelectedStep={hasSelectedStep}
+            ownNodeIds={ownNodeIds}
+            hiddenNodeIds={hiddenNodeIds}
+            onSetHiddenComponents={onSetHiddenComponents}
             onSelectStep={onSelectStep}
             onAddStep={onAddStep}
           />
@@ -895,243 +833,6 @@ function AssemblyInstructionExplorer({
         </Modal>
       )}
     </>
-  );
-}
-
-const stepStatusOrder = ["Todo", "Review", "Done"] as const;
-type StepStatus = (typeof stepStatusOrder)[number];
-
-const stepStatusStyles: Record<StepStatus, string> = {
-  Todo: "bg-red-500",
-  Review: "bg-yellow-500",
-  Done: "bg-green-500"
-};
-
-const StepStatusDot = ({ status }: { status: StepStatus }) => (
-  <span
-    className={cn(
-      "block size-2 shrink-0 rounded-full",
-      stepStatusStyles[status] ?? stepStatusStyles.Todo
-    )}
-  />
-);
-
-function StepStatusControl({
-  stepId,
-  status,
-  isDisabled
-}: {
-  stepId: string;
-  status: StepStatus;
-  isDisabled: boolean;
-}) {
-  const { id } = useParams();
-  if (!id) throw new Error("Could not find id");
-
-  const fetcher = useFetcher<{ success: boolean }>();
-
-  // Optimistic: show the in-flight status while the fetcher is busy
-  const displayed =
-    fetcher.state !== "idle" && fetcher.formData
-      ? ((fetcher.formData.get("status") as StepStatus) ?? status)
-      : status;
-
-  const onSelect = (value: string) => {
-    if (value === status) return;
-    const formData = new FormData();
-    formData.append("status", value);
-    fetcher.submit(formData, {
-      method: "post",
-      action: path.to.assemblyInstructionStepStatus(id, stepId)
-    });
-  };
-
-  // Non-interactive: a labeled chip so the status is legible without the dot
-  // color code (published/archived instructions can't be edited)
-  if (isDisabled) {
-    return (
-      <span className="inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border border-border px-1.5 text-xs text-foreground">
-        <StepStatusDot status={displayed} />
-        {displayed}
-      </span>
-    );
-  }
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={`Step status: ${displayed}. Change status`}
-          className="inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-1.5 text-xs text-foreground shadow-button-base hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.98]"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <StepStatusDot status={displayed} />
-          {displayed}
-          <LuChevronDown className="size-3 text-muted-foreground" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        className="min-w-[8rem]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <DropdownMenuRadioGroup value={displayed} onValueChange={onSelect}>
-          {stepStatusOrder.map((option) => (
-            <DropdownMenuRadioItem key={option} value={option}>
-              <span className="flex items-center gap-2">
-                <StepStatusDot status={option} />
-                {option}
-              </span>
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function DraggableStepItem({
-  stepId,
-  isDisabled,
-  children
-}: {
-  stepId: string;
-  isDisabled: boolean;
-  children: (dragControls: DragControls) => ReactNode;
-}) {
-  const dragControls = useDragControls();
-  return (
-    <Reorder.Item
-      key={stepId}
-      value={stepId}
-      dragListener={false}
-      dragControls={dragControls}
-    >
-      {children(dragControls)}
-    </Reorder.Item>
-  );
-}
-
-type StepItemProps = {
-  step?: AssemblyInstructionStepRow;
-  title: string;
-  index: number;
-  isDisabled: boolean;
-  isSelected: boolean;
-  dragControls?: DragControls;
-  onSelect: () => void;
-  onPreview: () => void;
-  onDelete: () => void;
-};
-
-function StepItem({
-  step,
-  title,
-  index,
-  isDisabled,
-  isSelected,
-  dragControls,
-  onSelect,
-  onPreview,
-  onDelete
-}: StepItemProps) {
-  const permissions = usePermissions();
-  if (!step) return null;
-
-  const componentCount = step.componentNodeIds?.length ?? 0;
-
-  const needsSupport = (step.warnings as { needsSupport?: boolean } | null)
-    ?.needsSupport;
-
-  return (
-    <div
-      className={cn(
-        "group relative flex w-full cursor-pointer select-none items-center gap-1.5 border-b border-border bg-card py-3 pl-1.5 pr-2.5 hover:bg-accent/30",
-        isSelected && "bg-accent/40 hover:bg-accent/40"
-      )}
-      onClick={onSelect}
-      onDoubleClick={onPreview}
-      title="Double-click to play this step"
-    >
-      {isSelected && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 left-0 w-0.5 bg-primary"
-        />
-      )}
-      <IconButton
-        aria-label="Drag handle"
-        icon={<LuGripVertical />}
-        variant="ghost"
-        size="sm"
-        disabled={isDisabled}
-        className="size-6 shrink-0 cursor-grab text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing"
-        onPointerDown={(e) => {
-          if (!isDisabled && dragControls) dragControls.start(e);
-        }}
-        style={{ touchAction: "none" }}
-      />
-      <span className="w-5 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-        {index + 1}
-      </span>
-      <ProcedureStepTypeIcon
-        type={step.type ?? "Task"}
-        className="size-3.5 shrink-0 text-muted-foreground"
-      />
-      <span
-        className="min-w-0 flex-1 truncate text-sm text-foreground"
-        title={title}
-      >
-        {title}
-      </span>
-      {needsSupport && (
-        <span
-          className="shrink-0 text-amber-600 dark:text-amber-500"
-          title="A part in this step may tip once placed — consider a fixture or a second person."
-        >
-          <LuHand className="size-3.5" />
-        </span>
-      )}
-      <span
-        className="shrink-0 text-xs tabular-nums text-muted-foreground"
-        title={`${componentCount} component${componentCount === 1 ? "" : "s"}`}
-      >
-        ×{componentCount}
-      </span>
-      <StepStatusControl
-        stepId={step.id}
-        status={step.status ?? "Todo"}
-        isDisabled={isDisabled}
-      />
-      {!isDisabled && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <IconButton
-              aria-label="More"
-              size="sm"
-              variant="ghost"
-              className="size-6 shrink-0 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100"
-              icon={<LuEllipsisVertical />}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem
-              destructive
-              disabled={!permissions.can("delete", "production")}
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-            >
-              <DropdownMenuIcon icon={<LuTrash />} />
-              Delete Step
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
-    </div>
   );
 }
 

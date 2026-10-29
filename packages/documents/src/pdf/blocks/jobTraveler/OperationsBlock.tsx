@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getMESUrl } from "@carbon/env";
 import type { JSONContent } from "@carbon/react";
 import { formatFactor } from "@carbon/utils";
@@ -5,17 +9,47 @@ import { Image, Text, View } from "@react-pdf/renderer";
 import { generateQRCode } from "../../../qr/qr-code";
 import type { OperationsBlock as OperationsBlockType } from "../../../template";
 import { Note } from "../../components";
+import { breakLongNotesWord } from "../../notesText";
 import { tw } from "./tw";
 import type { JobOperationWithSteps, JobTravelerData } from "./types";
 
+/** Starts a timer on the operation in MES; `?type=` picks Setup, Labor or Machine. */
 function getStartPath(operationId: string) {
   return `${getMESUrl()}/x/start/${operationId}`;
 }
 
+/** Records completed quantity on the operation in MES, finishing it at its target. */
 function getEndPath(operationId: string) {
   return `${getMESUrl()}/x/end/${operationId}`;
 }
 
+/**
+ * Opens the operation without starting anything. The MES decides from the
+ * live membership whether it runs in a batch, so the code stays right when
+ * the job leaves the batch after this page is printed.
+ */
+function getOperationPath(operationId: string) {
+  return `${getMESUrl()}/x/operation/${operationId}`;
+}
+
+// The ruled uppercase title over a sub-section of an operation row.
+const SUB_SECTION_TITLE = {
+  marginBottom: 8,
+  borderTopWidth: 1,
+  borderTopColor: "#d1d5db",
+  borderBottomWidth: 1,
+  borderColor: "#d1d5db",
+  paddingTop: 4,
+  paddingBottom: 4,
+  fontSize: 9,
+  fontWeight: 700,
+  textTransform: "uppercase"
+} as const;
+
+/**
+ * The sequence number printed for an operation. One that runs With Previous
+ * shares the number of the operation it runs with.
+ */
 function getParallelizedOrder(
   index: number,
   item: JobOperationWithSteps,
@@ -58,21 +92,32 @@ export function OperationsBlock({
         .sort((a, b) => a.order - b.order)
         .map((operation, index) => {
           const isInside = operation.operationType !== "Outside Processing";
+          // A batched operation runs on the batch's shared timer and is
+          // completed with the whole batch, so its row gets no start or
+          // complete codes: those would time and complete this job alone.
+          const batch = operation.jobOperationBatch ?? null;
+          const batchNotes = batch?.notes?.trim() ? batch.notes : null;
+          const openQrCode = batch
+            ? () => generateQRCode(getOperationPath(operation.id), 10)
+            : null;
           const setupQrCode =
-            operation.setupTime > 0
+            !batch && operation.setupTime > 0
               ? generateQRCode(`${getStartPath(operation.id)}?type=Setup`, 10)
               : null;
           let laborQrCode =
-            operation.laborTime > 0
+            !batch && operation.laborTime > 0
               ? generateQRCode(`${getStartPath(operation.id)}?type=Labor`, 10)
               : null;
           const machiningQrCode =
-            operation.machineTime > 0
+            !batch && operation.machineTime > 0
               ? generateQRCode(`${getStartPath(operation.id)}?type=Machine`, 10)
               : null;
-          const completeQrCode = generateQRCode(getEndPath(operation.id), 10);
+          const completeQrCode = batch
+            ? null
+            : generateQRCode(getEndPath(operation.id), 10);
 
           if (
+            !batch &&
             setupQrCode === null &&
             laborQrCode === null &&
             machiningQrCode === null
@@ -119,7 +164,7 @@ export function OperationsBlock({
                 "flex flex-col border-b border-gray-300 py-4 px-[6px] page-break-inside-avoid"
               )}
               key={operation.id}
-              wrap={includeWorkInstructions ? true : false}
+              wrap={includeWorkInstructions || Boolean(batchNotes)}
             >
               <View style={tw("flex flex-col gap-y-4")} wrap={false}>
                 <View
@@ -135,25 +180,25 @@ export function OperationsBlock({
                     <Text style={tw("font-bold")}>{operation.description}</Text>
                   </View>
                   <View style={tw("w-3/12 text-left")}>
-                    {hasExpectedTimes && (
+                    {hasExpectedTimes ? (
                       <View style={tw("flex flex-col gap-1")}>
-                        {setupTimeFormatted && (
+                        {setupTimeFormatted ? (
                           <Text style={tw("text-[10px]")}>
                             Setup: {setupTimeFormatted}
                           </Text>
-                        )}
-                        {laborTimeFormatted && (
+                        ) : null}
+                        {laborTimeFormatted ? (
                           <Text style={tw("text-[10px]")}>
                             Labor: {laborTimeFormatted}
                           </Text>
-                        )}
-                        {machineTimeFormatted && (
+                        ) : null}
+                        {machineTimeFormatted ? (
                           <Text style={tw("text-[10px]")}>
                             Machine: {machineTimeFormatted}
                           </Text>
-                        )}
+                        ) : null}
                       </View>
-                    )}
+                    ) : null}
                   </View>
                 </View>
 
@@ -162,62 +207,86 @@ export function OperationsBlock({
                     "flex flex-row justify-between items-center py-3 px-[6px] border-gray-300 font-bold uppercase page-break-inside-avoid"
                   )}
                 >
-                  <Text style={tw("text-left pr-4")}>Actions</Text>
+                  <Text style={tw("text-left pr-4")}>
+                    {batch ? `Batch ${batch.readableId}` : "Actions"}
+                  </Text>
                 </View>
 
                 <View style={tw("w-full flex flex-row justify-start gap-2")}>
-                  {isInside && setupQrCode && (
+                  {openQrCode ? (
+                    <View style={tw("flex flex-col items-center w-1/4")}>
+                      <Image src={openQrCode} style={tw("w-16 h-16")} />
+                      <Text style={tw("text-[10px] mt-1")}>Open in MES</Text>
+                    </View>
+                  ) : null}
+                  {batch ? (
+                    <Text style={tw("w-3/4 self-center text-[10px]")}>
+                      This operation runs with other jobs as one batch. Start
+                      and complete it from the batch in MES.
+                    </Text>
+                  ) : null}
+                  {isInside && setupQrCode ? (
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <>
                         <Image src={setupQrCode} style={tw("w-16 h-16")} />
                         <Text style={tw("text-[10px] mt-1")}>Setup</Text>
                       </>
                     </View>
-                  )}
+                  ) : null}
 
-                  {isInside && laborQrCode && (
+                  {isInside && laborQrCode ? (
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <>
                         <Image src={laborQrCode} style={tw("w-16 h-16")} />
                         <Text style={tw("text-[10px] mt-1")}>Labor</Text>
                       </>
                     </View>
-                  )}
-                  {isInside && machiningQrCode && (
+                  ) : null}
+                  {isInside && machiningQrCode ? (
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <>
                         <Image src={machiningQrCode} style={tw("w-16 h-16")} />
                         <Text style={tw("text-[10px] mt-1")}>Machine</Text>
                       </>
                     </View>
-                  )}
-                  <View style={tw("flex flex-col items-center w-1/4")}>
-                    <Image src={completeQrCode} style={tw("w-16 h-16")} />
-                    <Text style={tw("text-[10px] mt-1")}>Complete</Text>
-                  </View>
+                  ) : null}
+                  {completeQrCode ? (
+                    <View style={tw("flex flex-col items-center w-1/4")}>
+                      <Image src={completeQrCode} style={tw("w-16 h-16")} />
+                      <Text style={tw("text-[10px] mt-1")}>Complete</Text>
+                    </View>
+                  ) : null}
                 </View>
               </View>
 
-              {(hasWorkInstruction || hasProcedureSteps) && (
+              {/* The planner's notes from the batch builder: plain text, so
+                  line breaks print as typed. First, as in the MES. They take
+                  the batch row's columns: nothing under the QR code, then the
+                  same left and right edges as the sentence beside it. */}
+              {batchNotes ? (
+                <View
+                  style={tw(
+                    "w-full flex flex-row justify-start gap-2 mt-2 mb-2"
+                  )}
+                >
+                  <View style={tw("w-1/4")} />
+                  <View style={tw("w-3/4")}>
+                    <Text style={SUB_SECTION_TITLE}>Batch Notes</Text>
+                    <Text
+                      style={tw("text-[9px]")}
+                      hyphenationCallback={breakLongNotesWord}
+                    >
+                      {batchNotes}
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
+
+              {hasWorkInstruction || hasProcedureSteps ? (
                 <View style={tw("mt-2 ml-8")}>
-                  {hasProcedureSteps && (
+                  {hasProcedureSteps ? (
                     <View style={tw("mb-2")}>
-                      <Text
-                        style={{
-                          marginBottom: 8,
-                          borderTopWidth: 1,
-                          borderTopColor: "#d1d5db",
-                          borderBottomWidth: 1,
-                          borderColor: "#d1d5db",
-                          paddingTop: 4,
-                          paddingBottom: 4,
-                          fontSize: 9,
-                          fontWeight: 700,
-                          textTransform: "uppercase"
-                        }}
-                      >
-                        Procedure Steps
-                      </Text>
+                      <Text style={SUB_SECTION_TITLE}>Procedure Steps</Text>
                       {operation
                         .jobOperationStep!.sort(
                           (a, b) => a.sortOrder - b.sortOrder
@@ -252,23 +321,23 @@ export function OperationsBlock({
                                 <Text style={tw("text-[9px] font-bold")}>
                                   {step.name}
                                 </Text>
-                                {hasStepDescription && (
+                                {hasStepDescription ? (
                                   <Note
                                     title="Procedure Step"
                                     content={stepDescription}
                                   />
-                                )}
+                                ) : null}
                               </View>
                             </View>
                           );
                         })}
                     </View>
-                  )}
-                  {hasWorkInstruction && (
+                  ) : null}
+                  {hasWorkInstruction ? (
                     <Note title="Work Instructions" content={workInstruction} />
-                  )}
+                  ) : null}
                 </View>
-              )}
+              ) : null}
             </View>
           );
         })}

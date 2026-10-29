@@ -1,4 +1,13 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -13,6 +22,7 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type { IssueWorkflow } from "../../types";
@@ -21,10 +31,11 @@ import { getPriorityIcon, getSourceIcon } from "../Issue/IssueIcons";
 type IssueWorkflowsTableProps = {
   data: IssueWorkflow[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const IssueWorkflowsTable = memo(
-  ({ data, count }: IssueWorkflowsTableProps) => {
+  ({ data, count, infinite }: IssueWorkflowsTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
@@ -45,6 +56,7 @@ const IssueWorkflowsTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -58,6 +70,7 @@ const IssueWorkflowsTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P3",
             icon: <LuDna />
           }
         },
@@ -71,6 +84,7 @@ const IssueWorkflowsTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P2",
             icon: <LuChartNoAxesColumnIncreasing />
           }
         }
@@ -83,6 +97,7 @@ const IssueWorkflowsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!permissions.can("update", "quality")}
               onClick={() => {
                 navigate(`${path.to.issueWorkflow(row.id!)}`);
@@ -92,6 +107,7 @@ const IssueWorkflowsTable = memo(
               Edit Template
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "quality")}
               onClick={() => {
@@ -114,6 +130,7 @@ const IssueWorkflowsTable = memo(
       <>
         <Table<IssueWorkflow>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           primaryAction={

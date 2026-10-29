@@ -29,18 +29,51 @@ Export subpaths (`package.json`): `.` (`index.ts`), `./auth.server`, `./session.
   RLS resolves the company via the key.
 - `getUserScopedClient(userId)` — mints a short-lived (5m) HS256 JWT with
   `SUPABASE_JWT_SECRET` and returns a user-scoped client (RLS enforced).
-- All clients use `fetchWithRetry` (timeout + retry on 5xx/408/524).
+- All clients set `db: { timeout: 25_000 }` and rely on supabase-js's built-in read retries, plus `storageReadFetch` for storage reads (see `database-patterns.md`).
 
 ## Login (`apps/erp/app/routes/_public+/login.tsx`)
 
 Magic link is the primary flow. The action rate-limits by IP (Upstash via `@carbon/kv`,
-`RATE_LIMIT` env default **5 / hour**), optionally verifies a Cloudflare Turnstile token
-(Cloud edition), then:
+`RATE_LIMIT` env default **10 per 5 minutes**, shared by login, MFA and unlock), runs the bot check (`verifyBotProtection`), then:
 
-- `DEV_BYPASS_EMAIL` match + active user → `signInWithBypassEmail` (local dev only).
-- Existing active user → `sendMagicLink` (Supabase OTP email).
+**Bot protection.** `botProtection` (`bot-protection.server.ts`, re-exported from
+`auth.server.ts`) picks ONE provider per process from `BOT_PROTECTION`: `"botid"` (only
+ON Vercel — `IS_VERCEL`, from Vercel's own `VERCEL=1`, which SST/Docker/the BYOC chart
+never set) or `"turnstile"` (needs both `CLOUDFLARE_TURNSTILE_SITE_KEY` and
+`_SECRET_KEY`). Unset: BotID for Cloud on Vercel, else Turnstile when both keys are set,
+else `null` (no check). It is explicit because the Turnstile keys can be present for
+something else (GoTrue, another form) while login uses BotID. An explicit value that
+cannot work (botid off Vercel, turnstile without keys, anything else) throws at boot.
+Every login loader (erp, mes, academy, starter) returns it, and the page calls
+`useBotProtection("/login", botProtection)` (`@carbon/react`), which returns
+`{ token, ready, challenge }`: render `challenge` in the form, post `token` as the hidden
+`botToken`, and disable submit until `ready`. For BotID the hook runs `initBotId`, which
+patches `window.fetch` so a POST to `/login` or `/login.data` carries the invisible
+challenge, and `challenge` is null. For Turnstile it renders the widget and `ready` waits
+on its token. The action calls `verifyBotProtection({ token: botToken, ip, actor })`.
+Both sides read the one value on purpose: off Vercel the BotID script (served through the
+`apps/*/vercel.json` rewrites) 404s and the patched fetch rejects, so the client must
+never init BotID where the server cannot verify it. Failure modes differ deliberately: a
+`checkBotId` THROW fails OPEN and logs (a platform misconfiguration would otherwise lock
+out every Cloud user), while an unreachable Turnstile siteverify fails CLOSED (an operator
+chose Turnstile by setting its keys). The rate limit and lockout apply either way.
+Turnstile is verified in-app only; Supabase Auth captcha (Attack Protection) must stay OFF,
+because the magic-link call forwards no token to GoTrue.
 - Unknown user (non-Enterprise) → `sendVerificationCode`, redirect to `/verify` (email
   verification-code signup). Enterprise edition rejects unknown users.
+
+**Self-signup blocklist (Cloud edition only)** — `isSelfSignupBlockedForEmail` /
+`SELF_SIGNUP_BLOCKED_MESSAGE` in `@carbon/auth/self-signup.server` (the domain list is
+the bundled `self-signup-blocked-domains.txt`, loaded via `?raw`). A brand-new
+self-signup on a free/disposable email domain is refused. The email path checks
+before the account exists — `login.tsx` (unknown-user branch) and `verify.tsx`
+(before `createEmailAuthAccount`). OAuth (Google/Azure) has **no** pre-create seam:
+GoTrue and the `create_public_user` trigger provision the user during the handshake,
+so both apps' `callback.tsx` refuse a blocked-domain **self-signup** (no company
+membership AND no pending `invite`) in the non-SSO branch and decline to mint a
+session — the inert, membership-less account is left as-is (a later legitimate invite
+reuses the row via `createEmployeeAccount`), so there is no teardown. Existing members
+and invited contractors are never affected. No-op outside Cloud edition.
 
 Other methods on the login page: Google + Azure OAuth (`signInWithOAuth`, redirect to
 `/callback`), Passkey/WebAuthn (`@simplewebauthn`, `/api/passkey/authenticate/*`,
@@ -138,7 +171,7 @@ querying), and every route entry point checks it too — login buttons, the
   capturing Kysely driver): `seedSsoIdentityForUser` (one user, idempotent
   `ON CONFLICT (provider_id, provider) DO NOTHING`) — called best-effort/logged by
   `seedSsoIdentityForNewUser` in all three ERP account-creation flows
-  (`users.server.ts` create{Customer,Employee,Supplier}Account); and, run from the
+  (`users.service.ts` create{Customer,Employee,Supplier}Account); and, run from the
   domain-claim flows, `backfillSsoIdentitiesForDomain` (verify → seed EVERY
   existing non-SSO user on the domain) and `removeSsoIdentitiesForDomain` (unregister
   → delete, keyed on the email column so it also removes GoTrue's self-healed
@@ -169,20 +202,93 @@ querying), and every route entry point checks it too — login buttons, the
   invite routes and jobs `user-admin.ts`) routes covered-domain invite emails to
   `/login?email=...` instead of `/invite/<code>`, so the IdP is never bypassed.
   Employee invites outside the covered domains are refused up front
-  (`getSsoInviteDomainError` in ERP `users.server.ts` → `uncoveredSsoDomainError`).
+  (`refuseEmailOutsideSso` in ERP `users.service.ts` → `uncoveredSsoDomainError`: a
+  `rule` refusal, or `unavailable` when the domains cannot be read).
 - **Config**: GoTrue SAML via `SAML_ENABLED` / `SAML_PRIVATE_KEY` in root `.env`
   (compose substitution → `GOTRUE_SAML_*`; `crbn reload` does not read root `.env` —
   see `.ai/lessons.md`).
 
+## CSRF and CSP (`middleware/security.server.ts`, `lib/security.ts`)
+
+The `carbon` cookie is `SameSite=Lax` on the PARENT domain (`carbon.ms`), so every
+`*.carbon.ms` host is same-site and Lax alone is not a CSRF defence. `securityMiddleware`
+(root `middleware` of erp, mes, academy, starter) refuses a POST/PUT/PATCH/DELETE when
+`Sec-Fetch-Site` is anything but `same-origin`/`none`, or — without that header — when
+`Origin` differs from the addressed host (`getRequestHost`, `@carbon/utils`; never
+`request.url`, the internal origin behind the proxy). No `Origin` at all is a server (webhooks,
+Inngest, assembler callback, API-key clients, the MES→ERP proxy) and passes, so webhooks
+need no exemption; `CROSS_ORIGIN_ENDPOINTS` is only `/token`, `/register`, `/api/mcp`.
+Browser submissions arrive as `…/path.data`, stripped before matching.
+React Router 7.18 has its own check (`throwIfPotentialCSRFAttack`: `Origin` host vs
+`request.url` host, 400) — but only on DOCUMENT and `.data` actions, and it runs before
+middleware. Resource routes (every `api+` action) get no check from it; the middleware is
+what refuses those (checked 2026-09-28: `handleResourceRequest` calls no origin check; a
+cross-site POST to an `api+` route now gets the middleware's 403).
+
+GET loaders that write (kanban QR `api+/kanban.$id.tsx`, MES `x+/start|end.$operationId`,
+invoice `new` routes, `settings.sequence.next`, stock-transfer pick/unpick, stripe-connect
+dashboard) call `rejectCrossSiteNavigation`: 403 on `Sec-Fetch-Site: cross-site`,
+while a QR scan (`none`) and the ERP→MES redirect (`same-site`) pass. Deliberately unguarded:
+`api+/link.ts` (company switch from email links — webmail clicks are cross-site) and
+stripe-connect `connect` (Stripe's expired-link `refresh_url` lands on `callback`, which
+redirects there: a chain started on stripe.com, so cross-site).
+
+CSP: the middleware puts a per-request nonce in `nonceContext`; `entry.server` passes it
+to `vercelHandleRequest(…, { nonce })`, which React Router's `<Links>`, `<Scripts>` and
+`<ScrollRestoration>` read from framework context; the inline `window.env` script reads
+`UNSAFE_FrameworkContext`. The enforced policy is still the old baseline (`object-src`,
+`base-uri`, `frame-ancestors`); the strict nonce + `strict-dynamic` policy
+(`buildContentSecurityPolicy`) ships as `Content-Security-Policy-Report-Only`, reporting
+to `/api/csp-report` in each app. Why each exception exists (`wasm-unsafe-eval`, ERP
+`unsafe-eval` for the configurator, `style-src 'unsafe-inline'`, `img-src https:`) and
+why there is no `form-action`: `.ai/plans/2026-09-28-csp-csrf.md`.
+
 ## Sessions (`session.server.ts`)
 
 - `createCookieSessionStorage`, cookie name **`carbon`**, `httpOnly`, `sameSite: "lax"`
-  (`"none"` in Test edition), `secure`/`domain` from `DOMAIN` in non-test. Payload stored
-  under key `SESSION_KEY = "auth"`; `SESSION_MAX_AGE = 7 days`.
+  (`"none"` in Test edition, always with `Secure` — browsers drop `None` without it),
+  `secure`/`domain` from `DOMAIN` in non-test. Payload stored
+  under key `SESSION_KEY = "auth"`; `SESSION_MAX_AGE = 7 days`. Every write of this
+  cookie passes `SESSION_MAX_AGE`, flash writes included: the toast shares the
+  cookie, and a write without it turned the session into one that ends when the
+  browser closes.
+- **Cookie names are per deployment.** `authCookieName` (`utils/cookie.ts`) appends
+  `AUTH_COOKIE_SUFFIX` to `carbon`, `companyId`, `carbon-push` and
+  `carbon-oauth-state`. US and EU production both set `DOMAIN` to `carbon.ms`, so
+  with one name each region overwrote the other's cookie and failed its signature
+  (EU has its own `SESSION_SECRET`), signing users out. EU sets the suffix (`eu`) on
+  its ERP and MES; unset keeps the plain names. Changing `DOMAIN` instead is not a
+  fix: the browser still sends the parent-domain cookie, and it changes the passkey
+  `RP_ID`.
 - `requireAuthSession` reads/validates; `getOrRefreshAuthSession` refreshes within
   `REFRESH_ACCESS_TOKEN_THRESHOLD` (10 min) of expiry via `refreshAccessToken`.
 - `destroyAuthSession` clears auth + company-id cookies, redirects to login.
+- `clearAuthCookies` (which `destroyAuthSession` and the login loader's
+  expired-session branch call) also ends this browser's push notifications: it
+  reads the signed `carbon-push` cookie (`pushEndpointCookie`, set by
+  `api+/push-subscription` when browser notifications are enabled), deletes every
+  `pushSubscription` row of that endpoint with the service role, and clears the
+  cookie. Every sign-out path therefore stops pushes in that browser. A cross-site
+  navigation (`Sec-Fetch-Site: cross-site`, the login GET from another site's
+  link) skips the cleanup, per the GET-write rule; such rows lapse anyway, because
+  `notify` skips rows no page load has refreshed within a session's lifetime. The
+  service-role client is imported inside that cleanup, not at module load, so
+  importing `session.server` builds no Supabase client (the session tests mock
+  `config/env` without the Supabase keys).
   `updateCompanySession` / `updateSessionConsole` switch active company / console mode.
+- **Console pin-in** (`@carbon/auth/console-pin.server`): which operator is pinned in
+  at a console terminal lives in the `console-pin-<companyId>` cookie, SIGNED with
+  `SESSION_SECRET` and bound to the company and the terminal's session user
+  (`setConsolePinIn` / `clearConsolePinIn`). `resolveConsolePinIn` re-validates it on
+  every request — the operator must still be an active employee of the company and
+  `companySettings.consoleEnabled` still on — and is memoized per read request. PINs
+  are bcrypt hashes in `employeePin` (no API-role access; `set_employee_pin` /
+  `verify_employee_pin` over the server's Kysely connection, via
+  `@carbon/ee/console.server`). MES pin-in (`x+/console.pin-in.tsx`) consumes the
+  per-operator `AccountLockout` attempt and the per-terminal `Ratelimit` token BEFORE
+  verifying (refunding both on a non-guess), so a parallel burst cannot outrun the
+  limits. `companySettings.consoleEnabled` is server-only: a trigger refuses API-role
+  writes, and it only moves through `updateConsoleSetting` (`requireEntitlement`).
 
 ## MFA / TOTP (`mfa.server.ts`)
 
@@ -208,8 +314,9 @@ Supabase's `auth.mfa_factors` — no app table.
 - **auth-js gotcha**: `supabase.auth.mfa.*` reads the client's INTERNAL session, not the
   `Authorization` header override — `mfa.server.ts` seeds a fresh anon client via
   `auth.setSession` with the cookie's tokens.
-- **Enrollment**: Account → Security (`x+/account+/security.tsx`, which also owns
-  passkeys) → `api+/mfa.enroll` / `mfa.verify` / `mfa.unenroll` (unenroll requires a
+- **Enrollment**: Account settings → Security (the modal pane
+  `packages/account/src/ui/SecuritySettings.tsx`, data and passkey writes in
+  `api+/account.security.ts`) → `api+/mfa.enroll` / `mfa.verify` / `mfa.unenroll` (unenroll requires a
   current code as step-up). The enroll→scan→verify state machine, the 6-slot code
   input, and the invalid-code copy are shared with the enforcement gate via
   `~/components/TotpEnrollment` (`useTotpEnrollment`, `OtpInput`,
@@ -266,11 +373,20 @@ Supabase's `auth.mfa_factors` — no app table.
 
 ## Permissions & RLS gating (`auth.server.ts` → `requirePermissions`)
 
-`requirePermissions(request, { view?, create?, update?, delete?, role?, bypassRls? })` is
+`requirePermissions(request, { view?, create?, update?, delete?, role?, bypassRls?, allowPortalAccounts? })` is
 the gate used in every loader/action. Two paths:
 
 1. **`carbon-key` header present** → API-key auth (see below).
 2. **Otherwise** → `requireAuthSession`, then `getUserClaims(userId, companyId)`.
+   - A session whose role in the active company is `customer` or `supplier` (portal
+     accounts) is refused with a 403 BEFORE the empty-requirement early exit, unless the
+     route passes `allowPortalAccounts: true`. Portal accounts hold `documents_*`,
+     `parts_view`, `sales_view`/`purchasing_view`, and `{}` admitted any session, so before
+     this ~50 routes that read with the service role (file previews, job travelers, order
+     and quote pages) served them. No route is theirs: portal pages are share links on
+     the service role. Opted in: onboarding, company switch (erp/mes/starter),
+     `api+/link.ts`, academy challenge — each acts on the user's own identity. A 403, not a
+     redirect: the MES `/x` middleware calls `requirePermissions`, so a redirect there loops.
    - Claims are `{ role, permissions }`. Cached in **Redis** (`@carbon/kv`) at key
      `permissions:${userId}`; on miss, fetched via the `get_claims(uid, company)` RPC
      (`getCarbonServiceRole`) and cached. `makePermissionsFromClaims` shapes the result.
@@ -288,25 +404,63 @@ the gate used in every loader/action. Two paths:
    - Returns `{ client, companyId, companyGroupId, email, userId, sessionUserId,
      consoleMode }`. `bypassRls: true` + employee role returns a service-role client;
      otherwise a Bearer-authed `getCarbon(accessToken)` client (RLS enforced).
+   - `consoleMode` is `authSession.console === companyId`. In console mode `userId`
+     is the pinned operator from `resolveConsolePinIn` (falling back to the session
+     user when nobody valid is pinned in); `sessionUserId` is always the account the
+     terminal is signed in with. Gate terminal-level actions (entering console mode)
+     on `sessionUserId`, never `userId`.
 
 Claims cache must be invalidated when permissions change — `users.server.ts` deactivate
 flows call `redis.del(getPermissionCacheKey(userId))`.
 
 ## API key auth
 
-`carbon-key: <key>` header. `requirePermissions` resolves it via service role
-(`getCompanyIdFromAPIKey` → `apiKey` lookup by `keyHash`), then:
+`carbon-key: <key>` header. `requirePermissions` resolves it through
+`getCompanyIdFromAPIKey`, which now reads via `getApiKeyRecord`
+(`packages/auth/src/services/api-key.server.ts`): a **30s Redis cache** at
+`apikey:auth:<keyHash>`, per-request memoized (`oncePerRequest`) so one HTTP call
+does one lookup even though both `requirePermissions` and the v1 scope read need
+the row. Unknown keys are cached too (the literal `"null"`), so a bad key
+hammering the endpoint doesn't hammer Postgres. Redis being down falls through to
+the DB. Busting: the api-key service functions (`updateApiKey`, `revokeApiKey` in
+`settings.server.ts`) call `invalidateApiKeyCache` (`settings.service.ts` →
+`bustApiKeyCache`) after an edit, and BEFORE and after a delete (the keyHash is
+unreadable once the row is gone), so a scope
+change or revocation takes effect immediately; the worst-case lag for any other
+writer is the 30s TTL. Then:
 
 - Reject if `expiresAt` passed (401).
 - Rate-limit via `checkApiKeyRateLimit` (`@carbon/database/ratelimit`, Postgres function
   `check_api_key_rate_limit`) using per-key `rateLimit` + `rateLimitWindow`
   (`"1m"|"1h"|"1d"`). 429 with `X-RateLimit-*` + `Retry-After` headers on exceed.
-- Fire-and-forget `lastUsedAt` update.
+  The same function also holds a company to a per-minute total across all its keys:
+  `companyPlan.apiRateLimit`, or **60** when that is NULL or the company has no
+  `companyPlan` row (`v_default_company_limit`, migration `20261015143857`). It sums the
+  keys' counters for the current minute, each capped at its own limit so requests refused
+  on one key do not lock out the others. No separate table — so deleting a key drops its
+  share, and a key on an hourly/daily window is not counted (none exist). A company
+  refusal returns the company's limit as `limit`. Pinned by
+  `supabase/tests/api-key-rate-limit.test.sql`.
+- **Raising a limit is a support operation, not a setting.** One key: `apiKey.rateLimit`
+  (tenants with `settings_update` can also write it through the Data API, so the company
+  total is the real ceiling). A company: `companyPlan.apiRateLimit`, which only the
+  service role writes (the table has a SELECT policy and no other) and which company
+  backups never carry. A key's limit above its company's total is capped by the total.
+  Both are read per request through the 30s key cache. Only a company with a
+  `companyPlan` row (every paying Cloud company) can be given an override: do not insert
+  one just for this, since `company-cleanup` treats a plan row as a paying company. The
+  Stripe `customer.subscription.deleted` webhook deletes the row, override included;
+  the subscription sync upserts named columns only, so a plan change keeps it.
+- `lastUsedAt` is written by `check_api_key_rate_limit` itself, at most once a minute per
+  key, so the Node path and the edge functions both record it. (The app used to build
+  this update with `void client.from(…).update(…)`, which never sends: a supabase-js
+  builder only runs when awaited.)
 - Scope check: `scopes` is JSONB `{ "<permission>_<action>": [companyIds] }`; required
   perms must be present and include the active company. `{}` is NOT full access here —
   an empty scope set fails the check. 403 on failure.
 - Cloud edition: Starter-plan companies are blocked from API access (Business+ only),
-  except `STRIPE_BYPASS_COMPANY_IDS`.
+  except `STRIPE_BYPASS_COMPANY_IDS`. The plan comes from the cached `getCompanyPlanId`
+  (see `billing-system.md`), so a plan change made outside the Stripe sync can take up to 5 minutes to bite.
 - Returns a `getCarbonAPIKeyClient(apiKey)` client (RLS resolves company via header).
 
 Key hashing: `hashApiKey` = `createHash("sha256")` hex (same in Node ERP and Deno edge
@@ -318,17 +472,36 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 `_oauth+/` (`authorize.tsx`, `token.tsx`, `register.ts`) plus discovery at
 `[.]well-known.oauth-authorization-server.ts` and `[.]well-known.oauth-protected-resource.ts`.
 
-- PKCE supported (`code_challenge` / `code_challenge_method` S256|plain on authorize,
-  `code_verifier` on token).
+- PKCE: `code_challenge` on authorize (required for public clients), verified S256-only
+  with `code_verifier` on token.
 - Dynamic client registration (`POST /oauth/register`) writes to the **`oauthClient`**
-  table. <!-- UNVERIFIED: the old cache doc described a separate `oauthDynamicClient` table; it does not exist in current migrations. -->
+  table. It is open by design (MCP clients self-register) but rate-limited per IP
+  (100/hour), and the rules live in `~/services/oauth.server.ts`:
+  `isAllowedRedirectUri` admits https, http only on a loopback host, or a
+  private-use scheme, never a fragment; `supportedScope` keeps only `mcp:tools`.
+  Only `client_secret_post` and `none` are accepted as `token_endpoint_auth_method`
+  (what discovery advertises; `/token` never reads a Basic header).
+- **Authorize** (`authorize.tsx`) requires `settings_update` and employee role in the
+  SELECTED company (`canAuthorizeForCompany`), not just the session's active one, and
+  re-checks the redirect URI with `isRegisteredRedirectUri` (registered AND still
+  allowed — clients registered before the rules existed are held to them too). The
+  consent page shows the redirect host only once it passes that check.
+- **Refresh tokens rotate** on every use (the update matches the OLD hash, so one of
+  two concurrent refreshes loses) and die after 30 days idle (`isRefreshTokenIdle`:
+  `expiresAt` + 30 days — no extra column). There is no revocation endpoint.
+- A token carries no permissions of its own: the MCP endpoint re-checks on every
+  request that the user is still an `employee` of the token's company and gates each
+  operation on that user's live permissions (see `mcp-tools-reference.md`).
 - Tables: `oauthClient`, `oauthCode`, `oauthToken` (all PK `xid()`, scoped by
   `companyId`/`userId`). Columns are plain TEXT, but **access tokens, refresh tokens, and
   client secrets are SHA-256 hashed at the app layer before storage** via
   `hashOAuthSecret` (`auth.server.ts`). Lookups hash the incoming value and compare.
-- MCP endpoint (`apps/erp/app/routes/api+/mcp+/_index.ts`): a `Bearer` token (when no
-  `carbon-key`) is hashed and looked up in `oauthToken`; on miss it falls back to
-  `carbon-key` API-key auth. `companyId`/`userId` always come from the token context.
+- MCP endpoint (`apps/erp/app/routes/api+/mcp+/_index.ts`): a `Bearer` token not
+  prefixed `crbn_` is an OAuth token — `findOAuthToken` (hash lookup + expiry), the
+  per-user rate limit, then `oauthContext` (membership, company group, claims, user
+  client, in parallel), both in `api+/v1+/lib/authenticate.server.ts` beside
+  `authenticateApiKey`. A `crbn_` bearer is rewritten to `carbon-key` API-key auth.
+  `companyId`/`userId` always come from the token row.
 
 ## Schema (newest migrations; `packages/database/supabase/migrations`)
 
@@ -348,7 +521,7 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
   `status` (`ssoDomainStatus` enum: `pending|verified`), `verifiedAt`. Same RLS split as
   `ssoConnection`.
 - `apiKey` — `keyHash` (unique), `keyPreview`, `name`, `companyId`, `createdBy`, `scopes`
-  JSONB, `rateLimit` (default **60**), `rateLimitWindow` (default `'1m'`), `expiresAt`,
+  JSONB, `rateLimit` (default **20**; keys created before `20261002153217` keep 60), `rateLimitWindow` (default `'1m'`), `expiresAt`,
   `lastUsedAt`. The old plaintext `key` column was dropped.
 - `apiKeyRateLimit` — UNLOGGED, PK `(apiKeyId, windowStart)`, `requestCount`.
 - RLS/RPC functions: `get_claims`, `get_company_id_from_api_key`, `get_api_key_scopes`,
@@ -359,7 +532,7 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`,
 `SESSION_SECRET`, `SESSION_KEY` (`"auth"`), `SESSION_MAX_AGE`,
 `REFRESH_ACCESS_TOKEN_THRESHOLD`, `DOMAIN`, `RATE_LIMIT`, `CarbonEdition`,
-`STRIPE_BYPASS_COMPANY_IDS`, Turnstile + OAuth-provider keys.
+`STRIPE_BYPASS_COMPANY_IDS`, `IS_VERCEL`, Turnstile + OAuth-provider keys.
 
 ## Gotchas
 
@@ -370,9 +543,9 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
   token. Negatives are never cached — `getAuthAccountByAccessToken` also returns null
   on a transient network error. Bounds how long a deleted/deactivated account keeps
   being accepted; signing out never revoked a live access token anyway.
-- ERP's `~/modules/users/users.server` re-exports `getUserClaims` from `@carbon/auth`;
-  it used to carry a drifted copy that missed the cache TTL. Don't reintroduce one.
+- ERP code imports `getUserClaims` from `@carbon/auth/users.server`; the ERP used to
+  carry a drifted copy that missed the cache TTL. Don't reintroduce one.
 - Service-role clients bypass RLS — only use behind `bypassRls` + employee role.
 - API key `scopes: {}` denies, not grants. Don't assume empty = full access.
 - Edition matters: Enterprise rejects unknown-user login; Cloud gates API keys by plan
-  and enforces Turnstile.
+  and enforces the bot check (BotID on Vercel, Turnstile elsewhere).

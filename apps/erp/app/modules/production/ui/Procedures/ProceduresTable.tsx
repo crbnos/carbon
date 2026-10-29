@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -28,6 +33,7 @@ import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useProcesses } from "~/components/Form/Process";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Procedures } from "../../types";
@@ -37,9 +43,11 @@ type ProceduresTableProps = {
   data: Procedures[];
   tags: { name: string }[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
+const ProceduresTable = memo((props: ProceduresTableProps) => {
+  const { data, tags, count, infinite } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -65,6 +73,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -80,6 +89,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <TbRoute />,
           filter: {
             type: "static",
@@ -92,6 +102,8 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <ProcedureStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
+          mobilePill: true,
           icon: <LuCalendar />
         }
       },
@@ -102,6 +114,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
           <EmployeeAvatar employeeId={row.original.assignee} />
         ),
         meta: {
+          mobile: "P3",
           icon: <LuUser />
         }
       },
@@ -186,6 +199,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "production")}
             onClick={() => {
               navigate(`${path.to.procedure(row.id!)}`);
@@ -195,6 +209,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
             Edit Procedure
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "production")}
             onClick={() => {
@@ -219,6 +234,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
         data={data}
         columns={columns}
         count={count}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "production") && (
             <New label={t`Procedure`} to={path.to.newProcedure} />

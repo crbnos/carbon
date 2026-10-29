@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Card,
@@ -16,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@carbon/react";
-import { INPUT_FORMAT, round } from "@carbon/utils";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useState } from "react";
 import { LuSave } from "react-icons/lu";
@@ -28,45 +32,30 @@ import {
   usePermissions
 } from "~/hooks";
 import { path } from "~/utils/path";
-
-// An available credit (a posted, balance-reducing memo) the party can apply to an
-// open invoice alongside the cash payment.
-type AvailableCredit = {
-  id: string;
-  memoId: string;
-  direction: string;
-  currencyCode: string;
-  exchangeRate: number;
-  remaining: number;
-};
-
-type OpenInvoiceOption = {
-  id: string;
-  invoiceId: string;
-  exchangeRate: number;
-  balance: number;
-};
+import {
+  type AvailableCredit,
+  buildCreditApplications,
+  type CreditRow,
+  changeCreditInvoice,
+  type OpenInvoiceOption,
+  type StagedCredit,
+  seedCreditRows,
+  toggleCreditRow,
+  updateCreditAmount
+} from "./payment-logic";
 
 type AvailableCreditsTableProps = {
   paymentId: string;
   // Drives which invoice column the settlement targets.
   side: "sales" | "purchase";
   currency: string;
+  documentCurrency: string;
+  documentDecimals: number;
   credits: AvailableCredit[];
   openInvoices: OpenInvoiceOption[];
   // Credit applications already staged on this (Draft) payment — pre-fills the
   // table so a staged credit shows as selected instead of vanishing.
-  staged?: { memoId: string; invoiceId: string; amount: number }[];
-};
-
-type CreditRow = {
-  id: string;
-  memoId: string;
-  direction: string;
-  remaining: number;
-  checked: boolean;
-  invoiceId: string; // target invoice id
-  amount: number;
+  staged?: StagedCredit[];
 };
 
 const GRID =
@@ -76,6 +65,8 @@ const AvailableCreditsTable = ({
   paymentId,
   side,
   currency,
+  documentCurrency,
+  documentDecimals,
   credits,
   openInvoices,
   staged = []
@@ -84,91 +75,40 @@ const AvailableCreditsTable = ({
   const permissions = usePermissions();
   const fetcher = useFetcher();
   const currencyFormatter = useCurrencyFormatter({ currency });
+  const documentFormatter = useCurrencyFormatter({
+    currency: documentCurrency
+  });
   const currencyDecimals = useCurrencyDecimals(currency);
   const canEdit = permissions.can("update", "invoicing");
 
   const balanceByInvoice = useMemo(
-    () => new Map(openInvoices.map((i) => [i.id, i.balance])),
+    () => new Map(openInvoices.map((i) => [i.id, i])),
     [openInvoices]
   );
 
-  // staged is keyed by the memo's row id (== credit.id).
-  const stagedByMemo = useMemo(
-    () => new Map(staged.map((s) => [s.memoId, s])),
-    [staged]
-  );
   const seed = useMemo<CreditRow[]>(
-    () =>
-      credits.map((c) => {
-        const s = stagedByMemo.get(c.id);
-        return {
-          id: c.id,
-          memoId: c.memoId,
-          direction: c.direction,
-          remaining: c.remaining,
-          checked: Boolean(s),
-          invoiceId: s?.invoiceId ?? openInvoices[0]?.id ?? "",
-          amount: s?.amount ?? 0
-        };
-      }),
-    [credits, openInvoices, stagedByMemo]
+    () => seedCreditRows(credits, openInvoices, staged, documentDecimals),
+    [credits, openInvoices, staged, documentDecimals]
   );
 
   const [rows, setRows] = useState<CreditRow[]>(seed);
 
-  // The most a credit can apply to the chosen invoice: its remaining vs the
-  // invoice's open balance.
-  const capFor = useCallback(
-    (remaining: number, invoiceId: string) =>
-      round(Math.min(remaining, Number(balanceByInvoice.get(invoiceId) ?? 0))),
-    [balanceByInvoice]
-  );
-
   const toggleRow = useCallback(
     (id: string, checked: boolean) =>
-      setRows((prev) =>
-        prev.map((r) => {
-          if (r.id !== id) return r;
-          if (checked) {
-            return {
-              ...r,
-              checked: true,
-              amount:
-                r.amount === 0 ? capFor(r.remaining, r.invoiceId) : r.amount
-            };
-          }
-          return { ...r, checked: false, amount: 0 };
-        })
-      ),
-    [capFor]
+      setRows((prev) => toggleCreditRow(prev, id, checked, balanceByInvoice)),
+    [balanceByInvoice]
   );
-
   const updateInvoice = useCallback(
     (id: string, invoiceId: string) =>
       setRows((prev) =>
-        prev.map((r) =>
-          r.id === id
-            ? {
-                ...r,
-                invoiceId,
-                amount: r.checked ? capFor(r.remaining, invoiceId) : r.amount
-              }
-            : r
-        )
+        changeCreditInvoice(prev, id, invoiceId, balanceByInvoice)
       ),
-    [capFor]
+    [balanceByInvoice]
   );
-
   const updateAmount = useCallback(
     (id: string, value: number) =>
-      setRows((prev) =>
-        prev.map((r) => {
-          if (r.id !== id) return r;
-          const amount = round(Math.max(0, value));
-          return { ...r, amount, checked: amount > 0 };
-        })
-      ),
-    []
+      setRows((prev) => updateCreditAmount(prev, id, value, documentDecimals)),
+    [documentDecimals]
   );
 
   const totalApplied = useMemo(
@@ -177,13 +117,7 @@ const AvailableCreditsTable = ({
   );
 
   const onSave = () => {
-    const applications = rows
-      .filter((r) => r.checked && r.amount > 0 && r.invoiceId)
-      .map((r) => ({
-        memoId: r.id,
-        invoiceId: r.invoiceId,
-        amount: r.amount
-      }));
+    const applications = buildCreditApplications(rows);
 
     const formData = new FormData();
     formData.set("applications", JSON.stringify(applications));
@@ -205,8 +139,8 @@ const AvailableCreditsTable = ({
         </CardTitle>
         <CardDescription>
           <Trans>
-            Clear this invoice with the party's posted credits as well as cash.
-            Credits apply directly — no posting needed.
+            Credit amounts are in company base currency ({currency}). Credits
+            take effect when this payment posts.
           </Trans>
         </CardDescription>
       </CardHeader>
@@ -271,6 +205,9 @@ const AvailableCreditsTable = ({
                     </div>
                     <div className="text-right tabular-nums text-sm text-muted-foreground self-center">
                       {currencyFormatter.format(Number(r.remaining))}
+                      <div className="text-xs">
+                        {documentFormatter.format(r.remainingDocument)}
+                      </div>
                     </div>
                     <Select
                       value={r.invoiceId}
@@ -280,11 +217,13 @@ const AvailableCreditsTable = ({
                         <SelectValue placeholder={t`Select invoice`} />
                       </SelectTrigger>
                       <SelectContent>
-                        {openInvoices.map((inv) => (
-                          <SelectItem key={inv.id} value={inv.id}>
-                            {inv.invoiceId}
-                          </SelectItem>
-                        ))}
+                        {openInvoices
+                          .filter((inv) => inv.exchangeRate === r.exchangeRate)
+                          .map((inv) => (
+                            <SelectItem key={inv.id} value={inv.id}>
+                              {inv.invoiceId}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                     <NumberField
@@ -349,7 +288,7 @@ const CardFooterRow = ({
       leftIcon={<LuSave />}
       onClick={onSave}
       isLoading={isSaving}
-      isDisabled={!canEdit || totalApplied <= 0}
+      isDisabled={!canEdit}
     >
       <Trans>Apply credits</Trans>
     </Button>

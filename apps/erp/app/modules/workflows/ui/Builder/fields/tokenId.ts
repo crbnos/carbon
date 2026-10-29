@@ -1,4 +1,8 @@
-import type { ItemRef, VariableRef } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { ItemRef, VariableRef } from "@carbon/ee/workflows";
 import { nodeNameLabel, outputLabel } from "../labelKeys";
 
 /** The two template parts that are not plain text. */
@@ -11,7 +15,13 @@ export type RefPart = VariableRef | ItemRef;
 export function encodeTokenId(ref: RefPart): string {
   return JSON.stringify(
     ref.kind === "item"
-      ? { kind: "item", path: ref.path }
+      ? // `card` scopes the item to one operation card of a data-node chain;
+        // dropping it here would strip that scope on every edit of the value.
+        {
+          kind: "item",
+          path: ref.path,
+          ...(ref.card ? { card: ref.card } : {})
+        }
       : {
           kind: "ref",
           nodeId: ref.nodeId,
@@ -37,7 +47,11 @@ export function decodeTokenId(id: string): RefPart | undefined {
   }
 
   if (candidate.kind === "item") {
-    return { kind: "item", path: path as string[] };
+    return {
+      kind: "item",
+      path: path as string[],
+      ...(typeof candidate.card === "string" ? { card: candidate.card } : {})
+    };
   }
   if (
     candidate.kind === "ref" &&

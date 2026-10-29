@@ -1,75 +1,31 @@
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { redirect, useNavigate } from "react-router";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import type { ActionFunctionArgs } from "react-router";
+import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
-  upsertWorkCenter,
-  WorkCenterForm,
-  workCenterValidator
-} from "~/modules/resources";
+  withoutOperatingHours,
+  workCenterFormValidator
+} from "~/modules/resources/resources.models";
+import { WorkCenterForm } from "~/modules/resources/ui";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { getCompanyId, workCentersQuery } from "~/utils/react-query";
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(workCenterFormValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.createWorkCenter({
+    ...withoutOperatingHours(input.data),
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  const formData = await request.formData();
-  const modal = formData.get("type") === "modal";
-
-  const validation = await validator(workCenterValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  const createWorkCenter = await upsertWorkCenter(client, {
-    ...d,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
-  });
-  if (createWorkCenter.error) {
-    return modal
-      ? createWorkCenter
-      : redirect(
-          path.to.workCenters,
-          await flash(
-            request,
-            error(createWorkCenter.error, "Failed to create work center")
-          )
-        );
-  }
-
-  await notifyScheduleInputsChanged(
-    companyId,
-    "work-center",
-    "Work center hours changed",
-    createWorkCenter.data?.id
-  );
-
-  return modal ? createWorkCenter : redirect(path.to.workCenters);
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    workCentersQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
+  // The modal form reads the result and closes itself.
+  if (input.formData?.get("type") === "modal") return result;
+  return respond(args.request, result).redirect(path.to.workCenters);
 }
 
 export default function NewWorkCenterRoute() {
@@ -88,7 +44,9 @@ export default function NewWorkCenterRoute() {
     name: "",
     overheadRate: 0,
     processes: [],
-    shifts: []
+    shifts: [],
+    batchCapacity: undefined as number | undefined,
+    minimumBatchQuantity: undefined as number | undefined
   };
 
   return <WorkCenterForm onClose={onClose} initialValues={initialValues} />;

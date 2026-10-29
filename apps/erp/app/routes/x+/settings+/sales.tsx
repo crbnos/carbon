@@ -1,15 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   Boolean,
-  Input,
   Number,
-  PhoneInput,
   Submit,
   ValidatedForm,
   validator
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -18,7 +22,6 @@ import {
   CardHeader,
   CardTitle,
   cn,
-  Heading,
   HStack,
   Label,
   ScrollArea,
@@ -26,31 +29,25 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT } from "@carbon/utils";
+import { INPUT_FORMAT, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
-import { EmailRecipients, Users } from "~/components/Form";
-import Country from "~/components/Form/Country";
+import { useLoaderData } from "react-router";
+import { z } from "zod";
+import { Users } from "~/components/Form";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
+import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
-  accountsReceivableBillingAddressValidator,
-  defaultCustomerCcValidator,
   digitalQuoteValidator,
-  getAccountsReceivableBillingAddress,
-  getCompanySettings,
   quoteLineCategoryMarkupsSettingsValidator,
   rfqReadyValidator,
-  updateAccountsReceivableAddressSetting,
-  updateAccountsReceivableBillingAddress,
-  updateDefaultCustomerCc,
-  updateDigitalQuoteSetting,
-  updateQuoteLineCategoryMarkups,
-  updateRfqReadySetting,
-  updateShowCustomerReadableIdSetting
-} from "~/modules/settings";
+  salesRuleNotificationValidator,
+  settingsToggle
+} from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -64,10 +61,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const [companySettings, arBillingAddress] = await Promise.all([
-    getCompanySettings(client, companyId),
-    getAccountsReceivableBillingAddress(client, companyId)
-  ]);
+  const companySettings = await getCompanySettings(client, companyId);
   if (!companySettings.data)
     throw redirect(
       path.to.settings,
@@ -77,191 +71,96 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     );
   return {
-    companySettings: companySettings.data,
-    arBillingAddress: arBillingAddress.data
+    companySettings: companySettings.data
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// One form per card, told apart by its intent: each becomes the fields of
+// `settings.sales.update` it saves.
+const salesSettingsForm = z.discriminatedUnion("intent", [
+  settingsToggle(
+    "requireCustomerContactAndLocationToggle",
+    "requireCustomerContactAndLocation"
+  ),
+  settingsToggle("showCustomerReadableIdToggle", "showCustomerReadableId"),
+  digitalQuoteValidator
+    .extend({ intent: z.literal("digitalQuote") })
+    .transform((form) => ({
+      digitalQuoteEnabled: form.digitalQuoteEnabled,
+      digitalQuoteNotificationGroup: form.digitalQuoteNotificationGroup ?? [],
+      digitalQuoteIncludesPurchaseOrders:
+        form.digitalQuoteIncludesPurchaseOrders
+    })),
+  rfqReadyValidator
+    .extend({ intent: z.literal("rfq") })
+    .transform(({ rfqReadyNotificationGroup }) => ({
+      rfqReadyNotificationGroup: rfqReadyNotificationGroup ?? []
+    })),
+  salesRuleNotificationValidator
+    .extend({ intent: z.literal("salesRuleViolations") })
+    .transform(({ salesRuleNotificationGroup }) => ({
+      salesRuleNotificationGroup: salesRuleNotificationGroup ?? []
+    })),
+  quoteLineCategoryMarkupsSettingsValidator
+    .extend({ intent: z.literal("categoryMarkups") })
+    .transform(({ intent: _, ...quoteLineCategoryMarkups }) => ({
+      quoteLineCategoryMarkups
+    }))
+]);
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  switch (intent) {
-    case "accountsReceivableAddressToggle":
-      const arToggleEnabled = formData.get("enabled") === "true";
-      const arToggleResult = await updateAccountsReceivableAddressSetting(
-        client,
-        companyId,
-        arToggleEnabled
-      );
-      if (arToggleResult.error) {
-        return { success: false, message: arToggleResult.error.message };
-      }
-      return {
-        success: true,
-        message: `Accounts receivable billing address ${arToggleEnabled ? "enabled" : "disabled"}`
-      };
-
-    case "showCustomerReadableIdToggle":
-      const showCustomerReadableId = formData.get("enabled") === "true";
-      const showCustomerReadableIdResult =
-        await updateShowCustomerReadableIdSetting(
-          client,
-          companyId,
-          showCustomerReadableId
-        );
-      if (showCustomerReadableIdResult.error) {
-        return {
-          success: false,
-          message: showCustomerReadableIdResult.error.message
-        };
-      }
-      return {
-        success: true,
-        message: `Customer IDs ${showCustomerReadableId ? "shown" : "hidden"}`
-      };
-
-    case "digitalQuote":
-      const validation = await validator(digitalQuoteValidator).validate(
-        formData
-      );
-
-      if (validation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const digitalQuote = await updateDigitalQuoteSetting(
-        client,
-        companyId,
-        validation.data.digitalQuoteEnabled,
-        validation.data.digitalQuoteNotificationGroup ?? [],
-        validation.data.digitalQuoteIncludesPurchaseOrders
-      );
-      if (digitalQuote.error)
-        return { success: false, message: digitalQuote.error.message };
-
-      return { success: true, message: "Digital quote setting updated" };
-
-    case "rfq":
-      const rfqValidation =
-        await validator(rfqReadyValidator).validate(formData);
-
-      if (rfqValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const rfqSettings = await updateRfqReadySetting(
-        client,
-        companyId,
-        rfqValidation.data.rfqReadyNotificationGroup ?? []
-      );
-
-      if (rfqSettings.error)
-        return { success: false, message: rfqSettings.error.message };
-
-      return { success: true, message: "RFQ setting updated" };
-
-    case "categoryMarkups":
-      const categoryMarkupsValidation = await validator(
-        quoteLineCategoryMarkupsSettingsValidator
-      ).validate(formData);
-
-      if (categoryMarkupsValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const categoryMarkupsResult = await updateQuoteLineCategoryMarkups(
-        client,
-        companyId,
-        categoryMarkupsValidation.data
-      );
-
-      if (categoryMarkupsResult.error)
-        return {
-          success: false,
-          message: categoryMarkupsResult.error.message
-        };
-
-      return {
-        success: true,
-        message: "Default category markups updated"
-      };
-
-    case "accountsReceivableBillingAddress":
-      const arBillingValidation = await validator(
-        accountsReceivableBillingAddressValidator
-      ).validate(formData);
-
-      if (arBillingValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const arBillingResult = await updateAccountsReceivableBillingAddress(
-        client,
-        companyId,
-        arBillingValidation.data,
-        userId
-      );
-
-      if (arBillingResult.error) {
-        return { success: false, message: arBillingResult.error.message };
-      }
-
-      return {
-        success: true,
-        message: "Accounts receivable billing address updated"
-      };
-
-    case "emails":
-      const defaultCustomerCcValidation = await validator(
-        defaultCustomerCcValidator
-      ).validate(formData);
-
-      if (defaultCustomerCcValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const defaultCustomerCcResult = await updateDefaultCustomerCc(
-        client,
-        companyId,
-        defaultCustomerCcValidation.data.defaultCustomerCc ?? []
-      );
-
-      if (defaultCustomerCcResult.error) {
-        return {
-          success: false,
-          message: defaultCustomerCcResult.error.message
-        };
-      }
-
-      return {
-        success: true,
-        message: "Customer email settings updated"
-      };
-  }
-
-  return { success: false, message: "Unknown intent" };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(salesSettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updateSalesSettings(input.data);
 }
 
 export default function SalesSettingsRoute() {
   const { t } = useLingui();
-  const { companySettings, arBillingAddress } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-  const toggleFetcher = useFetcher<typeof action>();
-  const [arAddressEnabled, setArAddressEnabled] = useState(
-    companySettings.accountsReceivableAddress ?? false
+  const { companySettings } = useLoaderData<typeof loader>();
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.digitalQuoteEnabled !== undefined)
+        toast.success(t`Digital quote setting updated`);
+      else if (data.rfqReadyNotificationGroup)
+        toast.success(t`RFQ setting updated`);
+      else if (data.salesRuleNotificationGroup)
+        toast.success(t`Sales rule notification settings updated`);
+      else toast.success(t`Default category markups updated`);
+    }
+  });
+  const toggleFetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.requireCustomerContactAndLocation !== undefined) {
+        toast.success(
+          data.requireCustomerContactAndLocation
+            ? t`Customer contact requirement enabled`
+            : t`Customer contact requirement disabled`
+        );
+      } else if (data.showCustomerReadableId !== undefined) {
+        toast.success(
+          data.showCustomerReadableId
+            ? t`Customer IDs shown`
+            : t`Customer IDs hidden`
+        );
+      }
+    }
+  });
+
+  const requireCustomerContactAndLocation = useSavedToggle(
+    toggleFetcher,
+    "requireCustomerContactAndLocationToggle",
+    (companySettings as { requireCustomerContactAndLocation?: boolean })
+      .requireCustomerContactAndLocation ?? false
   );
 
-  const handleArAddressToggle = useCallback(
+  const handleRequireCustomerContactToggle = useCallback(
     (checked: boolean) => {
-      setArAddressEnabled(checked);
       toggleFetcher.submit(
         {
-          intent: "accountsReceivableAddressToggle",
+          intent: "requireCustomerContactAndLocationToggle",
           enabled: checked.toString()
         },
         { method: "POST" }
@@ -270,12 +169,14 @@ export default function SalesSettingsRoute() {
     [toggleFetcher]
   );
 
-  const [showCustomerReadableIdEnabled, setShowCustomerReadableIdEnabled] =
-    useState(companySettings.showCustomerReadableId ?? false);
+  const showCustomerReadableIdEnabled = useSavedToggle(
+    toggleFetcher,
+    "showCustomerReadableIdToggle",
+    companySettings.showCustomerReadableId ?? false
+  );
 
   const handleShowCustomerReadableIdToggle = useCallback(
     (checked: boolean) => {
-      setShowCustomerReadableIdEnabled(checked);
       toggleFetcher.submit(
         { intent: "showCustomerReadableIdToggle", enabled: checked.toString() },
         { method: "POST" }
@@ -288,187 +189,113 @@ export default function SalesSettingsRoute() {
     companySettings.digitalQuoteEnabled ?? false
   );
 
-  useEffect(() => {
-    if (fetcher.data?.success === true && fetcher?.data?.message) {
-      toast.success(fetcher.data.message);
-    }
-
-    if (fetcher.data?.success === false && fetcher?.data?.message) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data?.message, fetcher.data?.success]);
-
-  useEffect(() => {
-    if (toggleFetcher.data?.success === true && toggleFetcher?.data?.message) {
-      toast.success(toggleFetcher.data.message);
-    }
-    if (toggleFetcher.data?.success === false && toggleFetcher?.data?.message) {
-      toast.error(toggleFetcher.data.message);
-    }
-  }, [toggleFetcher.data?.message, toggleFetcher.data?.success]);
-
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Sales</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <SettingsSectionHeader>
           <Trans>Documents</Trans>
         </SettingsSectionHeader>
 
         <Card>
-          <ValidatedForm
-            method="post"
-            validator={defaultCustomerCcValidator}
-            defaultValues={{
-              defaultCustomerCc: companySettings.defaultCustomerCc ?? []
-            }}
-            fetcher={fetcher}
-          >
-            <input type="hidden" name="intent" value="emails" />
-            <CardHeader>
-              <CardTitle>
-                <Trans>Emails</Trans>
-              </CardTitle>
-              <CardDescription>
-                <Trans>
-                  These email addresses will be automatically CC'd on all quote
-                  emails sent to customers.
-                </Trans>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-8 max-w-[400px]">
-                <EmailRecipients
-                  name="defaultCustomerCc"
-                  label={t`Default CC Recipients`}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Submit
-                isDisabled={fetcher.state !== "idle"}
-                isLoading={
-                  fetcher.state !== "idle" &&
-                  fetcher.formData?.get("intent") === "defaultCustomerCc"
-                }
-              >
-                <Trans>Save</Trans>
-              </Submit>
-            </CardFooter>
-          </ValidatedForm>
-        </Card>
-        <Card>
           <CardHeader>
+            <CardTitle>
+              <Trans>Require a Customer Contact and Location</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                A customer must have at least one contact with an email address
+                and at least one location with a country — plus a state, for US
+                addresses — before its quotes, orders and invoices can be issued
+                or posted. The mirror of the supplier requirement under
+                Purchasing; no integration requires it today.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Centralized Billing Address</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Route all AR invoices to one address (e.g. corporate
-                    headquarters) instead of individual locations.
-                  </Trans>
-                </CardDescription>
-              </div>
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {requireCustomerContactAndLocation ? (
+                    <Trans>A customer contact and location are required</Trans>
+                  ) : (
+                    <Trans>A customer contact and location are optional</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {requireCustomerContactAndLocation ? (
+                    <Trans>
+                      Quotes, orders and invoices are blocked until the customer
+                      has a contact with an email address and a location with a
+                      country.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to block issuing or posting for a customer with no
+                      contact or no location.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
               <Switch
-                checked={arAddressEnabled}
-                onCheckedChange={handleArAddressToggle}
+                checked={requireCustomerContactAndLocation}
+                onCheckedChange={handleRequireCustomerContactToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
-          </CardHeader>
+          </CardContent>
         </Card>
-        {arAddressEnabled && (
-          <Card>
-            <ValidatedForm
-              method="post"
-              validator={accountsReceivableBillingAddressValidator}
-              defaultValues={{
-                name: arBillingAddress?.name ?? "",
-                addressLine1: arBillingAddress?.addressLine1 ?? "",
-                addressLine2: arBillingAddress?.addressLine2 ?? "",
-                city: arBillingAddress?.city ?? "",
-                state: arBillingAddress?.state ?? "",
-                postalCode: arBillingAddress?.postalCode ?? "",
-                countryCode: arBillingAddress?.countryCode ?? "",
-                phone: arBillingAddress?.phone ?? "",
-                fax: arBillingAddress?.fax ?? "",
-                email: arBillingAddress?.email ?? ""
-              }}
-              fetcher={fetcher}
-            >
-              <input
-                type="hidden"
-                name="intent"
-                value="accountsReceivableBillingAddress"
-              />
-              <CardHeader>
-                <CardTitle>
-                  <Trans>Billing Address</Trans>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 w-full">
-                  <Input name="name" label={t`Name`} />
-                  <Input name="email" label={t`Email`} />
-                  <Input name="addressLine1" label={t`Address Line 1`} />
-                  <Input name="addressLine2" label={t`Address Line 2`} />
-                  <Input name="city" label={t`City`} />
-                  <Input name="state" label={t`State / Province`} />
-                  <Input name="postalCode" label={t`Postal Code`} />
-                  <Country name="countryCode" />
-                  <PhoneInput name="phone" label={t`Phone`} />
-                  <PhoneInput name="fax" label={t`Fax`} />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Submit
-                  isDisabled={fetcher.state !== "idle"}
-                  isLoading={
-                    fetcher.state !== "idle" &&
-                    fetcher.formData?.get("intent") ===
-                      "accountsReceivableBillingAddress"
-                  }
-                >
-                  <Trans>Save</Trans>
-                </Submit>
-              </CardFooter>
-            </ValidatedForm>
-          </Card>
-        )}
         <SettingsSectionHeader>
           <Trans>Customers</Trans>
         </SettingsSectionHeader>
 
         <Card>
           <CardHeader>
+            <CardTitle>
+              <Trans>Show Customer IDs</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Show a readable Customer ID column on the customer list,
+                customer forms, and dropdowns. Customers are still identified
+                internally either way.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Show Customer IDs</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Show a readable Customer ID column on the customer list,
-                    customer forms, and dropdowns. Customers are still
-                    identified internally either way.
-                  </Trans>
-                </CardDescription>
-              </div>
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {showCustomerReadableIdEnabled ? (
+                    <Trans>Customer IDs are shown</Trans>
+                  ) : (
+                    <Trans>Customer IDs are hidden</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {showCustomerReadableIdEnabled ? (
+                    <Trans>
+                      A readable Customer ID appears on lists, forms and
+                      dropdowns.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to show a readable Customer ID on lists, forms and
+                      dropdowns.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
               <Switch
                 checked={showCustomerReadableIdEnabled}
                 onCheckedChange={handleShowCustomerReadableIdToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
-          </CardHeader>
+          </CardContent>
         </Card>
 
         <SettingsSectionHeader>
@@ -600,7 +427,56 @@ export default function SalesSettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
-      </VStack>
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={salesRuleNotificationValidator}
+            defaultValues={{
+              salesRuleNotificationGroup:
+                companySettings.salesRuleNotificationGroup ?? []
+            }}
+            fetcher={fetcher}
+          >
+            <input type="hidden" name="intent" value="salesRuleViolations" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trans>Sales Rule Violations</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Enable notifications when a sales rule violation is blocked or
+                  acknowledged on a quote, sales order, or sales invoice.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <div className="flex flex-col gap-2">
+                  <Label>
+                    <Trans>Notifications</Trans>
+                  </Label>
+                  <Users
+                    name="salesRuleNotificationGroup"
+                    label={t`Who should receive notifications when a sales rule violation is blocked or acknowledged?`}
+                    type="employee"
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "salesRuleViolations"
+                }
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+      </SettingsPage>
     </ScrollArea>
   );
 }
@@ -658,7 +534,7 @@ function CategoryMarkupsCard({
   companySettings: ReturnType<
     typeof useLoaderData<typeof loader>
   >["companySettings"];
-  fetcher: ReturnType<typeof useFetcher<typeof action>>;
+  fetcher: ReturnType<typeof useAction<typeof action>>;
 }) {
   const saved = (companySettings as Record<string, unknown>)
     .quoteLineCategoryMarkups as Record<string, number> | null;

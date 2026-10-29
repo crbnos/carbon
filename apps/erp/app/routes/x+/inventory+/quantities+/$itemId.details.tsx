@@ -1,32 +1,34 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
-import { pluckUnique } from "@carbon/utils";
+import { isUniqueViolation, pluckUnique, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
-import {
-  getTrackedEntityExpirations,
-  InventoryDetails
-} from "~/modules/inventory";
+import { getTrackedEntityExpirations } from "~/modules/inventory/inventory.service";
+import { InventoryDetails } from "~/modules/inventory/ui";
 import {
   getItem,
   getItemQuantities,
   getItemShelfLife,
-  getItemStorageUnitQuantities,
   getMakeMethodById,
   getMakeMethods,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   getPickMethod,
   upsertPickMethod
-} from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
-import type { MethodItemType, MethodType } from "~/modules/shared";
-import { getTagsList } from "~/modules/shared";
-import { getUserDefaults } from "~/modules/users/users.server";
+} from "~/modules/items/items.service";
+import { getItemStorageUnitQuantities } from "~/modules/items/items.utils";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getTagsList } from "~/modules/shared/shared.service";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 
@@ -42,8 +44,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   let locationId = searchParams.get("location");
 
-  if (!locationId) {
-    const userDefaults = await getUserDefaults(client, userId, companyId);
+  // Three waits at most: what needs no location is read while the default
+  // location is, and everything else is read together.
+  const [userDefaults, item, itemShelfLife, makeMethods] = await Promise.all([
+    locationId ? null : getUserDefaults(client, userId, companyId),
+    getItem(client, itemId),
+    getItemShelfLife(client, itemId),
+    getMakeMethods(client, itemId, companyId)
+  ]);
+
+  if (userDefaults) {
     if (userDefaults.error) {
       throw redirect(
         path.to.inventory,
@@ -71,8 +81,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [pickMethod] = await Promise.all([
-    getPickMethod(client, itemId, companyId, locationId)
+  // Manufacturing data, for manufactured parts only
+  const makeMethod =
+    item.data && item.data.replenishmentSystem !== "Buy"
+      ? (makeMethods.data?.find((m) => m.status === "Active") ??
+        makeMethods.data?.[0])
+      : undefined;
+
+  let [
+    pickMethod,
+    quantities,
+    itemStorageUnitQuantities,
+    fullMethod,
+    methodMaterials,
+    methodOperations,
+    operationTags
+  ] = await Promise.all([
+    getPickMethod(client, itemId, companyId, locationId),
+    getItemQuantities(client, itemId, companyId, locationId),
+    getItemStorageUnitQuantities(client, itemId, companyId, locationId),
+    makeMethod ? getMakeMethodById(client, makeMethod.id, companyId) : null,
+    makeMethod ? getMethodMaterialsByMakeMethod(client, makeMethod.id) : null,
+    makeMethod
+      ? getMethodOperationsByMakeMethodId(client, makeMethod.id)
+      : null,
+    makeMethod ? getTagsList(client, companyId, "operation") : null
   ]);
 
   if (pickMethod.error || !pickMethod.data) {
@@ -84,10 +117,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       createdBy: userId
     });
 
-    if (
-      insertPickMethod.error &&
-      !insertPickMethod.error.message.includes("duplicate key value")
-    ) {
+    if (insertPickMethod.error && !isUniqueViolation(insertPickMethod.error)) {
       throw redirect(
         path.to.inventory,
         await flash(
@@ -109,10 +139,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  const [quantities, item] = await Promise.all([
-    getItemQuantities(client, itemId, companyId, locationId),
-    getItem(client, itemId)
-  ]);
   if (quantities.error) {
     throw redirect(
       path.to.inventory,
@@ -127,12 +153,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const itemStorageUnitQuantities = await getItemStorageUnitQuantities(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
   if (itemStorageUnitQuantities.error || !itemStorageUnitQuantities.data) {
     throw redirect(
       path.to.inventory,
@@ -152,56 +172,34 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     itemStorageUnitQuantities.data,
     (row) => row.trackedEntityId
   );
-  const [itemShelfLife, trackedEntityExpirations] = await Promise.all([
-    getItemShelfLife(client, itemId),
-    getTrackedEntityExpirations(client, trackedEntityIds)
-  ]);
+  const trackedEntityExpirations = await getTrackedEntityExpirations(
+    client,
+    trackedEntityIds
+  );
 
-  // Load manufacturing data for manufactured parts
   let methodData = null;
   let tags: { name: string }[] = [];
 
-  if (item.data.replenishmentSystem !== "Buy") {
-    const makeMethods = await getMakeMethods(client, itemId, companyId);
-    const makeMethod =
-      makeMethods.data?.find((m) => m.status === "Active") ??
-      makeMethods.data?.[0];
-
-    if (makeMethod) {
-      const fullMethod = await getMakeMethodById(
-        client,
-        makeMethod.id,
-        companyId
-      );
-      if (!fullMethod.error && fullMethod.data) {
-        const [methodMaterials, methodOperations, operationTags] =
-          await Promise.all([
-            getMethodMaterialsByMakeMethod(client, fullMethod.data.id),
-            getMethodOperationsByMakeMethodId(client, fullMethod.data.id),
-            getTagsList(client, companyId, "operation")
-          ]);
-
-        methodData = {
-          makeMethod: fullMethod.data,
-          methodMaterials:
-            methodMaterials.data?.map((m) => ({
-              ...m,
-              description: m.item?.name ?? "",
-              methodType: m.methodType as MethodType,
-              itemType: m.itemType as MethodItemType
-            })) ?? [],
-          methodOperations:
-            methodOperations.data?.map((operation) => ({
-              ...operation,
-              workCenterId: operation.workCenterId ?? undefined,
-              operationSupplierProcessId:
-                operation.operationSupplierProcessId ?? undefined,
-              workInstruction: operation.workInstruction as JSONContent | null
-            })) ?? []
-        };
-        tags = operationTags.data ?? [];
-      }
-    }
+  if (fullMethod && !fullMethod.error && fullMethod.data) {
+    methodData = {
+      makeMethod: fullMethod.data,
+      methodMaterials:
+        methodMaterials?.data?.map((m) => ({
+          ...m,
+          description: m.item?.name ?? "",
+          methodType: m.methodType as MethodType,
+          itemType: m.itemType as MethodItemType
+        })) ?? [],
+      methodOperations:
+        methodOperations?.data?.map((operation) => ({
+          ...operation,
+          workCenterId: operation.workCenterId ?? undefined,
+          operationSupplierProcessId:
+            operation.operationSupplierProcessId ?? undefined,
+          workInstruction: operation.workInstruction as JSONContent | null
+        })) ?? []
+    };
+    tags = operationTags?.data ?? [];
   }
 
   return {
@@ -247,6 +245,7 @@ export default function ItemInventoryRoute() {
         }}
         quantities={quantities}
         storageUnits={storageUnits.options}
+        variant="quantity"
       />
     </VStack>
   );

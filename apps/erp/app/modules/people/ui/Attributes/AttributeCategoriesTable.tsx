@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -15,6 +20,7 @@ import { LuListChecks, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { AttributeCategory } from "../../types";
@@ -22,10 +28,11 @@ import type { AttributeCategory } from "../../types";
 type AttributeCategoriesTableProps = {
   data: AttributeCategory[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const AttributeCategoriesTable = memo(
-  ({ data, count }: AttributeCategoriesTableProps) => {
+  ({ data, count, infinite }: AttributeCategoriesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const [params] = useUrlParams();
@@ -50,6 +57,7 @@ const AttributeCategoriesTable = memo(
         {
           accessorKey: "name",
           header: t`Category`,
+          meta: { mobile: "P1" },
           cell: ({ row }) => (
             <Hyperlink to={row.original.id} className="flex items-center gap-2">
               {row.original.emoji ? (
@@ -63,6 +71,7 @@ const AttributeCategoriesTable = memo(
         },
         {
           header: t`Attributes`,
+          meta: { mobile: "P3" },
           cell: ({ row }) => (
             <HStack className="text-xs text-muted-foreground">
               <LuListChecks />
@@ -72,9 +81,12 @@ const AttributeCategoriesTable = memo(
                   : 0}{" "}
                 <Trans>Attributes</Trans>
               </span>
+              {/* Phones: line 2 sits under the row link, so this button is
+                  hidden; the row menu's View Attributes opens the same list. */}
               <Button
                 variant="secondary"
                 size="sm"
+                className="max-md:hidden"
                 onClick={() => {
                   navigate(
                     `${path.to.attributeCategoryList(
@@ -100,6 +112,7 @@ const AttributeCategoriesTable = memo(
             );
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: [
@@ -131,6 +144,7 @@ const AttributeCategoriesTable = memo(
               <Trans>New Attribute</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.view}
               onClick={() => {
                 navigate(
                   `${path.to.attributeCategoryList(
@@ -143,6 +157,7 @@ const AttributeCategoriesTable = memo(
               <Trans>View Attributes</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               onClick={() => {
                 navigate(path.to.attributeCategory(row.id));
               }}
@@ -151,6 +166,7 @@ const AttributeCategoriesTable = memo(
               <Trans>Edit Category</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={row.protected || !permissions.can("delete", "users")}
               onClick={() => onDelete(row)}
@@ -169,6 +185,7 @@ const AttributeCategoriesTable = memo(
       <>
         <Table<AttributeCategory>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count ?? 0}
           primaryAction={

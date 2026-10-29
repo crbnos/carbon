@@ -1,20 +1,27 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { datetime } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
-  ARAPWorkbench,
   getApAging,
   getApOpenBySupplier,
   getApTieOut
-} from "~/modules/invoicing";
-import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+} from "~/modules/invoicing/invoicing.service";
+import { ARAPWorkbench } from "~/modules/invoicing/ui";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Payables",
+  realtime: ["purchaseInvoice", "payment"],
+  breadcrumb: msg`Payables`,
   to: path.to.payables,
   module: "invoicing"
 };
@@ -42,16 +49,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : "dueDate";
   const bucketDays = parseBuckets(url.searchParams.get("bucketDays"));
 
-  // GL tie-outs only mean something when journals are being posted — skip
-  // them entirely when accounting is disabled (result: null hides the
+  // GL tie-outs only mean something once journals count — skip them
+  // entirely before the accounting cutover (result: null hides the
   // tie-out panel and the adjusting-entry form in ARAPWorkbench).
   const companySettings = await getCompanySettings(client, companyId);
-  const accountingEnabled =
-    (companySettings.data as { accountingEnabled?: boolean } | null)
-      ?.accountingEnabled ?? false;
+  const accountingSetUp = hasAccountingCutover(companySettings.data);
 
   const [tieOut, aging, open] = await Promise.all([
-    accountingEnabled
+    accountingSetUp
       ? getApTieOut(client, companyId, asOfDate)
       : Promise.resolve({ data: null }),
     getApAging(client, companyId, asOfDate, { agingMethod, bucketDays }),

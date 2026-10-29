@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getSsoConnectionByDomain, isSsoEnabled } from "@carbon/ee/sso.server";
 import { Ratelimit, redis } from "@carbon/kv";
+import { getClientIp } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -15,7 +20,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ enabled: false, required: false });
   }
 
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(20, "1 h"),

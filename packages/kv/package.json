@@ -3,17 +3,17 @@
   "dependencies": {
     "@carbon/env": "workspace:*",
     "@carbon/logger": "workspace:*",
-    "cookie": "catalog:",
-    "dompurify": "catalog:",
-    "ioredis": "5.10.1",
-    "nanoid": "catalog:"
+    "ioredis": "5.10.1"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
-    "@types/ioredis-mock": "8.2.7",
+    "@types/ioredis-mock": "8.2.8",
     "@types/node": "20.19.39",
+    "cookie": "catalog:",
+    "dompurify": "catalog:",
     "dotenv": "16.3.1",
     "ioredis-mock": "8.13.1",
+    "nanoid": "catalog:",
     "rimraf": "catalog:",
     "sst": "catalog:",
     "tsup": "catalog:",
@@ -32,7 +32,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "sideEffects": false,
   "version": "0.0.0"

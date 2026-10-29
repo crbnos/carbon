@@ -1,5 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
-import { Checkbox, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import {
+  Checkbox,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -30,6 +40,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import {
   usePercentFormatter,
   usePermissions,
@@ -47,6 +58,7 @@ type GaugeCalibrationRecordsTableProps = {
   data: GaugeCalibrationRecord[];
   types: ListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -60,7 +72,7 @@ const defaultColumnVisibility = {
 };
 
 const GaugeCalibrationRecordsTable = memo(
-  ({ data, types, count }: GaugeCalibrationRecordsTableProps) => {
+  ({ data, types, count, infinite }: GaugeCalibrationRecordsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -106,6 +118,7 @@ const GaugeCalibrationRecordsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -116,6 +129,10 @@ const GaugeCalibrationRecordsTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            mobile: "P2",
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -128,6 +145,7 @@ const GaugeCalibrationRecordsTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCheck />,
             filter: {
               type: "static",
@@ -219,6 +237,7 @@ const GaugeCalibrationRecordsTable = memo(
             <SupplierAvatar supplierId={row.original.supplierId} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: suppliers?.map((supplier) => ({
@@ -344,6 +363,7 @@ const GaugeCalibrationRecordsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!permissions.can("update", "quality")}
               onClick={() => {
                 navigate(
@@ -357,6 +377,7 @@ const GaugeCalibrationRecordsTable = memo(
               Edit Record
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "quality")}
               onClick={() => {
@@ -379,6 +400,7 @@ const GaugeCalibrationRecordsTable = memo(
       <>
         <Table<GaugeCalibrationRecord>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           defaultColumnVisibility={defaultColumnVisibility}

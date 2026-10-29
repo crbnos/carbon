@@ -1,1677 +1,1752 @@
-import { CONTROLLED_ENVIRONMENT, error, success } from "@carbon/auth";
-import { deleteAuthAccount } from "@carbon/auth/auth.server";
-import { logPermissionChange } from "@carbon/auth/auth-events.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash, requireAuthSession } from "@carbon/auth/session.server";
-import {
-  deactivateCustomer,
-  deactivateEmployee,
-  deactivateSupplier
-} from "@carbon/auth/users.server";
-import type { Database, Json } from "@carbon/database";
-import { redis } from "@carbon/kv";
-import { now, parseAbsolute } from "@internationalized/date";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Re-exported, not reimplemented: this module used to carry a near-identical
-// copy that (a) missed the canonical version's cache TTL and (b) bypassed its
-// per-request memoization.
-export { getUserClaims } from "@carbon/auth/users.server";
-
+import { accountProfileValidator } from "@carbon/account";
+import { defineServiceFn } from "@carbon/api/service-fn.server";
+import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { CarbonEdition, CONTROLLED_ENVIRONMENT } from "@carbon/auth";
+import { deactivateUser } from "@carbon/auth/users.server";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
+import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
 import {
-  emailDomain,
-  getSsoConnection,
-  getSsoConnectionByDomain,
-  isSsoEnabled,
-  seedSsoIdentityForUser,
-  uncoveredSsoDomainError
-} from "@carbon/ee/sso.server";
+  insertEmployeeType,
+  updateEmployee,
+  upsertEmployeeType,
+  upsertEmployeeTypePermissions
+} from "@carbon/ee/permissions.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
+import { batchTrigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { redirect } from "react-router";
-import { getSupplierContact } from "~/modules/purchasing";
-import { getCustomerContact } from "~/modules/sales";
-import type {
-  CompanyPermission,
-  EmployeeInsert,
-  EmployeeTypePermission,
-  InviteInsert,
-  Module,
-  Permission,
-  User
-} from "~/modules/users";
-import { getPermissionsByEmployeeType } from "~/modules/users";
-import { getDatabaseClient } from "~/services/database.server";
-import type { Result } from "~/types";
-import { path } from "~/utils/path";
-import { insertEmployeeJob } from "../people/people.service";
+import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
+import {
+  datetime,
+  Edition,
+  isAllowedAvatarValue,
+  isOwnAvatarUpload,
+  isOwnSignaturePath,
+  requiresItarEntityCertification
+} from "@carbon/utils";
+import { nanoid } from "nanoid";
+import { z } from "zod";
+import {
+  createOperatorValidator,
+  employeeTypePermissionsValidator,
+  itarEntityCertificationValidator,
+  itarUserCertificationValidator,
+  US_PERSON_ATTESTATION_REQUIRED,
+  userFlagValidator,
+  userPermissionsValidator
+} from "./users.models";
+import * as service from "./users.service";
 
 const logger = getLogger("erp", "users");
+// ---------------------------------------------------------------------------
+// Operations (`defineServiceFn`): what the routes, the API and MCP all run
+// ---------------------------------------------------------------------------
+//
+// The writes that send an invite or write an audit record are not published
+// (no `@mcp`): they take the request's IP, city and user agent as input, which
+// an API caller could set to anything, and the permission editors write that IP
+// into the permission audit log. They wait for a context that carries the
+// request.
 
+/** Where the request came from, as the route read it from its headers. */
+const requestOrigin = {
+  ip: z.string().optional(),
+  city: z.string().optional()
+};
 /**
- * Controlled environments (ITAR) expire invites 7 days after creation. Computed
- * at read time — no `expiresAt` column. Resend resets `createdAt`, restarting
- * the window. Enforced only when CONTROLLED_ENVIRONMENT is on.
- */
-export const INVITE_EXPIRY_DAYS = 7;
-
-export function isControlledInviteExpired(createdAt: string): boolean {
-  if (!CONTROLLED_ENVIRONMENT) return false;
-  const expiresAt = parseAbsolute(createdAt, "UTC").add({
-    days: INVITE_EXPIRY_DAYS
-  });
-  return expiresAt.compare(now("UTC")) < 0;
-}
-
-/**
- * Once a company has an active SSO connection, employee invites must stay on
- * its covered domains — an uncovered invite would silently bypass the IdP via
- * magic-link auth. Customer/supplier invites are external by nature and are
- * not constrained. Scoped to THIS company's connection: a domain covered by
- * another company's connection is neither required nor blocked here.
- * Returns the refusal message for the email field, or null when the invite
- * may proceed. A failed connection read refuses (fail closed) rather than
- * guessing.
- */
-export async function getSsoInviteDomainError(
-  serviceRole: SupabaseClient<Database>,
-  companyId: string,
-  email: string
-): Promise<string | null> {
-  const connection = await getSsoConnection(serviceRole, companyId);
-  if (connection.error) {
-    logger.error("Failed to read SSO connection for invite check", {
-      companyId,
-      error: connection.error
-    });
-    return "Could not verify the company's single sign-on configuration. Try again.";
-  }
-  if (!connection.data) {
-    return null;
-  }
-  return uncoveredSsoDomainError(connection.data.domains ?? [], email);
-}
-
-export async function acceptInvite(
-  serviceRole: SupabaseClient<Database>,
-  code: string,
-  email?: string
-) {
-  const invite = await serviceRole
-    .from("invite")
-    .select("*")
-    .eq("code", code)
-    .is("acceptedAt", null)
-    .is("revokedAt", null)
-    .single();
-
-  if (invite.error) return invite;
-
-  if (isControlledInviteExpired(invite.data.createdAt)) {
-    return {
-      data: null,
-      error: {
-        message:
-          "This invite has expired. Please request a new invite to continue."
-      }
-    };
-  }
-
-  if (email && invite.data.email !== email) {
-    throw new Error(
-      "Invite code does not match email. Please logout and try again."
-    );
-  }
-
-  const user = await getUserByEmail(invite.data.email);
-  if (user.error) return user;
-
-  const activationFunction =
-    invite.data.role === "employee"
-      ? activateEmployee
-      : invite.data.role === "customer"
-        ? activateCustomer
-        : invite.data.role === "supplier"
-          ? activateSupplier
-          : null;
-
-  if (!activationFunction) {
-    return {
-      data: null,
-      error: {
-        message: "Invalid invite role"
-      }
-    };
-  }
-
-  const [activate, addUser, setPermissions] = await Promise.all([
-    activationFunction(serviceRole, {
-      userId: user.data.id,
-      companyId: invite.data.companyId
-    }),
-    addUserToCompany(serviceRole, {
-      userId: user.data.id,
-      companyId: invite.data.companyId,
-      role: invite.data.role
-    }),
-    setUserPermissions(
-      serviceRole,
-      user.data.id,
-      invite.data.permissions as Record<string, string[]>
-    )
-  ]);
-
-  if (activate.error) {
-    logger.error("Failed to activate invite", { error: activate.error });
-    await rollbackInvite(serviceRole, {
-      userId: user.data.id,
-      companyId: invite.data.companyId
-    });
-    return activate;
-  }
-
-  if (addUser.error) {
-    logger.error("Failed to add user to company", { error: addUser.error });
-    await rollbackInvite(serviceRole, {
-      userId: user.data.id,
-      companyId: invite.data.companyId
-    });
-    return addUser;
-  }
-
-  if (setPermissions.error) {
-    logger.error("Failed to set user permissions", {
-      error: setPermissions.error
-    });
-    await rollbackInvite(serviceRole, {
-      userId: user.data.id,
-      companyId: invite.data.companyId
-    });
-    return setPermissions;
-  }
-
-  return serviceRole
-    .from("invite")
-    .update({ acceptedAt: new Date().toISOString() })
-    .eq("code", code)
-    .select("*")
-    .single();
-}
-
-async function activateCustomer(
-  client: SupabaseClient<Database>,
-  {
-    userId,
-    companyId
-  }: {
-    userId: string;
-    companyId: string;
-  }
-) {
-  const result = await client
-    .from("customerAccount")
-    .update({ active: true })
-    .eq("id", userId)
-    .eq("companyId", companyId)
-    .select("id");
-
-  if (!result.error && (!result.data || result.data.length === 0)) {
-    return {
-      data: null,
-      error: {
-        message: `Customer account not found for user ${userId} in company ${companyId}. The account may have been deleted during deactivation.`
-      }
-    };
-  }
-
-  return result;
-}
-
-async function activateEmployee(
-  client: SupabaseClient<Database>,
-  {
-    userId,
-    companyId
-  }: {
-    userId: string;
-    companyId: string;
-  }
-) {
-  const result = await client
-    .from("employee")
-    .update({ active: true })
-    .eq("id", userId)
-    .eq("companyId", companyId)
-    .select("id");
-
-  if (!result.error && (!result.data || result.data.length === 0)) {
-    return {
-      data: null,
-      error: {
-        message: `Employee record not found for user ${userId} in company ${companyId}. The record may have been deleted during deactivation.`
-      }
-    };
-  }
-
-  return result;
-}
-
-async function activateSupplier(
-  client: SupabaseClient<Database>,
-  {
-    userId,
-    companyId
-  }: {
-    userId: string;
-    companyId: string;
-  }
-) {
-  const result = await client
-    .from("supplierAccount")
-    .update({ active: true })
-    .eq("id", userId)
-    .eq("companyId", companyId)
-    .select("id");
-
-  if (!result.error && (!result.data || result.data.length === 0)) {
-    return {
-      data: null,
-      error: {
-        message: `Supplier account not found for user ${userId} in company ${companyId}. The account may have been deleted during deactivation.`
-      }
-    };
-  }
-
-  return result;
-}
-
-export async function addUserToCompany(
-  client: SupabaseClient<Database>,
-  userToCompany: {
-    userId: string;
-    companyId: string;
-    role: "employee" | "customer" | "supplier";
-  }
-) {
-  return client.from("userToCompany").insert(userToCompany);
-}
-
-/**
- * Pre-seed a SAML SSO identity for a newly-created auth user when their email
- * domain already has a verified SSO connection — so their first SAML sign-in
- * links to this account instead of being rejected by GOTRUE_DISABLE_SIGNUP.
- * (Existing users on a domain are handled by the backfill in verifySsoDomain.)
+ * Invite an employee: create their account in the company and email them
+ * the invite link.
  *
- * Best-effort: a failure is logged, never thrown — account creation must not
- * fail because seeding failed, and the domain-verify backfill is a fallback.
- * Rollback-safe: identities cascade-delete with auth.users, so a later insert
- * failure that deletes the auth account also removes this row. Self-gates on
- * isSsoEnabled(); off-Enterprise it does not query.
+ * @remarks
+ * Without role authoring (the PERMISSIONS feature), the invite always gets
+ * the Admin employee type, whatever was asked for. In a controlled
+ * environment the inviter must attest the person is a U.S. person (a
+ * `validation` error otherwise). Once SSO is on, an email outside its
+ * domains is refused (a `rule` error, its only one). A deactivated or
+ * still-invited person is re-added (see `createEmployeeAccount`).
  */
-async function seedSsoIdentityForNewUser(
-  serviceRole: SupabaseClient<Database>,
-  { userId, email }: { userId: string; email: string }
-): Promise<void> {
-  if (!isSsoEnabled()) return;
-  const domain = emailDomain(email);
-  if (!domain) return;
+export const inviteEmployee = defineServiceFn({
+  input: z.object({
+    email: z.string().email(),
+    firstName: z.string().min(1),
+    lastName: z.string().min(1),
+    employeeType: z.string().min(1),
+    locationId: z.string().min(1),
+    usPersonAttestation: z.boolean().default(false),
+    ...requestOrigin
+  }),
+  permission: { create: "users" },
+  async run(ctx, input) {
+    const companyId = ctx.company.id;
+    const client = ctx.asCaller.supabase;
 
-  const connection = await getSsoConnectionByDomain(serviceRole, domain);
-  if (connection.error || !connection.data) return;
-
-  const seed = await seedSsoIdentityForUser(getDatabaseClient(), {
-    userId,
-    email,
-    providerId: connection.data.providerId
-  });
-  if (seed.error) {
-    logger.error("Failed to pre-seed SSO identity for new user", {
-      userId,
-      domain,
-      error: seed.error
+    let employeeType = input.employeeType;
+    const canAuthorRoles = await companyHasFeature(client, companyId, {
+      feature: "PERMISSIONS"
     });
-  }
-}
-
-export async function createCustomerAccount(
-  client: SupabaseClient<Database>,
-  {
-    id,
-    customerId,
-    companyId,
-    createdBy
-  }: {
-    id: string;
-    customerId: string;
-    companyId: string;
-    createdBy: string;
-  }
-): Promise<
-  | { success: false; message: string }
-  | { success: true; code: string; userId: string; email: string }
-> {
-  const customerContact = await getCustomerContact(client, id);
-  if (
-    customerContact.error ||
-    customerContact.data === null ||
-    customerContact.data.contact === null ||
-    !customerContact.data.contact.email
-  ) {
-    return { success: false, message: "Failed to get customer contact" };
-  }
-
-  const { email, firstName, lastName } = customerContact.data.contact;
-
-  const permissions = makeCustomerPermissions(companyId);
-  const serviceRole = getCarbonServiceRole();
-  const user = await getUserByEmail(email);
-  let userId = "";
-  let isNewUser = false;
-
-  if (user.data) {
-    userId = user.data.id;
-    if (!(await authIdentityExists(userId))) {
-      return {
-        success: false,
-        message:
-          "This user's auth account no longer exists. Contact support before re-adding."
-      };
-    }
-  } else {
-    isNewUser = true;
-    const resolvedId = await resolveAuthUserId(email);
-    if (!resolvedId) {
-      return { success: false, message: "Failed to create auth account" };
-    }
-    userId = resolvedId;
-
-    const createCarbonUser = await createUser(serviceRole, {
-      id: userId,
-      email: email.toLowerCase(),
-      firstName: firstName ?? "",
-      lastName: lastName ?? "",
-      avatarUrl: null
-    });
-
-    if (createCarbonUser.error) {
-      await deleteAuthAccount(serviceRole, userId);
-      return { success: false, message: createCarbonUser.error.message };
+    if (!canAuthorRoles) {
+      const adminType = await client
+        .from("employeeType")
+        .select("id")
+        .eq("companyId", companyId)
+        .eq("systemType", "Admin")
+        .maybeSingle();
+      if (adminType.data?.id) employeeType = adminType.data.id;
     }
 
-    await seedSsoIdentityForNewUser(serviceRole, { userId, email });
-  }
+    // 22 CFR 120.62: the inviter attests the invitee is a U.S. person.
+    if (CONTROLLED_ENVIRONMENT && !input.usPersonAttestation) {
+      return ctx.error("validation", US_PERSON_ATTESTATION_REQUIRED);
+    }
 
-  const code = crypto.randomUUID();
-  const [contactUpdate, customerAccountInsert, inviteInsert] =
-    await Promise.all([
-      client.from("customerContact").update({ userId }).eq("id", id),
-      insertCustomerAccount(client, {
-        id: userId,
-        customerId,
-        companyId
-      }),
-      insertInvite(serviceRole, {
-        role: "customer",
-        permissions,
-        email,
+    const outsideSso = await service.refuseEmailOutsideSso(ctx, input.email);
+    if (outsideSso) return outsideSso;
+
+    const created = await service.createEmployeeAccount(
+      client,
+      ctx.asSystem.pg,
+      {
+        email: input.email.toLowerCase(),
+        firstName: input.firstName,
+        lastName: input.lastName,
+        employeeType,
+        locationId: input.locationId,
         companyId,
-        createdBy,
-        code
-      })
+        createdBy: ctx.auditUserId,
+        attestedBy: CONTROLLED_ENVIRONMENT ? ctx.auditUserId : null,
+        attestedAt: CONTROLLED_ENVIRONMENT ? datetime.timestamp() : null
+      }
+    );
+    if (!created.success) {
+      return ctx.error(
+        "internal",
+        created.message ?? "Failed to create employee account",
+        created
+      );
+    }
+
+    const sender = await service.inviteSender(ctx);
+    if (!sender) return ctx.error("internal", "Failed to load company or user");
+    await service.sendInviteEmail(ctx, {
+      ...sender,
+      email: input.email,
+      code: created.code,
+      name: `${input.firstName} ${input.lastName}`.trim(),
+      ip: input.ip,
+      city: input.city
+    });
+    return { userId: created.userId };
+  }
+});
+/**
+ * Invite a customer contact: create their portal account and email them the
+ * invite link.
+ */
+export const inviteCustomerContact = defineServiceFn({
+  input: z.object({
+    customerContactId: z.string().min(1),
+    customerId: z.string().min(1),
+    ...requestOrigin
+  }),
+  permission: { create: "users" },
+  async run(ctx, { customerContactId, customerId, ...origin }) {
+    const created = await service.createCustomerAccount(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        id: customerContactId,
+        customerId,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      }
+    );
+    if (!created.success) {
+      return ctx.error(
+        "internal",
+        created.message ?? "Failed to create customer account",
+        created
+      );
+    }
+    return service.emailAccountInvite(ctx, created, origin);
+  }
+});
+
+/**
+ * Invite a supplier contact: create their portal account and email them the
+ * invite link.
+ */
+export const inviteSupplierContact = defineServiceFn({
+  input: z.object({
+    supplierContactId: z.string().min(1),
+    supplierId: z.string().min(1),
+    ...requestOrigin
+  }),
+  permission: { create: "users" },
+  async run(ctx, { supplierContactId, supplierId, ...origin }) {
+    const created = await service.createSupplierAccount(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        id: supplierContactId,
+        supplierId,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      }
+    );
+    if (!created.success) {
+      return ctx.error(
+        "internal",
+        created.message ?? "Failed to create supplier account",
+        created
+      );
+    }
+    return service.emailAccountInvite(ctx, created, origin);
+  }
+});
+
+/**
+ * Send pending invites again.
+ *
+ * @remarks
+ * One user is re-invited at once: the invite gets a new code (the old link
+ * stops working), its acceptance and revocation are cleared, and its
+ * `createdAt` restarts the controlled-environment expiry. Several are queued
+ * as a job (`queued: true`). Refused when the user has no invite here.
+ */
+export const resendInvites = defineServiceFn({
+  input: z.object({
+    userIds: z.array(z.string().min(1)).min(1),
+    ...requestOrigin
+  }),
+  permission: { create: "users" },
+  async run(ctx, { userIds, ip, city }) {
+    const companyId = ctx.company.id;
+    if (userIds.length > 1) {
+      try {
+        await batchTrigger(
+          "user-admin",
+          userIds.map((id) => ({
+            payload: {
+              id,
+              type: "resend" as const,
+              companyId,
+              location: city ?? "Unknown",
+              ip: ip ?? "127.0.0.1"
+            }
+          }))
+        );
+      } catch (err) {
+        return ctx.error("internal", "Failed to reinvite users", err);
+      }
+      return { queued: true };
+    }
+
+    const [userId] = userIds;
+    const serviceRole = ctx.asSystem.supabase;
+    const [company, user] = await Promise.all([
+      serviceRole.from("company").select("name").eq("id", companyId).single(),
+      serviceRole
+        .from("user")
+        .select("email, fullName")
+        .eq("id", userId)
+        .single()
     ]);
-
-  if (contactUpdate.error) {
-    if (isNewUser) {
-      await deleteAuthAccount(serviceRole, userId);
-    } else {
-      await deactivateCustomer(serviceRole, userId, companyId);
-    }
-    return { success: false, message: contactUpdate.error.message };
-  }
-
-  if (customerAccountInsert.error) {
-    if (isNewUser) {
-      await deleteAuthAccount(serviceRole, userId);
-    } else {
-      await deactivateCustomer(serviceRole, userId, companyId);
-    }
-    return { success: false, message: customerAccountInsert.error.message };
-  }
-
-  if (inviteInsert.error) {
-    if (isNewUser) {
-      await deleteAuthAccount(serviceRole, userId);
-    } else {
-      await deactivateCustomer(serviceRole, userId, companyId);
-    }
-    return { success: false, message: inviteInsert.error.message };
-  }
-
-  return { success: true, code, userId, email };
-}
-
-export async function createEmployeeAccount(
-  client: SupabaseClient<Database>,
-  {
-    email,
-    firstName,
-    lastName,
-    employeeType,
-    locationId,
-    companyId,
-    createdBy,
-    attestedBy,
-    attestedAt
-  }: {
-    email: string;
-    firstName: string;
-    lastName: string;
-    employeeType: string;
-    locationId: string;
-    companyId: string;
-    createdBy: string;
-    // ITAR (controlled environments): the inviter's 22 CFR 120.62 U.S.-person
-    // attestation. Null in ordinary deployments.
-    attestedBy?: string | null;
-    attestedAt?: string | null;
-  }
-): Promise<
-  | { success: false; message: string }
-  | { success: true; code: string; userId: string }
-> {
-  const employeeTypePermissions = await getPermissionsByEmployeeType(
-    client,
-    employeeType
-  );
-  if (employeeTypePermissions.error) {
-    return { success: false, message: employeeTypePermissions.error.message };
-  }
-
-  const permissions = makePermissionsFromEmployeeType(employeeTypePermissions);
-  const serviceRole = getCarbonServiceRole();
-  const user = await getUserByEmail(email);
-  let userId = "";
-  let isNewUser = false;
-
-  if (user.data) {
-    userId = user.data.id;
-    if (!(await authIdentityExists(userId))) {
-      return {
-        success: false,
-        message:
-          "This user's auth account no longer exists. Contact support before re-adding."
-      };
+    if (!company.data || !user.data) {
+      return ctx.error("internal", "Failed to load company or user");
     }
 
-    const existingEmployee = await client
-      .from("employee")
-      .select("id")
-      .eq("id", userId)
+    const existingInvite = await serviceRole
+      .from("invite")
+      .select("createdBy")
+      .eq("email", user.data.email)
       .eq("companyId", companyId)
       .maybeSingle();
-
-    if (existingEmployee.data) {
-      return {
-        success: false,
-        message: "This user is already an employee in this company"
-      };
-    }
-  } else {
-    isNewUser = true;
-    const resolvedId = await resolveAuthUserId(email);
-    if (!resolvedId) {
-      return { success: false, message: "Failed to create auth account" };
-    }
-    userId = resolvedId;
-
-    const createCarbonUser = await createUser(serviceRole, {
-      id: userId,
-      email: email.toLowerCase(),
-      firstName,
-      lastName,
-      avatarUrl: null
-    });
-
-    if (createCarbonUser.error) {
-      await deleteAuthAccount(serviceRole, userId);
-      return { success: false, message: createCarbonUser.error.message };
-    }
-
-    await seedSsoIdentityForNewUser(serviceRole, { userId, email });
-  }
-
-  const code = crypto.randomUUID();
-  const [employeeInsert, jobInsert, inviteInsert] = await Promise.all([
-    insertEmployee(client, {
-      id: userId,
-      employeeTypeId: employeeType,
-      active: false,
-      companyId
-    }),
-    insertEmployeeJob(client, {
-      id: userId,
-      companyId,
-      locationId
-    }),
-    insertInvite(serviceRole, {
-      role: "employee",
-      permissions,
-      email,
-      companyId,
-      createdBy,
-      code,
-      attestedBy: attestedBy ?? null,
-      attestedAt: attestedAt ?? null
-    })
-  ]);
-
-  if (employeeInsert.error) {
-    if (isNewUser) {
-      await deleteAuthAccount(serviceRole, userId);
-    }
-    return { success: false, message: employeeInsert.error.message };
-  }
-
-  if (jobInsert.error) {
-    if (isNewUser) {
-      await deleteAuthAccount(serviceRole, userId);
-    } else {
-      await deactivateEmployee(serviceRole, userId, companyId);
-    }
-    return { success: false, message: jobInsert.error.message };
-  }
-
-  if (inviteInsert.error) {
-    if (isNewUser) {
-      await deleteAuthAccount(serviceRole, userId);
-    } else {
-      await deactivateEmployee(serviceRole, userId, companyId);
-    }
-    return { success: false, message: inviteInsert.error.message };
-  }
-
-  return { success: true, code, userId };
-}
-
-export async function createSupplierAccount(
-  client: SupabaseClient<Database>,
-  {
-    id,
-    supplierId,
-    companyId,
-    createdBy
-  }: {
-    id: string;
-    supplierId: string;
-    companyId: string;
-    createdBy: string;
-  }
-): Promise<
-  | { success: false; message: string }
-  | { success: true; code: string; userId: string; email: string }
-> {
-  const supplierContact = await getSupplierContact(client, id);
-  if (
-    supplierContact.error ||
-    supplierContact.data === null ||
-    supplierContact.data.contact === null ||
-    !supplierContact.data.contact.email
-  ) {
-    return { success: false, message: "Failed to get supplier contact" };
-  }
-
-  const { email, firstName, lastName } = supplierContact.data.contact;
-
-  const permissions = makeSupplierPermissions(companyId);
-  const serviceRole = getCarbonServiceRole();
-  const user = await getUserByEmail(email);
-  let userId = "";
-  let isNewUser = false;
-
-  if (user.data) {
-    userId = user.data.id;
-    if (!(await authIdentityExists(userId))) {
-      return {
-        success: false,
-        message:
-          "This user's auth account no longer exists. Contact support before re-adding."
-      };
-    }
-  } else {
-    isNewUser = true;
-    const resolvedId = await resolveAuthUserId(email);
-    if (!resolvedId) {
-      return { success: false, message: "Failed to create auth account" };
-    }
-    userId = resolvedId;
-
-    const createCarbonUser = await createUser(serviceRole, {
-      id: userId,
-      email: email.toLowerCase(),
-      firstName: firstName ?? "",
-      lastName: lastName ?? "",
-      avatarUrl: null
-    });
-
-    if (createCarbonUser.error) {
-      await deleteAuthAccount(serviceRole, userId);
-      return { success: false, message: createCarbonUser.error.message };
-    }
-
-    await seedSsoIdentityForNewUser(serviceRole, { userId, email });
-  }
-
-  const code = crypto.randomUUID();
-  const [contactUpdate, supplierAccountInsert, inviteInsert] =
-    await Promise.all([
-      client.from("supplierContact").update({ userId }).eq("id", id),
-      insertSupplierAccount(client, {
-        id: userId,
-        supplierId,
-        companyId
-      }),
-      insertInvite(serviceRole, {
-        role: "supplier",
-        permissions,
-        email,
-        companyId,
-        createdBy,
-        code
-      })
-    ]);
-
-  if (contactUpdate.error) {
-    if (isNewUser) {
-      await deleteAuthAccount(serviceRole, userId);
-    } else {
-      await deactivateSupplier(serviceRole, userId, companyId);
-    }
-    return { success: false, message: contactUpdate.error.message };
-  }
-
-  if (supplierAccountInsert.error) {
-    if (isNewUser) {
-      await deleteAuthAccount(serviceRole, userId);
-    } else {
-      await deactivateSupplier(serviceRole, userId, companyId);
-    }
-    return { success: false, message: supplierAccountInsert.error.message };
-  }
-
-  if (inviteInsert.error) {
-    if (isNewUser) {
-      await deleteAuthAccount(serviceRole, userId);
-    } else {
-      await deactivateSupplier(serviceRole, userId, companyId);
-    }
-    return { success: false, message: inviteInsert.error.message };
-  }
-
-  return { success: true, code, userId, email };
-}
-
-async function createUser(
-  client: SupabaseClient<Database>,
-  user: Omit<User, "fullName">
-) {
-  const { data, error } = await insertUser(client, user);
-
-  if (error) {
-    await deleteAuthAccount(client, user.id);
-  }
-
-  return { data, error };
-}
-
-export async function getClaims(
-  client: SupabaseClient<Database>,
-  uid: string,
-  company?: string
-) {
-  return client.rpc("get_claims", { uid, company: company ?? "" });
-}
-
-export async function getCurrentUser(
-  request: Request,
-  client: SupabaseClient<Database>
-) {
-  const { userId } = await requireAuthSession(request);
-
-  const user = await getUser(client, userId);
-  if (user?.error || user?.data === null) {
-    throw redirect(
-      path.to.authenticatedRoot,
-      await flash(request, error(user.error, "Failed to get user"))
-    );
-  }
-
-  return user.data;
-}
-
-export function getPermissionCacheKey(userId: string) {
-  return `permissions:${userId}`;
-}
-
-export async function getUser(client: SupabaseClient<Database>, id: string) {
-  return client
-    .from("user")
-    .select("*")
-    .eq("id", id)
-    .eq("active", true)
-    .single();
-}
-
-export async function getUserByEmail(email: string) {
-  return getCarbonServiceRole()
-    .from("user")
-    .select("*")
-    .eq("email", email.toLowerCase())
-    .single();
-}
-
-// Returns false if the auth identity for this userId has been deleted, leaving only an app-side row.
-async function authIdentityExists(userId: string): Promise<boolean> {
-  const { error } = await getCarbonServiceRole().auth.admin.getUserById(userId);
-  return !error;
-}
-
-// Creates the auth user for email, or recovers the existing ID if a prior deletion left one behind.
-async function resolveAuthUserId(email: string): Promise<string | null> {
-  const serviceRole = getCarbonServiceRole();
-  const result = await serviceRole.auth.admin.createUser({
-    email: email.toLowerCase(),
-    password: crypto.randomUUID(),
-    email_confirm: true
-  });
-
-  if (!result.error) return result.data.user.id;
-
-  // Only recover for "already registered"; other errors (network, rate limit) surface as-is.
-  if (result.error.code !== "user_already_exists") return null;
-
-  // auth record exists but app user row doesn't; find the orphaned ID.
-  const target = email.toLowerCase();
-  let page = 1;
-  const perPage = 1000;
-  while (true) {
-    const { data, error } = await serviceRole.auth.admin.listUsers({
-      page,
-      perPage
-    });
-    if (error || !data?.users?.length) return null;
-    const match = data.users.find((u) => u.email?.toLowerCase() === target);
-    if (match) return match.id;
-    if (data.users.length < perPage) return null;
-    page++;
-  }
-}
-
-export async function getUserGroups(
-  client: SupabaseClient<Database>,
-  userId: string
-) {
-  // Normalize an empty result to [] (not null) — belt-and-suspenders with the
-  // groups_for_user COALESCE migration, so a user with no memberships is a
-  // well-formed empty array rather than a null the /x guard could mistake for
-  // an auth failure.
-  const result = await client.rpc("groups_for_user", { uid: userId });
-  return { ...result, data: result.data ?? [] };
-}
-
-export async function getUserDefaults(
-  client: SupabaseClient<Database>,
-  userId: string,
-  companyId: string
-) {
-  return client
-    .from("userDefaults")
-    .select("*")
-    .eq("userId", userId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-}
-
-export async function getModulePreferences(
-  client: SupabaseClient<Database>,
-  userId: string,
-  companyId: string
-) {
-  return client
-    .from("userModulePreference")
-    .select("module, position, hidden")
-    .eq("userId", userId)
-    .eq("companyId", companyId)
-    .order("position");
-}
-
-export async function upsertModulePreferences(
-  client: SupabaseClient<Database>,
-  userId: string,
-  companyId: string,
-  preferences: { module: string; position: number; hidden: boolean }[]
-) {
-  return client.from("userModulePreference").upsert(
-    preferences.map((p) => ({
-      userId,
-      companyId,
-      module: p.module,
-      position: p.position,
-      hidden: p.hidden,
-      updatedAt: new Date().toISOString()
-    })),
-    { onConflict: "userId,companyId,module" }
-  );
-}
-
-async function insertCustomerAccount(
-  client: SupabaseClient<Database>,
-  customerAccount: {
-    id: string;
-    customerId: string;
-    companyId: string;
-  }
-) {
-  return client
-    .from("customerAccount")
-    .insert(customerAccount)
-    .select("id")
-    .single();
-}
-
-export async function insertEmployee(
-  client: SupabaseClient<Database>,
-  employee: EmployeeInsert
-) {
-  return client.from("employee").insert([employee]).select("*").single();
-}
-
-export async function insertInvite(
-  client: SupabaseClient<Database>,
-  invite: InviteInsert
-) {
-  return client
-    .from("invite")
-    .upsert([{ ...invite, acceptedAt: null }], {
-      onConflict: "email, companyId",
-      ignoreDuplicates: false
-    })
-    .select("*")
-    .single();
-}
-
-async function insertSupplierAccount(
-  client: SupabaseClient<Database>,
-  supplierAccount: {
-    id: string;
-    supplierId: string;
-    companyId: string;
-  }
-) {
-  return client
-    .from("supplierAccount")
-    .insert(supplierAccount)
-    .select("id")
-    .single();
-}
-
-async function insertUser(
-  client: SupabaseClient<Database>,
-  user: Omit<User, "fullName" | "createdAt">
-) {
-  return client.from("user").upsert([user]).select("*");
-}
-
-/**
- * Creates a console-only operator: a lightweight user record that can pin in
- * at MES terminals without needing email, password, or Supabase Auth.
- *
- * Uses a synthetic email ({uuid}@console.internal) to satisfy the NOT NULL
- * constraint. No auth.users entry is created — operators cannot log in.
- */
-export async function createConsoleOperator(
-  client: SupabaseClient<Database>,
-  {
-    firstName,
-    lastName,
-    employeeType,
-    locationId,
-    companyId,
-    createdBy
-  }: {
-    firstName: string;
-    lastName: string;
-    employeeType: string;
-    locationId: string;
-    companyId: string;
-    createdBy: string;
-  }
-): Promise<
-  | { success: false; message: string }
-  | { success: true; userId: string; name: string }
-> {
-  const serviceRole = getCarbonServiceRole();
-  const userId = crypto.randomUUID();
-  const syntheticEmail = `${userId}@console.internal`;
-
-  // 1. Insert user record (no Supabase Auth)
-  // Note: isConsoleOperator field added by migration 20260319000000_console-mode.sql
-  // Type will be available after db:generate runs
-  const userInsert = await serviceRole
-    .from("user")
-    .insert({
-      id: userId,
-      email: syntheticEmail,
-      firstName,
-      lastName,
-      avatarUrl: null,
-      active: true,
-      isConsoleOperator: true
-    } as any)
-    .select("*")
-    .single();
-
-  if (userInsert.error) {
-    return { success: false, message: userInsert.error.message };
-  }
-
-  // 2. Insert employee (auto-active, no invite needed)
-  const employeeInsert = await insertEmployee(client, {
-    id: userId,
-    employeeTypeId: employeeType,
-    active: true,
-    companyId
-  });
-
-  if (employeeInsert.error) {
-    // Cleanup: remove user
-    await serviceRole.from("user").delete().eq("id", userId);
-    return { success: false, message: employeeInsert.error.message };
-  }
-
-  // 3. Insert employeeJob
-  const jobInsert = await insertEmployeeJob(client, {
-    id: userId,
-    companyId,
-    locationId
-  });
-
-  if (jobInsert.error) {
-    // Cleanup
-    await serviceRole.from("employee").delete().eq("id", userId);
-    await serviceRole.from("user").delete().eq("id", userId);
-    return { success: false, message: jobInsert.error.message };
-  }
-
-  // 4. Add to userToCompany (for billing/plan counting)
-  const companyLink = await serviceRole
-    .from("userToCompany")
-    .insert({ userId, companyId, role: "employee" as const })
-    .select("*")
-    .single();
-
-  if (companyLink.error) {
-    // Non-critical — operator still works without this
-    logger.error("Failed to link console operator to company", {
-      error: companyLink.error
-    });
-  }
-
-  return {
-    success: true,
-    userId,
-    name: `${firstName} ${lastName}`
-  };
-}
-
-/**
- * Converts a console-only operator to a full user by adding a Supabase Auth
- * account and updating their email to a real one.
- */
-export async function convertConsoleOperatorToUser(
-  client: SupabaseClient<Database>,
-  {
-    userId,
-    email,
-    employeeType,
-    companyId,
-    createdBy
-  }: {
-    userId: string;
-    email: string;
-    employeeType: string;
-    companyId: string;
-    createdBy: string;
-  }
-): Promise<{ success: false; message: string } | { success: true }> {
-  const serviceRole = getCarbonServiceRole();
-
-  // Verify the user is a console operator
-  // Note: isConsoleOperator field added by migration 20260319000000_console-mode.sql
-  const existingUser = await serviceRole
-    .from("user")
-    .select("*")
-    .eq("id", userId)
-    .single();
-
-  if (existingUser.error || !(existingUser.data as any)?.isConsoleOperator) {
-    return { success: false, message: "User is not a console operator" };
-  }
-
-  // Check email isn't already taken
-  const emailCheck = await serviceRole
-    .from("user")
-    .select("id")
-    .eq("email", email.toLowerCase())
-    .maybeSingle();
-
-  if (emailCheck.data) {
-    return { success: false, message: "Email is already in use" };
-  }
-
-  // Create Supabase Auth account with the same user ID
-  const createAuth = await serviceRole.auth.admin.createUser({
-    id: userId,
-    email: email.toLowerCase(),
-    password: crypto.randomUUID(),
-    email_confirm: true
-  });
-
-  if (createAuth.error) {
-    return { success: false, message: createAuth.error.message };
-  }
-
-  // Update user record: real email + no longer console operator
-  const updateUser = await serviceRole
-    .from("user")
-    .update({
-      email: email.toLowerCase(),
-      isConsoleOperator: false
-    } as any)
-    .eq("id", userId);
-
-  if (updateUser.error) {
-    // Cleanup auth
-    await deleteAuthAccount(serviceRole, userId);
-    return { success: false, message: updateUser.error.message };
-  }
-
-  // Change employee type to the selected type
-  await serviceRole
-    .from("employee")
-    .update({ employeeTypeId: employeeType })
-    .eq("id", userId)
-    .eq("companyId", companyId);
-
-  // Create invite so user gets the magic link email
-  const code = crypto.randomUUID();
-  const employee = await client
-    .from("employee")
-    .select("employeeTypeId")
-    .eq("id", userId)
-    .eq("companyId", companyId)
-    .single();
-
-  if (employee.data?.employeeTypeId) {
-    const employeeTypePermissions = await getPermissionsByEmployeeType(
-      client,
-      employee.data.employeeTypeId
-    );
-
-    if (!employeeTypePermissions.error) {
-      const permissions = makePermissionsFromEmployeeType(
-        employeeTypePermissions
+    if (existingInvite.error || !existingInvite.data) {
+      return ctx.error(
+        "notFound",
+        "No invite record found for user",
+        existingInvite.error
       );
+    }
 
-      const inviteResult = await insertInvite(serviceRole, {
-        role: "employee",
-        permissions,
-        email: email.toLowerCase(),
+    const refreshed = await serviceRole
+      .from("invite")
+      .update({
+        code: nanoid(),
+        acceptedAt: null,
+        revokedAt: null,
+        createdAt: datetime.timestamp()
+      })
+      .eq("email", user.data.email)
+      .eq("companyId", companyId)
+      .select("code")
+      .single();
+    if (refreshed.error || !refreshed.data) {
+      return ctx.error("internal", "Failed to refresh invite", refreshed.error);
+    }
+
+    const inviter = await serviceRole
+      .from("user")
+      .select("email, fullName")
+      .eq("id", existingInvite.data.createdBy)
+      .single();
+
+    await service.sendInviteEmail(ctx, {
+      companyName: company.data.name,
+      invitedBy: {
+        email: inviter.data?.email ?? user.data.email,
+        fullName: inviter.data?.fullName ?? null
+      },
+      email: user.data.email,
+      code: refreshed.data.code,
+      name: user.data.fullName ?? "",
+      ip,
+      city
+    });
+    return { queued: false };
+  }
+});
+
+/**
+ * Revoke pending invites, and take the users' access to the company away.
+ *
+ * @remarks
+ * One user is deactivated at once (and, on Cloud, the subscription's seat
+ * count updated); several are deactivated by a job. Then every open invite
+ * of theirs here is marked revoked, and each revocation is written to the
+ * audit log when the company keeps one.
+ */
+export const revokeInvites = defineServiceFn({
+  input: z.object({
+    userIds: z.array(z.string().min(1)).min(1),
+    ip: z.string().optional(),
+    userAgent: z.string().optional()
+  }),
+  permission: { create: "users" },
+  async run(ctx, { userIds, ip, userAgent }) {
+    const companyId = ctx.company.id;
+    const actorId = ctx.auditUserId;
+    const serviceRole = ctx.asSystem.supabase;
+
+    const users = await serviceRole
+      .from("user")
+      .select("id, email")
+      .in("id", userIds);
+    if (users.error) {
+      return ctx.error("internal", "Failed to load users", users.error);
+    }
+
+    if (users.data.length === 1) {
+      const deactivated = await deactivateUser(
+        serviceRole,
+        users.data[0].id,
         companyId,
-        createdBy,
-        code
-      });
+        actorId,
+        ip
+      );
+      if (!deactivated.success) {
+        return ctx.error(
+          "internal",
+          "Failed to deactivate user",
+          deactivated.message
+        );
+      }
+      if (CarbonEdition === Edition.Cloud) {
+        await updateSubscriptionQuantityForCompany(companyId);
+      }
+    } else {
+      await batchTrigger(
+        "user-admin",
+        userIds.map((id) => ({
+          payload: { id, type: "deactivate" as const, companyId, actorId, ip }
+        }))
+      );
+    }
 
-      if (inviteResult.error) {
-        logger.error("Failed to create invite for converted operator", {
-          error: inviteResult.error
+    const revokedAt = datetime.timestamp();
+    const revoked = await serviceRole
+      .from("invite")
+      .update({ revokedAt })
+      .in(
+        "email",
+        users.data.map((user) => user.email)
+      )
+      .eq("companyId", companyId)
+      .is("revokedAt", null)
+      .select("id");
+    if (revoked.error) {
+      return ctx.error("internal", "Failed to revoke invites", revoked.error);
+    }
+
+    // Best effort: a company without audit logging has no audit log table.
+    if (revoked.data.length > 0) {
+      try {
+        await insertAuditLogEntries(
+          serviceRole,
+          companyId,
+          revoked.data.map((invite) => ({
+            tableName: "invite" as const,
+            entityType: "invite" as const,
+            entityId: invite.id,
+            recordId: invite.id,
+            operation: "UPDATE" as const,
+            actorId,
+            diff: { revokedAt: { old: null, new: revokedAt } },
+            metadata: { ipAddress: ip, userAgent }
+          }))
+        );
+      } catch (err) {
+        logger.warn("[revoke-invite] audit write skipped", { error: err });
+      }
+    }
+    return { revoked: revoked.data.length };
+  }
+});
+
+/**
+ * Deactivate users in the company: remove their access and their grants
+ * here.
+ *
+ * @remarks
+ * Refuses the caller's own account. One user is deactivated at once, and
+ * `message` says how it went; several are deactivated by a job
+ * (`queued: true`).
+ */
+export const deactivateUsers = defineServiceFn({
+  input: z.object({
+    userIds: z.array(z.string().min(1)).min(1),
+    ip: z.string().optional()
+  }),
+  permission: { delete: "users" },
+  async run(ctx, { userIds, ip }) {
+    const companyId = ctx.company.id;
+    const actorId = ctx.auditUserId;
+    if (userIds.includes(actorId)) {
+      return ctx.error("rule", "You cannot deactivate yourself");
+    }
+
+    if (userIds.length === 1) {
+      // The service role: "userPermission" has no UPDATE policy, so under the
+      // caller's client the permission strip matched no rows and the user
+      // kept every grant for this company. It also updates the Stripe seats.
+      const result = await deactivateUser(
+        ctx.asSystem.supabase,
+        userIds[0],
+        companyId,
+        actorId,
+        ip
+      );
+      if (!result.success) {
+        return ctx.error(
+          "internal",
+          result.message ?? "Failed to deactivate user"
+        );
+      }
+      return { queued: false, message: result.message };
+    }
+
+    try {
+      await batchTrigger(
+        "user-admin",
+        userIds.map((id) => ({
+          payload: { id, type: "deactivate" as const, companyId, actorId, ip }
+        }))
+      );
+    } catch (err) {
+      return ctx.error("internal", "Failed to deactivate users", err);
+    }
+    return {
+      queued: true,
+      message: "Success. Please check back in a few moments."
+    };
+  }
+});
+
+const companyPermissions = z.record(z.string(), userPermissionsValidator);
+/**
+ * Change an employee's employee type and their permissions in the company.
+ *
+ * @remarks
+ * Needs role authoring (the PERMISSIONS feature). The employee and the type
+ * must both be the company's, and the caller must be a claims admin. The
+ * change is written to the permission audit log.
+ */
+export const updateEmployeePermissions = defineServiceFn({
+  input: z.object({
+    id: z.string().min(1),
+    employeeType: z.string().min(1),
+    permissions: companyPermissions,
+    ip: z.string().optional()
+  }),
+  permission: { update: "users" },
+  async run(ctx, { id, employeeType, permissions, ip }) {
+    const gated = await service.refuseUnlessPermissionsFeature(ctx);
+    if (gated) return gated;
+
+    const result = await updateEmployee(ctx.asCaller.supabase, {
+      id,
+      employeeType,
+      permissions,
+      companyId: ctx.company.id,
+      actorId: ctx.auditUserId,
+      ip
+    });
+    if (!result.success)
+      return service.permissionsWriteError(ctx, result.message);
+    return { id };
+  }
+});
+
+/**
+ * Change several employees' permissions in the company, in a job.
+ *
+ * @remarks
+ * Needs role authoring (the PERMISSIONS feature). Every user must be an
+ * employee of the company. `editType: "add"` only grants; any other value
+ * also takes away what `permissions` leaves unchecked.
+ */
+export const bulkUpdatePermissions = defineServiceFn({
+  input: z.object({
+    editType: z.string().min(1),
+    userIds: z.array(z.string().min(1)).min(1),
+    permissions: companyPermissions,
+    ip: z.string().optional()
+  }),
+  permission: { update: "users" },
+  async run(ctx, { editType, userIds, permissions, ip }) {
+    const gated = await service.refuseUnlessPermissionsFeature(ctx);
+    if (gated) return gated;
+
+    const companyId = ctx.company.id;
+    // The job writes these users' grants as the service role: every id must
+    // be an employee of this company. One batched read.
+    const uniqueUserIds = [...new Set(userIds)];
+    const members = await ctx.asSystem.supabase
+      .from("employee")
+      .select("id")
+      .in("id", uniqueUserIds)
+      .eq("companyId", companyId);
+    if (members.error || (members.data ?? []).length !== uniqueUserIds.length) {
+      logger.error("Bulk permission edit names users outside the company", {
+        companyId,
+        userIds: uniqueUserIds,
+        error: members.error
+      });
+      return ctx.error("notFound", "Employee not found");
+    }
+
+    await batchTrigger(
+      "update-permissions",
+      userIds.map((id) => ({
+        payload: {
+          id,
+          permissions,
+          addOnly: editType === "add",
+          companyId,
+          actorId: ctx.auditUserId,
+          ip
+        }
+      }))
+    );
+    return { count: userIds.length };
+  }
+});
+
+/**
+ * Create an employee type with its permissions.
+ *
+ * @remarks
+ * Needs role authoring (the PERMISSIONS feature). The type and its
+ * permissions are two writes: when the permissions fail, the type stays.
+ */
+export const createEmployeeType = defineServiceFn({
+  input: z.object({
+    name: z.string().trim().min(1),
+    permissions: employeeTypePermissionsValidator
+  }),
+  permission: { create: "users" },
+  async run(ctx, { name, permissions }) {
+    const gated = await service.refuseUnlessPermissionsFeature(ctx);
+    if (gated) return gated;
+
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const created = await insertEmployeeType(client, { name, companyId });
+    const employeeTypeId = created.data?.id;
+    if (created.error || !employeeTypeId) {
+      return ctx.error(
+        "internal",
+        "Failed to insert employee type",
+        created.error
+      );
+    }
+
+    const saved = await upsertEmployeeTypePermissions(
+      client,
+      employeeTypeId,
+      companyId,
+      permissions
+    );
+    if (saved.error) {
+      return ctx.error(
+        "internal",
+        "Failed to insert employee type permissions",
+        saved.error
+      );
+    }
+    return { id: employeeTypeId };
+  }
+});
+
+/**
+ * Rename an employee type and change its permissions.
+ *
+ * @remarks
+ * Needs role authoring (the PERMISSIONS feature). Two writes, as for
+ * `createEmployeeType`.
+ */
+export const updateEmployeeType = defineServiceFn({
+  input: z.object({
+    id: z.string().min(1),
+    name: z.string().trim().min(1),
+    permissions: employeeTypePermissionsValidator
+  }),
+  permission: { update: "users" },
+  async run(ctx, { id, name, permissions }) {
+    const gated = await service.refuseUnlessPermissionsFeature(ctx);
+    if (gated) return gated;
+
+    const client = ctx.asCaller.supabase;
+    const updated = await upsertEmployeeType(client, { id, name });
+    if (updated.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update employee type",
+        updated.error
+      );
+    }
+
+    const saved = await upsertEmployeeTypePermissions(
+      client,
+      id,
+      ctx.company.id,
+      permissions
+    );
+    if (saved.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update employee type permissions",
+        saved.error
+      );
+    }
+    return { id };
+  }
+});
+
+const groupMembers = z.array(z.string().min(1)).min(1);
+
+/**
+ * Create a group with its members: users (`user_<id>`) and groups
+ * (`group_<id>`). When the members cannot be saved, the group is removed.
+ */
+export const createGroup = defineServiceFn({
+  input: z.object({ name: z.string().trim().min(1), selections: groupMembers }),
+  permission: { create: "users" },
+  async run(ctx, { name, selections }) {
+    const client = ctx.asCaller.supabase;
+    const created = await service.insertGroup(client, {
+      name,
+      companyId: ctx.company.id
+    });
+    const groupId = created.data?.id;
+    if (created.error || !groupId) {
+      return ctx.error("internal", "Failed to insert group", created.error);
+    }
+
+    const members = await service.upsertGroupMembers(
+      client,
+      groupId,
+      selections
+    );
+    if (members.error) {
+      await service.deleteGroup(client, groupId);
+      return ctx.error(
+        "internal",
+        "Failed to insert group members",
+        members.error
+      );
+    }
+    return { id: groupId };
+  }
+});
+
+/** Rename a group and replace its members. */
+export const updateGroup = defineServiceFn({
+  input: z.object({
+    id: z.string().min(1),
+    name: z.string().trim().min(1),
+    selections: groupMembers
+  }),
+  // The route has only ever required view; row-level security decides the
+  // write. Kept as it was, so this stays unpublished.
+  permission: { view: "users" },
+  async run(ctx, { id, name, selections }) {
+    const client = ctx.asCaller.supabase;
+    const [group, members] = await Promise.all([
+      service.upsertGroup(client, { id, name, companyId: ctx.company.id }),
+      service.upsertGroupMembers(client, id, selections)
+    ]);
+    if (group.error) {
+      return ctx.error("internal", "Failed to update group", group.error);
+    }
+    if (members.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update group members",
+        members.error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
+ * Add a console operator: a PIN-only person who pins in at MES consoles.
+ *
+ * @remarks
+ * The operator gets the company's Console Operator employee type and a new
+ * 4-digit PIN, stored only as a hash and returned once. The subscription's
+ * seat count is updated. When the PIN cannot be set, the operator stays and
+ * the error says to reset the PIN.
+ */
+export const addConsoleOperator = defineServiceFn({
+  input: createOperatorValidator,
+  permission: { create: "users" },
+  async run(ctx, { firstName, lastName, locationId }) {
+    const companyId = ctx.company.id;
+    const operatorType = await ctx.asSystem.supabase
+      .from("employeeType")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("systemType", "Console Operator")
+      .single();
+    if (operatorType.error || !operatorType.data) {
+      return ctx.error(
+        "internal",
+        "Console Operator employee type not found. Run the migration.",
+        operatorType.error
+      );
+    }
+
+    const created = await service.createConsoleOperator(ctx.asCaller.supabase, {
+      firstName,
+      lastName,
+      employeeType: operatorType.data.id,
+      locationId,
+      companyId,
+      createdBy: ctx.auditUserId
+    });
+    if (!created.success) {
+      return ctx.error(
+        "internal",
+        created.message ?? "Failed to create console operator",
+        created
+      );
+    }
+
+    const pin = generateConsolePin();
+    try {
+      await setEmployeePin(ctx.asSystem.pg, {
+        employeeId: created.userId,
+        companyId,
+        pin,
+        updatedBy: ctx.auditUserId
+      });
+    } catch (err) {
+      await updateSubscriptionQuantityForCompany(companyId);
+      return ctx.error(
+        "internal",
+        "Operator created, but the PIN could not be set. Use Reset PIN.",
+        err
+      );
+    }
+
+    await updateSubscriptionQuantityForCompany(companyId);
+    return { userId: created.userId, name: created.name, pin };
+  }
+});
+
+/**
+ * Give a person a new console PIN. Their old PIN stops working at once.
+ *
+ * @remarks
+ * A PIN pins in as that person at any MES console, so resetting one hands
+ * over their shop-floor identity. Users update covers console operators
+ * (PIN-only accounts made for this); for anyone else, an admin included, the
+ * caller also needs settings update, the permission that turns console mode
+ * on. The PIN is stored only as a hash and returned once.
+ */
+export const resetConsoleOperatorPin = defineServiceFn({
+  input: z.object({ operatorId: z.string().min(1) }),
+  permission: { update: "users" },
+  async run(ctx, { operatorId }) {
+    const user = await ctx.asCaller.supabase
+      .from("user")
+      .select("id, isConsoleOperator")
+      .eq("id", operatorId)
+      .single();
+    if (user.error || !user.data) {
+      return ctx.error("notFound", "Operator not found", user.error);
+    }
+    if (!user.data.isConsoleOperator && !ctx.can({ update: "settings" })) {
+      return ctx.error("forbidden", "You do not have permission to do this");
+    }
+
+    // The (employee, company) foreign key refuses an operator outside this
+    // company.
+    const pin = generateConsolePin();
+    try {
+      await setEmployeePin(ctx.asSystem.pg, {
+        employeeId: operatorId,
+        companyId: ctx.company.id,
+        pin,
+        updatedBy: ctx.auditUserId
+      });
+    } catch (err) {
+      return ctx.error("internal", "Failed to reset PIN", err);
+    }
+    return { pin };
+  }
+});
+
+/** Where a certification was signed, as the route read it. */
+const signedFrom = {
+  ipAddress: z.string().optional(),
+  userAgent: z.string().optional()
+};
+const RIDER_SIGNER =
+  "The Rider must be accepted by a representative of the company it binds.";
+
+/**
+ * Accept the ITAR Rider on behalf of the company.
+ *
+ * @remarks
+ * It unblocks the whole company's controlled-environment gate, so it needs
+ * users update, and the signer must be a real person of the company: an API
+ * key signs as no one, and Carbon staff (who hold users update in companies
+ * they set up) cannot bind a customer.
+ */
+export const certifyItarEntity = defineServiceFn({
+  input: z.object({
+    authorityToBind: z.boolean(),
+    acceptRider: z.boolean(),
+    fullLegalName: z.string(),
+    title: z.string(),
+    complianceContact: z.string(),
+    ...signedFrom
+  }),
+  permission: { update: "users" },
+  async run(ctx, { ipAddress, userAgent, ...form }) {
+    if (ctx.actor.type !== "user") return ctx.error("forbidden", RIDER_SIGNER);
+    const signer = await ctx.asSystem.supabase
+      .from("user")
+      .select("email")
+      .eq("id", ctx.actor.userId)
+      .single();
+    const email = signer.data?.email;
+    if (!email || !requiresItarEntityCertification(email)) {
+      return ctx.error("forbidden", RIDER_SIGNER);
+    }
+
+    const parsed = itarEntityCertificationValidator.safeParse(form);
+    if (!parsed.success) {
+      return ctx.error("validation", service.firstIssue(parsed.error));
+    }
+    return service.recordItarCertification(ctx, {
+      type: "entity",
+      fullLegalName: parsed.data.fullLegalName,
+      title: parsed.data.title,
+      complianceContact: parsed.data.complianceContact,
+      ipAddress,
+      userAgent
+    });
+  }
+});
+
+/** Certify that the caller is a U.S. person, for the controlled environment. */
+export const certifyItarUser = defineServiceFn({
+  input: z.object({
+    certifyUsPerson: z.boolean(),
+    agreeNotify: z.boolean(),
+    understandPenalty: z.boolean(),
+    fullLegalName: z.string(),
+    ...signedFrom
+  }),
+  permission: {},
+  async run(ctx, { ipAddress, userAgent, ...form }) {
+    const parsed = itarUserCertificationValidator.safeParse(form);
+    if (!parsed.success) {
+      return ctx.error("validation", service.firstIssue(parsed.error));
+    }
+    return service.recordItarCertification(ctx, {
+      type: "user",
+      fullLegalName: parsed.data.fullLegalName,
+      ipAddress,
+      userAgent
+    });
+  }
+});
+/**
+ * The ITAR gate: does a valid, unexpired entity Rider acceptance exist for this company, and a valid user attestation for this user
+ *
+ * @mcp read
+ */
+export const getItarCertificationStatus = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return await service.getItarCertificationStatus(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      ctx.auditUserId
+    );
+  }
+});
+
+/**
+ * The company's latest entity Rider acceptance, or null when nobody has accepted one yet
+ *
+ * @mcp read
+ */
+export const getItarEntityCertification = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getItarEntityCertification(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Compliance report source: every active employee with their latest ITAR certification (version / date / expiry)
+ *
+ * @mcp read
+ */
+export const getItarCertificationReport = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getItarCertificationReport(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Delete group
+ *
+ * @mcp destructive
+ */
+export const deleteGroup = defineServiceFn({
+  input: z.looseObject({ groupId: z.string() }),
+  permission: { delete: "users" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.deleteGroup(ctx.asCaller.supabase, input.groupId as never)
+    );
+  }
+});
+
+/**
+ * Get customers
+ *
+ * @mcp read
+ */
+export const getCustomers = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getCustomers(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get employee
+ *
+ * @mcp read
+ */
+export const getEmployee = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getEmployee(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get unrevoked invite emails
+ *
+ * @mcp read
+ */
+export const getUnrevokedInviteEmails = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getUnrevokedInviteEmails(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * User ids in this company with a verified authenticator
+ *
+ * @mcp read
+ */
+export const getUsersWithVerifiedMfa = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getUsersWithVerifiedMfa(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get employees
+ *
+ * @mcp read
+ */
+export const getEmployees = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getEmployees(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Gets console operators — users with @console.internal emails
+ *
+ * @mcp read
+ */
+export const getConsoleOperators = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getConsoleOperators(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get employee type
+ *
+ * @mcp read
+ */
+export const getEmployeeType = defineServiceFn({
+  input: z.looseObject({ employeeTypeId: z.string() }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getEmployeeType(
+        ctx.asCaller.supabase,
+        input.employeeTypeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get employee types
+ *
+ * @mcp read
+ */
+export const getEmployeeTypes = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getEmployeeTypes(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get invitable
+ *
+ * @mcp read
+ */
+export const getInvitable = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getInvitable(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get modules
+ *
+ * @mcp read
+ */
+export const getModules = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return unwrap(ctx, await service.getModules(ctx.asCaller.supabase));
+  }
+});
+
+/**
+ * Get group
+ *
+ * @mcp read
+ */
+export const getGroup = defineServiceFn({
+  input: z.looseObject({ groupId: z.string() }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getGroup(ctx.asCaller.supabase, input.groupId as never)
+    );
+  }
+});
+
+/**
+ * Get group members
+ *
+ * @mcp read
+ */
+export const getGroupMembers = defineServiceFn({
+  input: z.looseObject({ groupId: z.string() }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getGroupMembers(
+        ctx.asCaller.supabase,
+        input.groupId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get groups
+ *
+ * @mcp read
+ */
+export const getGroups = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    uid: z.string().nullable().optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getGroups(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get group emails
+ *
+ * @mcp read
+ */
+export const getGroupEmails = defineServiceFn({
+  input: z.looseObject({ groupIds: z.array(z.string()) }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return await service.getGroupEmails(
+      ctx.asCaller.supabase,
+      payload(ctx, input.groupIds).build() as never
+    );
+  }
+});
+
+/**
+ * Get user select groups
+ *
+ * @mcp read
+ */
+export const getUserSelectGroups = defineServiceFn({
+  input: z.looseObject({
+    type: z.string().optional(),
+    search: z.string().optional(),
+    limit: z.number(),
+    offset: z.number()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getUserSelectGroups(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get user select group members
+ *
+ * @mcp read
+ */
+export const getUserSelectGroupMembers = defineServiceFn({
+  input: z.looseObject({ groupId: z.string() }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getUserSelectGroupMembers(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.groupId as never
+      )
+    );
+  }
+});
+
+/**
+ * Search users for select
+ *
+ * @mcp read
+ */
+export const searchUsersForSelect = defineServiceFn({
+  input: z.looseObject({
+    q: z.string(),
+    type: z.string().optional(),
+    excludeSelf: z.boolean().optional(),
+    allowedIds: z.array(z.string()).optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.searchUsersForSelect(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).withUser().build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Resolve user select ids
+ *
+ * @mcp
+ */
+export const resolveUserSelectIds = defineServiceFn({
+  input: z.looseObject({ ids: z.array(z.string()) }),
+  permission: { update: "users" },
+  async run(ctx, input) {
+    return await service.resolveUserSelectIds(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      payload(ctx, input.ids).build() as never
+    );
+  }
+});
+
+/**
+ * Get permissions by employee type
+ *
+ * @mcp read
+ */
+export const getPermissionsByEmployeeType = defineServiceFn({
+  input: z.looseObject({ employeeTypeId: z.string() }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getPermissionsByEmployeeType(
+        ctx.asCaller.supabase,
+        input.employeeTypeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get suppliers
+ *
+ * @mcp read
+ */
+export const getSuppliers = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getSuppliers(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+// The caller's own account: every operation acts on the signed-in user (an
+// API key's creator).
+
+/** Change the caller's name, phone and about text. */
+export const updateOwnProfile = defineServiceFn({
+  input: accountProfileValidator,
+  permission: {},
+  async run(ctx, profile) {
+    const saved = await service.updatePublicAccount(ctx.asCaller.supabase, {
+      id: ctx.auditUserId,
+      ...profile
+    });
+    if (saved.error) {
+      return ctx.error("internal", "Failed to update profile", saved.error);
+    }
+    return { id: ctx.auditUserId };
+  }
+});
+
+/**
+ * Change the caller's avatar to a generated avatar or their own upload.
+ *
+ * @remarks
+ * Refuses any other value: it could point at another user's file. Saves the
+ * new value first, then deletes the uploaded photo it replaced, so a failed
+ * save never leaves the avatar pointing at a deleted file. A failed delete
+ * only leaves an orphan file, so it is logged, not returned.
+ */
+export const updateOwnAvatar = defineServiceFn({
+  input: z.object({ path: z.string() }),
+  permission: {},
+  async run(ctx, { path }) {
+    const userId = ctx.auditUserId;
+    if (!isAllowedAvatarValue(userId, path)) {
+      return ctx.error("validation", "Invalid avatar path");
+    }
+
+    const client = ctx.asCaller.supabase;
+    // Only the replaced avatar is needed: the narrow reader, not `select("*")`.
+    const previous = await service.getCurrentUser(client, userId);
+    if (previous.error) {
+      logger.error("Failed to read the avatar being replaced", {
+        userId,
+        error: previous.error
+      });
+    }
+    const saved = await service.updateAvatar(client, userId, path);
+    if (saved.error) {
+      return ctx.error("internal", "Failed to update avatar", saved.error);
+    }
+
+    const previousPath = previous.data?.avatarUrl;
+    if (isOwnAvatarUpload(userId, previousPath) && previousPath !== path) {
+      const removal = await client.storage
+        .from("avatars")
+        .remove([previousPath]);
+      if (removal.error) {
+        logger.error("Failed to remove the replaced avatar photo", {
+          userId,
+          path: previousPath,
+          error: removal.error
         });
       }
     }
+    return { avatarUrl: path };
   }
+});
 
-  return { success: true };
-}
+/**
+ * Set or remove the caller's own signature.
+ *
+ * @remarks
+ * `path` is a file the caller uploaded to their own folder of the
+ * `signatures` bucket, or null to remove the signature. The replaced file is
+ * deleted unless an approval recorded it.
+ */
+export const updateOwnSignature = defineServiceFn({
+  input: z.object({ path: z.string().nullable() }),
+  permission: {},
+  async run(ctx, { path }) {
+    const userId = ctx.auditUserId;
+    if (path !== null && !isOwnSignaturePath(userId, path)) {
+      return ctx.error("validation", "Invalid signature path");
+    }
+    const saved = await service.updateSignature(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      userId,
+      path
+    );
+    if (saved.error) {
+      return ctx.error("internal", "Failed to update signature", saved.error);
+    }
+    return { signaturePath: path };
+  }
+});
 
-function makePermissionsFromEmployeeType({
-  data
-}: {
-  data: {
-    view: string[];
-    create: string[];
-    update: string[];
-    delete: string[];
-    module: string;
-  }[];
-}) {
-  const permissions: Record<string, string[]> = {};
+/**
+ * Set a person's value of an attribute.
+ *
+ * @remarks
+ * Anyone with resources update may set anyone's value. Others may set only
+ * their own, of an attribute marked as self-managed. `value` must match
+ * `type` (a boolean for `boolean`, a number for `numeric`, else a string),
+ * or nothing is stored for it.
+ */
+export const upsertAttributeValue = defineServiceFn({
+  input: z.object({
+    userId: z.string().min(1),
+    userAttributeId: z.string().min(1),
+    userAttributeValueId: z.string().optional(),
+    type: z.string().min(1),
+    value: z.union([z.boolean(), z.number(), z.string()])
+  }),
+  permission: {},
+  async run(ctx, { userId, ...value }) {
+    const refused = await service.refuseAttributeValueChange(
+      ctx,
+      userId,
+      value.userAttributeId,
+      "Unauthorized: Cannot update attribute"
+    );
+    if (refused) return refused;
 
-  data.forEach((permission) => {
-    if (!permission.module) {
-      throw new Error(
-        `Permission module is missing for permission ${JSON.stringify(data)}`
+    const saved = await service.upsertUserAttributeValue(
+      ctx.asCaller.supabase,
+      {
+        ...value,
+        userId,
+        updatedBy: ctx.auditUserId
+      }
+    );
+    if (saved.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update attribute value",
+        saved.error
       );
     }
-
-    const module = permission.module.toLowerCase();
-
-    permissions[`${module}_view`] = permission.view;
-    permissions[`${module}_create`] = permission.create;
-    permissions[`${module}_update`] = permission.update;
-    permissions[`${module}_delete`] = permission.delete;
-  });
-
-  return permissions;
-}
-
-function isClaimPermission(key: string, value: unknown) {
-  const action = key.split("_")[1];
-  return (
-    action !== undefined &&
-    ["view", "create", "update", "delete"].includes(action) &&
-    Array.isArray(value)
-  );
-}
-
-function makeCustomerPermissions(companyId: string) {
-  // TODO: this should be more dynamic
-  const permissions: Record<string, string[]> = {
-    documents_view: [companyId],
-    documents_create: [companyId],
-    documents_udpate: [companyId],
-    documents_delete: [companyId],
-    jobs_view: [companyId],
-    sales_view: [companyId],
-    parts_view: [companyId]
-  };
-
-  return permissions;
-}
-
-export function makeEmptyPermissionsFromModules(data: Module[]) {
-  return data.reduce<
-    Record<string, { name: string; permission: CompanyPermission }>
-  >((acc, m) => {
-    if (m.name && m.name !== "Messaging") {
-      acc[m.name] = {
-        name: m.name.toLowerCase(),
-        permission: {
-          view: false,
-          create: false,
-          update: false,
-          delete: false
-        }
-      };
-    }
-    return acc;
-  }, {});
-}
-
-export function makeCompanyPermissionsFromClaims(
-  claims: Json[] | null,
-  companyId: string
-) {
-  if (typeof claims !== "object" || claims === null) return null;
-  let permissions: Record<string, CompanyPermission> = {};
-  let role: string | null = null;
-
-  Object.entries(claims).forEach(([key, value]) => {
-    if (isClaimPermission(key, value)) {
-      const [module, action] = key.split("_");
-      if (!(module in permissions)) {
-        permissions[module] = {
-          view: false,
-          create: false,
-          update: false,
-          delete: false
-        };
-      }
-
-      if (!Array.isArray(value)) {
-        permissions[module] = {
-          view: false,
-          create: false,
-          update: false,
-          delete: false
-        };
-      } else {
-        switch (action) {
-          case "view":
-            // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["view"] = value.includes(companyId);
-            break;
-          case "create":
-            // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["create"] = value.includes(companyId);
-            break;
-          case "update":
-            // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["update"] = value.includes(companyId);
-            break;
-          case "delete":
-            // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["delete"] = value.includes(companyId);
-            break;
-        }
-      }
-    }
-  });
-
-  if ("role" in claims) {
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    role = claims["role"] as string;
+    return { userAttributeValueId: saved.data.id };
   }
+});
 
-  if ("items" in permissions) {
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    delete permissions["items"];
-  }
+/**
+ * Remove a person's value of an attribute.
+ *
+ * @remarks
+ * Allowed as for `upsertAttributeValue`.
+ */
+export const deleteAttributeValue = defineServiceFn({
+  input: z.object({
+    userId: z.string().min(1),
+    userAttributeId: z.string().min(1),
+    userAttributeValueId: z.string().min(1)
+  }),
+  permission: {},
+  async run(ctx, value) {
+    const refused = await service.refuseAttributeValueChange(
+      ctx,
+      value.userId,
+      value.userAttributeId,
+      "Unauthorized: Cannot remove attribute"
+    );
+    if (refused) return refused;
 
-  if ("messaging" in permissions) {
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    delete permissions["messaging"];
-  }
-
-  return { permissions, role };
-}
-
-export function makePermissionsFromClaims(claims: Json[] | null) {
-  if (typeof claims !== "object" || claims === null) return null;
-  let permissions: Record<string, Permission> = {};
-  let role: string | null = null;
-
-  Object.entries(claims).forEach(([key, value]) => {
-    if (isClaimPermission(key, value)) {
-      const [module, action] = key.split("_");
-      if (!(module in permissions)) {
-        permissions[module] = {
-          view: [],
-          create: [],
-          update: [],
-          delete: []
-        };
-      }
-
-      switch (action) {
-        case "view":
-          // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-          permissions[module]["view"] = value as string[];
-          break;
-        case "create":
-          // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-          permissions[module]["create"] = value as string[];
-          break;
-        case "update":
-          // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-          permissions[module]["update"] = value as string[];
-          break;
-        case "delete":
-          // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-          permissions[module]["delete"] = value as string[];
-          break;
-      }
-    }
-  });
-
-  if ("role" in claims) {
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    role = claims["role"] as string;
-  }
-
-  if ("items" in permissions) {
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    delete permissions["items"];
-  }
-
-  if ("messaging" in permissions) {
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    delete permissions["messaging"];
-  }
-
-  return { permissions, role };
-}
-
-export function makeCompanyPermissionsFromEmployeeType(
-  data: EmployeeTypePermission[],
-  companyId: string
-) {
-  const result: Record<
-    string,
-    { name: string; permission: CompanyPermission }
-  > = {};
-  if (!data) return result;
-  data.forEach((permission) => {
-    if (!permission.module) {
-      throw new Error(
-        `Module is missing for permission ${JSON.stringify(permission)}`
+    const deleted = await service.deleteUserAttributeValue(
+      ctx.asCaller.supabase,
+      value
+    );
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete attribute value",
+        deleted.error
       );
-    } else {
-      result[permission.module] = {
-        name: permission.module.toLowerCase(),
-        permission: {
-          view: permission.view.includes(companyId),
-          create: permission.create.includes(companyId),
-          update: permission.update.includes(companyId),
-          delete: permission.delete.includes(companyId)
-        }
-      };
     }
-  });
-
-  if ("items" in result) {
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    delete result["items"];
+    return { userAttributeValueId: value.userAttributeValueId, deleted: true };
   }
+});
 
-  if ("Messaging" in result) {
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    delete result["Messaging"];
-  }
-
-  return result;
-}
-
-function makeSupplierPermissions(companyId: string) {
-  // TODO: this should be more dynamic
-  const permissions: Record<string, string[]> = {
-    documents_view: [companyId],
-    documents_create: [companyId],
-    documents_udpate: [companyId],
-    documents_delete: [companyId],
-    purchasing_view: [companyId],
-    parts_view: [companyId]
-  };
-
-  return permissions;
-}
-
-export async function getInvite(
-  client: SupabaseClient<Database>,
-  email: string,
-  companyId: string
-) {
-  return client
-    .from("invite")
-    .select("*")
-    .eq("email", email)
-    .eq("companyId", companyId)
-    .single();
-}
-
-export async function resetPassword(userId: string, password: string) {
-  return getCarbonServiceRole().auth.admin.updateUserById(userId, {
-    password
-  });
-}
-
-async function rollbackInvite(
-  serviceRole: SupabaseClient<Database>,
-  { userId, companyId }: { userId: string; companyId: string }
-) {
-  await Promise.all([
-    serviceRole
-      .from("employee")
-      .update({ active: false })
+/**
+ * Set one of the caller's flags (a dismissed training panel, a changelog
+ * entry seen), keeping the others.
+ */
+export const setOwnFlag = defineServiceFn({
+  input: userFlagValidator,
+  permission: {},
+  async run(ctx, { flag, value }) {
+    const userId = ctx.auditUserId;
+    const client = ctx.asCaller.supabase;
+    const user = await client
+      .from("user")
+      .select("flags")
       .eq("id", userId)
-      .eq("companyId", companyId),
-    serviceRole
-      .from("userToCompany")
-      .delete()
-      .eq("userId", userId)
-      .eq("companyId", companyId),
-    serviceRole
-      .from("customerAccount")
-      .delete()
-      .eq("userId", userId)
-      .eq("companyId", companyId),
-    serviceRole
-      .from("supplierAccount")
-      .delete()
-      .eq("userId", userId)
-      .eq("companyId", companyId)
-  ]);
-}
-
-async function setUserPermissions(
-  client: SupabaseClient<Database>,
-  userId: string,
-  permissions: Record<string, string[]>
-) {
-  const user = await client
-    .from("userPermission")
-    .select("permissions")
-    .eq("id", userId)
-    .maybeSingle();
-
-  const currentPermissions = (user.data?.permissions ?? {}) as Record<
-    string,
-    string[]
-  >;
-  const newPermissions = { ...currentPermissions };
-
-  Object.entries(permissions).forEach(([key, value]) => {
-    if (key in newPermissions) {
-      newPermissions[key] = [...newPermissions[key], ...value];
-    } else {
-      newPermissions[key] = value;
-    }
-  });
-
-  const result = await client
-    .from("userPermission")
-    .upsert({ id: userId, permissions: newPermissions });
-
-  await redis.del(getPermissionCacheKey(userId));
-
-  return result;
-}
-
-export async function updateEmployee(
-  client: SupabaseClient<Database>,
-  {
-    id,
-    employeeType,
-    permissions,
-    companyId,
-    actorId,
-    ip
-  }: {
-    id: string;
-    employeeType: string;
-    permissions: Record<string, CompanyPermission>;
-    companyId: string;
-    actorId?: string;
-    ip?: string;
-  }
-): Promise<Result> {
-  const updateEmployeeEmployeeType = await client
-    .from("employee")
-    .upsert([{ id, companyId, employeeTypeId: employeeType }]);
-
-  if (updateEmployeeEmployeeType.error)
-    return error(updateEmployeeEmployeeType.error, "Failed to update employee");
-
-  return updatePermissions(client, { id, permissions, companyId, actorId, ip });
-}
-
-export async function updatePermissions(
-  client: SupabaseClient<Database>,
-  {
-    id,
-    permissions,
-    companyId,
-    addOnly = false,
-    actorId,
-    ip
-  }: {
-    id: string;
-    permissions: Record<string, CompanyPermission>;
-    companyId: string;
-    addOnly?: boolean;
-    actorId?: string;
-    ip?: string;
-  }
-): Promise<Result> {
-  if (await client.rpc("is_claims_admin", { company: companyId })) {
-    const claims = await getClaims(client, id);
-
-    if (claims.error) return error(claims.error, "Failed to get claims");
-
-    const updatedPermissions = (
-      typeof claims.data !== "object" ||
-      Array.isArray(claims.data) ||
-      claims.data === null
-        ? {}
-        : claims.data
-    ) as Record<string, string[]>;
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    delete updatedPermissions["role"];
-
-    // Snapshot the effective grant set BEFORE the in-place mutation below, so
-    // the audit event carries an honest before/after diff (NIST 3.3.1/3.3.2).
-    const beforePermissions = structuredClone(updatedPermissions);
-
-    // add any missing claims to the current claims
-    Object.keys(permissions).forEach((name) => {
-      const module = name.toLowerCase();
-      if (!(`${module}_view` in updatedPermissions)) {
-        updatedPermissions[`${module}_view`] = [];
-      }
-      if (!(`${module}_create` in updatedPermissions)) {
-        updatedPermissions[`${module}_create`] = [];
-      }
-      if (!(`${module}_update` in updatedPermissions)) {
-        updatedPermissions[`${module}_update`] = [];
-      }
-      if (!(`${module}_delete` in updatedPermissions)) {
-        updatedPermissions[`${module}_delete`] = [];
-      }
-    });
-
-    if (addOnly) {
-      Object.entries(permissions).forEach(([name, permission]) => {
-        const module = name.toLowerCase();
-        if (
-          permission.view &&
-          !updatedPermissions[`${module}_view`]?.includes(companyId)
-        ) {
-          updatedPermissions[`${module}_view`].push(companyId);
-        }
-        if (
-          permission.create &&
-          !updatedPermissions[`${module}_create`]?.includes(companyId)
-        ) {
-          updatedPermissions[`${module}_create`].push(companyId);
-        }
-        if (
-          permission.update &&
-          !updatedPermissions[`${module}_update`]?.includes(companyId)
-        ) {
-          updatedPermissions[`${module}_update`].push(companyId);
-        }
-        if (
-          permission.delete &&
-          !updatedPermissions[`${module}_delete`]?.includes(companyId)
-        ) {
-          updatedPermissions[`${module}_delete`].push(companyId);
-        }
-      });
-    } else {
-      Object.entries(permissions).forEach(([name, permission]) => {
-        const module = name.toLowerCase();
-        if (permission.view) {
-          if (!updatedPermissions[`${module}_view`]?.includes(companyId)) {
-            updatedPermissions[`${module}_view`] = [
-              ...updatedPermissions[`${module}_view`],
-              companyId
-            ];
-          }
-        } else {
-          updatedPermissions[`${module}_view`] = (
-            updatedPermissions[`${module}_view`] as string[]
-          ).filter((c: string) => c !== companyId);
-        }
-
-        if (permission.create) {
-          if (!updatedPermissions[`${module}_create`]?.includes(companyId)) {
-            updatedPermissions[`${module}_create`] = [
-              ...updatedPermissions[`${module}_create`],
-              companyId
-            ];
-          }
-        } else {
-          updatedPermissions[`${module}_create`] = (
-            updatedPermissions[`${module}_create`] as string[]
-          ).filter((c: string) => c !== companyId);
-        }
-
-        if (permission.update) {
-          if (!updatedPermissions[`${module}_update`]?.includes(companyId)) {
-            updatedPermissions[`${module}_update`] = [
-              ...updatedPermissions[`${module}_update`],
-              companyId
-            ];
-          }
-        } else {
-          updatedPermissions[`${module}_update`] = (
-            updatedPermissions[`${module}_update`] as string[]
-          ).filter((c: string) => c !== companyId);
-        }
-
-        if (permission.delete) {
-          if (!updatedPermissions[`${module}_delete`]?.includes(companyId)) {
-            updatedPermissions[`${module}_delete`] = [
-              ...updatedPermissions[`${module}_delete`],
-              companyId
-            ];
-          }
-        } else {
-          updatedPermissions[`${module}_delete`] = (
-            updatedPermissions[`${module}_delete`] as string[]
-          ).filter((c: string) => c !== companyId);
-        }
-      });
+      .single();
+    if (user.error) {
+      return ctx.error("internal", "Failed to read user flags", user.error);
     }
 
-    // The "0" global-company wildcard is retired (NIST 800-171 3.1.5). Strip it
-    // from every array so it can never be persisted to the authoritative table.
-    for (const key of Object.keys(updatedPermissions)) {
-      const value = updatedPermissions[key];
-      if (Array.isArray(value)) {
-        updatedPermissions[key] = value.filter((c: string) => c !== "0");
-      }
+    const flags = (user.data?.flags as Record<string, boolean> | null) ?? {};
+    const updated = await client
+      .from("user")
+      .update({ flags: { ...flags, [flag]: value } })
+      .eq("id", userId);
+    if (updated.error) {
+      return ctx.error("internal", "Failed to update flag", updated.error);
     }
-
-    const permissionsUpdate = await getCarbonServiceRole()
-      .from("userPermission")
-      .update({ permissions: updatedPermissions })
-      .eq("id", id);
-    if (permissionsUpdate.error)
-      return error(permissionsUpdate.error, "Failed to update claims");
-
-    await redis.del(getPermissionCacheKey(id));
-
-    // Audit the change (NIST 800-171 3.3.1/3.3.2): actor, target, before/after.
-    logPermissionChange({
-      actor: actorId,
-      targetUserId: id,
-      companyId,
-      ip,
-      before: beforePermissions,
-      after: updatedPermissions,
-      reason: addOnly ? "add" : "edit"
-    });
-
-    return success("Permissions updated");
-  } else {
-    return error(null, "You do not have permission to update permissions");
+    return { flag, value };
   }
-}
+});
+
+/**
+ * Get notification preferences
+ *
+ * @mcp read
+ */
+export const getNotificationPreferences = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: {},
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getNotificationPreferences(
+        ctx.asCaller.supabase,
+        ctx.auditUserId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Upsert notification preference
+ *
+ * @mcp
+ */
+export const upsertNotificationPreference = defineServiceFn({
+  input: z.looseObject({
+    topic: z.string(),
+    channel: z.enum(["email", "slack"]),
+    enabled: z.boolean()
+  }),
+  permission: {},
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.upsertNotificationPreference(
+        ctx.asCaller.supabase,
+        payload(ctx, input).withUser().build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get account
+ *
+ * @mcp read
+ */
+export const getAccount = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: {},
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getAccount(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Return the connected user's own profile (id, email, name)
+ *
+ * @mcp read
+ */
+export const getCurrentUser = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: {},
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getCurrentUser(ctx.asCaller.supabase, ctx.auditUserId)
+    );
+  }
+});
+
+/**
+ * Get all attribute categories
+ *
+ * @mcp read
+ */
+export const getAllAttributeCategories = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: {},
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getAllAttributeCategories(
+        ctx.asCaller.supabase,
+        ctx.auditUserId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get attribute category with values
+ *
+ * @mcp read
+ */
+export const getAttributeCategoryWithValues = defineServiceFn({
+  input: z.looseObject({ categoryId: z.string() }),
+  permission: {},
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getAttributeCategoryWithValues(
+        ctx.asCaller.supabase,
+        input.categoryId as never,
+        ctx.auditUserId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Update public account
+ *
+ * @mcp
+ */
+export const updatePublicAccount = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+    about: z.string().optional(),
+    phone: z.string().optional()
+  }),
+  permission: {},
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.updatePublicAccount(ctx.asCaller.supabase, input as never)
+    );
+  }
+});

@@ -1,26 +1,29 @@
-import { writeFileSync } from "node:fs";
-import * as dotenv from "dotenv";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-dotenv.config({ path: ".env" });
-dotenv.config({ path: ".env.local", override: true });
+import { renameSync, writeFileSync } from "node:fs";
+import { loadDotEnv } from "./lib/local-script-config";
+import { normalizeSwaggerSchema } from "./lib/swagger-schema";
 
-const studioPort = process.env.PORT_STUDIO;
-if (!studioPort) {
-  console.error(
-    "PORT_STUDIO not set (expected in .env.local). Run `pnpm dev:up` first."
-  );
-  process.exit(1);
-}
-
-const url = `http://localhost:${studioPort}/api/platform/projects/default/api/rest`;
-
-(async () => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
+async function main(): Promise<void> {
+  loadDotEnv();
+  // PostgREST's own OpenAPI document, through Kong with the anon key. Studio's
+  // /api/platform/.../api/rest returns these exact bytes, so reading it here
+  // keeps this script working when Studio isn't running.
+  const apiPort = process.env.PORT_API;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  if (!apiPort || !anonKey)
+    throw new Error(
+      "PORT_API / SUPABASE_ANON_KEY not set (expected in .env.local). Run `crbn up` first."
+    );
+  const response = await fetch(`http://127.0.0.1:${apiPort}/rest/v1/`, {
+    headers: { apikey: anonKey },
+    signal: AbortSignal.timeout(30_000)
+  });
+  if (!response.ok)
+    throw new Error(`Swagger request failed (HTTP ${response.status})`);
+  const data = normalizeSwaggerSchema(await response.json());
 
   // Strip per-tenant `searchIndex_<companyId>` / `auditLog_<companyId>` tables
   // (created at runtime per company) — which ones exist depends on the local
@@ -41,8 +44,18 @@ const url = `http://localhost:${studioPort}/api/platform/projects/default/api/re
     return value;
   };
 
+  const output = "packages/database/src/swagger-docs-schema.ts";
   writeFileSync(
-    "packages/database/src/swagger-docs-schema.ts",
+    `${output}.tmp`,
     `export default ${JSON.stringify(stripPerTenantKeys(data), null, 2)}`
   );
-})();
+  renameSync(`${output}.tmp`, output);
+  process.stdout.write("Swagger schema refreshed.\n");
+}
+
+main().catch((error) => {
+  process.stderr.write(
+    `Swagger generation failed: ${error instanceof Error ? error.message : String(error)}\n`
+  );
+  process.exitCode = 1;
+});

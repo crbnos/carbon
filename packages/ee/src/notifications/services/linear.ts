@@ -1,13 +1,16 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { getUser } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { TiptapText } from "@carbon/files/markdown";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { TiptapDocument } from "../../linear/lib/index.server";
 import {
   getLinearClient,
   getLinearIssueFromExternalId,
-  mapCarbonStatusToLinearStatus,
-  tiptapToMarkdown
+  mapCarbonStatusToLinearStatus
 } from "../../linear/lib/index.server";
 import type { NotificationEvent, NotificationService } from "../types";
 
@@ -103,11 +106,11 @@ export class LinearNotificationService implements NotificationService {
         if (!issue) return; // No linked Linear issue
 
         // Convert Tiptap notes to markdown for Linear
-        const notes = event.data.notes as TiptapDocument | null | undefined;
+        const notes = event.data.notes;
         if (!notes) return;
 
         try {
-          const description = tiptapToMarkdown(notes);
+          const description = TiptapText(notes).toMarkdown();
 
           await linear.updateIssue(event.companyId, {
             id: issue.id,

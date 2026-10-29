@@ -1,17 +1,26 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { getIntegrationIdsByRole } from "@carbon/ee";
 import { useLingui } from "@lingui/react/macro";
-import { IoBalloonOutline } from "react-icons/io5";
 import {
   LuChartBarBig,
   LuChartLine,
   LuCirclePlay,
+  LuLayers,
   LuListChecks,
   LuListTodo,
   LuSquareChartGantt,
   LuSquareKanban,
   LuStepForward,
-  LuTrash
+  LuTimerOff,
+  LuTrash,
+  LuTruck
 } from "react-icons/lu";
+import { GroupedContentSidebar } from "~/components/Layout";
 import { usePermissions } from "~/hooks";
+import { useIntegrations } from "~/hooks/useIntegrations";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -19,6 +28,15 @@ import { path } from "~/utils/path";
 export default function useProductionSubmodules() {
   const { t } = useLingui();
   const permissions = usePermissions();
+  // Unattributed Time only exists once an OEE provider is reporting machines.
+  const integrations = useIntegrations();
+  const oeeIntegrationIds = new Set<string>(getIntegrationIdsByRole("oee"));
+  const hasOeeProvider = integrations.list.some(
+    (integration) =>
+      integration.active &&
+      integration.id !== null &&
+      oeeIntegrationIds.has(integration.id)
+  );
 
   const productionRoutes: AuthenticatedRouteGroup[] = [
     {
@@ -29,7 +47,23 @@ export default function useProductionSubmodules() {
           to: path.to.jobs,
           icon: <LuCirclePlay />,
           table: "job"
-        }
+        },
+        {
+          name: t`Batches`,
+          to: path.to.operationBatches,
+          icon: <LuLayers />,
+          table: "jobOperationBatch"
+        },
+        ...(hasOeeProvider
+          ? [
+              {
+                name: t`Unattributed Time`,
+                to: path.to.unattributedMachineTimes,
+                icon: <LuTimerOff />,
+                role: "employee" as const
+              }
+            ]
+          : [])
       ]
     },
     {
@@ -66,6 +100,11 @@ export default function useProductionSubmodules() {
           name: t`Priorities`,
           to: path.to.priorityDates,
           icon: <LuSquareKanban />
+        },
+        {
+          name: t`Outbound`,
+          to: path.to.scheduleOutbound,
+          icon: <LuTruck />
         }
       ]
     },
@@ -77,12 +116,6 @@ export default function useProductionSubmodules() {
           to: path.to.assemblyInstructions,
           icon: <LuStepForward />,
           role: "employee"
-        },
-        {
-          name: t`Inspection Plans`,
-          to: path.to.inspectionDocuments,
-          icon: <IoBalloonOutline />,
-          permission: "quality"
         },
         {
           name: t`Procedures`,
@@ -122,4 +155,11 @@ export default function useProductionSubmodules() {
         routes: group.routes.filter(isRouteVisible).map(addSavedViewsToRoutes)
       }))
   };
+}
+
+/** Phones: the module's section switcher, for routes outside the module's
+ *  own layout (`handle.compactSidebar`). */
+export function ProductionSections() {
+  const { groups } = useProductionSubmodules();
+  return <GroupedContentSidebar groups={groups} />;
 }

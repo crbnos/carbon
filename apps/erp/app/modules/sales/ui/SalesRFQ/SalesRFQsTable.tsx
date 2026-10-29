@@ -1,4 +1,14 @@
-import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
@@ -24,6 +34,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
@@ -35,9 +46,11 @@ import { SalesRFQStatus } from ".";
 type SalesRFQsTableProps = {
   data: SalesRFQ[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
+const SalesRFQsTable = memo((props: SalesRFQsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -64,6 +77,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -75,6 +89,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           <CustomerAvatar customerId={row.original.customerId} />
         ),
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -93,6 +108,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           return <SalesRFQStatus status={status} />;
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: salesRFQStatusType.map((status) => ({
@@ -119,6 +135,9 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -129,6 +148,9 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -229,11 +251,15 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
   const renderContextMenu = useMemo(() => {
     return (row: SalesRFQ) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.salesRfqDetails(row.id!))}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
+          onClick={() => navigate(path.to.salesRfqDetails(row.id!))}
+        >
           <MenuIcon icon={<LuPencil />} />
           <Trans>Edit</Trans>
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           disabled={!permissions.can("delete", "sales")}
           onClick={() => {
@@ -252,6 +278,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
     <>
       <Table<SalesRFQ>
         count={count}
+        infinite={infinite}
         columns={columns}
         data={data}
         defaultColumnPinning={{

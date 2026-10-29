@@ -1,19 +1,27 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
+import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { ComponentProps } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { AssemblyView } from "~/components/AssemblyView";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
+  getAbilityShortfall,
   getAssemblyPlaybackByOperationId,
   getJobByOperationId,
   getJobMakeMethod,
   getJobMaterialsByOperationId,
   getJobOperationById,
+  getJobOperationForCompany,
   getJobOperationProcedure,
   getKanbanByJobId,
   getModelUploadsByIds,
@@ -24,7 +32,8 @@ import {
   getThumbnailPathByItemId,
   getToolsByOperationId,
   getTrackedEntitiesByMakeMethodId,
-  getWorkCenter
+  getWorkCenter,
+  isFirstOperationOfMakeMethod
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
@@ -32,6 +41,8 @@ import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
+
+const logger = getLogger("mes", "assembly");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
@@ -52,6 +63,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const trackedEntityId = url.searchParams.get("trackedEntityId");
 
   const serviceRole = await getCarbonServiceRole();
+
+  // Every read below is service-role: verify the operation is this company's.
+  const ownedOperation = await getJobOperationForCompany(
+    serviceRole,
+    operationId,
+    companyId
+  );
+  if (!ownedOperation.data) {
+    logger.warn("Operation not found in company", {
+      companyId,
+      operationId,
+      error: ownedOperation.error
+    });
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, "Operation not found"))
+    );
+  }
 
   const [job, operation] = await Promise.all([
     getJobByOperationId(serviceRole, operationId),
@@ -91,7 +120,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     assemblyPlayback
   ] = await Promise.all([
     getThumbnailPathByItemId(serviceRole, op.itemId),
-    getTrackedEntitiesByMakeMethodId(serviceRole, op.jobMakeMethodId),
+    getTrackedEntitiesByMakeMethodId(
+      serviceRole,
+      op.jobMakeMethodId,
+      companyId
+    ),
     getJobMakeMethod(serviceRole, op.jobMakeMethodId),
     getJobOperationProcedure(serviceRole, operationId),
     getToolsByOperationId(serviceRole, operationId),
@@ -137,7 +170,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   // Expiry policy for the issue-material modal — same source as the operation view.
-  const companySettings = await getCompanySettings(serviceRole, companyId);
+  const [companySettings, abilityWarning] = await Promise.all([
+    getCompanySettings(serviceRole, companyId),
+    getAbilityShortfall(serviceRole, {
+      operationId,
+      employeeId: userId,
+      companyId
+    })
+  ]);
   const inventoryShelfLife = (companySettings.data?.inventoryShelfLife ??
     null) as { expiredEntityPolicy?: ExpiredEntityPolicy } | null;
   const expiredEntityPolicy: ExpiredEntityPolicy =
@@ -192,7 +232,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? navEntities[0]?.id
       : navEntities[unitIndex]?.id;
 
-  const [materials, openEvent, priorDependency] = await Promise.all([
+  const [materials, openEvent, isFirstOperation] = await Promise.all([
     getJobMaterialsByOperationId(serviceRole, {
       operation: op,
       trackedEntityId: effectiveEntityId,
@@ -214,27 +254,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .maybeSingle(),
     // Is this the first operation in the routing? A serial unit only earns a printed
     // label when completed at its first operation, so the first op flows unit-by-unit
-    // (auto-select), and later ops scan/select (labels exist). "First" means nothing
-    // precedes it within THIS make method — no jobOperationDependency whose predecessor
-    // shares this op's jobMakeMethodId. Cross make-method (subassembly) dependencies are
-    // ignored: a parent-assembly op still has no printed label just because a subassembly
-    // finished first. `order` is only a display/sort field and isn't a reliable signal.
-    serviceRole
-      .from("jobOperationDependency")
-      .select(
-        "dependsOn:jobOperation!jobOperationDependency_dependsOnId_fk!inner(jobMakeMethodId)"
-      )
-      .eq("operationId", operationId)
-      .eq("dependsOn.jobMakeMethodId", op.jobMakeMethodId)
-      .limit(1)
-      .maybeSingle()
+    // (auto-select), and later ops scan/select (labels exist).
+    isFirstOperationOfMakeMethod(serviceRole, operationId, op.jobMakeMethodId)
   ]);
-  // Fail closed: a query error also returns null data, so treat an errored lookup
-  // as "not first" — later ops require scan/select, which is the safe default when
-  // we can't confirm the operation has no predecessor.
-  const isFirstOperation = !priorDependency.error && !priorDependency.data;
 
   return {
+    abilityWarning,
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     thumbnailPath,

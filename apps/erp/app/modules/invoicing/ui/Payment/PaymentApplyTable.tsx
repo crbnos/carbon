@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Card,
@@ -8,116 +12,113 @@ import {
   CardTitle,
   Checkbox,
   cn,
-  HStack,
-  NumberField,
-  NumberInput,
-  NumberInputGroup
+  HStack
 } from "@carbon/react";
-import { EPSILON, INPUT_FORMAT, round } from "@carbon/utils";
+import {
+  allocatePaymentFunding,
+  EPSILON,
+  type FundingScope,
+  type FundingSource,
+  formatDate,
+  fundingScopeCovers,
+  INPUT_FORMAT,
+  round,
+  toBaseAmount,
+  toDocumentAmount
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { CSSProperties } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useLocale } from "@react-aria/i18n";
+import type { PostgrestSingleResponse } from "@supabase/supabase-js";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { CSSProperties, ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuListChecks, LuRotateCcw, LuSave } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { DateTime } from "~/components";
+import { EditableNumber } from "~/components/Editable";
+import Grid from "~/components/Grid";
 import {
+  useCompanyToday,
   useCurrencyDecimals,
   useCurrencyFormatter,
   usePermissions
 } from "~/hooks";
 import { path } from "~/utils/path";
-
-// One row in the apply table — an open invoice for the payment's
-// counterparty, plus the user's selection + entered amounts.
-type OpenInvoice = {
-  id: string;
-  invoiceId: string;
-  dateDue: string | null;
-  currencyCode: string;
-  exchangeRate: number;
-  totalAmount: number;
-  balance: number;
-  status: string | null;
-};
-
-type ExistingApplication = {
-  targetSalesInvoiceId: string | null;
-  targetPurchaseInvoiceId: string | null;
-  appliedAmount: number;
-  discountAmount: number;
-  writeOffAmount: number;
-  targetExchangeRate: number;
-  sourceExchangeRate: number;
-  appliedDate: string;
-};
-
-// The invoice's read-only fields plus the editable selection state.
-type ApplyRow = {
-  id: string;
-  invoiceId: string;
-  dateDue: string | null;
-  currencyCode: string;
-  exchangeRate: number;
-  balance: number;
-  checked: boolean;
-  appliedAmount: number;
-  discountAmount: number;
-  writeOffAmount: number;
-};
-
-type AmountField = "appliedAmount" | "discountAmount" | "writeOffAmount";
+import {
+  type AmountField,
+  type ApplyRow,
+  autoApplyRows,
+  buildApplications,
+  type ExistingApplication,
+  fundingRequests,
+  type OpenInvoice,
+  seedApplyRows,
+  toggleApplyRow,
+  updateApplyAmount
+} from "./payment-logic";
 
 type PaymentApplyTableProps = {
+  isRefund?: boolean;
+  // An employee payee: the rows are Posted reimbursements, not invoices, and
+  // the only legal target column is `targetReimbursementId`. A reimbursement
+  // payout takes no discount and no write-off (there is no negotiated
+  // settlement with an employee), so those two columns are hidden as well —
+  // `replaceInvoiceSettlements` refuses a non-zero one.
+  isReimbursement?: boolean;
   paymentId: string;
   paymentType: "Receipt" | "Disbursement";
   paymentCurrency: string;
+  baseCurrency: string;
+  currencyDecimals: number;
+  // Prior posted receipts this payment can draw on. A source with a `scope` is
+  // a customer deposit and funds only invoices of its own document.
+  priorSources: FundingSource[];
+  // Set when this payment is itself a deposit: it applies only to invoices of
+  // that document.
+  paymentScope?: FundingScope | null;
   paymentTotal: number;
   paymentExchangeRate: number;
   // On-account credit (in payment currency) the counterparty can draw on when
-  // applying more than this payment's cash. 0 when none is available.
+  // applying more than this payment's cash — deposits excluded, they are
+  // listed per document from `priorSources`. 0 when none is available.
   availableCredit: number;
   openInvoices: OpenInvoice[];
   existingApplications: ExistingApplication[];
 };
 
-// Shared grid template so the header labels stay aligned with the rows. Wide
-// enough to scroll horizontally on small screens rather than cramp the inputs.
-const GRID = "grid grid-cols-[2rem_minmax(9rem,1fr)_7rem_8rem_8rem_8rem] gap-3";
+// An amount cell edits local state; Save applications is what persists it, so
+// the cell's own "save" always succeeds.
+const APPLIED = {
+  data: null,
+  error: null,
+  count: null,
+  status: 200,
+  statusText: "OK"
+} as unknown as PostgrestSingleResponse<unknown>;
 
-// Compact, right-aligned numeric input for the editable amount cells.
-const AmountInput = ({
-  value,
-  onChange,
-  isDisabled,
-  label,
-  currency,
-  currencyDecimals
-}: {
-  value: number;
-  onChange: (value: number) => void;
-  isDisabled: boolean;
-  label: string;
-  currency: string;
-  currencyDecimals: number;
-}) => (
-  <NumberField
-    aria-label={label}
-    value={value}
-    onChange={(v) => onChange(Number.isNaN(v) ? 0 : v)}
-    minValue={0}
-    isDisabled={isDisabled}
-    formatOptions={INPUT_FORMAT.money(currency, currencyDecimals)}
-  >
-    <NumberInputGroup>
-      <NumberInput className="text-right tabular-nums" />
-    </NumberInputGroup>
-  </NumberField>
+// About eight invoices tall; past it the rows scroll under a pinned header and
+// only the rows in view are rendered. The grid's layout is then fixed, so each
+// column's `size` is its width.
+const APPLY_GRID_MAX_HEIGHT = 400;
+
+// Amounts read and edit right-aligned, the way a spreadsheet lines up figures.
+const AmountHeader = ({ children }: { children: ReactNode }) => (
+  <span className="w-full text-right">{children}</span>
+);
+
+const AmountCell = ({ children }: { children: ReactNode }) => (
+  <span className="block text-right tabular-nums">{children}</span>
 );
 
 const PaymentApplyTable = ({
+  isRefund = false,
+  isReimbursement = false,
   paymentId,
   paymentType,
   paymentCurrency,
+  baseCurrency,
+  currencyDecimals,
+  priorSources,
+  paymentScope = null,
   paymentTotal,
   paymentExchangeRate,
   availableCredit,
@@ -127,128 +128,313 @@ const PaymentApplyTable = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher();
+  const { locale } = useLocale();
   const currencyFormatter = useCurrencyFormatter({ currency: paymentCurrency });
-  const currencyDecimals = useCurrencyDecimals(paymentCurrency);
-  const today = new Date().toISOString().slice(0, 10);
+  const baseFormatter = useCurrencyFormatter({ currency: baseCurrency });
+  const baseDecimals = useCurrencyDecimals(baseCurrency);
+  const today = useCompanyToday().toString();
   const isReceipt = paymentType === "Receipt";
+  // Discount and write-off only exist on a trade invoice settlement.
+  const hasAdjustments = !isRefund && !isReimbursement;
   const canEdit = permissions.can("update", "invoicing");
-
-  // Seed rows from existing applications so users see what's already
-  // applied when they reopen a Draft payment.
-  const seed = useMemo<ApplyRow[]>(() => {
-    const byInvoice = new Map<string, ExistingApplication>();
-    for (const a of existingApplications) {
-      const id = isReceipt ? a.targetSalesInvoiceId : a.targetPurchaseInvoiceId;
-      if (id) byInvoice.set(id, a);
-    }
-    return openInvoices.map((inv) => {
-      const existing = byInvoice.get(inv.id);
-      return {
-        id: inv.id,
-        invoiceId: inv.invoiceId,
-        dateDue: inv.dateDue,
-        currencyCode: inv.currencyCode,
-        exchangeRate: inv.exchangeRate,
-        balance: inv.balance,
-        checked: Boolean(existing),
-        appliedAmount: existing?.appliedAmount ?? 0,
-        discountAmount: existing?.discountAmount ?? 0,
-        writeOffAmount: existing?.writeOffAmount ?? 0
-      };
-    });
-  }, [openInvoices, existingApplications, isReceipt]);
-
-  const [rows, setRows] = useState<ApplyRow[]>(seed);
-
-  const totalCash = useMemo(
-    () => rows.reduce((sum, r) => (r.checked ? sum + r.appliedAmount : sum), 0),
-    [rows]
+  const targets = useMemo(
+    () => ({ isReceipt, isRefund, isReimbursement }),
+    [isReceipt, isRefund, isReimbursement]
   );
-  // The most this payment can apply is its own cash plus the counterparty's
-  // available on-account credit; applying beyond cash draws that credit down.
-  const maxApplicable = paymentTotal + availableCredit;
-  const unapplied = paymentTotal - totalCash;
+  const seed = useMemo<ApplyRow[]>(
+    () =>
+      seedApplyRows({
+        openInvoices,
+        existingApplications,
+        targets,
+        paymentCurrency,
+        paymentScope,
+        currencyDecimals
+      }),
+    [
+      openInvoices,
+      existingApplications,
+      targets,
+      paymentCurrency,
+      paymentScope,
+      currencyDecimals
+    ]
+  );
+  const [rows, setRows] = useState<ApplyRow[]>(seed);
+  const currentPayment = useMemo(
+    () => ({
+      paymentId,
+      postingDate: today,
+      exchangeRate: paymentExchangeRate,
+      remainingDocument: paymentTotal,
+      remainingBase: toBaseAmount(paymentTotal, paymentExchangeRate),
+      scope: paymentScope
+    }),
+    [paymentId, today, paymentExchangeRate, paymentTotal, paymentScope]
+  );
+  // Deposits fund only their own document's invoices, so they are not part of
+  // the on-account credit any row can draw on.
+  const deposits = useMemo(
+    () => priorSources.filter((source) => source.scope),
+    [priorSources]
+  );
+  const preview = useMemo(() => {
+    try {
+      return {
+        data: allocatePaymentFunding({
+          currentPayment,
+          priorSources,
+          currencyDecimals,
+          isAR: isReceipt,
+          requests: fundingRequests(rows)
+        }),
+        error: null
+      };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : t`Invalid applications`
+      };
+    }
+  }, [rows, currentPayment, priorSources, currencyDecimals, isReceipt, t]);
+  const totalCash = toDocumentAmount(
+    rows.reduce((sum, r) => sum + (r.checked ? r.sourceAmount : 0), 0),
+    1,
+    currencyDecimals
+  );
+  // A deposit counts toward what can be applied only once a row it can fund is
+  // selected; whether the selection is actually fundable is the preview's call.
+  const eligibleDeposits = deposits.filter((deposit) =>
+    rows.some((r) => r.checked && fundingScopeCovers(deposit.scope, r))
+  );
+  const maxApplicable = toDocumentAmount(
+    paymentTotal +
+      availableCredit +
+      eligibleDeposits.reduce((sum, d) => sum + d.remainingDocument, 0),
+    1,
+    currencyDecimals
+  );
+  const unapplied =
+    preview.data?.newOnAccountDocument ?? Math.max(0, paymentTotal - totalCash);
   const creditDraw = Math.max(
     0,
-    Math.min(availableCredit, totalCash - paymentTotal)
+    toDocumentAmount(
+      totalCash - (paymentTotal - unapplied),
+      1,
+      currencyDecimals
+    )
   );
   // EPSILON, not a hand-picked 1e-4: every amount here is already rounded to
   // internal scale, so the only slack needed is float noise. A 1e-4 band is
   // coarser than the 1e-5 the values carry, and let a real over-application of
   // 0.0001 through.
   const overApplied = totalCash > maxApplicable + EPSILON;
+  // A row can't settle more than the invoice's open balance
+  // (applied + discount + write-off). Mirrors the authoritative cap in the
+  // post-payment server function, so a manual discount that over-settles is caught
+  // here — before Post — instead of failing server-side.
+  const overSettled = useMemo(
+    () =>
+      rows.some(
+        (r) =>
+          r.checked &&
+          round(r.appliedAmount + r.discountAmount + r.writeOffAmount) >
+            r.balance + EPSILON
+      ),
+    [rows]
+  );
   const appliedPct =
-    paymentTotal > 0
-      ? Math.min(100, Math.max(0, (totalCash / paymentTotal) * 100))
+    maxApplicable > 0
+      ? Math.min(100, Math.max(0, (totalCash / maxApplicable) * 100))
       : 0;
-
   const toggleRow = useCallback(
     (id: string, checked: boolean) =>
       setRows((prev) =>
-        prev.map((r) => {
-          if (r.id !== id) return r;
-          // Checking an empty row auto-fills the applied amount with the
-          // open balance (capped at the payment total). Unchecking zeroes it.
-          if (checked) {
-            return {
-              ...r,
-              checked: true,
-              appliedAmount:
-                r.appliedAmount === 0
-                  ? round(Math.min(r.balance, maxApplicable))
-                  : r.appliedAmount
-            };
-          }
-          return {
-            ...r,
-            checked: false,
-            appliedAmount: 0,
-            discountAmount: 0,
-            writeOffAmount: 0
-          };
+        toggleApplyRow(prev, id, checked, {
+          currentPayment,
+          priorSources,
+          currencyDecimals
         })
       ),
-    [maxApplicable]
+    [currentPayment, priorSources, currencyDecimals]
   );
-
-  // Entering any amount auto-checks the row so it's included on save (mirrors
-  // the check-to-apply affordance).
   const updateAmount = useCallback(
     (id: string, field: AmountField, value: number) =>
       setRows((prev) =>
-        prev.map((r) => {
-          if (r.id !== id) return r;
-          const next = { ...r, [field]: round(Math.max(0, value)) };
-          next.checked =
-            next.appliedAmount + next.discountAmount + next.writeOffAmount > 0;
-          return next;
-        })
+        updateApplyAmount(prev, id, field, value, currencyDecimals)
       ),
-    []
+    [currencyDecimals]
   );
 
-  const onAutoApply = useCallback(() => {
-    // Distribute payment cash oldest-first (openInvoices is already sorted by
-    // dateDue ascending from the loader).
-    let remaining = paymentTotal;
-    setRows((prev) =>
-      prev.map((r) => {
-        if (remaining <= 0) {
-          return { ...r, checked: false, appliedAmount: 0 };
-        }
-        const take = Math.min(remaining, r.balance);
-        remaining = round(remaining - take);
-        return { ...r, checked: true, appliedAmount: round(take) };
-      })
+  // Each `EditableNumber` call returns a new component, and rebuilding one
+  // remounts the open editor mid-typing, so the editors are built once per
+  // currency and reach the latest `updateAmount` through a ref.
+  const latestUpdateAmount = useRef(updateAmount);
+  useEffect(() => {
+    latestUpdateAmount.current = updateAmount;
+  });
+  const editableComponents = useMemo(() => {
+    const applyCell = async (
+      accessorKey: string,
+      value: string,
+      row: ApplyRow
+    ) => {
+      latestUpdateAmount.current(
+        row.id,
+        accessorKey as AmountField,
+        Number(value) || 0
+      );
+      return APPLIED;
+    };
+    const editor = EditableNumber<ApplyRow>(
+      applyCell,
+      {
+        minValue: 0,
+        formatOptions: INPUT_FORMAT.money(baseCurrency, baseDecimals)
+      },
+      { inputClassName: "text-right tabular-nums" }
     );
-  }, [paymentTotal]);
+    return {
+      appliedAmount: editor,
+      discountAmount: editor,
+      writeOffAmount: editor
+    };
+  }, [baseCurrency, baseDecimals]);
 
+  const showsDocumentAmount = paymentCurrency !== baseCurrency;
+  const columns = useMemo<ColumnDef<ApplyRow>[]>(() => {
+    const amount = (
+      accessorKey: AmountField,
+      header: string
+    ): ColumnDef<ApplyRow> => ({
+      accessorKey,
+      header: () => <AmountHeader>{header}</AmountHeader>,
+      size: 120,
+      cell: ({ row }) => (
+        <AmountCell>
+          {baseFormatter.format(row.original[accessorKey])}
+        </AmountCell>
+      )
+    });
+
+    return [
+      {
+        id: "select",
+        header: "",
+        size: 48,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              aria-label={t`Apply to ${row.original.invoiceId}`}
+              checked={row.original.checked}
+              onCheckedChange={(checked) =>
+                toggleRow(row.original.id, Boolean(checked))
+              }
+              disabled={!canEdit}
+            />
+          </div>
+        )
+      },
+      {
+        id: "invoice",
+        header: isReimbursement
+          ? t`Reimbursement`
+          : isRefund
+            ? t`Memo`
+            : t`Invoice`,
+        size: 150,
+        cell: ({ row }) => (
+          <span className="font-medium">{row.original.invoiceId}</span>
+        )
+      },
+      {
+        id: "dateDue",
+        header: t`Due Date`,
+        size: 120,
+        cell: ({ row }) => {
+          const { dateDue } = row.original;
+          if (!dateDue) return "—";
+          return (
+            <span
+              className={cn(
+                "tabular-nums",
+                // an open invoice due before today is overdue
+                dateDue < today && "font-medium text-red-500"
+              )}
+            >
+              {formatDate(dateDue, undefined, locale)}
+            </span>
+          );
+        }
+      },
+      {
+        id: "balance",
+        header: () => <AmountHeader>{t`Open`}</AmountHeader>,
+        size: 120,
+        cell: ({ row }) => (
+          <AmountCell>{baseFormatter.format(row.original.balance)}</AmountCell>
+        )
+      },
+      // The same open amount in the payment's own currency, when it differs
+      // from the base currency the editable columns are entered in.
+      ...(showsDocumentAmount
+        ? [
+            {
+              id: "remainingDocument",
+              header: () => (
+                <AmountHeader>{t`Open (${paymentCurrency})`}</AmountHeader>
+              ),
+              size: 120,
+              cell: ({ row }) => (
+                <AmountCell>
+                  {currencyFormatter.format(row.original.remainingDocument)}
+                </AmountCell>
+              )
+            } satisfies ColumnDef<ApplyRow>
+          ]
+        : []),
+      amount("appliedAmount", t`Applied`),
+      ...(hasAdjustments
+        ? [
+            amount("discountAmount", t`Discount`),
+            amount("writeOffAmount", t`Write-off`)
+          ]
+        : [])
+    ];
+  }, [
+    baseFormatter,
+    currencyFormatter,
+    canEdit,
+    hasAdjustments,
+    isRefund,
+    isReimbursement,
+    locale,
+    paymentCurrency,
+    showsDocumentAmount,
+    t,
+    today,
+    toggleRow
+  ]);
+
+  const onAutoApply = useCallback(
+    () =>
+      setRows((prev) =>
+        autoApplyRows(prev, {
+          currentPayment,
+          priorSources,
+          currencyDecimals,
+          isReceipt
+        })
+      ),
+    [currentPayment, priorSources, currencyDecimals, isReceipt]
+  );
   const onClear = useCallback(
     () =>
       setRows((prev) =>
         prev.map((r) => ({
           ...r,
           checked: false,
+          sourceAmount: 0,
           appliedAmount: 0,
           discountAmount: 0,
           writeOffAmount: 0
@@ -256,24 +442,13 @@ const PaymentApplyTable = ({
       ),
     []
   );
-
   const onSave = () => {
-    const applications = rows
-      .filter(
-        (r) =>
-          r.checked && r.appliedAmount + r.discountAmount + r.writeOffAmount > 0
-      )
-      .map((r) => ({
-        targetSalesInvoiceId: isReceipt ? r.id : undefined,
-        targetPurchaseInvoiceId: isReceipt ? undefined : r.id,
-        appliedAmount: r.appliedAmount,
-        discountAmount: r.discountAmount,
-        writeOffAmount: r.writeOffAmount,
-        targetExchangeRate: r.exchangeRate || 1,
-        sourceExchangeRate: paymentExchangeRate || 1,
-        appliedDate: today
-      }));
-
+    if (preview.error) return;
+    const applications = buildApplications(rows, {
+      targets,
+      paymentExchangeRate,
+      today
+    });
     const formData = new FormData();
     formData.set("applications", JSON.stringify(applications));
     fetcher.submit(formData, {
@@ -290,13 +465,25 @@ const PaymentApplyTable = ({
         <HStack className="justify-between w-full">
           <div>
             <CardTitle>
-              <Trans>Apply to invoices</Trans>
+              {isReimbursement ? (
+                <Trans>Apply to reimbursements</Trans>
+              ) : isRefund ? (
+                <Trans>Refund memos</Trans>
+              ) : (
+                <Trans>Apply to invoices</Trans>
+              )}
             </CardTitle>
             <CardDescription>
-              <Trans>
-                Select the invoices this payment settles. Discount and write-off
-                are in invoice currency.
-              </Trans>
+              {hasAdjustments ? (
+                <Trans>
+                  Applied, discount and write-off amounts are in company base
+                  currency ({baseCurrency}).
+                </Trans>
+              ) : (
+                <Trans>
+                  Applied amounts are in company base currency ({baseCurrency}).
+                </Trans>
+              )}
             </CardDescription>
           </div>
           <HStack>
@@ -305,7 +492,7 @@ const PaymentApplyTable = ({
               variant="secondary"
               leftIcon={<LuListChecks />}
               onClick={onAutoApply}
-              isDisabled={!canEdit || openInvoices.length === 0}
+              isDisabled={!canEdit || rows.length === 0}
             >
               <Trans>Auto apply</Trans>
             </Button>
@@ -322,10 +509,16 @@ const PaymentApplyTable = ({
         </HStack>
       </CardHeader>
       <CardContent>
-        {openInvoices.length === 0 ? (
+        {rows.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border py-10 px-6 text-center">
             <p className="text-sm font-medium text-foreground">
-              <Trans>No open invoices</Trans>
+              {isReimbursement ? (
+                <Trans>No open reimbursements</Trans>
+              ) : isRefund ? (
+                <Trans>No open memos</Trans>
+              ) : (
+                <Trans>No open invoices</Trans>
+              )}
             </p>
             <p className="text-sm text-muted-foreground mt-1 text-pretty">
               <Trans>
@@ -335,97 +528,19 @@ const PaymentApplyTable = ({
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <div className="min-w-[44rem]">
-              <div
-                className={cn(GRID, "px-2 pb-2 text-xs text-muted-foreground")}
-              >
-                <span aria-hidden />
-                <span>
-                  <Trans>Invoice</Trans>
-                </span>
-                <span className="text-right">
-                  <Trans>Open</Trans>
-                </span>
-                <span className="text-right">
-                  <Trans>Applied</Trans>
-                </span>
-                <span className="text-right">
-                  <Trans>Discount</Trans>
-                </span>
-                <span className="text-right">
-                  <Trans>Write-off</Trans>
-                </span>
-              </div>
-              <div className="border-t border-border/70 divide-y divide-border/70">
-                {rows.map((r) => (
-                  <div
-                    key={r.id}
-                    className={cn(
-                      GRID,
-                      "items-center px-2 py-2 transition-colors",
-                      r.checked ? "bg-muted/50" : "hover:bg-muted/30"
-                    )}
-                  >
-                    <div className="flex items-center justify-center">
-                      <Checkbox
-                        checked={r.checked}
-                        onCheckedChange={(checked) =>
-                          toggleRow(r.id, Boolean(checked))
-                        }
-                        disabled={!canEdit}
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-medium text-foreground truncate">
-                        {r.invoiceId}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {r.dateDue ? (
-                          <DateTime value={r.dateDue} variant="date" />
-                        ) : (
-                          t`No due date`
-                        )}
-                        {" · "}
-                        {r.currencyCode}
-                      </div>
-                    </div>
-                    <div className="text-right tabular-nums text-sm text-muted-foreground self-center">
-                      {currencyFormatter.format(Number(r.balance))}
-                    </div>
-                    <AmountInput
-                      label={t`Applied amount for ${r.invoiceId}`}
-                      value={r.appliedAmount}
-                      isDisabled={!canEdit}
-                      currency={paymentCurrency}
-                      currencyDecimals={currencyDecimals}
-                      onChange={(v) => updateAmount(r.id, "appliedAmount", v)}
-                    />
-                    <AmountInput
-                      label={t`Discount for ${r.invoiceId}`}
-                      value={r.discountAmount}
-                      isDisabled={!canEdit}
-                      currency={paymentCurrency}
-                      currencyDecimals={currencyDecimals}
-                      onChange={(v) => updateAmount(r.id, "discountAmount", v)}
-                    />
-                    <AmountInput
-                      label={t`Write-off for ${r.invoiceId}`}
-                      value={r.writeOffAmount}
-                      isDisabled={!canEdit}
-                      currency={paymentCurrency}
-                      currencyDecimals={currencyDecimals}
-                      onChange={(v) => updateAmount(r.id, "writeOffAmount", v)}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <Grid<ApplyRow>
+            data={rows}
+            columns={columns}
+            canEdit={canEdit}
+            editableComponents={editableComponents}
+            contained={false}
+            withSimpleSorting={false}
+            maxHeight={APPLY_GRID_MAX_HEIGHT}
+          />
         )}
       </CardContent>
       <CardFooter className="flex-col items-stretch gap-4">
-        {openInvoices.length > 0 ? (
+        {rows.length > 0 ? (
           <div className="w-full">
             <div className="flex items-baseline justify-between text-sm">
               <span className="text-muted-foreground">
@@ -455,7 +570,7 @@ const PaymentApplyTable = ({
                 style={{ "--applied": `${appliedPct}%` } as CSSProperties}
               />
             </div>
-            {availableCredit > 0.0001 ? (
+            {availableCredit > 0 ? (
               <div className="mt-2 flex items-baseline justify-between text-xs text-muted-foreground">
                 <span>
                   <Trans>On-account credit available</Trans>
@@ -465,16 +580,45 @@ const PaymentApplyTable = ({
                 </span>
               </div>
             ) : null}
+            {deposits.map((deposit) => {
+              const document = deposit.scope?.readableId;
+              return (
+                <div
+                  key={deposit.paymentId}
+                  className="mt-1 flex items-baseline justify-between text-xs text-muted-foreground"
+                >
+                  <span>
+                    {document ? (
+                      <Trans>Deposit for {document} (its invoices only)</Trans>
+                    ) : (
+                      <Trans>Deposit (its document's invoices only)</Trans>
+                    )}
+                  </span>
+                  <span className="tabular-nums">
+                    {currencyFormatter.format(deposit.remainingDocument)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
+        ) : null}
+        {preview.error ? (
+          <p className="text-sm text-destructive">{preview.error}</p>
         ) : null}
         <HStack className="justify-between w-full">
           <span className="text-sm">
-            {overApplied ? (
+            {overSettled ? (
+              <span className="font-semibold text-destructive">
+                <Trans>
+                  A line settles more than its invoice's open balance
+                </Trans>
+              </span>
+            ) : overApplied ? (
               <span className="font-semibold text-destructive">
                 <Trans>Over-applied by</Trans>{" "}
                 {currencyFormatter.format(totalCash - maxApplicable)}
               </span>
-            ) : creditDraw > 0.0001 ? (
+            ) : creditDraw > 0 ? (
               <span className="text-muted-foreground">
                 <Trans>Drawing</Trans>{" "}
                 <span className="tabular-nums font-medium text-foreground">
@@ -495,7 +639,9 @@ const PaymentApplyTable = ({
             leftIcon={<LuSave />}
             onClick={onSave}
             isLoading={isSaving}
-            isDisabled={!canEdit || overApplied}
+            isDisabled={
+              !canEdit || overApplied || overSettled || Boolean(preview.error)
+            }
           >
             <Trans>Save applications</Trans>
           </Button>

@@ -1,11 +1,15 @@
-import { ERP_URL } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { SLACK_SIGNING_SECRET } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
-  createIssueSlackThread,
+  AmbiguousSlackWorkspaceError,
   createSlackWebClient,
-  getCarbonEmployeeFromSlackId,
-  getSlackIntegrationByTeamId
+  getSlackWorkspaceByTeamId
 } from "@carbon/ee/slack.server";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -14,10 +18,13 @@ import { data } from "react-router";
 import { z } from "zod";
 import {
   getIssueTypesList,
-  getIssueWorkflowsList,
-  insertIssue
+  getIssueWorkflowsList
 } from "~/modules/quality/quality.service";
-import { path } from "~/utils/path";
+import { shareLinkContext } from "~/modules/service-context.server";
+import { createIssueFromSlack } from "~/modules/shared/shared.server";
+
+// nodejs runtime: the Slack signature check uses node:crypto.
+export const config = { runtime: "nodejs" };
 
 const logger = getLogger("erp", "slack", "interactive");
 
@@ -53,10 +60,58 @@ const slackInteractivePayloadSchema = z.object({
   callback_id: z.string().optional()
 });
 
+const SLACK_SIGNATURE_VERSION = "v0";
+const SLACK_MAX_REQUEST_AGE_SECONDS = 5 * 60;
+
+/**
+ * Verifies Slack's `x-slack-signature` HMAC over the RAW body. The payload's
+ * `team.id` picks the company this request acts on with the service role, and a
+ * Slack team id is not a secret — without this check anyone could POST a forged
+ * payload and create issues in any company that has Slack connected.
+ */
+function isValidSlackSignature(request: Request, rawBody: string): boolean {
+  if (!SLACK_SIGNING_SECRET) return false;
+
+  const timestamp = request.headers.get("x-slack-request-timestamp");
+  const signature = request.headers.get("x-slack-signature");
+  if (!timestamp || !signature) return false;
+
+  const timestampSeconds = Number.parseInt(timestamp, 10);
+  if (
+    !Number.isFinite(timestampSeconds) ||
+    Math.abs(Date.now() / 1000 - timestampSeconds) >
+      SLACK_MAX_REQUEST_AGE_SECONDS
+  ) {
+    return false;
+  }
+
+  const expected = `${SLACK_SIGNATURE_VERSION}=${createHmac(
+    "sha256",
+    SLACK_SIGNING_SECRET
+  )
+    .update(`${SLACK_SIGNATURE_VERSION}:${timestamp}:${rawBody}`)
+    .digest("hex")}`;
+
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 export async function action({ request }: ActionFunctionArgs) {
   try {
-    const formData = await request.formData();
-    const payloadString = formData.get("payload") as string;
+    const rawBody = await request.text();
+
+    if (!isValidSlackSignature(request, rawBody)) {
+      logger.error(
+        "Rejected Slack interactive request with invalid signature",
+        {
+          hasSigningSecret: Boolean(SLACK_SIGNING_SECRET)
+        }
+      );
+      return data({ error: "Invalid signature" }, { status: 401 });
+    }
+
+    const payloadString = new URLSearchParams(rawBody).get("payload");
 
     if (!payloadString) {
       return data({ error: "Missing payload" }, { status: 400 });
@@ -86,14 +141,28 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
 
-    const integration = await getSlackIntegrationByTeamId(
-      serviceRole,
-      payload.data.team.id
-    );
+    let workspace: Awaited<ReturnType<typeof getSlackWorkspaceByTeamId>>;
+    try {
+      workspace = await getSlackWorkspaceByTeamId(
+        serviceRole,
+        payload.data.team.id
+      );
+    } catch (err) {
+      if (err instanceof AmbiguousSlackWorkspaceError) {
+        logger.error("Slack workspace linked to more than one company", {
+          teamId: payload.data.team.id
+        });
+        return {
+          response_type: "ephemeral",
+          text: "This Slack workspace is connected to more than one Carbon company, so Carbon cannot tell which one you mean. Ask an admin to disconnect it from all but one."
+        };
+      }
+      throw err;
+    }
 
-    if (!integration.data?.[0] || integration.error) {
-      logger.error("Failed to get Slack integration", {
-        error: integration.error
+    if (workspace === null) {
+      logger.error("No Slack connection for workspace", {
+        teamId: payload.data.team.id
       });
       return {
         response_type: "ephemeral",
@@ -101,16 +170,7 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
 
-    const { companyId, metadata } = integration.data?.[0];
-    const slackToken = (metadata as any)?.access_token as string;
-
-    if (!slackToken) {
-      logger.error("Slack token not found");
-      return {
-        response_type: "ephemeral",
-        text: "Slack token not found. Please reconfigure the integration."
-      };
-    }
+    const { companyId, token: slackToken } = workspace;
 
     switch (payload.data.type) {
       case "shortcut":
@@ -120,13 +180,7 @@ export async function action({ request }: ActionFunctionArgs) {
         return handleBlockActions(payload.data, companyId, slackToken);
 
       case "view_submission":
-        return handleViewSubmission(
-          payload.data,
-          companyId,
-          slackToken,
-          serviceRole,
-          integration.data?.[0]
-        );
+        return handleViewSubmission(payload.data, companyId);
 
       case "view_closed":
         return { ok: true };
@@ -369,10 +423,7 @@ async function handleCreateNcrShortcut(
 
 async function handleViewSubmission(
   payload: z.infer<typeof slackInteractivePayloadSchema>,
-  companyId: string,
-  slackToken: string,
-  serviceRole: SupabaseClient<Database>,
-  integration: Database["public"]["Tables"]["companyIntegration"]["Row"]
+  companyId: string
 ) {
   const view = payload.view;
 
@@ -380,93 +431,35 @@ async function handleViewSubmission(
     return { ok: true };
   }
 
+  const failed = {
+    response_action: "errors",
+    errors: {
+      title_block: "Failed to create Issue. Please try again."
+    }
+  };
+
   try {
     const values = view.state.values;
-    const title = values.title_block.title.value;
-    const description = values.description_block?.description?.value || "";
-    const typeId = values.type_block.type.selected_option?.value;
-    const workflowId = values.workflow_block?.workflow?.selected_option?.value;
-    const severity =
-      values.severity_block?.severity?.selected_option?.value || "Medium";
+    const { user_id } = JSON.parse(view.private_metadata);
 
-    const modalMetadata = JSON.parse(view.private_metadata);
-    const { user_id } = modalMetadata;
+    // The verified signature is the only credential: the workspace's company
+    // is the one acted in.
+    const ctx = await shareLinkContext({ companyId, createdBy: "system" });
+    if (!ctx) throw new Error("Failed to read the company");
 
-    // Use the configured channel from integration metadata, not the trigger channel
-    const integrationMetadata = integration.metadata as any;
-    const configuredChannelId = integrationMetadata?.channel_id;
-
-    if (!configuredChannelId) {
-      throw new Error("No channel configured for Slack integration");
-    }
-
-    const employee = await getCarbonEmployeeFromSlackId(
-      serviceRole,
-      slackToken,
-      user_id,
-      companyId
-    );
-
-    if (employee.error || !employee.data) {
-      logger.error("Failed to get employee", { error: employee.error });
-      throw new Error("Failed to get employee");
-    }
-
-    const createResult = await insertIssue(serviceRole, {
-      companyId,
-      createdBy: employee.data?.id,
-      description,
-      locationId: employee.data?.locationId || "",
-      name: title,
-      nonConformanceTypeId: typeId,
-      nonConformanceWorkflowId: workflowId,
-      openDate: new Date().toISOString(),
-      priority: severity,
-      source: "Internal"
+    const created = await createIssueFromSlack(ctx, {
+      slackUserId: user_id,
+      title: values.title_block.title.value,
+      description: values.description_block?.description?.value || "",
+      nonConformanceTypeId: values.type_block.type.selected_option?.value,
+      nonConformanceWorkflowId:
+        values.workflow_block?.workflow?.selected_option?.value,
+      priority:
+        values.severity_block?.severity?.selected_option?.value || "Medium"
     });
-
-    if (createResult.error || !createResult.data) {
-      logger.error("Failed to create issue", { error: createResult.error });
-      throw new Error("Failed to create issue");
-    }
-
-    const ncrId = createResult.data.id;
-
-    const [threadResult, tasksResult] = await Promise.all([
-      createIssueSlackThread(
-        serviceRole,
-        {
-          carbonUrl: `${ERP_URL}${path.to.issue(ncrId)}`,
-          companyId,
-          description,
-          id: ncrId,
-          nonConformanceId: createResult.data.nonConformanceId,
-          severity,
-          title,
-          userId: employee.data?.id
-        },
-        {
-          slackToken,
-          slackUserId: user_id,
-          channelId: configuredChannelId
-        }
-      ),
-      serviceRole.functions.invoke("create", {
-        body: {
-          type: "nonConformanceTasks",
-          id: ncrId,
-          companyId,
-          userId: employee.data?.id ?? "system"
-        }
-      })
-    ]);
-
-    if (tasksResult.error) {
-      logger.error("Error creating tasks", { error: tasksResult.error });
-    }
-
-    if (threadResult.error) {
-      logger.error("Error creating thread", { error: threadResult.error });
+    if (created.error) {
+      logger.error("Error creating Issue", { error: created.error });
+      return failed;
     }
 
     return {
@@ -474,12 +467,6 @@ async function handleViewSubmission(
     };
   } catch (error) {
     logger.error("Error creating Issue", { error });
-
-    return {
-      response_action: "errors",
-      errors: {
-        title_block: "Failed to create Issue. Please try again."
-      }
-    };
+    return failed;
   }
 }

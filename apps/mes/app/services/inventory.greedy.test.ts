@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import { greedyFillAllocation, sortLotsByPickMethod } from "./allocation";
 
@@ -71,6 +75,12 @@ describe("greedyFillAllocation", () => {
   it("preserves lot pick order (does not reorder the pool)", () => {
     const picks = greedyFillAllocation([lot("B", 1), lot("A", 1)], 2);
     expect(picks.map((p) => p.trackedEntityId)).toEqual(["B", "A"]);
+  });
+
+  it("rounds the spilled remainder at the persist boundary (0.98 + 0.02)", () => {
+    // Raw float would spill round(1 - 0.98) = 0.020000000000000018 onto B.
+    const picks = greedyFillAllocation([lot("A", 0.98), lot("B", 5)], 1);
+    expect(picks.map((p) => p.quantity)).toEqual([0.98, 0.02]);
   });
 });
 

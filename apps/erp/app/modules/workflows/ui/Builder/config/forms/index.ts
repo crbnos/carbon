@@ -1,14 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
   WorkflowIssue,
   WorkflowNode,
   WorkflowNodeType
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { ComponentType } from "react";
 import type { BuilderNode } from "../../../../types";
 import { ActionForm } from "./ActionForm";
 import { ComputeForm } from "./ComputeForm";
 import { ConditionForm } from "./ConditionForm";
 import { FilterForm } from "./FilterForm";
+import { IntegrationNodeForm } from "./IntegrationNodeForm";
 import { LookupForm } from "./LookupForm";
 import { TriggerForm } from "./TriggerForm";
 
@@ -34,7 +39,8 @@ export const NODE_FORMS: {
   compute: ComputeForm,
   lookup: LookupForm,
   filter: FilterForm,
-  action: ActionForm
+  action: ActionForm,
+  integration: IntegrationNodeForm
 };
 
 /** What the card can actually pass: the kind is a value, so it cannot be correlated. */

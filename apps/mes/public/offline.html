@@ -1,0 +1,435 @@
+<!doctype html>
+<!-- Served by the service worker (public/service-worker.js)
+     when a page load fails for want of a network. Self-contained: nothing else
+     is reachable while offline. Each app has a copy in its public folder;
+     keep them the same. The workers save it when they install: bump the offline
+     cache version in both service-worker.js files after any change here. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Offline | Carbon</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family:
+          ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        --fg: #09090b;
+        --muted: #71717a;
+        --line: #e4e4e7;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #fff;
+        color: var(--fg);
+      }
+      main {
+        width: 100%;
+        max-width: 22rem;
+        padding: 1.5rem;
+        box-sizing: border-box;
+        text-align: center;
+      }
+      main.playing {
+        max-width: 40rem;
+      }
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        text-wrap: balance;
+      }
+      /* The text keeps its width when the game widens the page, and its
+         lines are balanced, so no word is left alone on the last line. */
+      p {
+        max-width: 19rem;
+        margin: 0 auto 1.5rem;
+        color: var(--muted);
+        line-height: 1.5;
+        text-wrap: balance;
+      }
+      .actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+      }
+      button {
+        font: inherit;
+        font-weight: 500;
+        border: 0;
+        border-radius: 0.4375rem;
+        padding: 0.625rem 1.25rem;
+        background: var(--fg);
+        color: #fafafa;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: transparent;
+        color: var(--fg);
+        box-shadow: inset 0 0 0 1px var(--line);
+      }
+      #game {
+        display: none;
+        margin-top: 1.5rem;
+      }
+      main.playing #game {
+        display: block;
+      }
+      main.playing #play {
+        display: none;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 1;
+        border-radius: 0.4375rem;
+        box-shadow: inset 0 0 0 1px var(--line);
+        touch-action: manipulation;
+        cursor: pointer;
+      }
+      canvas:focus-visible {
+        outline: 2px solid var(--muted);
+        outline-offset: 2px;
+      }
+      .hint {
+        max-width: none;
+        margin: 0.5rem 0 0;
+        font-size: 0.8125rem;
+      }
+      /* Last, so it overrides the light rules above. */
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fg: #fafafa;
+          --muted: #a1a1aa;
+          --line: #27272a;
+        }
+        body {
+          background: #09090b;
+        }
+        button {
+          color: #09090b;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="main">
+      <h1>You're offline</h1>
+      <p>
+        This device lost its connection. Carbon reloads the page when the
+        connection is back.
+      </p>
+      <div class="actions">
+        <button type="button" id="retry">Try again</button>
+        <button type="button" id="play" class="secondary">
+          Play while you wait
+        </button>
+      </div>
+      <div id="game">
+        <canvas
+          id="canvas"
+          tabindex="0"
+          aria-label="Forklift game: press Space or tap to jump over the crates"
+        ></canvas>
+        <p class="hint">Space, ↑ or tap to jump</p>
+      </div>
+    </main>
+    <script>
+      document
+        .getElementById("retry")
+        .addEventListener("click", () => location.reload());
+      window.addEventListener("online", () => location.reload());
+
+      // "online" never fires when the device kept its network but Carbon
+      // could not be reached (the server, or the internet behind the Wi-Fi):
+      // ask Carbon itself every few seconds. /health answers 200 only once
+      // the app and its database are up (503 while the database is down), so
+      // a static file a CDN still serves cannot reload this into an error.
+      // The service workers pass it straight to the network. Not at its own
+      // address: there it stands in for no page, and would reload forever.
+      setInterval(() => {
+        if (!navigator.onLine || location.pathname === "/offline.html") return;
+        fetch("/health", { cache: "no-store" }).then(
+          (response) => response.ok && location.reload(),
+          () => undefined
+        );
+      }, 10000);
+
+      // A forklift runner: jump the crates, pallets and cones on the shop
+      // floor. Opened from a button, so the page stays quiet until asked.
+      (() => {
+        const main = document.getElementById("main");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        const W = 600;
+        const H = 150;
+        const GROUND = 128;
+        const GRAVITY = 1700;
+        const JUMP = 560;
+        const START_SPEED = 260;
+        const MAX_SPEED = 620;
+        const BEST_KEY = "carbon-offline-best";
+
+        // Fixed logical size, drawn at the screen's pixel density.
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = W * ratio;
+        canvas.height = H * ratio;
+        ctx.scale(ratio, ratio);
+
+        const readBest = () => {
+          try {
+            return Number(localStorage.getItem(BEST_KEY)) || 0;
+          } catch {
+            return 0;
+          }
+        };
+        const writeBest = (value) => {
+          try {
+            localStorage.setItem(BEST_KEY, String(value));
+          } catch {
+            // Private mode: the best score lasts this page only.
+          }
+        };
+
+        const player = { x: 48, y: GROUND, vy: 0, w: 34, h: 28 };
+        let state = "ready"; // ready | running | paused | over
+        let obstacles = [];
+        let speed = START_SPEED;
+        let distance = 0;
+        let nextGap = 0;
+        let floorOffset = 0;
+        let best = readBest();
+        let last = 0;
+        let frame = 0;
+
+        // Read once, and again when the light/dark mode changes.
+        const readColors = () => {
+          const style = getComputedStyle(document.documentElement);
+          return {
+            fg: style.getPropertyValue("--fg").trim(),
+            muted: style.getPropertyValue("--muted").trim(),
+            line: style.getPropertyValue("--line").trim()
+          };
+        };
+        let palette = readColors();
+
+        const reset = () => {
+          obstacles = [];
+          speed = START_SPEED;
+          distance = 0;
+          nextGap = 320;
+          player.y = GROUND;
+          player.vy = 0;
+        };
+
+        const spawn = () => {
+          const kind = Math.random();
+          if (kind < 0.45) {
+            const size = 18 + Math.random() * 10;
+            obstacles.push({ type: "crate", x: W, w: size, h: size });
+          } else if (kind < 0.75) {
+            obstacles.push({ type: "pallet", x: W, w: 38, h: 22 });
+          } else {
+            obstacles.push({ type: "cone", x: W, w: 16, h: 24 });
+          }
+          // Gaps grow with speed, so every gap stays jumpable.
+          nextGap = speed * (0.75 + Math.random() * 0.9) + 90;
+        };
+
+        const start = () => {
+          state = "running";
+          last = performance.now();
+          frame = requestAnimationFrame(loop);
+        };
+
+        const jump = () => {
+          if (state === "ready" || state === "over") {
+            reset();
+            start();
+            return;
+          }
+          if (state === "paused") {
+            start();
+            return;
+          }
+          if (player.y >= GROUND) player.vy = -JUMP;
+        };
+
+        const hits = (o) => {
+          // A little forgiveness: the boxes are drawn larger than they hit.
+          const pad = 4;
+          return (
+            player.x + pad < o.x + o.w &&
+            player.x + player.w - pad > o.x &&
+            player.y - pad > GROUND - o.h
+          );
+        };
+
+        const update = (dt) => {
+          speed = Math.min(MAX_SPEED, speed + 9 * dt);
+          distance += speed * dt;
+          floorOffset = (floorOffset + speed * dt) % 24;
+
+          player.vy += GRAVITY * dt;
+          player.y = Math.min(GROUND, player.y + player.vy * dt);
+          if (player.y === GROUND) player.vy = 0;
+
+          for (const o of obstacles) o.x -= speed * dt;
+          obstacles = obstacles.filter((o) => o.x + o.w > 0);
+          const lastObstacle = obstacles[obstacles.length - 1];
+          if (!lastObstacle || W - (lastObstacle.x + lastObstacle.w) > nextGap) {
+            spawn();
+          }
+
+          if (obstacles.some(hits)) {
+            state = "over";
+            const score = Math.floor(distance / 10);
+            if (score > best) {
+              best = score;
+              writeBest(best);
+            }
+          }
+        };
+
+        const drawForklift = (c) => {
+          const x = player.x;
+          const y = player.y;
+          ctx.fillStyle = c.fg;
+          ctx.strokeStyle = c.fg;
+          ctx.lineWidth = 2;
+          // Body and cab.
+          ctx.fillRect(x, y - 18, 22, 12);
+          ctx.strokeRect(x + 4, y - 28, 12, 10);
+          // Mast and forks, at the front.
+          ctx.fillRect(x + 24, y - 30, 3, 26);
+          ctx.fillRect(x + 27, y - 6, 9, 2);
+          // Wheels.
+          ctx.beginPath();
+          ctx.arc(x + 5, y - 3, 3.5, 0, Math.PI * 2);
+          ctx.arc(x + 19, y - 3, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        };
+
+        const drawObstacle = (o, c) => {
+          const top = GROUND - o.h;
+          ctx.strokeStyle = c.muted;
+          ctx.fillStyle = c.muted;
+          ctx.lineWidth = 2;
+          if (o.type === "crate") {
+            ctx.strokeRect(o.x + 1, top + 1, o.w - 2, o.h - 2);
+            ctx.beginPath();
+            ctx.moveTo(o.x + 1, top + 1);
+            ctx.lineTo(o.x + o.w - 1, GROUND - 1);
+            ctx.stroke();
+          } else if (o.type === "pallet") {
+            ctx.fillRect(o.x, top, o.w, 10);
+            ctx.fillRect(o.x, GROUND - 4, o.w, 4);
+            ctx.fillRect(o.x + 2, top + 10, 5, 8);
+            ctx.fillRect(o.x + o.w / 2 - 2.5, top + 10, 5, 8);
+            ctx.fillRect(o.x + o.w - 7, top + 10, 5, 8);
+          } else {
+            ctx.beginPath();
+            ctx.moveTo(o.x + o.w / 2, top);
+            ctx.lineTo(o.x + o.w, GROUND);
+            ctx.lineTo(o.x, GROUND);
+            ctx.closePath();
+            ctx.fill();
+          }
+        };
+
+        const drawText = (text, y, c, size) => {
+          ctx.fillStyle = c;
+          ctx.font = `500 ${size}px ui-sans-serif, system-ui, sans-serif`;
+          ctx.textAlign = "center";
+          ctx.fillText(text, W / 2, y);
+        };
+
+        const draw = () => {
+          const c = palette;
+          ctx.clearRect(0, 0, W, H);
+
+          // Floor, with lane markings moving past.
+          ctx.fillStyle = c.line;
+          ctx.fillRect(0, GROUND, W, 2);
+          ctx.fillStyle = c.muted;
+          for (let x = -floorOffset; x < W; x += 24) {
+            ctx.fillRect(x, GROUND + 9, 10, 2);
+          }
+
+          for (const o of obstacles) drawObstacle(o, c);
+          drawForklift(c);
+
+          // Score, top right.
+          ctx.fillStyle = c.muted;
+          ctx.font = "500 12px ui-monospace, SFMono-Regular, monospace";
+          ctx.textAlign = "right";
+          const score = String(Math.floor(distance / 10)).padStart(5, "0");
+          const bestText = best ? `BEST ${String(best).padStart(5, "0")}  ` : "";
+          ctx.fillText(`${bestText}${score} m`, W - 12, 22);
+
+          if (state === "ready") {
+            drawText("Press Space or tap to start", 64, c.fg, 15);
+          } else if (state === "paused") {
+            drawText("Paused", 56, c.fg, 15);
+            drawText("Press Space or tap to carry on", 78, c.muted, 13);
+          } else if (state === "over") {
+            drawText("Crashed into the stock", 56, c.fg, 15);
+            drawText("Press Space or tap to go again", 78, c.muted, 13);
+          }
+        };
+
+        const loop = (now) => {
+          if (state !== "running") return;
+          // Capped, so a frame after a stall does not leap through a crate.
+          const dt = Math.min((now - last) / 1000, 1 / 30);
+          last = now;
+          update(dt);
+          draw();
+          if (state === "running") frame = requestAnimationFrame(loop);
+        };
+
+        canvas.addEventListener("keydown", (event) => {
+          if (event.code === "Space" || event.code === "ArrowUp") {
+            event.preventDefault();
+            jump();
+          }
+        });
+        canvas.addEventListener("pointerdown", (event) => {
+          event.preventDefault();
+          canvas.focus();
+          jump();
+        });
+
+        // Hidden tab: stop, and wait for a key or tap to carry on.
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden && state === "running") {
+            cancelAnimationFrame(frame);
+            state = "paused";
+            draw();
+          }
+        });
+
+        window
+          .matchMedia("(prefers-color-scheme: dark)")
+          .addEventListener("change", () => {
+            palette = readColors();
+            if (state !== "running") draw();
+          });
+
+        document.getElementById("play").addEventListener("click", () => {
+          main.classList.add("playing");
+          reset();
+          draw();
+          // Keys go to the game, not to the Try again button.
+          canvas.focus();
+        });
+      })();
+    </script>
+  </body>
+</html>

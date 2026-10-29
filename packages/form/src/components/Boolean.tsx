@@ -1,4 +1,8 @@
-import type { TermId } from "@carbon/glossary";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
 import {
   cn,
   FormControl,
@@ -23,6 +27,7 @@ type FormBooleanProps = {
   value?: boolean;
   helperText?: string;
   isDisabled?: boolean;
+  isOptional?: boolean;
   bordered?: boolean;
   className?: string;
   description?: string | JSX.Element;
@@ -41,6 +46,7 @@ const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
       variant,
       bordered,
       isDisabled: isDisabledProp,
+      isOptional,
       value: controlledValue,
       className,
       ...props
@@ -56,6 +62,9 @@ const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
     const isDisabled =
       formState.isDisabled || formState.isReadOnly || isDisabledProp;
     const [value, setValue] = useControlField<boolean>(name);
+    // A switch shown with only a description (a day of the week) is named by it.
+    const accessibleName =
+      label ?? (typeof description === "string" ? description : undefined);
 
     useEffect(() => {
       if (controlledValue !== null && controlledValue !== undefined)
@@ -89,7 +98,7 @@ const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
                 setValue(checked);
                 onChange?.(checked);
               }}
-              aria-label={label}
+              aria-label={accessibleName}
               {...props}
             />
           </HStack>
@@ -105,11 +114,14 @@ const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
     return (
       <FormControl isInvalid={!!error} className={cn("pt-2", className)}>
         {label && (
-          <FormLabel htmlFor={name} isOptional={fieldIsOptional ?? false}>
+          <FormLabel
+            htmlFor={name}
+            isOptional={isOptional ?? fieldIsOptional ?? false}
+          >
             <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
           </FormLabel>
         )}
-        <HStack>
+        <HStack className="max-md:-ml-1">
           <Switch
             variant={variant}
             {...getInputProps()}
@@ -119,7 +131,7 @@ const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
               setValue(checked);
               onChange?.(checked);
             }}
-            aria-label={label}
+            aria-label={accessibleName}
             {...props}
           />
           {description && (

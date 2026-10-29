@@ -1,12 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateQRCodeBuffer } from "@carbon/documents/qr";
+import { getRequestOrigin } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getKanban } from "~/modules/inventory/inventory.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -17,16 +22,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Invalid kanban action");
   }
 
-  const kanban = await getKanban(client, id);
+  const kanban = await getKanban(client, id, companyId);
 
   if (kanban.error) {
     return data({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const url = new URL(request.url);
   let kanbanUrl = "";
   let qrColor = "000000";
-  const baseUrl = `${url.protocol}//${url.host}`;
+  // The origin the user is on, not request.url's (internal, http) — it is
+  // printed into the QR code.
+  const baseUrl = getRequestOrigin(request) ?? new URL(request.url).origin;
   if (action === "order") {
     kanbanUrl = `${baseUrl}${path.to.api.kanban(id)}`;
     qrColor = "000000"; // black
@@ -40,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const buffer = await generateQRCodeBuffer(kanbanUrl, 36, qrColor);
 
-  // @ts-ignore
+  // @ts-expect-error
   return new Response(buffer, {
     headers: {
       "Content-Type": "image/png",

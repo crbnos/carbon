@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCallback, useEffect } from "react";
 import type { InternalFormContextValue } from "../formContext";
-import { useFieldDefaultValue } from "../hooks";
+import { useFieldDefaultValue, useIsFormHydrated } from "../hooks";
 import { useFormStore } from "./storeHooks";
 import type { InternalFormId } from "./types";
 
@@ -11,10 +15,7 @@ export const useControlledFieldValue = (
   const value = useFormStore(context.formId, (state) =>
     state.controlledFields.getValue(field)
   );
-  const isFormHydrated = useFormStore(
-    context.formId,
-    (state) => state.isHydrated
-  );
+  const isFormHydrated = useIsFormHydrated(context);
   const defaultValue = useFieldDefaultValue(field, context);
 
   return isFormHydrated ? value : defaultValue;

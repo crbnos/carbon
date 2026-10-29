@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -8,6 +12,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -16,13 +21,14 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Status,
   useDisclosure,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import { LuEllipsisVertical, LuTrash } from "react-icons/lu";
+import { LuEllipsisVertical, LuKeySquare, LuTrash } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { EmployeeAvatar } from "~/components";
@@ -30,6 +36,10 @@ import { useAuditLog } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
 import { useCustomerTypes } from "~/components/Form/CustomerType";
+import {
+  RecordHero,
+  RecordPhoneChrome
+} from "~/components/Layout/RecordHeader";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action } from "~/routes/x+/settings+/tags";
@@ -37,7 +47,7 @@ import { path } from "~/utils/path";
 import type { CustomerDetail, CustomerStatus } from "../../types";
 
 const CustomerHeader = () => {
-  const { i18n, t } = useLingui();
+  const { t } = useLingui();
   const { customerId } = useParams();
 
   if (!customerId) throw new Error("Could not find customerId");
@@ -90,11 +100,30 @@ const CustomerHeader = () => {
     [customerId, fetcher.submit]
   );
 
+  const menuItems = (
+    <>
+      {auditLogTrigger}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={!permissions.can("delete", "sales")}
+        destructive
+        onClick={deleteModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Customer</Trans>
+      </DropdownMenuItem>
+    </>
+  );
   return (
     <>
+      {/* The app bar titles the record with its name, so no hero. */}
+      {/* No hero; it still zeroes --header-height on phones. */}
+      <RecordHero />
+      <RecordPhoneChrome menu={menuItems} copyValue={customerId} />
       <VStack>
         <Card>
-          <HStack className="justify-between items-start">
+          <HStack className="justify-between items-start max-md:hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <span>{routeData?.customer?.name}</span>
@@ -107,19 +136,13 @@ const CustomerHeader = () => {
                       size="sm"
                     />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {auditLogTrigger}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={!permissions.can("delete", "sales")}
-                      destructive
-                      onClick={deleteModal.onOpen}
-                    >
-                      <DropdownMenuIcon icon={<LuTrash />} />
-                      <Trans>Delete Customer</Trans>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+                  <DropdownMenuContent>{menuItems}</DropdownMenuContent>
                 </DropdownMenu>
+                <Copy
+                  text={customerId}
+                  label={t`Copy customer unique identifier`}
+                  icon={<LuKeySquare />}
+                />
               </CardTitle>
             </CardHeader>
           </HStack>
@@ -130,11 +153,7 @@ const CustomerHeader = () => {
                   <Trans>Status</Trans>
                 </CardAttributeLabel>
                 <CardAttributeValue>
-                  {customerStatus ? (
-                    <Enumerable value={i18n._(customerStatus)} />
-                  ) : (
-                    "-"
-                  )}
+                  {customerStatus ? <Enumerable value={customerStatus} /> : "-"}
                 </CardAttributeValue>
               </CardAttribute>
               <CardAttribute>
@@ -160,7 +179,9 @@ const CustomerHeader = () => {
                 </CardAttributeValue>
               </CardAttribute>
               <CardAttribute>
-                <CardAttributeLabel>Tax Status</CardAttributeLabel>
+                <CardAttributeLabel>
+                  <Trans>Tax Status</Trans>
+                </CardAttributeLabel>
                 <CardAttributeValue>
                   {routeData?.customerTax?.taxExempt ? (
                     <Status color="red">Exempt</Status>

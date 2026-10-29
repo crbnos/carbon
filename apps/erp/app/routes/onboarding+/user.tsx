@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -10,11 +14,13 @@ import {
   CardHeader,
   CardTitle,
   HStack,
+  PrefetchLink,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
-import { Link, redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import type { z } from "zod";
 import {
   OnboardingCard,
@@ -23,16 +29,19 @@ import {
 } from "~/components";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
-import {
-  onboardingUserValidator,
-  updatePublicAccount
-} from "~/modules/account";
-import { getUser } from "~/modules/users/users.server";
+import { onboardingUserValidator } from "~/modules/users/users.models";
+import { getUser, updatePublicAccount } from "~/modules/users/users.service";
+import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
+import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "user");
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { userId } = await requirePermissions(request, {});
+  const { userId } = await requirePermissions(request, {
+    // Onboarding acts on the user's own account: a portal-only user may still
+    // create a company of their own.
+    allowPortalAccounts: true
+  });
 
   const user = await getUser(getCarbonServiceRole(), userId);
   if (user.error || !user.data) {
@@ -44,7 +53,11 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {});
+  const { userId } = await requirePermissions(request, {
+    // Onboarding acts on the user's own account: a portal-only user may still
+    // create a company of their own.
+    allowPortalAccounts: true
+  });
 
   const validation = await validator(onboardingUserValidator).validate(
     await request.formData()
@@ -68,7 +81,7 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Fatal: failed to update account");
   }
 
-  throw redirect(next);
+  throw redirect(next || path.to.onboarding.root);
 }
 
 export default function OnboardingUser() {
@@ -120,11 +133,11 @@ export default function OnboardingUser() {
               asChild
               tabIndex={-1}
             >
-              <Link to={previous} prefetch="intent">
+              <PrefetchLink to={previous}>
                 <Trans>Previous</Trans>
-              </Link>
+              </PrefetchLink>
             </Button>
-            <Submit>
+            <Submit shortcut={ONBOARDING_SHORTCUTS.continue}>
               <Trans>Next</Trans>
             </Submit>
           </HStack>

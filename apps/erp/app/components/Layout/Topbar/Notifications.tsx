@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 import { NotificationEvent, renderInlineLinks } from "@carbon/notifications";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -12,12 +17,14 @@ import {
   Tabs,
   TabsContent,
   TabsList,
-  TabsTrigger
+  TabsTrigger,
+  useRouteData
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import {
   LuBell,
+  LuCalendarClock,
   LuCalendarX,
   LuChevronDown,
   LuChevronUp,
@@ -25,6 +32,7 @@ import {
   LuCirclePlay,
   LuClipboardCheck,
   LuDollarSign,
+  LuFileSpreadsheet,
   LuGitPullRequestArrow,
   LuGraduationCap,
   LuHammer,
@@ -46,14 +54,19 @@ import {
   RiProgress4Line,
   RiProgress8Line
 } from "react-icons/ri";
-import { Link, useFetcher, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { DateTime } from "~/components";
 import { useNotifications, useUser } from "~/hooks";
-import type { ApprovalDocumentType } from "~/modules/shared";
+import { useAppBadge } from "~/hooks/useAppBadge";
+import { useRestoreBrowserNotifications } from "~/hooks/usePushSubscription";
 import { usePeople } from "~/stores";
 import type { Notification as NotificationRecord } from "~/types";
-import { getRecordPath } from "~/utils/entity";
+import {
+  type NotificationDocumentType,
+  notificationTarget
+} from "~/utils/notification-target";
 import { path } from "~/utils/path";
+import { EnableBrowserNotifications } from "./EnableBrowserNotifications";
 
 type OutstandingTraining = {
   trainingAssignmentId: string;
@@ -85,7 +98,7 @@ function getNotificationBody(
 
 function EmptyState({ description }: { description: string }) {
   return (
-    <div className="h-[460px] flex items-center justify-center flex-col gap-y-4">
+    <div className="h-[460px] max-md:h-auto max-md:py-16 flex items-center justify-center flex-col gap-y-4">
       <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center">
         <LuInbox size={18} />
       </div>
@@ -139,6 +152,7 @@ function TrainingItem({
 function Notification({
   icon,
   to,
+  reloadDocument,
   description,
   body,
   createdAt,
@@ -148,6 +162,9 @@ function Notification({
 }: {
   icon: React.ReactNode;
   to: string;
+  // A resource route (a file download) needs a full page request, not a
+  // client navigation.
+  reloadDocument?: boolean;
   description: string;
   body?: string;
   createdAt: string;
@@ -224,14 +241,16 @@ function Notification({
           className="flex items-between justify-between gap-x-4 cursor-pointer"
           onClick={() => {
             onClose();
-            navigate(to);
+            if (reloadDocument) window.location.assign(to);
+            else navigate(to);
           }}
           onKeyDown={(e) => {
             if (e.target !== e.currentTarget) return;
             if (e.key !== "Enter" && e.key !== " ") return;
             e.preventDefault();
             onClose();
-            navigate(to);
+            if (reloadDocument) window.location.assign(to);
+            else navigate(to);
           }}
         >
           {content}
@@ -241,6 +260,7 @@ function Notification({
           className="flex items-between justify-between gap-x-4 "
           onClick={() => onClose()}
           to={to}
+          reloadDocument={reloadDocument}
         >
           {content}
         </Link>
@@ -260,6 +280,52 @@ function Notification({
   );
 }
 
+/** The topbar icon of each event. An event without one has no row here
+ *  (Digest rows are `DigestNotification`). */
+const NOTIFICATION_ICONS: Partial<Record<NotificationEvent, React.ReactNode>> =
+  {
+    [NotificationEvent.ApprovalApproved]: <LuClipboardCheck />,
+    [NotificationEvent.ApprovalRejected]: <LuClipboardCheck />,
+    [NotificationEvent.ApprovalRequested]: <LuClipboardCheck />,
+    [NotificationEvent.ChangeNoticeStarted]: <LuGitPullRequestArrow />,
+    [NotificationEvent.ChangeNoticeImplementation]: <LuGitPullRequestArrow />,
+    [NotificationEvent.ChangeNoticeDone]: <LuGitPullRequestArrow />,
+    [NotificationEvent.DigitalQuoteResponse]: <LuDollarSign />,
+    [NotificationEvent.GaugeCalibrationExpired]: <LuCircleGauge />,
+    [NotificationEvent.SalesRuleViolation]: <LuShieldAlert />,
+    [NotificationEvent.IntegrationSync]: <LuRefreshCw />,
+    [NotificationEvent.TableExport]: <LuFileSpreadsheet />,
+    [NotificationEvent.TableBulkAction]: <LuListChecks />,
+    [NotificationEvent.RecurringInvoicing]: <LuDollarSign />,
+    [NotificationEvent.LeaseCriticalDate]: <LuCalendarClock />,
+    [NotificationEvent.JobCompleted]: <LuHammer />,
+    [NotificationEvent.JobAssignment]: <LuHammer />,
+    [NotificationEvent.JobOperationAssignment]: <LuCirclePlay />,
+    [NotificationEvent.JobOperationMessage]: <LuMessageSquare />,
+    [NotificationEvent.MaintenanceDispatchCreated]: <LuWrench />,
+    [NotificationEvent.MaintenanceDispatchAssignment]: <LuWrench />,
+    [NotificationEvent.NonConformanceAssignment]: <LuShieldX />,
+    [NotificationEvent.ProcedureAssignment]: <LuListChecks />,
+    [NotificationEvent.QuoteExpired]: <LuCalendarX />,
+    [NotificationEvent.PurchaseInvoiceAssignment]: <LuShoppingCart />,
+    [NotificationEvent.PurchasingRfqAssignment]: <LuPackageSearch />,
+    [NotificationEvent.PurchaseOrderAssignment]: <LuShoppingCart />,
+    [NotificationEvent.QuoteAssignment]: <RiProgress4Line />,
+    [NotificationEvent.RiskAssignment]: <LuShieldAlert />,
+    [NotificationEvent.SalesRfqReady]: <RiProgress2Line />,
+    [NotificationEvent.SalesRfqAssignment]: <RiProgress2Line />,
+    [NotificationEvent.SalesOrderAssignment]: <RiProgress8Line />,
+    [NotificationEvent.StockTransferAssignment]: <LuListChecks />,
+    [NotificationEvent.PickingListAssignment]: <LuListChecks />,
+    [NotificationEvent.SuggestionResponse]: <LuLightbulb />,
+    [NotificationEvent.SupplierQuoteAssignment]: <LuDollarSign />,
+    [NotificationEvent.SupplierQuoteResponse]: <LuMailCheck />,
+    [NotificationEvent.TrainingAssignment]: <LuListChecks />,
+    [NotificationEvent.TrainingReminder]: <LuListChecks />,
+    [NotificationEvent.ResourceTrainingAssignment]: <LuGraduationCap />,
+    [NotificationEvent.Workflow]: <LuGitPullRequestArrow />
+  };
+
 function GenericNotification({
   id,
   event,
@@ -272,249 +338,22 @@ function GenericNotification({
   body?: string;
   event: NotificationEvent;
   from?: string;
-  documentType?: ApprovalDocumentType;
+  documentType?: NotificationDocumentType;
   markMessageAsRead?: () => void;
   onClose: () => void;
 }) {
-  switch (event) {
-    case NotificationEvent.ApprovalApproved:
-    case NotificationEvent.ApprovalRejected:
-    case NotificationEvent.ApprovalRequested:
-      return (
-        <Notification
-          icon={<LuClipboardCheck />}
-          to={
-            documentType === "qualityDocument"
-              ? path.to.qualityDocument(id)
-              : path.to.purchaseOrderDetails(id)
-          }
-          {...props}
-        />
-      );
-    case NotificationEvent.ChangeNoticeStarted:
-    case NotificationEvent.ChangeNoticeImplementation:
-    case NotificationEvent.ChangeNoticeDone:
-      return (
-        <Notification
-          icon={<LuGitPullRequestArrow />}
-          to={path.to.changeNoticeDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.DigitalQuoteResponse:
-      return (
-        <Notification
-          icon={<LuDollarSign />}
-          to={path.to.quoteDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.GaugeCalibrationExpired:
-      return (
-        <Notification
-          icon={<LuCircleGauge />}
-          to={path.to.gauge(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.IntegrationSync:
-      // id is the provider id ("rillet", "xero", ...) — link to that
-      // integration's settings page, where the Sync Activity tab lives.
-      return (
-        <Notification
-          icon={<LuRefreshCw />}
-          to={path.to.integration(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.JobCompleted:
-    case NotificationEvent.JobAssignment:
-      return (
-        <Notification
-          icon={<LuHammer />}
-          to={path.to.jobDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.JobOperationAssignment:
-    case NotificationEvent.JobOperationMessage:
-      const [jobId, operationId, makeMethodId, materialId] = id.split(":");
-      const link = materialId
-        ? path.to.jobMakeMethod(jobId, makeMethodId)
-        : path.to.jobMethod(jobId, makeMethodId);
-
-      return (
-        <Notification
-          icon={
-            event === NotificationEvent.JobOperationMessage ? (
-              <LuMessageSquare />
-            ) : (
-              <LuCirclePlay />
-            )
-          }
-          to={`${link}?selectedOperation=${operationId}`}
-          {...props}
-        />
-      );
-    case NotificationEvent.MaintenanceDispatchCreated:
-    case NotificationEvent.MaintenanceDispatchAssignment:
-      return (
-        <Notification
-          icon={<LuWrench />}
-          to={path.to.maintenanceDispatch(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.NonConformanceAssignment:
-      return (
-        <Notification icon={<LuShieldX />} to={path.to.issue(id)} {...props} />
-      );
-    case NotificationEvent.ProcedureAssignment:
-      return (
-        <Notification
-          icon={<LuListChecks />}
-          to={path.to.procedure(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.QuoteExpired:
-      return (
-        <Notification
-          icon={<LuCalendarX />}
-          to={path.to.quoteDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.PurchaseInvoiceAssignment:
-      return (
-        <Notification
-          icon={<LuShoppingCart />}
-          to={path.to.purchaseInvoiceDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.PurchasingRfqAssignment:
-      return (
-        <Notification
-          icon={<LuPackageSearch />}
-          to={path.to.purchasingRfq(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.PurchaseOrderAssignment:
-      return (
-        <Notification
-          icon={<LuShoppingCart />}
-          to={path.to.purchaseOrderDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.QuoteAssignment:
-      return (
-        <Notification
-          icon={<RiProgress4Line />}
-          to={path.to.quoteDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.RiskAssignment:
-      return (
-        <Notification
-          icon={<LuShieldAlert />}
-          to={path.to.risk(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.SalesRfqReady:
-    case NotificationEvent.SalesRfqAssignment:
-      return (
-        <Notification
-          icon={<RiProgress2Line />}
-          to={path.to.salesRfq(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.SalesOrderAssignment:
-      return (
-        <Notification
-          icon={<RiProgress8Line />}
-          to={path.to.salesOrderDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.StockTransferAssignment:
-      return (
-        <Notification
-          icon={<LuListChecks />}
-          to={path.to.salesOrderDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.PickingListAssignment:
-      return (
-        <Notification
-          icon={<LuListChecks />}
-          to={path.to.pickingList(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.SuggestionResponse:
-      return (
-        <Notification
-          icon={<LuLightbulb />}
-          to={path.to.suggestion(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.SupplierQuoteAssignment:
-      return (
-        <Notification
-          icon={<LuDollarSign />}
-          to={path.to.supplierQuoteDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.SupplierQuoteResponse:
-      return (
-        <Notification
-          icon={<LuMailCheck />}
-          to={path.to.supplierQuoteDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.TrainingAssignment:
-    case NotificationEvent.TrainingReminder:
-      return (
-        <Notification
-          icon={<LuListChecks />}
-          to={path.to.completeTrainingAssignment(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.ResourceTrainingAssignment:
-      return (
-        <Notification
-          icon={<LuGraduationCap />}
-          to={path.to.training(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.Workflow:
-      return (
-        <Notification
-          icon={<LuGitPullRequestArrow />}
-          to={getRecordPath(documentType, id) ?? path.to.authenticatedRoot}
-          {...props}
-        />
-      );
-    case NotificationEvent.Digest:
-      // Digest rows are rendered by DigestNotification (expandable). This
-      // branch is unreachable when GenericNotification is used from the
-      // topbar maps — kept as a defensive fallback.
-      return null;
-    default:
-      return null;
-  }
+  const icon = NOTIFICATION_ICONS[event];
+  if (!icon) return null;
+  // The same target as the email link (`api+/link.ts`).
+  const target = notificationTarget(event, id, documentType);
+  return (
+    <Notification
+      icon={icon}
+      to={target?.path ?? path.to.authenticatedRoot}
+      reloadDocument={target?.download}
+      {...props}
+    />
+  );
 }
 
 function DigestNotification({
@@ -606,7 +445,7 @@ function DigestNotification({
                   from={child.payload.from as string | undefined}
                   documentType={
                     child.payload.documentType as
-                      | ApprovalDocumentType
+                      | NotificationDocumentType
                       | undefined
                   }
                   onClose={onClose}
@@ -620,28 +459,50 @@ function DigestNotification({
   );
 }
 
-const Notifications = () => {
-  const { t } = useLingui();
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
-  const [isOpen, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("inbox");
-  const [trainingsLoaded, setTrainingsLoaded] = useState(false);
-  const trainingsFetcher = useFetcher<{ data: OutstandingTraining[] }>();
+export function usePushPublicKey() {
+  return (
+    useRouteData<{ pushPublicKey: string | null }>(path.to.authenticatedRoot)
+      ?.pushPublicKey ?? null
+  );
+}
 
-  const {
+/**
+ * The notification tabs (Inbox, Trainings, Archive). The desktop bell
+ * popover and the compact Profile sheet's Notifications drill-in both
+ * render it; the caller owns `useNotifications` so the unread badge and the
+ * panel share one subscription.
+ */
+export function NotificationsPanel({
+  isOpen,
+  onClose,
+  activeTab,
+  onActiveTabChange,
+  notifications: {
     fetchDigestChildren,
     hasUnseenNotifications,
     notifications,
     markMessageAsRead,
     markAllMessagesAsSeen,
     markAllMessagesAsRead
-  } = useNotifications({
-    companyId,
-    userId
-  });
+  }
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  /** Owned by the caller: the desktop popover unmounts the panel on close
+   * and reopens on the last tab. */
+  activeTab: string;
+  onActiveTabChange: (tab: string) => void;
+  notifications: ReturnType<typeof useNotifications>;
+}) {
+  const { t } = useLingui();
+  const pushPublicKey = usePushPublicKey();
+  // Loaded when the tab is opened, and again each time the popover reopens.
+  const trainingsFetcher = useLoaderQuery<{ data: OutstandingTraining[] }>(
+    isOpen && activeTab === "trainings"
+      ? path.to.api.outstandingTrainings
+      : null,
+    { staleTime: 0 }
+  );
 
   const unreadNotifications = notifications.filter(
     (notification) => !notification.read
@@ -651,21 +512,6 @@ const Notifications = () => {
     (notification) => notification.read
   );
 
-  // Lazy load trainings when the tab is selected
-  useEffect(() => {
-    if (activeTab === "trainings" && !trainingsLoaded && isOpen) {
-      trainingsFetcher.load(path.to.api.outstandingTrainings);
-      setTrainingsLoaded(true);
-    }
-  }, [activeTab, trainingsLoaded, isOpen, trainingsFetcher]);
-
-  // Reset trainings loaded state when popover closes
-  useEffect(() => {
-    if (!isOpen) {
-      setTrainingsLoaded(false);
-    }
-  }, [isOpen]);
-
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (isOpen && hasUnseenNotifications) {
@@ -674,7 +520,199 @@ const Notifications = () => {
   }, [hasUnseenNotifications, isOpen]);
 
   const outstandingTrainings = trainingsFetcher.data?.data ?? [];
-  const isLoadingTrainings = trainingsFetcher.state === "loading";
+  const isLoadingTrainings = trainingsFetcher.isFetching;
+
+  return (
+    <Tabs
+      defaultValue="inbox"
+      value={activeTab}
+      onValueChange={onActiveTabChange}
+    >
+      <TabsList className="w-full border-b py-2 rounded-none bg-muted/50">
+        <TabsTrigger value="inbox" className="font-normal">
+          <Trans>Inbox</Trans>
+        </TabsTrigger>
+        <TabsTrigger value="trainings" className="font-normal">
+          <Trans>Trainings</Trans>
+        </TabsTrigger>
+        <TabsTrigger value="archive" className="font-normal">
+          <Trans>Archive</Trans>
+        </TabsTrigger>
+      </TabsList>
+
+      {/* <Link
+        to={path.to.notificationSettings}
+        className="absolute right-[11px] top-1.5"
+      >
+        <IconButton
+          aria-label={t`Settings`}
+          icon={<LuSettings />}
+          variant="ghost"
+          isIcon
+          className="rounded-full"
+          onClick={() => onClose()}
+        />
+      </Link> */}
+
+      <TabsContent value="inbox" className="relative mt-0">
+        {!unreadNotifications.length && (
+          <>
+            <EnableBrowserNotifications publicKey={pushPublicKey} />
+            <EmptyState description={t`No new notifications`} />
+          </>
+        )}
+
+        {unreadNotifications.length > 0 && (
+          <ScrollArea className="pb-12 h-[485px] max-md:h-auto">
+            <EnableBrowserNotifications publicKey={pushPublicKey} />
+            <div className="divide-y">
+              {unreadNotifications.map((notification) => {
+                const event = notification.payload.event as NotificationEvent;
+                if (event === NotificationEvent.Digest) {
+                  return (
+                    <DigestNotification
+                      key={notification._id}
+                      id={notification._id}
+                      description={notification.payload.description as string}
+                      markMessageAsRead={() =>
+                        markMessageAsRead(notification._id)
+                      }
+                      onClose={() => onClose()}
+                      fetchChildren={fetchDigestChildren}
+                    />
+                  );
+                }
+                return (
+                  <GenericNotification
+                    key={notification._id}
+                    id={notification.payload.documentId as string}
+                    createdAt={notification.createdAt}
+                    description={notification.payload.description as string}
+                    body={getNotificationBody(notification.payload, event)}
+                    event={event}
+                    from={notification.payload.from as string | undefined}
+                    documentType={
+                      notification.payload.documentType as
+                        | NotificationDocumentType
+                        | undefined
+                    }
+                    markMessageAsRead={() =>
+                      markMessageAsRead(notification._id)
+                    }
+                    onClose={() => onClose()}
+                  />
+                );
+              })}
+            </div>
+          </ScrollArea>
+        )}
+
+        {unreadNotifications.length > 0 && (
+          <div className="h-12 w-full absolute bottom-0 flex items-center justify-center border-t">
+            <Button
+              variant="secondary"
+              className="bg-transparent"
+              onClick={markAllMessagesAsRead}
+            >
+              <Trans>Archive all</Trans>
+            </Button>
+          </div>
+        )}
+      </TabsContent>
+
+      <TabsContent value="trainings" className="mt-0">
+        {isLoadingTrainings && (
+          <div className="h-[460px] max-md:h-auto max-md:py-16 flex items-center justify-center">
+            <Spinner />
+          </div>
+        )}
+
+        {!isLoadingTrainings && outstandingTrainings.length === 0 && (
+          <EmptyState description={t`No outstanding trainings`} />
+        )}
+
+        {!isLoadingTrainings && outstandingTrainings.length > 0 && (
+          <ScrollArea className="h-[490px] max-md:h-auto">
+            <div className="divide-y">
+              {outstandingTrainings.map((training) => (
+                <TrainingItem
+                  key={training.trainingAssignmentId}
+                  training={training}
+                  onClose={() => onClose()}
+                />
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </TabsContent>
+
+      <TabsContent value="archive" className="mt-0">
+        {!archivedNotifications.length && (
+          <EmptyState description={t`Nothing in the archive`} />
+        )}
+
+        {archivedNotifications.length > 0 && (
+          <ScrollArea className="h-[490px] max-md:h-auto">
+            <div className="divide-y">
+              {archivedNotifications.map((notification) => {
+                const event = notification.payload.event as NotificationEvent;
+                if (event === NotificationEvent.Digest) {
+                  return (
+                    <DigestNotification
+                      key={notification._id}
+                      id={notification._id}
+                      description={notification.payload.description as string}
+                      onClose={() => onClose()}
+                      fetchChildren={fetchDigestChildren}
+                    />
+                  );
+                }
+                return (
+                  <GenericNotification
+                    key={notification._id}
+                    id={notification.payload.documentId as string}
+                    createdAt={notification.createdAt}
+                    description={notification.payload.description as string}
+                    body={getNotificationBody(notification.payload, event)}
+                    event={event}
+                    from={notification.payload.from as string | undefined}
+                    documentType={
+                      notification.payload.documentType as
+                        | NotificationDocumentType
+                        | undefined
+                    }
+                    onClose={() => onClose()}
+                  />
+                );
+              })}
+            </div>
+          </ScrollArea>
+        )}
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+const Notifications = () => {
+  const { t } = useLingui();
+  const {
+    id: userId,
+    company: { id: companyId }
+  } = useUser();
+  // The bell is always mounted on desktop (the Profile sheet is on phones), so
+  // it is where a signed-back-in user's browser notifications come back.
+  useRestoreBrowserNotifications({ publicKey: usePushPublicKey(), userId });
+  useAppBadge({ userId });
+  const [isOpen, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("inbox");
+  const notificationsState = useNotifications({
+    companyId,
+    userId
+  });
+
+  const unreadNotifications = notificationsState.notifications.filter(
+    (notification) => !notification.read
+  );
 
   return (
     <Popover onOpenChange={setOpen} open={isOpen}>
@@ -683,9 +721,17 @@ const Notifications = () => {
           variant="ghost"
           isIcon
           className="w-8 h-8 flex items-center relative"
+          aria-label={
+            unreadNotifications.length > 0
+              ? t`Notifications, ${unreadNotifications.length} unread`
+              : t`Notifications`
+          }
         >
           {unreadNotifications.length > 0 && (
-            <span className="absolute top-0 right-0 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium leading-4 text-center tabular-nums">
+            <span
+              aria-hidden
+              className="absolute top-0 right-0 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium leading-4 text-center tabular-nums"
+            >
               {unreadNotifications.length}
             </span>
           )}
@@ -697,175 +743,13 @@ const Notifications = () => {
         align="end"
         sideOffset={10}
       >
-        <Tabs
-          defaultValue="inbox"
-          value={activeTab}
-          onValueChange={setActiveTab}
-        >
-          <TabsList className="w-full border-b py-2 rounded-none bg-muted/50">
-            <TabsTrigger value="inbox" className="font-normal">
-              <Trans>Inbox</Trans>
-            </TabsTrigger>
-            <TabsTrigger value="trainings" className="font-normal">
-              <Trans>Trainings</Trans>
-            </TabsTrigger>
-            <TabsTrigger value="archive" className="font-normal">
-              <Trans>Archive</Trans>
-            </TabsTrigger>
-          </TabsList>
-
-          {/* <Link
-            to={path.to.notificationSettings}
-            className="absolute right-[11px] top-1.5"
-          >
-            <IconButton
-              aria-label={t`Settings`}
-              icon={<LuSettings />}
-              variant="ghost"
-              isIcon
-              className="rounded-full"
-              onClick={() => setOpen(false)}
-            />
-          </Link> */}
-
-          <TabsContent value="inbox" className="relative mt-0">
-            {!unreadNotifications.length && (
-              <EmptyState description={t`No new notifications`} />
-            )}
-
-            {unreadNotifications.length > 0 && (
-              <ScrollArea className="pb-12 h-[485px]">
-                <div className="divide-y">
-                  {unreadNotifications.map((notification) => {
-                    const event = notification.payload
-                      .event as NotificationEvent;
-                    if (event === NotificationEvent.Digest) {
-                      return (
-                        <DigestNotification
-                          key={notification._id}
-                          id={notification._id}
-                          description={
-                            notification.payload.description as string
-                          }
-                          markMessageAsRead={() =>
-                            markMessageAsRead(notification._id)
-                          }
-                          onClose={() => setOpen(false)}
-                          fetchChildren={fetchDigestChildren}
-                        />
-                      );
-                    }
-                    return (
-                      <GenericNotification
-                        key={notification._id}
-                        id={notification.payload.documentId as string}
-                        createdAt={notification.createdAt}
-                        description={notification.payload.description as string}
-                        body={getNotificationBody(notification.payload, event)}
-                        event={event}
-                        from={notification.payload.from as string | undefined}
-                        documentType={
-                          notification.payload.documentType as
-                            | ApprovalDocumentType
-                            | undefined
-                        }
-                        markMessageAsRead={() =>
-                          markMessageAsRead(notification._id)
-                        }
-                        onClose={() => setOpen(false)}
-                      />
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            )}
-
-            {unreadNotifications.length > 0 && (
-              <div className="h-12 w-full absolute bottom-0 flex items-center justify-center border-t">
-                <Button
-                  variant="secondary"
-                  className="bg-transparent"
-                  onClick={markAllMessagesAsRead}
-                >
-                  <Trans>Archive all</Trans>
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="trainings" className="mt-0">
-            {isLoadingTrainings && (
-              <div className="h-[460px] flex items-center justify-center">
-                <Spinner />
-              </div>
-            )}
-
-            {!isLoadingTrainings && outstandingTrainings.length === 0 && (
-              <EmptyState description={t`No outstanding trainings`} />
-            )}
-
-            {!isLoadingTrainings && outstandingTrainings.length > 0 && (
-              <ScrollArea className="h-[490px]">
-                <div className="divide-y">
-                  {outstandingTrainings.map((training) => (
-                    <TrainingItem
-                      key={training.trainingAssignmentId}
-                      training={training}
-                      onClose={() => setOpen(false)}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-          </TabsContent>
-
-          <TabsContent value="archive" className="mt-0">
-            {!archivedNotifications.length && (
-              <EmptyState description={t`Nothing in the archive`} />
-            )}
-
-            {archivedNotifications.length > 0 && (
-              <ScrollArea className="h-[490px]">
-                <div className="divide-y">
-                  {archivedNotifications.map((notification) => {
-                    const event = notification.payload
-                      .event as NotificationEvent;
-                    if (event === NotificationEvent.Digest) {
-                      return (
-                        <DigestNotification
-                          key={notification._id}
-                          id={notification._id}
-                          description={
-                            notification.payload.description as string
-                          }
-                          onClose={() => setOpen(false)}
-                          fetchChildren={fetchDigestChildren}
-                        />
-                      );
-                    }
-                    return (
-                      <GenericNotification
-                        key={notification._id}
-                        id={notification.payload.documentId as string}
-                        createdAt={notification.createdAt}
-                        description={notification.payload.description as string}
-                        body={getNotificationBody(notification.payload, event)}
-                        event={event}
-                        from={notification.payload.from as string | undefined}
-                        documentType={
-                          notification.payload.documentType as
-                            | ApprovalDocumentType
-                            | undefined
-                        }
-                        onClose={() => setOpen(false)}
-                      />
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            )}
-          </TabsContent>
-        </Tabs>
+        <NotificationsPanel
+          isOpen={isOpen}
+          onClose={() => setOpen(false)}
+          activeTab={activeTab}
+          onActiveTabChange={setActiveTab}
+          notifications={notificationsState}
+        />
       </PopoverContent>
     </Popover>
   );

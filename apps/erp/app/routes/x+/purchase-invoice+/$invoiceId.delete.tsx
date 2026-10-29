@@ -1,31 +1,18 @@
-import { assertIsPost, error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
-import { deletePurchaseInvoice } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client } = await requirePermissions(request, {
-    delete: "invoicing"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["invoiceId"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.invoicing.deleteDraftPurchaseInvoice({
+    invoiceId: input.params.invoiceId
   });
-
-  const { invoiceId } = params;
-  if (!invoiceId) throw notFound("invoiceId not found");
-
-  const remove = await deletePurchaseInvoice(client, invoiceId);
-
-  if (remove.error) {
-    throw redirect(
-      path.to.invoicingPurchasing,
-      await flash(
-        request,
-        error(remove.error, "Failed to delete purchase invoice")
-      )
-    );
-  }
-
-  throw redirect(path.to.invoicingPurchasing);
+  return respond(args.request, result).redirect(path.to.invoicingPurchasing);
 }

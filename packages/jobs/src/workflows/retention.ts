@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 const MAX_LIST_ITEMS = 5;
 const MAX_STRING_LENGTH = 256;
 const MAX_OBJECT_KEYS = 20;
@@ -30,6 +34,19 @@ export function compactForLog(value: unknown, depth = 0): unknown {
     if (record.kind === "entity") {
       return { kind: record.kind, of: record.of, id: record.id };
     }
+    // An object shrinks by its FIELDS. Its `of` is the declared type, not data —
+    // left to the generic branch it would be compacted as a nested payload and
+    // roughly double what the log keeps, while burying the values a reader wants.
+    if (
+      record.kind === "record" &&
+      record.fields !== null &&
+      typeof record.fields === "object"
+    ) {
+      return {
+        kind: "record",
+        fields: compactKeys(record.fields as Record<string, unknown>, depth)
+      };
+    }
     // Named rows shrink like a list: cap the entries, recurse into each value.
     if (record.kind === "pairs" && Array.isArray(record.entries)) {
       const rows = record.entries as Record<string, unknown>[];
@@ -51,16 +68,25 @@ export function compactForLog(value: unknown, depth = 0): unknown {
               ]
       };
     }
-    const entries = Object.entries(record);
-    const kept: Record<string, unknown> = {};
-    for (const [key, entry] of entries.slice(0, MAX_OBJECT_KEYS)) {
-      kept[key] = compactForLog(entry, depth + 1);
-    }
-    if (entries.length > MAX_OBJECT_KEYS) {
-      kept["…"] = `${entries.length - MAX_OBJECT_KEYS} more keys`;
-    }
-    return kept;
+    return compactKeys(record, depth);
   }
 
   return value;
+}
+
+/** An object's first MAX_OBJECT_KEYS keys, each compacted, plus a marker for the
+ * rest. Shared by a plain object and a record value's fields. */
+function compactKeys(
+  source: Record<string, unknown>,
+  depth: number
+): Record<string, unknown> {
+  const entries = Object.entries(source);
+  const kept: Record<string, unknown> = {};
+  for (const [key, entry] of entries.slice(0, MAX_OBJECT_KEYS)) {
+    kept[key] = compactForLog(entry, depth + 1);
+  }
+  if (entries.length > MAX_OBJECT_KEYS) {
+    kept["…"] = `${entries.length - MAX_OBJECT_KEYS} more keys`;
+  }
+  return kept;
 }

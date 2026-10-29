@@ -19,15 +19,15 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           sparse-checkout: scripts/pr-complexity
           sparse-checkout-cone-mode: true
 
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --ignore-workspace --ignore-scripts

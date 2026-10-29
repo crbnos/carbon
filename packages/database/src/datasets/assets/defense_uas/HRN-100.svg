@@ -1,0 +1,254 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="amber" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8a5a12"/>
+      <stop offset="0.3" stop-color="#c9903a"/>
+      <stop offset="0.55" stop-color="#e0b25f"/>
+      <stop offset="0.8" stop-color="#a06f22"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <linearGradient id="goldBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7a5d19"/>
+      <stop offset="0.2" stop-color="#c9a445"/>
+      <stop offset="0.45" stop-color="#e8cd7c"/>
+      <stop offset="0.72" stop-color="#a8853a"/>
+      <stop offset="1" stop-color="#6a4f16"/>
+    </linearGradient>
+    <linearGradient id="goldFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e8cd7c"/>
+      <stop offset="0.45" stop-color="#c19c40"/>
+      <stop offset="1" stop-color="#7a5d19"/>
+    </linearGradient>
+    <linearGradient id="goldSide" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#a8853a"/>
+      <stop offset="0.55" stop-color="#836620"/>
+      <stop offset="1" stop-color="#5c4413"/>
+    </linearGradient>
+    <linearGradient id="blkFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5a6167"/>
+      <stop offset="0.45" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="tiFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#f0f4f6"/>
+      <stop offset="0.5" stop-color="#c6ced4"/>
+      <stop offset="1" stop-color="#8a9298"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="706" rx="442" ry="97" fill="url(#shadow)"/>
+
+  <!-- ======================================================================
+       four branch legs, drawn under the trunk so they merge into it
+       ====================================================================== -->
+  <g fill="none" stroke-linecap="round">
+    <!-- leg A: upper left -->
+    <path d="M320 452 C282 424 254 392 240 356" stroke="#6f736e" stroke-width="44"/>
+    <path d="M320 452 C282 424 254 392 240 356" stroke="#cfd2cc" stroke-width="38"/>
+    <path d="M316 448 C278 420 250 388 236 352" stroke="#f6f4ee" stroke-width="24"/>
+    <path d="M312 444 C276 416 248 386 234 350" stroke="#ffffff" stroke-width="8" opacity="0.55"/>
+    <!-- leg B: upper right -->
+    <path d="M718 444 C752 418 782 390 800 350" stroke="#6f736e" stroke-width="44"/>
+    <path d="M718 444 C752 418 782 390 800 350" stroke="#cfd2cc" stroke-width="38"/>
+    <path d="M714 440 C748 414 778 386 796 346" stroke="#f6f4ee" stroke-width="24"/>
+    <path d="M710 436 C744 410 774 382 792 342" stroke="#ffffff" stroke-width="8" opacity="0.5"/>
+    <!-- leg C: lower right -->
+    <path d="M672 602 C716 626 744 650 764 686" stroke="#6f736e" stroke-width="44"/>
+    <path d="M672 602 C716 626 744 650 764 686" stroke="#cfd2cc" stroke-width="38"/>
+    <path d="M668 598 C712 622 740 646 760 682" stroke="#f6f4ee" stroke-width="24"/>
+    <path d="M664 594 C708 618 736 642 756 678" stroke="#ffffff" stroke-width="8" opacity="0.45"/>
+    <!-- leg D: lower left -->
+    <path d="M300 584 C270 610 250 640 240 678" stroke="#6f736e" stroke-width="44"/>
+    <path d="M300 584 C270 610 250 640 240 678" stroke="#cfd2cc" stroke-width="38"/>
+    <path d="M296 580 C266 606 246 636 236 674" stroke="#f6f4ee" stroke-width="24"/>
+    <path d="M292 576 C264 602 244 634 234 670" stroke="#ffffff" stroke-width="8" opacity="0.5"/>
+  </g>
+
+  <!-- tape wrap on the branch breakouts -->
+  <g fill="none" stroke-linecap="butt">
+    <path d="M320 452 C296 434 276 412 262 388" stroke="#7a4e10" stroke-width="46"/>
+    <path d="M320 452 C296 434 276 412 262 388" stroke="url(#amber)" stroke-width="40"/>
+    <path d="M318 448 C296 430 278 410 264 386" stroke="#f0d69a" stroke-width="9" opacity="0.4"/>
+    <path d="M718 444 C740 426 760 404 774 380" stroke="#7a4e10" stroke-width="46"/>
+    <path d="M718 444 C740 426 760 404 774 380" stroke="url(#amber)" stroke-width="40"/>
+    <path d="M716 440 C738 422 758 402 772 378" stroke="#f0d69a" stroke-width="9" opacity="0.35"/>
+    <path d="M672 602 C700 618 722 636 738 658" stroke="#7a4e10" stroke-width="46"/>
+    <path d="M672 602 C700 618 722 636 738 658" stroke="url(#amber)" stroke-width="40"/>
+    <path d="M670 598 C698 614 720 632 736 654" stroke="#f0d69a" stroke-width="9" opacity="0.3"/>
+    <path d="M300 584 C282 602 268 624 258 648" stroke="#7a4e10" stroke-width="46"/>
+    <path d="M300 584 C282 602 268 624 258 648" stroke="url(#amber)" stroke-width="40"/>
+    <path d="M298 580 C280 598 266 620 256 644" stroke="#f0d69a" stroke-width="9" opacity="0.35"/>
+  </g>
+
+  <!-- ======================================================================
+       main trunk — a loose flat loop of bundled white PTFE wire
+       ====================================================================== -->
+  <g fill="none" stroke-linecap="round">
+    <path id="trunk" d="M306 452 C386 396 636 388 730 440 C820 490 792 574 660 606 C520 640 344 630 268 578 C208 538 232 486 306 452 Z"
+          stroke="#5f635e" stroke-width="66"/>
+    <path d="M306 452 C386 396 636 388 730 440 C820 490 792 574 660 606 C520 640 344 630 268 578 C208 538 232 486 306 452 Z"
+          stroke="#cfd2cc" stroke-width="58"/>
+    <!-- individual strands showing where the bundle is not taped -->
+    <path d="M302 447 C382 391 632 383 726 435 C816 485 788 569 656 601 C516 635 340 625 264 573 C204 533 228 481 302 447 Z"
+          stroke="#f6f4ee" stroke-width="40"/>
+    <g stroke="#b9bdb6" stroke-width="2.5" opacity="0.65">
+      <path d="M306 434 C386 378 636 370 730 422 C820 472 792 556 660 588 C520 622 344 612 268 560 C208 520 232 468 306 434"/>
+      <path d="M306 442 C386 386 636 378 730 430 C820 480 792 564 660 596 C520 630 344 620 268 568 C208 528 232 476 306 442"/>
+      <path d="M306 462 C386 406 636 398 730 450 C820 500 792 584 660 616 C520 650 344 640 268 588 C208 548 232 496 306 462"/>
+      <path d="M306 470 C386 414 636 406 730 458 C820 508 792 592 660 624 C520 658 344 648 268 596 C208 556 232 504 306 470"/>
+    </g>
+    <!-- key light along the upper-left of the bundle -->
+    <path d="M300 440 C380 384 630 376 724 428 C814 478 786 562 654 594 C514 628 338 618 262 566 C202 526 226 474 300 440 Z"
+          stroke="#ffffff" stroke-width="12" opacity="0.5"/>
+  </g>
+
+  <!-- spiralled polyimide tape binding the trunk -->
+  <g fill="none" stroke-linecap="butt">
+    <path d="M306 452 C386 396 636 388 730 440 C820 490 792 574 660 606 C520 640 344 630 268 578 C208 538 232 486 306 452 Z"
+          stroke="#7a4e10" stroke-width="62" stroke-dasharray="52 34"/>
+    <path d="M306 452 C386 396 636 388 730 440 C820 490 792 574 660 606 C520 640 344 630 268 578 C208 538 232 486 306 452 Z"
+          stroke="url(#amber)" stroke-width="56" stroke-dasharray="48 38"/>
+    <!-- helical seam running along the wrap -->
+    <path d="M302 442 C382 386 632 378 726 430 C816 480 788 564 656 596 C516 630 340 620 264 568 C204 528 228 476 302 442 Z"
+          stroke="#7a4e10" stroke-width="4" stroke-dasharray="10 22" opacity="0.7"/>
+    <path d="M310 466 C390 410 640 402 734 454 C824 504 796 588 664 620 C524 654 348 644 272 592 C212 552 236 500 310 466 Z"
+          stroke="#7a4e10" stroke-width="4" stroke-dasharray="10 22" opacity="0.6"/>
+    <!-- film sheen -->
+    <path d="M300 438 C380 382 630 374 724 426 C814 476 786 560 654 592 C514 626 338 616 262 564 C202 524 226 472 300 438 Z"
+          stroke="#f0d69a" stroke-width="11" opacity="0.34" stroke-dasharray="44 42"/>
+  </g>
+
+  <!-- ======================================================================
+       three black anodised P-clamps with titanium screws
+       ====================================================================== -->
+  <g>
+    <!-- clamp on the upper run -->
+    <g transform="rotate(-8 512 402)">
+      <path d="M470 372 L554 372 L554 434 L470 434 Z" fill="none" stroke="#15181a" stroke-width="16"/>
+      <path d="M470 372 L554 372 L554 434 L470 434 Z" fill="none" stroke="url(#blkFace)" stroke-width="10"/>
+      <path d="M474 378 L550 378" stroke="#ffffff" stroke-opacity="0.2" stroke-width="3" fill="none"/>
+      <path d="M496 356 L528 356 L528 378 L496 378 Z" fill="url(#blkFace)" stroke="#15181a" stroke-width="2.5"/>
+      <ellipse cx="512" cy="356" rx="18" ry="7" fill="url(#tiFace)" stroke="#7f868c" stroke-width="2"/>
+      <ellipse cx="512" cy="356" rx="9" ry="3.5" fill="#3a4045"/>
+    </g>
+    <!-- clamp on the right run -->
+    <g transform="rotate(64 754 512)">
+      <path d="M712 482 L796 482 L796 544 L712 544 Z" fill="none" stroke="#15181a" stroke-width="16"/>
+      <path d="M712 482 L796 482 L796 544 L712 544 Z" fill="none" stroke="url(#blkFace)" stroke-width="10"/>
+      <path d="M716 488 L792 488" stroke="#ffffff" stroke-opacity="0.2" stroke-width="3" fill="none"/>
+      <path d="M738 466 L770 466 L770 488 L738 488 Z" fill="url(#blkFace)" stroke="#15181a" stroke-width="2.5"/>
+      <ellipse cx="754" cy="466" rx="18" ry="7" fill="url(#tiFace)" stroke="#7f868c" stroke-width="2"/>
+      <ellipse cx="754" cy="466" rx="9" ry="3.5" fill="#3a4045"/>
+    </g>
+    <!-- clamp on the lower run -->
+    <g transform="rotate(6 470 622)">
+      <path d="M428 596 L512 596 L512 658 L428 658 Z" fill="none" stroke="#15181a" stroke-width="16"/>
+      <path d="M428 596 L512 596 L512 658 L428 658 Z" fill="none" stroke="url(#blkFace)" stroke-width="10"/>
+      <path d="M432 652 L508 652" stroke="#ffffff" stroke-opacity="0.14" stroke-width="3" fill="none"/>
+      <path d="M454 658 L486 658 L486 680 L454 680 Z" fill="url(#blkFace)" stroke="#15181a" stroke-width="2.5"/>
+      <ellipse cx="470" cy="680" rx="18" ry="7" fill="url(#tiFace)" stroke="#7f868c" stroke-width="2"/>
+      <ellipse cx="470" cy="680" rx="9" ry="3.5" fill="#3a4045"/>
+    </g>
+  </g>
+
+  <!-- ======================================================================
+       four gold-shell micro-D connectors with knurled jackscrews
+       ====================================================================== -->
+  <!-- connector A: upper left -->
+  <g transform="rotate(-36 240 322)">
+    <path d="M172 294 L308 294 L296 358 L184 358 Z" fill="url(#goldSide)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M172 294 L308 294 L322 268 L186 268 Z" fill="url(#goldFace)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M186 268 L322 268 L310 328 L198 328 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M198 280 L306 280 L297 316 L207 316 Z" fill="#241f14" stroke="#4a3a12" stroke-width="2"/>
+    <g fill="#e8cd7c" opacity="0.9">
+      <circle cx="216" cy="291" r="4"/><circle cx="234" cy="291" r="4"/><circle cx="252" cy="291" r="4"/>
+      <circle cx="270" cy="291" r="4"/><circle cx="288" cy="291" r="4"/>
+      <circle cx="225" cy="305" r="4"/><circle cx="243" cy="305" r="4"/><circle cx="261" cy="305" r="4"/>
+      <circle cx="279" cy="305" r="4"/>
+    </g>
+    <path d="M190 274 L318 274" stroke="#ffffff" stroke-opacity="0.4" stroke-width="3.5" fill="none"/>
+    <!-- knurled jackscrews -->
+    <g>
+      <path d="M156 278 L180 278 L180 320 L156 320 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2"/>
+      <g stroke="#6a4f16" stroke-width="2.5" opacity="0.65"><path d="M161 280 L161 318"/><path d="M168 279 L168 319"/><path d="M175 280 L175 318"/></g>
+      <ellipse cx="168" cy="278" rx="12" ry="4.6" fill="url(#goldFace)" stroke="#4a3a12" stroke-width="1.5"/>
+      <path d="M328 278 L352 278 L352 320 L328 320 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2"/>
+      <g stroke="#6a4f16" stroke-width="2.5" opacity="0.65"><path d="M333 280 L333 318"/><path d="M340 279 L340 319"/><path d="M347 280 L347 318"/></g>
+      <ellipse cx="340" cy="278" rx="12" ry="4.6" fill="url(#goldFace)" stroke="#4a3a12" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <!-- connector B: upper right -->
+  <g transform="translate(-16 0) rotate(34 796 320)">
+    <path d="M728 292 L864 292 L852 356 L740 356 Z" fill="url(#goldSide)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M728 292 L864 292 L878 266 L742 266 Z" fill="url(#goldFace)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M742 266 L878 266 L866 326 L754 326 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M754 278 L862 278 L853 314 L763 314 Z" fill="#241f14" stroke="#4a3a12" stroke-width="2"/>
+    <g fill="#e8cd7c" opacity="0.9">
+      <circle cx="772" cy="289" r="4"/><circle cx="790" cy="289" r="4"/><circle cx="808" cy="289" r="4"/>
+      <circle cx="826" cy="289" r="4"/><circle cx="844" cy="289" r="4"/>
+      <circle cx="781" cy="303" r="4"/><circle cx="799" cy="303" r="4"/><circle cx="817" cy="303" r="4"/>
+      <circle cx="835" cy="303" r="4"/>
+    </g>
+    <path d="M746 272 L874 272" stroke="#ffffff" stroke-opacity="0.4" stroke-width="3.5" fill="none"/>
+    <g>
+      <path d="M712 276 L736 276 L736 318 L712 318 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2"/>
+      <g stroke="#6a4f16" stroke-width="2.5" opacity="0.65"><path d="M717 278 L717 316"/><path d="M724 277 L724 317"/><path d="M731 278 L731 316"/></g>
+      <ellipse cx="724" cy="276" rx="12" ry="4.6" fill="url(#goldFace)" stroke="#4a3a12" stroke-width="1.5"/>
+      <path d="M884 276 L908 276 L908 318 L884 318 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2"/>
+      <g stroke="#6a4f16" stroke-width="2.5" opacity="0.65"><path d="M889 278 L889 316"/><path d="M896 277 L896 317"/><path d="M903 278 L903 316"/></g>
+      <ellipse cx="896" cy="276" rx="12" ry="4.6" fill="url(#goldFace)" stroke="#4a3a12" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <!-- connector C: lower right -->
+  <g transform="rotate(28 768 706)">
+    <path d="M700 682 L836 682 L824 746 L712 746 Z" fill="url(#goldSide)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M700 682 L836 682 L850 656 L714 656 Z" fill="url(#goldFace)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M714 656 L850 656 L838 716 L726 716 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M726 668 L834 668 L825 704 L735 704 Z" fill="#241f14" stroke="#4a3a12" stroke-width="2"/>
+    <g fill="#e8cd7c" opacity="0.9">
+      <circle cx="744" cy="679" r="4"/><circle cx="762" cy="679" r="4"/><circle cx="780" cy="679" r="4"/>
+      <circle cx="798" cy="679" r="4"/><circle cx="816" cy="679" r="4"/>
+      <circle cx="753" cy="693" r="4"/><circle cx="771" cy="693" r="4"/><circle cx="789" cy="693" r="4"/>
+      <circle cx="807" cy="693" r="4"/>
+    </g>
+    <path d="M718 662 L846 662" stroke="#ffffff" stroke-opacity="0.36" stroke-width="3.5" fill="none"/>
+    <g>
+      <path d="M684 666 L708 666 L708 708 L684 708 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2"/>
+      <g stroke="#6a4f16" stroke-width="2.5" opacity="0.65"><path d="M689 668 L689 706"/><path d="M696 667 L696 707"/><path d="M703 668 L703 706"/></g>
+      <ellipse cx="696" cy="666" rx="12" ry="4.6" fill="url(#goldFace)" stroke="#4a3a12" stroke-width="1.5"/>
+      <path d="M856 666 L880 666 L880 708 L856 708 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2"/>
+      <g stroke="#6a4f16" stroke-width="2.5" opacity="0.65"><path d="M861 668 L861 706"/><path d="M868 667 L868 707"/><path d="M875 668 L875 706"/></g>
+      <ellipse cx="868" cy="666" rx="12" ry="4.6" fill="url(#goldFace)" stroke="#4a3a12" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <!-- connector D: lower left -->
+  <g transform="rotate(-24 244 700)">
+    <path d="M176 676 L312 676 L300 740 L188 740 Z" fill="url(#goldSide)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M176 676 L312 676 L326 650 L190 650 Z" fill="url(#goldFace)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M190 650 L326 650 L314 710 L202 710 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M202 662 L310 662 L301 698 L211 698 Z" fill="#241f14" stroke="#4a3a12" stroke-width="2"/>
+    <g fill="#e8cd7c" opacity="0.9">
+      <circle cx="220" cy="673" r="4"/><circle cx="238" cy="673" r="4"/><circle cx="256" cy="673" r="4"/>
+      <circle cx="274" cy="673" r="4"/><circle cx="292" cy="673" r="4"/>
+      <circle cx="229" cy="687" r="4"/><circle cx="247" cy="687" r="4"/><circle cx="265" cy="687" r="4"/>
+      <circle cx="283" cy="687" r="4"/>
+    </g>
+    <path d="M194 656 L322 656" stroke="#ffffff" stroke-opacity="0.38" stroke-width="3.5" fill="none"/>
+    <g>
+      <path d="M160 660 L184 660 L184 702 L160 702 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2"/>
+      <g stroke="#6a4f16" stroke-width="2.5" opacity="0.65"><path d="M165 662 L165 700"/><path d="M172 661 L172 701"/><path d="M179 662 L179 700"/></g>
+      <ellipse cx="172" cy="660" rx="12" ry="4.6" fill="url(#goldFace)" stroke="#4a3a12" stroke-width="1.5"/>
+      <path d="M332 660 L356 660 L356 702 L332 702 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2"/>
+      <g stroke="#6a4f16" stroke-width="2.5" opacity="0.65"><path d="M337 662 L337 700"/><path d="M344 661 L344 701"/><path d="M351 662 L351 700"/></g>
+      <ellipse cx="344" cy="660" rx="12" ry="4.6" fill="url(#goldFace)" stroke="#4a3a12" stroke-width="1.5"/>
+    </g>
+  </g>
+</svg>

@@ -1,4 +1,14 @@
-import { Badge, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Badge,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -20,8 +30,10 @@ import {
 import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useItems } from "~/stores/items";
@@ -41,9 +53,11 @@ type IssuesTableProps = {
   data: Issue[];
   types: ListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
+const IssuesTable = memo((props: IssuesTableProps) => {
+  const { data, types, count, infinite } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -73,6 +87,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -82,6 +97,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <IssueStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleGauge />,
           filter: {
             type: "static",
@@ -105,6 +121,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <LuOctagonX />,
           filter: {
             type: "static",
@@ -208,6 +225,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           <EmployeeAvatar employeeId={row.original.assignee} />
         ),
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: people.map((employee) => ({
@@ -223,17 +241,16 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
         id: "items",
         header: t`Items`,
         cell: ({ row }) => (
-          <span className="flex gap-2 items-center flex-wrap py-2">
-            {((row.original.items ?? []) as Array<string>).map((i) => {
-              const item = items.find((x) => x.id === i);
-              if (!item) return null;
-              return (
-                <Badge variant="outline" key={item?.id}>
-                  {item?.readableIdWithRevision}
-                </Badge>
-              );
-            })}
-          </span>
+          <EnumerableGroup
+            chip="outline"
+            items={((row.original.items ?? []) as Array<string>).flatMap(
+              (i) => {
+                const item = items.find((x) => x.id === i);
+                if (!item) return [];
+                return { label: item.readableIdWithRevision ?? item.id };
+              }
+            )}
+          />
         ),
         meta: {
           icon: <LuBlocks />,
@@ -256,6 +273,9 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           <DateTime value={row.original.openDate} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -266,6 +286,9 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           <DateTime value={row.original.closeDate} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -305,6 +328,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "quality")}
             onClick={() => {
               navigate(`${path.to.issue(row.id!)}`);
@@ -314,6 +338,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
             Edit Issue
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "quality")}
             onClick={() => {
@@ -336,6 +361,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
     <>
       <Table<Issue>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

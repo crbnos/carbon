@@ -1,116 +1,37 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
-import type { Database } from "@carbon/database";
-import { NotificationEvent } from "@carbon/notifications";
+import type { NotificationEvent } from "@carbon/notifications";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
-import { getCompanies } from "~/modules/settings";
-import { getRecordPath } from "~/utils/entity";
+import { getCompanies } from "~/modules/settings/settings.service";
+import {
+  type NotificationDocumentType,
+  notificationTarget
+} from "~/utils/notification-target";
 import { path } from "~/utils/path";
-
-type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
-
-function resolve(
-  event: NotificationEvent,
-  documentId: string,
-  documentType?: ApprovalDocumentType
-): string | null {
-  switch (event) {
-    case NotificationEvent.TrainingAssignment:
-    case NotificationEvent.TrainingReminder: {
-      // documentId is a trainingAssignment id; the recipient is the trainee,
-      // so land on the completion page (same target as the topbar row).
-      return path.to.completeTrainingAssignment(documentId);
-    }
-    case NotificationEvent.ResourceTrainingAssignment: {
-      // documentId is a training id; land on the training viewer (same
-      // target as the topbar row).
-      return path.to.training(documentId);
-    }
-    case NotificationEvent.JobAssignment:
-    case NotificationEvent.JobCompleted:
-    case NotificationEvent.JobsProjectedLate:
-      return path.to.job(documentId);
-    case NotificationEvent.JobOperationAssignment:
-    case NotificationEvent.JobOperationMessage: {
-      const [jobId, operationId, makeMethodId, materialId] =
-        documentId.split(":");
-      if (!jobId || !operationId || !makeMethodId) return null;
-      const link = materialId
-        ? path.to.jobMakeMethod(jobId, makeMethodId)
-        : path.to.jobMethod(jobId, makeMethodId);
-      return `${link}?selectedOperation=${operationId}`;
-    }
-    case NotificationEvent.PurchaseInvoiceAssignment:
-      return path.to.purchaseInvoice(documentId);
-    case NotificationEvent.PurchaseOrderAssignment:
-      return path.to.purchaseOrder(documentId);
-    case NotificationEvent.QuoteAssignment:
-    case NotificationEvent.QuoteExpired:
-    case NotificationEvent.DigitalQuoteResponse:
-      return path.to.quote(documentId);
-    case NotificationEvent.SupplierQuoteAssignment:
-    case NotificationEvent.SupplierQuoteResponse:
-      return path.to.supplierQuote(documentId);
-    case NotificationEvent.SalesOrderAssignment:
-      return path.to.salesOrder(documentId);
-    case NotificationEvent.PurchasingRfqAssignment:
-      return path.to.purchasingRfq(documentId);
-    case NotificationEvent.SalesRfqAssignment:
-    case NotificationEvent.SalesRfqReady:
-      return path.to.salesRfq(documentId);
-    case NotificationEvent.MaintenanceDispatchAssignment:
-    case NotificationEvent.MaintenanceDispatchCreated:
-      return path.to.maintenanceDispatch(documentId);
-    case NotificationEvent.GaugeCalibrationExpired:
-      return path.to.gauge(documentId);
-    case NotificationEvent.NonConformanceAssignment:
-      return path.to.issue(documentId);
-    case NotificationEvent.ChangeNoticeStarted:
-    case NotificationEvent.ChangeNoticeImplementation:
-    case NotificationEvent.ChangeNoticeDone:
-      return path.to.changeNoticeDetails(documentId);
-    case NotificationEvent.RiskAssignment:
-      return path.to.risk(documentId);
-    case NotificationEvent.ProcedureAssignment:
-      return path.to.procedure(documentId);
-    case NotificationEvent.StockTransferAssignment:
-      return path.to.stockTransfer(documentId);
-    case NotificationEvent.PickingListAssignment:
-      return path.to.pickingList(documentId);
-    case NotificationEvent.SuggestionResponse:
-      return path.to.suggestion(documentId);
-    case NotificationEvent.Workflow:
-      return getRecordPath(documentType, documentId);
-    case NotificationEvent.ApprovalApproved:
-    case NotificationEvent.ApprovalRejected:
-    case NotificationEvent.ApprovalRequested:
-      if (documentType === "purchaseOrder")
-        return path.to.purchaseOrder(documentId);
-      if (documentType === "qualityDocument")
-        return path.to.qualityDocument(documentId);
-      if (documentType === "supplier")
-        return path.to.supplierApproval(documentId);
-      return null;
-    default:
-      return null;
-  }
-}
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const {
     client,
     companyId: sessionCompanyId,
     userId
-  } = await requirePermissions(request, {});
+  } = await requirePermissions(request, {
+    // Notification links switch to the linked company, which must work from a
+    // portal company session too.
+    allowPortalAccounts: true
+  });
 
   const url = new URL(request.url);
   const event = url.searchParams.get("event") as NotificationEvent | null;
   const documentId = url.searchParams.get("documentId");
   const documentType = url.searchParams.get(
     "documentType"
-  ) as ApprovalDocumentType | null;
+  ) as NotificationDocumentType | null;
   const page = url.searchParams.get("page");
 
   const companyId = url.searchParams.get("companyId");
@@ -118,10 +39,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let redirectTo: string;
   if (page === "notification-settings") {
     // Email footer link — no document, but the company-switch below still applies.
-    redirectTo = path.to.notificationSettings;
+    redirectTo = path.to.accountSettings("notifications");
   } else if (event && documentId) {
-    const link = resolve(event, documentId, documentType ?? undefined);
-    redirectTo = link ?? path.to.authenticatedRoot;
+    // The same target as the topbar row (`notificationTarget`).
+    redirectTo =
+      notificationTarget(event, documentId, documentType)?.path ??
+      path.to.authenticatedRoot;
   } else if (companyId) {
     redirectTo = path.to.authenticatedRoot;
   } else {

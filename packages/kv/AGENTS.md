@@ -32,10 +32,11 @@ pnpm --filter @carbon/kv typecheck
 | Export | Provides |
 |--------|----------|
 | `redis` | Global ioredis singleton (lazy connect, 3 retries, offline queue), resilience-wrapped to fail soft when Redis is unreachable |
-| `Ratelimit` | Rate limiter class with `limit()`, `blockUntilReady()`, `getRemaining()`, `resetUsedTokens()` |
+| `Ratelimit` | Rate limiter class with `limit()`, `blockUntilReady()`, `getRemaining()`, `resetUsedTokens()`, `refund()` (sliding window only: give back a token `limit()` consumed, for consume-before-verify callers such as MES console pin-in) |
 | `Ratelimit.fixedWindow(tokens, window)` | Fixed window algorithm (simple, low memory) |
 | `Ratelimit.slidingWindow(tokens, window)` | Sliding window (smoother, prevents boundary bursts) |
 | `Ratelimit.tokenBucket(refillRate, interval, maxTokens?)` | Token bucket (allows controlled bursts) |
+| `redisFlagsStore` | The `FlagsStore` for `initFlags` (`@carbon/env/flags.server`): the shared flags document per source in the hash `flags:<scope>` (`body`, `etag`, `fetchedAt`, at most 1 MB) and the refresh lease `flags:<scope>:refresh` |
 | `Duration` type | Time duration strings like `"10 s"`, `"1 m"`, `"1 h"` |
 
 ## Cross-References

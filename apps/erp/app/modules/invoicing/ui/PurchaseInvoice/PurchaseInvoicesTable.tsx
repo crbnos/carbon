@@ -1,4 +1,14 @@
-import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
@@ -26,28 +36,23 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
+import type { InfiniteOptions } from "~/components/Table";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { PurchaseInvoiceListItem } from "~/modules/invoicing";
-import {
-  PurchaseInvoicingStatus,
-  purchaseInvoiceStatusType
-} from "~/modules/invoicing";
+import { purchaseInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
+import type { PurchaseInvoiceListItem } from "~/modules/invoicing/types";
+import { PurchaseInvoicingStatus } from "~/modules/invoicing/ui";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
 type PurchaseInvoicesTableProps = {
   data: PurchaseInvoiceListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const PurchaseInvoicesTable = memo(
-  ({ data, count }: PurchaseInvoicesTableProps) => {
-    useRealtime(
-      "purchaseInvoice",
-      `id=in.(${data.map((d) => d.id).join(",")})`
-    );
-
+  ({ data, count, infinite }: PurchaseInvoicesTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -72,7 +77,7 @@ const PurchaseInvoicesTable = memo(
               <ItemThumbnail
                 size="sm"
                 thumbnailPath={row.original.thumbnailPath}
-                // @ts-ignore
+                // @ts-expect-error
                 type={row.original.itemType}
               />
               <Hyperlink to={path.to.purchaseInvoiceDetails(row.original.id!)}>
@@ -81,6 +86,7 @@ const PurchaseInvoicesTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -91,6 +97,7 @@ const PurchaseInvoicesTable = memo(
             <SupplierAvatar supplierId={row.original.supplierId} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: suppliers?.map((supplier) => ({
@@ -135,6 +142,7 @@ const PurchaseInvoicesTable = memo(
             return <PurchaseInvoicingStatus status={status} />;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: purchaseInvoiceStatusType.map((status) => ({
@@ -151,6 +159,7 @@ const PurchaseInvoicesTable = memo(
           header: t`Order Total`,
           cell: (item) => currencyFormatter.format(item.getValue<number>()),
           meta: {
+            mobile: "P2",
             icon: <LuDollarSign />,
             formatter: currencyFormatter.format,
             renderTotal: true
@@ -190,6 +199,9 @@ const PurchaseInvoicesTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -200,6 +212,9 @@ const PurchaseInvoicesTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -210,6 +225,9 @@ const PurchaseInvoicesTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -220,6 +238,9 @@ const PurchaseInvoicesTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -294,6 +315,7 @@ const PurchaseInvoicesTable = memo(
       return (row: PurchaseInvoiceListItem) => (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("view", "invoicing")}
             onClick={() => navigate(path.to.purchaseInvoice(row.id!))}
           >
@@ -301,6 +323,7 @@ const PurchaseInvoicesTable = memo(
             <Trans>Edit</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
               row.status !== "Draft" || !permissions.can("delete", "invoicing")
             }
@@ -323,6 +346,7 @@ const PurchaseInvoicesTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infinite={infinite}
           defaultColumnPinning={{
             left: ["invoiceId"]
           }}

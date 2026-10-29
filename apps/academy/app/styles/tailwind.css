@@ -9,6 +9,7 @@
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Fira Code", ui-monospace, monospace;
+  --font-headline: "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {

@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   BarProgress,
@@ -13,13 +18,11 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  toast,
   useDebounce
 } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
-import { nanoid } from "nanoid";
+import type { DragControls } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuCalendar, LuContainer, LuRedoDot } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
@@ -36,6 +39,7 @@ import { useProcesses } from "~/components/Form/Process";
 import SupplierAvatar from "~/components/SupplierAvatar";
 import {
   useDateFormatter,
+  useImageUpload,
   usePermissions,
   useRouteData,
   useUser
@@ -47,9 +51,12 @@ import type {
   IssueActionTask,
   IssueItem,
   IssueReviewer
-} from "~/modules/quality";
+} from "~/modules/quality/types";
+import type { action as dueDateRouteAction } from "~/routes/x+/issue+/action.$id.due-date";
+import type { action as taskStatusAction } from "~/routes/x+/issue+/task.$id.status";
+import type { action as supplierRouteAction } from "~/routes/x+/issue+/task.supplier";
 import { useSuppliers } from "~/stores";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 
 // TaskProgress moved to the shared ActionTasks folder (SSOT with Change Notices);
 // re-exported here so existing `~/modules/quality/ui/Issue` importers keep working.
@@ -85,22 +92,15 @@ function SupplierAssignment({
 }) {
   const [open, setOpen] = useState(false);
   const [suppliers] = useSuppliers();
-  const submit = useSubmit();
+  const supplierAction = useAction<typeof supplierRouteAction>();
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetchers = useFetchers();
 
   const canEdit = permissions.can("update", "quality") && !isDisabled;
 
-  // Check for optimistic update
-  const pendingUpdate = fetchers.find(
-    (f) =>
-      f.formData?.get("id") === task.id &&
-      f.key === `supplierAssignment:${task.id}`
-  );
-
+  // The supplier being saved, before the server answers.
   const currentSupplierId =
-    (pendingUpdate?.formData?.get("supplierId") as string | null) ??
+    (supplierAction.pending?.get("supplierId") as string | null) ??
     task.supplierId;
 
   const handleChange = (supplierId: string) => {
@@ -109,18 +109,13 @@ function SupplierAssignment({
         ? "nonConformanceInvestigationTask"
         : "nonConformanceActionTask";
 
-    submit(
+    supplierAction.submit(
       {
         id: task.id!,
         supplierId: supplierId || "",
         table
       },
-      {
-        method: "post",
-        action: path.to.issueTaskSupplier,
-        navigate: false,
-        fetcherKey: `supplierAssignment:${task.id}`
-      }
+      { method: "post", action: path.to.issueTaskSupplier }
     );
     setOpen(false);
   };
@@ -137,7 +132,7 @@ function SupplierAssignment({
     return [{ value: "", label: t`Unassigned` }, ...filteredSuppliers];
   }, [suppliers, supplierIds, t]);
 
-  const isPending = pendingUpdate && pendingUpdate?.state !== "idle";
+  const isPending = supplierAction.isPending;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -293,11 +288,7 @@ export function TaskItem({
       showDragHandle={showDragHandle}
       dragControls={dragControls}
       statusBadge={
-        <IssueTaskStatus
-          task={task}
-          type="investigation"
-          isDisabled={isDisabled}
-        />
+        <IssueTaskStatus task={task} type={type} isDisabled={isDisabled} />
       }
       headerExtras={
         <>
@@ -360,32 +351,12 @@ function useTaskNotes({
   hasLinearLink?: boolean;
   hasJiraLink?: boolean;
 }) {
-  const { t } = useLingui();
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
+  const { id: userId } = useUser();
   const { carbon } = useCarbon();
 
   const [content, setContent] = useState(initialContent ?? {});
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   const table = getTable(type);
 
@@ -393,8 +364,7 @@ function useTaskNotes({
     async (content: JSONContent) => {
       // Update notes in Carbon database
       await carbon
-        // @ts-expect-error -
-        ?.from(table)
+        ?.from(table as "nonConformanceActionTask")
         .update({
           notes: content,
           updatedBy: userId
@@ -431,12 +401,14 @@ function useTaskNotes({
   };
 }
 
+// Both the task card and its status badge submit status changes, each through
+// its own fetcher, so the pending status is found by the action it posts to.
 function useOptimisticTaskStatus(taskId: string) {
   const fetchers = useFetchers();
   const pendingUpdate = fetchers.find(
     (f) =>
       f.formData?.get("id") === taskId &&
-      f.key === `nonConformanceTask:${taskId}`
+      f.formAction === path.to.issueTaskStatus(taskId)
   );
   return pendingUpdate?.formData?.get("status") as
     | IssueActionTask["status"]
@@ -458,11 +430,11 @@ function useTaskStatus({
   type: "investigation" | "action" | "approval" | "review";
   onChange?: (status: IssueActionTask["status"]) => void;
 }) {
-  const submit = useSubmit();
+  const { submit } = useAction<typeof taskStatusAction>();
   const permissions = usePermissions();
   const optimisticStatus = useOptimisticTaskStatus(task.id!);
 
-  const isDisabled = !permissions.can("update", "production") || disabled;
+  const isDisabled = !permissions.can("update", "quality") || disabled;
 
   const onOperationStatusChange = useCallback(
     (id: string, status: IssueActionTask["status"]) => {
@@ -474,12 +446,7 @@ function useTaskStatus({
           type,
           assignee: task.assignee ?? ""
         },
-        {
-          method: "post",
-          action: path.to.issueTaskStatus(id),
-          navigate: false,
-          fetcherKey: `nonConformanceTask:${id}`
-        }
+        { method: "post", action: path.to.issueTaskStatus(id) }
       );
     },
     [onChange, submit, task.assignee, type]
@@ -554,32 +521,20 @@ function TaskDueDate({
 }) {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
-  const submit = useSubmit();
+  const dueDateAction = useAction<typeof dueDateRouteAction>();
   const [isOpen, setIsOpen] = useState(false);
   const permissions = usePermissions();
 
   const canEdit = permissions.can("update", "quality") && !isDisabled;
-  const fetchers = useFetchers();
-  const pendingUpdate = fetchers.find(
-    (f) =>
-      f.formData?.get("id") === task.id &&
-      f.key === `nonConformanceTask:${task.id}`
-  );
-
-  const pendingValue = pendingUpdate?.formData?.get("dueDate") ?? task.dueDate;
+  const pendingValue = dueDateAction.pending?.get("dueDate") ?? task.dueDate;
 
   const handleDateChange = (date: string | null) => {
-    submit(
+    dueDateAction.submit(
       {
         id: task.id!,
         dueDate: date || ""
       },
-      {
-        method: "post",
-        action: path.to.issueActionDueDate(task.id!),
-        navigate: false,
-        fetcherKey: `nonConformanceTask:${task.id}`
-      }
+      { method: "post", action: path.to.issueActionDueDate(task.id!) }
     );
   };
 

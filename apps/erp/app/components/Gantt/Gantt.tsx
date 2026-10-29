@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Shortcut } from "@carbon/react";
 import {
   Badge,
@@ -22,13 +26,14 @@ import {
   TooltipContent,
   TooltipTrigger,
   useDebounce,
-  useShortcutKeys
+  useShortcutKeys,
+  useViewport
 } from "@carbon/react";
 import { formatDurationMilliseconds, lerp } from "@carbon/utils";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { plural } from "@lingui/core/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type { Virtualizer } from "@tanstack/react-virtual";
-import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import {
   LuBan,
@@ -58,6 +63,12 @@ import {
   runStatusClassNameColor
 } from "./components/GanttTaskStatus";
 import { eventBackgroundClassName, SpanTitle } from "./components/SpanTitle";
+import {
+  type GanttVisibility,
+  rowMatchesFilter,
+  visibleUnderFilter
+} from "./filter";
+import { assignTracks, groupOverlaps, rowNonWorkingIntervals } from "./tracks";
 
 /** The tree list's default width, in px — the timeline takes the remainder. */
 const TREE_DEFAULT_WIDTH = 360;
@@ -101,9 +112,12 @@ type GanttProps = {
   /**
    * Optional content for the toolbar, rendered just before the In Process /
    * Show Durations switches — e.g. the forecast board's resource/reservation
-   * counts and conflict badge.
+   * counts and conflict badge. A function receives the search and switches, so
+   * the counts can follow what is shown.
    */
-  toolbarAccessory?: React.ReactNode;
+  toolbarAccessory?:
+    | React.ReactNode
+    | ((visibility: GanttVisibility) => React.ReactNode);
   totalDuration: number;
   rootSpanStatus: "inprogress" | "completed" | "todo" | "cancelled";
   rootStartedAt: Date | undefined;
@@ -131,6 +145,12 @@ type GanttProps = {
    * only used in `axis === "absolute"` mode.
    */
   nonWorkingIntervals?: { start: number; end: number }[];
+  /**
+   * Non-working intervals of particular rows, by event id — a work center that
+   * keeps its own hours. A row without an entry takes its nearest ancestor's,
+   * else {@link nonWorkingIntervals}. When set, shading is drawn per row.
+   */
+  nonWorkingIntervalsByRow?: Record<string, { start: number; end: number }[]>;
   /**
    * Spacing between axis ticks, in ms, anchored at {@link windowStartMs}. Gives
    * clean clock-aligned gridlines (e.g. every 4h on a day view) instead of the
@@ -164,10 +184,12 @@ const Gantt = ({
   formatAxisTick,
   nowMs,
   nonWorkingIntervals,
+  nonWorkingIntervalsByRow,
   tickIntervalMs,
   axisTickMs
 }: GanttProps) => {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const [filterText, setFilterText] = useState("");
   const [wipOnly, setWipOnly] = useState(false);
   const [showDurations, setShowDurations] = useState(false);
@@ -176,6 +198,25 @@ const Gantt = ({
   const treeScrollRef = useRef<HTMLDivElement>(null);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
   const panelGroupRef = useRef<HTMLDivElement>(null);
+
+  // An inline bar (`data.items`) is not a tree node, so the tree cannot hold
+  // its selection — the Gantt does. Selecting a row clears it and vice versa.
+  // Seeded once from `selectedId`, like the tree's own selection.
+  const [selectedItemId, setSelectedItemId] = useState<string | undefined>(
+    () =>
+      selectedId &&
+      events.some((event) =>
+        event.data.items?.some((item) => item.id === selectedId)
+      )
+        ? selectedId
+        : undefined
+  );
+  const onTreeSelectedIdChanged = (id: string | undefined) => {
+    // The tree letting go because an inline bar took the selection.
+    if (id === undefined && selectedItemId) return;
+    setSelectedItemId(undefined);
+    onSelectedIdChanged(id);
+  };
 
   // The tree defaults to a fixed pixel width; react-resizable-panels only takes
   // percentages, so convert once the group's width is known (and gate the group
@@ -197,6 +238,7 @@ const Gantt = ({
     getTreeProps,
     getNodeProps,
     toggleNodeSelection,
+    deselectAllNodes,
     toggleExpandNode,
     expandAllBelowDepth,
     toggleExpandLevel,
@@ -208,49 +250,215 @@ const Gantt = ({
     tree: events,
     selectedId,
     collapsedIds,
-    onSelectedIdChanged,
+    onSelectedIdChanged: onTreeSelectedIdChanged,
     estimatedRowHeight: () => 32,
     parentRef,
     filter: {
       value: { text: filterText, wipOnly },
-      fn: (value, node) => {
-        const isWIP = (value.wipOnly && node.data.isPartial) || !value.wipOnly;
-
-        if (!isWIP) return false;
-
-        if (value.text === "") return true;
-        if (
-          node.data.message.toLowerCase().includes(value.text.toLowerCase())
-        ) {
-          return true;
-        }
-        return false;
-      }
+      // A row also matches on its inline bars — a job search finds the lane
+      // it runs on.
+      fn: rowMatchesFilter
     }
   });
 
+  const visibility = useMemo(
+    () => visibleUnderFilter(events, { text: filterText, wipOnly }),
+    [events, filterText, wipOnly]
+  );
+  const nothingMatches = visibility.active && visibility.rows.size === 0;
+
+  const selectItem = (id: string) => {
+    if (id === selectedItemId) {
+      setSelectedItemId(undefined);
+      onSelectedIdChanged(undefined);
+      return;
+    }
+    setSelectedItemId(id);
+    deselectAllNodes();
+    onSelectedIdChanged(id);
+  };
+
+  // Defined once: desktop puts these in resizable panels, phones in a fixed row.
+  const treePanel = (
+    <div className="grid h-full grid-rows-[2rem_1fr] overflow-hidden">
+      <div className="flex items-center pr-2">
+        {parentReadableId && (
+          <ShowParentLink ganttReadableId={parentReadableId} />
+        )}
+        <LiveReloadingStatus
+          rootSpanCompleted={rootSpanStatus !== "inprogress"}
+        />
+      </div>
+      <TreeView
+        parentRef={parentRef}
+        scrollRef={treeScrollRef}
+        virtualizer={virtualizer}
+        autoFocus
+        tree={events}
+        nodes={nodes}
+        getNodeProps={getNodeProps}
+        getTreeProps={getTreeProps}
+        renderNode={({ node, state }) => (
+          <>
+            <div
+              className={cn(
+                "group flex h-8 cursor-pointer items-center overflow-hidden rounded-l-sm pr-2",
+                state.selected ? "bg-muted" : "bg-transparent hover:bg-muted/60"
+              )}
+              onClick={() => {
+                selectNode(node.id);
+              }}
+            >
+              <div className="flex h-8 items-center">
+                {Array.from({ length: node.level }).map((_, index) => (
+                  <LevelLine
+                    key={index}
+                    isError={node.data.isError}
+                    isSelected={state.selected}
+                  />
+                ))}
+                <div
+                  className={cn(
+                    "flex h-8 w-4 items-center",
+                    node.hasChildren && "hover:bg-muted"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (e.altKey) {
+                      if (state.expanded) {
+                        collapseAllBelowDepth(node.level);
+                      } else {
+                        expandAllBelowDepth(node.level);
+                      }
+                    } else {
+                      toggleExpandNode(node.id);
+                    }
+                    scrollToNode(node.id);
+                  }}
+                >
+                  {node.hasChildren ? (
+                    state.expanded ? (
+                      <LuChevronDown className="size-4 text-muted-foreground" />
+                    ) : (
+                      <LuChevronRight className="size-4 text-muted-foreground" />
+                    )
+                  ) : (
+                    <div className="h-8 w-4" />
+                  )}
+                </div>
+              </div>
+
+              <div className="flex w-full items-center justify-between gap-2 pl-1 max-md:min-w-0">
+                <div className="flex items-center gap-2 overflow-x-hidden max-md:min-w-0">
+                  <GanttIcon
+                    name={node.data.style?.icon}
+                    className="size-4 min-h-4 min-w-4"
+                  />
+                  <NodeText node={node} />
+                  {node.data.isRoot && (
+                    <Badge variant="outline" className="text-xs">
+                      <Trans>Job</Trans>
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  {renderNodeAside?.(node)}
+                  <span className="contents max-md:hidden">
+                    <NodeStatusIcon node={node} />
+                  </span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+        onScroll={(scrollTop) => {
+          //sync the scroll to the tree
+          if (timelineScrollRef.current) {
+            timelineScrollRef.current.scrollTop = scrollTop;
+          }
+        }}
+      />
+    </div>
+  );
+  const timelinePanel = (
+    <GanttTimeline
+      totalDuration={totalDuration}
+      scale={scale}
+      events={events}
+      rootSpanStatus={rootSpanStatus}
+      rootStartedAt={rootStartedAt}
+      axis={axis}
+      windowStartMs={windowStartMs}
+      formatAxisTick={formatAxisTick}
+      nowMs={nowMs}
+      nonWorkingIntervals={nonWorkingIntervals}
+      nonWorkingIntervalsByRow={nonWorkingIntervalsByRow}
+      tickIntervalMs={tickIntervalMs}
+      axisTickMs={axisTickMs}
+      parentRef={parentRef}
+      timelineScrollRef={timelineScrollRef}
+      nodes={nodes}
+      getNodeProps={getNodeProps}
+      getTreeProps={getTreeProps}
+      showDurations={showDurations}
+      treeScrollRef={treeScrollRef}
+      virtualizer={virtualizer}
+      toggleNodeSelection={toggleNodeSelection}
+      selectedItemId={selectedItemId}
+      onItemSelected={selectItem}
+      litBars={visibility.active ? visibility.bars : null}
+    />
+  );
+
   return (
-    <div className="grid h-full grid-rows-[2.5rem_1fr_3.25rem] overflow-hidden">
-      <div className="flex items-center justify-between gap-2 border-b border-border">
+    <div className="grid h-full grid-rows-[2.5rem_1fr_3.25rem] overflow-hidden max-md:grid-cols-[minmax(0,1fr)]">
+      <div className="flex items-center justify-between gap-2 border-b border-border max-md:overflow-x-auto max-md:scroll-fade-x">
         <SearchField onChange={setFilterText} />
-        <div className="flex items-center gap-3 pr-2">
-          {toolbarAccessory}
+        <div className="flex items-center gap-3 pr-2 max-md:shrink-0">
+          {typeof toolbarAccessory === "function"
+            ? toolbarAccessory(visibility)
+            : toolbarAccessory}
           <Switch
             variant="small"
             label={t`In Process Only`}
             checked={wipOnly}
             onCheckedChange={(e) => setWipOnly(e.valueOf())}
           />
-          <Switch
-            variant="small"
-            label={t`Show Durations`}
-            checked={showDurations}
-            onCheckedChange={(e) => setShowDurations(e.valueOf())}
-          />
+          {/* Phones have no hover, so their bars always show durations. */}
+          {!isPhone && (
+            <Switch
+              variant="small"
+              label={t`Show Durations`}
+              checked={showDurations}
+              onCheckedChange={(e) => setShowDurations(e.valueOf())}
+            />
+          )}
         </div>
       </div>
-      <div ref={panelGroupRef} className="h-full w-full min-h-0">
-        {treeDefaultSize !== undefined && (
+      <div ref={panelGroupRef} className="relative h-full w-full min-h-0">
+        {/* The live region stays mounted so a screen reader hears the text
+            appear; one mounted with its text already inside says nothing. */}
+        <div
+          role="status"
+          className="pointer-events-none absolute inset-x-0 top-12 z-10 flex justify-center"
+        >
+          {nothingMatches && (
+            <span className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground shadow-sm">
+              <Trans>Nothing matches the search or filter</Trans>
+            </span>
+          )}
+        </div>
+        {/* Phones: a fixed tree column beside the timeline, which keeps its
+            own sideways scroll. */}
+        {isPhone && (
+          <div className="flex h-full w-full">
+            <div className="h-full w-[118px] shrink-0 overflow-hidden border-r border-border pl-3">
+              {treePanel}
+            </div>
+            <div className="h-full min-w-0 flex-1">{timelinePanel}</div>
+          </div>
+        )}
+        {!isPhone && treeDefaultSize !== undefined && (
           <ResizablePanelGroup
             direction="horizontal"
             onLayout={(layout) => {
@@ -265,107 +473,7 @@ const Gantt = ({
               defaultSize={treeDefaultSize}
               className="pl-3"
             >
-              <div className="grid h-full grid-rows-[2rem_1fr] overflow-hidden">
-                <div className="flex items-center pr-2">
-                  {parentReadableId && (
-                    <ShowParentLink ganttReadableId={parentReadableId} />
-                  )}
-                  <LiveReloadingStatus
-                    rootSpanCompleted={rootSpanStatus !== "inprogress"}
-                  />
-                </div>
-                <TreeView
-                  parentRef={parentRef}
-                  scrollRef={treeScrollRef}
-                  virtualizer={virtualizer}
-                  autoFocus
-                  tree={events}
-                  nodes={nodes}
-                  getNodeProps={getNodeProps}
-                  getTreeProps={getTreeProps}
-                  renderNode={({ node, state }) => (
-                    <>
-                      <div
-                        className={cn(
-                          "group flex h-8 cursor-pointer items-center overflow-hidden rounded-l-sm pr-2",
-                          state.selected
-                            ? "bg-muted"
-                            : "bg-transparent hover:bg-muted/60"
-                        )}
-                        onClick={() => {
-                          selectNode(node.id);
-                        }}
-                      >
-                        <div className="flex h-8 items-center">
-                          {Array.from({ length: node.level }).map(
-                            (_, index) => (
-                              <LevelLine
-                                key={index}
-                                isError={node.data.isError}
-                                isSelected={state.selected}
-                              />
-                            )
-                          )}
-                          <div
-                            className={cn(
-                              "flex h-8 w-4 items-center",
-                              node.hasChildren && "hover:bg-muted"
-                            )}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (e.altKey) {
-                                if (state.expanded) {
-                                  collapseAllBelowDepth(node.level);
-                                } else {
-                                  expandAllBelowDepth(node.level);
-                                }
-                              } else {
-                                toggleExpandNode(node.id);
-                              }
-                              scrollToNode(node.id);
-                            }}
-                          >
-                            {node.hasChildren ? (
-                              state.expanded ? (
-                                <LuChevronDown className="size-4 text-muted-foreground" />
-                              ) : (
-                                <LuChevronRight className="size-4 text-muted-foreground" />
-                              )
-                            ) : (
-                              <div className="h-8 w-4" />
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex w-full items-center justify-between gap-2 pl-1">
-                          <div className="flex items-center gap-2 overflow-x-hidden">
-                            <GanttIcon
-                              name={node.data.style?.icon}
-                              className="size-4 min-h-4 min-w-4"
-                            />
-                            <NodeText node={node} />
-                            {node.data.isRoot && (
-                              <Badge variant="outline" className="text-xs">
-                                <Trans>Job</Trans>
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {renderNodeAside?.(node)}
-                            <NodeStatusIcon node={node} />
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  onScroll={(scrollTop) => {
-                    //sync the scroll to the tree
-                    if (timelineScrollRef.current) {
-                      timelineScrollRef.current.scrollTop = scrollTop;
-                    }
-                  }}
-                />
-              </div>
+              {treePanel}
             </ResizablePanel>
             <ResizableHandle withHandle />
             {/* Timeline — takes whatever the tree leaves */}
@@ -374,29 +482,7 @@ const Gantt = ({
               minSize={20}
               defaultSize={100 - treeDefaultSize}
             >
-              <GanttTimeline
-                totalDuration={totalDuration}
-                scale={scale}
-                events={events}
-                rootSpanStatus={rootSpanStatus}
-                rootStartedAt={rootStartedAt}
-                axis={axis}
-                windowStartMs={windowStartMs}
-                formatAxisTick={formatAxisTick}
-                nowMs={nowMs}
-                nonWorkingIntervals={nonWorkingIntervals}
-                tickIntervalMs={tickIntervalMs}
-                axisTickMs={axisTickMs}
-                parentRef={parentRef}
-                timelineScrollRef={timelineScrollRef}
-                nodes={nodes}
-                getNodeProps={getNodeProps}
-                getTreeProps={getTreeProps}
-                showDurations={showDurations}
-                treeScrollRef={treeScrollRef}
-                virtualizer={virtualizer}
-                toggleNodeSelection={toggleNodeSelection}
-              />
+              {timelinePanel}
             </ResizablePanel>
           </ResizablePanelGroup>
         )}
@@ -411,7 +497,7 @@ const Gantt = ({
               setShowDurations={setShowDurations}
             />
           </div>
-          <div className="@[42rem]:hidden">
+          <div className="@[42rem]:hidden max-md:hidden">
             <Popover>
               <PopoverTrigger className="text-sm">
                 <Trans>Shortcuts</Trans>
@@ -463,6 +549,7 @@ type GanttTimelineProps = Pick<
   | "formatAxisTick"
   | "nowMs"
   | "nonWorkingIntervals"
+  | "nonWorkingIntervalsByRow"
   | "tickIntervalMs"
   | "axisTickMs"
 > & {
@@ -476,9 +563,16 @@ type GanttTimelineProps = Pick<
   toggleNodeSelection: UseTreeStateOutput["toggleNodeSelection"];
   showDurations: boolean;
   treeScrollRef: React.RefObject<HTMLDivElement>;
+  selectedItemId: string | undefined;
+  onItemSelected: (id: string) => void;
+  /** Inline bars the filter keeps lit; null when no filter is on. */
+  litBars: Set<string> | null;
 };
 
 const TICK_COUNT = 5;
+const LABEL_MIN_PX = 40;
+/** The axis runs 5% past the last span, so a bar never ends at the edge. */
+const AXIS_PADDING = 1.05;
 
 /**
  * Split a bar's [offset, offset+duration] into its WORKING pieces by removing
@@ -509,6 +603,68 @@ function splitWorkingSegments(
     .map((s) => ({ startMs: s.start, durationMs: s.end - s.start }));
 }
 
+/** Absolute intervals as offsets from the window start (absolute axis only). */
+function toOffsetSpace(
+  intervals: { start: number; end: number }[] | undefined,
+  windowStartMs: number | undefined
+) {
+  return windowStartMs !== undefined && intervals
+    ? intervals.map((interval) => ({
+        start: interval.start - windowStartMs,
+        end: interval.end - windowStartMs
+      }))
+    : null;
+}
+
+function splitOrUndefined(
+  offset: number,
+  duration: number,
+  nonWorking: { start: number; end: number }[] | null
+) {
+  return nonWorking
+    ? splitWorkingSegments(offset, duration, nonWorking)
+    : undefined;
+}
+
+/**
+ * One row's non-working time, shaded behind its bars, with the grid lines
+ * (`children`) drawn over the shading.
+ */
+function RowShading({
+  offsets,
+  duration,
+  selected,
+  children
+}: {
+  offsets: { start: number; end: number }[] | null;
+  duration: number;
+  /** A selected row is already `bg-muted`, so its shading takes a darker tone. */
+  selected: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="pointer-events-none absolute inset-0">
+      {offsets?.map((interval) => {
+        const startMs = Math.max(0, interval.start);
+        const endMs = Math.min(duration, interval.end);
+        if (endMs <= startMs) return null;
+        return (
+          <Timeline.Span
+            key={`nonworking-${interval.start}`}
+            startMs={startMs}
+            durationMs={endMs - startMs}
+            className={cn(
+              "h-full",
+              selected ? "bg-muted-foreground/15" : "bg-muted/50"
+            )}
+          />
+        );
+      })}
+      {children}
+    </div>
+  );
+}
+
 const GanttTimeline = ({
   totalDuration,
   scale,
@@ -519,6 +675,7 @@ const GanttTimeline = ({
   formatAxisTick,
   nowMs,
   nonWorkingIntervals,
+  nonWorkingIntervalsByRow,
   tickIntervalMs,
   axisTickMs,
   parentRef,
@@ -530,7 +687,10 @@ const GanttTimeline = ({
   getTreeProps,
   toggleNodeSelection,
   showDurations,
-  treeScrollRef
+  treeScrollRef,
+  selectedItemId,
+  onItemSelected,
+  litBars
 }: GanttTimelineProps) => {
   const timelineContainerRef = useRef<HTMLDivElement>(null);
   // Live width (ResizeObserver) so the timeline reflows to fill the panel when
@@ -601,13 +761,79 @@ const GanttTimeline = ({
 
   // Non-working intervals in offset-space (ms from the window start), used to
   // split each bar into its working pieces so nights/weekends read as gaps.
-  const nonWorkingOffsets =
-    isAbsolute && windowStartMs !== undefined && nonWorkingIntervals
-      ? nonWorkingIntervals.map((interval) => ({
-          start: interval.start - windowStartMs,
-          end: interval.end - windowStartMs
-        }))
-      : null;
+  const anchorMs = isAbsolute ? windowStartMs : undefined;
+  const nonWorkingOffsets = toOffsetSpace(nonWorkingIntervals, anchorMs);
+  const rowOffsets = useMemo(() => {
+    if (!nonWorkingIntervalsByRow) return null;
+    const byRow = rowNonWorkingIntervals(
+      events,
+      nonWorkingIntervalsByRow,
+      nonWorkingIntervals
+    );
+    return new Map(
+      [...byRow].map(([id, intervals]) => [
+        id,
+        toOffsetSpace(intervals, anchorMs)
+      ])
+    );
+  }, [events, nonWorkingIntervalsByRow, nonWorkingIntervals, anchorMs]);
+  // Every row has an entry, even when that is none (the location rollup);
+  // `rowNonWorkingIntervals` already gave the plant's hours to the rest.
+  const offsetsFor = (eventId: string) =>
+    rowOffsets ? (rowOffsets.get(eventId) ?? null) : nonWorkingOffsets;
+
+  // The tick lines and the "now" (or end-of-span) line. Drawn behind the
+  // rows, and again inside a row that shades its own non-working time, so the
+  // shading never covers them.
+  const gridLines = (
+    <>
+      {/* The vertical tick lines */}
+      {absoluteTicks ? (
+        absoluteTicks.map((tickMs, index) =>
+          index === 0 ? null : (
+            <Timeline.Point
+              key={tickMs}
+              ms={tickMs}
+              className="h-full border-r border-muted"
+            />
+          )
+        )
+      ) : (
+        <Timeline.EquallyDistribute count={TICK_COUNT}>
+          {(ms: number, index: number) => {
+            if (index === 0) return null;
+            return (
+              <Timeline.Point
+                ms={ms}
+                className={"h-full border-r border-muted"}
+              />
+            );
+          }}
+        </Timeline.EquallyDistribute>
+      )}
+      {/* Absolute mode: the green line is "now", drawn only while now is
+          inside the window. Duration mode keeps the completed/failed
+          end-of-span line. */}
+      {isAbsolute
+        ? showNow && (
+            <Timeline.Point
+              ms={nowOffsetMs as number}
+              className="h-full border-r border-emerald-500/90"
+            />
+          )
+        : rootSpanStatus !== "inprogress" && (
+            <Timeline.Point
+              ms={duration}
+              className={cn(
+                "h-full border-r",
+                rootSpanStatus === "completed"
+                  ? "border-emerald-500/90"
+                  : "border-destructive/30"
+              )}
+            />
+          )}
+    </>
+  );
 
   return (
     <div
@@ -615,7 +841,7 @@ const GanttTimeline = ({
       ref={timelineContainerRef}
     >
       <Timeline.Root
-        durationMs={duration * 1.05}
+        durationMs={duration * AXIS_PADDING}
         scale={scale}
         className="h-full overflow-hidden"
         minWidth={minTimelineWidth}
@@ -643,10 +869,12 @@ const GanttTimeline = ({
                           // start hugs the left, one at the very end hugs the
                           // right, everything between (e.g. a week's mid-week
                           // day ticks, which don't reach the edge) is centered.
+                          // Phones drop the edge labels: ticks are too close
+                          // for them not to collide with their neighbours.
                           tickMs <= 0
-                            ? "ml-1"
+                            ? "ml-1 max-md:hidden"
                             : tickMs >= duration * 0.98
-                              ? "-ml-1 -translate-x-full"
+                              ? "-ml-1 -translate-x-full max-md:hidden"
                               : "-translate-x-1/2"
                         )}
                       >
@@ -672,9 +900,9 @@ const GanttTimeline = ({
                               className={cn(
                                 "whitespace-nowrap",
                                 index === 0
-                                  ? "ml-1"
+                                  ? "ml-1 max-md:hidden"
                                   : index === TICK_COUNT - 1
-                                    ? "-ml-1 -translate-x-full"
+                                    ? "-ml-1 -translate-x-full max-md:hidden"
                                     : "-translate-x-1/2"
                               )}
                             >
@@ -755,6 +983,7 @@ const GanttTimeline = ({
                 as 24h/day. Absolute mode only; clamped to the visible window. */}
             {isAbsolute &&
               windowStartMs !== undefined &&
+              !rowOffsets &&
               nonWorkingIntervals?.map((interval) => {
                 const startMs = Math.max(0, interval.start - windowStartMs);
                 const endMs = Math.min(duration, interval.end - windowStartMs);
@@ -768,51 +997,7 @@ const GanttTimeline = ({
                   />
                 );
               })}
-            {/* The vertical tick lines */}
-            {absoluteTicks ? (
-              absoluteTicks.map((tickMs, index) =>
-                index === 0 ? null : (
-                  <Timeline.Point
-                    key={tickMs}
-                    ms={tickMs}
-                    className="h-full border-r border-muted"
-                  />
-                )
-              )
-            ) : (
-              <Timeline.EquallyDistribute count={TICK_COUNT}>
-                {(ms: number, index: number) => {
-                  if (index === 0) return null;
-                  return (
-                    <Timeline.Point
-                      ms={ms}
-                      className={"h-full border-r border-muted"}
-                    />
-                  );
-                }}
-              </Timeline.EquallyDistribute>
-            )}
-            {/* Absolute mode: the green line is "now", drawn only while now is
-                inside the window. Duration mode keeps the completed/failed
-                end-of-span line. */}
-            {isAbsolute
-              ? showNow && (
-                  <Timeline.Point
-                    ms={nowOffsetMs as number}
-                    className="h-full border-r border-emerald-500/90"
-                  />
-                )
-              : rootSpanStatus !== "inprogress" && (
-                  <Timeline.Point
-                    ms={duration}
-                    className={cn(
-                      "h-full border-r",
-                      rootSpanStatus === "completed"
-                        ? "border-emerald-500/90"
-                        : "border-destructive/30"
-                    )}
-                  />
-                )}
+            {gridLines}
             <TreeView
               scrollRef={timelineScrollRef}
               virtualizer={virtualizer}
@@ -842,7 +1027,32 @@ const GanttTimeline = ({
                       toggleNodeSelection(node.id);
                     }}
                   >
-                    {node.data.level === "TRACE" ? (
+                    {rowOffsets && (
+                      <RowShading
+                        offsets={offsetsFor(node.id)}
+                        duration={duration}
+                        selected={state.selected}
+                      >
+                        {gridLines}
+                      </RowShading>
+                    )}
+                    {node.data.items ? (
+                      <LaneItems
+                        items={node.data.items}
+                        selectedItemId={selectedItemId}
+                        onItemSelected={onItemSelected}
+                        litBars={litBars}
+                        nonWorkingOffsets={offsetsFor(node.id)}
+                        labelMinMs={
+                          // ~40px at the current zoom: narrower bars
+                          // truncate their label to "J." or ","
+                          (LABEL_MIN_PX /
+                            lerp(minTimelineWidth, maxTimelineWidth, scale)) *
+                          duration *
+                          AXIS_PADDING
+                        }
+                      />
+                    ) : node.data.level === "TRACE" ? (
                       <>
                         {node.data.wait && node.data.wait.duration > 0 && (
                           <WaitSpan wait={node.data.wait} />
@@ -858,26 +1068,23 @@ const GanttTimeline = ({
                             startMs={node.data.offset}
                             durationMs={node.data.duration}
                             node={node}
-                            segments={
-                              nonWorkingOffsets
-                                ? splitWorkingSegments(
-                                    node.data.offset,
-                                    node.data.duration,
-                                    nonWorkingOffsets
-                                  )
-                                : undefined
-                            }
+                            segments={splitOrUndefined(
+                              node.data.offset,
+                              node.data.duration,
+                              offsetsFor(node.id)
+                            )}
                           />
                         )}
                         {/* Red conflict windows painted over the neutral rollup
                             base — split on working time so they line up with the
                             chopped bar. */}
                         {node.data.conflictSegments?.flatMap((segment, si) => {
-                          const pieces = nonWorkingOffsets
+                          const rowNonWorking = offsetsFor(node.id);
+                          const pieces = rowNonWorking
                             ? splitWorkingSegments(
                                 segment.offset,
                                 segment.duration,
-                                nonWorkingOffsets
+                                rowNonWorking
                               )
                             : [
                                 {
@@ -899,12 +1106,11 @@ const GanttTimeline = ({
                     ) : (
                       <Timeline.Point ms={node.data.offset}>
                         {(ms) => (
-                          <motion.div
+                          <div
                             className={cn(
                               "-ml-1 size-3 rounded-full",
                               eventBackgroundClassName(node.data)
                             )}
-                            layoutId={node.id}
                           />
                         )}
                       </Timeline.Point>
@@ -927,7 +1133,7 @@ const GanttTimeline = ({
 };
 
 function NodeText({ node }: { node: GanttEvent }) {
-  const className = "line-clamp-1";
+  const className = "line-clamp-1 max-md:min-w-0";
   return (
     <Paragraph variant="small" className={cn(className)}>
       <SpanTitle {...node.data} size="small" />
@@ -1128,6 +1334,10 @@ function SpanWithDuration({
       ? segments
       : [{ startMs: props.startMs, durationMs: props.durationMs }];
 
+  // Plain divs, not motion `layoutId`s: every scroll frame re-renders
+  // the visible rows, and a layout node measures itself before and after each
+  // render — hundreds of forced reflows per frame on a large board.
+
   // The duration label (TOTAL work, from props.durationMs) rides the widest
   // piece so it stays readable when the bar is split into thin segments.
   let labelIndex = 0;
@@ -1145,7 +1355,7 @@ function SpanWithDuration({
           startMs={piece.startMs}
           durationMs={piece.durationMs}
         >
-          <motion.div
+          <div
             className={cn(
               "relative flex h-4 w-full min-w-[2px] items-center rounded-sm",
               // Aggregate/rollup rows draw a neutral base; their conflict windows
@@ -1155,7 +1365,6 @@ function SpanWithDuration({
                 ? "bg-gray-500"
                 : eventBackgroundClassName(node.data)
             )}
-            layoutId={pieces.length === 1 ? node.id : `${node.id}:${i}`}
           >
             {(node.data.isPartial || node.data.isEstimated) && (
               <div
@@ -1174,7 +1383,7 @@ function SpanWithDuration({
               <div
                 className={cn(
                   "sticky left-0 z-10 transition group-hover:opacity-100",
-                  !showDuration && "opacity-0"
+                  !showDuration && "md:opacity-0"
                 )}
               >
                 <div className="rounded-sm bg-black/40 px-1 py-0.5 text-xxs font-medium text-white tabular-nums">
@@ -1185,10 +1394,284 @@ function SpanWithDuration({
                 </div>
               </div>
             )}
-          </motion.div>
+          </div>
         </Timeline.Span>
       ))}
     </>
+  );
+}
+
+/**
+ * An inline bar's colors: a light fill with dark text in light mode, the
+ * reverse in dark mode. Solid, not translucent, so gridlines and the shaded
+ * non-working time never show through. Same meaning as the solid bars —
+ * red conflict, amber maintenance, blue in progress, neutral scheduled.
+ */
+function laneItemClassName(
+  data: Pick<
+    GanttEvent["data"],
+    "isError" | "isCancelled" | "isPartial" | "style"
+  >
+) {
+  if (data.isError) {
+    return "border-red-300 bg-red-50 text-red-900 hover:border-red-500 dark:border-red-800 dark:bg-red-950 dark:text-red-100 dark:hover:border-red-600";
+  }
+  if (data.isCancelled) {
+    return "border-border bg-muted text-muted-foreground";
+  }
+  if (data.style.variant === "maintenance") {
+    return "border-amber-300 bg-amber-50 text-amber-900 hover:border-amber-500 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100 dark:hover:border-amber-600";
+  }
+  if (data.isPartial) {
+    return "border-blue-300 bg-blue-50 text-blue-900 hover:border-blue-500 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-100 dark:hover:border-blue-600";
+  }
+  return "border-zinc-300 bg-zinc-100 text-zinc-900 hover:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500";
+}
+
+/**
+ * A row's inline bars (`data.items`), each labelled and selectable. Bars that
+ * overlap in time stack into tracks so none hides another; a row with no
+ * overlap stays one line. Like any bar, each is split on non-working time,
+ * with its label on the widest piece.
+ */
+function LaneItems({
+  items,
+  selectedItemId,
+  onItemSelected,
+  litBars,
+  nonWorkingOffsets,
+  labelMinMs = 0
+}: {
+  items: GanttEvent[];
+  selectedItemId: string | undefined;
+  onItemSelected: (id: string) => void;
+  litBars: Set<string> | null;
+  /** A bar piece shorter than this is too narrow to label. */
+  labelMinMs?: number;
+  nonWorkingOffsets: { start: number; end: number }[] | null;
+}) {
+  const { t } = useLingui();
+  const visible = items.filter((item) => item.data.duration > 0);
+  // Work that could not be placed holds no time, so it never shares tracks
+  // with placed work: it gets its own strip at the bottom of the row, where
+  // markers that overlap merge into one.
+  const placed = visible.filter((item) => !item.data.isUnschedulable);
+  const unplaced = visible.filter((item) => item.data.isUnschedulable);
+  const { tracks, trackCount } = assignTracks(placed.map((item) => item.data));
+  const groups = groupOverlaps(unplaced.map((item) => item.data));
+  const stripShare = unplaced.length === 0 ? 0 : placed.length === 0 ? 1 : 0.45;
+  // Two bands in one row leave no room for padding around the text.
+  const dense = stripShare > 0 && stripShare < 1;
+  const placedShare = 1 - stripShare;
+  const isDimmed = (item: GanttEvent) =>
+    litBars !== null && !litBars.has(item.id);
+
+  return (
+    <div className="pointer-events-none absolute inset-x-0 inset-y-0.5">
+      {placed.map((item, index) => (
+        <LaneBar
+          key={item.id}
+          item={item}
+          top={((tracks[index] ?? 0) / trackCount) * placedShare}
+          height={placedShare / trackCount}
+          showLabel={trackCount <= 2}
+          dense={dense}
+          textClassName={
+            trackCount === 1 && placedShare === 1 ? "text-xs" : "text-xxs"
+          }
+          isSelected={item.id === selectedItemId}
+          isDimmed={isDimmed(item)}
+          onSelect={() => onItemSelected(item.id)}
+          nonWorkingOffsets={nonWorkingOffsets}
+          labelMinMs={labelMinMs}
+        />
+      ))}
+      {groups.map((group) => {
+        const members = group.indices.flatMap((index) => {
+          const item = unplaced[index];
+          return item ? [item] : [];
+        });
+        const [first] = members;
+        if (!first) return null;
+        if (members.length === 1) {
+          return (
+            <LaneBar
+              key={first.id}
+              item={first}
+              top={placedShare}
+              height={stripShare}
+              showLabel
+              dense={dense}
+              textClassName="text-xxs"
+              isSelected={first.id === selectedItemId}
+              isDimmed={isDimmed(first)}
+              onSelect={() => onItemSelected(first.id)}
+              nonWorkingOffsets={nonWorkingOffsets}
+              labelMinMs={labelMinMs}
+            />
+          );
+        }
+        const selected =
+          members.find((member) => member.id === selectedItemId) ?? null;
+        const count = members.length;
+        const names = members.map((member) => member.data.message).join(", ");
+        const label = t`${plural(count, {
+          one: `# can't be scheduled: ${names}`,
+          other: `# can't be scheduled: ${names}`
+        })}`;
+        return (
+          <div
+            key={first.id}
+            className="absolute inset-x-0"
+            style={{
+              top: `${placedShare * 100}%`,
+              height: `${stripShare * 100}%`
+            }}
+          >
+            <Timeline.Span
+              startMs={group.offset}
+              durationMs={group.duration}
+              className={cn("h-full px-px", !dense && "py-px")}
+            >
+              <button
+                type="button"
+                title={t`${label} — click to open the next`}
+                aria-label={label}
+                aria-pressed={selected !== null}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Each click opens the next of the merged operations.
+                  const next = selected
+                    ? members[(members.indexOf(selected) + 1) % members.length]
+                    : first;
+                  onItemSelected((next ?? first).id);
+                }}
+                className={cn(
+                  "pointer-events-auto relative flex h-full w-full min-w-[2px] items-center gap-1 overflow-hidden rounded-sm border px-1.5 text-left text-xxs font-medium leading-none",
+                  laneItemClassName(first.data),
+                  selected &&
+                    "ring-2 ring-foreground ring-offset-1 ring-offset-background",
+                  members.every(isDimmed) && "opacity-30"
+                )}
+              >
+                <LuBan className="relative size-3 shrink-0" />
+                <span className="relative truncate">
+                  <Plural
+                    value={members.length}
+                    one="# can't be scheduled"
+                    other="# can't be scheduled"
+                  />
+                </span>
+              </button>
+            </Timeline.Span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** One inline bar, split on non-working time, labelled on its widest piece. */
+function LaneBar({
+  item,
+  top,
+  height,
+  showLabel,
+  dense = false,
+  textClassName,
+  isSelected,
+  isDimmed,
+  onSelect,
+  nonWorkingOffsets,
+  labelMinMs = 0
+}: {
+  item: GanttEvent;
+  /** Fraction of the row above the bar, 0–1. */
+  top: number;
+  /** Fraction of the row the bar takes, 0–1. */
+  height: number;
+  showLabel: boolean;
+  /** No room for padding: the row also holds a placeholder strip. */
+  dense?: boolean;
+  textClassName: string;
+  isSelected: boolean;
+  isDimmed: boolean;
+  onSelect: () => void;
+  nonWorkingOffsets: { start: number; end: number }[] | null;
+  labelMinMs?: number;
+}) {
+  const { offset, duration } = item.data;
+  const pieces = nonWorkingOffsets
+    ? splitWorkingSegments(offset, duration, nonWorkingOffsets)
+    : [{ startMs: offset, durationMs: duration }];
+  let labelIndex = 0;
+  for (let i = 1; i < pieces.length; i++) {
+    if ((pieces[i]?.durationMs ?? 0) > (pieces[labelIndex]?.durationMs ?? 0)) {
+      labelIndex = i;
+    }
+  }
+  const title = `${item.data.message} · ${formatDurationMilliseconds(duration, {
+    style: "short",
+    maxDecimalPoints: 1
+  })}`;
+
+  return (
+    <div
+      className="absolute inset-x-0"
+      style={{ top: `${top * 100}%`, height: `${height * 100}%` }}
+    >
+      {pieces.map((piece, i) => (
+        <Timeline.Span
+          key={`${piece.startMs}:${piece.durationMs}`}
+          startMs={piece.startMs}
+          durationMs={piece.durationMs}
+          className={cn("h-full px-px", !dense && "py-px")}
+        >
+          <button
+            type="button"
+            title={title}
+            aria-label={title}
+            aria-pressed={isSelected}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
+            className={cn(
+              "pointer-events-auto relative flex h-full w-full min-w-[2px] items-center gap-1 overflow-hidden rounded-sm border px-1.5 text-left font-medium transition-[opacity,border-color]",
+              textClassName,
+              dense && "leading-none",
+              laneItemClassName(item.data),
+              isSelected &&
+                "ring-2 ring-foreground ring-offset-1 ring-offset-background",
+              isDimmed && "opacity-30"
+            )}
+          >
+            {(item.data.isPartial || item.data.isEstimated) && (
+              <span
+                className={cn(
+                  "absolute inset-0 opacity-15",
+                  item.data.isPartial && "animate-tile-scroll"
+                )}
+                style={{
+                  backgroundImage: `url(${tileBgPath})`,
+                  backgroundSize: "8px 8px"
+                }}
+              />
+            )}
+            {showLabel &&
+              i === labelIndex &&
+              piece.durationMs >= labelMinMs && (
+                <>
+                  {item.data.isUnschedulable && (
+                    <LuBan className="relative size-3 shrink-0" />
+                  )}
+                  <span className="relative truncate">{item.data.message}</span>
+                </>
+              )}
+          </button>
+        </Timeline.Span>
+      ))}
+    </div>
   );
 }
 
@@ -1357,7 +1840,10 @@ function SearchField({ onChange }: { onChange: (value: string) => void }) {
   };
 
   return (
-    <InputGroup insetRing className="border-transparent rounded-none ring-0">
+    <InputGroup
+      insetRing
+      className="border-transparent rounded-none ring-0 max-md:min-w-[140px] max-md:w-[160px] max-md:shrink-0"
+    >
       <InputLeftElement>
         <LuSearch className="h-4 w-4 text-muted-foreground" />
       </InputLeftElement>

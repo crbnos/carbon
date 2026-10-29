@@ -1,6 +1,11 @@
-import { Combobox, Submit, ValidatedForm } from "@carbon/form";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction } from "@carbon/query";
 import {
   Button,
+  Combobox,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -26,15 +31,16 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  ToggleGroup,
+  ToggleGroupItem,
+  Tr,
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuArrowRight, LuLink, LuSearch, LuSparkles } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
-import { accountMappingUpsertValidator } from "~/modules/settings/settings.models";
 
 /**
  * Local structural mirrors of @carbon/ee/accounting's AccountMapping /
@@ -112,6 +118,8 @@ const ACCOUNT_CLASS_ORDER = [
 ];
 const OTHER_CLASS = "Other";
 
+type MappingFilter = "all" | "unmapped" | "mapped";
+
 /**
  * Small status pill for an account row — a Vercel-style dot + label. Neutral
  * (monochrome) marks a required posting-default account; warning (amber) marks
@@ -163,8 +171,19 @@ export function AccountMapping({
   const [showMatchDrawer, setShowMatchDrawer] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<MappingFilter>("all");
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  // The provider account the user picked for each Carbon account this
+  // session, saved together by the footer's Save.
+  const [edits, setEdits] = useState<Record<string, string>>({});
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
+  const savedToast = useAccountMappingsSavedToast();
+  const saveFetcher = useAction({
+    onSuccess: ({ data }) => {
+      setEdits({});
+      if (data) savedToast(data.count);
+    }
+  });
 
   const chartById = useMemo(
     () => new Map(chart.map((account) => [account.id, account])),
@@ -187,10 +206,48 @@ export function AccountMapping({
     () => new Set(blocking.map((account) => account.id)),
     [blocking]
   );
+  // A mapping row with no provider account maps nothing
   const mappedById = useMemo(
-    () => new Map(mappings.map((mapping) => [mapping.accountId, mapping])),
+    () =>
+      new Map(
+        mappings
+          .filter((mapping) => mapping.externalId)
+          .map((mapping) => [mapping.accountId, mapping])
+      ),
     [mappings]
   );
+
+  const changes = useMemo(
+    () =>
+      Object.entries(edits).filter(
+        ([accountId, externalId]) =>
+          externalId && externalId !== mappedById.get(accountId)?.externalId
+      ),
+    [edits, mappedById]
+  );
+
+  const save = () => {
+    if (changes.length === 0) return;
+    const formData = new FormData();
+    formData.append("intent", "bulk-upsert-account-mappings");
+    for (const [accountId, externalId] of changes) {
+      const chartAccount = chartById.get(externalId);
+      formData.append(
+        "mappings",
+        JSON.stringify({
+          accountId,
+          externalId,
+          ...(chartAccount
+            ? {
+                externalCode: chartAccount.code,
+                externalName: chartAccount.name
+              }
+            : {})
+        })
+      );
+    }
+    saveFetcher.submit(formData, { method: "post" });
+  };
 
   // One list: every account in the chart, plus any account blocking a sync
   // that isn't an active leaf (so a block is never hidden).
@@ -210,15 +267,25 @@ export function AccountMapping({
     return [...byId.values()];
   }, [allAccounts, blocking]);
 
+  // Mapped means a saved mapping, not a pick made this session — a row stays
+  // in the Unmapped view while its provider account is being chosen.
+  const mappedCount = useMemo(
+    () =>
+      displayAccounts.filter((account) => mappedById.has(account.id)).length,
+    [displayAccounts, mappedById]
+  );
+
   const grouped = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const filtered = term
-      ? displayAccounts.filter(
-          (account) =>
-            (account.number ?? "").toLowerCase().includes(term) ||
-            account.name.toLowerCase().includes(term)
-        )
-      : displayAccounts;
+    const filtered = displayAccounts.filter((account) => {
+      if (filter === "mapped" && !mappedById.has(account.id)) return false;
+      if (filter === "unmapped" && mappedById.has(account.id)) return false;
+      return (
+        !term ||
+        (account.number ?? "").toLowerCase().includes(term) ||
+        account.name.toLowerCase().includes(term)
+      );
+    });
     const groups = new Map<string, AllAccountRow[]>();
     for (const account of filtered) {
       const key =
@@ -232,7 +299,7 @@ export function AccountMapping({
     return [...ACCOUNT_CLASS_ORDER, OTHER_CLASS]
       .filter((key) => groups.has(key))
       .map((key) => ({ class: key, accounts: groups.get(key) ?? [] }));
-  }, [displayAccounts, search]);
+  }, [displayAccounts, mappedById, filter, search]);
 
   // Unmapped required accounts (posting defaults + expense) — the AI-suggest
   // input and the gate for the Suggest button.
@@ -268,6 +335,8 @@ export function AccountMapping({
   const focusKey = (focusAccountIds ?? []).join(",");
   useEffect(() => {
     if (!focusKey) return;
+    // The focused account may be hidden by the Mapped / Unmapped filter
+    setFilter("all");
     setHighlightedId(focusKey.split(",")[0] ?? null);
     const timer = setTimeout(() => setHighlightedId(null), 2500);
     return () => clearTimeout(timer);
@@ -327,37 +396,83 @@ export function AccountMapping({
           )}
         </div>
 
-        <div className="w-full max-w-[280px]">
-          <InputGroup size="sm">
-            <InputLeftElement>
-              <LuSearch className="size-4 text-muted-foreground" />
-            </InputLeftElement>
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t`Search accounts`}
-            />
-          </InputGroup>
+        <div className="flex w-full flex-wrap items-center gap-2">
+          <div className="w-full max-w-[280px]">
+            <InputGroup size="sm">
+              <InputLeftElement>
+                <LuSearch className="size-4 text-muted-foreground" />
+              </InputLeftElement>
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={t`Search accounts`}
+              />
+            </InputGroup>
+          </div>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={filter}
+            // Radix fires "" when the active item is clicked again; keep it set
+            onValueChange={(next) => {
+              if (next) setFilter(next as MappingFilter);
+            }}
+          >
+            <ToggleGroupItem value="all">
+              <Trans>All</Trans>
+              <span className="ml-1.5 tabular-nums text-muted-foreground">
+                {displayAccounts.length}
+              </span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="unmapped">
+              <Trans>Unmapped</Trans>
+              <span className="ml-1.5 tabular-nums text-muted-foreground">
+                {displayAccounts.length - mappedCount}
+              </span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="mapped">
+              <Trans>Mapped</Trans>
+              <span className="ml-1.5 tabular-nums text-muted-foreground">
+                {mappedCount}
+              </span>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
 
         {grouped.length === 0 ? (
-          <div className="flex w-full items-center justify-center rounded-lg border border-border py-8 text-sm text-muted-foreground">
-            <Trans>No accounts match your search</Trans>
+          <div className="flex w-full items-center justify-center rounded-lg border border-border py-8 text-sm text-muted-foreground max-md:border-0 max-md:rounded-none">
+            {search.trim() ? (
+              <Trans>No accounts match your search</Trans>
+            ) : filter === "unmapped" ? (
+              <Trans>Every account is mapped</Trans>
+            ) : filter === "mapped" ? (
+              <Trans>No accounts are mapped yet</Trans>
+            ) : (
+              <Trans>No accounts match your search</Trans>
+            )}
           </div>
         ) : (
           grouped.map((group) => (
             <div key={group.class} className="flex w-full flex-col gap-1">
               <Subheading variant="heavy">{group.class}</Subheading>
-              <div className="w-full rounded-lg border border-border">
+              <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
                 <div className="flex w-full flex-col divide-y divide-border">
                   {group.accounts.map((account) => {
                     const mapping = mappedById.get(account.id);
                     return (
-                      <AccountMappingRowForm
+                      <AccountMappingRow
                         key={account.id}
                         accountId={account.id}
                         accountNumber={account.number}
                         accountName={account.name}
+                        value={edits[account.id] ?? mapping?.externalId ?? ""}
+                        onChange={(externalId) =>
+                          setEdits((current) => ({
+                            ...current,
+                            [account.id]: externalId
+                          }))
+                        }
                         currentExternalId={mapping?.externalId ?? null}
                         currentExternalCode={mapping?.externalCode ?? null}
                         currentExternalName={mapping?.externalName ?? null}
@@ -376,6 +491,19 @@ export function AccountMapping({
           ))
         )}
       </DrawerBody>
+      <DrawerFooter>
+        <HStack>
+          <Button
+            isDisabled={
+              !canUpdate || changes.length === 0 || saveFetcher.isPending
+            }
+            isLoading={saveFetcher.isPending}
+            onClick={save}
+          >
+            <Trans>Save</Trans>
+          </Button>
+        </HStack>
+      </DrawerFooter>
 
       {showMatchDrawer && (
         <MatchByCodeDrawer
@@ -398,15 +526,15 @@ export function AccountMapping({
 }
 
 /**
- * One Carbon account → provider account row. Each row is its own
- * ValidatedForm posting intent=upsert-account-mapping; the provider
- * code/name of the selected option travel in hidden fields because the
- * journal syncer resolves account codes from the mapping metadata.
+ * One Carbon account → provider account row. The pick is held by the tab
+ * and saved with every other changed row by the footer's Save.
  */
-function AccountMappingRowForm({
+function AccountMappingRow({
   accountId,
   accountNumber,
   accountName,
+  value,
+  onChange,
   currentExternalId,
   currentExternalCode,
   currentExternalName,
@@ -420,6 +548,8 @@ function AccountMappingRowForm({
   accountId: string;
   accountNumber: string | null;
   accountName: string | null;
+  value: string;
+  onChange: (externalId: string) => void;
   currentExternalId: string | null;
   currentExternalCode: string | null;
   currentExternalName: string | null;
@@ -431,21 +561,6 @@ function AccountMappingRowForm({
   highlighted?: boolean;
 }) {
   const { t } = useLingui();
-  // `selected` holds the user's explicit pick this session; `touched` marks
-  // whether they have edited this row. The row stays mounted (key=account.id)
-  // across parent revalidations, so until the user edits we must derive the
-  // hidden provider metadata from the CURRENT mapping props (not a value frozen
-  // at mount) — otherwise a save after the mapping changed elsewhere (match-by-
-  // code, AI suggest, revalidation) would overwrite the stored code/name with
-  // stale or empty values. Once touched, the user's selection wins, and an
-  // explicit clear submits empty to unmap.
-  const [selected, setSelected] = useState<{
-    code: string | null;
-    name: string | null;
-  } | null>(null);
-  const [touched, setTouched] = useState(false);
-  const externalCode = touched ? selected?.code : currentExternalCode;
-  const externalName = touched ? selected?.name : currentExternalName;
 
   // A mapped provider account can be missing from the chart (archived or
   // the chart failed to load): keep it selectable/visible via a fallback
@@ -478,20 +593,7 @@ function AccountMappingRowForm({
           : "w-full"
       }
     >
-      <ValidatedForm
-        validator={accountMappingUpsertValidator}
-        method="post"
-        defaultValues={{
-          intent: "upsert-account-mapping",
-          accountId,
-          externalId: currentExternalId ?? undefined
-        }}
-        className="flex w-full items-center gap-3 p-3"
-      >
-        <input type="hidden" name="intent" value="upsert-account-mapping" />
-        <input type="hidden" name="accountId" value={accountId} />
-        <input type="hidden" name="externalCode" value={externalCode ?? ""} />
-        <input type="hidden" name="externalName" value={externalName ?? ""} />
+      <div className="flex w-full items-center gap-3 p-3">
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-sm font-medium">
@@ -508,36 +610,14 @@ function AccountMappingRowForm({
         <LuArrowRight className="size-4 shrink-0 text-muted-foreground" />
         <div className="w-[260px] shrink-0">
           <Combobox
-            name="externalId"
+            value={value}
             options={options}
             placeholder={t`Select provider account`}
-            onChange={(option) => {
-              setTouched(true);
-              if (!option) {
-                setSelected(null);
-                return;
-              }
-              const chartAccount = chartById.get(option.value);
-              if (chartAccount) {
-                setSelected({
-                  code: chartAccount.code,
-                  name: chartAccount.name
-                });
-              } else if (option.value === currentExternalId) {
-                setSelected({
-                  code: currentExternalCode,
-                  name: currentExternalName
-                });
-              } else {
-                setSelected(null);
-              }
-            }}
+            isReadOnly={!canUpdate}
+            onChange={onChange}
           />
         </div>
-        <Submit size="sm" variant="secondary" isDisabled={!canUpdate}>
-          <Trans>Save</Trans>
-        </Submit>
-      </ValidatedForm>
+      </div>
     </div>
   );
 }
@@ -547,6 +627,17 @@ function AccountMappingRowForm({
  * Confirm submits one bulk POST with repeated JSON-encoded `mappings`
  * fields (per the sync-operation `ids` precedent).
  */
+/** The toast for saved account mappings. */
+function useAccountMappingsSavedToast() {
+  const { t } = useLingui();
+  return (count: number) =>
+    toast.success(
+      count === 1
+        ? t`Saved account mapping`
+        : t`Saved ${count} account mappings`
+    );
+}
+
 function MatchByCodeDrawer({
   proposals,
   canUpdate,
@@ -556,17 +647,19 @@ function MatchByCodeDrawer({
   canUpdate: boolean;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher();
+  const savedToast = useAccountMappingsSavedToast();
+  const fetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (data) savedToast(data.count);
+    },
+    onSettled: () => {
+      if (submittedRef.current) {
+        onClose();
+      }
+    }
+  });
   const isSubmitting = fetcher.state !== "idle";
   const submittedRef = useRef(false);
-
-  // Close once the confirm-all POST settles; revalidation has already
-  // refreshed the sections behind the drawer.
-  useEffect(() => {
-    if (submittedRef.current && fetcher.state === "idle") {
-      onClose();
-    }
-  }, [fetcher.state, onClose]);
 
   const confirmAll = () => {
     if (proposals.length === 0) return;
@@ -614,7 +707,7 @@ function MatchByCodeDrawer({
               <Trans>No unmapped accounts match a provider code</Trans>
             </div>
           ) : (
-            <div className="w-full rounded-lg border border-border">
+            <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
               <Table>
                 <Thead>
                   <Tr>
@@ -697,24 +790,26 @@ function AiSuggestModal({
   canUpdate: boolean;
   onClose: () => void;
 }) {
-  const suggestFetcher = useFetcher<{
-    proposals?: AccountMatchProposalRow[];
+  const savedToast = useAccountMappingsSavedToast();
+  const suggestFetcher = useAction<{
+    data: { proposals: AccountMatchProposalRow[] } | null;
   }>();
-  const applyFetcher = useFetcher();
+  const applyFetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (data) savedToast(data.count);
+    },
+    onSettled: () => {
+      if (appliedRef.current) {
+        onClose();
+      }
+    }
+  });
   const appliedRef = useRef(false);
 
   const isSuggesting = suggestFetcher.state !== "idle";
   const isApplying = applyFetcher.state !== "idle";
-  const proposals = suggestFetcher.data?.proposals;
+  const proposals = suggestFetcher.data?.data?.proposals;
   const hasSuggested = proposals !== undefined;
-
-  // Close once the apply POST settles; revalidation has already refreshed
-  // the sections behind the modal.
-  useEffect(() => {
-    if (appliedRef.current && applyFetcher.state === "idle") {
-      onClose();
-    }
-  }, [applyFetcher.state, onClose]);
 
   const suggest = () => {
     const formData = new FormData();
@@ -792,7 +887,7 @@ function AiSuggestModal({
               <Trans>AI couldn't confidently match any accounts</Trans>
             </div>
           ) : (
-            <div className="w-full rounded-lg border border-border">
+            <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
               <Table>
                 <Thead>
                   <Tr>

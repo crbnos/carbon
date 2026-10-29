@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { AuditLogEntry } from "@carbon/database/audit.types";
 import { ValidatedForm } from "@carbon/form";
 import {
@@ -16,6 +20,7 @@ import {
   HStack,
   IconButton,
   LabelWithHelp,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -43,6 +48,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuEllipsisVertical,
+  LuGlobe,
   LuHistory,
   LuSquareUser,
   LuTrash,
@@ -75,7 +81,7 @@ import {
 import { priceOverrideValidator } from "../../sales.models";
 import type { PriceOverrideBreak } from "../../types";
 
-type ScopeType = "customer" | "customerType";
+type ScopeType = "customer" | "customerType" | "all";
 
 type PriceOverrideFormProps = {
   initialValues: z.infer<typeof priceOverrideValidator>;
@@ -99,6 +105,7 @@ const PriceOverrideForm = ({
   const [scope, setScope] = useState<ScopeType>(() => {
     if (initialValues.customerId) return "customer";
     if (initialValues.customerTypeId) return "customerType";
+    if (initialValues.allCustomers) return "all";
     return initialScope ?? "customer";
   });
 
@@ -178,6 +185,12 @@ const PriceOverrideForm = ({
                       title: t`Customer Type`,
                       description: t`Override price for all customers of a type`,
                       icon: <LuUsers />
+                    },
+                    {
+                      value: "all",
+                      title: t`All Customers`,
+                      description: t`Override price for every customer`,
+                      icon: <LuGlobe />
                     }
                   ]}
                 />
@@ -199,6 +212,14 @@ const PriceOverrideForm = ({
                   </>
                 )}
 
+                {scope === "all" && (
+                  <>
+                    <Hidden name="customerId" value="" />
+                    <Hidden name="customerTypeId" value="" />
+                    <Hidden name="allCustomers" value="on" />
+                  </>
+                )}
+
                 <PriceBreaks
                   breaks={breaks}
                   onChange={setBreaks}
@@ -208,7 +229,7 @@ const PriceOverrideForm = ({
                   companyId={company?.id}
                 />
 
-                <div className="grid grid-cols-2 gap-3 w-full">
+                <div className="grid grid-cols-2 gap-3 w-full max-md:grid-cols-1">
                   <BooleanField
                     name="active"
                     label={t`Active`}
@@ -222,7 +243,7 @@ const PriceOverrideForm = ({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 w-full">
+                <div className="grid grid-cols-2 gap-3 w-full max-md:grid-cols-1">
                   <DatePicker name="validFrom" label={t`Valid From`} />
                   <DatePicker
                     name="validTo"
@@ -350,7 +371,8 @@ function PriceBreaks({
         error: null,
         count: null,
         status: 200,
-        statusText: "OK"
+        statusText: "OK",
+        success: true
       }) as const,
     []
   );
@@ -389,6 +411,7 @@ function PriceBreaks({
                   <DropdownMenuContent>
                     {canShowHistory && row.original.id ? (
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.view}
                         onClick={() =>
                           setHistoryBreakId(row.original.id ?? null)
                         }
@@ -398,6 +421,7 @@ function PriceBreaks({
                       </DropdownMenuItem>
                     ) : null}
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.delete}
                       onClick={() =>
                         setPendingDelete({
                           index: row.index,

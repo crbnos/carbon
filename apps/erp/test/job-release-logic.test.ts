@@ -1,0 +1,322 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { describe, expect, it, vi } from "vitest";
+
+// The models import the glossary, whose `msg` macro only runs compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
+import {
+  startingPurchaseOrders,
+  jobReleaseProblems,
+  materialsWithoutStorageUnit,
+  makeMethodsMissingOperations,
+  outsideOperationsNeedingPurchaseOrders,
+  resolveOperationSupplier,
+  type SupplierProcessRef
+} from "../app/modules/production/ui/Jobs/job-release-logic";
+import { makeToAssetReleaseError } from "../app/modules/production/production.models";
+
+const op = (
+  id: string,
+  jobMakeMethodId: string,
+  operationType = "Process",
+  operationSupplierProcessId: string | null = null
+) => ({ id, jobMakeMethodId, operationType, operationSupplierProcessId });
+
+describe("makeMethodsMissingOperations", () => {
+  it("flags the root and make-to-order sub-assemblies without operations", () => {
+    const materials = [
+      { jobMaterialMakeMethodId: "sub1", methodType: "Make to Order", kit: false },
+      { jobMaterialMakeMethodId: "sub2", methodType: "Make to Order", kit: false },
+      { jobMaterialMakeMethodId: null, methodType: "Pull from Inventory", kit: false }
+    ];
+    expect(
+      makeMethodsMissingOperations("root", materials, [op("o1", "sub1")]).sort()
+    ).toEqual(["root", "sub2"]);
+  });
+
+  it("does not require operations on kitted sub-assemblies", () => {
+    const materials = [
+      { jobMaterialMakeMethodId: "kit1", methodType: "Make to Order", kit: true }
+    ];
+    expect(
+      makeMethodsMissingOperations("root", materials, [op("o1", "root")])
+    ).toEqual([]);
+  });
+});
+
+describe("outsideOperationsNeedingPurchaseOrders", () => {
+  it("keeps outside operations with no PO line yet, supplier or not", () => {
+    const ops = [
+      op("a", "root", "Outside Processing", "sp1"),
+      op("b", "root", "Outside Processing", "sp2"),
+      op("c", "root", "Outside Processing", null),
+      op("d", "root", "Process", "sp3")
+    ];
+    expect(
+      outsideOperationsNeedingPurchaseOrders(ops, new Set(["b"])).map((o) => o.id)
+    ).toEqual(["a", "c"]);
+  });
+});
+
+describe("resolveOperationSupplier", () => {
+  const sp = (id: string, processId: string): SupplierProcessRef => ({
+    id,
+    supplierId: `sup-${id}`,
+    processId
+  });
+  const byId = new Map([["own", sp("own", "plating")]]);
+  const byProcess = new Map([
+    ["anodize", [sp("a1", "anodize")]],
+    ["heat", [sp("h1", "heat"), sp("h2", "heat")]]
+  ]);
+
+  it("uses the operation's own supplier process first", () => {
+    expect(
+      resolveOperationSupplier(
+        { operationSupplierProcessId: "own", processId: "heat" },
+        byId,
+        byProcess
+      )
+    ).toEqual({ supplierProcess: byId.get("own") });
+  });
+
+  it("falls back to the process's sole supplier", () => {
+    expect(
+      resolveOperationSupplier(
+        { operationSupplierProcessId: null, processId: "anodize" },
+        byId,
+        byProcess
+      )
+    ).toEqual({ supplierProcess: sp("a1", "anodize") });
+  });
+
+  it("asks for a choice when the process has several, and flags none", () => {
+    expect(
+      resolveOperationSupplier(
+        { operationSupplierProcessId: null, processId: "heat" },
+        byId,
+        byProcess
+      )
+    ).toEqual({ missing: "choose" });
+    expect(
+      resolveOperationSupplier(
+        { operationSupplierProcessId: null, processId: "paint" },
+        byId,
+        byProcess
+      )
+    ).toEqual({ missing: "none" });
+  });
+});
+
+describe("jobReleaseProblems", () => {
+  const ready = {
+    manufacturingBlocked: false,
+    missingAssemblies: [],
+    outsideOperationsWithoutSupplier: [],
+    materialsWithoutStorageUnit: []
+  };
+
+  it("finds nothing to fix on a job that is ready", () => {
+    expect(jobReleaseProblems(ready)).toEqual([]);
+  });
+
+  it("names every problem, assemblies together and operations one by one", () => {
+    expect(
+      jobReleaseProblems({
+        manufacturingBlocked: true,
+        missingAssemblies: [
+          { description: "Bracket" },
+          { description: "Housing" }
+        ],
+        outsideOperationsWithoutSupplier: [
+          { description: "Heat Treat", missing: "choose" },
+          { description: "Paint", missing: "none" }
+        ],
+        materialsWithoutStorageUnit: [
+          { description: "BOLT-10" },
+          { description: "NUT-10" }
+        ]
+      })
+    ).toEqual([
+      "manufacturing is blocked",
+      "no operations on Bracket, Housing",
+      "choose a supplier for Heat Treat on the job",
+      "Paint has no supplier",
+      "set a Pull From storage unit on BOLT-10; NUT-10"
+    ]);
+  });
+});
+
+describe("startingPurchaseOrders", () => {
+  it("starts every supplier on a new PO and asks for a choice when Drafts exist", () => {
+    const result = startingPurchaseOrders([
+      { supplierId: "s1", draftPurchaseOrders: [] },
+      { supplierId: "s2", draftPurchaseOrders: [{ id: "po-a" }] }
+    ]);
+    expect(result.purchaseOrders).toEqual({ s1: "new", s2: "new" });
+    expect([...result.suppliersToChoose]).toEqual(["s2"]);
+  });
+
+  it("keeps the PO an earlier slice created, with no choice to make", () => {
+    // Slice 1 created po-1 for s1; slice 2 now reads it as a Draft of s1.
+    const result = startingPurchaseOrders(
+      [{ supplierId: "s1", draftPurchaseOrders: [{ id: "po-1" }] }],
+      { carried: { s1: "po-1" } }
+    );
+    expect(result.purchaseOrders).toEqual({ s1: "po-1" });
+    expect(result.suppliersToChoose.size).toBe(0);
+  });
+
+  it("ignores a carried PO that is no longer a Draft of the supplier", () => {
+    const result = startingPurchaseOrders(
+      [{ supplierId: "s1", draftPurchaseOrders: [{ id: "po-other" }] }],
+      { carried: { s1: "po-1" } }
+    );
+    expect(result.purchaseOrders).toEqual({ s1: "new" });
+    expect([...result.suppliersToChoose]).toEqual(["s1"]);
+  });
+
+  it("takes a chosen Draft, and asks nobody once a choice is sent", () => {
+    const result = startingPurchaseOrders(
+      [
+        { supplierId: "s1", draftPurchaseOrders: [{ id: "po-a" }] },
+        { supplierId: "s2", draftPurchaseOrders: [{ id: "po-b" }] }
+      ],
+      { chosen: { s1: "po-a", s2: "po-not-a-draft" } }
+    );
+    expect(result.purchaseOrders).toEqual({ s1: "po-a", s2: "new" });
+    expect(result.suppliersToChoose.size).toBe(0);
+  });
+});
+
+describe("jobReleaseProblems with a long BoM", () => {
+  it("names the first five parts and counts the rest", () => {
+    expect(
+      jobReleaseProblems({
+        manufacturingBlocked: false,
+        missingAssemblies: [],
+        outsideOperationsWithoutSupplier: [],
+        materialsWithoutStorageUnit: Array.from({ length: 40 }, (_, i) => ({
+          description: `PART-${i + 1}`
+        }))
+      })
+    ).toEqual([
+      "set a Pull From storage unit on PART-1; PART-2; PART-3; PART-4; PART-5; and 35 more"
+    ]);
+  });
+});
+
+describe("jobReleaseProblems: what the job page also refuses", () => {
+  const base = {
+    manufacturingBlocked: false,
+    missingAssemblies: [],
+    outsideOperationsWithoutSupplier: [],
+    materialsWithoutStorageUnit: []
+  };
+
+  it("names a job with nothing to make and one that cannot complete to its asset", () => {
+    expect(
+      jobReleaseProblems({
+        ...base,
+        nothingToMake: true,
+        makeToAssetError: "Make to Asset needs a serialized item or a quantity of one"
+      })
+    ).toEqual([
+      "nothing to make",
+      "Make to Asset needs a serialized item or a quantity of one"
+    ]);
+  });
+});
+
+describe("materialsWithoutStorageUnit", () => {
+  const line = {
+    methodType: "Pull from Inventory",
+    itemType: "Part",
+    storageUnitId: null,
+    item: { itemTrackingType: "Inventory", readableIdWithRevision: "BOLT-10" }
+  };
+
+  it("names each part once, even when it is on several lines", () => {
+    expect(
+      materialsWithoutStorageUnit([
+        { ...line, id: "jm-1", description: "Bolt" },
+        { ...line, id: "jm-2", description: "Bolt" }
+      ])
+    ).toEqual([{ id: "jm-1", description: "BOLT-10" }]);
+  });
+
+  it("skips lines with a storage unit, built lines and non-stock items", () => {
+    expect(
+      materialsWithoutStorageUnit([
+        { ...line, id: "jm-1", description: "Bolt", storageUnitId: "bin-1" },
+        {
+          ...line,
+          id: "jm-2",
+          description: "Bracket",
+          methodType: "Make to Order"
+        },
+        {
+          ...line,
+          id: "jm-3",
+          description: "Paint",
+          item: { itemTrackingType: "Non-Inventory", readableIdWithRevision: "PAINT" }
+        }
+      ])
+    ).toEqual([]);
+  });
+
+  it("names a part whose bin is non-nettable, with the bin", () => {
+    expect(
+      materialsWithoutStorageUnit([
+        {
+          ...line,
+          id: "jm-1",
+          description: "Bolt",
+          storageUnitId: "mrb",
+          storageUnit: { name: "MRB-Hold", effectiveNettable: false }
+        },
+        {
+          ...line,
+          id: "jm-2",
+          description: "Nut",
+          storageUnitId: "bin-1",
+          storageUnit: { name: "A1", effectiveNettable: true },
+          item: { itemTrackingType: "Inventory", readableIdWithRevision: "NUT-10" }
+        }
+      ])
+    ).toEqual([
+      { id: "jm-1", description: "BOLT-10 (MRB-Hold is non-nettable)" }
+    ]);
+  });
+
+  it("falls back to the line description when the item has no readable id", () => {
+    expect(
+      materialsWithoutStorageUnit([
+        { ...line, id: "jm-1", description: "Bolt", item: null }
+      ])
+    ).toEqual([{ id: "jm-1", description: "Bolt" }]);
+  });
+});
+
+describe("makeToAssetReleaseError", () => {
+  it("is null for a job that does not complete to an asset", () => {
+    expect(makeToAssetReleaseError({ quantity: 3 })).toBeNull();
+  });
+
+  it("refuses an asset job on a sales order line, after the item rule", () => {
+    expect(
+      makeToAssetReleaseError({
+        fixedAssetId: "fa-1",
+        itemTrackingType: "Serial",
+        salesOrderLineId: "sol-1"
+      })
+    ).toBe("A job linked to a sales order line cannot complete to a fixed asset");
+    expect(
+      makeToAssetReleaseError({ fixedAssetClassId: "fac-1", salesOrderLineId: "sol-1" })
+    ).toBe("A job that completes to a fixed asset class needs a serialized item");
+  });
+});

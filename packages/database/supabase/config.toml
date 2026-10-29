@@ -112,7 +112,7 @@ subject = "You have been invited to Carbon"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.magic_link]
-subject = "Your Carbon Magic Link"
+subject = "Your Carbon sign-in code"
 content_path = "./supabase/templates/magic-link.html"
 
 
@@ -145,102 +145,6 @@ vector_port = 54328
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
 
-[functions.image-resizer]
-enabled = true
-verify_jwt = false
-
-[functions.logo-resizer]
-enabled = true
-verify_jwt = false
-
-[functions.sync]
-enabled = true
-verify_jwt = true
-
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/sync/*.html" ]
-
-[functions.post-sales-invoice]
-enabled = true
-verify_jwt = true
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/post-sales-invoice/*.html" ]
-
-
-[functions.pick]
-enabled = true
-verify_jwt = true
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/pick/index.ts"
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/pick/*.html" ]
-
-[functions.post-stock-transfer]
-enabled = true
-verify_jwt = true
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/post-stock-transfer/index.ts"
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/post-stock-transfer/*.html" ]
-
-[functions.post-picking]
-enabled = true
-verify_jwt = true
-entrypoint = "./functions/post-picking/index.ts"
-
-[functions.post-inventory-count]
-enabled = true
-verify_jwt = true
-entrypoint = "./functions/post-inventory-count/index.ts"
-
-[functions.post-inventory-adjustment]
-enabled = true
-verify_jwt = true
-entrypoint = "./functions/post-inventory-adjustment/index.ts"
-
-[functions.correct-stock-movement]
-enabled = true
-verify_jwt = true
-entrypoint = "./functions/correct-stock-movement/index.ts"
-
-[functions.post-nonconformance]
-enabled = true
-verify_jwt = true
-entrypoint = "./functions/post-nonconformance/index.ts"
-
-
-[functions.transcription]
-enabled = true
-verify_jwt = true
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/transcription/index.ts"
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/transcription/*.html" ]
-
-[functions.event-wake]
-enabled = true
-verify_jwt = true
-entrypoint = "./functions/event-wake/index.ts"
-
 [functions.embedding]
 enabled = true
 verify_jwt = true
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/embedding/index.ts"
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/embedding/*.html" ]
-
-[functions.assign-serial-numbers]
-enabled = true
-verify_jwt = true
-entrypoint = "./functions/assign-serial-numbers/index.ts"

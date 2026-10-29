@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -13,16 +17,17 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
-  toast,
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuAlignJustify,
   LuBookMarked,
@@ -38,7 +43,7 @@ import {
 } from "react-icons/lu";
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetArrow } from "react-icons/tb";
-import { Link, useFetcher, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   DateTime,
   EmployeeAvatar,
@@ -55,10 +60,11 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ConfirmDelete } from "~/components/Modals";
+import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
+import { useBulkFormAction } from "~/hooks/useBulkAction";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { methodType } from "~/modules/shared";
-import type { action } from "~/routes/x+/items+/update";
+import { methodType } from "~/modules/shared/shared.models";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { itemTrackingTypes } from "../../items.models";
@@ -68,10 +74,11 @@ type ConsumablesTableProps = {
   data: ConsumableListItem[];
   tags: { name: string }[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const ConsumablesTable = memo(
-  ({ data, count, tags }: ConsumablesTableProps) => {
+  ({ data, count, tags, infinite }: ConsumablesTableProps) => {
     const { t } = useLingui();
     const translateMethodType = useCallback(
       (v: string) =>
@@ -124,14 +131,20 @@ const ConsumablesTable = memo(
               <Hyperlink to={path.to.consumableDetails(row.original.id!)}>
                 <VStack spacing={0}>
                   {row.original.readableIdWithRevision}
-                  <div className="w-full truncate text-muted-foreground text-xs">
-                    {row.original.name}
-                  </div>
+                  {distinctItemText(
+                    row.original.readableIdWithRevision,
+                    row.original.name
+                  ) && (
+                    <div className="w-full truncate text-muted-foreground text-xs">
+                      {row.original.name}
+                    </div>
+                  )}
                 </VStack>
               </Hyperlink>
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />,
             // The accessor is the raw item id — export the readable id
             // the cell shows instead of a UUID.
@@ -152,6 +165,7 @@ const ConsumablesTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P3",
             icon: <LuAlignJustify />
           }
         },
@@ -202,6 +216,7 @@ const ConsumablesTable = memo(
             </VStack>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: methodType.map((value) => ({
@@ -429,13 +444,7 @@ const ConsumablesTable = memo(
       translateTrackingType
     ]);
 
-    const fetcher = useFetcher<typeof action>();
-    useEffect(() => {
-      if (fetcher.data?.error) {
-        toast.error(fetcher.data.error.message);
-      }
-    }, [fetcher.data]);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+    const { submit: submitBulk } = useBulkFormAction();
     const onBulkUpdate = useCallback(
       (
         selectedRows: typeof data,
@@ -444,25 +453,20 @@ const ConsumablesTable = memo(
           | "defaultMethodType"
           | "itemTrackingType"
           | "itemPostingGroupId",
-        value: string
+        value: string,
+        scope?: BulkActionScope
       ) => {
-        const formData = new FormData();
-        selectedRows.forEach((row) => {
-          if (row.id) formData.append("items", row.id);
-        });
-        formData.append("field", field);
-        formData.append("value", value);
-        fetcher.submit(formData, {
-          method: "post",
-          action: path.to.bulkUpdateItems
-        });
+        submitBulk(
+          path.to.bulkUpdateItems,
+          { scope, idsField: "items", ids: selectedRows.map((row) => row.id) },
+          { field, value }
+        );
       },
-
-      []
+      [submitBulk]
     );
 
     const renderActions = useCallback(
-      (selectedRows: typeof data) => {
+      (selectedRows: typeof data, scope?: BulkActionScope) => {
         return (
           <DropdownMenuContent align="end" className="min-w-[200px]">
             <DropdownMenuLabel>
@@ -483,7 +487,8 @@ const ConsumablesTable = memo(
                           onBulkUpdate(
                             selectedRows,
                             "itemPostingGroupId",
-                            group.value
+                            group.value,
+                            scope
                           )
                         }
                       >
@@ -503,7 +508,12 @@ const ConsumablesTable = memo(
                       <DropdownMenuItem
                         key={type}
                         onClick={() =>
-                          onBulkUpdate(selectedRows, "defaultMethodType", type)
+                          onBulkUpdate(
+                            selectedRows,
+                            "defaultMethodType",
+                            type,
+                            scope
+                          )
                         }
                       >
                         <DropdownMenuIcon icon={<MethodIcon type={type} />} />
@@ -523,7 +533,12 @@ const ConsumablesTable = memo(
                       <DropdownMenuItem
                         key={type}
                         onClick={() =>
-                          onBulkUpdate(selectedRows, "itemTrackingType", type)
+                          onBulkUpdate(
+                            selectedRows,
+                            "itemTrackingType",
+                            type,
+                            scope
+                          )
                         }
                       >
                         <DropdownMenuIcon
@@ -550,11 +565,15 @@ const ConsumablesTable = memo(
     const renderContextMenu = useMemo(() => {
       return (row: ConsumableListItem) => (
         <>
-          <MenuItem onClick={() => navigate(path.to.consumable(row.id!))}>
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
+            onClick={() => navigate(path.to.consumable(row.id!))}
+          >
             <MenuIcon icon={<LuPencil />} />
             Edit ConsumableListItem
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={!permissions.can("delete", "parts")}
             destructive
             onClick={() => {
@@ -575,6 +594,7 @@ const ConsumablesTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infinite={infinite}
           defaultColumnPinning={{
             left: ["id"]
           }}
@@ -595,7 +615,12 @@ const ConsumablesTable = memo(
           primaryAction={
             permissions.can("create", "parts") && (
               <div className="flex items-center gap-2">
-                <Button variant="secondary" leftIcon={<LuGroup />} asChild>
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuGroup />}
+                  className="max-md:hidden"
+                  asChild
+                >
                   <Link to={path.to.itemPostingGroups}>
                     <Trans>Item Groups</Trans>
                   </Link>

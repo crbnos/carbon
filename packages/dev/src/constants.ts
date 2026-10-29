@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /** File names + paths used across the CLI. */
 // Relative to the repo root (the cwd the CLI runs docker from). Compose is
 // always invoked with `--project-directory .` so the file's `./packages/...`
@@ -21,6 +25,11 @@ export const APP_CHOICES = [
     value: "email",
     label: "Email previews",
     hint: "react-email server for every email template"
+  },
+  {
+    value: "studio",
+    label: "Studio",
+    hint: "Supabase dashboard for the local database"
   }
 ] as const;
 export type AppId = (typeof APP_CHOICES)[number]["value"];

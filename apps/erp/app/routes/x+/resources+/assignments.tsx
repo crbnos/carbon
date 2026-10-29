@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -5,10 +9,13 @@ import {
   Badge,
   BarProgress,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
+  RecordOutlet,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -26,19 +33,10 @@ import {
   LuUsers
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  Link,
-  Outlet,
-  redirect,
-  useFetcher,
-  useLoaderData
-} from "react-router";
+import { Link, useFetcher, useLoaderData } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
-import {
-  getTrainingAssignmentSummary,
-  getTrainingAssignments
-} from "~/modules/resources";
+import { getTrainingAssignmentSummary } from "~/modules/resources/resources.service";
 import type { TrainingAssignmentSummaryItem } from "~/modules/resources/types";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -54,10 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     role: "employee"
   });
 
-  const [summary, assignments] = await Promise.all([
-    getTrainingAssignmentSummary(client, companyId),
-    getTrainingAssignments(client, companyId)
-  ]);
+  const summary = await getTrainingAssignmentSummary(client, companyId);
 
   if (summary.error) {
     throw redirect(
@@ -69,32 +64,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  // Create a map of trainingId to assignment id for edit/delete links
-  const assignmentsByTraining = (assignments.data ?? []).reduce(
-    (acc, assignment) => {
-      if (!acc[assignment.trainingId]) {
-        acc[assignment.trainingId] = [];
-      }
-      acc[assignment.trainingId].push(assignment.id);
-      return acc;
-    },
-    {} as Record<string, string[]>
-  );
-
   return {
-    summary: (summary.data ?? []) as TrainingAssignmentSummaryItem[],
-    assignmentsByTraining
+    summary: (summary.data ?? []) as TrainingAssignmentSummaryItem[]
   };
 }
 
 const TrainingAssignmentsTable = memo(
-  ({
-    data,
-    assignmentsByTraining
-  }: {
-    data: TrainingAssignmentSummaryItem[];
-    assignmentsByTraining: Record<string, string[]>;
-  }) => {
+  ({ data }: { data: TrainingAssignmentSummaryItem[] }) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const fetcher = useFetcher();
@@ -105,12 +81,22 @@ const TrainingAssignmentsTable = memo(
           header: t`Training`,
           cell: ({ row }) => (
             <Hyperlink
-              to={path.to.trainingAssignmentDetail(row.original.trainingId)}
+              to={path.to.trainingAssignmentDetail(
+                row.original.trainingAssignmentId
+              )}
             >
-              {row.original.trainingName}
+              <HStack spacing={2}>
+                <span>{row.original.trainingName}</span>
+                {row.original.isExternal && (
+                  <Badge variant="outline">
+                    <Trans>External</Trans>
+                  </Badge>
+                )}
+              </HStack>
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookOpen />
           }
         },
@@ -129,6 +115,7 @@ const TrainingAssignmentsTable = memo(
           header: t`Period`,
           cell: ({ row }) => row.original.currentPeriod ?? "-",
           meta: {
+            mobile: "P3",
             icon: <LuClock />
           }
         },
@@ -202,6 +189,7 @@ const TrainingAssignmentsTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuChartColumnIncreasing />
           }
         }
@@ -211,23 +199,18 @@ const TrainingAssignmentsTable = memo(
 
     const renderContextMenu = useMemo(() => {
       return (row: TrainingAssignmentSummaryItem) => {
-        const assignmentIds = assignmentsByTraining[row.trainingId] ?? [];
-        // If there are multiple assignments for this training, we need a different approach
-        // For now, we'll use the first one (or show nothing if no assignments)
-        const assignmentId = assignmentIds[0];
-
-        if (!assignmentId) return null;
+        const assignmentId = row.trainingAssignmentId;
 
         return (
           <>
-            <MenuItem asChild>
-              <Link to={path.to.trainingAssignmentDetail(row.trainingId)}>
+            <MenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
+              <Link to={path.to.trainingAssignmentDetail(assignmentId)}>
                 <MenuIcon icon={<LuEye />} />
                 <Trans>View Status</Trans>
               </Link>
             </MenuItem>
             {permissions.can("update", "resources") && (
-              <MenuItem asChild>
+              <MenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
                 <Link to={path.to.trainingAssignment(assignmentId)}>
                   <MenuIcon icon={<LuPencil />} />
                   <Trans>Edit Assignment</Trans>
@@ -250,7 +233,7 @@ const TrainingAssignmentsTable = memo(
           </>
         );
       };
-    }, [assignmentsByTraining, permissions, fetcher]);
+    }, [permissions, fetcher]);
 
     return (
       <Table<TrainingAssignmentSummaryItem>
@@ -273,15 +256,12 @@ const TrainingAssignmentsTable = memo(
 TrainingAssignmentsTable.displayName = "TrainingAssignmentsTable";
 
 export default function TrainingAssignmentsRoute() {
-  const { summary, assignmentsByTraining } = useLoaderData<typeof loader>();
+  const { summary } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <TrainingAssignmentsTable
-        data={summary}
-        assignmentsByTraining={assignmentsByTraining}
-      />
-      <Outlet />
+      <TrainingAssignmentsTable data={summary} />
+      <RecordOutlet />
     </VStack>
   );
 }

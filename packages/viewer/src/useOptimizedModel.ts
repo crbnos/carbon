@@ -1,7 +1,9 @@
-import {
-  MODEL_RAW_KEEP_MAX_BYTES,
-  modelPathOptimizeFormat
-} from "@carbon/utils";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { modelPathOptimizeFormat } from "@carbon/files/cad";
+import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isRawRenderable } from "./raw/formats";
@@ -18,6 +20,10 @@ export type ModelArtifacts = {
   lodPath: string | null;
   glbPath: string | null;
   thumbnailPath: string | null;
+  /** The model's `pmi.json` (PMI read from a STEP AP242 source by the
+   *  optimise ingest), or null when the model has none. Absent (older
+   *  server) → treat as null. */
+  pmiPath?: string | null;
   /** Raw upload (non-`.zst`) for the viewer's WASM fallback tier, with its
    *  resolved bucket (temp-staging for current uploads, private for old rows). */
   rawPath: string | null;

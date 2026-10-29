@@ -1,63 +1,49 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import {
   computeReportPeriodBuckets,
   datetime,
-  defaultReportRange
+  defaultReportRange,
+  redirect
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
-import type { ChartPeriodSeries } from "~/modules/accounting";
+import { useLoaderData } from "react-router";
+import { financialReportParamsValidator } from "~/modules/accounting/accounting.models";
 import {
-  financialReportParamsValidator,
+  applyCtaToReportPeriodSeriesForReport,
   getCompaniesInGroup,
+  getConsolidatedPeriodSeriesForReport,
   getFinancialStatementPeriodSeries,
   getFiscalYearSettings
-} from "~/modules/accounting";
-import { getConsolidatedPeriodSeriesForReport } from "~/modules/accounting/accounting.ee.server";
+} from "~/modules/accounting/accounting.service";
+import { selectReportCompanyIds } from "~/modules/accounting/accounting.utils";
 import {
   exportPeriodReport,
   getPeriodColumnLabel,
   MultiPeriodStatementTree,
   ReportFilters
 } from "~/modules/accounting/ui/Reports";
-import { months } from "~/modules/shared";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { months } from "~/modules/shared/shared.models";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { revalidateIgnoringOffset } from "~/utils/revalidate";
+import { revalidateOnSearchChange } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Balance Sheet`,
   to: path.to.balanceSheet
 };
 
-export const shouldRevalidate = revalidateIgnoringOffset;
-
-const CTA_RESERVES_ACCOUNT_NUMBER = "3200";
-
-function applyCtaByBucket(
-  accounts: ChartPeriodSeries[],
-  ctaByBucket: Record<string, number>
-) {
-  const ctaAccount = accounts.find(
-    (a) => a.number === CTA_RESERVES_ACCOUNT_NUMBER
-  );
-  if (!ctaAccount) return;
-  for (const [key, cta] of Object.entries(ctaByBucket)) {
-    const cell = ctaAccount.periods[key];
-    if (!cell) continue;
-    ctaAccount.periods[key] = {
-      ...cell,
-      translatedBalance: (cell.translatedBalance ?? 0) + cta
-    };
-  }
-}
+export const shouldRevalidate = revalidateOnSearchChange;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -91,16 +77,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
   const fiscalStartMonth =
     months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1;
+  if (companies.error) {
+    throw redirect(
+      path.to.accounting,
+      await flash(
+        request,
+        error(companies.error, "Failed to load report companies")
+      )
+    );
+  }
   const companiesList = companies.data ?? [];
   const parentCompany = companiesList.find((c) => !c.parentCompanyId);
   const parentCurrency = parentCompany?.baseCurrencyCode ?? null;
 
-  const selectedCompanyIds =
-    companiesParam === "all"
-      ? companiesList.map((c) => c.id)
-      : companiesParam
-        ? [companiesParam]
-        : [companyId];
+  const selectedCompanyIds = selectReportCompanyIds(
+    companiesParam,
+    companiesList.map((c) => c.id),
+    companyId
+  );
+  if (!selectedCompanyIds) {
+    throw new Response("Company not found", { status: 404 });
+  }
   const isMultiCompany = selectedCompanyIds.length > 1;
 
   // Default range: last 6 months to date (in the company's business timezone) —
@@ -141,10 +138,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
 
-    const balanceSheetAccounts = consolidated.data.filter(
+    const adjusted = await applyCtaToReportPeriodSeriesForReport(
+      request,
+      parentCompany!.id,
+      {
+        accounts: consolidated.data,
+        bucketKeys: buckets.map((bucket) => bucket.key),
+        ctaByBucket: consolidated.ctaByBucket
+      }
+    );
+    if (adjusted.error || !adjusted.data) {
+      throw redirect(
+        path.to.accounting,
+        await flash(
+          request,
+          error(
+            adjusted.error,
+            adjusted.error?.message ?? "Failed to apply currency translation"
+          )
+        )
+      );
+    }
+    const balanceSheetAccounts = adjusted.data.filter(
       (a) => a.incomeBalance === "Balance Sheet"
     );
-    applyCtaByBucket(balanceSheetAccounts, consolidated.ctaByBucket);
 
     return {
       balanceSheet: balanceSheetAccounts,
@@ -189,12 +206,34 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const balanceSheetAccounts = (series.data ?? []).filter(
+  let accounts = series.data ?? [];
+  if (showTranslated) {
+    const adjusted = await applyCtaToReportPeriodSeriesForReport(
+      request,
+      parentCompany!.id,
+      {
+        accounts,
+        bucketKeys: buckets.map((bucket) => bucket.key),
+        ctaByBucket: series.ctaByBucket
+      }
+    );
+    if (adjusted.error || !adjusted.data) {
+      throw redirect(
+        path.to.accounting,
+        await flash(
+          request,
+          error(
+            adjusted.error,
+            adjusted.error?.message ?? "Failed to apply currency translation"
+          )
+        )
+      );
+    }
+    accounts = adjusted.data;
+  }
+  const balanceSheetAccounts = accounts.filter(
     (a) => a.incomeBalance === "Balance Sheet"
   );
-  if (showTranslated) {
-    applyCtaByBucket(balanceSheetAccounts, series.ctaByBucket);
-  }
 
   return {
     balanceSheet: balanceSheetAccounts,
@@ -265,7 +304,7 @@ export default function BalanceSheetRoute() {
         search={search}
         ledgerPath={path.to.balanceSheetLedger}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

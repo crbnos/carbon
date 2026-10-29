@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import raw from "./api-data.generated";
 import type { ApiData, ApiModule, ApiResource } from "./api-types";
 
@@ -22,7 +26,7 @@ export function allResourceParams(): { module: string; resource: string }[] {
 export const firstResourcePath: string = (() => {
   const m = apiModules[0];
   const r = m?.resources[0];
-  return m && r ? `/api-reference/${m.slug}/${r.slug}` : "/api-reference";
+  return m && r ? `/api/data/${m.slug}/${r.slug}` : "/api/data";
 })();
 
 // Slim nav tree (no code samples) for the sidebar.

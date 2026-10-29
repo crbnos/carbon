@@ -1,16 +1,24 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Body,
-  Button,
   Container,
   Heading,
   Link,
   Preview,
   Section,
   Text
-} from "@react-email/components";
+} from "react-email";
+import { Button } from "./components/Button";
 import { Logo } from "./components/Logo";
 import { notificationStyles } from "./components/notificationStyles";
-import { EmailThemeProvider, getEmailThemeClasses } from "./components/Theme";
+import {
+  EmailThemeProvider,
+  getEmailThemeClasses,
+  HeadStyle
+} from "./components/Theme";
 
 interface Props {
   recipientName?: string;
@@ -32,7 +40,7 @@ export const MfaEnabledEmail = ({
       preview={
         <Preview>Two-factor authentication is on for your account</Preview>
       }
-      additionalHeadContent={<style>{notificationStyles}</style>}
+      additionalHeadContent={<HeadStyle css={notificationStyles} />}
     >
       <Body
         className={`my-auto mx-auto font-sans nf-body ${themeClasses.body}`}
@@ -108,28 +116,7 @@ export const MfaEnabledEmail = ({
           </Section>
 
           <Section className="text-center mb-[24px]">
-            <Button
-              href={securityUrl}
-              className="nf-cta"
-              style={{
-                backgroundColor: "#0e0e0e",
-                borderColor: "#0e0e0e",
-                borderRadius: 10,
-                borderStyle: "solid",
-                borderWidth: 1,
-                color: "#ffffff",
-                display: "inline-block",
-                fontSize: 14,
-                fontWeight: 500,
-                padding: "13px 24px",
-                textAlign: "center",
-                textDecoration: "none"
-              }}
-            >
-              <span style={{ verticalAlign: "middle" }}>
-                Review security settings
-              </span>
-            </Button>
+            <Button href={securityUrl}>Review security settings</Button>
           </Section>
 
           <Text

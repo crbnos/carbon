@@ -1,12 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useLocalStorage, VStack } from "@carbon/react";
+import { RecordOutlet, useLocalStorage, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useCallback, useMemo, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
-import { getPickingSchedule } from "~/modules/inventory";
+import { useLoaderData } from "react-router";
+import { getPickingSchedule } from "~/modules/inventory/inventory.service";
 import type {
   PickingDisplaySettings,
   PickingScheduleItem
@@ -16,8 +21,8 @@ import {
   PickingKanban,
   PickingListsHeader
 } from "~/modules/inventory/ui/PickingLists";
-import { getLocationsList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { makeDurations } from "~/utils/duration";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -111,7 +116,13 @@ export default function PickingScheduleRoute() {
     [pickingSchedule]
   );
 
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [picked, setSelectedIds] = useState<Set<string>>(new Set());
+  // Only what is still on the board: an operation another user has since put
+  // on a list must not be counted or submitted.
+  const selectedIds = useMemo(() => {
+    const onBoard = new Set(data.map((op) => op.jobOperationId));
+    return new Set([...picked].filter((id) => onBoard.has(id)));
+  }, [picked, data]);
 
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -145,7 +156,7 @@ export default function PickingScheduleRoute() {
         selectedIds={selectedIds}
         onToggle={toggleSelection}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

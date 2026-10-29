@@ -1,4 +1,14 @@
-import { Avatar, HStack, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Avatar,
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -7,17 +17,20 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Partner } from "~/modules/resources";
+import type { Partner } from "~/modules/resources/types";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
 type PartnersTableProps = {
   data: Partner[];
   count: number;
+  // The loader read SINGLE_LOAD_LIMIT rows: more may match.
+  isTruncated?: boolean;
   // abilities: Partial<Ability>[];
 };
 
-const PartnersTable = memo(({ data, count }: PartnersTableProps) => {
+const PartnersTable = memo((props: PartnersTableProps) => {
+  const { data, count, isTruncated } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -45,6 +58,7 @@ const PartnersTable = memo(({ data, count }: PartnersTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           filter: {
             type: "static",
             options: suppliers.map((supplier) => ({
@@ -56,7 +70,8 @@ const PartnersTable = memo(({ data, count }: PartnersTableProps) => {
       },
       {
         header: t`Location`,
-        cell: ({ row }) => `${row.original.city}, ${row.original.state}`
+        cell: ({ row }) => `${row.original.city}, ${row.original.state}`,
+        meta: { mobile: "P3" }
       },
       // {
       //   accessorKey: "abilityName",
@@ -75,7 +90,8 @@ const PartnersTable = memo(({ data, count }: PartnersTableProps) => {
       {
         accessorKey: "hoursPerWeek",
         header: t`Hours per Week`,
-        cell: (item) => item.getValue()
+        cell: (item) => item.getValue(),
+        meta: { mobile: "P2" }
       }
     ];
 
@@ -87,6 +103,7 @@ const PartnersTable = memo(({ data, count }: PartnersTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(
                 `${path.to.partner(
@@ -100,6 +117,7 @@ const PartnersTable = memo(({ data, count }: PartnersTableProps) => {
             <Trans>Edit Partner</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {
@@ -123,6 +141,7 @@ const PartnersTable = memo(({ data, count }: PartnersTableProps) => {
     <Table<Partner>
       data={data}
       count={count}
+      isTruncated={isTruncated}
       columns={columns}
       primaryAction={
         permissions.can("create", "resources") && (

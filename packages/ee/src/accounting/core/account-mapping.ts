@@ -1,7 +1,10 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import type z from "zod";
-import type { ExternalIntegrationMapping } from "./external-mapping";
 import { createMappingService } from "./external-mapping";
 import type {
   ProviderChartAccountSchema,
@@ -75,7 +78,7 @@ export interface MappableChartAccount {
 
 /**
  * A proposed (not written) match between a Carbon account and a provider
- * account. The UI confirms proposals and calls upsertAccountMapping.
+ * account. The UI confirms proposals and calls upsertAccountMappings.
  */
 export interface AccountMatchProposal {
   accountId: string;
@@ -90,7 +93,7 @@ function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-async function getCompanyGroupId(
+export async function getCompanyGroupId(
   db: Db,
   companyId: string
 ): Promise<string | null> {
@@ -319,38 +322,66 @@ export async function loadAccountCodesById(
 }
 
 /**
- * Upsert an account mapping (Carbon account.id → provider account id).
- * externalCode/externalName go into the mapping metadata for display.
- * Consolidation is a legitimate many-to-one: several Carbon detail
- * accounts may map to a single provider account, so duplicate external
- * ids are allowed.
+ * Upsert account mappings (Carbon account.id → provider account id), all or
+ * none. externalCode/externalName go into the mapping metadata for display.
+ * Consolidation is a legitimate many-to-one: several Carbon detail accounts
+ * may map to a single provider account, so duplicate external ids are
+ * allowed. Returns the number of mappings written.
  */
-export async function upsertAccountMapping(
+export async function upsertAccountMappings(
   db: Db,
-  args: UpsertAccountMappingInput
-): Promise<{ data: ExternalIntegrationMapping | null; error: string | null }> {
+  args: {
+    companyId: string;
+    integration: string;
+    userId: string;
+    mappings: Array<
+      Pick<
+        UpsertAccountMappingInput,
+        "accountId" | "externalId" | "externalCode" | "externalName"
+      >
+    >;
+  }
+): Promise<{ data: number | null; error: string | null }> {
+  if (args.mappings.length === 0) return { data: 0, error: null };
+
   try {
-    const mappingService = createMappingService(db, args.companyId);
+    // The account ids come from the caller (form fields on the mapping tab),
+    // and this Kysely client bypasses RLS. Accounts are company-group scoped:
+    // refuse any from outside the caller's group, whose number and name the
+    // mapping list would otherwise display.
+    const accountIds = [
+      ...new Set(args.mappings.map((mapping) => mapping.accountId))
+    ];
+    const companyGroupId = await getCompanyGroupId(db, args.companyId);
+    const accounts = companyGroupId
+      ? await db
+          .selectFrom("account")
+          .select("id")
+          .where("id", "in", accountIds)
+          .where("companyGroupId", "=", companyGroupId)
+          .execute()
+      : [];
+    const found = new Set(accounts.map((account) => account.id));
+    const missing = accountIds.filter((id) => !found.has(id));
+    if (missing.length > 0) {
+      return { data: null, error: `Account ${missing.join(", ")} not found` };
+    }
 
-    await mappingService.link(
-      ACCOUNT_MAPPING_ENTITY_TYPE,
-      args.accountId,
-      args.integration,
-      args.externalId,
-      {
-        metadata: buildAccountMappingMetadata(args),
-        createdBy: args.userId,
-        allowDuplicateExternalId: true
-      }
+    await createMappingService(db, args.companyId).linkBatch(
+      args.mappings.map((mapping) => ({
+        entityType: ACCOUNT_MAPPING_ENTITY_TYPE,
+        entityId: mapping.accountId,
+        integration: args.integration,
+        externalId: mapping.externalId,
+        options: {
+          metadata: buildAccountMappingMetadata(mapping),
+          createdBy: args.userId,
+          allowDuplicateExternalId: true
+        }
+      }))
     );
 
-    const data = await mappingService.getByEntity(
-      ACCOUNT_MAPPING_ENTITY_TYPE,
-      args.accountId,
-      args.integration
-    );
-
-    return { data, error: null };
+    return { data: args.mappings.length, error: null };
   } catch (err) {
     return { data: null, error: toErrorMessage(err) };
   }
@@ -477,12 +508,86 @@ export async function getFullChartMappableAccounts(
 }
 
 /**
+ * The accounts a company must map before an accounting integration may sync:
+ * every accountDefault posting account plus every Expense account (any
+ * Expense account can be charged directly on a PO G/L-account line). The
+ * Account Mapping tab badges exactly this set as Required.
+ */
+export function selectRequiredMappingAccountIds(
+  accountDefaultIds: string[],
+  chart: Pick<MappableChartAccount, "id" | "class">[]
+): string[] {
+  return [
+    ...new Set([
+      ...accountDefaultIds,
+      ...chart
+        .filter((account) => account.class === "Expense")
+        .map((account) => account.id)
+    ])
+  ];
+}
+
+/**
+ * Required accounts (selectRequiredMappingAccountIds) in the active chart that
+ * have no provider account yet. Turning sync on is refused while any remain.
+ */
+export function selectUnmappedRequiredAccounts(args: {
+  accountDefaultIds: string[];
+  chart: MappableChartAccount[];
+  mappedAccountIds: Set<string>;
+}): UnmappedPostingAccount[] {
+  const required = new Set(
+    selectRequiredMappingAccountIds(args.accountDefaultIds, args.chart)
+  );
+  return args.chart
+    .filter(
+      (account) =>
+        required.has(account.id) && !args.mappedAccountIds.has(account.id)
+    )
+    .map(({ id, number, name }) => ({ id, number, name }));
+}
+
+export async function getUnmappedRequiredAccounts(
+  db: Db,
+  args: { companyId: string; integration: string }
+): Promise<{ data: UnmappedPostingAccount[] | null; error: string | null }> {
+  try {
+    const [accountDefaultIds, chart, mappedRows] = await Promise.all([
+      loadAccountDefaultAccountIds(db, args.companyId),
+      getFullChartMappableAccounts(db, { companyId: args.companyId }),
+      db
+        .selectFrom("externalIntegrationMapping")
+        .select("entityId")
+        .where("entityType", "=", ACCOUNT_MAPPING_ENTITY_TYPE)
+        .where("integration", "=", args.integration)
+        .where("companyId", "=", args.companyId)
+        .where("externalId", "is not", null)
+        .execute()
+    ]);
+    if (chart.error || !chart.data) {
+      return { data: null, error: chart.error ?? "Failed to load accounts" };
+    }
+
+    return {
+      data: selectUnmappedRequiredAccounts({
+        accountDefaultIds,
+        chart: chart.data,
+        mappedAccountIds: new Set(mappedRows.map((row) => row.entityId))
+      }),
+      error: null
+    };
+  } catch (err) {
+    return { data: null, error: toErrorMessage(err) };
+  }
+}
+
+/**
  * Propose (not write) exact matches between Carbon account numbers and the
  * provider's chart-of-accounts codes across the FULL chart of accounts — every
  * active, non-group, numbered account without an existing mapping (widened from
  * the accountDefault-only set so an arbitrary account can be matched too). The
  * proposer already excludes already-mapped Carbon ids and already-used external
- * ids; the UI confirms each proposal and calls upsertAccountMapping.
+ * ids; the UI confirms each proposal and calls upsertAccountMappings.
  */
 export async function matchAccountsByCode(
   db: Db,

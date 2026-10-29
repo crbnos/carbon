@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { PairEntry, ValueOrRef } from "@carbon/ee/workflows";
 import { Button, cn, IconButton, Input } from "@carbon/react";
-import type { PairEntry, ValueOrRef } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import { LuPlus, LuX } from "react-icons/lu";
@@ -21,6 +25,8 @@ export function PairsField({
   label,
   required,
   helpTermId,
+  help,
+  hint,
   value,
   onChange,
   context,
@@ -56,13 +62,14 @@ export function PairsField({
       label={label}
       required={required}
       helpTermId={helpTermId}
+      help={help}
       issue={issue}
+      hint={hint}
     >
       <div className="flex w-full min-w-0 flex-col gap-2">
         {entries.map((entry, index) => {
           const rowIssue = partIssues?.[index];
           return (
-            // biome-ignore lint/suspicious/noArrayIndexKey: rows have no stable id
             <div key={index} className="flex w-full min-w-0 flex-col gap-1">
               <div className="flex w-full min-w-0 items-start gap-1">
                 <Input

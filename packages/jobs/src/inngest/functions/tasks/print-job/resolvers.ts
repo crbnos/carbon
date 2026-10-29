@@ -1,18 +1,28 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
+import { type KanbanLabelAction, kanbanLabelCode } from "@carbon/documents/zpl";
 import { ERP_URL } from "@carbon/env";
 import type { ProductLabelItem } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type KanbanCardItem = {
   id: string;
+  /** The card's one action: Create, Start or Complete. */
+  action: KanbanLabelAction;
+  kanbanId: string | null;
   kanbanUrl: string;
   itemId: string;
   itemName: string;
   locationName: string;
   storageUnitId: string | null;
   storageUnitName: string | null;
+  fromStorageUnitName: string | null;
   supplierName: string | null;
   quantity: number;
+  replenishmentLevel: number | null;
   unitOfMeasureCode: string | null;
   thumbnailPath: string | null;
 };
@@ -62,25 +72,36 @@ export async function resolveKanbanData(
 
   if (!kanban) return null;
 
-  const kanbanUrl = `${ERP_URL ?? ""}/api/kanban/${sourceDocumentId}`;
+  // One card per action, never several codes on one card: a Make kanban
+  // prints its Create, Start and Complete cards; Buy and Transfer only Create.
+  const actions: KanbanLabelAction[] =
+    kanban.replenishmentSystem === "Make"
+      ? ["order", "start", "complete"]
+      : ["order"];
 
   return {
-    items: [
-      {
-        id: sourceDocumentId,
-        kanbanUrl,
-        itemId: kanban.readableIdWithRevision || kanban.itemId || "",
-        itemName: kanban.name || "",
-        locationName: kanban.locationName || "",
-        storageUnitId: kanban.storageUnitId,
-        storageUnitName: kanban.storageUnitName,
-        supplierName: kanban.supplierName,
-        quantity: kanban.quantity ?? 0,
-        unitOfMeasureCode: kanban.purchaseUnitOfMeasureCode,
-        thumbnailPath: kanban.thumbnailPath
-      }
-    ],
-    readableId: kanban.readableIdWithRevision ?? null
+    items: actions.map((action) => ({
+      id: sourceDocumentId,
+      action,
+      kanbanId: kanban.kanbanId,
+      kanbanUrl: kanbanLabelCode(
+        { id: sourceDocumentId },
+        ERP_URL ?? "",
+        action
+      ).url,
+      itemId: kanban.readableIdWithRevision || kanban.itemId || "",
+      itemName: kanban.name || "",
+      locationName: kanban.locationName || "",
+      storageUnitId: kanban.storageUnitId,
+      storageUnitName: kanban.storageUnitName,
+      fromStorageUnitName: kanban.fromStorageUnitName,
+      supplierName: kanban.supplierName,
+      quantity: kanban.quantity ?? 0,
+      replenishmentLevel: kanban.replenishmentLevel ?? null,
+      unitOfMeasureCode: kanban.purchaseUnitOfMeasureCode,
+      thumbnailPath: kanban.thumbnailPath
+    })),
+    readableId: kanban.kanbanId ?? kanban.readableIdWithRevision ?? null
   };
 }
 
@@ -149,6 +170,7 @@ async function queryTrackedEntities(
           "jobMakeMethodId, ...jobMakeMethod(...item(readableIdWithRevision))"
         )
         .eq("id", sourceDocumentId)
+        .eq("companyId", companyId)
         .single();
 
       if (!jobOperation?.jobMakeMethodId)
@@ -158,7 +180,12 @@ async function queryTrackedEntities(
         .from("trackedEntity")
         .select("*")
         .eq("attributes->>Job Make Method", jobOperation?.jobMakeMethodId)
-        .order("createdAt", { ascending: true });
+        .eq("companyId", companyId)
+        // Unit-axis order (see MES getTrackedEntitiesByMakeMethodId), so
+        // labels print in serial order even for serials minted together.
+        .order("createdAt", { ascending: true })
+        .order("readableId", { ascending: true })
+        .order("id", { ascending: true });
 
       return {
         trackedEntities,

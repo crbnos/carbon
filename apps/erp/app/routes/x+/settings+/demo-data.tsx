@@ -1,26 +1,33 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Settings → Demo Data (apply an industry demo dataset, keep it or revert).
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { DATASETS, datasetKeys } from "@carbon/database/datasets";
-import { Heading, VStack } from "@carbon/react";
+import { useRevalidator } from "@carbon/query";
+import { toast, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useRevalidator } from "react-router";
-import type { CompanyTemplateRun } from "~/modules/settings";
-import { getCompanyTemplateRun } from "~/modules/settings";
+import { data, useFetcher, useLoaderData } from "react-router";
+import { SettingsPageHeading } from "~/components/SettingsPage";
+import type { CompanyTemplateRun } from "~/modules/settings/backups.service";
+import { getCompanyTemplateRun } from "~/modules/settings/backups.service";
 import {
   finalizeCompanyTemplate,
+  purgeCorruptedRows,
   revertCompanyTemplate,
   startCompanyTemplate
-} from "~/modules/settings/demoData.server";
+} from "~/modules/settings/settings.service";
 import {
   TemplateCards,
   TemplateReviewRow
 } from "~/modules/settings/ui/DemoData";
-import { canAccessBackups } from "~/utils/backups";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export const handle = {
@@ -28,20 +35,10 @@ export const handle = {
   to: path.to.demoData
 };
 
-function requireDemoDataAccess(email: string | null) {
-  // Same gate as Backups: this replaces a company's data wholesale and carries
-  // the same unhardened multi-tenant caveats, so it stays internal-only in real
-  // deployments and open to everyone on a local dev stack.
-  if (!canAccessBackups(email)) {
-    throw redirect(path.to.settings);
-  }
-}
-
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "settings"
   });
-  requireDemoDataAccess(email);
 
   const run = await getCompanyTemplateRun(client, companyId);
 
@@ -58,13 +55,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId, email } = await requirePermissions(
-    request,
-    {
-      update: "settings"
-    }
-  );
-  requireDemoDataAccess(email);
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "settings"
+  });
 
   const formData = await request.formData();
   const intent = formData.get("intent");
@@ -149,6 +142,69 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     }
 
+    // Mirrors Backups' purgeAndRestore. No finalize first: apply overwrites a
+    // failed marker, and a snapshot-guard failure never recorded a snapshot.
+    case "purgeAndApply": {
+      const datasetKey = String(formData.get("datasetKey") ?? "");
+      const current = await getCompanyTemplateRun(client, companyId);
+      const failed = current.data;
+      if (
+        !failed ||
+        !templateRunId ||
+        failed.templateRunId !== templateRunId ||
+        failed.status !== "failed" ||
+        failed.reason !== "scope-violations" ||
+        failed.datasetKey !== datasetKey ||
+        !datasetKeys().includes(datasetKey as never)
+      ) {
+        return {
+          success: false,
+          message: "This demo data change can't be retried this way"
+        };
+      }
+
+      // The delete commits on its own; the apply is enqueued after. Two steps,
+      // not one transaction, so the messages say WHICH half happened.
+      let deleted: Array<{ table: string; rows: number }>;
+      try {
+        ({ deleted } = await purgeCorruptedRows(
+          getDatabaseClient(),
+          companyId
+        ));
+      } catch (err) {
+        return {
+          success: false,
+          message:
+            err instanceof Error
+              ? err.message
+              : "Failed to remove corrupted data — nothing was deleted"
+        };
+      }
+
+      const rows = deleted.reduce((sum, d) => sum + d.rows, 0);
+      try {
+        const startedRunId = await startCompanyTemplate({
+          companyId,
+          userId,
+          datasetKey
+        });
+        return {
+          success: true,
+          message: `Removed ${rows} row${rows === 1 ? "" : "s"} — applying demo data`,
+          templateRunId: startedRunId
+        };
+      } catch (err) {
+        return {
+          success: false,
+          message:
+            `Removed ${rows} row${rows === 1 ? "" : "s"}, but the demo data did not start` +
+            ` — apply it again. (${
+              err instanceof Error ? err.message : "unknown error"
+            })`
+        };
+      }
+    }
+
     default:
       return { success: false, message: "Unknown action" };
   }
@@ -167,13 +223,16 @@ export default function DemoDataRoute() {
   // marker written yet — without this the button's spinner vanishes and the page
   // looks like nothing happened. Stands in until the loader sees a real run.
   const [pendingApplyKey, setPendingApplyKey] = useState<string | null>(null);
-  const hasRun = run !== null;
+  // A run the user already resolved (a failed run being purged and re-applied)
+  // doesn't count — the optimistic row stands in until the NEW run appears.
+  const hasLiveRun =
+    run !== null && !resolvedRunIds.includes(run.templateRunId);
   useEffect(() => {
-    if (hasRun) setPendingApplyKey(null);
-  }, [hasRun]);
+    if (hasLiveRun) setPendingApplyKey(null);
+  }, [hasLiveRun]);
 
   const optimisticRun: CompanyTemplateRun | null =
-    !hasRun && pendingApplyKey !== null
+    !hasLiveRun && pendingApplyKey !== null
       ? {
           templateRunId: "",
           status: "running",
@@ -181,7 +240,10 @@ export default function DemoDataRoute() {
           startedAt: null,
           error: null,
           progress: null,
-          hasSnapshot: false
+          hasSnapshot: false,
+          reason: null,
+          violations: [],
+          violationRowsByTable: []
         }
       : null;
 
@@ -201,17 +263,54 @@ export default function DemoDataRoute() {
     return () => clearInterval(id);
   }, [active, revalidator]);
 
+  const purgeFetcher = useFetcher<{ success: boolean; message: string }>();
+  const [purgingRun, setPurgingRun] = useState<CompanyTemplateRun | null>(null);
+  // The response a previous purge left on the fetcher — ignored, so a retry
+  // doesn't settle on the old result before its own arrives.
+  const staleResult = useRef<typeof purgeFetcher.data>(undefined);
+  const purgeAndApply = (failed: CompanyTemplateRun) => {
+    staleResult.current = purgeFetcher.data;
+    setPurgingRun(failed);
+    setResolvedRunIds((prev) => [...prev, failed.templateRunId]);
+    setPendingApplyKey(failed.datasetKey);
+    purgeFetcher.submit(
+      {
+        intent: "purgeAndApply",
+        templateRunId: failed.templateRunId,
+        datasetKey: failed.datasetKey ?? ""
+      },
+      { method: "post", action: path.to.demoData }
+    );
+  };
+  const purgeResult =
+    purgeFetcher.state === "idle" && purgeFetcher.data !== staleResult.current
+      ? purgeFetcher.data
+      : null;
+  useEffect(() => {
+    if (!purgeResult || !purgingRun) return;
+    if (purgeResult.success) {
+      toast.success(purgeResult.message);
+    } else {
+      toast.error(purgeResult.message);
+      setResolvedRunIds((prev) =>
+        prev.filter((id) => id !== purgingRun.templateRunId)
+      );
+      setPendingApplyKey(null);
+    }
+    setPurgingRun(null);
+  }, [purgeResult, purgingRun]);
+
   const datasetLabel = useMemo(
     () => datasets.find((d) => d.key === pending?.datasetKey)?.label ?? null,
     [datasets, pending]
   );
 
   return (
-    <VStack spacing={4} className="p-8 w-full max-w-4xl mx-auto">
+    <VStack spacing={4} className="p-8 w-full max-w-4xl mx-auto max-md:p-4">
       <VStack spacing={1}>
-        <Heading size="h3">
+        <SettingsPageHeading>
           <Trans>Demo Data</Trans>
-        </Heading>
+        </SettingsPageHeading>
         <p className="text-muted-foreground text-sm">
           <Trans>
             Fill this company with a realistic industry story so every screen
@@ -225,6 +324,7 @@ export default function DemoDataRoute() {
           run={pending}
           datasetLabel={datasetLabel}
           onResolve={(id) => setResolvedRunIds((prev) => [...prev, id])}
+          onPurgeAndApply={() => purgeAndApply(pending)}
         />
       )}
 

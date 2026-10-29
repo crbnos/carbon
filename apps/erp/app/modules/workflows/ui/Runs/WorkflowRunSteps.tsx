@@ -1,9 +1,14 @@
-import type { WorkflowDefinition, WorkflowNode } from "@carbon/workflows";
-import { topologicalNodeOrder } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { WorkflowDefinition, WorkflowNode } from "@carbon/ee/workflows";
+import { topologicalNodeOrder } from "@carbon/ee/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
-import { MAX_RUN_STEPS, type WorkflowRunStep } from "../../workflows.service";
+import type { WorkflowRunStep } from "../../workflows.service";
+import { MAX_RUN_STEPS } from "../../workflows.utils";
 import { useWorkflowLabel } from "../Builder/catalog";
 import {
   actionInputLabelKey,
@@ -16,6 +21,7 @@ import {
   NODE_KIND_META
 } from "../Builder/nodes/meta";
 import { ConditionDetail } from "./ConditionDetail";
+import { DataDetail } from "./DataDetail";
 import { StepStatus } from "./RunStatus";
 import { ValueMap } from "./RuntimeValueView";
 import { useNodeLabel } from "./useNodeLabel";
@@ -141,7 +147,10 @@ function StepRow({
 }) {
   const { t } = useLingui();
   const label = useWorkflowLabel();
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  // Null until the user toggles the row: a step that fails while the run is
+  // being watched then opens on its own, as it does when the drawer is reopened.
+  const [toggled, setToggled] = useState<boolean | null>(null);
+  const expanded = toggled ?? defaultExpanded;
   const [raw, setRaw] = useState(false);
   const isNotReached = step === null;
 
@@ -172,8 +181,8 @@ function StepRow({
     <div className="border-b border-border/50">
       <button
         type="button"
-        className="w-full flex items-center gap-3 py-3 px-3 hover:bg-muted/50 transition-colors text-left"
-        onClick={() => hasDetail && setExpanded((p) => !p)}
+        className="w-full flex items-center gap-3 py-3 px-3 hover:bg-muted/50 transition-colors text-left max-md:flex-wrap max-md:gap-y-1"
+        onClick={() => hasDetail && setToggled(!expanded)}
         disabled={!hasDetail}
       >
         {hasDetail ? (
@@ -211,7 +220,7 @@ function StepRow({
             <p className="text-xs text-muted-foreground">{step.statusReason}</p>
           )}
         </div>
-        <div className="ml-auto flex items-center gap-2 shrink-0">
+        <div className="ml-auto flex items-center gap-2 shrink-0 max-md:ml-0 max-md:basis-full max-md:pl-[52px]">
           <span className="text-xs text-muted-foreground tabular-nums">
             {durationLabel(step.durationMs)}
           </span>
@@ -223,7 +232,7 @@ function StepRow({
         <div className="px-10 pb-3 space-y-3">
           <button
             type="button"
-            className="text-xs text-muted-foreground underline underline-offset-2"
+            className="text-xs text-muted-foreground underline underline-offset-2 max-md:hit-area"
             onClick={() => setRaw((p) => !p)}
           >
             {raw ? t`Show summary` : t`Show raw`}
@@ -269,10 +278,12 @@ function StepRow({
               )}
               {step.detail !== null && (
                 <ExpandedSection label={t`Why`}>
+                  {/* Each answers only for its own detail kind. */}
                   <ConditionDetail
                     detail={step.detail}
                     node={node?.type === "condition" ? node : undefined}
                   />
+                  <DataDetail detail={step.detail} />
                 </ExpandedSection>
               )}
             </>

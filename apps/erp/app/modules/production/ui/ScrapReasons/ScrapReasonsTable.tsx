@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -6,6 +10,7 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -14,9 +19,11 @@ import type { ScrapReason } from "../../types";
 type ScrapReasonsTableProps = {
   data: ScrapReason[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
+const ScrapReasonsTable = memo((props: ScrapReasonsTableProps) => {
+  const { data, count, infinite } = props;
   const [params] = useUrlParams();
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -34,6 +41,7 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuTrash />
         }
       }
@@ -46,6 +54,7 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.scrapReason(row.id)}?${params.toString()}`);
             }}
@@ -54,6 +63,7 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
             Edit Scrap Reason
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "production")}
             onClick={() => {
@@ -76,6 +86,13 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={infinite}
+      importCSV={[
+        {
+          table: "scrapReason" as const,
+          label: t`Scrap Reasons`
+        }
+      ]}
       primaryAction={
         permissions.can("create", "production") && (
           <New

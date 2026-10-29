@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { loadAccountCodesById } from "../../../core/account-mapping";
 import type { NormalizedPayment } from "../../../core/payment-application";
 import {
+  PAYMENT_TARGET_LABELS,
   type PaymentPushContext,
   PaymentSyncerBase
 } from "../../../core/payment-syncer";
@@ -15,7 +20,7 @@ import type { XeroProvider } from "../provider";
  * endpoint) settles exactly ONE invoice: an ACCPAY invoice (a bill → AP,
  * settling a Carbon purchaseInvoice) or an ACCREC invoice (a sales invoice →
  * AR, settling a Carbon salesInvoice). The base writes a Draft `payment` +
- * `invoiceSettlement` and then invokes the native `post-payment` edge function
+ * `invoiceSettlement` and then invokes the native `post-payment` server function
  * (GL journal + Posted/Voided status). Two-way as of Phase G: a Carbon-born
  * Posted payment pushes back out as a Xero `/Payments` document (see
  * `pushRemotePayment`).
@@ -221,7 +226,7 @@ export class XeroPaymentSyncer extends PaymentSyncerBase<Xero.Payment> {
       paymentRemoteId,
       amount: remote.Amount ?? 0,
       currencyCode: remote.Invoice?.CurrencyCode ?? null,
-      exchangeRate: remote.CurrencyRate ?? 1,
+      exchangeRate: remote.CurrencyRate ?? null,
       paidDate: getXeroPaymentDate(remote.Date),
       // The Xero PaymentID is the human/provider reference.
       reference: paymentRemoteId,
@@ -248,8 +253,12 @@ export class XeroPaymentSyncer extends PaymentSyncerBase<Xero.Payment> {
   protected async pushRemotePayment(
     context: PaymentPushContext
   ): Promise<{ remoteId: string; compositeEntityId: string }> {
+    // An employee reimbursement IS a Xero ACCPAY invoice (see
+    // entities/reimbursement.ts), so /Payments settles it through the same
+    // `Invoice: { InvoiceID }` call as a bill — only the MAPPING entityType
+    // differs, because its remote id is stored under `reimbursement`.
     const documentRemoteId = await this.mappingService.getExternalId(
-      context.family === "ar" ? "invoice" : "bill",
+      context.targetEntityType,
       context.targetDocumentId,
       this.provider.id
     );
@@ -257,7 +266,7 @@ export class XeroPaymentSyncer extends PaymentSyncerBase<Xero.Payment> {
       throw new JournalEntrySyncError({
         errorCode: "UNSYNCED_DOCUMENT",
         message: `The settled ${
-          context.family === "ar" ? "invoice" : "bill"
+          PAYMENT_TARGET_LABELS[context.targetEntityType]
         } has not synced to Xero yet — sync it, then retry the payment`,
         warning: true,
         metadata: { targetDocumentId: context.targetDocumentId }

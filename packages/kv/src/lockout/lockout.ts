@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Redis } from "ioredis";
 import { Ratelimit } from "../ratelimit";
 import type { Duration } from "../ratelimit/types";
@@ -27,7 +31,27 @@ export const DEFAULT_MAX_LOCK_SECONDS = 60 * 60; // cap: 1 hour
 /** How long a lock "level" survives so repeat offenders keep escalating. */
 export const DEFAULT_LEVEL_TTL_SECONDS = 24 * 60 * 60; // 1 day
 
+/**
+ * The per-account allowance for a login route, from its per-IP RATE_LIMIT
+ * (attempts per 5 minutes): a quarter of it per 15-minute window, never
+ * fewer than DEFAULT_MAX_ATTEMPTS. At the default RATE_LIMIT of 10 that is
+ * the default; a deployment that raises RATE_LIMIT raises this with it,
+ * one knob for both.
+ */
+export function maxAttemptsForRateLimit(rateLimit: number): number {
+  if (!Number.isFinite(rateLimit) || rateLimit <= 0) {
+    return DEFAULT_MAX_ATTEMPTS;
+  }
+  return Math.max(DEFAULT_MAX_ATTEMPTS, Math.ceil(rateLimit / 4));
+}
+
 const DEFAULT_PREFIX = "@carbon/lockout";
+
+/**
+ * The sign-in code's own lockout. Wrong codes lock code sign-in only, so
+ * guessing at someone's code cannot also stop them asking for a link.
+ */
+export const SIGN_IN_CODE_LOCKOUT_PREFIX = "@carbon/lockout-code";
 
 /**
  * Normalize an email into the lockout key: trim + lowercase so `Foo@x.com `,
@@ -200,6 +224,16 @@ export class AccountLockout {
     } catch {
       return NOT_LOCKED; // fail open
     }
+  }
+
+  /**
+   * Give back the attempt the last `recordFailure` counted, for callers that
+   * count BEFORE the check (so a concurrent burst cannot all pass) and then
+   * learn the check never ran — an outage is not a wrong guess. An attempt
+   * that engaged a lock is not undone; the caller never runs the check then.
+   */
+  async refund(email: string): Promise<void> {
+    await this.ratelimit.refund(normalizeLoginIdentifier(email));
   }
 
   /**

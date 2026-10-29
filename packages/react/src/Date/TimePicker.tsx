@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useTimeField } from "@react-aria/datepicker";
 import { useLocale } from "@react-aria/i18n";
 import type { TimeFieldStateOptions } from "@react-stately/datepicker";
@@ -7,7 +11,10 @@ import { InputGroup } from "../Input";
 import { DateSegment } from "./components/DateSegment";
 
 const TimePicker = (
-  props: Omit<TimeFieldStateOptions, "locale" | "createCalendar">
+  props: Omit<TimeFieldStateOptions, "locale" | "createCalendar"> & {
+    /** The field's name for assistive tech, when no label points at it. */
+    "aria-label"?: string;
+  }
 ) => {
   const { locale } = useLocale();
   const state = useTimeFieldState({

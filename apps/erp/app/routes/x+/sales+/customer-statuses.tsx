@@ -1,13 +1,16 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
-import { getCustomerStatuses } from "~/modules/sales";
+import { useLoaderData } from "react-router";
 import { CustomerStatusesTable } from "~/modules/sales/ui/CustomerStatuses";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { customerStatusesList } from "~/utils/list-registry/sales.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Customer Statuses`,
@@ -15,33 +18,16 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales",
-    role: "employee"
-  });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  return await getCustomerStatuses(client, companyId, {
-    search,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
+  return loadListPage(request, customerStatusesList, { dataKey: "data" });
 }
 
 export default function CustomerStatusesRoute() {
-  const { data, count } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <CustomerStatusesTable data={data ?? []} count={count ?? 0} />
-      <Outlet />
+      <CustomerStatusesTable data={data} count={count} infinite={infinite} />
+      <RecordOutlet />
     </VStack>
   );
 }

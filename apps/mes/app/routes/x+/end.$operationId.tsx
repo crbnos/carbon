@@ -1,23 +1,35 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  evaluateLinesForSurface,
-  isBlocked
-} from "@carbon/ee/storage-rules.server";
+import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
+import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import { erpPosting } from "~/services/erp";
 import {
+  abilityBlockRefusal,
   finishJobOperation,
   getNextIncompleteSerialEntity,
   getTrackedEntitiesByMakeMethodId,
   insertProductionQuantity,
+  isFirstOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
+import { autoPrintFirstOperationLabel } from "~/services/printing.server";
+import { checkStrictBackflush } from "~/services/quality.server";
 import { path } from "~/utils/path";
 
+const logger = getLogger("mes", "end-operation");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
+  // Writes on GET: a link on another site must not trigger it.
+  rejectCrossSiteNavigation(request);
   const { userId, companyId } = await requirePermissions(request, {});
 
   const { operationId } = params;
@@ -55,6 +67,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (jobOperation.data?.companyId !== companyId) {
+    logger.warn("Job operation does not belong to company", {
+      companyId,
+      operationId
+    });
     return redirect(
       path.to.operations,
       await flash(request, {
@@ -66,6 +82,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })
     );
   }
+  const abilityRefusal = await abilityBlockRefusal(serviceRole, {
+    operationId,
+    employeeId: userId,
+    companyId
+  });
+  if (abilityRefusal) {
+    return redirect(
+      path.to.operation(operationId),
+      await flash(request, error(null, abilityRefusal))
+    );
+  }
+
   const completeAll = jobOperation.data?.completeAllOnScan ?? false;
 
   const [jobMakeMethod] = await Promise.all([
@@ -156,14 +184,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (quantityToComplete > 0) {
     if (isTrackedEntity) {
-      if (!trackedEntityId) {
-        const trackedEntities = await getTrackedEntitiesByMakeMethodId(
-          serviceRole,
-          jobOperation.data.jobMakeMethodId
-        );
+      const trackedEntities = await getTrackedEntitiesByMakeMethodId(
+        serviceRole,
+        jobOperation.data.jobMakeMethodId,
+        companyId
+      );
 
-        // Complete the next incomplete serial unit for this operation (createdAt
-        // asc), falling back to the last entity when every unit is complete.
+      if (!trackedEntityId) {
+        // No unit named (a scan from outside the MES, or the first operation,
+        // where units flow in order): complete the next incomplete unit for
+        // this operation (createdAt asc), falling back to the last entity when
+        // every unit is complete.
         const nextTrackedEntity = getNextIncompleteSerialEntity(
           trackedEntities.data ?? [],
           operationId
@@ -171,25 +202,81 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         if (nextTrackedEntity) {
           trackedEntityId = nextTrackedEntity.id;
         }
+      } else if (jobMakeMethod.data.requiresSerialTracking) {
+        // The operation and assembly views send the unit the operator scanned
+        // or selected. Completing it twice would record a second production
+        // quantity for one unit.
+        const heldEntity = (trackedEntities.data ?? []).find(
+          (entity) => entity.id === trackedEntityId
+        );
+        if (
+          !heldEntity ||
+          !isSerialEntityIncompleteForOperation(heldEntity, operationId)
+        ) {
+          return redirect(
+            `${path.to.operation(operationId)}?trackedEntityId=${trackedEntityId}`,
+            await flash(
+              request,
+              error(null, "This unit is already complete at this operation")
+            )
+          );
+        }
       }
 
       if (jobMakeMethod.data.requiresSerialTracking) {
-        const response = await serviceRole.functions.invoke("issue", {
-          body: {
+        // Units flow in order through the first operation; at a later one the
+        // operator scans or selects each unit, so the scan never moves the view
+        // to a unit of its own choosing.
+        const isFirstOperation = await isFirstOperationOfMakeMethod(
+          serviceRole,
+          operationId,
+          jobOperation.data.jobMakeMethodId
+        );
+        const response = await erpPosting(
+          "issue",
+          { companyId, userId },
+          {
             type: "jobOperationSerialComplete",
             quantity: 1,
             jobOperationId: jobOperation.data.id,
-            trackedEntityId,
-            trackingType: "Serial",
-            notes: "Generated by QR code",
+            trackedEntityId: trackedEntityId!,
+            notes: "Generated by QR code"
+          }
+        );
+
+        if (response.error) {
+          return redirect(
+            path.to.operation(operationId),
+            await flash(request, {
+              ...error(
+                response.error,
+                response.error.message || "Failed to complete job operation"
+              ),
+              flash: "error"
+            })
+          );
+        }
+
+        const newTrackedEntityId = response.data?.newTrackedEntityId as
+          | string
+          | undefined;
+
+        // Auto-print label on first operation only (entity was just minted).
+        // Print the unit just completed, not the new reserved one.
+        const printEntityId = trackedEntityId || newTrackedEntityId;
+        if (printEntityId) {
+          await autoPrintFirstOperationLabel({
+            serviceRole,
+            trackedEntityId: printEntityId,
+            jobOperationId: jobOperation.data.id,
+            jobMakeMethodId: jobOperation.data.jobMakeMethodId,
+            workCenterId: jobOperation.data.workCenterId ?? undefined,
             companyId,
             userId
-          }
-        });
+          });
+        }
 
-        const newTrackedEntityId = response.data?.newTrackedEntityId;
-
-        if (newTrackedEntityId) {
+        if (newTrackedEntityId && isFirstOperation) {
           return redirect(
             `${path.to.operation(
               operationId
@@ -223,13 +310,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           );
         }
 
+        // Later operation: stay on the unit just completed. The view sees it
+        // complete and asks for the next unit (scan or select).
+        if (!isFirstOperation) {
+          return redirect(
+            `${path.to.operation(operationId)}?trackedEntityId=${trackedEntityId}`,
+            await flash(request, {
+              ...success("Completed"),
+              flash: "success"
+            })
+          );
+        }
+
         // Pre-split flow: the issue function did not spawn a new entity (all
         // units already exist), so advance to the next incomplete serial unit
         // for this operation. When none remain, fall through to the shared
         // "operation complete" redirect below.
         const remainingTrackedEntities = await getTrackedEntitiesByMakeMethodId(
           serviceRole,
-          jobOperation.data.jobMakeMethodId
+          jobOperation.data.jobMakeMethodId,
+          companyId
         );
         const nextTrackedEntity = (remainingTrackedEntities.data ?? []).find(
           (entity) => isSerialEntityIncompleteForOperation(entity, operationId)
@@ -242,30 +342,62 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           );
         }
       } else if (jobMakeMethod.data.requiresBatchTracking) {
-        const response = await serviceRole.functions.invoke("issue", {
-          body: {
+        const response = await erpPosting(
+          "issue",
+          { companyId, userId },
+          {
             type: "jobOperationBatchComplete",
             quantity: quantityToComplete,
             jobOperationId: jobOperation.data.id,
-            trackedEntityId,
-            trackingType: "Batch",
-            notes: "Generated by QR code",
-            companyId,
-            userId
+            trackedEntityId: trackedEntityId!,
+            notes: "Generated by QR code"
           }
-        });
+        );
 
         if (response.error) {
           return redirect(
             path.to.operation(operationId),
             await flash(request, {
-              ...error(response.error, "Failed to complete job operation"),
+              ...error(
+                response.error,
+                response.error.message || "Failed to complete job operation"
+              ),
               flash: "error"
             })
           );
         }
+
+        // Auto-print label on first operation only (batch entity was just minted)
+        if (trackedEntityId) {
+          await autoPrintFirstOperationLabel({
+            serviceRole,
+            trackedEntityId,
+            jobOperationId: jobOperation.data.id,
+            jobMakeMethodId: jobOperation.data.jobMakeMethodId,
+            workCenterId: jobOperation.data.workCenterId ?? undefined,
+            companyId,
+            userId
+          });
+        }
       }
     } else {
+      const check = await checkStrictBackflush({
+        jobOperationId: operationId,
+        quantity: quantityToComplete,
+        companyId,
+        userId
+      });
+
+      if (check.error) {
+        return redirect(
+          path.to.operation(operationId),
+          await flash(request, {
+            ...error(check.error, check.message!),
+            flash: "error"
+          })
+        );
+      }
+
       const insertProduction = await insertProductionQuantity(
         serviceRole,
         {
@@ -291,21 +423,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         );
       }
 
-      const issue = await serviceRole.functions.invoke("issue", {
-        body: {
+      const issued = await erpPosting(
+        "issue",
+        { companyId, userId },
+        {
           id: operationId,
           type: "jobOperation",
-          quantity: quantityToComplete,
-          companyId,
-          userId
+          quantity: quantityToComplete
         }
-      });
+      );
 
-      if (issue.error) {
+      if (issued.error) {
         return redirect(
           path.to.operation(operationId),
           await flash(request, {
-            ...error(issue.error, "Failed to issue materials"),
+            ...error(
+              issued.error,
+              `Units completed, but ${issued.error.message || "failed to issue materials"}`
+            ),
             flash: "error"
           })
         );

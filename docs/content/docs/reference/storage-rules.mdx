@@ -4,18 +4,12 @@ plan: Business
 description: "Predicate guards that validate inventory transactions: block with an error, or warn and let the user continue."
 ---
 
-A **storage rule** is a guard that runs when an inventory transaction posts. It checks the line against a
-condition you define and, if the condition fails, either **blocks** the transaction or **warns** and lets the
-user acknowledge and continue. Rules attach to **items** or to **<Term id="work-center">work centers</Term>**.
+A **storage rule** validates an inventory transaction during posting. If its condition fails, the rule either **blocks** the transaction or **warns** and allows the user to acknowledge the warning. Rules apply to **items** or **<Term id="work-center">work centers</Term>**.
 
-For example, to keep batch chemicals out of ambient bins: target **items** in your chemicals group, fire on
-**<Term>receipt</Term>** and **place** (put-away), and require `storageUnit.storageTypeId` `eq` your cold-storage type.
-Severity **error**, message `{item.id} must be stored in cold storage`. Receive that item into the wrong
-bin and the post is stopped with exactly that message.
+For example, to prevent batch chemicals from entering ambient bins, target **items** in the chemicals group, enable **<Term>receipt</Term>** and **place** operations, and require `storageUnit.storageTypeId` `eq` the cold-storage type. Set severity to **error** and the message to `{item.id} must be stored in cold storage`. A receipt into any other storage type is rejected with that message.
 
 <Callout type="note">
-Storage rules are a **validation** layer. A rule never transforms data, sets defaults, or computes a
-price. Its only output is a message and a severity.
+Storage rules only validate data. They do not transform values, set defaults, or compute prices. A rule returns a message and severity.
 </Callout>
 
 ## What a rule checks
@@ -94,7 +88,7 @@ A rule reaches the lines it applies to in one of two ways:
   <Field name="Message">Shown on a violation; supports `{token}` interpolation.</Field>
   <Field name="Surfaces">Which transactions the rule fires on.</Field>
   <Field name="Target">`item` or `workCenter`.</Field>
-  <Field name="Item filters">Item types and/or groups to scope an item rule (empty = all items).</Field>
+  <Field name="Item filters">Item types and/or groups to scope a rule (empty = all items).</Field>
   <Field name="Active">Whether the rule is currently evaluated.</Field>
 </FieldTable>
 
@@ -111,6 +105,10 @@ plans the screen shows an upgrade prompt and no rules are evaluated.
 ## Related
 
 <Cards>
+  <Card title="Sales rules" href="/docs/reference/sales-rules">
+    The sibling rule family: the same condition builder, applied to quote, sales order, and sales invoice
+    lines.
+  </Card>
   <Card title="Items" href="/docs/reference/items">
     The most common rule target: scope by item type or group, or assign per item.
   </Card>

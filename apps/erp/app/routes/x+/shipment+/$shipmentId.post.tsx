@@ -1,383 +1,44 @@
-import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import {
-  dedupeViolations,
-  evaluateLinesForSurface,
-  isBlocked
-} from "@carbon/ee/storage-rules.server";
-import { trigger } from "@carbon/jobs";
-import { trackWorkEvent } from "@carbon/lib/telemetry";
-import { raiseMoment } from "@carbon/lib/workflows";
-import { getLogger } from "@carbon/logger";
-import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
-import { datetime } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import { getPreferenceHeaders, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
-import { upsertDocument } from "~/modules/documents";
-import {
-  getCompanyTimeZone,
-  getLocationTimeZone
-} from "~/modules/shared/timezone.server";
-import { loader as pdfLoader } from "~/routes/file+/shipment+/$id[.]pdf";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { path } from "~/utils/path";
-import { stripSpecialCharacters } from "~/utils/string";
 
-type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
+// The post modal's form: `acknowledged` is set when the user accepts the
+// rule violations shown to them, `postingDate` dates a rental delivery.
+const postForm = z.object({
+  acknowledged: zfd.checkbox({ trueValue: "true" }),
+  postingDate: zfd.text(z.string().optional())
+});
 
-const logger = getLogger("erp", "shipment", "post");
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(postForm).request(args, {
+    params: ["shipmentId"]
   });
-
-  const { shipmentId } = params;
-  if (!shipmentId) throw new Error("shipmentId not found");
-
-  const formData = await request.formData();
-  const acknowledged = formData.get("acknowledged") === "true";
-
-  // Item Rule evaluation across every line on this shipment before posting.
-  const serviceRole = getCarbonServiceRole();
-  const { data: lines } = await serviceRole
-    .from("shipmentLine")
-    .select(
-      "id, itemId, storageUnitId, shippedQuantity, locationId, shipmentId"
-    )
-    .eq("shipmentId", shipmentId)
-    .eq("companyId", companyId);
-
-  // Shipment source determines which surface(s) eval. Shipments leaving for
-  // an Outbound Transfer ALSO eval the `warehouseTransfer` surface — the post
-  // auto-completes the parent transfer, so warehouse-scoped rules need to
-  // fire here too.
-  const { data: shipmentForSurface } = await serviceRole
-    .from("shipment")
-    .select("sourceDocument, locationId")
-    .eq("id", shipmentId)
-    .single();
-  const surfaces: ("shipment" | "warehouseTransfer")[] = ["shipment"];
-  if (shipmentForSurface?.sourceDocument === "Outbound Transfer") {
-    surfaces.push("warehouseTransfer");
-  }
-
-  const evalLines = (lines ?? []).map((l) => ({
-    lineId: l.id as string,
-    itemId: l.itemId as string | null,
-    storageUnitId: l.storageUnitId as string | null,
-    quantity: Number(l.shippedQuantity ?? 0),
-    locationId: l.locationId as string | null
-  }));
-
-  const allViolations = [];
-  const allRuleNames: Record<string, string> = {};
-  for (const surface of surfaces) {
-    const { violations, ruleNames } = await evaluateLinesForSurface({
-      client: serviceRole,
-      companyId,
-      userId,
-      targetType: "item",
-      surface,
-      lines: evalLines
-    });
-    allViolations.push(...violations);
-    Object.assign(allRuleNames, ruleNames);
-  }
-
-  // Pick pass — the bin side of the shipment. Same lines, same item target;
-  // item rules own the `pick` surface. Transfers double-up via the
-  // warehouseTransfer surface (dedupe collapses the overlap).
-  const pickSurfaces: ("pick" | "warehouseTransfer")[] = ["pick"];
-  if (shipmentForSurface?.sourceDocument === "Outbound Transfer") {
-    pickSurfaces.push("warehouseTransfer");
-  }
-  for (const surface of pickSurfaces) {
-    const { violations, ruleNames } = await evaluateLinesForSurface({
-      client: serviceRole,
-      companyId,
-      userId,
-      targetType: "item",
-      surface,
-      lines: evalLines
-    });
-    allViolations.push(...violations);
-    Object.assign(allRuleNames, ruleNames);
-  }
-
-  const deduped = dedupeViolations(allViolations);
-  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
-    return {
-      error: null,
-      data: null,
-      violations: deduped,
-      ruleNames: allRuleNames
-    };
-  }
-
-  // Expired-batch policy check. Mirrors post-stock-transfer / issue edge
-  // functions: pulls inventoryShelfLife.expiredEntityPolicy from
-  // companySettings and refuses to post when any tracked entity attached to
-  // the shipment is past its expirationDate (unless policy is "Warn").
-  const { data: companySettings } = await serviceRole
-    .from("companySettings")
-    .select("inventoryShelfLife")
-    .eq("id", companyId)
-    .single();
-  const shelfLifeBlob = companySettings?.inventoryShelfLife as {
-    expiredEntityPolicy?: ExpiredEntityPolicy;
-  } | null;
-  const expiredPolicy: ExpiredEntityPolicy =
-    shelfLifeBlob?.expiredEntityPolicy ?? "Block";
-
-  const { data: shipmentTrackedEntities } = await serviceRole
-    .from("trackedEntity")
-    .select("id, readableId, expirationDate")
-    .eq("attributes ->> Shipment", shipmentId)
-    .eq("companyId", companyId);
-
-  // Expiry is judged on the shipping site's calendar, not the server's — a lot
-  // that expires today must not read as expired at a plant still on yesterday.
-  // No location on the shipment → the company calendar.
-  const shipmentLocationId = shipmentForSurface?.locationId as string | null;
-  const todayLocal = datetime.today(
-    shipmentLocationId
-      ? await getLocationTimeZone(serviceRole, shipmentLocationId, companyId)
-      : await getCompanyTimeZone(serviceRole, companyId)
-  );
-  const expiredEntities = (shipmentTrackedEntities ?? []).filter((e) => {
-    if (!e.expirationDate) return false;
-    try {
-      return parseDate(e.expirationDate).compare(todayLocal) < 0;
-    } catch {
-      return false;
-    }
+  if ("invalid" in input) return input.invalid;
+  const { shipmentId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.inventory.postShipment({
+    shipmentId,
+    ...input.data,
+    locale: getPreferenceHeaders(args.request).locale
   });
-
-  let expiredWarning: string | null = null;
-  if (expiredEntities.length > 0) {
-    const ids = expiredEntities.map((e) => e.readableId ?? e.id).join(", ");
-    const message = `Cannot post shipment with expired batch${
-      expiredEntities.length === 1 ? "" : "es"
-    }: ${ids}`;
-
-    if (expiredPolicy === "Block" || expiredPolicy === "BlockWithOverride") {
-      throw redirect(
-        path.to.shipmentDetails(shipmentId),
-        await flash(request, error(null, message))
-      );
-    }
-
-    expiredWarning = `Posted shipment with expired batch${
-      expiredEntities.length === 1 ? "" : "es"
-    }: ${ids}`;
-  }
-
-  const setPendingState = await client
-    .from("shipment")
-    .update({
-      status: "Pending"
-    })
-    .eq("id", shipmentId);
-
-  if (setPendingState.error) {
-    throw redirect(
-      path.to.shipments,
-      await flash(
-        request,
-        error(setPendingState.error, "Failed to post shipment")
-      )
-    );
-  }
-
-  /** Set by the catch below when the post was rolled back to Draft. */
-  let reverted = false;
-
-  try {
-    // Get shipment details to check if it's related to a sales order
-    const { data: shipment } = await serviceRole
-      .from("shipment")
-      .select("sourceDocument, sourceDocumentId, shipmentId")
-      .eq("id", shipmentId)
-      .single();
-
-    // If the shipment is related to a sales order, save the packing slip PDF
-    if (
-      shipment?.sourceDocument === "Sales Order" &&
-      shipment?.sourceDocumentId
-    ) {
-      try {
-        // Get the opportunity ID from the sales order
-        const { data: salesOrder } = await serviceRole
-          .from("salesOrder")
-          .select("opportunityId")
-          .eq("id", shipment.sourceDocumentId)
-          .single();
-
-        if (salesOrder?.opportunityId) {
-          // Generate the packing slip PDF
-          const pdfArgs = {
-            request,
-            params: { id: shipmentId },
-            context: {}
-          };
-
-          // @ts-expect-error TS2741 - TODO: fix type
-          const pdf = await pdfLoader(pdfArgs);
-
-          if (pdf.headers.get("content-type") === "application/pdf") {
-            const file = await pdf.arrayBuffer();
-            const fileName = stripSpecialCharacters(
-              `${shipment.shipmentId} - ${new Date()
-                .toISOString()
-                .slice(0, -5)}.pdf`
-            );
-
-            const documentFilePath = `${companyId}/opportunity/${salesOrder.opportunityId}/${fileName}`;
-
-            // Upload the PDF to storage
-            const documentFileUpload = await serviceRole.storage
-              .from("private")
-              .upload(documentFilePath, file, {
-                cacheControl: `${12 * 60 * 60}`,
-                contentType: "application/pdf",
-                upsert: true
-              });
-
-            if (!documentFileUpload.error) {
-              // Create document record
-              await upsertDocument(serviceRole, {
-                path: documentFilePath,
-                name: fileName,
-                size: Math.round(file.byteLength / 1024),
-                sourceDocument: "Shipment",
-                sourceDocumentId: shipmentId,
-                readGroups: [userId],
-                writeGroups: [userId],
-                createdBy: userId,
-                companyId
-              });
-            }
-          }
-        }
-      } catch (err) {
-        // Continue with posting even if PDF generation fails
-        logger.error("Failed to generate packing slip PDF", { error: err });
-      }
-    }
-
-    const postShipment = await serviceRole.functions.invoke("post-shipment", {
-      body: {
-        type: "post",
-        shipmentId: shipmentId,
-        userId: userId,
-        companyId: companyId
-      }
-    });
-
-    if (postShipment.error) {
-      await client
-        .from("shipment")
-        .update({
-          status: "Draft"
-        })
-        .eq("id", shipmentId);
-
-      throw redirect(
-        path.to.shipmentDetails(shipmentId),
-        await flash(
-          request,
-          error(postShipment.error, "Failed to post shipment")
-        )
-      );
-    }
-
-    // Auto-print labels if enabled
-    try {
-      const { data: shipmentForPrint } = await serviceRole
-        .from("shipment")
-        .select("locationId")
-        .eq("id", shipmentId)
-        .single();
-      const locationId = shipmentForPrint?.locationId as string | undefined;
-      if (locationId) {
-        const config = await getCachedPrinterConfig(
-          serviceRole,
-          companyId,
-          locationId,
-          "shipping"
-        );
-        if (config?.autoPrint ?? true) {
-          await trigger("print-job", {
-            sourceDocument: "Shipment",
-            sourceDocumentId: shipmentId,
-            companyId,
-            userId,
-            locationId
-          });
-        }
-      }
-    } catch (e) {
-      logger.error("Auto-print failed", { error: e });
-    }
-
-    // Auto-print labels for batch split entities. splitEntityIds carries the
-    // RETAINED shelf lots (their quantity changed in the split) — existing
-    // entities being reprinted, hence sourceDocument "Entity". The shipped
-    // child departed Consumed and gets no label.
-    const splitEntityIds = postShipment.data?.splitEntityIds || [];
-    if (splitEntityIds.length > 0) {
-      try {
-        for (const entityId of splitEntityIds) {
-          await trigger("print-job", {
-            sourceDocument: "Entity",
-            sourceDocumentId: entityId,
-            companyId,
-            userId
-          });
-        }
-      } catch (e) {
-        logger.error("Auto-print for split entities failed", { error: e });
-      }
-    }
-  } catch (thrown) {
-    if (thrown instanceof Response) throw thrown;
-    reverted = true;
-    await client
-      .from("shipment")
-      .update({
-        status: "Draft"
-      })
-      .eq("id", shipmentId);
-  }
-
-  // Must stay below the rollback catch above — a post that got reverted to
-  // Draft must not fire workflows.
-  await raiseMoment("inventory.shipmentPosted", {
-    outputs: { shipment: { id: shipmentId }, postedBy: { id: userId } },
-    companyId,
-    actorId: userId
-  });
-
-  // See the receipt post route: below the catch still runs after a rollback,
-  // so the flag is what makes this "the post stuck", not the position.
-  if (!reverted) {
-    trackWorkEvent("shipment_posted", {
-      companyId,
-      userId,
-      shipmentId,
-      sourceDocument: shipmentForSurface?.sourceDocument ?? null
+  // An error, toasted by the modal.
+  if (!result.data) return result;
+  // A blocking rule: the violation modal reads these.
+  if ("violations" in result.data) return result.data;
+  const to = path.to.shipmentDetails(shipmentId);
+  // Posted with expired batches, as the company's policy allows.
+  if (result.data.warning) {
+    return respond(args.request, result).redirect(to, {
+      message: result.data.warning
     });
   }
-
-  if (expiredWarning) {
-    throw redirect(
-      path.to.shipmentDetails(shipmentId),
-      await flash(request, success(expiredWarning))
-    );
-  }
-
-  throw redirect(path.to.shipmentDetails(shipmentId));
+  throw redirect(to);
 }

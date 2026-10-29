@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { SESSION_SECRET } from "@carbon/auth";
 import { createCookieSessionStorage } from "react-router";
 
 const MES_PEOPLE_OVERRIDE_KEY = "mes-people-override";
@@ -6,6 +11,7 @@ const sessionStorage = createCookieSessionStorage({
   cookie: {
     name: MES_PEOPLE_OVERRIDE_KEY,
     path: "/",
+    secrets: [SESSION_SECRET!],
     secure: false
   }
 });

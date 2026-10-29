@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -20,7 +24,7 @@ import {
   VStack
 } from "@carbon/react";
 import { useLocale } from "@react-aria/i18n";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
@@ -31,9 +35,9 @@ import {
   getPurchasingRFQLines
 } from "~/modules/purchasing/purchasing.service";
 import type { PurchasingRFQLine } from "~/modules/purchasing/types";
-import type { Company } from "~/modules/settings";
-import { getCompany } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import { getCompany } from "~/modules/settings/settings.service";
+import type { Company } from "~/modules/settings/types";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
 export const meta = () => {
   return [{ title: "RFQ Preview" }];
@@ -123,9 +127,9 @@ const Header = ({
         {rfq?.rfqId && (
           <p className="text-lg text-muted-foreground">{rfq.rfqId}</p>
         )}
-        {rfq?.dueDate && (
+        {rfq?.expirationDate && (
           <p className="text-lg text-muted-foreground">
-            Due <DateTime value={rfq.dueDate} variant="date" />
+            Due <DateTime value={rfq.expirationDate} variant="date" />
           </p>
         )}
       </div>
@@ -175,9 +179,9 @@ const LineItems = ({
         return (
           <motion.div
             key={line.id}
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="border-b border-input py-6 w-full"
           >
             <HStack spacing={4} className="items-start">
@@ -263,6 +267,7 @@ const LinePricing = ({ line }: { line: PurchasingRFQLine }) => {
           <Tr className="whitespace-nowrap">
             <Th className="w-[50px]" />
             <Th className="w-2">Quantity</Th>
+            <Th className="w-[80px]">Unit</Th>
             <Th className="w-[150px]">Unit Price</Th>
             <Th className="w-[120px]">Lead Time</Th>
             <Th className="w-[150px]">Shipping Cost</Th>
@@ -277,6 +282,10 @@ const LinePricing = ({ line }: { line: PurchasingRFQLine }) => {
                 <div className="w-4 h-4 border rounded" />
               </Td>
               <Td>{qty}</Td>
+              <Td>
+                {line.purchaseUnitOfMeasureCode ??
+                  line.inventoryUnitOfMeasureCode}
+              </Td>
               <Td className="text-muted-foreground">—</Td>
               <Td className="text-muted-foreground">—</Td>
               <Td className="text-muted-foreground">—</Td>
@@ -345,7 +354,7 @@ const ErrorMessage = ({
 }) => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center">
-      <h1 className="text-3xl font-bold">{title}</h1>
+      <h1 className="text-3xl font-semibold">{title}</h1>
       <p className="text-lg text-muted-foreground">{message}</p>
     </div>
   );

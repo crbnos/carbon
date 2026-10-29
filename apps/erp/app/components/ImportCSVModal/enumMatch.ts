@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure matching helpers for the CSV import enum-mapping step. Extracted so the
 // auto-match logic is unit-testable without a DOM. An option may carry
 // `aliases` — additional identifiers (e.g. a supplier's readableId) that resolve

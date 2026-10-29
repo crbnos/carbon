@@ -3,9 +3,9 @@ title: Work centers
 description: Where operations run — the stations and machines, their rates, and the processes they perform.
 ---
 
-A **work center** is a place on the floor where <Term id="operation">operations</Term> run, tied to a location: a station, a machine, a cell. It carries the rates used to cost and schedule work, and performs one or more **processes** (the capabilities, like *cut* or *weld*).
+A **work center** is a location-specific station, machine, or cell where <Term id="operation">operations</Term> run. It defines scheduling and cost rates and supports one or more **processes**, such as cutting or welding.
 
-<Term id="routing">Routing</Term> operations are scheduled onto work centers, and a work center's rates price the labor and machine time logged against it. It's the link between an operation in the abstract and a real place with a cost and a calendar.
+<Term id="routing">Routing</Term> operations are assigned to work centers. The work center's rates price logged labor and machine time, and its calendar constrains scheduling.
 
 ## Fields
 
@@ -25,9 +25,26 @@ A **work center** is a place on the floor where <Term id="operation">operations<
 
 A **process** is a capability a work center can perform; work centers and processes are many-to-many. A process is *Inside*, *Outside*, or both. **<Term id="outside-operation">Outside</Term>** processes are subcontracted, and suppliers attach to them for outside-processing <Term id="purchase-order">purchase orders</Term>.
 
+### Requiring an ability
+
+Turn on **"Requires Ability"** on a process and only qualified people can be scheduled for it. What the shop floor does with someone who isn't qualified depends on the setting below. The process has one ability of its own, with the same name; the toggle's description names it. People get it by completing a [training](/docs/reference/training#training-can-grant-an-ability) that grants it, or a manager adds it on their Abilities page.
+
+While the toggle is on, **"If an operator isn't qualified"** decides what the shop floor does when someone without the ability opens an operation of this process:
+
+<FieldTable>
+  <Field name="Warn">The operator sees a warning on the operation and can still work. This is the default.</Field>
+  <Field name="Block">The operator sees why they can't work on it, and these production actions are refused: starting the timer, logging completed, scrap or rework, marking it done, recording steps, issuing material, and inspection verdicts. Pausing a timer that is already running, maintenance and quality issues stay available. Two actions are not blocked: a manager's **"Complete all steps"** override, and picking material for a whole batch at once.</Field>
+</FieldTable>
+
+See [running an operation without the ability](/docs/reference/mes#when-you-dont-have-the-required-ability) for what the operator sees.
+
 <Callout type="note">
-A work center is **not** a fixed asset. The machine you schedule production on (a work center) and the machine you depreciate (a fixed asset) are independent records in Carbon. There's no link between them, even when they're the same physical machine.
+A work center is **not** a fixed asset. The machine you schedule production on (a work center) and the machine you depreciate (a fixed asset) are separate records in Carbon.
+
+An asset can name the work center it runs on (the asset's **"Work Center"** field), which is how the work center's **"Capital Cost"** panel lists the assets behind it with their net book value; straight-line assets also show their monthly depreciation, and disposed assets drop off. Scheduling and depreciation stay independent.
 </Callout>
+
+<Screenshot label="Work center form with the read-only Capital Cost panel listing its assets, net book value and monthly depreciation" caption="The Capital Cost panel appears once an asset names the work center." />
 
 ## Rates: estimate vs actual
 
@@ -39,6 +56,14 @@ A work center is a **finite resource**: the [scheduler](/docs/reference/scheduli
 
 An open maintenance task that takes the work center offline subtracts its downtime from those hours (lights-out machines included), so the scheduler routes work around a machine that's down rather than booking it.
 
+## Loaded operation
+
+Each work center has a **loaded operation**: the operation of the latest <Term>production event</Term> started there. A Setup, Labor or Machine start loads it. An event that you enter with an end time does not, and neither does an event that starts before the work center's latest load or unload. The operation stays loaded until it is **"Done"** or **"Canceled"**, is deleted, or moves to another work center. A **"Pause"** in the MES does not unload it.
+
+Carbon keeps the history of the loads on each work center for at least 7 days after each unload.
+
+The MES work center display shows the loaded operation as **"Loaded:"** with the job and the operation. When a [machine monitoring](/docs/integrations/oee) device is mapped to the work center, Carbon records the machine's run time on the operation that was loaded when the machine ran.
+
 ## Related
 
 <Cards>
@@ -47,5 +72,8 @@ An open maintenance task that takes the work center offline subtracts its downti
   </Card>
   <Card title="Manufacturing accounting" href="/guides/job-costing">
     How a work center's rates become a job's labor and machine cost.
+  </Card>
+  <Card title="Machine monitoring" href="/docs/integrations/oee">
+    Machine time from Sense sensors, recorded on the loaded operation.
   </Card>
 </Cards>

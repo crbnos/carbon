@@ -1,190 +1,187 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import {
   invoiceSettlementValidator,
   isInvoicePayable,
-  paymentValidator
+  memoValidator,
+  paymentValidator,
+  purchaseInvoiceSupplierChange,
+  salesInvoiceCustomerChange
 } from "./invoicing.models";
 
 describe("paymentValidator", () => {
-  const validReceipt = {
-    paymentType: "Receipt" as const,
-    customerId: "cust1",
-    paymentDate: "2026-05-19",
-    currencyCode: "USD",
-    exchangeRate: 1,
-    totalAmount: 100,
-    bankAccount: "acc1"
-  };
+  const base = (overrides: Record<string, unknown>) =>
+    paymentValidator.safeParse({
+      paymentType: "Receipt",
+      paymentDate: "2026-05-19",
+      currencyCode: "USD",
+      exchangeRate: 1,
+      totalAmount: 100,
+      bankAccount: "acc1",
+      ...overrides
+    });
 
-  it("accepts a Receipt with a customer", () => {
-    const r = paymentValidator.safeParse(validReceipt);
-    expect(r.success).toBe(true);
+  // Exactly one party; either direction is legal for a customer or a supplier
+  // (refunds), an employee only receives a reimbursement payout.
+  it.each([
+    ["Receipt", { customerId: "cust1" }, true],
+    ["Disbursement", { supplierId: "supp1" }, true],
+    ["Disbursement", { customerId: "cust1" }, true],
+    ["Receipt", { supplierId: "supp1" }, true],
+    ["Disbursement", { employeeId: "emp1" }, true],
+    ["Receipt", {}, false],
+    ["Disbursement", {}, false],
+    ["Receipt", { customerId: "cust1", supplierId: "supp1" }, false],
+    ["Disbursement", { customerId: "cust1", supplierId: "supp1" }, false],
+    ["Disbursement", { employeeId: "emp1", customerId: "cust1" }, false],
+    ["Disbursement", { employeeId: "emp1", supplierId: "supp1" }, false]
+  ])("%s with %o parses: %s", (paymentType, parties, success) => {
+    expect(base({ paymentType, ...parties }).success).toBe(success);
   });
 
-  it("accepts a Disbursement with a supplier", () => {
-    const r = paymentValidator.safeParse({
-      ...validReceipt,
-      paymentType: "Disbursement",
-      customerId: undefined,
-      supplierId: "supp1"
-    });
-    expect(r.success).toBe(true);
-  });
-
-  it("rejects a Receipt missing customer", () => {
-    const r = paymentValidator.safeParse({
-      ...validReceipt,
-      customerId: undefined
-    });
-    expect(r.success).toBe(false);
-  });
-
-  it("rejects a Disbursement missing supplier", () => {
-    const r = paymentValidator.safeParse({
-      ...validReceipt,
-      paymentType: "Disbursement",
-      customerId: undefined
-    });
-    expect(r.success).toBe(false);
-  });
-
-  it("accepts a zero totalAmount (pure credit-application, no cash)", () => {
-    const r = paymentValidator.safeParse({
-      ...validReceipt,
-      totalAmount: 0
-    });
-    expect(r.success).toBe(true);
-  });
-
-  it("rejects a negative totalAmount", () => {
-    const r = paymentValidator.safeParse({
-      ...validReceipt,
-      totalAmount: -10
-    });
-    expect(r.success).toBe(false);
-  });
-
-  it("rejects a zero exchange rate", () => {
-    const r = paymentValidator.safeParse({
-      ...validReceipt,
-      exchangeRate: 0
-    });
-    expect(r.success).toBe(false);
+  it("accepts a zero total (credit application, no cash) and refuses a negative one", () => {
+    expect(base({ customerId: "cust1", totalAmount: 0 }).success).toBe(true);
+    expect(base({ customerId: "cust1", totalAmount: -10 }).success).toBe(false);
   });
 });
 
 describe("invoiceSettlementValidator", () => {
-  const validApp = {
-    paymentId: "p1",
-    targetSalesInvoiceId: "si1",
-    appliedAmount: 50,
-    discountAmount: 0,
-    writeOffAmount: 0,
-    targetExchangeRate: 1,
-    sourceExchangeRate: 1,
-    appliedDate: "2026-05-19"
-  };
-
-  it("accepts an application against a sales invoice", () => {
-    const r = invoiceSettlementValidator.safeParse(validApp);
-    expect(r.success).toBe(true);
-  });
-
-  it("accepts an application against a purchase invoice", () => {
-    const r = invoiceSettlementValidator.safeParse({
-      ...validApp,
-      targetSalesInvoiceId: undefined,
-      targetPurchaseInvoiceId: "pi1"
-    });
-    expect(r.success).toBe(true);
-  });
-
-  it("rejects when both sales and purchase ids set", () => {
-    const r = invoiceSettlementValidator.safeParse({
-      ...validApp,
-      targetPurchaseInvoiceId: "pi1"
-    });
-    expect(r.success).toBe(false);
-  });
-
-  it("rejects when neither sales nor purchase id set", () => {
-    const r = invoiceSettlementValidator.safeParse({
-      ...validApp,
-      targetSalesInvoiceId: undefined
-    });
-    expect(r.success).toBe(false);
-  });
-
-  it("rejects when all three components are zero", () => {
-    const r = invoiceSettlementValidator.safeParse({
-      ...validApp,
-      appliedAmount: 0,
+  const base = (overrides: Record<string, unknown>) =>
+    invoiceSettlementValidator.safeParse({
+      paymentId: "p1",
+      appliedAmount: 50,
       discountAmount: 0,
-      writeOffAmount: 0
+      writeOffAmount: 0,
+      targetExchangeRate: 1,
+      sourceExchangeRate: 1,
+      appliedDate: "2026-05-19",
+      ...overrides
     });
-    expect(r.success).toBe(false);
+
+  it.each([
+    [{ targetSalesInvoiceId: "si1" }, true],
+    [{ targetPurchaseInvoiceId: "pi1" }, true],
+    [{ targetReimbursementId: "reimb1" }, true],
+    [{}, false],
+    [{ targetSalesInvoiceId: "si1", targetPurchaseInvoiceId: "pi1" }, false],
+    [{ targetSalesInvoiceId: "si1", targetReimbursementId: "reimb1" }, false]
+  ])("needs exactly one target: %o parses %s", (targets, success) => {
+    expect(base(targets).success).toBe(success);
   });
 
-  it("accepts a discount-only application (no cash applied)", () => {
-    const r = invoiceSettlementValidator.safeParse({
-      ...validApp,
+  it.each([
+    [{ appliedAmount: 0 }, false],
+    [{ appliedAmount: 0, discountAmount: 5 }, true],
+    [{ appliedAmount: 0, writeOffAmount: 5 }, true]
+  ])("needs a non-zero component: %o parses %s", (amounts, success) => {
+    expect(base({ targetSalesInvoiceId: "si1", ...amounts }).success).toBe(
+      success
+    );
+  });
+
+  it("keeps the exact document principal when its rounded base is zero", () => {
+    const result = base({
+      targetSalesInvoiceId: "si1",
       appliedAmount: 0,
-      discountAmount: 5
+      sourceAmount: 0.01,
+      sourceExchangeRate: 100000,
+      targetExchangeRate: 100000
     });
-    expect(r.success).toBe(true);
-  });
-
-  it("accepts a write-off-only application", () => {
-    const r = invoiceSettlementValidator.safeParse({
-      ...validApp,
-      appliedAmount: 0,
-      writeOffAmount: 5
-    });
-    expect(r.success).toBe(true);
-  });
-
-  it("rejects a zero invoice exchange rate", () => {
-    const r = invoiceSettlementValidator.safeParse({
-      ...validApp,
-      targetExchangeRate: 0
-    });
-    expect(r.success).toBe(false);
-  });
-
-  it("rejects a negative payment exchange rate", () => {
-    const r = invoiceSettlementValidator.safeParse({
-      ...validApp,
-      sourceExchangeRate: -1
-    });
-    expect(r.success).toBe(false);
+    expect(result.data?.sourceAmount).toBe(0.01);
   });
 });
 
 describe("isInvoicePayable", () => {
-  it("is payable when posted with a real outstanding balance", () => {
-    expect(isInvoicePayable("Partially Paid", 25)).toBe(true);
-    expect(isInvoicePayable("Submitted", 0.01)).toBe(true);
-    expect(isInvoicePayable("Overdue", 100)).toBe(true);
+  it.each([
+    ["Partially Paid", 25, true],
+    ["Submitted", 0.01, true],
+    ["Overdue", 100, true],
+    // A foreign document remainder below one base cent is still owed.
+    ["Partially Paid", 0.003, true],
+    ["Paid", 0, false],
+    ["Submitted", 0, false],
+    ["Voided", 100, false],
+    ["Draft", 100, false],
+    ["Pending", 100, false],
+    [null, null, false],
+    [undefined, undefined, false]
+  ])("%s with balance %s → %s", (status, balance, payable) => {
+    expect(isInvoicePayable(status, balance)).toBe(payable);
+  });
+});
+
+// Every party × direction is legal: deriving direction from the party once
+// made a customer Debit / supplier Credit memo unauthorable.
+describe("memoValidator", () => {
+  const base = {
+    memoDate: "2026-09-28",
+    currencyCode: "USD",
+    amount: "100",
+    exchangeRate: "1"
+  };
+
+  it.each([
+    [{ customerId: "cust_1" }, "Credit"],
+    [{ customerId: "cust_1" }, "Debit"],
+    [{ supplierId: "sup_1" }, "Credit"],
+    [{ supplierId: "sup_1" }, "Debit"]
+  ] as const)("accepts %o in the %s direction", (party, direction) => {
+    expect(
+      memoValidator.safeParse({ ...base, direction, ...party }).data?.direction
+    ).toBe(direction);
   });
 
-  it("forgives a sub-cent dust balance (not payable)", () => {
-    expect(isInvoicePayable("Partially Paid", 0.003)).toBe(false);
-    expect(isInvoicePayable("Partially Paid", 0.009)).toBe(false);
+  it.each([{}, { customerId: "cust_1", supplierId: "sup_1" }])(
+    "requires exactly one party, refusing %o",
+    (parties) => {
+      expect(
+        memoValidator.safeParse({ ...base, direction: "Credit", ...parties })
+          .success
+      ).toBe(false);
+    }
+  );
+
+  it("requires a direction rather than defaulting one", () => {
+    expect(
+      memoValidator.safeParse({ ...base, customerId: "cust_1" }).success
+    ).toBe(false);
+  });
+});
+
+describe("invoice party change", () => {
+  const eur = { currencyCode: "EUR", exchangeRate: 0.92 };
+
+  it("sets the invoice customer, clears its contact and location, and keeps the currency when the customer has none", () => {
+    expect(salesInvoiceCustomerChange("cust_billing", null)).toEqual({
+      invoiceCustomerId: "cust_billing",
+      invoiceCustomerContactId: null,
+      invoiceCustomerLocationId: null
+    });
   });
 
-  it("is not payable when fully paid or zero balance", () => {
-    expect(isInvoicePayable("Paid", 0)).toBe(false);
-    expect(isInvoicePayable("Submitted", 0)).toBe(false);
+  it("takes the invoice customer's currency, never the sold-to customer", () => {
+    expect(salesInvoiceCustomerChange("cust_billing", eur)).toEqual({
+      invoiceCustomerId: "cust_billing",
+      invoiceCustomerContactId: null,
+      invoiceCustomerLocationId: null,
+      ...eur
+    });
   });
 
-  it("is not payable in non-payable statuses regardless of balance", () => {
-    expect(isInvoicePayable("Voided", 100)).toBe(false);
-    expect(isInvoicePayable("Draft", 100)).toBe(false);
-    expect(isInvoicePayable("Pending", 100)).toBe(false);
-  });
-
-  it("treats nullish balance/status as not payable", () => {
-    expect(isInvoicePayable(null, null)).toBe(false);
-    expect(isInvoicePayable(undefined, undefined)).toBe(false);
+  it("sets the invoice supplier and takes its currency, never the supplier", () => {
+    expect(purchaseInvoiceSupplierChange("supp_billing", null)).toEqual({
+      invoiceSupplierId: "supp_billing",
+      invoiceSupplierContactId: null,
+      invoiceSupplierLocationId: null
+    });
+    expect(purchaseInvoiceSupplierChange("supp_billing", eur)).toEqual({
+      invoiceSupplierId: "supp_billing",
+      invoiceSupplierContactId: null,
+      invoiceSupplierLocationId: null,
+      ...eur
+    });
   });
 });

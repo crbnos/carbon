@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -8,9 +12,9 @@ import { data, useParams } from "react-router";
 import { useCurrencyFormatter, useRouteData } from "~/hooks";
 import {
   isMaintenanceDispatchLocked,
-  maintenanceDispatchItemValidator,
-  upsertMaintenanceDispatchItem
-} from "~/modules/resources";
+  maintenanceDispatchItemValidator
+} from "~/modules/resources/resources.models";
+import { upsertMaintenanceDispatchItem } from "~/modules/resources/resources.service";
 import type { MaintenanceDispatchItem } from "~/modules/resources/types";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";

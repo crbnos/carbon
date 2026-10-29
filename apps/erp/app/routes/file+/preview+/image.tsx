@@ -1,8 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { path } from "~/utils/path";
 
 // this route exists so we can apply some styles to the preview iframe
+const escapeAttribute = (value: string) =>
+  value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
 export let loader = async ({ request }: LoaderFunctionArgs) => {
   await requirePermissions(request, {
     view: "documents"
@@ -31,9 +38,16 @@ export let loader = async ({ request }: LoaderFunctionArgs) => {
         </style>
       </head>
       <body>
-        <img src="${path.to.file.previewFile(file)}" />
+        <img src="${escapeAttribute(path.to.file.previewFile(file))}" />
       </body>
     </html>`;
-  const headers = new Headers({ "Content-Type": "text/html" });
+  // `file` is attacker-controlled (it comes from the link): escaped above, and
+  // this page runs no script at all even if escaping is ever lost.
+  const headers = new Headers({
+    "Content-Type": "text/html",
+    "Content-Security-Policy":
+      "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'",
+    "X-Content-Type-Options": "nosniff"
+  });
   return new Response(body, { status: 200, headers });
 };

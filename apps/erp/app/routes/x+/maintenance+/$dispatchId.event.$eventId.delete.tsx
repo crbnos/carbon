@@ -1,48 +1,32 @@
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
-import {
-  deleteMaintenanceDispatchEvent,
-  getMaintenanceDispatch,
-  isMaintenanceDispatchLocked
-} from "~/modules/resources";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client } = await requirePermissions(request, {
-    delete: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["dispatchId", "eventId"]
   });
-
-  const { dispatchId, eventId } = params;
-  if (!dispatchId) throw new Error("Could not find dispatchId");
-  if (!eventId) throw new Error("Could not find eventId");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "resources"
+  if ("invalid" in input) return input.invalid;
+  const { dispatchId, eventId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.resources.deleteMaintenanceEvent({
+    dispatchId,
+    eventId
   });
-  const dispatch = await getMaintenanceDispatch(viewClient, dispatchId);
-  await requireUnlocked({
-    request,
-    isLocked: isMaintenanceDispatchLocked(dispatch.data?.status),
-    redirectTo: path.to.maintenanceDispatch(dispatchId),
-    message: "Cannot modify a locked dispatch. Reopen it first."
-  });
-
-  const result = await deleteMaintenanceDispatchEvent(client, eventId);
-
-  if (result.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.maintenanceDispatch(dispatchId),
-      await flash(request, error(result.error, "Failed to delete timecard"))
-    );
+  const to =
+    requestReferrer(args.request) ?? path.to.maintenanceDispatch(dispatchId);
+  // The timecard is gone either way; a failed reversal is the flash.
+  if (result.data?.warning) {
+    return respond(args.request, {
+      error: { message: result.data.warning }
+    }).redirect(to);
   }
-
-  throw redirect(
-    requestReferrer(request) ?? path.to.maintenanceDispatch(dispatchId),
-    await flash(request, success("Timecard removed successfully"))
-  );
+  return respond(args.request, result).redirect(to, {
+    message: "Timecard removed successfully"
+  });
 }

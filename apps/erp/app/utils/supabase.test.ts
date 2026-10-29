@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import { parseJobFilePath } from "./supabase";
 
@@ -42,6 +46,9 @@ describe("parseJobFilePath", () => {
   it("rejects dot segments", () => {
     expect(parseJobFilePath("co123/job/op456/../op789/file.png")).toBeNull();
     expect(parseJobFilePath("co123/job/op456/./x/file.png")).toBeNull();
+    expect(parseJobFilePath("co123/job/../file.png")).toBeNull();
+    expect(parseJobFilePath("co123/job/op456/%2e%2e/file.png")).toBeNull();
+    expect(parseJobFilePath("co123/job/op456/..\\..\\x.png")).toBeNull();
   });
 
   it("rejects empty and undefined input", () => {

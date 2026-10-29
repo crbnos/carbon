@@ -1,6 +1,6 @@
 ---
 description: Workflow actions and operations — the two hand-written catalogue sources plus the entity `write` allowlists, and the job-side executors that carry them out as the workflow's owner. Read before adding an action, an operation, or anything a workflow can write or call.
-paths: ["packages/jobs/src/workflows/actions/**", "packages/workflows/src/catalog/actions.ts", "packages/workflows/src/catalog/operations.ts"]
+paths: ["packages/jobs/src/workflows/actions/**", "packages/ee/src/workflows/catalog/actions.ts", "packages/ee/src/workflows/catalog/operations.ts"]
 ---
 
 # Workflow Actions and Operations
@@ -15,18 +15,21 @@ Matcher: `workflow-matcher.md`.
 ## Where the catalogue comes from
 
 ```
-packages/workflows/src/catalog/actions.ts     HAND-WRITTEN  the actions with no generic form
-packages/workflows/src/catalog/operations.ts  HAND-WRITTEN  read-only computations
-packages/workflows/src/catalog/entities.ts    HAND-WRITTEN  `write` allowlist per entity
+packages/ee/src/workflows/catalog/actions.ts     HAND-WRITTEN  the actions with no generic form
+packages/ee/src/workflows/catalog/operations.ts  HAND-WRITTEN  read-only computations
+packages/ee/src/workflows/catalog/entities.ts    HAND-WRITTEN  `write` allowlist per entity
                     │
                     ▼  scripts/generate-workflow-catalog.ts → buildCatalog (pure)
-packages/workflows/src/catalog/actions.generated.ts   COMMITTED
-      WORKFLOW_ACTION_CATALOG  +  WORKFLOW_OPERATION_CATALOG   (one file, both maps)
-packages/workflows/src/catalog/labels.generated.ts    COMMITTED  labels for events, actions and operations
+packages/ee/src/workflows/catalog/actions.generated.ts   COMMITTED
+      WORKFLOW_ACTION_CATALOG + WORKFLOW_INTEGRATION_CATALOG
+                             + WORKFLOW_OPERATION_CATALOG    (one file, three maps)
+packages/ee/src/workflows/catalog/labels.generated.ts    COMMITTED  labels for events, actions and operations
 ```
 
-Today: **16 actions** (6 hand-written, 10 generated `<entity>.update`) and
-**15 operations**. Same commands as the event side — one generator writes all
+Today: **16 actions** (6 hand-written, 10 generated `<entity>.update`) and **15
+operations**, plus **7 integration steps** in their own catalog — an integration is a
+distinct NODE KIND, not an action, so nothing on this path carries a piece. See
+`workflow-integrations.md`. Same commands as the event side — one generator writes all
 three `*.generated.ts` files:
 
 ```bash
@@ -34,7 +37,8 @@ pnpm run generate:workflow-catalog
 pnpm run check:workflow-catalog
 ```
 
-`buildCatalog(registry, moments, actions, operations, schema)` expands each
+`buildCatalog(registry, moments, actions, operations, schema, integrationSteps)`
+expands each
 entity's `write` map into one `<entity>.update` action: an input keyed by the
 entity name (the record, `required: true`), plus one optional input per writable
 column typed from the swagger schema. It sets `update: { entity }` and
@@ -42,8 +46,8 @@ column typed from the swagger schema. It sets `update: { entity }` and
 `Update a/an <entity>`. A hand-written id that collides with a generated one is a
 **build error**, not a silent overwrite.
 
-A hand-written action must have either a `call` (an MCP tool name) or be one of
-`BUILT_IN_ACTIONS` (`notify`, `webhook`) — `validateCatalogInputs` reports
+An action must have a `call` (an MCP tool name) or membership in `BUILT_IN_ACTIONS`
+(`notify`, `webhook`) — `validateCatalogInputs` reports
 `Action "<id>" has no implementation route.` otherwise. The check script also
 verifies every `call` exists in `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 and tells you to run `pnpm run generate:mcp`.
@@ -65,16 +69,17 @@ may write. Adding a column to `watch` does not make it writable, and that is the
 point.
 
 Both maps are keyed by `ColumnOf<T>` for the entry's own table, so a migration
-that renames a column fails `tsgo` at the registry line. `write` entries carry
+that renames a column fails `tsc` at the registry line. `write` entries carry
 the same `ref` escape hatch as `watch` for composite foreign keys, and a `ref`
 that disagrees with a present foreign key is a build error.
 
 ## The dispatcher seam
 
 `packages/jobs` cannot import `~/modules/*` — the dependency only runs app → package.
-But the four `*.create` actions must go through the ERP's own `upsert*` service
-functions, so sequence numbers, defaults and required-field logic are the ones the
-app already uses.
+But the four `*.create` actions must go through the ERP's own service functions
+(`production_insertJob`, `quality_insertIssue`, `purchasing_insertPurchaseOrder`,
+`sales_insertSalesOrder`), so sequence numbers, defaults and required-field logic are
+the ones the app already uses.
 
 So `packages/jobs/src/workflows/actions/dispatcher.ts` holds one module-level
 slot:
@@ -84,30 +89,54 @@ export function setWorkflowDispatch(fn: WorkflowDispatch): void
 export function getWorkflowDispatch(): WorkflowDispatch | undefined
 ```
 
-`apps/erp/app/routes/api+/inngest.ts` fills it at boot:
+`apps/erp/app/routes/api+/inngest.ts` fills it on first request (lazy, so the
+client build can tree-shake the server graph):
 
 ```ts
 import { functions, inngest, setWorkflowDispatch } from "@carbon/jobs/inngest";
-import { executeFunction } from "./mcp+/lib/direct-executor";
+import { scopesFromPermissions } from "./v1+/lib/base.server";
+import { callOperation } from "./v1+/lib/call.server";
 
-setWorkflowDispatch(executeFunction);
+setWorkflowDispatch((name, { permissions, ...context }, args) =>
+  callOperation(
+    name,
+    {
+      ...context,
+      authKind: "session",
+      scopes: scopesFromPermissions(permissions, context.companyId)
+    },
+    args
+  )
+);
 ```
 
-`WorkflowDispatch` is declared to be **structurally** satisfied by
-`executeFunction`, so nothing in `@carbon/jobs` names an app type. An unfilled
-slot is not a crash: `runAction` returns
+`callOperation` is the Carbon API's canonical entry point (the same one MCP
+`call_tool` uses) — it runs the operation through the real
+oRPC procedure. `authKind: "session"` marks the workflow engine as an
+in-process caller acting as the owner. The per-operation gate checks the
+operation's own permission against the owner's permissions, which
+`execute.ts` reads once per run (`readOwnerPermissions`) and passes through
+`createWorkflowServices` into `DispatchContext.permissions`. That is on top of
+the engine's own check of the node's catalog permission, and of RLS on the
+owner-scoped client. A step whose owner lacks the operation's permission fails
+with "The workflow's owner does not have the required permission: …". `WorkflowDispatch` is
+**structurally** satisfied by the wrapper, so nothing in `@carbon/jobs` names an
+app type. An unfilled slot is not a crash: `runAction` returns
 `"This step is not available in this environment."`
 
 `runCreateAction` (`actions/create.ts`) converts each `RuntimeValue` with
-`toPlainValue`, dispatches, then digs the new row's id out of whatever came back
-— the service functions return a Supabase envelope whose `error` it checks
-separately, and `idIn` walks a list if one came back. No id means
-`"The record was created but could not be read back."`, never a silent success.
-`companyId`, `createdBy` and `updatedBy` are stamped by the dispatcher.
+`toPlainValue`, dispatches, then digs the new row's id out of whatever came back.
+`callOperation` returns the service data already UNWRAPPED (`{ success, data }`),
+and `create.ts` handles both that and the legacy envelope shape: it checks
+`envelope.error` when the payload looks like one, and `idIn` walks a list if one
+came back. No id means `"The record was created but could not be read back."`,
+never a silent success. `companyId`, `createdBy` and `updatedBy` are stamped by
+the service function itself (`payload`, `@carbon/api/service-tools.server`), from
+its context, never from the input.
 
 ## `createWorkflowServices` — the one port
 
-`packages/workflows/src/runtime/types.ts` declares `WorkflowServices`
+`packages/ee/src/workflows/runtime/types.ts` declares `WorkflowServices`
 (`runAction`, `runOperation`, `search`). It is **required** on `RuntimeContext`,
 so a missing implementation is a compile error. The pure runtime knows nothing
 else about the world.
@@ -128,6 +157,10 @@ if (route.update !== undefined) …   // runUpdateAction
 if (route.call   !== undefined) …   // runCreateAction
 return { ok: false, error: GONE };
 ```
+
+`runIntegration` is a SEPARATE service method, not a branch here: it is handed the
+`{ name, action }` block off the integration step's own catalog entry, so the action
+path never learns what a piece is and no id is ever parsed for one.
 
 An id that *reads* like `x.update` but carries no `update` block must not reach
 the update executor. `getActionRoute` (`catalog/catalog.ts`) exists precisely so
@@ -219,7 +252,7 @@ Three things about it are load-bearing:
   on notify nodes saved before the field existed in a picker where the author
   cannot tick the one channel that is actually on.
 - **Availability is a build-time concern.** Email needs `EMAIL_NOTIFICATIONS`
-  (Business/Partner) and Slack needs the company's Slack integration active; the
+  (Business/Partner) and Slack needs a usable Slack connection (`getSlackWorkspace`); the
   job skips a channel it cannot use with a `console.warn` at most. The builder
   disables the option and says why (`fields/choiceOptions.tsx`) — that is the only
   place the author ever finds out. "Unavailable" only blocks ADDING a channel; one
@@ -303,21 +336,28 @@ covered completely: a literal cannot rebind, because there is no name to re-reso
 The two layers are what make the guard whole, so don't drop the pre-check as
 "redundant".
 
-## The two older webhook systems are untouched
+## The other two webhook systems
 
-Three things in this repo are called "webhook". Only the first is new:
+Three things in this repo are called "webhook":
 
 | | What | Where |
 |---|---|---|
 | **Workflow action** | Outbound, SSRF-guarded, https-only | `packages/jobs/src/workflows/actions/webhook.ts` |
-| Event-system `WEBHOOK` handler | Outbound `axios.post` on `carbon/event-webhook` to a subscription's configured URL with its configured headers — **no signing, no URL guard** | `packages/jobs/src/inngest/functions/events/webhook.ts` |
+| Event-system `WEBHOOK` handler | Outbound `axios.post` on `carbon/event-webhook` to a subscription's configured URL, signed (`Carbon-Signature`), SSRF-guarded, http or https | `packages/jobs/src/inngest/functions/events/webhook.ts` |
 | Integration webhooks | **Inbound** routes for Jira, Linear, Paperless Parts, Stripe and Xero | `apps/erp/app/routes/api+/webhook.{jira,linear,paperless-parts,stripe,xero}*.ts` |
 
-They share no code with the workflow action and were deliberately not changed.
-Do not "unify" them: the event-system handler's contract is an existing customer
-integration, and hardening it is its own decision with its own migration. The
-matcher's subscription reconciler is already careful never to touch a company's
-`WEBHOOK` rows (see `workflow-matcher.md`).
+The event-system handler shares only the guard with the workflow action, through
+`checkWebhookUrl` (the private-network check of `checkOutboundUrl`, but http and URL
+credentials still allowed, since its customer contract never forbade them) and
+`outboundHttpAgent` / `outboundHttpsAgent` (`guardedLookup` for node's http client),
+both in `url-guard.ts`. `webhookTransport` (`events/webhook-body.ts`) holds its axios
+options: those agents, `maxRedirects: 0` (a 3xx fails the attempt) and `proxy: false`
+(through an `HTTP_PROXY` the guard would check the proxy, not the target). A refused
+address counts one error and throws `NonRetriableError`; a failed lookup is
+`retryable` and takes the ordinary retry path. Do not go further and
+"unify" the two: the event handler's contract (http, signing, retries, the 30 s
+timeout) is an existing customer integration. The matcher's subscription reconciler
+is careful never to touch a company's `WEBHOOK` rows (see `workflow-matcher.md`).
 
 ## Gotchas
 

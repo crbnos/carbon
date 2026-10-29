@@ -1,11 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { nonScrapQuantityValidator } from "~/services/models";
-import { insertReworkQuantity } from "~/services/operations.service";
+import {
+  abilityBlockRefusal,
+  insertReworkQuantity
+} from "~/services/operations.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -18,6 +26,16 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  const serviceRole = await getCarbonServiceRole();
+  const refusal = await abilityBlockRefusal(serviceRole, {
+    operationId: validation.data.jobOperationId,
+    employeeId: userId,
+    companyId
+  });
+  if (refusal) {
+    return data({}, await flash(request, error(null, refusal)));
   }
 
   const insertRework = await insertReworkQuantity(client, {

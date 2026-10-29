@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import {
   type ActionOutcome,
   isNull,
   primitiveValue,
   type RuntimeValue
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 // undici's own fetch, not the global one: the global is whatever undici Node bundled,
 // and a dispatcher from a different major is rejected at request time.

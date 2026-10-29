@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   cn,
@@ -8,19 +12,15 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Kbd,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
+  MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   useDisclosure,
-  useKeyboardShortcuts,
   useMount,
-  usePrettifyShortcut,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
@@ -46,8 +46,9 @@ import {
   useUser
 } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { ItemType } from "~/modules/shared";
-import { itemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
+import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { isPurchaseOrderLocked } from "../../purchasing.models";
@@ -56,7 +57,6 @@ import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
 import PurchaseOrderLineForm from "./PurchaseOrderLineForm";
 
 export default function PurchaseOrderExplorer() {
-  const prettifyShortcut = usePrettifyShortcut();
   const { defaults } = useUser();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -69,7 +69,11 @@ export default function PurchaseOrderExplorer() {
 
   const purchaseOrderLineInitialValues = {
     purchaseOrderId: orderId,
-    purchaseOrderLineType: "Item" as ItemType,
+    // "Item" is the picker's generic mode, not a member of the line-type enum.
+    // Posting it made the validator fail with "Type is required" — an error
+    // naming a field the modal doesn't show. Start from a real type; the item
+    // picker overwrites it with the selected item's type on change.
+    purchaseOrderLineType: "Part" as ItemType,
     purchaseQuantity: 1,
     supplierUnitPrice: 0,
     locationId:
@@ -77,7 +81,11 @@ export default function PurchaseOrderExplorer() {
     supplierTaxAmount: 0,
     taxPercent: 0,
     supplierShippingCost: 0,
-    exchangeRate: purchaseOrderData?.purchaseOrder?.exchangeRate ?? 1
+    exchangeRate: purchaseOrderData?.purchaseOrder?.exchangeRate ?? 1,
+    requiredDate:
+      purchaseOrderData?.purchaseOrder?.receiptRequestedDate ?? undefined,
+    promisedDate:
+      purchaseOrderData?.purchaseOrder?.receiptPromisedDate ?? undefined
   };
 
   const newPurchaseOrderLineDisclosure = useDisclosure();
@@ -90,6 +98,11 @@ export default function PurchaseOrderExplorer() {
   const isDisabled = isLocked
     ? true
     : purchaseOrderData?.purchaseOrder?.status !== "Draft";
+  // A Planned PO is one planning created and nobody has sent yet, so a line
+  // can still come off it, the same as on a Draft.
+  const isDeleteDisabled = !["Draft", "Planned"].includes(
+    purchaseOrderData?.purchaseOrder?.status ?? ""
+  );
 
   const lines = useMemo(
     () => purchaseOrderData?.lines ?? [],
@@ -113,14 +126,6 @@ export default function PurchaseOrderExplorer() {
     setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
-
-  const newButtonRef = useRef<HTMLButtonElement>(null);
-  useKeyboardShortcuts({
-    "Command+Shift+l": (event: KeyboardEvent) => {
-      event.stopPropagation();
-      newButtonRef.current?.click();
-    }
-  });
 
   return (
     <>
@@ -147,7 +152,7 @@ export default function PurchaseOrderExplorer() {
               lines.map((line) => (
                 <PurchaseOrderLineItem
                   key={line.id}
-                  isDisabled={isDisabled}
+                  isDeleteDisabled={isDeleteDisabled}
                   line={line}
                   onDelete={onDeleteLine}
                 />
@@ -178,30 +183,16 @@ export default function PurchaseOrderExplorer() {
             />
           ) : (
             <>
-              <Tooltip>
-                <TooltipTrigger className="flex-1">
-                  <Button
-                    ref={newButtonRef}
-                    className="w-full"
-                    isDisabled={
-                      isDisabled || !permissions.can("update", "sales")
-                    }
-                    leftIcon={<LuCirclePlus />}
-                    variant="secondary"
-                    onClick={newPurchaseOrderLineDisclosure.onOpen}
-                  >
-                    <Trans>Add Line Item</Trans>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <HStack>
-                    <span>
-                      <Trans>New Line Item</Trans>
-                    </span>
-                    <Kbd>{prettifyShortcut("Command+Shift+l")}</Kbd>
-                  </HStack>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                className="flex-1"
+                shortcut={EXPLORER_SHORTCUTS.addLine}
+                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                leftIcon={<LuCirclePlus />}
+                variant="secondary"
+                onClick={newPurchaseOrderLineDisclosure.onOpen}
+              >
+                <Trans>Add Line Item</Trans>
+              </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
                   aria-label="Reorder lines"
@@ -239,6 +230,15 @@ function PurchaseOrderLineBody({
   isOverlay?: boolean;
 }) {
   const [items] = useItems();
+  const subtitle =
+    line.purchaseOrderLineType === "G/L Account"
+      ? "G/L Account"
+      : line.purchaseOrderLineType === "Fixed Asset"
+        ? (line as any).assetName || line.description
+        : distinctItemText(
+            getItemReadableId(items, line.itemId),
+            line.description
+          );
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
@@ -251,13 +251,11 @@ function PurchaseOrderLineBody({
                 ? (line as any).assetReadableId || "Fixed Asset"
                 : getItemReadableId(items, line.itemId)}
           </span>
-          <span className="text-muted-foreground text-xs truncate line-clamp-1">
-            {line.purchaseOrderLineType === "G/L Account"
-              ? "G/L Account"
-              : line.purchaseOrderLineType === "Fixed Asset"
-                ? (line as any).assetName || line.description
-                : line.description}
-          </span>
+          {subtitle && (
+            <span className="text-muted-foreground text-xs truncate line-clamp-1">
+              {subtitle}
+            </span>
+          )}
         </VStack>
       </HStack>
     </ReorderableRow>
@@ -266,13 +264,13 @@ function PurchaseOrderLineBody({
 
 type PurchaseOrderLineItemProps = {
   line: PurchaseOrderLine;
-  isDisabled: boolean;
+  isDeleteDisabled: boolean;
   onDelete: (line: PurchaseOrderLine) => void;
 };
 
 function PurchaseOrderLineItem({
   line,
-  isDisabled,
+  isDeleteDisabled,
   onDelete
 }: PurchaseOrderLineItemProps) {
   const { t } = useLingui();
@@ -320,11 +318,20 @@ function PurchaseOrderLineItem({
       "Completed"
     ].includes(orderStatus);
 
+  const subtitle =
+    line.purchaseOrderLineType === "G/L Account"
+      ? "G/L Account"
+      : line.purchaseOrderLineType === "Fixed Asset"
+        ? line.assetName || line.description
+        : distinctItemText(
+            getItemReadableId(items, line.itemId),
+            line.description
+          );
+
   return (
     <VStack spacing={0} className="border-b">
-      <Link
+      <PrefetchLink
         to={path.to.purchaseOrderLine(orderId, line.id!)}
-        prefetch="intent"
         className="w-full"
       >
         <HStack
@@ -347,13 +354,11 @@ function PurchaseOrderLineItem({
                     ? (line as any).assetReadableId || "Fixed Asset"
                     : getItemReadableId(items, line.itemId)}
               </span>
-              <span className="text-muted-foreground text-xs truncate line-clamp-1">
-                {line.purchaseOrderLineType === "G/L Account"
-                  ? "G/L Account"
-                  : line.purchaseOrderLineType === "Fixed Asset"
-                    ? line.assetName || line.description
-                    : line.description}
-              </span>
+              {subtitle && (
+                <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                  {subtitle}
+                </span>
+              )}
             </VStack>
           </HStack>
           <div className="absolute right-2">
@@ -361,7 +366,7 @@ function PurchaseOrderLineItem({
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label={t`More`}
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   variant="solid"
                   onClick={(e) => e.stopPropagation()}
@@ -369,9 +374,10 @@ function PurchaseOrderLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={
-                    isDisabled || !permissions.can("delete", "purchasing")
+                    isDeleteDisabled || !permissions.can("delete", "purchasing")
                   }
                   onClick={(e) => {
                     e.stopPropagation();
@@ -404,7 +410,7 @@ function PurchaseOrderLineItem({
                 {(itemType as readonly string[]).includes(
                   line?.purchaseOrderLineType ?? ""
                 ) && (
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
                     <Link
                       to={getLinkToItemDetails(
                         line.purchaseOrderLineType as ItemType,
@@ -422,7 +428,7 @@ function PurchaseOrderLineItem({
             </DropdownMenu>
           </div>
         </HStack>
-      </Link>
+      </PrefetchLink>
       {receivingDisclosure.isOpen && (
         <Confirm
           action={path.to.purchaseOrderLineReceiving(orderId, line.id!)}

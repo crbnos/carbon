@@ -1,4 +1,10 @@
-import { SUPABASE_URL, useCarbon } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
+import { prepareImageUpload } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
@@ -16,6 +22,7 @@ import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuRefreshCw } from "react-icons/lu";
 import { useUser } from "~/hooks";
+import { regenerateModelThumbnail } from "~/utils/model-thumbnail";
 import { getPrivateUrl } from "~/utils/path";
 
 const logger = getLogger("erp", "itemthumnailupload");
@@ -94,44 +101,20 @@ export function ItemThumbnailUpload({
   const onRegenerate = useCallback(async () => {
     if (!modelId || !carbon) return;
     setIsRegenerating(true);
+    toast.info(t`Regenerating thumbnail…`);
     try {
-      // Snapshot the current model thumbnail so we can detect the new one.
-      const before = await carbon
-        .from("modelUpload")
-        .select("thumbnailPath")
-        .eq("id", modelId)
-        .maybeSingle();
-      const beforePath = before.data?.thumbnailPath ?? null;
-
-      const body = new FormData();
-      body.append("modelUploadId", modelId);
-      const res = await fetch("/api/model/thumbnail", {
-        method: "POST",
-        body
+      const path = await regenerateModelThumbnail({
+        carbon,
+        modelId,
+        isActive: () => mountedRef.current
       });
-      if (!res.ok) throw new Error(`thumbnail ${res.status}`);
-      toast.info(t`Regenerating thumbnail…`);
-
-      // The render runs async in the background. Poll for the fresh path (unique
-      // per generation) and swap the image in when it lands; bounded so it never
-      // spins forever.
-      const deadline = Date.now() + 90_000;
-      while (mountedRef.current && Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 3000));
-        if (!mountedRef.current) return;
-        const cur = await carbon
-          .from("modelUpload")
-          .select("thumbnailPath")
-          .eq("id", modelId)
-          .maybeSingle();
-        const curPath = cur.data?.thumbnailPath ?? null;
-        if (curPath && curPath !== beforePath) {
-          setThumbnailPath(getPrivateUrl(curPath));
-          toast.success(t`Thumbnail updated`);
-          return;
-        }
+      if (!mountedRef.current) return;
+      if (path) {
+        setThumbnailPath(getPrivateUrl(path));
+        toast.success(t`Thumbnail updated`);
+      } else {
+        toast.info(t`Thumbnail is still generating`);
       }
-      if (mountedRef.current) toast.info(t`Thumbnail is still generating`);
     } catch {
       if (mountedRef.current) toast.error(t`Failed to regenerate thumbnail`);
     } finally {
@@ -148,27 +131,13 @@ export function ItemThumbnailUpload({
       const file = e.target.files?.[0];
       if (file) {
         toast.info(t`Uploading ${file.name}`);
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("contained", "true");
 
         try {
-          const response = await fetch(
-            `${SUPABASE_URL}/functions/v1/image-resizer`,
-            {
-              method: "POST",
-              body: formData
-            }
-          );
-
-          // Get content type from response to determine if it's JPG or PNG
-          const contentType =
-            response.headers.get("Content-Type") || "image/png";
-          const isJpg = contentType.includes("image/jpeg");
-          const fileExtension = isJpg ? "jpg" : "png";
-
-          const blob = new Blob([await response.arrayBuffer()], {
-            type: contentType
+          const processed = await prepareImageUpload(carbon, {
+            bucket: getCompanyPrivateBucket(company.id),
+            directory: `${company.id}/tmp`,
+            file,
+            contained: true
           });
 
           const reader = new FileReader();
@@ -178,15 +147,15 @@ export function ItemThumbnailUpload({
               setThumbnailPath(base64String);
             }
           };
-          reader.readAsDataURL(blob);
+          reader.readAsDataURL(processed);
 
+          const fileExtension = processed.name.split(".").pop();
           const fileName = `${nanoid()}.${fileExtension}`;
-          const thumbnailFile = new File([blob], fileName, {
-            type: contentType
+          const thumbnailFile = new File([processed], fileName, {
+            type: processed.type
           });
-
-          const { data, error } = await carbon.storage
-            .from("private")
+          const { data, error } = await storage(carbon)
+            .company(company.id)
             .upload(
               `${company.id}/thumbnails/${itemId}/${fileName}`,
               thumbnailFile,

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { GanttEvent } from "~/components/Gantt";
 import type { TimelineNodeDetail } from "./timeline";
 
@@ -38,6 +42,24 @@ export type ResourceTimelineReservation = {
    */
   operationId: string;
   operationDescription: string | null;
+  /**
+   * The part this operation produces (its make method's item) — used to title
+   * the bar and the detail panel instead of the operation description, and to
+   * show the item's thumbnail in the panel.
+   */
+  itemReadableId?: string | null;
+  itemName?: string | null;
+  itemThumbnailPath?: string | null;
+  itemType?: string | null;
+  /**
+   * Set when this is a Released operation batch's ONE coalesced hold (its
+   * jobId/operationId are just the anchor member). The bar reads as the
+   * batch — "BAT… · N jobs" — never as the anchor member alone.
+   */
+  batchReadableId?: string | null;
+  batchMemberCount?: number | null;
+  /** Raw batch id — lets the detail panel open the batch itself. */
+  batchId?: string | null;
   hasConflict: boolean;
   conflictReason: string | null;
   /**
@@ -50,6 +72,10 @@ export type ResourceTimelineReservation = {
   scheduleNote?: string | null;
   /** Actual work content (hours) inside the interval, excluding pauses */
   workHours?: number | null;
+  /** The operation is In Progress: what the board's In Process switch shows. */
+  inProgress?: boolean;
+  /** `TimelineNodeDetail.qualifiedPeople` */
+  qualifiedPeople?: { name: string; stations: string[] }[];
 };
 
 export type ResourceTimeline = {
@@ -63,6 +89,11 @@ const ROOT_ID = "resources-root";
 
 /** The lane-id prefix for a work-center row: `lane:WorkCenter:<workCenterId>`. */
 const WORK_CENTER_LANE_PREFIX = "lane:WorkCenter:";
+
+/** A work center's lane node id. */
+export function workCenterLaneId(workCenterId: string): string {
+  return `${WORK_CENTER_LANE_PREFIX}${workCenterId}`;
+}
 
 /**
  * Recover a work center's id from its lane node id (built as
@@ -109,6 +140,27 @@ type Lane = {
 
 const clamp = (value: number, lo: number, hi: number) =>
   Math.min(Math.max(value, lo), hi);
+
+/**
+ * The bar/detail label for a reservation. A batch reads as the batch
+ * ("BAT… · N jobs"); everything else reads as "{job} · {part}" — the operation's
+ * make-method item, NOT its description — falling back to the description only
+ * when the part is unknown, then to the job id alone.
+ */
+function reservationLabel(r: ResourceTimelineReservation): string {
+  if (r.batchReadableId) {
+    return `${r.batchReadableId}${
+      r.batchMemberCount ? ` · ${r.batchMemberCount} jobs` : ""
+    }`;
+  }
+  if (r.itemReadableId) {
+    return `${r.jobReadableId} · ${r.itemReadableId}`;
+  }
+  if (r.operationDescription) {
+    return `${r.jobReadableId} · ${r.operationDescription}`;
+  }
+  return r.jobReadableId;
+}
 
 export function buildResourceTimeline(input: {
   reservations: ResourceTimelineReservation[];
@@ -347,7 +399,8 @@ export function buildResourceTimeline(input: {
 
   // A reservation → its Gantt bar (+ detail). Reused for operation nodes (the
   // machine hold), operator segments, and legacy pool / orphan rows. The detail
-  // panel keeps the full "job · operation" label whatever the bar is titled.
+  // panel carries the same "job · part" label as the bar, plus the part's
+  // thumbnail and the operation description for context.
   const buildReservationBar = (
     r: ResourceTimelineReservation,
     parentId: string,
@@ -360,9 +413,7 @@ export function buildResourceTimeline(input: {
     const barEnd = clamp(rawEnd, windowStart, windowEnd);
     detailsById[r.id] = {
       kind: "reservation",
-      title: r.operationDescription
-        ? `${r.jobReadableId} · ${r.operationDescription}`
-        : r.jobReadableId,
+      title: reservationLabel(r),
       start: new Date(rawStart).toISOString(),
       end: new Date(rawEnd).toISOString(),
       durationMs: Math.max(rawEnd - rawStart, 0),
@@ -372,10 +423,20 @@ export function buildResourceTimeline(input: {
       employeeName: r.resourceKind === "Employee" ? r.resourceName : null,
       conflictReason: r.hasConflict ? r.conflictReason : null,
       unschedulable: r.unschedulable,
+      qualifiedPeople: r.qualifiedPeople,
       scheduleNote: r.scheduleNote ?? null,
       workMs: r.workHours ? r.workHours * 3_600_000 : undefined,
       jobId: r.jobId,
-      jobReadableId: r.jobReadableId
+      jobReadableId: r.jobReadableId,
+      operationId: r.operationId,
+      resourceId: r.resourceId,
+      operationDescription: r.operationDescription ?? null,
+      itemReadableId: r.itemReadableId ?? null,
+      itemName: r.itemName ?? null,
+      thumbnailPath: r.itemThumbnailPath ?? null,
+      itemType: r.itemType ?? null,
+      batchId: r.batchId ?? null,
+      estimatedWorkHours: r.workHours ?? null
     };
     return {
       id: r.id,
@@ -393,7 +454,7 @@ export function buildResourceTimeline(input: {
         // op: same red bar (isError), but a "can't be scheduled" alert in the
         // status column instead of the generic conflict triangle.
         isUnschedulable: r.unschedulable,
-        isPartial: false,
+        isPartial: r.inProgress ?? false,
         isCancelled: false,
         // Always TRACE: only TRACE nodes render as duration bars.
         level: "TRACE" as GanttEvent["data"]["level"],
@@ -407,15 +468,13 @@ export function buildResourceTimeline(input: {
   for (const lane of lanes) {
     // Operation nodes (the machine hold) with operator segments nested under
     // each. The op is the anchor bar; a machine-only or unschedulable op simply
-    // has no operators beneath it. Titled "{job} · {op}" so the op reads clearly
-    // under its station.
+    // has no operators beneath it. Titled "{job} · {part}" so the op reads
+    // clearly under its station.
     const opNodes = [...lane.ops.values()]
       .sort((a, b) => byStart(a.machine, b.machine))
       .map((op) => {
         const node = buildReservationBar(op.machine, lane.id, 2, {
-          message: op.machine.operationDescription
-            ? `${op.machine.jobReadableId} · ${op.machine.operationDescription}`
-            : op.machine.jobReadableId
+          message: reservationLabel(op.machine)
         });
         const workerBars = [...op.workers].sort(byStart).map((w) =>
           buildReservationBar(w, op.machine.id, 3, {
@@ -581,5 +640,92 @@ function makeRootEvent(
       conflictSegments:
         conflictSegments.length > 0 ? conflictSegments : undefined
     }
+  };
+}
+
+/**
+ * The compact layout of a resource timeline: one row per resource lane, its
+ * operations (and maintenance) drawn side by side on that row as `items`
+ * instead of one row each. Operator segments are dropped — the detailed tree
+ * shows who worked what. Pure: the input is left untouched, and every item
+ * keeps its id, so the same `detailsById` serves both layouts.
+ */
+export function collapseToLanes(events: GanttEvent[]): GanttEvent[] {
+  const byId = new Map(events.map((event) => [event.id, event]));
+  const lanes: GanttEvent[] = [];
+  let root: GanttEvent | undefined;
+
+  for (const event of events) {
+    if (event.level === 0) {
+      root = event;
+    } else if (event.level === 1) {
+      const items = event.children
+        .map((id) => byId.get(id))
+        .filter((child): child is GanttEvent => child !== undefined)
+        .map((child) => ({ ...child, children: [], hasChildren: false }));
+      lanes.push({
+        ...event,
+        children: [],
+        hasChildren: false,
+        data: { ...event.data, items }
+      });
+    }
+  }
+
+  return root ? [root, ...lanes] : lanes;
+}
+
+export type ForecastCounts = {
+  resources: number;
+  reservations: number;
+  jobs: number;
+  conflicts: number;
+  unschedulable: number;
+};
+
+/**
+ * The board's header counts over what it shows: the rows and inline bars a
+ * filter leaves on screen (`visibleUnderFilter`), in the view the board draws.
+ * Resources are the lanes shown plus the operators booked on shown work,
+ * each once.
+ */
+export function forecastCounts(
+  events: GanttEvent[],
+  detailsById: Record<string, TimelineNodeDetail>,
+  visibility: { rows: Set<string>; bars: Set<string> }
+): ForecastCounts {
+  const resources = new Set<string>();
+  const jobs = new Set<string>();
+  const conflicts = new Set<string>();
+  const unschedulable = new Set<string>();
+  let reservations = 0;
+  const count = (event: GanttEvent) => {
+    const detail = detailsById[event.id];
+    if (detail?.kind !== "reservation") return;
+    reservations++;
+    if (detail.jobId) jobs.add(detail.jobId);
+    if (detail.resourceKind === "Employee" && detail.resourceId) {
+      resources.add(`Employee:${detail.resourceId}`);
+    }
+    const operationId = detail.operationId ?? event.id;
+    if (detail.unschedulable) unschedulable.add(operationId);
+    else if (event.data.isError) conflicts.add(operationId);
+  };
+  for (const event of events) {
+    if (!visibility.rows.has(event.id)) continue;
+    if (event.level === 1 && event.id.startsWith("lane:")) {
+      resources.add(event.id.slice("lane:".length));
+    }
+    count(event);
+    for (const item of event.data.items ?? []) {
+      if (visibility.bars.has(item.id)) count(item);
+    }
+  }
+  return {
+    resources: resources.size,
+    reservations,
+    jobs: jobs.size,
+    conflicts: conflicts.size,
+    unschedulable: unschedulable.size
   };
 }

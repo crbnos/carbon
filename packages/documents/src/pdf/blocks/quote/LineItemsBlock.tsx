@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -78,12 +82,12 @@ export function LineItemsBlock({
         <View style={tw("w-2/3 flex flex-row items-center")}>
           <Text style={tw(`${colWidth} text-center pr-3`)}>Qty</Text>
           <Text style={tw(`${colWidth} text-center pr-3`)}>Unit Price</Text>
-          {!hasSinglePricePerLine && (
+          {!hasSinglePricePerLine ? (
             <Text style={tw(`${colWidth} text-center pr-3`)}>Tax & Fees</Text>
-          )}
-          {hasAnyLeadTime && (
+          ) : null}
+          {hasAnyLeadTime ? (
             <Text style={tw(`${colWidth} text-center pr-3`)}>Lead Time</Text>
-          )}
+          ) : null}
           <Text style={tw(`${colWidth} text-center`)}>Total</Text>
         </View>
       </View>
@@ -97,9 +101,10 @@ export function LineItemsBlock({
 
         return (
           <View key={line.id}>
-            {line.status !== "No Quote" ? (
-              <>
-                {(line.quantity ?? []).map((quantity, index) => {
+            <>
+              {[...(line.quantity ?? [])]
+                .sort((a, b) => a - b)
+                .map((quantity, index) => {
                   const prices =
                     line.id != null ? (pricesByLine[line.id] ?? []) : [];
                   const price = prices.find(
@@ -154,7 +159,7 @@ export function LineItemsBlock({
                       ]}
                     >
                       <View style={tw("w-1/3 pr-2")}>
-                        {index === 0 && (
+                        {index === 0 ? (
                           <>
                             <Text
                               style={{ ...tw("text-gray-800"), ...overflow }}
@@ -170,17 +175,17 @@ export function LineItemsBlock({
                               {getLineDescriptionDetails(line)}
                             </Text>
                             {opts.showThumbnails &&
-                              thumbnails &&
-                              line.id != null &&
-                              line.id in thumbnails && (
-                                <View style={tw("mt-2")}>
-                                  <Image
-                                    src={thumbnails[line.id]!}
-                                    style={{ width: 60, height: 60 }}
-                                  />
-                                </View>
-                              )}
-                            {totalTaxAndFees > 0 && (
+                            thumbnails &&
+                            line.id != null &&
+                            thumbnails[line.id] ? (
+                              <View style={tw("mt-2")}>
+                                <Image
+                                  src={thumbnails[line.id]!}
+                                  style={{ width: 60, height: 60 }}
+                                />
+                              </View>
+                            ) : null}
+                            {totalTaxAndFees > 0 ? (
                               <View style={tw("mt-1")}>
                                 <Text
                                   style={tw(
@@ -189,7 +194,7 @@ export function LineItemsBlock({
                                 >
                                   Tax & Fees
                                 </Text>
-                                {(price?.convertedShippingCost ?? 0) > 0 && (
+                                {(price?.convertedShippingCost ?? 0) > 0 ? (
                                   <View
                                     style={tw("flex flex-row justify-between")}
                                   >
@@ -208,7 +213,7 @@ export function LineItemsBlock({
                                       )}
                                     </Text>
                                   </View>
-                                )}
+                                ) : null}
                                 {Object.values(additionalCharges)
                                   .filter(
                                     (charge) =>
@@ -245,7 +250,7 @@ export function LineItemsBlock({
                                       </View>
                                     );
                                   })}
-                                {taxPercent > 0 && (
+                                {taxPercent > 0 ? (
                                   <View
                                     style={tw("flex flex-row justify-between")}
                                   >
@@ -263,11 +268,11 @@ export function LineItemsBlock({
                                       {numberFormatter.format(taxAmount)}
                                     </Text>
                                   </View>
-                                )}
+                                ) : null}
                               </View>
-                            )}
+                            ) : null}
                           </>
-                        )}
+                        ) : null}
                       </View>
                       <View style={tw("w-2/3 flex flex-row")}>
                         <Text
@@ -286,7 +291,7 @@ export function LineItemsBlock({
                             ? unitPriceNumberFormatter.format(unitPrice)
                             : "-"}
                         </Text>
-                        {!hasSinglePricePerLine && (
+                        {!hasSinglePricePerLine ? (
                           <Text
                             style={tw(
                               `${colWidth} text-center text-gray-600 pr-3`
@@ -296,8 +301,8 @@ export function LineItemsBlock({
                               ? numberFormatter.format(totalTaxAndFees)
                               : "-"}
                           </Text>
-                        )}
-                        {hasAnyLeadTime && (
+                        ) : null}
+                        {hasAnyLeadTime ? (
                           <Text
                             style={tw(
                               `${colWidth} text-center text-gray-600 pr-3`
@@ -307,7 +312,7 @@ export function LineItemsBlock({
                               ? `${leadTime} ${pluralize(leadTime, "day")}`
                               : "-"}
                           </Text>
-                        )}
+                        ) : null}
                         <Text
                           style={tw(
                             `${colWidth} text-center text-gray-800 font-medium`
@@ -325,52 +330,15 @@ export function LineItemsBlock({
                     </View>
                   );
                 })}
-                {Object.keys(line.externalNotes ?? {}).length > 0 && (
-                  <View style={tw("px-3 py-2 border-b border-gray-200")}>
-                    <Note
-                      key={`${line.id}-notes`}
-                      content={line.externalNotes as JSONContent}
-                    />
-                  </View>
-                )}
-              </>
-            ) : (
-              <View
-                wrap={false}
-                style={[
-                  tw(
-                    "flex flex-row py-2 px-3 border-b border-gray-200 text-[10px]"
-                  ),
-                  {
-                    backgroundColor:
-                      rowIndex++ % 2 !== 0 && opts.zebra
-                        ? "rgba(249, 250, 251, 0.6)"
-                        : "transparent"
-                  }
-                ]}
-              >
-                <View style={tw("w-1/3 pr-2")}>
-                  <Text style={tw("text-gray-800")}>
-                    {getLineDescription(line)}
-                  </Text>
-                  <Text style={tw("text-[8px] text-gray-400 mt-0.5")}>
-                    {getLineDescriptionDetails(line)}
-                  </Text>
+              {Object.keys(line.externalNotes ?? {}).length > 0 ? (
+                <View style={tw("px-3 py-2 border-b border-gray-200")}>
+                  <Note
+                    key={`${line.id}-notes`}
+                    content={line.externalNotes as JSONContent}
+                  />
                 </View>
-                <View style={tw("w-2/3 flex flex-row")}>
-                  <Text
-                    style={tw(`${colWidth} text-right text-gray-600 font-bold`)}
-                  >
-                    No Quote
-                  </Text>
-                  <View style={tw("flex-1 text-right")}>
-                    <Text style={tw("text-gray-400 text-[8px] text-right")}>
-                      {line.noQuoteReason ?? ""}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
+              ) : null}
+            </>
           </View>
         );
       })}

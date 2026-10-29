@@ -1,4 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
+import { describe, expect, it } from "vitest";
 import type { NormalizedPayment } from "../../../../core/payment-application";
 import { SyncFactory } from "../../../../core/sync";
 import type { Qbo } from "../../models";
@@ -15,12 +19,8 @@ import {
   QboPaymentSyncer
 } from "../payment";
 
-// The base dynamically imports @carbon/auth/client.server only when posting;
-// mock it so nothing touches server env during these pure-mapper tests.
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({ functions: { invoke: vi.fn() } })
-}));
-
+// Posting imports the post-payment operation lazily; stub it so these tests
+// never reach the database or server env.
 describe("composite payment sync entity id (QBO)", () => {
   it("round-trips invoice + payment ids as a prefix-less AR id", () => {
     const entityId = getQboPaymentSyncEntityId("inv-remote-1", "pay-1");
@@ -171,7 +171,7 @@ describe("QboPaymentSyncer.mapToNormalized", () => {
       paymentRemoteId: "bp-1",
       amount: 500,
       currencyCode: "USD",
-      exchangeRate: 1,
+      exchangeRate: null,
       paidDate: "2026-08-01",
       reference: "bp-1",
       status: "settled",
@@ -228,7 +228,7 @@ describe("QboPaymentSyncer.mapToNormalized", () => {
       paymentRemoteId: "pay-1",
       amount: 125,
       currencyCode: "EUR",
-      exchangeRate: 1.1,
+      exchangeRate: 1 / 1.1,
       paidDate: "2026-07-15",
       reference: "pay-1",
       status: "settled",

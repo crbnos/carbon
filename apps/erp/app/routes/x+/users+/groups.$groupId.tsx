@@ -1,22 +1,19 @@
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { redirect, useLoaderData } from "react-router";
-import {
-  GroupForm,
-  getGroupMembers,
-  groupValidator,
-  upsertGroup,
-  upsertGroupMembers
-} from "~/modules/users";
+import { validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
+import { GroupForm } from "~/modules/users/ui";
+import { groupValidator } from "~/modules/users/users.models";
+import { getGroupMembers } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
-import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -60,51 +57,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { group };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    view: "users"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(groupValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.users.updateGroup(input.data);
+  return respond(args.request, result).redirect(path.to.groups, {
+    message: "Group updated successfully"
   });
-
-  const validation = await validator(groupValidator).validate(
-    await request.formData()
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, name, selections } = validation.data;
-
-  const [updateGroup, updateGroupMembers] = await Promise.all([
-    upsertGroup(client, { id, name, companyId }),
-    upsertGroupMembers(client, id, selections)
-  ]);
-
-  if (updateGroup.error)
-    redirect(
-      path.to.groups,
-      await flash(request, error(updateGroup.error, "Failed to update group"))
-    );
-
-  if (updateGroupMembers.error)
-    redirect(
-      path.to.groups,
-      await flash(
-        request,
-        error(updateGroupMembers.error, "Failed to update group members")
-      )
-    );
-
-  throw redirect(
-    path.to.groups,
-    await flash(request, success("Group updated successfully"))
-  );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  invalidateUserSelectQueries(getCompanyId());
-  return await serverAction();
 }
 
 export default function UsersGroupRoute() {

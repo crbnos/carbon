@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getTrackedEntity } from "~/modules/inventory";
+import { getTrackedEntity } from "~/modules/inventory/inventory.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 
 export async function getEntityLabelData(

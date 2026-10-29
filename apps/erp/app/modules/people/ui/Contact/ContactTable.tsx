@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
@@ -19,6 +23,7 @@ const ContactTable = memo(({ data, count }: ContactTableProps) => {
         header: t`First Name`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P1",
           icon: <LuUser />
         }
       },
@@ -35,6 +40,7 @@ const ContactTable = memo(({ data, count }: ContactTableProps) => {
         header: t`Email`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P3",
           icon: <LuMail />
         }
       },

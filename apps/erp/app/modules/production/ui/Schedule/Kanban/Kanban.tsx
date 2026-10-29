@@ -1,11 +1,14 @@
-import { ClientOnly, cn } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { ClientOnly, cn, toast } from "@carbon/react";
+import { withUnorderedLast } from "@carbon/utils";
 import type {
-  Active,
   Announcements,
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
-  Over,
   UniqueIdentifier
 } from "@dnd-kit/core";
 import {
@@ -17,26 +20,40 @@ import {
   useSensor,
   useSensors
 } from "@dnd-kit/core";
-import { arrayMove, SortableContext } from "@dnd-kit/sortable";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { SortableContext } from "@dnd-kit/sortable";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { createPortal } from "react-dom";
 import { useFetchers, useSubmit } from "react-router";
 import { path } from "~/utils/path";
+import { BatchItemCard } from "./components/BatchItemCard";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { ItemCard } from "./components/ItemCard";
+import type { KanbanMoveTo } from "./context/KanbanContext";
 import { KanbanProvider } from "./context/KanbanContext";
+import {
+  type BoardDragEvent,
+  type DragCommit,
+  type OperationDragOrigin,
+  type OperationItemDrag,
+  type OperationsDragState,
+  planCommitSubmissions,
+  reduceOperationsDrag,
+  resolveColumnCommit
+} from "./drag-lifecycle";
 import {
   comparePriorityThenId,
   createDragOrigin,
-  type DragOrigin,
-  type DragPreview,
-  getColumnPlacement,
-  getItemPlacement,
-  isSamePlacement,
-  isSamePreview,
   resolveInsertionMarker
 } from "./placement";
 import type { Column, DisplaySettings, Item, Progress } from "./types";
+import { isBatchItem } from "./types";
 import {
   coordinateGetter,
   hasDraggableData,
@@ -52,14 +69,12 @@ type KanbanProps = {
 
 const COLUMN_ORDER_KEY = "kanban-column-order";
 
-type OperationDragOrigin = DragOrigin<Item>;
+const KanbanDragPreviewContext = createContext<OperationItemDrag | null>(null);
 
-type KanbanDragState = {
-  origin: OperationDragOrigin;
-  preview: DragPreview | null;
-};
-
-const KanbanDragPreviewContext = createContext<KanbanDragState | null>(null);
+// A new options object makes a new sensor, and with it new listeners for
+// every card on every render of the board.
+const KEYBOARD_SENSOR_OPTIONS = { coordinateGetter };
+const NO_ITEMS: Item[] = [];
 
 function PreviewItemCard({
   item,
@@ -90,89 +105,17 @@ function PreviewItemCard({
           )}
         />
       )}
-      <ItemCard
-        item={item}
-        isOverlay={isOverlay}
-        progressByItemId={progressByItemId}
-      />
+      {isBatchItem(item) ? (
+        <BatchItemCard item={item} isOverlay={isOverlay} />
+      ) : (
+        <ItemCard
+          item={item}
+          isOverlay={isOverlay}
+          progressByItemId={progressByItemId}
+        />
+      )}
     </div>
   );
-}
-
-function isOriginItemDrag(active: Active, origin: OperationDragOrigin) {
-  return (
-    hasDraggableData(active) &&
-    active.data.current?.type === "item" &&
-    String(active.id) === origin.item.id
-  );
-}
-
-function resolveDragPlacement(
-  origin: OperationDragOrigin,
-  over: Over | null,
-  items: readonly Item[],
-  itemsById: ReadonlyMap<string, Item>,
-  columnsById: ReadonlyMap<string, Column>
-): DragPreview | null {
-  if (
-    !over ||
-    over.disabled ||
-    !hasDraggableData(over) ||
-    !itemsById.has(origin.item.id)
-  ) {
-    return null;
-  }
-
-  const overId = String(over.id);
-  if (overId === origin.item.id) {
-    return { ...origin.placement, targetType: "item" };
-  }
-
-  const overData = over.data.current;
-  if (overData?.type === "item") {
-    const overItem = itemsById.get(overId);
-    if (
-      !overItem ||
-      overData.item.id !== overId ||
-      overData.item.columnId !== overItem.columnId ||
-      !columnsById.has(overItem.columnId)
-    ) {
-      return null;
-    }
-
-    const destinationColumn = columnsById.get(overItem.columnId);
-    if (!destinationColumn?.type.includes(origin.item.columnType)) {
-      return null;
-    }
-
-    const placement = getItemPlacement(
-      origin,
-      items,
-      overItem.columnId,
-      overItem.id
-    );
-    return placement ? { ...placement, targetType: "item" } : null;
-  }
-
-  if (overData?.type === "column") {
-    if (
-      overData.column.id !== overId ||
-      !columnsById.has(overId) ||
-      overId === origin.placement.columnId
-    ) {
-      return null;
-    }
-
-    const destinationColumn = columnsById.get(overId);
-    if (!destinationColumn?.type.includes(origin.item.columnType)) {
-      return null;
-    }
-
-    const placement = getColumnPlacement(origin, items, overId);
-    return placement ? { ...placement, targetType: "column" } : null;
-  }
-
-  return null;
 }
 
 const Kanban = ({
@@ -183,58 +126,106 @@ const Kanban = ({
   ...displaySettings
 }: KanbanProps) => {
   const submit = useSubmit();
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [columnOrder, setColumnOrder] = useState<string[]>(() => {
-    // Get stored column order from localStorage
-    const storedOrder = localStorage.getItem(COLUMN_ORDER_KEY);
-    if (storedOrder) {
-      const parsedOrder = JSON.parse(storedOrder) as string[];
-      // Add any new columns that aren't in stored order
-      const newOrder = [...parsedOrder];
-      columns.forEach((col) => {
-        if (!newOrder.includes(col.id)) {
-          newOrder.push(col.id);
-        }
-      });
-      return newOrder;
-    }
-    return columns.map((col) => col.id);
-  });
 
-  // Update localStorage when column order changes
+  // Surface a failed batch work-center reassignment (drag). The optimistic move
+  // snaps back on revalidation, so without this the rejection would be silent —
+  // the create/add path toasts via its own fetcher; this covers the drag path
+  // (intent="update"), which submits through useSubmit and has no result reader.
+  // A fetcher's formData is cleared once it goes idle, so capture the intent
+  // while it is still submitting and read the result on idle.
+  const batchUpdateFetchers = useFetchers();
+  const pendingBatchIntent = useRef<Map<string, string>>(new Map());
+  const toastedBatchUpdates = useRef<Set<string>>(new Set());
   useEffect(() => {
-    localStorage.setItem(COLUMN_ORDER_KEY, JSON.stringify(columnOrder));
-  }, [columnOrder]);
-
-  const itemsById = new Map<string, Item>(
-    initialItems.map((item) => [item.id, item])
-  );
-  const pendingItems = usePendingItems();
-
-  // merge pending items and existing items
-  for (const pendingItem of pendingItems) {
-    const item = itemsById.get(pendingItem.id);
-    if (item) {
-      itemsById.set(pendingItem.id, { ...item, ...pendingItem });
+    for (const f of batchUpdateFetchers) {
+      if (f.state !== "idle") {
+        const intent = f.formData?.get("intent");
+        if (
+          f.formAction === path.to.priorityBatchingUpdate &&
+          typeof intent === "string"
+        ) {
+          pendingBatchIntent.current.set(f.key, intent);
+        }
+        toastedBatchUpdates.current.delete(f.key);
+        continue;
+      }
+      if (pendingBatchIntent.current.get(f.key) !== "update") continue;
+      const result = f.data as
+        | { error?: { message?: string } | null; fieldErrors?: unknown }
+        | undefined;
+      if (result === undefined) continue;
+      const failed = !!result.error || !!result.fieldErrors;
+      if (failed && !toastedBatchUpdates.current.has(f.key)) {
+        toastedBatchUpdates.current.add(f.key);
+        toast.error(result.error?.message ?? "Failed to move batch");
+      }
+      pendingBatchIntent.current.delete(f.key);
     }
-  }
+  }, [batchUpdateFetchers]);
 
-  const items = Array.from(itemsById.values()).sort(comparePriorityThenId);
-  const columnsById = new Map(columns.map((column) => [column.id, column]));
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  // Only the order the user chose is state. The columns come from the loader
+  // and change while the board is open (a filter, a work center's first
+  // operation): one copied in at mount never showed a column that arrived later.
+  const [storedOrder, setStoredOrder] = useState<string[]>(() => {
+    const stored = localStorage.getItem(COLUMN_ORDER_KEY);
+    return stored ? (JSON.parse(stored) as string[]) : [];
+  });
+  const columnOrder = useMemo(
+    () =>
+      withUnorderedLast(
+        storedOrder,
+        columns.map((col) => col.id)
+      ),
+    [storedOrder, columns]
+  );
+
+  useEffect(() => {
+    localStorage.setItem(COLUMN_ORDER_KEY, JSON.stringify(storedOrder));
+  }, [storedOrder]);
+
+  const pendingItems = usePendingItems();
+  // The board re-renders on every drag state change. Deriving these once per
+  // change of the data keeps each column's item array (and so its cards) the
+  // same object across those renders.
+  const pendingKey = JSON.stringify(pendingItems);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pendingItems is keyed by value
+  const { items, itemsById, itemsByColumn } = useMemo(() => {
+    const byId = new Map<string, Item>(
+      initialItems.map((item) => [item.id, item])
+    );
+    // merge pending items and existing items
+    for (const pendingItem of pendingItems) {
+      const item = byId.get(pendingItem.id);
+      if (item) {
+        byId.set(pendingItem.id, { ...item, ...pendingItem });
+      }
+    }
+    const sorted = Array.from(byId.values()).sort(comparePriorityThenId);
+    const byColumn = new Map<string, Item[]>();
+    for (const item of sorted) {
+      const column = byColumn.get(item.columnId);
+      if (column) column.push(item);
+      else byColumn.set(item.columnId, [item]);
+    }
+    return { items: sorted, itemsById: byId, itemsByColumn: byColumn };
+  }, [initialItems, pendingKey]);
+  const columnsById = useMemo(
+    () => new Map(columns.map((column) => [column.id, column])),
+    [columns]
+  );
 
   const pickedUpItemColumn = useRef<string | null>(null);
-  const dragOriginRef = useRef<OperationDragOrigin | null>(null);
-  const dragTypeRef = useRef<"item" | "column" | null>(null);
-  const [dragState, setDragState] = useState<KanbanDragState | null>(null);
+  // A ref, not state: dnd-kit can fire the next event before a re-render.
+  const dragRef = useRef<OperationsDragState>(null);
+  const [dragState, setDragState] = useState<OperationItemDrag | null>(null);
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeItem, setActiveItem] = useState<Item | null>(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter
-    })
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
   );
 
   function getDraggingItemData(itemId: UniqueIdentifier, columnId: string) {
@@ -343,12 +334,29 @@ const Kanban = ({
     }
   };
 
+  const moveTo: KanbanMoveTo = {
+    targetsFor: (itemId) => {
+      const item = itemsById.get(itemId);
+      if (!item) return [];
+      return columnOrder.flatMap((columnId) => {
+        const column = columnsById.get(columnId);
+        return column &&
+          column.id !== item.columnId &&
+          column.type.includes(item.columnType)
+          ? [{ id: column.id, title: column.title }]
+          : [];
+      });
+    },
+    onMove: moveToColumn
+  };
+
   return (
     <KanbanProvider
       displaySettings={displaySettings}
       selectedGroup={selectedGroup}
       setSelectedGroup={setSelectedGroup}
       tags={tags}
+      moveTo={moveTo}
     >
       <KanbanDragPreviewContext.Provider value={dragState}>
         <DndContext
@@ -371,7 +379,7 @@ const Kanban = ({
                   <ColumnCard
                     key={col.id}
                     column={col}
-                    items={items.filter((item) => item.columnId === col.id)}
+                    items={itemsByColumn.get(col.id) ?? NO_ITEMS}
                     progressByItemId={progressByItemId}
                     CardComponent={PreviewItemCard}
                   />
@@ -388,31 +396,34 @@ const Kanban = ({
                     <ColumnCard
                       isOverlay
                       column={activeColumn}
-                      items={items.filter(
-                        (item) => item.columnId === activeColumn.id
-                      )}
+                      items={itemsByColumn.get(activeColumn.id) ?? NO_ITEMS}
                       progressByItemId={progressByItemId}
                     />
                   )}
-                  {activeItem && (
-                    <ItemCard
-                      // @ts-expect-error TS2322 - TODO: fix type
-                      item={{
-                        ...activeItem,
-                        status: progressByItemId[activeItem.id]?.active
-                          ? "In Progress"
-                          : activeItem.status,
-                        employeeIds: progressByItemId[activeItem.id]?.employees
-                          ? Array.from(
-                              progressByItemId[activeItem.id].employees!
-                            )
-                          : undefined,
-                        progress: progressByItemId[activeItem.id]?.progress ?? 0
-                      }}
-                      isOverlay
-                      progressByItemId={progressByItemId}
-                    />
-                  )}
+                  {activeItem &&
+                    (isBatchItem(activeItem) ? (
+                      <BatchItemCard item={activeItem} isOverlay />
+                    ) : (
+                      <ItemCard
+                        item={{
+                          ...activeItem,
+                          // @ts-expect-error TS2322 - TODO: fix type
+                          status: progressByItemId[activeItem.id]?.active
+                            ? "In Progress"
+                            : activeItem.status,
+                          employeeIds: progressByItemId[activeItem.id]
+                            ?.employees
+                            ? Array.from(
+                                progressByItemId[activeItem.id].employees!
+                              )
+                            : undefined,
+                          progress:
+                            progressByItemId[activeItem.id]?.progress ?? 0
+                        }}
+                        isOverlay
+                        progressByItemId={progressByItemId}
+                      />
+                    ))}
                 </DragOverlay>,
                 document.body
               )
@@ -423,140 +434,75 @@ const Kanban = ({
     </KanbanProvider>
   );
 
+  function dispatchDrag(event: BoardDragEvent) {
+    const { state, effect } = reduceOperationsDrag(dragRef.current, event, {
+      items,
+      itemsById,
+      columnsById,
+      columnOrder
+    });
+    if (effect?.type === "reorderColumns") setStoredOrder(effect.columnOrder);
+    if (effect?.type === "commit") submitCommit(effect.origin, effect.commit);
+    dragRef.current = state;
+    setDragState(state?.type === "item" ? state : null);
+  }
+
   function clearDragState() {
     pickedUpItemColumn.current = null;
-    dragOriginRef.current = null;
-    dragTypeRef.current = null;
-    setDragState(null);
+    dispatchDrag({ type: "cancel" });
     setActiveItem(null);
     setActiveColumn(null);
   }
 
   function onDragStart(event: DragStartEvent) {
-    if (!hasDraggableData(event.active)) {
-      clearDragState();
-      return;
-    }
+    clearDragState();
+    dispatchDrag({ type: "start", active: event.active });
 
+    const state = dragRef.current;
+    if (!state || !hasDraggableData(event.active)) return;
     const data = event.active.data.current;
-    if (data?.type === "column") {
-      clearDragState();
-      dragTypeRef.current = "column";
+    if (state.type === "column" && data?.type === "column") {
       setActiveColumn(data.column);
-      return;
     }
-
-    if (data?.type === "item") {
-      clearDragState();
-      const activeItem = itemsById.get(String(event.active.id));
-      const origin = activeItem ? createDragOrigin(items, activeItem) : null;
-
-      if (!origin) return;
-
-      dragOriginRef.current = origin;
-      dragTypeRef.current = "item";
+    if (state.type === "item" && data?.type === "item") {
       pickedUpItemColumn.current = data.item.columnId;
-      setDragState({ origin, preview: null });
       setActiveItem(data.item);
     }
   }
 
   function onDragEnd(event: DragEndEvent) {
-    const origin = dragOriginRef.current;
-    const { active, over } = event;
-    const activeData = hasDraggableData(active)
-      ? active.data.current
-      : undefined;
-
-    if (
-      !dragTypeRef.current ||
-      !hasDraggableData(active) ||
-      !over ||
-      !hasDraggableData(over)
-    ) {
-      clearDragState();
-      return;
-    }
-
-    if (
-      dragTypeRef.current === "column" &&
-      activeData?.type === "column" &&
-      over.data.current?.type === "column"
-    ) {
-      const activeId = active.id;
-      const overId = over.id;
-      if (activeId !== overId) {
-        const activeColumnIndex = columnOrder.findIndex(
-          (id) => id === activeId
-        );
-        const overColumnIndex = columnOrder.findIndex((id) => id === overId);
-
-        if (activeColumnIndex >= 0 && overColumnIndex >= 0) {
-          setColumnOrder(
-            arrayMove(columnOrder, activeColumnIndex, overColumnIndex)
-          );
-        }
-      }
-      clearDragState();
-      return;
-    }
-
-    if (
-      dragTypeRef.current === "item" &&
-      activeData?.type === "item" &&
-      origin &&
-      isOriginItemDrag(active, origin)
-    ) {
-      const placement = resolveDragPlacement(
-        origin,
-        over,
-        items,
-        itemsById,
-        columnsById
-      );
-
-      if (placement && !isSamePlacement(origin.placement, placement)) {
-        submit(
-          {
-            id: origin.item.id,
-            columnId: placement.columnId,
-            priority: placement.priority
-          },
-          {
-            method: "post",
-            action: path.to.priorityOperationUpdate,
-            navigate: false,
-            flushSync: true,
-            fetcherKey: `item:${origin.item.id}`
-          }
-        );
-      }
-    }
-
+    dispatchDrag({ type: "end", active: event.active, over: event.over });
     clearDragState();
   }
 
+  // Persists a resolved move: each moved card writes through its own endpoint.
+  function submitCommit(origin: OperationDragOrigin, commit: DragCommit) {
+    for (const submission of planCommitSubmissions(origin, commit, itemsById)) {
+      submit(submission.payload, {
+        method: "post",
+        action:
+          submission.action === "batching"
+            ? path.to.priorityBatchingUpdate
+            : path.to.priorityOperationUpdate,
+        navigate: false,
+        flushSync: submission.flushSync,
+        fetcherKey: submission.fetcherKey
+      });
+    }
+  }
+
+  // Phones: "Move to" on a card makes the same move as dropping it on that
+  // column's background.
+  function moveToColumn(itemId: string, columnId: string) {
+    const activeItem = itemsById.get(itemId);
+    const origin = activeItem ? createDragOrigin(items, activeItem) : null;
+    if (!origin) return;
+    const commit = resolveColumnCommit(origin, items, columnsById, columnId);
+    if (commit) submitCommit(origin, commit);
+  }
+
   function onDragOver(event: DragOverEvent) {
-    const origin = dragOriginRef.current;
-    if (!origin || !isOriginItemDrag(event.active, origin)) return;
-
-    const placement = resolveDragPlacement(
-      origin,
-      event.over,
-      items,
-      itemsById,
-      columnsById
-    );
-    const preview =
-      placement && !isSamePlacement(origin.placement, placement)
-        ? placement
-        : null;
-
-    setDragState((current) =>
-      current?.origin === origin && isSamePreview(current.preview, preview)
-        ? current
-        : { origin, preview }
-    );
+    dispatchDrag({ type: "over", active: event.active, over: event.over });
   }
 
   function onDragCancel() {
@@ -568,21 +514,65 @@ function usePendingItems() {
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;
   };
-  return useFetchers()
+  const fetchers = useFetchers();
+
+  const operationMoves = fetchers
     .filter((fetcher): fetcher is PendingItem => {
       return fetcher.formAction === path.to.priorityOperationUpdate;
     })
-    .map((fetcher) => {
-      let columnId = String(fetcher.formData.get("columnId"));
-      let id = String(fetcher.formData.get("id"));
-      let priority = Number(fetcher.formData.get("priority"));
-      let item: { id: string; priority: number; columnId: string } = {
-        id,
-        priority,
-        columnId
-      };
-      return item;
+    .flatMap((fetcher) => {
+      const columnId = String(fetcher.formData.get("columnId"));
+      const updates = fetcher.formData.get("updates");
+      const rows: { id: string; priority: number }[] =
+        typeof updates === "string"
+          ? JSON.parse(updates)
+          : [
+              {
+                id: String(fetcher.formData.get("id")),
+                priority: Number(fetcher.formData.get("priority"))
+              }
+            ];
+      return rows.map(
+        (row): { id: string; priority?: number; columnId: string } => ({
+          id: row.id,
+          priority: row.priority,
+          columnId
+        })
+      );
     });
+
+  // A batch work-center reassignment in flight: keep the batch card in its
+  // destination column until the loader revalidates.
+  const batchMoves = fetchers
+    .filter((fetcher): fetcher is PendingItem => {
+      return (
+        fetcher.formAction === path.to.priorityBatchingUpdate &&
+        fetcher.formData?.get("intent") === "update" &&
+        fetcher.formData?.has("workCenterId")
+      );
+    })
+    .map((fetcher) => ({
+      id: `batch:${String(fetcher.formData.get("batchId"))}`,
+      columnId: String(fetcher.formData.get("workCenterId"))
+    }));
+
+  // A within-column batch reorder in flight: the card's board priority is
+  // min(member priority), which the reprioritize action sets to a single value,
+  // so mirror that value onto the card until the loader revalidates.
+  const batchReprioritizes = fetchers
+    .filter((fetcher): fetcher is PendingItem => {
+      return (
+        fetcher.formAction === path.to.priorityBatchingUpdate &&
+        fetcher.formData?.get("intent") === "reprioritize" &&
+        fetcher.formData?.has("priority")
+      );
+    })
+    .map((fetcher) => ({
+      id: `batch:${String(fetcher.formData.get("batchId"))}`,
+      priority: Number(fetcher.formData.get("priority"))
+    }));
+
+  return [...operationMoves, ...batchMoves, ...batchReprioritizes];
 }
 
 export default Kanban;

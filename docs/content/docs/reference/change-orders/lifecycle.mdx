@@ -1,16 +1,13 @@
 ---
 title: Lifecycle & release
-description: The five change-notice stages, the Implementation lock and Reopen, the impact panel, the diff review, and exactly what release does when a change notice reaches Done.
+description: The five change-notice stages, the Implementation lock and Reopen, the impact panel, the diff review, and what release does at Done.
 ---
 
-A change notice advances forward one stage at a time. There's no approval toggle — the stages *are* the
-workflow, and the change notice is its own release gate. There are two ways back: **Reopen** at
-**"Implementation"** sends it one stage back to **"Engineering Complete"**, and **"Cancel"** — available from
-every open stage — closes it, after which **Reopen** returns it to **"Draft"**.
+A change notice advances one stage at a time; its stages are the release workflow. **Reopen** from **Implementation** returns it to **Engineering Complete**. **Cancel** closes a notice from any open stage, and **Reopen** from **Cancelled** returns it to **Draft**.
 
 ## The stages
 
-<StatusFlow>
+<StatusFlow entity="changeOrder">
   <Status name="Draft">The change notice is being written. Pick affected items, set change types, and edit each draft method. No notification is sent.</Status>
   <Status name="Start">Work is underway. Advancing to Start notifies the assignee and every action-task assignee.</Status>
   <Status name="Engineering Complete">The design edits are finished and ready for implementation review. Silent, no notification.</Status>
@@ -30,10 +27,7 @@ items the change notice minted, so nothing is orphaned.
 
 ## Implementation freezes the engineering content
 
-Advancing to **"Implementation"** means "we are now rolling this out." From that moment the *engineering*
-content is read-only, so what's being implemented can't shift underneath the people implementing it. The
-*workflow* content stays editable, because coordinating the rollout is exactly the work that happens at this
-stage.
+At **Implementation**, engineering content becomes read-only while workflow fields remain editable for rollout coordination.
 
 | Locked at Implementation (engineering) | Still editable at Implementation (workflow) |
 | --- | --- |
@@ -54,12 +48,7 @@ visible at Implementation — you can read the whole change, you just can't edit
 
 ## Reopen
 
-If review at Implementation turns up something that has to change, use **Reopen** in the **⋮** menu next to
-the change notice id. It sends the notice back one stage to **"Engineering Complete"**, which unfreezes the
-affected items, the drafts, the cutover config, and the narrative fields. Nothing you've already done is
-discarded — the drafts, diffs, and action tasks are exactly as you left them. Edit, then advance to
-Implementation again. (The same **Reopen** action appears on a **"Cancelled"** notice, where it returns it to
-**"Draft"** instead.)
+To change engineering content during Implementation, select **Reopen** from the **⋮** menu. The notice returns to **Engineering Complete**, preserving drafts, diffs, and tasks while unlocking affected items, cutover configuration, and narrative fields. A Cancelled notice uses the same action to return to **Draft**.
 
 <Callout type="warning" title="Done is terminal — there is no reopen from Done.">
 Reopen exists only at **"Implementation"** (before release) and at **"Cancelled"** (nothing was released).
@@ -83,11 +72,7 @@ nothing here blocks releasing."*
 
 ## Review the changes, then release
 
-You don't have to wait for release to see what a change notice does. The overview page carries a **Changes**
-card, between the description and the action tasks, that rolls up **every** affected item's diff as you author
-it — each item labeled with its change type, its diff rendered read-only. It's the same view the release dialog
-shows, available the whole time so you can check your work before you commit. An item with nothing edited yet
-reads *"No changes yet."*
+The overview's **Changes** card shows a read-only diff for every affected item during authoring. The release dialog uses the same view. Items without edits display *"No changes yet."*
 
 Release itself lives on the change notice at **"Implementation"**. The **"Release change notice"** dialog lays out
 that same per-item diff one more time before you commit — *"Review each item's changes, then confirm —
@@ -99,10 +84,11 @@ Each item's diff compares its edited draft against the method it was snapshotted
 - **Bill of Process** — added, removed, and modified operations and their steps, parameters, and tools.
 - **Properties** — changed item fields (name, description, unit of measure, tracking type, replenishment
   system, and the rest), one row per changed column.
-- **Supplier Parts** — for a purchased Revision, Replacement Part, or New Part, the [suppliers you set up on the
-  line](/docs/reference/change-orders/change-types#supplier-parts-on-a-purchased-line), each listed as an
-  addition with its part number, unit price, min order qty, order multiple, conversion factor, and purchasing
-  unit. A draft starts with none, so every supplier you add shows here.
+- **Supplier Parts** — for a purchased Revision, Replacement Part, or New Part, the [suppliers on the
+  line](/docs/reference/change-orders/change-types#supplier-parts-on-a-purchased-line), with their part number,
+  unit price, min order qty, order multiple, conversion factor, and purchasing unit. A Revision starts with its
+  source revision's suppliers, so only the ones you added, changed, or removed show here. A Replacement Part or
+  New Part starts with none, so every supplier you add shows as an addition.
 
 <Callout type="info" title="The diff is exact because the draft is real.">
 There's no shadow copy of your edits to drift out of sync. You edited an actual draft method, so the diff is
@@ -111,8 +97,7 @@ simply that draft compared against the live one it came from. What you review is
 
 ## What release does
 
-On confirm, Carbon walks the affected items and, per [change
-type](/docs/reference/change-orders/change-types):
+On confirmation, Carbon processes each affected item according to its [change type](/docs/reference/change-orders/change-types):
 
 1. **Activates the draft method** — it becomes the new **Active** version and the prior Active version is
    **Archived** (kept as history, never deleted).

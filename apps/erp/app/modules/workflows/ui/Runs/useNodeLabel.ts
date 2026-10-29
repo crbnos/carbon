@@ -1,5 +1,10 @@
-import type { WorkflowNode } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { WorkflowNode } from "@carbon/ee/workflows";
 import { useWorkflowLabel } from "../Builder/catalog";
+import { useDataOperationLabel } from "../Builder/dataOperationLabels";
 import { nodeTitle } from "../Builder/labelKeys";
 import { NODE_KIND_META } from "../Builder/nodes/meta";
 
@@ -16,6 +21,7 @@ export type NodeLabel = {
  * and any future surface cannot disagree. */
 export function useNodeLabel(): (node: WorkflowNode) => NodeLabel {
   const label = useWorkflowLabel();
+  const operationLabel = useDataOperationLabel();
 
   return (node: WorkflowNode) => {
     const meta = NODE_KIND_META[node.type];
@@ -23,7 +29,7 @@ export function useNodeLabel(): (node: WorkflowNode) => NodeLabel {
     const describes =
       (catalogId === undefined ? undefined : label(catalogId, catalogId)) ??
       meta.title?.(node) ??
-      meta.summary?.(node) ??
+      meta.summary?.(node, { operation: operationLabel }) ??
       meta.defaultTitle;
 
     const title = nodeTitle(node.name, describes);

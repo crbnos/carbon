@@ -1,4 +1,8 @@
-import { describe, expect, it } from "vitest";
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
+import { describe, expect, it, vi } from "vitest";
 import type { Accounting } from "../../../../core/types";
 import type { Xero } from "../../models";
 import { SalesInvoiceSyncer } from "../invoice";
@@ -22,6 +26,12 @@ const invoice = (): Accounting.SalesInvoice =>
     customerExternalId: null,
     status: "Pending",
     currencyCode: "USD",
+    baseCurrencyCode: "USD",
+    baseCurrencyDecimalPlaces: 2,
+    currencyDecimalPlaces: 2,
+    headerShippingCost: 0,
+    shippingRevenueAccountId: "acct_shipping",
+    salesRevenueAccountId: "acct_sales",
     exchangeRate: 1,
     dateIssued: "2026-08-04",
     dateDue: null,
@@ -41,6 +51,9 @@ const invoice = (): Accounting.SalesInvoice =>
         description: "Widget",
         quantity: 2,
         unitPrice: 50,
+        shippingCost: 0,
+        addOnCost: 0,
+        nonTaxableAddOnCost: 0,
         taxPercent: 0,
         lineAmount: 100
       }
@@ -49,7 +62,10 @@ const invoice = (): Accounting.SalesInvoice =>
   }) as unknown as Accounting.SalesInvoice;
 
 function makeInvoiceDb(config: {
-  accountDefault: { salesAccount: string | null };
+  accountDefault: {
+    salesAccount: string | null;
+    salesShippingRevenueAccount?: string | null;
+  };
   accountMappings: Array<{
     id: string;
     accountId: string;
@@ -74,6 +90,13 @@ function makeInvoiceDb(config: {
       },
       async executeTakeFirst() {
         if (table === "accountDefault") return config.accountDefault;
+        if (table === "account as a")
+          return {
+            id: config.accountDefault.salesShippingRevenueAccount,
+            class: "Revenue",
+            active: true,
+            isGroup: false
+          };
         return undefined;
       }
     };
@@ -93,8 +116,9 @@ function makeInvoiceSyncer(db: never) {
     entityType: "invoice"
   });
   (syncer as unknown as Record<string, unknown>).getRemoteId = async () => null;
-  (syncer as unknown as Record<string, unknown>).ensureDependencySynced =
-    async (type: string) => `${type}-remote`;
+  (syncer as unknown as Record<string, unknown>).ensureDependencySynced = vi.fn(
+    async (type: string) => `${type}-remote`
+  );
   return syncer as unknown as {
     mapToRemote(local: Accounting.SalesInvoice): Promise<Xero.Invoice>;
   };
@@ -120,8 +144,11 @@ describe("SalesInvoiceSyncer.mapToRemote (item revenue account)", () => {
     ).mapToRemote(invoice());
 
     expect(payload.LineItems[0]?.AccountCode).toBe("4000");
-    // Item still referenced; tax handling unchanged (Exclusive + NONE at 0 tax).
-    expect(payload.LineItems[0]?.ItemCode).toBe("WIDGET-1");
+    // NO ItemCode: Xero lines are already account-coded, so the item was pure
+    // subledger detail and carrying it mirrored Carbon's parts catalog into
+    // Xero Items. The item name stays in Description.
+    expect(payload.LineItems[0]?.ItemCode).toBeUndefined();
+    expect(payload.LineItems[0]?.Description).toContain("Widget");
     expect(payload.LineItems[0]?.TaxType).toBe("NONE");
     expect(payload.LineAmountTypes).toBe("Exclusive");
   });
@@ -188,6 +215,9 @@ const fxInvoice = (): Accounting.SalesInvoice =>
         // base currency: 2 x 50 = 100 base, i.e. 80 EUR
         unitPrice: 50,
         convertedUnitPrice: 40,
+        shippingCost: 0,
+        addOnCost: 0,
+        nonTaxableAddOnCost: 0,
         taxPercent: 0,
         lineAmount: 100
       }
@@ -214,9 +244,26 @@ describe("SalesInvoiceSyncer.mapToRemote (foreign currency)", () => {
   it("pushes line amounts in the currency the payload declares", async () => {
     const payload = await makeInvoiceSyncer(db()).mapToRemote(fxInvoice());
     expect(payload.CurrencyCode).toBe("EUR");
-    // 40 EUR/ea, not the 50 base
-    expect(payload.LineItems[0]?.UnitAmount).toBe(40);
+    // One monetary unit carries the full 80 EUR net; source detail remains.
+    expect(payload.LineItems[0]?.UnitAmount).toBe(80);
+    expect(payload.LineItems[0]?.Description).toContain("2 × 40 EUR");
     expect(payload.LineItems[0]?.LineAmount).toBe(80);
+  });
+
+  it("pushes a discounted line's NET amount", async () => {
+    const source = fxInvoice();
+    // 2 × 50 base list, 20% off → 80 base merchandise, 64 EUR at 0.8.
+    const payload = await makeInvoiceSyncer(db()).mapToRemote({
+      ...source,
+      subtotal: 80,
+      totalAmount: 80,
+      balance: 80,
+      lines: [{ ...source.lines[0]!, discountPercent: 0.2, lineAmount: 80 }]
+    });
+    expect(payload.LineItems[0]?.UnitAmount).toBe(64);
+    expect(payload.LineItems[0]?.LineAmount).toBe(64);
+    expect(payload.LineItems[0]?.Description).toContain("2 × 32 EUR");
+    expect(payload.LineItems[0]).not.toHaveProperty("DiscountRate");
   });
 
   it("passes CurrencyRate through unchanged (foreign per base, both sides)", async () => {
@@ -231,4 +278,250 @@ describe("SalesInvoiceSyncer.mapToRemote (foreign currency)", () => {
     // Xero: "Setting a CurrencyRate of 1 is redundant and considered incorrect."
     expect(payload.CurrencyRate).toBeUndefined();
   });
+});
+
+const mappedAccounts = [
+  {
+    id: "sales-map",
+    accountId: "acct_sales",
+    externalId: "sales-remote",
+    metadata: { externalCode: "4000" },
+    lastSyncedAt: null,
+    accountNumber: "4000",
+    accountName: "Sales"
+  },
+  {
+    id: "shipping-map",
+    accountId: "acct_shipping",
+    externalId: "shipping-remote",
+    metadata: { externalCode: "4010" },
+    lastSyncedAt: null,
+    accountNumber: "4010",
+    accountName: "Shipping"
+  }
+];
+function chargedInvoice(): Accounting.SalesInvoice {
+  const source = invoice();
+  return {
+    ...source,
+    currencyCode: "EUR",
+    exchangeRate: 0.8,
+    headerShippingCost: 5,
+    shippingRevenueAccountId: "acct_shipping",
+    salesRevenueAccountId: "acct_sales",
+    subtotal: 133,
+    totalTax: 13,
+    totalAmount: 151,
+    balance: 151,
+    lines: [
+      {
+        ...source.lines[0]!,
+        quantity: 1,
+        unitPrice: 100,
+        convertedUnitPrice: 80,
+        shippingCost: 10,
+        addOnCost: 20,
+        nonTaxableAddOnCost: 3,
+        taxPercent: 0.1
+      }
+    ]
+  };
+}
+describe("Xero native sales components", () => {
+  it("maps sales/shipping separately and sends fractional native tax exactly once in document currency", async () => {
+    const syncer = makeInvoiceSyncer(
+      makeInvoiceDb({
+        accountDefault: {
+          salesAccount: "acct_sales",
+          salesShippingRevenueAccount: "acct_shipping"
+        },
+        accountMappings: mappedAccounts
+      })
+    );
+    const payload = await syncer.mapToRemote(chargedInvoice());
+    expect(payload).toMatchObject({
+      SubTotal: 110.4,
+      TotalTax: 10.4,
+      Total: 120.8,
+      AmountDue: 120.8,
+      CurrencyCode: "EUR",
+      CurrencyRate: 0.8,
+      LineAmountTypes: "Exclusive"
+    });
+    expect(
+      payload.LineItems.map((line) => [
+        line.AccountCode,
+        line.LineAmount,
+        line.TaxAmount,
+        line.TaxType
+      ])
+    ).toEqual([
+      ["4000", 80, 8, "OUTPUT"],
+      ["4000", 16, 1.6, "OUTPUT"],
+      ["4000", 2.4, 0, "NONE"],
+      ["4010", 8, 0.8, "OUTPUT"],
+      ["4010", 4, 0, "NONE"]
+    ]);
+  });
+  it("preflights unmapped shipping before customer/item provisioning", async () => {
+    const syncer = makeInvoiceSyncer(
+      makeInvoiceDb({
+        accountDefault: {
+          salesAccount: "acct_sales",
+          salesShippingRevenueAccount: "acct_shipping"
+        },
+        accountMappings: mappedAccounts.slice(0, 1)
+      })
+    );
+    await expect(syncer.mapToRemote(chargedInvoice())).rejects.toMatchObject({
+      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+    });
+    expect(
+      (syncer as unknown as { ensureDependencySynced: unknown })
+        .ensureDependencySynced
+    ).not.toHaveBeenCalled();
+  });
+});
+
+function reviewSyncer() {
+  const database = makeInvoiceDb({
+    accountDefault: {
+      salesAccount: "acct_sales",
+      salesShippingRevenueAccount: "acct_replacement"
+    },
+    accountMappings: [
+      ...mappedAccounts,
+      {
+        ...mappedAccounts[1]!,
+        id: "replacement-map",
+        accountId: "acct_replacement",
+        metadata: { externalCode: "4050" }
+      }
+    ]
+  });
+  return makeInvoiceSyncer(database);
+}
+describe("Xero posted facts and monetary representation", () => {
+  it("keeps the posted shipping account after changing defaults", async () => {
+    const source = Object.assign(chargedInvoice(), {
+      shippingRevenueAccountId: "acct_shipping",
+      salesRevenueAccountId: "acct_sales"
+    });
+    const payload = await reviewSyncer().mapToRemote(source);
+    expect(
+      payload.LineItems.filter((line) =>
+        line.Description?.startsWith("Shipping")
+      ).map((line) => line.AccountCode)
+    ).toEqual(["4010", "4010"]);
+  });
+  it("represents bulk native tax against a monetary unit without losing the source quantity", async () => {
+    const source = invoice();
+    source.totalTax = 10;
+    source.totalAmount = 110;
+    source.balance = 110;
+    source.lines[0] = {
+      ...source.lines[0]!,
+      quantity: 100,
+      unitPrice: 1,
+      taxPercent: 0.1
+    };
+    const payload = await reviewSyncer().mapToRemote(source);
+    expect(payload.LineItems[0]).toMatchObject({
+      Quantity: 1,
+      UnitAmount: 100,
+      LineAmount: 100,
+      TaxAmount: 10
+    });
+    expect(payload.LineItems[0]?.Description).toContain("100 × 1 USD");
+  });
+  it("refuses subcent document principal before dependency writes", async () => {
+    const source = invoice();
+    source.currencyDecimalPlaces = 3;
+    source.subtotal = 1.001;
+    source.totalAmount = 1.001;
+    source.balance = 1.001;
+    source.lines[0] = { ...source.lines[0]!, quantity: 1, unitPrice: 1.001 };
+    await expect(reviewSyncer().mapToRemote(source)).rejects.toThrow(
+      /Xero.*precision|Xero.*decimal/i
+    );
+  });
+  it("pins an explicit foreign 1:1 rate", async () => {
+    const source = invoice();
+    source.currencyCode = "EUR";
+    expect((await reviewSyncer().mapToRemote(source)).CurrencyRate).toBe(1);
+  });
+  it.each([false, true])(
+    "opts into supported unit precision at the actual invoice transport (batch=%s)",
+    async (batch) => {
+      const syncer = reviewSyncer();
+      const requests: string[] = [];
+      (syncer as any).provider.request = async (
+        _method: string,
+        url: string
+      ) => {
+        requests.push(url);
+        return { data: { Invoices: [{ InvoiceID: "remote" }] } };
+      };
+      const payload = await syncer.mapToRemote(invoice());
+      if (batch)
+        await (syncer as any).upsertRemoteBatch([{ localId: "si_1", payload }]);
+      else await (syncer as any).upsertRemote(payload, "si_1");
+      expect(requests).toEqual(["/Invoices?unitdp=4"]);
+    }
+  );
+});
+
+it("preserves an exact extended net when the source unit price has four decimals", async () => {
+  const source = fxInvoice();
+  source.subtotal = 59.997;
+  source.totalAmount = 59.997;
+  source.balance = 59.997;
+  source.lines[0] = {
+    ...source.lines[0]!,
+    quantity: 3,
+    unitPrice: 19.999,
+    convertedUnitPrice: 15.9992
+  };
+  const payload = await reviewSyncer().mapToRemote(source);
+  expect(payload.LineItems[0]).toMatchObject({
+    Quantity: 1,
+    UnitAmount: 48,
+    LineAmount: 48
+  });
+  expect(payload.LineItems[0]?.Description).toContain("3 × 15.9992 EUR");
+  expect(payload.Total).toBe(48);
+});
+it("preserves a negative untaxed offset without increasing the invoice principal", async () => {
+  const source = invoice();
+  source.subtotal = 90;
+  source.totalAmount = 90;
+  source.balance = 90;
+  source.lines.push({
+    ...source.lines[0]!,
+    id: "offset",
+    quantity: 5,
+    unitPrice: -2
+  });
+  const payload = await reviewSyncer().mapToRemote(source);
+  expect(
+    payload.LineItems.map((line) => [
+      line.Quantity,
+      line.UnitAmount,
+      line.LineAmount,
+      line.TaxAmount
+    ])
+  ).toEqual([
+    [1, 100, 100, 0],
+    [1, -10, -10, 0]
+  ]);
+  expect(payload.Total).toBe(90);
+});
+it("refuses missing original shipping provenance before provisioning", async () => {
+  const source = chargedInvoice();
+  source.shippingRevenueAccountId = null;
+  const syncer = reviewSyncer();
+  await expect(syncer.mapToRemote(source)).rejects.toMatchObject({
+    failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+  });
+  expect((syncer as any).ensureDependencySynced).not.toHaveBeenCalled();
 });

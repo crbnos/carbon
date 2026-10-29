@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem, Status } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem, Status } from "@carbon/react";
 import {
   formatPeriodLabel,
   PERIOD_CLOSE_STATUS_COLOR_MAP
@@ -63,6 +67,7 @@ const PeriodsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuCalendarCheck />,
             exportValue: (row) => periodLabel(row)
           }
@@ -74,6 +79,7 @@ const PeriodsTable = memo(
             <DateTime value={row.original.startDate} variant="date" />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuCalendar />
           }
         },
@@ -96,6 +102,7 @@ const PeriodsTable = memo(
             </Status>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: (["Active", "Inactive"] as const).map((v) => ({
@@ -122,6 +129,7 @@ const PeriodsTable = memo(
             </Status>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: periodCloseStatuses.map((v) => ({
@@ -143,6 +151,11 @@ const PeriodsTable = memo(
       (row: AccountingPeriodListItem) => (
         <>
           <MenuItem
+            shortcut={
+              row.closeStatus === "Closed"
+                ? MENU_ITEM_SHORTCUTS.view
+                : undefined
+            }
             disabled={!permissions.can("view", "accounting")}
             onClick={() => navigate(path.to.accountingPeriodClose(row.id))}
           >
@@ -152,6 +165,7 @@ const PeriodsTable = memo(
           {row.closeStatus === "Open" &&
             permissions.can("delete", "accounting") && (
               <MenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 onClick={() => navigate(path.to.accountingPeriodDelete(row.id))}
               >

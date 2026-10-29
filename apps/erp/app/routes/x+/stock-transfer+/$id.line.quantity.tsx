@@ -1,166 +1,36 @@
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import { getStockTransfer } from "~/modules/inventory";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
-import { path } from "~/utils/path";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
-const logger = getLogger("erp", "id-line-quantity");
+// A line's Pick (its quantity) or Unpick (0).
+const quantityForm = z.object({
+  id: z.string().min(1),
+  quantity: zfd.numeric(z.number().min(0)),
+  locationId: zfd.text(z.string().optional()),
+  trackedEntityId: zfd.text(z.string().optional())
+});
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "inventory"
-  });
-
-  const { id } = params;
-  if (!id) throw notFound("id not found");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "inventory"
-  });
-  const transfer = await getStockTransfer(viewClient, id);
-  await requireUnlocked({
-    request,
-    isLocked: transfer.data?.status === "Completed",
-    redirectTo: path.to.stockTransfer(id),
-    message: "Cannot pick from a completed stock transfer."
-  });
-
-  const formData = await request.formData();
-
-  const lineId = formData.get("id") as string;
-  const pickedQuantity = parseInt(formData.get("quantity") as string, 10);
-  const locationId = formData.get("locationId") as string;
-  const trackedEntityId = formData.get("trackedEntityId") as string | undefined;
-
-  if (!lineId || !Number.isFinite(pickedQuantity)) {
-    return data(
-      {
-        success: false
-      },
-      await flash(request, error("Invalid form data", "Invalid form data"))
-    );
-  }
-
-  const stockTransferLine = await client
-    .from("stockTransferLine")
-    .select("*")
-    .eq("id", lineId)
-    .single();
-
-  if (!stockTransferLine.data) {
-    return data(
-      {
-        success: false
-      },
-      await flash(
-        request,
-        error("Stock transfer line not found", "Stock transfer line not found")
-      )
-    );
-  }
-
-  let type = "inventory";
-  if (pickedQuantity === 0) {
-    if (stockTransferLine.data.requiresSerialTracking) {
-      type = "unpickSerial";
-    } else if (stockTransferLine.data.requiresBatchTracking) {
-      type = "unpickBatch";
-    } else {
-      type = "unpickInventory";
-    }
-  }
-
-  if (
-    !trackedEntityId &&
-    (stockTransferLine.data.requiresSerialTracking ||
-      stockTransferLine.data.requiresBatchTracking)
-  ) {
-    return data(
-      {
-        success: false
-      },
-      await flash(
-        request,
-        error("Tracked entity not found", "Tracked entity not found")
-      )
-    );
-  }
-
-  // Call the post-stock-transfer function for inventory items
-  const { data: transferResult, error: functionError } =
-    await client.functions.invoke("post-stock-transfer", {
-      body: JSON.stringify({
-        type: type,
-        stockTransferId: stockTransferLine.data.stockTransferId,
-        stockTransferLineId: lineId,
-        quantity: pickedQuantity,
-        locationId: locationId,
-        trackedEntityId: trackedEntityId,
-        userId,
-        companyId
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(quantityForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id: lineId, quantity, locationId = "", trackedEntityId } = input.data;
+  const api = await carbon(args.request);
+  return quantity === 0
+    ? api.inventory.unpickStockTransferLine({
+        lineId,
+        locationId,
+        trackedEntityId
       })
-    });
-
-  if (functionError) {
-    return data(
-      {
-        success: false
-      },
-      await flash(
-        request,
-        error(
-          functionError.message || "Failed to pick line",
-          "Failed to pick line"
-        )
-      )
-    );
-  }
-
-  if (transferResult?.splitEntityId) {
-    try {
-      // Post-flip, splitEntityId is the DEPARTING child that physically
-      // arrives at the destination bin — it gets a fresh Entity label. The
-      // payload entity is the shelf parent whose quantity changed — reprint.
-      // (Under legacy deploy skew the roles invert, but both entities still
-      // need Entity labels, so printing both ids is role-agnostic.)
-      await trigger("print-job", {
-        sourceDocument: "Entity",
-        sourceDocumentId: transferResult.splitEntityId,
-        companyId,
-        userId,
-        locationId: locationId || undefined
+    : api.inventory.pickStockTransferLine({
+        lineId,
+        quantity,
+        locationId,
+        trackedEntityId
       });
-      if (trackedEntityId) {
-        await trigger("print-job", {
-          sourceDocument: "Entity",
-          sourceDocumentId: trackedEntityId,
-          companyId,
-          userId,
-          locationId: locationId || undefined
-        });
-      }
-    } catch (e) {
-      logger.error("Auto-print for split entity failed", { error: e });
-    }
-  }
-
-  return data(
-    {
-      success: true
-    },
-    await flash(
-      request,
-      success(
-        `${pickedQuantity} ${
-          pickedQuantity === 1 ? "item" : "items"
-        } marked as picked`
-      )
-    )
-  );
 }

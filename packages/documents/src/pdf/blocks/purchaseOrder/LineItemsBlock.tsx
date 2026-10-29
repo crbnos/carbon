@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { JSONContent } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
@@ -117,29 +121,29 @@ export function LineItemsBlock({
                     </>
                   )}
                   {purchaseOrder.purchaseOrderType === "Outside Processing" &&
-                    line.jobOperationDescription && (
-                      <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
-                        {line.jobOperationDescription}
-                      </Text>
-                    )}
+                  line.jobOperationDescription ? (
+                    <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
+                      {line.jobOperationDescription}
+                    </Text>
+                  ) : null}
                   {opts.showThumbnails &&
-                    thumbnails &&
-                    line.id &&
-                    line.id in thumbnails &&
-                    thumbnails[line.id] && (
-                      <View style={tw("mt-1 w-16")}>
-                        <Image
-                          src={thumbnails[line.id]!}
-                          style={tw("w-full h-auto")}
-                        />
-                      </View>
-                    )}
-                  {(line.supplierShippingCost ?? 0) > 0 && (
+                  thumbnails &&
+                  line.id &&
+                  line.id in thumbnails &&
+                  thumbnails[line.id] ? (
+                    <View style={tw("mt-1 w-16")}>
+                      <Image
+                        src={thumbnails[line.id]!}
+                        style={tw("w-full h-auto")}
+                      />
+                    </View>
+                  ) : null}
+                  {(line.supplierShippingCost ?? 0) > 0 ? (
                     <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
                       Shipping:{" "}
                       {numberFormatter.format(line.supplierShippingCost ?? 0)}
                     </Text>
-                  )}
+                  ) : null}
                 </View>
                 <Text style={tw("w-[8%] text-center text-gray-600")}>
                   {line.purchaseOrderLineType === "Comment"
@@ -168,18 +172,18 @@ export function LineItemsBlock({
                     : numberFormatter.format(netValue)}
                 </Text>
                 <View style={tw("w-[12%]")}>
-                  {line.purchaseOrderLineType !== "Comment" && (
+                  {line.purchaseOrderLineType !== "Comment" ? (
                     <View style={tw("flex flex-col items-center")}>
                       <Text style={tw("text-gray-600")}>
                         {numberFormatter.format(line.supplierTaxAmount ?? 0)}
                       </Text>
-                      {taxPercentLabel && (
+                      {taxPercentLabel ? (
                         <Text style={tw("text-[6px] text-gray-400")}>
                           {taxPercentLabel}
                         </Text>
-                      )}
+                      ) : null}
                     </View>
-                  )}
+                  ) : null}
                 </View>
                 <Text
                   style={tw("w-[13%] text-center text-gray-800 font-medium")}
@@ -190,14 +194,14 @@ export function LineItemsBlock({
                 </Text>
               </View>
             </View>
-            {Object.keys(line.externalNotes ?? {}).length > 0 && (
+            {Object.keys(line.externalNotes ?? {}).length > 0 ? (
               <View style={tw("px-3 py-2 border-b border-gray-200")}>
                 <Note
                   key={`${line.id}-notes`}
                   content={line.externalNotes as JSONContent}
                 />
               </View>
-            )}
+            ) : null}
           </View>
         );
       })}

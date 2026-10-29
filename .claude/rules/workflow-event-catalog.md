@@ -1,7 +1,7 @@
 ---
 description: The workflow catalog — four hand-written inputs generate one committed catalog of every trigger, action and operation a customer can pick; never hand-edit the generated files, and every declared moment must be raised somewhere or the build fails.
 paths:
-  - "packages/workflows/src/catalog/**"
+  - "packages/ee/src/workflows/catalog/**"
   - "packages/lib/src/workflows/**"
   - "scripts/generate-workflow-catalog.ts"
   - "scripts/check-workflow-catalog.ts"
@@ -16,26 +16,28 @@ customer-facing feature (a "when this happens, do that" rule built on a canvas) 
 `nonConformanceWorkflow`.
 
 Spec: `.ai/specs/2026-07-30-workflows-event-catalog.md`. Package guide:
-`packages/workflows/AGENTS.md`.
+`packages/ee/src/workflows/AGENTS.md`.
 
-## Four hand-written inputs, three generated files
+## Five hand-written inputs, four generated files
 
 ```
-packages/workflows/src/catalog/entities.ts   HAND-WRITTEN  record types + watched columns + write allowlist
-packages/workflows/src/catalog/moments.ts    HAND-WRITTEN  business events + labels + outputs
-packages/workflows/src/catalog/actions.ts    HAND-WRITTEN  the actions with no generic form
-packages/workflows/src/catalog/operations.ts HAND-WRITTEN  read-only computations
+packages/ee/src/workflows/catalog/entities.ts   HAND-WRITTEN  record types + watched columns + write allowlist
+packages/ee/src/workflows/catalog/moments.ts    HAND-WRITTEN  business events + labels + outputs
+packages/ee/src/workflows/catalog/actions.ts    HAND-WRITTEN  the actions with no generic form
+packages/ee/src/workflows/catalog/operations.ts HAND-WRITTEN  read-only computations
+packages/jobs/src/workflows/integrations/allowlist.ts  HAND-WRITTEN  the integration pieces we expose
                     │
                     ▼  scripts/generate-workflow-catalog.ts  (buildCatalog, pure)
-packages/workflows/src/catalog/events.generated.ts   COMMITTED  ids, outputs, permission, match
-packages/workflows/src/catalog/actions.generated.ts  COMMITTED  action + operation catalogs
-packages/workflows/src/catalog/labels.generated.ts   COMMITTED  one msg`` per event, action and operation id
+packages/ee/src/workflows/catalog/events.generated.ts   COMMITTED  ids, outputs, permission, match
+packages/ee/src/workflows/catalog/actions.generated.ts  COMMITTED  action + operation catalogs
+packages/ee/src/workflows/catalog/labels.generated.ts   COMMITTED  one msg`` per event, action and operation id
 ```
 
 Today: 10 triggerable entities with 77 watched columns → 97 record events, plus 9 moments
 = **106 events**, plus property maps for 17 entities (the 10 triggerable ones and 7
 reference-only: `user`, `group`, `jobOperation`, `nonConformanceType`, `salesInvoice`,
-`purchaseInvoice`, `location`), plus **16 actions** and **15 operations**.
+`purchaseInvoice`, `location`), plus **16 actions**, **2 integration steps** (their own catalog — see
+`workflow-integrations.md`) and **15 operations**.
 
 To add an entity, a moment, an action or an operation, edit the one hand-written file
 and run:
@@ -75,7 +77,7 @@ A `.changed` event hands out `record`, `before` and `after`; `created`/`deleted`
 `packages/database/src/swagger-docs-schema.ts` as an **argument**. That file is already generated and committed and — unlike `types.ts` — is
 a runtime *value* carrying every column's type, enum values and foreign-key target, so no
 TypeScript-compiler-API parsing is needed. Injecting it keeps `@carbon/database` out of
-`@carbon/workflows`' runtime graph (it is a **devDependency, types only**) and lets the
+`@carbon/ee/workflows`' runtime graph (it is a **devDependency, types only**) and lets the
 transform be unit-tested in `build.test.ts`.
 
 Entity properties are generated from the table's own columns, minus `companyId`,
@@ -112,7 +114,7 @@ Update a/an {entity}                 the generated <entity>.update action
 
 Moment, action and operation labels are hand-written and mandatory (an empty one is a
 build failure from `validateCatalogInputs`).
-`packages/workflows/src` is in `lingui.config.js`'s `erp` catalog `include` and in
+`packages/ee/src/workflows` is in `lingui.config.js`'s `erp` catalog `include` and in
 `//#lingui:compile`'s `inputs` in `turbo.json`. After regenerating, run
 `pnpm run lingui:extract && pnpm run lingui:clean` — the clean step strips the origin
 references that otherwise churn every `.po` file.
@@ -145,14 +147,15 @@ inside a function designed never to throw.
 
 Three rules the raise sites follow:
 
-- **Raise in the service function, not the route, wherever a service function exists.** Every
-  `apps/erp/app/modules/*/*.service.ts` export is also callable over `POST /api/mcp` through
-  `apps/erp/app/routes/api+/mcp+/lib/direct-executor.ts`, whose blocklist is one entry long. A
-  route-level raise silently misses every MCP caller. After changing a service signature, run
-  `pnpm run generate:mcp` — the executor maps arguments by declared parameter name.
+- **Raise in the service function, not the route, wherever a service function exists.** Each
+  operation is one `defineServiceFn` const in `apps/erp/app/modules/<module>/<module>.server.ts`.
+  The route, the HTTP API, MCP and workflows all call that same const, so raise in it or in a
+  building block it calls (`<module>.service.ts`). A route-level raise silently misses every
+  API, MCP and workflow caller. After changing a published function's input, run
+  `pnpm run generate:mcp` to regenerate the tool metadata.
 - **Raise after the write commits, and only if it did.** For the four posting moments the write
-  happens inside a Deno edge function that cannot import app code, so the route raises once the
-  invoke returns cleanly. Place the raise **below** the route's rollback `catch`, not inside the
+  happens inside a posting that commits its own transaction, so the
+  operation (`<module>.server.ts`) raises once the call returns cleanly. Place the raise **below** the operation's rollback `catch`, not inside the
   `try`: `raiseMoment` not throwing stops it from *causing* a rollback, but not from being
   reached before later code throws and reverts the document to Draft. Announcing a post that
   then got rolled back would fire workflows on a record the UI still shows as Draft.
@@ -167,10 +170,10 @@ The nine v1 moments and their sites:
 | `production.jobOperationCompleted` | `finishJobOperation`, `apps/mes/app/services/operations.service.ts` |
 | `sales.quoteSent` | `finalizeQuote`, `modules/sales/sales.service.ts` |
 | `sales.quoteAccepted` | `convertQuoteToOrder`, same file |
-| `inventory.receiptPosted` | `x+/receipt+/$receiptId.post.tsx`, below the rollback catch |
-| `inventory.shipmentPosted` | `x+/shipment+/$shipmentId.post.tsx`, below the rollback catch |
-| `invoicing.salesInvoicePosted` | `x+/sales-invoice+/$invoiceId.post.tsx`, below the tenant guard |
-| `invoicing.purchaseInvoicePosted` | `x+/purchase-invoice+/$invoiceId.post.tsx`, below the rollback catch |
+| `inventory.receiptPosted` | `postReceipt`, `modules/inventory/inventory.server.ts`, below the rollback to Draft |
+| `inventory.shipmentPosted` | `postShipment`, same file, below the rollback to Draft |
+| `invoicing.salesInvoicePosted` | `postSalesInvoice`, `modules/invoicing/invoicing.server.ts`, below the rollback to Draft |
+| `invoicing.purchaseInvoicePosted` | `postPurchaseInvoice`, same file, below the rollback to Draft |
 
 `packages/jobs/.../tasks/post-transaction.ts` posts the same three documents and looks like a
 second caller, but **nothing sends `carbon/post-transaction`** — it is dead code. Don't add a
@@ -189,7 +192,9 @@ allowlist into `actions.generated.ts`, which holds **both** `WORKFLOW_ACTION_CAT
 
 - **Actions** are what a workflow does. 6 hand-written (`job.create`,
   `nonConformance.create`, `purchaseOrder.create`, `salesOrder.create`, `notify`,
-  `webhook`) plus one `<entity>.update` generated per entity that declares `write`.
+  `webhook`), one `<entity>.update` generated per entity that declares `write`, and one
+  `integration.<piece>.<action>` per entry in the piece allowlist (see
+  `workflow-integrations.md`).
 - **Operations** are read-only computations over things a property map cannot reach —
   stored totals live only on views, and counts span child tables.
 
@@ -213,7 +218,7 @@ tenancy checks, webhook signing and the SSRF guard — is in
 2. **Every raise site names a declared moment** (the type system covers this too).
 3. **Every registry table, watched column and writable column still exists.** Also a compile
    error, via type-only `TableName` / `ColumnOf<T>` from `@carbon/database/audit.config` — a
-   migration renaming a column fails `tsgo` at the registry line, naming the column. The
+   migration renaming a column fails `tsc` at the registry line, naming the column. The
    script repeats it in plain English and catches skew between the two generated schema
    artifacts. A writable column that is identity or audit (`id`, `companyId`, `createdBy`,
    `createdAt`, `updatedBy`, `updatedAt`) is refused outright.
@@ -223,8 +228,8 @@ tenancy checks, webhook signing and the SSRF guard — is in
 5. **Every moment, action and operation has a label**, and names only registry entities for
    its outputs, inputs and output.
 6. **Every action has an implementation route** — a `call` that is a real tool in
-   `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json` (run `pnpm run generate:mcp`), or
-   membership in the built-in set (`notify`, `webhook`).
+   `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json` (run `pnpm run generate:mcp`), a
+   `piece` block from the allowlist, or membership in the built-in set (`notify`, `webhook`).
 
 Deploy-time, against a live database (so not CI — they sit with `packages/checks`' invariants):
 the `workflow-trigger-event-drift` SQL invariant and
@@ -259,7 +264,7 @@ column always wins and a customer cannot shadow one.
   `walk` single-step, and matches the differ, which never emits the bare `customFields` key.
 - `custom-fields.ts` holds the ONLY `DataType → ValueType` map. List → `string` plus `choices`
   from `listOptions`; User/Customer/Supplier → `t.entity(...)`; File → the stored path as a
-  string, not a link.
+  string, not a link; Link → the web address as stored, a string.
 - Trigger ids are `<entity>.customFields.<fieldId>.changed` and are **parsed, not looked up**:
   `WORKFLOW_EVENTS` stays a closed, committed, drift-checked record. `getCatalogEvent(id)` is
   the single lookup — the static map first, then `resolveCustomFieldEvent`. Every consumer goes

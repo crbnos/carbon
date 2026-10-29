@@ -1,46 +1,65 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { AccountSettings } from "@carbon/account/ui";
 import {
   CarbonEdition,
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
-  getAppUrl,
   getCarbon,
   getCompanies,
   getUser,
+  hasPermission,
   ITAR_RIDER_PDF_PATH,
   isAuthProviderEnabled,
   SESSION_HEARTBEAT_MS,
   SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { setConsolePinIn } from "@carbon/auth/console-pin.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
   destroyAuthSession,
   requireAuthSession
 } from "@carbon/auth/session.server";
+import { getUserClaims } from "@carbon/auth/users.server";
+import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
 import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
+import { RouteRealtime, useLoaderQuery } from "@carbon/query";
+import { setClientCompanyId } from "@carbon/query/cache";
 import {
+  AnnouncementBar,
   Button,
+  cn,
   Heading,
   ItarEntityPendingBlock,
   ItarUserCertification,
   SidebarProvider,
   TooltipProvider,
+  toast,
   useKeyboardWedge,
   useNProgress,
+  useScanPending,
   VStack
 } from "@carbon/react";
+import { HalloweenLayer } from "@carbon/react/Halloween";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
-  isSearchParamOnlyNavigation,
-  requiresItarEntityCertification
+  formatDate,
+  redirect,
+  redirectExternal,
+  requiresItarEntityCertification,
+  SHELL_MAX_AGE_MS
 } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import type {
   LoaderFunctionArgs,
   MiddlewareFunction,
@@ -51,20 +70,22 @@ import {
   data,
   Form,
   Outlet,
-  redirect,
   useLoaderData,
-  useNavigate
+  useLocation
 } from "react-router";
 import { AppSidebar } from "~/components";
 import { ConsolePill } from "~/components/ConsolePill";
+import { isTabBarPath, MesTabBar } from "~/components/MesTabBar";
 import { PinInOverlay } from "~/components/PinInOverlay";
 import RealtimeDataProvider from "~/components/RealtimeDataProvider";
+import { ScanPendingOverlay } from "~/components/ScanPendingOverlay";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
+import ShortcutHelp from "~/components/ShortcutHelp";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import { userContext } from "~/context";
 import { useIdle } from "~/hooks";
 import { userMiddleware } from "~/middleware/user";
-import { refreshConsolePinIn } from "~/services/console.server";
+import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
 import { getItarCertificationStatus } from "~/services/itar.service";
 import { getActiveMaintenanceEventsCount } from "~/services/maintenance.service";
 import {
@@ -74,12 +95,19 @@ import {
 import { getOpenClockEntry } from "~/services/people.service";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
+// Set from the component when loader data arrives, not in shouldRevalidate:
+// link prefetching calls that too.
+let shellLoadedAt = Date.now();
+
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
-  nextUrl,
   formMethod,
+  formAction,
   defaultShouldRevalidate
 }) => {
+  // The refreshed session reaches the client through this loader.
+  if (formAction === path.to.refreshSession) return true;
+
   if (
     currentUrl.pathname.startsWith("/refresh-session") ||
     currentUrl.pathname.startsWith("/switch-company") ||
@@ -88,16 +116,21 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     return true;
   }
 
-  // This loader is the app shell: 9 queries plus an auth round-trip. Without
-  // this it re-ran on every filter, sort and page click, none of which can
-  // change anything it returns.
-  // NOTE: `useRevalidator().revalidate()` — how the realtime hooks refresh —
-  // also looks like a same-pathname GET, so the shell does not re-run for
-  // realtime events either. Leaf loaders still refresh, which is the intent.
-  // Shell data that must react to a realtime change needs an explicit case
-  // above.
-  if (isSearchParamOnlyNavigation({ currentUrl, nextUrl, formMethod })) {
-    return false;
+  // Console mode + pin-in/out live in this shell loader (via userMiddleware).
+  // Those actions set cookies, so the shell MUST re-run for the change to show —
+  // without this, the overlay/console state only updated on a full page refresh.
+  if (
+    formAction === path.to.consolePinIn ||
+    formAction === path.to.consolePinOut ||
+    formAction === path.to.consoleToggle
+  ) {
+    return true;
+  }
+
+  // Only a mutation can change what the shell returns, so a GET re-runs it
+  // only once the data has aged out — that covers out-of-band changes.
+  if (!formMethod || formMethod === "GET") {
+    return Date.now() - shellLoadedAt > SHELL_MAX_AGE_MS;
   }
 
   return defaultShouldRevalidate;
@@ -112,26 +145,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   // share a client between requests
   const client = getCarbon(accessToken);
 
-  // parallelize the requests
-  const [companies, user] = await Promise.all([
-    getCompanies(client, userId),
-    getUser(client, userId)
-  ]);
-
-  if (user.error || !user.data) {
-    throw await destroyAuthSession(request);
-  }
-
-  const company = companies.data?.find((c) => c.companyId === companyId);
-  if (!company) {
-    // A company-less authenticated user (e.g. an enterprise first-run user who
-    // hasn't onboarded) has no MES to enter — MES doesn't host onboarding.
-    // Send them to a terminal screen that links to ERP onboarding, not into
-    // accountSettings (an ERP /x route that would itself bounce a no-company
-    // user, i.e. a redirect loop).
-    throw redirect(path.to.setupRequired);
-  }
-
   // Get the location and console state from middleware context
   const ctx = context.get(userContext);
   const locationId = ctx?.locationId;
@@ -142,6 +155,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
 
   let [
+    companies,
+    user,
+    activeMaintenanceCount,
     companyPlan,
     locations,
     activeEvents,
@@ -150,6 +166,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     locationEmployees,
     printerRoutes
   ] = await Promise.all([
+    getCompanies(client, userId),
+    getUser(client, userId),
+    getActiveMaintenanceEventsCount(client, locationId),
     getStripeCustomerByCompanyId(companyId, userId),
     getLocationsByCompany(client, companyId),
     getActiveJobCount(client, {
@@ -175,10 +194,43 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     getPrinterRoutes(serviceRole, companyId)
   ]);
 
+  if (user.error || !user.data) {
+    throw await destroyAuthSession(request);
+  }
+
+  const company = companies.data?.find((c) => c.companyId === companyId);
+  if (!company) {
+    // A company-less authenticated user (e.g. an enterprise first-run user who
+    // hasn't onboarded) has no MES to enter — MES doesn't host onboarding.
+    // Send them to a terminal screen that links to ERP onboarding, not into
+    // the ERP's /x routes (which would themselves bounce a no-company user,
+    // i.e. a redirect loop).
+    throw redirect(path.to.setupRequired);
+  }
+
   const locationEmployeeIds =
     locationEmployees.data?.map((e: { id: string }) => e.id) ?? [];
   const timeCardEnabled = companySettings.data?.timeCardEnabled ?? false;
-  const consoleEnabled = companySettings.data?.consoleEnabled ?? false;
+  // Console mode as the gate sees it (flag AND entitlement), never the raw
+  // flag. A console session was already checked by `userMiddleware`, which
+  // kept it through a settings read error (`null`); otherwise the flag this
+  // loader read is passed in, so the entitlement check adds no second read.
+  const consoleEnabled = consoleMode
+    ? ctx?.consoleEnabled !== false
+    : (await isConsoleModeEnabledForCompany(client, companyId, {
+        consoleEnabled: companySettings.data?.consoleEnabled ?? false
+      })) === true;
+  // Entering console mode needs `settings_update` on the SESSION user (the
+  // console.toggle action enforces it); the sidebar only offers the switch to
+  // them, or to a terminal already in console mode so it can always leave.
+  const canEnterConsoleMode =
+    consoleEnabled &&
+    hasPermission(
+      (await getUserClaims(userId, companyId)).permissions,
+      "settings",
+      "update",
+      companyId
+    );
 
   // Org-enforced MFA, mirroring the ERP shell. Enrollment itself lives only in
   // the ERP (MES has no account settings), so the gate here points there.
@@ -195,12 +247,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       ? !(await userHasVerifiedTotpFactor(userId))
       : false;
 
-  // Get active maintenance count after we have the location
-  const activeMaintenanceCount = await getActiveMaintenanceEventsCount(
-    client,
-    locationId
-  );
-
   // ITAR gate — only queried in controlled environments. `entityRequired` is
   // false for Carbon staff: the Rider binds the customer's own organization, so
   // it is not ours to accept and the pending block would strand us behind a
@@ -214,7 +260,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     : { entityCertified: true, userCertified: true, entityRequired: false };
 
   if (!companyPlan && CarbonEdition === Edition.Cloud) {
-    throw redirect(path.to.onboarding);
+    // Onboarding lives in the ERP: another origin.
+    throw redirectExternal(path.to.onboarding);
   }
 
   if (!locations.data || locations.data.length === 0) {
@@ -226,7 +273,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   if (pinnedInUser && ctx) {
     headers.append(
       "Set-Cookie",
-      refreshConsolePinIn(companyId, {
+      await setConsolePinIn(companyId, userId, {
         userId: pinnedInUser.userId,
         name: pinnedInUser.name,
         avatarUrl: pinnedInUser.avatarUrl,
@@ -247,6 +294,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       company,
       companies: companies.data ?? [],
       consoleEnabled,
+      canEnterConsoleMode,
       consoleMode: consoleEnabled && consoleMode,
       location: locationId,
       locationEmployeeIds,
@@ -284,6 +332,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
+  const loaderData = useLoaderData<typeof loader>();
   const {
     session,
     activeEvents,
@@ -291,6 +340,7 @@ export default function AuthenticatedRoute() {
     company,
     companies,
     consoleEnabled,
+    canEnterConsoleMode,
     consoleMode,
     location,
     locationEmployeeIds,
@@ -305,9 +355,17 @@ export default function AuthenticatedRoute() {
     itarCertification,
     mfaEnrollmentRequired,
     sessionTimeout
-  } = useLoaderData<typeof loader>();
+  } = loaderData;
+  // During render, not in an effect: the first child reads it.
+  setClientCompanyId(company?.id ?? null, user?.id ?? null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
+  useEffect(() => {
+    shellLoadedAt = Date.now();
+  }, [loaderData]);
 
-  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const showTabBar = isTabBarPath(pathname);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Session lock (NIST 3.1.10) — client idle UX only; server enforces in
   // requireAuthSession. Inert unless CONTROLLED_ENVIRONMENT and non-console.
@@ -321,7 +379,7 @@ export default function AuthenticatedRoute() {
   // Console (shared-kiosk) idle lock (NIST 3.1.10). A controlled-environment
   // console session is exempt from the session-wide lock above (sessionTimeout.
   // enabled is false for it) — its lock is the operator pin-in. On idle, reload:
-  // the server-tightened pin-in (console.server) has by then expired, so the
+  // the server-tightened pin-in (console-pin.server) has by then expired, so the
   // reload surfaces the PinInOverlay and the operator must re-PIN.
   const { isIdle: consoleIsIdle } = useIdle({
     enabled: CONTROLLED_ENVIRONMENT && consoleMode,
@@ -336,21 +394,32 @@ export default function AuthenticatedRoute() {
   }, [consoleIsIdle]);
 
   useNProgress();
+
+  const userId = user?.id;
+  const { t } = useLingui();
   useKeyboardWedge({
     test: (input) =>
       (input.startsWith(MES_URL) || input.startsWith(ERP_URL)) &&
       !input.includes("/kanban/complete/"), // we handle this more gracefully in JobOperation
-    callback: (input) => {
-      try {
-        const url = new URL(input);
-        navigate(url.pathname + url.search);
-      } catch {
-        navigate(input);
-      }
-    }
+    inTextFields: true,
+    onUnrecognized: () => toast.error(t`Nothing on this page uses that barcode`)
   });
-
-  const userId = user?.id;
+  const scanPending = useScanPending();
+  const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
+    path.to.api.systemStatus
+  );
+  const { locale } = useLocale();
+  const moveDate = systemStatus.data?.accountMoveDate;
+  // The account move outranks the deployment-wide announcement, and cannot
+  // be dismissed: it stays until the date is cleared on the company.
+  const announcement = moveDate
+    ? {
+        id: `account-move:${moveDate}`,
+        severity: "warning" as const,
+        message: t`🚨 Heads up: on ${formatDate(moveDate, { dateStyle: "long" }, locale)} your account will be moved to erp.try.carbon.ms`,
+        dismissible: false
+      }
+    : systemStatus.data?.announcement;
   const userEmail = user?.email;
   const userFullName = user ? `${user.firstName} ${user.lastName}` : undefined;
   const companyId = company?.companyId;
@@ -402,7 +471,7 @@ export default function AuthenticatedRoute() {
             </Trans>
           </p>
           <Button size="lg" className="w-full" asChild>
-            <a href={`${getAppUrl()}/x/account/profile`}>
+            <a href={path.to.erpAccountSecurity}>
               <Trans>Set up in Carbon</Trans>
             </a>
           </Button>
@@ -440,7 +509,7 @@ export default function AuthenticatedRoute() {
   }
 
   return (
-    <div className="h-screen w-full overflow-y-auto lg:overflow-hidden">
+    <div className="h-dvh w-full overflow-y-auto lg:overflow-hidden">
       {/* Idle lock conceals the app (3.1.10). Not over the ITAR/MFA gates. */}
       {isIdle && !itarScreen && !mfaScreen && (
         <SessionLockOverlay
@@ -463,24 +532,65 @@ export default function AuthenticatedRoute() {
             }}
           >
             <RealtimeDataProvider>
-              <SidebarProvider defaultOpen={false} touch>
+              {company?.id && <RouteRealtime companyId={company.id} />}
+              <SidebarProvider defaultOpen={false}>
                 <TooltipProvider delayDuration={0}>
                   <AppSidebar
                     activeEvents={activeEvents}
                     activeMaintenanceCount={activeMaintenanceCount}
                     company={company}
                     companies={companies}
-                    consoleEnabled={consoleEnabled}
+                    consoleEnabled={
+                      consoleEnabled && (consoleMode || canEnterConsoleMode)
+                    }
                     consoleMode={consoleMode}
                     location={location}
                     locations={locations}
                     openClockEntry={openClockEntry}
                     pinnedInUser={pinnedInUser}
                     timeCardEnabled={timeCardEnabled}
+                    moreOpen={moreOpen}
+                    onMoreOpenChange={setMoreOpen}
                   />
-                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border">
-                    <Outlet />
+                  {/* From lg the shell does not scroll, so the page area stops at the
+                      screen and each page's own scroller takes the overflow. */}
+                  <div
+                    data-app-card
+                    className={cn(
+                      "flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border lg:max-h-[calc(100dvh-1rem)]",
+                      showTabBar && "max-md:pb-[var(--mes-tab-bar-h)]"
+                    )}
+                  >
+                    {/* A company switch stays on the same page. Without the key the page
+                        keeps its state, so a form still held the previous company's
+                        values and saving wrote them to the new one. */}
+                    <AnnouncementBar
+                      announcement={announcement}
+                      // The pinned-in operator on a console, so one
+                      // operator's dismissal is not everyone's.
+                      userId={loaderData.effectiveUserId ?? user?.id ?? ""}
+                      dismissLabel={t`Dismiss`}
+                      defaultLinkLabel={t`Learn more`}
+                    />
+                    <Outlet key={companyId} />
+                    {/* Seasonal: shows only with the Halloween theme. Remove
+                        with packages/react/src/Halloween/. */}
+                    <HalloweenLayer />
                   </div>
+                  <MesTabBar
+                    activeEvents={activeEvents}
+                    activeMaintenanceCount={activeMaintenanceCount}
+                    moreOpen={moreOpen}
+                    onMoreOpenChange={setMoreOpen}
+                  />
+                  <ShortcutHelp />
+                  {user && company?.id && (
+                    <AccountSettings
+                      api={path.to.erpApi}
+                      user={user}
+                      companyId={company.id}
+                    />
+                  )}
                   {timeCardEnabled && (
                     <Suspense fallback={null}>
                       <Await resolve={openClockEntry}>
@@ -499,6 +609,7 @@ export default function AuthenticatedRoute() {
                       </Await>
                     </Suspense>
                   )}
+                  {scanPending && <ScanPendingOverlay />}
                   {consoleMode && !pinnedInUser && (
                     <PinInOverlay
                       companyId={company.companyId!}

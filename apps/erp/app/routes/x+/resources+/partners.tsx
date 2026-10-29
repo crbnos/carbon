@@ -1,16 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   getAbilitiesList,
-  getPartners,
-  PartnersTable
-} from "~/modules/resources";
+  getPartners
+} from "~/modules/resources/resources.service";
+import { PartnersTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -29,14 +35,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
+  const { sorts, filters } = getGenericQueryFilters(searchParams);
 
+  // A partner has one row per ability, so `id` is not unique and a cursor
+  // cannot page the list. It loads once: the first SINGLE_LOAD_LIMIT rows.
   const [partners] = await Promise.all([
     getPartners(client, companyId, {
       search,
-      limit,
-      offset,
+      limit: SINGLE_LOAD_LIMIT,
+      offset: 0,
       sorts,
       filters
     }),
@@ -52,17 +59,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     partners: partners.data ?? [],
-    count: partners.count ?? 0
+    count: partners.count ?? 0,
+    isTruncated: (partners.data?.length ?? 0) >= SINGLE_LOAD_LIMIT
   };
 }
 
 export default function Route() {
-  const { partners, count } = useLoaderData<typeof loader>();
+  const { partners, count, isTruncated } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <PartnersTable data={partners} count={count} />
-      <Outlet />
+      <PartnersTable data={partners} count={count} isTruncated={isTruncated} />
+      <RecordOutlet />
     </VStack>
   );
 }

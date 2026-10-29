@@ -1,4 +1,13 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -25,6 +34,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useAccounts } from "~/components/Form/Account";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
@@ -50,9 +60,15 @@ type MemoRow = {
 type MemosTableProps = {
   data: MemoRow[];
   count: number;
+  infinite: InfiniteOptions;
+  // Which party this list is scoped to. "customer" → Credit Memos (AR),
+  // "supplier" → Supplier Credits (AP). Drives the counterparty column, the
+  // title, and the New-button label/default party.
+  party: "customer" | "supplier";
 };
 
-const MemosTable = memo(({ data, count }: MemosTableProps) => {
+const MemosTable = memo((props: MemosTableProps) => {
+  const { data, count, party, infinite } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -66,7 +82,14 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
   const renderContextMenu = useCallback(
     (row: MemoRow) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.memo(row.id))}>
+        <MenuItem
+          shortcut={
+            row.status === "Draft"
+              ? MENU_ITEM_SHORTCUTS.edit
+              : MENU_ITEM_SHORTCUTS.view
+          }
+          onClick={() => navigate(path.to.memo(row.id))}
+        >
           <MenuIcon icon={row.status === "Draft" ? <LuPencil /> : <LuEye />} />
           {row.status === "Draft" ? (
             <Trans>Edit Memo</Trans>
@@ -75,6 +98,7 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
           )}
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           disabled={
             row.status !== "Draft" || !permissions.can("delete", "invoicing")
@@ -102,13 +126,14 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
             {row.original.memoId}
           </Hyperlink>
         ),
-        meta: { icon: <LuHash /> }
+        meta: { icon: <LuHash />, mobile: "P1" }
       },
       {
         accessorKey: "direction",
         header: t`Direction`,
         cell: ({ row }) => <Enumerable value={row.original.direction} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -122,31 +147,28 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
       },
       {
         id: "counterparty",
-        header: t`Counterparty`,
+        header: party === "supplier" ? t`Supplier` : t`Customer`,
         cell: ({ row }) =>
-          row.original.customerId ? (
+          party === "supplier" ? (
+            row.original.supplierId ? (
+              <SupplierAvatar supplierId={row.original.supplierId} />
+            ) : null
+          ) : row.original.customerId ? (
             <CustomerAvatar customerId={row.original.customerId} />
-          ) : row.original.supplierId ? (
-            <SupplierAvatar supplierId={row.original.supplierId} />
           ) : null,
         meta: {
+          mobile: "P3",
           icon: <LuUser />,
           filter: {
             type: "static",
-            // Combined customer + supplier options; the loader maps the chosen
-            // ids onto customerId OR supplierId.
-            options: [
-              ...(customers ?? []).map((c) => ({
-                value: c.id,
-                label: c.name
-              })),
-              ...(suppliers ?? []).map((s) => ({
-                value: s.id,
-                label: s.name
-              }))
-            ]
+            // Only this list's party; the loader maps the chosen ids onto the
+            // matching customerId / supplierId column.
+            options:
+              party === "supplier"
+                ? (suppliers ?? []).map((s) => ({ value: s.id, label: s.name }))
+                : (customers ?? []).map((c) => ({ value: c.id, label: c.name }))
           },
-          pluralHeader: t`Counterparties`
+          pluralHeader: party === "supplier" ? t`Suppliers` : t`Customers`
         }
       },
       {
@@ -155,7 +177,7 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
         cell: (item) => (
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
-        meta: { icon: <LuCalendar /> }
+        meta: { filter: { type: "dateRange" }, icon: <LuCalendar /> }
       },
       {
         accessorKey: "amount",
@@ -166,6 +188,7 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
           </span>
         ),
         meta: {
+          mobile: "P2",
           icon: <LuCoins />,
           renderTotal: true,
           formatter: currencyFormatter.format
@@ -198,6 +221,7 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <MemoStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -215,12 +239,13 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
         cell: ({ row }) => row.original.reference ?? null
       }
     ],
-    [t, currencyFormatter, customers, suppliers, accounts]
+    [t, currencyFormatter, customers, suppliers, accounts, party]
   );
 
   return (
     <>
       <Table<MemoRow>
+        infinite={infinite}
         count={count}
         columns={columns}
         data={data}
@@ -230,11 +255,14 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
         }}
         primaryAction={
           permissions.can("create", "invoicing") && (
-            <New label={t`Memo`} to={path.to.memoNew} />
+            <New
+              label={party === "supplier" ? t`Supplier Credit` : t`Credit Memo`}
+              to={`${path.to.memoNew}?party=${party}`}
+            />
           )
         }
         renderContextMenu={renderContextMenu}
-        title={t`Credit / Debit Memos`}
+        title={party === "supplier" ? t`Supplier Credits` : t`Credit Memos`}
         table="memo"
         withSavedView
       />

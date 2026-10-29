@@ -1,12 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
-import type { ChangeNoticeStatus } from "~/modules/items";
+import type { ChangeNoticeStatus } from "~/modules/items/types";
 import type { nonConformanceAssociationType } from "./quality.models";
 import type {
   getGaugeCalibrationRecords,
   getGauges,
   getGaugeTypes,
   getInspection,
+  getInspectionGauges,
+  getInspectionIssues,
   getInspectionMeasurements,
+  getInspectionPlanParts,
   getInspectionSamplingPlans,
   getInspections,
   getIssueActionTasks,
@@ -183,8 +190,18 @@ export type ItemInspectionDocumentAssignment =
 export type InspectionMeasurementRow =
   Database["public"]["Tables"]["inspectionMeasurement"]["Row"];
 
+export type InspectionIssue = NonNullable<
+  NonNullable<
+    Awaited<ReturnType<typeof getInspectionIssues>>["data"]
+  >[number]["nonConformance"]
+>;
+
 export type InspectionSamplingPlan = NonNullable<
   Awaited<ReturnType<typeof getInspectionSamplingPlans>>["data"]
+>[number];
+
+export type InspectionGauge = NonNullable<
+  Awaited<ReturnType<typeof getInspectionGauges>>["data"]
 >[number];
 
 export type InspectionMeasurement = NonNullable<
@@ -194,3 +211,25 @@ export type InspectionMeasurement = NonNullable<
 export type IssueTypeListItem = NonNullable<
   Awaited<ReturnType<typeof getIssueTypesList>>["data"]
 >[number];
+
+// --- Inspection Documents -----------------------------------------------
+
+export type InspectionPlanPart = NonNullable<
+  Awaited<ReturnType<typeof getInspectionPlanParts>>["data"]
+>[number];
+
+export type BalloonFeature = {
+  id: string;
+  balloonNumber: number;
+  description: string;
+  nominalValue: number | null;
+  tolerancePlus: number | null;
+  toleranceMinus: number | null;
+  unitOfMeasureCode: string | null;
+};
+
+export type InspectionDocumentContent = {
+  pdfUrl: string | null;
+  drawingNumber: string | null;
+  features: BalloonFeature[];
+};

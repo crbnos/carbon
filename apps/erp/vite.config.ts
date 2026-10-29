@@ -1,15 +1,99 @@
-import { applyDotenvToProcessEnv } from "@carbon/dev/vite";
-import { lingui } from "@lingui/vite-plugin";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { applyDotenvToProcessEnv, carbon } from "@carbon/dev/vite";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
-import { defineConfig, PluginOption } from "vite";
-import babelMacros from "vite-plugin-babel-macros";
+import { defineConfig } from "vite";
 
-export default defineConfig(({ isSsrBuild, mode }) => {
-  applyDotenvToProcessEnv(mode, __dirname);
+export default defineConfig(({ command, isSsrBuild, mode }) => {
+  applyDotenvToProcessEnv(mode, import.meta.dirname);
+
+  // One id per build, the same in the client and server bundles. `path.to.api`
+  // puts it on the reference lists the browser keeps for a day, so a deploy
+  // is never served the copy cached under the previous one. The deployment on
+  // Vercel (a redeploy of one commit can still change what those lists hold);
+  // elsewhere the build's own start time, which also changes per build.
+  process.env.VITE_BUILD_ID ??=
+    process.env.VERCEL_DEPLOYMENT_ID?.replace(/^dpl_/, "").slice(0, 12) ??
+    process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ??
+    Date.now().toString(36);
+
+  // root.tsx loads Vercel Web Analytics only in a build Vercel ran: its script
+  // is served nowhere else. Vercel's React Router preset exposes no VITE_ copy
+  // of its system variables, so make the one Vercel's Vite preset would.
+  if (process.env.VERCEL === "1") {
+    process.env.VITE_VERCEL_ENV ??= process.env.VERCEL_ENV;
+  }
+
+  /**
+   * Dev-server SSR dependencies that must be inlined rather than left as bare
+   * `import`s. A production build inlines every dependency (`ssrBuild` below).
+   * Applied to BOTH `ssr` and `environments.ssr.resolve`.
+   *
+   * The second location is not redundant: with `future.v8_viteEnvironmentApi`
+   * enabled, the Vercel preset builds each route group as a named server-bundle
+   * environment (`ssr_bundle_*`), and React Router's server-bundle environment
+   * resolver merges `viteUserConfig.environments.ssr` — NOT the top-level `ssr`
+   * config.
+   */
+  const ssrNoExternal = [
+    "react-tweet",
+    "react-dropzone",
+    "react-icons",
+    "react-phone-number-input",
+    "tailwind-merge",
+    /**
+     * @react-three/fiber v8 (inlined via @carbon/viewer) default-imports
+     * its nested zustand v3, while the app uses zustand v5 (no default
+     * export). Externalizing zustand merges both into one bare import that
+     * resolves to v5 at runtime and crashes the server at module load.
+     * Bundling it lets each importer keep its own version.
+     */
+    "zustand",
+    /**
+     * @carbon/react imports each avatar style's JSON with a dynamic import().
+     * Externalized, Node loads that JSON natively and refuses it without an
+     * import attribute (ERR_IMPORT_ATTRIBUTE_MISSING), so /file/avatar fails.
+     * The attribute cannot go in the source: Vite passes it to the browser,
+     * which then rejects the JSON it serves as JavaScript. Bundled, Vite turns
+     * the JSON into a module on both sides.
+     */
+    "@dicebear/styles",
+  ];
+
+  /**
+   * The production server bundles every dependency. Left as bare imports they
+   * are read from node_modules one file at a time when a function starts —
+   * over 4,000 files, most of an ~8 s Vercel cold start.
+   *
+   * The AI SDK stays external: @ai-sdk/provider-utils require()s `undici`
+   * relative to its own file at runtime, which only resolves from where pnpm
+   * installed it.
+   */
+  const ssrBuild = {
+    noExternal: true as const,
+    external: ["ai", "@ai-sdk/anthropic", "@ai-sdk/openai", "@ai-sdk/react"],
+  };
+  const ssrResolve =
+    command === "build" ? ssrBuild : { noExternal: ssrNoExternal };
 
   return {
+    // Build analysis (plugin hook cost, chunks, duplicate packages). Opt-in,
+    // because each build writes gigabytes to node_modules/.rolldown:
+    // `VITE_DEVTOOLS=1 pnpm build`, then `pnpm exec vite-devtools`.
+    devtools: Boolean(process.env.VITE_DEVTOOLS),
+    /**
+     * The jSquash image codecs (paperless thumbnails, via
+     * `@carbon/files/media/node`) import their wasm as `?inline` data URIs, so
+     * the bytes ride in the server bundle instead of being resolved off disk at
+     * runtime — a bundled `require.resolve` is anchored in the output directory,
+     * where neither `@jsquash` nor the .wasm exists. Vite only honours `?inline`
+     * for a file it treats as an asset, and `.wasm` is not one by default.
+     */
+    assetsInclude: ["**/*.wasm"],
     build: {
       minify: true,
       rolldownOptions: {
@@ -26,40 +110,19 @@ export default defineConfig(({ isSsrBuild, mode }) => {
     define: {
       global: "globalThis",
     },
-    ssr: {
-      noExternal: [
-        "react-tweet",
-        "react-dropzone",
-        "react-icons",
-        "react-phone-number-input",
-        "tailwind-merge",
-        /**
-         * react-csv@2.2.2 ships a broken manifest: it `require('react')` and
-         * `require('prop-types')` at runtime but declares neither as a
-         * dependency or peer. Externalized, the SSR server bundle keeps the bare
-         * `require('react')`, which resolves locally via pnpm's hoisted store
-         * but is NOT traced into the Vercel serverless function — so the Lambda
-         * crashes on cold start with "Cannot find module 'react'". Bundling it
-         * inline resolves react/prop-types against the app's copies at build
-         * time, the same reason the react-* packages above are inlined.
-         *
-         * Build-only: react-csv also declares `"jsnext:main": "src/index.js"`,
-         * so when inlined in the dev server Vite picks the untranspiled ESM
-         * source, whose `import { func } from "prop-types"` fails under Node's
-         * CJS interop ("Named export 'func' not found"). In dev the CJS entry is
-         * externalized and `require`d directly, which works via pnpm's store.
-         */
-
-        ...(isSsrBuild ? ["react-csv"] : []),
-        /**
-         * @react-three/fiber v8 (inlined via @carbon/viewer) default-imports
-         * its nested zustand v3, while the app uses zustand v5 (no default
-         * export). Externalizing zustand merges both into one bare import that
-         * resolves to v5 at runtime and crashes the server at module load.
-         * Bundling it lets each importer keep its own version.
-         */
-        "zustand",
-      ],
+    ssr: ssrResolve,
+    environments: {
+      ssr: {
+        resolve: ssrResolve,
+        // Bundled CommonJS that reads __dirname/__filename (yoga-layout under
+        // react-pdf, libheif) runs in ES module output, where neither exists.
+        ...(command === "build" && {
+          define: {
+            __dirname: "import.meta.dirname",
+            __filename: "import.meta.filename",
+          },
+        }),
+      },
     },
     server: {
       port: 3000,
@@ -74,10 +137,24 @@ export default defineConfig(({ isSsrBuild, mode }) => {
     },
     plugins: [
       tailwindcss(),
-      babelMacros(),
-      lingui(),
       reactRouter(),
-    ] as PluginOption[],
+      carbon({
+        command,
+        mode,
+        locales: true,
+        precompress: true,
+        splitServer: true,
+        // unpdf's bundled PDF.js engine is a dead lazy chunk in the browser,
+        // which runs react-pdf's pdfjs-dist (see @carbon/files/pdf). Keep it
+        // out there only: on the server it is the one engine PDF reading has.
+        clientOnly: {
+          "unpdf/pdfjs": path.resolve(
+            import.meta.dirname,
+            "app/ssr-shims/unpdf-pdfjs-stub.mjs"
+          ),
+        },
+      }),
+    ],
     resolve: {
       tsconfigPaths: true,
       alias: {
@@ -86,7 +163,7 @@ export default defineConfig(({ isSsrBuild, mode }) => {
          * can still load that graph; alias `canvas` to a stub (do not alias the
          * whole `konva` package — react-konva imports `konva/lib/Core.js`, etc.).
          */
-        canvas: path.resolve(__dirname, "app/ssr-shims/canvas-stub.cjs"),
+        canvas: path.resolve(import.meta.dirname, "app/ssr-shims/canvas-stub.cjs"),
         /**
          * `rhino3dm` (via @carbon/viewer) has a Node-only branch that
          * `require("ws")`, but declares no dependencies, so `ws` is not
@@ -94,12 +171,12 @@ export default defineConfig(({ isSsrBuild, mode }) => {
          * fails the build; esbuild did not. Nothing here uses `ws` — stub it
          * like `canvas` above.
          */
-        ws: path.resolve(__dirname, "app/ssr-shims/ws-stub.cjs"),
+        ws: path.resolve(import.meta.dirname, "app/ssr-shims/ws-stub.cjs"),
         // Directory (not index.ts) so subpath imports like
         // `@carbon/utils/favicon` resolve to `src/favicon.ts`.
-        "@carbon/utils": path.resolve(__dirname, "../../packages/utils/src"),
+        "@carbon/utils": path.resolve(import.meta.dirname, "../../packages/utils/src"),
         "@carbon/form": path.resolve(
-          __dirname,
+          import.meta.dirname,
           "../../packages/form/src/index.tsx"
         ),
       },

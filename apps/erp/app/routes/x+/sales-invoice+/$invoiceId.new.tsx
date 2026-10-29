@@ -1,94 +1,39 @@
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useUser } from "~/hooks";
-import type { SalesInvoice } from "~/modules/invoicing";
-import {
-  getSalesInvoice,
-  isSalesInvoiceLocked,
-  salesInvoiceLineValidator,
-  upsertSalesInvoiceLine
-} from "~/modules/invoicing";
+import { salesInvoiceLineValidator } from "~/modules/invoicing/invoicing.models";
+import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-
-  const { invoiceId } = params;
-  if (!invoiceId) throw new Error("Could not find invoiceId");
-
-  // Check if SI is locked
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "invoicing"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(salesInvoiceLineValidator).request(args, {
+    params: ["invoiceId"]
   });
-
-  const invoice = await getSalesInvoice(viewClient, invoiceId);
-  if (invoice.error) {
-    throw redirect(
-      path.to.salesInvoiceDetails(invoiceId),
-      await flash(request, error(invoice.error, "Failed to load sales invoice"))
-    );
-  }
-
-  await requireUnlocked({
-    request,
-    isLocked: isSalesInvoiceLocked(invoice.data?.status),
-    redirectTo: path.to.salesInvoiceDetails(invoiceId),
-    message: "Cannot modify a locked sales invoice. Reopen it first."
+  if ("invalid" in input) return input.invalid;
+  const { invoiceId } = input.params;
+  const formData = input.formData ?? new FormData();
+  const api = await carbon(args.request);
+  const result = await api.invoicing.createSalesInvoiceLine({
+    ...input.data,
+    // The URL invoice, not the form's copy.
+    invoiceId,
+    customFields: setCustomFields(formData),
+    acknowledged: formData.get("acknowledged") === "true"
   });
-
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "invoicing"
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(salesInvoiceLineValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  if (d.invoiceLineType === "Fixed Asset") {
-    d.accountId = undefined;
-    d.itemId = undefined;
-  } else {
-    d.accountId = undefined;
-    d.assetId = undefined;
-  }
-
-  const createSalesInvoiceLine = await upsertSalesInvoiceLine(client, {
-    ...d,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
-  });
-
-  if (createSalesInvoiceLine.error) {
-    throw redirect(
-      path.to.salesInvoiceDetails(invoiceId),
-      await flash(
-        request,
-        error(
-          createSalesInvoiceLine.error,
-          "Failed to create sales invoice line."
-        )
-      )
-    );
-  }
-
+  // An error is toasted; the violation modal reads `violations`.
+  if (!result.data) return result;
+  if ("violations" in result.data) return result.data;
   throw redirect(path.to.salesInvoiceDetails(invoiceId));
 }
 
@@ -104,17 +49,22 @@ export default function NewSalesInvoiceLineRoute() {
 
   const initialValues = {
     invoiceId: invoiceId,
-    invoiceLineType: "Item" as MethodItemType,
+    // "Item" is the picker's generic mode, not a member of the line-type
+    // enum; posting it failed validation with "Type is required".
+    invoiceLineType: "Part" as MethodItemType,
     quantity: 1,
     unitOfMeasureCode: "EA",
     locationId:
       salesInvoiceData?.salesInvoice?.locationId ?? defaults.locationId ?? "",
     unitPrice: 0,
+    discountPercent: 0,
     shippingCost: 0,
     addOnCost: 0,
     nonTaxableAddOnCost: 0,
     taxPercent: 0,
-    exchangeRate: salesInvoiceData?.salesInvoice?.exchangeRate ?? 1
+    exchangeRate: salesInvoiceData?.salesInvoice?.exchangeRate ?? 1,
+    serviceStartDate: "",
+    serviceEndDate: ""
   };
 
   return <SalesInvoiceLineForm initialValues={initialValues} />;

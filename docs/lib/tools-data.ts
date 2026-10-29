@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import raw from "./tools-data.generated";
 
 export type ToolClass = "READ" | "WRITE" | "DESTRUCTIVE";
@@ -8,6 +12,12 @@ export interface ToolItem {
   classification: ToolClass;
   description: string;
   schema: unknown;
+  /** Response `data` shape, reflected from the service's return type. Absent when
+   *  the return type yielded nothing usable (an `any`, a void, an opaque shape). */
+  responseSchema?: unknown;
+  /** The HTTP path under /api/v1 when it is not `/{module}/{id}`: a service
+   *  function's router path (`/production/job/cancel`). */
+  path?: string;
 }
 export interface ToolModule {
   name: string;
@@ -21,6 +31,25 @@ interface ToolData {
 
 export const toolModules: ToolModule[] = (raw as ToolData).modules;
 
+/**
+ * Display name for an operation: the callable name minus its `{module}_` prefix.
+ * Every surface that shows an operation already states its module — the sidebar
+ * groups by it, the detail page breadcrumbs it — so the prefix is redundant noise on
+ * an already-long identifier. The FULL name stays wherever it is callable (the
+ * `call_tool` snippet, the page title) since that is the string you actually send.
+ */
+/** An operation's name split for display: `getJobs` → `get` + `Jobs`. */
+export function splitOperationName(label: string): { verb: string; entity: string } {
+  const at = label.search(/[A-Z]/);
+  return at <= 0 ? { verb: label, entity: "" } : { verb: label.slice(0, at), entity: label.slice(at) };
+}
+
+export function operationLabel(name: string, moduleSlug: string): string {
+  return name.startsWith(`${moduleSlug}_`)
+    ? name.slice(moduleSlug.length + 1)
+    : name;
+}
+
 export function getTool(slug: string): { module: ToolModule; tool: ToolItem } | null {
   for (const m of toolModules) {
     const tool = m.tools.find((t) => t.slug === slug);
@@ -31,6 +60,31 @@ export function getTool(slug: string): { module: ToolModule; tool: ToolItem } | 
 
 export function allToolParams(): { tool: string }[] {
   return toolModules.flatMap((m) => m.tools.map((t) => ({ tool: t.slug })));
+}
+
+export interface ToolCounts {
+  /** Total number of operations across every module. */
+  total: number;
+  /** Number of modules. */
+  modules: number;
+  /** Operation count per classification. */
+  byClass: Record<ToolClass, number>;
+  /** `[module name, operation count]`, sorted by count descending. */
+  perModule: [string, number][];
+}
+
+/** Counts derived from the generated catalog, so the docs copy can never go stale. */
+export function toolCounts(): ToolCounts {
+  const byClass: Record<ToolClass, number> = { READ: 0, WRITE: 0, DESTRUCTIVE: 0 };
+  let total = 0;
+  const perModule: [string, number][] = [];
+  for (const m of toolModules) {
+    total += m.tools.length;
+    perModule.push([m.name, m.tools.length]);
+    for (const t of m.tools) byClass[t.classification] += 1;
+  }
+  perModule.sort((a, b) => b[1] - a[1]);
+  return { total, modules: toolModules.length, byClass, perModule };
 }
 
 // Slim nav tree (no schemas) for the sidebar.
@@ -44,13 +98,19 @@ export interface ToolNavModule {
   slug: string;
   tools: ToolNavItem[];
 }
-// Modules and their tools are listed alphabetically in the nav.
+// Modules are listed alphabetically; a module's operations by the record they
+// act on, so `createJob`, `deleteJob` and `getJob` sit together.
+const byEntity = (moduleSlug: string) => (a: { name: string }, b: { name: string }) => {
+  const x = splitOperationName(operationLabel(a.name, moduleSlug));
+  const y = splitOperationName(operationLabel(b.name, moduleSlug));
+  return x.entity.localeCompare(y.entity) || x.verb.localeCompare(y.verb);
+};
 export const toolsNavTree: ToolNavModule[] = toolModules
   .map((m) => ({
     name: m.name,
     slug: m.slug,
     tools: m.tools
       .map((t) => ({ name: t.name, slug: t.slug, classification: t.classification }))
-      .sort((a, b) => a.name.localeCompare(b.name)),
+      .sort(byEntity(m.slug)),
   }))
   .sort((a, b) => a.name.localeCompare(b.name));

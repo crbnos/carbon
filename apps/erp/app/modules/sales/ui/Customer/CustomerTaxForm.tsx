@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import { storage } from "@carbon/files";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -20,7 +25,7 @@ import { FileDropzone } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Boolean, Hidden, Input, Select, Submit } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
-import { taxExemptionReasons } from "~/modules/shared";
+import { taxExemptionReasons } from "~/modules/shared/shared.models";
 import { customerTaxValidator } from "../../sales.models";
 
 type CustomerTaxFormProps = {
@@ -54,8 +59,8 @@ const CustomerTaxForm = ({ initialValues }: CustomerTaxFormProps) => {
       const fileExtension = file.name.split(".").pop();
       const fileName = `${companyId}/tax-certificates/${nanoid()}.${fileExtension}`;
 
-      const result = await carbon.storage
-        .from("private")
+      const result = await storage(carbon)
+        .company(companyId)
         .upload(fileName, file);
 
       if (result.error) {
@@ -95,7 +100,7 @@ const CustomerTaxForm = ({ initialValues }: CustomerTaxFormProps) => {
             ) : (
               <div />
             )}
-            <div className="col-span-3">
+            <div className="col-span-3 max-md:col-span-full">
               <Boolean
                 name="taxExempt"
                 label={t`Tax Exempt`}
@@ -147,14 +152,14 @@ const CustomerTaxForm = ({ initialValues }: CustomerTaxFormProps) => {
                 onDrop={onDrop}
                 accept={{
                   "application/pdf": [".pdf"],
-                  "image/*": [".png", ".jpg", ".jpeg"]
+                  "image/*": [".png", ".jpg", ".jpeg", ".heic", ".heif"]
                 }}
                 multiple={false}
               />
             </div>
           )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="max-md:[&>*]:flex-1 max-md:[&>div>*]:flex-1 max-md:[&_button]:h-11">
           <HStack>
             <Submit isDisabled={isDisabled}>
               <Trans>Save</Trans>

@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Select, ValidatedForm } from "@carbon/form";
 import { Badge } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { z } from "zod";
 import { SourcingTypeIcon } from "~/components/Icons";
-import type { SourcingType } from "~/modules/shared";
-import { sourcingType } from "~/modules/shared";
+import { sourcingType } from "~/modules/shared/shared.models";
+import type { SourcingType } from "~/modules/shared/types";
 
 type SourcingTypePropertyProps = {
   replenishmentSystem?: string | null;

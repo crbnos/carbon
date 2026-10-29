@@ -1,22 +1,26 @@
 ---
 title: Training
-description: Training programs, quiz questions, group assignments, per-period completion tracking, and the weekly reminder digest.
+description: Training programs, written, PDF or YouTube video content, quiz questions, group assignments, external training, per-period completion tracking, and the weekly reminder digest.
 ---
 
-**Training** is where you build the courses your team has to complete, assign them to groups of employees, and track who has finished. A training is a named program with rich content and an optional quiz. You assign it to employee groups, and Carbon tracks completion per employee for the current period, chases the stragglers with a weekly email, and lets a manager mark someone complete by hand. It lives in the [resources](/docs/reference/work-centers) area and is governed by the `resources` permission.
+**Training** manages required courses, employee-group assignments, and completion records. A training program contains written content, a PDF or a YouTube video, and a quiz. Training taken outside Carbon is an external assignment with only a name, which an admin marks complete. Carbon tracks completion for each employee and period, sends weekly reminders for outstanding assignments, and allows managers to record manual completion. Training belongs to the [resources](/docs/reference/work-centers) area and uses the `resources` permission.
 
-A quick example: you create a "Lockout/Tagout" training, set its type to **"Mandatory"** and frequency to **"Annual"**, write the material, add a few quiz questions, then assign it to the "Machinists" group. Every machinist now shows as **"Pending"** for the current year until they complete it — and every Sunday night anyone still outstanding gets a reminder.
+For example, create a "Lockout/Tagout" training with type **"Mandatory"** and frequency **"Annual"**, then assign it to the "Machinists" group. Each group member remains **"Pending"** for the current year until completion and receives a Sunday reminder while outstanding.
 
 ## The training catalog
 
-Each training is one row in the `training` table (`packages/database/supabase/migrations/20251205021915_training.sql:18`). You create one from the training list with just a **Name** — the create form is deliberately minimal (`apps/erp/app/modules/resources/ui/Training/TrainingForm.tsx:76`). Everything else is edited afterward from the training's **Properties** panel (`apps/erp/app/modules/resources/ui/Training/TrainingProperties.tsx`), which saves each field on change through a bulk-update action.
+Each training is a row in the `training` table (`packages/database/supabase/migrations/20251205021915_training.sql:18`). The create form requires only a **Name** (`apps/erp/app/modules/resources/ui/Training/TrainingForm.tsx:76`). Configure the remaining fields in the **Properties** panel (`apps/erp/app/modules/resources/ui/Training/TrainingProperties.tsx`), which saves each change through a bulk-update action.
+
+<Screenshot label="Training detail page: the Questions list on the left, the Content card with its Write | Upload PDF | YouTube Video toggle in the middle, and the Properties panel on the right" caption="Questions on the left, the content in the middle, properties on the right." />
 
 <FieldTable>
 <Field name="name" required>The training's title.</Field>
 <Field name="type" type="Mandatory | Optional">Whether completion is required. Drives the badge on the list and, for mandatory trainings, the sense of "you must finish this."</Field>
 <Field name="frequency" type="Once | Quarterly | Annual">How often the training must be re-taken. **"Once"** means complete it a single time, forever. **"Quarterly"** and **"Annual"** are *recurring* — completion is tracked per period and resets when a new period begins.</Field>
-<Field name="status" type="Draft | Active | Archived">Lifecycle of the training itself. See below.</Field>
-<Field name="content">The training material, stored as rich JSON (`content`). This is the body an employee reads.</Field>
+<Field name="status" type="Draft | Active | Archived">Lifecycle of the training itself, changed from the page header. See below.</Field>
+<Field name="content">The written training material, stored as rich JSON (`content`). Employees read it before the questions.</Field>
+<Field name="guidePath">The uploaded PDF. A training with a PDF shows the PDF to employees instead of the written content.</Field>
+<Field name="videoUrl">The YouTube video, stored as its watch link. A training with a video shows the video to employees instead of the written content.</Field>
 <Field name="estimatedDuration">A free-text estimate of how long the training takes.</Field>
 <Field name="tags">Free-form tags for filtering the catalog.</Field>
 <Field name="assignee">The person responsible for the training.</Field>
@@ -24,11 +28,27 @@ Each training is one row in the `training` table (`packages/database/supabase/mi
 
 The status enum is a simple linear lifecycle on the training record — not to be confused with an employee's *completion* status further down.
 
-<StatusFlow>
+Change the status from the page header: a Draft training shows **Publish**, an Active one shows **Archive**, and **Reopen** in the ⋯ menu moves it back to Draft. Each asks for confirmation.
+
+<StatusFlow entity="trainingCourse">
 <Status name="Draft">Being authored. Not yet meant for assignment.</Status>
 <Status name="Active" accent>Published and in use. Assignments and reminders operate against active trainings.</Status>
 <Status name="Archived" terminal>Retired. Kept for history, no longer assigned.</Status>
 </StatusFlow>
+
+<Callout type="note" title="Only a Draft training can change">
+The content, the PDF, the video, and the questions are editable only while the training is **"Draft"**; the server refuses a PDF or video change on any other status (`apps/erp/app/routes/x+/training+/update.tsx`). Employees can open and complete only an **"Active"** training. To change a published training, **Reopen** it first.
+</Callout>
+
+## Written content, a PDF or a video
+
+A training's content is one of three kinds, chosen with the **Write | Upload PDF | YouTube Video** toggle on the **Content** card:
+
+- **Write:** type the material in the editor.
+- **Upload PDF:** drop one PDF, for shops that already have their training material as a document. **Replace** swaps it (`apps/erp/app/modules/resources/ui/Training/TrainingGuide.tsx`).
+- **YouTube Video:** paste a link to one YouTube video (a `youtube.com/watch`, `youtu.be`, Shorts or live link). Carbon stores it as the video's watch link; **Change** swaps it (`apps/erp/app/modules/resources/ui/Training/TrainingVideo.tsx`). Carbon does not host video files.
+
+Employees see the PDF in a viewer, or the video in YouTube's player, when the training has one, and the written content when it has neither. To switch to another kind, choose it on the toggle; Carbon asks before it removes the PDF or the video. All three change only while the training is Draft.
 
 ## Quiz questions
 
@@ -46,13 +66,25 @@ Questions are authored on the training detail page and can be reordered. The sto
 
 ## Assigning training to groups
 
-You don't assign a training to individuals one at a time — you assign it to **groups**. A `trainingAssignment` (`20251205021915_training.sql:93`) links one `trainingId` to an array of `groupIds`. Every employee who belongs to one of those groups is on the hook for the training.
+Trainings are assigned to **groups**, not individual employees. A `trainingAssignment` (`20251205021915_training.sql:93`) links one `trainingId` to an array of `groupIds`. Every employee in those groups receives the assignment.
+
+A new assignment is **Internal** or **External**. An internal assignment picks a training from the catalog. An external assignment has only a **Name**, as below.
 
 <Callout type="note" title="Assignments target groups, then expand to people">
 The assignment stores `groupIds`, not employee ids. Carbon expands the groups to their members when it computes who owes the training, so adding a person to a group automatically enrolls them — you don't re-assign.
 </Callout>
 
-Open an existing assignment and switch to the **Status** tab to see the per-employee roster: each member with their current status, a completion date if they've finished, and a **"Mark Complete"** button (`apps/erp/app/modules/resources/ui/Training/TrainingAssignmentForm.tsx`). Assigning also fires a notification to the newly-covered employees (see [notifications](/docs/reference/notifications)).
+Click an assignment in the list to open its roster: each member with their current status, a completion date if they've finished, and a **"Mark Complete"** button (`apps/erp/app/routes/x+/resources+/assignments.$assignmentId.tsx`). **Edit Assignment** in the row menu changes its name or groups. Assigning an internal training also fires a notification to the newly-covered employees (see [notifications](/docs/reference/notifications)).
+
+## External training
+
+Some training happens outside Carbon, such as a forklift course from an outside provider. Create an **External** assignment with the course's **Name** and its groups. Carbon stores no training for it (`trainingAssignment.name`, `20261014164752_external-training-assignments.sql`), so it has no content, no quiz and no frequency. It is one-time: each employee is **"Pending"** or **"Completed"**.
+
+- **No employee page and no notifications.** Employees are not notified or reminded, and they cannot open it.
+- **Admin completes it:** on the roster, **Mark Complete** can attach the employee's certificate (one PDF, PNG or JPG of 10 MB or less). The certificate is optional. A phone photo in HEIC format is converted to JPEG on upload.
+- **Proof:** a completed row with a certificate shows **View Certificate** on the roster and on the person's Trainings card.
+
+The assignments list shows an **External** badge on these rows.
 
 ## Completion and status
 
@@ -68,7 +100,7 @@ The **period** is the heart of the recurring logic (`20251206000000_training_ass
 
 An employee's status is *computed*, not stored — Carbon evaluates it from whether a completion exists for the current period and when the employee started. There are four possible values (`apps/erp/app/modules/resources/resources.models.ts:318`):
 
-<StatusFlow>
+<StatusFlow entity="trainingAssignment">
 <Status name="Pending">Assigned, in the current period, not yet completed. The default state.</Status>
 <Status name="Completed" accent>A completion row exists for this employee and period.</Status>
 <Status name="Overdue" branch>A recurring period has already ended and the employee never completed it.</Status>
@@ -79,11 +111,13 @@ An employee's status is *computed*, not stored — Carbon evaluates it from whet
 Recurring trainings check the employee's start date against the period. Someone who joined after a past period closed shows **"Not Required"** for that period, not **"Overdue"** — so onboarding a new hire doesn't instantly paint their record red.
 </Callout>
 
-A manager marks completion from the assignment's Status tab; the action posts to `markTrainingComplete` with the employee and the current period (`apps/erp/app/modules/resources/ui/Training/TrainingAssignmentForm.tsx`). An employee already **"Completed"** or **"Not Required"** has no button — there's nothing to mark.
+A manager marks completion from the assignment's roster with **"Mark Complete"**; Carbon works out the current period on the server (`recordTrainingCompletion`, `apps/erp/app/modules/resources/resources.server.ts`). An employee already **"Completed"** or **"Not Required"** has no button — there's nothing to mark.
+
+To undo a wrong completion, **"Remove Completion"** on the roster deletes it and the employee goes back to **"Pending"** (or **"Overdue"**). It needs the `resources_delete` permission, and it also deletes the attached certificate file. Any ability the training granted stays with the employee; remove it on their Abilities page if needed.
 
 ## The weekly reminder
 
-Every Sunday at 21:00 UTC, a scheduled job sweeps outstanding training and emails the stragglers (`packages/jobs/src/inngest/functions/scheduled/weekly.ts`, cron `0 21 * * 0`). For each company it pulls the assignment status, keeps only the employees whose status is a reminder-worthy one (**"Pending"** or **"Overdue"**), groups them by person, and sends one digest per employee.
+Every Sunday at 21:00 UTC, a scheduled job finds outstanding training (`packages/jobs/src/inngest/functions/scheduled/weekly.ts`, cron `0 21 * * 0`). It selects **"Pending"** and **"Overdue"** assignments and sends one digest to each employee.
 
 The notification is the `TrainingReminder` event (`training-reminder`) under the `Training` topic. Its email heading is **"Training reminder"** and the call-to-action button reads **"View training"** (`packages/notifications/src/index.ts`). It's the only *recurring* notification event in Carbon — so it needs a guard against nagging forever.
 
@@ -91,31 +125,38 @@ The notification is the `TrainingReminder` event (`training-reminder`) under the
 A recurring reminder is capped: once an outstanding training has had five successful reminder emails delivered for the current period, Carbon stops re-sending it. For quarterly and annual trainings the count is keyed to the period, so the cap resets when a new period begins. If a reminder "stopped coming," this cap is usually why.
 </Callout>
 
-Two related one-shot events fire when work is handed to people rather than chased: **"Training assigned to you"** (`training-assignment`) and **"New training available"** (`resource-training-assignment`). See [notifications](/docs/reference/notifications) for how these are delivered and how a person tunes them.
+Two one-time events announce assignments: **"Training assigned to you"** (`training-assignment`) and **"New training available"** (`resource-training-assignment`). See [notifications](/docs/reference/notifications) for delivery and preferences.
 
-## Abilities are a separate system
+## Training can grant an ability
 
-Carbon also tracks employee **abilities** — a skill or certification with a learning curve — under the [people](/docs/reference/people) side of the app (`apps/erp/app/modules/people/ui/Person/PersonAbilities.tsx`). An ability defines a starting proficiency, the weeks to reach full proficiency, and a shadowing period; each employee's progress against it is tracked as `NotStarted`, `InProgress`, or `Complete` (`apps/erp/app/modules/resources/types.ts`).
+An **ability** is an employee's qualification for a process. A training can grant one: set **Grants Ability** in Properties, and completing the training adds that ability to the employee (`grant_ability_on_training_completion`, `packages/database/supabase/migrations/20260720121629_capacity-planning.sql:264`). The scheduler and the shop floor use abilities to decide who may run the process.
 
-<Callout type="warn" title="Abilities and trainings are not linked">
-Despite the shared vocabulary, abilities and trainings are **two independent systems today**. There is no active link between a training and an ability, and work centers do not require a specific ability — the fields that would connect them (`requiredAbilityId` on a work center, an `abilityId` on a training) exist only as commented-out placeholders in the code (`apps/erp/app/modules/resources/resources.models.ts:495`). Completing a training does not advance an ability, and vice versa.
-</Callout>
+Training is one way to grant an ability; a manager can also add it by hand on the person's Abilities page. Removing a training completion does not remove the ability.
 
-Because they're separate, plan around it: use **training** for course-and-quiz compliance with reminders, and **abilities** for skill-curve tracking on a person's profile. Don't expect one to update the other.
+Each process that requires an ability decides whether an operator without it is only warned or blocked on the shop floor; see [requiring an ability](/docs/reference/work-centers#requiring-an-ability).
+
+<Cards>
+  <Card title="People" href="/docs/reference/people">
+    Employees, their abilities, and their training records.
+  </Card>
+  <Card title="Notifications" href="/docs/reference/notifications">
+    Training assignment and reminder delivery.
+  </Card>
+</Cards>
 
 <AgentContext>
 ## Troubleshooting
 
 Exact strings and preconditions for training assignment, completion, and reminders.
 
-### "Training is required"
-The assignment form was submitted without picking a training (`apps/erp/app/modules/resources/resources.models.ts:325`). Select a training in the **Training** field before saving. The field is read-only when editing an existing assignment, so this only bites on create.
+### "Training is required" / "Name is required"
+An internal assignment needs a training, and an external one needs a name (`trainingAssignmentValidator`, `apps/erp/app/modules/resources/resources.models.ts`). The training is read-only when editing an existing assignment, so "Training is required" only bites on create.
 
 ### "At least one group is required"
 An assignment must target at least one group; the `groupIds` array was empty. Add one or more groups in **"Assign to Groups"** before saving.
 
 ### "Training assignment is required" / "Employee is required"
-The mark-complete action needs both `trainingAssignmentId` and `employeeId` (`apps/erp/app/modules/resources/resources.models.ts:333`). These come from hidden fields on the Status-tab row; an empty value means the row didn't carry them — reload the assignment and try again from the Status tab.
+The mark-complete action needs both `trainingAssignmentId` and `employeeId` (`apps/erp/app/modules/resources/resources.models.ts:333`). These come from the roster row; an empty value means the row didn't carry them — reload the assignment and try again from its roster.
 
 ### "Why didn't a reminder send?"
 Not an error string — a common question. Checklist of preconditions for the weekly digest (`packages/jobs/src/inngest/functions/scheduled/weekly.ts`, cron `0 21 * * 0`, Sunday 21:00 UTC):
@@ -126,6 +167,21 @@ Not an error string — a common question. Checklist of preconditions for the we
 
 ### "Why can't I mark someone complete / assign a training?"
 The action is gated by the `resources` permission — `resources_update` to mark complete and edit, `resources_create` to create a training or assignment (`apps/erp/app/modules/resources/ui/Training/TrainingAssignmentForm.tsx`). Without it the **"Mark Complete"** and **Save** buttons are disabled. (These permissions were `people_*` before migration `20251211012654_training-to-resources.sql`; the code now checks `resources`.)
+
+### "This training is not currently active"
+The employee or manager tried to complete a training that is **"Draft"** or **"Archived"**. Publish it (or **Reopen** and publish) first.
+
+### "The certificate must be a PDF, PNG or JPG" / "The certificate must be 10 MB or smaller"
+A certificate attached to an external assignment's **Mark Complete** must be of an accepted type and size (`validateTrainingCertificate`, `apps/erp/app/modules/resources/resources.models.ts`). Carbon checks the file's first bytes, so a file renamed to `.pdf` is refused. The dialog converts HEIC to JPEG.
+
+### "This employee is not assigned this training"
+**Mark Complete** was sent for a person outside the assignment's groups (`assignments.complete.tsx`). Add the person to one of its groups first.
+
+### "The guide can only change while the training is Draft" / "The video can only change while the training is Draft"
+The PDF or the video was changed on an Active or Archived training. **Reopen** it first.
+
+### "Enter a YouTube video link"
+The link is not a YouTube video (`getYouTubeVideoId`, `apps/erp/app/modules/resources/resources.models.ts`). Only YouTube is supported; copy the link from the video's **Share** button.
 
 ### "A completed training re-appeared as Pending"
 Expected for recurring frequencies. A **"Quarterly"** or **"Annual"** training tracks completion per period; when the new period starts (a new `Q?-YYYY` or `YYYY`), a fresh completion is required and the employee resets to **"Pending"** (`20251206000000_training_assignments.sql`). Only **"Once"** trainings stay completed forever.

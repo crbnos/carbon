@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Drawer,
@@ -5,7 +9,7 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  IconButton,
+  PrefetchLink,
   Table,
   Tbody,
   Td,
@@ -15,14 +19,16 @@ import {
 } from "@carbon/react";
 import { toDisplayCredit, toDisplayDebit } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
+import { InfiniteStatus } from "~/components/Table/components/InfiniteStatus";
+import { useInfiniteRows } from "~/components/Table/useInfiniteRows";
+import { useInfiniteScroll } from "~/components/Table/useInfiniteScroll";
 import { useUrlParams } from "~/hooks";
 import type {
   AccountClass,
   AccountLedgerLine,
   AccountLedgerSummary
-} from "~/modules/accounting";
+} from "~/modules/accounting/types";
 import { path } from "~/utils/path";
 import JournalEntryStatus from "../JournalEntries/JournalEntryStatus";
 
@@ -38,8 +44,8 @@ type AccountLedgerDrawerProps = {
   summary: AccountLedgerSummary;
   startDate: string | null;
   endDate: string | null;
-  offset: number;
-  limit: number;
+  /** The loader's `nextCursor`: null when the first page is every line. */
+  nextCursor: string | null;
   backTo: string;
 };
 
@@ -65,18 +71,24 @@ const AccountLedgerDrawer = ({
   summary,
   startDate,
   endDate,
-  offset,
-  limit,
+  nextCursor,
   backTo
 }: AccountLedgerDrawerProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
-  const [params, setParams] = useUrlParams();
+  const [params] = useUrlParams();
+
+  // The first page comes from the loader; later pages load as the drawer
+  // body scrolls to its end.
+  const ledger = useInfiniteRows<AccountLedgerLine>({
+    initialRows: lines,
+    infinite: { dataKey: "lines", nextCursor }
+  });
+  const { rows, hasMore, loadError, retry, totalLoaded } = ledger;
+  const endRef = useInfiniteScroll(ledger, { root: "auto" });
 
   const onClose = () => {
-    const backParams = new URLSearchParams(params);
-    backParams.delete("offset");
-    const search = backParams.toString();
+    const search = new URLSearchParams(params).toString();
     navigate(search ? `${backTo}?${search}` : backTo);
   };
 
@@ -90,8 +102,6 @@ const AccountLedgerDrawer = ({
           : t`All Time`;
 
   const accountClass = (account.class ?? "Asset") as AccountClass;
-  const from = count === 0 ? 0 : offset + 1;
-  const to = Math.min(offset + limit, count);
 
   return (
     <Drawer
@@ -111,7 +121,7 @@ const AccountLedgerDrawer = ({
             <span>{periodLabel}</span>
           </div>
         </DrawerHeader>
-        <DrawerBody className="p-0">
+        <DrawerBody className="p-0 max-md:p-0">
           <div className="grid w-full grid-cols-3 divide-x divide-border border-b border-border">
             <div className="px-4 py-3">
               <p className="text-xs text-muted-foreground">
@@ -138,7 +148,7 @@ const AccountLedgerDrawer = ({
               </p>
             </div>
           </div>
-          {lines.length === 0 ? (
+          {rows.length === 0 ? (
             <div className="flex w-full items-center justify-center py-16 text-sm text-muted-foreground">
               <Trans>No transactions in this period</Trans>
             </div>
@@ -164,7 +174,7 @@ const AccountLedgerDrawer = ({
                 </Tr>
               </Thead>
               <Tbody>
-                {lines.map((line) => {
+                {rows.map((line) => {
                   const debit = toDisplayDebit(line.amount, accountClass);
                   const credit = toDisplayCredit(line.amount, accountClass);
                   return (
@@ -174,13 +184,12 @@ const AccountLedgerDrawer = ({
                       </Td>
                       <Td className="px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <Link
+                          <PrefetchLink
                             to={path.to.journalEntryDetails(line.journalId)}
-                            prefetch="intent"
                             className="font-mono text-xs text-foreground hover:underline"
                           >
                             {line.journalEntryId}
-                          </Link>
+                          </PrefetchLink>
                           {line.status !== "Posted" && (
                             <JournalEntryStatus status={line.status} />
                           )}
@@ -206,36 +215,21 @@ const AccountLedgerDrawer = ({
               </Tbody>
             </Table>
           )}
-          {count > limit && (
-            <div className="flex w-full items-center justify-between border-t border-border px-4 py-2">
-              <p className="text-xs text-muted-foreground tabular-nums">
+          {(hasMore || loadError) && (
+            <div
+              ref={endRef}
+              className="flex w-full items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm text-muted-foreground"
+            >
+              <InfiniteStatus
+                isLoading={hasMore}
+                loadError={loadError}
+                onRetry={retry}
+              />
+              <p className="text-xs tabular-nums">
                 <Trans>
-                  {from}–{to} of {count}
+                  {totalLoaded} of {count}
                 </Trans>
               </p>
-              <div className="flex items-center gap-1">
-                <IconButton
-                  aria-label={t`Previous page`}
-                  variant="ghost"
-                  size="sm"
-                  icon={<LuChevronLeft />}
-                  isDisabled={offset === 0}
-                  onClick={() =>
-                    setParams({
-                      offset:
-                        offset - limit > 0 ? String(offset - limit) : undefined
-                    })
-                  }
-                />
-                <IconButton
-                  aria-label={t`Next page`}
-                  variant="ghost"
-                  size="sm"
-                  icon={<LuChevronRight />}
-                  isDisabled={offset + limit >= count}
-                  onClick={() => setParams({ offset: String(offset + limit) })}
-                />
-              </div>
             </div>
           )}
         </DrawerBody>

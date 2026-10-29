@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Development seed script for Carbon.
  *
@@ -11,12 +15,20 @@
  * An email that belongs to no company bootstraps a brand new user + company
  * first, which is what `crbn up` relies on for test@carbon.ms.
  *
+ * After the seed commits it runs MRP and the scheduler through
+ * `@carbon/jobs`'s `plan:company` (skip with `--skip-plan`).
+ *
  * Usage:
  *   pnpm run db:seed:dev -- --email your@email.com [--dataset satellite]
  */
 
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { homedir } from "node:os";
+import path from "node:path";
 import process from "node:process";
-import { getPostgresConnectionPool } from "./client.ts";
+import { fileURLToPath } from "node:url";
+import { getProcessPool } from "./client.ts";
 import { bootstrap, DEV_PASSWORD } from "./datasets/bootstrap.ts";
 import { loadEnv, parseSeedArgs } from "./datasets/cli.ts";
 import { applyDataset, datasetKeys, getDataset } from "./datasets/index.ts";
@@ -30,14 +42,16 @@ async function main() {
     email,
     dataset: datasetKey,
     tiers,
-    skipWipe
+    skipWipe,
+    skipPlan
   } = parseSeedArgs(datasetKeys());
   console.log(
     `\nSeeding development environment for: ${email} (${datasetKey})\n`
   );
 
-  const pool = getPostgresConnectionPool(1);
+  const pool = getProcessPool();
   const client = await pool.connect();
+  let seeded: { companyId: string; userId: string } | null = null;
 
   try {
     let resolved = await resolveCompany(client, email);
@@ -55,15 +69,6 @@ async function main() {
 
     if (skipWipe) console.log("Skipping wipe (--skip-wipe).");
 
-    // Dev/test convenience: enable accounting so posting flows create GL
-    // journals out of the box. Runs for pre-existing companies too (the
-    // bootstrap path also sets it for brand-new ones). Production keeps
-    // the column default (false) — this script is dev-seed only.
-    await client.query(
-      `UPDATE "companySettings" SET "accountingEnabled" = true WHERE id = $1`,
-      [companyId]
-    );
-
     await applyDataset(client, {
       companyId,
       userId,
@@ -75,6 +80,7 @@ async function main() {
     });
 
     await printSummary(client, companyId);
+    seeded = { companyId, userId };
     console.log(`
 ========================================
 Dev environment seeded successfully!
@@ -91,6 +97,57 @@ Dev environment seeded successfully!
   } finally {
     client.release();
     await pool.end();
+  }
+
+  if (seeded && !skipPlan) planCompany(seeded);
+}
+
+// The engines reach Supabase over HTTPS; under portless that is its self-signed
+// CA, which `crbn up` hands its apps the same way (packages/dev services/apps.ts).
+function portlessCa(): Record<string, string> {
+  const caPath = path.join(homedir(), ".portless", "ca.pem");
+  return !process.env.NODE_EXTRA_CA_CERTS && existsSync(caPath)
+    ? { NODE_EXTRA_CA_CERTS: caPath }
+    : {};
+}
+
+// A spawned script, not an import: @carbon/planning depends on this package.
+function planCompany({
+  companyId,
+  userId
+}: {
+  companyId: string;
+  userId: string;
+}) {
+  const repoRoot = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "..",
+    ".."
+  );
+  const planned = spawnSync(
+    "pnpm",
+    [
+      "--silent",
+      "--filter",
+      "@carbon/jobs",
+      "plan:company",
+      "--",
+      "--company",
+      companyId,
+      "--user",
+      userId
+    ],
+    {
+      stdio: "inherit",
+      cwd: repoRoot,
+      env: { ...process.env, ...portlessCa() }
+    }
+  );
+  if (planned.status !== 0) {
+    console.warn(
+      `⚠ Planning step failed — run it later with: pnpm --filter @carbon/jobs plan:company -- --company ${companyId} --user ${userId}`
+    );
   }
 }
 

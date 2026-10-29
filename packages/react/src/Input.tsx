@@ -1,11 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import type { HTMLAttributes, InputHTMLAttributes } from "react";
 import { cloneElement, createContext, forwardRef, useContext } from "react";
 import * as ReactAria from "react-aria-components";
 
+import { useFormControl } from "./Form/useFormControl";
 import { cn } from "./utils/cn";
 import { getValidChildren } from "./utils/react";
+import { usePhoneAutoFocus } from "./Viewport";
 
 const InputGroupContext = createContext<boolean>(false);
 
@@ -15,9 +21,9 @@ const inputGroupVariants = cva(
     variants: {
       size: {
         lg: "h-12 rounded-lg",
-        md: "h-10 rounded-md",
-        sm: "h-8 rounded-md",
-        xs: "h-6 rounded"
+        md: "h-10 rounded-md max-md:h-11",
+        sm: "h-8 rounded-md max-md:h-11",
+        xs: "h-6 rounded max-md:h-11"
       },
       isDisabled: {
         true: "opacity-50 disabled:cursor-not-allowed",
@@ -53,7 +59,7 @@ const InputGroup = forwardRef<HTMLDivElement, InputGroupProps>(
   (
     {
       className,
-      isInvalid = false,
+      isInvalid: isInvalidProp,
       isDisabled = false,
       insetRing,
       size,
@@ -62,6 +68,7 @@ const InputGroup = forwardRef<HTMLDivElement, InputGroupProps>(
     },
     ref
   ) => {
+    const { isInvalid } = useFormControl({ isInvalid: isInvalidProp });
     const validChildren = getValidChildren(children);
 
     const _children = validChildren.map((child, index) => {
@@ -111,9 +118,9 @@ export const inputVariants = cva(
     variants: {
       size: {
         lg: "h-12 rounded-lg px-4 text-base",
-        md: "h-10 rounded-md px-4 text-sm",
-        sm: "h-8 rounded-md px-3 text-sm",
-        xs: "h-6 rounded px-2 text-sm"
+        md: "h-10 rounded-md px-4 text-sm max-md:h-11 max-md:text-base",
+        sm: "h-8 rounded-md px-3 text-sm max-md:h-11 max-md:text-base",
+        xs: "h-6 rounded px-2 text-sm max-md:h-11 max-md:text-base"
       },
       isInputGroup: {
         true: "h-auto outline-none focus-within:outline-none",
@@ -191,7 +198,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       size,
       isFirstChild = true,
       isLastChild = true,
-      isInvalid = false,
+      isInvalid: isInvalidProp,
       isDisabled,
       isReadOnly = false,
       borderless = false,
@@ -201,7 +208,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     ref
   ) => {
     const isInputGroup = useContext(InputGroupContext) ?? false;
+    const { isInvalid, ariaProps } = useFormControl({
+      ...props,
+      isInvalid: isInvalidProp
+    });
     const disabled = isDisabled ?? props.disabled ?? false;
+    const autoFocus = usePhoneAutoFocus(props.autoFocus);
 
     return (
       <ReactAria.Input
@@ -219,6 +231,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           className
         )}
         {...props}
+        {...ariaProps}
+        autoFocus={autoFocus}
         // Explicit disabled must survive the spread; it was being overwritten.
         disabled={disabled}
         readOnly={isReadOnly}
@@ -240,9 +254,9 @@ const inputAddonVariants = cva(
       },
       size: {
         lg: "h-12 px-3",
-        md: "h-10 px-3",
-        sm: "h-8 px-2",
-        xs: "h-6 px-1"
+        md: "h-10 px-3 max-md:h-11",
+        sm: "h-8 px-2 max-md:h-11",
+        xs: "h-6 px-1 max-md:h-11"
       },
       isDisabled: {
         true: "opacity-50 cursor-not-allowed bg-muted text-muted-foreground",
@@ -350,9 +364,9 @@ const inputElementVariants = cva(
     variants: {
       size: {
         lg: "h-12",
-        md: "h-10",
-        sm: "h-8",
-        xs: "h-6"
+        md: "h-10 max-md:h-11",
+        sm: "h-8 max-md:h-11",
+        xs: "h-6 max-md:h-11"
       },
       placement: {
         left: "pl-2",

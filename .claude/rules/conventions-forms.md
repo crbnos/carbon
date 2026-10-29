@@ -20,8 +20,9 @@ Real reference examples (current code):
   `payment-terms.$paymentTermId.tsx` (edit).
 - `apps/erp/app/modules/resources/ui/WorkCenters/WorkCenterForm.tsx` +
   `apps/erp/app/routes/x+/resources+/work-centers.new.tsx`.
-- `apps/erp/app/modules/storage-rules/ui/StorageRuleForm.tsx` (uses `.superRefine`,
-  `zfd.checkbox`, `zfd.repeatableOfType`).
+- `apps/erp/app/modules/inventory/ui/StorageRules/StorageRuleForm.tsx` (uses
+  `.superRefine`, `zfd.checkbox`, `zfd.repeatableOfType`; its validator lives in
+  the module's one `inventory.models.ts`).
 
 ## File Locations
 
@@ -109,7 +110,7 @@ import {
   Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { thingValidator } from "~/modules/things";
+import { thingValidator } from "~/modules/things/things.models";
 import { path } from "~/utils/path";
 
 type ThingFormProps = {
@@ -179,64 +180,56 @@ const ThingForm = ({ initialValues, type = "drawer", open, onClose }: ThingFormP
 - `VStack spacing={4}` for vertical layout; `grid grid-cols-1 lg:grid-cols-3
   gap-x-8 gap-y-4` for multi-column.
 - Permission check drives `isDisabled` on `<Submit>`.
+- **A submit button must disable while its own submission is in flight.** Inside a
+  `ValidatedForm` use `<Submit>`, which disables on `isSubmitting`; the form itself
+  also drops a re-entrant submit, so the two together make a double POST impossible.
+  On a `fetcher.Form` / `<Form>` bind the button yourself —
+  `isLoading={fetcher.state !== "idle"}` (on `@carbon/react`'s `Button`, `isLoading`
+  disables as well as spins), or `navigation.formAction === <action>` for a
+  navigation form. Every extra click is a whole extra POST: `fetcher.submit` aborts
+  the previous browser request, but the server action it started runs to completion
+  — nothing reads `request.signal`. A slow action (render a PDF, post a ledger entry,
+  email a customer) is exactly where this bites, and the missing spinner is what
+  invites the second click. Enforced by `no-unguarded-submit` (`@carbon/checks`);
+  note that an `isDisabled` bound to something that is not a submit-state signal
+  does NOT count.
 - Pass `fetcher` from `useFetcher()` when the form is a drawer/modal (so loading
   state and action data flow through the fetcher); plain page forms may omit it.
 
 ## 3. Route Action
 
+A route action checks the request, then makes ONE service-function call, then
+returns its result. The write and every check it needs live in the service
+function (`<module>.server.ts`), so the API, MCP and workflows run the same logic.
+See `module-files.md`.
+
 ```typescript
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { data, redirect } from "react-router";
-import { thingValidator, upsertThing } from "~/modules/things";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import type { ActionFunctionArgs } from "react-router";
+import { thingValidator } from "~/modules/things/things.models";
 import { setCustomFields } from "~/utils/form";
-import { getParams, path } from "~/utils/path";
+import { path } from "~/utils/path";
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "things"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(thingValidator).request(args, {
+    params: ["thingId"] // only for an edit route
+  });
+  if ("invalid" in input) return input.invalid;
+
+  const api = await carbon(args.request);
+  const result = await api.things.updateThing({
+    ...input.data,
+    id: input.params.thingId,
+    customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
 
-  const formData = await request.formData();
-  const modal = formData.get("type") === "modal";
-
-  const validation = await validator(thingValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, ...rest } = validation.data;
-
-  const insertThing = await upsertThing(client, {
-    ...rest,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
-  });
-
-  if (insertThing.error) {
-    return data(
-      {},
-      await flash(request, error(insertThing.error, "Failed to create thing"))
-    );
-  }
-
-  // Modal flows often return the created row (status 201) instead of redirecting,
-  // so the opener can read it; page flows throw a redirect.
-  return modal
-    ? data(insertThing, { status: 201 })
-    : redirect(
-        `${path.to.things}?${getParams(request)}`,
-        await flash(request, success("Thing created"))
-      );
+  // A fetcher form: return the result; `useAction` toasts an error.
+  return result;
+  // A navigating form instead: flash the error, or `message`, and redirect.
+  // return respond(args.request, result).redirect(path.to.things, {
+  //   message: "Thing saved"
+  // });
 }
 ```
 
@@ -244,18 +237,26 @@ export async function action({ request }: ActionFunctionArgs) {
 
 | Step | Pattern |
 |------|---------|
-| First | `assertIsPost(request)` |
-| Auth | `requirePermissions(request, { create \| update: "module" })` → `{ client, companyId, userId }` |
-| Read once | `const formData = await request.formData()` (reuse it; check `modal` via `formData.get("type")`) |
-| Validate | `validator(thingValidator).validate(formData)` - the **only** place the schema gets wrapped with `validator(...)`; NOT `schema.parse()` |
-| Validation error | `return validationError(validation.error)` (422; from `@carbon/form`) |
-| Custom fields | `customFields: setCustomFields(formData)` (`~/utils/form`) |
-| Service error | `return data({}, await flash(request, error(...)))` |
-| Success (page) | `throw redirect(...)` - NOT `return redirect()` (some modal branches `return redirect(...)` / `return data(row, { status: 201 })`) |
+| Check the request | `validator(schema).request(args, { method?, params? })` (`@carbon/form`): the method (default POST, else 405), the named route params (400), then the body (form data or JSON). Pass no schema when the action reads no body |
+| Invalid body | `if ("invalid" in input) return input.invalid` (the 422 `validationError`) |
+| Auth | `carbon(args.request)` (`@carbon/api/carbon.server`) authenticates the caller. The service function's `permission` is the gate, so the route has no `requirePermissions` |
+| One call | `api.<module>.<name>(input)`. No write in the route itself (a `.from(...)` write, Kysely, `invokePosting`): the `route-action-shape` check fails it |
+| Custom fields | `setCustomFields(input.formData)` (`~/utils/form`) when the body is form data |
+| Fetcher form | `return result` |
+| Navigating form | `return respond(args.request, result).redirect(to, { message, onError })` |
 
 Actions return **plain objects** or `data(value, init)`. Do NOT use `json(...)` -
-that is the old Remix helper and is not used here. Edit actions live in the
-`${id}` route and use `update: "module"` permission instead of `create`.
+that is the old Remix helper and is not used here.
+
+### Legacy shape
+
+Many actions still call a building block directly. They keep the old order until
+their module migrates: `assertIsPost(request)` → `requirePermissions(request, { create | update: "module" })`
+→ `const formData = await request.formData()` → `validator(schema).validate(formData)`
+→ `return validationError(validation.error)` on failure → the service call →
+`return data({}, await flash(request, error(...)))` on failure, or
+`throw redirect(path, await flash(request, success(...)))` on success (a modal
+branch may `return data(row, { status: 201 })`). Do not write new actions this way.
 
 ## 4. Route Default Export
 
@@ -347,41 +348,35 @@ const typeOptions = thingTypes.map((t) => ({ label: t, value: t }));
 <Select name="type" label="Type" options={typeOptions} />
 ```
 
-### Client action (cache invalidation)
+### Cache invalidation
 
-Cached entities add a `clientAction` that clears/invalidates the company-scoped
-query, then delegates. Two shapes are both in use:
+Nothing to write. The root client middleware (`createInvalidationMiddleware`,
+`@carbon/query`) marks every cached loader entry stale after any action, so a
+form's route does not export a `clientAction` and does not name the lists it
+changes. See `clientAction-patterns.md`.
+
+### Reacting to the result
+
+Use `useAction` from `@carbon/query` instead of `useFetcher` plus an effect that
+watches `fetcher.data`:
 
 ```typescript
-// Clear a specific cached query (most common for these list queries)
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(thingsQuery(getCompanyId()).queryKey, null);
-  return await serverAction();
-}
-
-// Or invalidate by predicate on a company-scoped key
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  const companyId = getCompanyId();
-  window.clientCache?.invalidateQueries({
-    predicate: (query) => {
-      const queryKey = query.queryKey as string[];
-      return queryKey[0] === "things" && queryKey[1] === companyId;
-    }
-  });
-  return await serverAction();
-}
+const fetcher = useAction<typeof action>({
+  onSuccess: () => onClose(),
+  onError: (data) => toast.error(data.message)
+});
+// <ValidatedForm fetcher={fetcher} …> or fetcher.submit(…), as before
 ```
 
 ## Checklist
 
 - [ ] Zod validator in `{module}.models.ts` (`import { z } from "zod"` + `zfd`)
-- [ ] Validator exported from the module `index.ts` barrel
+- [ ] Validator imported from `~/modules/{module}/{module}.models` (modules have no barrel)
 - [ ] Form component with `ValidatedForm`, raw schema in `validator` prop
 - [ ] Props typed with `z.infer<typeof validator>`; `<Hidden name="id" />` present
-- [ ] Route action: `assertIsPost` → `requirePermissions` →
-      `validator(schema).validate(formData)` → service → flash/redirect
+- [ ] Route action: `validator(schema).request(args, …)` → `carbon(request)` →
+      one service-function call → return the result or `respond(...).redirect(...)`
 - [ ] `setCustomFields(formData)` + `<CustomFormFields table="..." />` if the
       table has custom fields
-- [ ] `clientAction` if the entity is cached client-side
 - [ ] Path helpers in `~/utils/path` (use `path.to.*`, never hardcoded URLs)
 - [ ] Container matches neighboring routes (ModalDrawer, Card, inline, etc.)

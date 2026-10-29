@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Combobox, Radios, Submit, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -19,13 +24,13 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  Tr,
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { LuArrowRight, LuLink, LuPlus, LuTrash2 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
 import {
   dimensionSlotsUpdateValidator,
@@ -128,6 +133,9 @@ export function DimensionMapping({
   proposals
 }: DimensionMappingProps) {
   const { t } = useLingui();
+  const slotsFetcher = useAction({
+    onSuccess: () => toast.success(t`Updated dimension sync settings`)
+  });
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "settings");
   const [showMatchDrawer, setShowMatchDrawer] = useState(false);
@@ -228,6 +236,7 @@ export function DimensionMapping({
         <ValidatedForm
           validator={dimensionSlotsUpdateValidator}
           method="post"
+          fetcher={slotsFetcher}
           defaultValues={{
             intent: "update-dimension-slots",
             onUnmappedDimensionValue
@@ -282,7 +291,7 @@ export function DimensionMapping({
                 )}
               </p>
             )}
-            <div className="w-full rounded-lg border border-border">
+            <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
               {rows.length === 0 ? (
                 <div className="flex w-full items-center justify-center py-8 text-sm text-muted-foreground">
                   <Trans>No dimension slots configured</Trans>
@@ -567,7 +576,7 @@ function MappingSection({
         </div>
         <p className="text-xs text-muted-foreground">{description}</p>
       </div>
-      <div className="w-full rounded-lg border border-border">
+      <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
         {count === 0 ? (
           <div className="flex w-full items-center justify-center py-8 text-sm text-muted-foreground">
             {emptyMessage}
@@ -609,6 +618,9 @@ function DimensionValueMappingRowForm({
   canUpdate: boolean;
 }) {
   const { t } = useLingui();
+  const fetcher = useAction({
+    onSuccess: () => toast.success(t`Saved dimension value mapping`)
+  });
   const [selectedName, setSelectedName] = useState<string | null>(
     currentExternalId ? currentExternalName : null
   );
@@ -643,6 +655,7 @@ function DimensionValueMappingRowForm({
     <ValidatedForm
       validator={dimensionValueMappingUpsertValidator}
       method="post"
+      fetcher={fetcher}
       defaultValues={{
         intent: "upsert-dimension-value-mapping",
         dimensionId,
@@ -710,17 +723,24 @@ function MatchByNameDrawer({
   canUpdate: boolean;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher();
+  const { t } = useLingui();
+  const fetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      toast.success(
+        data.count === 1
+          ? t`Saved dimension value mapping`
+          : t`Saved ${data.count} dimension value mappings`
+      );
+    },
+    onSettled: () => {
+      if (submittedRef.current) {
+        onClose();
+      }
+    }
+  });
   const isSubmitting = fetcher.state !== "idle";
   const submittedRef = useRef(false);
-
-  // Close once the confirm-all POST settles; revalidation has already
-  // refreshed the sections behind the drawer.
-  useEffect(() => {
-    if (submittedRef.current && fetcher.state === "idle") {
-      onClose();
-    }
-  }, [fetcher.state, onClose]);
 
   const confirmAll = () => {
     if (proposals.length === 0) return;
@@ -768,7 +788,7 @@ function MatchByNameDrawer({
               <Trans>No unmapped values match a provider option name</Trans>
             </div>
           ) : (
-            <div className="w-full rounded-lg border border-border">
+            <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
               <Table>
                 <Thead>
                   <Tr>

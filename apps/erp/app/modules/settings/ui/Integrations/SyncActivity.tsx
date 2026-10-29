@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -11,6 +16,7 @@ import {
   DrawerTitle,
   HStack,
   IconButton,
+  PrefetchLink,
   Status,
   Table,
   Tbody,
@@ -20,7 +26,8 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Tr
+  Tr,
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -28,17 +35,20 @@ import { useCallback, useMemo, useState } from "react";
 import {
   LuArrowDownLeft,
   LuArrowUpRight,
-  LuChevronLeft,
-  LuChevronRight,
   LuCircleSlash,
+  LuDownload,
   LuRefreshCw,
   LuRotateCw,
   LuScale,
   LuSend,
   LuTriangleAlert
 } from "react-icons/lu";
-import { Link, useFetcher, useRevalidator } from "react-router";
+import { Link } from "react-router";
+import { InfiniteStatus } from "~/components/Table/components/InfiniteStatus";
+import { useInfiniteRows } from "~/components/Table/useInfiniteRows";
+import { useInfiniteScroll } from "~/components/Table/useInfiniteScroll";
 import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
+import type { KeysetSort } from "~/utils/cursor";
 import { path } from "~/utils/path";
 
 /**
@@ -81,6 +91,13 @@ export type SyncActivityOperation = {
   createdAt: string;
   updatedBy: string | null;
   updatedAt: string | null;
+  /**
+   * The document number a human reads (`PO000001`) plus the CARBON row id
+   * to link to, resolved in the loader. Null on purpose for a pulled record
+   * that never landed a Carbon row: it has only the PROVIDER's remote id,
+   * and the row falls back to it.
+   */
+  reference: SyncOperationReference | null;
 };
 
 /**
@@ -111,11 +128,13 @@ export type SyncReconciliationReport = {
 type SyncActivityProps = {
   /** Shared tab bar, rendered at the top of this tab's body card. */
   tabs?: ReactNode;
+  /** The integration whose activity this is — scopes the CSV export. */
+  integrationId: string;
   operations: SyncActivityOperation[];
   count: number;
   status: SyncOperationStatus | null;
-  page: number;
-  pageSize: number;
+  /** The loader's cursor after the first page; null when it holds every row. */
+  nextCursor: string | null;
   /**
    * Latest reconciliation report from the integration's metadata
    * (settings.postingSync.lastReconciliation). Rendered as a warning
@@ -134,6 +153,14 @@ type SyncActivityProps = {
     cellCount: number;
   } | null;
 };
+
+/**
+ * The order the tab pages in: newest first, `id` ascending on ties. The
+ * cursor (`toPage`) follows it; `getSyncOperations` orders the same way.
+ */
+export const SYNC_ACTIVITY_SORTS: KeysetSort[] = [
+  { column: "createdAt", ascending: false }
+];
 
 const STATUS_FILTERS: SyncOperationStatus[] = [
   "Pending",
@@ -162,10 +189,13 @@ const STATUS_COLORS: Record<
  * Display labels for sync entity types (keys of the accounting sync engine's
  * ENTITY_DEFINITIONS). Kept local so this client component doesn't import
  * runtime code from @carbon/ee/accounting.
+ *
+ * The `vendor` KEY is the sync engine's, but the label is Carbon's word for
+ * the thing — the row links to `path.to.supplier`.
  */
 const ENTITY_LABELS: Record<string, string> = {
   customer: "Customer",
-  vendor: "Vendor",
+  vendor: "Supplier",
   item: "Item",
   employee: "Employee",
   purchaseOrder: "Purchase Order",
@@ -174,7 +204,11 @@ const ENTITY_LABELS: Record<string, string> = {
   invoice: "Invoice",
   payment: "Payment",
   inventoryAdjustment: "Inventory Adjustment",
-  journalEntry: "Journal Entry"
+  journalEntry: "Journal Entry",
+  charge: "Card Charge",
+  creditMemo: "Credit Memo",
+  supplierCredit: "Supplier Credit",
+  reimbursement: "Reimbursement"
 };
 
 /**
@@ -189,19 +223,40 @@ const ENTITY_PATHS: Record<string, (id: string) => string> = {
   purchaseOrder: path.to.purchaseOrder,
   bill: path.to.purchaseInvoice,
   salesOrder: path.to.salesOrder,
-  invoice: path.to.salesInvoice
+  invoice: path.to.salesInvoice,
+  charge: path.to.charge,
+  reimbursement: path.to.reimbursement
 };
 
-function getEntityLabel(entityType: string): string {
+export function getEntityLabel(entityType: string): string {
   return ENTITY_LABELS[entityType] ?? entityType;
 }
 
-function getEntityPath(operation: SyncActivityOperation): string | null {
+/** What the loader resolved for one operation's record. */
+type SyncOperationReference = { label: string; recordId: string };
+
+/**
+ * What to show for an operation's record, and where it links: the document
+ * number and the Carbon row when the loader resolved one, else the raw id
+ * it stored.
+ */
+function getEntityReference(operation: SyncActivityOperation): {
+  label: string;
+  isReadable: boolean;
+  path: string | null;
+} {
+  const resolved = operation.reference;
   const pathFn = ENTITY_PATHS[operation.entityType];
-  return pathFn ? pathFn(operation.entityId) : null;
+  const recordId = resolved?.recordId ?? operation.entityId;
+
+  return {
+    label: resolved?.label ?? operation.entityId,
+    isReadable: resolved !== null,
+    path: pathFn ? pathFn(recordId) : null
+  };
 }
 
-function formatTrigger(trigger: string): string {
+export function formatTrigger(trigger: string): string {
   return trigger.charAt(0).toUpperCase() + trigger.slice(1);
 }
 
@@ -227,11 +282,11 @@ function getAvailableTransitions(status: SyncOperationStatus): {
 
 export function SyncActivity({
   tabs,
+  integrationId,
   operations,
   count,
   status,
-  page,
-  pageSize,
+  nextCursor,
   lastReconciliation,
   tieOut
 }: SyncActivityProps) {
@@ -242,7 +297,25 @@ export function SyncActivity({
   const [, setParams] = useUrlParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const fetcher = useFetcher();
+  const fetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      const { count, to } = data;
+      if (to === "Skipped") {
+        toast.success(
+          count === 1
+            ? t`Skipped sync operation`
+            : t`Skipped ${count} sync operations`
+        );
+      } else {
+        toast.success(
+          count === 1
+            ? t`Queued sync operation for sync`
+            : t`Queued ${count} sync operations for sync`
+        );
+      }
+    }
+  });
   const isTransitioning = fetcher.state !== "idle";
 
   // The tab's data (operations, tie-out, reconciliation) lives in the
@@ -266,45 +339,43 @@ export function SyncActivity({
 
   const setStatusFilter = useCallback(
     (nextStatus: SyncOperationStatus | null) => {
-      setParams({
-        syncStatus: nextStatus ?? undefined,
-        syncPage: undefined
-      });
+      setParams({ syncStatus: nextStatus ?? undefined });
     },
     [setParams]
   );
 
-  const setPage = useCallback(
-    (nextPage: number) => {
-      setParams({
-        syncPage: nextPage > 1 ? String(nextPage) : undefined
-      });
-    },
-    [setParams]
-  );
+  // The first page comes from the loader; later pages load from the API
+  // route as the drawer body scrolls to the end of the table.
+  const syncRows = useInfiniteRows({
+    initialRows: operations,
+    infinite: {
+      dataKey: "operations",
+      nextCursor,
+      pageUrl: path.to.api.integrationSyncActivity(integrationId, status),
+      ignoreParams: ["tab"]
+    }
+  });
+  const { rows, hasMore, loadError, retry } = syncRows;
+  const endRef = useInfiniteScroll(syncRows, { root: "auto" });
 
   // Keep the detail drawer in sync with revalidated data: after a
   // transition the row's status updates (or the row leaves the current
   // filter, closing the drawer).
   const selectedOperation = useMemo(
-    () => operations.find((operation) => operation.id === selectedId) ?? null,
-    [operations, selectedId]
+    () => rows.find((operation) => operation.id === selectedId) ?? null,
+    [rows, selectedId]
   );
 
   const retryableIds = useMemo(
     () =>
-      operations
+      rows
         .filter(
           (operation) =>
             operation.status === "Failed" || operation.status === "Warning"
         )
         .map((operation) => operation.id),
-    [operations]
+    [rows]
   );
-
-  const totalPages = Math.max(1, Math.ceil(count / pageSize));
-  const from = count === 0 ? 0 : (page - 1) * pageSize + 1;
-  const to = Math.min(count, (page - 1) * pageSize + operations.length);
 
   return (
     <>
@@ -346,6 +417,24 @@ export function SyncActivity({
                   <Trans>Retry all</Trans>
                 </Button>
               )}
+            {count > 0 && (
+              <Button
+                size="sm"
+                variant="secondary"
+                leftIcon={<LuDownload />}
+                asChild
+              >
+                <a
+                  href={path.to.api.integrationSyncActivityCsv(
+                    integrationId,
+                    status
+                  )}
+                  download
+                >
+                  <Trans>Export CSV</Trans>
+                </a>
+              </Button>
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <IconButton
@@ -369,7 +458,7 @@ export function SyncActivity({
         </div>
 
         <div className="w-full rounded-lg border border-border">
-          {operations.length === 0 ? (
+          {rows.length === 0 ? (
             <div className="flex w-full items-center justify-center py-16 text-sm text-muted-foreground">
               {status ? (
                 <Trans>No {status.toLowerCase()} sync operations</Trans>
@@ -406,9 +495,9 @@ export function SyncActivity({
                 </Tr>
               </Thead>
               <Tbody>
-                {operations.map((operation) => {
+                {rows.map((operation) => {
                   const transitions = getAvailableTransitions(operation.status);
-                  const entityPath = getEntityPath(operation);
+                  const entityReference = getEntityReference(operation);
                   return (
                     <Tr
                       key={operation.id}
@@ -425,18 +514,27 @@ export function SyncActivity({
                           <span className="text-sm font-medium">
                             {getEntityLabel(operation.entityType)}
                           </span>
-                          {entityPath ? (
-                            <Link
-                              to={entityPath}
-                              prefetch="intent"
+                          {entityReference.path ? (
+                            <PrefetchLink
+                              to={entityReference.path}
                               onClick={(e) => e.stopPropagation()}
-                              className="block max-w-[180px] truncate font-mono text-xs text-muted-foreground hover:text-foreground hover:underline"
+                              title={operation.entityId}
+                              className={cn(
+                                "block max-w-[180px] truncate text-xs text-muted-foreground hover:text-foreground hover:underline",
+                                !entityReference.isReadable && "font-mono"
+                              )}
                             >
-                              {operation.entityId}
-                            </Link>
+                              {entityReference.label}
+                            </PrefetchLink>
                           ) : (
-                            <span className="block max-w-[180px] truncate font-mono text-xs text-muted-foreground">
-                              {operation.entityId}
+                            <span
+                              title={operation.entityId}
+                              className={cn(
+                                "block max-w-[180px] truncate text-xs text-muted-foreground",
+                                !entityReference.isReadable && "font-mono"
+                              )}
+                            >
+                              {entityReference.label}
                             </span>
                           )}
                         </div>
@@ -549,34 +647,26 @@ export function SyncActivity({
           )}
         </div>
 
-        <div className="flex w-full items-center justify-between">
+        <div
+          ref={endRef}
+          className="flex w-full items-center justify-between gap-3"
+        >
+          <div>
+            <InfiniteStatus
+              isLoading={hasMore}
+              loadError={loadError}
+              onRetry={retry}
+            />
+          </div>
           <p className="text-xs text-muted-foreground tabular-nums">
             {count === 0 ? (
               <Trans>0 operations</Trans>
             ) : (
               <Trans>
-                {from}–{to} of {count} operations
+                {rows.length} of {count} operations
               </Trans>
             )}
           </p>
-          <div className="flex items-center gap-1">
-            <IconButton
-              aria-label={t`Previous page`}
-              variant="ghost"
-              size="sm"
-              icon={<LuChevronLeft />}
-              isDisabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-            />
-            <IconButton
-              aria-label={t`Next page`}
-              variant="ghost"
-              size="sm"
-              icon={<LuChevronRight />}
-              isDisabled={page >= totalPages}
-              onClick={() => setPage(page + 1)}
-            />
-          </div>
         </div>
       </DrawerBody>
 
@@ -805,7 +895,7 @@ function SyncOperationDetailDrawer({
   if (!operation) return null;
 
   const transitions = getAvailableTransitions(operation.status);
-  const entityPath = getEntityPath(operation);
+  const entityReference = getEntityReference(operation);
   const hasMetadata =
     operation.metadata && Object.keys(operation.metadata).length > 0;
 
@@ -820,8 +910,13 @@ function SyncOperationDetailDrawer({
         <DrawerHeader>
           <DrawerTitle>
             {getEntityLabel(operation.entityType)}{" "}
-            <span className="font-mono text-muted-foreground">
-              {operation.entityId}
+            <span
+              className={cn(
+                "text-muted-foreground",
+                !entityReference.isReadable && "font-mono"
+              )}
+            >
+              {entityReference.label}
             </span>
           </DrawerTitle>
           <DrawerDescription>
@@ -873,19 +968,33 @@ function SyncOperationDetailDrawer({
             </Detail>
           </div>
           <Detail label={t`Entity`}>
-            {entityPath ? (
-              <Link
-                to={entityPath}
-                prefetch="intent"
-                className="break-all font-mono text-xs hover:underline"
-              >
-                {operation.entityId}
-              </Link>
-            ) : (
-              <span className="break-all font-mono text-xs">
-                {operation.entityId}
-              </span>
-            )}
+            <div className="flex flex-col gap-0.5">
+              {entityReference.path ? (
+                <PrefetchLink
+                  to={entityReference.path}
+                  className={cn(
+                    "break-all text-xs hover:underline",
+                    !entityReference.isReadable && "font-mono"
+                  )}
+                >
+                  {entityReference.label}
+                </PrefetchLink>
+              ) : (
+                <span
+                  className={cn(
+                    "break-all text-xs",
+                    !entityReference.isReadable && "font-mono"
+                  )}
+                >
+                  {entityReference.label}
+                </span>
+              )}
+              {entityReference.isReadable && (
+                <span className="break-all font-mono text-xs text-muted-foreground">
+                  {operation.entityId}
+                </span>
+              )}
+            </div>
           </Detail>
           <Detail label={t`Idempotency key`}>
             <span className="break-all font-mono text-xs">

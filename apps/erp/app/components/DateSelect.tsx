@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   cn,
   DateRangePicker,
@@ -9,10 +13,11 @@ import {
   ToggleGroup,
   ToggleGroupItem
 } from "@carbon/react";
+import type { CalendarDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import type { DateRange } from "@react-types/datepicker";
-import { forwardRef, useMemo } from "react";
-import { LuCalendar } from "react-icons/lu";
+import { forwardRef, useMemo, useState } from "react";
+import { LuCalendar, LuChevronDown } from "react-icons/lu";
 
 type DateSelectOption = {
   value: string;
@@ -26,6 +31,8 @@ interface DateSelectProps {
   showCustom?: boolean;
   dateRange?: DateRange | null;
   onDateRangeChange?: (dateRange: DateRange | null) => void;
+  /** Days to flag with a dot in the custom-range calendar. */
+  isDateMarked?: (date: CalendarDate) => boolean;
   className?: string;
 }
 
@@ -38,11 +45,19 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
       showCustom = true,
       dateRange,
       onDateRangeChange,
+      isDateMarked,
       className
     },
     ref
   ) => {
     const { t } = useLingui();
+    // Picking "custom" opens the calendar straight away; a page that merely
+    // loads on "custom" (e.g. from the URL) leaves it closed.
+    const [openCalendar, setOpenCalendar] = useState(false);
+    const onChange = (next: string) => {
+      setOpenCalendar(next === "custom");
+      onValueChange(next);
+    };
     const resolvedOptions = useMemo(() => {
       if (options) return options;
       return [
@@ -64,9 +79,18 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
         className={cn("inline-flex items-center gap-2", className)}
       >
         {/* Compact dropdown for small screens */}
-        <Select value={value} onValueChange={onValueChange}>
-          <SelectTrigger className="md:hidden w-auto h-8 text-xs">
+        <Select value={value} onValueChange={onChange}>
+          {/* Phones: a period chip with a ⌄ picker indicator,
+              32pt visual with a 44pt hit area like its neighbouring buttons. */}
+          <SelectTrigger
+            hideIcon
+            className={cn(
+              "md:hidden w-auto h-8 text-xs",
+              "max-md:relative max-md:h-8 max-md:rounded-full max-md:space-x-1 max-md:text-sm max-md:after:absolute max-md:after:-inset-[max(0px,calc((44px-100%)/2))]"
+            )}
+          >
             <SelectValue />
+            <LuChevronDown className="size-4 shrink-0 opacity-50" />
           </SelectTrigger>
           <SelectContent>
             {allOptions.map((option) => (
@@ -82,7 +106,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
           type="single"
           value={value}
           onValueChange={(v) => {
-            if (v) onValueChange(v);
+            if (v) onChange(v);
           }}
           className="hidden md:inline-flex gap-0 rounded-full border border-border bg-muted p-0.5 shadow-sm"
         >
@@ -107,7 +131,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
               className={cn(
                 "h-7 w-7 rounded-full p-0",
                 "bg-transparent text-muted-foreground",
-                "hover:bg-active hover:text-active-foreground",
+                "hover:bg-active hover:text-active-foreground hover:data-[state=on]:bg-active",
                 "data-[state=on]:bg-active data-[state=on]:text-active-foreground data-[state=on]:shadow-sm",
                 "transition-all duration-200"
               )}
@@ -122,6 +146,8 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
             value={dateRange}
             onChange={onDateRangeChange}
             size="sm"
+            defaultOpen={openCalendar}
+            isDateMarked={isDateMarked}
           />
         )}
       </div>
@@ -131,5 +157,5 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
 
 DateSelect.displayName = "DateSelect";
 
+export type { DateSelectOption, DateSelectProps };
 export { DateSelect };
-export type { DateSelectProps, DateSelectOption };

@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Button, IconButton } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { LuExternalLink, LuX } from "react-icons/lu";
 import type { TrainingVideo } from "~/utils/training";
 import { getVideoEmbedUrl } from "~/utils/training";
@@ -30,7 +34,7 @@ export default function TrainingPanel({
           animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
           exit={{ opacity: 0, y: 10, scale: 0.95, filter: "blur(4px)" }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="fixed bottom-4 right-4 w-[380px] rounded-lg border bg-background shadow-lg z-40 overflow-hidden"
+          className="fixed bottom-4 right-4 w-[380px] rounded-lg border bg-background shadow-lg z-40 overflow-hidden max-md:inset-x-2 max-md:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] max-md:z-[60] max-md:w-auto max-md:max-w-none max-md:max-h-[85dvh] max-md:overflow-y-auto"
         >
           <div className="relative aspect-video w-full bg-muted">
             <iframe

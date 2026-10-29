@@ -1,17 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { supplierShippingValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getSupplierShipping,
-  supplierShippingValidator,
   updateSupplierShipping
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import SupplierShippingForm from "~/modules/purchasing/ui/Supplier/SupplierShippingForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
     view: "purchasing"

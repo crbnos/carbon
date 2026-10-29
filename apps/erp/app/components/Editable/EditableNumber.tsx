@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { NumberFieldProps } from "@carbon/react";
-import { NumberField, NumberInput } from "@carbon/react";
+import { cn, NumberField, NumberInput } from "@carbon/react";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { useRef } from "react";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
@@ -11,7 +15,12 @@ const EditableNumber = <T extends object>(
     row: T
   ) => Promise<PostgrestSingleResponse<unknown>>,
   numberFieldProps?: NumberFieldProps | ((row: T) => NumberFieldProps),
-  options?: { clearable?: boolean }
+  options?: {
+    clearable?: boolean;
+    /** Classes for the editor's input — e.g. `text-right` for an amount
+     *  column, so the value does not jump sides when the cell opens. */
+    inputClassName?: string;
+  }
 ) => {
   const EditableNumberEditor = ({
     value,
@@ -52,7 +61,7 @@ const EditableNumber = <T extends object>(
 
       onUpdate({ [accessorKey]: next });
 
-      // @ts-ignore
+      // @ts-expect-error
       mutation(accessorKey, isEmpty ? "" : next, row)
         .then(({ error }) => {
           if (error) {
@@ -77,7 +86,10 @@ const EditableNumber = <T extends object>(
       >
         <NumberInput
           size="sm"
-          className="w-full rounded-none outline-none border-none shadow-none focus-visible:ring-0"
+          className={cn(
+            "w-full rounded-none outline-none border-none shadow-none focus-visible:ring-0",
+            options?.inputClassName
+          )}
           autoFocus
           onFocus={(e) => e.currentTarget.select()}
           onBlur={() => commit(latestValue.current)}

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   BUILT_IN_SECTION_IDS,
   DEFAULT_HEADER_OPTIONS,
@@ -8,8 +12,11 @@ import {
   type DocumentTheme,
   type HeaderOptions
 } from "@carbon/documents/template";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
+import { toast } from "@carbon/react";
 import { arrayMove } from "@dnd-kit/sortable";
+import { useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import {
   createContext,
@@ -20,7 +27,6 @@ import {
   useMemo,
   useRef
 } from "react";
-import { useFetcher } from "react-router";
 import type { StoreApi } from "zustand";
 import { createStore, useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
@@ -309,6 +315,20 @@ export function useEditorStore<T>(selector: (s: EditorState) => T): T {
   return useStore(useEditorContext().store, selector);
 }
 
+const PickBlockContext = createContext<((id: string) => void) | null>(null);
+
+/** Overrides what tapping a block row does (the compact editor's panes). */
+export const PickBlockProvider = PickBlockContext.Provider;
+
+/** Tapping a block row: toggles its selection unless a provider overrides it. */
+export function usePickBlock() {
+  const selectedId = useEditorStore((s) => s.selectedId);
+  const select = useEditorStore((s) => s.select);
+  const onPick = useContext(PickBlockContext);
+  return (id: string) =>
+    onPick ? onPick(id) : select(selectedId === id ? null : id);
+}
+
 export function DocumentTemplateProvider({
   children,
   ...props
@@ -325,7 +345,15 @@ export function DocumentTemplateProvider({
     store.setState({ sections: props.sections });
   }, [store, props.sections]);
 
-  const fetcher = useFetcher<{ success?: boolean }>();
+  const { t } = useLingui();
+  const fetcher = useAction({
+    onSuccess: () => {
+      if (!savedRef.current) return;
+      savedRef.current = false;
+      store.getState().rebaseline();
+      toast.success(t`Saved document layout`);
+    }
+  });
   const isSaving = fetcher.state !== "idle";
   const savedRef = useRef(false);
 
@@ -342,14 +370,6 @@ export function DocumentTemplateProvider({
     savedRef.current = true;
     fetcher.submit(formData, { method: "post", action: props.actionPath });
   }, [store, fetcher, props.actionPath]);
-
-  // Once our save resolves, clear the dirty baseline to the just-saved state.
-  useEffect(() => {
-    if (savedRef.current && fetcher.state === "idle" && fetcher.data?.success) {
-      savedRef.current = false;
-      store.getState().rebaseline();
-    }
-  }, [fetcher.data, fetcher.state, store]);
 
   const value = useMemo(
     () => ({ store, save, isSaving }),

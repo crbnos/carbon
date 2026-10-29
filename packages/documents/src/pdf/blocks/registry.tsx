@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { DocumentBlockType } from "../../template";
 import { Watermark } from "../components";
 import { CustomFieldBlock } from "./CustomFieldBlock";
@@ -52,6 +56,7 @@ export const salesInvoiceBlockRegistry: Record<
   associations: () => null,
   actionTasks: () => null,
   reviewers: () => null,
+  approval: () => null,
   labelHeading: () => null,
   labelRevision: () => null,
   labelQuantity: () => null,

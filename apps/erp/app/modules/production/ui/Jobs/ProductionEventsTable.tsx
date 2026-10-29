@@ -1,4 +1,14 @@
-import { Badge, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Badge,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -24,12 +34,20 @@ import type { ProductionEvent } from "../../types";
 type ProductionEventsTableProps = {
   data: ProductionEvent[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   operations: { id: string; description: string | null }[];
   workCenters: WorkCenter[];
 };
 
 const ProductionEventsTable = memo(
-  ({ data, count, operations, workCenters }: ProductionEventsTableProps) => {
+  ({
+    data,
+    count,
+    nextCursor,
+    operations,
+    workCenters
+  }: ProductionEventsTableProps) => {
     const { jobId } = useParams();
     const { t } = useLingui();
     if (!jobId) throw new Error("Job ID is required");
@@ -46,6 +64,7 @@ const ProductionEventsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             filter: {
               type: "static",
               options: operations.map((operation) => ({
@@ -70,6 +89,7 @@ const ProductionEventsTable = memo(
             <EmployeeAvatar employeeId={row.original.employeeId} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -97,6 +117,7 @@ const ProductionEventsTable = memo(
             </Badge>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: ["Setup", "Labor", "Machine"].map((type) => ({
@@ -125,7 +146,8 @@ const ProductionEventsTable = memo(
           cell: ({ row }) =>
             row.original.duration
               ? formatDurationMilliseconds(row.original.duration * 1000)
-              : null
+              : null,
+          meta: { mobile: "P2" }
         },
         {
           accessorKey: "workCenterId",
@@ -201,6 +223,7 @@ const ProductionEventsTable = memo(
       (row) => (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "production")}
             onClick={() => navigate(row.id)}
           >
@@ -208,6 +231,7 @@ const ProductionEventsTable = memo(
             Edit Event
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "production")}
             onClick={() => onDelete(row)}
@@ -254,6 +278,8 @@ const ProductionEventsTable = memo(
         <Table<ProductionEvent>
           compact
           count={count}
+          // Scoped to one job: no list registry entry, so no `listKey`.
+          infinite={{ dataKey: "events", nextCursor }}
           columns={columns}
           data={data}
           emptyState={emptyState}

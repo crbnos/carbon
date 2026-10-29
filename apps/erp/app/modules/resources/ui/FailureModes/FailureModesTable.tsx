@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -6,6 +10,7 @@ import { LuCircleAlert, LuPencil, LuShapes, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import { maintenanceFailureModeType } from "../../resources.models";
@@ -14,9 +19,11 @@ import type { FailureMode } from "../../types";
 type FailureModesTableProps = {
   data: FailureMode[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const FailureModesTable = memo(({ data, count }: FailureModesTableProps) => {
+const FailureModesTable = memo((props: FailureModesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -33,6 +40,7 @@ const FailureModesTable = memo(({ data, count }: FailureModesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuCircleAlert />
         }
       },
@@ -41,6 +49,7 @@ const FailureModesTable = memo(({ data, count }: FailureModesTableProps) => {
         header: t`Type`,
         cell: ({ row }) => <Enumerable value={row.original.type} />,
         meta: {
+          mobile: "P3",
           icon: <LuShapes />,
           filter: {
             type: "static",
@@ -60,6 +69,7 @@ const FailureModesTable = memo(({ data, count }: FailureModesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.failureMode(row.id)}?${params.toString()}`);
             }}
@@ -68,6 +78,7 @@ const FailureModesTable = memo(({ data, count }: FailureModesTableProps) => {
             <Trans>Edit Failure Mode</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {
@@ -88,6 +99,7 @@ const FailureModesTable = memo(({ data, count }: FailureModesTableProps) => {
   return (
     <Table<FailureMode>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count}
       primaryAction={

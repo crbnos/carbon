@@ -1,0 +1,30 @@
+# pnpm db:seed:dev -- --email demo-audit@carbon.local --dataset motor   (2026-09-23, branch feat/demo-data-completeness, re-apply onto scratch company dapnjkh860gjckkl52t0, exit 0)
+Seeded row counts
+-----------------
+  location                    2
+  process                    14
+  workCenter                  8
+  customer                    4
+  supplier                   12
+  item                       37
+  makeMethod                 30
+  methodMaterial             54
+  itemLedger                 38
+  opportunity                28
+  salesRfq                    4
+  quote                       8
+  salesOrder                 20
+  shipment                    5
+  salesInvoice                7
+  supplierInteraction        22
+  purchasingRfq               3
+  supplierQuote               6
+  purchaseOrder              17
+  receipt                     5
+  purchaseInvoice             7
+  job                         8
+  jobOperation               54
+  nonConformance              5
+  changeOrder                 6
+  fixedAsset                  6
+  workflow                    7

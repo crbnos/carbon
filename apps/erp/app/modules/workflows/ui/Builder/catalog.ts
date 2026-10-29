@@ -1,13 +1,17 @@
-import type { TermId } from "@carbon/glossary";
-import type { WorkflowCatalog } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
+import type { WorkflowCatalog } from "@carbon/ee/workflows";
 import {
   buildCatalogOverlay,
   CUSTOM_FIELD_PREFIX,
   createWorkflowCatalog,
   parseCustomFieldEventId
-} from "@carbon/workflows";
-import { WORKFLOW_FIELD_HELP } from "@carbon/workflows/help";
-import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
+} from "@carbon/ee/workflows";
+import { WORKFLOW_FIELD_HELP } from "@carbon/ee/workflows/help";
+import { WORKFLOW_LABELS } from "@carbon/ee/workflows/labels";
 import { useLingui } from "@lingui/react";
 import { useLingui as useLinguiMacro } from "@lingui/react/macro";
 import { useMemo } from "react";

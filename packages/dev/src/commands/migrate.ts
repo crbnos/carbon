@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { existsSync } from "node:fs";
-import { intro, log, outro, tasks } from "@clack/prompts";
+import { intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { execa } from "execa";
 import { join } from "pathe";
@@ -11,12 +15,16 @@ import {
   ensureDockerRunning,
   stopStack
 } from "../services/compose.js";
+import { wakeIfAsleep } from "../services/hibernate.js";
 import {
   applyMigrations,
   ensureConfigRow,
-  waitForPostgres
+  syncAuthz,
+  waitForPostgres,
+  waitForServiceSchemas
 } from "../services/migrations.js";
 import { branchToPrefix } from "../services/portless.js";
+import { tasks } from "../ui.js";
 import {
   ensureSlugAvailable,
   getWorktreeRoot,
@@ -26,10 +34,13 @@ import {
   resolveSlug
 } from "../worktree.js";
 
+const MIGRATION_SERVICES = ["postgres", "gotrue", "storage", "realtime"];
+
 // Run database migrations against the worktree's local stack. If postgres is
 // already running (full stack up), migrate against it directly. If not, boot
-// just postgres, apply migrations + regenerate types, then tear down — no need
-// for the full 11-service compose stack to run migrations.
+// postgres plus the three services whose schemas the migrations write into,
+// apply migrations + regenerate types, then tear down — no need for the full
+// compose stack to run migrations.
 export async function migrate(opts: { regen?: boolean } = {}) {
   const shouldRegen = opts.regen ?? true;
   intro("Carbon · dev migrate");
@@ -51,12 +62,14 @@ export async function migrate(opts: { regen?: boolean } = {}) {
     // .env.local missing or PORT_DB not set — will need to provision.
   }
 
+  if (await wakeIfAsleep(slug)) log.info("woke the hibernated stack");
+
   // If postgres is already reachable, migrate against the running DB.
   if (portDb && (await tryConnect("127.0.0.1", portDb, 500))) {
     return migrateAgainstRunningDb(root, portDb, shouldRegen);
   }
 
-  // Standalone mode: boot just postgres, migrate, tear down.
+  // Standalone mode: boot the migration services, migrate, tear down.
   return migrateStandalone(root, slug, shouldRegen);
 }
 
@@ -109,12 +122,16 @@ async function migrateAgainstRunningDb(
             }
           }
         ]
-      : [])
+      : []),
+    {
+      title: "Sync RLS policies with the authz manifest",
+      task: () => syncAuthz(root, portDb)
+    }
   ]);
   outro("done");
 }
 
-// ─── Standalone path (postgres-only) ──────────────────────────────────────
+// ─── Standalone path (migration services only) ────────────────────────────
 
 async function migrateStandalone(
   root: string,
@@ -143,7 +160,7 @@ async function migrateStandalone(
   const portDb = requireNumberEnv("PORT_DB");
   const project = projectName(slug);
 
-  log.info(`booting postgres-only stack (${project})`);
+  log.info(`booting migration services (${project})`);
   await ensureDockerRunning();
 
   // Tear down on Ctrl+C so the standalone postgres doesn't orphan.
@@ -151,13 +168,14 @@ async function migrateStandalone(
   const detach = onShutdown(() => {
     if (interrupted) return;
     interrupted = true;
-    process.stderr.write("\ninterrupted — stopping postgres…\n");
+    process.stderr.write("\ninterrupted — stopping services…\n");
     void stopStack(root, slug, false).finally(() => process.exit(130));
   });
 
   try {
-    await bootStack(root, slug, { services: ["postgres"] });
+    await bootStack(root, slug, { services: MIGRATION_SERVICES });
     await waitForPostgres(portDb);
+    await waitForServiceSchemas(portDb);
 
     await tasks([
       {
@@ -190,17 +208,21 @@ async function migrateStandalone(
               }
             }
           ]
-        : [])
+        : []),
+      {
+        title: "Sync RLS policies with the authz manifest",
+        task: () => syncAuthz(root, portDb)
+      }
     ]);
 
     if (shouldRegen) {
       log.warn(
-        "swagger skipped — requires Studio (run `crbn up` for full regen)"
+        "swagger skipped — requires the API (run `crbn up` for full regen)"
       );
     }
   } finally {
     detach();
-    log.info("stopping postgres-only stack");
+    log.info("stopping migration services");
     await stopStack(root, slug, false);
   }
 

@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { clearConsolePinIn } from "@carbon/auth/console-pin.server";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { clearConsolePinIn } from "~/services/console.server";
 import { endProductionEvents } from "~/services/operations.service";
 
 const log = getLogger("mes");
@@ -58,7 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // In console mode, pin out the operator after ending their shift
   const headers = new Headers();
   if (consoleMode) {
-    headers.append("Set-Cookie", clearConsolePinIn(companyId));
+    headers.append("Set-Cookie", await clearConsolePinIn(companyId));
   }
 
   return data(

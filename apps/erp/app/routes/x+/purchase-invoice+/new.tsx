@@ -1,29 +1,26 @@
-import { assertIsPost, error } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { deriveRate, taxableBase } from "@carbon/utils";
+import { validator } from "@carbon/form";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { FunctionsResponse } from "@supabase/functions-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
-import { upsertDocument } from "~/modules/documents";
-import {
-  createPurchaseInvoiceFromPurchaseOrder,
-  getPurchaseInvoice,
-  insertPurchaseInvoice,
-  PurchaseInvoiceForm,
-  purchaseInvoiceValidator,
-  upsertPurchaseInvoiceLine
-} from "~/modules/invoicing";
-import { resolveItemIdFromExtractedText } from "~/modules/items";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { purchaseInvoiceValidator } from "~/modules/invoicing/invoicing.models";
+import { createPurchaseInvoiceFromPurchaseOrder } from "~/modules/invoicing/invoicing.service";
+import { PurchaseInvoiceForm } from "~/modules/invoicing/ui";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
-import { path } from "~/utils/path";
-import { stripSpecialCharacters } from "~/utils/string";
+import { path, requestReferrer } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Purchasing`,
@@ -32,6 +29,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  // Writes on GET: a link on another site must not trigger it.
+  rejectCrossSiteNavigation(request);
   // we don't use the client here -- if they have this permission, we'll upgrade to a service role if needed
   const { companyId, userId } = await requirePermissions(request, {
     create: "invoicing"
@@ -41,13 +40,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const sourceDocument = url.searchParams.get("sourceDocument") ?? undefined;
   const sourceDocumentId = url.searchParams.get("sourceDocumentId") ?? "";
 
-  let result: FunctionsResponse<{ id: string }>;
+  let result: Awaited<
+    ReturnType<typeof createPurchaseInvoiceFromPurchaseOrder>
+  >;
 
   switch (sourceDocument) {
     case "Purchase Order":
       if (!sourceDocumentId) throw new Error("Missing sourceDocumentId");
       result = await createPurchaseInvoiceFromPurchaseOrder(
         getCarbonServiceRole(),
+        getDatabaseClient(),
         sourceDocumentId,
         companyId,
         userId
@@ -55,15 +57,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       if (result.error || !result?.data) {
         throw redirect(
-          request.headers.get("Referer") ?? path.to.purchaseOrders,
+          requestReferrer(request) ?? path.to.purchaseOrders,
           await flash(
             request,
             error(
               result.error,
-              await getEdgeFunctionErrorMessage(
-                result.error,
-                "Failed to create purchase invoice"
-              )
+              getErrorMessage(result.error, "Failed to create purchase invoice")
             )
           )
         );
@@ -76,160 +75,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      create: "invoicing"
-    });
-
-  const formData = await request.formData();
-  const validation = await validator(purchaseInvoiceValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id: _id, ...d } = validation.data;
-
-  const result = await insertPurchaseInvoice(client, {
-    ...d,
-    invoiceId: d.invoiceId || undefined,
-    companyId,
-    companyGroupId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(purchaseInvoiceValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const formData = input.formData ?? new FormData();
+  const api = await carbon(args.request);
+  const result = await api.invoicing.createPurchaseInvoice({
+    ...input.data,
+    customFields: setCustomFields(formData),
+    lines: extractedLines(formData.get("extractedLineItems")),
+    taxAmount:
+      Number.parseFloat(String(formData.get("extractedTaxAmount") ?? "")) || 0,
+    documentPath:
+      (formData.get("extractedStoragePath") as string | null) || undefined
   });
-
-  if (result.error || !result.data) {
-    throw redirect(
-      path.to.invoicingPurchasing,
-      await flash(
-        request,
-        error(result.error, "Failed to insert purchase invoice")
-      )
-    );
+  if (!result.data) {
+    return respond(args.request, result).redirect(path.to.invoicingPurchasing);
   }
-
-  const extractedLineItemsStr = formData.get("extractedLineItems") as string;
-  let extractedLineItems: any[] = [];
-  if (extractedLineItemsStr) {
-    try {
-      extractedLineItems = JSON.parse(extractedLineItemsStr);
-    } catch {
-      // ignore
-    }
-  }
-
-  const extractedTaxAmountStr = formData.get("extractedTaxAmount") as string;
-  const extractedTaxAmount = Number.parseFloat(extractedTaxAmountStr) || 0;
-
-  const promises: Promise<any>[] = [];
-
-  if (extractedLineItems.length > 0) {
-    let taxApplied = false;
-
-    for (const item of extractedLineItems) {
-      if (!item.description && !item.partNumber) continue;
-
-      const lineTax = !taxApplied ? extractedTaxAmount : 0;
-      taxApplied = true;
-
-      // The whole document's tax lands on the first line, so it can exceed that
-      // one line's own subtotal. The AMOUNT is what the supplier actually
-      // charged and stays authoritative; the rate is the derived half of the
-      // pair, rounded to internal scale and held inside the 0..1 fraction the
-      // validator and TaxFields both require.
-      // No shipping term: this path hardcodes supplierShippingCost to 0 below,
-      // so the base is deliberately unit price x quantity only.
-      const lineSubtotal = taxableBase(
-        item.unitPrice || 0,
-        item.quantity || 1,
-        0
-      );
-      const lineTaxPercent = Math.min(1, deriveRate(lineTax, lineSubtotal));
-
-      // Map the line up front when the extracted text directly matches an
-      // existing record — only lines with no direct match are left as
-      // comments for the review modal.
-      const itemId = await resolveItemIdFromExtractedText(
-        client,
-        companyId,
-        { type: "supplier", id: d.supplierId },
-        [item.partNumber, item.description]
-      );
-
-      promises.push(
-        upsertPurchaseInvoiceLine(client, {
-          invoiceId: result.data.id,
-          invoiceLineType: itemId ? "Part" : "Comment",
-          itemId: itemId ?? undefined,
-          description: item.partNumber || item.description || "Line Item",
-          quantity: item.quantity || 1,
-          supplierUnitPrice: item.unitPrice || 0,
-          supplierShippingCost: 0,
-          supplierTaxAmount: lineTax,
-          taxPercent: lineTaxPercent,
-          locationId: d.locationId,
-          companyId,
-          createdBy: userId,
-          customFields: {}
-        })
-      );
-    }
-  }
-
-  const extractedStoragePath = formData.get("extractedStoragePath") as
-    | string
-    | undefined;
-
-  const resultDataId = result.data.id;
-
-  if (extractedStoragePath) {
-    promises.push(
-      (async () => {
-        const fetchedInvoice = await getPurchaseInvoice(client, resultDataId);
-        const interactionId = fetchedInvoice.data?.supplierInteractionId;
-
-        if (interactionId) {
-          const filenameParts = extractedStoragePath.split("/");
-          const basename =
-            filenameParts[filenameParts.length - 1] || "Extracted_Invoice.pdf";
-          const originalFilename = basename.includes("_")
-            ? basename.split("_").slice(1).join("_")
-            : basename;
-          const safeFilename = stripSpecialCharacters(originalFilename);
-          const newStoragePath = `${companyId}/supplier-interaction/${interactionId}/${safeFilename}`;
-
-          const copyResult = await client.storage
-            .from("private")
-            .copy(extractedStoragePath, newStoragePath);
-
-          if (!copyResult.error) {
-            await upsertDocument(client, {
-              path: newStoragePath,
-              name: originalFilename,
-              size: 0,
-              sourceDocument: "Purchase Invoice",
-              sourceDocumentId: resultDataId,
-              readGroups: [userId],
-              writeGroups: [userId],
-              createdBy: userId,
-              companyId
-            });
-          }
-        }
-      })()
-    );
-  }
-
-  if (promises.length > 0) {
-    await Promise.all(promises);
-  }
-
   throw redirect(path.to.purchaseInvoice(result.data.id));
+}
+
+/** The lines an extraction found, posted as JSON; unreadable means none. */
+function extractedLines(value: FormDataEntryValue | null) {
+  if (typeof value !== "string" || !value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 export default function PurchaseInvoiceNewRoute() {
@@ -247,8 +121,8 @@ export default function PurchaseInvoiceNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <PurchaseInvoiceForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

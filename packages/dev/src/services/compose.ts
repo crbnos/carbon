@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { existsSync } from "node:fs";
 import { log } from "@clack/prompts";
 import { execa } from "execa";
@@ -56,20 +60,34 @@ export type Container = {
 // Every profile `bootStack` can enable. Compose treats profile-gated services
 // as "not enabled" rather than orphans, so a `down` missing one silently
 // leaves those containers running. `stopStack`'s sweep backstops drift here.
-const COMPOSE_PROFILES = ["full", "chrome"] as const;
+const COMPOSE_PROFILES = ["full", "studio", "mail"] as const;
+
+// Which services a boot starts. Default: the stack the apps need plus Inbucket
+// (login emails). `full` adds Studio, Postgres-Meta, the edge runtime and
+// imgproxy — nothing in the apps calls the first three (~40% of a stack's
+// memory) and imgproxy only converts HEIC. `studio` adds just Studio and the
+// Postgres-Meta it reads through (picked as an app in `crbn up`). `minimal`
+// drops Inbucket too (headless runs sign in by bypass).
+export type StackSize = { minimal?: boolean; full?: boolean; studio?: boolean };
+
+function profileArgs(opts?: StackSize): string[] {
+  const profiles: string[] = [];
+  if (opts?.full) profiles.push("full");
+  else if (opts?.studio) profiles.push("studio");
+  if (!opts?.minimal) profiles.push("mail");
+  return profiles.flatMap((profile) => ["--profile", profile]);
+}
 
 // Exported for tests: the `docker compose … up -d` argv.
 export function buildUpArgs(
   root: string,
   slug: string,
-  opts?: { minimal?: boolean; services?: string[]; chrome?: boolean }
+  opts?: StackSize & { services?: string[] }
 ): string[] {
   const args = devArgs(root, slug, "--env-file", ".env.local");
   // When specific services are requested, don't activate profiles — compose
   // starts only the named services (+ dependencies) regardless of profiles.
-  if (!opts?.services && !opts?.minimal) args.push("--profile", "full");
-  // Opt-in local Chromium for the thumbnail edge fn (`crbn up --thumbnails`).
-  if (!opts?.services && opts?.chrome) args.push("--profile", "chrome");
+  if (!opts?.services) args.push(...profileArgs(opts));
   args.push("up", "-d");
   if (opts?.services) args.push(...opts.services);
   return args;
@@ -92,9 +110,20 @@ export function buildDownArgs(
 export async function bootStack(
   root: string,
   slug: string,
-  opts?: { minimal?: boolean; services?: string[]; chrome?: boolean }
+  opts?: StackSize & { services?: string[] }
 ) {
   await execStrict("docker", buildUpArgs(root, slug, opts), root);
+}
+
+// Stop every container of the stack but keep them (and their volumes): the
+// memory is freed and `bootStack` brings them back. All profiles, so a service
+// started later with `crbn reload` is stopped too. 30s for Postgres to shut
+// down cleanly before Docker kills it.
+export async function sleepStack(root: string, slug: string) {
+  const args = devArgs(root, slug, ...envFileArgs(root));
+  for (const profile of COMPOSE_PROFILES) args.push("--profile", profile);
+  args.push("stop", "--timeout", "30");
+  await execStrict("docker", args, root);
 }
 
 // `docker compose restart` a subset of services. Used by the storage-stuck
@@ -147,10 +176,10 @@ export async function pullStack(
   root: string,
   slug: string,
   onLine: (line: string) => void,
-  opts?: { minimal?: boolean }
+  opts?: StackSize
 ) {
   const args = devArgs(root, slug, "--env-file", ".env.local");
-  if (!opts?.minimal) args.push("--profile", "full");
+  args.push(...profileArgs(opts));
   args.push("--progress", "plain", "pull");
   const proc = execa("docker", args, { cwd: root, reject: false, all: true });
 
@@ -172,10 +201,10 @@ export async function pullStack(
 export async function devComposeImageRefs(
   root: string,
   slug: string,
-  opts?: { minimal?: boolean }
+  opts?: StackSize
 ): Promise<string[] | null> {
   const args = devArgs(root, slug, "--env-file", ".env.local");
-  if (!opts?.minimal) args.push("--profile", "full");
+  args.push(...profileArgs(opts));
   args.push("config", "--images");
   const r = await execa("docker", args, { cwd: root, reject: false });
   if (r.exitCode !== 0) return null;
@@ -344,14 +373,13 @@ export async function listContainers(
   root: string,
   slug: string
 ): Promise<Container[]> {
-  const r = await execa(
-    "docker",
-    devArgs(root, slug, "ps", "-a", "--format", "json"),
-    { cwd: root, reject: false }
+  const stdout = await composeRead(
+    root,
+    devArgs(root, slug, ...envFileArgs(root), "ps", "-a", "--format", "json")
   );
-  if (r.exitCode !== 0 || !r.stdout?.trim()) return [];
+  if (!stdout.trim()) return [];
   const out: Container[] = [];
-  for (const line of r.stdout.split("\n")) {
+  for (const line of stdout.split("\n")) {
     if (!line) continue;
     let raw: unknown;
     try {
@@ -404,14 +432,12 @@ function parsePublishers(raw: unknown): Publisher[] {
 export async function listComposeServices(
   root: string,
   slug: string,
-  opts?: { minimal?: boolean }
+  opts?: StackSize
 ): Promise<string[]> {
   const args = devArgs(root, slug, "--env-file", ".env.local");
-  if (!opts?.minimal) args.push("--profile", "full");
+  args.push(...profileArgs(opts));
   args.push("config", "--services");
-  const r = await execa("docker", args, { cwd: root, reject: false });
-  if (r.exitCode !== 0) return [];
-  return (r.stdout ?? "")
+  return (await composeRead(root, args))
     .split("\n")
     .map((s) => s.trim())
     .filter(Boolean);
@@ -428,7 +454,16 @@ export async function tailServiceLogs(
 ): Promise<string> {
   const r = await execa(
     "docker",
-    devArgs(root, slug, "logs", "--tail", String(lines), "--no-color", service),
+    devArgs(
+      root,
+      slug,
+      ...envFileArgs(root),
+      "logs",
+      "--tail",
+      String(lines),
+      "--no-color",
+      service
+    ),
     { cwd: root, reject: false }
   );
   return ((r.stdout ?? "") + (r.stderr ?? "")).trim();
@@ -533,6 +568,29 @@ export async function listCarbonProjects(): Promise<string[]> {
   return [...all];
 }
 
+// Every crbn stack on the machine, including ones whose containers are gone:
+// `down` keeps volumes, so a deleted worktree's data outlives its containers.
+// Matching on the `pgdata` volume keeps other "carbon-" compose projects out.
+export async function listCarbonStacks(): Promise<string[]> {
+  const r = await execa(
+    "docker",
+    [
+      "volume",
+      "ls",
+      "--filter",
+      "label=com.docker.compose.volume=pgdata",
+      "--format",
+      '{{.Label "com.docker.compose.project"}}'
+    ],
+    { reject: false }
+  );
+  const fromVolumes = (r.stdout ?? "")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter((name) => name.startsWith("carbon-"));
+  return [...new Set([...fromVolumes, ...(await listCarbonProjects())])];
+}
+
 // ---------------------------------------------------------------------------
 // Utility
 // ---------------------------------------------------------------------------
@@ -553,6 +611,34 @@ export async function flushDb(db: number) {
 // ---------------------------------------------------------------------------
 // Private helpers
 // ---------------------------------------------------------------------------
+
+// A compose command whose answer the caller reports as fact. A failure here is
+// thrown with compose's own words: returning "nothing" instead made `crbn
+// status` show an empty stack while eight containers ran, hiding the config
+// error that caused it.
+async function composeRead(root: string, args: string[]): Promise<string> {
+  const r = await execa("docker", args, { cwd: root, reject: false });
+  if (r.exitCode === 0) return r.stdout ?? "";
+  const detail = (r.stderr ?? "")
+    .split("\n")
+    .filter((line) => line.trim() && !line.includes("level=warning"))
+    .slice(-5)
+    .join("\n");
+  throw new Error(
+    `docker ${args.slice(-3).join(" ")} failed (exit ${r.exitCode})\n${detail}`
+  );
+}
+
+// Compose must interpolate the whole file before it will even list containers,
+// and the file has values with no default (extra_hosts names). Read-only
+// commands that run outside `crbn up` — where nothing has loaded .env.local
+// into the process — need it passed explicitly, or they fail and report an
+// empty stack.
+function envFileArgs(root: string): string[] {
+  return existsSync(join(root, ".env.local"))
+    ? ["--env-file", ".env.local"]
+    : [];
+}
 
 function devArgs(root: string, slug: string, ...rest: string[]): string[] {
   // --project-directory . pins the project dir to the cwd (repo root) so the

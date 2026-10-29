@@ -1,5 +1,13 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import { Email } from "./config";
+import { Gmail } from "../gmail/config";
+import { readConnection } from "../integrations/connections";
+import { parseEmailSettings } from "./delivery";
 
 const logger = getLogger("ee", "email");
 
@@ -9,12 +17,19 @@ const logger = getLogger("ee", "email");
  * Validates the stored credentials for the company's chosen delivery
  * provider without actually sending a message:
  *
+ * - `server`: healthy when this server has mail settings. The company's From
+ *   cannot make it undeliverable: it is only ever the Reply-To beside the
+ *   server's own From (see `sharedMailHeaders`), so the relay only ever sees its
+ *   own sender.
  * - `resend`: hits `GET https://api.resend.com/domains` with the API key.
- *   A 2xx means the key is valid and has read access; anything else means
- *   the credentials are wrong or the account is suspended.
+ *   A 2xx means the key is valid and has read access; a 401
+ *   `restricted_api_key` means a valid "Sending access" key, also healthy.
+ *   Anything else means the credentials are wrong or the account is suspended.
  * - `smtp`:   dynamically imports `nodemailer`, builds a transport from the
  *   stored host/port/username/password/secure and calls `.verify()`, which
  *   performs a handshake without sending mail.
+ * - `gmail`:  the picked connection is this company's Gmail account and is
+ *   Active. An Expired or Revoked one needs a reconnect on the Gmail card.
  *
  * Returns `true` on success and `false` on any failure (invalid metadata,
  * network error, bad credentials). Never throws — the settings page caches
@@ -22,22 +37,27 @@ const logger = getLogger("ee", "email");
  * in the integrations list.
  */
 export async function emailHealthcheck(
-  _companyId: string,
+  companyId: string,
   metadata: Record<string, unknown>
 ): Promise<boolean> {
-  // Legacy installs predate the `provider` field — default them to Resend
-  // the same way `send-email.ts` does so existing configs stay healthy.
-  const withProvider =
-    metadata && typeof metadata === "object" && !("provider" in metadata)
-      ? { provider: "resend", ...metadata }
-      : metadata;
-
-  const parsed = Email.schema.safeParse(withProvider);
+  const parsed = parseEmailSettings(metadata);
   if (!parsed.success) return false;
 
   const data = parsed.data;
+  if (data.provider === "server") return SERVER_MAIL_CONFIGURED;
 
   try {
+    if (data.provider === "gmail") {
+      const connection = await readConnection(
+        getCarbonServiceRole(),
+        companyId,
+        data.gmailConnectionId
+      );
+      return (
+        connection?.pieceName === Gmail.id && connection.status === "Active"
+      );
+    }
+
     if (data.provider === "resend") {
       const response = await fetch("https://api.resend.com/domains", {
         method: "GET",
@@ -45,7 +65,16 @@ export async function emailHealthcheck(
           Authorization: `Bearer ${data.apiKey}`
         }
       });
-      return response.ok;
+      if (response.ok) return true;
+      // A "Sending access" key is refused here with `restricted_api_key`, but
+      // sending is all the integration uses it for.
+      if (response.status === 401) {
+        const body = (await response.json().catch(() => null)) as {
+          name?: string;
+        } | null;
+        return body?.name === "restricted_api_key";
+      }
+      return false;
     }
 
     if (data.provider === "smtp") {

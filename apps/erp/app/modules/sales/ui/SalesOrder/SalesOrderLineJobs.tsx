@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { DatePicker, ValidatedForm } from "@carbon/form";
 import {
@@ -42,7 +46,7 @@ import {
   LuCirclePlus,
   LuSettings2
 } from "react-icons/lu";
-import { useFetcher, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { Assignee, Empty, Hyperlink, TimeTypeIcon } from "~/components";
 import {
   Hidden,
@@ -64,6 +68,7 @@ import { JobStartModal } from "~/modules/production/ui/Jobs/JobHeader";
 import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { OperationDueDatePicker } from "~/modules/production/ui/Jobs/OperationDueDatePicker";
+import { useJobRelease } from "~/modules/production/ui/Jobs/useJobRelease";
 import { path } from "~/utils/path";
 import type {
   Opportunity,
@@ -154,7 +159,10 @@ export function SalesOrderLineJobs({
                       index === jobs.length - 1 && "border-b-0"
                     )}
                   >
-                    <SalesOrderJobItem job={job as SalesOrderJob} />
+                    <SalesOrderJobItem
+                      job={job as SalesOrderJob}
+                      isService={line.salesOrderLineType === "Service"}
+                    />
                   </div>
                 ))}
             </div>
@@ -225,7 +233,7 @@ export function SalesOrderLineJobs({
                     label={t`Job ID`}
                     table="job"
                   />
-                  <Location name="locationId" label={t`Location`} />
+                  <Location autoFocus name="locationId" label={t`Location`} />
                   <NumberControlled
                     name="quantity"
                     label={t`Quantity`}
@@ -281,11 +289,18 @@ export function SalesOrderLineJobs({
   );
 }
 
-export function SalesOrderJobItem({ job }: { job: SalesOrderJob }) {
+export function SalesOrderJobItem({
+  job,
+  isService = false
+}: {
+  job: SalesOrderJob;
+  // A Service job's output is never shipped, so it has no shipped count.
+  isService?: boolean;
+}) {
   const disclosure = useDisclosure();
   const permissions = usePermissions();
   const releaseModal = useDisclosure();
-  const statusFetcher = useFetcher<{}>();
+  const release = useJobRelease();
   const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
   return (
@@ -332,23 +347,22 @@ export function SalesOrderJobItem({ job }: { job: SalesOrderJob }) {
               {job.quantityComplete ?? 0}/{job.quantity ?? 0}
             </p>
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Shipped</label>
-            <p className="text-sm">
-              {job.quantityShipped ?? 0}/{job.quantity ?? 0}
-            </p>
-          </div>
+          {!isService && (
+            <div>
+              <label className="text-xs text-muted-foreground">Shipped</label>
+              <p className="text-sm">
+                {job.quantityShipped ?? 0}/{job.quantity ?? 0}
+              </p>
+            </div>
+          )}
         </HStack>
         <HStack>
           <Button
             onClick={releaseModal.onOpen}
-            isLoading={
-              statusFetcher.state !== "idle" &&
-              statusFetcher.formData?.get("status") === "Ready"
-            }
+            isLoading={release.isPending}
             isDisabled={
               job.status !== "Draft" ||
-              statusFetcher.state !== "idle" ||
+              release.isPending ||
               !permissions.can("update", "production") ||
               (job?.quantity === 0 && job?.scrapQuantity === 0)
             }
@@ -375,7 +389,7 @@ export function SalesOrderJobItem({ job }: { job: SalesOrderJob }) {
         <JobStartModal
           job={job as Job}
           onClose={releaseModal.onClose}
-          fetcher={statusFetcher}
+          release={release}
         />
       )}
     </VStack>

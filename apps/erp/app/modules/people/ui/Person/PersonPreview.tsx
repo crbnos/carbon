@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Card,
   CardAttribute,
@@ -9,7 +13,8 @@ import {
   CardHeader,
   CardTitle,
   HStack,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 // import { LuHistory } from "react-icons/lu";
@@ -27,6 +32,7 @@ const PersonHeader = () => {
 
   const { company } = useUser();
   const auditDrawer = useDisclosure();
+  const { isPhone } = useViewport();
   const routeData = useRouteData<{ employeeSummary: EmployeeSummary }>(
     path.to.person(personId)
   );
@@ -36,7 +42,7 @@ const PersonHeader = () => {
       <Card>
         <HStack className="justify-between items-center p-6 pl-0">
           <CardHeader className="pt-0">
-            <CardTitle className="text-2xl">
+            <CardTitle className="font-headline text-2xl">
               {routeData?.employeeSummary?.name}
             </CardTitle>
             <CardDescription>
@@ -74,7 +80,8 @@ const PersonHeader = () => {
                 <Trans>Manager</Trans>
               </CardAttributeLabel>
               <CardAttributeValue>
-                {routeData?.employeeSummary?.managerName}
+                {routeData?.employeeSummary?.managerName ||
+                  (isPhone ? "—" : null)}
               </CardAttributeValue>
             </CardAttribute>
             <CardAttribute>

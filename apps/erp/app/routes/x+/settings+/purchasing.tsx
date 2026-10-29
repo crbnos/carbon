@@ -1,6 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import {
   Input,
   PhoneInput,
@@ -9,7 +15,7 @@ import {
   ValidatedForm,
   validator
 } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -17,7 +23,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
   Label,
   ScrollArea,
@@ -25,35 +30,34 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { z } from "zod";
 import CompanyDefaultAttachmentsCard from "~/components/CompanyDefaultAttachmentsCard";
 import { EmailRecipients, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
+import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
   accountsPayableBillingAddressValidator,
+  billingAddressFields,
   defaultSupplierCcValidator,
-  getAccountsPayableBillingAddress,
-  getCompanySettings,
   purchasePriceUpdateTimingTypes,
   purchasePriceUpdateTimingValidator,
-  supplierQuoteNotificationValidator,
-  updateAccountsPayableAddressSetting,
-  updateAccountsPayableBillingAddress,
-  updateDefaultSupplierCc,
-  updateLeadTimesOnReceiptSetting,
-  updatePurchasePriceUpdateTimingSetting,
-  updateShowSupplierReadableIdSetting,
-  updateSupplierQuoteNotificationSetting
-} from "~/modules/settings";
+  settingsToggle,
+  supplierQuoteNotificationValidator
+} from "~/modules/settings/settings.models";
+import {
+  getAccountsPayableBillingAddress,
+  getCompanySettings
+} from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "settings", "purchasing");
 
 export const handle: Handle = {
   breadcrumb: msg`Purchasing`,
@@ -69,8 +73,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     await Promise.all([
       getCompanySettings(client, companyId),
       getAccountsPayableBillingAddress(client, companyId),
-      client.storage
-        .from("private")
+      storage(client)
+        .company(companyId)
         .list(`${companyId}/default-attachments/company`)
     ]);
 
@@ -91,241 +95,148 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// One form per card, told apart by its intent: each becomes the fields of
+// `settings.purchasing.update` it saves (the operation drops `intent`).
+const purchasingSettingsForm = z.discriminatedUnion("intent", [
+  settingsToggle("accountsPayableAddressToggle", "accountsPayableAddress"),
+  settingsToggle(
+    "requireSupplierContactAndLocationToggle",
+    "requireSupplierContactAndLocation"
+  ),
+  settingsToggle(
+    "requirePurchaseOrderApprovalSignatureToggle",
+    "requirePurchaseOrderApprovalSignature"
+  ),
+  purchasePriceUpdateTimingValidator.extend({
+    intent: z.literal("purchasePriceUpdateTiming")
+  }),
+  settingsToggle("updateLeadTimesOnReceipt", "updateLeadTimesOnReceipt"),
+  settingsToggle("showSupplierReadableIdToggle", "showSupplierReadableId"),
+  supplierQuoteNotificationValidator
+    .extend({ intent: z.literal("supplierQuoteNotification") })
+    .transform(({ supplierQuoteNotificationGroup }) => ({
+      supplierQuoteNotificationGroup: supplierQuoteNotificationGroup ?? []
+    })),
+  accountsPayableBillingAddressValidator
+    .extend({ intent: z.literal("accountsPayableBillingAddress") })
+    .transform((form) => ({
+      accountsPayableBillingAddress: billingAddressFields(form)
+    })),
+  defaultSupplierCcValidator
+    .extend({ intent: z.literal("emails") })
+    .transform(({ defaultSupplierCc }) => ({
+      defaultSupplierCc: defaultSupplierCc ?? []
+    }))
+]);
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  switch (intent) {
-    case "accountsPayableAddressToggle":
-      const apToggleEnabled = formData.get("enabled") === "true";
-      const apToggleResult = await updateAccountsPayableAddressSetting(
-        client,
-        companyId,
-        apToggleEnabled
-      );
-      if (apToggleResult.error) {
-        logger.error("Failed to update accounts payable address toggle", {
-          error: apToggleResult.error
-        });
-        return {
-          success: false,
-          message: apToggleResult.error.message
-        };
-      }
-      return {
-        success: true,
-        message: `Accounts payable billing address ${apToggleEnabled ? "enabled" : "disabled"}`
-      };
-
-    case "purchasePriceUpdateTiming":
-      const validation = await validator(
-        purchasePriceUpdateTimingValidator
-      ).validate(formData);
-
-      if (validation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const result = await updatePurchasePriceUpdateTimingSetting(
-        client,
-        companyId,
-        validation.data.purchasePriceUpdateTiming
-      );
-
-      if (result.error) {
-        logger.error("Failed to update purchase price timing setting", {
-          error: result.error
-        });
-        return {
-          success: false,
-          message: result.error.message
-        };
-      }
-
-      return {
-        success: true,
-        message: "Purchase price update timing updated"
-      };
-
-    case "updateLeadTimesOnReceipt":
-      const updateLeadTimesOnReceipt = formData.get("enabled") === "true";
-      const updateLeadTimesResult = await updateLeadTimesOnReceiptSetting(
-        client,
-        companyId,
-        updateLeadTimesOnReceipt
-      );
-
-      if (updateLeadTimesResult.error) {
-        logger.error("Failed to update lead-time-on-receipt setting", {
-          error: updateLeadTimesResult.error
-        });
-        return {
-          success: false,
-          message: updateLeadTimesResult.error.message
-        };
-      }
-
-      return {
-        success: true,
-        message: `Lead time updates on receipt ${updateLeadTimesOnReceipt ? "enabled" : "disabled"}`
-      };
-
-    case "showSupplierReadableIdToggle":
-      const showSupplierReadableId = formData.get("enabled") === "true";
-      const showSupplierReadableIdResult =
-        await updateShowSupplierReadableIdSetting(
-          client,
-          companyId,
-          showSupplierReadableId
-        );
-
-      if (showSupplierReadableIdResult.error) {
-        logger.error("Failed to update supplier ID visibility setting", {
-          error: showSupplierReadableIdResult.error
-        });
-        return {
-          success: false,
-          message: showSupplierReadableIdResult.error.message
-        };
-      }
-
-      return {
-        success: true,
-        message: `Supplier IDs ${showSupplierReadableId ? "shown" : "hidden"}`
-      };
-
-    case "supplierQuoteNotification":
-      const supplierQuoteValidation = await validator(
-        supplierQuoteNotificationValidator
-      ).validate(formData);
-
-      if (supplierQuoteValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const supplierQuoteResult = await updateSupplierQuoteNotificationSetting(
-        client,
-        companyId,
-        supplierQuoteValidation.data.supplierQuoteNotificationGroup ?? []
-      );
-
-      if (supplierQuoteResult.error) {
-        logger.error("Failed to update supplier quote notification setting", {
-          error: supplierQuoteResult.error
-        });
-        return {
-          success: false,
-          message: supplierQuoteResult.error.message
-        };
-      }
-
-      return {
-        success: true,
-        message: "Supplier quote notification setting updated"
-      };
-
-    case "accountsPayableBillingAddress":
-      const apBillingValidation = await validator(
-        accountsPayableBillingAddressValidator
-      ).validate(formData);
-
-      if (apBillingValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const apBillingResult = await updateAccountsPayableBillingAddress(
-        client,
-        companyId,
-        apBillingValidation.data,
-        userId
-      );
-
-      if (apBillingResult.error) {
-        logger.error("Failed to update accounts payable billing address", {
-          error: apBillingResult.error
-        });
-        return {
-          success: false,
-          message: apBillingResult.error.message
-        };
-      }
-
-      return {
-        success: true,
-        message: "Accounts payable billing address updated"
-      };
-
-    case "emails":
-      const defaultSupplierCcValidation = await validator(
-        defaultSupplierCcValidator
-      ).validate(formData);
-
-      if (defaultSupplierCcValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const defaultSupplierCcResult = await updateDefaultSupplierCc(
-        client,
-        companyId,
-        defaultSupplierCcValidation.data.defaultSupplierCc ?? []
-      );
-
-      if (defaultSupplierCcResult.error) {
-        logger.error("Failed to update default supplier CC", {
-          error: defaultSupplierCcResult.error
-        });
-        return {
-          success: false,
-          message: defaultSupplierCcResult.error.message
-        };
-      }
-
-      return {
-        success: true,
-        message: "Supplier email settings updated"
-      };
-  }
-
-  return { success: false, message: "Unknown intent" };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(purchasingSettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updatePurchasingSettings(input.data);
 }
 
 export default function PurchasingSettingsRoute() {
   const { t } = useLingui();
   const { companySettings, apBillingAddress, defaultAttachments } =
     useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-
-  useEffect(() => {
-    if (fetcher.data?.success === true && fetcher?.data?.message) {
-      toast.success(fetcher.data.message);
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.purchasePriceUpdateTiming)
+        toast.success(t`Purchase price update timing updated`);
+      else if (data.supplierQuoteNotificationGroup)
+        toast.success(t`Supplier quote notification setting updated`);
+      else if (data.accountsPayableBillingAddress)
+        toast.success(t`Accounts payable billing address updated`);
+      else toast.success(t`Supplier email settings updated`);
     }
+  });
 
-    if (fetcher.data?.success === false && fetcher?.data?.message) {
-      toast.error(fetcher.data.message);
+  const toggleFetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.accountsPayableAddress !== undefined) {
+        toast.success(
+          data.accountsPayableAddress
+            ? t`Accounts payable billing address enabled`
+            : t`Accounts payable billing address disabled`
+        );
+      } else if (data.requireSupplierContactAndLocation !== undefined) {
+        toast.success(
+          data.requireSupplierContactAndLocation
+            ? t`Supplier contact requirement enabled`
+            : t`Supplier contact requirement disabled`
+        );
+      } else if (data.requirePurchaseOrderApprovalSignature !== undefined) {
+        toast.success(
+          data.requirePurchaseOrderApprovalSignature
+            ? t`Approval signature requirement enabled`
+            : t`Approval signature requirement disabled`
+        );
+      } else if (data.updateLeadTimesOnReceipt !== undefined) {
+        toast.success(
+          data.updateLeadTimesOnReceipt
+            ? t`Lead time updates on receipt enabled`
+            : t`Lead time updates on receipt disabled`
+        );
+      } else if (data.showSupplierReadableId !== undefined) {
+        toast.success(
+          data.showSupplierReadableId
+            ? t`Supplier IDs shown`
+            : t`Supplier IDs hidden`
+        );
+      }
     }
-  }, [fetcher.data?.message, fetcher.data?.success]);
+  });
 
-  const toggleFetcher = useFetcher<typeof action>();
-
-  const [apAddressEnabled, setApAddressEnabled] = useState(
+  const apAddressEnabled = useSavedToggle(
+    toggleFetcher,
+    "accountsPayableAddressToggle",
     companySettings.accountsPayableAddress ?? false
   );
 
-  const [leadTimesOnReceiptEnabled, setLeadTimesOnReceiptEnabled] = useState(
+  const requireSupplierContactAndLocation = useSavedToggle(
+    toggleFetcher,
+    "requireSupplierContactAndLocationToggle",
+    (companySettings as { requireSupplierContactAndLocation?: boolean })
+      .requireSupplierContactAndLocation ?? false
+  );
+
+  const requireApprovalSignature = useSavedToggle(
+    toggleFetcher,
+    "requirePurchaseOrderApprovalSignatureToggle",
+    companySettings.requirePurchaseOrderApprovalSignature ?? false
+  );
+
+  const handleRequireApprovalSignatureToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        {
+          intent: "requirePurchaseOrderApprovalSignatureToggle",
+          enabled: checked.toString()
+        },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
+  const leadTimesOnReceiptEnabled = useSavedToggle(
+    toggleFetcher,
+    "updateLeadTimesOnReceipt",
     (companySettings as { updateLeadTimesOnReceipt?: boolean })
       .updateLeadTimesOnReceipt ?? false
   );
 
-  const [showSupplierReadableIdEnabled, setShowSupplierReadableIdEnabled] =
-    useState(companySettings.showSupplierReadableId ?? false);
+  const showSupplierReadableIdEnabled = useSavedToggle(
+    toggleFetcher,
+    "showSupplierReadableIdToggle",
+    companySettings.showSupplierReadableId ?? false
+  );
 
   const handleShowSupplierReadableIdToggle = useCallback(
     (checked: boolean) => {
-      setShowSupplierReadableIdEnabled(checked);
       toggleFetcher.submit(
         { intent: "showSupplierReadableIdToggle", enabled: checked.toString() },
         { method: "POST" }
@@ -334,9 +245,21 @@ export default function PurchasingSettingsRoute() {
     [toggleFetcher]
   );
 
+  const handleRequireSupplierContactToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        {
+          intent: "requireSupplierContactAndLocationToggle",
+          enabled: checked.toString()
+        },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
   const handleApAddressToggle = useCallback(
     (checked: boolean) => {
-      setApAddressEnabled(checked);
       toggleFetcher.submit(
         { intent: "accountsPayableAddressToggle", enabled: checked.toString() },
         { method: "POST" }
@@ -347,7 +270,6 @@ export default function PurchasingSettingsRoute() {
 
   const handleLeadTimesOnReceiptToggle = useCallback(
     (checked: boolean) => {
-      setLeadTimesOnReceiptEnabled(checked);
       toggleFetcher.submit(
         {
           intent: "updateLeadTimesOnReceipt",
@@ -359,24 +281,12 @@ export default function PurchasingSettingsRoute() {
     [toggleFetcher]
   );
 
-  useEffect(() => {
-    if (toggleFetcher.data?.success === true && toggleFetcher?.data?.message) {
-      toast.success(toggleFetcher.data.message);
-    }
-    if (toggleFetcher.data?.success === false && toggleFetcher?.data?.message) {
-      toast.error(toggleFetcher.data.message);
-    }
-  }, [toggleFetcher.data?.message, toggleFetcher.data?.success]);
-
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Purchasing</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <SettingsSectionHeader>
           <Trans>Documents</Trans>
@@ -430,25 +340,142 @@ export default function PurchasingSettingsRoute() {
 
         <Card>
           <CardHeader>
+            <CardTitle>
+              <Trans>Require a Supplier Contact and Location</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                A supplier must have at least one contact with an email address
+                and at least one location with a country — plus a state, for US
+                addresses — before its quotes, orders and invoices can be issued
+                or posted. Spend platforms cannot create a vendor without all of
+                them, so a supplier missing any has its bills rejected after the
+                fact.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Centralized Billing Address</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Route all AP invoices to one address (e.g. corporate
-                    headquarters) instead of individual purchasers.
-                  </Trans>
-                </CardDescription>
-              </div>
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {requireSupplierContactAndLocation ? (
+                    <Trans>A supplier contact and location are required</Trans>
+                  ) : (
+                    <Trans>A supplier contact and location are optional</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {requireSupplierContactAndLocation ? (
+                    <Trans>
+                      Quotes, orders and invoices are blocked until the supplier
+                      has a contact with an email address and a location with a
+                      country.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to block issuing or posting for a supplier with no
+                      contact or no location.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={requireSupplierContactAndLocation}
+                onCheckedChange={handleRequireSupplierContactToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Require a Signature to Approve Purchase Orders</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                An approver must have a signature in Account → Profile before
+                they can approve a purchase order. The purchase order PDF prints
+                the signature of the person who approved it.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {requireApprovalSignature ? (
+                    <Trans>A signature is required to approve</Trans>
+                  ) : (
+                    <Trans>A signature is optional to approve</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {requireApprovalSignature ? (
+                    <Trans>
+                      An approver with no signature on file is asked to add one
+                      before they approve.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to block approval from anyone with no signature on
+                      file.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={requireApprovalSignature}
+                onCheckedChange={handleRequireApprovalSignatureToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Centralized Billing Address</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Route all AP invoices to one address (e.g. corporate
+                headquarters) instead of individual purchasers.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {apAddressEnabled ? (
+                    <Trans>Centralized billing is enabled</Trans>
+                  ) : (
+                    <Trans>Centralized billing is disabled</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {apAddressEnabled ? (
+                    <Trans>
+                      AP invoices are routed to a single billing address.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to route all AP invoices to a single billing
+                      address.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
               <Switch
                 checked={apAddressEnabled}
                 onCheckedChange={handleApAddressToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
-          </CardHeader>
+          </CardContent>
         </Card>
         {apAddressEnabled && (
           <Card>
@@ -568,24 +595,45 @@ export default function PurchasingSettingsRoute() {
         </Card>
         <Card>
           <CardHeader>
+            <CardTitle>
+              <Trans>Automatic Lead Time Updates</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Update part lead times from posted purchase receipts.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Automatic Lead Time Updates</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Update part lead times from posted purchase receipts.
-                  </Trans>
-                </CardDescription>
-              </div>
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {leadTimesOnReceiptEnabled ? (
+                    <Trans>Lead time updates are enabled</Trans>
+                  ) : (
+                    <Trans>Lead time updates are disabled</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {leadTimesOnReceiptEnabled ? (
+                    <Trans>
+                      Part lead times update from posted purchase receipts.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to update part lead times from posted purchase
+                      receipts.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
               <Switch
                 checked={leadTimesOnReceiptEnabled}
                 onCheckedChange={handleLeadTimesOnReceiptToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
-          </CardHeader>
+          </CardContent>
         </Card>
         <SettingsSectionHeader>
           <Trans>Suppliers</Trans>
@@ -593,26 +641,48 @@ export default function PurchasingSettingsRoute() {
 
         <Card>
           <CardHeader>
+            <CardTitle>
+              <Trans>Show Supplier IDs</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Show a readable Supplier ID column on the supplier list,
+                supplier forms, and dropdowns. Suppliers are still identified
+                internally either way.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Show Supplier IDs</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Show a readable Supplier ID column on the supplier list,
-                    supplier forms, and dropdowns. Suppliers are still
-                    identified internally either way.
-                  </Trans>
-                </CardDescription>
-              </div>
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {showSupplierReadableIdEnabled ? (
+                    <Trans>Supplier IDs are shown</Trans>
+                  ) : (
+                    <Trans>Supplier IDs are hidden</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {showSupplierReadableIdEnabled ? (
+                    <Trans>
+                      A readable Supplier ID appears on lists, forms and
+                      dropdowns.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to show a readable Supplier ID on lists, forms and
+                      dropdowns.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
               <Switch
                 checked={showSupplierReadableIdEnabled}
                 onCheckedChange={handleShowSupplierReadableIdToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
-          </CardHeader>
+          </CardContent>
         </Card>
 
         <SettingsSectionHeader>
@@ -673,7 +743,7 @@ export default function PurchasingSettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

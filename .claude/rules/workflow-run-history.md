@@ -43,7 +43,7 @@ filters `isTest = false` — a test is the author's experiment, not the workflow
 ## Step list ordering
 
 `WorkflowRunSteps` builds its row list using `topologicalNodeOrder(definition)` from
-`@carbon/workflows` — trigger first, then breadth-first over edges, ties broken by position in
+`@carbon/ee/workflows` — trigger first, then breadth-first over edges, ties broken by position in
 `definition.nodes`. When `definition` is null (version unreadable), falls back to the steps'
 own `sequence` order and omits "Not reached" rows. A node in `order` with no step rows renders
 as a greyed "Not reached" row. Step rows whose `nodeId` is not in `order` (definition changed
@@ -68,16 +68,23 @@ exists — it was dropped in definition format v3.
 ## The `detail` column contract
 
 `workflowStepRun.detail` is diagnostics, never node data. It holds the per-clause condition
-evaluation written by `conditionExecutor` (`packages/workflows/src/runtime/condition.ts`) and
+evaluation written by `conditionExecutor` (`packages/ee/src/workflows/runtime/condition.ts`) and
 surfaced by `ConditionDetail.tsx`. It is only set on Succeeded and Skipped nodes — Failed nodes
 leave it null (the error string is what matters there, and the inputs are already in `input`).
-The `detail` JSON shape is `NodeDetail` (`packages/workflows/src/runtime/types.ts`):
+The `detail` JSON shape is `NodeDetail` (`packages/ee/src/workflows/runtime/types.ts`):
 `{ kind: "condition", paths: [{ pathId, combinator, evaluations: [{ left, operator, right, passed, reason? }], taken }] }`.
 
 ## Retention — four passes, nightly at 04:00
 
 `workflowRunRetentionFunction` in `packages/jobs/src/inngest/functions/scheduled/` runs four
-`step.run` passes in order. Every pass that touches finished runs filters on a TERMINAL status
+`step.run` passes in order. It has no cron of its own: the pg_cron job
+`workflow-run-retention-sweeper` runs `util.sweep_workflow_run_retention()` at 04:00 UTC, which
+sends `carbon/workflow-run-retention.process` only when
+`util.workflow_run_retention_has_work()` finds a run for one of the passes
+(`20261004183512_scheduled-jobs-from-database.sql`, pinned by
+`supabase/tests/scheduled-job-sweeps.test.sql`). That function repeats the ages in the table
+below: change a constant in one place and it must change in the other. Like every wake from
+Postgres it needs the Vault secret `inngest_event_url` (see `event-system.md`). Every pass that touches finished runs filters on a TERMINAL status
 (`Succeeded | Failed | Blocked | Skipped`). In-flight runs are never deleted by passes 2–4.
 
 | Pass | Step id | What it does | Constant |
@@ -89,8 +96,16 @@ The `detail` JSON shape is `NodeDetail` (`packages/workflows/src/runtime/types.t
 
 Pass 3 runs **before** pass 4 so `compactedAt` is always set on the `workflowRun` row before its step rows are deleted. The UI uses `run.compactedAt !== null` to distinguish "steps purged" from "run has no steps yet".
 
-Age is always `COALESCE("completedAt", "createdAt")` — `Blocked` and `Skipped` runs never set
-`completedAt`, and `workflowRun_retention_idx` is the index for it.
+Age is always `COALESCE("completedAt", "createdAt")`, and `workflowRun_retention_idx` is the
+index for it. Some terminal runs are INSERTED terminal and never get `completedAt` (or
+`startedAt`): **`Blocked`** runs (the matcher's loop guard, `planRuns` in `matcher.ts`) and
+the scheduler's **`Skipped`** runs (`TOO_LATE`, `PREVIOUS_RUN_ACTIVE` in `scheduler.ts`), both
+written by `insertRunsAndBuildEvents` with no timestamp. A `Skipped` run settled at the engine's
+`load` step (`NOT_ENTITLED`, `UNPUBLISHED` in `engine/execute.ts`) goes through `finishRun`
+(`engine/log.ts`), which ALWAYS sets `completedAt` and `durationMs` — but `claimRun` never ran,
+so its `startedAt` stays null. The migration's own comment
+(`20260810100200_workflow-run-history.sql`: "Blocked and Skipped runs never set completedAt")
+is wrong for that load-time skip; the COALESCE covers both shapes either way.
 
 Every pass selects `ORDER BY` that age ascending, so a backlog drains oldest-first instead of
 re-reading the same page each night. Each pass must also be able to *leave* its own candidate
@@ -127,5 +142,6 @@ information the tool exists to show.
 
 `RunLiveUpdates` / `RunsLiveUpdates` in `ui/Runs/RunLiveUpdates.tsx` use `useDebouncedRealtime`
 to revalidate the loader after 1.5 s of quiet. They mount only while at least one row is
-non-terminal — an unfiltered subscription on `workflowStepRun` would fire on every company's
-every step. Caller supplies the filter; the hook does not add `companyId` itself.
+non-terminal. The broadcast topic is per company, so the runs list follows `workflowRun`
+with no filter; the run drawer filters `workflowStepRun` on `runId` and `workflowRun` on
+`id` (see `realtime-system.md`).

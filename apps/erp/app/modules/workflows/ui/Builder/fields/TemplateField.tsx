@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Field } from "./Field";
 import { InlineValueEditor } from "./InlineValueEditor";
 import type { ValueFieldProps } from "./types";
@@ -8,6 +12,8 @@ export function TemplateField({
   label,
   required,
   helpTermId,
+  help,
+  hint,
   value,
   onChange,
   context,
@@ -20,7 +26,9 @@ export function TemplateField({
       label={label}
       required={required}
       helpTermId={helpTermId}
+      help={help}
       issue={issue}
+      hint={hint}
     >
       {/* These are the prose inputs — a subject, a message body, a webhook payload.
           They open at a few rows and take line breaks, so a JSON payload can be

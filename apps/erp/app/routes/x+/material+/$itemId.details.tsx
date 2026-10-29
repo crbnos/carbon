@@ -1,26 +1,33 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useParams } from "react-router";
+import { useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ItemFile, MaterialSummary } from "~/modules/items";
-import { materialValidator, upsertMaterial } from "~/modules/items";
+import { materialValidator } from "~/modules/items/items.models";
+import { upsertMaterial } from "~/modules/items/items.service";
+import type { ItemFile, MaterialSummary } from "~/modules/items/types";
 import {
   ItemDocuments,
   ItemNotes,
   ItemRiskRegister
 } from "~/modules/items/ui/Item";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -34,9 +41,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateMaterial = await upsertMaterial(client, {
+  // A new size is a new item revision, so it also needs create.
+  if (validation.data.sizes?.length) {
+    await requirePermissions(request, { create: "parts" });
+  }
+
+  const updateMaterial = await upsertMaterial(client, getDatabaseClient(), {
     ...validation.data,
     id: itemId,
+    companyId,
     customFields: setCustomFields(formData),
     updatedBy: userId
   });

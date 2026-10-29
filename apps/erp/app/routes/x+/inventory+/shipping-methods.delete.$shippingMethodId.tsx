@@ -1,17 +1,19 @@
-import { error, notFound, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteShippingMethod, getShippingMethod } from "~/modules/inventory";
+import { getShippingMethod } from "~/modules/inventory/inventory.service";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, shippingMethodsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -34,45 +36,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { shippingMethod: shippingMethod.data };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["shippingMethodId"]
   });
-
-  const { shippingMethodId } = params;
-  if (!shippingMethodId) {
-    throw redirect(
-      path.to.shippingMethods,
-      await flash(request, error(params, "Failed to get an shipping method id"))
-    );
-  }
-
-  const { error: deleteTypeError } = await deleteShippingMethod(
-    client,
-    shippingMethodId
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.inventory.deleteShippingMethod({
+    shippingMethodId: input.params.shippingMethodId
+  });
+  return respond(args.request, result).redirect(
+    `${path.to.shippingMethods}?${getParams(args.request)}`,
+    {
+      message: "Successfully deleted shipping method",
+      onError: path.to.shippingMethods
+    }
   );
-  if (deleteTypeError) {
-    throw redirect(
-      path.to.shippingMethods,
-      await flash(
-        request,
-        error(deleteTypeError, "Failed to delete shipping method")
-      )
-    );
-  }
-
-  throw redirect(
-    `${path.to.shippingMethods}?${getParams(request)}`,
-    await flash(request, success("Successfully deleted shipping method"))
-  );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    shippingMethodsQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function DeleteShippingMethodRoute() {

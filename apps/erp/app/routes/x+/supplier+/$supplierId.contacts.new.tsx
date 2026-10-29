@@ -1,21 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { data, redirect, useNavigate, useParams } from "react-router";
-import {
-  insertSupplierContact,
-  supplierContactValidator
-} from "~/modules/purchasing";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
+import { data, useNavigate, useParams } from "react-router";
+import { supplierContactValidator } from "~/modules/purchasing/purchasing.models";
+import { insertSupplierContact } from "~/modules/purchasing/purchasing.service";
 import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContactForm";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { supplierContactsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -23,7 +24,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "purchasing"
   });
 
-  // RLS doesn't work for selecting a contact with no supplier
   const client = getCarbonServiceRole();
 
   const { supplierId } = params;
@@ -43,59 +43,45 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, contactId, supplierLocationId, ...contact } = validation.data;
 
-  const createSupplierContact = await insertSupplierContact(client, {
-    supplierId,
-    companyId,
-    contact,
-    supplierLocationId,
-    customFields: setCustomFields(formData)
-  });
+  // The contact is written through the service role: the supplier in the URL
+  // (and the location on the form) must belong to this company.
+  await Promise.all([
+    requireCompanyRecord(client, "supplier", companyId, { id: supplierId }),
+    supplierLocationId
+      ? requireCompanyRecord(client, "supplierLocation", companyId, {
+          id: supplierLocationId,
+          supplierId
+        })
+      : null
+  ]);
+
+  const createSupplierContact = await insertSupplierContact(
+    getDatabaseClient(),
+    {
+      supplierId,
+      companyId,
+      contact,
+      supplierLocationId,
+      customFields: setCustomFields(formData)
+    }
+  );
 
   if (createSupplierContact.error) {
-    let errorMessage = "Failed to create supplier contact";
-    if (createSupplierContact.error?.message?.includes("duplicate key value")) {
-      const contact = await client
-        .from("contact")
-        .select("id")
-        .eq("email", validation.data.email)
-        .eq("companyId", companyId)
-        .single();
-      if (contact.data) {
-        const supplierContact = await client
-          .from("supplierContact")
-          .select("supplierId")
-          .eq("contactId", contact.data.id)
-          .single();
-        if (supplierContact.data) {
-          const supplier = await client
-            .from("supplier")
-            .select("name")
-            .eq("id", supplierContact.data.supplierId)
-            .single();
-          errorMessage = `Contact ${validation.data.email} already exists for ${supplier.data?.name}`;
-        } else {
-          const customerContact = await client
-            .from("customerContact")
-            .select("customerId")
-            .eq("contactId", contact.data.id)
-            .single();
-          if (customerContact.data) {
-            const customer = await client
-              .from("customer")
-              .select("name")
-              .eq("id", customerContact.data.customerId)
-              .single();
-            errorMessage = `Contact ${validation.data.email} already exists for ${customer.data?.name}`;
-          }
-        }
-      }
-    }
-
+    // The form reads `{ data, error }`; never send it the database's message.
     return modal
-      ? createSupplierContact
+      ? {
+          data: null,
+          error: { message: "Failed to create supplier contact" }
+        }
       : redirect(
           path.to.supplierContacts(supplierId),
-          await flash(request, error(createSupplierContact.error, errorMessage))
+          await flash(
+            request,
+            error(
+              createSupplierContact.error,
+              "Failed to create supplier contact"
+            )
+          )
         );
   }
 
@@ -105,20 +91,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         path.to.supplierContacts(supplierId),
         await flash(request, success("Supplier contact created"))
       );
-}
-
-export async function clientAction({
-  serverAction,
-  params
-}: ClientActionFunctionArgs) {
-  const { supplierId } = params;
-  if (supplierId) {
-    window.clientCache?.setQueryData(
-      supplierContactsQuery(supplierId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
 }
 
 export default function SupplierContactsNewRoute() {

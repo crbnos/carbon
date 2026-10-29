@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getQuoteDisplayId } from "@carbon/documents/utils";
 import {
   BarProgress,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -33,6 +38,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
@@ -44,9 +50,10 @@ import QuoteStatus from "./QuoteStatus";
 type QuotesTableProps = {
   data: QuotationListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
+const QuotesTable = memo(({ data, count, infinite }: QuotesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -74,7 +81,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
             <ItemThumbnail
               size="md"
               thumbnailPath={row.original.thumbnailPath}
-              // @ts-ignore
+              // @ts-expect-error
               type={row.original.itemType}
             />
             <Hyperlink to={path.to.quoteDetails(row.original.id!)}>
@@ -86,6 +93,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -93,9 +101,26 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         id: "customerId",
         header: t`Customer`,
         cell: ({ row }) => (
-          <CustomerAvatar customerId={row.original.customerId} />
+          // Phones: the expiry date follows the customer on line 2.
+          <div className="contents max-md:flex max-md:min-w-0 max-md:items-center max-md:gap-1">
+            <CustomerAvatar customerId={row.original.customerId} />
+            {row.original.expirationDate ? (
+              <span className="shrink-0 whitespace-nowrap md:hidden">
+                ·{" "}
+                <Trans>
+                  Exp.{" "}
+                  <DateTime
+                    value={row.original.expirationDate}
+                    variant="date"
+                    dateOptions={{ month: "short", day: "numeric" }}
+                  />
+                </Trans>
+              </span>
+            ) : null}
+          </div>
         ),
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -115,15 +140,26 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           const lines = row.original.lines ?? 0;
           const completedLines = row.original.completedLines ?? 0;
           return status === "Draft" ? (
-            <BarProgress
-              gradient
-              progress={lines === 0 ? 0 : (completedLines / lines) * 100}
-            />
+            <>
+              <BarProgress
+                className="max-md:hidden"
+                gradient
+                progress={lines === 0 ? 0 : (completedLines / lines) * 100}
+              />
+              {/* Phones: the status and the count in words, not a bare bar. */}
+              <span className="flex min-w-0 items-center gap-1.5 md:hidden">
+                <QuoteStatus status="Draft" />
+                <span className="truncate text-xs text-muted-foreground">
+                  {t`${completedLines} of ${lines} lines complete`}
+                </span>
+              </span>
+            </>
           ) : (
             <QuoteStatus status={status} />
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: quoteStatusType.map((status) => ({
@@ -192,6 +228,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -202,6 +241,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -284,11 +326,15 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
   const renderContextMenu = useMemo(() => {
     return (row: QuotationListItem) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.quoteDetails(row.id!))}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
+          onClick={() => navigate(path.to.quoteDetails(row.id!))}
+        >
           <MenuIcon icon={<LuPencil />} />
           <Trans>Edit</Trans>
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           disabled={!permissions.can("delete", "sales")}
           destructive
           onClick={() => {
@@ -307,6 +353,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
     <>
       <Table<QuotationListItem>
         count={count}
+        infinite={infinite}
         columns={columns}
         data={data}
         defaultColumnPinning={{
@@ -318,6 +365,20 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           updatedAt: false,
           updatedBy: false
         }}
+        importCSV={
+          // The import action gates on `sales_update` (see import.$tableId.tsx),
+          // so match that here rather than `create`.
+          permissions.can("update", "sales")
+            ? [
+                {
+                  table: "quoteWithLines" as const,
+                  label: t`Quotes with Lines`
+                },
+                { table: "quote" as const, label: t`Quotes` },
+                { table: "quoteLine" as const, label: t`Quote Lines` }
+              ]
+            : undefined
+        }
         primaryAction={
           permissions.can("create", "sales") && (
             <New label={t`Quote`} to={path.to.newQuote} />

@@ -1,5 +1,5 @@
 {
-  "title": "Building",
+  "title": "Building on Carbon",
   "defaultOpen": true,
-  "pages": ["webhooks", "local-development"]
+  "pages": ["api-keys", "webhooks", "local-development", "architecture"]
 }

@@ -2,6 +2,8 @@
 paths:
   - "apps/mes/app/components/JobOperation/**"
   - "apps/mes/app/routes/x+/operation.$operationId.tsx"
+  - "apps/mes/app/routes/x+/batch.$batchId.tsx"
+  - "packages/react/src/hooks/useKeyboardWedge.ts"
 ---
 
 # MES Job Operation UI
@@ -59,13 +61,222 @@ redirects kinds it does not serve (no loops).
 - **`finishJobOperation`** (`operations.service.ts`) flips the op to `Done` (firing
   the `sync_finish_job_operation` trigger that completes the job to inventory when
   it's the last op). It then runs `returnPickedRemainders`: one `post-picking`
-  sweep invoke (via the service-role client) — `returnJobRemainders` when
-  `job.status='Completed'`, else `returnOperationRemainders` (which itself no-ops
-  unless `companySettings.returnPickedMaterialTiming = 'operation'`). The sweep
+  `returnOperationRemainders` sweep — the posting sweeps the whole job when
+  `job.status='Completed'`, else no-ops unless
+  `companySettings.returnPickedMaterialTiming = 'operation'`. The sweep
   returns un-consumed lineside remainders (tracked AND untracked) to their
   warehouse source, booking `pickingListLine.quantityReturned`. The SQL trigger
-  can't call edge functions, so this is orchestrated in TS. See
+  can't call postings, so this is orchestrated in TS. See
   `.ai/specs/2026-08-04-picked-material-return-timing.md`.
+
+## Ability gate
+
+When the operation's process has `requiresAbility` on and the operator has no
+current `employeeAbility` row, `getAbilityShortfall` (`operations.service.ts`)
+returns what is missing: the process's `abilityPolicy`, the process name, the
+expiry date and an Active training whose `grantsAbilityId` is the ability. It
+fails open on any read error. The operation, assembly and inspection loaders
+pass it to the view as `abilityWarning`, which `AbilityWarning` renders as a
+banner.
+
+- `Warn`: banner only.
+- `Block`: the view disables production work (start, complete, scrap, rework,
+  finish, step records, material issue, inspection verdicts) and skips timer
+  auto-start; pausing a running timer stays enabled. Every write route calls
+  `abilityBlockRefusal` before it writes: `event` (Start only), `start.$operationId`,
+  `end.$operationId` (the kanban complete scan), `batch.$batchId.complete`,
+  `batch.$batchId.record` (one member checked: every member runs the batch's one
+  process), `complete`, `finish`, `scrap`, `rework`, `record`, `record.$id.delete`, `issue`,
+  `issue-tracked-entity` (single operation), `unconsume`, `entity+/…scrap`, and the
+  inspection `sample`, `measurement`, `disposition` and `complete-passed` routes.
+  Not gated: `steps.complete-all` (a manager override), `steps.inspection` (an
+  automatic sync) and a batch pick.
+
+`event.tsx` also redirects a full-page POST (`Sec-Fetch-Mode: navigate`, a press
+before the page hydrates) back to the referrer with the flash, so the operator never
+lands on the bare resource route.
+
+## Batch mode (operation batching)
+
+**Floor gate (membership handoff), enforced server-side.** An operation is
+floor-visible iff — in a batch → the batch is Released (`Active`/`Completing`),
+even when its job is Draft/Planned; in no batch → its job is in
+`activeJobStatuses` (the pre-batching rule). The operation loader
+(`operation.$operationId.tsx`) redirects with a flash for a `Planned`-batch
+member ("part of a batch that has not been released") and for an unbatched op
+on an unreleased job; `start.$operationId.tsx` runs the same two checks BEFORE
+its timer-reopen update. `end.$operationId.tsx` is deliberately ungated —
+closing a timer is never blocked. `getOpenJobs` widens with Released-batch
+member jobs via a two-step `.or(status.in…, id.in…)` (quoted statuses — "In
+Progress" has a space). List visibility alone was the leak: nothing else gated
+a direct operation URL.
+
+**Outside Processing never runs on the floor.** Subcontracted work runs at the
+supplier: `get_active_job_operations_by_location` filters it by type (not by a
+null `workCenterId`, which a stale value defeats), and the operation loader, the
+`start.$operationId.tsx` loader (before its timer re-open) and `event.tsx`'s
+Start branch all refuse it with `OUTSIDE_PROCESSING_REFUSAL`
+(`utils/operationView.ts`). `resolveOperationView` still maps it to the Operation
+view so the resolver stays total; the refusal is the routes' job.
+
+
+There is **no separate batch page** — the operation view IS the batch UI. In
+batch mode the job heading is replaced by ONE scope switcher — an outlined
+`rounded-full` pill `(BAT… N jobs | Jobs ⌄)` whose selected segment gets a soft
+`bg-accent` fill; the second segment IS the member-job picker (it reads the
+open job's id in the job scope) — which sets
+`?scope=` between **Batch**
+(default; `BatchOverview`: completed/issued/scrap/output-lot stat cards, one
+materials table from `getBatchMaterialTotals` with the per-job split and a
+batch-wide "Pick N", the steps/parameters/files of every member, and the
+member jobs table — each list in a bordered panel with the DS `Table`) and the member's own job
+details (`?scope=job`, which member links use). The `IssueMaterialModal` is
+mounted in both scopes via `renderIssueModal`. The batch scope shows no member's
+values anywhere: the context bar reads batch status (Released/Completing),
+customers, the batch plan and the earliest member due date; the dock's Item is
+the batch's item (or "N items"); the ⋮ menu offers only the batch list (plus
+Item Master when every member makes the same item). The tabs stay as on a
+single job: Details (`BatchOverview view="details"`: stats, a load list only when parts must be
+kept apart (the jobs make different items, or each job gets its own output lot)
+— each job's quantity to run with due date/customer and a total — materials grouped "To pick" / "Used automatically at completion",
+and files) and Instructions
+(`view="instructions"`: the batch's steps and process parameters); Chat is
+disabled on the batch because notes (`jobOperationNote`) belong to one job
+operation. The job scope
+opens with a banner saying the job runs in the batch — timer and completion are
+shared — with "Back to batch". Work-instruction steps are recorded
+for the whole batch from `BatchRecordModal` — a per-job grid with an "All
+jobs" row that fills every cell (typed cells for Measurement/Value/List/Person,
+ticks for Task/Checkbox/Timestamp, one upload copied into each job's own step
+folder for File/Inspection) posting to `batch.$batchId.record.tsx`
+(`insertBatchStepRecords`: steps re-read under the batch + company, upsert at
+record set 0, then the per-step backflush). Only new or changed rows are sent,
+since a re-record re-runs the step's backflush. When an
+operation belongs to a batch that is still `Active`/`Completing`, the loader
+(`operation.$operationId.tsx`) reads `jobOperationBatch` (via
+`getJobOperationBatch`; the RPC `get_job_operation_by_id` omits
+`jobOperationBatchId`, so a direct one-column read detects membership), swaps the
+per-op events for the batch's events (`getProductionEventsForBatch`), and passes
+`batch` to `<JobOperation>`. A `Completed` batch was already re-sliced per member,
+so the loader passes `batch: null` and the page is a plain operation view.
+
+`batch.$batchId.tsx` is now a **loader-only redirect** to the first member's
+operation (`path.to.operation`). Legacy links keep working: the ERP board's "Open
+in MES" (`path.to.external.mesBatch`) and the MES kanban batch card
+(`path.to.batch`). Completion still POSTs to `batch.$batchId.complete.tsx`
+(unchanged) → `batch-operations` posting.
+
+In batch mode `JobOperation` derives `isBatched = !!batch`,
+`isCompleting = batch.status === "Completing"`, and:
+- **Shared timer** — `useOperation({ batchId })` subscribes the `productionEvent`
+  realtime filter to `jobOperationBatchId=eq.<id>` (all members' timers), and
+  `StartStopButton` renders `<Hidden name="jobOperationBatchId">` so the event is
+  tagged. `event.tsx`'s End branch **skips `post-production-event`** for a
+  batch-tagged event — cost posts once at batch completion when the aggregate
+  events are sliced per member. A timer started on any member is the same shared
+  timer on every member's page.
+- **Batch-total planned durations** — `displayOperation` converts each member's
+  times with `makeDurations`, then delegates to `@carbon/utils`
+  `batchPlanBreakdown(durations, batch.process?.batchType ?? "Sequential")` (the
+  same helper the scheduler's `batchDuration` shares its run-combining rule with,
+  and the ERP builder/drawer use). It yields ONE shared setup (the max — that is
+  the point of batching) and per-type labor/machine buckets (Σ Sequential | max
+  Simultaneous) as the `WorkTypeToggle` / `Times` denominators, and carries
+  `plan.total` as `duration` — setup + each member's run `max(labor, machine)`
+  combined by batch type, NOT setup + labor + machine (which double-counts a
+  member that has both). With a `machineDuration = 1` / `duration = 1` fallback
+  when the batch has no planned time anywhere, so the info-bar duration and
+  denominators read against the batch's total plan, not one member's.
+  The info-bar duration hides entirely when the plan is ≤1ms (no
+  "0 milliseconds"), and the per-piece header divides the shared elapsed time by
+  the members' summed `quantityComplete` — a quantity-weighted per-piece rate
+  consistent with the completion split's `operationQuantity` weights.
+- **Scope switcher** — the batch segment carries the yellow `Completing`
+  badge; the chevron menu lists members as `Link`s to their `?scope=job` view.
+  "Print batch list" lives in the job's ⋮ menu.
+- **Completion** — the "Log Completed" button becomes "Complete Batch" and opens
+  `BatchCompleteModal`, a **spreadsheet-style grid** (bare `<input inputMode="numeric">`
+  cells in a bordered `border-separate` table — no react-aria stepper arrows, no
+  close-X via `withCloseButton={false}`, Job / Quantity / Scrap columns —
+  the per-member Operation is redundant in a batch). **The operator never
+  enters a lot number** — lot identity is planned at batch creation
+  (`jobOperationBatch.mergeOutput` / `outputLotNumber`, or each member's WIP
+  `trackedEntity.readableId`). A merged batch shows a success `Alert` naming
+  the lot; otherwise a read-only **Lot** column lists each member's planned
+  lot, and a tracked member with no planned lot blocks submit with a warning
+  naming the jobs (legacy batches — fix via the job's properties sidebar).
+  Each row still submits a hidden `trackedEntityId`. Rows are pre-filled
+  `operationQuantity − quantityComplete`, controlled as strings in local state.
+  Completing a batch **auto-stops** any still-running shared timer: the Phase-1
+  txn closes open `jobOperationBatchId`-tagged `productionEvent`s with
+  `endTime = NOW()` before slicing (mirroring `sync_finish_job_operation` on a
+  single op's `Done`), so submit is NOT gated on the timer and there is no "stop
+  the timer" note. **"Not in this run" is now implicit: leave a member at 0
+  quantity AND 0 scrap** — the modal derives `excluded` from that, submits
+  `excluded="true"` (string flag, the `exclusive` idiom), and `batch-operations`
+  detaches it back to the schedule un-run inside the Phase-1 txn — no time slice,
+  no quantities, not Done. There is no explicit exclude toggle/X and no amber
+  "completed with 0" warning: 0 simply means not-in-this-run. All-excluded (every
+  row 0/0) disables submit. Scrap / Rework /
+  Finish are hidden in the actions sheet (per-op writes would double-count a
+  member); Maintenance + Quality Issue stay.
+- **Planned merge** — when `batch.mergeOutput`, the completion route passes
+  `outputLotNumber` as every member's batch number, then (after completion
+  succeeds) `getPlannedMergeLots` reads the members' Available output lots and
+  invokes `issue` `mergeTrackedEntities` with that readableId. The merge
+  carries **no entity ids from the form** — the route derives them server-side
+  from batch membership before calling `issue`. A merge failure leaves the batch completed with
+  per-member lots; the ERP batch drawer's "Merge output lots" is the recovery
+  path. The route returns `data({ completed: true })` + flash, NOT a
+  redirect: the completion's own writes fire `useOperation`'s realtime
+  `revalidate()` mid-action, and React Router drops a fetcher redirect when a
+  newer navigation started after the submit — `JobOperation` navigates to
+  `path.to.operations` when the fetcher settles with `completed`. The job's ⋮
+  menu also offers
+  "Print batch list" (`path.to.file.batchLoadList` → the ERP
+  `/file/batch/:id.pdf` route, `BatchListPDF`). The kanban keyboard wedge is
+  disabled (`active: !!kanban?.id && !isBatched`) — it completes a single op,
+  never a batched member.
+
+## Barcode scans (keyboard wedge)
+
+`useKeyboardWedge` (`@carbon/react`) registers a handler with ONE capture-phase
+`keydown` listener on `window`, shared by every wedge on the page, so a
+component that stops a key (Combobox, Dock) cannot hide a scan from it.
+`ScanReader` splits the keys into bursts at any gap over 80 ms. A stray key is
+therefore dropped rather than kept in front of the next scan, and two
+scanner-speed bursts are joined (a Bluetooth pause). From the fourth
+scanner-speed key on, the keys are kept from the page, so a scan never hits
+Space (Start/Pause) or clicks the focused button with its Enter. A scan with no
+Enter or Tab ends after 700 ms of quiet. Ending sooner acted on the first half
+of a paused URL, which is itself a valid link.
+
+- The MES layout opens MES/ERP links; `JobOperation` and `AssemblyView`
+  complete the kanban (`isKanbanCompleteScan`, `~/utils/kanban`). That check
+  compares the label's PATH, because a label holds the origin it was printed
+  from. It accepts the completed barcode override and the printed label.
+- A kanban Complete scan on a serial part completes the unit ON SCREEN:
+  `kanbanCompleteTarget` (`~/utils/kanban`, tested) sends the URL's
+  `?trackedEntityId` to `end.$operationId` when that unit is still open at the
+  operation. With none, the first operation lets the route take the next unit
+  in order; a later operation opens the serial picker instead, because the
+  route's own pick (first incomplete by `createdAt`) need not be the unit in
+  the operator's hands. The route refuses a named unit already complete there,
+  and at a later operation redirects back onto the completed unit (never a
+  next or spawned one), so the view's held-unit edge (`useOperation`, and
+  `heldEntityRef` in `AssemblyView`) asks for the next scan. A scan through the
+  ERP URL names no unit and still takes the route's pick.
+- All three wedges (layout, `JobOperation`, `AssemblyView`) set `inTextFields`: a matching scan is taken even while a field
+  has focus, and the field is set back to its value from before the scan.
+  A scan no handler takes stays in the field.
+- A scan outside a field that no handler takes is kept from the page, and
+  the layout's `onUnrecognized` shows a toast.
+- A callback that returns a promise (`navigate`, `fetcher.load`, or the
+  cross-origin `location.assign` that the default callback waits on) keeps
+  the scan pending. `useScanPending` drives `ScanPendingOverlay` in the
+  layout, and every other scan is ignored until the promise settles (at most
+  20 s). A kanban start label loads the ERP and then the MES, so without
+  this state operators scanned it twice.
 
 ## Components
 
@@ -73,11 +284,9 @@ redirects kinds it does not serve (no loops).
   `Tabs`, header/job-info bar, and all detail sections.
 - **`JobOperation/components/Controls.tsx`** — exports `Controls`, `Times`,
   `WorkTypeToggle`, `StartStopButton`, `IconButtonWithTooltip`, `FloatingActionMenu`,
-  `PlayButton`/`PauseButton`. The right/bottom control panel: work center, work-type
+  `PlayButton`/`PauseButton`. The dock / bottom action bar (see Layout): work center, work-type
   toggle (Setup/Labor/Machine), big start-stop button, "Log Completed", and a "More
-  Actions" sheet (Scrap, Rework, Finish, Maintenance, Quality Issue). Carries
-  **mobile-only** job/customer/deadline info in a `md:hidden` block (the header hides
-  that info on mobile).
+  Actions" sheet (Scrap, Rework, Finish, Maintenance, Quality Issue).
 - **`components/Step.tsx`** — exports `StepsListItem`, **`RecordModal`**, and
   **`DeleteStepRecordModal`** (these are NOT separate files). File/Inspection step
   uploads go to the private bucket at
@@ -89,7 +298,7 @@ redirects kinds it does not serve (no loops).
   `ReworkModal`, `SerialSelectorModal`, `QualityIssueModal`, `MaintenanceDispatch`,
   `ScrapReason`, `Chat.tsx` (`OperationChat`), `TableSkeleton`.
 - **Hooks:** `hooks/useOperation.tsx` (modal disclosures, live progress via
-  `useInterval` + `useRealtimeChannel`, active-event detection, serial selection),
+  `useInterval` + realtime (`@carbon/query`, see `realtime-system.md`), active-event detection, serial selection),
   `hooks/useFiles.tsx` (`downloadFile`/`downloadModel` via `path.to.file.previewFile`).
 
 ## Tabs
@@ -103,7 +312,11 @@ when `parentIsSerial`) Serial Numbers.
 
 `useOperation` subscribes on topic `job-operations:${operation.id}` to postgres changes
 on `job`, `productionEvent` (filtered by `jobOperationId`), and `jobOperation`. Event
-inserts/updates/deletes patch local state; job/operation updates `revalidate()`. A
+inserts/updates/deletes patch local state; a job update revalidates through
+`useRealtimeRevalidator` (`~/hooks`), which skips while any fetcher is
+submitting — a submission's own writes echo back mid-action, and a revalidation
+started then makes React Router drop the action's redirect. `AssemblyView`'s
+live sync uses the same hook. A
 deleted operation toasts and redirects to `path.to.operations`.
 
 ## Key tables (newest migrations)
@@ -125,22 +338,39 @@ Serial Numbers section uses shared `~/components` `PrintButton` with
 per-entity (`sourceDocument="Entity"`, `trackedEntityLabel*`). See
 `.claude/rules/` printing notes / cache for fallback-to-download behavior.
 
-## Responsive / CSS gotchas
+## Layout (application shell)
 
-- CSS vars: **`--controls-width: 220px`** (260px at xl, in `apps/mes/app/styles/tailwind.css`),
-  `--controls-height` set inline from a computed `controlsHeight` memo, `--header-height`
-  from `@carbon/react`. Details scrollport classes live **inline on the details
-  container in `JobOperation.tsx`** (no separate helper):
-  - **Below `lg`:** `h-auto` + page scroll — Controls/Times stack inline under content so
-    Files / Serial Numbers stay reachable (do **not** put a viewport-filling fixed height
-    here; that nested-scroll trap was #959).
-  - **`lg+`:** fixed height
-    `calc(100dvh - var(--header-height)*2 - var(--controls-height) - 2rem)` with
-    `lg:pr-[var(--controls-gutter)]` so absolute Controls/Times dock without overlap.
-- Root Tabs is `min-h-screen h-auto lg:h-screen` for the same reason.
-- Header detail metadata is `hidden lg:flex` (so `Controls` shows it on mobile instead);
-  Materials "Source" column is `hidden lg:table-cell`; Procedure steps list is
-  `hidden lg:block`; the `Controls` panel is inline on mobile, `lg:absolute` top-right
-  on desktop.
+The `Tabs` root in `JobOperation.tsx` IS the shell: a CSS grid of named areas,
+each pane scrolling on its own — nothing is absolutely positioned and no height
+is computed in JS (the old `--controls-height` / `--controls-gutter` /
+`calc(100dvh - …)` scheme is gone).
 
-<!-- UNVERIFIED: exact column set of jobOperation (status/duration fields) not fully audited here; check the live schema or 20240909194622_jobs.sql + later alters when relying on specific fields. -->
+- **Areas.** Below `lg`: one column — `header`, `context`, `sep`, `main`,
+  `status`, `dock`. From `lg`: `main`/`status` on the left, `dock` spanning both
+  on the right (`minmax(0,1fr) auto`). Every TabsContent sits in `main`
+  (inactive ones are `display:none`, so they take no track); `Times` is
+  `status`; `Controls` is `dock`.
+- **Height.** The MES outlet frame (`x+/_layout.tsx`) is only `min-h-svh`
+  bounded because other screens page-scroll, so the shell sizes itself:
+  `h-svh md:h-[calc(100svh-1rem)]` (the frame's `md:my-2` inset). Never
+  `h-screen`/`h-full` here — the first overflowed the inset frame (clipped the
+  status bar), the second resolves to content height.
+- **Dock (`Controls`).** ONE mounted instance — it owns the start/stop form and
+  the modal triggers, so it is re-laid-out by CSS, never rendered twice: a
+  `--controls-width` column from `lg` (collapsible to a 76px rail via
+  `data-collapsed` + `group/dock` variants, persisted per device in
+  localStorage `mes:operation-dock-collapsed`, read after mount), a pinned
+  bottom action bar below `lg` (toggle · start/stop · complete · more). Play/Pause
+  and `IconButtonWithTooltip` size by context (`size-14`/`size-12` in the bar
+  and rail, full size in the dock).
+- **Status bar (`Times`).** A footer row, not a floating card: one meter per
+  planned work type plus quantity. A plan of ≤1ms is the batch no-plan
+  placeholder — it shows elapsed time alone over an empty track (never
+  "0ms/1ms").
+- **Context bar.** Wraps below `lg`; its metadata row (customer, description,
+  status, duration, deadline) scrolls sideways (`scrollbar-hide`, items
+  `shrink-0`) instead of hiding, so there is no mobile-only duplicate in the
+  dock. Header tabs scroll sideways too (`ml-auto` on the list, never
+  `justify-end` on an overflow container — it strands the start).
+- Materials "Source" column stays `hidden lg:table-cell`; Procedure steps list
+  `hidden lg:block`.

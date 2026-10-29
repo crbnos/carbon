@@ -1,33 +1,13 @@
-import { resolveDate } from "../dates.ts";
-import { addBomLine, createItem } from "../helpers/items.ts";
-import type { Row } from "../sql.ts";
-import {
-  insertId,
-  insertRow,
-  need,
-  nextSequence,
-  one,
-  quote,
-  rows,
-  sharedColumns
-} from "../sql.ts";
-import type { Ctx, ItemRef } from "../types.ts";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Columns never copied verbatim when a change notice clones a method's BoM/BoP:
-// the row's own identity, its parent method (the clone's whole point), tenancy +
-// audit (re-stamped by insertRow) and methodMaterial's generated
-// productionQuantity. Everything else comes from sharedColumns, so a migration
-// that adds a column can't silently drop it from the clone.
-const CLONE_EXCLUDE = [
-  "id",
-  "makeMethodId",
-  "companyId",
-  "createdAt",
-  "createdBy",
-  "updatedAt",
-  "updatedBy",
-  "productionQuantity"
-];
+import { resolveDate } from "../dates.ts";
+import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
+import { addBomLine, createItem } from "../helpers/items.ts";
+import { copyMethodToMethod } from "../helpers/method-copy.ts";
+import { insertId, insertRow, need, nextSequence, one, RICH } from "../sql.ts";
+import type { Ctx, ItemRef } from "../types.ts";
 
 // The item's current (highest-version) make method — what a change notice clones
 // its draft from, and what the release diff reads as the base.
@@ -45,69 +25,6 @@ async function baseMakeMethod(
   );
 }
 
-/**
- * Copy one method's BoM/BoP onto another (what `copyMakeMethod` does in the app).
- * Operations are cloned first so each material's methodOperationId can be remapped
- * onto the cloned operation. Operation children (steps / parameters / tools) are
- * not copied — no tier writes any.
- */
-async function cloneMethodRows(
-  ctx: Ctx,
-  sourceMakeMethodId: string,
-  targetMakeMethodId: string
-): Promise<void> {
-  const operationColumns = await sharedColumns(
-    ctx.client,
-    "methodOperation",
-    "methodOperation",
-    CLONE_EXCLUDE
-  );
-  const sourceOperations = await rows<Row>(
-    ctx.client,
-    `SELECT "id", ${operationColumns.map(quote).join(", ")}
-     FROM "methodOperation"
-     WHERE "makeMethodId" = $1 AND "companyId" = $2
-     ORDER BY "order"`,
-    [sourceMakeMethodId, ctx.companyId]
-  );
-
-  const operationIds = new Map<string, string>();
-  for (const { id, ...operation } of sourceOperations) {
-    const cloned = await insertId(ctx, "methodOperation", {
-      ...operation,
-      makeMethodId: targetMakeMethodId
-    });
-    operationIds.set(id as string, cloned);
-  }
-
-  const materialColumns = await sharedColumns(
-    ctx.client,
-    "methodMaterial",
-    "methodMaterial",
-    CLONE_EXCLUDE
-  );
-  const sourceMaterials = await rows<Row>(
-    ctx.client,
-    `SELECT ${materialColumns.map(quote).join(", ")}
-     FROM "methodMaterial"
-     WHERE "makeMethodId" = $1 AND "companyId" = $2
-     ORDER BY "order"`,
-    [sourceMakeMethodId, ctx.companyId]
-  );
-
-  for (const material of sourceMaterials) {
-    const operationId = material.methodOperationId;
-    await insertRow(ctx, "methodMaterial", {
-      ...material,
-      makeMethodId: targetMakeMethodId,
-      methodOperationId:
-        typeof operationId === "string"
-          ? (operationIds.get(operationId) ?? null)
-          : null
-    });
-  }
-}
-
 export async function runTier8(ctx: Ctx): Promise<void> {
   const data = ctx.dataset.changeOrders;
 
@@ -119,8 +36,54 @@ export async function runTier8(ctx: Ctx): Promise<void> {
       name: spec.name,
       type: spec.type,
       status: spec.status,
-      openDate: resolveDate(ctx.anchor, spec.openDateOffset)
+      openDate: resolveDate(ctx.anchor, spec.openDateOffset),
+      changeOrderTypeId:
+        spec.changeOrderType === undefined
+          ? undefined
+          : await bootstrapIdByName(
+              ctx,
+              "changeOrderType",
+              spec.changeOrderType
+            ),
+      priority: spec.priority,
+      dueDate:
+        spec.dueDateOffset === undefined
+          ? undefined
+          : resolveDate(ctx.anchor, spec.dueDateOffset),
+      reasonForChange:
+        spec.reasonForChange === undefined
+          ? undefined
+          : RICH(spec.reasonForChange),
+      nonConformanceId:
+        spec.nonConformance === undefined
+          ? undefined
+          : need(ctx.refs.documents, spec.nonConformance, "NCR")
     });
+
+    // Action tasks as setChangeNoticeActionTasks instantiates them from the
+    // required-action templates: template id + name, 1-based sortOrder.
+    for (const [taskIndex, task] of (spec.actionTasks ?? []).entries()) {
+      await insertRow(ctx, "changeOrderActionTask", {
+        changeOrderId: changeOrder,
+        actionTypeId: await bootstrapIdByName(
+          ctx,
+          "changeOrderRequiredAction",
+          task.action
+        ),
+        name: task.action,
+        status: task.status,
+        sortOrder: taskIndex + 1,
+        assignee: task.status === "In Progress" ? ctx.userId : undefined,
+        dueDate:
+          task.dueDateOffset === undefined
+            ? undefined
+            : resolveDate(ctx.anchor, task.dueDateOffset),
+        completedDate:
+          task.completedOffset === undefined
+            ? undefined
+            : resolveDate(ctx.anchor, task.completedOffset)
+      });
+    }
 
     for (const affected of spec.affectedItems) {
       const item = need(ctx.refs.items, affected.item);
@@ -134,7 +97,15 @@ export async function runTier8(ctx: Ctx): Promise<void> {
         case "Version": {
           // A Version stays on the same item: the notice owns a new Draft method
           // version cloned from the active one, and the affected item points at
-          // both ends.
+          // both ends. A still-Draft base is promoted to Active first, as
+          // createChangeNoticeDraftMethod does — otherwise the notice's higher
+          // version outranks it in `activeMakeMethods` and its unreleased edits
+          // reach quotes, jobs and MRP.
+          await ctx.client.query(
+            `UPDATE "makeMethod" SET status = 'Active', "updatedBy" = $3
+     WHERE id = $1 AND "companyId" = $2 AND status = 'Draft'`,
+            [base.id, ctx.companyId, ctx.userId]
+          );
           const draftVersion = Number(base.version) + 1;
           const draft = await insertId(ctx, "makeMethod", {
             itemId: item.id,
@@ -142,7 +113,7 @@ export async function runTier8(ctx: Ctx): Promise<void> {
             status: "Draft",
             changeOrderId: changeOrder
           });
-          await cloneMethodRows(ctx, base.id, draft);
+          await copyMethodToMethod(ctx, base.id, draft);
           ctx.log(`  ${item.readableId} draft method v${draftVersion}`);
           draftMakeMethodId = draft;
           baseMakeMethodId = base.id;
@@ -150,7 +121,7 @@ export async function runTier8(ctx: Ctx): Promise<void> {
         }
 
         case "Revision": {
-          // A Revision mints a new revision of the item (EPS-001.A) and edits ITS
+          // A Revision mints a new revision of the item (HARNESS-001.A) and edits ITS
           // method. The revision stays hidden — inactive, notice-owned — until release.
           const revisionSpec = affected.revision;
           if (!revisionSpec) {
@@ -164,7 +135,8 @@ export async function runTier8(ctx: Ctx): Promise<void> {
             name: item.name,
             type: "Part",
             replenishment: "Make",
-            standardCost: 0,
+            // A new revision starts at its predecessor's cost.
+            standardCost: item.unitCost,
             unitSalePrice: revisionSpec.unitSalePrice,
             description: revisionSpec.description
           });
@@ -184,7 +156,7 @@ export async function runTier8(ctx: Ctx): Promise<void> {
      WHERE id = $1`,
             [draft, changeOrder, ctx.userId]
           );
-          await cloneMethodRows(ctx, base.id, draft);
+          await copyMethodToMethod(ctx, base.id, draft);
           ctx.log(
             `  ${revisionItem.readableId}.${revisionItem.revision} draft method`
           );

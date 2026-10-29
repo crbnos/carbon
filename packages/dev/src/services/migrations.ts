@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { readdirSync, readFileSync } from "node:fs";
 import { setTimeout as sleep } from "node:timers/promises";
 import { log } from "@clack/prompts";
@@ -49,6 +53,33 @@ export async function waitForPostgres(port: number, timeoutMs = 60_000) {
     await sleep(1000);
   }
   throw new Error(`postgres did not accept queries within ${timeoutMs}ms`);
+}
+
+// Block until Kong answers for both PostgREST and GoTrue. After a hibernated
+// stack is started again the ports open well before these two can serve, and
+// the request that woke the stack is waiting on exactly them.
+export async function waitForApi(
+  port: number,
+  anonKey: string,
+  timeoutMs = 60_000
+) {
+  const deadline = Date.now() + timeoutMs;
+  const up = async (path: string) => {
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}${path}`, {
+        headers: { apikey: anonKey },
+        signal: AbortSignal.timeout(2000)
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
+  while (Date.now() < deadline) {
+    if ((await up("/rest/v1/")) && (await up("/auth/v1/health"))) return;
+    await sleep(500);
+  }
+  throw new Error(`the API did not answer within ${timeoutMs}ms`);
 }
 
 /**
@@ -182,6 +213,34 @@ export async function applyMigrations(
   return { applied: didApplyMigrations(r) };
 }
 
+// Make every table's RLS policies match packages/database/src/authz/manifest.ts — the
+// one place policies are authored; migrations only create tables. Callers run it after
+// migrations (which create the tables) and after type regen, so a manifest problem
+// fails loudly without leaving the generated types stale.
+export async function syncAuthz(root: string, dbPort: number): Promise<string> {
+  const r = await execa(
+    "pnpm",
+    ["--silent", "--filter", "@carbon/database", "run", "authz", "sync"],
+    {
+      cwd: root,
+      reject: false,
+      env: {
+        ...process.env,
+        SUPABASE_DB_URL: `postgresql://supabase_admin:postgres@localhost:${dbPort}/postgres`
+      }
+    }
+  );
+  if (r.exitCode !== 0) {
+    process.stderr.write(r.stderr?.toString() ?? "");
+    process.stdout.write(r.stdout?.toString() ?? "");
+    throw new Error(
+      "authz sync failed: fix the rule or function file named above (packages/database/src/authz, src/event-system/functions), then migrate again"
+    );
+  }
+  const counts = (r.stdout ?? "").match(/changed \d+ (helper|table)\(s\)/g);
+  return counts?.join(", ") ?? "policies in sync";
+}
+
 // supabase prints "Applying migration <ts>_<name>.sql..." per applied
 // migration — on STDERR (stdout says "Local database is up to date." even
 // while applying), so both streams must be checked.
@@ -251,6 +310,9 @@ async function repairStaleMigrations(
  * stack can't abort the run, which means a missing `storage.objects` would let
  * the restore finish "successfully" with no buckets seeded. Both services must
  * have booted.
+ *
+ * Realtime is the third: `realtime.messages` is built by the Realtime service,
+ * and Carbon's migrations put policies on it.
  */
 export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
   return withClient(dbPort, async (c) => {
@@ -258,6 +320,7 @@ export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
       `SELECT to_regclass('auth.users') IS NOT NULL
                 AND to_regclass('storage.objects') IS NOT NULL
                 AND to_regclass('storage.buckets') IS NOT NULL
+                AND to_regclass('realtime.messages') IS NOT NULL
                 AND EXISTS (
                   SELECT 1 FROM information_schema.columns
                   WHERE table_schema = 'auth' AND table_name = 'users'
@@ -268,11 +331,24 @@ export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
   });
 }
 
-// The singleton "config" row is what SECURITY DEFINER functions
-// (wake_event_queue and the other pg_net callers) read to POST to edge
-// functions via pg_net. Without it those pushes silently no-op, so the
-// event-queue wake never fires in dev — and since webhooks now ride the event
-// system, they don't either. `apiUrl` must be the in-network Kong URL — pg_net
+// Carbon's migrations write into schemas GoTrue, Storage and Realtime build on
+// their first boot, so a fresh volume can't be migrated until all three have.
+export async function waitForServiceSchemas(port: number, timeoutMs = 90_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await serviceSchemasReady(port).catch(() => false)) return;
+    await sleep(1000);
+  }
+  throw new Error(
+    `auth / storage / realtime schemas not ready within ${timeoutMs}ms — check the gotrue, storage and realtime containers`
+  );
+}
+
+// The singleton "config" row (the API URL and anon key some database
+// functions read), and the Vault `inngest_event_url` that
+// util.send_inngest_event posts database events to. Without the URL the
+// event-queue wake never fires in dev — and since webhooks ride the event
+// system, they don't either. Both URLs are in-network (Kong, Inngest): pg_net
 // runs inside the postgres container, which can't reach host ports.
 export async function ensureConfigRow(
   dbPort: number,
@@ -285,6 +361,12 @@ export async function ensureConfigRow(
        ON CONFLICT ("id") DO UPDATE
          SET "apiUrl" = EXCLUDED."apiUrl", "anonKey" = EXCLUDED."anonKey"`,
       [anonKey]
+    )
+  );
+  // Postgres sends its Inngest events to the dev server on the compose network.
+  await withClient(dbPort, (c) =>
+    c.query(
+      `SELECT public.set_inngest_event_url('http://inngest:8288/e/NO_EVENT_KEY_SET')`
     )
   );
 }

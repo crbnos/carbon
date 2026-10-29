@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Badge, cn, ScrollArea, ScrollBar, toast } from "@carbon/react";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import {
@@ -21,11 +25,18 @@ import { createPortal } from "react-dom";
 import { LuGripVertical, LuX } from "react-icons/lu";
 import { useSubmit } from "react-router";
 import { EmployeeAvatar } from "~/components";
+import { type MoveTarget, MoveToMenu } from "~/components/MoveToSubmenu";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { BoardContainer } from "../Kanban/components/ColumnCard";
 import { hasDraggableData } from "../Kanban/utils";
 import { assignmentMatchesShift } from "./peopleShared";
+
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const KEYBOARD_SENSOR_OPTIONS = {
+  coordinateGetter: sortableKeyboardCoordinates
+};
 
 const UNASSIGNED = "unassigned";
 
@@ -51,6 +62,8 @@ type WeekCardItem = {
   days: number;
   /** distinct absence days this week */
   daysOff: number;
+  /** distinct days at stations the department filter hides */
+  daysElsewhere: number;
   /** the person's qualified (non-expired) abilities — badged on the card */
   abilities: string[];
 };
@@ -62,6 +75,11 @@ type PeopleWeekBoardProps = {
   employees: WeekEmployee[];
   workCenters: { id: string; name: string }[];
   assignments: WeekAssignment[];
+  /**
+   * The week's rows at stations the department filter hides: the person is
+   * committed on those days, and assigning the week skips them.
+   */
+  assignmentsElsewhere?: WeekAssignment[];
   absences: { employeeId: string; date: string }[];
   /** each person's own shift — what new assignments get stamped with */
   employeeShiftId: Record<string, string>;
@@ -79,12 +97,17 @@ function WeekCard({
   item,
   isOverlay,
   isDisabled,
-  onRemove
+  onRemove,
+  getMoveTargets = () => [],
+  onMove
 }: {
   item: WeekCardItem;
   isOverlay?: boolean;
   isDisabled?: boolean;
   onRemove: (item: WeekCardItem) => void;
+  /** Phones: the other columns, for the card's "Move to" menu. */
+  getMoveTargets?: () => MoveTarget[];
+  onMove?: (item: WeekCardItem, columnId: string) => void;
 }) {
   const {
     setNodeRef,
@@ -135,16 +158,29 @@ function WeekCard({
               <Trans>{item.daysOff}d off</Trans>
             </span>
           )}
+          {item.daysElsewhere > 0 && (
+            <span className="inline-flex items-center rounded-md border border-dashed border-border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
+              <Trans>{item.daysElsewhere}d elsewhere</Trans>
+            </span>
+          )}
           {item.workCenterId && !isDisabled && !isOverlay && (
             <button
               type="button"
               aria-label="Remove"
-              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-red-600 dark:hover:text-red-400"
+              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-red-600 dark:hover:text-red-400 max-md:hit-area"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => onRemove(item)}
             >
               <LuX className="h-3.5 w-3.5" />
             </button>
+          )}
+          {/* Phones: the card has no menu on desktop, where moving is drag
+              only; this holds just the drop's move, reachable by tap. */}
+          {onMove && !isDisabled && !isOverlay && (
+            <MoveToMenu
+              getTargets={getMoveTargets}
+              onMove={(columnId) => onMove(item, columnId)}
+            />
           )}
         </div>
       </div>
@@ -170,7 +206,9 @@ function WeekColumn({
   items,
   isDisabled,
   sticky = false,
-  onRemove
+  onRemove,
+  columnTargets = [],
+  onMove
 }: {
   id: string;
   title: string;
@@ -178,6 +216,9 @@ function WeekColumn({
   isDisabled: boolean;
   sticky?: boolean;
   onRemove: (item: WeekCardItem) => void;
+  /** Every column of the board, for the cards' "Move to" menu. */
+  columnTargets?: MoveTarget[];
+  onMove?: (item: WeekCardItem, columnId: string) => void;
 }) {
   const { setNodeRef } = useSortable({
     id,
@@ -209,7 +250,10 @@ function WeekColumn({
       className={cn(
         "w-[300px] max-w-full flex flex-col flex-shrink-0 snap-center rounded-none bg-card/30 border-0 border-r h-[calc(100dvh-var(--header-height)*2)]",
         sticky && "sticky left-0 z-10 bg-card transition-shadow",
-        sticky && isScrolled && "shadow-[6px_0_12px_-6px_rgba(0,0,0,0.15)]"
+        sticky && isScrolled && "shadow-[6px_0_12px_-6px_rgba(0,0,0,0.15)]",
+        // Phones: a pinned 300px column would leave no room for the rest, so
+        // Unassigned scrolls with the board like any other column.
+        sticky && "max-md:static max-md:shadow-none"
       )}
     >
       <div className="p-4 w-full font-semibold text-left flex flex-row items-center sticky top-0 z-1 border-b bg-card">
@@ -225,6 +269,8 @@ function WeekColumn({
                 item={item}
                 isDisabled={isDisabled}
                 onRemove={onRemove}
+                getMoveTargets={() => columnTargets.filter((c) => c.id !== id)}
+                onMove={onMove}
               />
             ))}
             {/* the dashed box doubles as the drop affordance — an empty
@@ -259,6 +305,7 @@ const PeopleWeekBoard = ({
   employees,
   workCenters,
   assignments,
+  assignmentsElsewhere = [],
   absences,
   employeeShiftId,
   employeeAbilityNames
@@ -273,7 +320,7 @@ const PeopleWeekBoard = ({
 
   const sensors = useSensors(
     useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
   );
 
   // shift-less rows resolve through the person's own shift, like the hours do
@@ -286,6 +333,23 @@ const PeopleWeekBoard = ({
         : assignments,
     [assignments, shiftId, employeeShiftId]
   );
+
+  const daysElsewhereByEmployee = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const assignment of assignmentsElsewhere) {
+      // the shift filter applies here as it does to the visible rows
+      if (
+        shiftId &&
+        !assignmentMatchesShift(assignment, shiftId, employeeShiftId)
+      ) {
+        continue;
+      }
+      const set = map.get(assignment.employeeId) ?? new Set<string>();
+      set.add(assignment.date);
+      map.set(assignment.employeeId, set);
+    }
+    return map;
+  }, [assignmentsElsewhere, shiftId, employeeShiftId]);
 
   const daysOffByEmployee = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -317,6 +381,7 @@ const PeopleWeekBoard = ({
     for (const employee of employees) {
       const stations = byEmployeeStation.get(employee.id);
       const daysOff = daysOffByEmployee.get(employee.id)?.size ?? 0;
+      const daysElsewhere = daysElsewhereByEmployee.get(employee.id)?.size ?? 0;
       const abilities = employeeAbilityNames[employee.id] ?? [];
       if (!stations || stations.size === 0) {
         map.get(UNASSIGNED)!.push({
@@ -324,6 +389,7 @@ const PeopleWeekBoard = ({
           workCenterId: null,
           days: 0,
           daysOff,
+          daysElsewhere,
           abilities
         });
         continue;
@@ -335,6 +401,7 @@ const PeopleWeekBoard = ({
           workCenterId,
           days: days.size,
           daysOff,
+          daysElsewhere,
           abilities
         });
       }
@@ -345,6 +412,7 @@ const PeopleWeekBoard = ({
     workCenters,
     scopedAssignments,
     daysOffByEmployee,
+    daysElsewhereByEmployee,
     employeeAbilityNames
   ]);
 
@@ -393,6 +461,12 @@ const PeopleWeekBoard = ({
     }
     if (!targetColumnId) return;
 
+    moveToColumn(item, targetColumnId);
+  }
+
+  // The drop's move; phones also reach it from a card's "Move to" menu.
+  function moveToColumn(item: WeekCardItem, targetColumnId: string) {
+    if (isDisabled) return;
     const currentColumnId = item.workCenterId ?? UNASSIGNED;
     if (targetColumnId === currentColumnId) return;
 
@@ -435,8 +509,17 @@ const PeopleWeekBoard = ({
       weekStart,
       ...(weekShiftId ? { shiftId: weekShiftId } : {})
     });
-    toast.success(t`Assigned ${employeeName} to ${targetName} for the week`);
+    // the toast comes from the answer (usePeopleBoardFeedback): only the
+    // server knows which days it left as they were
   }
+
+  const columnTargets: MoveTarget[] = [
+    { id: UNASSIGNED, title: t`Unassigned` },
+    ...workCenters.map((workCenter) => ({
+      id: workCenter.id,
+      title: workCenter.name
+    }))
+  ];
 
   const onRemove = (item: WeekCardItem) => {
     if (!item.workCenterId) return;
@@ -465,6 +548,8 @@ const PeopleWeekBoard = ({
           isDisabled={isDisabled}
           sticky
           onRemove={onRemove}
+          columnTargets={columnTargets}
+          onMove={moveToColumn}
         />
         {workCenters.map((workCenter) => (
           <WeekColumn
@@ -474,6 +559,8 @@ const PeopleWeekBoard = ({
             items={itemsByColumn.get(workCenter.id) ?? []}
             isDisabled={isDisabled}
             onRemove={onRemove}
+            columnTargets={columnTargets}
+            onMove={moveToColumn}
           />
         ))}
       </BoardContainer>

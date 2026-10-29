@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Avatar,
   Badge,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useInterval
@@ -23,6 +28,7 @@ import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -43,6 +49,7 @@ type TimeCardEntry = {
 type TimecardsTableProps = {
   data: TimeCardEntry[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 function formatTime(dateStr: string, locale: string) {
@@ -60,7 +67,8 @@ function formatDuration(clockInStr: string, clockOutStr: string | null) {
   return `${hours}h ${minutes}m`;
 }
 
-const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
+const TimecardsTable = memo((props: TimecardsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const { locale } = useLocale();
   const navigate = useNavigate();
@@ -99,6 +107,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuUser />
         }
       },
@@ -116,6 +125,28 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
             "—"
           ),
         meta: {
+          mobile: "P3",
+          // Phones: line 2 also carries the clock-in – clock-out span.
+          mobileCell: ({ row }) =>
+            row.original.clockIn ? (
+              <>
+                <DateTime
+                  value={row.original.clockIn}
+                  variant="date"
+                  dateOptions={{ dateStyle: "medium" }}
+                />
+                {" · "}
+                <DateTime value={row.original.clockIn} variant="time" />
+                {" – "}
+                <DateTime
+                  value={row.original.clockOut}
+                  variant="time"
+                  fallback="—"
+                />
+              </>
+            ) : (
+              "—"
+            ),
           icon: <LuCalendar />
         }
       },
@@ -147,6 +178,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
         cell: ({ row }) =>
           durationLabel(row.original.clockIn, row.original.clockOut),
         meta: {
+          mobile: "P2",
           icon: <LuClock />,
           exportValue: (row) => durationLabel(row.clockIn, row.clockOut)
         }
@@ -162,6 +194,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
           </Badge>
         ),
         meta: {
+          mobile: "P2",
           icon: <LuRadar />,
           filter: {
             type: "static" as const,
@@ -206,6 +239,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "people")}
             onClick={() =>
               navigate(`${path.to.timecard(row.id!)}?${params.toString()}`)
@@ -215,6 +249,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
             <Trans>Edit Timecard</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "people")}
             onClick={() =>
@@ -235,6 +270,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
   return (
     <Table<TimeCardEntry>
       data={data}
+      infinite={infinite}
       count={count}
       columns={columns}
       primaryAction={

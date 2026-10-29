@@ -1,24 +1,33 @@
-import { assertIsPost, error } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { SalesRFQ } from "~/modules/sales";
+import {
+  isSalesRfqLocked,
+  salesRfqLineValidator
+} from "~/modules/sales/sales.models";
 import {
   getOpportunityLineDocuments,
   getSalesRFQ,
   getSalesRFQLine,
-  isSalesRfqLocked,
-  salesRfqLineValidator,
   upsertSalesRFQLine
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
+import type { SalesRFQ } from "~/modules/sales/types";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -27,6 +36,8 @@ import { SalesRFQLineForm } from "~/modules/sales/ui/SalesRFQ";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "sales-rfq-line-details");
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { companyId } = await requirePermissions(request, {
@@ -46,6 +57,17 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       path.to.salesRfq(rfqId),
       await flash(request, error(line.error, "Failed to load line"))
     );
+  }
+
+  // The service role bypasses RLS and lineId comes from the URL: the line must
+  // belong to this company and to the RFQ in the URL.
+  if (line.data.companyId !== companyId || line.data.salesRfqId !== rfqId) {
+    logger.error("Sales RFQ line not found for company", {
+      companyId,
+      rfqId,
+      lineId
+    });
+    throw notFound("Sales RFQ line not found");
   }
 
   const itemId = line.data.itemId;
@@ -176,7 +198,7 @@ export default function SalesRFQLine() {
         viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
       />
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

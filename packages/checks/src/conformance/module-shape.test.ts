@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import type { ModuleDir } from "../check";
 import { moduleShape } from "./module-shape";
@@ -13,7 +17,6 @@ const COMPLIANT = [
   "sales.models.ts",
   "types.ts",
   "ui",
-  "index.ts",
   "sales.server.ts"
 ];
 
@@ -24,7 +27,7 @@ describe("moduleShape", () => {
 
   it("flags a missing required entry (types.ts)", () => {
     const v = moduleShape.inspect(
-      mod("sales", ["sales.service.ts", "sales.models.ts", "ui", "index.ts"])
+      mod("sales", ["sales.service.ts", "sales.models.ts", "ui"])
     );
     expect(v).toHaveLength(1);
     expect(v[0]?.snippet).toBe("missing:types.ts");
@@ -44,13 +47,12 @@ describe("moduleShape", () => {
 
   it("accepts the .ee-licensed service/server variant as the primary file", () => {
     const v = moduleShape.inspect(
-      mod("accounting", [
-        "accounting.ee.service.ts",
-        "accounting.models.ts",
+      mod("widget", [
+        "widget.ee.service.ts",
+        "widget.models.ts",
         "types.ts",
         "ui",
-        "index.ts",
-        "accounting.ee.server.ts"
+        "widget.ee.server.ts"
       ])
     );
     expect(v).toHaveLength(0);
@@ -58,12 +60,11 @@ describe("moduleShape", () => {
 
   it("still flags a second service file alongside the .ee variant", () => {
     const v = moduleShape.inspect(
-      mod("accounting", [
-        "accounting.ee.service.ts",
-        "accounting.models.ts",
+      mod("widget", [
+        "widget.ee.service.ts",
+        "widget.models.ts",
         "types.ts",
         "ui",
-        "index.ts",
         "extra.service.ts"
       ])
     );
@@ -72,25 +73,48 @@ describe("moduleShape", () => {
 
   it("flags a missing primary service file", () => {
     const v = moduleShape.inspect(
-      mod("sales", ["sales.models.ts", "types.ts", "ui", "index.ts"])
+      mod("sales", ["sales.models.ts", "types.ts", "ui"])
     );
     expect(v.map((x) => x.snippet)).toContain("missing:sales.service.ts");
   });
 
-  it("allows multiple .server.ts and utils/test files", () => {
+  it("allows utils and test files", () => {
     const v = moduleShape.inspect(
       mod("quality", [
         "quality.service.ts",
         "quality.models.ts",
         "types.ts",
         "ui",
-        "index.ts",
         "quality.server.ts",
-        "inspectionBalloon.server.ts",
         "quality.utils.ts",
         "quality.utils.test.ts"
       ])
     );
     expect(v).toHaveLength(0);
+  });
+
+  it("flags a barrel", () => {
+    const v = moduleShape.inspect(
+      mod("sales", [...COMPLIANT, "index.ts", "index.server.ts"])
+    );
+    expect(v.map((x) => x.snippet)).toEqual([
+      "barrel:index.ts",
+      "barrel:index.server.ts"
+    ]);
+  });
+
+  it("allows one server file, and its tests", () => {
+    const v = moduleShape.inspect(
+      mod("sales", [
+        ...COMPLIANT,
+        "sales.server.test.ts",
+        "sales.documents.server.tsx",
+        "timezone.server.ts"
+      ])
+    );
+    expect(v.map((x) => x.snippet)).toEqual([
+      "extra-server:sales.documents.server.tsx",
+      "extra-server:timezone.server.ts"
+    ]);
   });
 });

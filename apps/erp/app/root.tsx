@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import "./zod.client";
 import { CONTROLLED_ENVIRONMENT, error, getBrowserEnv } from "@carbon/auth";
 import { flashClientMiddleware } from "@carbon/auth/middleware/flash.client";
 import {
@@ -5,32 +10,45 @@ import {
   flashMiddleware,
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
+import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
+import { maintenanceMiddleware } from "@carbon/auth/middleware/maintenance.server";
+import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
-import {
-  requestContextMiddleware,
-  requestIdMiddleware
-} from "@carbon/logger/middleware.server";
+import { requestMiddleware } from "@carbon/logger/middleware.server";
+import { timedMiddleware } from "@carbon/logger/tracing.server";
+import { createInvalidationMiddleware } from "@carbon/query/cache";
 import {
   OperatingSystemContextProvider,
   Toaster,
   TooltipProvider,
-  useMode
+  useMode,
+  ViewportProvider
 } from "@carbon/react";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
-import type { Theme } from "@carbon/utils";
-import { getPreferenceHeaders, modeValidator, themes } from "@carbon/utils";
+import {
+  colorSchemeHintScript,
+  getPreferenceHeaders,
+  getViewportHint,
+  isSearchParamOnlyNavigation,
+  modeValidator,
+  prefetchCacheMiddleware,
+  themeByName,
+  themeColorValidator
+} from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import type {
   ActionFunctionArgs,
   LinksFunction,
   LoaderFunctionArgs,
-  MetaFunction
+  MetaFunction,
+  ShouldRevalidateFunction
 } from "react-router";
 import {
   data,
@@ -39,25 +57,41 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData
+  UNSAFE_FrameworkContext,
+  useLoaderData,
+  useLocation,
+  useMatches
 } from "react-router";
 import SonnerStyle from "sonner/dist/styles.css?url";
-import { loadLinguiCatalogForRequest } from "~/services/lingui.server";
+import { preloadCatalog, useCatalog } from "~/services/lingui";
 import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
+import type { Handle } from "~/utils/handle";
+import { path } from "~/utils/path";
 import "@carbon/lib/shims";
+import { MotionConfig } from "motion/react";
 import type { Route } from "./+types/root";
-import { getTheme } from "./services/theme.server";
+import { getTheme, setTheme } from "./services/theme.server";
 
-export const middleware = [
-  // First: publishes the request context so server code can reach it via ALS.
-  requestContextMiddleware,
-  requestIdMiddleware,
-  flashMiddleware
+export const middleware = timedMiddleware({
+  // First: the request scope (context, request id, access log).
+  request: requestMiddleware,
+  security: securityMiddleware,
+  // After security, so the 503 still carries the nonce and security headers.
+  maintenance: maintenanceMiddleware,
+  formBody: formBodyMiddleware,
+  flash: flashMiddleware,
+  prefetchCache: prefetchCacheMiddleware
+});
+export const clientMiddleware = [
+  flashClientMiddleware,
+  createInvalidationMiddleware({
+    getCache: () => window.clientCache,
+    skipPaths: [path.to.refreshSession]
+  })
 ];
-export const clientMiddleware = [flashClientMiddleware];
 
 export const links: LinksFunction = () => {
   return [
@@ -77,13 +111,18 @@ export const meta: MetaFunction = ({ error }) => {
   ];
 };
 
+// Root data is cookies + env + the flash result. A same-pathname GET (table
+// filter, sort, page, useRevalidator from realtime hooks) can change none of
+// it; actions still revalidate so the flash toast is surfaced.
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isSearchParamOnlyNavigation(args) ? false : args.defaultShouldRevalidate;
+
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const {
     AUTH_PROVIDERS,
     CARBON_EDITION,
     CARBON_API_URL,
     CARBON_SLACK_ENABLED,
-    CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
     ERP_URL,
     GOOGLE_PLACES_API_KEY,
@@ -92,9 +131,12 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     MES_URL,
     NODE_ENV,
     ONSHAPE_CLIENT_ID,
+    GOOGLE_CLIENT_ID,
+    ONSHAPE_V2_CLIENT_ID,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     QUICKBOOKS_CLIENT_ID,
+    RAMP_CLIENT_ID,
     STRIPE_CONNECT_ENABLED,
     SUPABASE_ANON_KEY,
     SUPABASE_URL,
@@ -106,7 +148,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
   const preferences = getPreferenceHeaders(request);
   const appLanguage = resolveLanguage(preferences.locale);
-  const linguiCatalog = await loadLinguiCatalogForRequest(request, appLanguage);
+  await preloadCatalog(appLanguage);
 
   return data(
     {
@@ -115,19 +157,21 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         CARBON_API_URL,
         CARBON_EDITION,
         CARBON_SLACK_ENABLED,
-        CLOUDFLARE_TURNSTILE_SITE_KEY,
         CONTROLLED_ENVIRONMENT,
         DEFAULT_LANGUAGE,
         ERP_URL,
+        GOOGLE_CLIENT_ID,
         GOOGLE_PLACES_API_KEY,
         JIRA_CLIENT_ID,
         LOG_LEVEL,
         MES_URL,
         NODE_ENV,
         ONSHAPE_CLIENT_ID,
+        ONSHAPE_V2_CLIENT_ID,
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         QUICKBOOKS_CLIENT_ID,
+        RAMP_CLIENT_ID,
         STRIPE_CONNECT_ENABLED,
         SUPABASE_ANON_KEY,
         SUPABASE_URL,
@@ -135,8 +179,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         VERCEL_URL,
         XERO_CLIENT_ID
       },
-      linguiCatalog,
-      mode: getMode(request),
+      ...getMode(request),
+      viewport: getViewportHint(request),
       preferences: getPreferenceHeaders(request),
       result: context.get(flashResultContext),
       theme: getTheme(request)
@@ -156,9 +200,26 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid content type" }, { status: 400 });
   }
 
-  const validation = await validator(modeValidator).validate(
-    await request.formData()
-  );
+  const formData = await request.formData();
+
+  // The account settings Appearance pane posts its theme color here too.
+  if (formData.has("theme")) {
+    const themeValidation =
+      await validator(themeColorValidator).validate(formData);
+    if (themeValidation.error) {
+      return data(error(themeValidation.error, "Invalid theme"), {
+        status: 400
+      });
+    }
+    return data(
+      {},
+      {
+        headers: setTheme(themeValidation.data.theme, { inApp: true })
+      }
+    );
+  }
+
+  const validation = await validator(modeValidator).validate(formData);
 
   if (validation.error) {
     return data(error(validation.error, "Invalid mode"), {
@@ -187,27 +248,19 @@ export function Document({
   theme?: string;
   env?: Record<string, unknown>;
 }) {
-  const selectedTheme = themes.find((t) => t.name === theme) as
-    | Theme
-    | undefined;
+  const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
+  const selectedTheme = themeByName(theme);
 
   // Create style objects for both light and dark modes
   const lightVars: Record<string, string> = {};
   const darkVars: Record<string, string> = {};
 
-  if (selectedTheme) {
-    // Set light mode variables
-    Object.entries(selectedTheme.cssVars.light).forEach(([key, value]) => {
-      const cssKey = `--${key}`;
-      lightVars[cssKey] = `${value}`;
-    });
-
-    // Set dark mode variables
-    Object.entries(selectedTheme.cssVars.dark).forEach(([key, value]) => {
-      const cssKey = `--${key}`;
-      darkVars[cssKey] = `${value}`;
-    });
-  }
+  Object.entries(selectedTheme.cssVars.light).forEach(([key, value]) => {
+    lightVars[`--${key}`] = `${value}`;
+  });
+  Object.entries(selectedTheme.cssVars.dark).forEach(([key, value]) => {
+    darkVars[`--${key}`] = `${value}`;
+  });
 
   // Combine the styles with proper selectors
   const themeStyle = {
@@ -225,7 +278,14 @@ export function Document({
         <meta charSet="utf-8" />
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        {/* Before any paint: records the OS color scheme for a `system` user
+            and reloads once if the server rendered the wrong mode. */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: colorSchemeHintScript }}
         />
         <Meta />
         <Links />
@@ -238,6 +298,9 @@ export function Document({
             window.env at module load and otherwise crashes hydration. */}
         {env ? (
           <script
+            // Server render only: on the client the nonce is undefined (and browsers hide it).
+            nonce={nonce}
+            suppressHydrationWarning
             dangerouslySetInnerHTML={{
               __html: `window.env = ${JSON.stringify(env)};`
             }}
@@ -246,7 +309,9 @@ export function Document({
         <Toaster position="bottom-right" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
-        {!CONTROLLED_ENVIRONMENT && import.meta.env.PROD && <Analytics />}
+        {!CONTROLLED_ENVIRONMENT &&
+          import.meta.env.PROD &&
+          import.meta.env.VITE_VERCEL_ENV && <Analytics />}
       </body>
     </html>
   );
@@ -257,9 +322,14 @@ export default function App() {
   const env = loaderData?.env ?? {};
   const theme = loaderData?.theme ?? "zinc";
   const prefs = loaderData?.preferences;
-  const linguiCatalog = loaderData?.linguiCatalog;
   const appLanguage = resolveLanguage(prefs.locale);
-  const mode = useMode();
+  const catalog = useCatalog(appLanguage);
+  const userMode = useMode();
+  const { search } = useLocation();
+  const hostMode = useMatches()
+    .map((match) => (match.handle as Handle | undefined)?.hostMode)
+    .find((value) => value !== undefined);
+  const mode = hostMode ? hostMode(new URLSearchParams(search)) : userMode;
 
   // One client for both consumers: the imperative `window.clientCache`
   // read-through convention (clientLoader/cachedApiQuery) and hook-based
@@ -288,15 +358,26 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <OperatingSystemContextProvider platform={prefs.platform}>
-        <LocaleProvider locale={appLanguage} catalog={linguiCatalog}>
-          <I18nProvider locale={prefs.locale}>
-            <TooltipProvider delayDuration={200}>
-              <Document mode={mode} theme={theme} lang={appLanguage} env={env}>
-                <Outlet />
-              </Document>
-            </TooltipProvider>
-          </I18nProvider>
-        </LocaleProvider>
+        <ViewportProvider initialViewport={loaderData?.viewport ?? "desktop"}>
+          <LocaleProvider locale={appLanguage} catalog={catalog}>
+            <I18nProvider locale={prefs.locale}>
+              <TooltipProvider>
+                <MotionConfig reducedMotion="user">
+                  <Document
+                    mode={mode}
+                    theme={theme}
+                    lang={appLanguage}
+                    env={env}
+                  >
+                    <Outlet />
+                    {/* Renders nothing outside development; the package strips itself. */}
+                    <ReactQueryDevtools buttonPosition="bottom-right" />
+                  </Document>
+                </MotionConfig>
+              </TooltipProvider>
+            </I18nProvider>
+          </LocaleProvider>
+        </ViewportProvider>
       </OperatingSystemContextProvider>
     </QueryClientProvider>
   );

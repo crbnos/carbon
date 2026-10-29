@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { formatDate, formatExchangeRate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -50,6 +54,7 @@ const ExchangeRatesTable = memo(({ data, count }: ExchangeRatesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -58,6 +63,7 @@ const ExchangeRatesTable = memo(({ data, count }: ExchangeRatesTableProps) => {
         header: t`Code`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P3",
           icon: <LuEuro />
         }
       },
@@ -70,6 +76,7 @@ const ExchangeRatesTable = memo(({ data, count }: ExchangeRatesTableProps) => {
             ? formatExchangeRate(row.original.rate, locale)
             : null,
         meta: {
+          mobile: "P2",
           icon: <LuPercent />
         }
       },
@@ -110,6 +117,7 @@ const ExchangeRatesTable = memo(({ data, count }: ExchangeRatesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "accounting")}
             onClick={() => {
               navigate(

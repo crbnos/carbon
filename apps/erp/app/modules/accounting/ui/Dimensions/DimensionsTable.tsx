@@ -1,4 +1,8 @@
-import { Badge, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { Badge, MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -12,6 +16,7 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import { dimensionEntityTypes } from "../../accounting.models";
@@ -20,9 +25,11 @@ import type { Dimension } from "../../types";
 type DimensionsTableProps = {
   data: Dimension[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
+const DimensionsTable = memo((props: DimensionsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -39,6 +46,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -47,6 +55,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
         header: t`Entity Type`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: dimensionEntityTypes.map((v) => ({
@@ -83,6 +92,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           icon: <LuShapes />
         }
       }
@@ -95,6 +105,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "accounting")}
             onClick={() => {
               navigate(`${path.to.dimension(row.id)}?${params.toString()}`);
@@ -104,6 +115,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
             <Trans>Edit Dimension</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={!permissions.can("delete", "accounting")}
             onClick={() => {
               navigate(
@@ -122,6 +134,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
 
   return (
     <Table<Dimension>
+      infinite={infinite}
       data={data}
       columns={columns}
       count={count}

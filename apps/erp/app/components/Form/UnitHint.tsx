@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useField } from "@carbon/form";
 import { FormControl, FormHelperText, FormLabel } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 
 import { Select } from "~/components";
 import type { SelectProps } from "~/components/Select";
-import type { StandardFactor } from "~/modules/shared";
+import type { StandardFactor } from "~/modules/shared/types";
 
 export type UnitHintProps = Omit<SelectProps, "onChange" | "options"> & {
   name: string;

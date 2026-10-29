@@ -1,5 +1,9 @@
-import type { AvailableVariable } from "@carbon/workflows";
-import { createWorkflowCatalog } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { AvailableVariable } from "@carbon/ee/workflows";
+import { createWorkflowCatalog } from "@carbon/ee/workflows";
 import { describe, expect, it } from "vitest";
 import { decodeTokenId } from "./tokenId";
 import {
@@ -233,6 +237,35 @@ describe("variableTree", () => {
     expect(
       variableTree([], catalog, { inLoop: false }).some((n) => n.key === "item")
     ).toBe(false);
+  });
+
+  // A whole object has no operator, so a clause over a list of them is only
+  // writable when one of its fields can be picked.
+  it("opens the current item into its fields, scoped to its card", () => {
+    const event = {
+      kind: "record",
+      fields: { summary: text, attendees: number }
+    } as const;
+    const options = { inLoop: true, itemCard: "c1", itemType: event };
+
+    const [item] = variableTree([], catalog, options);
+    expect(item.children?.map((child) => child.label)).toEqual([
+      "summary",
+      "attendees"
+    ]);
+    expect(decodeTokenId(item.children?.[0].item?.id ?? "")).toEqual({
+      kind: "item",
+      path: ["summary"],
+      card: "c1"
+    });
+
+    expect(
+      variableMenuItems([], catalog, options).map((entry) => entry.label)
+    ).toEqual([
+      "Current item",
+      "Current item › summary",
+      "Current item › attendees"
+    ]);
   });
 
   // A record prints as its readable id, so a text field offers it alongside its

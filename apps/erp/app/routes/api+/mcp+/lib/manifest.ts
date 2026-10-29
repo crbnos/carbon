@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * The MCP server's own manifest, served at `/.well-known/mcp.json`.
  *
@@ -13,6 +17,7 @@
  * up promising a module that was removed two releases ago.
  */
 
+import { DOCS_URL } from "@carbon/content/links";
 import toolMetadataJson from "./tool-metadata.json";
 
 type ToolSummary = {
@@ -46,10 +51,9 @@ export const MCP_META_KEY = "ms.carbon/v1";
 
 export const MARKETING_URL = "https://carbon.ms";
 export const REPOSITORY_URL = "https://github.com/crbnos/carbon";
-export const DOCS_URL = "https://docs.carbon.ms";
 
 /**
- * The three tools the server registers. Carbon publishes meta-tools rather than
+ * The four tools the server registers. Carbon publishes meta-tools rather than
  * ~1,400 flat ones: a client that loaded every ERP operation as a tool would
  * spend its whole context on definitions before doing any work.
  */
@@ -57,19 +61,25 @@ const TOOLS = [
   {
     name: "search_tools",
     description:
-      "Search Carbon's ERP operations by name, module or classification (READ, WRITE, DESTRUCTIVE), and make the matches available to call.",
+      "Relevance-ranked search over Carbon's ERP operations by keyword, module or classification (READ, WRITE, DESTRUCTIVE); understands common abbreviations and schema field names.",
     readOnly: true
   },
   {
     name: "describe_tool",
     description:
-      "Return the full input schema and description for one operation, so its arguments can be built correctly before calling it.",
+      "Return the full contract for one or more operations — description, permission, input schema and response schema — so arguments can be built correctly before calling.",
     readOnly: true
   },
   {
     name: "call_tool",
     description:
-      "Call an operation by name with its arguments. The company and user are taken from the credential, never from the arguments.",
+      "Call a READ or WRITE operation by name with its arguments, optionally returning only the named fields of each row. Lists come back as CSV. The company and user are taken from the credential, never from the arguments.",
+    readOnly: false
+  },
+  {
+    name: "call_destructive_tool",
+    description:
+      "Call a DESTRUCTIVE operation (one that deletes or removes) by name with its arguments, exactly as call_tool does. call_tool refuses these, so a client can ask before one runs.",
     readOnly: false
   }
 ] as const;
@@ -135,15 +145,15 @@ export function buildMcpManifest(origin: string) {
         tools: TOOLS,
         operations: {
           description:
-            "search_tools, describe_tool and call_tool reach every ERP operation Carbon exposes, each classified READ, WRITE or DESTRUCTIVE.",
+            "search_tools, describe_tool, call_tool and call_destructive_tool reach every ERP operation Carbon exposes, each classified READ, WRITE or DESTRUCTIVE.",
           total: toolMetadata.totalTools,
           modules: MODULES,
           classifications: CLASSIFICATIONS
         },
         documentation: {
-          mcpGuide: `${DOCS_URL}/mcp`,
-          apiReference: `${DOCS_URL}/api-reference`,
-          authentication: `${DOCS_URL}/api-reference/authentication`,
+          mcpGuide: `${DOCS_URL}/api/mcp`,
+          apiReference: `${DOCS_URL}/api`,
+          authentication: `${DOCS_URL}/api/authentication`,
           openapi: `${MARKETING_URL}/openapi.json`
         },
         /** Drop-in config for Claude Desktop, Claude Code and compatible clients. */

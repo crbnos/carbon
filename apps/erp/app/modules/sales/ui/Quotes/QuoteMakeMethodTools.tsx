@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { SelectControlled, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertTitle,
@@ -20,6 +25,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  PrefetchLink,
   Tabs,
   TabsContent,
   TabsList,
@@ -41,16 +47,16 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
-import { Link, useFetcher, useLocation, useParams } from "react-router";
+import { useLocation, useParams } from "react-router";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import { Hidden, Item, Submit, useConfigurableItems } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import {
-  type ConfigurationParameter,
-  type ConfigurationParameterGroup,
-  getConfigurationParameters
-} from "~/modules/items";
+import { getConfigurationParameters } from "~/modules/items/items.utils";
+import type {
+  ConfigurationParameter,
+  ConfigurationParameterGroup
+} from "~/modules/items/types";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import MakeMethodVersionStatus from "~/modules/items/ui/Item/MakeMethodVersionStatus";
 import type { MethodItemType } from "~/modules/shared/types";
@@ -65,7 +71,15 @@ const QuoteMakeMethodTools = () => {
   const { quoteId, lineId, methodId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
 
-  const fetcher = useFetcher<{ error: string | null }>();
+  // Get Method answers with a service result, Save Method with an error
+  // string.
+  const fetcher = useAction<{ error: string | { message: string } | null }>({
+    onError: (data) => {
+      const error = data?.error;
+      const message = typeof error === "string" ? error : error?.message;
+      if (message) toast.error(message);
+    }
+  });
   const routeData = useRouteData<{
     quote: Quotation;
     lines: QuotationLine[];
@@ -106,12 +120,6 @@ const QuoteMakeMethodTools = () => {
     !!fetcher.formData?.get("configuration");
   const isSaveMethodLoading =
     fetcher.state !== "idle" && fetcher.formAction === path.to.quoteMethodSave;
-
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error);
-    }
-  }, [fetcher.data?.error]);
 
   const [includeInactive, setIncludeInactive] = useState<
     boolean | "indeterminate"
@@ -278,9 +286,7 @@ const QuoteMakeMethodTools = () => {
                 )}
                 {itemLink && (
                   <MenubarItem leftIcon={<LuGitFork />} asChild>
-                    <Link prefetch="intent" to={itemLink}>
-                      Item Master
-                    </Link>
+                    <PrefetchLink to={itemLink}>Item Master</PrefetchLink>
                   </MenubarItem>
                 )}
               </HStack>

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { DOCUMENT_PDFS, ensureFont } from "@carbon/documents/pdf";
 import {
@@ -14,8 +18,11 @@ import { getPreferenceHeaders, labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { getCompany, resolveSections } from "~/modules/settings";
-import { buildPreviewProps } from "~/modules/settings/documentPreview.server";
+import {
+  buildPreviewProps,
+  getCompany,
+  resolveSections
+} from "~/modules/settings/settings.service";
 
 /**
  * Renders a sample of the document with the draft block layout, server-side.

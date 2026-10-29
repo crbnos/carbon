@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   HStack,
@@ -13,11 +18,14 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
-import { useFetcher } from "react-router";
 import type { z } from "zod";
-import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
+import {
+  Boolean,
+  CustomFormFields,
+  Hidden,
+  Input,
+  Submit
+} from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { storageTypeValidator } from "../../inventory.models";
@@ -37,25 +45,19 @@ const StorageTypeForm = ({
 }: StorageTypeFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher<PostgrestResponse<{ id: string; name: string }>>();
+  // A modal closes on the new record; an error is toasted and the form stays.
+  const fetcher = useAction({
+    onSuccess: () => {
+      if (type !== "modal") return;
+      onClose?.();
+      toast.success(t`Created storage type`);
+    }
+  });
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
     ? !permissions.can("update", "parts")
     : !permissions.can("create", "parts");
-
-  useEffect(() => {
-    if (type !== "modal") return;
-
-    if (fetcher.state === "loading" && fetcher.data?.data) {
-      onClose?.();
-      toast.success(t`Created storage type`);
-    } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(
-        t`Failed to create storage type: ${fetcher.data.error.message}`
-      );
-    }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
 
   return (
     <ModalDrawerProvider type={type}>
@@ -92,12 +94,19 @@ const StorageTypeForm = ({
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
                 <Input name="name" label={t`Name`} />
+                <Boolean
+                  name="nonNettable"
+                  label={t`Non-nettable`}
+                  termId="non-nettable"
+                  bordered
+                  description={t`Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it.`}
+                />
                 <CustomFormFields table="storageType" />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={isDisabled}>
+                <Submit hideShortcutKey isDisabled={isDisabled}>
                   <Trans>Save</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={() => onClose()}>

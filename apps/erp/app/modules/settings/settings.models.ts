@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { serialNumberTimings } from "@carbon/database/serial-number-timing";
 import {
   blockSchema,
   documentSectionPlacementSchema,
@@ -6,11 +11,16 @@ import {
   sectionConfigSchema,
   themeSchema
 } from "@carbon/documents/template";
-import { isValidTimeZone, labelSizes } from "@carbon/utils";
+import {
+  isValidTimeZone,
+  labelSizes,
+  type ThemeName,
+  themeColorValidator
+} from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
-import { DataType } from "~/modules/shared";
+import { DataType } from "~/modules/shared/types";
 
 export const modulesType = [
   "Accounting",
@@ -27,6 +37,19 @@ export const modulesType = [
 ] as const;
 
 export const kanbanOutputTypes = ["label", "qrcode", "url"] as const;
+
+// Mirrors the `kanbanLabelSize` DB enum. `letter` is a sheet of six; the
+// others are thermal label ids in @carbon/utils `labelSizes`.
+export const kanbanLabelSizes = ["letter", "label4x2", "label3x2"] as const;
+
+// Mirrors the `invoiceAutomation` DB enum: what happens to a recurring
+// invoice (rental agreements today) when the daily job creates it.
+export const invoiceAutomations = [
+  "Draft Only",
+  "Post",
+  "Post and Email",
+  "Post and Send via Stripe"
+] as const;
 
 export const purchasePriceUpdateTimingTypes = [
   "Purchase Invoice Post",
@@ -73,6 +96,32 @@ export const apiKeyValidator = z.object({
       })
   )
 });
+
+/** An API key form's fields as saved: the form posts its scopes as one JSON string. */
+export function apiKeyFields({
+  scopes,
+  ...form
+}: z.output<typeof apiKeyValidator>) {
+  return {
+    ...form,
+    scopes: (scopes ? JSON.parse(scopes) : {}) as Record<string, string[]>
+  };
+}
+
+export const integrationConnectionActionValidator = z.discriminatedUnion(
+  "intent",
+  [
+    z.object({
+      intent: z.literal("rename"),
+      id: z.string().min(1, { message: "No connection was named" }),
+      name: z.string().trim().min(1, { message: "A connection needs a name" })
+    }),
+    z.object({
+      intent: z.literal("disconnect"),
+      id: z.string().min(1, { message: "No connection was named" })
+    })
+  ]
+);
 
 const ssoDomainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
 
@@ -231,13 +280,59 @@ export const digitalQuoteValidator = z.object({
   digitalQuoteIncludesPurchaseOrders: zfd.checkbox()
 });
 
+/**
+ * A settings switch's form: `intent` names the switch and `enabled` is
+ * "true" or "false". Parses to the one field it saves, `{ [field]: boolean }`.
+ */
+export function settingsToggle<
+  const Intent extends string,
+  const Field extends string
+>(intent: Intent, field: Field) {
+  return z
+    .object({ intent: z.literal(intent), enabled: z.string().optional() })
+    .transform(
+      ({ enabled }) =>
+        ({ [field]: enabled === "true" }) as { [K in Field]: boolean }
+    );
+}
+
 export const jobCompletedValidator = z.object({
   inventoryJobCompletedNotificationGroup: z.array(z.string()).optional(),
   salesJobCompletedNotificationGroup: z.array(z.string()).optional()
 });
 
+export const invoiceAutomationValidator = z.object({
+  invoiceAutomation: z.enum(invoiceAutomations)
+});
+
+export const mrpScheduleTypes = ["Every 3 Hours", "Daily"] as const;
+
+// "Every 3 Hours" is the default cadence and ignores the time; "Daily" runs
+// once a day at `mrpRunTime` on the company's own clock. The form offers whole
+// hours, but the column (and the MCP tool) take any time — the cron checks
+// every 15 minutes — so the field is the stored "HH:MM[:SS]" string, and a
+// time like 14:30 saves back unchanged instead of being cut to 14:00.
+export const mrpScheduleValidator = z
+  .object({
+    mrpSchedule: z.enum(mrpScheduleTypes),
+    mrpRunTime: zfd.text(
+      z
+        .string()
+        .regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, {
+          message: "Choose a time"
+        })
+        .optional()
+    )
+  })
+  .refine(
+    (data) => data.mrpSchedule !== "Daily" || data.mrpRunTime !== undefined,
+    { message: "Time is required", path: ["mrpRunTime"] }
+  );
+
 export const kanbanOutputValidator = z.object({
-  kanbanOutput: z.enum(kanbanOutputTypes)
+  kanbanOutput: z.enum(kanbanOutputTypes),
+  // Only on the form while the output is a label.
+  kanbanLabelSize: z.enum(kanbanLabelSizes).optional()
 });
 
 export const plmReleaseControlValidator = z.object({
@@ -258,6 +353,21 @@ export const expiredEntityPolicies = [
   "Block",
   "BlockWithOverride"
 ] as const;
+
+// Planning settings (MRP suggestions). Whole days / whole weekly buckets.
+export const rescheduleToleranceValidator = z.object({
+  days: zfd.numeric(z.number().int().min(0).max(365))
+});
+
+// Empty clears the default: items without their own horizon then have no fence.
+export const planningHorizonValidator = z.object({
+  days: zfd.numeric(z.number().int().min(0).max(3650).optional())
+});
+
+export const forecastConsumptionValidator = z.object({
+  backwardPeriods: zfd.numeric(z.number().int().min(0).max(52)),
+  forwardPeriods: zfd.numeric(z.number().int().min(0).max(52))
+});
 
 // Every shelf-life knob lives inside the companySettings.inventoryShelfLife
 // JSONB blob. The validator below reads/writes that single object so the
@@ -314,6 +424,21 @@ export const returnPickedMaterialTimingValidator = z.object({
   returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).default("job")
 });
 
+// When a produced unit's serial number is drawn from the item's serial sequence.
+// 'jobCreation' (default) reserves one number per unit as soon as the job exists;
+// 'jobRelease' when the job is released to the shop floor; 'production' waits
+// until the unit is first touched on the floor — its first production event,
+// its first operation completion, its scrap, or its receipt. The company's
+// choice is the default; an item's serial sequence can override it.
+export {
+  type SerialNumberTiming,
+  serialNumberTimings
+} from "@carbon/database/serial-number-timing";
+
+export const serialNumberTimingValidator = z.object({
+  serialNumberTiming: z.enum(serialNumberTimings).default("jobCreation")
+});
+
 export const updateLeadTimesOnReceiptValidator = z.object({
   updateLeadTimesOnReceipt: zfd.checkbox()
 });
@@ -340,8 +465,20 @@ export const productLabelSizeValidator = z.object({
   )
 });
 
+export const invoiceNotificationValidator = z.object({
+  invoiceNotificationGroup: z
+    .array(z.string().min(1, { message: "Invalid selection" }))
+    .optional()
+});
+
 export const rfqReadyValidator = z.object({
   rfqReadyNotificationGroup: z
+    .array(z.string().min(1, { message: "Invalid selection" }))
+    .optional()
+});
+
+export const salesRuleNotificationValidator = z.object({
+  salesRuleNotificationGroup: z
     .array(z.string().min(1, { message: "Invalid selection" }))
     .optional()
 });
@@ -411,26 +548,15 @@ export const itemSerialSequenceValidator = z.object({
   suffix: zfd.text(z.string().optional()),
   next: zfd.numeric(z.number().min(0)),
   step: zfd.numeric(z.number().min(1)),
-  size: zfd.numeric(z.number().min(1).max(20))
+  size: zfd.numeric(z.number().min(1).max(20)),
+  // Empty follows the company's serial number timing.
+  serialNumberTiming: zfd.text(z.enum(serialNumberTimings).optional())
 });
 
-export const themes = [
-  "zinc",
-  "neutral",
-  "red",
-  "orange",
-  "yellow",
-  "green",
-  "blue",
-  "violet"
-] as const;
-export type Theme = (typeof themes)[number];
+export type Theme = ThemeName;
 
-export const themeValidator = z.object({
-  next: zfd.text(z.string().optional()),
-  theme: z.enum(themes, {
-    error: "Theme is required"
-  })
+export const themeValidator = themeColorValidator.extend({
+  next: zfd.text(z.string().optional())
 });
 
 export const webhookValidator = z
@@ -438,7 +564,12 @@ export const webhookValidator = z
     id: zfd.text(z.string().optional()),
     name: z.string().trim().min(1, { message: "Name is required" }),
     table: z.string().min(1, { message: "Table is required" }),
-    url: z.string().url({ message: "Must be a valid URL" }),
+    url: z
+      .string()
+      .url({ message: "Must be a valid URL" })
+      .refine((url) => /^https?:\/\//i.test(url), {
+        message: "Must be an http or https URL"
+      }),
     onInsert: zfd.checkbox(),
     onUpdate: zfd.checkbox(),
     onDelete: zfd.checkbox(),
@@ -474,22 +605,22 @@ export const syncOperationTransitionValidator = z.object({
   to: z.enum(["Pending", "Skipped"])
 });
 
+export const workCenterDeviceUpsertValidator = z.object({
+  intent: z.literal("upsert-work-center-device"),
+  externalDeviceId: z.string().min(1, { message: "Device is required" }),
+  deviceName: z.string().min(1, { message: "Device name is required" }),
+  externalSiteId: zfd.text(z.string().optional()),
+  siteTimezone: zfd.text(z.string().optional()),
+  workCenterId: zfd.text(z.string().optional())
+});
+
 /**
- * Saves one account mapping row (Carbon account.id → provider account id)
- * from the integration drawer's Account Mapping tab. externalCode /
- * externalName are display metadata captured from the selected provider
+ * One account mapping (Carbon account.id → provider account id).
+ * externalCode / externalName are captured from the selected provider
  * account — the journal syncer resolves provider account codes from the
  * mapping's stored externalCode, so the code must be persisted.
  */
-export const accountMappingUpsertValidator = z.object({
-  intent: z.literal("upsert-account-mapping"),
-  accountId: z.string().min(1, { message: "Account is required" }),
-  externalId: z.string().min(1, { message: "Provider account is required" }),
-  externalCode: zfd.text(z.string().optional()),
-  externalName: zfd.text(z.string().optional())
-});
-
-const accountMappingEntrySchema = z.object({
+export const accountMappingEntrySchema = z.object({
   accountId: z.string().min(1),
   externalId: z.string().min(1),
   externalCode: z.string().optional(),
@@ -497,10 +628,10 @@ const accountMappingEntrySchema = z.object({
 });
 
 /**
- * Confirm-all from the match-by-code drawer. `mappings` is a repeated form
- * field (per the sync-operation `ids` precedent) — each entry a
- * JSON-encoded proposal validated against the same shape as the single-row
- * upsert.
+ * Save from the Account Mapping tab, and confirm-all from match-by-code and
+ * AI suggest. `mappings` is a repeated form field (per the sync-operation
+ * `ids` precedent) — each entry a JSON-encoded account → provider account
+ * pair.
  */
 export const accountMappingBulkUpsertValidator = z.object({
   intent: z.literal("bulk-upsert-account-mappings"),
@@ -599,8 +730,20 @@ export const postingSyncSettingsValidator = z.object({
   ),
   familyAr: z.enum(["documents", "journals", "none"]),
   familyAp: z.enum(["documents", "journals", "none"]),
+  familyCreditMemo: z.enum(["documents", "journals", "none"]),
+  familySupplierCredit: z.enum(["documents", "journals", "none"]),
   periodLockPolicy: z.enum(["park", "redate"]),
   lockDate: zfd.text(z.string().optional())
+});
+
+/**
+ * Turns an accounting integration's sync on or off (the switch in the
+ * integration drawer header). The action refuses "on" while any required
+ * account is unmapped.
+ */
+export const syncEnabledValidator = z.object({
+  intent: z.literal("update-sync-enabled"),
+  syncEnabled: z.enum(["true", "false"]).transform((value) => value === "true")
 });
 
 /**
@@ -611,7 +754,7 @@ export const postingSyncSettingsValidator = z.object({
  * (dimension sync off). The action re-validates the slots against the
  * provider's declared targets via validateDimensionSlots before writing.
  */
-const dimensionSlotEntrySchema = z.object({
+export const dimensionSlotEntrySchema = z.object({
   dimensionId: z.string().min(1),
   target: z.string().min(1),
   autoCreate: z.boolean().optional()
@@ -654,7 +797,7 @@ export const dimensionValueMappingUpsertValidator = z.object({
   externalName: zfd.text(z.string().optional())
 });
 
-const dimensionValueMappingEntrySchema = z.object({
+export const dimensionValueMappingEntrySchema = z.object({
   dimensionId: z.string().min(1),
   valueId: z.string().min(1),
   externalId: z.string().min(1),
@@ -717,6 +860,18 @@ const billingAddress = {
 export const accountsPayableBillingAddressValidator = z.object(billingAddress);
 export const accountsReceivableBillingAddressValidator =
   z.object(billingAddress);
+
+/** A billing address form's fields as saved: a blank field clears it. */
+export function billingAddressFields(
+  form: z.output<typeof accountsPayableBillingAddressValidator>
+) {
+  return Object.fromEntries(
+    Object.keys(billingAddress).map((key) => [
+      key,
+      form[key as keyof typeof form] ?? null
+    ])
+  ) as { [K in keyof typeof billingAddress]: string | null };
+}
 
 export const timeCardSettingsValidator = z.object({
   timeCardEnabled: zfd.checkbox()

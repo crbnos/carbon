@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getAccountMappings } from "../../../core/account-mapping";
 import { createMappingService } from "../../../core/external-mapping";
@@ -50,10 +54,9 @@ export const QBO_DOC_NUMBER_MAX_LENGTH = 21;
 /** Which field carries the Carbon readable id on a pushed QBO transaction. */
 export type QboDocNumberSource = "docNumber" | "privateNote";
 
-/** Escape a string literal for a QBO query WHERE clause (single quotes). */
-export function escapeQboQueryValue(value: string): string {
-  return value.replace(/'/g, "\\'");
-}
+// Lives in the leaf `../query` so `provider.ts` can use it too (this module
+// imports `../provider`, so the provider cannot import this one).
+export { escapeQboQueryValue } from "../query";
 
 /**
  * Apply QBO's 21-char DocNumber cap: a readable id that fits becomes the

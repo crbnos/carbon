@@ -1,17 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction } from "@carbon/query";
 import {
   Card,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
   HStack,
   useDebounce,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
-import { Reorder, useDragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
+import { Reorder, useDragControls } from "motion/react";
 import { type ReactNode, useEffect, useState } from "react";
-import { useFetcher } from "react-router";
 import type { ListItem } from "~/types";
 import { ActionTaskAddModal } from "./ActionTaskAddModal";
 import type { ActionTaskStatus } from "./ActionTaskCard";
@@ -51,7 +57,8 @@ export function ActionTaskList<T extends ActionTaskRow>({
   isDisabled?: boolean;
   title?: ReactNode;
 }) {
-  const orderFetcher = useFetcher<{ success: boolean }>();
+  const orderFetcher = useAction();
+  const { isPhone } = useViewport();
 
   const [sortOrder, setSortOrder] = useState<string[]>(() =>
     [...tasks]
@@ -93,7 +100,28 @@ export function ActionTaskList<T extends ActionTaskRow>({
         <CardHeader>
           <CardTitle>{title ?? <Trans>Actions</Trans>}</CardTitle>
         </CardHeader>
-        {tasks.length > 0 && <ActionTaskProgress tasks={tasks} />}
+        {isPhone ? (
+          // Phones: the add sits in the header; the progress bar keeps the
+          // space for the collapse button after it.
+          <HStack spacing={0} className="pr-14">
+            {tasks.length > 0 && (
+              <ActionTaskProgress tasks={tasks} className="pr-2" />
+            )}
+            {!isDisabled && onAdd && (
+              <CardAction className="px-0">
+                <ActionTaskAddModal
+                  templates={templates ?? []}
+                  onAdd={onAdd}
+                  isSubmitting={isAddSubmitting}
+                  emptyMessage={addEmptyMessage}
+                  trigger="button"
+                />
+              </CardAction>
+            )}
+          </HStack>
+        ) : (
+          tasks.length > 0 && <ActionTaskProgress tasks={tasks} />
+        )}
       </HStack>
       <CardContent>
         <VStack spacing={3}>
@@ -118,7 +146,13 @@ export function ActionTaskList<T extends ActionTaskRow>({
             </Reorder.Group>
           )}
 
-          {!isDisabled && onAdd && (
+          {isPhone && tasks.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              <Trans>No actions yet.</Trans>
+            </p>
+          )}
+
+          {!isPhone && !isDisabled && onAdd && (
             <ActionTaskAddModal
               templates={templates ?? []}
               onAdd={onAdd}

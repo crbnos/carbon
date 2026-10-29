@@ -1,8 +1,11 @@
 {
   "$schema": "https://turborepo.org/schema.json",
+  "agentGuidance": false,
   "tasks": {
     "build": {
       "dependsOn": ["^build", "//#lingui:compile"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/AGENTS.md", "!**/CLAUDE.md"],
+      "env": ["VERCEL"],
       "outputs": [
         "dist/**",
         "build/**",
@@ -18,26 +21,30 @@
       "outputs": ["src/pdf/fonts.data.ts"]
     },
     "//#lingui:compile": {
-      "inputs": [
-        "lingui.config.js",
-        "apps/erp/app/**",
-        "apps/mes/app/**",
-        "packages/react/src/**",
-        "packages/workflows/src/**",
-        "packages/locale/locales/**/*.po"
-      ],
+      "inputs": ["lingui.config.js", "packages/locale/locales/**/*.po"],
       "outputs": ["packages/locale/locales/**/*.mjs"]
     },
+    "transit": {
+      "dependsOn": ["^transit"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/AGENTS.md", "!**/CLAUDE.md"]
+    },
     "test": {
-      "cache": false,
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "transit"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/AGENTS.md", "!**/CLAUDE.md"],
+      "outputs": []
     },
     "typecheck": {
-      "cache": false,
-      "dependsOn": []
+      "dependsOn": ["transit"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/AGENTS.md", "!**/CLAUDE.md"],
+      "outputs": [".react-router/types/**", ".source/**", "lib/*.generated.ts"]
     },
     "lint": {
-      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/AGENTS.md",
+        "!**/CLAUDE.md",
+        "$TURBO_ROOT$/biome.jsonc"
+      ],
       "outputs": []
     },
     "dev": {
@@ -70,6 +77,23 @@
     "typegen": {
       "cache": false,
       "outputs": []
+    },
+    "//#generate:mcp": {
+      "inputs": [
+        "apps/erp/app/modules/**",
+        "apps/erp/app/components/TreeView/**",
+        "apps/erp/app/services/**",
+        "apps/erp/app/types/**",
+        "apps/erp/app/utils/**",
+        "apps/erp/tsconfig.json",
+        "packages/{account,api,auth,database,documents,ee,env,files,form,jobs,kv,lib,locale,logger,notifications,onboarding,planning,printing,react,stripe,utils}/src/**",
+        "scripts/generate-mcp.ts",
+        "scripts/lib/**"
+      ],
+      "outputs": [
+        "apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json",
+        "apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json"
+      ]
     }
   }
 }

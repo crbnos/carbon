@@ -1,10 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { erpPosting } from "~/services/erp";
 import { scrapTrackedEntityValidator } from "~/services/models";
-import { getTrackedEntity } from "~/services/operations.service";
+import {
+  abilityBlockRefusal,
+  getTrackedEntity
+} from "~/services/operations.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
@@ -25,6 +33,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  const serviceRole = await getCarbonServiceRole();
+  const material = await serviceRole
+    .from("jobMaterial")
+    .select("jobOperationId")
+    .eq("id", materialId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  const refusal = material.data?.jobOperationId
+    ? await abilityBlockRefusal(serviceRole, {
+        operationId: material.data.jobOperationId,
+        employeeId: userId,
+        companyId
+      })
+    : null;
+  if (refusal) {
+    return data({ success: false, message: refusal }, { status: 403 });
+  }
+
   const trackedEntity = await getTrackedEntity(client, trackedEntityId);
   if (trackedEntity.error) {
     return data(
@@ -32,22 +58,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
       { status: 400 }
     );
   }
-
-  const serviceRole = await getCarbonServiceRole();
-  const issue = await serviceRole.functions.invoke("issue", {
-    body: {
+  const issued = await erpPosting(
+    "issue",
+    { companyId, userId },
+    {
       trackedEntityId,
       materialId,
-      parentTrackedEntityId,
+      parentTrackedEntityId: parentTrackedEntityId!,
       type: "scrapTrackedEntity",
       scrapReasonId: validation.data.scrapReasonId,
-      makeReplacement: validation.data.makeReplacement,
-      companyId,
-      userId
+      makeReplacement: validation.data.makeReplacement
     }
-  });
+  );
 
-  if (issue.error) {
+  if (issued.error) {
     return data(
       { success: false, message: "Failed to scrap entity" },
       { status: 400 }

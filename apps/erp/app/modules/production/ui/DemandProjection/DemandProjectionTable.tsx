@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Combobox,
   DropdownMenu,
@@ -7,9 +11,12 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   useUrlParams,
+  useViewport,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { getLocalTimeZone, parseDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
@@ -27,12 +34,15 @@ import { useLocations } from "~/components/Form/Location";
 import ItemThumbnail from "~/components/ItemThumbnail";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
+import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
 import { path } from "~/utils/path";
 import type { DemandProjection } from "../../types";
 
 type DemandProjectionsTableProps = {
   data: DemandProjection[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
 };
@@ -43,7 +53,13 @@ const defaultColumnPinning = {
 };
 
 const DemandProjectionsTable = memo(
-  ({ data, count, locationId, periods }: DemandProjectionsTableProps) => {
+  ({
+    data,
+    count,
+    nextCursor,
+    locationId,
+    periods
+  }: DemandProjectionsTableProps) => {
     const numberFormatter = useNumberFormatter();
     const dateFormatter = useDateFormatter({
       month: "short",
@@ -51,6 +67,8 @@ const DemandProjectionsTable = memo(
     });
     const [params] = useUrlParams();
     const { t } = useLingui();
+    const weekLabel = usePlanningWeekLabel();
+    const { isPhone } = useViewport();
     const permissions = usePermissions();
     const locations = useLocations();
     const [selectedItem, setSelectedItem] = useState<DemandProjection | null>(
@@ -60,9 +78,8 @@ const DemandProjectionsTable = memo(
     const columns = useMemo<ColumnDef<DemandProjection>[]>(() => {
       const periodColumns: ColumnDef<DemandProjection>[] = periods.map(
         (period, index) => {
-          const isCurrentWeek = index === 0;
-          const weekNumber = index + 1;
-          const weekKey = `week${weekNumber}` as keyof DemandProjection;
+          const weekKey = `week${index + 1}` as keyof DemandProjection;
+          const label = weekLabel(period.startDate, index);
           const startDate = parseDate(period.startDate).toDate(
             getLocalTimeZone()
           );
@@ -72,9 +89,7 @@ const DemandProjectionsTable = memo(
             accessorKey: weekKey,
             header: () => (
               <VStack spacing={0}>
-                <div>
-                  {isCurrentWeek ? "Present Week" : `Week ${weekNumber}`}
-                </div>
+                <div>{label}</div>
                 <div className="text-xs text-muted-foreground">
                   {dateFormatter.format(startDate)} -{" "}
                   {dateFormatter.format(endDate)}
@@ -88,9 +103,7 @@ const DemandProjectionsTable = memo(
               return <span>{numberFormatter.format(value)}</span>;
             },
             meta: {
-              filterHeader: isCurrentWeek
-                ? t`Present Week`
-                : t`Week ${weekNumber}`,
+              filterHeader: label,
               exportValue: (row: DemandProjection) => {
                 const value = row[weekKey] as number | undefined | null;
                 return value === undefined || value === null || value === 0
@@ -110,24 +123,32 @@ const DemandProjectionsTable = memo(
             <Hyperlink
               to={path.to.demandProjection(row.original.id!, locationId)}
             >
-              <HStack className="py-1 cursor-pointer">
+              <HStack className="py-1 cursor-pointer max-md:min-w-0">
                 <ItemThumbnail
                   size="sm"
                   thumbnailPath={row.original.thumbnailPath}
-                  // @ts-ignore
+                  // @ts-expect-error
                   type={row.original.type}
                 />
 
-                <VStack spacing={0} className="font-medium">
-                  {row.original.readableIdWithRevision}
-                  <div className="w-full truncate text-muted-foreground text-xs">
-                    {row.original.name}
-                  </div>
+                <VStack spacing={0} className="font-medium max-md:min-w-0">
+                  <span className="max-md:block max-md:w-full max-md:truncate">
+                    {row.original.readableIdWithRevision}
+                  </span>
+                  {distinctItemText(
+                    row.original.readableIdWithRevision,
+                    row.original.name
+                  ) && (
+                    <div className="w-full truncate text-muted-foreground text-xs">
+                      {row.original.name}
+                    </div>
+                  )}
                 </VStack>
               </HStack>
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -155,7 +176,10 @@ const DemandProjectionsTable = memo(
                     />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
+                    <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.edit}
+                      asChild
+                    >
                       <Link
                         to={path.to.demandProjection(
                           row.original.id!,
@@ -167,6 +191,7 @@ const DemandProjectionsTable = memo(
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.delete}
                       onSelect={() => setSelectedItem(row.original)}
                       destructive
                     >
@@ -180,19 +205,30 @@ const DemandProjectionsTable = memo(
           }
         }
       ];
-    }, [periods, dateFormatter, numberFormatter, locationId, permissions, t]);
+    }, [
+      periods,
+      dateFormatter,
+      numberFormatter,
+      locationId,
+      permissions,
+      t,
+      weekLabel
+    ]);
 
     return (
       <>
         <Table<DemandProjection>
+          mobileLayout="table"
           data={data}
           columns={columns}
           count={count}
+          // Location-scoped: no list registry entry, so no `listKey`.
+          infinite={{ dataKey: "projections", nextCursor }}
           defaultColumnPinning={defaultColumnPinning}
           title={t`Demand Forecasts`}
-          table="production-planning"
+          table="demand-projection"
           withSavedView
-          withSelectableRows
+          withSelectableRows={!isPhone}
           withSimpleSorting
           primaryAction={
             <div className="flex items-center gap-2">

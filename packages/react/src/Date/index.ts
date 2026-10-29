@@ -1,7 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Calendar } from "./components/Calendar";
 import DatePicker from "./DatePicker";
 import DateRangePicker from "./DateRangePicker";
 import DateTimePicker from "./DateTimePicker";
+import { TimeCombobox } from "./TimeCombobox";
 import TimePicker from "./TimePicker";
 
-export { Calendar, DatePicker, DateTimePicker, DateRangePicker, TimePicker };
+export {
+  Calendar,
+  DatePicker,
+  DateRangePicker,
+  DateTimePicker,
+  TimeCombobox,
+  TimePicker
+};

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
 import type {
@@ -11,6 +15,15 @@ import type {
   Company,
   CompanySettings
 } from "../../../types";
+
+/** Who approved the order, for the `order.approved*` merge fields. */
+export interface PurchaseOrderApproval {
+  approvedBy: string | null;
+  /** The business day of the decision, `YYYY-MM-DD`. */
+  approvedDate: string;
+  /** The approver's signature as a data URL, when one was on file. */
+  signature?: string | null;
+}
 
 /** Everything a Purchase Order block renderer might need. */
 export interface PurchaseOrderData {
@@ -27,6 +40,7 @@ export interface PurchaseOrderData {
   theme: DocumentTheme;
   sections: Record<string, ResolvedSection>;
   currencyCode: string | null;
+  approval?: PurchaseOrderApproval | null;
   numberFormatter: Intl.NumberFormat;
   /** Unit-price COLUMN only — a rate, not a settlement amount. */
   rateFormatter: Intl.NumberFormat;

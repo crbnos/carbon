@@ -1,101 +1,41 @@
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useRouteData, useUser } from "~/hooks";
-import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
-import type { Customer, SalesOrder, SalesOrderLineType } from "~/modules/sales";
-import {
-  getSalesOrder,
-  isSalesOrderLocked,
-  salesOrderLineValidator,
-  upsertSalesOrderLine
-} from "~/modules/sales";
+import { salesOrderLineValidator } from "~/modules/sales/sales.models";
+import type {
+  Customer,
+  SalesOrder,
+  SalesOrderLineType
+} from "~/modules/sales/types";
 import { SalesOrderLineForm } from "~/modules/sales/ui/SalesOrder";
 import { setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { orderId } = params;
-  if (!orderId) throw new Error("Could not find orderId");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "sales"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(salesOrderLineValidator).request(args, {
+    params: ["orderId"]
   });
-
-  const salesOrder = await getSalesOrder(viewClient, orderId);
-  await requireUnlocked({
-    request,
-    isLocked: isSalesOrderLocked(salesOrder.data?.status),
-    redirectTo: path.to.salesOrderDetails(orderId),
-    message: "Cannot add lines to a locked sales order. Reopen it first."
+  if ("invalid" in input) return input.invalid;
+  const { orderId } = input.params;
+  const formData = input.formData ?? new FormData();
+  const api = await carbon(args.request);
+  const result = await api.sales.createSalesOrderLine({
+    ...input.data,
+    // The URL order, not the form's copy.
+    salesOrderId: orderId,
+    customFields: setCustomFields(formData),
+    acknowledged: formData.get("acknowledged") === "true"
   });
-
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "sales"
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(salesOrderLineValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  if (d.salesOrderLineType === "Comment") {
-    d.accountId = undefined;
-    d.assetId = undefined;
-    d.itemId = undefined;
-  } else if (d.salesOrderLineType === "Fixed Asset") {
-    d.accountId = undefined;
-    d.itemId = undefined;
-  } else {
-    d.accountId = undefined;
-    d.assetId = undefined;
-  }
-
-  // An item a change notice is still holding is not sellable — it is a draft
-  // revision whose BOM has not been approved. Checked here rather than only in
-  // the picker because this action is also reached by the API and the MCP tools.
-  if (d.itemId) {
-    const unreleasedIssue = await getUnreleasedChangeOrderIssue(
-      getCarbonServiceRole(),
-      { itemId: d.itemId, companyId }
-    );
-    if (unreleasedIssue) {
-      return validationError({
-        fieldErrors: { itemId: `${unreleasedIssue} It cannot be ordered.` }
-      });
-    }
-  }
-
-  const createSalesOrderLine = await upsertSalesOrderLine(client, {
-    ...d,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
-  });
-
-  if (createSalesOrderLine.error) {
-    throw redirect(
-      path.to.salesOrderDetails(orderId),
-      await flash(
-        request,
-        error(createSalesOrderLine.error, "Failed to create sales order line.")
-      )
-    );
-  }
-
+  // An error is toasted; the violation modal reads `violations`.
+  if (!result.data) return result;
+  if ("violations" in result.data) return result.data;
   throw redirect(path.to.salesOrderDetails(orderId));
 }
 
@@ -126,12 +66,14 @@ export default function NewSalesOrderLineRoute() {
       salesOrderData?.salesOrder?.receiptPromisedDate ??
       salesOrderData?.salesOrder?.receiptRequestedDate ??
       "",
+    serviceStartDate: "",
+    serviceEndDate: "",
     shippingCost: 0
   };
 
   return (
     <SalesOrderLineForm
-      // @ts-ignore
+      // @ts-expect-error
       initialValues={initialValues}
     />
   );

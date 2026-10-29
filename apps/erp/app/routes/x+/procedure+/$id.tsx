@@ -1,33 +1,41 @@
-import { error, useCarbon } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { generateHTML, toast, useDebounce } from "@carbon/react";
+import {
+  generateHTML,
+  RecordOutlet,
+  useDebounce,
+  useHydrated
+} from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  Outlet,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { useFetcher, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { usePermissions, useUser } from "~/hooks";
-import { getProcedure, getProcedureVersions } from "~/modules/production";
+import { useImageUpload, usePermissions } from "~/hooks";
+import {
+  getProcedure,
+  getProcedureVersions
+} from "~/modules/production/production.service";
 import ProcedureExplorer from "~/modules/production/ui/Procedures/ProcedureExplorer";
 import ProcedureHeader from "~/modules/production/ui/Procedures/ProcedureHeader";
 import ProcedureProperties from "~/modules/production/ui/Procedures/ProcedureProperties";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/x+/procedure+/update";
 import { useDocumentStore } from "~/stores";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "procedure-detail");
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
@@ -59,6 +67,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // bypassRls makes `client` the service role, so the URL id is only proven to
+  // exist — not to be this company's.
+  if (procedure.data.companyId !== companyId) {
+    logger.error("Procedure is not in the caller's company", {
+      companyId,
+      procedureId: id
+    });
+    throw redirect(path.to.procedures);
+  }
+
   return {
     procedure: procedure.data,
     tags: tags.data ?? [],
@@ -67,6 +85,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ProcedureRoute() {
+  const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
@@ -79,6 +98,7 @@ export default function ProcedureRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Steps`}
               explorer={
                 <ProcedureExplorer
                   key={`explorer-${id}-${procedure.version}`}
@@ -87,7 +107,7 @@ export default function ProcedureRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <ProcedureEditor />
-                  <Outlet />
+                  <RecordOutlet />
                 </div>
               }
               properties={
@@ -133,22 +153,18 @@ function ProcedureEditor() {
     return () => setLiveTitle(null);
   }, [canEdit, setLiveTitle]);
 
-  const { carbon } = useCarbon();
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
-
+  // Its own fetcher, so a content save and a name save never abort each other.
+  const contentFetcher = useFetcher<typeof action>();
   const updateProcedure = useDebounce(
-    async (content: JSONContent) => {
-      await carbon
-        ?.from("procedure")
-        .update({
-          content: content ?? {},
-          updatedAt: today(getLocalTimeZone()).toString(),
-          updatedBy: userId
-        })
-        .eq("id", id!);
+    (content: JSONContent) => {
+      const formData = new FormData();
+      formData.append("ids", id!);
+      formData.append("field", "content");
+      formData.append("value", JSON.stringify(content ?? {}));
+      contentFetcher.submit(formData, {
+        method: "post",
+        action: path.to.bulkUpdateProcedure
+      });
     },
     500,
     true
@@ -180,23 +196,10 @@ function ProcedureEditor() {
     true
   );
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/job/notes/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error("Failed to upload image");
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("job/notes");
+  // generateHTML renders "" on the server and React 18 keeps a mismatched
+  // innerHTML on hydration, so remount the read-only body once hydrated.
+  const isHydrated = useHydrated();
 
   return (
     <div className="flex flex-col w-full h-full">
@@ -220,11 +223,12 @@ function ProcedureEditor() {
           }}
         />
       ) : (
-        <div className="flex flex-col gap-6 w-full h-full p-8">
+        <div className="flex flex-col gap-6 w-full h-full p-8 max-md:p-4">
           <h1 className="md:text-3xl text-2xl font-semibold leading-tight tracking-tight text-foreground">
             {procedureName}
           </h1>
           <div
+            key={isHydrated ? "client" : "server"}
             className="prose dark:prose-invert"
             dangerouslySetInnerHTML={{
               __html: generateHTML(content)

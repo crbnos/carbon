@@ -1,18 +1,16 @@
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
-import { VStack } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
-import { getStorageTypes } from "~/modules/inventory";
+import { useLoaderData } from "react-router";
 import StorageTypesTable from "~/modules/inventory/ui/StorageTypes/StorageTypesTable";
 import type { Handle } from "~/utils/handle";
+import { storageTypesList } from "~/utils/list-registry/inventory.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
-
-const logger = getLogger("erp", "storage-types");
 
 export const handle: Handle = {
   breadcrumb: msg`Storage Types`,
@@ -20,46 +18,26 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    role: "employee"
+  return loadListPage(request, storageTypesList, {
+    dataKey: "storageTypes",
+    onError: {
+      redirectTo: path.to.inventory,
+      message: "Error loading storage types"
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const storageTypes = await getStorageTypes(client, companyId, {
-    limit,
-    offset,
-    sorts,
-    search,
-    filters
-  });
-
-  if (storageTypes.error) {
-    logger.error(storageTypes.error);
-    throw redirect(
-      path.to.inventory,
-      await flash(request, error(null, "Error loading storage types"))
-    );
-  }
-
-  return {
-    storageTypes: storageTypes.data ?? [],
-    count: storageTypes.count ?? 0
-  };
 }
 
 export default function StorageTypesRoute() {
-  const { storageTypes, count } = useLoaderData<typeof loader>();
+  const { storageTypes, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <StorageTypesTable data={storageTypes} count={count ?? 0} />
-      <Outlet />
+      <StorageTypesTable
+        data={storageTypes}
+        count={count}
+        infinite={infinite}
+      />
+      <RecordOutlet />
     </VStack>
   );
 }

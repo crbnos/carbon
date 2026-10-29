@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -8,12 +12,11 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
-import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import type { z } from "zod";
 import {
   Employee,
@@ -41,18 +44,18 @@ const ProductionQuantityForm = ({
   operationOptions
 }: ProductionQuantityFormProps) => {
   const permissions = usePermissions();
-  const { t, i18n } = useLingui();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const { t } = useLingui();
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
 
   const [type, setType] = useState<"Production" | "Scrap" | "Rework">(
     initialValues.type
   );
 
   const quantityTypeOptions = [
-    { label: i18n._(msg`Production`), value: "Production" },
-    { label: i18n._(msg`Scrap`), value: "Scrap" },
-    { label: i18n._(msg`Rework`), value: "Rework" }
+    { label: t`Production`, value: "Production" },
+    { label: t`Scrap`, value: "Scrap" },
+    { label: t`Rework`, value: "Rework" }
   ];
 
   const isEditing = initialValues.id !== undefined;

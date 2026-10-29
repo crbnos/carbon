@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import bwipjs from "@bwip-js/node";
 import type { Database } from "@carbon/database";
 import type { TrackedEntityAttributes } from "@carbon/utils";
@@ -39,6 +43,58 @@ export function LineItemsBlock({
   const hasTrackedEntities = trackedEntities.length > 0;
   let rowIndex = 0;
 
+  // A rental shipment lists its units instead of shipment lines: one unit per
+  // row, with its serial number.
+  if (data.rentalUnits && data.rentalUnits.length > 0) {
+    return (
+      <View style={tw("mb-4")}>
+        <View
+          style={[
+            tw("flex flex-row py-2 px-3 text-[9px] font-bold"),
+            { backgroundColor: theme.accent, color: theme.accentForeground }
+          ]}
+        >
+          <Text style={tw("w-6/12 text-left")}>Description</Text>
+          <Text style={tw("w-2/12 text-right")}>Qty</Text>
+          <Text style={tw("w-4/12 text-right")}>Serial</Text>
+        </View>
+        {data.rentalUnits.map((unit, index) => {
+          const rowBg =
+            !opts.zebra || index % 2 === 0 ? "bg-white" : "bg-gray-50";
+          return (
+            <View
+              key={unit.id}
+              style={tw(
+                `flex flex-row py-2 px-3 border-b border-gray-200 text-[10px] ${rowBg}`
+              )}
+              wrap={false}
+            >
+              <View style={tw("w-6/12 pr-2")}>
+                <Text style={{ ...tw("text-gray-800"), ...overflow }}>
+                  {unit.name}
+                </Text>
+                {unit.assetReadableId ? (
+                  <Text
+                    style={{
+                      ...tw("text-[8px] text-gray-400 mt-0.5"),
+                      ...overflow
+                    }}
+                  >
+                    {unit.assetReadableId}
+                  </Text>
+                ) : null}
+              </View>
+              <Text style={tw("w-2/12 text-right text-gray-600")}>1</Text>
+              <Text style={tw("w-4/12 text-right text-gray-600")}>
+                {unit.serialNumber ?? ""}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    );
+  }
+
   return (
     <View style={tw("mb-4")}>
       <View
@@ -51,9 +107,9 @@ export function LineItemsBlock({
           Description
         </Text>
         <Text style={tw("w-2/12 text-right")}>Qty</Text>
-        {hasTrackedEntities && (
+        {hasTrackedEntities ? (
           <Text style={tw("w-5/12 text-right")}>Serial/Batch</Text>
-        )}
+        ) : null}
       </View>
 
       {shipmentLines
@@ -93,17 +149,17 @@ export function LineItemsBlock({
                   {line.description}
                 </Text>
                 {opts.showThumbnails &&
-                  thumbnails &&
-                  line.id != null &&
-                  line.id in thumbnails &&
-                  thumbnails[line.id] && (
-                    <View style={tw("mt-1 w-16")}>
-                      <Image
-                        src={thumbnails[line.id]!}
-                        style={tw("w-full h-auto")}
-                      />
-                    </View>
-                  )}
+                thumbnails &&
+                line.id != null &&
+                line.id in thumbnails &&
+                thumbnails[line.id] ? (
+                  <View style={tw("mt-1 w-16")}>
+                    <Image
+                      src={thumbnails[line.id]!}
+                      style={tw("w-full h-auto")}
+                    />
+                  </View>
+                ) : null}
                 <View style={tw("mt-1")}>
                   <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
                 </View>
@@ -111,7 +167,7 @@ export function LineItemsBlock({
               <Text style={tw("w-2/12 text-right text-gray-600")}>
                 {`${line.shippedQuantity} / ${line.orderQuantity} ${line.unitOfMeasure}`}
               </Text>
-              {hasTrackedEntities && (
+              {hasTrackedEntities ? (
                 <View style={tw("w-5/12 flex flex-col gap-1 items-end")}>
                   {trackedEntitiesForLine.map((entity) => {
                     const qrCodeDataUrl = generateQRCode(entity.id, 8);
@@ -131,7 +187,7 @@ export function LineItemsBlock({
                     );
                   })}
                 </View>
-              )}
+              ) : null}
             </View>
           );
         })}

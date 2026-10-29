@@ -1,15 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ConnectCustomerInput } from "@carbon/stripe/connect.server";
-// Type-only imports on purpose: they are erased at build, so this module stays
-// free of the `~/modules/sales` barrel. Importing it for real would transitively
-// pull `@carbon/glossary`'s Lingui macros, which throw outside a configured i18n
-// runtime and take plain unit tests of this mapper down with them.
 import type {
   getCustomer,
   getCustomerContact,
   getCustomerLocation,
   getCustomerTax
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 
+// Type-only imports on purpose: they are erased at build, so this pure mapper
+// loads nothing of `sales.service.ts`, and its unit test none of that module's
+// dependencies.
 /**
  * Stripe caps a metadata value at 500 characters and rejects the whole request
  * over it — a long tag list would otherwise fail the customer create rather

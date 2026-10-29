@@ -1,13 +1,16 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
-import { getDimensions } from "~/modules/accounting";
+import { useLoaderData } from "react-router";
 import { DimensionsTable } from "~/modules/accounting/ui/Dimensions";
 import type { Handle } from "~/utils/handle";
+import { dimensionsList } from "~/utils/list-registry/accounting.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Dimensions`,
@@ -15,33 +18,16 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyGroupId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
-  });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  return await getDimensions(client, companyGroupId, {
-    search,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
+  return loadListPage(request, dimensionsList, { dataKey: "data" });
 }
 
 export default function DimensionsRoute() {
-  const { data, count } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <DimensionsTable data={data ?? []} count={count ?? 0} />
-      <Outlet />
+      <DimensionsTable data={data} count={count} infinite={infinite} />
+      <RecordOutlet />
     </VStack>
   );
 }

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /*
   ModalCard components are an abstraction over Card and Modal components.
 */
@@ -119,15 +123,15 @@ ModalCardDescription.displayName = "ModalCardDescription";
 
 const ModalCardFooter = forwardRef<
   ElementRef<typeof ModalFooter> | ElementRef<typeof CardFooter>,
-  | ComponentPropsWithoutRef<typeof ModalFooter>
-  | ComponentPropsWithoutRef<typeof CardFooter>
->((props, ref) => {
+  ComponentPropsWithoutRef<typeof CardFooter>
+>(({ sticky, ...props }, ref) => {
   const type = useModalCardType();
 
   if (type === "card") {
-    return <CardFooter {...props} ref={ref} />;
+    return <CardFooter {...props} sticky={sticky} ref={ref} />;
   }
 
+  // A modal's footer is already pinned on phones.
   return <ModalFooter {...props} />;
 });
 ModalCardFooter.displayName = "ModalCardFooter";

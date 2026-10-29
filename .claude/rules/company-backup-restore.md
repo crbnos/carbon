@@ -6,17 +6,14 @@ paths:
   - "packages/jobs/src/inngest/functions/tasks/company-import.ts"
   - "packages/jobs/src/inngest/functions/tasks/company-restore.ts"
   - "apps/erp/app/modules/settings/backups.service.ts"
-  - "apps/erp/app/modules/settings/backups.server.ts"
+  - "apps/erp/app/modules/settings/settings.service.ts"
   - "apps/erp/app/modules/settings/ui/Backups/**"
   - "apps/erp/app/routes/x+/settings+/backups.tsx"
   - "apps/erp/app/routes/api+/settings.backup-summary.ts"
   - "apps/erp/app/routes/api+/settings.backup-restore-status.$restoreRunId.ts"
   - "apps/erp/app/services/onboarding.server.ts"
-  - "apps/erp/app/services/onboarding-draft.server.ts"
   - "packages/jobs/src/scripts/check-backups.ts"
   - "packages/jobs/manifests/**"
-  - "ci/src/upload-backup-templates.ts"
-  - "packages/database/supabase/backups/**"
 ---
 
 # Company Backup / Restore / Onboarding Seed
@@ -29,20 +26,47 @@ is the replacement. Reader-facing docs: `docs/content/docs/platform/backups.mdx`
 (kept deliberately impl-free — keep internals here, not there).
 
 User-facing rules of the feature: backups require `settings` update permission
-(no owner gate — the old `group.ownerId === userId` check was removed from both the
-route and the `export-company` edge function), exclude secrets, and a restore is
+(no owner gate — the old `group.ownerId === userId` check was removed; the route
+sends `carbon/company-export` itself via `exportCompanyBackup` in
+`settings.service.ts`), exclude secrets, and a restore is
 reversible via an auto-snapshot.
 
-**Internal-only in real deployments, open to everyone on a local dev stack**,
-while the multi-tenant caveats below are unhardened. One gate:
+**Backups are a Business/Enterprise feature** (`BACKUPS` in `FEATURE_PLANS`), with
+an internal-staff / local-dev escape hatch. The authoritative gate is
+`canManageBackups(client, companyId, email)`
+(`apps/erp/app/modules/settings/settings.service.ts`) =
+`canAccessBackups(email) || companyHasFeature(client, companyId, { feature: "BACKUPS" })`.
 `canAccessBackups(email)` (`apps/erp/app/utils/backups.ts`) = `IS_LOCAL_DEV ||
-isInternalEmail(email)`. `IS_LOCAL_DEV` (`packages/env`) is true only when neither
-`NODE_ENV` nor `VERCEL_ENV` is `production`/`preview` — so prod, preview, and
-self-hosted (all `NODE_ENV=production`) stay internal-only. Used by
-`requireBackupAccess` (route loader/action), every `api+/settings.backup-*`
-loader/action (404), and the nav (`localOrInternalRoutes` in
-`useSettingsSubmodules.tsx`, via `useFlags().isLocalDev`). Internal =
-`@carbon.ms` / `@carbon.us.org`. Drop `canAccessBackups` entirely to ship publicly.
+isInternalEmail(email)` stays a pure browser-safe predicate — the escape hatch, and the
+whole gate for **Demo Data** (`x+/settings+/demo-data`), which stays internal-only. Used
+by the `backups.tsx` loader/action and every `api+/settings.backup-*` loader/action (404
+on deny); the nav gates it in `useSettingsSubmodules.tsx` via `usePlanGate({ feature:
+"BACKUPS" })` OR `isInternal`/`isLocalDev` (Demo Data still uses `localOrInternalRoutes`).
+Internal = `@carbon.ms` / `@carbon.us.org`.
+
+`canManageBackups` is the route-level UX gate (a deletable open-code `if`). The
+un-strippable commercial LOCK is `requireBackupsEntitlement(companyId)`
+(`packages/ee/src/backups.server.ts` → `@carbon/ee/backups.server`), embedded at the
+top of every START-action durable function — `companyExportFunction`,
+`companyRestoreFunction`, `companyImportFunction` (finalize/revert are NOT gated —
+they only resolve an already-started restore, and gating them would strand a
+pending restore if entitlement lapsed). It is
+`IS_LOCAL_DEV`-exempt (the service-role job path carries no `email`, so the
+`isInternalEmail` half of the hatch cannot apply there) and otherwise
+`requireEntitlement("BACKUPS")` — Community/Starter throw. Onboarding demo-template
+apply/revert call `buildCompanyBackup`/`wipeAndLoad` DIRECTLY, and the import fn
+exempts `referencedTemplate`, so templating stays free on every edition. Do NOT push
+the check into `buildCompanyBackup`/`wipeAndLoad` — that breaks onboarding.
+
+The multi-tenant caveats below are real but are NOT a cross-tenant leak in the backup
+feature — every entry point is scoped to the caller's `companyId`. They were the reason
+this stayed internal-only, and exposing it to customers is a deliberate product decision:
+(1) restore is a full in-company wipe-and-reload (large destructive surface, snapshot-
+reversible); (2) the export HARD-REFUSES when a company's live data already holds
+cross-tenant references left by an upstream bug (tables like `jobOperationDependency`
+still lacking `companyId` in their PK — see `.ai/specs/2026-08-25-backup-durability.md`),
+offering a destructive "remove corrupted data" path. Closing that upstream schema hole
+is the remaining hardening.
 
 ## Shared engine — `company-backup.ts`
 
@@ -60,19 +84,33 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   data; `companyGroupId` = config shared across a company group (chart of
   accounts, currencies, dimensions).
 - Skip/scope sets: `SECRET_TABLES` (`apiKey`, `apiKeyRateLimit`,
-  `companyIntegration`, `webhook`, `oauthClient`, `oauthToken` — never travel;
+  `companyIntegration`, `employeePin`, `webhook`, `oauthClient`, `oauthCode`, `oauthToken`,
+  `ssoConnection`, `ssoDomain`, `pushSubscription` — never travel; `pushSubscription` is a
+  browser's push endpoint and its encryption keys, so a restore must neither bring back
+  signed-out browsers nor wipe the current ones; SSO rows carry values unique across all
+  companies (`providerId`, a verified `domain`), so a cross-company copy collided;
+  `employeePin` holds console-PIN bcrypt hashes, a credential for a 4-digit PIN, and
+  stays in place on restore alongside `employee` (`IN_PLACE_SKIPPED_TABLES`), which is
+  never wiped, so its (employee, company) FK has nothing to orphan it from;
   `apiKeyRateLimit` is here because its NOT-NULL `apiKeyId` references the stripped
   secret `apiKey`, so exporting it alone would dangle every row on restore — and
   it's UNLOGGED operational counters, not user data), `STRUCTURAL_TABLES` (`company` —
   excluded from catalog), `TRANSIENT_TABLES` (`demandForecastSource`,
-  `demandActual`, `supplyForecast`, `supplyActual` — MRP planning output the
-  `mrp` edge fn regenerates wholesale every run; excluded from the catalog
+  `demandActual`, `supplyForecast`, `supplyActual` — MRP planning output that
+  MRP regenerates wholesale every run; excluded from the catalog
   entirely alongside `STRUCTURAL_TABLES`, so they're never exported/wiped/loaded
   and the next MRP run rebuilds them. `demandForecastSource`'s discriminator
   CHECK (`sourceType` ↔ which of `jobId`/`salesOrderLineId`/`demandProjectionId`
   is non-null) made a remapped restore crash — the FK-nulling dangling-ref policy
   in `buildRowTransforms` nulls a set FK and violates the CHECK. `demandForecast`
-  is deliberately kept: it has a user-forecast write path and no such CHECK. The
+  is deliberately kept: it has a user-forecast write path and no such CHECK.
+  `planningAction` is kept too — `Dismissed` and `assigneeOverridden` are the
+  planner's own state, not regenerable — even though it has a comparable CHECK
+  (`planningAction_change_target_chk`, `20261006130000`: a change action keeps
+  its `jobId` or `purchaseOrderLineId`). Its target FKs are nullable with ON
+  DELETE CASCADE, so a consistent snapshot never carries a dangling target; a
+  remapped restore that did would null the FK and fail that CHECK. The dataset
+  wipe (`wipe.ts` `TRANSIENT_MRP_TABLES`) deletes it, which is a different path. The
   two excluded sets are unioned into `CATALOG_EXCLUDED_TABLES`, which
   `assertBackupImportable` also skips — an OLDER backup that still carries an
   excluded table is not schema drift, its rows are just ignored on load),
@@ -97,6 +135,20 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
 - Versioning: `BACKUP_VERSION` (currently **1** — single supported format, no
   legacy branch) in the manifest; `assertBackupImportable` rejects a file whose
   version no longer matches or that's missing a now-required column.
+- Reseed re-inclusion: `filterUnpopulated` drops tables the target already
+  populated (onboarding's own inserts), but a dropped table whose ids the kept
+  rows still REFERENCE is re-added by `referencedDroppedTables`
+  (`company-backup.transforms.ts`, transitive over `id`-FKs) — without it the
+  backup's `location` table was dropped because onboarding had inserted one
+  "Headquarters" row, and every imported `workCenter`/`job` locationId was
+  nulled (nullable) or left dangling at the SOURCE company's row (NOT NULL,
+  committed under replica mode) — the "schedule says no work centers exist"
+  bug. A re-added table is populated in the target by definition and unique
+  constraints stay enforced under replica mode, so backup rows that collide on
+  a real unique key (both sides have a "Headquarters") are NOT inserted:
+  `mapCollidingRows` + `matchableUniqueGroups` (+ `getUniqueColumnGroups` over
+  `pg_index`) map the source id onto the existing target row's id instead, so
+  every FK into the skipped row lands on the target's own row.
 - Id minting: `newIdForTable(table)` → `randomUUID()` for uuid id columns else
   `nanoid()`. `buildIdMaps` (`company-backup.transforms.ts`) decides WHICH rows get
   one, and both the restore and the reseed/import call it so they can't drift.
@@ -107,7 +159,14 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   `("id","companyId")`) and `demandProjection` (PK
   `("itemId","locationId","periodId")`). Leaving their source ids in place made a
   cross-company restore collide with the SOURCE company's still-live rows and roll
-  the whole thing back. Serial/int ids are left alone. A
+  the whole thing back. Five OTHER composite-PK tables are excluded BY NAME
+  (`READABLE_ID_TABLES`: `part`, `material`, `consumable`, `service`, `tool`)
+  because their `id` is a human-authored part number matched by VALUE against
+  `item."readableId"`, not an identifier — minting a fresh one orphans every row
+  from its item and every list view renders empty against a full table. They carry
+  only the composite PK (no global `UNIQUE (id)`), so preserving their ids cannot
+  collide; the two sets are disjoint by construction and a test enforces it.
+  Serial/int ids are left alone. A
   1:1 extension table whose `id` is itself an FK (`purchaseOrderDelivery.id ->
   purchaseOrder.id`) SHARES its parent's map rather than minting a second id,
   which would split the pair — and under `session_replication_role='replica'`
@@ -115,13 +174,28 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
 - Storage path rewriting: `rewriteStoragePath` (swap `{sourceCompanyId}/` →
   `{targetCompanyId}/` + remapped id segments), `rewriteToTemplateAssetPath`
   (`{co}/…` → `_templates/{industryId}/…`). `STORAGE_PATH_COLUMNS` =
-  `thumbnailPath` ONLY. `modelPath` (raw CAD) is deliberately excluded — raw
-  models live in the transient `temp-staging` bucket, not `private`, so a backup
-  never carries them; a restored model keeps its thumbnail and regenerates its 3D
-  artifacts if the raw is re-uploaded.
+  `thumbnailPath`, `modelPath`, `originalPath`, `optimizedModelPath`,
+  `glbPath`, `graphPath`, `pmiPath` — every `modelUpload` artifact column. A backup enumerates assets by LISTING the bucket under
+  `{companyId}/` (`company-export.ts`), not by reading these columns, so raw CAD
+  IS carried; a column missing from this set survives a cross-company restore
+  still pointing at the SOURCE company's prefix (which is what left restored
+  assemblies unable to load their model).
+- FK-less id refs: `ID_REF_COLUMNS` (`src/backups/id-refs.ts`, per table) lists
+  TEXT/TEXT[] columns that hold a tenant row's id with no FK — generic refs like
+  `inspection.sourceDocumentId`/`sourceDocumentLineId` (receipt line OR job
+  operation), `itemLedger.documentId`, `...Ids` arrays. `buildRowTransforms` rewrites
+  them through the combined `idRewrite` map on a remap load (element-wise for arrays,
+  lookup-only so non-id values pass through; an FK column is never treated this way).
+  Unlisted, a cross-company restore keeps the SOURCE ids: the
+  `inspection_sourceDocumentLineId_key` unique index (cross-company, on
+  `("sourceDocument","sourceDocumentLineId")`) then collides with the source
+  company's live rows and rolls the restore back. A migration adding such a column
+  must list it (`workflow-database-migration.md` step 3c). The map is typed against the
+  generated row types (`satisfies`), so a renamed/dropped column fails typecheck.
+  Neither `db:check:backups` nor any other check detects an UNLISTED new column yet.
 - Asset transport: `copyAssetsToBackup` (server-side `storage.copy`
-  of `private/{companyId}/…` files into a backup's `assets/` folder) and
-  `restoreAssetsFromBackup` (copy them back to `private/`, rewriting paths +
+  of the company bucket's `{companyId}/…` files into a backup's `assets/` folder) and
+  `restoreAssetsFromBackup` (copy them back into the target company's bucket, rewriting paths +
   guarding every write to the target `{companyId}/` prefix). `removeStoragePrefix`
   recursively deletes a backup's asset folder, which is `backupAssetsDir(name)` =
   `exports/<name>/assets` — derived from the folder name, not from a file suffix.
@@ -129,11 +203,10 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   memory stays flat regardless of asset size.
 
 Buckets (important, two different things):
-- `STORAGE_BUCKET = "private"` — the **shared** bucket holding every company's
-  uploaded assets under a `{companyId}/` prefix.
-- The **per-company bucket named by `companyId`** holds one folder per backup
-  (`exports/<name>/` — its `manifest.json`, `tables/`, `assets/{companyId}/…`) and
-  pre-restore snapshots under the same prefix — see `client.storage.from(companyId)`.
+- The **per-company bucket named by `companyId`** holds the company's uploaded assets
+  under a `{companyId}/` prefix, one folder per backup (`exports/<name>/` — its
+  `manifest.json`, `tables/`, `assets/{companyId}/…`), and pre-restore snapshots under
+  the same prefix — see `client.storage.from(companyId)`.
 - `TEMPLATE_BUCKET = "company-templates"`, `TEMPLATE_ASSET_PREFIX = "_templates"`.
 
 ## Export — `company-export.ts`
@@ -200,7 +273,7 @@ in-scope asset paths in `manifest.storage` and returns them; the job then
   intent → `dismissCompanyExportFailure` (service role — the table has no DELETE
   policy), and the next export's `upsertExportMarker` reuses the row.
 - **Asset cap** (`company-export.ts`): no per-file cap (the bucket already bounds
-  uploads — 120MB CAD, 50MB docs; the `private` bucket's own limit is the dev
+  uploads — 120MB CAD, 50MB docs; a company bucket's own limit is the dev
   `50MiB` global in `config.toml`), only a `MAX_STORAGE_TOTAL_BYTES = 1GiB` guard on
   the whole backup. Files are included greedily until the budget is hit; each is
   recorded in `manifest.storage` with `included: true|false`. The cap is storage-cost
@@ -218,7 +291,7 @@ downstream mechanism can do no more than say so.
 
 That is why there is **no stored verdict and no re-check job**: the Backups
 loader computes `reportBackupCompatibility` against the LIVE schema on every
-load (`getCompanyBackups` in `backups.server.ts`), so the badge cannot go
+load (`getCompanyBackups` in `settings.service.ts`), so the badge cannot go
 stale, and the hard refusal is `assertBackupImportable`, which runs against
 the live schema inside `company-restore.ts`. (Two earlier designs died here:
 a nightly re-check that alerted nobody and repaired nothing, and an
@@ -254,7 +327,7 @@ A schema-shaped manifest with no rows is exactly as informative as a real custom
 backup, because compatibility is decided entirely by table and column names. That is
 what makes this checkable from a committed file rather than from a database.
 
-It runs from `.husky/pre-commit` when a staged file is under
+It runs from `scripts/git-hooks/pre-commit` when a staged file is under
 `packages/database/supabase/migrations/`, alongside `db:check:datasets`, and skips
 with `CARBON_SKIP_BACKUP_CHECK=1`. Read-only — one connection, `information_schema`
 queries, no writes.
@@ -417,7 +490,8 @@ Forward flow:
      `SECRET_TABLES` still carries its rows (e.g. `apiKeyRateLimit` → the stripped
      `apiKey`); they're ignored on load, so the preflight ignores them too.
 5. `restoreAssetsFromBackup` (outside the txn, non-transactional) copies the files
-   from the backup's `assets/` folder back to `private/<rewritten path>`,
+   from the backup's `assets/` folder back into the target company's bucket at the
+   rewritten path,
    server-side. It runs **before** the `ready` marker (step below) so the progress
    dialog only reports "complete" once data AND files are in place — but it never
    throws (per-file warnings), so a storage hiccup still can't fail a committed
@@ -437,6 +511,14 @@ also used by `company-template.ts`: applying a demo template from Settings
 snapshots with `buildCompanyBackup`, and reverting it wipes-and-loads that
 snapshot through exactly this path. See `onboarding-company-templates.md`.
 
+**Third caller: company deletion.** `purgeCompany` (`packages/jobs/.../scheduled/purge-company.ts`,
+used by the weekly inactive-company cleanup) runs `wipeScopedData` over the WHOLE catalog in
+replica mode, secret and identity tables included, because nothing is reloaded after it. It
+then deletes the `company` row with triggers back on, so tables outside the catalog cascade.
+`canSetReplicationRole` decides whether it can wipe at all. See `billing-system.md`.
+`listBucketFilesRecursive` lives in `src/backups/storage.ts`, shared by the export and that
+cleanup.
+
 ### Known caveats in the committed code (not yet hardened)
 
 - **Storage restore is best-effort** — copy failures `console.warn` only; the
@@ -455,14 +537,15 @@ snapshot through exactly this path. See `onboarding-company-templates.md`.
 
 ## ERP layer
 
-- `backups.service.ts` — per-company bucket ops: `exportCompanyBackup`,
+- `backups.service.ts` — per-company bucket ops:
   `listCompanyBackupFolders` (`from(companyId).list("exports")` folders, paged
   with a hard page cap; a folder is "ready" once `manifest.json` exists, else
   "pending"; returns each parsed `Manifest` for the server wrapper),
   `deleteCompanyBackup` (removes the whole `exports/<name>/` folder),
   `getCompanyRestoreRuns` (restore markers), `getCompanyExportRun` (the export
   marker: `status: "running" | "failed"`, `progress`, `startedAt`, `error`).
-- `backups.server.ts` — server-only. `getCompanyBackups` is the loader's list:
+- `settings.service.ts` (server-only) holds the rest. `canManageBackups` is the gate.
+  `exportCompanyBackup` sends `carbon/company-export`. `getCompanyBackups` is the loader's list:
   it reads the live catalog ONCE per load (`getCompanyTableCatalog` over
   `getDatabaseClient()`, via `@carbon/jobs/backups`), diffs every listed
   manifest with `reportBackupCompatibility`, attaches
@@ -591,15 +674,7 @@ picker rather than provisioning a clean company.
 
 **Dormant** (built, never wired, do not revive without revisiting
 `.ai/specs/implemented/2026-08-13-onboarding-company-templates.md`): the
-`company-templates` bucket, `TEMPLATE_BUCKET` / `TEMPLATE_ASSET_PREFIX`,
-`templateIndustryId` on `carbon/company-import`, `ci/src/upload-backup-templates.ts`, and
-`packages/database/supabase/backups/` (which now holds only a README saying so).
-
-## CI publish (dormant)
-
-`ci/src/upload-backup-templates.ts` is part of the dormant set above and publishes
-nothing today — onboarding templates never go through a storage bucket. It is described
-here only so the next reader knows what the script and the `Publish backup templates`
-workflow (`.github/workflows/publish-templates.yml`, `workflow_dispatch`) were for:
-a manual, idempotent upload of committed `.gz` archives and their sibling
-`<industryId>.assets/` folders into each workspace's `company-templates` bucket.
+`company-templates` bucket, `TEMPLATE_BUCKET` / `TEMPLATE_ASSET_PREFIX`, and
+`templateIndustryId` on `carbon/company-import`. The CI publish script
+(`ci/src/upload-backup-templates.ts`), its `Publish backup templates` workflow and
+`packages/database/supabase/backups/` were deleted.

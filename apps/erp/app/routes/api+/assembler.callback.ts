@@ -1,4 +1,8 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { isAssemblerCallbackToken } from "@carbon/api/internal-call";
 import { SESSION_SECRET } from "@carbon/env";
 import { inngest } from "@carbon/lib/inngest";
 import type { ActionFunctionArgs } from "react-router";
@@ -7,12 +11,6 @@ import type { ActionFunctionArgs } from "react-router";
 // and wakes the waiting run via `carbon/assembler-job-done`. Auth is the
 // per-job HMAC token (the caller is the assembler, not a user); duplicate
 // deliveries are inert (waitForEvent consumes the first match).
-
-export function assemblerCallbackToken(jobId: string): string {
-  return createHmac("sha256", SESSION_SECRET ?? "")
-    .update(`assembler-callback:${jobId}`)
-    .digest("hex");
-}
 
 export async function action({ request }: ActionFunctionArgs) {
   const body = (await request.json().catch(() => null)) as {
@@ -30,10 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const token = new URL(request.url).searchParams.get("token") ?? "";
-  const expected = assemblerCallbackToken(job.id);
-  const a = Buffer.from(token);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) {
+  if (!isAssemblerCallbackToken(SESSION_SECRET ?? "", job.id, token)) {
     throw new Response("Unauthorized", { status: 401 });
   }
 

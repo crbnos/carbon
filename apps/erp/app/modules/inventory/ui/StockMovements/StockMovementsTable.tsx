@@ -1,4 +1,16 @@
-import { Badge, HStack, MenuIcon, MenuItem, VStack } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Badge,
+  HStack,
+  MenuIcon,
+  MenuItem,
+  PrefetchLink,
+  VStack
+} from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -17,7 +29,6 @@ import {
   LuWarehouse,
   LuWrench
 } from "react-icons/lu";
-import { Link } from "react-router";
 import {
   DateTime,
   EmployeeAvatar,
@@ -28,9 +39,10 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
-import { usePermissions, useUser } from "~/hooks";
+import type { InfiniteOptions } from "~/components/Table";
+import { usePermissions } from "~/hooks";
 import { useDebouncedRealtime } from "~/hooks/useDebouncedRealtime";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import {
@@ -43,12 +55,12 @@ import StockMovementCorrectionModal from "./StockMovementCorrectionModal";
 type StockMovementsTableProps = {
   data: StockMovement[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const StockMovementsTable = memo(
-  ({ data, count }: StockMovementsTableProps) => {
+  ({ data, count, infinite }: StockMovementsTableProps) => {
     const { t } = useLingui();
-    const { company } = useUser();
     const permissions = usePermissions();
     const [correctionTarget, setCorrectionTarget] =
       useState<StockMovement | null>(null);
@@ -62,7 +74,7 @@ const StockMovementsTable = memo(
     // Company-wide realtime: a single posting can insert many itemLedger rows
     // at once, so coalesce the burst into one route revalidation (1.5s debounce
     // inside useDebouncedRealtime) rather than revalidating per event.
-    useDebouncedRealtime("itemLedger", `companyId=eq.${company.id}`);
+    useDebouncedRealtime("itemLedger");
 
     const columns = useMemo<ColumnDef<StockMovement>[]>(() => {
       return [
@@ -79,7 +91,10 @@ const StockMovementsTable = memo(
               <Hyperlink to={getInventoryItemActivityPath(row.original)}>
                 <VStack spacing={0}>
                   <span>{row.original.itemReadableId}</span>
-                  {row.original.itemDescription && (
+                  {distinctItemText(
+                    row.original.itemReadableId,
+                    row.original.itemDescription
+                  ) && (
                     <span className="text-muted-foreground text-xs">
                       {row.original.itemDescription}
                     </span>
@@ -89,6 +104,7 @@ const StockMovementsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBlocks />
           }
         },
@@ -102,6 +118,7 @@ const StockMovementsTable = memo(
           header: t`Entry Type`,
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: itemLedgerTypes.map((type) => ({
@@ -117,6 +134,7 @@ const StockMovementsTable = memo(
           header: t`Document Type`,
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: itemLedgerDocumentTypes.map((type) => ({
@@ -156,6 +174,7 @@ const StockMovementsTable = memo(
           header: t`Quantity`,
           cell: ({ row }) => <QuantityDelta value={row.original.quantity} />,
           meta: {
+            mobile: "P2",
             icon: <LuHash />
           }
         },
@@ -199,13 +218,12 @@ const StockMovementsTable = memo(
               row.original.trackedEntityReadableId || trackedEntityId;
             if (!trackedEntityId) return label ?? "";
             return (
-              <Link
-                prefetch="intent"
+              <PrefetchLink
                 to={`${path.to.traceabilityGraph}?trackedEntityId=${trackedEntityId}`}
                 className="text-foreground hover:underline"
               >
                 {label}
-              </Link>
+              </PrefetchLink>
             );
           },
           meta: {
@@ -231,6 +249,10 @@ const StockMovementsTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            mobile: "P3",
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -281,6 +303,7 @@ const StockMovementsTable = memo(
       <>
         <Table<(typeof data)[number]>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           defaultColumnPinning={{

@@ -1,7 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
+  Copy,
   HStack,
   IconButton,
   Subheading,
@@ -12,12 +18,16 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
-import { LuCopy, LuInfo, LuLink, LuRefreshCcw } from "react-icons/lu";
+import { useCallback } from "react";
+import { LuCopy, LuKeySquare, LuLink, LuRefreshCcw } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { Assignee, DateTime, useOptimisticAssignment } from "~/components";
+import {
+  Assignee,
+  ExchangeRateUpdatedAt,
+  useOptimisticAssignment
+} from "~/components";
 import {
   Currency,
   Location,
@@ -49,13 +59,13 @@ const PurchaseInvoiceProperties = () => {
     purchaseInvoice: PurchaseInvoice;
   }>(path.to.purchaseInvoice(invoiceId));
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
-
+  });
   const { company } = useUser();
   const exchangeRateFetcher = useFetcher<typeof exchangeRateAction>();
 
@@ -144,6 +154,13 @@ const PurchaseInvoiceProperties = () => {
                 <span>Copy link to Purchase Invoice</span>
               </TooltipContent>
             </Tooltip>
+            <Copy
+              text={invoiceId}
+              label={t`Copy purchase invoice unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -434,13 +451,9 @@ const PurchaseInvoiceProperties = () => {
                 Exchange Rate
               </span>
               {routeData?.purchaseInvoice?.exchangeRateUpdatedAt && (
-                <DateTime
+                <ExchangeRateUpdatedAt
                   value={routeData?.purchaseInvoice?.exchangeRateUpdatedAt}
-                  variant="absolute"
-                  side="bottom"
-                >
-                  <LuInfo className="h-4 w-4 text-muted-foreground" />
-                </DateTime>
+                />
               )}
             </HStack>
             <HStack className="w-full justify-between">

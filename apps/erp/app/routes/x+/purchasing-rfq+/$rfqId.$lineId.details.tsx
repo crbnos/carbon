@@ -1,32 +1,43 @@
-import { assertIsPost, error } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Fragment } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { PurchasingRFQ } from "~/modules/purchasing";
+import {
+  isRfqLocked,
+  purchasingRfqLineValidator
+} from "~/modules/purchasing/purchasing.models";
 import {
   getPurchasingRFQ,
   getPurchasingRFQLine,
   getSupplierInteractionLineDocuments,
-  isRfqLocked,
-  purchasingRfqLineValidator,
   upsertPurchasingRFQLine
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
+import type { PurchasingRFQ } from "~/modules/purchasing/types";
 import { PurchasingRFQLineForm } from "~/modules/purchasing/ui/PurchasingRfq";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
 } from "~/modules/purchasing/ui/SupplierInteraction";
-import { getModelByItemId } from "~/modules/shared";
+import { getModelByItemId } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "purchasing-rfq-line-details");
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { companyId } = await requirePermissions(request, {
@@ -46,6 +57,20 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       path.to.purchasingRfq(rfqId),
       await flash(request, error(line.error, "Failed to load line"))
     );
+  }
+
+  // The service role bypasses RLS and lineId comes from the URL: the line must
+  // belong to this company and to the RFQ in the URL.
+  if (
+    line.data.companyId !== companyId ||
+    line.data.purchasingRfqId !== rfqId
+  ) {
+    logger.error("Purchasing RFQ line not found for company", {
+      companyId,
+      rfqId,
+      lineId
+    });
+    throw notFound("Purchasing RFQ line not found");
   }
 
   // purchasingRfqLines is the one line view that exposes modelPath without the
@@ -181,7 +206,7 @@ export default function PurchasingRFQLine() {
         viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
       />
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

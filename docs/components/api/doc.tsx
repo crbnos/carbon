@@ -1,7 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ReactNode } from "react";
 
-export function DocPage({ children }: { children: ReactNode }) {
-  return <div className="max-w-190">{children}</div>;
+/**
+ * `max-w-190` (760px) is a PROSE measure — right for paragraphs, wrong for a
+ * reference layout that puts a request sample and two columns of tables side by
+ * side. Those pass `wide` to use the column the page actually has.
+ */
+export function DocPage({
+  children,
+  wide = false
+}: {
+  children: ReactNode;
+  wide?: boolean;
+}) {
+  return <div className={wide ? "w-full" : "max-w-190"}>{children}</div>;
 }
 
 export function DocEyebrow({ children }: { children: ReactNode }) {
@@ -41,6 +56,49 @@ export function P({ children }: { children: ReactNode }) {
 
 export function Code({ children }: { children: ReactNode }) {
   return <code className="font-mono text-ed-13 text-ed-brown">{children}</code>;
+}
+
+/** `code` spans of one line of prose. */
+function inline(text: string): ReactNode[] {
+  return text
+    .split(/(`[^`]+`)/)
+    .map((part, i) =>
+      part.startsWith("`") && part.endsWith("`") ? (
+        <Code key={i}>{part.slice(1, -1)}</Code>
+      ) : (
+        part
+      )
+    );
+}
+
+/**
+ * An operation's description as plain-text docs write it: paragraphs split
+ * by a blank line, `- ` lines as a list, `code` in backticks.
+ */
+export function Prose({ text }: { text: string }) {
+  const blocks = text.trim().split(/\n\s*\n/);
+  return (
+    <>
+      {blocks.map((block, i) => {
+        const lines = block.split("\n").map((line) => line.trim());
+        const items = lines.filter((line) => line.startsWith("- "));
+        if (items.length === 0) {
+          return <P key={i}>{inline(lines.join(" "))}</P>;
+        }
+        const lead = lines.filter((line) => !line.startsWith("- ")).join(" ");
+        return (
+          <div key={i}>
+            {lead && <P>{inline(lead)}</P>}
+            <ul className="m-0 mt-2 list-disc pl-5 text-ed-15 leading-[170%] text-ed-ink/82">
+              {items.map((item, j) => (
+                <li key={j}>{inline(item.slice(2))}</li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </>
+  );
 }
 
 export function DocLink({ href, children }: { href: string; children: ReactNode }) {

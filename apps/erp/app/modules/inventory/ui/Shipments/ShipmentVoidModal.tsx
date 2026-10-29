@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -7,32 +12,34 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  ModalTitle
+  ModalTitle,
+  toast
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
-import { useEffect, useRef } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useRef } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { useFetcher, useNavigation, useParams } from "react-router";
+import { useNavigation, useParams } from "react-router";
+import type { action as voidAction } from "~/routes/x+/shipment+/$shipmentId.void";
 import { path } from "~/utils/path";
 
 const ShipmentVoidModal = ({ onClose }: { onClose: () => void }) => {
   const { shipmentId } = useParams();
   if (!shipmentId) throw new Error("shipmentId not found");
 
+  const { t } = useLingui();
   const navigation = useNavigation();
-  const fetcher = useFetcher<{}>();
-  const submitted = useRef(false);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onClose();
+  const fetcher = useAction<typeof voidAction>({
+    onSuccess: () => toast.success(t`Shipment voided`),
+    onSettled: () => {
+      if (submitted.current) {
+        onClose();
+      }
     }
-  }, [fetcher.state]);
+  });
+  const submitted = useRef(false);
 
   return (
     <Modal
@@ -47,14 +54,14 @@ const ShipmentVoidModal = ({ onClose }: { onClose: () => void }) => {
           <ModalTitle>
             <Trans>Void Shipment</Trans>
           </ModalTitle>
-          <ModalDescription>
+        </ModalHeader>
+        <ModalBody>
+          <p className="text-sm text-muted-foreground mb-4">
             <Trans>
               Are you sure you want to void this shipment? This action will
               reverse all inventory transactions and cannot be undone.
             </Trans>
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody>
+          </p>
           <Alert variant="destructive">
             <LuTriangleAlert className="h-4 w-4" />
             <AlertTitle>

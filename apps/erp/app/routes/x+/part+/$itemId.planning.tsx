@@ -1,28 +1,37 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { useRouteData } from "~/hooks";
+import {
+  itemPlanningValidator,
+  itemSupersessionValidator,
+  predecessorSupersessionValidator
+} from "~/modules/items/items.models";
 import {
   getItemPlanning,
   getItemQuantities,
   getItemSupersession,
-  getSupersessionChain,
-  itemPlanningValidator,
-  itemSupersessionValidator,
-  upsertItemPlanning,
-  upsertItemSupersession
-} from "~/modules/items";
+  getSupersessionChain
+} from "~/modules/items/items.service";
 import {
   ItemPlanningForm,
   ItemSupersessionForm
 } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import { getLocationsList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -90,84 +99,86 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     partPlanning: partPlanning.data,
     supersession: supersession.data,
     supersessionChain: supersessionChain.chain,
+    supersededBy: supersessionChain.supersededBy,
     quantityOnHand: quantities.data?.quantityOnHand ?? 0,
     locationId
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+// The planning form, the supersession card (`intent=supersession`) and its
+// Add Predecessor modal (`intent=supersession-predecessor`).
+const intentForm = z.object({ intent: zfd.text(z.string().optional()) });
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(intentForm).request(args, {
+    params: ["itemId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { itemId } = input.params;
+  const formData = input.formData ?? new FormData();
+  const api = await carbon(args.request);
 
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const formData = await request.formData();
-
-  if (formData.get("intent") === "supersession") {
-    const supersessionValidation = await validator(
-      itemSupersessionValidator
-    ).validate(formData);
-
-    if (supersessionValidation.error) {
-      return validationError(supersessionValidation.error);
-    }
-
-    const updateSupersession = await upsertItemSupersession(client, {
-      ...supersessionValidation.data,
-      itemId,
-      companyId,
-      createdBy: userId,
-      updatedBy: userId
+  if (input.data.intent === "supersession") {
+    const validation = await validator(itemSupersessionValidator).validate(
+      formData
+    );
+    if (validation.error) return validationError(validation.error);
+    const result = await api.items.setItemSupersession({
+      ...validation.data,
+      itemId
     });
-    if (updateSupersession.error) {
-      throw redirect(
-        path.to.part(itemId),
-        await flash(
-          request,
-          error(updateSupersession.error, "Failed to update supersession")
-        )
-      );
+    if (result.error?.category === "rule") {
+      return validationError({
+        fieldErrors: { successorItemId: result.error.message },
+        formId: validation.formId
+      });
     }
-
-    throw redirect(
-      supersessionValidation.data.locationId
-        ? path.to.partPlanningLocation(
-            itemId,
-            supersessionValidation.data.locationId
-          )
+    const { locationId } = validation.data;
+    return respond(args.request, result).redirect(
+      locationId
+        ? path.to.partPlanningLocation(itemId, locationId)
         : path.to.partPlanning(itemId),
-      await flash(request, success("Updated supersession"))
+      { message: "Updated supersession", onError: path.to.part(itemId) }
+    );
+  }
+
+  if (input.data.intent === "supersession-predecessor") {
+    const validation = await validator(
+      predecessorSupersessionValidator
+    ).validate(formData);
+    if (validation.error) return validationError(validation.error);
+    const result = await api.items.addItemPredecessor({
+      ...validation.data,
+      itemId
+    });
+    if (result.error && result.error.category !== "internal") {
+      return validationError({
+        fieldErrors: { predecessorItemId: result.error.message },
+        formId: validation.formId
+      });
+    }
+    return respond(args.request, result).redirect(
+      path.to.partPlanning(itemId),
+      { message: "Added predecessor" }
     );
   }
 
   const validation = await validator(itemPlanningValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const updatePartPlanning = await upsertItemPlanning(client, {
+  if (validation.error) return validationError(validation.error);
+  const result = await api.items.updateItemPlanning({
     ...validation.data,
     itemId,
-    updatedBy: userId,
     customFields: setCustomFields(formData)
   });
-  if (updatePartPlanning.error) {
-    throw redirect(
-      path.to.part(itemId),
-      await flash(
-        request,
-        error(updatePartPlanning.error, "Failed to update part planning")
-      )
-    );
+  if (result.error?.category === "rule") {
+    return validationError({
+      fieldErrors: { responsibleEmployee: result.error.message },
+      formId: validation.formId
+    });
   }
-
-  throw redirect(
+  return respond(args.request, result).redirect(
     path.to.partPlanningLocation(itemId, validation.data.locationId),
-    await flash(request, success("Updated part planning"))
+    { message: "Updated part planning", onError: path.to.part(itemId) }
   );
 }
 
@@ -180,6 +191,7 @@ export default function PartPlanningRoute() {
     partPlanning,
     supersession,
     supersessionChain,
+    supersededBy,
     quantityOnHand,
     locationId
   } = useLoaderData<typeof loader>();
@@ -224,6 +236,7 @@ export default function PartPlanningRoute() {
         }
         quantityOnHand={quantityOnHand}
         chain={supersessionChain}
+        supersededBy={supersededBy}
       />
       <ItemPlanningChart
         itemId={partPlanning.itemId}

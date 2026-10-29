@@ -1,4 +1,14 @@
-import { Badge, Copy, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Badge,
+  Copy,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -14,6 +24,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useSubstance } from "~/components/Form/Substance";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { MaterialGrade } from "../../types";
@@ -21,10 +32,11 @@ import type { MaterialGrade } from "../../types";
 type MaterialGradesTableProps = {
   data: MaterialGrade[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const MaterialGradesTable = memo(
-  ({ data, count }: MaterialGradesTableProps) => {
+  ({ data, count, infinite }: MaterialGradesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -40,6 +52,7 @@ const MaterialGradesTable = memo(
           header: t`Substance`,
           cell: ({ row }) => <Enumerable value={row.original.substanceName} />,
           meta: {
+            mobile: "P2",
             icon: <LuGlassWater />,
             filter: {
               type: "static",
@@ -66,6 +79,7 @@ const MaterialGradesTable = memo(
               </Hyperlink>
             ),
           meta: {
+            mobile: "P1",
             icon: <LuBeef />
           }
         },
@@ -109,6 +123,7 @@ const MaterialGradesTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={
                 !permissions.can("update", "parts") || row.companyId === null
               }
@@ -122,6 +137,7 @@ const MaterialGradesTable = memo(
               <Trans>Edit Material Grade</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
                 !permissions.can("delete", "parts") || row.companyId === null
               }
@@ -144,6 +160,7 @@ const MaterialGradesTable = memo(
     return (
       <Table<(typeof rows)[number]>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         importCSV={[

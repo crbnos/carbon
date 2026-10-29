@@ -1,6 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import type { ResourceTimelineReservation } from "./resourceTimeline";
-import { buildResourceTimeline } from "./resourceTimeline";
+import {
+  buildResourceTimeline,
+  collapseToLanes,
+  forecastCounts
+} from "./resourceTimeline";
 
 const HOUR = 3_600_000;
 
@@ -65,6 +73,44 @@ describe("buildResourceTimeline", () => {
     expect(child.data.message).toBe("J000009 · CNC Route");
     expect(child.data.offset).toBe(2 * HOUR);
     expect(child.data.duration).toBe(2 * HOUR);
+  });
+
+  it("titles the bar and detail by the part, not the operation description", () => {
+    const result = buildResourceTimeline({
+      reservations: [
+        reservation({
+          operationDescription: "3D Print — ESTIMATED: Inspect camera fit",
+          itemReadableId: "PART-0042",
+          itemName: "Camera Housing",
+          itemThumbnailPath: "_templates/aerospace_satellite/part-0042.svg",
+          itemType: "Part"
+        })
+      ]
+    });
+
+    const bar = result.events.find((e) => e.id === "res-1")!;
+    // The row reads "{job} · {part}" — the description no longer titles it.
+    expect(bar.data.message).toBe("J000001 · PART-0042");
+
+    const detail = result.detailsById["res-1"];
+    expect(detail.title).toBe("J000001 · PART-0042");
+    // The panel carries the part + thumbnail, and keeps the description for context.
+    expect(detail.itemReadableId).toBe("PART-0042");
+    expect(detail.itemName).toBe("Camera Housing");
+    expect(detail.thumbnailPath).toBe(
+      "_templates/aerospace_satellite/part-0042.svg"
+    );
+    expect(detail.operationDescription).toBe(
+      "3D Print — ESTIMATED: Inspect camera fit"
+    );
+  });
+
+  it("falls back to the operation description when the part is unknown", () => {
+    const result = buildResourceTimeline({
+      reservations: [reservation({ operationDescription: "Deburr" })]
+    });
+    const bar = result.events.find((e) => e.id === "res-1")!;
+    expect(bar.data.message).toBe("J000001 · Deburr");
   });
 
   it("interleaves reservations and maintenance by start within a lane", () => {
@@ -356,5 +402,179 @@ describe("buildResourceTimeline", () => {
     expect(detail.start).toBe("2026-07-14T04:00:00.000Z");
     expect(detail.end).toBe("2026-07-14T14:00:00.000Z");
     expect(detail.durationMs).toBe(10 * HOUR);
+  });
+});
+
+describe("collapseToLanes", () => {
+  const timeline = () =>
+    buildResourceTimeline({
+      locationName: "Austin Plant",
+      reservations: [
+        reservation({
+          id: "res-machine",
+          operationId: "op-clean",
+          startAt: "2026-07-14T10:00:00.000Z",
+          endAt: "2026-07-14T12:00:00.000Z"
+        }),
+        reservation({
+          id: "res-emp",
+          resourceKind: "Employee",
+          resourceId: "emp-1",
+          resourceName: "Brad Barbin",
+          operationId: "op-clean"
+        }),
+        reservation({ id: "res-a" }),
+        reservation({
+          id: "res-drill",
+          resourceId: "wc-2",
+          resourceName: "Drill Press"
+        })
+      ],
+      workCenters: [{ id: "wc-3", name: "Saw" }],
+      maintenance: [
+        {
+          id: "maint-1",
+          workCenterId: "wc-2",
+          name: "MAIN000001",
+          startAt: "2026-07-14T12:00:00.000Z",
+          endAt: "2026-07-14T13:00:00.000Z"
+        }
+      ]
+    });
+
+  it("keeps the root and one childless row per lane", () => {
+    const lanes = collapseToLanes(timeline().events);
+
+    expect(lanes.map((e) => e.id)).toEqual([
+      "resources-root",
+      "lane:WorkCenter:wc-1",
+      "lane:WorkCenter:wc-2",
+      "lane:WorkCenter:wc-3"
+    ]);
+    for (const lane of lanes.slice(1)) {
+      expect(lane.children).toEqual([]);
+      expect(lane.hasChildren).toBe(false);
+    }
+    expect(lanes[0]?.children).toEqual([
+      "lane:WorkCenter:wc-1",
+      "lane:WorkCenter:wc-2",
+      "lane:WorkCenter:wc-3"
+    ]);
+  });
+
+  it("puts a lane's operations and maintenance on its row in start order", () => {
+    const lanes = collapseToLanes(timeline().events);
+    const cnc = lanes.find((e) => e.id === "lane:WorkCenter:wc-1")!;
+    const drill = lanes.find((e) => e.id === "lane:WorkCenter:wc-2")!;
+    const saw = lanes.find((e) => e.id === "lane:WorkCenter:wc-3")!;
+
+    expect(cnc.data.items?.map((i) => i.id)).toEqual(["res-a", "res-machine"]);
+    expect(cnc.data.items?.[1]?.data.offset).toBe(2 * HOUR);
+    expect(cnc.data.items?.[1]?.data.duration).toBe(2 * HOUR);
+    expect(drill.data.items?.map((i) => i.id)).toEqual([
+      "res-drill",
+      "maint-1"
+    ]);
+    // An idle station still gets its (empty) row.
+    expect(saw.data.items).toEqual([]);
+  });
+
+  it("drops operator segments and leaves the input untouched", () => {
+    const events = timeline().events;
+    const snapshot = JSON.stringify(events);
+    const lanes = collapseToLanes(events);
+
+    const allIds = lanes.flatMap((lane) => [
+      lane.id,
+      ...(lane.data.items ?? []).map((item) => item.id)
+    ]);
+    expect(allIds).not.toContain("res-emp");
+    expect(JSON.stringify(events)).toBe(snapshot);
+  });
+});
+
+describe("forecastCounts", () => {
+  const timeline = buildResourceTimeline({
+    locationName: "Austin Plant",
+    workCenters: [
+      { id: "wc-1", name: "CNC Router" },
+      { id: "wc-2", name: "Lathe" }
+    ],
+    reservations: [
+      reservation({ id: "res-1", operationId: "op-1" }),
+      reservation({
+        id: "res-1-op",
+        operationId: "op-1",
+        resourceKind: "Employee",
+        resourceId: "emp-1",
+        resourceName: "Ana Ruiz"
+      }),
+      reservation({
+        id: "res-2",
+        jobId: "job-2",
+        jobReadableId: "J000009",
+        hasConflict: true
+      }),
+      reservation({
+        id: "res-3",
+        jobId: "job-3",
+        jobReadableId: "J000012",
+        resourceId: "wc-2",
+        resourceName: "Lathe",
+        hasConflict: true,
+        unschedulable: true
+      })
+    ]
+  });
+  const all = (events: typeof timeline.events) => ({
+    rows: new Set(events.map((event) => event.id)),
+    bars: new Set(
+      events.flatMap((event) => (event.data.items ?? []).map((i) => i.id))
+    )
+  });
+
+  it("counts every station, booking, operator, job and problem in the detailed tree", () => {
+    expect(
+      forecastCounts(
+        timeline.events,
+        timeline.detailsById,
+        all(timeline.events)
+      )
+    ).toEqual({
+      resources: 3,
+      reservations: 4,
+      jobs: 3,
+      conflicts: 1,
+      unschedulable: 1
+    });
+  });
+
+  it("counts what the compact board draws, where operators have no row", () => {
+    const compact = collapseToLanes(timeline.events);
+    expect(forecastCounts(compact, timeline.detailsById, all(compact))).toEqual(
+      {
+        resources: 2,
+        reservations: 3,
+        jobs: 3,
+        conflicts: 1,
+        unschedulable: 1
+      }
+    );
+  });
+
+  it("counts only the rows and bars the filter leaves", () => {
+    const compact = collapseToLanes(timeline.events);
+    expect(
+      forecastCounts(compact, timeline.detailsById, {
+        rows: new Set(["resources-root", "lane:WorkCenter:wc-2"]),
+        bars: new Set(["res-3"])
+      })
+    ).toEqual({
+      resources: 1,
+      reservations: 1,
+      jobs: 1,
+      conflicts: 0,
+      unschedulable: 1
+    });
   });
 });

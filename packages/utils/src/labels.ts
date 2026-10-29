@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 export type ProductLabelItem = {
   itemId: string;
   revision?: string;
@@ -58,6 +62,17 @@ export const labelSizes: LabelSize[] = [
       dpi: 203,
       width: 2,
       height: 1
+    }
+  },
+  {
+    id: "label3x2",
+    name: "Label 3x2",
+    width: 3,
+    height: 2,
+    zpl: {
+      dpi: 203,
+      width: 3,
+      height: 2
     }
   },
   {

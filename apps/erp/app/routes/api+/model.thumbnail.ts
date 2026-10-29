@@ -1,44 +1,24 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { trigger } from "@carbon/jobs";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import { modelViewDirection } from "~/modules/documents/documents.models";
 
-// Regenerate a model's preview thumbnail — re-renders the optimised GLB to a PNG
-// (model-thumbnail). Backs the item thumbnail's "Regenerate" action, e.g. when a
-// prior generation failed (the render service was down). Any authenticated
-// employee may fire it: generating a preview shouldn't require part-edit rights.
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+// Backs the item thumbnail's Regenerate and the viewer's capture from the
+// current camera (`direction`, a JSON `[x, y, z]`).
+const thumbnailForm = z.object({
+  modelUploadId: z.string().min(1),
+  direction: zfd.json(modelViewDirection.optional())
+});
 
-  const formData = await request.formData();
-  const modelUploadId = formData.get("modelUploadId") as string | null;
-  if (!modelUploadId) {
-    return data({ success: false }, { status: 400 });
-  }
-
-  // Confirm the model belongs to this tenant before firing.
-  const model = await client
-    .from("modelUpload")
-    .select("id")
-    .eq("id", modelUploadId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (model.error || !model.data) {
-    return data({ success: false }, { status: 404 });
-  }
-
-  // `get_part_details` prefers `item.thumbnailPath` over the model's, so a
-  // stale/manual item thumbnail (a deleted file shows as a broken image) would
-  // mask the regeneration and revert on reload. "Regenerate" is an explicit
-  // "use the model's thumbnail" action, so clear the item override → the fresh
-  // `modelUpload.thumbnailPath` (written by model-thumbnail) surfaces, and any
-  // broken item path stops rendering immediately.
-  await client
-    .from("item")
-    .update({ thumbnailPath: null })
-    .eq("modelUploadId", modelUploadId)
-    .eq("companyId", companyId);
-
-  await trigger("model-thumbnail", { modelId: modelUploadId, companyId });
-  return { success: true };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(thumbnailForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.documents.regenerateModelThumbnail(input.data);
 }

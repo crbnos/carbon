@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
   AvailableVariable,
   BatchPlan,
@@ -5,13 +9,13 @@ import type {
   ValueType,
   WorkflowCatalog,
   WorkflowDefinition
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import {
   availableVariables,
   batchPlan,
   createContext,
   variablesFromHandle
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import { useCallback, useMemo } from "react";
 import { useWorkflowCatalog } from "./catalog";
 import { useBuilderStoreApi, useBuilderStoreShallow } from "./context";
@@ -59,6 +63,27 @@ export function useVariablesGetter(nodeId: string): () => AvailableVariable[] {
     const { nodes, edges } = store.getState();
     return availableVariables(fromReactFlow(nodes, edges), nodeId, catalog);
   }, [store, nodeId, catalog]);
+}
+
+/** What the current loop item is at a node, computed on demand for the same reason.
+ * `card` names the operation card of a data-node chain; undefined when the loop's list
+ * is not known yet. */
+export function useLoopItemTypeGetter(
+  nodeId: string
+): (card?: string) => ValueType | undefined {
+  const store = useBuilderStoreApi();
+  const catalog = useWorkflowCatalog();
+  return useCallback(
+    (card?: string) => {
+      const { nodes, edges } = store.getState();
+      const { context } = createContext(fromReactFlow(nodes, edges), catalog);
+      return context.typeOf(
+        { kind: "item", path: [], ...(card ? { card } : {}) },
+        nodeId
+      );
+    },
+    [store, nodeId, catalog]
+  );
 }
 
 /**

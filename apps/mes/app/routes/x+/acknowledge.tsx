@@ -1,14 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { requiresItarEntityCertification } from "@carbon/utils";
+import { redirect, requiresItarEntityCertification } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   getRequestMeta,
   itarEntityCertificationValidator,
   itarUserCertificationValidator,
   recordItarCertification
 } from "~/services/itar.service";
+import { path } from "~/utils/path";
 
 const logger = getLogger("mes", "acknowledge");
 
@@ -39,7 +43,8 @@ export async function action({ request }: ActionFunctionArgs) {
     await client.from("user").update({ flags: updatedFlags }).eq("id", userId);
 
     if (redirectTo) {
-      throw redirect(redirectTo);
+      // Form-supplied, so only same-origin paths are honoured.
+      throw redirect(redirectTo || path.to.authenticatedRoot);
     }
 
     return { success: true, message: "University acknowledged" };

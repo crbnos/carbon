@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * The dataset engine: applies one industry story's worth of data to a company.
  *
@@ -9,6 +13,7 @@
 
 import { today } from "@internationalized/date";
 import type { PoolClient } from "pg";
+import { defense } from "./data/defense/index.ts";
 import { motor } from "./data/motor/index.ts";
 import { precision } from "./data/precision/index.ts";
 import { robotics } from "./data/robotics/index.ts";
@@ -31,7 +36,8 @@ export const DATASETS: Record<DatasetKey, Dataset> = {
   satellite,
   robotics,
   precision,
-  motor
+  motor,
+  defense
 };
 
 export function getDataset(key: string): Dataset | null {
@@ -121,6 +127,10 @@ export async function applyDatasetTiers(
   // Suppresses dispatch_event_batch (pgmq + pg_net). Sync interceptors
   // still run, so the satellite rows we depend on are still created.
   await client.query(`SET LOCAL "app.sync_in_progress" = 'true'`);
+  // Lets tier 01 date the accounting cutover at the dataset's first seeded
+  // period even when the company already has one; check_accounting_config_locked
+  // refuses that change in any other transaction.
+  await client.query(`SET LOCAL "app.dataset_apply" = 'true'`);
 
   // Must run before resetSequences, and before any nextSequence() call.
   await ensureSequences(client, companyId);

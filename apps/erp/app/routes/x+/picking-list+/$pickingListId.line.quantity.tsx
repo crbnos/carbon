@@ -1,41 +1,23 @@
-import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { pickPickingListLine } from "~/modules/inventory";
+import { pickQuantityValidator } from "~/modules/inventory/inventory.models";
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
-    update: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(pickQuantityValidator).request(args, {
+    params: ["pickingListId"]
   });
-  const serviceRole = getCarbonServiceRole();
+  if ("invalid" in input) return input.invalid;
 
-  const formData = await request.formData();
-  const pickingListLineId = formData.get("pickingListLineId") as string;
-  const quantity = Number(formData.get("quantity") ?? 0);
-  const markShort = formData.get("markShort") === "true";
-
-  if (!pickingListLineId) {
-    return { success: false, message: "Missing pickingListLineId" };
-  }
-
-  const result = await pickPickingListLine(serviceRole, {
-    pickingListLineId,
-    quantity,
-    markShort,
-    userId
+  const api = await carbon(args.request);
+  return api.inventory.pickPickingListLineChecked({
+    pickingListId: input.params.pickingListId,
+    pickingListLineId: input.data.pickingListLineId,
+    quantity: input.data.quantity,
+    markShort: input.data.markShort === "true"
   });
-
-  if (result.error) {
-    return {
-      success: false,
-      message:
-        typeof result.error === "string"
-          ? result.error
-          : (result.error.message ?? "Failed to pick line")
-    };
-  }
-
-  return { success: true, data: result.data };
 }

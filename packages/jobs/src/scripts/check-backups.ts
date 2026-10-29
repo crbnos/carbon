@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Checks that the backups customers already hold would still restore against the
  * current schema.
@@ -45,7 +49,8 @@ import {
   SCHEMA_REPO_PATH
 } from "./backup-baseline";
 
-const SCHEMA_FILE = join(import.meta.dirname, "../../manifests/schema.json");
+const REPO_ROOT = join(import.meta.dirname, "../../../..");
+const SCHEMA_FILE = join(REPO_ROOT, SCHEMA_REPO_PATH);
 /** A hook that hangs is a hook people bypass. */
 const FETCH_TIMEOUT_MS = 3000;
 
@@ -173,8 +178,16 @@ function reportBlocking(
   return true;
 }
 
+// Run from the repo root: a pre-commit hook in a linked worktree exports GIT_DIR
+// without GIT_WORK_TREE, so git takes the current directory (packages/jobs) as
+// the worktree top and `git add` would stage the file at the wrong path.
 function git(args: string[]): string {
+  // Always from the repo root. A git hook exports GIT_DIR without GIT_WORK_TREE,
+  // and git then takes the CURRENT directory as the work tree — so `git add` of
+  // the absolute manifest path, run from packages/jobs by `pnpm --filter`,
+  // indexed it as a root-level `manifests/schema.json` on every migration commit.
   return execFileSync("git", args, {
+    cwd: REPO_ROOT,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"]
   }).trim();
@@ -213,6 +226,15 @@ function writeSchemaFile(catalog: Catalog): void {
   const manifest = catalogAsManifest(catalog, now("UTC").toAbsoluteString());
   mkdirSync(dirname(SCHEMA_FILE), { recursive: true });
   writeFileSync(SCHEMA_FILE, `${JSON.stringify(manifest, null, 2)}\n`);
+  // lint-staged has already run by the time the pre-commit hook stages this file,
+  // so format it here or it never sees Biome at all.
+  try {
+    execFileSync("pnpm", ["exec", "biome", "format", "--write", SCHEMA_FILE], {
+      stdio: "pipe"
+    });
+  } catch {
+    // Cosmetic only — never block a commit on the formatter.
+  }
   try {
     git(["add", SCHEMA_FILE]);
     console.log(

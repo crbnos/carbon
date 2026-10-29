@@ -1,4 +1,13 @@
-import { Checkbox, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Checkbox,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -6,6 +15,7 @@ import { LuListChecks, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { ChangeNoticeRequiredAction } from "../../types";
@@ -13,10 +23,11 @@ import type { ChangeNoticeRequiredAction } from "../../types";
 type ChangeNoticeRequiredActionsTableProps = {
   data: ChangeNoticeRequiredAction[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const ChangeNoticeRequiredActionsTable = memo(
-  ({ data, count }: ChangeNoticeRequiredActionsTableProps) => {
+  ({ data, count, infinite }: ChangeNoticeRequiredActionsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -33,6 +44,7 @@ const ChangeNoticeRequiredActionsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuListChecks />
           }
         },
@@ -49,6 +61,7 @@ const ChangeNoticeRequiredActionsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!permissions.can("update", "parts")}
               onClick={() => {
                 navigate(
@@ -62,6 +75,7 @@ const ChangeNoticeRequiredActionsTable = memo(
               {t`Edit Action`}
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "parts")}
               onClick={() => {
@@ -84,6 +98,7 @@ const ChangeNoticeRequiredActionsTable = memo(
     return (
       <Table<ChangeNoticeRequiredAction>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

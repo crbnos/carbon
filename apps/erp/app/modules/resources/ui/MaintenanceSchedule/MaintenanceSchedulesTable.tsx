@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Combobox,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Status
@@ -25,6 +30,7 @@ import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import {
@@ -37,12 +43,19 @@ import MaintenancePriority from "../Maintenance/MaintenancePriority";
 type MaintenanceSchedulesTableProps = {
   data: MaintenanceSchedule[];
   count: number;
+  infinite: InfiniteOptions;
   locations: { id: string; name: string }[];
   locationId: string | null;
 };
 
 const MaintenanceSchedulesTable = memo(
-  ({ data, count, locations, locationId }: MaintenanceSchedulesTableProps) => {
+  ({
+    data,
+    count,
+    infinite,
+    locations,
+    locationId
+  }: MaintenanceSchedulesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -99,13 +112,15 @@ const MaintenanceSchedulesTable = memo(
           header: t`Schedule Name`,
           cell: ({ row }) => (
             <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
-          )
+          ),
+          meta: { mobile: "P1" }
         },
         {
           accessorKey: "workCenterName",
           header: t`Work Center`,
           cell: ({ row }) => <Enumerable value={row.original.workCenterName} />,
           meta: {
+            mobile: "P3",
             icon: <LuBuilding />
           }
         },
@@ -226,6 +241,7 @@ const MaintenanceSchedulesTable = memo(
               "-"
             ),
           meta: {
+            mobile: "P2",
             icon: <LuCalendar />
           }
         }
@@ -237,6 +253,7 @@ const MaintenanceSchedulesTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               onClick={() => {
                 navigate(
                   `${path.to.maintenanceSchedule(row.id!)}?${params.toString()}`
@@ -247,6 +264,7 @@ const MaintenanceSchedulesTable = memo(
               <Trans>Edit Schedule</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "production")}
               onClick={() => {
@@ -267,6 +285,7 @@ const MaintenanceSchedulesTable = memo(
     return (
       <Table<MaintenanceSchedule>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

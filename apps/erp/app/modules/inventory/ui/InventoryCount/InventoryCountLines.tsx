@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Badge, HStack, Skeleton, Switch, toast, VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
@@ -29,8 +33,8 @@ import { Enumerable } from "~/components/Enumerable";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
-import type { InventoryCountLine } from "~/modules/inventory";
-import { inventoryItemTypes } from "~/modules/inventory";
+import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
+import type { InventoryCountLine } from "~/modules/inventory/types";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -44,6 +48,8 @@ const VARIANCE_FILTER = "variance:neq:0";
 type InventoryCountLinesProps = {
   lines: InventoryCountLine[];
   count: number;
+  // The loader's cursor for the next page of lines (infinite scroll).
+  nextCursor: string | null;
   // Blind counting withholds System Qty + Variance until Posted; the caller
   // decides when — kept separate from the read-only (Draft) edit gate.
   hideSystemQuantity: boolean;
@@ -66,6 +72,7 @@ type InventoryCountLinesProps = {
 const InventoryCountLines = ({
   lines,
   count,
+  nextCursor,
   hideSystemQuantity,
   isReadOnly,
   locationId,
@@ -123,10 +130,7 @@ const InventoryCountLines = ({
     setParams({
       filter: filterParams.includes(filter)
         ? filterParams.filter((f) => f !== filter)
-        : filterParams.concat(filter),
-      // Changing the result set invalidates the current page — reset paging
-      // the same way SearchFilter does.
-      offset: null
+        : filterParams.concat(filter)
     });
   };
 
@@ -219,6 +223,7 @@ const InventoryCountLines = ({
           );
         },
         meta: {
+          mobile: "P1",
           icon: <LuPackage />,
           // Display column (no accessorKey) — without an exportValue it is
           // absent from the CSV entirely.
@@ -464,7 +469,7 @@ const InventoryCountLines = ({
           </span>
         );
       },
-      meta: { icon: <LuCalculator /> }
+      meta: { mobile: "P2", icon: <LuCalculator /> }
     });
 
     if (!hideSystem) {
@@ -672,8 +677,11 @@ const InventoryCountLines = ({
       )}
       <Table<InventoryCountLine>
         compact
+        mobileLayout="table"
         columns={columns}
         data={lines}
+        // One count's lines: no list registry entry, so no `listKey`.
+        infinite={{ dataKey: "lines", nextCursor }}
         count={count}
         defaultColumnVisibility={defaultColumnVisibility}
         editableComponents={editableComponents}

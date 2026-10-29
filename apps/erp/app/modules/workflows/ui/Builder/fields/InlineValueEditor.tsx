@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { ValueOrRef, ValueType } from "@carbon/ee/workflows";
 import { cn } from "@carbon/react";
 import {
   VariableText,
   type VariableTextPart
 } from "@carbon/react/VariableText";
-import type { ValueOrRef, ValueType } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useRef } from "react";
 import { useCustomFieldLabels } from "../catalog";
@@ -13,11 +17,7 @@ import { publishVariableMenuData, retractVariableMenuData } from "./menuBridge";
 import { leafOfLabel } from "./tokenId";
 import type { FieldContext } from "./types";
 import { useVariableMenuData } from "./useVariableMenuData";
-import {
-  fromEditorParts,
-  toEditorParts,
-  withoutTrailingSpace
-} from "./valueParts";
+import { fromEditorParts, toEditorParts, withoutEdgeSpace } from "./valueParts";
 
 /** Typing this opens the variable menu. The closing brace is drawn by the chip. */
 const TRIGGER = "{";
@@ -111,7 +111,7 @@ export function InlineValueEditor({
         if (isReadOnly) return;
         onFocusChange?.(false);
         const parts = toEditorParts(value, nodeName, undefined, segmentLabels);
-        const trimmed = withoutTrailingSpace(parts);
+        const trimmed = withoutEdgeSpace(parts);
         // Same array back means nothing to trim; writing anyway dirties the workflow
         // on every focus change.
         if (trimmed !== parts) {

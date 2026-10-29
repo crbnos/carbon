@@ -1,12 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
   WorkflowDefinition,
   WorkflowNode,
   WorkflowNodeType
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import {
   CURRENT_DEFINITION_FORMAT_VERSION,
   nextNodeName
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import { nanoid } from "nanoid";
 import type { BuilderEdge, BuilderNode } from "../../types";
 import { MAX_NODE_CARD_WIDTH, NODE_ACCEPTS_INCOMING } from "./nodes/kinds";
@@ -142,13 +146,22 @@ export function canConnect(
   return !wouldCreateCycle(edges, source, target);
 }
 
+/** What a new node of each kind is CALLED. Defaults to the type; `filter` differs
+ * because its stored type is a legacy spelling of what the node now does. */
+const NODE_NAME_SLUG: Partial<Record<WorkflowNodeType, string>> = {
+  filter: "data"
+};
+
 export function createNode(
   type: WorkflowNodeType,
   position: { x: number; y: number },
   takenNames: Iterable<string> = []
 ): WorkflowNode {
   const id = nanoid();
-  const name = nextNodeName(type, takenNames);
+  // The default NAME is the display slug, not the stored type: a data node stored
+  // as `filter` would otherwise be born called "Filter 0" and read as the old,
+  // narrower node. The type is untouched — only what a new node is called.
+  const name = nextNodeName(NODE_NAME_SLUG[type] ?? type, takenNames);
 
   switch (type) {
     case "trigger":
@@ -200,7 +213,12 @@ export function createNode(
         type,
         position,
         expanded: true,
-        data: { combinator: "and", clauses: [] }
+        data: {
+          combinator: "and",
+          clauses: [],
+          operation: "filter",
+          flatten: false
+        }
       };
     case "action":
       return {
@@ -210,6 +228,17 @@ export function createNode(
         position,
         expanded: true,
         data: { action: "", inputs: {} }
+      };
+    case "integration":
+      return {
+        id,
+        name,
+        type,
+        position,
+        expanded: true,
+        // Blank until the author picks the app and then the step; `checkConfig`
+        // asks for each in that order.
+        data: { piece: "", action: "", inputs: {} }
       };
   }
 }

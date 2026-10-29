@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -25,18 +30,21 @@ import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
-import type { TrainingListItem } from "~/modules/resources";
+import type { TrainingListItem } from "~/modules/resources/types";
 import { path } from "~/utils/path";
 import TrainingStatus from "./TrainingStatus";
 
 type TrainingsTableProps = {
   data: TrainingListItem[];
   count: number;
+  infinite: InfiniteOptions;
   tags: Array<{ name: string }>;
 };
 
-const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
+const TrainingsTable = memo((props: TrainingsTableProps) => {
+  const { data, count, infinite, tags } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -56,6 +64,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookOpen />
         }
       },
@@ -64,6 +73,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <TrainingStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: [
@@ -91,6 +101,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
           </Badge>
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: [
@@ -163,6 +174,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
           <EmployeeAvatar employeeId={row.original.assignee} />
         ),
         meta: {
+          mobile: "P3",
           icon: <LuUser />
         }
       },
@@ -199,6 +211,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "resources")}
             onClick={() => {
               navigate(`${path.to.training(row.id!)}`);
@@ -208,6 +221,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
             <Trans>Edit Training</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {
@@ -230,6 +244,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
     <>
       <Table<TrainingListItem>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

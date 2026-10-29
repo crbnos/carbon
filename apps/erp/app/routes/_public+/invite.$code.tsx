@@ -1,10 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
-  CarbonEdition,
   CONTROLLED_ENVIRONMENT,
   error,
   getAppUrl,
   getPermissionCacheKey,
-  RESEND_DOMAIN,
   success as successFlash
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -14,28 +16,32 @@ import {
   getAuthSession,
   updateCompanySession
 } from "@carbon/auth/session.server";
-import { insertAuditLogEntries } from "@carbon/database/audit";
 import { InviteEmail } from "@carbon/documents/email";
+import { trigger } from "@carbon/jobs";
 import { Ratelimit, redis } from "@carbon/kv";
-import { sendEmail } from "@carbon/lib/resend.server";
 import { getLogger } from "@carbon/logger";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
-import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
-import { datetime, Edition } from "@carbon/utils";
+import {
+  datetime,
+  getClientIp,
+  redirect,
+  redirectExternal
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { render } from "@react-email/components";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import { Form, Link, redirect, useLoaderData } from "react-router";
+import { Form, Link, useLoaderData } from "react-router";
 import {
   acceptInvite,
   isControlledInviteExpired
-} from "~/modules/users/users.server";
+} from "~/modules/users/users.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "invite");
@@ -87,7 +93,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const authSession = await getAuthSession(request);
 
-  const accept = await acceptInvite(serviceRole, code, authSession?.email);
+  const accept = await acceptInvite(
+    serviceRole,
+    getDatabaseClient(),
+    code,
+    authSession?.email,
+    request
+  );
   if (accept.error) {
     throw redirect(
       path.to.root,
@@ -96,33 +108,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(accept.error, accept.error.message ?? "Failed to accept invite")
       )
     );
-  }
-
-  // Best-effort audit of the acceptance, with request metadata.
-  try {
-    await insertAuditLogEntries(serviceRole, accept.data.companyId, [
-      {
-        tableName: "invite",
-        entityType: "invite",
-        entityId: accept.data.id,
-        recordId: accept.data.id,
-        operation: "UPDATE",
-        actorId: null,
-        diff: { acceptedAt: { old: null, new: accept.data.acceptedAt } },
-        metadata: {
-          ipAddress:
-            request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-            undefined,
-          userAgent: request.headers.get("user-agent") ?? undefined
-        }
-      }
-    ]);
-  } catch (err) {
-    logger.warn("[invite] audit write skipped for accept", { error: err });
-  }
-
-  if (CarbonEdition === Edition.Cloud) {
-    await updateSubscriptionQuantityForCompany(accept.data.companyId);
   }
 
   if (authSession) {
@@ -156,9 +141,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )}`
       }
     });
-    throw redirect(magicLink.data?.properties?.action_link ?? path.to.root, {
+    const actionLink = magicLink.data?.properties?.action_link;
+    const init = {
       headers: [["Set-Cookie", setCompanyId(accept.data.companyId)]]
-    });
+    } satisfies ResponseInit;
+    throw actionLink
+      ? redirectExternal(actionLink, init)
+      : redirect(path.to.root, init);
   }
 }
 
@@ -173,9 +162,7 @@ async function requestNewInvite(
   code: string,
   serviceRole: ReturnType<typeof getCarbonServiceRole>
 ) {
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const location = request.headers.get("x-vercel-ip-city") ?? "Unknown";
 
   const invite = await serviceRole
@@ -254,25 +241,32 @@ async function requestNewInvite(
     .eq("id", invite.data.createdBy)
     .single();
 
-  await sendEmail({
-    from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
-    to: invite.data.email,
-    subject: `You have been invited to join ${invite.data.company?.name} on Carbon`,
-    headers: { "X-Entity-Ref-ID": nanoid() },
-    html: await render(
-      InviteEmail({
-        invitedByEmail: inviter.data?.email ?? invite.data.email,
-        invitedByName: inviter.data?.fullName ?? "",
-        email: invite.data.email,
-        name: "",
-        companyName: invite.data.company?.name ?? "Carbon",
-        inviteLink: `${getAppUrl()}/invite/${refreshed.data.code}`,
-        ip,
-        location,
-        controlledEnvironment: CONTROLLED_ENVIRONMENT
-      })
-    )
+  const email = InviteEmail({
+    invitedByEmail: inviter.data?.email ?? invite.data.email,
+    invitedByName: inviter.data?.fullName ?? "",
+    email: invite.data.email,
+    name: "",
+    companyName: invite.data.company?.name ?? "Carbon",
+    inviteLink: `${getAppUrl()}/invite/${refreshed.data.code}`,
+    ip,
+    location,
+    controlledEnvironment: CONTROLLED_ENVIRONMENT
   });
+  // Queued so it follows the company's Email settings; a failed dispatch only logs.
+  try {
+    await trigger("send-email", {
+      to: invite.data.email,
+      subject: `You have been invited to join ${invite.data.company?.name} on Carbon`,
+      html: await render(email),
+      text: await render(email, { plainText: true }),
+      companyId: invite.data.companyId
+    });
+  } catch (cause) {
+    logger.error("Failed to queue the refreshed invite email", {
+      companyId: invite.data.companyId,
+      error: cause
+    });
+  }
 
   throw redirect(
     path.to.root,
@@ -401,6 +395,7 @@ export default function Invite() {
             transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
             size="lg"
             type="submit"
+            autoFocus
           >
             <Trans>Join {company?.name ?? "Company"}</Trans>
           </Button>

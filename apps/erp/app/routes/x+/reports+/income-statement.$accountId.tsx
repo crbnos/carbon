@@ -1,18 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   getAccount,
-  getAccountLedger,
-  getAccountLedgerSummary
-} from "~/modules/accounting";
-import { getConsolidatedAccountLedger } from "~/modules/accounting/accounting.ee.server";
+  getAccountLedgerPage
+} from "~/modules/accounting/accounting.service";
 import { AccountLedgerDrawer } from "~/modules/accounting/ui/Reports";
 import { path } from "~/utils/path";
-
-const LEDGER_PAGE_SIZE = 50;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -31,44 +32,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const companiesParam = searchParams.get("companies");
   const startDate = searchParams.get("startDate") || null;
   const endDate = searchParams.get("endDate") || null;
-  const offset = Math.max(0, Number(searchParams.get("offset")) || 0);
-
-  // "All Companies" drills into the consolidated ledger — including the
-  // elimination entities, which the user's RLS session can't see. Reading them
-  // via service role (scoped to this group) makes the elimination journal
-  // entries appear and the drawer summary tie to the consolidated report.
   const isConsolidated = companiesParam === "all";
   const selectedCompanyId = isConsolidated
     ? null
     : (companiesParam ?? companyId);
 
-  const [account, drill] = await Promise.all([
+  const [account, ledger] = await Promise.all([
     getAccount(client, accountId),
-    isConsolidated
-      ? getConsolidatedAccountLedger(companyGroupId, {
-          accountId,
-          startDate,
-          endDate,
-          limit: LEDGER_PAGE_SIZE,
-          offset
-        })
-      : Promise.all([
-          getAccountLedger(client, {
-            accountId,
-            companyId: selectedCompanyId,
-            startDate,
-            endDate,
-            limit: LEDGER_PAGE_SIZE,
-            offset
-          }),
-          getAccountLedgerSummary(client, companyGroupId, selectedCompanyId, {
-            accountId,
-            startDate,
-            endDate
-          })
-        ]).then(([ledger, summary]) => ({ ledger, summary }))
+    // A later page (`?after=`) is read for its lines only.
+    getAccountLedgerPage(client, {
+      accountId,
+      companyGroupId,
+      companyId: selectedCompanyId,
+      consolidated: isConsolidated,
+      startDate,
+      endDate,
+      after: searchParams.get("after")
+    })
   ]);
-  const { ledger, summary } = drill;
 
   if (account.error || !account.data) {
     throw redirect(
@@ -79,17 +60,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     account: account.data,
-    lines: ledger.data ?? [],
-    count: ledger.count ?? 0,
-    summary: summary.data ?? { opening: 0, netChange: 0, closing: 0 },
+    ...ledger,
     startDate,
-    endDate,
-    offset
+    endDate
   };
 }
 
 export default function IncomeStatementLedgerRoute() {
-  const { account, lines, count, summary, startDate, endDate, offset } =
+  const { account, lines, count, nextCursor, summary, startDate, endDate } =
     useLoaderData<typeof loader>();
 
   return (
@@ -100,8 +78,7 @@ export default function IncomeStatementLedgerRoute() {
       summary={summary}
       startDate={startDate}
       endDate={endDate}
-      offset={offset}
-      limit={LEDGER_PAGE_SIZE}
+      nextCursor={nextCursor}
       backTo={path.to.incomeStatement}
     />
   );

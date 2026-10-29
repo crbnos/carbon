@@ -1,62 +1,60 @@
-import { error, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import type { ActionFunctionArgs } from "react-router";
-import { redirect, useNavigate, useParams } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { useRouteData } from "~/hooks";
-import type { ApiKey } from "~/modules/settings";
-import { deleteApiKey } from "~/modules/settings";
+import { getApiKey } from "~/modules/settings/settings.service";
 import { getParams, path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
+// The list holds only the rows scrolled so far, so the modal reads its own key.
+export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     update: "users"
   });
 
-  await requirePlan({
-    request,
-    client,
-    companyId,
-    feature: "API_KEYS",
-    redirectTo: path.to.apiKeys
-  });
-
   const { id } = params;
-  if (!id) {
-    throw redirect(
-      path.to.itemPostingGroups,
-      await flash(request, error(params, "Failed to get an id"))
-    );
-  }
+  if (!id) throw new Error("Could not find id");
 
-  const { error: deleteApiKeyError } = await deleteApiKey(client, id);
-  if (deleteApiKeyError) {
+  const apiKey = await getApiKey(client, id, companyId);
+  if (apiKey.error) {
     throw redirect(
       `${path.to.apiKeys}?${getParams(request)}`,
-      await flash(request, error(deleteApiKeyError, "Failed to delete API key"))
+      await flash(request, error(apiKey.error, "Failed to load API key"))
     );
   }
 
-  throw redirect(
-    `${path.to.apiKeys}?${getParams(request)}`,
-    await flash(request, success("Successfully deleted API key"))
+  return { apiKey: { name: apiKey.data.name } };
+}
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.settings.revokeApiKey({ id: input.params.id });
+  return respond(args.request, result).redirect(
+    `${path.to.apiKeys}?${getParams(args.request)}`,
+    { message: "Successfully deleted API key" }
   );
 }
 
 export default function DeleteApiKeyRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
-  const routeData = useRouteData<{ apiKeys: ApiKey[] }>(path.to.apiKeys);
-  const navigate = useNavigate();
+  const { apiKey } = useLoaderData<typeof loader>();
+  const closeRoute = useCloseRoute();
   const { t } = useLingui();
 
-  const apiKey = routeData?.apiKeys.find((apiKey) => apiKey.id === id);
-  if (!apiKey) return null;
-
-  const onCancel = () => navigate(-1);
+  const onCancel = () => closeRoute();
 
   return (
     <ConfirmDelete

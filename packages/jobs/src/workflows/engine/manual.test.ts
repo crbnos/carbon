@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   DEFAULT_HANDLE,
   entityValue,
   type RuntimeValue,
   SUCCESS_HANDLE
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /** Enough of Kysely's builder to record what a manual run writes. */
@@ -58,6 +62,9 @@ const getJobDatabaseClient = vi.fn(() => ({
   // Only `failCrashedRun` reads, and only for the run's startedAt.
   selectFrom: () => builder({ startedAt: null })
 }));
+vi.mock("@carbon/ee/workflows.server", () => ({
+  workflowsEnabledForCompany: vi.fn(async () => true)
+}));
 vi.mock("../../db", () => ({ getJobDatabaseClient }));
 vi.mock("./owner", () => ({
   // The engine reads the company custom fields through this client; a bare {} has no
@@ -73,15 +80,6 @@ vi.mock("./owner", () => ({
   hasPermission: vi.fn(() => true)
 }));
 vi.mock("../actions", () => ({ createWorkflowServices: vi.fn() }));
-// The real module pulls in the email templates and @carbon/env; the engine only wants a URL.
-vi.mock("../../inngest/functions/notifications/content", () => ({
-  buildNotificationLink: (
-    event: string,
-    documentId: string,
-    companyId: string
-  ) =>
-    `https://erp.test/api/link?event=${event}&documentId=${documentId}&companyId=${companyId}`
-}));
 
 const { executeManualWorkflowRun } = await import("./manual");
 const { createWorkflowServices } = await import("../actions");
@@ -166,6 +164,7 @@ beforeEach(() => {
   stepIds = 0;
   vi.mocked(createWorkflowServices).mockReturnValue({
     runAction,
+    runIntegration: async () => ({ ok: false as const, error: "not stubbed" }),
     runOperation: async () => ({ ok: false, error: "not stubbed" }),
     search: async () => ({ ok: false, error: "not stubbed" })
   });

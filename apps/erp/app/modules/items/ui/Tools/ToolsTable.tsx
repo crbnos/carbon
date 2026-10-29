@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -13,19 +17,20 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   MenuSub,
   MenuSubContent,
   MenuSubTrigger,
-  toast,
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuAlignJustify,
   LuBookMarked,
@@ -43,7 +48,7 @@ import {
 } from "react-icons/lu";
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetArrow } from "react-icons/tb";
-import { Link, useFetcher, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   DateTime,
   EmployeeAvatar,
@@ -57,13 +62,15 @@ import {
   Table,
   TrackingTypeIcon
 } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
+import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
+import { useBulkFormAction } from "~/hooks/useBulkAction";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { methodType } from "~/modules/shared";
-import type { action } from "~/routes/x+/items+/update";
+import { methodType } from "~/modules/shared/shared.models";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import {
@@ -76,9 +83,11 @@ type ToolsTableProps = {
   data: ToolListItem[];
   tags: { name: string }[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
+const ToolsTable = memo((props: ToolsTableProps) => {
+  const { data, tags, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -136,14 +145,20 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
             <Hyperlink to={path.to.toolDetails(row.original.id!)}>
               <VStack spacing={0}>
                 {row.original.readableIdWithRevision}
-                <div className="w-full truncate text-muted-foreground text-xs">
-                  {row.original.name}
-                </div>
+                {distinctItemText(
+                  row.original.readableIdWithRevision,
+                  row.original.name
+                ) && (
+                  <div className="w-full truncate text-muted-foreground text-xs">
+                    {row.original.name}
+                  </div>
+                )}
               </VStack>
             </Hyperlink>
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />,
           // The accessor is the raw item id — export the readable id
           // the cell shows instead of a UUID.
@@ -164,6 +179,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuAlignJustify />
         }
       },
@@ -175,15 +191,14 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           const itemPostingGroup = itemPostingGroups.find(
             (group) => group.value === itemPostingGroupId
           );
-          const label = itemPostingGroup?.label;
-          return label ? <Badge variant="secondary">{label}</Badge> : null;
+          return <Enumerable value={itemPostingGroup?.label ?? null} />;
         },
         meta: {
           filter: {
             type: "static",
             options: itemPostingGroups.map((group) => ({
               value: group.value,
-              label: <Badge variant="secondary">{group.label}</Badge>
+              label: <Enumerable value={group.label} />
             }))
           },
           icon: <LuGroup />
@@ -203,6 +218,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           </Badge>
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: itemReplenishmentSystems.map((type) => ({
@@ -469,14 +485,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
     translateTrackingType
   ]);
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
-    }
-  }, [fetcher.data]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  const { submit: submitBulk } = useBulkFormAction();
   const onBulkUpdate = useCallback(
     (
       selectedRows: typeof data,
@@ -485,25 +494,20 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
         | "defaultMethodType"
         | "itemTrackingType"
         | "itemPostingGroupId",
-      value: string
+      value: string,
+      scope?: BulkActionScope
     ) => {
-      const formData = new FormData();
-      selectedRows.forEach((row) => {
-        if (row.id) formData.append("items", row.id);
-      });
-      formData.append("field", field);
-      formData.append("value", value);
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.bulkUpdateItems
-      });
+      submitBulk(
+        path.to.bulkUpdateItems,
+        { scope, idsField: "items", ids: selectedRows.map((row) => row.id) },
+        { field, value }
+      );
     },
-
-    []
+    [submitBulk]
   );
 
   const renderActions = useCallback(
-    (selectedRows: typeof data) => {
+    (selectedRows: typeof data, scope?: BulkActionScope) => {
       return (
         <DropdownMenuContent align="end" className="min-w-[200px]">
           <DropdownMenuLabel>
@@ -524,11 +528,12 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
                         onBulkUpdate(
                           selectedRows,
                           "itemPostingGroupId",
-                          group.value
+                          group.value,
+                          scope
                         )
                       }
                     >
-                      <span>{group.label}</span>
+                      <Enumerable value={group.label} />
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuSubContent>
@@ -544,7 +549,12 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
                     <DropdownMenuItem
                       key={type}
                       onClick={() =>
-                        onBulkUpdate(selectedRows, "defaultMethodType", type)
+                        onBulkUpdate(
+                          selectedRows,
+                          "defaultMethodType",
+                          type,
+                          scope
+                        )
                       }
                     >
                       <DropdownMenuIcon icon={<MethodIcon type={type} />} />
@@ -564,7 +574,12 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
                     <DropdownMenuItem
                       key={type}
                       onClick={() =>
-                        onBulkUpdate(selectedRows, "itemTrackingType", type)
+                        onBulkUpdate(
+                          selectedRows,
+                          "itemTrackingType",
+                          type,
+                          scope
+                        )
                       }
                     >
                       <DropdownMenuIcon
@@ -597,7 +612,10 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
         }[]) ?? [];
       return (
         <>
-          <MenuItem onClick={() => navigate(path.to.tool(row.id!))}>
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
+            onClick={() => navigate(path.to.tool(row.id!))}
+          >
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit Tool</Trans>
           </MenuItem>
@@ -621,6 +639,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
             </MenuSub>
           )}
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "parts")}
             onClick={() => {
@@ -642,6 +661,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
         count={count}
         columns={columns}
         data={data}
+        infinite={infinite}
         defaultColumnPinning={{
           left: ["id"]
         }}
@@ -674,7 +694,12 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
         primaryAction={
           permissions.can("create", "parts") && (
             <div className="flex items-center gap-2">
-              <Button variant="secondary" leftIcon={<LuGroup />} asChild>
+              <Button
+                variant="secondary"
+                leftIcon={<LuGroup />}
+                className="max-md:hidden"
+                asChild
+              >
                 <Link to={path.to.itemPostingGroups}>
                   <Trans>Item Groups</Trans>
                 </Link>

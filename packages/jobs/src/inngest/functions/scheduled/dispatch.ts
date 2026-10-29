@@ -1,6 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { fetchAllFromTable } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import { pluckUnique } from "@carbon/utils";
 import {
   getDayOfWeek,
   now,
@@ -11,6 +17,9 @@ import {
 import { inngest } from "../../client";
 
 const log = getLogger("jobs", "dispatch");
+
+// Company ids per companySettings read: keeps the `in` filter inside a URL.
+const SETTINGS_CHUNK = 200;
 
 // Day of week mapping (0 = Sunday, 1 = Monday, etc.)
 const dayOfWeekFields = [
@@ -99,14 +108,24 @@ async function isHoliday(
  *
  * Idempotent: a run whose `nextDueAt` is already in the future creates nothing
  * and re-writes the same value.
+ *
+ * `notificationGroup` is the company's `maintenanceDispatchNotificationGroup`
+ * (Settings → Resources), the same group a dispatch created in the MES notifies.
  */
 export async function generateDispatchesForSchedule(args: {
   serviceRole: ReturnType<typeof getCarbonServiceRole>;
   schedule: MaintenanceSchedule;
   companyId: string;
   currentDateTime: ReturnType<typeof now>;
+  notificationGroup: string[];
 }): Promise<number> {
-  const { serviceRole, schedule, companyId, currentDateTime } = args;
+  const {
+    serviceRole,
+    schedule,
+    companyId,
+    currentDateTime,
+    notificationGroup
+  } = args;
   const timeZone = currentDateTime.timeZone;
 
   let dispatchesCreated = 0;
@@ -308,30 +327,24 @@ export async function generateDispatchesForSchedule(args: {
       date: targetDateString
     });
 
-    // Get employees assigned to this work center to notify them
-    const { data: workCenterEmployees } = await (serviceRole as any)
-      .from("workCenterEmployee")
-      .select("userId")
-      .eq("workCenterId", schedule.workCenterId);
-
-    if (workCenterEmployees && workCenterEmployees.length > 0) {
-      const userIds = workCenterEmployees.map((e: any) => e.userId as string);
-      await inngest.send({
-        name: "carbon/notify",
-        data: {
-          event: NotificationEvent.MaintenanceDispatchCreated,
-          companyId,
-          documentId: newDispatch.id,
-          recipient: {
-            type: "users" as const,
-            userIds
+    if (notificationGroup.length > 0) {
+      try {
+        await inngest.send({
+          name: "carbon/notify",
+          data: {
+            event: NotificationEvent.MaintenanceDispatchCreated,
+            companyId,
+            documentId: newDispatch.id,
+            recipient: { type: "group" as const, groupIds: notificationGroup }
           }
-        }
-      });
-      log.info("Notified work center employees about dispatch", {
-        count: userIds.length,
-        dispatchId: sequenceData
-      });
+        });
+      } catch (error) {
+        log.error("Failed to notify about maintenance dispatch", {
+          scheduleId: schedule.id,
+          dispatchId: sequenceData,
+          error
+        });
+      }
     }
 
     // Calculate next due date based on frequency
@@ -385,64 +398,76 @@ export const dispatchFunction = inngest.createFunction(
       });
 
       try {
-        // Generate for every company; the schedule query below is the real
-        // gate (only active schedules that are due within the advance window).
-        const { data: companiesWithSettings, error: settingsError } =
-          await serviceRole.from("companySettings").select("id");
+        // Every active schedule that is already due (or never generated), in
+        // one paged read across companies. Generation is catch-up only, so
+        // future-dated schedules are skipped. Paged because max_rows would
+        // silently truncate the list.
+        const dueSchedules = await fetchAllFromTable<
+          MaintenanceSchedule & { companyId: string }
+        >(serviceRole, "maintenanceSchedule", "*", (query) =>
+          query
+            .eq("active", true)
+            .or(
+              `nextDueAt.is.null,nextDueAt.lte.${currentDateTime.toAbsoluteString()}`
+            )
+            .order("id")
+        );
 
-        if (settingsError) {
-          logger.error("Failed to fetch company settings", {
-            error: settingsError
+        if (dueSchedules.error) {
+          logger.error("Failed to fetch due schedules", {
+            error: dueSchedules.error
           });
-          return;
+          // Throwing, not returning: a return is a step that succeeds having
+          // generated nothing, and never spends the configured retries.
+          throw dueSchedules.error;
         }
 
-        logger.info("Found companies", {
-          count: companiesWithSettings?.length || 0
+        const schedules = dueSchedules.data ?? [];
+        const companyIds = pluckUnique(schedules, (s) => s.companyId);
+
+        logger.info("Schedules due", {
+          schedules: schedules.length,
+          companies: companyIds.length
         });
+
+        const notificationGroupByCompany = new Map<string, string[]>();
+        for (let i = 0; i < companyIds.length; i += SETTINGS_CHUNK) {
+          const { data: settings, error: settingsError } = await serviceRole
+            .from("companySettings")
+            .select("id, maintenanceDispatchNotificationGroup")
+            .in("id", companyIds.slice(i, i + SETTINGS_CHUNK));
+
+          if (settingsError) {
+            logger.error("Failed to fetch company settings", {
+              error: settingsError
+            });
+            throw settingsError;
+          }
+          for (const row of settings ?? []) {
+            notificationGroupByCompany.set(
+              row.id,
+              row.maintenanceDispatchNotificationGroup ?? []
+            );
+          }
+        }
 
         let totalDispatchesCreated = 0;
 
-        for (const settings of companiesWithSettings ?? []) {
-          // Active schedules that are already due (or never generated).
-          // Generation is catch-up only, so future-dated schedules are skipped.
-          const { data: dueSchedules, error: schedulesError } =
-            await serviceRole
-              .from("maintenanceSchedule")
-              .select("*")
-              .eq("companyId", settings.id)
-              .eq("active", true)
-              .or(
-                `nextDueAt.is.null,nextDueAt.lte.${currentDateTime.toAbsoluteString()}`
-              );
-
-          if (schedulesError) {
-            logger.error("Failed to fetch schedules for company", {
-              companyId: settings.id,
-              error: schedulesError
+        for (const schedule of schedules) {
+          try {
+            totalDispatchesCreated += await generateDispatchesForSchedule({
+              serviceRole,
+              schedule,
+              companyId: schedule.companyId,
+              currentDateTime,
+              notificationGroup:
+                notificationGroupByCompany.get(schedule.companyId) ?? []
             });
-            continue;
-          }
-
-          logger.info("Schedules due for company", {
-            companyId: settings.id,
-            count: dueSchedules?.length || 0
-          });
-
-          for (const schedule of dueSchedules ?? []) {
-            try {
-              totalDispatchesCreated += await generateDispatchesForSchedule({
-                serviceRole,
-                schedule: schedule as MaintenanceSchedule,
-                companyId: settings.id,
-                currentDateTime
-              });
-            } catch (err) {
-              logger.error("Error processing schedule", {
-                scheduleId: schedule.id,
-                error: err
-              });
-            }
+          } catch (err) {
+            logger.error("Error processing schedule", {
+              scheduleId: schedule.id,
+              error: err
+            });
           }
         }
 
@@ -503,11 +528,24 @@ export const generateMaintenanceForScheduleFunction = inngest.createFunction(
         return { dispatchesCreated: 0 };
       }
 
+      const { data: settings, error: settingsError } = await serviceRole
+        .from("companySettings")
+        .select("maintenanceDispatchNotificationGroup")
+        .eq("id", companyId)
+        .maybeSingle();
+      if (settingsError) {
+        logger.error("Failed to load maintenance notification group", {
+          companyId,
+          error: settingsError
+        });
+      }
+
       const dispatchesCreated = await generateDispatchesForSchedule({
         serviceRole,
         schedule: schedule as MaintenanceSchedule,
         companyId,
-        currentDateTime
+        currentDateTime,
+        notificationGroup: settings?.maintenanceDispatchNotificationGroup ?? []
       });
 
       logger.info("Generated dispatches for schedule on demand", {

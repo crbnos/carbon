@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Input, Select, Submit, ValidatedForm } from "@carbon/form";
 import type { PrinterRoute } from "@carbon/printing";
 import { printerRouteValidator } from "@carbon/printing";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
@@ -16,6 +21,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -27,9 +33,14 @@ import {
 } from "@carbon/react";
 import { getLabelSizeLabel, labelSizes } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useState } from "react";
-import { LuEllipsisVertical, LuPlay, LuPlus, LuTrash } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { useMemo, useState } from "react";
+import {
+  LuEllipsisVertical,
+  LuPencil,
+  LuPlay,
+  LuPlus,
+  LuTrash
+} from "react-icons/lu";
 import { Empty } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { path } from "~/utils/path";
@@ -45,14 +56,28 @@ export function PrintersCard({
   printerRoutes: PrinterRoute[];
 }) {
   const { t } = useLingui();
-  const routeFetcher = useFetcher<{ success: boolean; message: string }>();
+  const printerDisclosure = useDisclosure();
+  // The printer being edited; null while adding a new one.
+  const [printerToEdit, setPrinterToEdit] = useState<PrinterRoute | null>(null);
+  const routeFetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if ("created" in data) {
+        toast.success(
+          data.created ? t`Printer route created` : t`Printer route updated`
+        );
+        printerDisclosure.onClose();
+      } else {
+        toast.success(t`Test label sent to printer`);
+      }
+    }
+  });
 
   const formatOptions = [
     { value: "zpl", label: t`ZPL (Thermal Label)` },
     { value: "pdf", label: t`PDF (Document)` }
   ];
 
-  const newPrinterDisclosure = useDisclosure();
   const deletePrinterDisclosure = useDisclosure();
   const [printerToDelete, setPrinterToDelete] = useState<{
     id: string;
@@ -69,21 +94,10 @@ export function PrintersCard({
     [selectedFormat]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we don't need to re-run this effect when onClose changes
-  useEffect(() => {
-    if (routeFetcher.data?.success === true && routeFetcher.data?.message) {
-      toast.success(routeFetcher.data.message);
-      newPrinterDisclosure.onClose();
-    }
-    if (routeFetcher.data?.success === false && routeFetcher.data?.message) {
-      toast.error(routeFetcher.data.message);
-    }
-  }, [routeFetcher.data?.message, routeFetcher.data?.success]);
-
   return (
     <>
       <Card>
-        <HStack className="w-full justify-between items-start">
+        <HStack className="w-full justify-between items-start max-md:flex-col max-md:items-stretch max-md:gap-0">
           <CardHeader>
             <CardTitle>
               <Trans>Printers</Trans>
@@ -92,12 +106,13 @@ export function PrintersCard({
               <Trans>Physical printers available for assignment.</Trans>
             </CardDescription>
           </CardHeader>
-          <CardAction className="py-6">
+          <CardAction className="py-6 max-md:pt-0 max-md:pb-4 max-md:px-4">
             <Button
               leftIcon={<LuPlus />}
               onClick={() => {
+                setPrinterToEdit(null);
                 setSelectedFormat("zpl");
-                newPrinterDisclosure.onOpen();
+                printerDisclosure.onOpen();
               }}
             >
               <Trans>Add Printer</Trans>
@@ -137,6 +152,17 @@ export function PrintersCard({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.edit}
+                        onSelect={() => {
+                          setPrinterToEdit(route);
+                          setSelectedFormat(route.format);
+                          printerDisclosure.onOpen();
+                        }}
+                      >
+                        <DropdownMenuIcon icon={<LuPencil />} />
+                        <Trans>Edit</Trans>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         onSelect={() =>
                           routeFetcher.submit(
                             { intent: "testPrint", routeId: route.id },
@@ -148,6 +174,7 @@ export function PrintersCard({
                         <Trans>Test</Trans>
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.delete}
                         destructive
                         onSelect={() => {
                           setPrinterToDelete({
@@ -177,11 +204,11 @@ export function PrintersCard({
         </CardContent>
       </Card>
 
-      {newPrinterDisclosure.isOpen && (
+      {printerDisclosure.isOpen && (
         <Modal
           open
           onOpenChange={(open) => {
-            if (!open) newPrinterDisclosure.onClose();
+            if (!open) printerDisclosure.onClose();
           }}
         >
           <ModalContent size="large">
@@ -189,13 +216,40 @@ export function PrintersCard({
               method="post"
               validator={printerRouteValidator}
               fetcher={routeFetcher}
-              defaultValues={{ format: "zpl" }}
+              defaultValues={
+                printerToEdit
+                  ? {
+                      id: printerToEdit.id,
+                      locationId: printerToEdit.locationId ?? undefined,
+                      name: printerToEdit.name,
+                      format: printerToEdit.format,
+                      mediaSizeId: printerToEdit.mediaSizeId ?? undefined,
+                      printerUrl: printerToEdit.printerUrl,
+                      apiKey: printerToEdit.apiKey ?? undefined,
+                      templateId: printerToEdit.templateId ?? undefined
+                    }
+                  : { format: "zpl" }
+              }
               className="flex flex-col h-full"
             >
               <input type="hidden" name="intent" value="upsertRoute" />
+              {printerToEdit && (
+                <>
+                  <input type="hidden" name="id" value={printerToEdit.id} />
+                  <input
+                    type="hidden"
+                    name="locationId"
+                    value={printerToEdit.locationId ?? ""}
+                  />
+                </>
+              )}
               <ModalHeader>
                 <ModalTitle>
-                  <Trans>Add Printer</Trans>
+                  {printerToEdit ? (
+                    <Trans>Edit Printer</Trans>
+                  ) : (
+                    <Trans>Add Printer</Trans>
+                  )}
                 </ModalTitle>
               </ModalHeader>
               <ModalBody>
@@ -249,12 +303,16 @@ export function PrintersCard({
                   <Button
                     size="md"
                     variant="solid"
-                    onClick={newPrinterDisclosure.onClose}
+                    onClick={printerDisclosure.onClose}
                   >
                     <Trans>Cancel</Trans>
                   </Button>
                   <Submit>
-                    <Trans>Add Printer</Trans>
+                    {printerToEdit ? (
+                      <Trans>Save</Trans>
+                    ) : (
+                      <Trans>Add Printer</Trans>
+                    )}
                   </Submit>
                 </HStack>
               </ModalFooter>

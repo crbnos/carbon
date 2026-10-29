@@ -1,6 +1,10 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -16,10 +20,11 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Suspense } from "react";
 import { LuShoppingCart } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Await, redirect, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import {
   CadModel,
   DeferredFiles,
@@ -27,8 +32,11 @@ import {
   SupplierAvatar
 } from "~/components";
 import { usePanels } from "~/components/Layout";
-import { usePermissions, useRealtime, useRouteData } from "~/hooks";
-import type { Job, JobPurchaseOrderLine } from "~/modules/production";
+import { usePermissions, useRouteData } from "~/hooks";
+import {
+  JOB_LOCKED_MESSAGE,
+  jobValidator
+} from "~/modules/production/production.models";
 import {
   getJob,
   getJobDocumentsWithItemId,
@@ -37,12 +45,9 @@ import {
   getJobOperationsByMethodId,
   getJobPurchaseOrderLines,
   getProductionDataByOperations,
-  getRootMakeMethod,
-  isJobLocked,
-  jobValidator,
-  recalculateJobRequirements,
-  updateJob
-} from "~/modules/production";
+  getRootMakeMethod
+} from "~/modules/production/production.service";
+import type { Job, JobPurchaseOrderLine } from "~/modules/production/types";
 import {
   JobBillOfMaterial,
   JobBillOfProcess,
@@ -53,11 +58,13 @@ import {
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
-import { getTagsList } from "~/modules/shared";
+import {
+  getTagsList,
+  requireCompanyRecord
+} from "~/modules/shared/shared.service";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -69,7 +76,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const job = await getJob(client, jobId);
+  // `client` is the service role (bypassRls) and every read keys on the URL id,
+  // so the job must be this company's. The check runs beside the reads it
+  // guards, not before them: it rejects the whole batch, and nothing read here
+  // is returned unless it passes.
+  const [, job, rootMethod, tags] = await Promise.all([
+    requireCompanyRecord(client, "job", companyId, { id: jobId }),
+    getJob(client, jobId),
+    getRootMakeMethod(client, jobId, companyId),
+    getTagsList(client, companyId, "operation")
+  ]);
   if (job.error) {
     throw redirect(
       path.to.jobs,
@@ -77,7 +93,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const rootMethod = await getRootMakeMethod(client, jobId, companyId);
   if (rootMethod.error) {
     return {
       notes: (job.data?.notes ?? {}) as JSONContent,
@@ -97,10 +112,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const methodId = rootMethod.data.id;
 
-  const [materials, operations, tags, makeMethod] = await Promise.all([
+  const [materials, operations, makeMethod] = await Promise.all([
     getJobMaterialsByMethodId(client, methodId),
     getJobOperationsByMethodId(client, methodId),
-    getTagsList(client, companyId, "operation"),
     getJobMakeMethodById(client, methodId, companyId)
   ]);
 
@@ -140,71 +154,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(jobValidator).request(args, {
+    params: ["jobId"]
   });
-
-  const { jobId: id } = params;
-  if (!id) throw new Error("Could not find jobId");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "production"
+  if ("invalid" in input) return input.invalid;
+  const { jobId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.production.updateJobDetails({
+    ...input.data,
+    id: jobId,
+    customFields: setCustomFields(input.formData ?? new FormData())
   });
-  const job = await getJob(viewClient, id);
-  await requireUnlocked({
-    request,
-    isLocked: isJobLocked(job.data?.status),
-    redirectTo: path.to.job(id),
-    message: "Cannot modify a locked job. Reopen it first."
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(jobValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
+  // The item cannot complete to the job's asset: say so on the item field.
+  if (
+    result.error?.category === "rule" &&
+    result.error.message !== JOB_LOCKED_MESSAGE
+  ) {
+    return validationError({ fieldErrors: { itemId: result.error.message } });
   }
-
-  const result = await updateJob(client, {
-    id,
-    quantity: validation.data.quantity,
-    scrapQuantity: validation.data.scrapQuantity,
-    itemId: validation.data.itemId,
-    dueDate: validation.data.dueDate || null,
-    startDate: validation.data.startDate || null,
-    deadlineType: validation.data.deadlineType,
-    locationId: validation.data.locationId,
-    unitOfMeasureCode: validation.data.unitOfMeasureCode,
-    customerId: validation.data.customerId || null,
-    modelUploadId: validation.data.modelUploadId || null,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
+  return respond(args.request, result).redirect(path.to.job(jobId), {
+    message: "Updated job"
   });
-  if (result.error) {
-    throw redirect(
-      path.to.job(id),
-      await flash(request, error(result.error, "Failed to update job"))
-    );
-  }
-
-  const recalculate = await recalculateJobRequirements(getCarbonServiceRole(), {
-    id,
-    companyId,
-    userId
-  });
-  if (recalculate.error) {
-    throw redirect(
-      path.to.job(id),
-      await flash(
-        request,
-        error(recalculate.error, "Failed to recalculate job requirements")
-      )
-    );
-  }
-
-  throw redirect(path.to.job(id), await flash(request, success("Updated job")));
 }
 
 export default function JobDetailsRoute() {
@@ -230,14 +201,9 @@ export default function JobDetailsRoute() {
     }
   });
 
-  const jobData = useRouteData<{
-    job: Job;
-    files: Promise<StorageItem[]> | StorageItem[];
-  }>(path.to.job(jobId));
+  const jobData = useRouteData<{ job: Job }>(path.to.job(jobId));
 
   if (!jobData) throw new Error("Could not find job data");
-
-  useRealtime("modelUpload", `modelPath=eq.(${jobData?.job.modelPath})`);
 
   const methodId = makeMethod?.id;
 
@@ -258,9 +224,8 @@ export default function JobDetailsRoute() {
             <JobBillOfProcess
               key={`bop:${methodId}`}
               jobMakeMethodId={methodId}
-              // @ts-ignore
               materials={materials}
-              // @ts-ignore
+              // @ts-expect-error
               operations={operations}
               locationId={jobData?.job?.locationId ?? ""}
               tags={tags}
@@ -271,9 +236,9 @@ export default function JobDetailsRoute() {
             <JobBillOfMaterial
               key={`bom:${methodId}`}
               jobMakeMethodId={methodId}
-              // @ts-ignore
+              // @ts-expect-error
               materials={materials}
-              // @ts-ignore
+              // @ts-expect-error
               operations={operations}
             />
           </>
@@ -298,9 +263,8 @@ export default function JobDetailsRoute() {
           <Await resolve={productionData}>
             {(resolvedProductionData) => (
               <JobEstimatesVsActuals
-                // @ts-ignore
                 materials={materials ?? []}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={operations}
                 productionEvents={resolvedProductionData.events}
                 productionQuantities={resolvedProductionData.quantities}

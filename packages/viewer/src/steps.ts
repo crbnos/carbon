@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Three-free entry point for the pure plan → step-group logic, so server code
  * (the Inngest worker) can build assembly steps without pulling in the viewer's
@@ -9,13 +13,36 @@ import {
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION
 } from "./plan";
+import { hasCustomMotion, isPlanFlagged, isSavedView } from "./step-flags";
+import {
+  buildSubAssemblyPlan,
+  displayOrder,
+  isSubAssemblyHeader,
+  subAssemblyPartIds,
+  usableSubAssemblies,
+  validateSubAssemblies
+} from "./subassembly";
 
+export type { AssemblyGraphIndex } from "./graph";
+export type { AssemblyPlan, AssemblyStepGroup, StepPhase } from "./plan";
+export type {
+  SubAssemblyInfo,
+  SubAssemblyViolation,
+  UnusableReason
+} from "./subassembly";
+export type { AssemblyGraph } from "./types";
 export {
   assignStepPhases,
   buildAssemblyStepGroups,
+  buildSubAssemblyPlan,
   CURRENT_PLAN_VERSION,
-  indexAssemblyGraph
+  displayOrder,
+  hasCustomMotion,
+  indexAssemblyGraph,
+  isPlanFlagged,
+  isSavedView,
+  isSubAssemblyHeader,
+  subAssemblyPartIds,
+  usableSubAssemblies,
+  validateSubAssemblies
 };
-export type { AssemblyGraphIndex } from "./graph";
-export type { AssemblyPlan, AssemblyStepGroup, StepPhase } from "./plan";
-export type { AssemblyGraph } from "./types";

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -17,12 +22,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Textarea,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import type { IssueTypeListItem } from "~/modules/quality/types";
 
 export type FailedFeatureSummary = {
@@ -38,6 +43,9 @@ type RejectLotModalProps = {
   // Document-driven lots: the features that failed, previewed here and
   // written into the NCR description by the reject action.
   failedFeatureSummary?: FailedFeatureSummary[];
+  // Nothing failed statistically: the lot is rejected for another reason (a
+  // suspected counterfeit, the wrong part), which the inspector must give.
+  requiresReason?: boolean;
   onCancel: () => void;
   onSubmit: () => void;
 };
@@ -47,23 +55,25 @@ const RejectLotModal = ({
   issueTypes,
   summary,
   failedFeatureSummary,
+  requiresReason = false,
   onCancel,
   onSubmit
 }: RejectLotModalProps) => {
   const { t } = useLingui();
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction<{}>({
+    onSettled: () => {
+      if (submitted.current) {
+        onSubmit();
+        submitted.current = false;
+      }
+    }
+  });
   const submitted = useRef(false);
   const [createNcr, setCreateNcr] = useState(true);
+  const [reason, setReason] = useState("");
   const [issueTypeId, setIssueTypeId] = useState<string>(
     issueTypes[0]?.id ?? ""
   );
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onSubmit();
-      submitted.current = false;
-    }
-  }, [fetcher.state, onSubmit]);
 
   const hasIssueTypes = issueTypes.length > 0;
 
@@ -87,7 +97,7 @@ const RejectLotModal = ({
             {failedFeatureSummary && failedFeatureSummary.length > 0 && (
               <div className="w-full rounded-md border p-3">
                 <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  <Trans>Failed features</Trans>
+                  <Trans>Failed characteristics</Trans>
                 </p>
                 <ul className="flex flex-col gap-0.5">
                   {failedFeatureSummary.map((feature) => (
@@ -105,6 +115,23 @@ const RejectLotModal = ({
                 </ul>
               </div>
             )}
+            <div className="flex flex-col gap-2 w-full">
+              <Label htmlFor="rejectReason">
+                {requiresReason ? (
+                  <Trans>Reason</Trans>
+                ) : (
+                  <Trans>Reason (optional)</Trans>
+                )}
+              </Label>
+              <Textarea
+                id="rejectReason"
+                value={reason}
+                // rejectInspection takes at most 2,000 characters.
+                maxLength={2000}
+                onChange={(event) => setReason(event.target.value)}
+                placeholder={t`e.g. Suspected counterfeit, wrong part, damaged in transit`}
+              />
+            </div>
             <label className="flex items-center gap-2 w-full cursor-pointer">
               <Checkbox
                 isChecked={createNcr}
@@ -168,12 +195,14 @@ const RejectLotModal = ({
               name="nonConformanceTypeId"
               value={createNcr ? issueTypeId : ""}
             />
+            <input type="hidden" name="reason" value={reason.trim()} />
             <Button
               variant="destructive"
               type="submit"
               isLoading={fetcher.state !== "idle"}
               isDisabled={
                 fetcher.state !== "idle" ||
+                (requiresReason && !reason.trim()) ||
                 (createNcr && hasIssueTypes && !issueTypeId)
               }
             >

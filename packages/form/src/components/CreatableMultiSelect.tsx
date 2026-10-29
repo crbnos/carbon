@@ -1,4 +1,8 @@
-import type { TermId } from "@carbon/glossary";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
 import type { CreatableMultiSelectProps as CreatableMultiSelectBaseProps } from "@carbon/react";
 import {
   CreatableMultiSelect as CreatableMultiSelectBase,
@@ -6,7 +10,8 @@ import {
   FormErrorMessage,
   FormHelperText,
   FormLabel,
-  LabelWithHelp
+  LabelWithHelp,
+  optionLabelText
 } from "@carbon/react";
 import type { ReactNode } from "react";
 import { forwardRef, useEffect, useMemo } from "react";
@@ -73,7 +78,7 @@ const CreatableMultiSelect = forwardRef<
 
       // Sort unselected options alphabetically by label
       const sortedUnselected = [...unselectedOptions].sort((a, b) =>
-        a.label.localeCompare(b.label)
+        optionLabelText(a).localeCompare(optionLabelText(b))
       );
 
       // Combine selected options first, followed by sorted unselected options

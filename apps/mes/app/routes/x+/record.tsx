@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -8,6 +12,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { stepRecordValidator } from "~/services/models";
 import {
+  abilityBlockRefusal,
   backflushUntrackedMaterialsOnStepRecord,
   insertAttributeRecord
 } from "~/services/operations.service";
@@ -26,11 +31,33 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // A missing step is left to insertAttributeRecord's not-found refusal.
+  const step = await serviceRole
+    .from("jobOperationStep")
+    .select("operationId")
+    .eq("id", validation.data.jobOperationStepId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  const refusal = step.data
+    ? await abilityBlockRefusal(serviceRole, {
+        operationId: step.data.operationId,
+        employeeId: userId,
+        companyId
+      })
+    : null;
+  if (refusal) {
+    return data({}, await flash(request, error(null, refusal)));
+  }
+
   const attributeRecord = await insertAttributeRecord(serviceRole, {
     ...validation.data,
     companyId,
     createdBy: userId
   });
+
+  if (attributeRecord.refusal) {
+    return data({}, await flash(request, error(null, attributeRecord.refusal)));
+  }
 
   if (attributeRecord.error) {
     return data(

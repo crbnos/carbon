@@ -1,16 +1,21 @@
-import { assertIsPost, error } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
-import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
-import { insertJob, jobValidator } from "~/modules/production";
+import { CONSTRUCTION_IN_PROGRESS_ENABLED } from "~/modules/accounting/accounting.models";
+import { getFixedAssets } from "~/modules/accounting/accounting.service";
+import { jobValidator } from "~/modules/production/production.models";
 import { JobForm } from "~/modules/production/ui/Jobs";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -21,82 +26,85 @@ export const handle: Handle = {
   module: "production"
 };
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "production",
-    role: "employee"
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "production"
   });
 
-  const formData = await request.formData();
-  const validation = await validator(jobValidator).validate(formData);
+  // The Complete To pickers. A CIP class is the holding account a job's cost
+  // sits in, never a target, so it is filtered out here rather than by name.
+  const [fixedAssetClasses, underConstructionAssets] = await Promise.all([
+    client
+      .from("fixedAssetClass")
+      .select("id, name, isConstructionInProgress")
+      .eq("companyId", companyId)
+      .eq("isConstructionInProgress", false)
+      .order("name"),
+    // Not offered while construction in progress is hidden.
+    CONSTRUCTION_IN_PROGRESS_ENABLED
+      ? getFixedAssets(client, companyId, {
+          search: null,
+          status: "Under Construction",
+          limit: 100,
+          cursor: null,
+          sorts: [],
+          filters: []
+        })
+      : null
+  ]);
 
-  if (validation.error) {
-    return validationError(validation.error);
+  return {
+    fixedAssetClasses: (fixedAssetClasses.data ?? []).map((assetClass) => ({
+      id: assetClass.id,
+      name: assetClass.name
+    })),
+    // The query reads one row past `limit` (the next-page probe); keep 100.
+    underConstructionAssets: (underConstructionAssets?.data ?? [])
+      .slice(0, 100)
+      .map((asset) => ({
+        id: asset.id,
+        fixedAssetId: asset.fixedAssetId,
+        name: asset.name
+      }))
+  };
+}
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(jobValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+
+  const api = await carbon(args.request);
+  const result = await api.production.createJob({
+    ...input.data,
+    customFields: input.formData ? setCustomFields(input.formData) : undefined
+  });
+  // The item cannot be made (a change notice holds it, or it cannot complete
+  // to an asset): say so on the item field.
+  if (result.error?.category === "rule") {
+    return validationError({ fieldErrors: { itemId: result.error.message } });
   }
-
-  const { id: _id, configuration: configStr, ...data } = validation.data;
-
-  let configuration: Record<string, unknown> | undefined;
-  if (configStr) {
-    try {
-      configuration = JSON.parse(configStr);
-    } catch {
-      // invalid JSON — skip configuration
-    }
+  if (result.error) {
+    return respond(args.request, result).redirect(path.to.jobs);
   }
-
-  // A job pulls the item's active make method, and for an item a change notice
-  // still holds that is the notice's un-approved draft BOM. Refuse the job until
-  // the notice releases. Checked here rather than only in the picker because this
-  // action is also reached by the API and the MCP tools.
-  if (data.itemId) {
-    const unreleasedIssue = await getUnreleasedChangeOrderIssue(
-      getCarbonServiceRole(),
-      { itemId: data.itemId, companyId }
-    );
-    if (unreleasedIssue) {
-      return validationError({
-        fieldErrors: {
-          itemId: `${unreleasedIssue} A job cannot be made for it.`
-        }
-      });
-    }
-  }
-
-  const result = await insertJob(
-    getCarbonServiceRole(),
-    {
-      ...data,
-      jobId: data.jobId || undefined,
-      configuration,
-      companyId,
-      createdBy: userId,
-      customFields: setCustomFields(formData)
-    },
-    { source: "erp" }
-  );
-
-  if (result.error || !result.data) {
-    throw redirect(
-      path.to.jobs,
-      await flash(request, error(result.error, "Failed to insert job"))
-    );
-  }
-
-  throw redirect(path.to.job(result.data.id));
+  throw redirect(path.to.job(result.data.jobId));
 }
 
 export default function JobNewRoute() {
+  const { fixedAssetClasses, underConstructionAssets } =
+    useLoaderData<typeof loader>();
   const { defaults } = useUser();
   const [params] = useUrlParams();
   const customerId = params.get("customerId");
+  // "Build for fleet" opens this page with the class preselected.
+  const fixedAssetClassId = params.get("fixedAssetClassId");
 
   const initialValues = {
     customerId: customerId ?? "",
     deadlineType: "No Deadline" as const,
     description: "",
     dueDate: "",
+    fixedAssetClassId: fixedAssetClassId ?? "",
+    fixedAssetId: "",
     itemId: "",
     itemType: "Item" as MethodItemType,
     jobId: undefined,
@@ -108,8 +116,12 @@ export default function JobNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <JobForm initialValues={initialValues} />
-    </div>
+    <NewRecordPage>
+      <JobForm
+        initialValues={initialValues}
+        fixedAssetClasses={fixedAssetClasses}
+        underConstructionAssets={underConstructionAssets}
+      />
+    </NewRecordPage>
   );
 }

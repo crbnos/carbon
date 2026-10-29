@@ -1,7 +1,37 @@
-import { isValidTimeZone } from "@carbon/utils";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { Constants } from "@carbon/database";
+import { isUnsafeStoragePath } from "@carbon/files";
+import {
+  type BatchRules,
+  isValidTimeZone,
+  resolveBatchRules
+} from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { operationTypes, standardFactorType } from "../shared";
+import { operationTypes, standardFactorType } from "../shared/shared.models";
+
+// Batch compatibility rule levels — mirrors BatchRuleLevel in @carbon/utils.
+// A tuple literal is needed for z.enum; kept in sync with BATCH_RULE_DIMENSIONS.
+export const batchRuleLevels = ["must", "guide", "ignore"] as const;
+
+// Seed the six process-form batch-rule fields from a stored (sparse/null)
+// `batchRules` value, filling defaults. Used by the process create/edit forms so
+// an untouched process shows Guide/Ignore defaults and a saved one round-trips.
+export function batchRuleInitialValues(raw: BatchRules | null | undefined) {
+  const r = resolveBatchRules(raw);
+  return {
+    batchRuleItem: r.item,
+    batchRuleSubstance: r.substance,
+    batchRuleGrade: r.grade,
+    batchRuleDimension: r.dimension,
+    batchRuleForm: r.form,
+    batchRuleFinish: r.finish,
+    batchRuleProducedItem: r.producedItem
+  };
+}
 
 export const abilityCurveValidator = z.object({
   data: z
@@ -13,12 +43,17 @@ export const abilityCurveValidator = z.object({
   )
 });
 
-export const abilityNameValidator = z.object({
-  name: z.string().trim().min(1, { message: "Name is required" })
+// An ability is a process's qualification: it is created ONLY by picking a
+// process, and it carries no free-form name — the name derives from the linked
+// process (renaming the process renames the ability).
+export const abilityValidator = z.object({
+  processId: z.string().min(1, { message: "Process is required" }),
+  recertifyEveryDays: zfd.numeric(z.number().int().min(1).optional())
 });
 
-export const abilityValidator = z.object({
-  name: z.string().trim().min(1, { message: "Name is required" }),
+// The edit form only adjusts the recertification cadence; the process (and
+// therefore the name) is fixed for the life of the ability.
+export const abilityRecertifyValidator = z.object({
   recertifyEveryDays: zfd.numeric(z.number().int().min(1).optional())
 });
 
@@ -298,6 +333,11 @@ export const partnerValidator = z.object({
   // abilityId: z.string().min(1, { message: "Invalid ability" }),
 });
 
+// What MES does when an operator lacks the ability a process requires.
+// 'Warn' shows a banner; 'Block' refuses production work on the operation.
+export const processAbilityPolicies =
+  Constants.public.Enums.processAbilityPolicy;
+
 export const processValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -314,7 +354,20 @@ export const processValidator = z
       .array(z.string().min(1, { message: "Invalid work center" }))
       .optional(),
     completeAllOnScan: zfd.checkbox(),
-    requiresAbility: zfd.checkbox()
+    batchable: zfd.checkbox(),
+    batchType: z
+      .enum(["Sequential", "Simultaneous"])
+      .optional()
+      .default("Sequential"),
+    requiresAbility: zfd.checkbox(),
+    abilityPolicy: z.enum(processAbilityPolicies).optional(),
+    batchRuleItem: z.enum(batchRuleLevels).optional(),
+    batchRuleSubstance: z.enum(batchRuleLevels).optional(),
+    batchRuleGrade: z.enum(batchRuleLevels).optional(),
+    batchRuleDimension: z.enum(batchRuleLevels).optional(),
+    batchRuleForm: z.enum(batchRuleLevels).optional(),
+    batchRuleFinish: z.enum(batchRuleLevels).optional(),
+    batchRuleProducedItem: z.enum(batchRuleLevels).optional()
   })
   .refine((data) => {
     if (data.processType !== "Outside Processing" && !data.workCenters) {
@@ -339,13 +392,34 @@ export const trainingAssignmentStatusOptions = [
   "Not Required"
 ] as const;
 
-export const trainingAssignmentValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  trainingId: z.string().min(1, { message: "Training is required" }),
-  groupIds: z
-    .array(z.string())
-    .min(1, { message: "At least one group is required" })
-});
+// An internal assignment points at a training; an external one only has a
+// name, because the training happens in an outside system.
+export const trainingAssignmentValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    isExternal: zfd.checkbox(),
+    trainingId: zfd.text(z.string().optional()),
+    name: zfd.text(z.string().trim().optional()),
+    groupIds: z
+      .array(z.string())
+      .min(1, { message: "At least one group is required" })
+  })
+  .superRefine((value, ctx) => {
+    if (value.isExternal && !value.name) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["name"],
+        message: "Name is required"
+      });
+    }
+    if (!value.isExternal && !value.trainingId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["trainingId"],
+        message: "Training is required"
+      });
+    }
+  });
 
 export const trainingCompletionValidator = z.object({
   trainingAssignmentId: z
@@ -354,6 +428,128 @@ export const trainingCompletionValidator = z.object({
   employeeId: z.string().min(1, { message: "Employee is required" }),
   period: zfd.text(z.string().optional())
 });
+
+// Guide key: `{companyId}/training/{trainingId}/{uploadId}/{file name}` — the
+// last segment is the name the author uploaded.
+export function trainingGuideKeyPrefix(companyId: string, trainingId: string) {
+  return `${companyId}/training/${trainingId}/`;
+}
+
+// The browser posts the guide's key, so the server must not trust its shape.
+export function isValidTrainingGuideKey(key: string, prefix: string) {
+  if (!key.startsWith(prefix) || isUnsafeStoragePath(key)) return false;
+  const segments = key.slice(prefix.length).split("/");
+  return segments.length === 2 && segments.every((segment) => segment !== "");
+}
+
+const YOUTUBE_HOSTS = new Set([
+  "youtube.com",
+  "www.youtube.com",
+  "m.youtube.com",
+  "music.youtube.com",
+  "youtube-nocookie.com",
+  "www.youtube-nocookie.com"
+]);
+const YOUTUBE_VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
+
+// The video id of a YouTube link: watch, youtu.be, shorts, live and embed
+// links. Null for anything else, so the server can refuse it.
+export function getYouTubeVideoId(url: string) {
+  let parsed: URL;
+  try {
+    parsed = new URL(url.trim());
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+
+  const host = parsed.hostname.toLowerCase();
+  const segments = parsed.pathname.split("/").filter(Boolean);
+  let id: string | null | undefined = null;
+  if (host === "youtu.be") {
+    id = segments[0];
+  } else if (YOUTUBE_HOSTS.has(host)) {
+    if (segments[0] === "watch") id = parsed.searchParams.get("v");
+    else if (["shorts", "live", "embed", "v"].includes(segments[0] ?? ""))
+      id = segments[1];
+  }
+  return id && YOUTUBE_VIDEO_ID.test(id) ? id : null;
+}
+
+// A training's video is stored as the canonical watch link.
+export function youTubeWatchUrl(videoId: string) {
+  return `https://www.youtube.com/watch?v=${videoId}`;
+}
+
+export function trainingCertificateKeyPrefix(
+  companyId: string,
+  trainingAssignmentId: string,
+  employeeId: string
+) {
+  return `${companyId}/training-certificates/${trainingAssignmentId}/${employeeId}/`;
+}
+
+// A certificate is a PDF or a photo of one. HEIC is never stored: the ERP
+// dropzone converts it to JPEG first, and phone browsers hand a JPEG to a file
+// input that does not list HEIC.
+export const trainingCertificateAccept = {
+  "application/pdf": [".pdf"],
+  "image/png": [".png"],
+  "image/jpeg": [".jpg", ".jpeg"]
+};
+
+export const TRAINING_CERTIFICATE_MAX_BYTES = 10 * 1024 * 1024;
+
+const trainingCertificateExtensions = Object.values(trainingCertificateAccept)
+  .flat()
+  .map((extension) => extension.slice(1));
+
+// The first bytes of each accepted type. The extension alone can be renamed
+// onto any file.
+const trainingCertificateSignatures: Record<string, number[]> = {
+  pdf: [0x25, 0x50, 0x44, 0x46, 0x2d], // %PDF-
+  png: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+  jpg: [0xff, 0xd8, 0xff],
+  jpeg: [0xff, 0xd8, 0xff]
+};
+
+export async function validateTrainingCertificate(
+  file: FormDataEntryValue | null
+): Promise<
+  | { file: File; extension: string; error: null }
+  | { file: null; extension: null; error: string }
+> {
+  if (!(file instanceof File) || file.size === 0) {
+    return { file: null, extension: null, error: "Upload a certificate file" };
+  }
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const signature = trainingCertificateSignatures[extension];
+  if (!trainingCertificateExtensions.includes(extension) || !signature) {
+    return {
+      file: null,
+      extension: null,
+      error: "The certificate must be a PDF, PNG or JPG"
+    };
+  }
+  if (file.size > TRAINING_CERTIFICATE_MAX_BYTES) {
+    return {
+      file: null,
+      extension: null,
+      error: "The certificate must be 10 MB or smaller"
+    };
+  }
+  const head = new Uint8Array(
+    await file.slice(0, signature.length).arrayBuffer()
+  );
+  if (!signature.every((byte, index) => head[index] === byte)) {
+    return {
+      file: null,
+      extension: null,
+      error: "The certificate must be a PDF, PNG or JPG"
+    };
+  }
+  return { file, extension, error: null };
+}
 
 export const trainingFrequency = ["Once", "Quarterly", "Annual"] as const;
 
@@ -494,21 +690,57 @@ export const trainingValidator = z.object({
   grantsAbilityId: zfd.text(z.string().optional())
 });
 
-export const workCenterValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  description: z.string(),
-  defaultStandardFactor: z.enum(standardFactorType, {
-    error: "Standard factor is required"
-  }),
-  departmentId: zfd.text(z.string().optional()),
-  laborRate: zfd.numeric(z.number().min(0)),
-  locationId: z.string().min(1, { message: "Location is required" }),
-  machineRate: zfd.numeric(z.number().min(0)),
-  overheadRate: zfd.numeric(z.number().min(0)),
-  processes: z
-    .array(z.string().min(1, { message: "Invalid process" }))
-    .optional(),
-  shifts: z.array(z.string().min(1, { message: "Invalid shift" })).optional(),
-  alwaysOn: zfd.checkbox()
-});
+export const workCenterValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    description: z.string(),
+    defaultStandardFactor: z.enum(standardFactorType, {
+      error: "Standard factor is required"
+    }),
+    departmentId: zfd.text(z.string().optional()),
+    laborRate: zfd.numeric(z.number().min(0)),
+    locationId: z.string().min(1, { message: "Location is required" }),
+    machineRate: zfd.numeric(z.number().min(0)),
+    overheadRate: zfd.numeric(z.number().min(0)),
+    processes: z
+      .array(z.string().min(1, { message: "Invalid process" }))
+      .optional(),
+    shifts: z.array(z.string().min(1, { message: "Invalid shift" })).optional(),
+    alwaysOn: zfd.checkbox(),
+    batchCapacity: zfd.numeric(z.number().int().min(1).optional()),
+    minimumBatchQuantity: zfd.numeric(z.number().int().min(1).optional())
+  })
+  .refine(
+    (data) =>
+      data.batchCapacity == null ||
+      data.minimumBatchQuantity == null ||
+      data.minimumBatchQuantity <= data.batchCapacity,
+    {
+      message: "Minimum batch quantity cannot exceed batch capacity",
+      path: ["minimumBatchQuantity"]
+    }
+  );
+
+/**
+ * The work center form: its Operating hours choice is posted only to be
+ * checked, since "Some Shifts" with no shift picked would save as every
+ * shift. The API takes `workCenterValidator`, where `alwaysOn` and `shifts`
+ * say it all.
+ */
+export const workCenterFormValidator = workCenterValidator
+  .safeExtend({
+    operatingHours: zfd.text(z.enum(["all", "some", "lightsOut"]).optional())
+  })
+  .refine(
+    (data) => data.operatingHours !== "some" || (data.shifts?.length ?? 0) > 0,
+    { message: "Select at least one shift", path: ["shifts"] }
+  );
+
+/** The form's data as the API takes it: the choice was only for checking. */
+export function withoutOperatingHours<T extends { operatingHours?: unknown }>({
+  operatingHours: _operatingHours,
+  ...data
+}: T): Omit<T, "operatingHours"> {
+  return data;
+}

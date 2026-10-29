@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   type ActionOutcome,
   DEFAULT_HANDLE,
@@ -5,10 +9,13 @@ import {
   type RuntimeValue,
   type SearchOutcome,
   SUCCESS_HANDLE
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EngineStep, RunPayload } from "./execute";
 
+vi.mock("@carbon/ee/workflows.server", () => ({
+  workflowsEnabledForCompany: vi.fn(async () => true)
+}));
 vi.mock("../../db", () => ({ getJobDatabaseClient: () => ({}) }));
 vi.mock("./log", () => ({
   loadRunContext: vi.fn(),
@@ -34,18 +41,9 @@ vi.mock("./owner", () => ({
   hasPermission: () => true
 }));
 vi.mock("../actions", () => ({ createWorkflowServices: vi.fn() }));
-// The real module pulls in the email templates and @carbon/env; the engine only wants a URL.
-vi.mock("../../inngest/functions/notifications/content", () => ({
-  buildNotificationLink: (
-    event: string,
-    documentId: string,
-    companyId: string
-  ) =>
-    `https://erp.test/api/link?event=${event}&documentId=${documentId}&companyId=${companyId}`
-}));
 
 const { executeWorkflowRun } = await import("./execute");
-const { loadRunContext } = await import("./log");
+const { finishRun, loadRunContext } = await import("./log");
 const { claimStep, settleStep } = await import("./ledger");
 const { createWorkflowServices } = await import("../actions");
 
@@ -160,6 +158,7 @@ function withServices(params: {
   );
   vi.mocked(createWorkflowServices).mockReturnValue({
     runAction,
+    runIntegration: async () => ({ ok: false as const, error: "not stubbed" }),
     runOperation: async () => ({ ok: false, error: "not stubbed" }),
     search
   });
@@ -286,6 +285,11 @@ describe("batch mode", () => {
     expect(aggregateReason()).toBe("Ran 3 of 3; 1 failed.");
     // One failed item still marks the run failed; the node itself carried on.
     expect(result.status).toBe("Failed");
+    // ...and the run says why, in the aggregate row's words, not with no error.
+    expect(vi.mocked(finishRun).mock.calls.at(-1)?.[1]).toMatchObject({
+      status: "Failed",
+      error: "Ran 3 of 3; 1 failed."
+    });
   });
 
   it("follows the failure handle when every item fails", async () => {
@@ -383,6 +387,10 @@ describe("batch mode", () => {
           ? { ok: false, error: "This turn had no item." }
           : { ok: true, outputs: { record: job } };
       },
+      runIntegration: async () => ({
+        ok: false as const,
+        error: "not stubbed"
+      }),
       runOperation: async () => ({ ok: false, error: "not stubbed" }),
       search: async () => ({
         ok: true,

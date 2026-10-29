@@ -1,13 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
   BatchPlan,
   WorkflowIssue,
-  WorkflowNodeType
-} from "@carbon/workflows";
+  WorkflowNodeType,
+  WorkflowNotice
+} from "@carbon/ee/workflows";
 import {
   getNodeHandles,
   slugifyNodeName,
   uniqueNodeName
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { Connection, EdgeChange, NodeChange } from "@xyflow/react";
 import { addEdge, applyEdgeChanges, applyNodeChanges } from "@xyflow/react";
 import { nanoid } from "nanoid";
@@ -47,6 +52,9 @@ export type BuilderState = {
   /** Broken variables, recomputed as the graph is edited. Kept apart from `issues`
    * so a publish attempt and a live edit never overwrite each other's findings. */
   liveIssues: WorkflowIssue[];
+  /** Advisory notes recomputed alongside `liveIssues` — a record in a field that
+   * will not render it as a link. Never blocking, so never in `issues`. */
+  notices: WorkflowNotice[];
   /** Which action steps repeat and over what, by node id — derived from the wiring
    * alongside `liveIssues`, and absent for a step that runs once. */
   batchPlans: Record<string, BatchPlan>;
@@ -76,6 +84,7 @@ export type BuilderState = {
   setSelected: (id: string | null) => void;
   setIssues: (issues: WorkflowIssue[]) => void;
   setLiveIssues: (issues: WorkflowIssue[]) => void;
+  setNotices: (notices: WorkflowNotice[]) => void;
   setBatchPlans: (plans: Record<string, BatchPlan>) => void;
   setSaveState: (state: SaveState) => void;
   openTestRun: (nodeId: string) => void;
@@ -131,6 +140,7 @@ export function createBuilderStore(initial: {
     selectedNodeId: null,
     issues: [],
     liveIssues: [],
+    notices: [],
     batchPlans: {},
     saveState: "idle",
     isVersionLocked: initial.isVersionLocked,
@@ -258,6 +268,13 @@ export function createBuilderStore(initial: {
       const current = get().liveIssues;
       if (current.length === 0 && liveIssues.length === 0) return;
       set({ liveIssues });
+    },
+    setNotices: (notices) => {
+      // Same identity rule as `liveIssues`: most graphs have no notice, and a fresh
+      // empty array on every debounce would re-render every subscriber for nothing.
+      const current = get().notices;
+      if (current.length === 0 && notices.length === 0) return;
+      set({ notices });
     },
     setBatchPlans: (plans) => {
       // Same identity rule as `liveIssues`: most graphs have no repeating step, and a

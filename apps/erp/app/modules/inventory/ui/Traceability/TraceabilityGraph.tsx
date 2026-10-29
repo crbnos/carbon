@@ -1,4 +1,8 @@
-import { cn } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { cn, useViewport } from "@carbon/react";
 import {
   Background,
   BackgroundVariant,
@@ -23,8 +27,8 @@ import type {
   ActivityInput,
   ActivityOutput,
   TrackedEntity
-} from "~/modules/inventory";
-import { clampDepth } from "./constants";
+} from "~/modules/inventory/types";
+import { COMPACT_FIT_PADDING, clampDepth } from "./constants";
 import { QuantityEdge } from "./edges/QuantityEdge";
 import { GraphLegend } from "./GraphLegend";
 import { GraphToolbar } from "./GraphToolbar";
@@ -101,6 +105,7 @@ function TraceabilityGraphInner({
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { fitView } = useReactFlow();
+  const { isPhone } = useViewport();
   const nodesInitialized = useNodesInitialized();
   const lastFitSignatureRef = useRef<string>("");
 
@@ -193,11 +198,15 @@ function TraceabilityGraphInner({
           if (!isMeta) return;
         }
         e.preventDefault();
+        // Capture phase + stopPropagation so node search takes precedence
+        // over the global ⌘K search binding (a document-level listener)
+        // while the graph is mounted.
+        e.stopPropagation();
         setSearchOpen(true);
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, []);
   const handleRelayout = useCallback(() => {
     setLayoutVersion((v) => v + 1);
@@ -533,7 +542,7 @@ function TraceabilityGraphInner({
     lastFitSignatureRef.current = sig;
     const raf = requestAnimationFrame(() => {
       fitView({
-        padding: 0.2,
+        padding: isPhone ? COMPACT_FIT_PADDING : 0.2,
         duration: isFirstFit ? 0 : 250,
         maxZoom: 1
       });
@@ -549,7 +558,8 @@ function TraceabilityGraphInner({
     view,
     width,
     height,
-    fitView
+    fitView,
+    isPhone
   ]);
 
   const handleDepthChange = useCallback(
@@ -653,7 +663,7 @@ function TraceabilityGraphInner({
         <MiniMap
           pannable
           zoomable
-          className="!bg-card !border-border"
+          className="!bg-card !border-border max-md:!hidden"
           nodeColor={(n) => {
             const data = (n as any).data;
             if (data?.kind === "entity") {
@@ -736,7 +746,7 @@ function TraceabilityGraphInner({
                 </button>
               </>
             ) : (
-              <span className="px-1 flex items-center gap-1.5 text-muted-foreground">
+              <span className="px-1 flex items-center gap-1.5 text-muted-foreground max-md:hidden">
                 <kbd className="rounded border border-border bg-muted px-1 py-px font-mono text-[10px] leading-none text-foreground">
                   Shift
                 </kbd>

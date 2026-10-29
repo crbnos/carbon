@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Checkbox } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { MouseEvent } from "react";
@@ -26,6 +30,9 @@ const IndeterminateCheckbox = ({
   };
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    // Selecting a row must not also expand it (an expandable row toggles on
+    // click).
+    event.stopPropagation();
     shiftKeyRef.current = event.shiftKey;
   };
 

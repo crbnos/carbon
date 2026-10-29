@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Hidden, NumberControlled, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Modal,
@@ -11,7 +16,6 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
 import { pickQuantityValidator } from "../../inventory.models";
 
@@ -21,6 +25,7 @@ export function ShortPickModal({
   itemName,
   quantityToPick,
   quantityPicked,
+  unitOfMeasureCode,
   onClose
 }: {
   pickingListId: string;
@@ -28,10 +33,11 @@ export function ShortPickModal({
   itemName: string;
   quantityToPick: number;
   quantityPicked: number;
+  unitOfMeasureCode?: string | null;
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{ success: boolean; message?: string }>();
+  const fetcher = useAction();
   const [quantity, setQuantity] = useState(
     quantityPicked > 0 ? quantityPicked : quantityToPick
   );
@@ -72,7 +78,11 @@ export function ShortPickModal({
             <Hidden name="markShort" value="true" />
             <NumberControlled
               name="quantity"
-              label={t`Picked quantity`}
+              label={
+                unitOfMeasureCode
+                  ? `${t`Picked quantity`} (${unitOfMeasureCode})`
+                  : t`Picked quantity`
+              }
               value={quantity}
               onChange={setQuantity}
               minValue={0}

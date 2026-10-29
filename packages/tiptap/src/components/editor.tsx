@@ -1,10 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { EditorProviderProps, JSONContent } from "@tiptap/react";
 import { EditorProvider } from "@tiptap/react";
-import { Provider } from "jotai";
 import type { FC, ReactNode } from "react";
 import { forwardRef, useRef } from "react";
 import tunnel from "tunnel-rat";
-import { novelStore } from "../utils/store";
 import { EditorCommandTunnelContext } from "./editor-command";
 
 export interface EditorProps {
@@ -20,11 +22,9 @@ export const EditorRoot: FC<EditorRootProps> = ({ children }) => {
   const tunnelInstance = useRef(tunnel()).current;
 
   return (
-    <Provider store={novelStore}>
-      <EditorCommandTunnelContext.Provider value={tunnelInstance}>
-        {children}
-      </EditorCommandTunnelContext.Provider>
-    </Provider>
+    <EditorCommandTunnelContext.Provider value={tunnelInstance}>
+      {children}
+    </EditorCommandTunnelContext.Provider>
   );
 };
 

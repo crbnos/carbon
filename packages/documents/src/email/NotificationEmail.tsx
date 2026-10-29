@@ -1,7 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { renderInlineLinks } from "@carbon/notifications";
 import {
   Body,
-  Button,
   Container,
   Heading,
   Hr,
@@ -9,10 +12,15 @@ import {
   Preview,
   Section,
   Text
-} from "@react-email/components";
+} from "react-email";
+import { Button } from "./components/Button";
 import { Logo } from "./components/Logo";
 import { notificationStyles } from "./components/notificationStyles";
-import { EmailThemeProvider, getEmailThemeClasses } from "./components/Theme";
+import {
+  EmailThemeProvider,
+  getEmailThemeClasses,
+  HeadStyle
+} from "./components/Theme";
 
 // Structurally compatible with `NotificationDetail` from `@carbon/notifications`,
 // which this file now also imports `renderInlineLinks` from — the parser must be the
@@ -61,7 +69,7 @@ export const NotificationEmail = ({
   return (
     <EmailThemeProvider
       preview={preview ? <Preview>{preview}</Preview> : undefined}
-      additionalHeadContent={<style>{notificationStyles}</style>}
+      additionalHeadContent={<HeadStyle css={notificationStyles} />}
     >
       <Body
         className={`my-auto mx-auto font-sans nf-body ${themeClasses.body}`}
@@ -204,26 +212,7 @@ export const NotificationEmail = ({
           {ctaUrl && (
             <>
               <Section className="text-center mb-[24px]">
-                <Button
-                  href={ctaUrl}
-                  className="nf-cta"
-                  style={{
-                    backgroundColor: "#0e0e0e",
-                    borderColor: "#0e0e0e",
-                    borderRadius: 10,
-                    borderStyle: "solid",
-                    borderWidth: 1,
-                    color: "#ffffff",
-                    display: "inline-block",
-                    fontSize: 14,
-                    fontWeight: 500,
-                    padding: "13px 24px",
-                    textAlign: "center",
-                    textDecoration: "none"
-                  }}
-                >
-                  <span style={{ verticalAlign: "middle" }}>{ctaLabel}</span>
-                </Button>
+                <Button href={ctaUrl}>{ctaLabel}</Button>
               </Section>
 
               <Text

@@ -3,9 +3,9 @@ title: People
 description: The HR master data a company sets up — employees, departments, shifts, holidays, custom attributes, and time cards.
 ---
 
-**People** is where you manage the human side of a company: the employees who work there, how they're organized, when they're scheduled, and the custom fields you track against each one. It sits alongside identity and access — an employee record is the org-and-scheduling layer, while login, roles, and what someone is *allowed* to do live in [permissions](/docs/reference/permissions).
+**People** manages employees, organizational structure, schedules, and employee attributes. An employee record defines company membership and work assignments. Login methods, roles, and access grants are managed through [permissions](/docs/reference/permissions).
 
-A person in Carbon is one record split across three tables. The `user` is the global login identity. The `employee` is that user's membership in *this* company. The `employeeJob` holds their org placement — title, location, department, shift, and manager. They share the same id and are always scoped to a company, so the same person can be an employee of more than one company with a different title and manager in each.
+Carbon represents a person across three tables. `user` is the global login identity. `employee` represents membership in one company. `employeeJob` stores the person's title, location, department, shift, and manager. The records share an ID and are company-scoped, so one user can have different employment details in multiple companies.
 
 ## Employees
 
@@ -56,11 +56,13 @@ A **shift** is a named work schedule tied to a location: a start time, an end ti
 Shifts schedule both people and machines. A shift assigned to an employee defines when that person can be scheduled; a shift assigned to a [work center](/docs/reference/work-centers) defines that station's operating hours. And for operations whose process requires an ability, who's on shift *is* the binding constraint — no qualified operator on shift means the operation waits.
 </Callout>
 
-Deleting a shift is a soft delete — the record is marked inactive rather than removed, so historical assignments stay intact.
+Deleting a shift marks it inactive instead of removing it, preserving historical assignments.
 
 ## Holidays
 
 A **holiday** is a company non-working day: a name and a date. The year is derived from the date automatically, and the list groups by year so you can review one calendar year at a time.
+
+A holiday closes the plant for [scheduling](/docs/reference/scheduling): no operation is placed on that day, except on a lights-out (24×7) work center, and nobody is counted as available. Forecast shades the day as closed, and the capacity view on Resource Planning shows no available hours for it. Adding, editing, or deleting a holiday queues a reschedule.
 
 <FieldTable>
   <Field name="Holiday Name" type="text">What the day is called.</Field>
@@ -82,7 +84,7 @@ Each attribute defines:
   <Field name="Self Managed" type="boolean">When on, employees can edit this value on their own profile; otherwise only admins can.</Field>
 </FieldTable>
 
-The <Term id="attribute-data-type">Data Type</Term> comes from a fixed set: **"Text"**, **"Numeric"**, **"Yes/No"**, **"Date"**, **"List"**, and **"User"** (the same list also powers customer and supplier custom fields, which add **"Customer"**, **"Supplier"**, and **"File"**). A **"List"** attribute pulls its choices from its <Term id="attribute-list-options">List Options</Term>.
+The <Term id="attribute-data-type">Data Type</Term> comes from a fixed set: **"Text"**, **"Numeric"**, **"Yes/No"**, **"Date"**, **"List"**, and **"User"** (the same list also powers customer and supplier custom fields, which add **"Customer"**, **"Supplier"**, and **"File"**). A **"List"** attribute pulls its choices from its <Term id="attribute-list-options">List Options</Term>. The **"Link"** type is offered on custom fields only, not on attributes.
 
 <Callout type="note">
 Pick the data type when you create the attribute — it's fixed once the attribute has recorded values. Category and attribute deletes are soft deletes (marked inactive), so an attribute you retire won't erase the values already collected against it.
@@ -94,7 +96,7 @@ A **time card** is a clock-in / clock-out record for an employee. Time tracking 
 
 Each entry captures the employee, a clock-in time, an optional clock-out time, and a note. An entry with no clock-out is still open — Carbon derives its **Status** from that:
 
-<StatusFlow>
+<StatusFlow entity="timecard">
   <Status name="Active" accent>Clocked in with no clock-out yet — the employee is on the clock.</Status>
   <Status name="Complete" terminal>Clocked out. The entry is closed and its duration is fixed.</Status>
 </StatusFlow>

@@ -1,4 +1,13 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { getItemById, getItemReadableId } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -26,6 +35,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { Confirm } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import {
   riskRegisterType,
@@ -42,6 +52,7 @@ import RiskType from "./RiskType";
 type RiskRegistersTableProps = {
   data: Risk[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -51,7 +62,8 @@ const defaultColumnVisibility = {
   updatedAt: false
 };
 
-const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
+const RiskRegistersTable = memo((props: RiskRegistersTableProps) => {
+  const { data, count, infinite } = props;
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const workCenters = useWorkCenters({});
@@ -92,7 +104,8 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
               )}
             </div>
           </Hyperlink>
-        )
+        ),
+        meta: { mobile: "P1" }
       },
       {
         accessorKey: "type",
@@ -101,6 +114,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
           return <RiskType type={row.original.type} />;
         },
         meta: {
+          mobile: "P2",
           icon: <LuShapes />,
           filter: {
             type: "static",
@@ -140,6 +154,13 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
         header: t`Source`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
+          mobile: "P3",
+          // Phones: line 2 is muted context, not a second row of pills.
+          mobileCell: (item) => (
+            <span className="text-muted-foreground">
+              {item.getValue<string>()}
+            </span>
+          ),
           icon: <LuDna />,
           filter: {
             type: "static",
@@ -155,6 +176,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <RiskStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuStar />,
           filter: {
             type: "static",
@@ -239,6 +261,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
     (row) => (
       <>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
           onClick={() => {
             navigate(`${path.to.risk(row.id!)}?${params?.toString()}`);
           }}
@@ -247,6 +270,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
           Edit Risk
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           disabled={!permissions.can("delete", "quality")}
           onClick={() => onDelete(row)}
@@ -263,6 +287,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
     <>
       <Table<Risk>
         data={data}
+        infinite={infinite}
         defaultColumnVisibility={defaultColumnVisibility}
         columns={columns}
         count={count ?? 0}

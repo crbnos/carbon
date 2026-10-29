@@ -1,14 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
@@ -36,6 +41,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useCustomerTypes } from "~/components/Form/CustomerType";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCompanySettings, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores";
@@ -45,24 +51,20 @@ import type { Customer, CustomerStatus } from "../../types";
 type CustomersTableProps = {
   data: Customer[];
   count: number;
+  infinite: InfiniteOptions;
   customerStatuses: CustomerStatus[];
   tags: { name: string }[];
 };
 
 const CustomersTable = memo(
-  ({ data, count, customerStatuses, tags }: CustomersTableProps) => {
-    const { t, i18n } = useLingui();
+  ({ data, count, infinite, customerStatuses, tags }: CustomersTableProps) => {
+    const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
     const [people] = usePeople();
     const deleteModal = useDisclosure();
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
       null
-    );
-
-    const translateStatus = useCallback(
-      (value: string) => i18n._(value),
-      [i18n]
     );
 
     const customerTypes = useCustomerTypes();
@@ -97,21 +99,21 @@ const CustomersTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
         {
           accessorKey: "status",
           header: t`Status`,
-          cell: (item) => (
-            <Enumerable value={translateStatus(item.getValue<string>())} />
-          ),
+          cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: customerStatuses?.map((status) => ({
                 value: status.name,
-                label: <Enumerable value={translateStatus(status.name ?? "")} />
+                label: <Enumerable value={status.name ?? ""} />
               }))
             },
             pluralHeader: t`Statuses`,
@@ -129,6 +131,7 @@ const CustomersTable = memo(
             return <Enumerable value={customerType ?? ""} />;
           },
           meta: {
+            mobile: "P2",
             icon: <LuShapes />,
             filter: {
               type: "static",
@@ -276,18 +279,21 @@ const CustomersTable = memo(
       customColumns,
       tags,
       t,
-      translateStatus,
       showCustomerReadableId
     ]);
 
     const renderContextMenu = useMemo(
       () => (row: Customer) => (
         <>
-          <MenuItem onClick={() => navigate(path.to.customer(row.id!))}>
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
+            onClick={() => navigate(path.to.customer(row.id!))}
+          >
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "sales")}
             onClick={() => {
@@ -307,6 +313,7 @@ const CustomersTable = memo(
       <>
         <Table<Customer>
           count={count}
+          infinite={infinite}
           columns={columns}
           data={data}
           defaultColumnPinning={{

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Button } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { LuCircleHelp } from "react-icons/lu";
@@ -18,7 +22,7 @@ export default function AskDocs() {
   return (
     <Button
       aria-label="Question (⌘L)"
-      variant="outline"
+      variant="ghost"
       leftIcon={<LuCircleHelp />}
       className="hover:scale-100"
       onClick={() => toggleAgent()}

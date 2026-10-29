@@ -5,6 +5,10 @@ something real to open in the 3D viewer and in the assembler.
 
 ## Status
 
+**Superseded 2026-09-30.** All four third-party models were replaced by original generated
+models — see `.ai/specs/2026-09-30-satellite-demo-cad-model.md` and
+`.ai/specs/2026-09-30-demo-models-robotics-precision-motor.md`. Kept for the record.
+
 **Done and verified (2026-08-20).** All four models are baked, committed, and seeded by
 `tiers/06-production.ts`. Verified: `pnpm db:check:datasets` passes all four, `@carbon/database`
 typechecks, biome is clean, a fresh company seeds the rows correctly, and re-applying a second
@@ -61,7 +65,9 @@ entities — no part count below is inferred from a title.
   https://github.com/aidanahn/spot-v1 — 40 STEP files, 4,918,047 bytes total. Clean but it is a
   3D-printed RC car, and there is no single assembly file (40 loose parts).
 
-### aerospace_satellite — Radial aircraft engine
+### aerospace_satellite — Radial aircraft engine (superseded 2026-09-30)
+- Replaced by an original generated smallsat model (`smallsat.glb`); see
+  `.ai/specs/2026-09-30-satellite-demo-cad-model.md`. Kept below for the record.
 - 53 components: master rod, crankshaft, crankcase, engine head/barrel, valves, rocker arms, cams
 - `https://raw.githubusercontent.com/SivakumarThirumurugan/Radial-Engine/main/Radial%20Engine.STEP`
 - License: `MIT License` / `Copyright (c) 2026 Sivakumar Thirumurugan`

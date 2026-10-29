@@ -1,11 +1,15 @@
-import { Subheading } from "@carbon/react";
-import { OPERATOR_LABELS } from "@carbon/utils";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
   Clause,
   ClauseEvaluation,
   ConditionNode,
   NodeDetail
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
+import { Subheading } from "@carbon/react";
+import { OPERATOR_LABELS } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { LuCheck, LuX } from "react-icons/lu";
 import { humanizeField } from "../Builder/nodes/meta";
@@ -85,7 +89,7 @@ export function ConditionDetail({
   const d = detail as Record<string, unknown>;
   if (d.kind !== "condition") return null;
 
-  const paths = d.paths as NodeDetail["paths"];
+  const paths = d.paths as Extract<NodeDetail, { kind: "condition" }>["paths"];
   if (!Array.isArray(paths) || paths.length === 0) return null;
 
   return (

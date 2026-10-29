@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
+import { useAction } from "@carbon/query";
 import {
   DatePicker as DatePickerInput,
   Tooltip,
@@ -8,7 +13,6 @@ import {
 import { parseDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { LuPin } from "react-icons/lu";
-import { useSubmit } from "react-router";
 import { DateTime } from "~/components";
 import { path } from "~/utils/path";
 
@@ -26,7 +30,7 @@ export function OperationDueDatePicker({
   onChange
 }: OperationDueDatePickerProps) {
   const { t } = useLingui();
-  const submit = useSubmit();
+  const { submit } = useAction({ key: `jobOperationDueDate:${operationId}` });
 
   return (
     <Tooltip>
@@ -50,12 +54,7 @@ export function OperationDueDatePicker({
               onChange?.(dateStr);
               submit(
                 { id: operationId, dueDate: dateStr ?? "" },
-                {
-                  method: "post",
-                  action: path.to.jobOperationDueDate,
-                  navigate: false,
-                  fetcherKey: `jobOperationDueDate:${operationId}`
-                }
+                { method: "post", action: path.to.jobOperationDueDate }
               );
             }}
           />

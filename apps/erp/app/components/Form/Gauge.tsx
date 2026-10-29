@@ -1,13 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { useUser } from "~/hooks";
-import type { getGaugesList, getGaugeTypesList } from "~/modules/quality";
+import type {
+  getGaugesList,
+  getGaugeTypesList
+} from "~/modules/quality/quality.service";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
-
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 
@@ -75,14 +81,10 @@ Gauge.displayName = "Gauge";
 export default Gauge;
 
 export const useGauges = () => {
-  const gaugeFetcher = useFetcher<{
+  const gaugeFetcher = useLoaderQuery<{
     gauges: Awaited<ReturnType<typeof getGaugesList>>["data"];
     gaugeTypes: Awaited<ReturnType<typeof getGaugeTypesList>>["data"];
-  }>();
-
-  useMount(() => {
-    gaugeFetcher.load(path.to.api.gauges);
-  });
+  }>(path.to.api.gauges);
 
   const options = useMemo(
     () =>

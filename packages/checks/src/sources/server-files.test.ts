@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import { noLocalTimezone } from "../conformance/no-local-timezone";
 import { maskClientCode } from "./server-files";
@@ -50,6 +54,25 @@ describe("maskClientCode", () => {
       "}"
     ].join("\n");
     expect(scan(src)).toHaveLength(0);
+  });
+
+  it("masks a component whose destructured props span lines", () => {
+    // `}: {` and `}) {` close the signature, not the component.
+    const src = [
+      "function TaskRow({",
+      "  task",
+      "}: {",
+      "  task: Task;",
+      "}) {",
+      "  const d = today(getLocalTimeZone());",
+      "  return null;",
+      "}",
+      "",
+      "export async function loader() {",
+      "  const d = today(getLocalTimeZone());",
+      "}"
+    ].join("\n");
+    expect(scan(src)).toHaveLength(1);
   });
 
   it("skips clientLoader and clientAction, which run in the browser", () => {

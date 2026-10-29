@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   Badge,
@@ -6,25 +10,24 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Heading,
-  ScrollArea,
-  VStack
+  ScrollArea
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuMoon, LuSun } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { useRouteData } from "~/hooks";
-import type { Company } from "~/modules/settings";
 import {
-  CompanyLogoForm,
   updateLogoDark,
   updateLogoDarkIcon,
   updateLogoLight,
   updateLogoLightIcon,
   updateLogoWatermark
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service";
+import type { Company } from "~/modules/settings/types";
+import { CompanyLogoForm } from "~/modules/settings/ui";
 import { maxSizeMB } from "~/modules/settings/ui/Company/CompanyLogoForm";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -77,15 +80,15 @@ export default function LogosRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack spacing={4} className="py-12 px-4 max-w-[60rem] h-full mx-auto">
-        <div className="flex w-full justify-between items-center gap-1">
-          <Heading size="h3">
+      <SettingsPage>
+        <div className="flex w-full justify-between items-center gap-1 max-md:justify-end">
+          <SettingsPageHeading>
             <Trans>Logos</Trans>
-          </Heading>
+          </SettingsPageHeading>
           <Badge variant="outline">{maxSizeMB}MB limit</Badge>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 w-full">
+        <div className="grid grid-cols-2 gap-4 w-full max-md:grid-cols-1">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -156,7 +159,7 @@ export default function LogosRoute() {
             <CompanyLogoForm company={company} target="logoWatermark" />
           </CardContent>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

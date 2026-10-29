@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { getLogger } from "@carbon/logger";
+import { useChangedRows } from "@carbon/query";
 import {
   Avatar,
   Button,
@@ -8,8 +13,7 @@ import {
   Loading,
   ScrollArea,
   useDebounce,
-  useMount,
-  useRealtimeChannel
+  useMount
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
@@ -70,26 +74,17 @@ export function OperationChat({
     fetchChats();
   });
 
-  useRealtimeChannel({
-    topic: `job-operation-notes-${operation.id}`,
-    setup(channel) {
-      return channel.on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "jobOperationNote",
-          filter: `jobOperationId=eq.${operation.id}`
-        },
-        (payload) => {
-          setMessages((prev) => {
-            if (prev.some((note) => note.id === payload.new.id)) {
-              return prev;
-            }
-            return [...prev, payload.new as Message];
-          });
-        }
-      );
+  useChangedRows<Message & { jobOperationId: string }>({
+    companyId: user.company.id,
+    table: "jobOperationNote",
+    onResync: fetchChats,
+    onChange: ({ op, rows }) => {
+      if (op !== "INSERT") return;
+      const notes = rows.filter((row) => row.jobOperationId === operation.id);
+      setMessages((prev) => [
+        ...prev,
+        ...notes.filter((note) => !prev.some((p) => p.id === note.id))
+      ]);
     }
   });
 
@@ -154,7 +149,7 @@ export function OperationChat({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-var(--header-height)*2)]">
+    <div className="flex h-full min-h-0 flex-col">
       <ScrollArea className="flex-1 p-4">
         <Loading isLoading={isLoading}>
           <div className="flex flex-col gap-3">

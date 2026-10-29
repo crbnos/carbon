@@ -1,30 +1,34 @@
-import { assertIsPost, error, notFound } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { getItemReadableId, redirect, round } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment } from "react/jsx-runtime";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
+import { useRouteData } from "~/hooks";
 import {
-  getSalesInvoice,
-  getSalesInvoiceLine,
   isSalesInvoiceLocked,
-  salesInvoiceLineValidator,
-  upsertSalesInvoiceLine
-} from "~/modules/invoicing";
+  salesInvoiceLineValidator
+} from "~/modules/invoicing/invoicing.models";
+import { getSalesInvoiceLine } from "~/modules/invoicing/invoicing.service";
+import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
-import { getOpportunityLineDocuments } from "~/modules/sales";
+import { getOpportunityLineDocuments } from "~/modules/sales/sales.service";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
 } from "~/modules/sales/ui/Opportunity";
 import { useItems } from "~/stores";
 import { getCustomFields, setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -42,81 +46,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     salesInvoiceLine: salesInvoiceLine?.data ?? null,
-    files: await getOpportunityLineDocuments(client, companyId, lineId, itemId)
+    files: getOpportunityLineDocuments(client, companyId, lineId, itemId)
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-
-  const { invoiceId, lineId } = params;
-  if (!invoiceId) throw new Error("Could not find invoiceId");
-  if (!lineId) throw new Error("Could not find lineId");
-
-  // Check if SI is locked
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "invoicing"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(salesInvoiceLineValidator).request(args, {
+    params: ["invoiceId", "lineId"]
   });
-
-  const invoice = await getSalesInvoice(viewClient, invoiceId);
-  if (invoice.error) {
-    throw redirect(
-      path.to.salesInvoiceLine(invoiceId, lineId),
-      await flash(request, error(invoice.error, "Failed to load sales invoice"))
-    );
-  }
-
-  await requireUnlocked({
-    request,
-    isLocked: isSalesInvoiceLocked(invoice.data?.status),
-    redirectTo: path.to.salesInvoiceLine(invoiceId, lineId),
-    message: "Cannot modify a locked sales invoice. Reopen it first."
-  });
-
-  const { client, userId } = await requirePermissions(request, {
-    create: "invoicing"
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(salesInvoiceLineValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  if (d.invoiceLineType === "Fixed Asset") {
-    d.accountId = undefined;
-    d.itemId = undefined;
-  } else {
-    d.accountId = undefined;
-    d.assetId = undefined;
-  }
-
-  const updateSalesInvoiceLine = await upsertSalesInvoiceLine(client, {
+  if ("invalid" in input) return input.invalid;
+  const { invoiceId, lineId } = input.params;
+  const formData = input.formData ?? new FormData();
+  const api = await carbon(args.request);
+  const result = await api.invoicing.updateSalesInvoiceLine({
+    ...input.data,
     id: lineId,
-    ...d,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+    invoiceId,
+    customFields: setCustomFields(formData),
+    acknowledged: formData.get("acknowledged") === "true"
   });
-
-  if (updateSalesInvoiceLine.error) {
-    throw redirect(
-      path.to.salesInvoiceLine(invoiceId, lineId),
-      await flash(
-        request,
-        error(
-          updateSalesInvoiceLine.error,
-          "Failed to update sales invoice line"
-        )
-      )
-    );
-  }
-
+  // An error is toasted; the violation modal reads `violations`.
+  if (!result.data) return result;
+  if ("violations" in result.data) return result.data;
   throw redirect(path.to.salesInvoiceLine(invoiceId, lineId));
 }
 
@@ -127,6 +78,9 @@ export default function EditSalesInvoiceLineRoute() {
   if (!lineId) throw notFound("lineId not found");
 
   const { salesInvoiceLine, files } = useLoaderData<typeof loader>();
+  const routeData = useRouteData<{ salesInvoice: SalesInvoice }>(
+    path.to.salesInvoice(invoiceId)
+  );
 
   const initialValues = {
     id: salesInvoiceLine?.id ?? undefined,
@@ -142,11 +96,14 @@ export default function EditSalesInvoiceLineRoute() {
     description: salesInvoiceLine?.description ?? "",
     quantity: salesInvoiceLine?.quantity ?? 1,
     unitPrice: salesInvoiceLine?.unitPrice ?? 0,
+    discountPercent: round((salesInvoiceLine?.discountPercent ?? 0) * 100),
     shippingCost: salesInvoiceLine?.shippingCost ?? 0,
     taxPercent: salesInvoiceLine?.taxPercent ?? 0,
     exchangeRate: salesInvoiceLine?.exchangeRate ?? 1,
     unitOfMeasureCode: salesInvoiceLine?.unitOfMeasureCode ?? "",
     storageUnitId: salesInvoiceLine?.storageUnitId ?? "",
+    serviceStartDate: salesInvoiceLine?.serviceStartDate ?? "",
+    serviceEndDate: salesInvoiceLine?.serviceEndDate ?? "",
     assetReadableId: (salesInvoiceLine as any)?.assetReadableId ?? undefined,
     assetName: (salesInvoiceLine as any)?.assetName ?? undefined,
     ...getCustomFields(salesInvoiceLine?.customFields)
@@ -166,7 +123,9 @@ export default function EditSalesInvoiceLineRoute() {
         table="salesInvoiceLine"
         title={t`Notes`}
         subTitle={getItemReadableId(items, salesInvoiceLine?.itemId) ?? ""}
+        isReadOnly={isSalesInvoiceLocked(routeData?.salesInvoice?.status)}
         internalNotes={salesInvoiceLine?.internalNotes as JSONContent}
+        externalNotes={salesInvoiceLine?.externalNotes as JSONContent}
       />
 
       <DeferredFiles resolve={files}>
@@ -181,7 +140,7 @@ export default function EditSalesInvoiceLineRoute() {
         )}
       </DeferredFiles>
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

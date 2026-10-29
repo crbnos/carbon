@@ -1,3 +1,26 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { GL_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
+import {
+  fetchRemoteJournalTotals,
+  getAccountingIntegration,
+  getJournalEntrySyncEntityId,
+  getProviderIntegration,
+  getSyncOperations,
+  isAccountingSyncEnabled,
+  ProviderID,
+  parseJournalEntrySyncEntityId,
+  RatelimitError,
+  type RemoteJournalTotals,
+  resolvePostingSyncSettings,
+  type SyncContext,
+  type SyncOperation,
+  toDebitSignedAmount,
+  toPostingDateString
+} from "@carbon/ee/accounting";
 /**
  * Weekly reconciliation cron (posting sync, v3 spec §5 / v4 Pillar E) —
  * presence drift detection plus the per-period × per-account tie-out.
@@ -38,29 +61,12 @@
  *     Rows upsert on the (companyId, integration, accountingPeriodId,
  *     accountId) cell via the service role — the table has no write RLS.
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import {
-  fetchRemoteJournalTotals,
-  getAccountingIntegration,
-  getJournalEntrySyncEntityId,
-  getProviderIntegration,
-  getSyncOperations,
-  ProviderID,
-  parseJournalEntrySyncEntityId,
-  RatelimitError,
-  type RemoteJournalTotals,
-  resolvePostingSyncSettings,
-  type SyncContext,
-  type SyncOperation,
-  toDebitSignedAmount,
-  toPostingDateString
-} from "@carbon/ee/accounting";
-import { PostgresDriver } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import {
+  type IsolatedStepOutcome,
+  runIsolatedCompanyStep
+} from "./accounting-auth-failure";
 import {
   buildRemoteAccountRefIndex,
   computeTieOutDeltas,
@@ -409,7 +415,7 @@ async function computeTieOutForCompany(args: {
       .selectFrom("journal")
       .select(["id", "postingDate", "reversalOfId"])
       .where("companyId", "=", companyId)
-      .where("status", "in", ["Posted", "Reversed"])
+      .where("status", "in", GL_JOURNAL_STATUSES)
       .where("postingDate", ">=", minStart)
       .where("postingDate", "<=", maxEnd)
       .orderBy("id", "asc")
@@ -978,7 +984,7 @@ export const accountingReconciliationFunction = inngest.createFunction(
       // the provider-agnostic fetchRemoteJournalTotals dispatcher.
       const integrations = await client
         .from("companyIntegration")
-        .select("id, companyId, metadata")
+        .select("id, companyId, metadata, updatedBy")
         .in("id", Object.values(ProviderID))
         .eq("active", true);
 
@@ -989,8 +995,16 @@ export const accountingReconciliationFunction = inngest.createFunction(
       }
 
       return (integrations.data ?? [])
-        .filter((row) => resolvePostingSyncSettings(row.metadata).enabled)
-        .map((row) => ({ companyId: row.companyId, providerId: row.id }));
+        .filter(
+          (row) =>
+            isAccountingSyncEnabled(row.metadata) &&
+            resolvePostingSyncSettings(row.metadata).enabled
+        )
+        .map((row) => ({
+          companyId: row.companyId,
+          providerId: row.id,
+          updatedBy: row.updatedBy
+        }));
     });
 
     if (targets.length === 0) {
@@ -998,26 +1012,27 @@ export const accountingReconciliationFunction = inngest.createFunction(
     }
 
     const results: Array<
-      { companyId: string; providerId: string } & ReconciliationSummary
+      {
+        companyId: string;
+        providerId: string;
+      } & IsolatedStepOutcome<ReconciliationSummary>
     > = [];
 
     for (const target of targets) {
-      const result = await step.run(
-        `reconcile-${target.companyId}-${target.providerId}`,
-        async () => {
-          const pool = getPostgresConnectionPool(5);
-          const database = getPostgresClient(pool, PostgresDriver);
-          try {
-            return await reconcileCompany({
-              companyId: target.companyId,
-              providerId: target.providerId as ProviderID,
-              database
-            });
-          } finally {
-            await pool.end();
-          }
+      const result = await runIsolatedCompanyStep({
+        step,
+        client,
+        id: `reconcile-${target.companyId}-${target.providerId}`,
+        target,
+        fn: async () => {
+          const database = getJobDatabaseClient();
+          return await reconcileCompany({
+            companyId: target.companyId,
+            providerId: target.providerId as ProviderID,
+            database
+          });
         }
-      );
+      });
 
       results.push({
         companyId: target.companyId,

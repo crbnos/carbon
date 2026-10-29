@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Combobox } from "@carbon/react";
 import type { ComponentType } from "react";
 import { useMemo } from "react";
@@ -7,6 +11,7 @@ import { useLocations } from "~/components/Form/Location";
 import { UserSelect } from "~/components/Selectors";
 import type { IndividualOrGroup } from "~/components/Selectors/UserSelect/types";
 import { useCustomers, useItems, useSuppliers } from "~/stores";
+import type { RecordPickerEntity } from "./recordPickerEntities";
 
 // Plain Combobox, never CreatableCombobox: a workflow picks an existing record,
 // so a "Create <whatever you typed>" row would be an offer we cannot honor.
@@ -166,11 +171,7 @@ const GroupPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => (
  * nonConformance, jobOperation, salesInvoice, purchaseInvoice) fall back to a
  * plain text Input in LiteralControl — no store is available for those.
  */
-export const hasRecordPicker = (entity: string) => entity in RECORD_PICKERS;
-
-export const RECORD_PICKERS: Partial<
-  Record<string, ComponentType<RecordPickerProps>>
-> = {
+const PICKERS: Record<RecordPickerEntity, ComponentType<RecordPickerProps>> = {
   customer: CustomerPicker,
   supplier: SupplierPicker,
   item: ItemPicker,
@@ -179,3 +180,7 @@ export const RECORD_PICKERS: Partial<
   user: UserPicker,
   group: GroupPicker
 };
+
+export const RECORD_PICKERS: Partial<
+  Record<string, ComponentType<RecordPickerProps>>
+> = PICKERS;

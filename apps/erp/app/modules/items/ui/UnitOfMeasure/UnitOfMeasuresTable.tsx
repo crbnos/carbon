@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -6,18 +10,21 @@ import { LuBookMarked, LuCode, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
+import { EACH_UNIT_OF_MEASURE_CODE } from "../../items.models";
 import type { UnitOfMeasure } from "../../types";
 
 type UnitOfMeasuresTableProps = {
   data: UnitOfMeasure[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const UnitOfMeasuresTable = memo(
-  ({ data, count }: UnitOfMeasuresTableProps) => {
+  ({ data, count, infinite }: UnitOfMeasuresTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -35,6 +42,7 @@ const UnitOfMeasuresTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -43,6 +51,7 @@ const UnitOfMeasuresTable = memo(
           header: t`Code`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P2",
             icon: <LuCode />
           }
         }
@@ -55,6 +64,7 @@ const UnitOfMeasuresTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!permissions.can("update", "parts")}
               onClick={() => {
                 navigate(`${path.to.uom(row.id)}?${params.toString()}`);
@@ -64,8 +74,13 @@ const UnitOfMeasuresTable = memo(
               <Trans>Edit Unit of Measure</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "parts")}
+              // Each is built in; the database refuses to delete it.
+              disabled={
+                !permissions.can("delete", "parts") ||
+                row.code === EACH_UNIT_OF_MEASURE_CODE
+              }
               onClick={() => {
                 navigate(`${path.to.deleteUom(row.id)}?${params.toString()}`);
               }}
@@ -82,8 +97,15 @@ const UnitOfMeasuresTable = memo(
     return (
       <Table<(typeof data)[number]>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
+        importCSV={[
+          {
+            table: "unitOfMeasure" as const,
+            label: t`Unit of Measures`
+          }
+        ]}
         primaryAction={
           permissions.can("create", "parts") && (
             <New

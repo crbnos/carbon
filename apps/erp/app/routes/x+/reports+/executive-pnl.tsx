@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -5,20 +9,21 @@ import { VStack } from "@carbon/react";
 import {
   computeReportPeriodBuckets,
   datetime,
-  defaultReportRange
+  defaultReportRange,
+  redirect
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { financialReportParamsValidator } from "~/modules/accounting/accounting.models";
 import {
-  financialReportParamsValidator,
   getCompaniesInGroup,
+  getConsolidatedPeriodSeriesForReport,
   getFinancialStatementPeriodSeries,
   getFiscalYearSettings
-} from "~/modules/accounting";
-import { getConsolidatedPeriodSeriesForReport } from "~/modules/accounting/accounting.ee.server";
+} from "~/modules/accounting/accounting.service";
 import type { ExecutivePnlRowKey } from "~/modules/accounting/ui/Reports";
 import {
   ExecutivePnlSummary,
@@ -26,18 +31,18 @@ import {
   getPeriodColumnLabel,
   ReportFilters
 } from "~/modules/accounting/ui/Reports";
-import { months } from "~/modules/shared";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { months } from "~/modules/shared/shared.models";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { revalidateIgnoringOffset } from "~/utils/revalidate";
+import { revalidateOnSearchChange } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Executive P&L`,
   to: path.to.executivePnl
 };
 
-export const shouldRevalidate = revalidateIgnoringOffset;
+export const shouldRevalidate = revalidateOnSearchChange;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(

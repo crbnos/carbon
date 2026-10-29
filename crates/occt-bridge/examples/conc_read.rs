@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Isolated concurrency probe for `read_step`. Does OCCT 7.9.3 STEP reading
 //! actually parallelize across threads, or serialize / crash on shared global
 //! state? Bypasses the HTTP path entirely: N OS threads each call read_step in a

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Checkbox,
@@ -13,11 +17,15 @@ import {
   reactNodeToString,
   useMount
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { LuX } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { parseRangeFilter } from "~/utils/query";
+import DateRangeFilter from "./DateRangeFilter";
 import Filter from "./Filter";
 import type { ColumnFilter } from "./types";
 import { useFilters } from "./useFilters";
@@ -64,7 +72,8 @@ type ActiveFilterProps = {
 };
 
 const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
-  const { t, i18n } = useLingui();
+  const { t } = useLingui();
+  const { locale } = useLocale();
   const { hasFilter, removeKey, toggleFilter } = useFilters();
 
   const [open, setOpen] = useState(false);
@@ -115,29 +124,28 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
   }, [fetcher.data, filter.filter.type]);
 
   const makeLabel = (v: string) => {
+    if (filter.filter.type === "dateRange") {
+      const { from, to } = parseRangeFilter(v);
+      return [from, to]
+        .filter((d) => d !== null)
+        .map((d) => formatDate(d, undefined, locale))
+        .join(" – ");
+    }
     const [first, ...others] = v.split(",");
     if (others && others.length > 0) {
       return `${1 + others.length} ${
-        filter.pluralHeader
-          ? translate(filter.pluralHeader)
-          : `${translate(filter.header)}s`
+        filter.pluralHeader || `${filter.header}s`
       }`;
     } else {
       if (filter.filter.type === "custom" && filter.filter.getLabel) {
         const node = filter.filter.getLabel(first);
         if (node == null) return first;
-        return typeof node === "string"
-          ? translate(node)
-          : reactNodeToString(node);
+        return typeof node === "string" ? node : reactNodeToString(node);
       }
       const node = options.find((o) => o.value === v)?.label ?? "";
-      return typeof node === "string"
-        ? translate(node)
-        : reactNodeToString(node);
+      return typeof node === "string" ? node : reactNodeToString(node);
     }
   };
-
-  const translate = (text: string) => i18n._(text);
 
   return (
     <HStack spacing={0}>
@@ -147,10 +155,12 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
         size="sm"
         variant="secondary"
       >
-        {translate(filter.header)}
+        {filter.header}
       </Button>
       <Button className="rounded-none border-l-0" size="sm" variant="secondary">
-        {operator === "eq" ? (
+        {operator === "between" ? (
+          <RangeOperator value={value} />
+        ) : operator === "eq" ? (
           <Trans>is</Trans>
         ) : operator === "in" || operator === "contains" ? (
           <Trans>is any of</Trans>
@@ -161,7 +171,11 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            className="rounded-none max-w-[200px]"
+            className={
+              filter.filter.type === "dateRange"
+                ? "rounded-none"
+                : "rounded-none max-w-[200px]"
+            }
             role="combobox"
             variant="secondary"
             onClick={() => {
@@ -175,7 +189,8 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
         <PopoverContent
           align="start"
           className={
-            filter.filter.type === "custom"
+            filter.filter.type === "custom" ||
+            filter.filter.type === "dateRange"
               ? "w-auto p-0"
               : "min-w-[200px] w-[var(--radix-popover-trigger-width)] p-0"
           }
@@ -195,6 +210,10 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
                   ),
                 close: () => setOpen(false)
               })}
+            </div>
+          ) : filter.filter.type === "dateRange" ? (
+            <div className="w-auto min-w-[280px] p-2">
+              <DateRangeFilter accessorKey={filter.accessorKey} />
             </div>
           ) : (
             <Command>
@@ -232,11 +251,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
                     >
                       <HStack spacing={2}>
                         <Checkbox isChecked={isChecked} tabIndex={-1} />
-                        <span>
-                          {typeof option.label === "string"
-                            ? translate(option.label)
-                            : option.label}
-                        </span>
+                        <span>{option.label}</span>
                       </HStack>
                     </CommandItem>
                   );
@@ -259,6 +274,12 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
       </Button>
     </HStack>
   );
+};
+
+const RangeOperator = ({ value }: { value: string }) => {
+  const { from, to } = parseRangeFilter(value);
+  if (from && to) return <Trans>is between</Trans>;
+  return from ? <Trans>is on or after</Trans> : <Trans>is on or before</Trans>;
 };
 
 export default ActiveFilters;

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Fragment, useState } from "react";
 import { LuArrowUp, LuCheck } from "react-icons/lu";
 import { choiceBlock } from "../../agent.blocks";
@@ -44,7 +48,7 @@ export function AgentBlockChoice({ input }: { input: unknown }) {
   const canConfirm = selectedIds.size > 0 || freeText.trim().length > 0;
 
   return (
-    <div className="my-1 overflow-hidden rounded-lg border bg-background">
+    <div className="my-1 overflow-hidden rounded-lg border bg-card">
       {block.prompt && (
         <p className="px-3 pb-1.5 pt-2.5 text-xs text-muted-foreground">
           {block.prompt}

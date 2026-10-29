@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   DropdownMenu,
@@ -18,13 +22,16 @@ type Company = {
 type CompanySelectorProps = {
   companies: Company[];
   selectedCompanyIds: string[];
+  /** Offers "All Companies"; off for reports that read one company only */
+  allowAll?: boolean;
 };
 
 const ALL = "__all__";
 
 const CompanySelector = ({
   companies,
-  selectedCompanyIds
+  selectedCompanyIds,
+  allowAll = true
 }: CompanySelectorProps) => {
   const { t } = useLingui();
   const [, setParams] = useUrlParams();
@@ -51,9 +58,11 @@ const CompanySelector = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
-          <DropdownMenuRadioItem value={ALL}>
-            <Trans>All Companies</Trans>
-          </DropdownMenuRadioItem>
+          {allowAll && (
+            <DropdownMenuRadioItem value={ALL}>
+              <Trans>All Companies</Trans>
+            </DropdownMenuRadioItem>
+          )}
           {companies.map((company) => (
             <DropdownMenuRadioItem key={company.id} value={company.id}>
               {company.name}

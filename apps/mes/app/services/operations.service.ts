@@ -1,29 +1,45 @@
-import type { Database } from "@carbon/database";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { toJson } from "@carbon/database/json";
+import {
+  lockMachinePress,
+  recordManualMachinePress
+} from "@carbon/database/machine-time";
+import { storage } from "@carbon/files";
 import type { WorkSource } from "@carbon/lib/telemetry";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
+  async,
   datetime,
   type FlatTree,
   flattenTree,
   generateBomIds,
+  round,
   type TrackedActivityAttributes
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
+import { erpPosting } from "~/services/erp";
 import { sanitize } from "~/utils/supabase";
 import { getPickedQuantitiesByJobMaterial } from "./inventory.service";
 import type {
+  batchStepRecordsValidator,
   documentTypes,
   nonScrapQuantityValidator,
   productionEventValidator,
   scrapQuantityValidator,
   stepRecordValidator
 } from "./models";
+import { planStepBackflush } from "./step-backflush";
 import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
 const log = getLogger("mes", "operations");
@@ -39,20 +55,201 @@ function isMissingQuantityColumn(
   return error?.code === "42703" || error?.code === "PGRST204";
 }
 
+/**
+ * A `{ data, error }` failure shaped like a PostgREST response, for when a
+ * caller-supplied record id does not belong to the caller's company. Callers
+ * of these services pass service-role clients, so the companyId check is the
+ * only tenant boundary — a miss must stop the write, not no-op past it.
+ */
+function notFoundResponse(message: string) {
+  return {
+    data: null,
+    error: {
+      name: "PostgrestError",
+      message,
+      details: "",
+      hint: "",
+      code: "PGRST116"
+    } as PostgrestError,
+    count: null,
+    status: 404,
+    statusText: "Not Found"
+  };
+}
+
+const UNIQUE_VIOLATION = "23505";
+
+function conflictResponse(message: string) {
+  return {
+    data: null,
+    error: {
+      name: "PostgrestError",
+      message,
+      details: "",
+      hint: "",
+      code: "PGRST409"
+    } as PostgrestError,
+    count: null,
+    status: 409,
+    statusText: "Conflict"
+  };
+}
+
+/** Whether a production event already records this serial (its tracked activity output). */
+async function timerRecordsEntity(
+  client: SupabaseClient<Database>,
+  productionEventId: string,
+  trackedEntityId: string,
+  companyId: string
+) {
+  const activities = await client
+    .from("trackedActivity")
+    .select("id")
+    .eq("sourceDocument", "Production Event")
+    .eq("sourceDocumentId", productionEventId)
+    .eq("companyId", companyId);
+  const activityIds = activities.data?.map((activity) => activity.id) ?? [];
+  if (activityIds.length === 0) return false;
+  const output = await client
+    .from("trackedActivityOutput")
+    .select("trackedActivityId")
+    .in("trackedActivityId", activityIds)
+    .eq("trackedEntityId", trackedEntityId)
+    .eq("companyId", companyId)
+    .limit(1);
+  return (output.data?.length ?? 0) > 0;
+}
+
 export async function getOpenJobs(
   client: SupabaseClient<Database>,
   args: { companyId: string; locationId: string }
 ) {
-  return client
+  // Floor rule: an operation in a Released (Active/Completing) batch is
+  // floor-visible even when its own job is not released yet, so the jobs
+  // list widens to include those member jobs alongside the released ones.
+  const memberJobs = await client
+    .from("jobOperation")
+    .select("jobId, jobOperationBatch!inner(status)")
+    .eq("companyId", args.companyId)
+    .in("jobOperationBatch.status", ["Active", "Completing"]);
+
+  const memberJobIds = [
+    ...new Set((memberJobs.data ?? []).map((op) => op.jobId))
+  ];
+
+  let query = client
     .from("jobs")
     .select(
       "id, jobId, status, itemReadableIdWithRevision, name, quantity, quantityComplete, dueDate, deadlineType, assignee, jobMakeMethodId"
     )
     .eq("companyId", args.companyId)
-    .eq("locationId", args.locationId)
-    .in("status", [...activeJobStatuses])
-    .order("jobId", { ascending: true });
+    .eq("locationId", args.locationId);
+
+  if (memberJobIds.length > 0) {
+    // PostgREST `in` lists inside `.or()` quote each value — "In Progress"
+    // contains a space.
+    const statuses = activeJobStatuses.map((s) => `"${s}"`).join(",");
+    const ids = memberJobIds.map((id) => `"${id}"`).join(",");
+    query = query.or(`status.in.(${statuses}),id.in.(${ids})`);
+  } else {
+    query = query.in("status", [...activeJobStatuses]);
+  }
+
+  return query.order("jobId", { ascending: true });
 }
+
+export async function getJobOperationBatch(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  const batch = await client
+    .from("jobOperationBatch")
+    .select("*, process(batchType)")
+    .eq("id", batchId)
+    .eq("companyId", companyId)
+    .single();
+  if (batch.error) return batch;
+  // Only what the operation view's batch mode consumes: member planned times
+  // (summed into the work-type toggle), completion pre-fill quantities, the
+  // member's job id for the chip / completion table, and the due dates and
+  // customers the batch's header summarizes.
+  // @ts-ignore TS2589: the PostgREST select parse crosses the instantiation-depth limit (see .ai/lessons.md)
+  const operations = await client
+    .from("jobOperation")
+    .select(
+      "id, description, operationQuantity, quantityComplete, quantityScrapped, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, jobMakeMethodId, jobMakeMethod(requiresBatchTracking, itemId, item(readableIdWithRevision, name, thumbnailPath, type)), job(jobId, status, deadlineType, dueDate, customer(name))"
+    )
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId)
+    .order("jobId", { referencedTable: "job", ascending: true });
+
+  // Batch-tracked outputs: each member's WIP entity (finalized as the produced
+  // lot at completion) and its current batch number, for the completion form's
+  // per-member batch-number field.
+  const makeMethodIds = [
+    ...new Set(
+      (operations.data ?? [])
+        .map((o) => o.jobMakeMethodId)
+        .filter(Boolean) as string[]
+    )
+  ];
+  const entities = makeMethodIds.length
+    ? await client
+        .from("trackedEntity")
+        .select("id, readableId, attributes, createdAt")
+        .in("attributes->>Job Make Method", makeMethodIds)
+        .eq("companyId", companyId)
+        // Unit-axis order — see getTrackedEntitiesByMakeMethodId.
+        .order("createdAt", { ascending: true })
+        .order("readableId", { ascending: true })
+        .order("id", { ascending: true })
+    : { data: [], error: null };
+  const entityByMakeMethod = new Map<
+    string,
+    { id: string; readableId: string | null }
+  >();
+  for (const e of entities.data ?? []) {
+    const makeMethodId =
+      e.attributes !== null &&
+      typeof e.attributes === "object" &&
+      "Job Make Method" in e.attributes
+        ? (e.attributes["Job Make Method"] as string)
+        : null;
+    if (makeMethodId && !entityByMakeMethod.has(makeMethodId)) {
+      entityByMakeMethod.set(makeMethodId, {
+        id: e.id,
+        readableId: e.readableId
+      });
+    }
+  }
+
+  return {
+    data: {
+      ...batch.data,
+      operations: (operations.data ?? []).map((o) => {
+        const entity = o.jobMakeMethodId
+          ? entityByMakeMethod.get(o.jobMakeMethodId)
+          : undefined;
+        return {
+          ...o,
+          requiresBatchTracking:
+            o.jobMakeMethod?.requiresBatchTracking ?? false,
+          itemId: o.jobMakeMethod?.itemId ?? null,
+          trackedEntityId: entity?.id ?? null,
+          batchNumber: entity?.readableId ?? null
+        };
+      })
+    },
+    // The entities carry the planned lot numbers — completion must not run
+    // on a batch whose lots could not be read.
+    error: operations.error ?? entities.error
+  };
+}
+
+export type JobOperationBatch = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatch>>["data"]
+>;
 
 export async function getTrackedEntitiesByJobMakeMethodIds(
   client: SupabaseClient<Database>,
@@ -87,7 +284,9 @@ export async function getJobOperations(
 ) {
   return client
     .from("jobOperation")
-    .select("*, jobMakeMethod(parentMaterialId, item(readableIdWithRevision))")
+    .select(
+      "*, jobOperationBatch(readableId, status), jobMakeMethod(parentMaterialId, item(readableIdWithRevision))"
+    )
     .eq("jobId", jobId);
 }
 
@@ -99,6 +298,36 @@ export async function getJobOperationDependencies(
     .from("jobOperationDependency")
     .select("operationId, dependsOnId")
     .eq("jobId", jobId);
+}
+
+/**
+ * Is this the first operation of its make method's routing? A serial unit only
+ * earns a printed label when it is completed at its first operation, so this
+ * decides both the label auto-print and how the operation views pick units.
+ *
+ * "First" means no jobOperationDependency whose predecessor shares this op's
+ * jobMakeMethodId. Cross make-method (subassembly) dependencies are ignored: a
+ * parent-assembly op still has no printed label just because a subassembly
+ * finished first. `order` is only a display/sort field, not a precedence signal.
+ *
+ * Fails closed: an errored lookup reads as "not first" — no auto-select, no
+ * label — which is the safe default when we can't confirm there's no predecessor.
+ */
+export async function isFirstOperationOfMakeMethod(
+  client: SupabaseClient<Database>,
+  operationId: string,
+  jobMakeMethodId: string
+): Promise<boolean> {
+  const priorDependency = await client
+    .from("jobOperationDependency")
+    .select(
+      "dependsOn:jobOperation!jobOperationDependency_dependsOnId_fk!inner(jobMakeMethodId)"
+    )
+    .eq("operationId", operationId)
+    .eq("dependsOn.jobMakeMethodId", jobMakeMethodId)
+    .limit(1)
+    .maybeSingle();
+  return !priorDependency.error && !priorDependency.data;
 }
 
 export async function getUpstreamOperations(
@@ -171,43 +400,64 @@ export async function finishJobOperation(
     companyId: string;
   }
 ) {
+  // Callers pass a service-role client, so the companyId filter is the tenant
+  // check: an operation id from another company updates nothing, and nothing
+  // downstream (GL posting, picked-material returns, moments) may run for it.
   const result = await client
     .from("jobOperation")
     .update({
       status: "Done",
       updatedBy: args.userId
     })
-    .eq("id", args.jobOperationId);
+    .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
+    .select("id, jobId");
+
+  if (!result.error && result.data.length === 0) {
+    log.warn("finishJobOperation: job operation not found in company", {
+      companyId: args.companyId,
+      jobOperationId: args.jobOperationId
+    });
+    return notFoundResponse("Job operation not found");
+  }
 
   if (!result.error) {
-    client
-      .from("productionEvent")
-      .select("id")
-      .eq("jobOperationId", args.jobOperationId)
-      .not("endTime", "is", null)
-      .eq("postedToGL", false)
-      .then((unpostedEvents) => {
-        if (unpostedEvents.data?.length) {
-          Promise.all(
-            unpostedEvents.data.map((event) =>
-              client.functions.invoke("post-production-event", {
-                body: {
-                  productionEventId: event.id,
-                  userId: args.userId,
-                  companyId: args.companyId
-                }
-              })
-            )
-          );
-        }
-      });
+    // As the system: every caller passes the service role. A posting that
+    // fails or is skipped is logged in postEventTime; onError catches the
+    // query.
+    async.background(
+      async () => {
+        const unposted = await client
+          .from("productionEvent")
+          .select("id")
+          .eq("jobOperationId", args.jobOperationId)
+          .not("endTime", "is", null)
+          .eq("postedToGL", false);
+        if (unposted.error) throw unposted.error;
+        if (unposted.data.length === 0) return;
+
+        const caller = { companyId: args.companyId, userId: args.userId };
+        await async.map(
+          unposted.data,
+          (event) => postEventTime(caller, event.id),
+          { concurrency: 4 }
+        );
+      },
+      (error) =>
+        log.error("finishJobOperation: posting production events failed", {
+          companyId: args.companyId,
+          jobOperationId: args.jobOperationId,
+          error
+        })
+    );
 
     // The status='Done' write fires the sync_finish_job_operation trigger, which
     // completes the job to inventory (job.status → 'Completed') when this was the
     // last operation. Return any picked-but-unconsumed stock staged at lineside
-    // back to its warehouse source — the SQL trigger can't call edge functions,
+    // back to its warehouse source — the SQL trigger can't run app code,
     // so we orchestrate it here.
-    const { jobId } = await returnPickedRemainders(client, args);
+    await returnPickedRemainders(client, args);
+    const jobId = result.data[0]?.jobId;
 
     if (jobId) {
       await raiseMoment("production.jobOperationCompleted", {
@@ -260,16 +510,9 @@ export async function finishJobOperation(
 }
 
 /**
- * Flush un-consumed picked material (tracked AND untracked) from the lineside
- * shelf back to the warehouse via the post-picking sweep cases. Job just
- * completed → sweep the whole job (runs under both returnPickedMaterialTiming
- * policies). Otherwise → sweep this operation's lines; the edge function itself
- * no-ops unless the company policy is 'operation'. Both sweeps are idempotent.
- *
- * Uses the client `finishJobOperation` is given — every caller passes a
- * service-role client, so the picking lines (an inventory table the finishing
- * operator may not have RLS access to) are always readable and the returns
- * aren't silently skipped for production-only roles.
+ * Returns picked-but-unconsumed material a Done operation left at lineside —
+ * the whole job's remainder when it completed the job. Logged, never thrown:
+ * the status change has already happened.
  */
 export async function returnPickedRemainders(
   client: SupabaseClient<Database>,
@@ -278,52 +521,22 @@ export async function returnPickedRemainders(
     userId: string;
     companyId: string;
   }
-): Promise<{ jobId: string | undefined }> {
-  const op = await client
-    .from("jobOperation")
-    .select("jobId")
-    .eq("id", args.jobOperationId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  const jobId = op.data?.jobId;
-  if (!jobId) return { jobId: undefined };
-
-  const job = await client
-    .from("job")
-    .select("status")
-    .eq("id", jobId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (!job.data) return { jobId };
-
-  const body =
-    job.data.status === "Completed"
-      ? {
-          type: "returnJobRemainders" as const,
-          jobId,
-          userId: args.userId,
-          companyId: args.companyId
-        }
-      : {
-          type: "returnOperationRemainders" as const,
-          jobOperationId: args.jobOperationId,
-          userId: args.userId,
-          companyId: args.companyId
-        };
-
-  // `functions.invoke` resolves to `{ data, error }` rather than rejecting —
-  // inspect and log, otherwise a stranded lineside remainder is lost silently.
-  const { error } = await client.functions.invoke("post-picking", { body });
+): Promise<void> {
+  const { error } = await erpPosting(
+    "post-picking",
+    { client, companyId: args.companyId, userId: args.userId },
+    {
+      type: "returnOperationRemainders",
+      ...args
+    }
+  );
   if (error) {
     log.error("picked-material return sweep failed", {
       error,
-      jobId,
-      scope: body.type,
+      jobOperationId: args.jobOperationId,
       companyId: args.companyId
     });
   }
-
-  return { jobId };
 }
 
 export async function getActiveJobOperationsByEmployee(
@@ -348,6 +561,23 @@ export async function getActiveJobOperationsByLocation(
     location_id: locationId,
     work_center_ids: workCenterIds
   });
+}
+
+/**
+ * The member operations of the given batches: quantities and the job number.
+ */
+export async function getJobOperationBatchMembers(
+  client: SupabaseClient<Database>,
+  batchIds: string[],
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select(
+      "jobOperationBatchId, operationQuantity, targetQuantity, job(jobId)"
+    )
+    .in("jobOperationBatchId", batchIds)
+    .eq("companyId", companyId);
 }
 
 export async function getActiveJobCount(
@@ -506,7 +736,7 @@ export async function getAssemblyPlaybackByOperationId(
   const steps = await client
     .from("assemblyInstructionStep")
     .select(
-      "id, title, instructionText, componentNodeIds, motion, camera, fastener, durationSeconds, warnings"
+      "id, title, instructionText, componentNodeIds, hiddenComponentNodeIds, parentStepId, usedInStepId, isSubAssembly, motion, camera, orientation, fastener, durationSeconds, warnings"
     )
     .eq("assemblyInstructionId", instructionId)
     .order("sortOrder", { ascending: true });
@@ -527,6 +757,24 @@ export async function getJobAttributesByOperationId(
     .from("jobOperationStep")
     .select("*, jobOperationStepRecord(*)")
     .eq("operationId", operationId);
+}
+
+/**
+ * Tenant check for a caller-supplied job operation id. Routes read operations
+ * with a service-role client (operators often lack RLS rights), so this scoped
+ * lookup is the boundary: null data means the id is not in the company.
+ */
+export async function getJobOperationForCompany(
+  client: SupabaseClient<Database>,
+  operationId: string,
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select("id, jobId")
+    .eq("id", operationId)
+    .eq("companyId", companyId)
+    .maybeSingle();
 }
 
 export async function getJobByOperationId(
@@ -552,13 +800,19 @@ const getItemFiles = async (
   items: Array<{ itemId: string }>
 ) => {
   const getFile = async (id: string) => {
-    const res = await client.storage
-      .from("private")
+    const res = await storage(client)
+      .company(companyId)
       .list(`${companyId}/parts/${id}`);
 
-    if (res.error || !res.data) return null;
+    if (!res.data?.length) return null;
 
-    return res.data.map((f) => ({ ...f, bucket: "parts", itemId: id }));
+    return res.data.map(
+      (f): StorageItem => ({
+        ...f,
+        bucket: "parts",
+        itemId: id
+      })
+    );
   };
 
   const elems = items.map((el) => getFile(el.itemId));
@@ -578,30 +832,30 @@ export async function getJobFiles(
     const opportunityLine = job.salesOrderLineId || job.quoteLineId;
 
     const [opportunityLineFiles, jobFiles, itemFiles] = await Promise.all([
-      client.storage
-        .from("private")
+      storage(client)
+        .company(companyId)
         .list(`${companyId}/opportunity-line/${opportunityLine}`),
-      client.storage.from("private").list(`${companyId}/job/${job.id}`),
+      storage(client).company(companyId).list(`${companyId}/job/${job.id}`),
       getItemFiles(client, companyId, items)
     ]);
 
     // Combine and return both sets of files
     return [
-      ...(opportunityLineFiles.data?.map((f) => ({
+      ...(opportunityLineFiles.data ?? []).map((f) => ({
         ...f,
         bucket: "opportunity-line"
-      })) || []),
-      ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+      })),
+      ...(jobFiles.data ?? []).map((f) => ({ ...f, bucket: "job" })),
       ...itemFiles
     ];
   } else {
     const [jobFiles, itemFiles] = await Promise.all([
-      client.storage.from("private").list(`${companyId}/job/${job.id}`),
+      storage(client).company(companyId).list(`${companyId}/job/${job.id}`),
       getItemFiles(client, companyId, items)
     ]);
 
     return [
-      ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+      ...(jobFiles.data ?? []).map((f) => ({ ...f, bucket: "job" })),
       ...itemFiles
     ];
   }
@@ -612,6 +866,323 @@ export async function getJobMakeMethod(
   id: string
 ) {
   return client.from("jobMakeMethod").select("*").eq("id", id).single();
+}
+
+// Batch-wide material requirement per item: summed estimated vs issued across
+// every member operation's BOM lines. Feeds the batch-mode materials panel so
+// the operator sees the combined pick (e.g. 6,500 seeds); recording still
+// happens per member via the issue fn's trackedEntitiesToBatch case.
+export type BatchMaterialTotal = {
+  required: number;
+  issued: number;
+  itemReadableId: string | null;
+  name: string | null;
+  thumbnailPath: string | null;
+  itemType: string | null;
+  // Where the members' rows say to pick it from (the first one set).
+  storageUnitName: string | null;
+  unitOfMeasureCode: string | null;
+  requiresBatchTracking: boolean;
+  requiresSerialTracking: boolean;
+  // each member's share, in member order, for the per-job split line
+  perMember: { jobOperationId: string; required: number }[];
+};
+
+// The batch's materials, summed per item across every member. Reads the same
+// op-linked rows the shared pick (issue `trackedEntitiesToBatch`) issues
+// against, so what the batch view shows is exactly what one pick can cover.
+export async function getBatchMaterialTotals(
+  client: SupabaseClient<Database>,
+  args: { batchId: string; companyId: string }
+): Promise<Record<string, BatchMaterialTotal>> {
+  const members = await client
+    .from("jobOperation")
+    .select("id, jobMakeMethodId")
+    .eq("jobOperationBatchId", args.batchId)
+    .eq("companyId", args.companyId);
+  if (members.error || !members.data?.length) return {};
+  // A member's materials are what its operation view lists — its make method's
+  // BOM — with a row linked straight to a member operation kept on it. The
+  // batch pick (`issue` trackedEntitiesToBatch) attributes rows the same way.
+  const memberIds = new Set(members.data.map((m) => m.id));
+  const memberByMakeMethod = new Map(
+    members.data
+      .filter((m) => m.jobMakeMethodId)
+      .map((m) => [m.jobMakeMethodId as string, m.id])
+  );
+  const rows = await client
+    .from("jobMaterial")
+    .select(
+      "itemId, jobOperationId, jobMakeMethodId, estimatedQuantity, quantityIssued, description, unitOfMeasureCode, requiresBatchTracking, requiresSerialTracking, item(readableIdWithRevision, thumbnailPath, type), storageUnit(name)"
+    )
+    .or(
+      [
+        `jobOperationId.in.(${[...memberIds].join(",")})`,
+        memberByMakeMethod.size
+          ? `jobMakeMethodId.in.(${[...memberByMakeMethod.keys()].join(",")})`
+          : null
+      ]
+        .filter(Boolean)
+        .join(",")
+    )
+    .eq("companyId", args.companyId);
+  const totals: Record<string, BatchMaterialTotal> = {};
+  for (const r of rows.data ?? []) {
+    const jobOperationId =
+      r.jobOperationId && memberIds.has(r.jobOperationId)
+        ? r.jobOperationId
+        : memberByMakeMethod.get(r.jobMakeMethodId);
+    if (!r.itemId || !jobOperationId) continue;
+    const t = (totals[r.itemId] ??= {
+      required: 0,
+      issued: 0,
+      itemReadableId: r.item?.readableIdWithRevision ?? null,
+      thumbnailPath: r.item?.thumbnailPath ?? null,
+      itemType: r.item?.type ?? null,
+      storageUnitName: null,
+      name: r.description ?? null,
+      unitOfMeasureCode: r.unitOfMeasureCode ?? null,
+      requiresBatchTracking: Boolean(r.requiresBatchTracking),
+      requiresSerialTracking: Boolean(r.requiresSerialTracking),
+      perMember: []
+    });
+    t.storageUnitName ??= r.storageUnit?.name ?? null;
+    const required = Number(r.estimatedQuantity ?? 0);
+    t.required += required;
+    t.issued += Number(r.quantityIssued ?? 0);
+    const share = t.perMember.find((m) => m.jobOperationId === jobOperationId);
+    if (share) share.required += required;
+    else t.perMember.push({ jobOperationId, required });
+  }
+  // Rounded to internal scale like the pick's own check (splitPickAcrossMembers),
+  // so a requirement finer than a quantity input (0.000072 KG) reads as done
+  // once the pickable 0.00007 is issued, and the default pick is one it accepts.
+  for (const t of Object.values(totals)) {
+    t.required = round(t.required);
+    t.issued = round(t.issued);
+  }
+  return totals;
+}
+
+export type BatchStep = {
+  key: string;
+  name: string;
+  type: string;
+  sortOrder: number;
+  required: boolean;
+  unitOfMeasureCode: string | null;
+  minValue: number | null;
+  maxValue: number | null;
+  listValues: string[] | null;
+  // The reference material, taken from the first member carrying the step
+  // (the same procedure step on every job).
+  description: Json | null;
+  slides: {
+    id: string;
+    imagePath: string | null;
+    caption: string | null;
+    sortOrder: number | null;
+    annotations: Json | null;
+  }[];
+  // One entry per member operation carrying this step.
+  perMember: {
+    jobOperationId: string;
+    stepId: string;
+    recorded: boolean;
+    record: BatchStepRecord | null;
+  }[];
+};
+
+export type BatchStepRecord = {
+  value: string | null;
+  numericValue: number | null;
+  booleanValue: boolean | null;
+  userValue: string | null;
+};
+
+export type BatchParameter = {
+  key: string;
+  // Distinct values and the member operations holding each; one entry when
+  // every job runs the same setting.
+  values: { value: string; jobOperationIds: string[] }[];
+};
+
+export type BatchWorkInstructions = Awaited<
+  ReturnType<typeof getBatchWorkInstructions>
+>;
+
+export type BatchFile = StorageItem & {
+  storagePath: string;
+  // The member job a job file belongs to; null for item files every job shares.
+  jobReadableId: string | null;
+};
+
+// The batch view's work instructions, aggregated across members: each step
+// once (members share the routing) with who has recorded it, each parameter
+// once with any per-job differences, and every file — the item's shared
+// drawings once, plus each job's own attachments labelled by job.
+export async function getBatchWorkInstructions(
+  client: SupabaseClient<Database>,
+  args: { batchId: string; companyId: string }
+): Promise<{
+  steps: BatchStep[];
+  parameters: BatchParameter[];
+  files: BatchFile[];
+}> {
+  const members = await client
+    .from("jobOperation")
+    .select("id, jobId, job(jobId, itemId), jobMakeMethod(itemId)")
+    .eq("jobOperationBatchId", args.batchId)
+    .eq("companyId", args.companyId);
+  if (members.error || !members.data?.length) {
+    return { steps: [], parameters: [], files: [] };
+  }
+  const memberIds = members.data.map((m) => m.id);
+
+  const [steps, parameters] = await Promise.all([
+    client
+      .from("jobOperationStep")
+      .select(
+        "id, operationId, name, type, sortOrder, required, unitOfMeasureCode, minValue, maxValue, listValues, description, jobOperationStepSlide(id, imagePath, caption, sortOrder, annotations), jobOperationStepRecord(index, value, numericValue, booleanValue, userValue)"
+      )
+      .in("operationId", memberIds)
+      .eq("companyId", args.companyId),
+    client
+      .from("jobOperationParameter")
+      .select("operationId, key, value")
+      .in("operationId", memberIds)
+      .eq("companyId", args.companyId)
+  ]);
+
+  const stepsByKey = new Map<string, BatchStep>();
+  for (const step of steps.data ?? []) {
+    const key = `${step.sortOrder ?? 0}|${step.type}|${step.name}`;
+    const entry =
+      stepsByKey.get(key) ??
+      ({
+        key,
+        name: step.name,
+        type: step.type,
+        sortOrder: Number(step.sortOrder ?? 0),
+        required: Boolean(step.required),
+        unitOfMeasureCode: step.unitOfMeasureCode ?? null,
+        minValue: step.minValue ?? null,
+        maxValue: step.maxValue ?? null,
+        listValues: step.listValues ?? null,
+        description: step.description ?? null,
+        slides: step.jobOperationStepSlide ?? [],
+        perMember: []
+      } satisfies BatchStep);
+    const records = step.jobOperationStepRecord ?? [];
+    const record = records.find((r) => r.index === 0) ?? records[0] ?? null;
+    entry.perMember.push({
+      jobOperationId: step.operationId,
+      stepId: step.id,
+      recorded: records.length > 0,
+      record: record
+        ? {
+            value: record.value ?? null,
+            numericValue: record.numericValue ?? null,
+            booleanValue: record.booleanValue ?? null,
+            userValue: record.userValue ?? null
+          }
+        : null
+    });
+    stepsByKey.set(key, entry);
+  }
+
+  const parametersByKey = new Map<string, BatchParameter>();
+  for (const parameter of parameters.data ?? []) {
+    const entry = parametersByKey.get(parameter.key) ?? {
+      key: parameter.key,
+      values: []
+    };
+    const same = entry.values.find((v) => v.value === parameter.value);
+    if (same) same.jobOperationIds.push(parameter.operationId);
+    else
+      entry.values.push({
+        value: parameter.value,
+        jobOperationIds: [parameter.operationId]
+      });
+    parametersByKey.set(parameter.key, entry);
+  }
+
+  // Storage has no multi-folder list: one listing per member job and per
+  // distinct item, bounded by the batch's size (the same shape getJobFiles uses).
+  const jobs = members.data
+    .map((m) => ({
+      id: m.jobId,
+      readableId: (m.job as { jobId?: string } | null)?.jobId ?? m.jobId
+    }))
+    .filter((job, i, all) => all.findIndex((j) => j.id === job.id) === i);
+  // The item an operation builds is its make method's — a sub-assembly's,
+  // not the job's top-level part — as get_job_operation_by_id resolves it.
+  const itemIds = [
+    ...new Set(
+      members.data
+        .map(
+          (m) =>
+            (m.jobMakeMethod as { itemId?: string } | null)?.itemId ??
+            (m.job as { itemId?: string } | null)?.itemId
+        )
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const [jobFiles, itemFiles] = await Promise.all([
+    Promise.all(
+      jobs.map(async (job) => {
+        const folder = `${args.companyId}/job/${job.id}`;
+        const listed = await storage(client)
+          .company(args.companyId)
+          .list(folder);
+        return (listed.data ?? []).map(
+          (file): BatchFile => ({
+            ...file,
+            bucket: "job",
+            storagePath: `${folder}/${file.name}`,
+            jobReadableId: job.readableId
+          })
+        );
+      })
+    ),
+    Promise.all(
+      itemIds.map(async (itemId) => {
+        const folder = `${args.companyId}/parts/${itemId}`;
+        const listed = await storage(client)
+          .company(args.companyId)
+          .list(folder);
+        return (listed.data ?? []).map(
+          (file): BatchFile => ({
+            ...file,
+            bucket: "parts",
+            itemId,
+            storagePath: `${folder}/${file.name}`,
+            jobReadableId: null
+          })
+        );
+      })
+    )
+  ]);
+
+  return {
+    steps: [...stepsByKey.values()].sort((a, b) => a.sortOrder - b.sortOrder),
+    parameters: [...parametersByKey.values()],
+    files: [
+      ...itemFiles.flat(),
+      ...jobFiles.flat().sort((a, b) =>
+        (a.jobReadableId ?? "").localeCompare(
+          b.jobReadableId ?? "",
+          undefined,
+          {
+            numeric: true
+          }
+        )
+      )
+    ].filter(
+      // Supabase lists a folder placeholder with no id; it is not a file.
+      (file) => file.id && !file.name.startsWith(".")
+    )
+  };
 }
 
 export async function getJobMaterialsByOperationId(
@@ -789,7 +1360,8 @@ export async function getJobMaterialsByOperationId(
   const pickedFor = (materialId: string | null) =>
     (materialId ? pickedByMaterial[materialId] : undefined) ?? {
       quantityPicked: 0,
-      quantityToPick: 0
+      quantityToPick: 0,
+      pickedByItem: []
     };
 
   if (requiresSerialTracking) {
@@ -893,18 +1465,8 @@ export async function getJobMaterialsByOperationId(
  * built one at a time; an untracked (not serial/batch) part is consumed as the
  * step that "owns" it is recorded, so recording that step issues one unit's worth
  * automatically instead of making the operator issue it by hand (tracked parts
- * still require a scan). Step ownership:
- *   • A step-assigned part (jobMaterialStep) is owned by its assigned step(s) and
- *     issues when any of those steps is recorded for a unit.
- *   • A loose part (no step assignment) is owned by the operation's FIRST step —
- *     that's where the operator sees it — matching the prior behavior.
- * Idempotent by construction: per material the target is
- * (distinct units that recorded an owning step) × per-unit quantity, and only the
- * shortfall vs quantityIssued is issued — re-records, undo/redo, manual issues,
- * and the completion-time backflush (backflush_job_materials, which tops up to
- * completed × per-unit) can all overlap without double-issuing. A part assigned to
- * several steps is still counted once per unit, so its requirement never
- * multiplies. Eligibility mirrors backflush_job_materials (Material/Part/Consumable,
+ * still require a scan). `planStepBackflush` decides which step owns a part and
+ * how much to issue. Eligibility mirrors backflush_job_materials (Material/Part/Consumable,
  * not Make to Order, untracked). Issue failures (e.g. insufficient stock) are
  * collected, not thrown — the part simply stays unissued and manually issuable.
  */
@@ -916,6 +1478,7 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     .from("jobOperationStep")
     .select("id, operationId")
     .eq("id", args.jobOperationStepId)
+    .eq("companyId", args.companyId)
     .single();
   if (step.error || !step.data.operationId) return { error: step.error };
   const operationId = step.data.operationId;
@@ -942,7 +1505,7 @@ export async function backflushUntrackedMaterialsOnStepRecord(
 
   const materials = await client
     .from("jobMaterial")
-    .select("id, itemId, quantity, quantityIssued, methodType")
+    .select("id, itemId, quantity, quantityIssued, methodType, jobOperationId")
     .eq("jobMakeMethodId", operation.data.jobMakeMethodId)
     .eq("companyId", args.companyId)
     .in("itemType", ["Material", "Part", "Consumable"])
@@ -953,8 +1516,6 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     return { error: materials.error };
   }
 
-  // Step ownership: materialId → the step ids it's assigned to (empty = loose),
-  // plus each link's per-step quantity (NULL = the full BOM line quantity).
   // Falls back to the bare links against a pre-migration schema.
   let stepLinks = await client
     .from("jobMaterialStep")
@@ -973,98 +1534,46 @@ export async function backflushUntrackedMaterialsOnStepRecord(
       )) as unknown as typeof stepLinks;
   }
   if (stepLinks.error) return { error: stepLinks.error };
-  const ownedSteps = new Map<string, Set<string>>();
-  const linkQuantities = new Map<string, Map<string, number | null>>();
-  for (const link of stepLinks.data ?? []) {
-    const set = ownedSteps.get(link.jobMaterialId) ?? new Set<string>();
-    set.add(link.jobOperationStepId);
-    ownedSteps.set(link.jobMaterialId, set);
-    const quantities =
-      linkQuantities.get(link.jobMaterialId) ??
-      new Map<string, number | null>();
-    quantities.set(link.jobOperationStepId, link.quantity);
-    linkQuantities.set(link.jobMaterialId, quantities);
-  }
 
-  // Units (index) that have recorded each of the operation's steps, so we can
-  // count distinct started units per material from its owning step(s).
   const records = await client
     .from("jobOperationStepRecord")
     .select("jobOperationStepId, index")
     .in("jobOperationStepId", stepIds);
   if (records.error) return { error: records.error };
-  const unitsByStep = new Map<string, Set<number>>();
-  for (const r of records.data ?? []) {
-    const set = unitsByStep.get(r.jobOperationStepId) ?? new Set<number>();
-    set.add(r.index);
-    unitsByStep.set(r.jobOperationStepId, set);
-  }
+
+  const issues = planStepBackflush({
+    operationId,
+    stepIds,
+    materials: materials.data,
+    stepLinks: (stepLinks.data ?? []).map((link) => ({
+      jobMaterialId: link.jobMaterialId,
+      jobOperationStepId: link.jobOperationStepId,
+      quantity: link.quantity ?? null
+    })),
+    records: records.data ?? []
+  });
 
   const failures: string[] = [];
-  for (const material of materials.data) {
-    const perUnit = material.quantity ?? 0;
-    if (perUnit <= 0) continue;
-    // Owning steps: the material's assigned steps (scoped to this operation), or
-    // the first step when it's loose (unassigned).
-    const owning = ownedSteps.get(material.id);
-    const triggerStepIds =
-      owning && owning.size > 0
-        ? stepIds.filter((id) => owning.has(id))
-        : [firstStepId];
-    const quantities = linkQuantities.get(material.id);
-    const hasSplitQuantities = triggerStepIds.some(
-      (id) => (quantities?.get(id) ?? null) !== null
-    );
-    // Distinct units that recorded at least one owning step — the line-level
-    // requirement bound: a material can never owe more than units × per-unit.
-    const units = new Set<number>();
-    for (const id of triggerStepIds) {
-      for (const idx of unitsByStep.get(id) ?? []) units.add(idx);
-    }
-    let target: number;
-    if (hasSplitQuantities) {
-      // The line is SPLIT across steps (5 screws at step 1, 5 at step 2): each
-      // owning step consumes its own share as it is recorded, so the target is
-      // the per-step sum. A link left without an explicit quantity falls back
-      // to the full per-unit quantity for its step. The sum is capped at the
-      // line-level bound — the BOM line is the source of truth, so shares that
-      // over-allocate the line (2 + 10 on a 5-quantity line) must not issue
-      // more stock than the line requires.
-      target = Math.min(
-        triggerStepIds.reduce(
-          (sum, id) =>
-            sum +
-            (unitsByStep.get(id)?.size ?? 0) * (quantities?.get(id) ?? perUnit),
-          0
-        ),
-        units.size * perUnit
-      );
-    } else {
-      // Unsplit: distinct units counted once, so the requirement never
-      // multiplies across a material's several owning steps.
-      target = units.size * perUnit;
-    }
-    const delta = target - (material.quantityIssued ?? 0);
-    if (delta <= 0) continue;
-    const issue = await client.functions.invoke("issue", {
-      body: {
+  for (const issue of issues) {
+    const issued = await erpPosting(
+      "issue",
+      { client, companyId: args.companyId, userId: args.userId },
+      {
         id: operationId,
         type: "partToOperation",
-        itemId: material.itemId,
-        materialId: material.id,
-        quantity: delta,
-        adjustmentType: "Negative Adjmt.",
-        companyId: args.companyId,
-        userId: args.userId
+        itemId: issue.itemId,
+        materialId: issue.materialId,
+        quantity: issue.quantity,
+        adjustmentType: "Negative Adjmt."
       }
-    });
-    if (issue.error) failures.push(material.itemId);
+    );
+    if (issued.error) failures.push(issued.error.message || issue.itemId);
   }
 
   return {
     error: failures.length
       ? new Error(
-          `Backflush failed for ${failures.length} material(s): ${failures.join(", ")}`
+          `Backflush failed for ${failures.length} material(s): ${failures.join("; ")}`
         )
       : null
   };
@@ -1152,13 +1661,27 @@ export async function getNonConformanceActions(
   }[];
 }
 
-export async function getOperationEligibility(
+export type ProcessAbilityPolicy =
+  Database["public"]["Enums"]["processAbilityPolicy"];
+
+// What an operator lacks to work on an operation whose process requires an
+// ability. getAbilityShortfall returns null when nothing is missing.
+export type AbilityShortfall = {
+  policy: ProcessAbilityPolicy;
+  processName: string;
+  // the qualification's expiry date; null when the operator never held it
+  expiredOn: string | null;
+  // an Active training that grants the ability, when one exists
+  trainingName: string | null;
+};
+
+export async function getAbilityShortfall(
   client: SupabaseClient<Database>,
   args: { operationId: string; employeeId: string; companyId: string }
-): Promise<{ eligible: boolean; reason: string | null }> {
+): Promise<AbilityShortfall | null> {
   const { operationId, employeeId, companyId } = args;
 
-  // NOTE: query failures here FAIL OPEN (eligible: true). An RLS/database
+  // NOTE: query failures here FAIL OPEN (no shortfall). An RLS/database
   // error must not brick the shop floor — the scheduler is the primary
   // enforcement of ability requirements; this gate is a best-effort backstop.
   // The requirement comes from the operation's PROCESS: process.requiresAbility
@@ -1166,104 +1689,84 @@ export async function getOperationEligibility(
   // what the employee must be qualified for.
   const operation = await client
     .from("jobOperation")
-    .select("processId")
+    .select(
+      "process!jobOperation_processId_fkey(name, requiresAbility, abilityPolicy, ability!ability_processId_fkey(id, active))"
+    )
     .eq("id", operationId)
-    .maybeSingle();
-
-  if (operation.error) {
-    console.error(
-      "getOperationEligibility: failed to fetch jobOperation",
-      operation.error
-    );
-    return { eligible: true, reason: null };
-  }
-
-  if (!operation.data?.processId) {
-    return { eligible: true, reason: null };
-  }
-
-  const process = await client
-    .from("process")
-    .select("name, requiresAbility")
-    .eq("id", operation.data.processId)
     .eq("companyId", companyId)
     .maybeSingle();
 
-  if (process.error) {
-    console.error(
-      "getOperationEligibility: failed to fetch process",
-      process.error
-    );
-    return { eligible: true, reason: null };
+  const process = operation.data?.process;
+  if (operation.error || !process?.requiresAbility) return null;
+
+  // requiresAbility is on but no active linked ability exists — data anomaly,
+  // don't block the floor
+  const ability = process.ability.find((a) => a.active);
+  if (!ability) return null;
+
+  const [employeeAbility, training] = await Promise.all([
+    client
+      .from("employeeAbility")
+      .select("expiresAt")
+      .eq("employeeId", employeeId)
+      .eq("abilityId", ability.id)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    // Read alongside, so a refusal can name what to complete; a failed read
+    // only drops the name.
+    client
+      .from("training")
+      .select("name")
+      .eq("grantsAbilityId", ability.id)
+      .eq("companyId", companyId)
+      .eq("status", "Active")
+      .limit(1)
+      .maybeSingle()
+  ]);
+  if (employeeAbility.error) return null;
+
+  // Qualification is presence-based: the row existing means qualified,
+  // subject only to expiry.
+  const expiresAt = employeeAbility.data?.expiresAt ?? null;
+  if (employeeAbility.data) {
+    if (expiresAt === null) return null;
+    const today = datetime
+      .today(await getCompanyTimeZone(client, companyId))
+      .toString();
+    if (expiresAt > today) return null;
   }
 
-  if (!process.data?.requiresAbility) {
-    return { eligible: true, reason: null };
-  }
+  return {
+    policy: process.abilityPolicy,
+    // The ability's name IS the process's name (abilities no longer store one).
+    processName: process.name,
+    expiredOn: expiresAt,
+    trainingName: training.data?.name ?? null
+  };
+}
 
-  const ability = await client
-    .from("ability")
-    .select("id, name")
-    .eq("processId", operation.data.processId)
-    .eq("companyId", companyId)
-    .eq("active", true)
-    .maybeSingle();
+// English text for the server flash when work is refused. MES routes have no
+// server-side translation; the page banner carries the translated text.
+function abilityRefusalMessage(shortfall: AbilityShortfall): string {
+  const how = shortfall.trainingName
+    ? `Complete the ${shortfall.trainingName} training to get it.`
+    : "Ask a supervisor to add it to your profile.";
+  const expired = shortfall.expiredOn
+    ? ` Your qualification expired on ${shortfall.expiredOn}.`
+    : "";
+  return `You need the ${shortfall.processName} ability to work on this operation.${expired} ${how}`;
+}
 
-  if (ability.error) {
-    console.error(
-      "getOperationEligibility: failed to fetch ability",
-      ability.error
-    );
-    return { eligible: true, reason: null };
-  }
-
-  if (!ability.data) {
-    // requiresAbility is on but no linked ability exists — data anomaly,
-    // don't block the floor
-    return { eligible: true, reason: null };
-  }
-
-  const abilityName = ability.data.name ?? process.data.name ?? "ability";
-
-  const employeeAbility = await client
-    .from("employeeAbility")
-    .select("expiresAt")
-    .eq("employeeId", employeeId)
-    .eq("abilityId", ability.data.id)
-    .eq("companyId", companyId)
-    .maybeSingle();
-
-  if (employeeAbility.error) {
-    console.error(
-      "getOperationEligibility: failed to fetch employeeAbility",
-      employeeAbility.error
-    );
-    return { eligible: true, reason: null };
-  }
-
-  // Qualification is presence-based: the row existing means qualified, subject
-  // only to expiry below.
-  if (!employeeAbility.data) {
-    return {
-      eligible: false,
-      reason: `Requires ${abilityName} — not qualified`
-    };
-  }
-
-  const todayDate = datetime
-    .today(await getCompanyTimeZone(client, companyId))
-    .toString();
-  if (
-    employeeAbility.data.expiresAt !== null &&
-    employeeAbility.data.expiresAt <= todayDate
-  ) {
-    return {
-      eligible: false,
-      reason: `Requires ${abilityName} — qualification expired ${employeeAbility.data.expiresAt}`
-    };
-  }
-
-  return { eligible: true, reason: null };
+// The refusal text when the operator may not do production work on this
+// operation (the process's policy is 'Block'); null when the work may go ahead.
+export async function abilityBlockRefusal(
+  client: SupabaseClient<Database>,
+  args: { operationId: string; employeeId: string; companyId: string }
+): Promise<string | null> {
+  const shortfall = await getAbilityShortfall(client, args);
+  return shortfall?.policy === "Block"
+    ? abilityRefusalMessage(shortfall)
+    : null;
 }
 
 export async function getProcessesList(
@@ -1298,6 +1801,20 @@ export async function getProductionQuantitiesForJobOperation(
     .from("productionQuantity")
     .select("*")
     .eq("jobOperationId", operationId);
+}
+
+// Every productionEvent tagged with the batch — a batch timer started from any
+// member's operation page is tagged with the batch id, not one member's
+// operationId, so a batched operation view reads the batch's events rather than
+// its own to show the shared running timer and progress.
+export async function getProductionEventsForBatch(
+  client: SupabaseClient<Database>,
+  batchId: string
+) {
+  return client
+    .from("productionEvent")
+    .select("*")
+    .eq("jobOperationBatchId", batchId);
 }
 
 export async function getToolsByOperationId(
@@ -1403,15 +1920,47 @@ export async function getScrapReasonsList(
     .order("name");
 }
 
+/**
+ * The tracked entities of a make method in UNIT-AXIS order — position `i` here is
+ * the `index` every `jobOperationStepRecord` (and inspection result) for unit `i`
+ * is stored under (`deriveUnits` in `~/utils/units`). So this order is not
+ * cosmetic: it is the join key between a recorded value and the serial it was
+ * recorded for, and it must be the same on every read, forever.
+ *
+ * `createdAt` alone is NOT that. `assign-serial-numbers` used to mint every
+ * serial after the first in one INSERT, so they share a `createdAt`; Postgres
+ * returns tied rows in physical order, and any UPDATE moves a row to the end of
+ * it. Logging one serial complete therefore reshuffled the others, and the
+ * values recorded at position 2 displayed under whichever serial slid into
+ * position 2 — and the Assembly view then auto-completed that unit.
+ *
+ * The tiebreakers make the order a pure function of immutable columns:
+ * `readableId` puts tied serials back in the sequence they were minted in
+ * (serials are zero-padded, so text order is number order within a batch) and
+ * `id` settles anything left. New serials no longer tie at all — the mint now
+ * spaces their `createdAt` — so this only decides rows minted before that.
+ *
+ * ponytail: text order, so a batch whose counter overflowed its pad width
+ * (…99 → …100 at size 2) sorts wrong among PRE-EXISTING tied rows. Sort with a
+ * numeric collator in JS if that ever turns up.
+ *
+ * Kept in step with the ERP copy (`inventory.service.ts`), the inline copies
+ * (`getJobOperationBatch` here, `JobHeader.tsx`) and the `issue` edge
+ * function's serial-complete branch — they all index into this same axis.
+ */
 export async function getTrackedEntitiesByMakeMethodId(
   client: SupabaseClient<Database>,
-  jobMakeMethodId: string
+  jobMakeMethodId: string,
+  companyId: string
 ) {
   return client
     .from("trackedEntity")
     .select("*")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
-    .order("createdAt", { ascending: true });
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true })
+    .order("readableId", { ascending: true })
+    .order("id", { ascending: true });
 }
 
 type SerialEntityForSelection = Pick<
@@ -1446,7 +1995,7 @@ export function isSerialEntityIncompleteForOperation(
  * when every entity is already complete it falls back to the last entity, which
  * preserves the prior end-state behavior. This unifies both the pre-split flow
  * (all N `quantity=1` entities exist up front) and the old lazy-split flow (the
- * `issue` edge function spawns the next entity on each completion).
+ * `issue` posting spawns the next entity on each completion).
  */
 export function getNextIncompleteSerialEntity<
   T extends SerialEntityForSelection
@@ -1478,12 +2027,14 @@ export async function getTrackedEntity(
 
 export async function getTrackedEntitiesByOperationId(
   client: SupabaseClient<Database>,
-  operationId: string
+  operationId: string,
+  companyId: string
 ) {
   const jobOperation = await client
     .from("jobOperation")
     .select("jobMakeMethodId")
     .eq("id", operationId)
+    .eq("companyId", companyId)
     .single();
 
   if (jobOperation.error || !jobOperation.data.jobMakeMethodId)
@@ -1494,7 +2045,8 @@ export async function getTrackedEntitiesByOperationId(
 
   return getTrackedEntitiesByMakeMethodId(
     client,
-    jobOperation.data.jobMakeMethodId
+    jobOperation.data.jobMakeMethodId,
+    companyId
   );
 }
 
@@ -1705,6 +2257,8 @@ export async function getWorkCentersByCompany(
   return { data: mergedData, error: null };
 }
 
+// `refusal` is a message for the operator: a Measurement step was sent with no
+// value.
 export async function insertAttributeRecord(
   client: SupabaseClient<Database>,
   data: z.infer<typeof stepRecordValidator> & {
@@ -1712,10 +2266,85 @@ export async function insertAttributeRecord(
     createdBy: string;
   }
 ) {
-  return client.from("jobOperationStepRecord").upsert(data, {
+  // Callers pass a service-role client and the step id comes from the form.
+  // The upsert's conflict target is (jobOperationStepId, index), so a foreign
+  // step id would overwrite — and re-tenant — another company's record.
+  const step = await client
+    .from("jobOperationStep")
+    .select("id, type")
+    .eq("id", data.jobOperationStepId)
+    .eq("companyId", data.companyId)
+    .maybeSingle();
+  if (step.error) return { error: step.error, refusal: null };
+  if (!step.data) {
+    log.warn("insertAttributeRecord: step not found in company", {
+      companyId: data.companyId,
+      jobOperationStepId: data.jobOperationStepId
+    });
+    return {
+      error: notFoundResponse("Job operation step not found").error,
+      refusal: null
+    };
+  }
+
+  // The record window refuses an empty measurement (measurementStepRecordValidator);
+  // this route validates with the general validator, so repeat the rule here.
+  if (step.data.type === "Measurement" && data.numericValue === undefined) {
+    return { error: null, refusal: "Enter the measurement" };
+  }
+
+  const record = await client.from("jobOperationStepRecord").upsert(data, {
     onConflict: "jobOperationStepId, index",
     ignoreDuplicates: false
   });
+  return { error: record.error, refusal: null };
+}
+
+// The batch view's Record: one step written for several members in one upsert,
+// at record set 0 (batch members are never serial-tracked, so each job has one
+// set). The steps are re-read under the batch and company — this runs with the
+// service role and the ids come from the form.
+export async function insertBatchStepRecords(
+  client: SupabaseClient<Database>,
+  args: {
+    batchId: string;
+    companyId: string;
+    createdBy: string;
+    records: z.infer<typeof batchStepRecordsValidator>["records"];
+  }
+): Promise<{ error: { message: string } | null }> {
+  const members = await client
+    .from("jobOperation")
+    .select("id")
+    .eq("jobOperationBatchId", args.batchId)
+    .eq("companyId", args.companyId);
+  if (members.error) return { error: members.error };
+
+  const stepIds = [...new Set(args.records.map((r) => r.jobOperationStepId))];
+  const steps = await client
+    .from("jobOperationStep")
+    .select("id")
+    .in("id", stepIds)
+    .in(
+      "operationId",
+      (members.data ?? []).map((m) => m.id)
+    )
+    .eq("companyId", args.companyId);
+  if (steps.error) return { error: steps.error };
+  if ((steps.data ?? []).length !== stepIds.length) {
+    return { error: { message: "A step is not part of this batch" } };
+  }
+
+  const upsert = await client.from("jobOperationStepRecord").upsert(
+    args.records.map((record) => ({
+      ...record,
+      index: 0,
+      companyId: args.companyId,
+      createdBy: args.createdBy
+    })),
+    { onConflict: "jobOperationStepId, index", ignoreDuplicates: false }
+  );
+  return { error: upsert.error };
 }
 
 // Manager override: record every step of an operation that has no record yet for this unit
@@ -1800,10 +2429,18 @@ export async function insertReworkQuantity(
     .insert(
       sanitize({
         ...insert,
-        type: "Rework"
+        type: "Rework" as const
       })
     )
     .select("*");
+}
+
+// The tracked entity is recorded by the issue path, not on productionQuantity.
+function withoutTracking<
+  T extends { trackedEntityId?: unknown; trackingType?: unknown }
+>(data: T): Omit<T, "trackedEntityId" | "trackingType"> {
+  const { trackedEntityId: _entity, trackingType: _tracking, ...rest } = data;
+  return rest;
 }
 
 export async function insertProductionQuantity(
@@ -1823,8 +2460,8 @@ export async function insertProductionQuantity(
     .from("productionQuantity")
     .insert(
       sanitize({
-        ...data,
-        type: "Production"
+        ...withoutTracking(data),
+        type: "Production" as const
       })
     )
     .select("*");
@@ -1857,8 +2494,8 @@ export async function insertScrapQuantity(
     .from("productionQuantity")
     .insert(
       sanitize({
-        ...data,
-        type: "Scrap"
+        ...withoutTracking(data),
+        type: "Scrap" as const
       })
     )
     .select("*");
@@ -1870,13 +2507,112 @@ export async function endProductionEvent(
     id: string;
     endTime: string;
     employeeId: string;
+    companyId: string;
   }
 ) {
+  // Only an open event ends: a repeated End must not move its end time.
   return client
     .from("productionEvent")
     .update({ endTime: data.endTime, updatedBy: data.employeeId })
     .eq("id", data.id)
+    .eq("companyId", data.companyId)
+    .is("endTime", null)
     .select("*");
+}
+
+/** A Machine press refused to end an event (already ended, or started later). */
+class MachineEventNotEnded extends Error {}
+
+/**
+ * Ends an operator's open Machine event with a press: the press ends every
+ * open Machine event on the work center, this one included, in one
+ * transaction. Null when the event is no longer open, or the press could not
+ * end it (it starts after the press), and then nothing was ended. Skips RLS:
+ * the caller checks that the user may update production events first.
+ */
+export async function endMachineProductionEvent(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; workCenterId: string; companyId: string; userId: string }
+) {
+  try {
+    return await db.transaction().execute(async (trx) => {
+      await lockMachinePress(trx, args);
+      const open = await trx
+        .selectFrom("productionEvent")
+        .select("id")
+        .where("id", "=", args.id)
+        .where("companyId", "=", args.companyId)
+        .where("endTime", "is", null)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!open) throw new MachineEventNotEnded();
+      const press = await recordManualMachinePress(trx, args);
+      if (!press.endedEventIds.includes(args.id)) {
+        throw new MachineEventNotEnded();
+      }
+      return press;
+    });
+  } catch (error) {
+    if (error instanceof MachineEventNotEnded) return null;
+    throw error;
+  }
+}
+
+/**
+ * Posts the events a press ended (machine cost to WIP), as an operator's own
+ * End posts theirs. Batch timers post at batch completion, so they are left.
+ * A failure is logged, never thrown: the operation-finish catch-up posts what
+ * is still unposted.
+ */
+export async function postEndedProductionEvents(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; userId: string; ids: string[] }
+) {
+  if (args.ids.length === 0) return;
+  const events = await client
+    .from("productionEvent")
+    .select("id")
+    .in("id", args.ids)
+    .eq("companyId", args.companyId)
+    .is("jobOperationBatchId", null);
+  if (events.error) {
+    log.error("Failed to read the events a press ended", {
+      companyId: args.companyId,
+      error: events.error
+    });
+    return;
+  }
+  const caller = { companyId: args.companyId, userId: args.userId };
+  for (const event of events.data ?? []) {
+    await postEventTime(caller, event.id);
+  }
+}
+
+/**
+ * Posts an ended event's time to the GL. An event the posting refused or
+ * skipped (`success: false`) stays unposted: it is logged, not thrown, and the
+ * operation-finish and job-completion catch-ups post it later.
+ */
+async function postEventTime(
+  caller: { companyId: string; userId: string },
+  productionEventId: string
+) {
+  const posted = await erpPosting("post-production-event", caller, {
+    productionEventId
+  });
+  if (posted.error) {
+    log.error("Failed to post a production event", {
+      companyId: caller.companyId,
+      productionEventId,
+      error: posted.error
+    });
+  } else if (posted.data.success === false) {
+    log.warn("A production event was not posted", {
+      companyId: caller.companyId,
+      productionEventId,
+      reason: posted.data.reason
+    });
+  }
 }
 
 export async function endProductionEventsForJobOperation(
@@ -1910,6 +2646,7 @@ export async function endProductionEvents(
     .eq("companyId", args.companyId);
 }
 
+/** Ends every open event on the work center; returns the ended ids to post. */
 export async function endProductionEventsByWorkCenter(
   client: SupabaseClient<Database>,
   args: { workCenterId: string; companyId: string; endTime: string }
@@ -1921,7 +2658,8 @@ export async function endProductionEventsByWorkCenter(
     })
     .is("endTime", null)
     .eq("workCenterId", args.workCenterId)
-    .eq("companyId", args.companyId);
+    .eq("companyId", args.companyId)
+    .select("id");
 }
 
 // Phase 3 (auto-start): when an operator starts a production event, flip a not-yet-started
@@ -1930,12 +2668,13 @@ export async function endProductionEventsByWorkCenter(
 // block the production event that already succeeded.
 async function autoStartJobAndOperation(
   client: SupabaseClient<Database>,
-  args: { jobOperationId: string; userId: string }
+  args: { jobOperationId: string; userId: string; companyId: string }
 ) {
   const op = await client
     .from("jobOperation")
     .select("jobId, status")
     .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
     .maybeSingle();
   if (op.error || !op.data) return;
 
@@ -1946,6 +2685,7 @@ async function autoStartJobAndOperation(
         .from("jobOperation")
         .update({ status: "In Progress", updatedBy: args.userId })
         .eq("id", args.jobOperationId)
+        .eq("companyId", args.companyId)
         .in("status", ["Todo", "Ready", "Waiting"])
     );
   }
@@ -1955,41 +2695,177 @@ async function autoStartJobAndOperation(
         .from("job")
         .update({ status: "In Progress", updatedBy: args.userId })
         .eq("id", op.data.jobId)
+        .eq("companyId", args.companyId)
         .in("status", ["Draft", "Planned", "Ready"])
     );
   }
   await Promise.all(updates);
 }
 
+/**
+ * Every record id a production event references must belong to the event's
+ * company. `startProductionEvent` is called with a service-role client (the
+ * QR start route) as well as the user client, and a foreign id here would
+ * attach another tenant's operation, work center, batch or serial to this
+ * company's timer and genealogy. One scoped query per id type.
+ */
+async function verifyProductionEventRefs(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    jobOperationId: string;
+    workCenterId?: string;
+    jobOperationBatchId?: string;
+    trackedEntityId?: string;
+  }
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { companyId } = args;
+  const [operation, workCenter, batch, entity] = await Promise.all([
+    client
+      .from("jobOperation")
+      .select("id")
+      .eq("id", args.jobOperationId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    args.workCenterId
+      ? client
+          .from("workCenter")
+          .select("id")
+          .eq("id", args.workCenterId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    args.jobOperationBatchId
+      ? client
+          .from("jobOperationBatch")
+          .select("id")
+          .eq("id", args.jobOperationBatchId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    args.trackedEntityId
+      ? client
+          .from("trackedEntity")
+          .select("id")
+          .eq("id", args.trackedEntityId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+
+  const missing = [
+    !operation.data && "Job operation",
+    workCenter && !workCenter.data && "Work center",
+    batch && !batch.data && "Operation batch",
+    entity && !entity.data && "Tracked entity"
+  ].filter(Boolean) as string[];
+
+  if (missing.length > 0) {
+    log.warn("startProductionEvent: referenced record not found in company", {
+      companyId,
+      missing,
+      jobOperationId: args.jobOperationId,
+      workCenterId: args.workCenterId,
+      jobOperationBatchId: args.jobOperationBatchId,
+      trackedEntityId: args.trackedEntityId,
+      error:
+        operation.error ?? workCenter?.error ?? batch?.error ?? entity?.error
+    });
+    return { ok: false, message: `${missing[0]} not found` };
+  }
+
+  return { ok: true };
+}
+
 export async function startProductionEvent(
   client: SupabaseClient<Database>,
   data: Omit<
     z.infer<typeof productionEventValidator>,
-    "id" | "action" | "hasActiveEvents" | "unitIndex"
+    "id" | "action" | "hasActiveEvents" | "unitIndex" | "exclusive"
   > & {
     startTime: string;
     employeeId: string;
     companyId: string;
     createdBy: string;
+    // Tags the event as part of an operation batch (sliced per-member at completion).
+    jobOperationBatchId?: string;
   },
   trackedEntityId: string | undefined,
   unitIndex?: number,
   /** `mes_qr` when the operator scanned a traveller rather than tapping a station. */
   source: WorkSource = "mes"
 ) {
+  const refs = await verifyProductionEventRefs(client, {
+    companyId: data.companyId,
+    jobOperationId: data.jobOperationId,
+    workCenterId: data.workCenterId,
+    jobOperationBatchId: data.jobOperationBatchId,
+    trackedEntityId
+  });
+  if (!refs.ok) return notFoundResponse(refs.message);
+
+  // A Setup or Labor timer the operator already has running on this operation
+  // is returned, not started again: a double-tap, or a second device, would
+  // otherwise count the labor twice. The partial unique index on open events
+  // refuses an insert that races past this read; that start returns the
+  // running timer too.
+  const isTimer = data.type === "Setup" || data.type === "Labor";
+  const runningTimer = async () => {
+    const running = await client
+      .from("productionEvent")
+      .select("*")
+      .eq("jobOperationId", data.jobOperationId)
+      .eq("type", data.type)
+      .eq("employeeId", data.employeeId)
+      .eq("companyId", data.companyId)
+      .is("endTime", null)
+      .limit(1);
+    if (running.error) return { data: null, error: running.error };
+    const row = running.data[0];
+    if (!row) return null;
+    if (!trackedEntityId) return { data: [row], error: null };
+    // A serial start must record that serial; a timer running for another
+    // unit is refused rather than reported as this unit's start.
+    return (await timerRecordsEntity(
+      client,
+      row.id,
+      trackedEntityId,
+      data.companyId
+    ))
+      ? { data: { id: row.id }, error: null }
+      : conflictResponse(
+          `A ${data.type.toLowerCase()} timer is already running on this operation for another unit. Stop it before starting this one.`
+        );
+  };
+  const raced = (error: PostgrestError | null) =>
+    isTimer && error?.code === UNIQUE_VIOLATION;
+
+  if (isTimer) {
+    const running = await runningTimer();
+    if (running) return running;
+  }
+
+  // The tracked entity is the separate argument; productionEvent has no column for it.
+  const { trackedEntityId: _trackedEntityId, ...event } = data;
+
   if (trackedEntityId) {
     const activityId = nanoid();
 
     const [eventInsert, operation] = await Promise.all([
-      client.from("productionEvent").insert(data).select("id").single(),
+      client.from("productionEvent").insert(event).select("id").single(),
       client
         .from("jobOperation")
         .select("*")
         .eq("id", data.jobOperationId)
+        .eq("companyId", data.companyId)
         .single()
     ]);
 
-    if (eventInsert.error) return eventInsert;
+    if (eventInsert.error) {
+      if (raced(eventInsert.error))
+        return (await runningTimer()) ?? eventInsert;
+      return eventInsert;
+    }
     if (operation.error) return operation;
 
     const trackedActivityInsert = await client
@@ -2041,7 +2917,8 @@ export async function startProductionEvent(
 
     await autoStartJobAndOperation(client, {
       jobOperationId: data.jobOperationId,
-      userId: data.createdBy
+      userId: data.createdBy,
+      companyId: data.companyId
     });
 
     trackWorkEvent("job_operation_started", {
@@ -2058,13 +2935,16 @@ export async function startProductionEvent(
 
   const eventInsert = await client
     .from("productionEvent")
-    .insert(data)
+    .insert(event)
     .select("*");
+
+  if (raced(eventInsert.error)) return (await runningTimer()) ?? eventInsert;
 
   if (!eventInsert.error) {
     await autoStartJobAndOperation(client, {
       jobOperationId: data.jobOperationId,
-      userId: data.createdBy
+      userId: data.createdBy,
+      companyId: data.companyId
     });
 
     const inserted = eventInsert.data?.[0];
@@ -2081,6 +2961,115 @@ export async function startProductionEvent(
   }
 
   return eventInsert;
+}
+
+/**
+ * A Machine start on a work center: the press, which ends the work center's
+ * open machine time, the new event and its tracked activity commit in one
+ * transaction, at the press time read under the press locks. If any of it
+ * fails, nothing was ended. Skips RLS: the caller checks that the user may
+ * create production events first.
+ */
+export async function startMachineProductionEvent(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  data: Parameters<typeof startProductionEvent>[1] & { workCenterId: string },
+  trackedEntityId: string | undefined,
+  unitIndex?: number,
+  source: WorkSource = "mes"
+): Promise<{
+  data: { id: string; endedEventIds: string[] } | null;
+  error: unknown;
+}> {
+  const refs = await verifyProductionEventRefs(client, {
+    companyId: data.companyId,
+    jobOperationId: data.jobOperationId,
+    workCenterId: data.workCenterId,
+    jobOperationBatchId: data.jobOperationBatchId,
+    trackedEntityId
+  });
+  if (!refs.ok) return notFoundResponse(refs.message);
+
+  // The tracked entity is the separate argument; productionEvent has no column for it.
+  const { trackedEntityId: _trackedEntityId, ...event } = data;
+
+  try {
+    const started = await db.transaction().execute(async (trx) => {
+      const press = await recordManualMachinePress(trx, {
+        workCenterId: data.workCenterId,
+        companyId: data.companyId,
+        userId: data.createdBy
+      });
+      const inserted = await trx
+        .insertInto("productionEvent")
+        .values({ ...event, startTime: press.pressedAt })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      if (trackedEntityId) {
+        const operation = await trx
+          .selectFrom("jobOperation")
+          .select(["description", "jobId"])
+          .where("id", "=", data.jobOperationId)
+          .where("companyId", "=", data.companyId)
+          .executeTakeFirstOrThrow();
+        const activityId = nanoid();
+        await trx
+          .insertInto("trackedActivity")
+          .values({
+            id: activityId,
+            type: `${operation.description} (${data.type})`,
+            sourceDocument: "Production Event",
+            sourceDocumentId: inserted.id,
+            attributes: toJson({
+              Job: operation.jobId,
+              "Job Operation": data.jobOperationId,
+              "Production Event": inserted.id,
+              "Work Center": data.workCenterId,
+              Employee: data.employeeId,
+              ...(typeof unitIndex === "number" ? { Unit: unitIndex } : {})
+            }),
+            companyId: data.companyId,
+            createdBy: data.createdBy
+          })
+          .execute();
+        await trx
+          .insertInto("trackedActivityOutput")
+          .values({
+            trackedActivityId: activityId,
+            trackedEntityId,
+            quantity: 1,
+            companyId: data.companyId,
+            createdBy: data.createdBy
+          })
+          .execute();
+      }
+
+      return { id: inserted.id, endedEventIds: press.endedEventIds };
+    });
+
+    await autoStartJobAndOperation(client, {
+      jobOperationId: data.jobOperationId,
+      userId: data.createdBy,
+      companyId: data.companyId
+    });
+    trackWorkEvent("job_operation_started", {
+      companyId: data.companyId,
+      userId: data.createdBy,
+      productionEventId: started.id,
+      jobOperationId: data.jobOperationId,
+      eventType: data.type,
+      source
+    });
+    return { data: started, error: null };
+  } catch (error) {
+    log.error("Failed to start the Machine event", {
+      companyId: data.companyId,
+      workCenterId: data.workCenterId,
+      error
+    });
+    return { data: null, error };
+  }
 }
 
 type JobMethod = {

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { CalendarDate } from "@internationalized/date";
 import { useDateRangePicker } from "@react-aria/datepicker";
 import { useDateRangePickerState } from "@react-stately/datepicker";
 import type { DateRangePickerProps, DateValue } from "@react-types/datepicker";
@@ -39,9 +44,12 @@ const fieldVariants = cva("flex w-full", {
 
 const DateRangePicker = ({
   size = "md",
+  isDateMarked,
   ...props
 }: DateRangePickerProps<DateValue> & {
   size?: "sm" | "md" | "lg";
+  /** Days to flag with a dot in the calendar, e.g. days that have work due. */
+  isDateMarked?: (date: CalendarDate) => boolean;
 }) => {
   const state = useDateRangePickerState({
     ...props,
@@ -92,7 +100,7 @@ const DateRangePicker = ({
           </PopoverTrigger>
         </HStack>
         <PopoverContent align="end" {...dialogProps}>
-          <RangeCalendar {...calendarProps} />
+          <RangeCalendar {...calendarProps} isDateMarked={isDateMarked} />
         </PopoverContent>
       </div>
     </Popover>

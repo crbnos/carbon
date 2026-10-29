@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { downloadBlob } from "@carbon/files";
 import { path } from "~/utils/path";
 
 export type ModelDownloadResult = "ok" | "unavailable" | "error";
@@ -23,15 +28,7 @@ export async function downloadModelFile(model: {
     if (!response.ok) {
       return response.status === 404 ? "unavailable" : "error";
     }
-    const blob = await response.blob();
-    const blobUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    document.body.appendChild(a);
-    a.href = blobUrl;
-    a.download = model.modelName;
-    a.click();
-    window.URL.revokeObjectURL(blobUrl);
-    document.body.removeChild(a);
+    downloadBlob(await response.blob(), model.modelName);
     return "ok";
   } catch {
     return "error";

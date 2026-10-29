@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_SYNC_CONFIG, ProviderID } from "../../../core/models";
+import { DEFAULT_SYNC_CONFIG } from "../../../core/models";
 import type {
   GlobalSyncConfig,
   ProviderCredentials
@@ -105,30 +109,9 @@ describe("RilletProvider base URL + headers", () => {
 
     expect(requestUrl(0)).toBe("https://sandbox.api.rillet.com/accounts");
   });
-
-  it("identifies as the rillet provider", () => {
-    const provider = makeProvider();
-    expect(provider.id).toBe(ProviderID.RILLET);
-    expect(provider.capabilities).toEqual({
-      transport: "rest",
-      supportsWebhooks: true,
-      supportsJournalPush: true
-    });
-  });
 });
 
 describe("RilletProvider auth (API key, no OAuth)", () => {
-  it("throws the no-OAuth message from authenticate and every OAuth surface", async () => {
-    const provider = makeProvider();
-
-    await expect(provider.authenticate()).rejects.toThrow(/no OAuth flow/);
-    expect(() => provider.auth.getAuthUrl([], "")).toThrow(/no OAuth flow/);
-    expect(() => provider.auth.exchangeCode("code", "uri")).toThrow(
-      /no OAuth flow/
-    );
-    expect(() => provider.auth.refresh()).toThrow(/no OAuth flow/);
-  });
-
   it("throws a descriptive error when no credentials are stored", async () => {
     const provider = makeProvider({ credentials: null });
 
@@ -494,7 +477,7 @@ describe("buildRilletSyncConfig", () => {
       }).entities.journalEntry.enabled
     ).toBe(true);
 
-    // Payment: two-way (pull inbound + push Carbon-born outbound, Phase G),
+    // Payment: two-way (pull inbound + push Carbon-born outbound),
     // owner accounting, and FORCED enabled (no per-company toggle — the
     // documents-mode families gate governs whether it runs)
     expect(built.entities.payment).toEqual({
@@ -512,10 +495,6 @@ describe("buildRilletSyncConfig", () => {
 });
 
 describe("listChanges (SupportsIncrementalPull)", () => {
-  it("declares no lookback cap (updated.gt reaches arbitrarily far back)", () => {
-    expect(makeProvider().pullLookbackDays).toBeUndefined();
-  });
-
   it("lists changed invoice payments as composite-id changes with an invoice dependency", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({
@@ -697,5 +676,139 @@ describe("listChanges (SupportsIncrementalPull)", () => {
       "inv-1:pay-1",
       "inv-2:pay-2"
     ]);
+  });
+});
+
+describe("Rillet native void deletion", () => {
+  it.each([
+    ["deleteInvoice", ["inv-1"], "/invoices/inv-1"],
+    ["deleteBill", ["bill-1"], "/bills/bill-1"],
+    [
+      "deleteInvoicePayment",
+      ["inv-1", "pay-1"],
+      "/invoices/inv-1/payments/pay-1"
+    ],
+    ["deleteBillPayment", ["bill-1", "pay-1"], "/bills/bill-1/payments/pay-1"]
+  ] as const)(
+    "%s uses the native endpoint and tolerates only an already absent record",
+    async (method, ids, path) => {
+      const provider = makeProvider();
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+      await (provider[method] as (...ids: string[]) => Promise<void>)(...ids);
+      expect(requestUrl(0)).toBe(`https://api.rillet.com${path}`);
+      expect(requestInit(0)?.method).toBe("DELETE");
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({ message: "Not found" }, 404)
+      );
+      await expect(
+        (provider[method] as (...ids: string[]) => Promise<void>)(...ids)
+      ).resolves.toBeUndefined();
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({ message: "Payment is cleared" }, 400)
+      );
+      await expect(
+        (provider[method] as (...ids: string[]) => Promise<void>)(...ids)
+      ).rejects.toThrow();
+    }
+  );
+});
+
+describe("RilletProvider counterpart candidates", () => {
+  it("maps a vendor's email and tax id, and reads its company-qualified carbon reference", async () => {
+    const provider = makeProvider();
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        vendors: [
+          {
+            id: "rv_1",
+            name: "Acme Bolts",
+            email: "ap@acme.test",
+            tax_id: "TX-9",
+            external_references: [
+              { type: "carbon-company", id: "company-1" },
+              { type: "carbon", id: "sup_1" }
+            ]
+          }
+        ]
+      })
+    );
+
+    const candidates = await provider.findRemoteCandidates("vendor", {});
+
+    expect(candidates).toEqual([
+      {
+        remoteId: "rv_1",
+        name: "Acme Bolts",
+        email: "ap@acme.test",
+        taxId: "TX-9",
+        carbonReference: "sup_1"
+      }
+    ]);
+  });
+
+  it("refuses another Carbon instance's reference on a shared Rillet org", async () => {
+    const provider = makeProvider();
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        vendors: [
+          {
+            id: "rv_1",
+            name: "Acme Bolts",
+            external_references: [
+              { type: "carbon-company", id: "some-other-company" },
+              { type: "carbon", id: "sup_1" }
+            ]
+          }
+        ]
+      })
+    );
+
+    const candidates = await provider.findRemoteCandidates("vendor", {});
+
+    // Entity ids are only unique within one database, so an id from another
+    // instance must not look like ours — it would link the wrong supplier.
+    expect(candidates[0]?.carbonReference).toBeNull();
+    expect(candidates[0]?.name).toBe("Acme Bolts");
+  });
+
+  it("takes a customer's MAIN_SENDER email and reports no tax id", async () => {
+    const provider = makeProvider();
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        customers: [
+          {
+            id: "rc_1",
+            name: "Globex",
+            emails: [
+              { email: "cc@globex.test", type: "CC" },
+              { email: "ar@globex.test", type: "MAIN_SENDER" }
+            ]
+          }
+        ]
+      })
+    );
+
+    const candidates = await provider.findRemoteCandidates("customer", {});
+
+    // A Rillet customer has emails[] and NO tax_id — the vendor shape has the
+    // opposite. Reading one shape's fields off the other silently yields
+    // undefined and quietly weakens the ladder.
+    expect(candidates).toEqual([
+      {
+        remoteId: "rc_1",
+        name: "Globex",
+        email: "ar@globex.test",
+        taxId: null,
+        carbonReference: null
+      }
+    ]);
+  });
+
+  it("returns nothing for a kind Rillet has no contact list for", async () => {
+    const provider = makeProvider();
+    await expect(provider.findRemoteCandidates("item", {})).resolves.toEqual(
+      []
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

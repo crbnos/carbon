@@ -1,30 +1,28 @@
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import {
-  data,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useNavigate
-} from "react-router";
+import { fetchAllFromTable } from "@carbon/database";
+import { validator } from "@carbon/form";
+import { RecordOutlet, useCloseRoute } from "@carbon/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
+import { storageUnitValidator } from "~/modules/inventory/inventory.models";
 import {
   getEffectiveWorkCenterId,
-  getStorageUnit,
-  StorageUnitForm,
-  storageUnitValidator,
-  upsertStorageUnit
-} from "~/modules/inventory";
-import { getWorkCentersList } from "~/modules/resources";
+  getStorageUnit
+} from "~/modules/inventory/inventory.service";
+import {
+  type NonNettableUnit,
+  nonNettableSource
+} from "~/modules/inventory/inventory.utils";
+import { StorageUnitForm } from "~/modules/inventory/ui";
+import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, storageUnitsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -52,8 +50,39 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     inheritedWorkCenterName = wc?.name ?? null;
   }
 
+  // Nettable by its own flag, yet a parent or one of its storage types makes
+  // it non-nettable: say which.
+  const unit = storageUnit?.data;
+  let inheritedNonNettable: ReturnType<typeof nonNettableSource> = null;
+  if (unit?.nettable === true && unit.effectiveNettable === false) {
+    // Every ancestor is in the unit's location, inactive ones included.
+    const [units, types] = await Promise.all([
+      fetchAllFromTable<NonNettableUnit>(
+        client,
+        "storageUnit",
+        "id, name, parentId, nettable, storageTypeIds",
+        (query) =>
+          query
+            .eq("locationId", unit.locationId)
+            .eq("companyId", companyId)
+            .order("id")
+      ),
+      client
+        .from("storageType")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .eq("nettable", false)
+    ]);
+    inheritedNonNettable = nonNettableSource(
+      unit,
+      new Map((units.data ?? []).map((u) => [u.id, u])),
+      new Map((types.data ?? []).map((t) => [t.id, t.name]))
+    );
+  }
+
   return {
     storageUnit: storageUnit?.data ?? null,
+    inheritedNonNettable,
     inheritedWorkCenter: isInherited
       ? {
           workCenterId: effectiveWorkCenterId,
@@ -63,70 +92,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(storageUnitValidator).request(args, {
+    params: ["storageUnitId"]
   });
-
-  const formData = await request.formData();
-  const validation = await validator(storageUnitValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, ...d } = validation.data;
-  if (!id) throw new Error("id not found");
-
-  const updateStorageUnit = await upsertStorageUnit(client, {
-    id,
-    ...d,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+  if ("invalid" in input) return input.invalid;
+  const { id: _, ...storageUnit } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.inventory.updateStorageUnit({
+    ...storageUnit,
+    id: input.params.storageUnitId,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  if (updateStorageUnit.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(updateStorageUnit.error, "Failed to update storageUnit")
-      )
-    );
-  }
-
-  throw redirect(
-    `${path.to.storageUnits}?${getParams(request)}`,
-    await flash(request, success("Updated storageUnit"))
+  // An error is toasted and the drawer stays open.
+  if (result.error) return result;
+  return respond(args.request, result).redirect(
+    `${path.to.storageUnits}?${getParams(args.request)}`,
+    { message: "Updated storage unit" }
   );
 }
 
-export async function clientAction({
-  request,
-  serverAction
-}: ClientActionFunctionArgs) {
-  const companyId = getCompanyId();
-
-  const formData = await request.clone().formData();
-  const validation = await validator(storageUnitValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  if (companyId && validation.data.locationId) {
-    window.clientCache?.setQueryData(
-      storageUnitsQuery(companyId, validation.data.locationId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
-}
-
 export default function EditStorageUnitRoute() {
-  const { storageUnit, inheritedWorkCenter } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const { storageUnit, inheritedWorkCenter, inheritedNonNettable } =
+    useLoaderData<typeof loader>();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: storageUnit?.id ?? undefined,
@@ -136,6 +125,7 @@ export default function EditStorageUnitRoute() {
     parentId: storageUnit?.parentId ?? undefined,
     workCenterId: storageUnit?.workCenterId ?? undefined,
     storageTypeIds: storageUnit?.storageTypeIds ?? [],
+    nonNettable: storageUnit?.nettable === false,
     ...getCustomFields(storageUnit?.customFields)
   };
 
@@ -146,9 +136,10 @@ export default function EditStorageUnitRoute() {
         initialValues={initialValues}
         locationId={initialValues.locationId}
         inheritedWorkCenter={inheritedWorkCenter}
-        onClose={() => navigate(-1)}
+        inheritedNonNettable={inheritedNonNettable}
+        onClose={() => closeRoute()}
       />
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

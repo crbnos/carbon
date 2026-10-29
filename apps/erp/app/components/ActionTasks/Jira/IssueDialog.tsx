@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ActionTaskEntityType } from "@carbon/ee/action-task-entity";
 import { JiraIssueMappingSchema } from "@carbon/ee/jira";
+import { useRevalidator } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -22,7 +27,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
 import { PiLinkBreak } from "react-icons/pi";
-import { Link, useRevalidator } from "react-router";
+import { Link } from "react-router";
 import { JiraIcon, JiraIssueStatusBadge } from "~/components/Icons";
 import { useAsyncFetcher } from "~/hooks/useAsyncFetcher";
 import { path } from "~/utils/path";

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useRevalidator } from "@carbon/query";
 import {
   Button,
   Card,
@@ -9,7 +14,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import { Suspense } from "react";
 import { LuRefreshCw, LuTriangleAlert } from "react-icons/lu";
-import { Await, useRevalidator } from "react-router";
+import { Await } from "react-router";
 
 function DocumentsSkeleton() {
   return (

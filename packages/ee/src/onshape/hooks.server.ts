@@ -1,6 +1,19 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import { getOnshapeClient } from "./lib/client";
+import {
+  getOnshapeIntegration,
+  type OnshapeIntegrationId
+} from "./lib/connection";
+import type { OnshapeOAuthIntegrationId } from "./lib/integration-id";
+import { patchOnshapeCompanyId } from "./lib/state";
+
+const logger = getLogger("ee", "onshape");
 
 // The release webhook's callback path for a company. We match/deregister by this
 // PATH (not the full URL) so a host change — localhost, a tunnel, or the prod
@@ -9,16 +22,12 @@ function callbackPath(companyId: string): string {
   return `/api/webhook/onshape/${companyId}`;
 }
 
-// Build an Onshape client for background webhook management. Reads the installer
-// (updatedBy) for token refresh/audit; falls back to "system".
+// Build an Onshape client for background webhook management — against whichever
+// Onshape connection the company has (public app or Government private app).
+// Reads the installer (updatedBy) for token refresh/audit; falls back to "system".
 async function onshapeClientForCompany(companyId: string) {
   const client = getCarbonServiceRole();
-  const integration = await client
-    .from("companyIntegration")
-    .select("updatedBy")
-    .eq("id", "onshape")
-    .eq("companyId", companyId)
-    .maybeSingle();
+  const integration = await getOnshapeIntegration(client, companyId);
   const userId = integration.data?.updatedBy ?? "system";
   return getOnshapeClient(client, companyId, userId);
 }
@@ -33,12 +42,9 @@ async function resolveAndStoreOnshapeCompanyId(
   client: Awaited<ReturnType<typeof getOnshapeClient>>["client"]
 ): Promise<string | null> {
   const carbon = getCarbonServiceRole();
-  const integration = await carbon
-    .from("companyIntegration")
-    .select("metadata")
-    .eq("id", "onshape")
-    .eq("companyId", companyId)
-    .maybeSingle();
+  const integration = await getOnshapeIntegration(carbon, companyId);
+  if (!integration.data) return null;
+  const integrationId = integration.data.id;
   const metadata = (integration.data?.metadata ?? {}) as Record<
     string,
     unknown
@@ -50,17 +56,19 @@ async function resolveAndStoreOnshapeCompanyId(
   const resolved = companies[0]?.id;
   if (!resolved) return null;
 
-  const update = await carbon
-    .from("companyIntegration")
-    .update({ metadata: { ...metadata, onshapeCompanyId: resolved } })
-    .eq("id", "onshape")
-    .eq("companyId", companyId);
-  if (update.error) {
+  try {
+    await patchOnshapeCompanyId(
+      carbon,
+      companyId,
+      integrationId as OnshapeIntegrationId,
+      resolved
+    );
+  } catch (error) {
     // Non-fatal: we can still register with the resolved id; the jobs just fall
     // back to their own getCompanies() resolve if the store didn't stick.
     console.error(
       "onshape: failed to persist resolved Onshape company id",
-      update.error
+      error
     );
   }
   return resolved;
@@ -112,8 +120,13 @@ export async function registerOnshapeWebhook(
   const path = callbackPath(companyId);
   try {
     const existing = await onshape.client.getWebhooks();
+    // The element sync's transient translation webhooks share the path.
     const alreadyRegistered = (existing.items ?? []).some(
-      (webhook) => typeof webhook.url === "string" && webhook.url.includes(path)
+      (webhook) =>
+        typeof webhook.url === "string" &&
+        webhook.url.includes(path) &&
+        Array.isArray(webhook.events) &&
+        webhook.events.includes("onshape.revision.created")
     );
     if (alreadyRegistered) return { ok: true };
 
@@ -191,4 +204,39 @@ export async function ensureOnshapeReleaseWebhook(
 // Disconnect: remove the subscription so it doesn't keep firing at a dead callback.
 export async function onshapeOnUninstall(companyId: string): Promise<void> {
   await deregisterOnshapeWebhooks(companyId);
+}
+
+/**
+ * Building the client refreshes an expired token and one read proves it is
+ * accepted, so a revoked grant reads unhealthy. `getIntegrationHealth` caches a
+ * healthy answer for five hours, which bounds the quota this spends.
+ */
+export function onshapeHealthcheck(integrationId: OnshapeOAuthIntegrationId) {
+  return async (companyId: string): Promise<boolean> => {
+    try {
+      const onshape = await getOnshapeClient(
+        getCarbonServiceRole(),
+        companyId,
+        "system",
+        integrationId
+      );
+      if (!onshape.client) {
+        logger.warn("Onshape healthcheck: no client", {
+          companyId,
+          integrationId,
+          error: onshape.error
+        });
+        return false;
+      }
+      await onshape.client.getCompanies();
+      return true;
+    } catch (error) {
+      logger.warn("Onshape healthcheck: request failed", {
+        companyId,
+        integrationId,
+        error
+      });
+      return false;
+    }
+  };
 }

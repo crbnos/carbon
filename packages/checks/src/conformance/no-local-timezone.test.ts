@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import { noLocalTimezone } from "./no-local-timezone";
 
@@ -70,11 +74,5 @@ describe("noLocalTimezone", () => {
     const ts =
       "const d = datetime.today(await getCompanyTimeZone(client, companyId)).toString();";
     expect(noLocalTimezone.scan("f.ts", ts)).toHaveLength(0);
-  });
-
-  it("records provenance pointing at the company-timezone migration", () => {
-    expect(noLocalTimezone.provenance.since).toBe(
-      "20260805020925_company-timezone.sql"
-    );
   });
 });

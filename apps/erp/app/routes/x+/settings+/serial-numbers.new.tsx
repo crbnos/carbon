@@ -1,15 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData } from "react-router";
+import { data, useLoaderData } from "react-router";
+import { itemSerialSequenceValidator } from "~/modules/settings/settings.models";
 import {
   getItemSerialSequences,
-  ItemSerialSequenceForm,
-  itemSerialSequenceValidator,
   upsertItemSerialSequence
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service";
+import { ItemSerialSequenceForm } from "~/modules/settings/ui";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -21,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Items that already have a sequence can't get a second one.
   const existing = await getItemSerialSequences(client, companyId, {
     search: null,
-    limit: 1000,
+    limit: SINGLE_LOAD_LIMIT,
     offset: 0,
     sorts: [],
     filters: []

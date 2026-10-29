@@ -1,17 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { ChangeNotice, ChangeNoticeActionTask } from "~/modules/items";
-import {
-  canEditChangeNoticeEngineering,
-  canEditChangeNoticeWorkflow
-} from "~/modules/items";
+import { canEditChangeNoticeWorkflow } from "~/modules/items/items.models";
+import type {
+  ChangeNotice,
+  ChangeNoticeActionTask
+} from "~/modules/items/types";
 import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import {
   ChangeNoticeActions,
   ChangeNoticeChanges,
-  ChangeNoticeContent
+  ChangeNoticeContent,
+  useChangeNoticeEngineeringLock
 } from "~/modules/items/ui/ChangeNotice";
 import ChangeNoticeStatusFlow from "~/modules/items/ui/ChangeNotice/ChangeNoticeStatusFlow";
 import { path } from "~/utils/path";
@@ -32,11 +37,11 @@ export default function ChangeNoticeDetailsRoute() {
     actions: ChangeNoticeActionTask[];
     affectedItems: AffectedItemDraft[];
   }>(path.to.changeNotice(id));
+  const { isDisabled } = useChangeNoticeEngineeringLock(id);
   const changeNotice = routeData?.changeNotice;
 
   if (!changeNotice) throw new Error("Could not find change notice data");
 
-  const isDisabled = !canEditChangeNoticeEngineering(changeNotice.status);
   // Action tasks are workflow content — executing them is what Implementation is for.
   const isWorkflowDisabled = !canEditChangeNoticeWorkflow(changeNotice.status);
 

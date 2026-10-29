@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Card,
@@ -50,7 +54,7 @@ import { Bar, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { DateTime, SupplierAvatar } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { useCurrencyFormatter } from "~/hooks";
-import type { ItemCostHistory } from "~/modules/items";
+import type { ItemCostHistory } from "~/modules/items/types";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 

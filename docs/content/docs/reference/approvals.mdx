@@ -3,14 +3,9 @@ title: Approvals
 description: Route purchase orders, quality documents, and suppliers for sign-off before they take effect, with amount-tiered approval rules.
 ---
 
-An **approval** holds a document in a pending state until someone authorized signs off. Carbon decides
-whether a document needs approval, and who may grant it, from per-company **approval rules**. A rule
-exists per document type; for <Term id="purchase-order">purchase orders</Term> it can also carry an amount tier, so a small order goes
-through untouched while a large one waits for the right person.
+An **approval** keeps a document pending until an authorized user approves or rejects it. Per-company **approval rules** determine whether approval is required and who can decide. <Term id="purchase-order">Purchase-order</Term> rules can use amount tiers.
 
-Say you set a purchase-order rule at **$25,000** with the purchasing managers as approvers: a $4,000 order
-finalizes straight to **"To Receive"**, but a $40,000 order lands in **"Needs Approval"** and can't move
-until a manager approves it.
+For example, with a **$25,000** purchase-order rule, a $4,000 order can finalize directly to **To Receive**, while a $40,000 order enters **Needs Approval**.
 
 ## What can be approved
 
@@ -38,8 +33,7 @@ Rules live under **Settings → Approval Rules**, grouped by document type. Each
   <Field name="Enabled">Whether the rule is live.</Field>
 </FieldTable>
 
-For purchase orders, several rules form **amount tiers**. Each band runs from its minimum up to the next
-rule's minimum, and the top tier is "over $X". An order matches the single highest tier its total clears.
+For purchase orders, rules form **amount tiers**. Each tier runs from its minimum to the next tier's minimum. An order matches the highest threshold its total meets.
 
 <Callout type="note">
 There's **no global "require approval" switch.** A document type needs approval only while an **enabled**
@@ -48,10 +42,7 @@ rule exists for it. Disable or delete the rule and those documents finalize dire
 
 ## Who can approve
 
-A user may decide a request if they're the tier's **default approver**, are listed directly under **who can
-approve**, or belong to one of the groups listed there. Authority is otherwise governed by ordinary module
-permissions: purchase-order and supplier decisions need purchasing access, quality decisions need quality
-access; editing rules needs settings access.
+A user can decide a request when they are the tier's **default approver**, are listed under **Who can approve**, or belong to an authorized group. They also need the relevant module permission: purchasing for purchase orders and suppliers, quality for quality documents, or settings for editing rules.
 
 <Callout type="warn">
 Approval authority flows **upward only.** Someone assigned to the $25k tier can approve a $4k order, but a
@@ -72,9 +63,7 @@ Carbon notifies the resolved approvers when a request is raised, and the request
 they can see spend that cleared above their level.
 
 <Callout type="warn">
-Approval is **single-step, not a chain.** One matching rule is selected and **one** approver's decision
-finalizes the document. There are no sequential stages, parallel sign-offs, quorums, or delegation. The
-amount tiers choose *which rule applies*, not a series of steps a request walks through.
+Approval is **single-step**. Carbon selects one rule, and one authorized decision finalizes the document. It does not support sequential stages, parallel sign-offs, quorums, or delegation. Amount tiers select a rule; they are not approval stages.
 </Callout>
 
 ## Related

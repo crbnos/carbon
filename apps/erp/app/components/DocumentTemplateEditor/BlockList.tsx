@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { DocumentBlockType } from "@carbon/documents/template";
 import {
   BLOCK_META,
@@ -59,9 +63,14 @@ import { path } from "~/utils/path";
 import {
   type AddableBlockType,
   FOOTER_BLOCK_ID,
-  useDocumentTemplate
+  useDocumentTemplate,
+  usePickBlock
 } from "./context";
 import { HEADER_LOGO_ID, useHeaderConfig } from "./useHeaderConfig";
+
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
 
 const ADD_OPTIONS: {
   type: AddableBlockType;
@@ -129,7 +138,7 @@ export function BlockList() {
     ? bodyBlocks.filter((b) => b.id !== summaryBlock.id)
     : bodyBlocks;
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
     useSensor(KeyboardSensor)
   );
 
@@ -309,8 +318,9 @@ function AddMenuItem({
 }
 
 function BlockRow({ id }: { id: string }) {
-  const { blocks, sections, selectedId, select, toggleVisible, removeBlock } =
+  const { blocks, sections, selectedId, toggleVisible, removeBlock } =
     useDocumentTemplate();
+  const pickBlock = usePickBlock();
   const block = blocks.find((b) => b.id === id);
   const {
     attributes,
@@ -343,7 +353,7 @@ function BlockRow({ id }: { id: string }) {
         transform: CSS.Translate.toString(transform),
         transition: transition ?? undefined
       }}
-      onClick={() => select(isSelected ? null : id)}
+      onClick={() => pickBlock(id)}
       className={cn(
         "group flex cursor-pointer items-center gap-1.5 rounded-md border px-1.5 py-2",
         "transition-colors duration-150",
@@ -364,7 +374,7 @@ function BlockRow({ id }: { id: string }) {
       >
         {/* Type icon normally; grip on hover to signal draggability. */}
         <span className="group-hover:opacity-0">{blockIcon(block.type)}</span>
-        <span className="absolute inset-0 opacity-0 group-hover:opacity-100">
+        <span className="absolute inset-0 md:opacity-0 group-hover:opacity-100">
           <LuGripVertical className="size-4" />
         </span>
       </button>
@@ -392,7 +402,7 @@ function BlockRow({ id }: { id: string }) {
             e.stopPropagation();
             removeBlock(id);
           }}
-          className="rounded p-1 text-muted-foreground opacity-0 transition-[opacity,color] hover:text-destructive group-hover:opacity-100"
+          className="rounded p-1 text-muted-foreground md:opacity-0 transition-[opacity,color] hover:text-destructive group-hover:opacity-100"
         >
           <LuTrash2 className="size-4" />
         </button>
@@ -438,8 +448,9 @@ function BlockRow({ id }: { id: string }) {
  * behavior as `BlockRow`, just without the drag handle.
  */
 function NestedBlockRow({ id }: { id: string }) {
-  const { blocks, sections, selectedId, select, toggleVisible, removeBlock } =
+  const { blocks, sections, selectedId, toggleVisible, removeBlock } =
     useDocumentTemplate();
+  const pickBlock = usePickBlock();
   const block = blocks.find((b) => b.id === id);
   if (!block) return null;
   const meta = BLOCK_META[block.type];
@@ -458,7 +469,7 @@ function NestedBlockRow({ id }: { id: string }) {
   return (
     <div className="ml-3 border-l border-border/60 pl-2">
       <div
-        onClick={() => select(isSelected ? null : id)}
+        onClick={() => pickBlock(id)}
         className={cn(
           "group flex cursor-pointer items-center gap-1.5 rounded-md border px-1.5 py-2",
           "transition-colors duration-150",
@@ -480,7 +491,7 @@ function NestedBlockRow({ id }: { id: string }) {
               e.stopPropagation();
               removeBlock(id);
             }}
-            className="rounded p-1 text-muted-foreground opacity-0 transition-[opacity,color] hover:text-destructive group-hover:opacity-100"
+            className="rounded p-1 text-muted-foreground md:opacity-0 transition-[opacity,color] hover:text-destructive group-hover:opacity-100"
           >
             <LuTrash2 className="size-4" />
           </button>
@@ -525,8 +536,9 @@ function NestedBlockRow({ id }: { id: string }) {
  * it opens the header config (a link to its global shared section).
  */
 function HeaderRow({ id }: { id: string }) {
-  const { selectedId, select, headerSectionId, setHeaderSection } =
+  const { selectedId, headerSectionId, setHeaderSection } =
     useDocumentTemplate();
+  const pickBlock = usePickBlock();
   const isSelected = selectedId === id;
   const shown = headerSectionId !== null;
 
@@ -536,7 +548,7 @@ function HeaderRow({ id }: { id: string }) {
       label="Header"
       isSelected={isSelected}
       shown={shown}
-      onSelect={() => select(isSelected ? null : id)}
+      onSelect={() => pickBlock(id)}
       onToggle={() =>
         setHeaderSection(shown ? null : BUILT_IN_SECTION_IDS.header)
       }
@@ -550,7 +562,8 @@ function HeaderRow({ id }: { id: string }) {
  * Only rendered while the header is shown. Eye toggles `showLogo`.
  */
 function HeaderLogoRow() {
-  const { selectedId, select, headerSectionId } = useDocumentTemplate();
+  const { selectedId, headerSectionId } = useDocumentTemplate();
+  const pickBlock = usePickBlock();
   const { section, config, patch } = useHeaderConfig();
   // Hide the node when the header is off or its section isn't available.
   if (!section || headerSectionId === null) return null;
@@ -560,7 +573,7 @@ function HeaderLogoRow() {
   return (
     <div className="ml-3 border-l border-border/60 pl-2">
       <div
-        onClick={() => select(isSelected ? null : HEADER_LOGO_ID)}
+        onClick={() => pickBlock(HEADER_LOGO_ID)}
         className={cn(
           "group flex cursor-pointer items-center gap-1.5 rounded-md border px-1.5 py-2",
           "transition-colors duration-150",
@@ -606,8 +619,9 @@ function HeaderLogoRow() {
  * footer config (page numbers, registration line).
  */
 function FooterRow() {
-  const { footerSectionId, setFooterSection, selectedId, select } =
+  const { footerSectionId, setFooterSection, selectedId } =
     useDocumentTemplate();
+  const pickBlock = usePickBlock();
   const isSelected = selectedId === FOOTER_BLOCK_ID;
   const shown = footerSectionId !== null;
 
@@ -617,7 +631,7 @@ function FooterRow() {
       label="Footer"
       isSelected={isSelected}
       shown={shown}
-      onSelect={() => select(isSelected ? null : FOOTER_BLOCK_ID)}
+      onSelect={() => pickBlock(FOOTER_BLOCK_ID)}
       onToggle={() =>
         setFooterSection(shown ? null : BUILT_IN_SECTION_IDS.footer)
       }

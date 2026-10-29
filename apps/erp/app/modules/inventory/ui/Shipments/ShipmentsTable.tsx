@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Checkbox,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -30,7 +35,9 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
+import { NewAction } from "~/components/New";
+import type { InfiniteOptions } from "~/components/Table";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -43,27 +50,39 @@ import ShipmentStatus from "./ShipmentStatus";
 
 function NewShipment() {
   const fetcher = useFetcher();
+  const { t } = useLingui();
   return (
-    <fetcher.Form method="post" action={path.to.newShipment}>
-      <Button
-        type="submit"
-        leftIcon={<LuCirclePlus />}
-        variant="primary"
-        isLoading={fetcher.state !== "idle"}
-      >
-        <Trans>Add Shipment</Trans>
-      </Button>
-    </fetcher.Form>
+    <NewAction
+      label={t`Add Shipment`}
+      isDisabled={fetcher.state !== "idle"}
+      onClick={() =>
+        fetcher.submit(null, { method: "post", action: path.to.newShipment })
+      }
+    >
+      <fetcher.Form method="post" action={path.to.newShipment}>
+        <Button
+          type="submit"
+          leftIcon={<LuCirclePlus />}
+          variant="primary"
+          isLoading={fetcher.state !== "idle"}
+        >
+          <Trans>Add Shipment</Trans>
+        </Button>
+      </fetcher.Form>
+    </NewAction>
   );
 }
 
 type ShipmentsTableProps = {
   data: Shipment[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
-  useRealtime("shipment", `id=in.(${data.map((d) => d.id).join(",")})`);
+const ShipmentsTable = memo((props: ShipmentsTableProps) => {
+  const { data, count, infinite } = props;
+  // The route's `handle.realtime` follows every shipment of the company, so
+  // the rows of a later page refresh too.
 
   const [params] = useUrlParams();
   const { t } = useLingui();
@@ -86,6 +105,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -94,6 +114,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
         header: t`Source Document`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: shipmentSourceDocumentType.map((type) => ({
@@ -148,6 +169,16 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
                   {row.original.sourceDocumentReadableId}
                 </Hyperlink>
               );
+            case "Rental Agreement":
+              return (
+                <Hyperlink
+                  to={path.to.rentalAgreementDetails(
+                    row.original.sourceDocumentId!
+                  )}
+                >
+                  {row.original.sourceDocumentReadableId}
+                </Hyperlink>
+              );
             default:
               return null;
           }
@@ -170,6 +201,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: shipmentStatusType.map((type) => ({
@@ -220,6 +252,9 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -247,6 +282,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
           return <CustomerAvatar customerId={row.original.customerId} />;
         },
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -334,6 +370,11 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={
+              row.postingDate
+                ? MENU_ITEM_SHORTCUTS.view
+                : MENU_ITEM_SHORTCUTS.edit
+            }
             disabled={!permissions.can("update", "inventory")}
             onClick={() => {
               navigate(
@@ -345,6 +386,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
             {row.postingDate ? t`View Shipment` : t`Edit Shipment`}
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
               !permissions.can("delete", "inventory") ||
               !!row.postingDate ||
@@ -369,6 +411,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
     <>
       <Table<(typeof data)[number]>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         defaultColumnPinning={{

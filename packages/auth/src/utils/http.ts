@@ -1,10 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getLogger } from "@carbon/logger";
+import { safePath } from "@carbon/utils";
 import { path } from "./path";
 
 const log = getLogger("auth");
 
 export function getCurrentPath(request: Request) {
-  return new URL(request.url).pathname;
+  const url = new URL(request.url);
+  // `_routes` is React Router's single-fetch transport param. Loaders never
+  // see it, but middleware does (MES runs auth there), and a page URL that
+  // carries it limits which loaders later data requests run. Only when it is
+  // present: `delete` re-encodes the whole query (`a:b` to `a%3Ab`, `?index`
+  // to `?index=`), and every other URL should come back exactly as it was.
+  if (url.searchParams.has("_routes")) url.searchParams.delete("_routes");
+  return `${url.pathname}${url.search}`;
 }
 
 export function makeRedirectToFromHere(request: Request) {
@@ -17,7 +29,7 @@ export function getRedirectTo(
   defaultRedirectTo = path.to.authenticatedRoot
 ) {
   const url = new URL(request.url);
-  return safeRedirect(url.searchParams.get("redirectTo"), defaultRedirectTo);
+  return safePath(url.searchParams.get("redirectTo"), defaultRedirectTo);
 }
 
 export function isGet(request: Request) {
@@ -74,29 +86,6 @@ export function assertIsDelete(
   if (!isDelete(request)) {
     throw notAllowedMethod(message);
   }
-}
-
-/**
- * This should be used any time the redirect path is user-provided
- * (Like the query string on our login/signup pages). This avoids
- * open-redirect vulnerabilities.
- * @param {string} to The redirect destination
- * @param {string} defaultRedirect The redirect to use if the to is unsafe.
- */
-export function safeRedirect(
-  to: FormDataEntryValue | string | null | undefined,
-  defaultRedirect = path.to.authenticatedRoot
-) {
-  if (
-    !to ||
-    typeof to !== "string" ||
-    !to.startsWith("/") ||
-    to.startsWith("//")
-  ) {
-    return defaultRedirect;
-  }
-
-  return to;
 }
 
 export function parseNumberFromUrlParam(

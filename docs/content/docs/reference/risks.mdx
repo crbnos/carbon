@@ -3,9 +3,9 @@ title: Risk register
 description: Track risks and opportunities against any entity, rated by severity and likelihood, and drive each to a resolution.
 ---
 
-A risk entry is a titled concern you raise against something in Carbon: a supplier who ships late, an item that fails inspection, a job with a tight deadline. Each entry carries a **type** (a downside risk or an upside opportunity), two independent 1–5 ratings for **severity** and **likelihood**, an assignee, and a status you move from `"Open"` toward `"Closed"` or `"Accepted"`. The <Term id="risk-register">register</Term> lives in the quality module and reads back into the entity it's attached to, so a part's risks show on the part, a supplier's show on the supplier.
+A risk entry records a concern or opportunity associated with another Carbon entity. It has a **type**, independent 1–5 ratings for **severity** and **likelihood**, an assignee, and a status that moves from `"Open"` to `"Closed"` or `"Accepted"`. The quality module's <Term id="risk-register">risk register</Term> provides the company-wide view; each source entity also displays its related risks.
 
-Open the register at **Quality → Risks** for the company-wide list, or add one inline from an item, customer, supplier, job, quote line, or maintenance dispatch page.
+Open **Quality → Risks** for the company-wide register. You can also create risks from item, customer, supplier, job, quote-line, and maintenance-dispatch pages.
 
 ## What a risk entry holds
 
@@ -37,7 +37,7 @@ Because the two ratings are independent, a low-likelihood, high-severity risk (a
 
 Status is a free-set enum (`riskStatus`, `quality.models.ts:96`). Carbon does not enforce a state machine — any status can move to any other; you set where the entry stands.
 
-<StatusFlow>
+<StatusFlow entity="risk">
   <Status name="Open">A newly raised risk, not yet worked. The default for a new entry.</Status>
   <Status name="In Review">Being assessed — someone is deciding whether and how to act on it.</Status>
   <Status name="Mitigating">A treatment is in progress: you're actively reducing the severity or likelihood.</Status>

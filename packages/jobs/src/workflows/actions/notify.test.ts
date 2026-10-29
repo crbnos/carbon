@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { RuntimeValue } from "@carbon/ee/workflows";
+import { entityValue, listValue, primitiveValue } from "@carbon/ee/workflows";
 import {
   NotificationDestination,
   NotificationEvent
 } from "@carbon/notifications";
-import type { RuntimeValue } from "@carbon/workflows";
-import { entityValue, listValue, primitiveValue } from "@carbon/workflows";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runNotifyAction } from "./notify";
 

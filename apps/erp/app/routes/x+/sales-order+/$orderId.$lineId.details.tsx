@@ -1,38 +1,40 @@
-import { assertIsPost, error, notFound } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { Card, CardHeader, CardTitle } from "@carbon/react";
+import { Card, CardHeader, CardTitle, RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment, Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  Await,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import { getItemReplenishment } from "~/modules/items";
-import { getJobsBySalesOrderLine } from "~/modules/production";
-import type {
-  Opportunity,
-  SalesOrder,
-  SalesOrderLineType
-} from "~/modules/sales";
+import { getItemReplenishment } from "~/modules/items/items.service";
+import { getJobsBySalesOrderLine } from "~/modules/production/production.service";
+import {
+  isSalesOrderLocked,
+  salesOrderLineValidator
+} from "~/modules/sales/sales.models";
 import {
   getOpportunityLineDocuments,
-  getSalesOrder,
   getSalesOrderLine,
-  getSalesOrderLineShipments,
-  isSalesOrderLocked,
-  salesOrderLineValidator,
-  upsertSalesOrderLine
-} from "~/modules/sales";
+  getSalesOrderLineShipments
+} from "~/modules/sales/sales.service";
+import type {
+  Opportunity,
+  PriceTraceStep,
+  SalesOrder,
+  SalesOrderLineType
+} from "~/modules/sales/types";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -43,8 +45,9 @@ import {
 } from "~/modules/sales/ui/SalesOrder";
 import { SalesOrderLineShipments } from "~/modules/sales/ui/SalesOrder/SalesOrderLineShipments";
 import { getCustomFields, setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "sales-order-line-details");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {
@@ -71,6 +74,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // The service role bypasses RLS and lineId comes from the URL: the line must
+  // belong to this company and to the order in the URL.
+  if (line.data.companyId !== companyId || line.data.salesOrderId !== orderId) {
+    logger.error("Sales order line not found for company", {
+      companyId,
+      orderId,
+      lineId
+    });
+    throw notFound("Sales order line not found");
+  }
+
   const itemId = line.data.itemId;
 
   return {
@@ -80,74 +94,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ? getItemReplenishment(serviceRole, itemId, companyId)
         : Promise.resolve({ data: null }),
     files: getOpportunityLineDocuments(serviceRole, companyId, lineId, itemId),
-    jobs: jobs?.data ?? [],
-    shipments: shipments?.data ?? []
+    jobs: (jobs?.data ?? []).filter((job) => job.companyId === companyId),
+    shipments: (shipments?.data ?? []).filter(
+      (shipment) => shipment.companyId === companyId
+    )
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { orderId, lineId } = params;
-  if (!orderId) throw new Error("Could not find orderId");
-  if (!lineId) throw new Error("Could not find lineId");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "sales"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(salesOrderLineValidator).request(args, {
+    params: ["orderId", "lineId"]
   });
-
-  const salesOrder = await getSalesOrder(viewClient, orderId);
-  await requireUnlocked({
-    request,
-    isLocked: isSalesOrderLocked(salesOrder.data?.status),
-    redirectTo: path.to.salesOrderLine(orderId, lineId),
-    message: "Cannot modify a locked sales order. Reopen it first."
-  });
-
-  const { client, userId } = await requirePermissions(request, {
-    create: "sales"
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(salesOrderLineValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  if (d.salesOrderLineType === "Comment") {
-    d.accountId = undefined;
-    d.assetId = undefined;
-    d.itemId = undefined;
-  } else if (d.salesOrderLineType === "Fixed Asset") {
-    d.accountId = undefined;
-    d.itemId = undefined;
-  } else {
-    d.accountId = undefined;
-    d.assetId = undefined;
-  }
-
-  const updateSalesOrderLine = await upsertSalesOrderLine(client, {
+  if ("invalid" in input) return input.invalid;
+  const { orderId, lineId } = input.params;
+  const formData = input.formData ?? new FormData();
+  const api = await carbon(args.request);
+  const result = await api.sales.updateSalesOrderLine({
+    ...input.data,
     id: lineId,
-    ...d,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+    salesOrderId: orderId,
+    customFields: setCustomFields(formData),
+    acknowledged: formData.get("acknowledged") === "true"
   });
-
-  if (updateSalesOrderLine.error) {
-    throw redirect(
-      path.to.salesOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error(updateSalesOrderLine.error, "Failed to update sales order line")
-      )
-    );
-  }
-
+  // An error is toasted; the violation modal reads `violations`.
+  if (!result.data) return result;
+  if ("violations" in result.data) return result.data;
   throw redirect(path.to.salesOrderLine(orderId, lineId));
 }
 
@@ -184,6 +155,8 @@ export default function EditSalesOrderLineRoute() {
     methodType: line?.methodType ?? "Make to Order",
     nonTaxableAddOnCost: line?.nonTaxableAddOnCost ?? 0,
     promisedDate: line?.promisedDate ?? undefined,
+    serviceStartDate: line?.serviceStartDate ?? "",
+    serviceEndDate: line?.serviceEndDate ?? "",
     saleQuantity: line?.saleQuantity ?? 1,
     setupPrice: line?.setupPrice ?? 0,
     storageUnitId: line?.storageUnitId ?? "",
@@ -191,6 +164,9 @@ export default function EditSalesOrderLineRoute() {
     unitPrice: line?.unitPrice ?? 0,
     taxPercent: line?.taxPercent ?? 0,
     shippingCost: line?.shippingCost ?? 0,
+    configuration:
+      (line?.configuration as Record<string, unknown> | null) ?? null,
+    priceTrace: (line?.priceTrace as PriceTraceStep[] | null) ?? null,
     assetReadableId: (line as any)?.assetReadableId ?? undefined,
     assetName: (line as any)?.assetName ?? undefined,
     ...getCustomFields(line?.customFields)
@@ -200,7 +176,7 @@ export default function EditSalesOrderLineRoute() {
     <Fragment key={lineId}>
       <SalesOrderLineForm
         key={initialValues.id}
-        // @ts-ignore
+        // @ts-expect-error
         initialValues={initialValues}
       />
 
@@ -284,7 +260,7 @@ export default function EditSalesOrderLineRoute() {
         viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
       />
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

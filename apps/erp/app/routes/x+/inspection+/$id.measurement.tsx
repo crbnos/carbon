@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -5,8 +9,9 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import invariant from "tiny-invariant";
-import { inspectionMeasurementValidator } from "~/modules/quality";
-import { upsertInspectionMeasurement } from "~/modules/quality/quality.server";
+import { inspectionMeasurementValidator } from "~/modules/quality/quality.models";
+import { upsertInspectionMeasurement } from "~/modules/quality/quality.service";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -30,7 +35,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await upsertInspectionMeasurement({
+  const result = await upsertInspectionMeasurement(getDatabaseClient(), {
     ...validation.data,
     companyId,
     userId

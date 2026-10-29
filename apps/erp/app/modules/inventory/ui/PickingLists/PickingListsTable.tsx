@@ -1,4 +1,14 @@
-import { Button, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Button,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -15,6 +25,8 @@ import {
 import { Link, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import { NewAction } from "~/components/New";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import { pickingListStatusType } from "../../inventory.models";
@@ -41,9 +53,11 @@ export type PickingList = {
 type PickingListsTableProps = {
   data: PickingList[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
+const PickingListsTable = memo((props: PickingListsTableProps) => {
+  const { data, count, infinite } = props;
   const [params] = useUrlParams();
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -60,6 +74,7 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookmark />
         }
       },
@@ -72,6 +87,7 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
           return <PickingListStatus status={status} />;
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: pickingListStatusType.map((type) => ({
@@ -93,6 +109,7 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
             "Unassigned"
           ),
         meta: {
+          mobile: "P3",
           icon: <LuUser />,
           exportValue: (row) => row.assigneeName
         }
@@ -114,6 +131,9 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
           return date ? <DateTime value={date} variant="date" /> : "N/A";
         },
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -124,7 +144,8 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
           const total = row.original.lineCount ?? 0;
           const completed = row.original.completedLineCount ?? 0;
           return `${completed}/${total}`;
-        }
+        },
+        meta: { mobile: "P2" }
       },
       {
         accessorKey: "createdAt",
@@ -158,6 +179,11 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={
+              row.status !== "Draft"
+                ? MENU_ITEM_SHORTCUTS.view
+                : MENU_ITEM_SHORTCUTS.edit
+            }
             disabled={!permissions.can("update", "inventory")}
             onClick={() => {
               navigate(
@@ -171,6 +197,7 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
               : t`Edit Picking List`}
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
               !permissions.can("delete", "inventory") || row.status !== "Draft"
             }
@@ -193,6 +220,7 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
     <>
       <Table<PickingList>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         defaultColumnPinning={{
@@ -204,11 +232,13 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
         }}
         primaryAction={
           permissions.can("create", "inventory") ? (
-            <Button asChild leftIcon={<LuCirclePlus />}>
-              <Link to={path.to.pickingSchedule}>
-                <Trans>New Picking List</Trans>
-              </Link>
-            </Button>
+            <NewAction label={t`New Picking List`} to={path.to.pickingSchedule}>
+              <Button asChild leftIcon={<LuCirclePlus />}>
+                <Link to={path.to.pickingSchedule}>
+                  <Trans>New Picking List</Trans>
+                </Link>
+              </Button>
+            </NewAction>
           ) : undefined
         }
         renderContextMenu={renderContextMenu}

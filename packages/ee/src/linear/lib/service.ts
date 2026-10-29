@@ -1,11 +1,16 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { TiptapText } from "@carbon/files/markdown";
 import { getLogger } from "@carbon/logger";
+import { unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type z from "zod";
 import type { ActionTaskEntityType } from "../../lib/actionTaskEntity";
 import { actionTaskEntities } from "../../lib/actionTaskEntity";
-import { markdownToTiptap } from "./richtext";
 import { LinearIssueSchema } from "./types";
 import { mapLinearStatusToCarbonStatus } from "./utils";
 
@@ -43,7 +48,7 @@ export async function linkActionToLinearIssue(
   let notes: any = undefined;
   if (input.syncNotes && data.description) {
     try {
-      notes = markdownToTiptap(data.description);
+      notes = TiptapText(data.description).toDocument();
     } catch (e) {
       logger.error("Failed to convert Linear description to Tiptap", {
         error: e
@@ -65,7 +70,7 @@ export async function linkActionToLinearIssue(
   // Update the task fields
   const result = await client
     .from(entity.table)
-    .update(updateData)
+    .update(unchecked(updateData))
     .eq("companyId", companyId)
     .eq("id", input.actionId)
     .select(entity.parentColumn);

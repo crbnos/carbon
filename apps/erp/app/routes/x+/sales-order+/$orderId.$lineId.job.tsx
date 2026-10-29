@@ -1,64 +1,33 @@
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
-import { insertJob, salesOrderToJobValidator } from "~/modules/production";
+import { salesOrderToJobValidator } from "~/modules/production/production.models";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "orderid-lineid-job");
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-
-  const { orderId, lineId } = params;
-  if (!orderId || !lineId) {
-    throw new Error("Invalid orderId or lineId");
-  }
-
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "production"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(salesOrderToJobValidator).request(args, {
+    params: ["orderId", "lineId"]
   });
-  const serviceRole = getCarbonServiceRole();
-
-  const formData = await request.formData();
-  const validation = await validator(salesOrderToJobValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id: _id, ...d } = validation.data;
-
-  const methodSource = d.quoteId && d.quoteLineId ? "quoteLine" : "item";
-
-  const createJob = await insertJob(
-    serviceRole,
-    {
-      ...d,
-      jobId: d.jobId || undefined,
-      companyId,
-      createdBy: userId,
-      customFields: setCustomFields(formData)
-    },
-    { methodSource, source: "salesOrder" }
-  );
-
-  if (createJob.error || !createJob.data) {
-    logger.error("Error", { error: createJob.error });
-    throw redirect(
-      path.to.salesOrderLine(orderId, lineId),
-      await flash(request, error(createJob.error, "Failed to insert job"))
+  if ("invalid" in input) return input.invalid;
+  const { orderId, lineId } = input.params;
+  const api = await carbon(args.request);
+  // The job is attached to the order and line in the URL, never the form's.
+  const result = await api.production.createSalesOrderLineJob({
+    ...input.data,
+    salesOrderId: orderId,
+    salesOrderLineId: lineId,
+    customFields: input.formData ? setCustomFields(input.formData) : undefined
+  });
+  if (result.error) {
+    return respond(args.request, result).redirect(
+      path.to.salesOrderLine(orderId, lineId)
     );
   }
-
-  const id = createJob.data.id;
-
-  throw redirect(path.to.jobDetails(id));
+  throw redirect(path.to.jobDetails(result.data.id));
 }

@@ -1,4 +1,14 @@
-import { Button, HStack, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Button,
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -8,18 +18,21 @@ import { LuDatabase, LuLayoutGrid, LuList, LuTags } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { CustomFieldsTableType } from "~/modules/settings";
-import { modulesType } from "~/modules/settings";
-import { tablesWithTags } from "~/modules/shared";
+import { modulesType } from "~/modules/settings/settings.models";
+import type { CustomFieldsTableType } from "~/modules/settings/types";
+import { tablesWithTags } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 
 type CustomFieldsTableProps = {
   data: CustomFieldsTableType[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
+const CustomFieldsTable = memo((props: CustomFieldsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const [params] = useUrlParams();
@@ -39,6 +52,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuDatabase />
         }
       },
@@ -47,6 +61,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
         header: t`Module`,
         cell: ({ row }) => <Enumerable value={row.original.module} />,
         meta: {
+          mobile: "P2",
           icon: <LuLayoutGrid />,
           filter: {
             type: "static",
@@ -59,6 +74,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
       },
       {
         header: t`Fields`,
+        meta: { mobile: "P2" },
         cell: ({ row }) => (
           <HStack className="text-xs text-muted-foreground">
             <LuList />
@@ -103,6 +119,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
             <Trans>New Field</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.view}
             onClick={() => {
               navigate(
                 `${path.to.customFieldList(row.table!)}?${params?.toString()}`
@@ -125,6 +142,8 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
         data={data}
         columns={columns}
         count={count ?? 0}
+        infinite={infinite}
+        getRowId={(row) => String(row.table)}
         title={t`Custom Fields`}
         renderContextMenu={renderContextMenu}
       />

@@ -1,4 +1,14 @@
-import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
@@ -23,6 +33,7 @@ import {
   Table
 } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
@@ -37,10 +48,11 @@ import {
 type SupplierQuotesTableProps = {
   data: SupplierQuote[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const SupplierQuotesTable = memo(
-  ({ data, count }: SupplierQuotesTableProps) => {
+  ({ data, count, infinite }: SupplierQuotesTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -70,7 +82,7 @@ const SupplierQuotesTable = memo(
               <ItemThumbnail
                 size="sm"
                 thumbnailPath={row.original.thumbnailPath}
-                // @ts-ignore
+                // @ts-expect-error
                 type={row.original.itemType}
               />
               <Hyperlink to={path.to.supplierQuoteDetails(row.original.id!)}>
@@ -79,6 +91,7 @@ const SupplierQuotesTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -89,6 +102,7 @@ const SupplierQuotesTable = memo(
             <SupplierAvatar supplierId={row.original.supplierId} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: suppliers?.map((supplier) => ({
@@ -107,6 +121,7 @@ const SupplierQuotesTable = memo(
             <SupplierQuoteStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: supplierQuoteStatusType.map((status) => ({
@@ -148,6 +163,9 @@ const SupplierQuotesTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -158,6 +176,9 @@ const SupplierQuotesTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -225,12 +246,14 @@ const SupplierQuotesTable = memo(
       return (row: SupplierQuote) => (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => navigate(path.to.supplierQuoteDetails(row.id!))}
           >
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "purchasing")}
             onClick={() => {
@@ -251,6 +274,7 @@ const SupplierQuotesTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infinite={infinite}
           defaultColumnPinning={{
             left: ["supplierQuoteId"]
           }}

@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -38,7 +43,7 @@ import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuClock,
@@ -52,7 +57,7 @@ import {
   RiProgress8Line
 } from "react-icons/ri";
 import type { LoaderFunctionArgs } from "react-router";
-import { Await, useFetcher, useLoaderData } from "react-router";
+import { Await, useLoaderData } from "react-router";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   CustomerAvatar,
@@ -149,8 +154,52 @@ export default function SalesDashboard() {
     return merged;
   }, [openSalesOrders, openQuotes, openRFQs]);
 
-  const kpiFetcher = useFetcher<typeof kpiLoader>();
-  const isFetching = kpiFetcher.state !== "idle" || !kpiFetcher.data;
+  const dateFormatter = useDateFormatter({
+    month: "short",
+    day: "numeric"
+  });
+
+  const currencyCompactFormatter = useCurrencyFormatter({ compact: true });
+  const currencyFormatter = useCurrencyFormatter();
+  const numberFormatter = useNumberFormatter({
+    maximumFractionDigits: 0,
+    notation: "compact",
+    compactDisplay: "short"
+  });
+
+  const [customerId, setCustomerId] = useState<string>("all");
+  const [customers] = useCustomers();
+  const customerOptions = useMemo(() => {
+    return [
+      {
+        label: t`All Customers`,
+        value: "all"
+      },
+      ...customers.map((customer) => ({
+        label: customer.name,
+        value: customer.id
+      }))
+    ];
+  }, [customers, t]);
+
+  const [interval, setInterval] = useState("month");
+  const [selectedKpi, setSelectedKpi] = useState("salesOrderRevenue");
+  const [dateRange, setDateRange] = useState<DateRange | null>(() => {
+    const end = today("UTC");
+    const start = end.add({ months: -1 });
+    return { start, end };
+  });
+
+  const selectedKpiData = KPIs.find((k) => k.key === selectedKpi) || KPIs[0];
+
+  const kpiFetcher = useLoaderQuery<typeof kpiLoader>(
+    `${path.to.api.salesKpi(
+      selectedKpiData.key
+    )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
+      customerId === "all" ? "" : `&customerId=${customerId}`
+    }`
+  );
+  const isFetching = kpiFetcher.isFetching || !kpiFetcher.data;
 
   const steps = useMemo(() => {
     const defaultSteps = [
@@ -201,44 +250,6 @@ export default function SalesDashboard() {
     ];
   }, [kpiFetcher.data?.data, t]);
 
-  const dateFormatter = useDateFormatter({
-    month: "short",
-    day: "numeric"
-  });
-
-  const currencyCompactFormatter = useCurrencyFormatter({ compact: true });
-  const currencyFormatter = useCurrencyFormatter();
-  const numberFormatter = useNumberFormatter({
-    maximumFractionDigits: 0,
-    notation: "compact",
-    compactDisplay: "short"
-  });
-
-  const [customerId, setCustomerId] = useState<string>("all");
-  const [customers] = useCustomers();
-  const customerOptions = useMemo(() => {
-    return [
-      {
-        label: t`All Customers`,
-        value: "all"
-      },
-      ...customers.map((customer) => ({
-        label: customer.name,
-        value: customer.id
-      }))
-    ];
-  }, [customers, t]);
-
-  const [interval, setInterval] = useState("month");
-  const [selectedKpi, setSelectedKpi] = useState("salesOrderRevenue");
-  const [dateRange, setDateRange] = useState<DateRange | null>(() => {
-    const end = today("UTC");
-    const start = end.add({ months: -1 });
-    return { start, end };
-  });
-
-  const selectedKpiData = KPIs.find((k) => k.key === selectedKpi) || KPIs[0];
-
   const kpiLabels: Record<string, string> = useMemo(
     () => ({
       quoteCount: t`Quotes`,
@@ -249,17 +260,6 @@ export default function SalesDashboard() {
     }),
     [t]
   );
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    kpiFetcher.load(
-      `${path.to.api.salesKpi(
-        selectedKpiData.key
-      )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
-        customerId === "all" ? "" : `&customerId=${customerId}`
-      }`
-    );
-  }, [selectedKpi, dateRange, interval, selectedKpiData.key, customerId]);
 
   const onIntervalChange = (value: string) => {
     const end = today("UTC");
@@ -355,7 +355,7 @@ export default function SalesDashboard() {
           ? item.date
           : "month" in item
             ? item.month
-            : // @ts-ignore
+            : // @ts-expect-error
               item.monthKey,
         item.value
       ])
@@ -381,7 +381,7 @@ export default function SalesDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
+      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
         <MetricCard
           icon={<RiProgress2Line />}
           title={<Trans>Open RFQs</Trans>}
@@ -414,9 +414,9 @@ export default function SalesDashboard() {
       </div>
 
       <Card>
-        <HStack className="justify-between items-center">
+        <HStack className="justify-between items-center max-md:flex-col max-md:items-stretch">
           <CardHeader>
-            <div className="flex w-full justify-start items-center gap-2">
+            <div className="flex w-full justify-start items-center gap-2 max-md:flex-wrap">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -447,11 +447,11 @@ export default function SalesDashboard() {
                 onChange={setCustomerId}
                 options={customerOptions}
                 size="sm"
-                className="min-w-[160px] gap-4"
+                className="min-w-[160px] gap-4 max-md:min-w-0"
               />
             </div>
           </CardHeader>
-          <CardAction className="flex-row items-center gap-2">
+          <CardAction className="flex-row items-center gap-2 max-md:pt-0">
             <DateSelect
               value={interval}
               onValueChange={onIntervalChange}
@@ -503,7 +503,7 @@ export default function SalesDashboard() {
           </VStack>
           <Loading
             isLoading={isFetching}
-            className="h-[30dvw] md:h-[23dvw] w-full"
+            className="h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
           >
             {selectedKpi === "salesFunnel" ? (
               <FunnelChart
@@ -514,7 +514,7 @@ export default function SalesDashboard() {
             ) : (
               <ChartContainer
                 config={chartConfig}
-                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full"
+                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
               >
                 <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
                   <CartesianGrid vertical={false} />
@@ -719,7 +719,7 @@ function SalesOrderDocumentRow({ doc }: { doc: SalesOrder }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.salesOrder(doc.id!)}>
+        <Hyperlink className="max-md:min-h-11" to={path.to.salesOrder(doc.id!)}>
           <HStack spacing={1}>
             <RiProgress8Line className="size-4" />
             <span>{doc.salesOrderId}</span>
@@ -740,7 +740,7 @@ function QuoteDocumentRow({ doc }: { doc: Quotation }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.quote(doc.id!)}>
+        <Hyperlink className="max-md:min-h-11" to={path.to.quote(doc.id!)}>
           <HStack spacing={1}>
             <RiProgress4Line className="size-4" />
             <span>{doc.quoteId}</span>
@@ -761,7 +761,7 @@ function RfqDocumentRow({ doc }: { doc: SalesRFQ }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.salesRfq(doc.id!)}>
+        <Hyperlink className="max-md:min-h-11" to={path.to.salesRfq(doc.id!)}>
           <HStack spacing={1}>
             <RiProgress2Line className="size-4" />
             <span>{doc.rfqId}</span>

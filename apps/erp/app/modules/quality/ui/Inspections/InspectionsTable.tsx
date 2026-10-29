@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Badge } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -18,6 +22,7 @@ import {
   Hyperlink,
   Table
 } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { useUrlParams } from "~/hooks";
 import {
   inspectionSourceDocuments,
@@ -31,6 +36,7 @@ import { getInspectionStatusVariant } from "./InspectionStatus";
 type InspectionsTableProps = {
   data: Inspection[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 function computeProgress(row: Inspection): {
@@ -45,7 +51,8 @@ function computeProgress(row: Inspection): {
   return { inspected, total: (row as any).sampleSize ?? 0 };
 }
 
-const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
+const InspectionsTable = memo((props: InspectionsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const [items] = useItems();
@@ -63,6 +70,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -71,7 +79,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
         header: t`Item`,
         cell: ({ row }) => (
           <div className="flex flex-col gap-0">
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium max-md:text-[13px] max-md:font-normal">
               {getItemReadableId(items, (row.original as any).itemId) ??
                 (row.original as any).itemReadableId ??
                 ""}
@@ -82,6 +90,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuBookMarked />,
           filter: {
             type: "static",
@@ -139,7 +148,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
         cell: ({ row }) => (
           <span className="text-sm">{(row.original as any).lotSize ?? 0}</span>
         ),
-        meta: { icon: <LuBlocks /> }
+        meta: { mobile: "P2", mobileLabel: true, icon: <LuBlocks /> }
       },
       {
         accessorKey: "sampleSize",
@@ -163,6 +172,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
           </Badge>
         ),
         meta: {
+          mobile: "P2",
           icon: <LuClipboardCheck />,
           filter: {
             type: "static",
@@ -195,6 +205,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
   return (
     <Table<Inspection>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count ?? 0}
       title={t`Inspections`}

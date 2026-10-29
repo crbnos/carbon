@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { cn } from "@carbon/react";
 import type {
   ReportColumnGranularity,
@@ -19,6 +23,7 @@ import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useRealtime, useUrlParams } from "~/hooks";
 import type { ChartPeriodSeries } from "../../types";
 import { NET_INCOME_ACCOUNT_ID } from "../../types";
+import { reportFrameClassName, useReportColumnStep } from "./ColumnStepper";
 import { accountsToFlatTree, filterAccounts } from "./reportTree";
 
 const ACCOUNT_COLUMN_WIDTH = 360;
@@ -70,6 +75,32 @@ export function getPeriodColumnLabel(
   }
 }
 
+/**
+ * Phones: one period at a time (the latest first), so the row labels get the
+ * width the other periods took.
+ */
+export function usePeriodStep(
+  periods: ReportPeriodBucket[],
+  columns: ReportColumnGranularity
+) {
+  const { t } = useLingui();
+  const { locale } = useLocale();
+  const step = useReportColumnStep({
+    count: periods.length,
+    label: (index) => {
+      const bucket = periods[index];
+      return bucket ? getPeriodColumnLabel(bucket, columns, locale) : null;
+    },
+    detail: (index) => (periods[index]?.isPartial ? t`To Date` : undefined)
+  });
+  return {
+    ...step,
+    visiblePeriods: step.isPhone
+      ? periods.slice(step.index, step.index + 1)
+      : periods
+  };
+}
+
 const MultiPeriodStatementTree = memo(
   ({
     data,
@@ -82,6 +113,8 @@ const MultiPeriodStatementTree = memo(
     ledgerPath
   }: MultiPeriodStatementTreeProps) => {
     const { t } = useLingui();
+    const { isPhone, estimatedRowHeight, stepper, visiblePeriods } =
+      usePeriodStep(periods, columns);
     const { locale } = useLocale();
     useRealtime("journal");
     const navigate = useNavigate();
@@ -106,9 +139,7 @@ const MultiPeriodStatementTree = memo(
 
     const openLedger = (accountId: string) => {
       if (!ledgerPath) return;
-      const nextParams = new URLSearchParams(params);
-      nextParams.delete("offset");
-      const qs = nextParams.toString();
+      const qs = params.toString();
       navigate(qs ? `${ledgerPath(accountId)}?${qs}` : ledgerPath(accountId));
     };
 
@@ -128,45 +159,52 @@ const MultiPeriodStatementTree = memo(
     } = useTree<ChartPeriodSeries, undefined>({
       tree,
       parentRef,
-      estimatedRowHeight: () => 36,
+      estimatedRowHeight,
       isEager: true
     });
 
-    const rowWidth =
-      ACCOUNT_COLUMN_WIDTH + periods.length * PERIOD_COLUMN_WIDTH + 16;
+    const rowWidth = isPhone
+      ? undefined
+      : ACCOUNT_COLUMN_WIDTH + periods.length * PERIOD_COLUMN_WIDTH + 16;
 
     return (
-      <div className="flex h-[calc(100dvh-var(--header-height)-61px)] w-full flex-col">
-        {/* Header viewport — scrollLeft is mirrored from the tree below */}
-        <div ref={headerRef} className="shrink-0 overflow-x-hidden">
-          <div
-            className="flex h-12 items-center border-b border-border bg-card pr-4 text-sm font-medium text-foreground/80"
-            style={{ minWidth: rowWidth }}
-          >
-            <div
-              className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
-              style={{ width: ACCOUNT_COLUMN_WIDTH }}
-            >
-              <Trans>Account</Trans>
-            </div>
-            {periods.map((bucket) => (
+      <div className={cn("flex flex-col", reportFrameClassName)}>
+        {isPhone ? (
+          stepper
+        ) : (
+          <>
+            {/* Header viewport — scrollLeft is mirrored from the tree below */}
+            <div ref={headerRef} className="shrink-0 overflow-x-hidden">
               <div
-                key={bucket.key}
-                className="flex shrink-0 flex-col items-end justify-center px-2 text-right"
-                style={{ width: PERIOD_COLUMN_WIDTH }}
+                className="flex h-12 items-center border-b border-border bg-card pr-4 text-sm font-medium text-foreground/80"
+                style={{ minWidth: rowWidth }}
               >
-                <span className="whitespace-nowrap">
-                  {getPeriodColumnLabel(bucket, columns, locale)}
-                </span>
-                {bucket.isPartial && (
-                  <span className="text-xs font-normal text-muted-foreground">
-                    {t`To Date`}
-                  </span>
-                )}
+                <div
+                  className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
+                  style={{ width: ACCOUNT_COLUMN_WIDTH }}
+                >
+                  <Trans>Account</Trans>
+                </div>
+                {periods.map((bucket) => (
+                  <div
+                    key={bucket.key}
+                    className="flex shrink-0 flex-col items-end justify-center px-2 text-right"
+                    style={{ width: PERIOD_COLUMN_WIDTH }}
+                  >
+                    <span className="whitespace-nowrap">
+                      {getPeriodColumnLabel(bucket, columns, locale)}
+                    </span>
+                    {bucket.isPartial && (
+                      <span className="text-xs font-normal text-muted-foreground">
+                        {t`To Date`}
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          </>
+        )}
         <TreeView<ChartPeriodSeries>
           tree={tree}
           nodes={nodes}
@@ -175,7 +213,7 @@ const MultiPeriodStatementTree = memo(
           virtualizer={virtualizer}
           parentRef={parentRef}
           scrollRef={scrollRef}
-          parentClassName="flex-1 overflow-x-auto"
+          parentClassName="flex-1 overflow-x-auto max-md:scroll-fade-x"
           contentMinWidth={rowWidth}
           renderNode={({ node, state }) => {
             const account = node.data;
@@ -187,7 +225,7 @@ const MultiPeriodStatementTree = memo(
             return (
               <div
                 className={cn(
-                  "flex h-8 cursor-pointer items-center pr-4 text-sm group/row",
+                  "flex h-8 cursor-pointer items-center pr-4 text-sm group/row max-md:h-11",
                   state.selected
                     ? "bg-muted hover:bg-accent"
                     : "bg-transparent hover:bg-accent",
@@ -207,11 +245,13 @@ const MultiPeriodStatementTree = memo(
                 <div
                   className={cn(
                     "sticky left-0 z-[1] flex h-full shrink-0 items-center overflow-hidden",
+                    // Phones: no sideways scroll; the name takes the rest.
+                    "max-md:static max-md:min-w-0 max-md:flex-1",
                     state.selected
                       ? "bg-muted group-hover/row:bg-accent"
                       : "bg-card group-hover/row:bg-accent"
                   )}
-                  style={{ width: ACCOUNT_COLUMN_WIDTH }}
+                  style={isPhone ? undefined : { width: ACCOUNT_COLUMN_WIDTH }}
                 >
                   {/* Indentation lines */}
                   <div className="flex h-9 items-center">
@@ -242,7 +282,12 @@ const MultiPeriodStatementTree = memo(
                   </div>
 
                   {/* Folder icon */}
-                  <div className="w-5 h-5 flex items-center justify-center mr-2 shrink-0">
+                  <div
+                    className={cn(
+                      "w-5 h-5 flex items-center justify-center mr-2 shrink-0",
+                      !isGroup && "max-md:hidden"
+                    )}
+                  >
                     {isGroup &&
                       (isExpanded ? (
                         <LuFolderOpen className="h-4 w-4 text-muted-foreground" />
@@ -266,7 +311,7 @@ const MultiPeriodStatementTree = memo(
                 </div>
 
                 {/* One cell per period bucket */}
-                {periods.map((bucket) => {
+                {visiblePeriods.map((bucket) => {
                   const cell = account.periods?.[bucket.key];
                   // Translated: the Income Statement (netChange) must read the
                   // translated period delta; the Balance Sheet (balanceAtDate)

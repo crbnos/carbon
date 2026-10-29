@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getLogger } from "@carbon/logger";
-import type { MomentKey, MomentPayload } from "@carbon/workflows";
+import type { MomentKey, MomentPayload } from "@carbon/workflows-core";
 import { nanoid } from "nanoid";
 import { trigger } from "../trigger";
 

@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import type { Tree } from "~/components/TreeView";
-import { resolveBuyUnitCost, type SupplierPriceMap } from "~/modules/shared";
+import type { SupplierPriceMap } from "~/modules/shared/shared.models";
+import { resolveBuyUnitCost } from "~/modules/shared/shared.utils";
 import type {
   CostEffects,
   Costs,

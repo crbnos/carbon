@@ -3,11 +3,14 @@ name: Deploy Self-Hosted Functions
 on:
   # Deploying edge functions to the self-hosted Supabase instance is independent
   # of the ECS app deploy, so trigger directly on pushes that touch the functions.
-  # (Sync Inngest Functions is the workflow that must wait for Deploy Apps.)
+  # (Post Deploy Sync is the workflow that must wait for Deploy Apps.)
   push:
     branches: [main]
     paths: ["packages/database/supabase/functions/**"]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   functions:
@@ -25,7 +28,7 @@ jobs:
       INSTANCE_SSH_KEY: ${{ secrets[matrix.environment.instance_ssh_key] }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup SSH key
         run: |

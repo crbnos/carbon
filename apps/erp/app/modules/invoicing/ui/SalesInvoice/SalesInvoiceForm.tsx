@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
@@ -30,7 +34,7 @@ import {
 } from "~/components/Form";
 import PaymentTerm from "~/components/Form/PaymentTerm";
 import { usePermissions, useRouteData } from "~/hooks";
-import { salesInvoiceValidator } from "~/modules/invoicing";
+import { salesInvoiceValidator } from "~/modules/invoicing/invoicing.models";
 import { path } from "~/utils/path";
 import { isSalesInvoiceLocked } from "../../invoicing.models";
 
@@ -66,18 +70,11 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
     paymentTermId: initialValues.paymentTermId
   });
 
-  const [customer, setCustomer] = useState<{
-    id: string | undefined;
-  }>({
-    id: initialValues.customerId
-  });
-
   const onCustomerChange = async (
     newValue: {
       value: string | undefined;
     } | null
   ) => {
-    setCustomer({ id: newValue?.value });
     if (newValue?.value !== invoiceCustomer.id) {
       onInvoiceCustomerChange(newValue);
     }
@@ -106,12 +103,10 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
       });
 
       const [customerData, paymentTermData] = await Promise.all([
-        // @ts-ignore TS2589: the composite customerShipping embed sits on the
         // instantiation-depth cliff — the cliff shifts as unrelated modules
         // join the program (same class as the purchasing.service
-        // suppression). ts-ignore (not ts-expect-error) is used so it
-        // satisfies both checkers — tsgo would flag an unused expect-error
-        // directive in CI — and it survives the cliff receding.
+        // suppression). ts-ignore, not ts-expect-error: an unused
+        // expect-error directive fails the typecheck when the cliff recedes.
         carbon
           ?.from("customer")
           .select(
@@ -201,6 +196,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
                 />
               )}
               <Customer
+                autoFocus={!isEditing}
                 name="customerId"
                 label={t`Customer`}
                 onChange={onCustomerChange}
@@ -219,7 +215,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
               <CustomerLocation
                 name="invoiceCustomerLocationId"
                 label={t`Invoice Customer Location`}
-                customer={customer.id}
+                customer={invoiceCustomer.id}
                 value={invoiceCustomer.invoiceCustomerLocationId}
                 onChange={(newValue) => {
                   if (newValue?.id) {
@@ -233,7 +229,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
               <CustomerContact
                 name="invoiceCustomerContactId"
                 label={t`Invoice Customer Contact`}
-                customer={customer.id}
+                customer={invoiceCustomer.id}
                 value={invoiceCustomer.invoiceCustomerContactId}
                 onChange={(newValue) => {
                   if (newValue?.id) {
@@ -279,7 +275,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
             </div>
           </VStack>
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               isEditing

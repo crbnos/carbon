@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { activeJobStatuses } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -8,6 +13,7 @@ import {
   Button,
   Checkbox,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Modal,
@@ -23,7 +29,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import {
   LuAlignLeft,
   LuBuilding2,
@@ -31,16 +37,19 @@ import {
   LuDollarSign,
   LuLocateFixed,
   LuPencil,
+  LuPower,
   LuRedoDot,
   LuTrash,
   LuTriangleAlert,
   LuUser
 } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { useProcesses } from "~/components/Form/Process";
 import { Confirm } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import {
   useCurrencyFormatter,
   usePermissions,
@@ -48,7 +57,7 @@ import {
   useUser
 } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { WorkCenter } from "~/modules/resources";
+import type { WorkCenter } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -58,6 +67,7 @@ const logger = getLogger("erp", "workcenterstable");
 type WorkCentersTableProps = {
   data: WorkCenter[];
   count: number;
+  infinite: InfiniteOptions;
   departments: ListItem[];
   locations: ListItem[];
 };
@@ -71,14 +81,20 @@ const defaultColumnVisibility = {
 };
 
 const WorkCentersTable = memo(
-  ({ data, count, departments, locations }: WorkCentersTableProps) => {
+  ({
+    data,
+    count,
+    infinite,
+    departments,
+    locations
+  }: WorkCentersTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const [params] = useUrlParams();
     const [people] = usePeople();
 
     const permissions = usePermissions();
-    const deleteModal = useDisclosure();
+    const deactivateModal = useDisclosure();
     const activateModal = useDisclosure();
     const [selectedWorkCenter, setSelectedWorkCenter] =
       useState<WorkCenter | null>(null);
@@ -91,14 +107,14 @@ const WorkCentersTable = memo(
       activateModal.onOpen();
     };
 
-    const onDelete = (data: WorkCenter) => {
+    const onDeactivate = (data: WorkCenter) => {
       setSelectedWorkCenter(data);
-      deleteModal.onOpen();
+      deactivateModal.onOpen();
     };
 
     const onCancel = () => {
       setSelectedWorkCenter(null);
-      deleteModal.onClose();
+      deactivateModal.onClose();
       activateModal.onClose();
     };
 
@@ -128,6 +144,7 @@ const WorkCentersTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuLocateFixed />
           }
         },
@@ -135,21 +152,21 @@ const WorkCentersTable = memo(
           id: "processes",
           header: t`Processes`,
           cell: ({ row }) => (
-            <span className="flex gap-2 items-center flex-wrap py-2">
-              {((row.original.processes ?? []) as Array<string>).map((p) => {
-                const process = processes.find((proc) => proc.value === p);
-                return (
-                  <Enumerable
-                    key={process?.label}
-                    value={process?.label ?? null}
-                    onClick={() => navigate(path.to.process(process?.value!))}
-                    className="cursor-pointer"
-                  />
-                );
-              })}
-            </span>
+            <EnumerableGroup
+              items={((row.original.processes ?? []) as Array<string>).flatMap(
+                (p) => {
+                  const process = processes.find((proc) => proc.value === p);
+                  if (!process) return [];
+                  return {
+                    label: process.label,
+                    onClick: () => navigate(path.to.process(process.value))
+                  };
+                }
+              )}
+            />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuRedoDot />,
             filter: {
               type: "static",
@@ -304,6 +321,7 @@ const WorkCentersTable = memo(
       (row) => (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.workCenter(row.id!)}?${params?.toString()}`);
             }}
@@ -313,11 +331,10 @@ const WorkCentersTable = memo(
           </MenuItem>
           {row.active ? (
             <MenuItem
-              destructive
               disabled={!permissions.can("delete", "resources")}
-              onClick={() => onDelete(row)}
+              onClick={() => onDeactivate(row)}
             >
-              <MenuIcon icon={<LuTrash />} />
+              <MenuIcon icon={<LuPower />} />
               <Trans>Deactivate Work Center</Trans>
             </MenuItem>
           ) : (
@@ -329,6 +346,19 @@ const WorkCentersTable = memo(
               <Trans>Activate Work Center</Trans>
             </MenuItem>
           )}
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
+            destructive
+            disabled={!permissions.can("delete", "resources")}
+            onClick={() => {
+              navigate(
+                `${path.to.deleteWorkCenter(row.id!)}?${params?.toString()}`
+              );
+            }}
+          >
+            <MenuIcon icon={<LuTrash />} />
+            <Trans>Delete Work Center</Trans>
+          </MenuItem>
         </>
       ),
 
@@ -339,6 +369,7 @@ const WorkCentersTable = memo(
       <>
         <Table<WorkCenter>
           data={data}
+          infinite={infinite}
           defaultColumnVisibility={defaultColumnVisibility}
           columns={columns}
           count={count ?? 0}
@@ -360,9 +391,9 @@ const WorkCentersTable = memo(
         />
 
         {selectedWorkCenter && selectedWorkCenter.id && (
-          <DeleteWorkCenterModal
+          <DeactivateWorkCenterModal
             workCenter={selectedWorkCenter}
-            isOpen={deleteModal.isOpen}
+            isOpen={deactivateModal.isOpen}
             onCancel={onCancel}
             onSubmit={onCancel}
           />
@@ -387,7 +418,7 @@ const WorkCentersTable = memo(
 WorkCentersTable.displayName = "WorkCentersTable";
 export default WorkCentersTable;
 
-function DeleteWorkCenterModal({
+function DeactivateWorkCenterModal({
   workCenter,
   isOpen,
   onCancel,
@@ -439,15 +470,15 @@ function DeleteWorkCenterModal({
     }
   };
 
-  const fetcher = useFetcher<{}>();
-  const submitted = useRef(false);
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onSubmit?.();
-      submitted.current = false;
+  const fetcher = useAction<{}>({
+    onSettled: () => {
+      if (submitted.current) {
+        onSubmit?.();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state, onSubmit]);
-
+  });
+  const submitted = useRef(false);
   useMount(() => {
     getActiveOperations();
   });
@@ -486,12 +517,20 @@ function DeleteWorkCenterModal({
                     </li>
                   ))}
                 </ul>
+                <p className="mt-2">
+                  <Trans>
+                    Move these operations to another work center, or finish
+                    them, before you deactivate it.
+                  </Trans>
+                </p>
               </AlertDescription>
             </Alert>
           ) : (
             <p>
-              Are you sure you want to deactivate the {workCenter.name} work
-              center?
+              <Trans>
+                Are you sure you want to deactivate the {workCenter.name} work
+                center?
+              </Trans>
             </p>
           )}
         </ModalBody>
@@ -502,7 +541,7 @@ function DeleteWorkCenterModal({
           </Button>
           <fetcher.Form
             method="post"
-            action={path.to.deleteWorkCenter(workCenter.id!)}
+            action={path.to.workCenterDeactivate(workCenter.id!)}
             onSubmit={() => (submitted.current = true)}
           >
             <Button

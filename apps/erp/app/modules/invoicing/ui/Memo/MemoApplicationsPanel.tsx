@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Card,
   CardContent,
@@ -16,7 +20,7 @@ import { Link } from "react-router";
 import { DateTime, Empty } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useCurrencyFormatter } from "~/hooks";
-import type { MemoApplication } from "~/modules/invoicing";
+import type { MemoApplication } from "~/modules/invoicing/invoicing.service";
 import { path } from "~/utils/path";
 
 type MemoApplicationsPanelProps = {
@@ -28,7 +32,8 @@ type MemoApplicationsPanelProps = {
 const TARGET_LABEL: Record<MemoApplication["target"]["type"], string> = {
   salesInvoice: "Sales Invoice",
   purchaseInvoice: "Purchase Invoice",
-  memo: "Memo"
+  memo: "Memo",
+  reimbursement: "Reimbursement"
 };
 
 function targetPath(target: MemoApplication["target"]): string {
@@ -39,6 +44,8 @@ function targetPath(target: MemoApplication["target"]): string {
       return path.to.purchaseInvoice(target.id);
     case "memo":
       return path.to.memo(target.id);
+    case "reimbursement":
+      return path.to.reimbursement(target.id);
   }
 }
 

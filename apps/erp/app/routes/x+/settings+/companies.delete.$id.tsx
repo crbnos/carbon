@@ -1,21 +1,36 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { isInternalEmail } from "@carbon/utils";
+import { flags } from "@carbon/env/flags.server";
+import { getLogger } from "@carbon/logger";
+import { isInternalEmail, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteSubsidiary, getSubsidiary } from "~/modules/settings";
+import {
+  deleteSubsidiary,
+  getSubsidiary
+} from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "settings-companies-delete");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, email } = await requirePermissions(request, {
+  const { client, companyId, email } = await requirePermissions(request, {
     view: "settings"
   });
 
-  // Multi-company management is gated to internal (Carbon) users for now.
-  if (!isInternalEmail(email)) {
+  // Multi-company management: Carbon staff, and the companies the
+  // `multi-company-management` flag turns it on for.
+  if (
+    !isInternalEmail(email) &&
+    !(await flags.bool("multi-company-management", { companyId, email }))
+  ) {
     throw redirect(path.to.settings);
   }
 
@@ -34,12 +49,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { email } = await requirePermissions(request, {
-    delete: "settings"
-  });
+  const { companyGroupId, companyId, email } = await requirePermissions(
+    request,
+    {
+      delete: "settings"
+    }
+  );
 
-  // Multi-company management is gated to internal (Carbon) users for now.
-  if (!isInternalEmail(email)) {
+  // Multi-company management: Carbon staff, and the companies the
+  // `multi-company-management` flag turns it on for.
+  if (
+    !isInternalEmail(email) &&
+    !(await flags.bool("multi-company-management", { companyId, email }))
+  ) {
     throw redirect(path.to.settings);
   }
 
@@ -51,10 +73,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteError } = await deleteSubsidiary(
-    getCarbonServiceRole(),
-    id
-  );
+  const serviceRole = getCarbonServiceRole();
+
+  // The delete runs as the service role on a URL id: prove the company is in
+  // the caller's own group first, or any company id could be deleted.
+  const subsidiary = await serviceRole
+    .from("company")
+    .select("id")
+    .eq("id", id)
+    .eq("companyGroupId", companyGroupId)
+    .maybeSingle();
+  if (subsidiary.error || !subsidiary.data) {
+    logger.error("Subsidiary not found in the caller's company group", {
+      companyGroupId,
+      subsidiaryId: id,
+      error: subsidiary.error
+    });
+    throw redirect(
+      path.to.companies,
+      await flash(request, error(subsidiary.error, "Subsidiary not found"))
+    );
+  }
+
+  const { error: deleteError } = await deleteSubsidiary(serviceRole, id);
   if (deleteError) {
     throw redirect(
       path.to.companies,

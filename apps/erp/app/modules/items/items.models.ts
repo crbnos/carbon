@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { PostgrestError } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -60,6 +64,44 @@ export const itemReplenishmentSystems = [
   "Make",
   "Buy and Make"
 ] as const;
+
+/** The fields the item tables' bulk Update sets on many items at once. */
+export const itemBulkUpdateFields = [
+  "itemPostingGroupId",
+  "replenishmentSystem",
+  "defaultMethodType",
+  "sourcingType",
+  "itemTrackingType"
+] as const;
+
+export type ItemBulkUpdateField = (typeof itemBulkUpdateFields)[number];
+
+export function isItemBulkUpdateField(
+  field: unknown
+): field is ItemBulkUpdateField {
+  return itemBulkUpdateFields.some((allowed) => allowed === field);
+}
+
+/** One field set on many items (the items tables' Update): the field and a
+ *  value it takes. Any item group id, or none, is a value. */
+export const itemBulkUpdateValidator = z.discriminatedUnion("field", [
+  z.object({
+    field: z.literal("itemTrackingType"),
+    value: z.enum(itemTrackingTypes)
+  }),
+  z.object({
+    field: z.literal("replenishmentSystem"),
+    value: z.enum(itemReplenishmentSystems)
+  }),
+  z.object({
+    field: z.literal("defaultMethodType"),
+    value: z.enum(methodType)
+  }),
+  z.object({ field: z.literal("sourcingType"), value: z.enum(sourcingType) }),
+  z.object({ field: z.literal("itemPostingGroupId"), value: z.string() })
+]);
+
+export type ItemBulkUpdate = z.infer<typeof itemBulkUpdateValidator>;
 
 // Maps an edit of ONE of the three interlocked item-level fields
 // (replenishmentSystem, defaultMethodType, sourcingType) to the columns that must
@@ -206,10 +248,10 @@ export const itemValidator = z.object({
   // itemShelfLife row. Truly absent fields (non-form callers like MCP that
   // don't set shelfLifeMode at all) remain undefined, which the upsert
   // helper treats as a no-op.
-  shelfLifeMode: z.preprocess(
-    (v) => (v === "" ? "NotManaged" : v),
-    z.enum(shelfLifeModes).optional()
-  ),
+  shelfLifeMode: z
+    .union([z.literal(""), z.enum(shelfLifeModes)])
+    .transform((v) => (v === "" ? "NotManaged" : v))
+    .optional(),
   shelfLifeDays: zfd.numeric(z.number().positive().optional()),
   shelfLifeTriggerProcessId: zfd.text(z.string().optional()),
   // Whether the clock starts when the trigger process begins ('Before') or
@@ -227,7 +269,9 @@ export const itemValidator = z.object({
 // Common storage / shelf-life refines. Shared across all item-type
 // validators. Default Storage Unit is optional for every type - users can
 // set it later via the pickMethod UI once they know where the item lives.
-const applyStorageAndShelfLifeRefines = <T extends z.ZodObject>(schema: T) => {
+export const applyStorageAndShelfLifeRefines = <T extends z.ZodObject>(
+  schema: T
+) => {
   const refined: z.ZodType<z.infer<T>, z.input<T>> = schema
     .refine(
       (data: z.infer<T>) =>
@@ -425,7 +469,7 @@ export const materialValidatorWithGeneratedIds = z.object({
 });
 
 export const methodMaterialValidator = z.object({
-  id: z.string().min(1, { message: "Material ID is required" }),
+  id: z.string().trim().min(1, { message: "Material ID is required" }),
   makeMethodId: z.string().min(1, { message: "Make method is required" }),
   order: zfd.numeric(z.number().min(0)),
   itemType: z.enum(methodItemType, {
@@ -445,13 +489,27 @@ export const methodMaterialValidator = z.object({
   unitOfMeasureCode: z
     .string()
     .min(1, { message: "Unit of Measure is required" }),
-  storageUnitIds: z.string().transform((val) => {
-    try {
-      return JSON.parse(val) as Record<string, string>;
-    } catch {
-      return {};
-    }
-  })
+  // A location → storageUnitId map. The BoM web form submits it as a JSON string
+  // (`<Hidden value={JSON.stringify(...)} />`); the MCP/API layer sends the object
+  // map directly. `preprocess` accepts both — a string is JSON-parsed (a malformed
+  // string stays a string and is REJECTED by the record below, never silently
+  // stored) — and the input JSON Schema published to MCP is a clean object map.
+  // `nullish` lets a caller omit it or send `null` to clear (the service applies
+  // the create/update semantics: omitted → preserve on update / {} on create,
+  // explicit null/{} → clear).
+  storageUnitIds: z
+    .preprocess(
+      (val) => {
+        if (typeof val !== "string") return val;
+        try {
+          return JSON.parse(val);
+        } catch {
+          return val;
+        }
+      },
+      z.record(z.string(), z.string())
+    )
+    .nullish()
 });
 
 export const methodOperationValidator = z
@@ -623,7 +681,15 @@ export const itemPlanningValidator = z
     maximumInventoryQuantity: zfd.numeric(z.number().min(0)).optional(),
     minimumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
     maximumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
-    orderMultiple: zfd.numeric(z.number().min(1)).optional()
+    orderMultiple: zfd.numeric(z.number().min(1)).optional(),
+    // The planning horizon (time fence) in days from today: the planning grids
+    // surface only the actions and suggested orders that fall inside it. Empty
+    // = inherit the company default, else no fence; 0 = no fence for this item
+    // even when the company has a default.
+    planningHorizonDays: zfd.numeric(z.number().int().min(0).optional()),
+    // the ownership ladder's leaf override (spec §P1.3): this item at this
+    // location; empty = inherit item group → location → company default
+    responsibleEmployee: zfd.text(z.string().optional())
     // critical: zfd.checkbox(),
   })
   .refine(
@@ -678,7 +744,8 @@ export const supersessionModeMeta: Record<
   },
   "Prefer New": {
     color: "blue",
-    description: "Default to the successor; old part as fallback only"
+    description:
+      "Plan and build with the successor; picking falls back to the old part only while the successor is out of stock"
   },
   "Stock Only": {
     color: "orange",
@@ -705,7 +772,10 @@ export const itemSupersessionValidator = z
     minimumReserveQuantity: zfd.numeric(z.number().min(0).optional())
   })
   .refine(
-    (data) => (data.supersessionMode ? !!data.discontinuationDate : true),
+    (data) =>
+      data.supersessionMode && data.supersessionMode !== "Consume First"
+        ? !!data.discontinuationDate
+        : true,
     {
       message: "Discontinuation date is required",
       path: ["discontinuationDate"]
@@ -737,6 +807,39 @@ export const itemSupersessionValidator = z
     }
   );
 
+export const predecessorSupersessionValidator = z
+  .object({
+    predecessorItemId: z.string().min(1, { message: "Part is required" }),
+    supersessionMode: z.enum(supersessionModes),
+    discontinuationDate: zfd.text(z.string().optional()),
+    successorEffectivityDate: zfd.text(z.string().optional()),
+    conversionFactor: zfd.numeric(z.number().positive().optional())
+  })
+  .refine((data) => data.supersessionMode !== "No Stock", {
+    message: "No Stock has no successor; set it on the part itself",
+    path: ["supersessionMode"]
+  })
+  .refine(
+    (data) =>
+      data.supersessionMode !== "Consume First"
+        ? !!data.discontinuationDate
+        : true,
+    {
+      message: "Discontinuation date is required",
+      path: ["discontinuationDate"]
+    }
+  )
+  .refine(
+    (data) =>
+      data.successorEffectivityDate && data.discontinuationDate
+        ? data.successorEffectivityDate >= data.discontinuationDate
+        : true,
+    {
+      message:
+        "Successor effectivity date must be on or after the discontinuation date",
+      path: ["successorEffectivityDate"]
+    }
+  );
 export const itemPurchasingValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
   preferredSupplierId: zfd.text(z.string().optional()),
@@ -796,16 +899,17 @@ export const materialTypeValidator = z.object({
   code: z.string().trim().min(1, { message: "Code is required" }).max(10)
 });
 
-export const partValidator = applyStorageAndShelfLifeRefines(
-  itemValidator.merge(
-    z.object({
-      id: z.string().min(1, { message: "Part ID is required" }).max(255),
-      revision: z.string().min(1, { message: "Revision is required" }),
-      modelUploadId: zfd.text(z.string().optional()),
-      lotSize: zfd.numeric(z.number().min(0).optional())
-    })
-  )
+/** A part's fields before the storage and shelf-life rules (`partValidator`). */
+export const partFields = itemValidator.merge(
+  z.object({
+    id: z.string().min(1, { message: "Part ID is required" }).max(255),
+    revision: z.string().min(1, { message: "Revision is required" }),
+    modelUploadId: zfd.text(z.string().optional()),
+    lotSize: zfd.numeric(z.number().min(0).optional())
+  })
 );
+
+export const partValidator = applyStorageAndShelfLifeRefines(partFields);
 
 // Tracked-entity pick order surfaced on the item's per-location Inventory
 // card. 'Default' = the picker's smart order (expiring soonest, then oldest).
@@ -905,14 +1009,29 @@ export const revisionValidator = z
     { message: "Revision or copy from is required" }
   );
 
+export const SERVICE_NAME_MAX_LENGTH = 100;
+
+/**
+ * The built-in "Each" unit of measure. Every company has it and the database
+ * refuses to rename, deactivate or delete it; a service is always counted in it.
+ */
+export const EACH_UNIT_OF_MEASURE_CODE = "EA";
+
 export const serviceValidator = applyStorageAndShelfLifeRefines(
   itemValidator.merge(
     z.object({
-      id: z.string().min(1, { message: "Service ID is required" }).max(255),
-      revision: z.string().min(1, { message: "Revision is required" }),
-      unitOfMeasureCode: z
+      // A service is identified by its name: it is the readable id, so
+      // neither an id nor a revision is asked for. `id` is only the key of the
+      // service to update.
+      id: zfd.text(z.string().max(255).optional()),
+      name: z
         .string()
-        .min(1, { message: "Unit of Measure is required" }),
+        .trim()
+        .min(1, { message: "Name is required" })
+        .max(SERVICE_NAME_MAX_LENGTH),
+      revision: zfd.text(z.string().optional()),
+      // Ignored: a service is always counted in Each (EA).
+      unitOfMeasureCode: zfd.text(z.string().optional()),
       replenishmentSystem: z.enum(serviceReplenishmentSystems, {
         error: "Replenishment system is required"
       }),
@@ -931,22 +1050,39 @@ export const supplierPartValidator = z.object({
   minimumOrderQuantity: zfd.numeric(z.number().min(0)),
   orderMultiple: zfd.numeric(z.number().min(1)).optional(),
   conversionFactor: zfd.numeric(z.number().min(0)),
-  unitPrice: zfd.numeric(z.number().min(0).optional())
+  // Per purchase unit, in currencyCode — the price as the supplier quoted it.
+  currencyCode: zfd.text(z.string().optional()),
+  supplierUnitPrice: zfd.numeric(z.number().min(0).optional())
 });
 
-export const toolValidator = applyStorageAndShelfLifeRefines(
-  itemValidator.merge(
-    z.object({
-      id: z.string().min(1, { message: "Tool ID is required" }).max(255),
-      revision: z.string().min(1, { message: "Revision is required" }),
-      modelUploadId: zfd.text(z.string().optional()),
-      unitOfMeasureCode: z
-        .string()
-        .min(1, { message: "Unit of Measure is required" }),
-      lotSize: zfd.numeric(z.number().min(0).optional())
-    })
-  )
+/** A supplier part's price breaks, per purchase unit in its currency. */
+export const supplierPartPriceBreaksValidator = z.array(
+  z.object({
+    quantity: z.number(),
+    supplierUnitPrice: z.number(),
+    leadTime: z.number().optional()
+  })
 );
+
+/** The supplier part drawer's post: the part, and its price breaks as JSON. */
+export const supplierPartFormValidator = supplierPartValidator.extend({
+  priceBreaks: zfd.json(supplierPartPriceBreaksValidator.optional())
+});
+
+/** A tool's fields before the storage and shelf-life rules (`toolValidator`). */
+export const toolFields = itemValidator.merge(
+  z.object({
+    id: z.string().min(1, { message: "Tool ID is required" }).max(255),
+    revision: z.string().min(1, { message: "Revision is required" }),
+    modelUploadId: zfd.text(z.string().optional()),
+    unitOfMeasureCode: z
+      .string()
+      .min(1, { message: "Unit of Measure is required" }),
+    lotSize: zfd.numeric(z.number().min(0).optional())
+  })
+);
+
+export const toolValidator = applyStorageAndShelfLifeRefines(toolFields);
 
 export const unitOfMeasureValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -1120,6 +1256,11 @@ export function changeNoticeLockedMessage(status: string | null | undefined) {
     : "This change notice is closed, so its changes are read-only.";
 }
 
+// Engineering content is also frozen while an approval request is pending: the
+// approver signs off on exactly what they reviewed.
+export const changeNoticeAwaitingApprovalMessage =
+  "This change notice is waiting for approval. Engineering changes are locked until it is approved or rejected.";
+
 // Workflow content — action tasks, assignee, dates, priority. Editable until closed.
 export function canEditChangeNoticeWorkflow(
   status: string | null | undefined
@@ -1264,8 +1405,9 @@ export type ChangeNoticeItemDiff = {
   // read-only diff viewer can render the BOP as a tree.
   operations: OperationDiffEntry[];
   attributes: MethodDiffEntry<Record<string, unknown>>[];
-  // Supplier parts on a Revision/New Part draft item. Drafts start with none
-  // (the source's suppliers aren't copied), so these surface as `added` entries.
+  // Supplier parts on a draft item. A Revision draft starts with a copy of its
+  // source revision's, so its entries are a real diff against the source; a
+  // Replacement Part / New Part draft starts with none, so its are all `added`.
   supplierParts: MethodDiffEntry<Record<string, unknown>>[];
 };
 

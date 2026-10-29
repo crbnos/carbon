@@ -1,74 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
-import { textToTiptap } from "@carbon/utils";
+import type {
+  BuyPriceBreak,
+  CurrencyRate,
+  SupplierPriceBreak,
+  SupplierPriceMap
+} from "@carbon/database/supplier-part-price";
+import { TiptapText } from "@carbon/files/markdown";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-
-export const approvalDecisionValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  decision: z.enum(["Approved", "Rejected"], {
-    error: "Decision is required"
-  }),
-  decisionNotes: zfd.text(z.string().optional())
-});
-
-export const approvalDocumentType = [
-  "purchaseOrder",
-  "qualityDocument",
-  "supplier"
-] as const;
-
-export type ApprovalDocumentType =
-  Database["public"]["Enums"]["approvalDocumentType"];
-
-export const approvalDocumentTypeLabel: Record<ApprovalDocumentType, string> = {
-  purchaseOrder: "Purchase Order",
-  qualityDocument: "Quality Document",
-  supplier: "Supplier"
-};
-
-export const approvalDocumentTypesWithAmounts: ApprovalDocumentType[] = [
-  "purchaseOrder"
-] as const;
-
-export const approvalFiltersValidator = z.object({
-  documentType: z.enum(approvalDocumentType, {
-    error: "Document type is required"
-  }),
-  status: zfd.text(z.string().optional()),
-  dateFrom: zfd.text(z.string().optional()),
-  dateTo: zfd.text(z.string().optional())
-});
-
-export const approvalRequestValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  documentType: z.enum(approvalDocumentType, {
-    error: "Document type is required"
-  }),
-  documentId: zfd.text(
-    z.string().min(1, { message: "Document ID is required" })
-  ),
-  approverGroupIds: zfd.repeatableOfType(z.string()).optional()
-});
-
-export const approvalRuleValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  documentType: z.enum(approvalDocumentType, {
-    error: "Document type is required"
-  }),
-  approverGroupIds: z.array(
-    z.string().min(1, { message: "Invalid selection" })
-  ),
-  defaultApproverId: zfd.text(z.string().optional()),
-  lowerBoundAmount: zfd.numeric(z.number().gt(0).default(0)).optional(),
-  enabled: zfd.checkbox()
-});
-
-export const approvalStatusType = [
-  "Pending",
-  "Approved",
-  "Rejected",
-  "Cancelled"
-] as const;
 
 export const chartIntervals = [
   { key: "week", label: "Week" },
@@ -78,19 +21,7 @@ export const chartIntervals = [
   { key: "custom", label: "Custom" }
 ];
 
-export const documentTypes = [
-  "Archive",
-  "Document",
-  "Presentation",
-  "PDF",
-  "Spreadsheet",
-  "Text",
-  "Image",
-  "Video",
-  "Audio",
-  "Model",
-  "Other"
-] as const;
+export { documentTypes } from "@carbon/files";
 
 export const incoterms = [
   "EXW",
@@ -223,28 +154,61 @@ export type OperationType = (typeof operationTypes)[number];
 // inspectionDocumentId. Writes go through this so a stale pointer can't survive
 // a type change (sanitize() only nullifies present-undefined keys — it never
 // clears an omitted field). See .ai/specs/2026-07-21-operation-instruction-sources.md.
+// The same holds for the work center: Outside Processing runs at the supplier,
+// and a work center left over from an in-house type put the operation on the
+// MES Work Centers board.
+/**
+ * A yes/no field. An API caller sends a JSON boolean and a form posts
+ * `"true"` / `"false"`; both parse to a boolean. Typed as taking a boolean, so
+ * the published API schema says `boolean`: the form's strings are its own.
+ */
+export const booleanField = () =>
+  z.preprocess(
+    (value) => (value === "true" ? true : value === "false" ? false : value),
+    z.boolean()
+  ) as unknown as z.ZodType<boolean, boolean>;
+
+/**
+ * A JSON value. A form posts it as text in a hidden field; an API caller sends
+ * the value itself. Typed as the value, so the published API schema describes
+ * it instead of "anything". Text that is not JSON is left for `schema` to refuse.
+ */
+export const jsonInput = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((value) => {
+    if (typeof value !== "string") return value;
+    if (value.trim() === "") return undefined;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }, schema) as unknown as T;
+
 export function normalizeOperationSourceIds<
   T extends {
     operationType?: string;
     procedureId?: string | null;
     assemblyInstructionId?: string | null;
     inspectionDocumentId?: string | null;
+    workCenterId?: string | null;
   }
 >(operation: T): T {
+  // The type's own pointer is written only when the caller sent it (a form
+  // clearing it sends the key); a partial update that left it out keeps it.
+  const own = <K extends keyof T>(key: K, type: string) =>
+    operation.operationType !== type
+      ? { [key]: null }
+      : key in operation
+        ? { [key]: operation[key] || null }
+        : {};
   return {
     ...operation,
-    procedureId:
-      operation.operationType === "Process"
-        ? operation.procedureId || null
-        : null,
-    assemblyInstructionId:
-      operation.operationType === "Assembly"
-        ? operation.assemblyInstructionId || null
-        : null,
-    inspectionDocumentId:
-      operation.operationType === "Inspection"
-        ? operation.inspectionDocumentId || null
-        : null
+    ...(operation.operationType === "Outside Processing"
+      ? { workCenterId: null }
+      : {}),
+    ...own("procedureId", "Process"),
+    ...own("assemblyInstructionId", "Assembly"),
+    ...own("inspectionDocumentId", "Inspection")
   };
 }
 
@@ -288,6 +252,95 @@ export const oAuthCallbackSchema = z.object({
   state: z.string()
 });
 
+/**
+ * Coerces whatever a caller sent for a rich-text column into a tiptap document
+ * object. Accepts Markdown text, a JSON-encoded document (a form post), or the
+ * document itself (an MCP / API JSON body). `format: "text"` stores text as
+ * typed instead of reading it as Markdown.
+ *
+ * Rich-text columns (`internalNotes`, `externalNotes`, step descriptions) are
+ * `json`, and they MUST hold an object. A JSON string scalar stored there is
+ * read back by supabase-js as a JS string; when the row is later copied through
+ * Kysely (quote → sales order, RFQ → quote, quote → revision, method copies)
+ * the Postgres driver sends that string as raw text and Postgres rejects it
+ * with `invalid input syntax for type json`. The server functions serialise on
+ * their side too (`@carbon/database/json`), but the write side must never store the
+ * scalar in the first place. Never drops content to `{}`.
+ *
+ * Returns `any`: the doc is consumed both as a DB Json value and as editor
+ * JSONContent, and a narrower type breaks one of the two call sites.
+ */
+export function toTiptapDoc(
+  value: unknown,
+  format: "markdown" | "text" = "markdown"
+): any {
+  return TiptapText(value, { format }).toDocument();
+}
+
+/**
+ * Optional rich-text field: absent or empty leaves the column untouched,
+ * anything else is stored as a tiptap document via `toTiptapDoc`. Declared as
+ * `string | object` on the input side so the MCP manifest (which publishes the
+ * INPUT schema) tells a caller both shapes are accepted, instead of the bare
+ * `{}` a `z.any()` produced.
+ */
+// A node's `content` must be a list of nodes, at every depth: a document
+// whose content was a string reached the editor and RichTextView, which walk
+// it as an array.
+type TiptapNodeInput = { type: string; content?: TiptapNodeInput[] };
+const tiptapNodeInput: z.ZodType<TiptapNodeInput> = z.lazy(() =>
+  z.looseObject({
+    type: z.string().min(1),
+    text: z.string().optional(),
+    content: z.array(tiptapNodeInput).optional()
+  })
+);
+const tiptapDocumentInput = z.looseObject({
+  type: z.literal("doc"),
+  content: z.array(tiptapNodeInput).optional()
+});
+
+const tiptapDocInput = (format?: "markdown" | "text") =>
+  z
+    .union([
+      z.string(),
+      // A Tiptap document, or `{}` to clear; any other object is refused.
+      tiptapDocumentInput,
+      z.strictObject({})
+    ])
+    .transform((value): any =>
+      value === "" ? undefined : toTiptapDoc(value, format)
+    )
+    // `.optional()` LAST so the inferred key is optional (`notes?:`) — placing
+    // it before the transform makes zod infer a required key and every caller
+    // that omits `notes` stops compiling.
+    .optional();
+
+/** Text read as Markdown. */
+export const optionalTiptapDoc = tiptapDocInput();
+
+/**
+ * Text stored as typed, for a field edited in a plain textarea that reads it
+ * back with `TiptapText(…).toString()`: Markdown markers would not survive that
+ * round trip (`1. Ship` would come back as `Ship`).
+ */
+export const optionalPlainTextDoc = tiptapDocInput("text");
+
+/** Required rich text: Markdown, or a Tiptap document. */
+export const requiredTiptapDoc = z
+  .union([z.string().trim().min(1), tiptapDocumentInput])
+  .transform((value): any => toTiptapDoc(value));
+
+/**
+ * A List step's options. Blank rows (the empty row "Add option" leaves) are
+ * dropped before the step's refine runs, so a trailing empty row never blocks a
+ * save and is never stored.
+ */
+export const stepListValues = z
+  .array(z.string())
+  .transform((values) => values.filter((value) => value.trim() !== ""))
+  .optional();
+
 export const operationStepValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -296,29 +349,14 @@ export const operationStepValidator = z
     description: z
       .string()
       .min(1, { message: "Description is required" })
-      // Returns `any`: the tiptap doc is consumed both as a DB Json value and as
-      // editor JSONContent, and a narrower type breaks one of the two call sites.
-      .transform((val): any => {
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(val);
-          // biome-ignore lint/correctness/noUnusedVariables: raw text is not JSON
-        } catch (e) {
-          parsed = val;
-        }
-        // Always store a tiptap doc object, never a scalar string (jsonb scalar
-        // strings break method copies) and never silently drop content to {}.
-        if (typeof parsed === "string") return textToTiptap(parsed);
-        if (parsed && typeof parsed === "object") return parsed;
-        return textToTiptap(String(val));
-      }),
+      .transform((val): any => toTiptapDoc(val)),
     type: z.enum(procedureStepType, {
       error: "Type is required"
     }),
     unitOfMeasureCode: zfd.text(z.string().optional()),
     minValue: zfd.numeric(z.number().min(0).optional()),
     maxValue: zfd.numeric(z.number().min(0).optional()),
-    listValues: z.array(z.string()).optional(),
+    listValues: stepListValues,
     sortOrder: zfd.numeric(z.number().min(0).optional())
   })
   .refine(
@@ -336,17 +374,13 @@ export const operationStepValidator = z
   .refine(
     (data) => {
       if (data.type === "List") {
-        return (
-          Array.isArray(data.listValues) &&
-          data.listValues.length > 0 &&
-          data.listValues.every((option) => option.trim() !== "")
-        );
+        return Array.isArray(data.listValues) && data.listValues.length > 0;
       }
       return true;
     },
     {
       message: "List options are required",
-      path: ["listOptions"]
+      path: ["listValues"]
     }
   )
   .refine(
@@ -462,6 +496,23 @@ export const savedViewStateValidator = z.object({
   sorts: z.array(z.string()).optional()
 });
 
+/**
+ * An Inspection operation needs its inspection plan: unlike times, units and
+ * rates, nothing can fill it in. Spread into `.refine(...)`.
+ */
+export const inspectionPlanRequired: [
+  (operation: {
+    operationType: string;
+    inspectionDocumentId?: string;
+  }) => boolean,
+  { message: string; path: string[] }
+] = [
+  (operation) =>
+    operation.operationType !== "Inspection" ||
+    !!operation.inspectionDocumentId,
+  { message: "Inspection Plan is required", path: ["inspectionDocumentId"] }
+];
+
 export const standardFactorType = [
   "Hours/Piece",
   "Hours/100 Pieces",
@@ -476,15 +527,96 @@ export const standardFactorType = [
   "Total Minutes"
 ] as const;
 
-export type PriceBreak = {
-  quantity: number;
-  unitPrice: number;
+/** A costing break: inventory quantity, base-currency price per inventory unit. */
+export type PriceBreak = BuyPriceBreak;
+
+export type { SupplierPriceMap };
+
+/**
+ * A supplier part's pricing as the supplier quoted it — per purchase unit, in
+ * `currency.currencyCode` — with that currency's current rate.
+ */
+export type SupplierPartPricing = {
+  priceBreaks: SupplierPriceBreak[];
+  supplierUnitPrice: number | null;
+  currency: CurrencyRate;
 };
 
-export type SupplierPriceMap = Record<
-  string,
-  {
-    priceBreaks: PriceBreak[];
-    fallbackUnitPrice: number | null;
-  }
->;
+export type NoteField = "internalNotes" | "externalNotes" | "notes";
+type PublicTables = Database["public"]["Tables"];
+
+/**
+ * The notes fields a person edits in the app, per table: what `setNotes` may
+ * set. Each one is a column of its table (checked below).
+ */
+export const noteFields = {
+  salesRfq: ["internalNotes", "externalNotes"],
+  salesRfqLine: ["internalNotes", "externalNotes"],
+  quote: ["internalNotes", "externalNotes"],
+  quoteLine: ["internalNotes", "externalNotes"],
+  salesOrder: ["internalNotes", "externalNotes"],
+  salesOrderLine: ["internalNotes", "externalNotes"],
+  salesInvoice: ["internalNotes", "externalNotes"],
+  salesInvoiceLine: ["internalNotes", "externalNotes"],
+  purchasingRfq: ["internalNotes"],
+  purchasingRfqLine: ["internalNotes", "externalNotes"],
+  supplierQuote: ["internalNotes", "externalNotes"],
+  supplierQuoteLine: ["internalNotes", "externalNotes"],
+  purchaseOrder: ["internalNotes", "externalNotes"],
+  purchaseOrderLine: ["internalNotes", "externalNotes"],
+  purchaseInvoice: ["internalNotes"],
+  purchaseInvoiceLine: ["internalNotes"],
+  receipt: ["internalNotes"],
+  shipment: ["internalNotes", "externalNotes"],
+  job: ["notes"],
+  item: ["notes"],
+  fixedAsset: ["notes"],
+  pickingList: ["notes"],
+  stockTransfer: ["notes"]
+} as const satisfies {
+  readonly [T in keyof PublicTables]?: readonly (keyof PublicTables[T]["Row"] &
+    NoteField)[];
+};
+
+export type NoteTable = keyof typeof noteFields;
+export const noteTables = Object.keys(noteFields) as [
+  NoteTable,
+  ...NoteTable[]
+];
+
+/** The tables with an `assignee` column: what `assignRecord` may assign. */
+export const assignableTables = [
+  "changeOrder",
+  "changeOrderActionTask",
+  "customer",
+  "item",
+  "job",
+  "jobOperation",
+  "lease",
+  "maintenanceDispatch",
+  "nonConformance",
+  "nonConformanceActionTask",
+  "nonConformanceApprovalTask",
+  "nonConformanceReviewer",
+  "pickingList",
+  "planningAction",
+  "procedure",
+  "purchaseInvoice",
+  "purchaseOrder",
+  "purchaseReturnOrder",
+  "purchasingRfq",
+  "qualityDocument",
+  "quote",
+  "receipt",
+  "riskRegister",
+  "salesInvoice",
+  "salesOrder",
+  "salesOrderShipment",
+  "salesReturnOrder",
+  "salesRfq",
+  "shipment",
+  "stockTransfer",
+  "supplier",
+  "supplierQuote",
+  "training"
+] as const;

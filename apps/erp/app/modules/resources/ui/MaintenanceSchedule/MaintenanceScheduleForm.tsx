@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Boolean,
   Number,
@@ -5,6 +9,7 @@ import {
   useControlField,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   FormControl,
@@ -24,7 +29,6 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
-import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
@@ -111,7 +115,8 @@ const MaintenanceScheduleForm = ({
 }: MaintenanceScheduleFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
+  // A refusal is toasted for both the modal and the drawer.
+  const fetcher = useAction<PostgrestResponse<{ id: string }>>();
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -119,10 +124,6 @@ const MaintenanceScheduleForm = ({
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
       toast.success(t`Created maintenance schedule`);
-    } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(
-        t`Failed to create maintenance schedule: ${fetcher.data.error.message}`
-      );
     }
   }, [fetcher.data, fetcher.state, onClose, type, t]);
 

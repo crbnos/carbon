@@ -1,4 +1,9 @@
-import { getEntry, type TermId } from "@carbon/glossary";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { getEntry, type TermId } from "@carbon/content/glossary";
+import { docUrl } from "@carbon/content/links";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuInfo } from "react-icons/lu";
@@ -6,10 +11,11 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { HStack } from "./HStack";
 import { cn } from "./utils/cn";
 
-const DOCS_BASE_URL = "https://docs.carbon.ms";
-
 type LabelWithHelpProps = {
   termId: TermId | undefined;
+  /** Free-text fallback for the ⓘ hover when no glossary term exists — e.g. a
+   * third-party vendor's own field description. Ignored when `termId` is set. */
+  text?: string;
   children: ReactNode;
   className?: string;
   /** Delay (ms) before the help popup opens on hover. */
@@ -25,6 +31,7 @@ type LabelWithHelpProps = {
 
 export function LabelWithHelp({
   termId,
+  text,
   children,
   className,
   tooltipDelayDuration = 200,
@@ -32,12 +39,14 @@ export function LabelWithHelp({
 }: LabelWithHelpProps) {
   // Hooks must run unconditionally — call useLingui before any early return.
   const { t, i18n } = useLingui();
-  if (termId === undefined) return <>{children}</>;
-  const entry = getEntry(termId);
+  if (termId === undefined && text === undefined) return <>{children}</>;
+  const entry = termId === undefined ? undefined : getEntry(termId);
 
-  const translatedTerm = i18n._(entry.term);
-  const translatedDefinition = i18n._(entry.definition);
-  const showLearnMore = entry.href !== undefined;
+  const translatedTerm = entry === undefined ? "" : i18n._(entry.term);
+  const translatedDefinition =
+    entry === undefined ? (text ?? "") : i18n._(entry.definition);
+  const learnMoreUrl =
+    entry?.href === undefined ? undefined : docUrl(entry.href);
   const isInline = variant === "inline";
 
   // HoverCard (not Tooltip): the popup contains an interactive "Learn more"
@@ -50,7 +59,11 @@ export function LabelWithHelp({
         <button
           type="button"
           tabIndex={-1}
-          aria-label={t`What is ${translatedTerm}?`}
+          aria-label={
+            entry === undefined
+              ? t`About this field`
+              : t`What is ${translatedTerm}?`
+          }
           className={cn(
             "inline-flex items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             // Stacked labels sit above a form control: the 20px button is 4px
@@ -59,7 +72,9 @@ export function LabelWithHelp({
             // -2px vertical margin collapses the button's margin-box back to
             // the text line height so the row height is identical either way;
             // the hover ring overhangs harmlessly and the icon stays in line.
-            isInline ? "h-4 w-4" : "h-5 w-5 -my-0.5"
+            isInline ? "h-4 w-4" : "h-5 w-5 -my-0.5",
+            // Tap target on phones: an invisible 44px hit area around the icon.
+            "max-md:hit-area"
           )}
         >
           <LuInfo
@@ -74,11 +89,11 @@ export function LabelWithHelp({
         className="w-auto max-w-xs p-3 text-xs text-pretty leading-relaxed text-muted-foreground"
       >
         {translatedDefinition}
-        {showLearnMore && (
+        {learnMoreUrl && (
           <>
             {" "}
             <a
-              href={`${DOCS_BASE_URL}${entry.href}`}
+              href={learnMoreUrl}
               target="_blank"
               rel="noreferrer"
               className="text-primary font-medium underline decoration-dashed underline-offset-4 hover:decoration-solid"

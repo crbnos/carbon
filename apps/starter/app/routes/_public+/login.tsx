@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   assertIsPost,
   carbonClient,
@@ -7,8 +11,15 @@ import {
   SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID,
   SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
 } from "@carbon/auth";
-import { sendMagicLink, verifyAuthSession } from "@carbon/auth/auth.server";
+import {
+  botProtection,
+  getMagicLinkErrorMessage,
+  sendMagicLink,
+  verifyAuthSession,
+  verifyBotProtection
+} from "@carbon/auth/auth.server";
 import { flash, getAuthSession } from "@carbon/auth/session.server";
+import { markSignInBrowser } from "@carbon/auth/sign-in-browser.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
 import { Ratelimit, redis } from "@carbon/kv";
@@ -20,21 +31,17 @@ import {
   Heading,
   Separator,
   toast,
+  useBotProtection,
   VStack
 } from "@carbon/react";
+import { getClientIp, redirect } from "@carbon/utils";
 import { LuCircleAlert } from "react-icons/lu";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import {
-  data,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useSearchParams
-} from "react-router";
+import { data, useFetcher, useLoaderData, useSearchParams } from "react-router";
 
 import { path } from "~/utils/path";
 
@@ -50,16 +57,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     hasOutlookAuth: !!SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID,
-    hasGoogleAuth: !!SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
+    hasGoogleAuth: !!SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID,
+    botProtection
   };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
+    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "5 m"),
     analytics: true
   });
   const { success } = await ratelimit.limit(ip);
@@ -79,16 +87,36 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email } = validation.data;
+  const { email, botToken, redirectTo } = validation.data;
+
+  const botError = await verifyBotProtection({
+    token: botToken,
+    ip,
+    actor: email
+  });
+  if (botError) {
+    return data(
+      error(null, botError),
+      await flash(request, error(null, botError))
+    );
+  }
+
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email);
+    // Back to this app, not VERCEL_URL: outside `crbn up` that is the ERP's
+    // URL, so the link signed the user in to the ERP instead.
+    const magicLink = await sendMagicLink(
+      email,
+      new URL(request.url).origin,
+      redirectTo
+    );
 
-    if (!magicLink) {
+    if (magicLink.error) {
+      const message = getMagicLinkErrorMessage(magicLink.error);
       return data(
-        error(magicLink, "Failed to send magic link"),
-        await flash(request, error(magicLink, "Failed to send magic link"))
+        error(magicLink, message),
+        await flash(request, error(magicLink, message))
       );
     }
   } else {
@@ -98,24 +126,30 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  return { success: true };
+  // This browser asked: the email's link completes only here.
+  return data(
+    { success: true as const },
+    { headers: { "Set-Cookie": await markSignInBrowser() } }
+  );
 }
 
 export default function LoginRoute() {
-  const { hasOutlookAuth, hasGoogleAuth } = useLoaderData<typeof loader>();
+  const { hasOutlookAuth, hasGoogleAuth, botProtection } =
+    useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
 
   const fetcher = useFetcher<
     { success: true } | { success: false; message: string }
   >();
+  const bot = useBotProtection("/login", botProtection, fetcher.data);
 
   const onSignInWithGoogle = async () => {
     const { error } = await carbonClient.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/callback${
-          redirectTo ? `?redirectTo=${redirectTo}` : ""
+          redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""
         }`
       }
     });
@@ -131,7 +165,7 @@ export default function LoginRoute() {
       options: {
         scopes: "email",
         redirectTo: `${window.location.origin}/callback${
-          redirectTo ? `?redirectTo=${redirectTo}` : ""
+          redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""
         }`
       }
     });
@@ -173,6 +207,7 @@ export default function LoginRoute() {
             method="post"
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
+            <Hidden name="botToken" value={bot.token} />
             <VStack spacing={2}>
               {fetcher.data?.success === false && fetcher.data?.message && (
                 <Alert variant="destructive">
@@ -218,7 +253,7 @@ export default function LoginRoute() {
               <Input name="email" label="" placeholder="Email Address" />
 
               <Submit
-                isDisabled={fetcher.state !== "idle"}
+                isDisabled={fetcher.state !== "idle" || !bot.ready}
                 isLoading={fetcher.state === "submitting"}
                 size="lg"
                 className="w-full"
@@ -227,6 +262,7 @@ export default function LoginRoute() {
               >
                 Sign in with Email
               </Submit>
+              {bot.challenge}
             </VStack>
           </ValidatedForm>
         )}

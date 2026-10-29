@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   assertIsPost,
   callbackValidator,
@@ -20,13 +24,20 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
-  LoadingBars,
+  CarbonPulse,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, redirect, useFetcher, useLocation } from "react-router";
+import {
+  data,
+  Link,
+  useFetcher,
+  useLocation,
+  useSearchParams
+} from "react-router";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -50,7 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  const { refreshToken, userId } = validation.data;
+  const { refreshToken, userId, redirectTo } = validation.data;
   const serviceRole = getCarbonServiceRole();
   const companies = await serviceRole
     .from("userToCompany")
@@ -83,7 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
       authSession
     });
     const companyIdCookie = setCompanyId(authSession.companyId);
-    return redirect(path.to.authenticatedRoot, {
+    return redirect(redirectTo || path.to.authenticatedRoot, {
       headers: [
         ["Set-Cookie", sessionCookie],
         ["Set-Cookie", companyIdCookie]
@@ -103,6 +114,8 @@ export default function AuthCallback() {
   const [error, setError] = useState<string | null>(null);
 
   const { hash } = useLocation();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo") ?? undefined;
 
   useEffect(() => {
     const hashParams = new URLSearchParams(hash.slice(1));
@@ -130,6 +143,7 @@ export default function AuthCallback() {
         const formData = new FormData();
         formData.append("refreshToken", refreshToken);
         formData.append("userId", userId);
+        if (redirectTo) formData.append("redirectTo", redirectTo);
 
         fetcher.submit(formData, { method: "post" });
       }
@@ -138,50 +152,47 @@ export default function AuthCallback() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetcher]);
+  }, [fetcher, redirectTo]);
 
   return (
-    <div className="flex flex-col items-center justify-center">
-      <div className="flex justify-center mb-8">
-        <img
-          src="/carbon-mark-light.svg"
-          alt="Carbon Logo"
-          className="w-24 dark:hidden"
-        />
-        <img
-          src="/carbon-mark-dark.svg"
-          alt="Carbon Logo"
-          className="w-24 hidden dark:block"
-        />
-        <img
-          src="/carbon-mark-dark.svg"
-          alt="Carbon Logo"
-          className="w-24 hidden dark:block"
-        />
-      </div>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-card">
       {error ? (
-        <div className="rounded-lg p-8 mt-8 w-[380px]">
-          <VStack spacing={4}>
-            <Alert variant="destructive">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-            {error.includes("expired") && (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  But don't worry. You can use the forgot password flow to
-                  request a new magic link.
-                </p>
-                <Button size="lg" asChild className="w-full">
-                  <Link to={path.to.login}>Login</Link>
-                </Button>
-              </>
-            )}
-          </VStack>
-        </div>
+        <>
+          <div className="flex justify-center mb-8">
+            <img
+              src="/carbon-mark-light.svg"
+              alt="Carbon Logo"
+              className="w-24 dark:hidden"
+            />
+            <img
+              src="/carbon-mark-dark.svg"
+              alt="Carbon Logo"
+              className="w-24 hidden dark:block"
+            />
+          </div>
+          <div className="rounded-lg p-8 mt-8 w-[380px]">
+            <VStack spacing={4}>
+              <Alert variant="destructive">
+                <LuTriangleAlert className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+              {error.includes("expired") && (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    But don't worry. You can use the forgot password flow to
+                    request a new magic link.
+                  </p>
+                  <Button size="lg" asChild className="w-full">
+                    <Link to={path.to.login}>Login</Link>
+                  </Button>
+                </>
+              )}
+            </VStack>
+          </div>
+        </>
       ) : (
-        <LoadingBars />
+        <CarbonPulse />
       )}
     </div>
   );

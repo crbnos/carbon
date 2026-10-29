@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Hidden,
   Input,
@@ -6,6 +10,7 @@ import {
   Submit,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -29,9 +34,11 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  NumberField,
+  NumberInput as NumberFieldInput,
   toast
 } from "@carbon/react";
-import { EPSILON } from "@carbon/utils";
+import { distinctItemText, EPSILON, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -60,7 +67,67 @@ import { DispositionStatus } from "./DispositionStatus";
 type AssociatedItemsListProps = {
   associatedItems: IssueAssociationNode["children"];
   isDisabled?: boolean;
+  // True for an inspection-originated NCR: the reject already wrote off the
+  // lot quantity, which closeIssue restores on Use As Is / Rework.
+  isQuantityReadOnly?: boolean;
 };
+
+function DispositionQuantityInput({
+  nonConformanceItemId,
+  quantity
+}: {
+  nonConformanceItemId: string;
+  quantity: number;
+}) {
+  const { t } = useLingui();
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
+    }
+  });
+
+  // Show the submitted value while the save is in flight; once the fetcher is
+  // idle this falls back to the loader's quantity, which also resets the field
+  // when the server rejects the change.
+  const pending = fetcher.formData?.get("value");
+  const value = typeof pending === "string" ? Number(pending) : quantity;
+  // One save at a time: the next edit waits for the previous save and its
+  // revalidation, so it carries the fresh quantity as expectedQuantity.
+  const isSaving = fetcher.state !== "idle";
+
+  return (
+    <NumberField
+      aria-label={t`Quantity`}
+      value={value}
+      minValue={0}
+      formatOptions={INPUT_FORMAT.quantity}
+      isReadOnly={isSaving}
+      onChange={(next) => {
+        if (
+          isSaving ||
+          !Number.isFinite(next) ||
+          next < 0 ||
+          Math.abs(next - quantity) <= EPSILON
+        ) {
+          return;
+        }
+        const formData = new FormData();
+        formData.append("id", nonConformanceItemId);
+        formData.append("field", "quantity");
+        formData.append("value", String(next));
+        formData.append("expectedQuantity", String(quantity));
+        fetcher.submit(formData, {
+          method: "post",
+          action: path.to.updateIssueItem
+        });
+      }}
+    >
+      <NumberFieldInput size="sm" className="pr-2 tabular-nums" />
+    </NumberField>
+  );
+}
 
 type EntityLink = {
   id: string;
@@ -105,23 +172,24 @@ type MoveTarget = {
 
 export function AssociatedItemsList({
   associatedItems,
-  isDisabled = false
+  isDisabled = false,
+  isQuantityReadOnly = false
 }: AssociatedItemsListProps) {
   const [items] = useItems();
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
+    }
+  });
   const splitFetcher = useFetcher<typeof splitAction>();
   const assignFetcher = useFetcher<typeof assignAction>();
   const [splitTarget, setSplitTarget] = useState<SplitTarget | null>(null);
   const [moveTarget, setMoveTarget] = useState<MoveTarget | null>(null);
   const [dragOverRowId, setDragOverRowId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
-    }
-  }, [fetcher.data]);
 
   useEffect(() => {
     if (
@@ -227,6 +295,9 @@ export function AssociatedItemsList({
   }
 
   const canEdit = permissions.can("update", "quality") && !isDisabled;
+  // Tracked rows (with entity links) derive their quantity from the links, so
+  // only link-less rows get the input; the update route enforces the same.
+  const canEditQuantity = canEdit && !isQuantityReadOnly;
   const blockingRows = dispositionableRows.filter(
     (r) => r.pending || r.sumMismatch
   );
@@ -332,22 +403,34 @@ export function AssociatedItemsList({
                   }
                 }}
               >
-                <div className="flex items-start w-full gap-4">
-                  <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex items-start w-full gap-4 max-md:flex-wrap max-md:gap-y-2">
+                  <div className="flex flex-col min-w-0 flex-1 max-md:basis-full">
                     <h3 className="font-semibold truncate">
                       {item.readableIdWithRevision}
                     </h3>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {item.name}
-                    </p>
+                    {distinctItemText(
+                      item.readableIdWithRevision,
+                      item.name
+                    ) && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {item.name}
+                      </p>
+                    )}
                   </div>
                   <div className="w-20 shrink-0 flex flex-col gap-1">
                     <span className="text-xs font-medium text-muted-foreground">
                       <Trans>Quantity</Trans>
                     </span>
-                    <span className="h-8 flex items-center text-sm tabular-nums">
-                      {r.quantity}
-                    </span>
+                    {canEditQuantity && r.links.length === 0 ? (
+                      <DispositionQuantityInput
+                        nonConformanceItemId={r.child.id as string}
+                        quantity={r.quantity}
+                      />
+                    ) : (
+                      <span className="h-8 flex items-center text-sm tabular-nums">
+                        {r.quantity}
+                      </span>
+                    )}
                   </div>
                   <ValidatedForm
                     defaultValues={{

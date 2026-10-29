@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Input, TextArea, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -38,9 +43,9 @@ import {
 import { Editor } from "@carbon/react/Editor";
 import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   LuChevronRight,
   LuCirclePlus,
@@ -48,9 +53,10 @@ import {
   LuPencil
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { DateTime } from "~/components";
 import { externalSupplierQuoteValidator } from "~/modules/purchasing/purchasing.models";
+import { recordSupplierQuoteLinkVisit } from "~/modules/purchasing/purchasing.server";
 import {
   getSupplierQuoteByExternalLinkId,
   getSupplierQuoteLinePricesByQuoteId,
@@ -61,9 +67,10 @@ import type {
   SupplierQuoteLine,
   SupplierQuoteLinePrice
 } from "~/modules/purchasing/types";
-import type { Company } from "~/modules/settings";
-import { getCompany, getCompanySettings } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import { shareLinkContext } from "~/modules/service-context.server";
+import { getCompany } from "~/modules/settings/settings.service";
+import type { Company } from "~/modules/settings/types";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/api+/purchasing.digital-quote.$id";
 import { path } from "~/utils/path";
 
@@ -106,14 +113,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
-  // Update lastAccessedAt on externalLink when the page is loaded
   if (quote.data.externalLinkId) {
-    await serviceRole
-      .from("externalLink")
-      .update({
-        lastAccessedAt: new Date().toISOString()
-      } as any)
-      .eq("id", quote.data.externalLinkId);
+    const ctx = await shareLinkContext(quote.data);
+    if (ctx) {
+      await recordSupplierQuoteLinkVisit(ctx, {
+        externalLinkId: quote.data.externalLinkId
+      });
+    }
   }
 
   if (
@@ -127,13 +133,14 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
-  const [company, companySettings, quoteLines, quoteLinePrices] =
-    await Promise.all([
-      getCompany(serviceRole, quote.data.companyId),
-      getCompanySettings(serviceRole, quote.data.companyId),
-      getSupplierQuoteLines(serviceRole, quote.data.id),
-      getSupplierQuoteLinePricesByQuoteId(serviceRole, quote.data.id)
-    ]);
+  // No companySettings here: the page never reads it, and the row carries
+  // internal config (markups, notification groups, printing) that must not
+  // reach an unauthenticated supplier.
+  const [company, quoteLines, quoteLinePrices] = await Promise.all([
+    getCompany(serviceRole, quote.data.companyId),
+    getSupplierQuoteLines(serviceRole, quote.data.id),
+    getSupplierQuoteLinePricesByQuoteId(serviceRole, quote.data.id)
+  ]);
 
   const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(
     (acc, line) => {
@@ -173,7 +180,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     data: {
       quote: quote.data,
       company: company.data,
-      companySettings: companySettings.data,
       quoteLines:
         quoteLines.data?.map(({ internalNotes, ...line }) => ({
           ...line
@@ -381,9 +387,9 @@ const LineItems = ({
         return (
           <motion.div
             key={line.id}
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="border-b border-input py-6 w-full"
           >
             <HStack spacing={4} className="items-start">
@@ -632,6 +638,7 @@ const LinePricing = ({
           <Tr className="whitespace-nowrap">
             <Th className="w-[50px]" />
             <Th className="w-2">Quantity</Th>
+            <Th className="w-[80px]">Unit</Th>
             <Th className="w-[150px]">
               <HStack spacing={4}>
                 <span>Unit Price</span>
@@ -700,6 +707,10 @@ const LinePricing = ({
                   </label>
                 </Td>
                 <Td>{qty}</Td>
+                <Td>
+                  {line.purchaseUnitOfMeasureCode ??
+                    line.inventoryUnitOfMeasureCode}
+                </Td>
                 {isSelected ? (
                   <>
                     <Td className="">
@@ -830,18 +841,18 @@ const Quote = ({
 
   const submitModal = useDisclosure();
   const declineModal = useDisclosure();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onSettled: () => {
+      if (submitted.current) {
+        submitModal.onClose();
+        declineModal.onClose();
+        submitted.current = false;
+      }
+    }
+  });
   const submitted = useRef<boolean>(false);
   const mode = useMode();
   const logo = mode === "dark" ? company?.logoDark : company?.logoLight;
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      submitModal.onClose();
-      declineModal.onClose();
-      submitted.current = false;
-    }
-  }, [fetcher.state, submitModal, declineModal]);
 
   // Initialize selected lines from existing pricing data
   const [selectedLines, setSelectedLines] = useState<
@@ -1091,7 +1102,7 @@ export const ErrorMessage = ({
 }) => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center">
-      <h1 className="text-3xl font-bold">{title}</h1>
+      <h1 className="text-3xl font-semibold">{title}</h1>
       <p className="text-lg text-muted-foreground">{message}</p>
     </div>
   );

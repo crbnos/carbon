@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ColumnDef } from "@tanstack/react-table";
 
 export function getAccessorKey<T>(columnDef: ColumnDef<T, unknown>) {
@@ -6,12 +10,24 @@ export function getAccessorKey<T>(columnDef: ColumnDef<T, unknown>) {
     : undefined;
 }
 
+// Whether the server can sort the list by this column. Cursor paging compares
+// the sort value inside one table, so a sort on another table's column
+// (`table.column`) is off, as is a column that opts out with
+// `enableSorting: false` (for example a value the list's view does not have).
+export function isServerSortable<T>(columnDef: ColumnDef<T, unknown>) {
+  const accessorKey = getAccessorKey(columnDef);
+  if (!accessorKey) return false;
+  if (columnDef.enableSorting === false) return false;
+  const sortKey = columnDef.meta?.sortBy ?? accessorKey;
+  return !sortKey.includes(".");
+}
+
 export interface ColumnMaps<T> {
-  // accessorKey (or column id for display columns) -> translated header label
+  // accessorKey (or column id for display columns) -> header label
   accessors: Record<string, string>;
   // export key -> function returning the CSV value for the full row
   exportValues: Record<string, (row: T) => unknown>;
-  // server sort key (`meta.sortBy ?? accessorKey`) -> translated header label
+  // server sort key (`meta.sortBy ?? accessorKey`) -> header label
   sortKeyToLabel: Record<string, string>;
   // export keys flagged `meta.exportOnly` — rendered nowhere in the grid but
   // still emitted to CSV. Table.tsx force-hides these columns.
@@ -23,8 +39,7 @@ export interface ColumnMaps<T> {
 // UI. A column's accessorKey drives value + filter, but sort (meta.sortBy) and
 // export (meta.exportValue) can each point at a different field.
 export function buildColumnMaps<T>(
-  columns: ColumnDef<T, unknown>[],
-  translate: (value: string) => string
+  columns: ColumnDef<T, unknown>[]
 ): ColumnMaps<T> {
   const accessors: Record<string, string> = {};
   const exportValues: Record<string, (row: T) => unknown> = {};
@@ -33,7 +48,13 @@ export function buildColumnMaps<T>(
 
   for (const column of columns) {
     const accessorKey = getAccessorKey(column);
-    if (accessorKey?.includes("_")) {
+    // '_' is the nested-path separator for editable cells (`rowEdits.ts`).
+    // Custom-field columns are read-only and keyed by a generated id that may
+    // contain '_', so they are exempt.
+    if (
+      accessorKey?.includes("_") &&
+      !accessorKey.startsWith("customFields->>")
+    ) {
       throw new Error(`Invalid accessorKey ${accessorKey}. Cannot contain '_'`);
     }
 
@@ -46,12 +67,10 @@ export function buildColumnMaps<T>(
     // CSV heading: a non-empty string header wins, then filterHeader (covers
     // JSX-header and blank-header columns), then a (possibly empty) string
     // header — never invents a heading for a JSX header that lacks filterHeader.
-    const rawLabel =
+    const exportLabel =
       stringHeader && stringHeader.length > 0
         ? stringHeader
         : (filterHeader ?? stringHeader);
-    const exportLabel =
-      rawLabel !== undefined ? translate(rawLabel) : undefined;
 
     const includeInExport =
       (!!accessorKey && stringHeader !== undefined) || !!exportValue;
@@ -69,9 +88,9 @@ export function buildColumnMaps<T>(
 
     // Sort picker stays keyed on string-header columns only, so JSX-header
     // columns (e.g. MRP week columns with a filterHeader) never flood it.
-    if (accessorKey && stringHeader !== undefined) {
+    if (accessorKey && stringHeader !== undefined && isServerSortable(column)) {
       const sortKey = column.meta?.sortBy ?? accessorKey;
-      sortKeyToLabel[sortKey] = translate(stringHeader);
+      sortKeyToLabel[sortKey] = stringHeader;
     }
   }
 
@@ -132,17 +151,23 @@ export function exportOnlyColumn<T>(opts: {
   };
 }
 
-export function updateNestedProperty(
-  obj: object,
-  path: string | string[],
-  value: unknown
-): unknown {
-  if (typeof path == "string")
-    return updateNestedProperty(obj, path.split("_"), value);
-  else if (path.length == 1 && value !== undefined)
-    // @ts-ignore
-    return (obj[path[0]] = value);
-  else if (path.length == 0) return obj;
-  // @ts-ignore
-  else return updateNestedProperty(obj[path[0]], path.slice(1), value);
+/**
+ * True when every row has an id in `idColumn` and no two rows share it. The
+ * Table then keys rows by it, so selection and expansion follow the row when
+ * pages are appended or rows move. A list that repeats an id keeps index keys.
+ */
+export function hasUniqueRowIds(
+  rows: readonly unknown[],
+  idColumn = "id"
+): boolean {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (!row || typeof row !== "object" || !(idColumn in row)) return false;
+    const id = (row as Record<string, unknown>)[idColumn];
+    if (id === null || id === undefined) return false;
+    const key = String(id);
+    if (seen.has(key)) return false;
+    seen.add(key);
+  }
+  return true;
 }

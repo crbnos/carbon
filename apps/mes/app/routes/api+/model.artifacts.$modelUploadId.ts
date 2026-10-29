@@ -1,7 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ASSEMBLER_SERVICE_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { findStorageObjectBuckets } from "@carbon/database/storage-objects";
+import { getCompanyPrivateBucket, TEMP_STAGING_BUCKET } from "@carbon/files";
 import type { LoaderFunctionArgs } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 
 // Resolves a model's optimised / preview artifact storage paths for the
 // progressive ModelPreview (parity with the ERP api+/model.artifacts route).
@@ -18,7 +24,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const model = await client
     .from("modelUpload")
     .select(
-      "size, originalSize, optimizedSize, optimizedModelPath, glbPath, thumbnailPath, optimizeStatus, optimizedAt, modelPath, originalPath"
+      "size, originalSize, optimizedSize, optimizedModelPath, glbPath, thumbnailPath, pmiPath, optimizeStatus, optimizedAt, modelPath, originalPath"
     )
     .eq("id", modelUploadId)
     .eq("companyId", companyId)
@@ -38,50 +44,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // upload when no artifact exists). Prefer the retained ORIGINAL (xbf-compacted
   // rows keep the uploaded STEP at `originalPath` — the `.xbf.zst` itself isn't
   // WASM-renderable); else the uncompacted `modelPath`. A retained raw is
-  // relocated to the DURABLE `private` bucket; a just-uploaded one is briefly in
+  // copied to the company bucket; a just-uploaded one is briefly in
   // ephemeral `temp-staging` before relocation; a pruned one is in neither → no
   // raw tier (rely on the GLB).
-  let rawPath: string | null = null;
-  let rawBucket = "private";
   const modelPath = model.data?.modelPath ?? null;
   const rawCandidate =
     model.data?.originalPath ??
     (modelPath && !modelPath.toLowerCase().endsWith(".zst") ? modelPath : null);
-  const svc = getCarbonServiceRole();
-  const exists = async (path: string) => {
-    for (const bucket of ["private", "temp-staging"] as const) {
-      const info = await svc.storage
-        .from(bucket)
-        .info(path)
-        .catch(() => ({ data: null, error: true as const }));
-      if (!info.error && info.data) return bucket;
-    }
-    return null;
-  };
-  if (rawCandidate) {
-    const bucket = await exists(rawCandidate);
-    if (bucket) {
-      rawPath = rawCandidate;
-      rawBucket = bucket;
-    }
-    // Absent in both → pruned/gone; rawPath stays null (rely on the GLB).
-  }
-  // Whether a reoptimise has a source to read: the `modelPath` object (an
-  // `.xbf.zst` counts — it re-tessellates). A pruned/dangling source means the
-  // refresh affordance would only ever fail — the client hides it.
-  const sourceAvailable = modelPath
-    ? rawCandidate === modelPath
-      ? rawPath !== null
-      : (await exists(modelPath)) !== null
-    : false;
+  // A raw lives in the company's own bucket once it is durable, or in
+  // `temp-staging` before that. One query answers both paths.
+  const buckets = await findStorageObjectBuckets(getDatabaseClient(), {
+    names: [rawCandidate, modelPath].filter((name): name is string => !!name),
+    buckets: [getCompanyPrivateBucket(companyId), TEMP_STAGING_BUCKET]
+  });
+  const rawBucket = rawCandidate ? (buckets.get(rawCandidate) ?? null) : null;
+  const rawPath = rawBucket ? rawCandidate : null;
+  const sourceAvailable = modelPath ? buckets.has(modelPath) : false;
 
   return {
     optimizedModelPath: model.data?.optimizedModelPath ?? null,
     lodPath: null as string | null,
     glbPath: model.data?.glbPath ?? null,
     thumbnailPath: model.data?.thumbnailPath ?? null,
+    // The model's PMI (pmi.json), when its STEP carried any.
+    pmiPath: model.data?.pmiPath ?? null,
     rawPath,
-    rawBucket,
+    rawBucket: rawBucket ?? getCompanyPrivateBucket(companyId),
     // Whether the optimiser is configured at all. When false, the viewer hides
     // the "Optimize failed · Retry" affordance and never auto-fires an optimise.
     optimizerAvailable: Boolean(ASSEMBLER_SERVICE_URL),

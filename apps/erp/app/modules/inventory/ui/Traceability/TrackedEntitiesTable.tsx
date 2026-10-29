@@ -1,4 +1,8 @@
-import { Badge, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { Badge, MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -19,9 +23,10 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { useDateFormatter, usePermissions } from "~/hooks";
-import type { TrackedEntity } from "~/modules/inventory";
-import { trackedEntityStatus } from "~/modules/inventory";
+import { trackedEntityStatus } from "~/modules/inventory/inventory.models";
+import type { TrackedEntity } from "~/modules/inventory/types";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { Item } from "~/stores/items";
 import { useItems } from "~/stores/items";
@@ -37,19 +42,25 @@ type ShelfLifePolicy = {
   calculateFromBom?: boolean | null;
 };
 
+// A row of the list, with its item's shelf-life policy (from the loader), so
+// the Expiry trace popover can show the Policy step.
+type TrackedEntityRow = TrackedEntity & {
+  shelfLifePolicy: ShelfLifePolicy | null;
+};
+
 type TrackedEntitiesTableProps = {
-  data: TrackedEntity[];
+  data: TrackedEntityRow[];
   count: number;
+  infinite: InfiniteOptions;
   nearExpiryWarningDays: number | null;
-  shelfLifePolicies?: Record<string, ShelfLifePolicy>;
 };
 
 const TrackedEntitiesTable = memo(
   ({
     data,
     count,
-    nearExpiryWarningDays,
-    shelfLifePolicies
+    infinite,
+    nearExpiryWarningDays
   }: TrackedEntitiesTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -62,6 +73,7 @@ const TrackedEntitiesTable = memo(
     // can pre-fill its form. Lives at table level so the row context-menu
     // action can open it.
     const [unscrapping, setUnscrapping] = useState<TrackedEntity | null>(null);
+
     const [editingExpiry, setEditingExpiry] = useState<TrackedEntity | null>(
       null
     );
@@ -84,6 +96,7 @@ const TrackedEntitiesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />,
 
             filter: {
@@ -106,6 +119,7 @@ const TrackedEntitiesTable = memo(
               </Badge>
             ) : null,
           meta: {
+            mobile: "P3",
             icon: <LuHash />
           }
         },
@@ -116,6 +130,7 @@ const TrackedEntitiesTable = memo(
             <span>{numberFormatter.format(row.original.quantity)}</span>
           ),
           meta: {
+            mobile: "P2",
             icon: <LuHash />,
             renderTotal: true
           }
@@ -127,6 +142,7 @@ const TrackedEntitiesTable = memo(
             <TrackedEntityStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCheck />,
             filter: {
               type: "static",
@@ -175,8 +191,7 @@ const TrackedEntitiesTable = memo(
                   {formatted}
                 </span>
               );
-            const itemId = (row.original as { itemId?: string | null }).itemId;
-            const policy = itemId ? shelfLifePolicies?.[itemId] : undefined;
+            const policy = row.original.shelfLifePolicy;
             return (
               <ExpiryTracePopover
                 entity={row.original}
@@ -198,6 +213,9 @@ const TrackedEntitiesTable = memo(
             );
           },
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendarClock />
           }
         },
@@ -212,14 +230,7 @@ const TrackedEntitiesTable = memo(
           }
         }
       ],
-      [
-        numberFormatter,
-        items,
-        t,
-        nearExpiryWarningDays,
-        shelfLifePolicies,
-        formatDate
-      ]
+      [numberFormatter, items, t, nearExpiryWarningDays, formatDate]
     );
 
     const renderContextMenu = useCallback(
@@ -227,6 +238,7 @@ const TrackedEntitiesTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.view}
               disabled={!permissions.can("update", "inventory")}
               onClick={() => {
                 navigate(
@@ -238,6 +250,7 @@ const TrackedEntitiesTable = memo(
               <Trans>View Traceability Graph</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={
                 !permissions.can("update", "inventory") ||
                 row.status === "Consumed"
@@ -268,6 +281,7 @@ const TrackedEntitiesTable = memo(
       <>
         <Table<(typeof data)[number]>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           renderContextMenu={renderContextMenu}
@@ -316,7 +330,7 @@ function SourceDocumentLink({
       const item = items.find((item) => item.id === data.sourceDocumentId);
       if (!item) return <Enumerable value={data.sourceDocument} />;
       return (
-        // @ts-ignore
+        // @ts-expect-error
         <Hyperlink to={getLinkToItemDetails(item.type, item.id)}>
           <Enumerable value={data.sourceDocument} />
         </Hyperlink>

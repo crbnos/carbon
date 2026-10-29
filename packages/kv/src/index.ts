@@ -1,6 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import redis from "./client";
 
-export { redis };
+export { redisFlagsStore } from "./flags-store";
+export type { LeaseAcquisition } from "./lease";
+export { acquireLease, releaseLease, renewLease, withLease } from "./lease";
 export type {
   AccountLockoutOptions,
   LockDurationOptions,
@@ -15,7 +21,9 @@ export {
   DEFAULT_WINDOW,
   evaluateLockFromPttl,
   lockDurationSeconds,
-  normalizeLoginIdentifier
+  maxAttemptsForRateLimit,
+  normalizeLoginIdentifier,
+  SIGN_IN_CODE_LOCKOUT_PREFIX
 } from "./lockout";
 export type {
   Duration,
@@ -23,3 +31,4 @@ export type {
   RatelimitResponse
 } from "./ratelimit";
 export { Ratelimit } from "./ratelimit";
+export { redis };

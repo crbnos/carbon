@@ -1,0 +1,171 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
+import type { Operator } from "@carbon/utils";
+import type {
+  RequiredPermission,
+  WorkflowCatalog
+} from "../definition/catalog";
+import type { CardRefusal, DataOperation } from "../definition/data-operations";
+import type { WorkflowNode } from "../definition/schema";
+import type {
+  Combinator,
+  PrimitiveKind,
+  RecordType,
+  ScalarType
+} from "../definition/types";
+
+/** A value as it exists during a run, rather than the type it was declared as. */
+export type RuntimeValue =
+  | {
+      kind: "primitive";
+      of: PrimitiveKind;
+      value: string | number | boolean | null;
+    }
+  // `row` holds a snapshot the loader cannot produce: "before" shares its id with "after".
+  | { kind: "entity"; of: string; id: string; row?: Record<string, unknown> }
+  | { kind: "list"; of: ScalarType; items: RuntimeValue[] }
+  /** An object, with its data in hand. Carries `of` so a walk knows each field's
+   * declared type without a catalog lookup — records are structural and registered
+   * nowhere. Reading a field never touches the loader. */
+  | { kind: "record"; of: RecordType; fields: Record<string, RuntimeValue> }
+  /** Named rows, resolved. Runtime only — nothing declares it as a `ValueType`, so it is
+   * never compared, looped over, or produced as a step output. It exists so a resolved
+   * header set stays recognisable to the log redactor. */
+  | { kind: "pairs"; entries: { name: string; value: RuntimeValue }[] };
+
+/** `reason` is customer-facing text. */
+export type Resolution =
+  | { ok: true; value: RuntimeValue }
+  | { ok: false; reason: string };
+
+/** Implemented job-side; this package stays free of I/O. */
+export interface EntityLoader {
+  load(entity: string, id: string): Promise<Record<string, unknown> | null>;
+}
+
+export type ActionOutcome =
+  | { ok: true; outputs: Record<string, RuntimeValue>; summary?: string }
+  | { ok: false; error: string };
+
+export type OperationOutcome =
+  | { ok: true; value: RuntimeValue }
+  | { ok: false; error: string };
+
+export type SearchOutcome =
+  | { ok: true; value: RuntimeValue; matched: number; dropped: number }
+  | { ok: false; error: string };
+
+/** One resolved match rule, ready for the query builder. */
+export interface SearchCriterion {
+  field: string;
+  operator: Operator;
+  value: RuntimeValue;
+}
+
+/** Everything that touches the world. Implemented job-side; this package stays pure. */
+export interface WorkflowServices {
+  runAction(
+    actionId: string,
+    inputs: Record<string, RuntimeValue>
+  ): Promise<ActionOutcome>;
+  /** One step of a third-party integration. Takes the piece and its action off the
+   * catalog entry rather than an id, so nothing job-side parses an id's shape. */
+  runIntegration(
+    piece: { name: string; action: string },
+    inputs: Record<string, RuntimeValue>
+  ): Promise<ActionOutcome>;
+  runOperation(
+    operationId: string,
+    inputs: Record<string, RuntimeValue>
+  ): Promise<OperationOutcome>;
+  search(params: {
+    entity: string;
+    returns: "one" | "list";
+    criteria: SearchCriterion[];
+  }): Promise<SearchOutcome>;
+}
+
+export interface RuntimeContext {
+  catalog: WorkflowCatalog;
+  loader: EntityLoader;
+  /** Required, so a missing implementation is a compile error, not a run-time surprise. */
+  services: WorkflowServices;
+  /** nodeId → that node's outputs, filled in as the walk proceeds. */
+  outputs: Record<string, Record<string, RuntimeValue>>;
+  /** The item a looping node is on; absent outside a loop. */
+  item?: RuntimeValue;
+  /** Called as each input resolves, so a step can report the values it used even
+   * when the work it hands them to throws. The engine supplies it; tests may omit it. */
+  record?: (key: string, value: RuntimeValue) => void;
+  /** Turns a record into an absolute URL, for the inputs the catalog declares `links` on.
+   * Supplied by the engine, which may read ERP_URL — this package never builds a URL,
+   * because it is bundled for the browser and has four runtime dependencies. */
+  linkFor?: (of: string, id: string) => string | null;
+}
+
+/** What a single clause resolved to. `null` values mean it could not be read. */
+export type ClauseEvaluation = {
+  left: RuntimeValue | null;
+  operator: Operator;
+  right: RuntimeValue | null;
+  passed: boolean | null;
+  reason?: string;
+};
+
+/** Why a node did what it did. Diagnostics, never node data. */
+export type NodeDetail =
+  | {
+      kind: "condition";
+      paths: Array<{
+        pathId: string;
+        combinator: Combinator;
+        evaluations: ClauseEvaluation[];
+        taken: boolean;
+      }>;
+    }
+  | {
+      /** A data node's chain, one row per operation card, in run order. */
+      kind: "data";
+      cards: Array<{
+        id: string;
+        operation: DataOperation;
+        /** English, for logs. The run history words a card from `counts` or
+         * `refusal` instead. */
+        summary: string;
+        status: "Succeeded" | "Skipped";
+        /** Why a Skipped card could not run, as a code the run history words. */
+        refusal?: CardRefusal;
+        /** What a Succeeded card's summary says, as numbers, so the run history
+         * can word it in the reader's language: items in, items out (filter,
+         * pluck), items a filter could not check, and values a flattened pluck
+         * produced past the list cap and dropped. */
+        counts?: {
+          input: number;
+          output?: number;
+          unresolved?: number;
+          dropped?: number;
+        };
+      }>;
+    };
+
+export type NodeResult =
+  | {
+      status: "Succeeded";
+      outputs: Record<string, RuntimeValue>;
+      /** The handle to follow, or null to stop this path cleanly. */
+      handle: string | null;
+      branchTaken?: string;
+      /** A one-line note for the step row's statusReason. */
+      summary?: string;
+      detail?: NodeDetail;
+    }
+  | { status: "Skipped"; reason: string; detail?: NodeDetail }
+  | { status: "Failed"; error: string; handle?: string | null };
+
+export interface NodeExecutor<N extends WorkflowNode> {
+  /** What the owner must hold; undefined when the node touches nothing. */
+  permission(node: N, catalog: WorkflowCatalog): RequiredPermission | undefined;
+  execute(node: N, ctx: RuntimeContext): Promise<NodeResult>;
+}

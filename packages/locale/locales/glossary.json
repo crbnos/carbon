@@ -2995,6 +2995,25 @@
       }
     },
     {
+      "term": "Non-nettable",
+      "category": "planning",
+      "context": "A storage unit whose stock MRP and picking ignore (a quarantine or hold area). Not the accounting sense of netting.",
+      "translations": {
+        "fr": "Exclu du calcul des besoins",
+        "de": "Nicht disponierbar",
+        "es": "No neteable",
+        "it": "Non nettabile",
+        "ja": "MRP対象外",
+        "pl": "Nieuwzględniany w MRP",
+        "pt": "Não disponível para MRP",
+        "ru": "Не учитывается в MRP",
+        "zh": "不计入MRP",
+        "hi": "MRP से बाहर",
+        "tr": "MRP dışı",
+        "ko": "MRP 제외"
+      }
+    },
+    {
       "term": "Tracked Entity",
       "category": "inventory",
       "context": "A lot or serial instance that Carbon follows through the shop.",
@@ -7687,6 +7706,25 @@
         "hi": "शिपिंग विधि",
         "tr": "Sevkiyat yöntemi",
         "ko": "배송 방법"
+      }
+    },
+    {
+      "term": "Shipping Revenue",
+      "category": "accounting",
+      "context": "The revenue account credited for shipping charged to customers, posted on its own line and distinct from the Sales account. Its account-default field renders as \"Shipping Revenue (default)\" beside it on the Account Defaults screen, so both must use the SAME term.",
+      "translations": {
+        "fr": "Revenus d’expédition",
+        "de": "Umsatzerlöse aus Versand",
+        "es": "Ingresos por gastos de envío",
+        "it": "Ricavi da spedizioni",
+        "ja": "配送売上高",
+        "pl": "Przychody z opłat za wysyłkę",
+        "pt": "Receita de envio",
+        "ru": "Выручка от доставки",
+        "zh": "运输收入",
+        "hi": "शिपिंग राजस्व",
+        "tr": "Kargo hasılatı",
+        "ko": "배송 매출"
       }
     },
     {

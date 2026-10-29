@@ -1,17 +1,26 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { ShortcutInput } from "@carbon/react";
 import {
   Button,
   Count,
   HStack,
+  PrefetchLink,
+  ShortcutKey,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useKeyboardShortcuts,
-  usePrettifyShortcut,
+  useShortcutKeyMap,
+  useViewport,
   VStack
 } from "@carbon/react";
 import type { ReactNode } from "react";
-import { Link, useNavigate } from "react-router";
+import { useMemo } from "react";
+import { useNavigate } from "react-router";
 import { useOptimisticLocation } from "~/hooks";
+import { CompactTabRow } from "../CompactTabRow";
 
 type DetailSidebarProps = {
   links: {
@@ -19,23 +28,43 @@ type DetailSidebarProps = {
     to: string;
     icon?: ReactNode;
     count?: number;
-    shortcut?: string;
+    shortcut?: ShortcutInput;
   }[];
 };
 
 const DetailSidebar = ({ links }: DetailSidebarProps) => {
   const navigate = useNavigate();
   const location = useOptimisticLocation();
-  const prettifyShortcut = usePrettifyShortcut();
 
-  useKeyboardShortcuts(
-    links.reduce<Record<string, () => void>>((acc, link) => {
-      if (link.shortcut) {
-        acc[link.shortcut] = () => navigate(link.to);
-      }
-      return acc;
-    }, {})
+  useShortcutKeyMap(
+    useMemo(
+      () =>
+        links.flatMap((link) =>
+          link.shortcut
+            ? [{ shortcut: link.shortcut, action: () => navigate(link.to) }]
+            : []
+        ),
+      [links, navigate]
+    )
   );
+
+  // Phones: the same links as a sticky, horizontally scrolling underline
+  // tab row, as DetailsTopbar renders outside a record.
+  const { isPhone } = useViewport();
+  if (isPhone) {
+    return (
+      <CompactTabRow
+        className="sticky top-0 z-10 mb-3 w-full px-0"
+        items={links.map((route) => ({
+          id: route.name,
+          label: route.name,
+          to: route.to,
+          count: route.count,
+          active: location.pathname.includes(route.to)
+        }))}
+      />
+    );
+  }
 
   return (
     <VStack
@@ -53,9 +82,8 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
                 variant={isActive ? "active" : "ghost"}
                 className="w-full justify-start"
               >
-                <Link
+                <PrefetchLink
                   to={route.to}
-                  prefetch="intent"
                   className="flex items-center justify-start gap-2"
                 >
                   {route.icon}
@@ -63,12 +91,14 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
                   {route.count !== undefined && (
                     <Count count={route.count} className="ml-auto" />
                   )}
-                </Link>
+                </PrefetchLink>
               </Button>
             </TooltipTrigger>
             {route.shortcut && (
               <TooltipContent side="right">
-                <HStack>{prettifyShortcut(route.shortcut)}</HStack>
+                <HStack>
+                  <ShortcutKey shortcut={route.shortcut} variant="small" />
+                </HStack>
               </TooltipContent>
             )}
           </Tooltip>

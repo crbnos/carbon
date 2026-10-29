@@ -1,8 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { PrintJob } from "@carbon/printing";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Modal,
@@ -10,7 +16,8 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  ModalTitle
+  ModalTitle,
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -27,12 +34,12 @@ import {
   LuRefreshCw,
   LuTrash
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { DateTime, Table } from "~/components";
 
 type PrintJobsTableProps = {
   jobs: PrintJob[];
   count: number;
+  nextCursor: string | null;
 };
 
 type ViewContent = {
@@ -230,26 +237,28 @@ function ZplPreview({ zpl }: { zpl: string }) {
   );
 }
 
-const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
+const PrintJobsTable = memo((props: PrintJobsTableProps) => {
+  const { jobs, count, nextCursor } = props;
   const { t } = useLingui();
-  const fetcher = useFetcher<{
-    success: boolean;
-    message?: string;
-    content?: string;
-    contentType?: string;
-    printJobId?: string;
-  }>();
   const [viewContent, setViewContent] = useState<ViewContent | null>(null);
-
-  useEffect(() => {
-    if (fetcher.data && "content" in fetcher.data && fetcher.data.content) {
-      setViewContent({
-        content: fetcher.data.content,
-        contentType: fetcher.data.contentType as string,
-        printJobId: fetcher.data.printJobId as string
-      });
+  const fetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if ("content" in data) {
+        if (data.content) {
+          setViewContent({
+            content: data.content,
+            contentType: data.contentType as string,
+            printJobId: data.printJobId as string
+          });
+        }
+      } else if ("printJobId" in data) {
+        toast.success(t`Reprint job created`);
+      } else {
+        toast.success(t`Print job deleted`);
+      }
     }
-  }, [fetcher.data]);
+  });
 
   const columns = useMemo<ColumnDef<PrintJob>[]>(
     () => [
@@ -271,6 +280,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: [
@@ -292,6 +302,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuFileText />
         }
       },
@@ -364,6 +375,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
           </span>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuCalendar />
         }
       }
@@ -380,6 +392,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
     (job: PrintJob) => (
       <>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.view}
           disabled={job.status === "generating"}
           onClick={() => {
             fetcher.submit(
@@ -434,6 +447,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
         table="printJob"
         withSearch
         withPagination
+        infinite={{ dataKey: "jobs", nextCursor }}
         renderExpandedRow={renderExpandedRow}
         renderContextMenu={renderContextMenu}
       />

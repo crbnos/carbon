@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   cn,
   HStack,
@@ -25,8 +29,17 @@ import type {
   EditableTableCellComponent,
   Position
 } from "~/components/Editable";
+import { useVirtualRows } from "~/components/Table/useVirtualRows";
 import { Row } from "./components";
 import { getAccessorKey, updateNestedProperty } from "./utils";
+
+// Used until a row is measured: a body cell is `h-11`.
+const ESTIMATED_ROW_HEIGHT = 44;
+// The header row sits above the rows inside the same scroller. Its `Tr` is
+// `h-10`, but every `Th` is `h-11`, and a table row is as tall as its tallest
+// cell.
+const HEADER_HEIGHT = 44;
+const OVERSCAN = 3;
 
 interface GridProps<T extends object> {
   canEdit?: boolean;
@@ -36,6 +49,21 @@ interface GridProps<T extends object> {
   defaultColumnOrder?: string[];
   defaultColumnVisibility?: Record<string, boolean>;
   editableComponents?: Record<string, EditableTableCellComponent<T>>;
+  /**
+   * Lock individual rows: a row this returns `false` for renders its editable
+   * columns as plain, non-editable cells (no ring, no pencil, no editor), the
+   * same as every cell does under `canEdit={false}`. For lists that mix rows a
+   * user may still change with rows a status has locked. Defaults to every
+   * row being editable.
+   */
+  isRowEditable?: (row: T) => boolean;
+  /**
+   * Cap the grid's height in pixels. The rows then scroll inside the grid under
+   * a pinned header, and only the rows in view (plus the selected one) are
+   * rendered — for lists that can run to hundreds of rows. Without it every
+   * row is rendered and the grid is as tall as its rows.
+   */
+  maxHeight?: number;
 
   withNewRow?: boolean;
   withSimpleSorting?: boolean;
@@ -50,6 +78,8 @@ const Grid = <T extends object>({
   contained = true,
   data,
   editableComponents,
+  isRowEditable,
+  maxHeight,
   defaultColumnOrder,
   defaultColumnVisibility,
   withSimpleSorting = true,
@@ -166,13 +196,24 @@ const Grid = <T extends object>({
     [table, editableComponents]
   );
 
+  // A cell is editable when its column has an editor AND its row is not locked.
+  const isCellEditable = useCallback(
+    (rowIndex: number, column: number) => {
+      if (!isColumnEditable(column)) return false;
+      if (!isRowEditable) return true;
+      const row = table.getRowModel().rows[rowIndex];
+      return row ? isRowEditable(row.original) : false;
+    },
+    [isColumnEditable, isRowEditable, table]
+  );
+
   const onCellClick = useCallback(
     (row: number, column: number) => {
       // ignore row select checkbox column
       if (column === -1) return;
       // Editable cells enter edit mode on a single click (the editable input
       // then auto-focuses and selects its text), instead of select-then-click.
-      if (isColumnEditable(column)) {
+      if (isCellEditable(row, column)) {
         onSelectedCellChange({ row, column });
         setIsEditing(true);
         return;
@@ -180,7 +221,7 @@ const Grid = <T extends object>({
       setIsEditing(false);
       onSelectedCellChange({ row, column });
     },
-    [isColumnEditable, onSelectedCellChange]
+    [isCellEditable, onSelectedCellChange]
   );
 
   const onCellUpdate = useCallback(
@@ -267,7 +308,7 @@ const Grid = <T extends object>({
           !isEditing &&
           code === "Enter" &&
           !shiftKey &&
-          isColumnEditable(selectedCell.column)
+          isCellEditable(selectedCell.row, selectedCell.column)
         ) {
           setIsEditing(true);
           return;
@@ -298,7 +339,7 @@ const Grid = <T extends object>({
         // continues naturally. Otherwise (Enter) drop out of edit mode.
         if (isEditing) {
           const carryEdit = Boolean(
-            canEdit && code === "Tab" && isColumnEditable(x1)
+            canEdit && code === "Tab" && isCellEditable(y1, x1)
           );
           setIsEditing(carryEdit);
         }
@@ -318,12 +359,12 @@ const Grid = <T extends object>({
         !["ShiftLeft", "ShiftRight"].includes(code) &&
         !isEditing &&
         selectedCell &&
-        isColumnEditable(selectedCell.column)
+        isCellEditable(selectedCell.row, selectedCell.column)
       ) {
         setIsEditing(true);
       }
     },
-    [canEdit, isColumnEditable, isEditing, selectedCell, table]
+    [canEdit, isCellEditable, isEditing, selectedCell, table]
   );
 
   // reset the selected cell when the table data changes
@@ -338,18 +379,119 @@ const Grid = <T extends object>({
 
   const rows = table.getRowModel().rows;
 
+  /* Row virtualization (only with `maxHeight`) */
+  const isVirtual = maxHeight !== undefined;
+
+  // The selected row stays rendered when it scrolls out of view: it holds the
+  // keyboard focus and, mid-edit, the open editor. Dropping it would lose both.
+  const selectedRow = selectedCell?.row;
+  const keepSelectedRow = useCallback(() => selectedRow, [selectedRow]);
+
+  const { virtualizer: rowVirtualizer, renderRows } = useVirtualRows({
+    enabled: isVirtual,
+    count: rows.length,
+    getScrollElement: () => tableContainerRef.current,
+    getItemKey: (index) => rows[index]?.id ?? index,
+    estimateSize: () => ESTIMATED_ROW_HEIGHT,
+    overscan: OVERSCAN,
+    scrollMargin: HEADER_HEIGHT,
+    keepIndex: keepSelectedRow,
+    // The scroller is not measured until after the first render; without this
+    // that render would draw no rows at all.
+    initialHeight: maxHeight ?? 0
+  });
+
+  const renderRow = (row: (typeof rows)[number], virtualIndex?: number) => (
+    <Row
+      key={row.id}
+      editableComponents={
+        canEdit && (isRowEditable?.(row.original) ?? true)
+          ? editableComponents
+          : {}
+      }
+      isEditing={isEditing}
+      selectedCell={selectedCell}
+      row={row}
+      rowIsSelected={selectedCell?.row === row.index}
+      rowRef={isVirtual ? rowVirtualizer.measureElement : undefined}
+      virtualIndex={virtualIndex}
+      withRowBorder={isVirtual}
+      onCellClick={onCellClick}
+      onCellUpdate={onCellUpdate}
+      onEditRow={onEditRow}
+    />
+  );
+
+  // The rows in view, with an empty row standing in for each run of rows that
+  // is not rendered, so the scrollbar and every row's position stay true.
+  const renderVirtualRows = () => {
+    const columnCount = table.getVisibleLeafColumns().length;
+    return renderRows(
+      (index) => renderRow(rows[index]!, index),
+      (key, height) => (
+        <tr key={key} aria-hidden>
+          <td colSpan={columnCount} style={{ height, padding: 0 }} />
+        </tr>
+      )
+    );
+  };
+
+  // In a virtualized grid "New" sits under the scroller, always in view, so
+  // adding a row never means scrolling to the end of a long list first. The
+  // added row lands at the end, out of view, so the grid scrolls to it.
+  const awaitedRowCount = useRef<number | null>(null);
+  const onNewRowClick = () => {
+    awaitedRowCount.current = rows.length + 1;
+    onNewRow?.();
+  };
+  useEffect(() => {
+    const awaited = awaitedRowCount.current;
+    awaitedRowCount.current = null;
+    if (awaited === rows.length) {
+      rowVirtualizer.scrollToIndex(rows.length - 1, { align: "end" });
+    }
+  }, [rows.length, rowVirtualizer]);
+
   return (
-    <VStack spacing={0} className="h-full w-full">
+    <VStack
+      spacing={0}
+      className={cn(
+        "h-full w-full",
+        // The frame the table's own wrapper would otherwise draw: here it has
+        // to go around the scroller and the "New" button under it.
+        isVirtual && !contained && "overflow-hidden rounded-md border"
+      )}
+    >
       <div
         className={cn(
-          "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
-          contained ? "" : "relative"
+          "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-md:scroll-fade-x",
+          contained ? "" : "relative",
+          isVirtual && "overflow-y-auto"
         )}
+        style={
+          isVirtual ? { maxHeight, scrollPaddingTop: HEADER_HEIGHT } : undefined
+        }
         ref={tableContainerRef}
         onKeyDown={onKeyDown}
       >
-        <Table full={contained} className={cn(!contained && "border w-full")}>
-          <Thead className="sticky top-0 z-10">
+        <Table
+          full={contained || isVirtual}
+          className={cn(
+            !contained && !isVirtual && "border w-full",
+            // Automatic layout sizes columns from the rows that are rendered,
+            // and virtualization swaps those rows while scrolling, so every
+            // column changed width under the cursor. Fixed layout takes the
+            // widths from the header (`header.getSize()`) alone.
+            isVirtual && "table-fixed"
+          )}
+        >
+          <Thead
+            className={cn(
+              "sticky top-0 z-10",
+              // Rows scroll under the pinned header, so it must be opaque.
+              isVirtual && "bg-card"
+            )}
+          >
             {table.getHeaderGroups().map((headerGroup) => (
               <Tr key={headerGroup.id} className="h-10">
                 {headerGroup.headers.map((header) => {
@@ -388,21 +530,9 @@ const Grid = <T extends object>({
             ))}
           </Thead>
           <Tbody>
-            {rows.map((row) => {
-              return (
-                <Row
-                  key={row.id}
-                  editableComponents={canEdit ? editableComponents : {}}
-                  isEditing={isEditing}
-                  selectedCell={selectedCell}
-                  row={row}
-                  rowIsSelected={selectedCell?.row === row.index}
-                  onCellClick={onCellClick}
-                  onCellUpdate={onCellUpdate}
-                  onEditRow={onEditRow}
-                />
-              );
-            })}
+            {isVirtual
+              ? renderVirtualRows()
+              : rows.map((row) => renderRow(row))}
             {rows.length === 0 && !onNewRow && (
               <Tr className="h-10 hover:bg-muted/50">
                 <Td colSpan={24}>
@@ -412,7 +542,7 @@ const Grid = <T extends object>({
                 </Td>
               </Tr>
             )}
-            {onNewRow && (
+            {onNewRow && !isVirtual && (
               <Tr
                 onClick={onNewRow}
                 className="cursor-pointer h-10 hover:bg-muted/50 border-t"
@@ -430,6 +560,18 @@ const Grid = <T extends object>({
           </Tbody>
         </Table>
       </div>
+      {onNewRow && isVirtual && (
+        <button
+          type="button"
+          onClick={onNewRowClick}
+          className="flex h-11 w-full items-center space-x-2 border-t border-border px-6 text-sm hover:bg-muted/50"
+        >
+          <LuCirclePlus className="text-muted-foreground h-4 w-4" />
+          <span>
+            <Trans>New</Trans>
+          </span>
+        </button>
+      )}
     </VStack>
   );
 };

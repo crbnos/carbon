@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import {
   Badge,
   Button,
@@ -22,6 +27,7 @@ import {
   LuFactory,
   LuFlag,
   LuHash,
+  LuPackageCheck,
   LuRefreshCcwDot,
   LuShoppingCart
 } from "react-icons/lu";
@@ -37,6 +43,7 @@ import {
 } from "~/components";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions, useRouteData, useUrlParams } from "~/hooks";
+import type { JobMaterialPick } from "~/modules/inventory/inventory.service";
 import { type Item, useItems } from "~/stores";
 import { path } from "~/utils/path";
 import {
@@ -52,6 +59,15 @@ type JobMaterialsTableProps = {
   nearExpiryWarningDays?: number | null;
   jobItemIds: string[];
   orderStatusByMaterialId: Record<string, ItemOrderStatus>;
+  picksByMaterialId?: Record<string, JobMaterialPick[]>;
+  consumeFirstByItemId?: Record<
+    string,
+    {
+      successorItemId: string;
+      successorReadableId: string;
+      conversionFactor: number;
+    }
+  >;
 };
 function HeaderTooltip({ label, hint }: { label: ReactNode; hint: ReactNode }) {
   return (
@@ -85,7 +101,9 @@ const JobMaterialsTable = memo(
     count,
     nearExpiryWarningDays,
     jobItemIds,
-    orderStatusByMaterialId
+    orderStatusByMaterialId,
+    picksByMaterialId = {},
+    consumeFirstByItemId = {}
   }: JobMaterialsTableProps) => {
     const { jobId } = useParams();
     const { t } = useLingui();
@@ -140,11 +158,33 @@ const JobMaterialsTable = memo(
               ? (items.find((i) => i.id === substitutedFromId)
                   ?.readableIdWithRevision ?? substitutedFromId)
               : null;
+            const picks = row.original.id
+              ? (picksByMaterialId[row.original.id] ?? [])
+              : [];
+            const consumeFirst =
+              consumeFirstByItemId[row.original.jobMaterialItemId];
+            const need = Math.max(
+              0,
+              Number(row.original.estimatedQuantity ?? 0) -
+                Number(row.original.quantityIssued ?? 0)
+            );
+            const perAssembly = Number(row.original.quantityPerParent ?? 0);
+            const onHand = consumableInWholeAssemblies(
+              Number(row.original.quantityOnHandInStorageUnit ?? 0) +
+                Number(row.original.quantityOnHandNotInStorageUnit ?? 0),
+              perAssembly
+            );
+            const shortfall =
+              consumeFirst && picks.length === 0 && need > onHand
+                ? need - onHand
+                : 0;
+            const assembliesInStock =
+              perAssembly > 0 ? onHand / perAssembly : null;
             return (
               <HStack className="py-1">
                 <ItemThumbnail
                   size="md"
-                  // @ts-ignore
+                  // @ts-expect-error
                   type={row.original.itemType}
                 />
 
@@ -182,11 +222,36 @@ const JobMaterialsTable = memo(
                       ↩ <Trans>substituted from</Trans> {substitutedFrom}
                     </div>
                   )}
+                  {shortfall > 0 && consumeFirst && (
+                    <div className="w-full truncate text-xs text-blue-700 dark:text-blue-300">
+                      ↩{" "}
+                      {assembliesInStock !== null ? (
+                        <Trans>
+                          {formatter.format(onHand)} in stock, for{" "}
+                          {formatter.format(assembliesInStock)} assemblies; the
+                          remaining{" "}
+                          {formatter.format(
+                            shortfall * consumeFirst.conversionFactor
+                          )}{" "}
+                          will be picked as {consumeFirst.successorReadableId}
+                        </Trans>
+                      ) : (
+                        <Trans>
+                          {formatter.format(onHand)} in stock; the remaining{" "}
+                          {formatter.format(
+                            shortfall * consumeFirst.conversionFactor
+                          )}{" "}
+                          will be picked as {consumeFirst.successorReadableId}
+                        </Trans>
+                      )}
+                    </div>
+                  )}
                 </VStack>
               </HStack>
             );
           },
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />,
             // Filter by item id (a real column) so it filters server-side;
             // scoped to items on this job, with the readable id as the label.
@@ -231,6 +296,7 @@ const JobMaterialsTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuShoppingCart />,
             // `header` is JSX (tooltip), so name the column for the filter UI.
             filterHeader: t`Status`,
@@ -253,6 +319,76 @@ const JobMaterialsTable = memo(
           }
         },
         {
+          id: "picked",
+          header: () => (
+            <HeaderTooltip
+              label={t`Picked`}
+              hint={
+                <Trans>
+                  What has actually been picked to lineside for this material,
+                  per part. A pick can bring a different part than the material
+                  names (a Consume First split, a Prefer New fallback) — this is
+                  where you see which parts are at the machine.
+                </Trans>
+              }
+            />
+          ),
+          cell: ({ row }) => {
+            const picks = row.original.id
+              ? (picksByMaterialId[row.original.id] ?? [])
+              : [];
+            if (picks.length === 0) return null;
+            return (
+              <VStack spacing={1} className="py-1">
+                {picks.map((pick) => {
+                  const isFullyPicked =
+                    pick.quantityToPick > 0 &&
+                    pick.quantityPicked >= pick.quantityToPick;
+                  const isPartial = !isFullyPicked && pick.quantityPicked > 0;
+                  return (
+                    <HStack
+                      key={`${pick.pickingListId}:${pick.itemId}`}
+                      spacing={2}
+                    >
+                      <Badge
+                        variant={
+                          isFullyPicked
+                            ? "green"
+                            : isPartial
+                              ? "orange"
+                              : "secondary"
+                        }
+                        className="gap-1 shrink-0"
+                      >
+                        <LuPackageCheck className="size-3" />
+                        {isFullyPicked
+                          ? formatter.format(pick.quantityPicked)
+                          : `${formatter.format(pick.quantityPicked)}/${formatter.format(pick.quantityToPick)}`}
+                        {" × "}
+                        {pick.itemReadableId}
+                      </Badge>
+                      {pick.isSubstitute && (
+                        <span className="text-xs text-blue-700 dark:text-blue-300 whitespace-nowrap">
+                          <Trans>in place of this item</Trans>
+                        </span>
+                      )}
+                      <Hyperlink
+                        to={path.to.pickingList(pick.pickingListId)}
+                        className="text-xs text-muted-foreground whitespace-nowrap"
+                      >
+                        {pick.pickingListReadableId}
+                      </Hyperlink>
+                    </HStack>
+                  );
+                })}
+              </VStack>
+            );
+          },
+          meta: {
+            icon: <LuPackageCheck />
+          }
+        },
+        {
           accessorKey: "estimatedQuantity",
           header: () => (
             <HeaderTooltip
@@ -266,6 +402,7 @@ const JobMaterialsTable = memo(
           ),
           cell: ({ row }) => formatter.format(row.original.estimatedQuantity),
           meta: {
+            mobile: "P2",
             icon: <LuHash />
           }
         },
@@ -540,7 +677,9 @@ const JobMaterialsTable = memo(
       isRequired,
       formatter,
       jobItemIdSet,
-      orderStatusByMaterialId
+      orderStatusByMaterialId,
+      picksByMaterialId,
+      consumeFirstByItemId
     ]);
 
     const renderContextMenu = useMemo(() => {

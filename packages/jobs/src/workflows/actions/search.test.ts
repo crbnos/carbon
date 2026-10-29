@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import {
   entityValue,
@@ -7,7 +11,7 @@ import {
   type RuntimeValue,
   type SearchCriterion,
   WORKFLOW_ENTITIES
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import { runSearch } from "./search";
@@ -146,15 +150,16 @@ describe("runSearch operators", () => {
     ]
   ];
 
-  it.each(
-    cases
-  )("maps %s to the matching filter", async (_name, rule, expected) => {
-    const { client, calls } = createStub({ rows: [row] });
-    const outcome = await search(client, { criteria: [rule] });
+  it.each(cases)(
+    "maps %s to the matching filter",
+    async (_name, rule, expected) => {
+      const { client, calls } = createStub({ rows: [row] });
+      const outcome = await search(client, { criteria: [rule] });
 
-    expect(outcome.ok).toBe(true);
-    expect(calls).toContainEqual(expected);
-  });
+      expect(outcome.ok).toBe(true);
+      expect(calls).toContainEqual(expected);
+    }
+  );
 
   it("compares an entity by its id", async () => {
     const { client, calls } = createStub({ rows: [row] });

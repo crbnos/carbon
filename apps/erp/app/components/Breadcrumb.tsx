@@ -1,9 +1,12 @@
-import { Button, cn, getValidChildren } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { Button, cn, getValidChildren, PrefetchLink } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentProps } from "react";
-import { cloneElement, forwardRef } from "react";
+import { cloneElement, createContext, forwardRef, useContext } from "react";
 import type { LinkProps } from "react-router";
-import { Link } from "react-router";
 
 const Breadcrumbs = forwardRef<
   HTMLElement,
@@ -33,6 +36,10 @@ const Breadcrumbs = forwardRef<
 });
 Breadcrumbs.displayName = "Breadcrumbs";
 
+// Whether the item a link sits in is the trail's last. Only the last crumb
+// (the current page) reads at full strength.
+const BreadcrumbPositionContext = createContext({ isLastChild: true });
+
 const BreadcrumbItem = forwardRef<
   HTMLLIElement,
   ComponentProps<"li"> & {
@@ -46,7 +53,11 @@ const BreadcrumbItem = forwardRef<
     {...props}
   >
     {!isFirstChild && <span className="text-muted-foreground">/</span>}
-    {children}
+    <BreadcrumbPositionContext.Provider
+      value={{ isLastChild: isLastChild ?? true }}
+    >
+      {children}
+    </BreadcrumbPositionContext.Provider>
   </li>
 ));
 BreadcrumbItem.displayName = "BreadcrumbItem";
@@ -57,11 +68,13 @@ const BreadcrumbLink = forwardRef<
     isCurrentPage?: boolean;
   }
 >(({ className, children, isCurrentPage, ...props }, ref) => {
+  const { isLastChild } = useContext(BreadcrumbPositionContext);
   return (
     <Button
       variant="ghost"
       className={cn(
         "px-2 outline-none focus-visible:ring-transparent",
+        !isLastChild && "text-muted-foreground hover:text-foreground",
         className
       )}
       asChild
@@ -71,9 +84,9 @@ const BreadcrumbLink = forwardRef<
           {children}
         </span>
       ) : (
-        <Link ref={ref} {...props} prefetch="intent">
+        <PrefetchLink ref={ref} {...props}>
           {children}
-        </Link>
+        </PrefetchLink>
       )}
     </Button>
   );

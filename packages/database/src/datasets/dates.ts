@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Dataset dates are day-offsets from the moment the dataset is applied, never
  * absolute strings — a template applied next year must not show last year's
@@ -10,11 +14,10 @@
 import {
   type CalendarDate,
   endOfMonth,
+  startOfMonth,
   startOfWeek
 } from "@internationalized/date";
-
-/** Signed days relative to the dataset anchor. Negative = in the past. */
-export type DayOffset = number;
+import type { DayOffset } from "./types.ts";
 
 /** "YYYY-MM-DD" for a DATE column. */
 export function resolveDate(anchor: CalendarDate, offset: DayOffset): string {
@@ -36,6 +39,28 @@ export function resolveTimestamp(
 /** Last day of the month before the anchor's, as "YYYY-MM-DD". */
 export function previousMonthEnd(anchor: CalendarDate): string {
   return endOfMonth(anchor.subtract({ months: 1 })).toString();
+}
+
+// Seeded accounting periods: trailing months ending with the anchor's. Close is
+// sequential, so the oldest are Closed, the next Locked, the rest Open.
+export const SEEDED_PERIOD_MONTHS = 12;
+export const CLOSED_PERIOD_MONTHS_BACK = [11, 10] as const;
+export const LOCKED_PERIOD_MONTHS_BACK = 9;
+/**
+ * Offsets ≥ this land in month anchor−9 or later, never a Closed period (whose
+ * journals the period-open trigger rejects). Nine shortest months = 273 days.
+ */
+export const NOT_CLOSED_MIN_OFFSET = -273;
+/** Offsets ≥ this land in an Open period (month anchor−8 or later; 8 shortest months = 242 days). */
+export const OPEN_PERIOD_MIN_OFFSET = -242;
+
+/** `monthsBack` 0 = the anchor's own month. */
+export function monthBack(
+  anchor: CalendarDate,
+  monthsBack: number
+): { start: CalendarDate; end: CalendarDate } {
+  const month = anchor.subtract({ months: monthsBack });
+  return { start: startOfMonth(month), end: endOfMonth(month) };
 }
 
 /**

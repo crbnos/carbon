@@ -1,4 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { CARBON_SLACK_ENABLED, useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
+import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import {
   Hidden,
   Submit,
@@ -6,6 +12,7 @@ import {
   ValidatedForm
 } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   BadgeCloseButton,
@@ -26,9 +33,9 @@ import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import React, { Suspense, useEffect, useState } from "react";
 import { LuImage, LuMegaphone } from "react-icons/lu";
-import { useFetcher, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import { useUser } from "~/hooks";
-import { suggestionValidator } from "~/modules/shared";
+import { suggestionValidator } from "~/modules/shared/shared.models";
 import type { action } from "~/routes/x+/resources+/suggestions.new";
 import { useUIStore } from "~/stores/ui";
 import { path } from "~/utils/path";
@@ -48,7 +55,6 @@ type EmojiData = {
 
 const Suggestion = () => {
   const { t } = useLingui();
-  const fetcher = useFetcher<typeof action>();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [suggestion, setSuggestion] = useState("");
@@ -70,19 +76,17 @@ const Suggestion = () => {
     (state) => state.clearSuggestionRequest
   );
 
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      toast.success(fetcher.data.message);
+  const fetcher = useAction<typeof action>({
+    onSuccess: () => {
+      toast.success(t`Suggestion submitted`);
       setSuggestion("");
       setEmoji(defaultEmoji);
       setAttachment(null);
       setAnonymous(true);
       setSendToCarbon(CARBON_SLACK_ENABLED);
       setOpen(false);
-    } else if (fetcher.data?.message) {
-      toast.error(fetcher.data.message);
     }
-  }, [fetcher.data]);
+  });
 
   useEffect(() => {
     if (!suggestionPrefill) return;
@@ -97,19 +101,32 @@ const Suggestion = () => {
 
   const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && carbon) {
-      const file = e.target.files[0];
+      let file = e.target.files[0];
       const fileName = file.name;
       toast.info(t`Uploading ${fileName}`);
-      const fileExtension = file.name.substring(file.name.lastIndexOf(".") + 1);
 
       if (file.size > MAX_FILE_SIZE) {
         toast.error(t`File size exceeds 10MB limit`);
         return;
       }
 
+      if (isHeic(file.name, file.type)) {
+        try {
+          file = await convertHeicToJpeg(carbon, {
+            bucket: getCompanyPrivateBucket(companyId),
+            directory: `${companyId}/tmp`,
+            file
+          });
+        } catch {
+          toast.error(t`Failed to convert image`);
+          return;
+        }
+      }
+
+      const fileExtension = file.name.substring(file.name.lastIndexOf(".") + 1);
       const storagePath = `${companyId}/suggestions/${nanoid()}.${fileExtension}`;
-      const imageUpload = await carbon.storage
-        .from("private")
+      const imageUpload = await storage(carbon)
+        .company(companyId)
         .upload(storagePath, file, {
           cacheControl: `${12 * 60 * 60}`,
           upsert: true
@@ -138,7 +155,7 @@ const Suggestion = () => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           className="hover:scale-100"
           leftIcon={<LuMegaphone />}
         >

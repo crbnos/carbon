@@ -1,4 +1,14 @@
-import { Badge, Copy, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Badge,
+  Copy,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -16,6 +26,7 @@ import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useShape } from "~/components/Form/Shape";
 import { useSubstance } from "~/components/Form/Substance";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { MaterialType } from "../../types";
@@ -23,9 +34,11 @@ import type { MaterialType } from "../../types";
 type MaterialTypesTableProps = {
   data: MaterialType[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
+const MaterialTypesTable = memo((props: MaterialTypesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -42,6 +55,7 @@ const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
         header: t`Substance`,
         cell: ({ row }) => <Enumerable value={row.original.substanceName} />,
         meta: {
+          mobile: "P2",
           icon: <LuGlassWater />,
           filter: {
             type: "static",
@@ -57,6 +71,7 @@ const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
         header: t`Shape`,
         cell: ({ row }) => <Enumerable value={row.original.formName} />,
         meta: {
+          mobile: "P2",
           icon: <LuShapes />,
           filter: {
             type: "static",
@@ -83,6 +98,7 @@ const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
             </Hyperlink>
           ),
         meta: {
+          mobile: "P1",
           icon: <LuTag />
         }
       },
@@ -126,6 +142,7 @@ const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={
               !permissions.can("update", "parts") || row.companyId === null
             }
@@ -137,6 +154,7 @@ const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
             <Trans>Edit Material Type</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
               !permissions.can("delete", "parts") || row.companyId === null
             }
@@ -159,6 +177,7 @@ const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
   return (
     <Table<(typeof rows)[number]>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count}
       importCSV={[

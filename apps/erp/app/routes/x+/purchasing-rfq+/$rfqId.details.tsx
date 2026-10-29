@@ -1,21 +1,31 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
-import type { PurchasingRFQ, PurchasingRFQLine } from "~/modules/purchasing";
+import {
+  isRfqLocked,
+  purchasingRfqValidator
+} from "~/modules/purchasing/purchasing.models";
 import {
   getPurchasingRFQ,
-  isRfqLocked,
-  purchasingRfqValidator,
   upsertPurchasingRFQ
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
+import type {
+  PurchasingRFQ,
+  PurchasingRFQLine
+} from "~/modules/purchasing/types";
 import {
   SupplierInteractionDocuments,
   SupplierInteractionNotes
@@ -121,7 +131,7 @@ export default function PurchasingRFQDetailsRoute() {
   if (!rfqData) throw new Error("Could not find rfq data");
 
   return (
-    <VStack spacing={2}>
+    <VStack spacing={4}>
       <SupplierInteractionState
         currentRfq={{
           id: rfqData.rfqSummary.id!,

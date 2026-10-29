@@ -1,4 +1,5 @@
 #include "occt-bridge/src/occt.h"
+#include "occt-bridge/src/occt_doc.h"
 
 #include <map>
 #include <string>
@@ -12,7 +13,10 @@
 #include <cstdlib>
 #include <BinXCAFDrivers.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
+#include <BRepMesh_Context.hxx>
+#include <BRepMesh_FaceDiscret.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
+#include <BRepMesh_MeshAlgoFactory.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRep_Builder.hxx>
@@ -20,6 +24,7 @@
 #include <Bnd_Box.hxx>
 #include <GProp_GProps.hxx>
 #include <IFSelect_ReturnStatus.hxx>
+#include <IMeshTools_Parameters.hxx>
 #include <Interface_Static.hxx>
 #include <PCDM_ReaderStatus.hxx>
 #include <PCDM_StoreStatus.hxx>
@@ -65,7 +70,7 @@ static const std::vector<double> IDENTITY_4X4 = {
 
 // UTF-8, not TCollection_AsciiString: the ASCII conversion replaces every
 // non-Latin character with '?', which mangles e.g. CJK part names.
-static std::string to_utf8(const TCollection_ExtendedString &ext) {
+std::string to_utf8(const TCollection_ExtendedString &ext) {
   const int len = ext.LengthOfCString();
   if (len <= 0) return "";
   std::string out(static_cast<size_t>(len) + 1, '\0');
@@ -75,7 +80,7 @@ static std::string to_utf8(const TCollection_ExtendedString &ext) {
   return out;
 }
 
-static std::string label_name(const TDF_Label &label) {
+std::string label_name(const TDF_Label &label) {
   Handle(TDataStd_Name) attr;
   if (label.FindAttribute(TDataStd_Name::GetID(), attr)) {
     return to_utf8(attr->Get());
@@ -140,7 +145,7 @@ static bool mesh_parallel() {
 // handful of facets. Scale it to the shape: 0.05% of the bbox diagonal, never
 // coarser than requested, floored at 5% of the request so a tiny part can't
 // demand micron-level meshes.
-static double adaptive_deflection(const TopoDS_Shape &shape, double lin) {
+double adaptive_deflection(const TopoDS_Shape &shape, double lin) {
   Bnd_Box box;
   BRepBndLib::Add(shape, box);
   if (box.IsVoid()) return lin;
@@ -151,11 +156,74 @@ static double adaptive_deflection(const TopoDS_Shape &shape, double lin) {
   return std::min(lin, std::max(diag * 5e-4, lin * 0.05));
 }
 
+// A flat face with many holes is where BRepMesh's memory goes: its default
+// algorithm for a plane runs an interior-node pass whose bookkeeping grows with
+// the square of the hole count (1,200 holes on one face: 5.6 GB), although a
+// plane has no interior nodes to add. Past this many wires on one face the part
+// is meshed with that pass off for planes only. The vertices are the same, so
+// nodeIds and geometry hashes do not move; the triangle wiring can differ where
+// a face's points are co-circular (a disc, a regular hole pattern), which is why
+// smaller parts keep the default path and stay byte-identical.
+static const int LEAN_PLANE_MIN_WIRES = 64;
+
+// ASSEMBLER_LEAN_PLANES=0 turns it off (every part takes the default path).
+// Read per call, not cached, so a test can flip it.
+static bool lean_planes_enabled() {
+  const char *e = std::getenv("ASSEMBLER_LEAN_PLANES");
+  return !(e && e[0] == '0');
+}
+
+static bool has_perforated_face(const TopoDS_Shape &shape) {
+  for (TopExp_Explorer face(shape, TopAbs_FACE); face.More(); face.Next()) {
+    int wires = 0;
+    for (TopExp_Explorer wire(face.Current(), TopAbs_WIRE); wire.More();
+         wire.Next()) {
+      if (++wires > LEAN_PLANE_MIN_WIRES) return true;
+    }
+  }
+  return false;
+}
+
+// OCCT's default factory, except a plane gets the algorithm without the
+// interior-node pass. Every other surface keeps the caller's parameters.
+class LeanPlaneAlgoFactory : public IMeshTools_MeshAlgoFactory {
+public:
+  Handle(IMeshTools_MeshAlgo)
+  GetAlgo(const GeomAbs_SurfaceType type,
+          const IMeshTools_Parameters &params) const override {
+    if (type != GeomAbs_Plane) return base->GetAlgo(type, params);
+    IMeshTools_Parameters lean = params;
+    lean.InternalVerticesMode = false;
+    return base->GetAlgo(type, lean);
+  }
+
+private:
+  Handle(BRepMesh_MeshAlgoFactory) base = new BRepMesh_MeshAlgoFactory;
+};
+
+static void mesh(const TopoDS_Shape &shape, double lin, double ang) {
+  const double deflection = adaptive_deflection(shape, lin);
+  if (!lean_planes_enabled() || !has_perforated_face(shape)) {
+    BRepMesh_IncrementalMesh(shape, deflection, Standard_False, ang,
+                             mesh_parallel() ? Standard_True : Standard_False);
+    return;
+  }
+  // The same four parameters the constructor above sets.
+  BRepMesh_IncrementalMesh mesher;
+  mesher.SetShape(shape);
+  IMeshTools_Parameters &params = mesher.ChangeParameters();
+  params.Deflection = deflection;
+  params.Relative = false;
+  params.Angle = ang;
+  params.InParallel = mesh_parallel();
+  Handle(BRepMesh_Context) context = new BRepMesh_Context(params.MeshAlgo);
+  context->SetFaceDiscret(new BRepMesh_FaceDiscret(new LeanPlaneAlgoFactory));
+  mesher.Perform(context);
+}
+
 static void tessellate(const TopoDS_Shape &shape, double lin, double ang,
                        std::vector<float> &verts, std::vector<uint32_t> &indices) {
-  BRepMesh_IncrementalMesh(shape, adaptive_deflection(shape, lin),
-                           Standard_False, ang,
-                           mesh_parallel() ? Standard_True : Standard_False);
+  mesh(shape, lin, ang);
   uint32_t offset = 0;
   for (TopExp_Explorer exp(shape, TopAbs_FACE); exp.More(); exp.Next()) {
     TopoDS_Face face = TopoDS::Face(exp.Current());
@@ -411,7 +479,7 @@ class Builder {
 // no concurrent STEPControl_Controller::Init(). So warm both ONCE here,
 // single-threaded; concurrent reads then only touch their own local reader
 // instance and read (never write) the shared config.
-static void ensure_step_init() {
+void ensure_step_init() {
   static std::once_flag occt_init;
   std::call_once(occt_init, [] {
     STEPControl_Controller::Init();
@@ -422,7 +490,7 @@ static void ensure_step_init() {
 // One process-wide XCAF application with the BinXCAF (`.xbf`) storage/retrieval
 // drivers registered — required to SaveAs/Open XCAF documents. TDocStd_Application
 // is internally guarded, so a single shared instance is fine across threads.
-static const Handle(TDocStd_Application) & xcaf_app() {
+const Handle(TDocStd_Application) & xcaf_app() {
   static Handle(TDocStd_Application) app = [] {
     Handle(TDocStd_Application) a = new TDocStd_Application();
     BinXCAFDrivers::DefineFormat(a);
@@ -433,8 +501,8 @@ static const Handle(TDocStd_Application) & xcaf_app() {
 
 // Read + transfer a STEP file into a fresh XCAF document. Returns null and sets
 // `error` on failure (unreadable STEP, transfer failure).
-static Handle(TDocStd_Document) read_step_to_doc(const std::string &p,
-                                                 std::string &error) {
+Handle(TDocStd_Document) read_step_to_doc(const std::string &p,
+                                          std::string &error) {
   ensure_step_init();
   STEPCAFControl_Reader reader;
   reader.SetColorMode(true);

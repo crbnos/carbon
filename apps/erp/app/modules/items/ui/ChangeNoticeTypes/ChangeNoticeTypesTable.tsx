@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -6,6 +10,7 @@ import { LuGitPullRequestArrow, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { ChangeNoticeType } from "../../types";
@@ -13,10 +18,11 @@ import type { ChangeNoticeType } from "../../types";
 type ChangeNoticeTypesTableProps = {
   data: ChangeNoticeType[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const ChangeNoticeTypesTable = memo(
-  ({ data, count }: ChangeNoticeTypesTableProps) => {
+  ({ data, count, infinite }: ChangeNoticeTypesTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -33,6 +39,7 @@ const ChangeNoticeTypesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuGitPullRequestArrow />
           }
         }
@@ -44,6 +51,7 @@ const ChangeNoticeTypesTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!permissions.can("update", "parts")}
               onClick={() => {
                 navigate(
@@ -55,6 +63,7 @@ const ChangeNoticeTypesTable = memo(
               {t`Edit Type`}
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "parts")}
               onClick={() => {
@@ -77,6 +86,7 @@ const ChangeNoticeTypesTable = memo(
     return (
       <Table<ChangeNoticeType>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

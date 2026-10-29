@@ -1,16 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
+import { useCloseRoute } from "@carbon/react";
+import { datetime, redirect } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useNavigate } from "react-router";
 import { useCompanyToday, useRouteData, useUser } from "~/hooks";
-import type { GaugeType } from "~/modules/quality";
-import { gaugeValidator, insertGauge } from "~/modules/quality";
+import { gaugeValidator } from "~/modules/quality/quality.models";
+import { insertGauge } from "~/modules/quality/quality.service";
+import type { GaugeType } from "~/modules/quality/types";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
@@ -72,7 +77,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function GaugeNewRoute() {
   const { defaults } = useUser();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const routeData = useRouteData<{
     gaugeTypes: GaugeType[];
@@ -102,7 +107,7 @@ export default function GaugeNewRoute() {
     <GaugeForm
       initialValues={initialValues}
       gaugeTypes={routeData?.gaugeTypes ?? []}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

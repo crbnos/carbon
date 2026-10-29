@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import type { JSX } from "react";
 import { memo, useMemo } from "react";
 import { cn } from "./utils/cn";

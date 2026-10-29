@@ -1,23 +1,30 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { getItemReadableId, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment } from "react/jsx-runtime";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
+import {
+  isPurchaseInvoiceLocked,
+  purchaseInvoiceLineValidator
+} from "~/modules/invoicing/invoicing.models";
 import {
   getPurchaseInvoice,
   getPurchaseInvoiceLine,
-  isPurchaseInvoiceLocked,
-  PurchaseInvoiceLineForm,
-  purchaseInvoiceLineValidator,
   upsertPurchaseInvoiceLine
-} from "~/modules/invoicing";
-import { getSupplierInteractionLineDocuments } from "~/modules/purchasing";
+} from "~/modules/invoicing/invoicing.service";
+import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
+import { getSupplierInteractionLineDocuments } from "~/modules/purchasing/purchasing.service";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
@@ -36,14 +43,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");
 
-  const [purchaseInvoiceLine, files] = await Promise.all([
-    getPurchaseInvoiceLine(client, lineId),
-    getSupplierInteractionLineDocuments(client, companyId, lineId)
-  ]);
+  const purchaseInvoiceLine = await getPurchaseInvoiceLine(client, lineId);
 
   return {
     purchaseInvoiceLine: purchaseInvoiceLine?.data ?? null,
-    files
+    files: getSupplierInteractionLineDocuments(client, companyId, lineId)
   };
 }
 
@@ -165,6 +169,9 @@ export default function EditPurchaseInvoiceLineRoute() {
     taxPercent: purchaseInvoiceLine?.taxPercent ?? 0,
     assetReadableId: (purchaseInvoiceLine as any)?.assetReadableId ?? "",
     assetName: (purchaseInvoiceLine as any)?.assetName ?? "",
+    leaseId: purchaseInvoiceLine?.leaseId ?? "",
+    leasePaymentId: purchaseInvoiceLine?.leasePaymentId ?? "",
+    leaseReadableId: purchaseInvoiceLine?.leaseReadableId ?? "",
     ...getCustomFields(purchaseInvoiceLine?.customFields)
   };
 
@@ -201,7 +208,7 @@ export default function EditPurchaseInvoiceLineRoute() {
         )}
       </DeferredFiles>
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

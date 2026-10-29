@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { LinearIssue } from "@carbon/ee/linear";
 import { mapLinearStatusToCarbonStatus } from "@carbon/ee/linear";
 import {
   Badge,
   cn,
+  PrefetchLink,
   Status,
   Tooltip,
   TooltipContent,
@@ -25,6 +30,7 @@ import {
   LuBox,
   LuBuilding,
   LuBuilding2,
+  LuCalendarClock,
   LuCircle,
   LuCircleCheck,
   LuCircleDashed,
@@ -39,12 +45,14 @@ import {
   LuExternalLink,
   LuEye,
   LuFlaskConical,
+  LuFolderKanban,
   LuGroup,
   LuHammer,
   LuHandCoins,
   LuHardHat,
   LuHeadphones,
   LuImage,
+  LuKeyRound,
   LuLandmark,
   LuList,
   LuListChecks,
@@ -64,21 +72,22 @@ import {
   LuTriangleAlert,
   LuTruck,
   LuUser,
-  LuUsers
+  LuUsers,
+  LuWrench
 } from "react-icons/lu";
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetOff } from "react-icons/tb";
-import { Link } from "react-router";
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import type {
   dimensionEntityTypes,
   journalEntrySourceTypes
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.models";
 import type { JobOperation } from "~/modules/production/types";
-import type { nonConformanceTaskStatus } from "~/modules/quality";
-import type { MethodType, OperationType } from "~/modules/shared";
+import type { nonConformanceTaskStatus } from "~/modules/quality/quality.models";
+import type { OperationType } from "~/modules/shared/shared.models";
+import type { MethodType } from "~/modules/shared/types";
 
 export const ModuleIcon = ({ icon }: { icon: ReactNode }) => {
   return (
@@ -168,15 +177,15 @@ export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
   const mode = useMode();
   const style = getReplenishmentBadgeColor(type, mode);
   return (
-    <Link to={to} prefetch="intent" className="group flex items-center gap-1">
+    <PrefetchLink to={to} className="group flex items-center gap-1">
       <Badge style={style} className={className}>
         <MethodIcon type={type} className="w-3 h-3 mr-1 " />
         {text}
       </Badge>
-      <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
+      <span className="group-hover:opacity-100 md:opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
         <LuExternalLink />
       </span>
-    </Link>
+    </PrefetchLink>
   );
 }
 
@@ -614,6 +623,10 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuTruck className={className} />;
     case "Sales Return":
       return <LuRotateCcw className={className} />;
+    case "Sales Return Receipt":
+      return <LuRotateCcw className={className} />;
+    case "Purchase Return Shipment":
+      return <LuRotateCcw className={className} />;
     case "Transfer Receipt":
       return <LuArrowLeftRight className={className} />;
     case "Inventory Adjustment":
@@ -628,11 +641,18 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuHardHat className={className} />;
     case "Job Close":
       return <LuCircleCheck className={className} />;
+    case "Maintenance Event":
+      return <LuWrench className={className} />;
     case "Asset Depreciation":
       return <LuClock className={className} />;
     case "Asset Disposal":
       return <LuBuilding2 className={className} />;
     case "Payment":
+      return <LuBanknote className={className} />;
+    case "Charge":
+      return <LuCreditCard className={className} />;
+    case "Reimbursement":
+      // An employee payable, not a card charge — pair it with Payment's icon.
       return <LuBanknote className={className} />;
     case "Credit Memo":
       return <LuCreditCard className={className} />;
@@ -642,6 +662,13 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuTriangleAlert className={className} />;
     case "Inbound Inspection":
       return <LuClipboardCheck className={className} />;
+    case "Revenue Recognition":
+      return <LuCalendarClock className={className} />;
+    case "Asset Transfer":
+      return <LuArrowLeftRight className={className} />;
+    case "Lease":
+    case "Lease Run":
+      return <LuKeyRound className={className} />;
   }
 
   return <LuSquare className={cn("text-muted-foreground", className)} />;
@@ -683,6 +710,8 @@ export const DimensionEntityTypeIcon = ({
       return <LuLocateFixed className={className} />;
     case "Process":
       return <LuRedoDot className={className} />;
+    case "Project":
+      return <LuFolderKanban className={className} />;
     case "ScrapReason":
       return <LuTriangleAlert className={className} />;
   }

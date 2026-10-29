@@ -1,17 +1,21 @@
-import { useNavigate, useParams } from "react-router";
-import { useRouteData } from "~/hooks";
-import type { AttributeDataType } from "~/modules/people";
-import { AttributeForm } from "~/modules/people/ui/Attributes";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { DataType } from "~/modules/shared";
+import { useCloseRoute } from "@carbon/react";
+import { useParams } from "react-router";
+import { useRouteData } from "~/hooks";
+import type { AttributeDataType } from "~/modules/people/types";
+import { AttributeForm } from "~/modules/people/ui/Attributes";
+import { DataType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export default function NewAttributeRoute() {
   const { categoryId } = useParams();
   if (!categoryId) throw new Error("categoryId is not found");
 
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
   const attributesRouteData = useRouteData<{
     dataTypes: AttributeDataType[];
   }>(path.to.attributes);

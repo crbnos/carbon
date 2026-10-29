@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -12,6 +16,7 @@ import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
 import {
+  CustomerLocation,
   CustomFormFields,
   Hidden,
   Input,
@@ -22,9 +27,9 @@ import {
   Submit
 } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
-import type { SalesInvoice } from "~/modules/invoicing";
-import { salesInvoiceShipmentValidator } from "~/modules/invoicing";
-import { incoterms } from "~/modules/shared";
+import { salesInvoiceShipmentValidator } from "~/modules/invoicing/invoicing.models";
+import type { SalesInvoice } from "~/modules/invoicing/types";
+import { incoterms } from "~/modules/shared/shared.models";
 import type { action } from "~/routes/x+/sales-invoice+/$invoiceId.shipment";
 import { path } from "~/utils/path";
 import { isSalesInvoiceLocked } from "../../invoicing.models";
@@ -115,6 +120,12 @@ const SalesInvoiceShipmentForm = forwardRef<
               name="locationId"
               label={t`Shipment Location`}
               isReadOnly={isCustomer}
+              isClearable
+            />
+            <CustomerLocation
+              name="customerLocationId"
+              label={t`Ship To`}
+              customer={routeData?.salesInvoice?.customerId ?? undefined}
               isClearable
             />
             <ShippingMethod

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useEditor } from "@carbon/tiptap";
 import { useEffect, useRef } from "react";
 import { LuCheck, LuLink, LuTrash } from "react-icons/lu";
@@ -59,7 +63,7 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
             ref={inputRef}
             type="text"
             placeholder="Paste a link"
-            className="flex-1 bg-background p-1 text-sm outline-none"
+            className="flex-1 bg-transparent p-1 text-sm outline-none"
             defaultValue={editor.getAttributes("link").href || ""}
           />
           {editor.getAttributes("link").href ? (

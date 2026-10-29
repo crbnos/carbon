@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Popover,
   PopoverContent,
@@ -12,7 +16,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import type { ComponentProps, ReactNode } from "react";
 import { Link } from "react-router";
-import type { PeriodCloseUnpostedDocument } from "~/modules/accounting";
+import type { PeriodCloseUnpostedDocument } from "~/modules/accounting/accounting.service";
 import { JournalEntryStatus } from "~/modules/accounting/ui/JournalEntries";
 import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";

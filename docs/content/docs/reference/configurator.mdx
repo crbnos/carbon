@@ -3,13 +3,13 @@ title: Configurator
 description: Turn one part number into a parametric family. Inputs drive rules that resolve the BOM, routing, and price per order.
 ---
 
-Some parts aren't one fixed recipe. A bracket comes in three lengths, a panel in four finishes, a valve in a dozen bore sizes. Carbon's **configurator** lets a single item carry a set of **parameters** the ordering user fills in, and **rules** that read those parameters to resolve the item's <Term id="method">method</Term> at order time: which components go on the [bill of materials](/docs/reference/methods), how the routing runs, and what the line costs. One part number, a parametric family behind it.
+The **configurator** models a family of variants under one item. Users provide **parameters**, and rules use those values to resolve the item's <Term id="method">method</Term> at order time. Rules can select [bill-of-materials](/docs/reference/methods) components, routing details, and line cost.
 
-A part becomes configurable when you tick **"Requires Configuration"** on its manufacturing settings (`requiresConfiguration`, `apps/erp/app/modules/items/ui/Item/ItemManufacturingForm.tsx:82`). From then on the part is <Term id="item-configured">configured</Term>: its stored method is a *template*, and every job or quote line built from it runs the rules to produce its own resolved copy.
+Enable **Requires Configuration** in the part's manufacturing settings (`requiresConfiguration`, `apps/erp/app/modules/items/ui/Item/ItemManufacturingForm.tsx:82`). The stored method then becomes a template. Each job or quote line runs the rules to create its own resolved method.
 
 ## Parameters — the inputs
 
-Parameters are the questions the configurator asks. Each one is defined on the part (`configurationParameterValidator`, `apps/erp/app/modules/items/items.models.ts:341`) with a **label**, a machine **key**, and a **data type**. The key is alphanumeric with underscore separators (`length`, `wall_thickness`), lowercase by convention — it's the name your rules reference.
+Each parameter has a **label**, machine **key**, and **data type** (`configurationParameterValidator`, `apps/erp/app/modules/items/items.models.ts:341`). Rules reference the key. Use lowercase alphanumeric segments separated by single underscores, such as `length` or `wall_thickness`.
 
 <FieldTable>
   <Field name="text" type="string">A free-text value.</Field>
@@ -26,11 +26,11 @@ Parameters can be sorted into **groups** so the order form reads as sections (Di
 
 ## Rules — deriving the method
 
-A **rule** binds a *field* of the method to a snippet of code (`configurationRuleValidator`, `items.models.ts:369`). The field names which piece of the resolved method the rule sets; the code computes the value from the parameters.
+A **rule** binds a method field to code that computes its value from the parameters (`configurationRuleValidator`, `items.models.ts:369`).
 
 Rules attach per-field right on the embedded [method](/docs/reference/methods) editors. On the bill of materials each component exposes configurable fields — `itemId` (swap the component), `quantity`, `unitOfMeasureCode`, and `methodType` (`BillOfMaterial.tsx:841,866,890,1043`); on the bill of process, operation fields like the work center, process, and setup/labor/machine times. A field with a rule shows a "configured" marker instead of a static value.
 
-You author the code in a **Monaco editor** (`ConfigurationEditor.ee.tsx`) that generates the function skeleton and type definitions for you from the parameters, with a **Run** button to test the output before saving. The code is the body of a `configure(params)` function; `params` holds your parameters by key, and you `return` the value for that field:
+You author the code in a **Monaco editor** (`ConfigurationEditor.tsx`) that generates the function skeleton and type definitions for you from the parameters, with a **Run** button to test the output before saving. The code is the body of a `configure(params)` function; `params` holds your parameters by key, and you `return` the value for that field:
 
 ```typescript
 function configure(params: Params): number {
@@ -40,14 +40,14 @@ function configure(params: Params): number {
 ```
 
 <Callout type="note" title="Rules run in a sandbox — keep them pure">
-Rule code is transpiled and executed in a restricted sandbox (`packages/database/supabase/functions/lib/sandbox.ee.ts`): no `fetch`, no `setTimeout`/`setInterval`, no dynamic `import`, no `new Promise`, no `Function` constructor. A rule that trips a banned pattern is neutered to `return null`, and any rule that throws falls back to the field's default. Rules are for deriving a value from the inputs, not for side effects.
+Rule code runs in an isolated JavaScript sandbox (QuickJS, `packages/database/src/configuration-rule.ts`), both when a method is created and when you test a rule in the editor. The parameters are the only input and the returned value is the only output: a rule has no network, timers, or access to the page or server it runs in, and each run is limited in time and memory. A rule that fails to compile, throws, or exceeds a limit is ignored: a field keeps its default, and a bill of materials or process keeps all of its lines. Rules are for deriving a value from the inputs, not for side effects.
 </Callout>
 
 Rules can also **filter** the method wholesale: a `billOfMaterial` or `billOfProcess` rule returns the list of component or operation names to keep, so a boolean parameter can drop a whole subassembly or an outside-processing step from the recipe.
 
 ## Choosing a configured item at order time
 
-The configurator is exercised where a configured part is put on a [quote line](/docs/reference/quotes) or a [sales order](/docs/reference/sales-orders) line, and where a [job](/docs/reference/jobs) is created for it. When the picked item requires configuration, the line form shows a **"Configure"** button (`QuoteLineForm.tsx:556`, `JobForm.tsx`) that opens the parameter form. Until it's filled in, **"Save"** stays disabled — you can't commit a configured line without answering its parameters.
+Configuration runs when a configured part is added to a [quote line](/docs/reference/quotes), [sales order](/docs/reference/sales-orders) line, or [job](/docs/reference/jobs). The form displays **Configure** and disables **Save** until the required parameters are submitted (`QuoteLineForm.tsx:556`, `JobForm.tsx`).
 
 Submitting the configuration stores the answers on the line (`quoteLine.configuration` / `job.configuration`, JSON) and calls the [get-method](/docs/reference/methods) engine with those values (`x+/quote+/$quoteId.$lineId.configure.tsx`). The rules run, and the line gets its own resolved bill of materials, routing, and cost — a concrete instance of the parametric family, not the template. Reconfiguring clears the line's prices and re-derives everything.
 

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { cn } from "@carbon/react";
 import {
   BsFileEarmarkFill,
@@ -11,7 +15,7 @@ import {
   BsFileZipFill
 } from "react-icons/bs";
 import { LuAxis3D } from "react-icons/lu";
-import type { documentTypes } from "~/modules/shared";
+import type { documentTypes } from "~/modules/shared/shared.models";
 
 type DocumentIconProps = {
   type: (typeof documentTypes)[number];

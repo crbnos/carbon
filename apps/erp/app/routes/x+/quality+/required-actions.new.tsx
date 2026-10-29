@@ -1,13 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useNavigate } from "react-router";
-import {
-  requiredActionValidator,
-  upsertRequiredAction
-} from "~/modules/quality";
+import { useNavigate } from "react-router";
+import { requiredActionValidator } from "~/modules/quality/quality.models";
+import { upsertRequiredAction } from "~/modules/quality/quality.service";
 import { RequiredActionForm } from "~/modules/quality/ui/RequiredActions";
 import { path } from "~/utils/path";
 

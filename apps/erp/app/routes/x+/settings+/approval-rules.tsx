@@ -1,12 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getApprovalRules } from "@carbon/ee/approvals.server";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
-import { ApprovalRules } from "~/modules/settings";
-import { getApprovalRules } from "~/modules/shared";
+import { useLoaderData } from "react-router";
+import { usePlanGate } from "~/hooks/usePlanGate";
+import {
+  ApprovalRules,
+  ApprovalRulesUpgradeOverlay
+} from "~/modules/settings/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -67,15 +77,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
     (r) => r.documentType === "supplier"
   );
 
+  const changeOrderRules = enrichedRules.filter(
+    (r) => r.documentType === "changeOrder"
+  );
+
   return {
     poRules,
     qdRules,
-    supplierRules
+    supplierRules,
+    changeOrderRules
   };
 }
 
 export default function ApprovalSettingsRoute() {
-  const { poRules, qdRules, supplierRules } = useLoaderData<typeof loader>();
+  const { poRules, qdRules, supplierRules, changeOrderRules } =
+    useLoaderData<typeof loader>();
+  const { isGated } = usePlanGate({ feature: "APPROVAL_RULES" });
+
+  if (isGated) {
+    return <ApprovalRulesUpgradeOverlay />;
+  }
 
   return (
     <>
@@ -83,8 +104,9 @@ export default function ApprovalSettingsRoute() {
         poRules={poRules}
         qdRules={qdRules}
         supplierRules={supplierRules}
+        changeOrderRules={changeOrderRules}
       />
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

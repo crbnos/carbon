@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   assertIsPost,
   callbackValidator,
@@ -8,6 +12,10 @@ import { refreshAccessToken } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
+import {
+  isSelfSignupBlockedForEmail,
+  SELF_SIGNUP_BLOCKED_MESSAGE
+} from "@carbon/auth/self-signup.server";
 import {
   destroyAuthSession,
   flash,
@@ -23,21 +31,31 @@ import {
   isSsoRequiredForEmail
 } from "@carbon/ee/sso.server";
 import { validator } from "@carbon/form";
-import { AccountLockout, redis } from "@carbon/kv";
+import { AccountLockout, redis, SIGN_IN_CODE_LOCKOUT_PREFIX } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
   Button,
-  LoadingBars,
+  CarbonPulse,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, redirect, useFetcher, useLocation } from "react-router";
+import {
+  data,
+  Link,
+  useFetcher,
+  useLocation,
+  useSearchParams
+} from "react-router";
 import { path } from "~/utils/path";
+
+const logger = getLogger("mes", "callback");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
@@ -60,7 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  const { refreshToken, userId } = validation.data;
+  const { refreshToken, userId, redirectTo } = validation.data;
   const serviceRole = getCarbonServiceRole();
   const companies = await serviceRole
     .from("userToCompany")
@@ -83,6 +101,21 @@ export async function action({ request }: ActionFunctionArgs) {
     return redirect(
       path.to.root,
       await flash(request, error(authSession, "Invalid refresh token"))
+    );
+  }
+
+  // The form's `userId` is caller-supplied: the membership read above, the SSO
+  // lookup and the self-signup gate below all key on it. Only the refresh
+  // token proves identity, so a `userId` that is not the token's owner would
+  // stamp another user's company onto this session — refuse it.
+  if (authSession.userId !== userId) {
+    logger.warn("Callback userId does not match the refresh token's user", {
+      userId,
+      sessionUserId: authSession.userId
+    });
+    return redirect(
+      path.to.root,
+      await flash(request, error(null, "Invalid refresh token"))
     );
   }
 
@@ -158,13 +191,17 @@ export async function action({ request }: ActionFunctionArgs) {
     authSession.ssoProviderId = ssoProviderId;
 
     await new AccountLockout({ redis }).reset(authSession.email);
+    await new AccountLockout({
+      redis,
+      prefix: SIGN_IN_CODE_LOCKOUT_PREFIX
+    }).reset(authSession.email);
 
     // The IdP owns MFA for SSO sessions, including controlled environments
     // (user decision — attestation shifts to the IdP policy).
     authSession.mfaVerified = true;
 
     const ssoSessionCookie = await setAuthSession(request, { authSession });
-    return redirect(path.to.authenticatedRoot, {
+    return redirect(redirectTo || path.to.authenticatedRoot, {
       headers: [
         ["Set-Cookie", ssoSessionCookie],
         ["Set-Cookie", setCompanyId(ssoCompanyId)]
@@ -175,6 +212,40 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await getUserByEmail(authSession.email);
 
   if (user?.data) {
+    // Self-signup blocklist (Cloud only). OAuth (Google/Azure) has no pre-create
+    // seam — GoTrue creates the auth user and the `create_public_user` trigger
+    // fires before this action runs — so the callback is where we refuse it,
+    // mirroring the ERP callback. Only a GENUINE self-signup is refused: a user
+    // who already belongs to a company, or who holds a pending invite, is never
+    // a self-signup. We simply decline to mint a session and leave the inert,
+    // membership-less account; there is nothing to tear down.
+    const memberships = companies.data ?? [];
+    if (
+      memberships.length === 0 &&
+      isSelfSignupBlockedForEmail(authSession.email)
+    ) {
+      // ilike for the case fold only — escape LIKE metacharacters so %/_ in an
+      // address can never act as wildcards and match someone else's invite.
+      const invitePattern = authSession.email.replace(
+        /[\\%_]/g,
+        (match) => `\\${match}`
+      );
+      const pendingInvite = await serviceRole
+        .from("invite")
+        .select("id")
+        .ilike("email", invitePattern)
+        .is("acceptedAt", null)
+        .is("revokedAt", null)
+        .limit(1);
+
+      if (!pendingInvite.data?.length) {
+        return redirect(
+          path.to.root,
+          await flash(request, error(null, SELF_SIGNUP_BLOCKED_MESSAGE))
+        );
+      }
+    }
+
     // Require-SSO gate: this is the non-SSO path (magic link, Google/Azure
     // OAuth, magic links minted elsewhere) — a covered + enforced domain may
     // only authenticate via SSO, so refuse before any session state is minted.
@@ -195,12 +266,17 @@ export async function action({ request }: ActionFunctionArgs) {
     // accumulated per-account lockout state (NIST 3.1.8 reset-on-success). Runs
     // before the TOTP gate so an MFA-enrolled user's counter clears too.
     await new AccountLockout({ redis }).reset(authSession.email);
+    await new AccountLockout({
+      redis,
+      prefix: SIGN_IN_CODE_LOCKOUT_PREFIX
+    }).reset(authSession.email);
 
     // TOTP gate: park the tokens in the pending-MFA key and challenge before
     // any full session cookie exists. The /mfa action mints the real session.
     if (await userHasVerifiedTotpFactor(authSession.userId)) {
       const pendingCookie = await setPendingMfaSession(request, {
-        authSession
+        authSession,
+        redirectTo
       });
       return redirect(path.to.mfa, {
         headers: [["Set-Cookie", pendingCookie]]
@@ -211,7 +287,7 @@ export async function action({ request }: ActionFunctionArgs) {
       authSession
     });
     const companyIdCookie = setCompanyId(authSession.companyId);
-    return redirect(path.to.authenticatedRoot, {
+    return redirect(redirectTo || path.to.authenticatedRoot, {
       headers: [
         ["Set-Cookie", sessionCookie],
         ["Set-Cookie", companyIdCookie]
@@ -231,6 +307,8 @@ export default function AuthCallback() {
   const [error, setError] = useState<string | null>(null);
 
   const { hash } = useLocation();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo") ?? undefined;
 
   useEffect(() => {
     const hashParams = new URLSearchParams(hash.slice(1));
@@ -258,6 +336,7 @@ export default function AuthCallback() {
         const formData = new FormData();
         formData.append("refreshToken", refreshToken);
         formData.append("userId", userId);
+        if (redirectTo) formData.append("redirectTo", redirectTo);
 
         fetcher.submit(formData, { method: "post" });
       }
@@ -266,10 +345,10 @@ export default function AuthCallback() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetcher]);
+  }, [fetcher, redirectTo]);
 
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
       {error ? (
         <div className="rounded-lg p-8 mt-8 w-[380px]">
           <VStack spacing={4}>
@@ -298,7 +377,7 @@ export default function AuthCallback() {
           </VStack>
         </div>
       ) : (
-        <LoadingBars />
+        <CarbonPulse />
       )}
     </div>
   );

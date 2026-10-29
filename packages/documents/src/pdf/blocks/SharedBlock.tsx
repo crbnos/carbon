@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Text, View } from "@react-pdf/renderer";
 import type {
   ResolvedSection,
@@ -5,6 +9,7 @@ import type {
 } from "../../template";
 import { interpolateContent } from "../../template";
 import { Note } from "../components";
+import { hasContent } from "./resolveTerms";
 import { useTw } from "./tw";
 
 /** Extension block — doc-agnostic. Takes resolved sections + merge `vars`. */
@@ -21,13 +26,9 @@ export function SharedBlock({
   const section = sections[block.sectionId];
   if (!section) return null;
 
-  const hasContent =
-    section.content &&
-    typeof section.content === "object" &&
-    Array.isArray(section.content.content) &&
-    section.content.content.length > 0;
-
-  if (!hasContent) return null;
+  if (!hasContent(section.content)) return null;
+  const content = interpolateContent(section.content, vars);
+  if (!hasContent(content)) return null;
 
   return (
     <View style={tw("border border-gray-200 mb-4")}>
@@ -36,7 +37,7 @@ export function SharedBlock({
           {section.name}
         </Text>
         <View style={tw("text-[9px] text-gray-800")}>
-          <Note content={interpolateContent(section.content, vars)} />
+          <Note content={content} />
         </View>
       </View>
     </View>

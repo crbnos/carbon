@@ -1,19 +1,28 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useParams } from "react-router";
-import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
+import { useParams } from "react-router";
+import { useRouteData } from "~/hooks";
+import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
+import {
+  isPurchaseOrderLocked,
+  purchaseOrderLineValidator
+} from "~/modules/purchasing/purchasing.models";
 import {
   getPurchaseOrder,
-  isPurchaseOrderLocked,
-  purchaseOrderLineValidator,
   upsertPurchaseOrderLine
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
+import type { PurchaseOrder } from "~/modules/purchasing/types";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -106,16 +115,23 @@ export default function NewPurchaseOrderLineRoute() {
 
   if (!orderId) throw new Error("Could not find purchase order id");
 
+  const routeData = useRouteData<{ purchaseOrder: PurchaseOrder }>(
+    path.to.purchaseOrder(orderId)
+  );
+
   const initialValues = {
     conversionFactor: 1,
     exchangeRate: 1,
     inventoryUnitOfMeasureCode: "",
     itemId: "",
     purchaseOrderId: orderId,
-    purchaseOrderLineType: "Item" as MethodItemType,
+    // See PurchaseOrderExplorer — "Item" is the picker's generic mode and is
+    // not a valid line type.
+    purchaseOrderLineType: "Part" as MethodItemType,
     purchaseQuantity: 1,
     purchaseUnitOfMeasureCode: "",
-    requiredDate: undefined,
+    requiredDate: routeData?.purchaseOrder?.receiptRequestedDate ?? undefined,
+    promisedDate: routeData?.purchaseOrder?.receiptPromisedDate ?? undefined,
     setupPrice: 0,
     storageUnitId: "",
     supplierShippingCost: 0,

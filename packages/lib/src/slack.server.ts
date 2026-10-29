@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { getAppUrl, SLACK_BOT_TOKEN } from "@carbon/env";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { WebClientOptions } from "@slack/web-api";
 import { WebClient } from "@slack/web-api";
@@ -32,7 +37,12 @@ class SlackClient {
         blocks
       });
     } catch (error) {
-      log.error("Error sending Slack message", { error });
+      // Log, then RETHROW. Swallowing here made every caller's own catch dead
+      // code and let a failed post report success — `send-slack` classified
+      // errors it could never receive and settled `{ success: true }`. All
+      // callers already wrap this in a try/catch of their own.
+      log.error("Error sending Slack message", { channel, error });
+      throw error;
     }
   }
 }
@@ -114,8 +124,8 @@ export async function postSuggestionToCarbonSlack(
             .single()
         : Promise.resolve(null),
       input.attachmentPath
-        ? client.storage
-            .from("private")
+        ? storage(client)
+            .company(input.companyId)
             .createSignedUrl(input.attachmentPath, 60 * 60 * 24 * 7)
             .then((result) => result.data?.signedUrl ?? null)
         : Promise.resolve(null)

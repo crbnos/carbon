@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAccountSettings } from "@carbon/account";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import {
   getSortedLanguageSelectOptions,
@@ -16,22 +21,27 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  getSystemMode,
   ItarDisclosure,
-  Switch,
   useDisclosure,
   useEdition,
-  useMode
+  useMode,
+  useModePreference,
+  useThemePreview
 } from "@carbon/react";
-import { Edition, themes } from "@carbon/utils";
+import type { ModePreference } from "@carbon/utils";
+import { Edition, modeValidator, pickableThemes } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { useMemo, useState } from "react";
+import type { ReactElement, ReactNode } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
   LuCheck,
   LuCreditCard,
   LuFileText,
   LuHouse,
   LuLanguages,
+  LuLaptop,
   LuLogOut,
   LuMoon,
   LuPalette,
@@ -47,7 +57,33 @@ import type { action } from "~/root";
 import { startModeTransition } from "~/utils/dom";
 import { path } from "~/utils/path";
 
-const AvatarMenu = () => {
+export type AccountMenuItem = {
+  id:
+    | "dashboard"
+    | "apiDocs"
+    | "appearance"
+    | "theme"
+    | "language"
+    | "account"
+    | "billing"
+    | "legal"
+    | "about"
+    | "signOut";
+  /** Items in the same group sit between the same separators. */
+  group: number;
+  kind: "link" | "external" | "action" | "submenu" | "mode";
+  label: ReactNode;
+  icon: ReactElement;
+  to?: string;
+  children?: { id: string; label: ReactNode; icon: ReactElement; to: string }[];
+};
+
+/**
+ * The account menu's items, in desktop order, with every handler they need.
+ * The desktop AvatarMenu and the compact Profile sheet both render from this,
+ * so the two cannot drift.
+ */
+export function useAccountMenu() {
   const { t } = useLingui();
   const user = useUser();
   const name = `${user.firstName} ${user.lastName}`;
@@ -55,21 +91,32 @@ const AvatarMenu = () => {
   const edition = useEdition();
 
   const mode = useMode();
+  const modePreference = useModePreference();
   const serverTheme = useTheme();
-
-  const nextMode = mode === "dark" ? "light" : "dark";
+  const themeOptions = pickableThemes();
 
   const fetcher = useFetcher<typeof action>();
+  const previewTheme = useThemePreview(fetcher.state === "idle");
 
-  const onModeToggle = () => {
+  const onModeChange = (value: string) => {
+    const parsed = modeValidator.shape.mode.safeParse(value);
+    if (!parsed.success || parsed.data === modePreference) return;
+    const nextPreference: ModePreference = parsed.data;
+    const nextMode =
+      nextPreference === "system" ? getSystemMode() : nextPreference;
+
     const formData = new FormData();
-    formData.append("mode", nextMode);
-    startModeTransition(nextMode, () => {
+    formData.append("mode", nextPreference);
+    const persist = () =>
       fetcher.submit(formData, { method: "post", action: path.to.root });
-    });
+
+    if (nextMode === mode) {
+      persist();
+    } else {
+      startModeTransition(nextMode, persist);
+    }
   };
   const localeFetcher = useFetcher<{ ok?: boolean }>();
-  const [isOpen, setIsOpen] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
 
   const { locale } = useLocale();
@@ -81,77 +128,243 @@ const AvatarMenu = () => {
   );
 
   const onThemeChange = (t: string) => {
-    const newTheme = themes.find((theme) => theme.name === t);
+    const newTheme = themeOptions.find((theme) => theme.name === t);
     if (!newTheme) return;
-    const variables =
-      mode === "dark" ? newTheme.cssVars.dark : newTheme.cssVars.light;
-
     setSelectedTheme(t);
 
     const formData = new FormData();
     formData.append("theme", t);
     fetcher.submit(formData, { method: "post", action: path.to.theme });
-
-    Object.entries(variables).forEach(([key, value]) => {
-      document.body.style.setProperty(`--${key}`, value);
-    });
+    previewTheme(
+      mode === "dark" ? newTheme.cssVars.dark : newTheme.cssVars.light
+    );
   };
 
   const optimisticTheme = selectedTheme ?? serverTheme;
 
   const itarDisclosure = useDisclosure();
+  const openAccountSettings = useAccountSettings((s) => s.open);
 
-  return (
-    <>
-      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger className="outline-none focus-visible:outline-none">
-          <Avatar path={user.avatarUrl} name={name} />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-64">
-          <DropdownMenuLabel>{t`Signed in as ${name}`}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
+  const modeOptions = [
+    { value: "light", label: <Trans>Light</Trans>, icon: <LuSun /> },
+    { value: "dark", label: <Trans>Dark</Trans>, icon: <LuMoon /> },
+    { value: "system", label: <Trans>System</Trans>, icon: <LuLaptop /> }
+  ];
+
+  const items: AccountMenuItem[] = [
+    {
+      id: "dashboard",
+      group: 0,
+      kind: "link",
+      label: <Trans>Dashboard</Trans>,
+      icon: <LuHouse />,
+      to: path.to.authenticatedRoot
+    },
+    {
+      id: "apiDocs",
+      group: 1,
+      kind: "external",
+      label: <Trans>API Documentation</Trans>,
+      icon: <LuFileText />,
+      to: path.to.apiDocs
+    },
+    {
+      id: "appearance",
+      group: 2,
+      kind: "mode",
+      label: <Trans>Appearance</Trans>,
+      icon: mode === "dark" ? <LuMoon /> : <LuSun />
+    },
+    {
+      id: "theme",
+      group: 2,
+      kind: "submenu",
+      label: <Trans>Theme Color</Trans>,
+      icon: <LuPalette />
+    },
+    {
+      id: "language",
+      group: 3,
+      kind: "submenu",
+      label: <Trans>Language</Trans>,
+      icon: <LuLanguages />
+    },
+    {
+      id: "account",
+      group: 4,
+      kind: "action",
+      label: <Trans>Account Settings</Trans>,
+      icon: <LuUser />
+    },
+    ...(edition === Edition.Cloud && isOwner()
+      ? [
+          {
+            id: "billing",
+            group: 4,
+            kind: "link",
+            label: <Trans>Manage Subscription</Trans>,
+            icon: <LuCreditCard />,
+            to: path.to.billing
+          } satisfies AccountMenuItem
+        ]
+      : []),
+    {
+      id: "legal",
+      group: 4,
+      kind: "submenu",
+      label: <Trans>Terms and Privacy</Trans>,
+      icon: <LuFileText />,
+      children: [
+        {
+          id: "terms",
+          label: <Trans>Terms of Service</Trans>,
+          icon: <LuFileText />,
+          to: path.to.legal.termsAndConditions
+        },
+        {
+          id: "privacy",
+          label: <Trans>Privacy Policy</Trans>,
+          icon: <LuShieldCheck />,
+          to: path.to.legal.privacyPolicy
+        }
+      ]
+    },
+    ...(CONTROLLED_ENVIRONMENT
+      ? [
+          {
+            id: "about",
+            group: 5,
+            kind: "action",
+            label: <Trans>About</Trans>,
+            icon: <LuShieldCheck />
+          } satisfies AccountMenuItem
+        ]
+      : []),
+    {
+      id: "signOut",
+      group: 5,
+      kind: "action",
+      label: <Trans>Sign Out</Trans>,
+      icon: <LuLogOut />
+    }
+  ];
+
+  return {
+    user,
+    name,
+    signedInAs: t`Signed in as ${name}`,
+    items,
+    mode,
+    modePreference,
+    modeOptions,
+    onModeChange,
+    optimisticTheme,
+    onThemeChange,
+    themeOptions,
+    languageOptions,
+    resolvedLocale,
+    localeFetcher,
+    itarDisclosure,
+    openAccountSettings
+  };
+}
+
+const AvatarMenu = () => {
+  const {
+    user,
+    name,
+    signedInAs,
+    items,
+    mode,
+    modePreference,
+    modeOptions,
+    onModeChange,
+    optimisticTheme,
+    onThemeChange,
+    themeOptions,
+    languageOptions,
+    resolvedLocale,
+    localeFetcher,
+    itarDisclosure,
+    openAccountSettings
+  } = useAccountMenu();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const renderItem = (item: AccountMenuItem) => {
+    switch (item.id) {
+      case "account":
+        return (
+          <DropdownMenuItem onClick={() => openAccountSettings()}>
+            <DropdownMenuIcon icon={item.icon} />
+            {item.label}
+          </DropdownMenuItem>
+        );
+      case "dashboard":
+        return (
           <DropdownMenuItem asChild>
-            <Link to={path.to.authenticatedRoot}>
-              <DropdownMenuIcon icon={<LuHouse />} />
-              <Trans>Dashboard</Trans>
+            <Link to={item.to!}>
+              <DropdownMenuIcon icon={item.icon} />
+              {item.label}
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-
+        );
+      case "billing":
+        return (
           <DropdownMenuItem asChild>
-            <a href={path.to.apiDocs} target="_blank" rel="noreferrer">
-              <DropdownMenuIcon icon={<LuFileText />} />
-              <Trans>API Documentation</Trans>
+            <Link to={item.to!}>
+              <DropdownMenuIcon icon={item.icon} />
+              <span>{item.label}</span>
+            </Link>
+          </DropdownMenuItem>
+        );
+      case "apiDocs":
+        return (
+          <DropdownMenuItem asChild>
+            <a href={item.to} target="_blank" rel="noreferrer">
+              <DropdownMenuIcon icon={item.icon} />
+              {item.label}
             </a>
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center justify-start">
-                <DropdownMenuIcon
-                  icon={mode === "dark" ? <LuMoon /> : <LuSun />}
-                />
-                <Trans>Dark Mode</Trans>
-              </div>
-              <div>
-                <Switch
-                  checked={mode === "dark"}
-                  onCheckedChange={onModeToggle}
-                />
-              </div>
-            </div>
-          </DropdownMenuItem>
+        );
+      case "appearance":
+        return (
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <DropdownMenuIcon icon={<LuPalette />} />
-              <Trans>Theme Color</Trans>
+              <DropdownMenuIcon icon={item.icon} />
+              {item.label}
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup
+                value={modePreference}
+                onValueChange={onModeChange}
+              >
+                {modeOptions.map((option) => (
+                  <DropdownMenuRadioItem
+                    key={option.value}
+                    value={option.value}
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <DropdownMenuIcon icon={option.icon} />
+                    {option.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        );
+      case "theme":
+        return (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <DropdownMenuIcon icon={item.icon} />
+              {item.label}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               <DropdownMenuRadioGroup
                 value={optimisticTheme}
                 onValueChange={onThemeChange}
               >
-                {themes.map((t) => (
+                {themeOptions.map((t) => (
                   <DropdownMenuRadioItem
                     key={t.name}
                     value={t.name}
@@ -173,11 +386,13 @@ const AvatarMenu = () => {
               </DropdownMenuRadioGroup>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
-          <DropdownMenuSeparator />
+        );
+      case "language":
+        return (
           <DropdownMenuSub>
             <DropdownMenuSubTrigger disabled={localeFetcher.state !== "idle"}>
-              <DropdownMenuIcon icon={<LuLanguages />} />
-              <Trans>Language</Trans>
+              <DropdownMenuIcon icon={item.icon} />
+              {item.label}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               <localeFetcher.Form method="post" action="/api/locale">
@@ -211,63 +426,66 @@ const AvatarMenu = () => {
               </localeFetcher.Form>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link to={path.to.profile}>
-              <DropdownMenuIcon icon={<LuUser />} />
-              <Trans>Account Settings</Trans>
-            </Link>
-          </DropdownMenuItem>
-
-          {edition === Edition.Cloud && isOwner() && (
-            <DropdownMenuItem asChild>
-              <Link to={path.to.billing}>
-                <DropdownMenuIcon icon={<LuCreditCard />} />
-                <span>
-                  <Trans>Manage Subscription</Trans>
-                </span>
-              </Link>
-            </DropdownMenuItem>
-          )}
-
+        );
+      case "legal":
+        return (
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <DropdownMenuIcon icon={<LuFileText />} />
-              <Trans>Terms and Privacy</Trans>
+              <DropdownMenuIcon icon={item.icon} />
+              {item.label}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
-              <DropdownMenuItem asChild>
-                <a href={path.to.legal.termsAndConditions}>
-                  <DropdownMenuIcon icon={<LuFileText />} />
-                  <Trans>Terms of Service</Trans>
-                </a>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <a href={path.to.legal.privacyPolicy}>
-                  <DropdownMenuIcon icon={<LuShieldCheck />} />
-                  <Trans>Privacy Policy</Trans>
-                </a>
-              </DropdownMenuItem>
+              {item.children?.map((child) => (
+                <DropdownMenuItem key={child.id} asChild>
+                  <a href={child.to}>
+                    <DropdownMenuIcon icon={child.icon} />
+                    {child.label}
+                  </a>
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuSubContent>
           </DropdownMenuSub>
-
-          <DropdownMenuSeparator />
-          {CONTROLLED_ENVIRONMENT && (
-            <DropdownMenuItem onClick={itarDisclosure.onOpen}>
-              <DropdownMenuIcon icon={<LuShieldCheck />} />
-              <Trans>About</Trans>
-            </DropdownMenuItem>
-          )}
+        );
+      case "about":
+        return (
+          <DropdownMenuItem onClick={itarDisclosure.onOpen}>
+            <DropdownMenuIcon icon={item.icon} />
+            {item.label}
+          </DropdownMenuItem>
+        );
+      case "signOut":
+        return (
           <DropdownMenuItem asChild>
             <Form method="post" action={path.to.logout}>
               <button type="submit" className="w-full h-full flex items-center">
-                <DropdownMenuIcon icon={<LuLogOut />} />
-                <span>
-                  <Trans>Sign Out</Trans>
-                </span>
+                <DropdownMenuIcon icon={item.icon} />
+                <span>{item.label}</span>
               </button>
             </Form>
           </DropdownMenuItem>
+        );
+    }
+  };
+
+  return (
+    <>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenuTrigger
+          data-user-menu
+          className="outline-none focus-visible:outline-none"
+        >
+          <Avatar path={user.avatarUrl} name={name} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuLabel>{signedInAs}</DropdownMenuLabel>
+          {items.map((item, index) => (
+            <Fragment key={item.id}>
+              {item.group !== items[index - 1]?.group && (
+                <DropdownMenuSeparator />
+              )}
+              {renderItem(item)}
+            </Fragment>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
       {CONTROLLED_ENVIRONMENT && <ItarDisclosure disclosure={itarDisclosure} />}

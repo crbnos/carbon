@@ -1,11 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { EPSILON } from "@carbon/utils";
 import type { Edge, Node } from "@xyflow/react";
 import type {
   Activity,
   ActivityInput,
   ActivityOutput,
+  IssueContainment,
+  StepRecord,
   TrackedEntity
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import type { ClusterResult, EntityCluster } from "./cluster";
 import { clusterEntities, DEFAULT_CLUSTER_THRESHOLD, edgeKey } from "./cluster";
 import { NODE_SIZE } from "./constants";
@@ -69,37 +75,11 @@ export type LineageEdgeData = {
 
 export type LineageEdge = Edge<LineageEdgeData>;
 
-export type StepRecord = {
-  id: string;
-  jobOperationStepId: string;
-  index: number;
-  type: string;
-  name: string;
-  value: string | null;
-  numericValue: number | null;
-  booleanValue: boolean | null;
-  userValue: string | null;
-  unitOfMeasureCode: string | null;
-  minValue: number | null;
-  maxValue: number | null;
-  operationId: string;
-  operationDescription: string | null;
-  itemId: string | null;
-  itemReadableId: string | null;
-  createdAt: string;
-  createdBy: string | null;
-};
-
-export type IssueContainmentStatus = "Contained" | "Uncontained";
-
-export type IssueContainment = {
-  id: string;
-  readableId: string | null;
-  containmentStatus: IssueContainmentStatus;
-  status: string;
-  priority: string | null;
-  trackedEntityId: string;
-};
+export type {
+  IssueContainment,
+  IssueContainmentStatus,
+  StepRecord
+} from "~/modules/inventory/types";
 
 export type LineagePayload = {
   entities: TrackedEntity[];
@@ -752,6 +732,8 @@ export function sourceLinkHref(
       return `/x/picking-list/${id}`;
     case "Stock Transfer":
       return `/x/stock-transfer/${id}`;
+    case "Rental Agreement":
+      return `/x/rental-agreement/${id}/details`;
     default:
       return null;
   }

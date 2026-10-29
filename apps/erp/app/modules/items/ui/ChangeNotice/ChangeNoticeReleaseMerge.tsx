@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   HStack,
@@ -12,7 +16,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { useStore } from "@nanostores/react";
 import { useEffect } from "react";
 import { LuCircleCheck } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -22,7 +25,10 @@ import type {
   ChangeNoticeItemDiff
 } from "../../items.models";
 import ChangeNoticeDiffViewer from "./ChangeNoticeDiffViewer";
-import { releaseDialogOpenAtom } from "./releaseDialog.store";
+import {
+  setReleaseDialogOpen,
+  useReleaseDialogOpen
+} from "./releaseDialog.store";
 
 // One affected item's read-only changes, shown in the release confirmation.
 export type ReleaseChange = {
@@ -40,7 +46,7 @@ export type ReleaseChange = {
 
 // The Implementation → Done release control, rendered as a confirmation dialog
 // (opened from the header button or the rail's Release section via
-// releaseDialogOpenAtom). Releasing just activates each affected item's edited
+// the release dialog store). Releasing just activates each affected item's edited
 // Draft make method as a new Active version and archives the prior one — the
 // prior version is kept as history, so there is no merge/conflict step. The user
 // reviews each item's changes, then confirms. Release is never a one-click action.
@@ -54,26 +60,26 @@ export default function ChangeNoticeReleaseMerge({
   changes: ReleaseChange[];
 }) {
   const fetcher = useFetcher<{ success?: boolean }>();
-  const open = useStore(releaseDialogOpenAtom);
+  const open = useReleaseDialogOpen();
 
   useEffect(() => {
     const data = fetcher.data as
       | { error?: { message: string }; success?: boolean }
       | undefined;
     if (data?.error) toast.error(data.error.message);
-    if (data?.success) releaseDialogOpenAtom.set(false);
+    if (data?.success) setReleaseDialogOpen(false);
   }, [fetcher.data]);
 
   // Close the dialog if this control unmounts (e.g. navigating away).
-  useEffect(() => () => releaseDialogOpenAtom.set(false), []);
+  useEffect(() => () => setReleaseDialogOpen(false), []);
 
   if (status !== "Implementation") return null;
 
   const isSubmitting = fetcher.state !== "idle";
 
   return (
-    <Modal open={open} onOpenChange={(v) => releaseDialogOpenAtom.set(v)}>
-      <ModalContent className="flex h-[90vh] w-[90vw] flex-col p-0 sm:max-w-3xl">
+    <Modal open={open} onOpenChange={(v) => setReleaseDialogOpen(v)}>
+      <ModalContent className="w-[90vw] p-0 sm:max-w-3xl">
         <ModalHeader className="px-6 pt-6">
           <ModalTitle>
             <Trans>Release change notice</Trans>
@@ -86,7 +92,7 @@ export default function ChangeNoticeReleaseMerge({
           </ModalDescription>
         </ModalHeader>
 
-        <ModalBody className="flex-1 overflow-y-auto px-6 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+        <ModalBody>
           <VStack spacing={4} className="w-full">
             {changes.length === 0 ? (
               <span className="text-sm italic text-muted-foreground">
@@ -112,7 +118,7 @@ export default function ChangeNoticeReleaseMerge({
           <HStack spacing={2} className="w-full justify-end">
             <Button
               variant="secondary"
-              onClick={() => releaseDialogOpenAtom.set(false)}
+              onClick={() => setReleaseDialogOpen(false)}
               isDisabled={isSubmitting}
             >
               <Trans>Cancel</Trans>

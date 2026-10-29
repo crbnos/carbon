@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Hidden, Input, Submit, ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -22,7 +26,7 @@ import {
   toast,
   useDisclosure
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type {
   Column,
   ColumnOrderState,
@@ -50,11 +54,9 @@ import type { fieldMappings } from "~/modules/shared/imports.models";
 import type { action as savedViewAction } from "~/routes/x+/shared+/views";
 import { path } from "~/utils/path";
 import Columns from "./Columns";
-import Download from "./Download";
+import Download, { type InfiniteExport } from "./Download";
 import { ActiveFilters, Filter } from "./Filter";
 import type { ColumnFilter } from "./Filter/types";
-import type { PaginationProps } from "./Pagination";
-import { PaginationButtons } from "./Pagination";
 import Sort from "./Sort";
 
 type HeaderProps<T> = {
@@ -68,7 +70,13 @@ type HeaderProps<T> = {
   columnVisibility: Record<string, boolean>;
   columns: Column<T, unknown>[];
   compact?: boolean;
+  // The number of matching rows. Exact below 1,000; above, an estimate
+  // until the exact count arrives (`useExactCount`).
+  count: number;
+  countIsExact: boolean;
   data: object[];
+  // Infinite lists: the export loads the rest first, or hands it to a job.
+  infiniteExport?: InfiniteExport;
   editMode: boolean;
   filters: ColumnFilter[];
   // True when the table has no rows and no active filter/sort/search — hides the
@@ -82,8 +90,10 @@ type HeaderProps<T> = {
   // Extra controls in the toolbar row next to search/filter (e.g. quick
   // filter toggles that write their own `filter` URL params).
   headerActions?: ReactNode;
-  pagination: PaginationProps;
   selectedRows: T[];
+  // The selection's size: the matching count when every matching row is
+  // selected, else `selectedRows.length`.
+  selectedCount?: number;
   setColumnOrder: (newOrder: ColumnOrderState) => void;
   setEditMode: (editMode: boolean) => void;
   table?: string;
@@ -98,6 +108,10 @@ type HeaderProps<T> = {
   withPagination: boolean;
   withSearch: boolean;
   withSelectableRows: boolean;
+  // Embedded tables (wizards/drawers) can turn off the column picker and the
+  // CSV download; both default on so ordinary tables are unchanged.
+  withColumnOrdering?: boolean;
+  withCsvExport?: boolean;
   sort?: ReactNode;
 };
 
@@ -111,15 +125,18 @@ const TableHeader = <T extends object>({
   columnPinning,
   columnVisibility,
   columns,
+  count,
+  countIsExact,
   data,
+  infiniteExport,
   editMode,
   filters,
   isEmpty,
   importCSV,
   primaryAction,
   headerActions,
-  pagination,
   selectedRows,
+  selectedCount,
   renderActions,
   setColumnOrder,
   setEditMode,
@@ -133,9 +150,11 @@ const TableHeader = <T extends object>({
   withSavedView,
   withSearch,
   withSelectableRows,
+  withColumnOrdering = true,
+  withCsvExport = true,
   sort
 }: HeaderProps<T>) => {
-  const { t, i18n } = useLingui();
+  const { t } = useLingui();
   const [params, setParams] = useUrlParams();
   const currentFilters = params.getAll("filter").filter(Boolean);
   const currentSorts = params.getAll("sort").filter(Boolean);
@@ -160,11 +179,7 @@ const TableHeader = <T extends object>({
   }, [fetcher.state, fetcher.data?.success]);
 
   const { currentView, hasView } = useSavedViews();
-  const translateText = (value: string | undefined) => {
-    if (!value) return value;
-    return i18n._(value);
-  };
-  const viewTitle = translateText(currentView?.name ?? title);
+  const viewTitle = currentView?.name ?? title;
   // const viewDescription = currentView?.description ?? "";
   const savedViewFormValidator = useMemo(
     () =>
@@ -185,6 +200,22 @@ const TableHeader = <T extends object>({
 
   const hideTitleBar =
     !viewTitle && !primaryAction && !canSaveView && !titleBadge;
+
+  // With every control opted out the toolbar row would render as an empty
+  // padded strip — skip it entirely (embedded wizard tables).
+  const hideToolbar =
+    !withSearch &&
+    !filters?.length &&
+    !headerActions &&
+    !(withSelectableRows && typeof renderActions === "function") &&
+    sort === null &&
+    !withColumnOrdering &&
+    !canSaveView &&
+    !withCsvExport &&
+    !withPagination &&
+    // Forced edit mode hides the Edit/Lock toggle, the only control inline
+    // editing adds to the toolbar.
+    (!withInlineEditing || forceEditMode);
 
   return (
     <div className={cn("w-full flex flex-col", !compact && "mb-8")}>
@@ -293,7 +324,7 @@ const TableHeader = <T extends object>({
           </HStack>
         )
       )}
-      {!isEmpty && (
+      {!isEmpty && !hideToolbar && (
         <HStack
           className={cn(
             compact
@@ -313,7 +344,7 @@ const TableHeader = <T extends object>({
                       variant="secondary"
                     >
                       <Badge variant="secondary">
-                        <span>{selectedRows.length}</span>
+                        <span>{selectedCount ?? selectedRows.length}</span>
                       </Badge>
                     </Button>
                   </DropdownMenuTrigger>
@@ -333,12 +364,14 @@ const TableHeader = <T extends object>({
               sort
             )}
 
-            <Columns
-              columnOrder={columnOrder}
-              columns={columns}
-              setColumnOrder={setColumnOrder}
-              withSelectableRows={withSelectableRows}
-            />
+            {withColumnOrdering && (
+              <Columns
+                columnOrder={columnOrder}
+                columns={columns}
+                setColumnOrder={setColumnOrder}
+                withSelectableRows={withSelectableRows}
+              />
+            )}
 
             {canSaveView && (
               <Tooltip>
@@ -364,19 +397,21 @@ const TableHeader = <T extends object>({
               </Tooltip>
             )}
 
-            <Download
-              data={data}
-              columnAccessors={columnAccessors}
-              exportValues={exportValues}
-              exportOnlyColumns={exportOnlyColumns}
-              columnOrder={columnOrder}
-              columnVisibility={columnVisibility}
-            />
+            {withCsvExport && (
+              <Download
+                data={data}
+                infinite={infiniteExport}
+                columnAccessors={columnAccessors}
+                exportValues={exportValues}
+                exportOnlyColumns={exportOnlyColumns}
+                columnOrder={columnOrder}
+                columnVisibility={columnVisibility}
+              />
+            )}
 
-            {withPagination &&
-              (pagination.canNextPage || pagination.canPreviousPage) && (
-                <PaginationButtons {...pagination} condensed />
-              )}
+            {withPagination && count > 0 && (
+              <RowCount count={count} isExact={countIsExact} />
+            )}
 
             {withInlineEditing &&
               !forceEditMode &&
@@ -425,5 +460,19 @@ const TableHeader = <T extends object>({
     </div>
   );
 };
+
+// The list's total in place of the pager. `LIST_COUNT` is an estimate from
+// 1,000 rows up, so the number says "about" until the exact count arrives.
+function RowCount({ count, isExact }: { count: number; isExact: boolean }) {
+  return (
+    <span className="whitespace-nowrap px-2 text-sm text-muted-foreground tabular-nums">
+      {isExact ? (
+        <Plural value={count} one="# row" other="# rows" />
+      ) : (
+        <Plural value={count} one="about # row" other="about # rows" />
+      )}
+    </span>
+  );
+}
 
 export default TableHeader;

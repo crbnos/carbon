@@ -1,4 +1,8 @@
-import { assertIsPost, error, RATE_LIMIT, safeRedirect } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { assertIsPost, error, RATE_LIMIT } from "@carbon/auth";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
   completeMfaChallenge,
@@ -23,6 +27,7 @@ import {
   Heading,
   VStack
 } from "@carbon/react";
+import { getClientIp, redirect } from "@carbon/utils";
 import { useEffect, useRef } from "react";
 import { LuCircleAlert } from "react-icons/lu";
 import type {
@@ -30,13 +35,7 @@ import type {
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import {
-  data,
-  Form,
-  redirect,
-  useFetcher,
-  useSearchParams
-} from "react-router";
+import { data, Form, useFetcher, useSearchParams } from "react-router";
 import { z } from "zod";
 
 import { path } from "~/utils/path";
@@ -71,11 +70,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
 
   const ratelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
+    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "5 m"),
     analytics: true
   });
 
@@ -110,7 +109,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  return redirect(safeRedirect(result.redirectTo ?? redirectTo, path.to.root), {
+  return redirect((result.redirectTo ?? redirectTo) || path.to.root, {
     headers: [["Set-Cookie", result.sessionCookie]]
   });
 }

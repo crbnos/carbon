@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { Checkbox, cn } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -49,10 +53,12 @@ type JobOperationStepRecord = {
 type JobOperationStepRecordsTableProps = {
   data: JobOperationStepRecord[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const JobOperationStepRecordsTable = memo(
-  ({ data, count }: JobOperationStepRecordsTableProps) => {
+  ({ data, count, nextCursor }: JobOperationStepRecordsTableProps) => {
     const { jobId } = useParams();
     const { t } = useLingui();
     if (!jobId) throw new Error("Job ID is required");
@@ -76,6 +82,7 @@ const JobOperationStepRecordsTable = memo(
           header: t`Step`,
           cell: ({ row }) => row.original.name,
           meta: {
+            mobile: "P1",
             icon: <LuClipboardList />
           }
         },
@@ -171,6 +178,7 @@ const JobOperationStepRecordsTable = memo(
             }
           },
           meta: {
+            mobile: "P2",
             icon: <LuFileText />
           }
         },
@@ -184,6 +192,7 @@ const JobOperationStepRecordsTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P2",
             icon: <LuList />,
             filter: {
               type: "static",
@@ -209,6 +218,7 @@ const JobOperationStepRecordsTable = memo(
             />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuUser />
           }
         },
@@ -229,6 +239,8 @@ const JobOperationStepRecordsTable = memo(
       <Table<JobOperationStepRecord>
         compact
         count={count}
+        // Scoped to one job: no list registry entry, so no `listKey`.
+        infinite={{ dataKey: "stepRecords", nextCursor }}
         columns={columns}
         data={data}
         title={t`Step Records`}

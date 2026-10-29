@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -102,7 +106,7 @@ export function useLineOrderEditMode<T extends ReorderableLine>({
   useEffect(() => {
     if (!isEditing) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") cancelEditMode();
+      if (e.key === "Escape" && !e.defaultPrevented) cancelEditMode();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);

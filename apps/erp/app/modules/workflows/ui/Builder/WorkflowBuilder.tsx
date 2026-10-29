@@ -1,9 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { WorkflowNodeType } from "@carbon/ee/workflows";
 import {
+  BottomSheet,
+  BottomSheetBody,
+  BottomSheetContent,
+  BottomSheetHeader,
+  BottomSheetTitle,
+  IconButton,
   ResizableHandle,
   ResizablePanel,
-  ResizablePanelGroup
+  ResizablePanelGroup,
+  useViewport
 } from "@carbon/react";
-import type { WorkflowNodeType } from "@carbon/workflows";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { IsValidConnection } from "@xyflow/react";
 import {
   Background,
@@ -12,7 +24,9 @@ import {
   useReactFlow
 } from "@xyflow/react";
 import type { KeyboardEvent } from "react";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
+import { LuPlus } from "react-icons/lu";
+import { AppBarActions } from "~/components/Layout/Mobile";
 import type { BuilderEdge, BuilderNode } from "../../types";
 import type { WorkflowCanvasState } from "../../workflows.models";
 import { BuilderControls } from "./BuilderControls";
@@ -44,6 +58,9 @@ export function WorkflowBuilder({
   canvasState,
   canPersistCanvasState
 }: Props) {
+  const { t } = useLingui();
+  const { isPhone } = useViewport();
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const store = useBuilderStoreApi();
   const { screenToFlowPosition } = useReactFlow();
   const { panOnScroll, togglePanOnScroll, onMoveEnd, initialViewport } =
@@ -111,78 +128,116 @@ export function WorkflowBuilder({
     }
   }, []);
 
-  return (
-    <ResizablePanelGroup
-      direction="horizontal"
-      autoSaveId="workflow-builder"
-      className="flex-1 overflow-hidden"
+  const canvas = (
+    <div
+      className="relative h-full"
+      onKeyDown={onKeyDown}
+      onDrop={onDrop}
+      onDragOver={(event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+      }}
     >
-      {!isReadOnly && (
-        <ResizablePanel
-          id="palette"
-          order={1}
-          defaultSize={14}
-          minSize={10}
-          maxSize={22}
-        >
-          <NodePalette />
-        </ResizablePanel>
-      )}
-      {!isReadOnly && <ResizableHandle withHandle />}
-      <ResizablePanel id="canvas" order={2} defaultSize={62} minSize={30}>
-        <div
-          className="relative h-full"
-          onKeyDown={onKeyDown}
-          onDrop={onDrop}
-          onDragOver={(event) => {
-            event.preventDefault();
-            event.dataTransfer.dropEffect = "move";
-          }}
-        >
-          <ReactFlow<BuilderNode, BuilderEdge>
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            isValidConnection={isValidConnection}
-            onNodeClick={(_, node) => setSelected(node.id)}
-            onPaneClick={() => setSelected(null)}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            proOptions={proOptions}
-            minZoom={0.25}
-            maxZoom={2}
-            fitViewOptions={FIT_VIEW_OPTIONS}
-            {...(initialViewport
-              ? { defaultViewport: initialViewport }
-              : { fitView: true })}
-            onMoveEnd={onMoveEnd}
-            nodesDraggable={canMoveNodes}
-            nodesConnectable={!isReadOnly}
-            elementsSelectable
-            // Delete only. Backspace is too easy to hit by accident, and there
-            // is no undo — autosave persists the deletion a second later.
-            deleteKeyCode={isReadOnly ? null : ["Delete"]}
-            onlyRenderVisibleElements
-            defaultEdgeOptions={{ type: "workflow" }}
-            panOnScroll={panOnScroll}
-            zoomOnScroll={!panOnScroll}
+      <ReactFlow<BuilderNode, BuilderEdge>
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        isValidConnection={isValidConnection}
+        onNodeClick={(_, node) => setSelected(node.id)}
+        onPaneClick={() => setSelected(null)}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        proOptions={proOptions}
+        minZoom={0.25}
+        maxZoom={2}
+        fitViewOptions={FIT_VIEW_OPTIONS}
+        {...(initialViewport
+          ? { defaultViewport: initialViewport }
+          : { fitView: true })}
+        onMoveEnd={onMoveEnd}
+        nodesDraggable={canMoveNodes}
+        nodesConnectable={!isReadOnly}
+        elementsSelectable
+        // Delete only. Backspace is too easy to hit by accident, and there
+        // is no undo — autosave persists the deletion a second later.
+        deleteKeyCode={isReadOnly ? null : ["Delete"]}
+        onlyRenderVisibleElements
+        defaultEdgeOptions={{ type: "workflow" }}
+        panOnScroll={panOnScroll}
+        zoomOnScroll={!panOnScroll}
+      >
+        <Background variant={BackgroundVariant.Dots} gap={24} size={1} />
+        <BuilderControls
+          panOnScroll={panOnScroll}
+          onTogglePanOnScroll={togglePanOnScroll}
+        />
+      </ReactFlow>
+    </div>
+  );
+
+  // Phones: the canvas fills the page. The palette opens from the app bar +.
+  // A test run's result is the same drawer as on desktop — phones show every
+  // drawer as a bottom sheet — and closing it discards the result.
+  if (isPhone) {
+    return (
+      <div className="flex-1 overflow-hidden">
+        {canvas}
+        {!isReadOnly && (
+          <>
+            <AppBarActions>
+              <IconButton
+                aria-label={t`Add step`}
+                icon={<LuPlus />}
+                variant="ghost"
+                size="lg"
+                onClick={() => setPaletteOpen(true)}
+              />
+            </AppBarActions>
+            <BottomSheet open={paletteOpen} onOpenChange={setPaletteOpen}>
+              <BottomSheetContent>
+                <BottomSheetHeader>
+                  <BottomSheetTitle>
+                    <Trans>Add step</Trans>
+                  </BottomSheetTitle>
+                </BottomSheetHeader>
+                <BottomSheetBody>
+                  <NodePalette onAdd={() => setPaletteOpen(false)} />
+                </BottomSheetBody>
+              </BottomSheetContent>
+            </BottomSheet>
+          </>
+        )}
+        {showResults && <TestRunPanel />}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {showResults && <TestRunPanel />}
+      <ResizablePanelGroup
+        direction="horizontal"
+        autoSaveId="workflow-builder"
+        className="flex-1 overflow-hidden"
+      >
+        {!isReadOnly && (
+          <ResizablePanel
+            id="palette"
+            order={1}
+            defaultSize={14}
+            minSize={10}
+            maxSize={22}
           >
-            <Background variant={BackgroundVariant.Dots} gap={24} size={1} />
-            <BuilderControls
-              panOnScroll={panOnScroll}
-              onTogglePanOnScroll={togglePanOnScroll}
-            />
-          </ReactFlow>
-        </div>
-      </ResizablePanel>
-      {showResults && <ResizableHandle withHandle />}
-      {showResults && (
-        <ResizablePanel id="results" order={3} defaultSize={24} minSize={18}>
-          <TestRunPanel />
+            <NodePalette />
+          </ResizablePanel>
+        )}
+        {!isReadOnly && <ResizableHandle withHandle />}
+        <ResizablePanel id="canvas" order={2} defaultSize={62} minSize={30}>
+          {canvas}
         </ResizablePanel>
-      )}
-    </ResizablePanelGroup>
+      </ResizablePanelGroup>
+    </>
   );
 }

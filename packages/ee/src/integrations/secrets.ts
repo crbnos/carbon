@@ -1,4 +1,8 @@
-import type { Database } from "@carbon/database";
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
+import type { Database, Json as DatabaseJson } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -22,19 +26,47 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * as non-secret leaks — keep this map exhaustive and reviewed.
  */
 export const SECRET_KEYS: Record<string, string[]> = {
-  linear: ["apiKey"],
-  slack: ["access_token"],
-  jira: ["credentials.accessToken", "credentials.refreshToken"],
+  linear: ["apiKey", "webhookSigningSecret"],
+  mount: ["clientSecret"],
+  // slack: none — its token lives on integrationConnection (piece "slack").
+  jira: [
+    "credentials.accessToken",
+    "credentials.refreshToken",
+    "webhookSigningSecret"
+  ],
   onshape: ["credentials.accessToken", "credentials.refreshToken"],
+  // A Government customer's private OAuth app: its client secret is entered in
+  // the settings form, the tokens come from the callback.
+  "onshape-government": [
+    "clientSecret",
+    "credentials.accessToken",
+    "credentials.refreshToken"
+  ],
+  "onshape-v2": ["credentials.accessToken", "credentials.refreshToken"],
   xero: ["credentials.accessToken", "credentials.refreshToken"],
   quickbooks: ["credentials.accessToken", "credentials.refreshToken"],
+  ramp: [
+    "credentials.clientSecret",
+    "credentials.accessToken",
+    "credentials.refreshToken",
+    "webhookSecret"
+  ],
   rillet: ["credentials.apiKey", "credentials.providerMetadata.webhookToken"],
   "paperless-parts": ["apiKey", "secretKey"],
+  sense: ["apiKey"],
   resend: ["apiKey"],
   // email carries a secret in EITHER variant: Resend `apiKey` or SMTP `password`
   // (top-level). splitSecrets omits whichever is absent for the active provider.
   email: ["apiKey", "password"]
 };
+
+/**
+ * Metadata key of the OPTIONAL inbound-webhook signing secret for integrations
+ * whose webhook the customer creates by hand in the provider (Linear, Jira).
+ * Optional so existing unsigned installs keep working: when it is set, the
+ * webhook route rejects any delivery without a valid signature.
+ */
+export const WEBHOOK_SIGNING_SECRET_KEY = "webhookSigningSecret";
 
 /** Thrown when a secret is expected in the vault but cannot be read (fail-closed). */
 export class IntegrationSecretUnavailableError extends Error {
@@ -47,6 +79,54 @@ export class IntegrationSecretUnavailableError extends Error {
 }
 
 type Json = Record<string, unknown>;
+type CompanyIntegrationRow =
+  Database["public"]["Tables"]["companyIntegration"]["Row"];
+
+export type IntegrationStatePatch = {
+  /** Flat dot-path map applied to the current plaintext metadata object. */
+  metadata?: Record<string, DatabaseJson | undefined>;
+  /** Flat dot-path map merged into the current Vault secret bag. */
+  secrets?: Record<string, DatabaseJson | undefined>;
+  removeMetadata?: string[];
+  removeSecrets?: string[];
+  active?: boolean;
+  updatedBy?: string;
+};
+
+/**
+ * Atomically patch one integration row and its Vault secret bag. The RPC locks
+ * the logical `(integrationId, companyId)` key and reads the current values
+ * inside the transaction; callers never submit a stale whole metadata object.
+ * Requires a SERVICE-ROLE client.
+ */
+export async function patchIntegrationState(
+  serviceClient: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string,
+  patch: IntegrationStatePatch
+): Promise<CompanyIntegrationRow> {
+  const { data, error } = await serviceClient.rpc(
+    "upsert_company_integration_patch",
+    {
+      p_company_id: companyId,
+      p_integration_id: integrationId,
+      p_metadata_patch: patch.metadata ?? {},
+      p_secret_patch: patch.secrets ?? {},
+      p_metadata_remove: patch.removeMetadata ?? [],
+      p_secret_remove: patch.removeSecrets ?? [],
+      p_active: patch.active,
+      p_updated_by: patch.updatedBy
+    }
+  );
+
+  if (error) throw error;
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error(
+      `Integration state patch returned no row for ${integrationId} (company ${companyId})`
+    );
+  }
+  return data as CompanyIntegrationRow;
+}
 
 /** Read a dot-path (`a.b.c`) from a nested object; undefined if any hop is missing. */
 export function getPath(obj: unknown, path: string): unknown {
@@ -129,6 +209,9 @@ export async function persistIntegrationSecrets(
 ): Promise<Json> {
   const { config, secrets } = splitSecrets(integrationId, metadata);
 
+  // `secrets` is a PARTIAL bag — splitSecrets omits untouched masked fields — so
+  // the RPC MERGES it into the stored bag (an omitted secret keeps its value).
+  // A full replace silently wiped a multi-secret integration's other credential.
   if (Object.keys(secrets).length > 0) {
     const { error } = await serviceClient.rpc("upsert_integration_secret", {
       p_company_id: companyId,
@@ -210,4 +293,30 @@ export async function resolveIntegrationSecrets(
     setPath(base, path, value);
   }
   return base;
+}
+
+/**
+ * Read an integration's optional webhook signing secret from the vault.
+ * Returns null when none is configured (the webhook stays unsigned). Throws
+ * `IntegrationSecretUnavailableError` when the vault cannot be read — callers
+ * must fail closed, since "no secret" cannot be told apart from "unreadable".
+ * Requires a SERVICE-ROLE client.
+ */
+export async function getWebhookSigningSecret(
+  serviceClient: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string,
+  row: { metadata: unknown; secretRef?: string | null }
+): Promise<string | null> {
+  const resolved = await resolveIntegrationSecrets(
+    serviceClient,
+    companyId,
+    integrationId,
+    row.metadata,
+    row.secretRef
+  );
+  const secret = getPath(resolved, WEBHOOK_SIGNING_SECRET_KEY);
+  return typeof secret === "string" && secret.trim().length > 0
+    ? secret.trim()
+    : null;
 }

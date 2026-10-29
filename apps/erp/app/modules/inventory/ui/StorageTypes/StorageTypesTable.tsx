@@ -1,12 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Json } from "@carbon/database";
-import { MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Checkbox,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTag, LuTrash } from "react-icons/lu";
+import { LuBan, LuPencil, LuTag, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -14,6 +24,7 @@ import { path } from "~/utils/path";
 type StorageType = {
   id: string;
   name: string;
+  nettable: boolean;
   companyId: string;
   customFields: Json;
 };
@@ -21,9 +32,11 @@ type StorageType = {
 type StorageTypesTableProps = {
   data: StorageType[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
+const StorageTypesTable = memo((props: StorageTypesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -44,7 +57,26 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
             <Enumerable value={row.original.name} />
           </Hyperlink>
         ),
-        meta: { icon: <LuTag /> }
+        meta: { mobile: "P1", icon: <LuTag /> }
+      },
+      {
+        accessorKey: "nettable",
+        header: t`Non-nettable`,
+        cell: (item) => (
+          <Checkbox isChecked={item.getValue<boolean>() === false} />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: [
+              { value: "false", label: t`Non-nettable` },
+              { value: "true", label: t`Nettable` }
+            ]
+          },
+          pluralHeader: t`Non-nettable`,
+          icon: <LuBan />,
+          exportValue: (row) => !row.nettable
+        }
       }
     ];
     return [...defaultColumns, ...customColumns];
@@ -55,6 +87,7 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "parts")}
             onClick={() => {
               navigate(`${path.to.storageType(row.id)}?${params.toString()}`);
@@ -64,6 +97,7 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
             <Trans>Edit Storage Type</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={!permissions.can("delete", "parts")}
             destructive
             onClick={() => {
@@ -84,8 +118,15 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
   return (
     <Table<(typeof rows)[number]>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count}
+      importCSV={[
+        {
+          table: "storageType" as const,
+          label: t`Storage Types`
+        }
+      ]}
       primaryAction={
         permissions.can("create", "parts") && (
           <New

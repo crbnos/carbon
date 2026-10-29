@@ -75,8 +75,8 @@ Two patterns: the shared `redis` client (caching / TTL state) and the
   shared-customer-file downloads.
 - **Auth TTL state** — WebAuthn passkey challenges, email verification codes
   (`packages/auth/src/services/passkey.server.ts`, `verification.server.ts`).
-- **Settings / schema caches** (`apps/erp/.../settings.server.ts`,
-  `shared.server.ts`), **printer config** (`packages/printing/src/cache.server.ts`),
+- **Settings / schema caches** (`apps/erp/.../settings.service.ts`,
+  `shared.service.ts`), **printer config** (`packages/printing/src/cache.server.ts`),
   **Stripe** (`packages/stripe/src/stripe.server.ts`), **Slack EE** mapping.
 
 ## Prod (for contrast)

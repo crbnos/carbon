@@ -1,185 +1,109 @@
 # @carbon/jobs
 
-Background job system built on Inngest. Handles event system processing (webhooks, sync, search, audit, embeddings), integrations (Jira, Linear, accounting sync — Xero/QBO/Rillet, Slack, Onshape), notifications, scheduled tasks, and async workflows.
+Server-only Inngest jobs for event draining, integrations, notifications, workflows, scheduled maintenance, and long-running tasks.
 
 ## Always
 
-- Define new Inngest functions in the appropriate subdirectory under `src/inngest/functions/` (events, integrations, notifications, scheduled, tasks).
-- Use `trigger()` or `batchTrigger()` from `@carbon/jobs` to dispatch events from app code — these re-export from `@carbon/lib/trigger`.
-- Define event types in the shared `Events` type (re-exported from `@carbon/lib/events`) so Inngest has full type safety.
-- Event system handlers use idempotency keys (`event.data.msgId`) and per-record concurrency — maintain this pattern.
+- MUST define functions under `src/inngest/functions/{events,extraction,integrations,notifications,scheduled,tasks,workflows}` and register every entry in `src/inngest/index.ts`.
+- MUST dispatch from app code with `trigger()`/`batchTrigger()` from `@carbon/jobs`; event names and payloads come from `Events` in `@carbon/lib/events`.
+- MUST keep event handlers idempotent (`event.data.msgId`) and preserve their per-record/company concurrency keys.
+- MUST use `getJobDatabaseClient()` from `src/db.ts` in runtime jobs; the import-light backup compatibility CLI is the deliberate standalone exception.
+- MUST use `patchRampCursor()` for `cursors.*`; never read and replace the whole Ramp metadata object. Only `repaymentsRepaidAt` remains — Ramp's outbound push is ledger-driven, not cursor-driven.
+- MUST keep `ramp-sync.ts` as the durable coordinator only. Family logic belongs in `ramp-sync-{card,bill,reimbursement-family,repayment}.ts` (the outbound PO/bill WIRE left this package for `@carbon/ee/ramp/entities` syncers on the event engine; the outbound candidate walk behind the `ramp-outbound-reconcile` step is `ramp-sync-outbound.ts`); shared tenant/currency helpers belong in `ramp-sync-shared.ts`; transactional staging belongs in `ramp-sync-{card-stage,bill-stage,payment,reimbursement}.ts`.
+- MUST keep workflow business reads/writes on the owner-scoped client from `getOwnerClient()`. The privileged DB is limited to the workflow run/step ledger.
 
 ## Ask First
 
-- Adding new handler types to the event system — requires DB migration to widen the `handlerType` CHECK constraint.
-- Changing the event queue's flow control (`concurrency: 1`) or the pg_cron sweeper cadence — affects latency and coalescing for all async event processing. The drainer is push-woken by `carbon/event-queue.process` (see `.claude/rules/event-system.md`), not cron-polled. Note: `debounce` is intentionally NOT used — the local Inngest dev server can't unmarshal debounce items; bursts are coalesced by the per-transaction wake instead.
-- Adding new Inngest function registrations — they must be exported and registered in the functions index.
-- Adding a workflow action or operation — the declaration and its permission belong in
-  `packages/workflows/src/catalog/`, and only then does an implementation go in
-  `src/workflows/actions/`. An implementation with no catalog entry can never be reached; a catalog
-  entry with no implementation fails at run time in front of a customer.
+- Adding an Inngest registration or changing event-queue concurrency/wake cadence.
+- Adding a handler type; the database `handlerType` constraint and queue dispatcher must change together.
+- Adding a workflow action/operation; declare its id, input, output, and permission in `packages/ee/src/workflows/catalog/` before implementing it in `src/workflows/actions/`.
+- Changing Ramp family confirmation, cursor, payment, or reimbursement semantics; these are replay/idempotency contracts.
 
 ## Never
 
-- Import Inngest internals or server-only job code in app bundles — use only the public exports from `@carbon/jobs` (`.` subpath: `trigger`, `batchTrigger`, schemas; `./backups`: the pure catalog/compatibility layer, server-side only).
-- Use the event system for real-time / data-integrity needs — it is async (typically ~3–5s, up to ~1 min if a push wake is lost). Use sync interceptors instead.
-- Bypass the PGMQ queue by writing directly to handler tables — always go through `dispatch_event_batch()` triggers.
-- Give a workflow action anything but the owner-scoped client it was handed. A privileged or
-  untagged write escapes the owner's permissions and goes invisible to the matcher's origin filter
-  and loop guards.
+- Never import `@carbon/jobs/inngest` into browser bundles. App code normally imports only `@carbon/jobs`.
+- Never use the async event system for data-integrity or real-time guarantees; use database constraints/interceptors.
+- Never write handler tables directly; database triggers route changes through `dispatch_event_batch()` and PGMQ.
+- Never give workflow actions a service-role/untagged business client; it bypasses the owner's permissions and workflow loop guards.
+- Never close the shared pool from a job function. A Node process has one pool (`getProcessPool()`, 16 connections) shared with the app's requests; `getJobDatabaseClient()` takes no size.
 
 ## Validation Commands
 
 ```bash
 pnpm --filter @carbon/jobs test
 pnpm --filter @carbon/jobs typecheck
-pnpm --filter @carbon/jobs dev:jobs   # Start local Inngest dev server
-pnpm db:check:backups                 # Would existing customer backups still restore?
+pnpm --filter @carbon/jobs dev:jobs
+pnpm db:check:backups
+pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + schedule one company
 ```
-
-`db:check:backups` (`src/scripts/check-backups.ts`) runs from `.husky/pre-commit` when a staged
-file is under `packages/database/supabase/migrations/`. It compares `manifests/schema.json` **as
-it stands on `main`** (fetched from raw.githubusercontent.com, slug from your `origin` remote,
-falling back with a staleness warning to `git show origin/main:…`) against your live schema, and
-skips rather than passes when your database is behind. Nobody maintains that file: the hook passes
-`--stage`, which regenerates and `git add`s it on success. A bare `pnpm db:check:backups` is
-read-only. See `manifests/README.md` and `.claude/rules/company-backup-restore.md`.
-
-Scripts under `src/scripts/` run through bare `tsx`, which does NOT paper over CJS/ESM interop the
-way Vite and vitest do. A **named** import of a workspace package that lacks `"type": "module"`
-(`@carbon/database`, `@carbon/utils`, `@carbon/logger`) throws `does not provide an export named …`
-at run time even though it typechecks. The fix is to keep a script's runtime import chain free of
-those packages (type-only imports are fine — they erase) — never to flip a shared package's `type`
-field for one script. That is exactly why the catalog/compatibility logic lives in
-`src/backups/schema.ts` with no runtime `@carbon/*` imports, instead of in `company-backup.ts`
-(whose module-scope `getLogger` would drag `@carbon/logger` into the script).
 
 ## Key Exports
 
 | Subpath | Provides |
 |---------|----------|
-| `.` (index) | `trigger()`, `batchTrigger()`, `Events` type, Jira/Linear webhook schemas |
-| `./backups` | `src/backups/schema.ts` — catalog introspection + backup-compatibility diff (`getCompanyTableCatalog`, `reportBackupCompatibility`, `compatibilityStatus`, types), plus the re-exported `src/backups/scope.ts` — scope predicates, the export closure guard (`findExportScopeViolations`, `ExportScopeViolationError`) and the opt-in exclusion/purge (`computeScopeExclusions`, `purgeScopeViolations`). No Inngest, no logger; the ERP Backups loader computes the live restore verdict through it and the purge action deletes through it. Server-side only (runs `information_schema` SQL) |
-| `./events` | `Events` type (re-export from `@carbon/lib`) |
-| `./inngest` | Inngest client + function registrations, plus `setWorkflowDispatch` and its `WorkflowDispatch` / `DispatchContext` / `DispatchResult` types (server-only) |
-| `./worker` | Worker entry point for Inngest serve |
+| `.` | `trigger`, `batchTrigger`, `Events`, Jira/Linear webhook schemas |
+| `./events` | `Events` type |
+| `./inngest` | Inngest client plus workflow dispatch/manual-run server seams; the table-job seams for the ERP: `setTableJobHandlers`, `takeTableJobLock` / `releaseTableJobLock`, `tableExportStorageKey`, `tempStagingStorage`, `TABLE_JOB_PAGE_SIZE` |
+| `./backups` | Import-light backup catalog, scope, and compatibility helpers |
+| `./integrations` | **Server-only.** What the ERP needs from the integration pieces: `allowlistEntry` (+ the `AllowlistEntry` type), the OAuth helpers (`resolveOAuthApp`, `buildConsentUrl`, `requiredScopesFor`, `accountLabelFromBody`, `connectionMetadataFrom`), the options provider ids (`CONNECTION_PROVIDER`, `PROPERTY_PROVIDER`), `resolvePieceAuth`, and `getPieceAction` / `getPieceOAuth2Auth`. The catalog scripts import `buildPieceActionDeclarations` (the generator's sixth `buildCatalog` input) from `src/workflows/integrations/catalog.ts` directly. Piece packages bundle Node vendor SDKs — never import this from browser code. See `.claude/rules/workflow-integrations.md` |
 
-## Event System Handlers
+## Durable Entry Points
 
-| Handler | Event | Purpose |
-|---------|-------|---------|
-| WEBHOOK | `carbon/event-webhook` | POST to configured URL. Backs the user-facing Settings → Webhooks feature; its body `{type, record, old?, companyId, table}` is a public contract — change `toWebhookBody` only with the docs and `webhook.test.ts` |
-| SYNC | `carbon/event-sync` | Accounting sync for all three providers (Xero, QBO, Rillet) — v5: events are hints; refs go to the shared `reconcileEntities` executor (`integrations/reconcile.ts` decides from state), then the `accountingSyncOperation` ledger drains; table→entity map in `events/sync-tables.ts` (see `.claude/rules/accounting-sync-handlers.md`) |
-| SEARCH | `carbon/event-search` | Upsert/delete search index |
-| AUDIT | `carbon/event-audit` | Per-company audit log |
-| EMBEDDING | `carbon/event-embedding` | AI embeddings for items/customers/suppliers |
-| WORKFLOW | `carbon/event-workflow` | Customer-workflow matcher: announcement → catalog event ids → subscribed workflows → one `workflowRun` each |
+| Function | Trigger | Responsibility |
+|----------|---------|----------------|
+| `event-queue` | `carbon/event-queue.process` | Serial PGMQ drain and fan-out to WEBHOOK/WORKFLOW/SYNC/SEARCH/AUDIT/EMBEDDING |
+| `sync-external-accounting` | `carbon/sync-external-accounting` | Enqueue/drain accounting operations |
+| `accounting-pull-sweep` | `*/30 * * * *` | Incremental inbound correctness sweep |
+| `accounting-outbound-sweep` | `15,45 * * * *` | Subscription convergence and outbound reconciliation |
+| `accounting-reconciliation` | `0 3 * * 1` | Remote presence/tie-out checks |
+| `ramp-sync` | `carbon/ramp-sync` | Company-serialized Ramp family sync |
+| `ramp-sweep` | `0 * * * *` | Dispatch Ramp sync for every active install |
+| `oee-sweep` | `*/2 * * * *` | Sends one `carbon/oee-sync` per (company, OEE integration) that is active and has at least 1 `workCenterDevice`. OEE providers have no webhooks, so this poll is the only input |
+| `oee-sync` | `carbon/oee-sync` (concurrency 1 per company; `singleton` with `mode: "skip"` per company and integration, so an event that arrives while a run is live is dropped) | Syncs every mapped device of one OEE integration in ONE `step.run` (`syncOeeDevice`, `oee-sync-device.ts`): reads the provider's state changes from `lastEventAt − 10 minutes` (24 hours before the mapping on a first sync), stores them in `machineStateChange`, then under `lockWorkCenterDevice` reads the loads (`workCenterLoad`), maintenance block periods and recorded machine time in a bounded window, runs `planMachineTime` and writes Machine `productionEvent` / `unattributedMachineTime` rows; it clears `workCenterDevice.unplannedPressAt` and deletes closed unattributed rows shorter than `minimumStateSeconds`. A failed device gets `lastSyncError` and keeps its cursor; the others continue, except on `OeeProviderUnavailableError` (network failure, timeout, 5xx), which stops the run. Skipped (no error) when the company is not entitled, the integration is inactive or the key is empty. After each device commits, posts the Machine events its sync ended (`endedEventIds` → `postEndedMachineEvents`, `post-production-event` as `userId "system"`); a posting failure is logged, never fails the device. See `.claude/rules/oee-provider.md` |
+| `onshape-element-sync` | `carbon/onshape-element-sync` (`step.invoke`d by `onshape-backfill`, one per model item) | One Onshape element's export onto an item, as `runOnshapeElementSync`'s resumable steps: skip when the source's model exists (an assembly: when its version or workspace microversion is unchanged), start the model and drawing translations together, poll with `step.sleep` and then wait on the translation.complete webhook, `step.invoke` `onshape-fetch`, attach. Concurrency 1 per item. See `.claude/rules/onshape-panel.md` |
+| `onshape-drawing-sync` | `carbon/onshape-drawing-sync` (`step.invoke`d by `onshape-backfill`, one per released drawing) | One released Onshape drawing as a PDF on its model item, as `runOnshapeDrawingSync`'s resumable steps: translate, wait as the element sync does, attach. Concurrency 1 per item |
+| `onshape-fetch` | `carbon/onshape-fetch` (`step.invoke`d by the element sync) | The assembler's `fetch` copies one finished Onshape translation into temp-staging. Its own function so that only it holds `ASSEMBLER_CONCURRENCY` (Inngest counts every executing step of a function against its keys); an export past the upload limit returns `{ tooLarge: true }` |
+| `mount-publish` | `carbon/mount-publish` | One company's push to Mount: a step per batch of 200 until nothing is stale, a batch publishes nothing, or 50 batches; progress and outcome in `companyIntegration.metadata.lastPublish.{entityType}`, which the integration page reads |
+| `mount-sweep` | `30 2 * * *` | Dispatch a scheduled `mount-publish` for every active Mount install |
+| `workflow-run` | `carbon/workflow-run.queued` | Execute one owner-scoped workflow graph |
+| `workflows-scheduler` | `carbon/workflow-scheduler.wake` | Self-chaining scheduled-workflow dispatcher |
+| `recurring-billing` | `0 5 * * *` | The one daily job for every recurring-invoice source: rental agreements, AR contracts and lessee leases. One query finds every company with an Active rental agreement, Active `customerContract`, or a `lease` that is Active (or Expired / Terminated / Purchased with a Pending `leasePayment`). Per company, as of the company's today, `userId "system"`: a `rental-billing-<id>` step (`createRentalInvoices` (`sales.service.ts`, ported from the `create-rental-invoices` server function)), then a `contract-billing-<id>` step (`create-contract-invoices`, same `asOf`); a failed source never skips the other. Then an `automation-candidates-<id>` step (`findInvoicesToAutomate`) reads back every Draft — or Pending, a crashed claim — invoice the job created (`createdBy "system"`) with no hold whose source mode is not Draft Only, so drafts from a failed or retried drafting step are still automated; the drafting steps' results only report this run's planner holds. Per candidate a `post-<id>` step (`postSalesInvoiceUnattended`), a `pdf-<id>` step once it is posted (`attachPostedInvoicePdf` — every posting mode files the invoice PDF under its opportunity, as a manual Post does; the email step reuses that file rather than recording a second), and, by the source's effective mode, an `email-<id>` step (`emailPostedInvoice`, `Post and Email`) or a `stripe-<id>` step (`sendPostedInvoiceViaStripe`, `Post and Send via Stripe`; counts as sent in the digest), all in `src/invoicing/automate-invoice.ts`. For a company with leases, a `lease-billing-<id>` step (`createLeaseInvoices` (`purchasing.service.ts`, ported from the `create-lease-invoices` server function), same `asOf`): Draft purchase invoices that skip automation and are reported as drafted (a failed lease stays Pending until the next run); a `lease-reminders-<id>` step (`loadLeaseReminders` → `dueLeaseReminders`, `src/invoicing/lease-reminders.ts`: a `noticeDate` or `endDate` within `companySettings.leaseReminderDays`, once per date) that sends `LeaseCriticalDate` to the owner (`assignee ?? createdBy`) and the `invoiceNotificationGroup`, then `lease-reminded-<id>` (`stampLeaseReminders`); and a `lease-expiry-<id>` step (`expireLeases`: Active leases past `endDate` with every lease run row Posted and no Pending payment become Expired). Each lease step is caught on its own, so a failure never skips the others. Then one "Recurring invoicing" digest per owner (agreement or contract `salesPersonId ?? createdBy`, lease `assignee ?? createdBy`) plus the company's `invoiceNotificationGroup` (`buildRecurringInvoicingDigests`, `src/invoicing/digest.ts`). Sales invoices and lease drafts are never mixed: each recipient gets one notification per kind, carrying `documentType` (`salesInvoice` links to the sales invoices that need review, `purchaseInvoice` to the Draft purchase invoices; `api+/link` and the topbar route on it). The ended lease statuses come from `ENDED_LEASE_STATUSES` (`@carbon/utils`, `lease-math.ts`, the same list posting and drafting use) |
+| `invoice-automate` | `carbon/invoice.automate` | Posts one drafted recurring invoice (rental or contract), then emails it under `Post and Email` or sends it through Stripe Connect under `Post and Send via Stripe`; mode from the event or the source's effective mode (`resolveInvoiceAutomation`: `customerContracts.effectiveInvoiceAutomation` when the invoice has a `customerContractId`, else the rental agreement's). Fired by the **Invoice** action of a rental agreement or contract, by Sell to Customer, and by the invoice's Send action (`resend: true` — Stripe when that is the resolved mode, else `Post and Email`). One run per invoice (`concurrency` on `invoiceId`, not shared with the cron's steps). Every step is safe to retry: posting claims only a Draft (a Pending claim is reported as held, never re-claimed), and a send is skipped once `sentAt` is set or a Stripe invoice is linked — but an email that went out before its `sentAt` write failed is recorded as a `sendError`, and a Send then emails it again. `sendPostedInvoiceViaStripe` stamps `sentTo: "Stripe"`, or `sendError` "Stripe is not connected" / "No Stripe customer is linked", and never sends an invoice twice (it checks `sentAt` and the existing Stripe invoice link) |
+| `revenue-recognition-proposal` | `0 12 1 * *` | One query (`companiesToPropose`: `company` joined to `companySettings`, `accountingCutoverDate` set) finds every company with an accounting cutover. Per company, one step per run type (`rev-rec-<id>`, `lease-run-<id>`): proposes a Draft revenue recognition run and a Draft lease run for the month that just ended on the company's calendar (`proposeRevenueRecognitionRun` (`accounting.service.ts`, ported from the `propose-revenue-recognition-run` server function) with `type`, `userId "system"`). Only an existing Draft run of the same type for that period skips it; a Posted run does not, because rows can fall due after it posted. Posting stays human |
+| `notify` | `carbon/notify` (`trigger("notify", …)` from app code) | Resolve the recipients, write the in-app rows, then fan out email, Slack and push. Built for large groups: every read keyed by the recipients goes through `fetchAllByIds`, the `.in()` writes run per `IN_FILTER_CHUNK` (100) ids, inserts per `INSERT_CHUNK` (500) rows, emails render and send per `EMAIL_CHUNK` (20, about 16.9 KB each against Inngest's 512 KB send limit), and Slack and push send per `EVENT_CHUNK` (500) events |
+| `send-push` | `carbon/send-push` (one per `pushSubscription` row, fanned out by `notify` for every notification, like in-app, when `isPushConfigured()`) | Send one Web Push with `web-push`, carrying `badge` (the user's unread top-level notifications across their employee companies, as `useAppBadge` counts them; omitted when the count fails); deletes the row on 404/410, logs a warning and keeps it on 401/403 (another VAPID key, or Apple refusing our token), retries 429/5xx, fails other 4xx (`pushDeliveryOutcome`) |
+| `notification-digest` | `carbon/notification-digest.process` (sent by the `notification-digest-sweeper` pg_cron job every 15 min, only when `util.notification_digest_has_work()`) | Roll unread notifications into one digest per user, company and topic |
+| `workflow-run-retention` | `carbon/workflow-run-retention.process` (sent by the `workflow-run-retention-sweeper` pg_cron job at 04:00 UTC, only when `util.workflow_run_retention_has_work()`) | Reap stale runs, compact and drop step detail, purge old run headers |
+| `kanban-level-check` | `carbon/kanban.level-check` `{ companyId, kanbanIds }` (sent by the database only: the `queue_kanban_level_checks` statement handler on `itemLedger`, the `sync_kanban_level_check` interceptor on `kanban`, and the hourly `kanban-level-sweeper` pg_cron job through `util.sweep_kanban_levels()`, each only for Transfer kanbans already below their `replenishmentLevel`) | Calls `postingOrThrow("kanban-replenish", …)` in level mode (`userId "system"`, concurrency 1 per company, no `debounce`). It re-checks the projected quantity under a row lock, so a stale or duplicate event writes nothing. See `.claude/rules/kanban-system.md` |
+| `model-optimize` | `carbon/model-optimize` `{ modelUploadId, companyId }` (sent by the database: the `queue_model_pipeline` statement handler on `modelUpload` for every new row, except under `app.sync_in_progress` and for bundled `_templates/` paths; also by the viewer's Retry) | One assembler job per new model (`runAssemblerJob`, `tasks/assembler-client.ts`): the optimised preview GLB, the raw's compact form while the raw is in `temp-staging`, the thumbnail, and for a STEP with PMI the `pmi-{run}.json` the viewer draws (`modelUpload.pmiPath`, null when the model has none; the previous run's file is removed), and then sends `carbon/pmi-inspection-plan` when it wrote one. Then it moves the raw out of staging (`settleCompactedRaw`, else `relocateRaw`, `tasks/model-compact.ts`). The model's file is read only from its own company (`resolveModelSourceBucket`). pg_cron `model-pipeline-reaper` (`util.reap_model_pipeline()`, at :13 and :43) marks an optimise, conversion or plan job Queued or Processing for 8 hours as Failed, and resends this event for a model still Idle 30 to 60 minutes after it was created |
+| `pmi-inspection-plan` | `carbon/pmi-inspection-plan` `{ companyId, modelUploadId, itemId? }` (sent by `model-optimize` once a run wrote `pmi.json`, every item on the model; and by the `queue_pmi_inspection_plans` statement handler on `item` when an item starts using a model that already has PMI, that item only) | Makes an inspection plan from the model's PMI for each item with no plan for that model (`tasks/pmi-inspection-plan.ts`): `pmiInspectionCharacteristics` (`@carbon/viewer/pmi`) maps dimensions and geometric tolerances to characteristics, `createPmiInspectionPlan` (`@carbon/database/quality`) inserts the plan and its features in one transaction per item. Once per item and model (partial unique index `inspectionDocument_part_model_key`), never rewritten. Concurrency 1 per company and model. See `.claude/rules/inspection-system.md` |
+| `embedding-queue` | `carbon/embedding-queue.process` (sent by the 10 s `process-embeddings` pg_cron doorbell while visible messages wait) | Drain the pgmq `embedding_jobs` queue and write embeddings |
+| `table-export` | `carbon/table-export` (`api+/table.export.ts`) | Background CSV export of a registered ERP list past 1,000 rows. One run per company. Steps of at most 10,000 rows write part files to `temp-staging`; `compose` streams them into `{companyId}/exports/{userId}/{exportId}.csv`. Stops at 100,000 rows or 200 MB. Step bodies in `src/table-jobs/export-run.ts` |
+| `table-bulk-action` | `carbon/table-bulk-action` (`startBackgroundBulkAction`, ERP `utils/table-jobs.server.ts`) | A bulk action on every matching row of a registered list, or on selected rows too many for one request (`ids` in the event). One run per company, `retries: 0`. Collect steps store the ids (10,000 rows per step) in `temp-staging`; a selected-rows run stores its ids in one step instead. Apply steps run the action on one slice each, 100 ids per call, passing each call's `carry` to the next. Step bodies in `src/table-jobs/bulk-run.ts` |
+| `mrp` | `*/15 * * * *` | Scheduled MRP. Each tick plans only the companies that are DUE — every 3 hours (UTC) by default, or once a day at `companySettings.mrpRunTime` on the company's clock (`isMrpDue` / `mrpTick`) — and have planning work (`companiesWithPlanningWork`), both in `scheduled/mrp-companies.ts`; one `step.run` per company |
 
-The queue drainer (`events/queue.ts`) archives messages with an unknown `handlerType` to pgmq's
-dead-letter table (`pgmq.a_event_system`) instead of crash-looping — a poison message can no
-longer wedge all event processing.
+## Safety Notes
 
-## Accounting sync functions (`src/inngest/functions/integrations/`)
-
-Full architecture in `.claude/rules/accounting-sync-handlers.md`; the ones to know:
-
-| Function | Trigger | Purpose |
-|----------|---------|---------|
-| `sync-external-accounting` | `carbon/sync-external-accounting` | Webhook-fired entry point; enqueues + drains the `accountingSyncOperation` ledger |
-| `accounting-pull-sweep` | cron `*/30 * * * *` | INBOUND correctness: incremental pull (`listChanges`) for every active integration |
-| `accounting-outbound-sweep` | cron `15,45 * * * *` | OUTBOUND correctness backstop (v4/v5): subscription convergence, then pages the window's candidate refs into the shared `reconcileEntities` executor (same brain as the event path), then a drain (Xero's only periodic drain). Fires `NotificationEvent.IntegrationSync` (in-app) to the integration's configurer when the drain leaves failed ops |
-| `accounting-reconciliation` | cron `0 3 * * 1` | Provider-agnostic (all three) presence drift check + `accountingSyncTieOut` writer — one cell per (integration × period × account) |
-| `accounting-consolidation` | cron `0 2 * * *` | Daily-consolidation journal push (one aggregated provider journal per posting date) |
-| `accounting-backfill` | `carbon/accounting-backfill` | Explicit history backfill |
-
-## Workflow functions (`src/inngest/functions/workflows/`)
-
-| Function | Event | Purpose |
-|----------|-------|---------|
-| `workflow-moment` | `carbon/workflow-moment.raised` | Moment entry point of the same matcher (a moment already IS a catalog event id) |
-| `workflow-run` | `carbon/workflow-run.queued` | Walks one matched run's graph — one durable step per node, acting as the workflow's owner. Thin wrapper over `src/workflows/engine/` |
-| `workflows-scheduler` | `carbon/workflow-scheduler.wake` | Self-chaining scheduler wake: scans due workflows, claims and books the next wake, dispatches Queued/Skipped runs |
-| `workflows-scheduler-backstop` | cron `0 * * * *` | Hourly: sends a wake if the chain has gone quiet (Redis TTL expired or never set) |
-| `workflow-run-retention` | cron `0 4 * * *` | Nightly: reap stale runs, purge 90-day headers, drop 30-day step detail, compact 7-day payloads via `compactForLog` |
-
-The scheduler's Inngest-free core lives in `src/workflows/scheduler.ts` — same pattern as
-`matcher.ts`. The chain is kick-started by `trigger("workflow-scheduler-wake", { bookedFor: null })`
-inside `syncAndWake` (`apps/erp/app/modules/workflows/workflows.server.ts`), so activating a
-scheduled workflow starts it within minutes; the hourly backstop revives it if it goes quiet.
-
-All entry points call one shared core in `src/workflows/` (`event-ids.ts`, `matcher.ts`,
-`scheduler.ts`, `types.ts`), which imports no Inngest and is unit-tested directly. See
-`.claude/rules/workflow-matcher.md`.
-
-The engine lives in `src/workflows/engine/` (`walk.ts`, `owner.ts`, `loader.ts`,
-`ledger.ts`, `log.ts`, `execute.ts`, `manual.ts`) and imports no Inngest either.
-`manual.ts` is the builder's test run: the same walk and the same real side effects, so
-it writes the same run history with `workflowRun.isTest = true`. **A running workflow
-acts as its owner**: every business read goes through `getOwnerClient(ownerId, runId)`,
-minted per step and always carrying the run tag. `getJobDatabaseClient()` is allowed in
-the engine only for the two run-log tables — a business read through it bypasses the
-owner's permissions. See `.claude/rules/workflow-engine.md`.
-
-Step ids are deterministic. An ordinary node is `` `node:${nodeId}` ``; an action node fed a list
-where the catalog declares a single value (`batchPlan` in `@carbon/workflows` — there is no stored
-flag) resolves that list outside the durable steps, then runs one step per item as
-`` `node:${nodeId}:${itemKey}` ``, followed by **one aggregate row** under `` `node:${nodeId}` ``
-(`itemKey: ""`) whose handle is what the walk follows and whose `statusReason` is where a dropped
-or failed item becomes visible. The aggregate succeeds if at least one item did; a failed item
-does not stop the graph but does mark the run `Failed`.
-
-`ledger.ts` also writes the step's `input` column through `redactForLog`, which drops any key
-matching `/secret|token|password|signature|authorization|apikey|api_key/i`, masks every value of a
-`pairs` (the webhook's request headers) by shape while keeping its names, and truncates strings
-over 4 KB. Anything new that lands in that column goes through it.
-
-## Workflow actions (`src/workflows/actions/`)
-
-The `WorkflowServices` implementation — everything the pure `@carbon/workflows` runtime cannot do
-for itself. `createWorkflowServices()` in `services.ts` is the one port the runtime calls
-(`runAction` / `runOperation` / `search`); `execute.ts` builds one per step from the owner's
-freshly-minted client, so every call here carries the owner's identity and RLS still applies.
-Routing is off the catalog's `getActionRoute(id)`, never off the shape of an id.
-
-| File | What it does |
-|------|--------------|
-| `services.ts` | `createWorkflowServices` — routes an action id to `notify`, `webhook`, the update path or the create path; the only export the engine uses |
-| `dispatcher.ts` | The `setWorkflowDispatch` seam (below) |
-| `create.ts` | `runCreateAction` — creates through the ERP's own `upsert*` service function via the dispatcher, so sequence numbers, defaults and required-field logic are the app's; digs the new row's id out of the returned envelope |
-| `update.ts` | `runUpdateAction` — writes the catalog's allowlisted columns on one record. Checks the target and **every entity-typed value** exists in this company before writing, and rejects a value outside a column's enum. A custom field is written separately, through the `workflow_merge_custom_fields` RPC, so setting one cannot erase the others |
-| `notify.ts` | `runNotifyAction` — one `trigger("notify", …)` with `NotificationEvent.Workflow`. A role IS a group and every user has an identity group whose id is their user id, so both recipient inputs collapse to `groupIds` |
-| `search.ts` | `runSearch` — one Lookup node's search, translated to PostgREST filters that mean exactly what `runtime/compare.ts` says (`contains`/`startsWith`/`endsWith` → `ilike`). Reads `MAX_LIST_ITEMS + 1` so an over-cap list is detectable |
-| `operations.ts` | `runOperation` — the 15 read-only computations, one `COMPUTATIONS` entry per catalog operation id. An id with no implementation refuses rather than falls through; a throw becomes a failed node, never a thrown walk |
-| `webhook.ts` | `runWebhookAction` — the chosen method (POST when unset) to the configured URL with the customer's headers, SSRF-guarded, `redirect: "manual"`, 10s timeout, 2 KB response excerpt for the step summary. Only POST/PUT/PATCH carry a body; eight framing header names are refused |
-| `url-guard.ts` | `checkOutboundUrl` — https only, DNS-resolves the host and rejects if **any** returned address is private/loopback/link-local (169.254.0.0/16 covers cloud metadata). Plus `outboundDispatcher`, an undici `Agent` running the same check as the socket's own `connect.lookup` — that, not the pre-check, is what closes DNS rebinding |
-| `index.ts` | Barrel; `engine/execute.ts` imports `createWorkflowServices` from here |
-
-### The dispatch seam
-
-`packages/jobs` cannot import `~/modules/*` — the dependency only runs app → package. So
-`dispatcher.ts` holds a module-level `WorkflowDispatch` slot, and the ERP app fills it at boot:
-`apps/erp/app/routes/api+/inngest.ts` calls `setWorkflowDispatch(executeFunction)` with the MCP
-direct executor from `./mcp+/lib/direct-executor`. The type is structural, so the app satisfies it
-without importing anything from here beyond the setter (re-exported from `@carbon/jobs/inngest`).
-With no dispatcher registered, create actions fail cleanly with "This step is not available in this
-environment" — they do not throw.
-
-See `.claude/rules/workflow-actions.md`.
-
-## Database client
-
-`getJobDatabaseClient(size = 1)` from `src/db.ts` is the package's only Kysely
-constructor — used by the event-queue drainer, the workflow matcher, the workflow engine's
-two run-log tables, and the company backup/export/import/restore tasks. Don't build a new
-pool inline.
+- `src/inngest/functions/events/queue.ts` archives unknown handler types to `pgmq.a_event_system`; a poison message must not wedge the drain.
+- `src/inngest/functions/events/embedding.ts` (`embedding-queue`) deletes embedded messages and archives (`pgmq.archive`) permanent failures (unknown table, no text) and any message read `MAX_READS` (5) times; other failures become visible again after the 300 s visibility timeout.
+- Jobs that post (`tasks/post-transaction.ts`, the Ramp families, the invoice automation in `src/invoicing/automate-invoice.ts`, `recurring-billing`, `revenue-recognition-proposal`, `kanban-level-check`, `tasks/recalculate.ts`) call `posting` / `postingOrThrow` (`@carbon/api/postings.server`): the ERP registers each posting at start (`apps/erp/app/modules/postings.server.ts`), in-process, not over HTTP. A posting with a `client` runs as the caller behind it, else as the system.
+- `src/inngest/functions/events/sync-tables.ts` is the import-light table→accounting-entity map. `subscriptions-mapping.test.ts` pins it to provider subscriptions/syncers.
+- `src/inngest/functions/integrations/ramp-sync.ts` owns step ids, ordering, result aggregation, and notification only; changing a family module must preserve that durable public shape.
+- `src/workflows/actions/integration.ts` (`runIntegrationAction`) reads the connection and its token with a service-role client scoped by the run's `companyId`: the vault RPCs are service_role only, and the row's RLS asks for `settings_view`, which a workflow author need not have.
+- `src/table-jobs/` holds what both table jobs share: paging (`paging.ts`), the per-company Redis lock as Lua scripts (`lock.ts`), storage keys (`storage.ts`) and `notifyTableJobUser` with an Inngest event id per outcome (`notify.ts`). `packages/jobs` cannot import `~/modules`, so the ERP fills `TableJobHandlers` with `setTableJobHandlers` in `api+/inngest.ts`. See `.claude/rules/table-csv-export.md` and `.claude/rules/table-infinite-scroll.md`.
+- `src/workflows/actions/dispatcher.ts` is filled by `apps/erp/app/routes/api+/inngest.ts` with the canonical `callOperation` seam. Missing registration fails cleanly.
+- `src/workflows/engine/log.ts` redacts secret/token/password/header values before persisting step input.
+- Bare `tsx` scripts cannot rely on Vite's CJS/ESM interop. Keep runtime imports from packages without `"type":"module"` out of script dependency chains; type-only imports are safe.
+- `src/demo-planning.ts` `planDemoCompany` runs MRP + `runLocationSchedule` over a company after a demo template commits; it never throws. Called by the `company-template` job's non-fatal `plan-template` step and by the `plan:company` script (`src/scripts/plan-company.ts`, spawned by `db:seed:dev`), which loads it through `createRequire` for the reason above. See `.claude/rules/onboarding-company-templates.md`.
+- `db:check:backups` is read-only when run directly. The pre-commit hook passes `--stage` and regenerates/stages `packages/jobs/manifests/schema.json` after a successful live-schema comparison.
 
 ## Cross-References
 
-- `.claude/rules/workflow-actions.md` — the actions/operations implementations, the dispatch seam,
-  the tenancy and SSRF guards
-- `.claude/rules/workflow-engine.md` — the run walk, step ledger, batching, acting as the owner
-- `.claude/rules/workflow-matcher.md` — announcement → catalog event ids → queued runs
-- `.claude/rules/event-system.md` — full event architecture, PGMQ, triggers, handler details
-- `packages/database/src/event.ts` — event Zod schemas, subscription CRUD helpers
-- `packages/database/src/audit.config.ts` — audit entity definitions
-- `packages/lib/` — Inngest client, event types, trigger helpers (source of truth)
+- `.claude/rules/event-system.md` — PGMQ wake/drain architecture.
+- `.claude/rules/accounting-sync-handlers.md` — accounting ledger, sweeps, and reconciliation.
+- `.claude/rules/ramp-integration.md` — Ramp families and correctness contracts.
+- `.claude/rules/workflow-actions.md` — action implementations and dispatch seam.
+- `.claude/rules/workflow-integrations.md` — the piece allowlist, connections, OAuth and the host shim.
+- `.claude/rules/workflow-engine.md` — owner-scoped execution and run ledger.
+- `.claude/rules/workflow-matcher.md` — event matching and queued runs.
+- `.claude/rules/company-backup-restore.md` — backup compatibility and manifests.

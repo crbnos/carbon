@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { JSONContent } from "@carbon/react";
 import { StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { ReactNode } from "react";
@@ -18,11 +22,11 @@ function makeConvert(theme: DocumentTheme) {
       case "doc":
         return (
           <View style={{ fontSize: 9, width: "100%" }}>
-            {args?.title && (
+            {args?.title ? (
               <View style={[styles.thead, { color: theme.heading }]}>
                 <Text>{args.title}</Text>
               </View>
-            )}
+            ) : null}
             {node?.content?.map((child) => convert(child))}
           </View>
         );
@@ -111,6 +115,10 @@ function makeConvert(theme: DocumentTheme) {
 
       case "text":
         return node.text;
+
+      // Shift+Enter in the editor: a new line inside the same paragraph.
+      case "hardBreak":
+        return "\n";
 
       default:
         return null;

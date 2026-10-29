@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { Database } from "@carbon/database";
+import { Constants } from "@carbon/database";
 import { describe, expect, it } from "vitest";
 import {
   type Catalog,
@@ -5,6 +11,8 @@ import {
   type CompanyBackup,
   type ForeignKey,
   isUserScopedIdentityTable,
+  READABLE_ID_TABLES,
+  STORAGE_PATH_COLUMNS,
   selectWipeableTables,
   type TableInfo
 } from "./company-backup";
@@ -12,7 +20,10 @@ import {
   assertReferentiallyClosed,
   buildIdMaps,
   buildRowTransforms,
-  findDanglingReferences
+  findDanglingReferences,
+  mapCollidingRows,
+  matchableUniqueGroups,
+  referencedDroppedTables
 } from "./company-backup.transforms";
 
 // ── Tiny synthetic-catalog builders ─────────────────────────────────────────
@@ -502,6 +513,57 @@ describe("buildRowTransforms", () => {
     );
     expect(out.email).toBe("redacted@example.test");
   });
+
+  it("rewrites a FK-less id ref through idRewrite (inspection.sourceDocumentLineId)", () => {
+    // The source company's inspection still holds ("Receipt", "line-old"); a
+    // verbatim copy collides on the cross-company unique index.
+    const t = table("inspection", [
+      col("id"),
+      col("companyId"),
+      col("sourceDocumentId"),
+      col("sourceDocumentLineId", { nullable: true })
+    ]);
+    const idRewrite = new Map([
+      ["receipt-old", "receipt-new"],
+      ["line-old", "line-new"]
+    ]);
+    const out = apply(
+      t,
+      {
+        id: "i1",
+        companyId: "src-co",
+        sourceDocumentId: "receipt-old",
+        sourceDocumentLineId: "line-old"
+      },
+      ctx({ idRewrite })
+    );
+    expect(out.sourceDocumentId).toBe("receipt-new");
+    expect(out.sourceDocumentLineId).toBe("line-new");
+  });
+
+  it("rewrites each element of a FK-less id-array ref, keeping unmapped values", () => {
+    const t = table("pricingRule", [
+      col("id"),
+      col("companyId"),
+      col("itemIds", { nullable: true })
+    ]);
+    const out = apply(
+      t,
+      { id: "r1", companyId: "src-co", itemIds: ["a-old", "global-1"] },
+      ctx({ idRewrite: new Map([["a-old", "a-new"]]) })
+    );
+    expect(out.itemIds).toEqual(["a-new", "global-1"]);
+  });
+
+  it("leaves an id ref verbatim on an own restore (remap=false)", () => {
+    const t = table("inspection", [col("id"), col("sourceDocumentLineId")]);
+    const out = apply(
+      t,
+      { id: "i1", sourceDocumentLineId: "line-old" },
+      ctx({ remap: false, idRewrite: new Map([["line-old", "line-new"]]) })
+    );
+    expect(out.sourceDocumentLineId).toBe("line-old");
+  });
 });
 
 describe("buildIdMaps", () => {
@@ -635,5 +697,236 @@ describe("selectWipeableTables (identity tables vs foreign restore)", () => {
     const names = selectWipeableTables(cat, { remap: true }).map((t) => t.name);
     expect(names).toContain("customer");
     expect(names).toContain("customerAccount");
+  });
+});
+
+describe("referencedDroppedTables (reseed re-inclusion)", () => {
+  // The bug this pins: onboarding inserts one "Headquarters" location, so the
+  // reseed dropped the backup's `location` table as "already populated" — and
+  // every workCenter/job locationId was then nulled or left dangling.
+  const LOCATION = table("location", [col("id"), col("companyId")]);
+  const WORK_CENTER = table(
+    "workCenter",
+    [col("id"), col("locationId", { nullable: true }), col("companyId")],
+    [fk("locationId", "location")]
+  );
+
+  it("re-adds a dropped table that kept rows reference", () => {
+    const result = referencedDroppedTables([WORK_CENTER], [LOCATION]);
+    expect(result.map((t) => t.name)).toEqual(["location"]);
+  });
+
+  it("does not resurrect a dropped table nothing references", () => {
+    const SEQUENCE = table("sequence", [col("id"), col("companyId")]);
+    const result = referencedDroppedTables([WORK_CENTER], [LOCATION, SEQUENCE]);
+    expect(result.map((t) => t.name)).toEqual(["location"]);
+  });
+
+  it("follows a re-added table's own references transitively", () => {
+    const ADDRESS = table("address", [col("id"), col("companyId")]);
+    const SITE = table(
+      "site",
+      [col("id"), col("addressId"), col("companyId")],
+      [fk("addressId", "address")]
+    );
+    const PLANT = table(
+      "plant",
+      [col("id"), col("siteId"), col("companyId")],
+      [fk("siteId", "site")]
+    );
+    const result = referencedDroppedTables([PLANT], [SITE, ADDRESS]);
+    expect(result.map((t) => t.name).sort()).toEqual(["address", "site"]);
+  });
+
+  it("ignores non-id FK references", () => {
+    const REF = table("ref", [col("id"), col("code"), col("companyId")]);
+    const USER_OF_CODE = table(
+      "userOfCode",
+      [col("id"), col("refCode"), col("companyId")],
+      [{ column: "refCode", refTable: "ref", refColumn: "code" }]
+    );
+    expect(referencedDroppedTables([USER_OF_CODE], [REF])).toEqual([]);
+  });
+});
+
+describe("matchableUniqueGroups", () => {
+  const LOCATION = table(
+    "location",
+    [col("id"), col("name"), col("companyId")],
+    [],
+    { uniqueColumns: ["name", "companyId"] }
+  );
+
+  it("drops the scope column and keeps the natural key", () => {
+    expect(matchableUniqueGroups([["name", "companyId"]], LOCATION)).toEqual([
+      ["name"]
+    ]);
+  });
+
+  it("rejects a group containing id or a remapped FK column", () => {
+    const T = table(
+      "t",
+      [col("id"), col("parentId"), col("code"), col("companyId")],
+      [fk("parentId", "parent")]
+    );
+    expect(
+      matchableUniqueGroups([["id"], ["parentId", "code"], ["companyId"]], T)
+    ).toEqual([]);
+  });
+});
+
+describe("mapCollidingRows", () => {
+  const groups = [["name"]];
+
+  it("maps a colliding backup row onto the existing target row", () => {
+    const { skippedSourceIds, overrides } = mapCollidingRows(
+      groups,
+      [
+        { id: "src-hq", name: "Headquarters" },
+        { id: "src-plant", name: "Manufacturing Plant" }
+      ],
+      [{ id: "tgt-hq", name: "Headquarters" }]
+    );
+    expect([...skippedSourceIds]).toEqual(["src-hq"]);
+    expect(overrides.get("src-hq")).toBe("tgt-hq");
+    expect(overrides.has("src-plant")).toBe(false);
+  });
+
+  it("never matches on NULL (Postgres unique treats NULLs as distinct)", () => {
+    const { skippedSourceIds } = mapCollidingRows(
+      groups,
+      [{ id: "src", name: null }],
+      [{ id: "tgt", name: null }]
+    );
+    expect(skippedSourceIds.size).toBe(0);
+  });
+});
+
+// ── Cross-company restore: readable ids and storage paths ────────────────────
+// Both guards pin a hardcoded list that a future schema change can silently
+// invalidate. Each list went stale exactly once already and produced a restore
+// that looked successful and was not: the Items pages rendered empty
+// (readable ids rewritten) and assemblies would not load (path columns left
+// pointing at the source company).
+describe("cross-company restore invariants", () => {
+  // Composite-PK tables backed by a global UNIQUE (id). Their ids MUST be
+  // remapped or a cross-company restore collides with the source company's
+  // still-live rows. Verified against pg_index on 2026-09-18.
+  const GLOBAL_UNIQUE_ID_TABLES = [
+    "balloon",
+    "changeOrderRequiredAction",
+    "demandProjection",
+    "inspectionDocument",
+    "inspectionFeature"
+  ];
+
+  // Every `modelUpload` column whose name ends in `Path`, typed against the
+  // GENERATED row type: `satisfies` makes this list fail to COMPILE if a column
+  // is renamed or removed, and the `Exclude` below fails to compile if a new
+  // `*Path` column is added and not listed. The runtime assertion then checks
+  // STORAGE_PATH_COLUMNS covers them all.
+  type ModelUploadPathColumn = Extract<
+    keyof Database["public"]["Tables"]["modelUpload"]["Row"],
+    `${string}Path`
+  >;
+  const MODEL_UPLOAD_PATH_COLUMNS = [
+    "modelPath",
+    "thumbnailPath",
+    "originalPath",
+    "optimizedModelPath",
+    "glbPath",
+    "graphPath",
+    "pmiPath"
+  ] as const satisfies readonly ModelUploadPathColumn[];
+  // Fails to compile when a new `*Path` column exists that the list omits.
+  type _EveryPathColumnListed =
+    Exclude<
+      ModelUploadPathColumn,
+      (typeof MODEL_UPLOAD_PATH_COLUMNS)[number]
+    > extends never
+      ? true
+      : [
+          "unlisted modelUpload *Path column",
+          Exclude<
+            ModelUploadPathColumn,
+            (typeof MODEL_UPLOAD_PATH_COLUMNS)[number]
+          >
+        ];
+  const _pathColumnsExhaustive: _EveryPathColumnListed = true;
+  void _pathColumnsExhaustive;
+
+  it("keeps a readable-id table out of the id maps, but maps a normal table", () => {
+    const part = table("part", [col("id"), col("companyId"), col("name")], [], {
+      pkColumns: ["id", "companyId"]
+    });
+    const workflow = table("workflow", [col("id"), col("companyId")], [], {
+      pkColumns: ["id", "companyId"]
+    });
+    const idMaps = buildIdMaps([part, workflow], {
+      part: [{ id: "ADCS-001", companyId: "src-co", name: "Widget" }],
+      workflow: [{ id: "wf_1", companyId: "src-co" }]
+    });
+    expect(idMaps.has("part")).toBe(false);
+    expect(idMaps.get("workflow")?.get("wf_1")).toBeTypeOf("string");
+    expect(idMaps.get("workflow")?.get("wf_1")).not.toBe("wf_1");
+  });
+
+  it("preserves a part number verbatim through a cross-company restamp", () => {
+    // The `parts` view inner-joins part.id = item."readableId"; a rewritten id
+    // matches nothing and the Parts page renders empty against a full table.
+    const part = table("part", [col("id"), col("companyId"), col("name")], [], {
+      pkColumns: ["id", "companyId"]
+    });
+    const idMaps = buildIdMaps([part], {
+      part: [{ id: "ADCS-001", companyId: "src-co", name: "Widget" }]
+    });
+    const transforms = buildRowTransforms(part, part.columns, {
+      remap: true,
+      companyId: "target-co",
+      userId: "importer",
+      targetGroupId: "target-grp",
+      sourceCompanyId: "src-co",
+      idMaps,
+      idRewrite: new Map<string, string>()
+    });
+    const row: Record<string, unknown> = {
+      id: "ADCS-001",
+      companyId: "src-co",
+      name: "Widget"
+    };
+    const out: Record<string, unknown> = {};
+    part.columns.forEach((c, i) => {
+      out[c.name] = transforms[i]!(row[c.name]);
+    });
+    expect(out).toEqual({
+      id: "ADCS-001",
+      companyId: "target-co",
+      name: "Widget"
+    });
+  });
+
+  it("exempts the child table of every item type", () => {
+    // Derived from the GENERATED enum, not a hand-copied list: adding an
+    // itemType member ships a new child table keyed on the same readable id,
+    // and `fixture` is unpopulated in every local database, so a data-driven
+    // sweep cannot see it. Regenerating types is what makes this test fail.
+    const missing = Constants.public.Enums.itemType
+      .map((t) => t.toLowerCase())
+      .filter((t) => !READABLE_ID_TABLES.has(t));
+    expect(missing).toEqual([]);
+  });
+
+  it("never exempts a table that needs a fresh id to avoid a unique collision", () => {
+    const overlap = GLOBAL_UNIQUE_ID_TABLES.filter((t) =>
+      READABLE_ID_TABLES.has(t)
+    );
+    expect(overlap).toEqual([]);
+  });
+
+  it("covers every modelUpload artifact column in STORAGE_PATH_COLUMNS", () => {
+    const missing = MODEL_UPLOAD_PATH_COLUMNS.filter(
+      (c) => !STORAGE_PATH_COLUMNS.has(c)
+    );
+    expect(missing).toEqual([]);
   });
 });

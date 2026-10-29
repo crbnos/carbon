@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { formatDate } from "@carbon/utils";
 import { getPurchaseOrderDisplayId } from "../../../utils/purchase-order";
 import type { PurchaseOrderData } from "./types";
 
@@ -5,7 +10,12 @@ import type { PurchaseOrderData } from "./types";
 export function buildPurchaseOrderVars(
   data: Pick<
     PurchaseOrderData,
-    "purchaseOrder" | "purchaseOrderLocations" | "company" | "currencyCode"
+    | "purchaseOrder"
+    | "purchaseOrderLocations"
+    | "company"
+    | "currencyCode"
+    | "approval"
+    | "locale"
   >
 ): Record<string, string> {
   const po = data.purchaseOrder;
@@ -18,6 +28,12 @@ export function buildPurchaseOrderVars(
     "order.date": str(po?.orderDate),
     "order.supplierReference": str(po?.supplierReference),
     "order.currency": str(data.currencyCode),
+    "order.approvedBy": str(data.approval?.approvedBy),
+    "order.approvedDate": formatDate(
+      data.approval?.approvedDate,
+      undefined,
+      data.locale
+    ),
     "supplier.name": str(loc?.supplierName),
     "supplier.addressLine1": str(loc?.supplierAddressLine1),
     "supplier.city": str(loc?.supplierCity),

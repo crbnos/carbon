@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { LabelSize, ProductLabelItem } from "@carbon/utils";
 import { Document, Page, View } from "@react-pdf/renderer";
 import { Fragment } from "react";
@@ -198,7 +202,7 @@ const ProductLabelPDF = ({
                       >
                         {textBlocks.map(renderBlock)}
                       </View>
-                      {rightBlocks.length > 0 && (
+                      {rightBlocks.length > 0 ? (
                         <View
                           style={{
                             ...tw("flex flex-col items-end justify-start"),
@@ -207,7 +211,7 @@ const ProductLabelPDF = ({
                         >
                           {rightBlocks.map(renderBlock)}
                         </View>
-                      )}
+                      ) : null}
                     </View>
                     {barcodeBlocks.map(renderBlock)}
                     {entityBlocks.map(renderBlock)}

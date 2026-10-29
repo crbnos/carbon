@@ -1,4 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import { storage } from "@carbon/files";
+import { TiptapText } from "@carbon/files/markdown";
 import {
   Combobox,
   DateTimePicker,
@@ -9,6 +15,7 @@ import {
   Submit,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Button,
@@ -17,6 +24,7 @@ import {
   generateHTML,
   HStack,
   IconButton,
+  ImageZoomViewer,
   Modal,
   ModalBody,
   ModalContent,
@@ -36,13 +44,12 @@ import {
 import {
   documentHasImages,
   parseMentionsFromDocument,
-  stripSpecialCharacters,
-  tiptapToText
+  stripSpecialCharacters
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { nanoid } from "nanoid";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
@@ -54,10 +61,12 @@ import {
 import { useFetcher } from "react-router";
 import { DateTime } from "~/components";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
-import { ImageZoomViewer } from "~/components/ImageZoomViewer";
 import ItemThumbnail from "~/components/ItemThumbnail";
 import { useUser } from "~/hooks";
-import { stepRecordValidator } from "~/services/models";
+import {
+  measurementStepRecordValidator,
+  stepRecordValidator
+} from "~/services/models";
 import type { JobOperationStep } from "~/services/types";
 import { useItems, usePeople } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -78,17 +87,38 @@ type SlideAnnotation = {
 // JSON.stringify({}) === "{}" (and some legacy rows carry it as a tiptap doc
 // whose only text is literally "{}"). Treat an empty object, empty doc, or
 // "{}"-only text as "no description" so we render nothing instead of a bare "{}".
-function hasStepDescription(
+export function hasStepDescription(
   description: JobOperationStep["description"]
 ): boolean {
   if (!description) return false;
   const doc = description as JSONContent;
-  const text = tiptapToText(doc).trim();
+  const text = TiptapText(doc).toString().trim();
   if (text.length > 0 && text !== "{}") return true;
   if (parseMentionsFromDocument(doc).length > 0) return true;
   // A step's reference imagery is frequently an image-only description (no text,
   // no @-mention). Without this the description block — and its <img> — is hidden.
   return documentHasImages(doc);
+}
+
+// The limits a Measurement must fall within, in its unit, as the step lists
+// and the record windows state them. Both limits are inclusive: a value equal
+// to either one passes.
+export function useMeasurementLimits(step: {
+  minValue: number | null;
+  maxValue: number | null;
+  unitOfMeasureCode: string | null;
+}) {
+  const { t } = useLingui();
+  const { minValue, maxValue } = step;
+  const unitOfMeasureCode = step.unitOfMeasureCode ?? "";
+  if (minValue !== null && maxValue !== null) {
+    return t`Must be between ${minValue} and ${maxValue} ${unitOfMeasureCode}`;
+  }
+  if (minValue !== null)
+    return t`Must be at least ${minValue} ${unitOfMeasureCode}`;
+  if (maxValue !== null)
+    return t`Must be at most ${maxValue} ${unitOfMeasureCode}`;
+  return null;
 }
 
 export function StepsListItem({
@@ -98,7 +128,8 @@ export function StepsListItem({
   operationId,
   className,
   onRecord,
-  onDelete
+  onDelete,
+  disabled = false
 }: {
   activeStep: number;
   step: JobOperationStep;
@@ -107,40 +138,18 @@ export function StepsListItem({
   className: string;
   onRecord: (step: JobOperationStep) => void;
   onDelete: (step: JobOperationStep) => void;
+  // The operator may not record on this operation (ability policy 'block')
+  disabled?: boolean;
 }) {
   const fetcher = useFetcher<{ success: boolean }>();
   const user = useUser();
-  const { t } = useLingui();
-  const { name, description, type, unitOfMeasureCode, minValue, maxValue } =
-    step;
+  const { name, description, type } = step;
+  const limits = useMeasurementLimits(step);
 
   const hasDescription = hasStepDescription(description);
-  const mentionIds = hasDescription
-    ? parseMentionsFromDocument(description as JSONContent)
-    : [];
   const disclosure = useDisclosure({
     defaultIsOpen: hasDescription
   });
-
-  // Reference images ("slides") attached to this step in the Bill of Process. A slide
-  // is image XOR model; only image slides (imagePath) render here — model slides need a
-  // modelUpload join the standard-view loader doesn't fetch, so they're skipped.
-  const imageSlides = (step.jobOperationStepSlide ?? [])
-    .filter((slide) => !!slide.imagePath)
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-    .map((slide) => ({
-      id: slide.id,
-      url: getPrivateUrl(slide.imagePath as string),
-      caption: slide.caption,
-      // Slides copied from the method (get-method) can persist annotations as a
-      // non-array JSON value ({}), so normalize before the viewer calls .map().
-      annotations: Array.isArray(slide.annotations)
-        ? (slide.annotations as SlideAnnotation[])
-        : []
-    }));
-  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
-  const activeSlide =
-    viewerIndex !== null ? (imageSlides[viewerIndex] ?? null) : null;
 
   if (!operationId) return null;
   const record = step.jobOperationStepRecord.find(
@@ -162,15 +171,7 @@ export function StepsListItem({
                 </span>
               </HStack>
               {type === "Measurement" && (
-                <span className="text-xs text-muted-foreground">
-                  {minValue !== null && maxValue !== null
-                    ? t`Must be between ${minValue} and ${maxValue} ${unitOfMeasureCode}`
-                    : minValue !== null
-                      ? t`Must be > ${minValue} ${unitOfMeasureCode}`
-                      : maxValue !== null
-                        ? t`Must be < ${maxValue} ${unitOfMeasureCode}`
-                        : null}
-                </span>
+                <span className="text-xs text-muted-foreground">{limits}</span>
               )}
             </VStack>
             {!compact && (
@@ -188,7 +189,7 @@ export function StepsListItem({
                     variant="secondary"
                     size="lg"
                     icon={<LuCircleCheck />}
-                    isDisabled={record?.createdBy !== user?.id}
+                    isDisabled={disabled || record?.createdBy !== user?.id}
                     onClick={() => onRecord(step)}
                     className={cn(
                       "text-emerald-500",
@@ -207,6 +208,7 @@ export function StepsListItem({
                     variant="secondary"
                     size="lg"
                     rightIcon={<LuCircleCheck />}
+                    isDisabled={disabled}
                     onClick={() => onRecord(step)}
                   >
                     <Trans>Update</Trans>
@@ -217,7 +219,7 @@ export function StepsListItem({
                 variant="secondary"
                 size="lg"
                 icon={<LuTrash />}
-                isDisabled={record?.createdBy !== user?.id}
+                isDisabled={disabled || record?.createdBy !== user?.id}
                 onClick={() => onDelete(step)}
               />
             </div>
@@ -235,7 +237,7 @@ export function StepsListItem({
                   icon={<LuCircleCheck />}
                   type="submit"
                   isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
+                  isDisabled={disabled || fetcher.state !== "idle"}
                 />
               ) : (
                 <Button
@@ -244,7 +246,7 @@ export function StepsListItem({
                   size="lg"
                   rightIcon={<LuCircleCheck />}
                   isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
+                  isDisabled={disabled || fetcher.state !== "idle"}
                 >
                   <Trans>Complete</Trans>
                 </Button>
@@ -256,6 +258,7 @@ export function StepsListItem({
               variant="secondary"
               size="lg"
               icon={<LuCircleCheck />}
+              isDisabled={disabled}
               onClick={() => onRecord(step)}
             />
           ) : (
@@ -263,6 +266,7 @@ export function StepsListItem({
               variant="secondary"
               size="lg"
               rightIcon={<LuCircleCheck />}
+              isDisabled={disabled}
               onClick={() => onRecord(step)}
             >
               <Trans>Record</Trans>
@@ -282,6 +286,58 @@ export function StepsListItem({
           )}
         </div>
       </div>
+      <StepMedia
+        description={description}
+        slides={step.jobOperationStepSlide ?? []}
+        showDescription={disclosure.isOpen && hasDescription}
+      />
+    </div>
+  );
+}
+
+type StepSlide = {
+  id: string;
+  imagePath: string | null;
+  caption: string | null;
+  sortOrder: number | null;
+  annotations: unknown;
+};
+
+// A step's reference material: its image slides from the Bill of Process (a
+// slide is image XOR model; model slides need a modelUpload join these loaders
+// don't fetch, so only image slides render), the rich-text description, and
+// the parts it @-mentions. Shared by the job's step list and the batch view.
+export function StepMedia({
+  description,
+  slides,
+  showDescription
+}: {
+  description: JobOperationStep["description"];
+  slides: StepSlide[];
+  showDescription: boolean;
+}) {
+  const imageSlides = slides
+    .filter((slide) => !!slide.imagePath)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+    .map((slide) => ({
+      id: slide.id,
+      url: getPrivateUrl(slide.imagePath as string),
+      caption: slide.caption,
+      // Slides copied from the method (get-method) can persist annotations as a
+      // non-array JSON value ({}), so normalize before the viewer calls .map().
+      annotations: Array.isArray(slide.annotations)
+        ? (slide.annotations as SlideAnnotation[])
+        : []
+    }));
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const activeSlide =
+    viewerIndex !== null ? (imageSlides[viewerIndex] ?? null) : null;
+  const mentionIds = hasStepDescription(description)
+    ? parseMentionsFromDocument(description as JSONContent)
+    : [];
+
+  return (
+    <>
       {imageSlides.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
           {imageSlides.map((slide, i) => (
@@ -306,7 +362,7 @@ export function StepsListItem({
           ))}
         </div>
       )}
-      {disclosure.isOpen && hasDescription && (
+      {showDescription && (
         <div
           className="my-4 text-sm prose prose-sm dark:prose-invert"
           dangerouslySetInnerHTML={{
@@ -322,7 +378,7 @@ export function StepsListItem({
         annotations={activeSlide?.annotations ?? []}
         onClose={() => setViewerIndex(null)}
       />
-    </div>
+    </>
   );
 }
 
@@ -457,11 +513,18 @@ export function RecordModal({
   const { t } = useLingui();
   const { carbon } = useCarbon();
   const { company } = useUser();
+  const limits = useMeasurementLimits(attribute);
   const [file, setFile] = useState<File | null>(null);
   const [filePath, setFilePath] = useState<string | null>(null);
   // Bumped on every drop/remove so a stale in-flight upload can't set state
   const uploadIdRef = useRef(0);
-  const fetcher = useFetcher<{ success: boolean }>();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onClose();
+      }
+    }
+  });
 
   const removeFile = () => {
     uploadIdRef.current += 1;
@@ -480,8 +543,8 @@ export function RecordModal({
     const safeName = stripSpecialCharacters(fileUpload.name) || "file";
     const fileName = `${company.id}/job/${attribute.operationId}/${attribute.id}/${nanoid()}/${safeName}`;
 
-    const upload = await carbon?.storage
-      .from("private")
+    const upload = await storage(carbon)
+      .company(company.id)
       .upload(fileName, fileUpload, {
         cacheControl: `${12 * 60 * 60}`,
         upsert: true
@@ -497,12 +560,6 @@ export function RecordModal({
       setFilePath(upload.data.path);
     }
   };
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
-    }
-  }, [fetcher.data?.success, onClose]);
 
   const record = attribute?.jobOperationStepRecord.find(
     (r) => r.index === activeStep
@@ -524,7 +581,11 @@ export function RecordModal({
       <ModalContent>
         <ValidatedForm
           method="post"
-          validator={stepRecordValidator}
+          validator={
+            attribute.type === "Measurement"
+              ? measurementStepRecordValidator
+              : stepRecordValidator
+          }
           action={path.to.record}
           defaultValues={{
             index: activeStep,
@@ -532,7 +593,9 @@ export function RecordModal({
             value:
               record?.value ??
               (attribute.type === "Timestamp" ? new Date().toISOString() : ""),
-            numericValue: record?.numericValue ?? 0,
+            // Empty until recorded: a prefilled 0 could be recorded as a
+            // real measurement.
+            numericValue: record?.numericValue ?? undefined,
             userValue: record?.userValue ?? ""
           }}
           fetcher={fetcher}
@@ -579,7 +642,12 @@ export function RecordModal({
                 <InputField name="value" label="" size="lg" />
               )}
               {attribute.type === "Measurement" && (
-                <Number name="numericValue" label="" size="lg" />
+                <Number
+                  name="numericValue"
+                  label={attribute.unitOfMeasureCode ?? ""}
+                  helperText={limits ?? undefined}
+                  size="lg"
+                />
               )}
               {attribute.type === "Timestamp" && (
                 <DateTimePicker name="value" label="" size="lg" />
@@ -667,6 +735,9 @@ export function RecordModal({
                 (attribute.type === "File" && !filePath)
               }
               rightIcon={<LuCircleCheck />}
+              // Focus in a field submits natively on Enter; this covers focus
+              // elsewhere in the modal and renders the ↵ badge.
+              shortcut="enter"
               type="submit"
             >
               <Trans>Record</Trans>
@@ -689,13 +760,13 @@ export function DeleteStepRecordModal({
   title: string;
   description: string;
 }) {
-  const fetcher = useFetcher<{ success: boolean }>();
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onClose();
+      }
     }
-  }, [fetcher.data?.success, onClose]);
+  });
 
   return (
     <Modal open={true} onOpenChange={onClose}>

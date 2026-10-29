@@ -1,34 +1,38 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getStorageRulesDataForTarget } from "@carbon/ee/storage-rules.server";
+import { getStorageRulesDataForTarget } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { pluckUnique } from "@carbon/utils";
+import { pluckUnique, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useRouteData } from "~/hooks";
+import { getTrackedEntityExpirations } from "~/modules/inventory/inventory.service";
+import { InventoryDetails } from "~/modules/inventory/ui";
+import RuleAssignmentsList from "~/modules/inventory/ui/StorageRules/RuleAssignmentsList";
 import {
-  getTrackedEntityExpirations,
-  InventoryDetails
-} from "~/modules/inventory";
-import type { Consumable, UnitOfMeasureListItem } from "~/modules/items";
+  pickMethodWithShelfLifeValidator,
+  type shelfLifeModes
+} from "~/modules/items/items.models";
 import {
   getBomHasShelfLifeManagedInput,
   getItemQuantities,
   getItemShelfLife,
-  getItemStorageUnitQuantities,
   getPickMethod,
-  pickMethodWithShelfLifeValidator,
-  type shelfLifeModes,
   upsertPickMethod,
   upsertPickMethodWithShelfLife
-} from "~/modules/items";
+} from "~/modules/items/items.service";
+import { getItemStorageUnitQuantities } from "~/modules/items/items.utils";
+import type { Consumable, UnitOfMeasureListItem } from "~/modules/items/types";
 import { PickMethodForm } from "~/modules/items/ui/Item";
-import { getLocationsList } from "~/modules/resources";
-import RuleAssignmentsList from "~/modules/storage-rules/ui/RuleAssignmentsList";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores/items";
 import type { ListItem } from "~/types";
@@ -47,8 +51,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   let locationId = searchParams.get("location");
 
-  if (!locationId) {
-    const userDefaults = await getUserDefaults(client, userId, companyId);
+  // Three waits at most: what needs no location is read while the
+  // default location is, and everything that needs it is read together.
+  const [userDefaults, shelfLife, bomHasShelfLifeManagedInput, rulesData] =
+    await Promise.all([
+      locationId ? null : getUserDefaults(client, userId, companyId),
+      getItemShelfLife(client, itemId),
+      getBomHasShelfLifeManagedInput(client, itemId, companyId),
+      getStorageRulesDataForTarget(client, {
+        targetType: "item",
+        targetId: itemId,
+        companyId
+      })
+    ]);
+
+  if (userDefaults) {
     if (userDefaults.error) {
       throw redirect(
         path.to.consumable(itemId),
@@ -76,9 +93,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [consumableInventory] = await Promise.all([
-    getPickMethod(client, itemId, companyId, locationId)
-  ]);
+  let [consumableInventory, quantities, itemStorageUnitQuantities] =
+    await Promise.all([
+      getPickMethod(client, itemId, companyId, locationId),
+      getItemQuantities(client, itemId, companyId, locationId),
+      getItemStorageUnitQuantities(client, itemId, companyId, locationId)
+    ]);
 
   if (consumableInventory.error || !consumableInventory.data) {
     const insertPickMethod = await upsertPickMethod(client, {
@@ -119,12 +139,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  const quantities = await getItemQuantities(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
   if (quantities.error) {
     throw redirect(
       path.to.items,
@@ -135,12 +149,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const itemStorageUnitQuantities = await getItemStorageUnitQuantities(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
   if (itemStorageUnitQuantities.error || !itemStorageUnitQuantities.data) {
     throw redirect(
       path.to.items,
@@ -156,21 +164,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     (row) => row.trackedEntityId
   );
 
-  const [
-    shelfLife,
-    bomHasShelfLifeManagedInput,
-    trackedEntityExpirations,
-    rulesData
-  ] = await Promise.all([
-    getItemShelfLife(client, itemId),
-    getBomHasShelfLifeManagedInput(client, itemId, companyId),
-    getTrackedEntityExpirations(client, trackedEntityIds),
-    getStorageRulesDataForTarget(client, {
-      targetType: "item",
-      targetId: itemId,
-      companyId
-    })
-  ]);
+  const trackedEntityExpirations = await getTrackedEntityExpirations(
+    client,
+    trackedEntityIds
+  );
 
   return {
     consumableInventory: consumableInventory.data,
@@ -188,7 +185,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -220,6 +217,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       defaultStorageUnitId: pickMethodFields.defaultStorageUnitId,
       sortMethod: pickMethodFields.sortMethod,
       customFields: setCustomFields(formData),
+      companyId,
       userId,
       shelfLife: {
         mode: shelfLifeMode,

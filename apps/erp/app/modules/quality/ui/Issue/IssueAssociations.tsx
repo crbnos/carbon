@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Combobox, Hidden, Number, Submit, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Count,
@@ -14,6 +19,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -29,7 +35,7 @@ import {
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { flushSync } from "react-dom";
 import { AiOutlinePartition } from "react-icons/ai";
 import {
@@ -47,16 +53,17 @@ import {
   LuShoppingCart,
   LuSquareUser,
   LuTrash,
-  LuTruck
+  LuTruck,
+  LuUndo2
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { Customer, Item, Supplier } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
 import { ChangeNoticeStatus } from "~/modules/items/ui/ChangeNotice";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import type { action as associationAction } from "~/routes/x+/issue+/$id.association.new";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -273,11 +280,12 @@ export function IssueAssociationItem({
                         icon={<LuEllipsisVertical />}
                         variant="ghost"
                         size="sm"
-                        className="absolute right-1 top-1 flex-shrink-0 opacity-0 group-hover/association:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+                        className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/association:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
                       />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.delete}
                         destructive
                         onSelect={() => {
                           onDelete(child);
@@ -325,6 +333,10 @@ function getAssociationIcon(key: IssueAssociationNode["key"]) {
       return <LuTruck className="text-indigo-600" />;
     case "receiptLines":
       return <LuHandCoins className="text-red-600" />;
+    case "salesReturnOrderLines":
+      return <LuUndo2 className="text-green-600" />;
+    case "purchaseReturnOrderLines":
+      return <LuUndo2 className="text-blue-600" />;
     case "trackedEntities":
       return <LuQrCode />;
     case "inspections":
@@ -348,7 +360,6 @@ function NewItemAssociation() {
       <Item
         name="id"
         label={itemType}
-        // @ts-ignore
         type={itemType}
         onTypeChange={onTypeChange}
       />
@@ -860,6 +871,220 @@ function NewReceiptLineAssociation({ items }: { items?: string[] }) {
   );
 }
 
+function NewSalesReturnOrderLineAssociation({ items }: { items?: string[] }) {
+  const { t } = useLingui();
+  const { carbon } = useCarbon();
+  const [salesReturnOrders, setSalesReturnOrders] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [salesReturnOrdersAreLoading, setSalesReturnOrdersAreLoading] =
+    useState(true);
+  const [salesReturnOrderLines, setSalesReturnOrderLines] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [salesReturnOrderLinesAreLoading, setSalesReturnOrderLinesAreLoading] =
+    useState(false);
+
+  async function fetchSalesReturnOrders() {
+    if (!carbon) {
+      toast.error(t`Failed to load data`);
+      return;
+    }
+    const { data, error } = await carbon
+      .from("salesReturnOrders")
+      .select("id, salesReturnOrderId");
+
+    if (error) {
+      toast.error(t`Failed to load RMAs`);
+    }
+
+    setSalesReturnOrders(
+      data?.map((order) => ({
+        label: order.salesReturnOrderId ?? "",
+        value: order.id ?? ""
+      })) ?? []
+    );
+    setSalesReturnOrdersAreLoading(false);
+  }
+
+  async function fetchSalesReturnOrderLines(salesReturnOrderId: string) {
+    if (!carbon) {
+      toast.error(t`Failed to load data`);
+      return;
+    }
+
+    if (!salesReturnOrderId) {
+      setSalesReturnOrderLines([]);
+      setSalesReturnOrderLinesAreLoading(false);
+      return;
+    }
+
+    let query = carbon
+      .from("salesReturnOrderLine")
+      .select("id, lineNumber, itemId")
+      .eq("salesReturnOrderId", salesReturnOrderId);
+
+    if (items) {
+      query = query.in("itemId", items);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      toast.error(t`Failed to load RMA lines`);
+    }
+
+    setSalesReturnOrderLines(
+      data?.map((line) => ({
+        label: `Line ${line.lineNumber}`,
+        value: line.id
+      })) ?? []
+    );
+    setSalesReturnOrderLinesAreLoading(false);
+  }
+
+  useMount(() => {
+    fetchSalesReturnOrders();
+  });
+
+  return (
+    <>
+      <Combobox
+        name="id"
+        label={t`RMA`}
+        options={salesReturnOrders}
+        isLoading={salesReturnOrdersAreLoading}
+        onChange={(value) => {
+          if (value) {
+            flushSync(() => {
+              setSalesReturnOrderLinesAreLoading(true);
+            });
+            fetchSalesReturnOrderLines(value.value);
+          } else {
+            setSalesReturnOrderLines([]);
+          }
+        }}
+      />
+      <Combobox
+        name="lineId"
+        label={t`RMA Line`}
+        options={salesReturnOrderLines}
+        isLoading={salesReturnOrderLinesAreLoading}
+      />
+    </>
+  );
+}
+
+function NewPurchaseReturnOrderLineAssociation({
+  items
+}: {
+  items?: string[];
+}) {
+  const { t } = useLingui();
+  const { carbon } = useCarbon();
+  const [purchaseReturnOrders, setPurchaseReturnOrders] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [purchaseReturnOrdersAreLoading, setPurchaseReturnOrdersAreLoading] =
+    useState(true);
+  const [purchaseReturnOrderLines, setPurchaseReturnOrderLines] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [
+    purchaseReturnOrderLinesAreLoading,
+    setPurchaseReturnOrderLinesAreLoading
+  ] = useState(false);
+
+  async function fetchPurchaseReturnOrders() {
+    if (!carbon) {
+      toast.error(t`Failed to load data`);
+      return;
+    }
+    const { data, error } = await carbon
+      .from("purchaseReturnOrders")
+      .select("id, purchaseReturnOrderId");
+
+    if (error) {
+      toast.error(t`Failed to load supplier returns`);
+    }
+
+    setPurchaseReturnOrders(
+      data?.map((order) => ({
+        label: order.purchaseReturnOrderId ?? "",
+        value: order.id ?? ""
+      })) ?? []
+    );
+    setPurchaseReturnOrdersAreLoading(false);
+  }
+
+  async function fetchPurchaseReturnOrderLines(purchaseReturnOrderId: string) {
+    if (!carbon) {
+      toast.error(t`Failed to load data`);
+      return;
+    }
+
+    if (!purchaseReturnOrderId) {
+      setPurchaseReturnOrderLines([]);
+      setPurchaseReturnOrderLinesAreLoading(false);
+      return;
+    }
+
+    let query = carbon
+      .from("purchaseReturnOrderLine")
+      .select("id, lineNumber, itemId")
+      .eq("purchaseReturnOrderId", purchaseReturnOrderId);
+
+    if (items) {
+      query = query.in("itemId", items);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      toast.error(t`Failed to load supplier return lines`);
+    }
+
+    setPurchaseReturnOrderLines(
+      data?.map((line) => ({
+        label: `Line ${line.lineNumber}`,
+        value: line.id
+      })) ?? []
+    );
+    setPurchaseReturnOrderLinesAreLoading(false);
+  }
+
+  useMount(() => {
+    fetchPurchaseReturnOrders();
+  });
+
+  return (
+    <>
+      <Combobox
+        name="id"
+        label={t`Supplier Return`}
+        options={purchaseReturnOrders}
+        isLoading={purchaseReturnOrdersAreLoading}
+        onChange={(value) => {
+          if (value) {
+            flushSync(() => {
+              setPurchaseReturnOrderLinesAreLoading(true);
+            });
+            fetchPurchaseReturnOrderLines(value.value);
+          } else {
+            setPurchaseReturnOrderLines([]);
+          }
+        }}
+      />
+      <Combobox
+        name="lineId"
+        label={t`Supplier Return Line`}
+        options={purchaseReturnOrderLines}
+        isLoading={purchaseReturnOrderLinesAreLoading}
+      />
+    </>
+  );
+}
+
 function NewTrackedEntityAssociation({ items }: { items?: string[] }) {
   const { t } = useLingui();
   const { carbon } = useCarbon();
@@ -977,17 +1202,7 @@ function NewAssociationModal({
   const { id } = useParams();
   if (!id) throw new Error("No issue ID found");
 
-  const fetcher = useFetcher<typeof associationAction>();
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
-    }
-
-    if (fetcher.data?.success === false && fetcher.data?.message) {
-      toast.error(fetcher?.data?.message);
-    }
-  }, [fetcher.data?.message, fetcher.data?.success, onClose]);
+  const fetcher = useAction<typeof associationAction>({ onSuccess: onClose });
 
   function renderFields(type: IssueAssociationKey) {
     switch (type) {
@@ -1007,6 +1222,10 @@ function NewAssociationModal({
         return <NewShipmentLineAssociation items={items} />;
       case "receiptLines":
         return <NewReceiptLineAssociation items={items} />;
+      case "salesReturnOrderLines":
+        return <NewSalesReturnOrderLineAssociation items={items} />;
+      case "purchaseReturnOrderLines":
+        return <NewPurchaseReturnOrderLineAssociation items={items} />;
       case "trackedEntities":
         return <NewTrackedEntityAssociation items={items} />;
       case "inspections":
@@ -1075,6 +1294,18 @@ function getAssociationLink(
     case "receiptLines":
       if (!child.documentLineId) return "#";
       return path.to.receipt(child.documentId);
+    case "salesReturnOrderLines":
+      if (!child.documentLineId) return "#";
+      return path.to.salesReturnOrderLine(
+        child.documentId,
+        child.documentLineId
+      );
+    case "purchaseReturnOrderLines":
+      if (!child.documentLineId) return "#";
+      return path.to.purchaseReturnOrderLine(
+        child.documentId,
+        child.documentLineId
+      );
     case "trackedEntities":
       return `${path.to.traceabilityGraph}?trackedEntityId=${child.documentId}`;
     case "customers":

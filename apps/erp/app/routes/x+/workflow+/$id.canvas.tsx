@@ -1,14 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Json } from "@carbon/database";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  updateWorkflowCanvasState,
-  workflowCanvasStateValidator
-} from "~/modules/workflows";
+import { workflowCanvasStateValidator } from "~/modules/workflows/workflows.models";
+import { updateWorkflowCanvasState } from "~/modules/workflows/workflows.service";
 import { path } from "~/utils/path";
 
 // Canvas state is per workflow, not per version, so the live-version lock does
@@ -18,7 +20,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     update: "workflows"
   });
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,

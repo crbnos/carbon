@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -6,6 +10,7 @@ import { LuBookMarked, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -14,10 +19,11 @@ import type { NoQuoteReason } from "../../types";
 type NoQuoteReasonsTableProps = {
   data: NoQuoteReason[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const NoQuoteReasonsTable = memo(
-  ({ data, count }: NoQuoteReasonsTableProps) => {
+  ({ data, count, infinite }: NoQuoteReasonsTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -35,6 +41,7 @@ const NoQuoteReasonsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         }
@@ -47,6 +54,7 @@ const NoQuoteReasonsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               onClick={() => {
                 navigate(
                   `${path.to.noQuoteReason(row.id)}?${params.toString()}`
@@ -57,6 +65,7 @@ const NoQuoteReasonsTable = memo(
               <Trans>Edit Reason</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "sales")}
               onClick={() => {
@@ -79,6 +88,7 @@ const NoQuoteReasonsTable = memo(
         data={data}
         columns={columns}
         count={count}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "sales") && (
             <New

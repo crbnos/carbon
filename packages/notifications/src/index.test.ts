@@ -1,5 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
-import { renderInlineLinks, renderSlackMrkdwn } from "./index";
+import {
+  getNotificationTopicChannels,
+  getNotificationTopicScope,
+  isNotificationTopic,
+  isNotificationTopicEnabledByDefault,
+  NotificationTopic,
+  notificationPreferenceCompanyId,
+  renderInlineLinks,
+  renderSlackMrkdwn,
+  USER_FACING_NOTIFICATION_TOPICS
+} from "./index";
 
 const ORIGIN = "https://app.carbon.ms";
 const HREF = `${ORIGIN}/api/link?event=workflow&documentId=so_1`;
@@ -84,5 +98,64 @@ describe("renderSlackMrkdwn", () => {
 
   it("returns an empty string for an empty message", () => {
     expect(renderSlackMrkdwn("", ORIGIN)).toBe("");
+  });
+});
+
+describe("notification topic settings", () => {
+  it("lists the changelog newsletter on the settings page", () => {
+    expect(USER_FACING_NOTIFICATION_TOPICS).toContain(
+      NotificationTopic.Changelog
+    );
+  });
+
+  it("offers only email for the changelog newsletter", () => {
+    expect(getNotificationTopicChannels(NotificationTopic.Changelog)).toEqual([
+      "email"
+    ]);
+    expect(getNotificationTopicChannels(NotificationTopic.Job)).toEqual([
+      "email",
+      "slack"
+    ]);
+  });
+
+  it("scopes only the newsletter to the account", () => {
+    expect(getNotificationTopicScope(NotificationTopic.Changelog)).toBe(
+      "account"
+    );
+    expect(getNotificationTopicScope(NotificationTopic.Job)).toBe("company");
+  });
+
+  it("treats a missing preference as off only for the opt-in newsletter", () => {
+    expect(
+      isNotificationTopicEnabledByDefault(NotificationTopic.Changelog)
+    ).toBe(false);
+    for (const topic of USER_FACING_NOTIFICATION_TOPICS) {
+      if (topic === NotificationTopic.Changelog) continue;
+      expect(isNotificationTopicEnabledByDefault(topic)).toBe(true);
+    }
+  });
+});
+
+describe("notificationPreferenceCompanyId", () => {
+  it("stores the newsletter once per person", () => {
+    expect(
+      notificationPreferenceCompanyId(NotificationTopic.Changelog, "c1")
+    ).toBeNull();
+  });
+
+  it("stores every other topic per company", () => {
+    for (const topic of USER_FACING_NOTIFICATION_TOPICS) {
+      if (topic === NotificationTopic.Changelog) continue;
+      expect(notificationPreferenceCompanyId(topic, "c1")).toBe("c1");
+    }
+  });
+});
+
+describe("isNotificationTopic", () => {
+  it("accepts every topic and nothing else", () => {
+    for (const topic of Object.values(NotificationTopic)) {
+      expect(isNotificationTopic(topic)).toBe(true);
+    }
+    expect(isNotificationTopic("not-a-topic")).toBe(false);
   });
 });

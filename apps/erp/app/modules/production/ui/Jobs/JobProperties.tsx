@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Json } from "@carbon/database";
 import {
   DatePicker,
@@ -6,9 +10,11 @@ import {
   Select,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
+  Copy,
   HStack,
   Modal,
   ModalBody,
@@ -27,10 +33,10 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect, useState } from "react";
-import { LuCopy, LuLink, LuUnlink2 } from "react-icons/lu";
+import { Suspense, useCallback, useState } from "react";
+import { LuCopy, LuKeySquare, LuLink, LuUnlink2 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Await, useFetcher, useParams } from "react-router";
+import { Await, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -49,9 +55,10 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
+import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { TrackedEntity } from "~/modules/inventory/types";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import type { action } from "~/routes/x+/items+/update";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
@@ -76,13 +83,13 @@ const JobProperties = () => {
 
   const unlinkDisclosure = useDisclosure();
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
-
+  });
   const [type, setType] = useState<MethodItemType>(
     (routeData?.job?.itemType ?? "Part") as MethodItemType
   );
@@ -217,6 +224,13 @@ const JobProperties = () => {
                 </span>
               </TooltipContent>
             </Tooltip>
+            <Copy
+              text={jobId}
+              label={t`Copy job unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -238,6 +252,14 @@ const JobProperties = () => {
           </HStack>
         </HStack>
         <span className="text-sm">{routeData?.job?.jobId}</span>
+        {routeData?.job?.thumbnailPath && routeData?.job?.itemId && (
+          <ItemThumbnailUpload
+            path={routeData.job.thumbnailPath}
+            itemId={routeData.job.itemId}
+            modelId={routeData.job.modelId}
+            isReadOnly
+          />
+        )}
       </VStack>
 
       <VStack spacing={2}>
@@ -315,7 +337,7 @@ const JobProperties = () => {
               </Badge>
             </Hyperlink>
             <Button
-              className="group-hover:opacity-100 opacity-0 transition-opacity duration-200"
+              className="group-hover:opacity-100 md:opacity-0 transition-opacity duration-200"
               variant="ghost"
               size="sm"
               leftIcon={<LuUnlink2 className="w-3 h-3" />}
@@ -515,10 +537,8 @@ const JobProperties = () => {
           onChange={(value) => {
             const next = value?.value ?? "";
             setDeadlineType(next);
+            // One post: the server clears the date a type takes none of.
             onUpdate("deadlineType", next || null);
-            if (!deadlineRequiresDueDate(next)) {
-              onUpdate("dueDate", null);
-            }
           }}
         />
       </ValidatedForm>

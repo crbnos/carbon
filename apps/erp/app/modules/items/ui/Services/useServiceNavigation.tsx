@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
 import {
   LuClipboardCheck,
@@ -8,6 +12,7 @@ import {
 } from "react-icons/lu";
 import { useParams } from "react-router";
 import { usePermissions, useRouteData } from "~/hooks";
+import { DETAIL_TAB_SHORTCUTS } from "~/shortcuts";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
 import type { ServiceSummary } from "../../types";
@@ -31,7 +36,7 @@ export function useServiceNavigation() {
       name: t`Details`,
       to: path.to.serviceDetails(itemId),
       icon: LuFileText,
-      shortcut: "Command+Shift+d"
+      shortcut: DETAIL_TAB_SHORTCUTS.details
     },
     {
       name: t`Purchasing`,
@@ -40,14 +45,14 @@ export function useServiceNavigation() {
       role: ["employee", "supplier"],
       permission: "purchasing",
       icon: LuShoppingCart,
-      shortcut: "Command+Shift+p"
+      shortcut: DETAIL_TAB_SHORTCUTS.purchasing
     },
     {
       name: t`Sales`,
       to: path.to.serviceSales(itemId),
       role: ["employee", "customer"],
       icon: LuReceipt,
-      shortcut: "Command+Shift+x"
+      shortcut: DETAIL_TAB_SHORTCUTS.sales
     },
     {
       name: t`Accounting`,
@@ -55,7 +60,7 @@ export function useServiceNavigation() {
       role: ["employee"],
       permission: "purchasing",
       icon: LuTags,
-      shortcut: "Command+Shift+a"
+      shortcut: DETAIL_TAB_SHORTCUTS.accounting
     },
     {
       name: t`Quality`,
@@ -63,7 +68,7 @@ export function useServiceNavigation() {
       role: ["employee"],
       permission: "quality",
       icon: LuClipboardCheck,
-      shortcut: "Command+Shift+q"
+      shortcut: DETAIL_TAB_SHORTCUTS.quality
     }
   ].filter(
     (item) =>

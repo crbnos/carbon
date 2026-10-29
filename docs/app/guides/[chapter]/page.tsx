@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
@@ -65,7 +69,7 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
   // unfurls as "Make to order", not a stray line. Description is the guide's blurb.
   return pageSeo({
     title: page
-      ? `${page.data.label} ${page.data.flowName} — Carbon`
+      ? `${page.data.label} ${page.data.flowName} | Carbon`
       : "Carbon Docs",
     ogTitle: page?.data.flowName ?? "Carbon Docs",
     description: page

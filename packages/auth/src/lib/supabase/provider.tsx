@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   CarbonContext,
   type ICarbonStore,
@@ -60,18 +64,44 @@ export const CarbonProvider = ({
     }
   }, [carbon, setAuthToken, session.accessToken]);
 
+  // The access token the client holds comes from the shell loader, so only the
+  // shell is told to re-run after a refresh. Without that, every loader on the
+  // page re-ran each time the tab regained focus.
+  const refreshIfDue = (canRefresh: boolean) => {
+    // Offline, the reload lands on the browser's error page and the refresh
+    // fails into the app's error screen. The "online" listener checks again.
+    if (!navigator.onLine) return;
+
+    const expiresAt = session.expiresAt ?? 0;
+    const now = Date.now() / 1000;
+
+    if (expiresAt < now) {
+      window.location.reload();
+      return;
+    }
+
+    // refresh ten minutes before expiry
+    if (canRefresh && expiresAt - 60 * 10 < now) {
+      refresh.submit(null, {
+        method: "post",
+        action: path.to.refreshSession,
+        defaultShouldRevalidate: false
+      });
+    }
+  };
+
+  // Timers are throttled in a background tab, so a tab that comes back may be
+  // past the point where the interval below would have refreshed it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: refreshIfDue reads the latest session
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        refresh.submit(null, {
-          method: "post",
-          action: path.to.refreshSession
-        });
-      }
+      if (document.visibilityState === "visible") refreshIfDue(true);
     };
+    const handleOnline = () => refreshIfDue(true);
 
     if (isBrowser) {
       document.addEventListener("visibilitychange", handleVisibilityChange);
+      window.addEventListener("online", handleOnline);
     }
 
     return () => {
@@ -80,27 +110,13 @@ export const CarbonProvider = ({
           "visibilitychange",
           handleVisibilityChange
         );
+        window.removeEventListener("online", handleOnline);
       }
     };
-  }, [refresh]);
+  }, [refresh, session.expiresAt]);
 
   useInterval(() => {
-    // refresh ten minutes before expiry
-    const expiresAt = session.expiresAt ?? 0;
-    const shouldRefresh = expiresAt - 60 * 10 < Date.now() / 1000;
-    const shouldReload = expiresAt < Date.now() / 1000;
-
-    if (shouldReload) {
-      window.location.reload();
-    }
-
-    if (!initialLoad.current && shouldRefresh && carbon) {
-      refresh.submit(null, {
-        method: "post",
-        action: path.to.refreshSession
-      });
-    }
-
+    refreshIfDue(!initialLoad.current && !!carbon);
     initialLoad.current = false;
   }, 60000); // Check every minute
 
