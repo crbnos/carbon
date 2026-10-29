@@ -144,6 +144,9 @@ msgstr "{0, plural, one {# 品目} other {# 品目}}"
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# 件の製造指図} other {# 件の製造指図}}"
+#. placeholder {0}: card.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr ""
 
 #. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
@@ -2246,6 +2249,9 @@ msgstr "定期的な明細は毎期その料率で請求され、一度限りの
 msgid "A referenced record does not exist."
 msgstr "参照されたレコードは存在しません。"
 msgid "a released job"
+msgstr ""
+
+msgid "A removed requirement"
 msgstr ""
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
@@ -10072,6 +10078,8 @@ msgstr "日数"
 
 msgid "Days After Entry"
 msgstr "エントリー後の日数"
+msgid "Days (optional)"
+msgstr ""
 
 msgid "Days before a lease's notice or end date that its owner is reminded."
 msgstr "リースの通知または終了日の何日前に責任者に通知するか。"
@@ -12827,6 +12835,9 @@ msgstr "認証アプリから6桁のコードを入力してください"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "認証器アプリから6桁のコードを入力して再開します。"
 
+msgid "Enter the estimate as a number of days"
+msgstr ""
+
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "プライベートOAuthアプリケーションのOnshape URL、クライアントID、クライアントシークレットを入力して保存します。"
 
@@ -13008,6 +13019,8 @@ msgstr "見積が再開しました"
 
 msgid "Estimate sent"
 msgstr "見積送信済"
+msgid "Estimate (days)"
+msgstr ""
 
 msgid "Estimated"
 msgstr "推定"
@@ -20623,6 +20636,9 @@ msgstr "行がまだありません"
 msgid "No lines yet. Add a line before confirming the contract."
 msgstr "まだ明細がありません。契約を確認する前に明細を追加してください。"
 
+msgid "No linked requirement"
+msgstr ""
+
 msgid "No list variables available upstream."
 msgstr "アップストリームで利用可能なリスト変数がありません。"
 
@@ -22530,6 +22546,9 @@ msgstr "対象外"
 
 msgid "Out of calibration"
 msgstr "校正範囲外"
+
+msgid "out of scope"
+msgstr ""
 
 msgid "Out of scope"
 msgstr ""
@@ -28547,6 +28566,12 @@ msgstr "この仕入先から受け取った在庫のシリアルとバッチ"
 msgid "Series"
 msgstr "シリーズ"
 
+msgid "Serves requirement"
+msgstr ""
+
+msgid "Serves: {serves}"
+msgstr ""
+
 msgid "service"
 msgstr "サービス"
 
@@ -34163,6 +34188,9 @@ msgstr "メールを入力して Enter キーを押し、社外受取人を追�
 
 msgid "Type of Permission Update"
 msgstr "権限更新のタイプ"
+
+msgid "Type of work"
+msgstr ""
 
 msgid "Type to search across your workspace"
 msgstr "ワークスペース全体を検索するには入力してください"

@@ -144,6 +144,9 @@ msgstr "{0, plural, one {# artykuł} other {# artykuły}}"
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# zlecenie produkcyjne} other {# zlecenia produkcyjne}}"
+#. placeholder {0}: card.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr ""
 
 #. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
@@ -2246,6 +2249,9 @@ msgstr "Pozycja cykliczna jest rozliczana co okres w swojej stawce; pozycja jedn
 msgid "A referenced record does not exist."
 msgstr "Rekord, do którego się odwołujesz, nie istnieje."
 msgid "a released job"
+msgstr ""
+
+msgid "A removed requirement"
 msgstr ""
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
@@ -10072,6 +10078,8 @@ msgstr "Dni"
 
 msgid "Days After Entry"
 msgstr "Dni po wpisaniu"
+msgid "Days (optional)"
+msgstr ""
 
 msgid "Days before a lease's notice or end date that its owner is reminded."
 msgstr "Liczba dni przed datą powiadomienia lub datą końcową leasingu, kiedy właściciel otrzyma przypomnienie."
@@ -12827,6 +12835,9 @@ msgstr "Wprowadź 6-cyfrowy kod z aplikacji authenticator"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Wpisz 6-cyfrowy kod z aplikacji Authenticator, aby wznowić."
 
+msgid "Enter the estimate as a number of days"
+msgstr ""
+
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Podaj URL Onshape, identyfikator klienta i klucz tajny prywatnej aplikacji OAuth, a następnie zapisz."
 
@@ -13008,6 +13019,8 @@ msgstr "Szacunek ponownie otwarty"
 
 msgid "Estimate sent"
 msgstr "Wycena wysłana"
+msgid "Estimate (days)"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Szacunkowy"
@@ -20623,6 +20636,9 @@ msgstr "Brak wierszy"
 msgid "No lines yet. Add a line before confirming the contract."
 msgstr "Brak pozycji. Dodaj pozycję przed zatwierdzeniem umowy."
 
+msgid "No linked requirement"
+msgstr ""
+
 msgid "No list variables available upstream."
 msgstr "Brak zmiennych listy dostępnych w górę."
 
@@ -22530,6 +22546,9 @@ msgstr "Poza"
 
 msgid "Out of calibration"
 msgstr "Wymaga wzorcowania"
+
+msgid "out of scope"
+msgstr ""
 
 msgid "Out of scope"
 msgstr ""
@@ -28547,6 +28566,12 @@ msgstr "Numery seryjne i partie dostępne, które zostały otrzymane od tego dos
 msgid "Series"
 msgstr "Seria"
 
+msgid "Serves requirement"
+msgstr ""
+
+msgid "Serves: {serves}"
+msgstr ""
+
 msgid "service"
 msgstr "usługa"
 
@@ -34163,6 +34188,9 @@ msgstr "Wpisz adres e-mail i naciśnij Enter, aby dodać zewnętrznego odbiorcy"
 
 msgid "Type of Permission Update"
 msgstr "Typ aktualizacji uprawnień"
+
+msgid "Type of work"
+msgstr ""
 
 msgid "Type to search across your workspace"
 msgstr "Wpisz, aby wyszukać w całym obszarze roboczym"

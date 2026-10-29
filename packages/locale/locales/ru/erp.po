@@ -144,6 +144,9 @@ msgstr "{0, plural, one {# номенклатура} few {# номенклату
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# производственный заказ} other {# производственные заказы}}"
+#. placeholder {0}: card.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr ""
 
 #. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
@@ -2246,6 +2249,9 @@ msgstr "Повторяющаяся строка выставляет счет к
 msgid "A referenced record does not exist."
 msgstr "Ссылочная запись не существует."
 msgid "a released job"
+msgstr ""
+
+msgid "A removed requirement"
 msgstr ""
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
@@ -10072,6 +10078,8 @@ msgstr "Дни"
 
 msgid "Days After Entry"
 msgstr "Дни после входа"
+msgid "Days (optional)"
+msgstr ""
 
 msgid "Days before a lease's notice or end date that its owner is reminded."
 msgstr "Количество дней до даты уведомления или окончания аренды, за которые ответственный получит напоминание."
@@ -12827,6 +12835,9 @@ msgstr "Введите 6-значный код из приложения аут�
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Введите 6-значный код из приложения-аутентификатора, чтобы продолжить."
 
+msgid "Enter the estimate as a number of days"
+msgstr ""
+
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Введите URL Onshape, ID клиента и клиентский секрет вашего приватного OAuth приложения, затем сохраните."
 
@@ -13008,6 +13019,8 @@ msgstr "Смета переоткрыта"
 
 msgid "Estimate sent"
 msgstr "Смета отправлена"
+msgid "Estimate (days)"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Расчетный"
@@ -20623,6 +20636,9 @@ msgstr "Нет строк"
 msgid "No lines yet. Add a line before confirming the contract."
 msgstr "Строк еще нет. Добавьте строку перед подтверждением контракта."
 
+msgid "No linked requirement"
+msgstr ""
+
 msgid "No list variables available upstream."
 msgstr "Нет доступных переменных списка выше."
 
@@ -22530,6 +22546,9 @@ msgstr "Вне"
 
 msgid "Out of calibration"
 msgstr "Вне калибровки"
+
+msgid "out of scope"
+msgstr ""
 
 msgid "Out of scope"
 msgstr ""
@@ -28547,6 +28566,12 @@ msgstr "Серийные номера и партии на складе, пол�
 msgid "Series"
 msgstr "Серия"
 
+msgid "Serves requirement"
+msgstr ""
+
+msgid "Serves: {serves}"
+msgstr ""
+
 msgid "service"
 msgstr "услуга"
 
@@ -34163,6 +34188,9 @@ msgstr "Введите адрес электронной почты и нажм�
 
 msgid "Type of Permission Update"
 msgstr "Тип обновления прав доступа"
+
+msgid "Type of work"
+msgstr ""
 
 msgid "Type to search across your workspace"
 msgstr "Введите текст для поиска в вашем рабочем пространстве"

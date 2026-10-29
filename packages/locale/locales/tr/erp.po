@@ -144,6 +144,9 @@ msgstr "{0, plural, one {# stok kartı} other {# stok kartları}}"
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# iş emri} other {# iş emri}}"
+#. placeholder {0}: card.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr ""
 
 #. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
@@ -2246,6 +2249,9 @@ msgstr "Yinelenen satır her dönemde kendi oranında faturalanır; tek seferlik
 msgid "A referenced record does not exist."
 msgstr "Başvurulan bir kayıt mevcut değildir."
 msgid "a released job"
+msgstr ""
+
+msgid "A removed requirement"
 msgstr ""
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
@@ -10072,6 +10078,8 @@ msgstr "Günler"
 
 msgid "Days After Entry"
 msgstr "Giriş Sonrası Günler"
+msgid "Days (optional)"
+msgstr ""
 
 msgid "Days before a lease's notice or end date that its owner is reminded."
 msgstr "Kiranın bildirim veya bitiş tarihinden kaç gün önce sahibinin hatırlanacağı."
@@ -12827,6 +12835,9 @@ msgstr "Doğrulayıcı uygulamanızdaki 6 haneli kodu girin"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Devam etmek için kimlik doğrulayıcı uygulamanızdan 6 haneli kodu girin."
 
+msgid "Enter the estimate as a number of days"
+msgstr ""
+
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Özel OAuth uygulamanızın Onshape URL'sini, istemci ID'sini ve istemci gizli anahtarını girin, ardından kaydedin."
 
@@ -13008,6 +13019,8 @@ msgstr "Tahmin yeniden açıldı"
 
 msgid "Estimate sent"
 msgstr "Tahmin gönderildi"
+msgid "Estimate (days)"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Tahmini"
@@ -20623,6 +20636,9 @@ msgstr "Henüz satır yok"
 msgid "No lines yet. Add a line before confirming the contract."
 msgstr "Henüz satır yok. Sözleşmeyi onaylamadan önce bir satır ekleyin."
 
+msgid "No linked requirement"
+msgstr ""
+
 msgid "No list variables available upstream."
 msgstr "Yukarı akışta kullanılabilir liste değişkeni yok."
 
@@ -22530,6 +22546,9 @@ msgstr "Dışı"
 
 msgid "Out of calibration"
 msgstr "Kalibrasyon dışı"
+
+msgid "out of scope"
+msgstr ""
 
 msgid "Out of scope"
 msgstr ""
@@ -28547,6 +28566,12 @@ msgstr "Bu tedarikçiden alınan eldeki seri numaralar ve partiler"
 msgid "Series"
 msgstr "Seri"
 
+msgid "Serves requirement"
+msgstr ""
+
+msgid "Serves: {serves}"
+msgstr ""
+
 msgid "service"
 msgstr "hizmet"
 
@@ -34163,6 +34188,9 @@ msgstr "Harici bir alıcı eklemek için bir e-posta girin ve Enter tuşuna bas�
 
 msgid "Type of Permission Update"
 msgstr "İzin Güncelleme Türü"
+
+msgid "Type of work"
+msgstr ""
 
 msgid "Type to search across your workspace"
 msgstr "Çalışma alanınızda arama yapmak için yazın"

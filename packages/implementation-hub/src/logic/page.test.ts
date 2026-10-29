@@ -2,8 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { MessageDescriptor } from "@lingui/core";
 import { describe, expect, it } from "vitest";
 import type { ImplementationRowData } from "../types";
+import { flagKey } from "./keys";
 import {
   buildPageCatalogue,
   cardState,
@@ -14,6 +16,7 @@ import {
   type HubPagePerson,
   type HubPersonStatus,
   pageProgress,
+  requirementChoices,
   resolveMemberPage,
   starterMemberPage,
   unmetReadiness
@@ -86,6 +89,90 @@ describe("buildPageCatalogue", () => {
     const keys = buildPageCatalogue([]).map((entry) => entry.item);
     expect(keys.filter((key) => key === "task:first-quote")).toHaveLength(1);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe("customization cards", () => {
+  const customization = (
+    id: string,
+    payload: Record<string, unknown>
+  ): ImplementationRowData => ({
+    id,
+    collection: "customization",
+    payload,
+    sortOrder: 0
+  });
+  const catalogue = catalogueByItem(
+    buildPageCatalogue([
+      {
+        id: "row_req",
+        collection: "requirement",
+        payload: { requirement: "Print labels at receiving" },
+        sortOrder: 0
+      },
+      customization("row_full", {
+        title: "Label printer",
+        kind: "integration",
+        estimateDays: 2.5,
+        requirementRowId: "row_req"
+      }),
+      customization("row_template", {
+        title: "Quote layout",
+        requirementRowId: "SAL.QT.01"
+      }),
+      customization("row_gone", {
+        title: "Old report",
+        requirementRowId: "row_deleted"
+      })
+    ])
+  );
+  const message = (value: unknown) => (value as MessageDescriptor).message;
+
+  it("carries the type of work, the estimate and the requirement served", () => {
+    const entry = catalogue.get("customization:row_full");
+    expect(message(entry?.group)).toBe("Integration");
+    expect(entry?.estimateDays).toBe(2.5);
+    expect(entry?.serves).toBe("Print labels at receiving");
+  });
+
+  it("names a template requirement by its title", () => {
+    expect(message(catalogue.get("customization:row_template")?.serves)).toBe(
+      "Build quotes pulling live part, cost, and Bill of Process data"
+    );
+  });
+
+  it("shows no type until one is set, and no requirement once it is deleted", () => {
+    const entry = catalogue.get("customization:row_gone");
+    expect(entry?.group).toBeUndefined();
+    expect(entry?.estimateDays).toBeUndefined();
+    expect(entry?.serves).toBeUndefined();
+  });
+});
+
+describe("requirementChoices", () => {
+  it("lists template and company requirements with their scope", () => {
+    const choices = requirementChoices(
+      buildPageCatalogue([
+        {
+          id: "row_req",
+          collection: "requirement",
+          payload: { requirement: "Print labels at receiving" },
+          sortOrder: 0
+        }
+      ]),
+      new Map([[flagKey("SAL.QT.01"), "0"]])
+    );
+    expect(choices.find((choice) => choice.id === "SAL.QT.01")?.inScope).toBe(
+      false
+    );
+    expect(choices.find((choice) => choice.id === "row_req")).toEqual({
+      id: "row_req",
+      title: "Print labels at receiving",
+      inScope: true
+    });
+    expect(choices.filter((choice) => choice.inScope).length).toBe(
+      choices.length - 1
+    );
   });
 });
 

@@ -144,6 +144,9 @@ msgstr "{0, plural, one {# item} other {# items}}"
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# job} other {# jobs}}"
+#. placeholder {0}: card.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr "{0, plural, one {# day} other {# days}}"
 
 #. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
@@ -2246,6 +2249,9 @@ msgid "A referenced record does not exist."
 msgstr "A referenced record does not exist."
 msgid "a released job"
 msgstr "a released job"
+
+msgid "A removed requirement"
+msgstr "A removed requirement"
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
@@ -10067,6 +10073,8 @@ msgstr "Days"
 
 msgid "Days After Entry"
 msgstr "Days After Entry"
+msgid "Days (optional)"
+msgstr "Days (optional)"
 
 msgid "Days before a lease's notice or end date that its owner is reminded."
 msgstr "Days before a lease's notice or end date that its owner is reminded."
@@ -12821,6 +12829,9 @@ msgstr "Enter the 6-digit code from your authenticator app"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Enter the 6-digit code from your authenticator app to resume."
 
+msgid "Enter the estimate as a number of days"
+msgstr "Enter the estimate as a number of days"
+
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 
@@ -13002,6 +13013,8 @@ msgstr "Estimate reopened"
 
 msgid "Estimate sent"
 msgstr "Estimate sent"
+msgid "Estimate (days)"
+msgstr "Estimate (days)"
 
 msgid "Estimated"
 msgstr "Estimated"
@@ -20614,6 +20627,9 @@ msgstr "No lines yet"
 msgid "No lines yet. Add a line before confirming the contract."
 msgstr "No lines yet. Add a line before confirming the contract."
 
+msgid "No linked requirement"
+msgstr "No linked requirement"
+
 msgid "No list variables available upstream."
 msgstr "No list variables available upstream."
 
@@ -22523,6 +22539,9 @@ msgstr "Out"
 
 msgid "Out of calibration"
 msgstr "Out of calibration"
+
+msgid "out of scope"
+msgstr "out of scope"
 
 msgid "Out of scope"
 msgstr "Out of scope"
@@ -28542,6 +28561,12 @@ msgstr "Serials and batches on hand that were received from this supplier"
 msgid "Series"
 msgstr "Series"
 
+msgid "Serves requirement"
+msgstr "Serves requirement"
+
+msgid "Serves: {serves}"
+msgstr "Serves: {serves}"
+
 msgid "service"
 msgstr "service"
 
@@ -34158,6 +34183,9 @@ msgstr "Type an email and press Enter to add an external recipient"
 
 msgid "Type of Permission Update"
 msgstr "Type of Permission Update"
+
+msgid "Type of work"
+msgstr "Type of work"
 
 msgid "Type to search across your workspace"
 msgstr "Type to search across your workspace"

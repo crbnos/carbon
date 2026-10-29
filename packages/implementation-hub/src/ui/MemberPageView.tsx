@@ -19,7 +19,7 @@ import {
 import { formatDate } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { MessageDescriptor } from "@lingui/core";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { LuArrowRight, LuBookOpen, LuPlay } from "react-icons/lu";
 import { PAGE_CARD_KIND_LABEL, READINESS_LABEL } from "../content/page";
@@ -222,13 +222,16 @@ function PageCardView({
   // label it only ran off the card.
   const group = card.kind === "objective" ? undefined : text(card.group);
   const checkRow = card.tick ? checkRows.get(card.tick.itemKey) : undefined;
+  const serves = text(card.serves);
   const hasBody =
     Boolean(card.missing) ||
+    Boolean(serves) ||
     Boolean(card.note) ||
     waitingFor.length > 0 ||
     card.kind === "priority";
   const hasFooter =
     Boolean(card.due) ||
+    card.estimateDays !== undefined ||
     (showsStaffDetail && card.evidence.length > 0) ||
     Boolean(checkRow?.verifiedAt) ||
     (showsStaffDetail && isSourceShown(row?.source)) ||
@@ -269,6 +272,11 @@ function PageCardView({
               <Trans>This item was removed from the hub.</Trans>
             </p>
           ) : null}
+          {serves ? (
+            <p className="text-xs text-muted-foreground text-pretty">
+              <Trans>Serves: {serves}</Trans>
+            </p>
+          ) : null}
           {card.note ? (
             <p className="rounded-md bg-muted px-3 py-2 text-xs text-pretty">
               {card.note}
@@ -289,6 +297,16 @@ function PageCardView({
                 >
                   {overdue ? t`Overdue` : t`Due`}{" "}
                   {formatDate(card.due, undefined, i18n.locale)}
+                </Badge>
+              ) : null}
+              {card.estimateDays !== undefined ? (
+                <Badge variant="outline" className="font-normal tabular-nums">
+                  {t`Estimate`}{" "}
+                  <Plural
+                    value={card.estimateDays}
+                    one="# day"
+                    other="# days"
+                  />
                 </Badge>
               ) : null}
               {card.evidence.map((evidence) => (

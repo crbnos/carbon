@@ -144,6 +144,9 @@ msgstr "{0, plural, one {# 품목} other {# 품목}}"
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# 개의 작업 지시} other {# 개의 작업 지시}}"
+#. placeholder {0}: card.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr ""
 
 #. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
@@ -2246,6 +2249,9 @@ msgstr "반복 라인은 매 기간마다 요금으로 청구되고, 일회성 �
 msgid "A referenced record does not exist."
 msgstr "참조된 레코드가 존재하지 않습니다."
 msgid "a released job"
+msgstr ""
+
+msgid "A removed requirement"
 msgstr ""
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
@@ -10072,6 +10078,8 @@ msgstr "일"
 
 msgid "Days After Entry"
 msgstr "기입 후 일 수"
+msgid "Days (optional)"
+msgstr ""
 
 msgid "Days before a lease's notice or end date that its owner is reminded."
 msgstr "리스의 공지 또는 종료 날짜 전에 책임자가 알림을 받을 날 수입니다."
@@ -12827,6 +12835,9 @@ msgstr "인증자 앱에서 6자리 코드를 입력하세요"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "계속하려면 인증 앱의 6자리 코드를 입력하세요."
 
+msgid "Enter the estimate as a number of days"
+msgstr ""
+
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "개인 OAuth 애플리케이션의 Onshape URL, 클라이언트 ID 및 클라이언트 암호를 입력한 후 저장하세요."
 
@@ -13008,6 +13019,8 @@ msgstr "견적 재개됨"
 
 msgid "Estimate sent"
 msgstr "견적 전송됨"
+msgid "Estimate (days)"
+msgstr ""
 
 msgid "Estimated"
 msgstr "예상"
@@ -20623,6 +20636,9 @@ msgstr "아직 줄이 없습니다"
 msgid "No lines yet. Add a line before confirming the contract."
 msgstr "아직 라인이 없습니다. 계약을 확인하기 전에 라인을 추가하세요."
 
+msgid "No linked requirement"
+msgstr ""
+
 msgid "No list variables available upstream."
 msgstr "업스트림에서 사용 가능한 목록 변수가 없습니다."
 
@@ -22530,6 +22546,9 @@ msgstr "출고"
 
 msgid "Out of calibration"
 msgstr "교정 범위 벗어남"
+
+msgid "out of scope"
+msgstr ""
 
 msgid "Out of scope"
 msgstr ""
@@ -28547,6 +28566,12 @@ msgstr "이 공급업체에서 받은 현재 보유 중인 일련번호 및 배�
 msgid "Series"
 msgstr "시리즈"
 
+msgid "Serves requirement"
+msgstr ""
+
+msgid "Serves: {serves}"
+msgstr ""
+
 msgid "service"
 msgstr "서비스"
 
@@ -34163,6 +34188,9 @@ msgstr "이메일을 입력하고 Enter 키를 눌러 외부 수신자를 추가
 
 msgid "Type of Permission Update"
 msgstr "권한 업데이트 유형"
+
+msgid "Type of work"
+msgstr ""
 
 msgid "Type to search across your workspace"
 msgstr "입력하여 워크스페이스 전체를 검색하세요"

@@ -144,6 +144,9 @@ msgstr "{0, plural, one {# item} other {# itens}}"
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# ordem de produção} other {# ordens de produção}}"
+#. placeholder {0}: card.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr ""
 
 #. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
@@ -2246,6 +2249,9 @@ msgstr "Uma linha recorrente cobra a cada período em sua taxa; uma linha única
 msgid "A referenced record does not exist."
 msgstr "Um registro referenciado não existe."
 msgid "a released job"
+msgstr ""
+
+msgid "A removed requirement"
 msgstr ""
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
@@ -10072,6 +10078,8 @@ msgstr "Dias"
 
 msgid "Days After Entry"
 msgstr "Dias após Entrada"
+msgid "Days (optional)"
+msgstr ""
 
 msgid "Days before a lease's notice or end date that its owner is reminded."
 msgstr "Dias antes da data de aviso ou término do aluguel para o qual o responsável é lembrado."
@@ -12827,6 +12835,9 @@ msgstr "Digite o código de 6 dígitos do seu aplicativo autenticador"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Introduza o código de 6 dígitos da sua aplicação autenticadora para continuar."
 
+msgid "Enter the estimate as a number of days"
+msgstr ""
+
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Insira a URL do Onshape, o ID do cliente e o segredo do cliente de seu aplicativo OAuth privado e depois salve."
 
@@ -13008,6 +13019,8 @@ msgstr "Orçamento reaberto"
 
 msgid "Estimate sent"
 msgstr "Orçamento enviado"
+msgid "Estimate (days)"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Estimado"
@@ -20623,6 +20636,9 @@ msgstr "Nenhuma linha ainda"
 msgid "No lines yet. Add a line before confirming the contract."
 msgstr "Nenhuma linha ainda. Adicione uma linha antes de confirmar o contrato."
 
+msgid "No linked requirement"
+msgstr ""
+
 msgid "No list variables available upstream."
 msgstr "Nenhuma variável de lista disponível anteriormente."
 
@@ -22530,6 +22546,9 @@ msgstr "Fora"
 
 msgid "Out of calibration"
 msgstr "Fora de calibração"
+
+msgid "out of scope"
+msgstr ""
 
 msgid "Out of scope"
 msgstr ""
@@ -28547,6 +28566,12 @@ msgstr "Números de série e lotes em estoque que foram recebidos deste forneced
 msgid "Series"
 msgstr "Série"
 
+msgid "Serves requirement"
+msgstr ""
+
+msgid "Serves: {serves}"
+msgstr ""
+
 msgid "service"
 msgstr "serviço"
 
@@ -34163,6 +34188,9 @@ msgstr "Digite um email e pressione Enter para adicionar um destinatário extern
 
 msgid "Type of Permission Update"
 msgstr "Tipo de Atualização de Permissão"
+
+msgid "Type of work"
+msgstr ""
 
 msgid "Type to search across your workspace"
 msgstr "Digite para pesquisar em seu espaço de trabalho"

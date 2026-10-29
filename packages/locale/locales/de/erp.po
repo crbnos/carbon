@@ -144,6 +144,9 @@ msgstr "{0, plural, one {# Artikel} other {# Artikel}}"
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# Fertigungsauftrag} other {# Fertigungsaufträge}}"
+#. placeholder {0}: card.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr ""
 
 #. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
@@ -2246,6 +2249,9 @@ msgstr "Eine wiederkehrende Position wird jede Periode zum Satz abgerechnet; ein
 msgid "A referenced record does not exist."
 msgstr "Ein referenzierter Datensatz existiert nicht."
 msgid "a released job"
+msgstr ""
+
+msgid "A removed requirement"
 msgstr ""
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
@@ -10072,6 +10078,8 @@ msgstr "Tage"
 
 msgid "Days After Entry"
 msgstr "Tage nach Eingabe"
+msgid "Days (optional)"
+msgstr ""
 
 msgid "Days before a lease's notice or end date that its owner is reminded."
 msgstr "Tage vor dem Kündigungsdatum oder Enddatum eines Mietvertrags, an dem sein Verantwortlicher erinnert wird."
@@ -12827,6 +12835,9 @@ msgstr "Geben Sie den 6-stelligen Code aus Ihrer Authentifizierungs-App ein"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Geben Sie den 6-stelligen Code aus Ihrer Authentifikator-App ein, um fortzufahren."
 
+msgid "Enter the estimate as a number of days"
+msgstr ""
+
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Geben Sie die Onshape URL, Client-ID und Client Secret Ihrer privaten OAuth-Anwendung ein, dann speichern Sie."
 
@@ -13008,6 +13019,8 @@ msgstr "Kostenvoranschlag erneut geöffnet"
 
 msgid "Estimate sent"
 msgstr "Angebot versendet"
+msgid "Estimate (days)"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Geschätzt"
@@ -20623,6 +20636,9 @@ msgstr "Noch keine Zeilen"
 msgid "No lines yet. Add a line before confirming the contract."
 msgstr "Noch keine Positionen. Fügen Sie eine Position hinzu, bevor Sie den Vertrag bestätigen."
 
+msgid "No linked requirement"
+msgstr ""
+
 msgid "No list variables available upstream."
 msgstr "Keine Listenvariablen verfügbar davor."
 
@@ -22530,6 +22546,9 @@ msgstr "Aus"
 
 msgid "Out of calibration"
 msgstr "Nicht kalibriert"
+
+msgid "out of scope"
+msgstr ""
 
 msgid "Out of scope"
 msgstr ""
@@ -28547,6 +28566,12 @@ msgstr "Im Bestand befindliche Serien- und Chargen, die von diesem Lieferanten e
 msgid "Series"
 msgstr "Serie"
 
+msgid "Serves requirement"
+msgstr ""
+
+msgid "Serves: {serves}"
+msgstr ""
+
 msgid "service"
 msgstr "Dienstleistung"
 
@@ -34163,6 +34188,9 @@ msgstr "Geben Sie eine E-Mail ein und drücken Sie die Eingabetaste, um einen ex
 
 msgid "Type of Permission Update"
 msgstr "Art der Berechtigungsaktualisierung"
+
+msgid "Type of work"
+msgstr ""
 
 msgid "Type to search across your workspace"
 msgstr "Geben Sie ein, um in Ihrem Arbeitsbereich zu suchen"

@@ -6,8 +6,9 @@
 // questions included, with each change saved as it is made. Text is saved when
 // its field loses focus, as on the Company Plan hub. A change to the page saves
 // the whole page (`PageEditor.save`); a change to a company item (its title, a
-// question's options, a customization's status) updates the item, which every
-// page that shows it reads.
+// question's options, a customization's status, type of work, estimate and the
+// requirement it serves) updates the item, which every page that shows it
+// reads.
 
 import {
   Button,
@@ -59,9 +60,17 @@ import {
   LuTrash2,
   LuX
 } from "react-icons/lu";
-import { CUSTOMIZATION_STATUSES } from "../content/customization";
+import {
+  CUSTOMIZATION_KINDS,
+  CUSTOMIZATION_STATUSES
+} from "../content/customization";
 import { PAGE_CARD_KIND_LABEL } from "../content/page";
-import { readCustomization } from "../logic/customization";
+import {
+  CUSTOMIZATION_KIND_KEYS,
+  isCustomizationKind,
+  parseEstimateDays,
+  readCustomization
+} from "../logic/customization";
 import {
   buildPageCatalogue,
   cardState,
@@ -69,6 +78,8 @@ import {
   type PageCard,
   type PageCatalogueEntry,
   pageProgress,
+  type RequirementChoice,
+  requirementChoices,
   resolveMemberPage
 } from "../logic/page";
 import {
@@ -158,6 +169,10 @@ export function MemberPageEditor({
     [rows]
   );
   const progress = pageProgress(sections, states, rowsById);
+  const requirements = useMemo(
+    () => requirementChoices(catalogue, states),
+    [catalogue, states]
+  );
 
   const [adding, setAdding] = useState<PageTarget | null>(null);
   const [removingSection, setRemovingSection] = useState<number | null>(null);
@@ -248,6 +263,7 @@ export function MemberPageEditor({
                   pageCard={pageCard}
                   entry={pageCard.item ? items.get(pageCard.item) : undefined}
                   row={card.rowId ? rowsById.get(card.rowId) : undefined}
+                  requirements={requirements}
                   position={{
                     first: c === 0,
                     last: c === section.cards.length - 1,
@@ -317,6 +333,7 @@ function EditCard({
   pageCard,
   entry,
   row,
+  requirements,
   position,
   otherSections,
   onEdit,
@@ -328,6 +345,7 @@ function EditCard({
   pageCard: MemberPageCard;
   entry: PageCatalogueEntry | undefined;
   row: ImplementationRowData | undefined;
+  requirements: RequirementChoice[];
   position: { first: boolean; last: boolean; onlyCard: boolean };
   otherSections: { index: number; title: string }[];
   onEdit: (patch: CardPatch) => void;
@@ -405,6 +423,33 @@ function EditCard({
   const question = collection === "question" ? readQuestion(payload) : null;
   const customization =
     collection === "customization" ? readCustomization(payload) : null;
+  const served = customization?.requirementRowId;
+  // The in-scope requirements, and the one it serves when that is out of
+  // scope or deleted.
+  const servesChoices = requirements.flatMap((choice) =>
+    choice.inScope
+      ? [{ id: choice.id, label: text(choice.title) ?? choice.id }]
+      : choice.id === served
+        ? [
+            {
+              id: choice.id,
+              label: `${text(choice.title) ?? choice.id} (${t`out of scope`})`
+            }
+          ]
+        : []
+  );
+  if (served && !requirements.some((choice) => choice.id === served)) {
+    servesChoices.unshift({ id: served, label: t`A removed requirement` });
+  }
+
+  const commitEstimate = (input: string) => {
+    const days = parseEstimateDays(input);
+    if (input.trim() && days === undefined) {
+      toast.error(t`Enter the estimate as a number of days`);
+      return;
+    }
+    updateRow({ estimateDays: days });
+  };
 
   return (
     <Card className="flex flex-col">
@@ -518,6 +563,70 @@ function EditCard({
               </SelectContent>
             </Select>
           </Labelled>
+        ) : null}
+        {customization ? (
+          <>
+            <Labelled label={t`Type of work`}>
+              <Select
+                value={
+                  isCustomizationKind(payload.kind) ? payload.kind : NOT_SET
+                }
+                onValueChange={(kind) =>
+                  updateRow({ kind: kind === NOT_SET ? undefined : kind })
+                }
+              >
+                <SelectTrigger size="sm" aria-label={t`Type of work`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NOT_SET}>
+                    <Trans>Not set</Trans>
+                  </SelectItem>
+                  {CUSTOMIZATION_KIND_KEYS.map((kind) => (
+                    <SelectItem key={kind} value={kind}>
+                      {i18n._(CUSTOMIZATION_KINDS[kind])}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Labelled>
+            <Labelled label={t`Estimate (days)`}>
+              <EditableInput
+                value={
+                  customization.estimateDays === undefined
+                    ? ""
+                    : String(customization.estimateDays)
+                }
+                placeholder={t`Days (optional)`}
+                variant="muted"
+                onCommit={commitEstimate}
+              />
+            </Labelled>
+            <Labelled label={t`Serves requirement`}>
+              <Select
+                value={served ?? NOT_SET}
+                onValueChange={(id) =>
+                  updateRow({
+                    requirementRowId: id === NOT_SET ? undefined : id
+                  })
+                }
+              >
+                <SelectTrigger size="sm" aria-label={t`Serves requirement`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-80">
+                  <SelectItem value={NOT_SET}>
+                    <Trans>No linked requirement</Trans>
+                  </SelectItem>
+                  {servesChoices.map((choice) => (
+                    <SelectItem key={choice.id} value={choice.id}>
+                      {choice.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Labelled>
+          </>
         ) : null}
         <EditableInput
           value={pageCard.note ?? ""}
@@ -970,6 +1079,9 @@ function ConfirmModal({
     </Modal>
   );
 }
+
+// Radix Select has no empty value; this stands for "none chosen".
+const NOT_SET = "none";
 
 function Labelled({
   label,

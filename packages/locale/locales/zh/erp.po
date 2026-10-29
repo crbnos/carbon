@@ -144,6 +144,9 @@ msgstr "{0, plural, one {# 物料} other {# 物料}}"
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# 个工单} other {# 个工单}}"
+#. placeholder {0}: card.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr ""
 
 #. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
@@ -2246,6 +2249,9 @@ msgstr "循环行每个期间按其费率计费；一次性行仅计费一次。
 msgid "A referenced record does not exist."
 msgstr "引用的记录不存在。"
 msgid "a released job"
+msgstr ""
+
+msgid "A removed requirement"
 msgstr ""
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
@@ -10072,6 +10078,8 @@ msgstr "天数"
 
 msgid "Days After Entry"
 msgstr "输入后的天数"
+msgid "Days (optional)"
+msgstr ""
 
 msgid "Days before a lease's notice or end date that its owner is reminded."
 msgstr "在租赁的通知或结束日期前多少天提醒其负责人。"
@@ -12827,6 +12835,9 @@ msgstr "输入来自您的身份验证器应用的6位数代码"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "输入您的身份验证器应用中的 6 位数字代码以继续。"
 
+msgid "Enter the estimate as a number of days"
+msgstr ""
+
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "输入您的私有 OAuth 应用程序的 Onshape URL、客户端 ID 和客户端密钥，然后保存。"
 
@@ -13008,6 +13019,8 @@ msgstr "估价已重新打开"
 
 msgid "Estimate sent"
 msgstr "预估已发送"
+msgid "Estimate (days)"
+msgstr ""
 
 msgid "Estimated"
 msgstr "估计的"
@@ -20623,6 +20636,9 @@ msgstr "还没有行"
 msgid "No lines yet. Add a line before confirming the contract."
 msgstr "尚无行。确认合同前请添加一行。"
 
+msgid "No linked requirement"
+msgstr ""
+
 msgid "No list variables available upstream."
 msgstr "上游没有可用的列表变量。"
 
@@ -22530,6 +22546,9 @@ msgstr "出"
 
 msgid "Out of calibration"
 msgstr "校准过期"
+
+msgid "out of scope"
+msgstr ""
 
 msgid "Out of scope"
 msgstr ""
@@ -28547,6 +28566,12 @@ msgstr "从该供应商收到的现有序列号和批次"
 msgid "Series"
 msgstr "序列"
 
+msgid "Serves requirement"
+msgstr ""
+
+msgid "Serves: {serves}"
+msgstr ""
+
 msgid "service"
 msgstr "服务"
 
@@ -34163,6 +34188,9 @@ msgstr "输入电子邮件并按 Enter 键以添加外部收件人"
 
 msgid "Type of Permission Update"
 msgstr "权限更新类型"
+
+msgid "Type of work"
+msgstr ""
 
 msgid "Type to search across your workspace"
 msgstr "输入以搜索您的工作区"

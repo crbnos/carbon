@@ -144,6 +144,9 @@ msgstr "{0, plural, one {# आइटम} other {# आइटम}}"
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# जॉब} other {# जॉब}}"
+#. placeholder {0}: card.estimateDays
+msgid "{0, plural, one {# day} other {# days}}"
+msgstr ""
 
 #. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
@@ -2246,6 +2249,9 @@ msgstr "एक आवर्ती पंक्ति हर अवधि मे�
 msgid "A referenced record does not exist."
 msgstr "एक संदर्भित रिकॉर्ड मौजूद नहीं है।"
 msgid "a released job"
+msgstr ""
+
+msgid "A removed requirement"
 msgstr ""
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
@@ -10072,6 +10078,8 @@ msgstr "दिन"
 
 msgid "Days After Entry"
 msgstr "प्रविष्टि के बाद दिन"
+msgid "Days (optional)"
+msgstr ""
 
 msgid "Days before a lease's notice or end date that its owner is reminded."
 msgstr "लीज की सूचना या समाप्ति तारीख से पहले के दिन जब इसके स्वामी को याद दिलाया जाता है।"
@@ -12827,6 +12835,9 @@ msgstr "अपने प्रमाणकर्ता ऐप से 6-अंक
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "पुनः शुरू करने के लिए अपने ऑथेंटिकेटर ऐप से 6-अंकीय कोड दर्ज करें।"
 
+msgid "Enter the estimate as a number of days"
+msgstr ""
+
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "अपने निजी OAuth एप्लिकेशन का Onshape URL, क्लाइंट ID और क्लाइंट सीक्रेट दर्ज करें, फिर सहेजें।"
 
@@ -13008,6 +13019,8 @@ msgstr "अनुमान दोबारा खोला गया"
 
 msgid "Estimate sent"
 msgstr "अनुमान भेजा गया"
+msgid "Estimate (days)"
+msgstr ""
 
 msgid "Estimated"
 msgstr "अनुमानित"
@@ -20623,6 +20636,9 @@ msgstr "अभी तक कोई लाइन नहीं"
 msgid "No lines yet. Add a line before confirming the contract."
 msgstr "अभी तक कोई पंक्ति नहीं। अनुबंध की पुष्टि करने से पहले एक पंक्ति जोड़ें।"
 
+msgid "No linked requirement"
+msgstr ""
+
 msgid "No list variables available upstream."
 msgstr "कोई सूची चर अपस्ट्रीम उपलब्ध नहीं है।"
 
@@ -22530,6 +22546,9 @@ msgstr "बाहर"
 
 msgid "Out of calibration"
 msgstr "अंशांकन से बाहर"
+
+msgid "out of scope"
+msgstr ""
 
 msgid "Out of scope"
 msgstr ""
@@ -28547,6 +28566,12 @@ msgstr "इस आपूर्तिकर्ता से प्राप्त
 msgid "Series"
 msgstr "श्रृंखला"
 
+msgid "Serves requirement"
+msgstr ""
+
+msgid "Serves: {serves}"
+msgstr ""
+
 msgid "service"
 msgstr "सेवा"
 
@@ -34163,6 +34188,9 @@ msgstr "एक ईमेल टाइप करें और एक बाहर
 
 msgid "Type of Permission Update"
 msgstr "अनुमति अपडेट का प्रकार"
+
+msgid "Type of work"
+msgstr ""
 
 msgid "Type to search across your workspace"
 msgstr "अपने कार्यक्षेत्र में खोजने के लिए टाइप करें"
