@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261028221530",
+  "schemaVersion": "20261029130430",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-28T17:35:23.502Z",
+  "exportedAt": "2026-10-29T13:47:41.976Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -457,10 +457,10 @@
         "incompletePickingListPolicy",
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
+        "salesRuleNotificationGroup",
         "showCurrencyTrailingZeros",
         "requireMfa",
         "allowLowercaseItemIds",
-        "salesRuleNotificationGroup",
         "includeOperationsOnTraveler",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
@@ -1104,7 +1104,13 @@
     {
       "name": "itemStockQuantities",
       "rows": 0,
-      "columns": ["itemId", "companyId", "locationId", "quantityOnHand"]
+      "columns": [
+        "itemId",
+        "companyId",
+        "locationId",
+        "quantityOnHand",
+        "quantityNonNettable"
+      ]
     },
     {
       "name": "journal",
@@ -2303,7 +2309,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "customFields"
+        "customFields",
+        "nettable"
       ]
     },
     {
@@ -3797,7 +3804,9 @@
         "parentId",
         "storageTypeIds",
         "workCenterId",
-        "isWorkCenterDefault"
+        "isWorkCenterDefault",
+        "nettable",
+        "effectiveNettable"
       ]
     },
     {
@@ -5496,8 +5505,8 @@
         "manuallyScheduled",
         "reworkId",
         "assemblyInstructionId",
-        "inspectionDocumentId",
         "readyAt",
+        "inspectionDocumentId",
         "projectedCompletionAt",
         "jobOperationBatchId"
       ]

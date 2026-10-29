@@ -810,6 +810,9 @@ msgstr "{previewCount, plural, one {Questo imposterà +{hoursInput}h di straordi
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Eliminare definitivamente # riga?} other {Eliminare definitivamente # righe?}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} in stoccaggio non nettabile, non pianificato"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase rimanente} other {# fasi rimanenti}}"
 
@@ -2710,6 +2713,12 @@ msgstr "Allocato"
 
 msgid "Allows acknowledge & continue"
 msgstr "Consente di riconoscere e continuare"
+
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Già non nettabile tramite l'unità superiore {sourceName}"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Già non nettabile tramite il tipo di archiviazione {sourceName}"
 
 msgid "also at {otherStationNames}"
 msgstr "anche presso {otherStationNames}"
@@ -9876,6 +9885,9 @@ msgstr "Ogni Attività richiesta deve essere Fatta o Saltata prima che il period
 msgid "Every row was imported successfully."
 msgstr "Ogni riga è stata importata correttamente."
 
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "Ogni unità di stoccaggio di questo tipo è non nettabile: MRP e prelievo ignorano la sua giacenza."
+
 msgid "Every unit has a rate."
 msgstr "Ogni unità ha un tasso."
 
@@ -12888,7 +12900,7 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban per {kanbanName}"
 
-msgid "Kanban ID"
+msgid "Kanban IDs"
 msgstr "ID Kanban"
 
 msgid "Kanban Output"
@@ -12969,7 +12981,7 @@ msgstr "Dimensione etichetta"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Etichetta per completare l'operazione corrente per questo kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Etichetta per creare un {0} per questo kanban"
 
@@ -14312,6 +14324,9 @@ msgstr "Compensazione Migrazione (predefinito)"
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "La Compensazione Migrazione deve totalizzare zero. <0>Vai al Bilancio di verifica</0>"
 
+msgid "Min"
+msgstr "Min."
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "min {minimumBatchQuantity} — soddisfatto"
 
@@ -14597,6 +14612,9 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (pianificazione)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP e prelievo ignorano la giacenza in questa unità e nelle unità che contiene. Da usare per aree di quarantena e blocco."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP viene eseguito automaticamente ogni 3 ore, ma puoi eseguirlo manualmente qui."
 
@@ -14734,6 +14752,9 @@ msgstr "Cespite ROU netto"
 
 msgid "Net Unit Price"
 msgstr "Prezzo unitario netto"
+
+msgid "Nettable"
+msgstr "Nettabile"
 
 msgid "Network error"
 msgstr "Errore di rete"
@@ -16002,6 +16023,9 @@ msgstr "Porzione non corrente"
 
 msgid "Non-Inventory"
 msgstr "Non a magazzino"
+
+msgid "Non-nettable"
+msgstr "Non nettabile"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Conto spese non operative addebitato quando un cespite di questa classe viene venduto o demolito al di sotto del suo valore contabile netto."
@@ -18073,6 +18097,13 @@ msgstr "Stampa etichetta"
 msgid "Print Label"
 msgstr "Stampa Etichetta"
 
+msgid "Print Labels"
+msgstr "Stampa Etichette"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Stampa Etichette ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Output di stampa ({0})"
@@ -18238,9 +18269,6 @@ msgstr "Inizio progetto"
 
 msgid "Projected"
 msgstr "Proiettato"
-
-msgid "Projected (To)"
-msgstr "Previsto (A)"
 
 msgid "Projected completion"
 msgstr "Completamento previsto"
@@ -18599,7 +18627,7 @@ msgstr "VA residuale"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR Code per completare l'operazione corrente per questo kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Codice QR per creare un {0} per questo kanban"
 
@@ -22693,6 +22721,9 @@ msgstr "Giacenza"
 
 msgid "Stock Availability"
 msgstr "Disponibilità di Giacenza"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "La giacenza in questa unità di stoccaggio non è copertura. MRP e le schermate di pianificazione non la contano, e il prelievo non la usa. Un'unità è non nettabile anche quando lo è la sua unità superiore o uno dei suoi tipi di archiviazione. Da usare per aree di quarantena e blocco. Un trasferimento giacenza la sposta di nuovo fuori."
 
 msgid "Stock movement corrected"
 msgstr "Movimento di magazzino corretto"

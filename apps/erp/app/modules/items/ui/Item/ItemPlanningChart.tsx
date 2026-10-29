@@ -55,6 +55,7 @@ import {
   YAxis
 } from "recharts";
 import { DateTime, Empty, Hyperlink } from "~/components";
+import { useQuantityFormatter } from "~/hooks";
 import type { DemandForecastSourceRow } from "~/modules/items/items.service";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
@@ -193,6 +194,8 @@ export const ItemPlanningChart = ({
   });
 
   const numberFormatter = useNumberFormatter();
+  const formatQuantity = useQuantityFormatter();
+  const nonNettableQuantity = forecastFetcher.data?.quantityNonNettable ?? 0;
 
   const hasSafetyStock = typeof safetyStock === "number" && safetyStock > 0;
   const safetyStockValue = hasSafetyStock ? safetyStock : 0;
@@ -215,7 +218,7 @@ export const ItemPlanningChart = ({
     const demand = forecastFetcher.data.demand;
     const demandForecast = forecastFetcher.data.demandForecast ?? [];
     const supply = forecastFetcher.data.supply;
-    let currentQuantity = forecastFetcher.data.quantityOnHand ?? 0;
+    let currentQuantity = forecastFetcher.data.quantityNettable ?? 0;
 
     // Initialize all periods with zero values
     const groupedData = periods.reduce(
@@ -370,7 +373,7 @@ export const ItemPlanningChart = ({
 
   const axis = useMemo(() => {
     const show = (key: SeriesKey) => !hiddenSeries.has(key);
-    const onHand = forecastFetcher.data?.quantityOnHand ?? 0;
+    const onHand = forecastFetcher.data?.quantityNettable ?? 0;
     let domainMin = show("projection") ? Math.min(0, onHand) : 0;
     let domainMax = show("projection") ? Math.max(0, onHand) : 0;
     if (show("safety")) domainMax = Math.max(domainMax, safetyStockValue);
@@ -398,7 +401,7 @@ export const ItemPlanningChart = ({
   }, [
     chartData.data,
     hiddenSeries,
-    forecastFetcher.data?.quantityOnHand,
+    forecastFetcher.data?.quantityNettable,
     safetyStockValue
   ]);
 
@@ -455,7 +458,7 @@ export const ItemPlanningChart = ({
       forecastData,
       plannedOrders,
       conversionFactor,
-      forecastFetcher.data?.quantityOnHand ?? 0
+      forecastFetcher.data?.quantityNettable ?? 0
     );
 
     if (!searchTerm) return combined;
@@ -838,6 +841,11 @@ export const ItemPlanningChart = ({
                       )}`}
                     </div>
                   </CardTitle>
+                  {nonNettableQuantity > 0 && (
+                    <NonNettableNote
+                      quantity={formatQuantity(nonNettableQuantity)}
+                    />
+                  )}
                 </CardHeader>
               </Card>
               <Card>
@@ -1480,4 +1488,12 @@ function getPathToDocument(item: PlanningItem) {
     default:
       return "";
   }
+}
+
+function NonNettableNote({ quantity }: { quantity: string }) {
+  return (
+    <p className="text-xs text-muted-foreground">
+      <Trans>{quantity} in non-nettable storage, not planned against</Trans>
+    </p>
+  );
 }

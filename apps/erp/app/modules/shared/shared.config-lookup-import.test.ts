@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect, it } from "vitest";
-import { CONFIGS } from "./shared.service";
+import { CONFIGS, parseCsvNonNettable } from "./shared.service";
 
 it("unit of measure requires both a code and a name", () => {
   expect(CONFIGS.unitOfMeasure.validate({ code: "", name: "Each" })).toEqual(
@@ -75,4 +75,32 @@ it("department is the only table with a parent pass", () => {
     Object.keys(CONFIGS) as Array<keyof typeof CONFIGS>
   ).filter((table) => CONFIGS[table].parentField);
   expect(withParent).toEqual(["department"]);
+});
+
+it.each([
+  ["true", true],
+  ["Yes", true],
+  ["1", true],
+  ["false", false],
+  ["no", false],
+  ["0", false],
+  ["", undefined],
+  ["maybe", "invalid"]
+])("reads a Non-nettable cell %j as %j", (cell, expected) => {
+  expect(parseCsvNonNettable(cell)).toBe(expected);
+});
+
+it("refuses a storage type row whose Non-nettable cell is not true or false", () => {
+  expect(
+    CONFIGS.storageType.validate({ name: "Quarantine", nonNettable: "maybe" })
+  ).toEqual("Non-nettable must be true or false");
+});
+
+it("imports a storage type as non-nettable only when the cell says so", () => {
+  expect(
+    CONFIGS.storageType.values({ name: " Quarantine ", nonNettable: "yes" })
+  ).toEqual({ name: "Quarantine", nettable: false });
+  expect(
+    CONFIGS.storageType.values({ name: "Shelf", nonNettable: "" })
+  ).toEqual({ name: "Shelf" });
 });

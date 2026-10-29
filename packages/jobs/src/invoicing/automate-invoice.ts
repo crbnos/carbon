@@ -20,7 +20,6 @@ import {
 } from "@carbon/ee/rules.server";
 import { SUPABASE_INTERNAL_URL, SUPABASE_URL } from "@carbon/env";
 import { getDocumentType, storage } from "@carbon/files";
-import { DEFAULT_FROM, sendEmail } from "@carbon/lib/email.server";
 import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
 import {
   loadSalesInvoiceDocument,
@@ -39,6 +38,7 @@ import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { render } from "react-email";
+import { sendCompanyEmail } from "../email/company-email";
 
 const logger = getLogger("jobs", "invoice-automation");
 
@@ -397,12 +397,6 @@ export async function postSalesInvoiceUnattended(args: {
     });
   }
   return { outcome: "held", reason };
-}
-
-/** `"<Company>" <address>`, the address taken from DEFAULT_FROM. */
-export function companyFromAddress(companyName: string, defaultFrom: string) {
-  const address = defaultFrom.match(/<([^>]+)>/)?.[1] ?? defaultFrom.trim();
-  return `"${companyName.replace(/["\\]/g, "")}" <${address}>`;
 }
 
 /** CC: the customer's default CC, else the company's, plus the receivables
@@ -812,8 +806,9 @@ export async function emailPostedInvoice(args: {
     const html = await render(template);
     const text = await render(template, { plainText: true });
 
-    const sent = await sendEmail({
-      from: companyFromAddress(company.data.name, DEFAULT_FROM),
+    // A failed read of the company's Email settings is a send error like any other.
+    const sent = await sendCompanyEmail(client, companyId, {
+      document: true,
       to: recipient.email,
       cc: cc.length > 0 ? cc : undefined,
       replyTo,
@@ -823,7 +818,10 @@ export async function emailPostedInvoice(args: {
       attachments: [
         { filename: document.fileName, content: pdf.toString("base64") }
       ]
-    });
+    }).catch((error: unknown) => ({
+      data: null,
+      error: error instanceof Error ? error : new Error(String(error))
+    }));
     if (sent.error) {
       return stampSendError(client, companyId, invoiceId, sent.error.message);
     }

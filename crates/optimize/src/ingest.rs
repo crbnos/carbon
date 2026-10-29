@@ -368,7 +368,7 @@ pub fn threemf_to_glb(bytes: &[u8]) -> Result<Vec<u8>, OptimizeError> {
     let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes))
         .map_err(|_| OptimizeError::new("3MF is not a valid zip archive"))?;
     let model_name = (0..archive.len())
-        .filter_map(|i| archive.by_index(i).ok().map(|f| f.name().to_string()))
+        .filter_map(|i| archive.by_index(i).ok().and_then(|f| f.name().ok().map(|n| n.into_owned())))
         .find(|n| n == "3D/3dmodel.model" || n.ends_with(".model"))
         .ok_or_else(|| OptimizeError::new("3MF has no 3dmodel.model entry"))?;
     let mut xml = Vec::new();
@@ -554,7 +554,7 @@ pub fn amf_to_glb(bytes: &[u8]) -> Result<Vec<u8>, OptimizeError> {
         let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes))
             .map_err(|_| OptimizeError::new("AMF zip is invalid"))?;
         let name = (0..archive.len())
-            .filter_map(|i| archive.by_index(i).ok().map(|f| f.name().to_string()))
+            .filter_map(|i| archive.by_index(i).ok().and_then(|f| f.name().ok().map(|n| n.into_owned())))
             .find(|n| n.to_lowercase().ends_with(".amf"))
             .ok_or_else(|| OptimizeError::new("AMF zip has no .amf entry"))?;
         let mut out = Vec::new();

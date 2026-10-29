@@ -21,9 +21,9 @@ export const Email = defineIntegration({
   category: "Email",
   logo: Logo,
   description:
-    "Send transactional emails — quotes, purchase orders, invoices, and more. Use this server's mail settings, or pick Resend or Custom SMTP to send from your own account.",
+    "Send transactional emails — quotes, purchase orders, invoices, and more. Use this server's mail settings, or pick Resend, Custom SMTP or Gmail to send from your own account.",
   shortDescription:
-    "Deliver transactional emails via this server's mail settings, Resend, or a custom SMTP server.",
+    "Deliver transactional emails via this server's mail settings, Resend, a custom SMTP server, or Gmail.",
   images: [],
 
   settingGroups: [
@@ -61,6 +61,12 @@ export const Email = defineIntegration({
           value: "smtp",
           label: "Custom SMTP",
           description: "Bring your own SMTP server."
+        },
+        {
+          value: "gmail",
+          label: "Gmail",
+          description:
+            "Send as a Google account you connected on the Gmail integration."
         }
       ]
     },
@@ -72,7 +78,9 @@ export const Email = defineIntegration({
       type: "text",
       // Required for Resend and Custom SMTP; the schema enforces that.
       required: false,
-      value: ""
+      value: "",
+      // Gmail always sends as the connected account.
+      visibleWhen: { field: "provider", equals: ["server", "resend", "smtp"] }
     },
     // Resend group
     {
@@ -132,6 +140,18 @@ export const Email = defineIntegration({
       value: false,
       group: "SMTP",
       visibleWhen: { field: "provider", equals: "smtp" }
+    },
+    {
+      name: "gmailConnectionId",
+      label: "Gmail account",
+      description:
+        "The connected Google account that sends your email. Connect one on the Gmail integration first.",
+      type: "options",
+      required: true,
+      value: "",
+      // Filled per company by the settings loader.
+      listOptions: [],
+      visibleWhen: { field: "provider", equals: "gmail" }
     }
   ],
   schema: z.discriminatedUnion("provider", [
@@ -170,6 +190,10 @@ export const Email = defineIntegration({
           return v;
         }, z.boolean())
         .default(false)
+    }),
+    z.object({
+      provider: z.literal("gmail"),
+      gmailConnectionId: z.string().min(1, { message: "Pick a Gmail account" })
     })
   ])
 });
