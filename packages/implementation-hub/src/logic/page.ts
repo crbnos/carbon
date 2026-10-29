@@ -432,22 +432,26 @@ export interface RequirementChoice {
   inScope: boolean;
 }
 
-// Pure: the requirements a customization can serve, in catalogue order.
+// Pure: the requirements a customization can serve. The company's own come
+// first: they are the ones staff just wrote for it, and the template's run to
+// dozens.
 export function requirementChoices(
   catalogue: PageCatalogueEntry[],
   states: Map<string, string>
 ): RequirementChoice[] {
-  return catalogue.flatMap((entry) =>
-    entry.kind === "requirement" && entry.tick
-      ? [
-          {
-            id: entry.item.slice("requirement:".length),
-            title: entry.title,
-            inScope: inScope(entry.tick, states)
-          }
-        ]
-      : []
-  );
+  const choices = (own: boolean) =>
+    catalogue.flatMap((entry) =>
+      entry.kind === "requirement" && entry.tick && Boolean(entry.rowId) === own
+        ? [
+            {
+              id: entry.item.slice("requirement:".length),
+              title: entry.title,
+              inScope: inScope(entry.tick, states)
+            }
+          ]
+        : []
+    );
+  return [...choices(true), ...choices(false)];
 }
 
 export function catalogueByItem(

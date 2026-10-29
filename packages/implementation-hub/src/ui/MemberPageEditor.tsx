@@ -358,6 +358,9 @@ function EditCard({
   const states = useCheckMap();
   const rowsById = useMemo(() => new Map(row ? [[row.id, row]] : []), [row]);
   const [deleting, setDeleting] = useState(false);
+  // A due date still being typed. Its first year digit already makes a whole
+  // date ("2"), so it is held here until the year has four digits.
+  const [typedDue, setTypedDue] = useState<CalendarDate | null>(null);
 
   const text = (value: Text) =>
     value === undefined || typeof value === "string" ? value : i18n._(value);
@@ -635,13 +638,23 @@ function EditCard({
           multiline
           onCommit={(note) => onEdit({ note })}
         />
-        <Labelled label={t`Due`}>
+        {/* Not a <label>: a click inside one goes to the picker's calendar
+            button, so a typed date is lost. The picker names itself. */}
+        <Labelled as="div" label={t`Due`}>
           <div className="flex items-center gap-1">
             <DatePicker
               aria-label={t`Due`}
               size="sm"
-              value={toCalendarDate(pageCard.due)}
-              onChange={(date) => onEdit({ due: date ? date.toString() : "" })}
+              value={typedDue ?? toCalendarDate(pageCard.due)}
+              onChange={(date) => {
+                if (date && date.year < 1000) {
+                  setTypedDue(date);
+                  return;
+                }
+                setTypedDue(null);
+                onEdit({ due: date ? date.toString() : "" });
+              }}
+              onBlur={() => setTypedDue(null)}
             />
             {pageCard.due ? (
               <IconButton
@@ -895,7 +908,9 @@ function AddCardModal({
         if (!open) onClose();
       }}
     >
-      <ModalContent>
+      {/* Wide enough for the hub item list, which grows to 560px to fit its
+          longest title. */}
+      <ModalContent size="xlarge">
         <ModalHeader>
           <ModalTitle>
             {newSection ? (
@@ -1086,16 +1101,18 @@ const NOT_SET = "none";
 function Labelled({
   label,
   className,
+  as: Wrapper = "label",
   children
 }: {
   label: string;
   className?: string;
+  as?: "label" | "div";
   children: ReactNode;
 }) {
   return (
-    <label className={cn("flex flex-col gap-1", className)}>
+    <Wrapper className={cn("flex flex-col gap-1", className)}>
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
       {children}
-    </label>
+    </Wrapper>
   );
 }

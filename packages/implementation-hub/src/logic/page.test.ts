@@ -151,7 +151,7 @@ describe("customization cards", () => {
 });
 
 describe("requirementChoices", () => {
-  it("lists template and company requirements with their scope", () => {
+  it("lists the company's requirements before the template's, with their scope", () => {
     const choices = requirementChoices(
       buildPageCatalogue([
         {
@@ -166,7 +166,7 @@ describe("requirementChoices", () => {
     expect(choices.find((choice) => choice.id === "SAL.QT.01")?.inScope).toBe(
       false
     );
-    expect(choices.find((choice) => choice.id === "row_req")).toEqual({
+    expect(choices[0]).toEqual({
       id: "row_req",
       title: "Print labels at receiving",
       inScope: true
