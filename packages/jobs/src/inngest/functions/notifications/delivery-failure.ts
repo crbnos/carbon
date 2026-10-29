@@ -83,18 +83,37 @@ export const isRetryableSlackFailure = (error: unknown): boolean => {
   return code !== undefined && RETRYABLE_SLACK_CODES.has(code);
 };
 
+/** Gmail's 403 reasons for a request it refused over a rate limit; it asks to retry them. */
+const RATE_LIMIT_REASONS = new Set([
+  "rateLimitExceeded",
+  "userRateLimitExceeded"
+]);
+
+type VendorError = {
+  status?: unknown;
+  code?: unknown;
+  errors?: Array<{ reason?: unknown }>;
+  response?: {
+    status?: unknown;
+    data?: { error?: { errors?: Array<{ reason?: unknown }> } };
+  };
+};
+
 /**
- * An HTTP 429 from a vendor API (Gmail through googleapis): the vendor refused
- * the message before accepting it, so a replay cannot duplicate.
+ * A vendor API refused the request over a rate limit (Gmail through
+ * googleapis), so nothing was sent and a replay cannot duplicate: an HTTP 429,
+ * or a 403 whose reason is a rate limit. A 403 `dailyLimitExceeded` stays
+ * terminal: Google says not to retry it.
  */
 export const isRateLimitedResponse = (error: unknown): boolean => {
   if (typeof error !== "object" || error === null) return false;
-  const { status, code, response } = error as {
-    status?: unknown;
-    code?: unknown;
-    response?: { status?: unknown };
-  };
-  return [status, code, response?.status].some((v) => String(v) === "429");
+  const { status, code, errors, response } = error as VendorError;
+  const statuses = [status, code, response?.status].map(String);
+  if (statuses.includes("429")) return true;
+  if (!statuses.includes("403")) return false;
+  return [...(errors ?? []), ...(response?.data?.error?.errors ?? [])].some(
+    (e) => typeof e?.reason === "string" && RATE_LIMIT_REASONS.has(e.reason)
+  );
 };
 
 /** The error to throw for a failed email send, classified. */

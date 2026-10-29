@@ -108,21 +108,35 @@ describe("slack delivery failure", () => {
 });
 
 describe("vendor rate limit", () => {
+  const forbidden = (reason: string) => ({
+    status: 403,
+    response: { status: 403, data: { error: { errors: [{ reason }] } } }
+  });
+
   // googleapis reports the HTTP status on `status`, `code` or `response.status`
-  // depending on the version; a 429 means Google refused before accepting.
+  // depending on the version; Google refused before accepting the message.
   it.each([
     { status: 429 },
     { code: 429 },
     { code: "429" },
-    { response: { status: 429 } }
+    { response: { status: 429 } },
+    forbidden("rateLimitExceeded"),
+    forbidden("userRateLimitExceeded"),
+    { code: 403, errors: [{ reason: "userRateLimitExceeded" }] }
   ])("treats %o as a refused send", (error) => {
     expect(isRateLimitedResponse(error)).toBe(true);
   });
 
-  it.each([{ status: 500 }, { code: "ETIMEDOUT" }, new Error("boom"), null])(
-    "does not treat %o as a refused send",
-    (error) => {
-      expect(isRateLimitedResponse(error)).toBe(false);
-    }
-  );
+  // Google says not to retry the daily limit; other 403s are not rate limits.
+  it.each([
+    forbidden("dailyLimitExceeded"),
+    forbidden("insufficientPermissions"),
+    { status: 403 },
+    { status: 500 },
+    { code: "ETIMEDOUT" },
+    new Error("boom"),
+    null
+  ])("does not treat %o as a refused send", (error) => {
+    expect(isRateLimitedResponse(error)).toBe(false);
+  });
 });
