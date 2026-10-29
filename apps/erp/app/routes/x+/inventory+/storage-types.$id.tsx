@@ -57,6 +57,7 @@ export default function EditStorageTypeRoute() {
   const initialValues = {
     id: storageType?.id ?? undefined,
     name: storageType?.name ?? "",
+    nonNettable: storageType?.nettable === false,
     ...getCustomFields(storageType?.customFields)
   };
 

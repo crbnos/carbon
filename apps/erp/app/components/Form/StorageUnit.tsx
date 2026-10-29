@@ -200,7 +200,12 @@ function useNewStorageUnitModal(locationId?: string | null) {
           modal.onClose();
           triggerRef.current?.click();
         }}
-        initialValues={{ name: created, locationId, storageTypeIds: [] }}
+        initialValues={{
+          name: created,
+          locationId,
+          storageTypeIds: [],
+          nonNettable: false
+        }}
       />
     ) : null;
 

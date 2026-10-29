@@ -178,6 +178,54 @@ export async function fetchAllByIds<T extends object>(
 }
 
 /**
+ * The lots (tracked entities) among these whose stock sits in a non-nettable
+ * (quarantine) storage unit. A consumption picker leaves them out: issuing a
+ * lot consumes it from the bin it is in, and nobody chose that bin.
+ */
+export async function getNonNettableTrackedEntityIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  trackedEntityIds: readonly string[]
+): Promise<{ data: Set<string> | null; error: PostgrestError | null }> {
+  const ids = [...new Set(trackedEntityIds)];
+  if (ids.length === 0) return { data: new Set(), error: null };
+  const rows = await fetchAllByIds<{
+    trackedEntityId: string | null;
+    quantity: number;
+  }>(
+    ids,
+    (batch) =>
+      client
+        .from("itemLedger")
+        .select(
+          "trackedEntityId, quantity, storageUnit!inner(effectiveNettable)"
+        )
+        .in("trackedEntityId", batch)
+        .eq("companyId", companyId)
+        .eq("storageUnit.effectiveNettable", false)
+        .order("id") as unknown as PageQuery<{
+        trackedEntityId: string | null;
+        quantity: number;
+      }>
+  );
+  if (rows.error) return { data: null, error: rows.error };
+  const onHand = new Map<string, number>();
+  for (const row of rows.data) {
+    if (!row.trackedEntityId) continue;
+    onHand.set(
+      row.trackedEntityId,
+      (onHand.get(row.trackedEntityId) ?? 0) + Number(row.quantity)
+    );
+  }
+  return {
+    data: new Set(
+      [...onHand].filter(([, quantity]) => quantity > 0).map(([id]) => id)
+    ),
+    error: null
+  };
+}
+
+/**
  * Helper function for simple table queries that need all records
  */
 export async function fetchAllFromTable<T extends object>(

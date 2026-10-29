@@ -191,6 +191,8 @@ Phase-7 write) and throws on failure.
      `20260812002454`) — an indexed per-company read, replacing the old full
      `itemLedger` GROUP BY that grew with total history. Excludes `Rejected`
      tracked stock (matching `get_inventory_quantities`); the raw scan counted it.
+     MRP reads `quantityOnHand - quantityNonNettable`: stock in a non-nettable
+     storage unit is not supply (`inventory-system.md` → Non-nettable storage).
    - **Reads paginate**: every PostgREST read goes through `fetchAll`
      (`@carbon/database/fetch-all`, 1000-row pages + stable `.order()`) —
      production `max_rows = 1000`

@@ -810,6 +810,9 @@ msgstr "{previewCount, plural, one {这将在 # 个人天设置 +{hoursInput} �
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 # 行？}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} 位于不计入MRP的存储中，不参与计划"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
 
@@ -2710,6 +2713,12 @@ msgstr "已分配"
 
 msgid "Allows acknowledge & continue"
 msgstr "允许确认并继续"
+
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "已因上级单元 {sourceName} 而不计入MRP"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "已因存储类型 {sourceName} 而不计入MRP"
 
 msgid "also at {otherStationNames}"
 msgstr "也在 {otherStationNames}"
@@ -9870,6 +9879,9 @@ msgstr "每项必需任务必须在完成或已跳过后期间才能关闭。"
 msgid "Every row was imported successfully."
 msgstr "每一行都已成功导入。"
 
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "此类型的每个存储单元都不计入MRP：MRP 和拣货会忽略其中的库存。"
+
 msgid "Every unit has a rate."
 msgstr "每件都有费率。"
 
@@ -14591,6 +14603,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (计划)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP 和拣货会忽略此单元及其内部单元中的库存。用于隔离区和冻结区。"
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP 每 3 小时自动运行一次，但您也可以在此手动运行。"
 
@@ -14728,6 +14743,9 @@ msgstr "净ROU资产"
 
 msgid "Net Unit Price"
 msgstr "净单价"
+
+msgid "Nettable"
+msgstr "计入MRP"
 
 msgid "Network error"
 msgstr "网络错误"
@@ -15996,6 +16014,9 @@ msgstr "非流动部分"
 
 msgid "Non-Inventory"
 msgstr "非库存"
+
+msgid "Non-nettable"
+msgstr "不计入MRP"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "本类资产出售或报废价值低于账面净值时计入的非营业费用账户"
@@ -22683,6 +22704,9 @@ msgstr "库存"
 
 msgid "Stock Availability"
 msgstr "库存可用性"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "此存储单元中的库存不属于供应。MRP 和计划页面不计算它，拣货也不从中取货。当上级单元或其任一存储类型不计入MRP时，该单元同样不计入MRP。用于隔离区和冻结区。库存调拨可将库存再移出。"
 
 msgid "Stock movement corrected"
 msgstr "库存移动已修正"

@@ -810,6 +810,9 @@ msgstr "{previewCount, plural, one {Spowoduje ustawienie +{hoursInput}h godzin n
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Trwale usuń # wiersz?} other {Trwale usuń # wierszy?}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} w magazynie nieuwzględnianym w MRP, nieplanowane"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# faza pozostała} other {# faz pozostało}}"
 
@@ -2710,6 +2713,12 @@ msgstr "Przydzielone"
 
 msgid "Allows acknowledge & continue"
 msgstr "Umożliwia potwierdzenie i kontynuację"
+
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Już nieuwzględniany w MRP przez jednostkę nadrzędną {sourceName}"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Już nieuwzględniany w MRP przez typ magazynu {sourceName}"
 
 msgid "also at {otherStationNames}"
 msgstr "także w {otherStationNames}"
@@ -9870,6 +9879,9 @@ msgstr "Każde wymagane zadanie musi być Gotowe lub Pominięte zanim okres zost
 msgid "Every row was imported successfully."
 msgstr "Każdy wiersz został pomyślnie zaimportowany."
 
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "Każda jednostka magazynowa tego typu jest nieuwzględniana w MRP: MRP i kompletacja pomijają jej zapas."
+
 msgid "Every unit has a rate."
 msgstr "Każda sztuka ma stawkę."
 
@@ -14591,6 +14603,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (planowanie)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP i kompletacja pomijają zapas w tej jednostce i w jednostkach wewnątrz niej. Używaj dla stref kwarantanny i wstrzymania."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP uruchamia się automatycznie co 3 godziny, ale możesz uruchomić go ręcznie tutaj."
 
@@ -14728,6 +14743,9 @@ msgstr "Netto ROU Aktywa"
 
 msgid "Net Unit Price"
 msgstr "Cena jednostkowa netto"
+
+msgid "Nettable"
+msgstr "Uwzględniany w MRP"
 
 msgid "Network error"
 msgstr "Błąd sieci"
@@ -15996,6 +16014,9 @@ msgstr "Część nienobieżąca"
 
 msgid "Non-Inventory"
 msgstr "Niemagazynowy"
+
+msgid "Non-nettable"
+msgstr "Nieuwzględniany w MRP"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Konto wydatków niezwiązanych z działalnością obciążane, gdy składnik aktywów z tej klasy jest sprzedany lub złomowany poniżej jego wartości netto w księgach."
@@ -22683,6 +22704,9 @@ msgstr "Zapas"
 
 msgid "Stock Availability"
 msgstr "Dostępność zapasu"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "Zapas w tej jednostce magazynowej nie jest pokryciem. MRP i ekrany planowania go nie liczą, a kompletacja z niego nie pobiera. Jednostka jest też nieuwzględniana, gdy jest taka jej jednostka nadrzędna lub jeden z jej typów magazynu. Używaj dla stref kwarantanny i wstrzymania. Przesunięcie zapasu przenosi zapas z powrotem."
 
 msgid "Stock movement corrected"
 msgstr "Ruch zapasów poprawiony"

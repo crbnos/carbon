@@ -810,6 +810,9 @@ msgstr "{previewCount, plural, one {# 人・日に +{hoursInput}h の超勤を�
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 行を永久に削除しますか？} other {# 行を永久に削除しますか？}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} がMRP対象外の保管場所にあり、計画に含まれません"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
 
@@ -2710,6 +2713,12 @@ msgstr "配置済み"
 
 msgid "Allows acknowledge & continue"
 msgstr "確認して続行できます"
+
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "親ユニット {sourceName} により、すでにMRP対象外です"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "ストレージタイプ {sourceName} により、すでにMRP対象外です"
 
 msgid "also at {otherStationNames}"
 msgstr "{otherStationNames}でも実施中"
@@ -9870,6 +9879,9 @@ msgstr "すべての必須タスクは期間がクローズされる前に完了
 msgid "Every row was imported successfully."
 msgstr "すべての行が正常にインポートされました。"
 
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "このタイプのすべての保管ユニットはMRP対象外です。MRPとピッキングはその在庫を無視します。"
+
 msgid "Every unit has a rate."
 msgstr "すべての個にレートが設定されています。"
 
@@ -14591,6 +14603,9 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (計画)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRPとピッキングは、このユニットとその中のユニットの在庫を無視します。隔離・保留エリアに使用します。"
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRPは3時間ごとに自動的に実行されますが、ここで手動で実行することもできます。"
 
@@ -14728,6 +14743,9 @@ msgstr "純ROU資産"
 
 msgid "Net Unit Price"
 msgstr "純単価"
+
+msgid "Nettable"
+msgstr "MRP対象"
 
 msgid "Network error"
 msgstr "ネットワークエラー"
@@ -15996,6 +16014,9 @@ msgstr "非流動部分"
 
 msgid "Non-Inventory"
 msgstr "非在庫"
+
+msgid "Non-nettable"
+msgstr "MRP対象外"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "このクラスの資産が未償却残高以下で売却または廃棄されたとき、営業外費用勘定が借記されます。"
@@ -22683,6 +22704,9 @@ msgstr "在庫"
 
 msgid "Stock Availability"
 msgstr "在庫可用性"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "この保管ユニットの在庫は供給ではありません。MRPと計画画面はこれを数えず、ピッキングもここから取りません。親ユニットまたはそのストレージタイプのいずれかがMRP対象外の場合も、ユニットはMRP対象外になります。隔離・保留エリアに使用します。在庫転送で在庫を再び移動できます。"
 
 msgid "Stock movement corrected"
 msgstr "在庫移動が訂正されました"

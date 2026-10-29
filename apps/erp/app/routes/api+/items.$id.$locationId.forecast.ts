@@ -18,6 +18,7 @@ import { mergeDemandProjections } from "~/modules/items/demand-projection";
 import {
   getDemandForecastSources,
   getItemDemand,
+  getItemNettableQuantities,
   getItemQuantities,
   getOpenJobMaterials,
   getOpenProductionOrders,
@@ -38,6 +39,8 @@ const defaultResponse = {
   supply: [],
   periods: [],
   quantityOnHand: 0,
+  quantityNonNettable: 0,
+  quantityNettable: 0,
   openSalesOrderLines: [],
   openJobMaterials: [],
   openProductionOrders: [],
@@ -136,23 +139,24 @@ async function getRedirectedOpenJobMaterials(
 
   for (const rule of incoming.data ?? []) {
     if (!effective(rule)) continue;
-    const [predecessorLines, quantities] = await Promise.all([
+    const [predecessorLines, stock] = await Promise.all([
       getOpenJobMaterials(client, {
         itemId: rule.itemId,
         companyId,
         locationId
       }),
-      getItemQuantities(client, rule.itemId, companyId, locationId)
+      getItemNettableQuantities(client, rule.itemId, companyId, locationId)
     ]);
     if (predecessorLines.error) {
       throw new Error(predecessorLines.error.message);
     }
-    if (quantities.error) throw new Error(quantities.error.message);
+    if (stock.error) throw new Error(stock.error.message);
     const factor = Number(rule.conversionFactor ?? 1) || 1;
     const { moved } = redirectJobMaterialLines(
       predecessorLines.data ?? [],
       rule.supersessionMode,
-      Number(quantities.data?.quantityOnHand ?? 0)
+      Number(stock.data?.quantityOnHand ?? 0) -
+        Number(stock.data?.quantityNonNettable ?? 0)
     );
     for (const line of moved) {
       lines.push({
@@ -187,6 +191,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [
     demand,
     quantities,
+    stock,
     openSalesOrderLines,
     openJobMaterials,
     openProductionOrders,
@@ -200,6 +205,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId
     }),
     getItemQuantities(client, itemId, companyId, locationId),
+    getItemNettableQuantities(client, itemId, companyId, locationId),
     getOpenSalesOrderLines(client, { itemId, companyId, locationId }),
     getOpenJobMaterials(client, { itemId, companyId, locationId }),
     getOpenProductionOrders(client, { itemId, companyId, locationId }),
@@ -240,6 +246,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(request, error(demand.error, "Failed to load demand"))
     );
   }
+  // A failed stock read must not chart quarantined stock as supply.
+  if (stock.error) {
+    return data(
+      defaultResponse,
+      await flash(request, error(stock.error, "Failed to load stock"))
+    );
+  }
   // A failed supply read must not chart as "no supply".
   if (openPurchaseOrderLines.error || openProductionOrders.error) {
     return data(
@@ -254,6 +267,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // The card shows physical on-hand; the projection starts from nettable
+  // stock, read from the same aggregate runMrp plans against.
+  const quantityOnHand = Number(quantities.data?.quantityOnHand ?? 0);
+  const quantityNonNettable = Number(stock.data?.quantityNonNettable ?? 0);
+  const quantityNettable =
+    Number(stock.data?.quantityOnHand ?? 0) - quantityNonNettable;
+
   const redirectedOpenJobMaterials = await getRedirectedOpenJobMaterials(
     client,
     {
@@ -261,7 +281,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       locationId,
       companyId,
       today: today.toString(),
-      onHand: Number(quantities.data?.quantityOnHand ?? 0),
+      onHand: quantityNettable,
       lines: openJobMaterials.data ?? []
     }
   );
@@ -306,7 +326,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     demandForecastSources: demandForecastSources.data ?? [],
     supply,
     periods,
-    quantityOnHand: quantities.data?.quantityOnHand ?? 0,
+    quantityOnHand,
+    quantityNonNettable,
+    quantityNettable,
     openSalesOrderLines: openSalesOrderLines.data ?? [],
     openJobMaterials: redirectedOpenJobMaterials,
     openProductionOrders: productionOrders,

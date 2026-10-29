@@ -368,12 +368,16 @@ export const storageUnitValidator = z.object({
   warehouseId: zfd.text(z.string().optional()),
   parentId: zfd.text(z.string().optional()),
   workCenterId: zfd.text(z.string().optional()),
-  storageTypeIds: zfd.repeatableOfType(z.string()).default([])
+  storageTypeIds: zfd.repeatableOfType(z.string()).default([]),
+  // Stored as storageUnit.nettable = !nonNettable (see upsertStorageUnit).
+  nonNettable: zfd.checkbox()
 });
 
 export const storageTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  // Stored as storageType.nettable = !nonNettable (see upsertStorageType).
+  nonNettable: zfd.checkbox()
 });
 
 export const shipmentStatusType = [

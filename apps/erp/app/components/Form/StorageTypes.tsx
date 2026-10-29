@@ -46,7 +46,7 @@ const StorageTypes = (props: StorageTypesSelectProps) => {
             newTypeModal.onClose();
             triggerRef.current?.click();
           }}
-          initialValues={{ name: created }}
+          initialValues={{ name: created, nonNettable: false }}
         />
       )}
     </>

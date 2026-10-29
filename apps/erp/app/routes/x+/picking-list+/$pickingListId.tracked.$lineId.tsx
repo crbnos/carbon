@@ -51,6 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           companyId,
           locationId,
           excludeLineside: true,
+          excludeNonNettable: true,
           excludeAllocated: true,
           excludeLineId: lineId
         })

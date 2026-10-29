@@ -2543,6 +2543,22 @@ const norm = (s: string | undefined) => (s ?? "").trim().toLowerCase();
 
 const requireName = (r: Rec) => (!r.name?.trim() ? "Name is required" : null);
 
+/**
+ * A CSV "Non-nettable" cell: true or false when it says so, undefined when it
+ * is blank (an update leaves the stored flag alone), "invalid" otherwise.
+ */
+export function parseCsvNonNettable(
+  value: string | undefined
+): boolean | undefined | "invalid" {
+  const v = (value ?? "").trim().toLowerCase();
+  if (v === "") return undefined;
+  if (["true", "yes", "1", "y", "on"].includes(v)) return true;
+  if (["false", "no", "0", "n", "off"].includes(v)) return false;
+  return "invalid";
+}
+
+const NON_NETTABLE_CELL_ERROR = "Non-nettable must be true or false";
+
 type TableConfig = {
   // Row-level validation. Returns a reason string, or null when the row is fine.
   validate: (r: Rec) => string | null;
@@ -2556,7 +2572,7 @@ type TableConfig = {
     code?: string | null;
   }) => string[];
   // The columns to read off the mapped record, beyond the audit fields.
-  values: (r: Rec) => Record<string, string>;
+  values: (r: Rec) => Record<string, string | boolean>;
   // Set when the table carries a self-referencing parent applied in a second
   // pass (see `applyParents` below).
   parentField?: "parentDepartmentId";
@@ -2602,10 +2618,19 @@ export const CONFIGS: Record<ConfigLookupTable, TableConfig> = {
     }
   },
   storageType: {
-    validate: requireName,
+    validate: (r) =>
+      requireName(r) ??
+      (parseCsvNonNettable(r.nonNettable) === "invalid"
+        ? NON_NETTABLE_CELL_ERROR
+        : null),
     keysOf: (r) => [norm(r.name)],
     keysOfExisting: (r) => [norm(r.name ?? "")],
-    values: (r) => ({ name: r.name!.trim() })
+    values: (r) => {
+      const values: Record<string, string | boolean> = { name: r.name!.trim() };
+      const nonNettable = parseCsvNonNettable(r.nonNettable);
+      if (typeof nonNettable === "boolean") values.nettable = !nonNettable;
+      return values;
+    }
   },
   scrapReason: {
     validate: requireName,
@@ -4499,7 +4524,11 @@ async function writeGroup(
           );
         }
 
-        const storageUnitIds = await seedStorageUnitIds(trx, component.id);
+        const storageUnitIds = await seedStorageUnitIds(
+          trx,
+          component.id,
+          companyId
+        );
 
         await trx
           .insertInto("methodMaterial")
@@ -4950,13 +4979,23 @@ async function loadOperationChildren(
 // resolveMethodMaterialStorageUnitIds in items.service.ts).
 async function seedStorageUnitIds(
   trx: Transaction<KyselyDatabase>,
-  itemId: string
+  itemId: string,
+  companyId: string
 ): Promise<Record<string, string>> {
   const current: Record<string, string> = {};
+  // A non-nettable (quarantine) default is not seeded: the line would then
+  // name it, and jobs would consume quarantined stock as named.
   const rows = await trx
     .selectFrom("pickMethod")
-    .select(["locationId", "defaultStorageUnitId"])
-    .where("itemId", "=", itemId)
+    .innerJoin("storageUnit", (join) =>
+      join
+        .onRef("storageUnit.id", "=", "pickMethod.defaultStorageUnitId")
+        .onRef("storageUnit.companyId", "=", "pickMethod.companyId")
+    )
+    .select(["pickMethod.locationId", "pickMethod.defaultStorageUnitId"])
+    .where("pickMethod.itemId", "=", itemId)
+    .where("pickMethod.companyId", "=", companyId)
+    .where("storageUnit.effectiveNettable", "=", true)
     .execute();
   for (const row of rows) {
     if (
@@ -8521,6 +8560,16 @@ export async function importCsvTable(
           }
           const existingEntityId = matchedByCsvId ?? matchedByName;
 
+          // Blank leaves an existing unit's flag alone; a new unit is nettable.
+          const nonNettable = parseCsvNonNettable(record.nonNettable);
+          if (nonNettable === "invalid") {
+            summary.errors.push({
+              row: rowIndex,
+              reason: NON_NETTABLE_CELL_ERROR
+            });
+            continue;
+          }
+
           // Row is valid — claim its dedup slots now (after the guards, so a
           // rejected row never blocks a later legitimate row with the same
           // name/id from being processed).
@@ -8531,6 +8580,8 @@ export async function importCsvTable(
             parseTypeNames(record.storageTypeNames)
           );
           const active = parseActive(record.active);
+          const nettable =
+            typeof nonNettable === "boolean" ? { nettable: !nonNettable } : {};
 
           if (parentName) {
             parentIntents.push({
@@ -8550,6 +8601,7 @@ export async function importCsvTable(
                 name,
                 storageTypeIds,
                 active,
+                ...nettable,
                 updatedAt: datetime.timestamp(),
                 updatedBy: userId
               }
@@ -8577,6 +8629,7 @@ export async function importCsvTable(
               locationId,
               storageTypeIds,
               active,
+              ...nettable,
               companyId,
               createdBy: userId,
               createdAt: datetime.timestamp()
@@ -9554,6 +9607,14 @@ export async function convertDocument(
                 pickedLines.map((line) => line.locationId)
               )
               .where("companyId", "=", companyId)
+              // A line never ships from a non-nettable (quarantine) default.
+              .where("defaultStorageUnitId", "in", (eb) =>
+                eb
+                  .selectFrom("storageUnit")
+                  .select("storageUnit.id")
+                  .where("storageUnit.companyId", "=", companyId)
+                  .where("storageUnit.effectiveNettable", "=", true)
+              )
               .select(["itemId", "locationId", "defaultStorageUnitId"])
               .execute()
           : [];
@@ -17046,26 +17107,54 @@ export async function getStorageUnitId(
   trx: Transaction<DB>,
   itemId: string,
   locationId: string,
+  companyId: string,
   storageUnitId?: string,
   /** False under strict backflush: the fullest bin is a guess, not a choice. */
   allowFullestBin = true
 ): Promise<string | undefined> {
   if (storageUnitId) return storageUnitId;
 
-  const pickMethod = await trx
-    .selectFrom("pickMethod")
-    .where("itemId", "=", itemId)
-    .where("locationId", "=", locationId)
-    .select("defaultStorageUnitId")
-    .executeTakeFirst();
-
-  if (pickMethod?.defaultStorageUnitId) return pickMethod.defaultStorageUnitId;
+  const defaultStorageUnitId = await getNettableDefaultStorageUnitId(
+    trx,
+    itemId,
+    locationId,
+    companyId
+  );
+  if (defaultStorageUnitId) return defaultStorageUnitId;
   if (!allowFullestBin) return undefined;
 
   const storageUnitWithHighestQuantity =
-    await getStorageUnitWithHighestQuantity(trx, itemId, locationId);
+    await getStorageUnitWithHighestQuantity(trx, itemId, locationId, companyId);
 
   return storageUnitWithHighestQuantity ?? undefined;
+}
+
+/**
+ * The item's pick method default bin at the location, when it is nettable.
+ * Material is consumed from it, and stock in a non-nettable unit (quarantine)
+ * is never consumed unless someone names that bin on the material.
+ */
+export async function getNettableDefaultStorageUnitId(
+  trx: Transaction<DB>,
+  itemId: string,
+  locationId: string,
+  companyId: string
+): Promise<string | null> {
+  const pickMethod = await trx
+    .selectFrom("pickMethod")
+    .innerJoin("storageUnit", (join) =>
+      join
+        .onRef("storageUnit.id", "=", "pickMethod.defaultStorageUnitId")
+        .onRef("storageUnit.companyId", "=", "pickMethod.companyId")
+    )
+    .where("pickMethod.itemId", "=", itemId)
+    .where("pickMethod.locationId", "=", locationId)
+    .where("pickMethod.companyId", "=", companyId)
+    .where("storageUnit.effectiveNettable", "=", true)
+    .select("pickMethod.defaultStorageUnitId")
+    .executeTakeFirst();
+
+  return pickMethod?.defaultStorageUnitId ?? null;
 }
 
 /**
@@ -17123,23 +17212,32 @@ export async function getTrackedEntityOnHandInBin(
   return Number(row?.onHand ?? 0);
 }
 
-// Utility function to get the storage unit with the highest quantity
+/**
+ * The nettable storage unit holding the most of an item at a location: the
+ * guess a consumption (issue, backflush, maintenance) or a new job material
+ * falls back to when no bin was chosen. A non-nettable unit (quarantine) is
+ * never guessed, so its stock is only consumed when someone names it.
+ */
 export async function getStorageUnitWithHighestQuantity(
   trx: Transaction<DB>,
   itemId: string,
-  locationId: string
+  locationId: string,
+  companyId: string
 ): Promise<string | null> {
   const storageUnitWithHighestQuantity = await trx
     .selectFrom("itemLedger")
-    .where("itemId", "=", itemId)
-    .where("locationId", "=", locationId)
-    .where("storageUnitId", "is not", null)
-    .groupBy("storageUnitId")
+    .innerJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
+    .where("itemLedger.itemId", "=", itemId)
+    .where("itemLedger.locationId", "=", locationId)
+    .where("itemLedger.companyId", "=", companyId)
+    .where("storageUnit.companyId", "=", companyId)
+    .where("storageUnit.effectiveNettable", "=", true)
+    .groupBy("itemLedger.storageUnitId")
     .select([
-      "storageUnitId",
-      (eb) => eb.fn.sum("quantity").as("totalQuantity")
+      "itemLedger.storageUnitId",
+      (eb) => eb.fn.sum("itemLedger.quantity").as("totalQuantity")
     ])
-    .having((eb) => eb.fn.sum("quantity"), ">", 0)
+    .having((eb) => eb.fn.sum("itemLedger.quantity"), ">", 0)
     .orderBy("totalQuantity", "desc")
     .executeTakeFirst();
 
@@ -17157,6 +17255,15 @@ export async function updatePickMethodDefaultStorageUnitIfNeeded(
 ): Promise<void> {
   // Only proceed if storageUnitId and locationId are not null
   if (!storageUnitId || !locationId) return;
+
+  // Never a non-nettable (quarantine) unit: nobody chose it as the default.
+  const unit = await trx
+    .selectFrom("storageUnit")
+    .where("id", "=", storageUnitId)
+    .where("companyId", "=", companyId)
+    .select("effectiveNettable")
+    .executeTakeFirst();
+  if (unit && !unit.effectiveNettable) return;
 
   // Check if there are other non-null storage units for this item/location
   const otherStorageUnits = await trx

@@ -227,3 +227,47 @@ scanTest(
     }
   }
 );
+
+scanTest(
+  "a scan into a storage unit that became non-nettable is refused",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const kanbanId = await strictKanban(f, { pullFrom: true });
+      const hold = await f.db
+        .insertInto("storageUnit")
+        .values({
+          name: "MRB Hold",
+          locationId: f.locationId,
+          nettable: false,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await f.db
+        .updateTable("kanban")
+        .set({ storageUnitId: hold.id })
+        .where("id", "=", kanbanId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const scan = await scanKanban(context(f), { kanbanId });
+
+      expect(scan.data).toBeNull();
+      expect(scan.error).toMatchObject({
+        category: "rule",
+        message:
+          "MRB Hold is non-nettable. A kanban cannot replenish into or from a non-nettable storage unit."
+      });
+      const kanban = await f.db
+        .selectFrom("kanban")
+        .select("jobId")
+        .where("id", "=", kanbanId)
+        .executeTakeFirstOrThrow();
+      expect(kanban.jobId).toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

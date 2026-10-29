@@ -8599,6 +8599,7 @@ function methodLinesMissingPullFrom(
   companyId: string,
   locationIds: string[]
 ) {
+  // A line with no Pull From at a location, or a non-nettable (quarantine) one.
   return db
     .selectFrom("methodMaterial")
     .innerJoin("makeMethod", (join) =>
@@ -8619,7 +8620,16 @@ function methodLinesMissingPullFrom(
       sql<boolean>`COALESCE("component"."itemTrackingType", 'Inventory') <> 'Non-Inventory'`
     )
     .where(
-      sql<boolean>`EXISTS (SELECT 1 FROM unnest(${locationIds}::text[]) AS loc WHERE COALESCE("methodMaterial"."storageUnitIds" ->> loc, '') = '')`
+      sql<boolean>`EXISTS (
+        SELECT 1 FROM unnest(${locationIds}::text[]) AS loc
+        WHERE COALESCE("methodMaterial"."storageUnitIds" ->> loc, '') = ''
+          OR EXISTS (
+            SELECT 1 FROM "storageUnit" su
+            WHERE su."id" = "methodMaterial"."storageUnitIds" ->> loc
+              AND su."companyId" = ${companyId}
+              AND su."effectiveNettable" = false
+          )
+      )`
     );
 }
 
@@ -8628,6 +8638,7 @@ function jobLinesMissingStorageUnit(
   companyId: string,
   locationIds: string[]
 ) {
+  // A line with no storage unit, or a non-nettable (quarantine) one.
   return db
     .selectFrom("jobMaterial")
     .innerJoin("job", (join) =>
@@ -8643,7 +8654,20 @@ function jobLinesMissingStorageUnit(
     )
     .where("job.locationId", "in", locationIds)
     .where("jobMaterial.companyId", "=", companyId)
-    .where("jobMaterial.storageUnitId", "is", null)
+    .where((eb) =>
+      eb.or([
+        eb("jobMaterial.storageUnitId", "is", null),
+        eb(
+          "jobMaterial.storageUnitId",
+          "in",
+          eb
+            .selectFrom("storageUnit")
+            .select("storageUnit.id")
+            .where("storageUnit.companyId", "=", companyId)
+            .where("storageUnit.effectiveNettable", "=", false)
+        )
+      ])
+    )
     .where("jobMaterial.methodType", "!=", "Make to Order")
     .where("jobMaterial.itemType", "in", [...PULLED_ITEM_TYPES])
     .where("jobMaterial.requiresBatchTracking", "=", false)
@@ -8720,6 +8744,38 @@ export async function getActiveMethodsMissingPullFrom(
       ])
       .execute();
 
+    // The Pull Froms at these locations that are non-nettable (quarantine),
+    // which count as missing too.
+    const pullFromAt = (storageUnitIds: unknown, locationId: string) => {
+      const value =
+        storageUnitIds && typeof storageUnitIds === "object"
+          ? (storageUnitIds as Record<string, unknown>)[locationId]
+          : undefined;
+      return typeof value === "string" && value.length > 0 ? value : null;
+    };
+    const namedIds = [
+      ...new Set(
+        lines.flatMap((line) =>
+          locationIds.flatMap((id) => pullFromAt(line.storageUnitIds, id) ?? [])
+        )
+      )
+    ];
+    const nonNettable = new Set(
+      namedIds.length === 0
+        ? []
+        : (
+            await db
+              .selectFrom("storageUnit")
+              .where("companyId", "=", companyId)
+              // One array parameter: a large company can name more units
+              // than Postgres allows bound parameters.
+              .where(sql<boolean>`"id" = ANY(${namedIds}::text[])`)
+              .where("effectiveNettable", "=", false)
+              .select("id")
+              .execute()
+          ).map((unit) => unit.id)
+    );
+
     const methods = new Map<
       string,
       Omit<MethodMissingPullFrom, "materials" | "locations"> & {
@@ -8744,6 +8800,12 @@ export async function getActiveMethodsMissingPullFrom(
         locationIds
       ))
         method.locations.add(locationName.get(id) ?? id);
+      for (const id of locationIds) {
+        const pullFrom = pullFromAt(line.storageUnitIds, id);
+        if (pullFrom && nonNettable.has(pullFrom)) {
+          method.locations.add(locationName.get(id) ?? id);
+        }
+      }
       methods.set(line.makeMethodId, method);
     }
 

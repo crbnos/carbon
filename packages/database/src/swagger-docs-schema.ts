@@ -33067,6 +33067,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
           },
           {
+            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -33138,6 +33141,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
           },
           {
+            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -33161,6 +33167,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
           },
           {
             $ref: "#/parameters/body.itemStockQuantities"
@@ -53122,6 +53131,12 @@ export default {
             $ref: "#/parameters/rowFilter.storageUnit.isWorkCenterDefault"
           },
           {
+            $ref: "#/parameters/rowFilter.storageUnit.nettable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.storageUnit.effectiveNettable"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -53229,6 +53244,12 @@ export default {
             $ref: "#/parameters/rowFilter.storageUnit.isWorkCenterDefault"
           },
           {
+            $ref: "#/parameters/rowFilter.storageUnit.nettable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.storageUnit.effectiveNettable"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -53288,6 +53309,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.storageUnit.isWorkCenterDefault"
+          },
+          {
+            $ref: "#/parameters/rowFilter.storageUnit.nettable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.storageUnit.effectiveNettable"
           },
           {
             $ref: "#/parameters/body.storageUnit"
@@ -57166,6 +57193,9 @@ export default {
             $ref: "#/parameters/rowFilter.storageType.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.storageType.nettable"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -57249,6 +57279,9 @@ export default {
             $ref: "#/parameters/rowFilter.storageType.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.storageType.nettable"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -57284,6 +57317,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.storageType.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.storageType.nettable"
           },
           {
             $ref: "#/parameters/body.storageType"
@@ -104362,6 +104398,9 @@ export default {
             $ref: "#/parameters/rowFilter.storageUnits_recursive.ancestorPath"
           },
           {
+            $ref: "#/parameters/rowFilter.storageUnits_recursive.effectiveNettable"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -107584,6 +107623,13 @@ export default {
             name: "p_storage_unit_id",
             required: false,
             type: "string"
+          },
+          {
+            format: "boolean",
+            in: "query",
+            name: "p_exclude_non_nettable",
+            required: false,
+            type: "boolean"
           }
         ],
         produces: [
@@ -107619,6 +107665,10 @@ export default {
                   type: "string"
                 },
                 p_exclude_lineside: {
+                  format: "boolean",
+                  type: "boolean"
+                },
+                p_exclude_non_nettable: {
                   format: "boolean",
                   type: "boolean"
                 },
@@ -107891,6 +107941,51 @@ export default {
           }
         },
         tags: ["(rpc) get_item_change_notices"]
+      }
+    },
+    "/rpc/sync_storage_unit_nettable": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_storage_unit_nettable"]
       }
     },
     "/rpc/xid": {
@@ -109650,6 +109745,63 @@ export default {
         tags: ["(rpc) get_sales_order_lines_by_customer_id"]
       }
     },
+    "/rpc/storage_unit_is_nettable": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_storage_unit_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) storage_unit_is_nettable"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_storage_unit_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_storage_unit_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) storage_unit_is_nettable"]
+      }
+    },
     "/rpc/employee_requires_period": {
       get: {
         parameters: [
@@ -109716,6 +109868,66 @@ export default {
           }
         },
         tags: ["(rpc) employee_requires_period"]
+      }
+    },
+    "/rpc/get_warehouse_storage_unit_ids": {
+      get: {
+        parameters: [
+          {
+            format: "text[]",
+            in: "query",
+            name: "p_storage_unit_ids",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_warehouse_storage_unit_ids"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_storage_unit_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["p_storage_unit_ids"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_warehouse_storage_unit_ids"]
       }
     },
     "/rpc/get_my_permission": {
@@ -114997,6 +115209,51 @@ export default {
         tags: ["(rpc) get_job_quantity_on_hand"]
       }
     },
+    "/rpc/storage_unit_release_non_nettable_stock": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) storage_unit_release_non_nettable_stock"]
+      }
+    },
     "/rpc/sync_archive_other_procedures": {
       post: {
         parameters: [
@@ -117937,6 +118194,51 @@ export default {
           }
         },
         tags: ["(rpc) purchaseLinePivotLines"]
+      }
+    },
+    "/rpc/sync_storage_type_nettable": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_storage_type_nettable"]
       }
     },
     "/rpc/update_receipt_line_batch_tracking": {
@@ -134860,7 +135162,13 @@ export default {
       type: "object"
     },
     itemStockQuantities: {
-      required: ["itemId", "companyId", "locationId", "quantityOnHand"],
+      required: [
+        "itemId",
+        "companyId",
+        "locationId",
+        "quantityOnHand",
+        "quantityNonNettable"
+      ],
       properties: {
         itemId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -134879,6 +135187,11 @@ export default {
           type: "string"
         },
         quantityOnHand: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        quantityNonNettable: {
           default: 0,
           format: "numeric",
           type: "number"
@@ -144495,7 +144808,9 @@ export default {
         "createdAt",
         "name",
         "storageTypeIds",
-        "isWorkCenterDefault"
+        "isWorkCenterDefault",
+        "nettable",
+        "effectiveNettable"
       ],
       properties: {
         id: {
@@ -144583,6 +144898,16 @@ export default {
         },
         isWorkCenterDefault: {
           default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        nettable: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        effectiveNettable: {
+          default: true,
           format: "boolean",
           type: "boolean"
         }
@@ -146623,7 +146948,14 @@ export default {
       type: "object"
     },
     storageType: {
-      required: ["id", "name", "companyId", "createdBy", "createdAt"],
+      required: [
+        "id",
+        "name",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "nettable"
+      ],
       properties: {
         id: {
           default: "public.xid()",
@@ -146664,6 +146996,11 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        nettable: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -169183,6 +169520,10 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        effectiveNettable: {
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -187126,6 +187467,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.itemStockQuantities.quantityNonNettable": {
+      name: "quantityNonNettable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.demandActual": {
       name: "demandActual",
       description: "demandActual",
@@ -197758,6 +198105,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.storageUnit.nettable": {
+      name: "nettable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.storageUnit.effectiveNettable": {
+      name: "effectiveNettable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.rentalAgreementLine": {
       name: "rentalAgreementLine",
       description: "rentalAgreementLine",
@@ -200229,6 +200588,12 @@ export default {
     },
     "rowFilter.storageType.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.storageType.nettable": {
+      name: "nettable",
       required: false,
       in: "query",
       type: "string"
@@ -225308,6 +225673,12 @@ export default {
     },
     "rowFilter.storageUnits_recursive.ancestorPath": {
       name: "ancestorPath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.storageUnits_recursive.effectiveNettable": {
+      name: "effectiveNettable",
       required: false,
       in: "query",
       type: "string"

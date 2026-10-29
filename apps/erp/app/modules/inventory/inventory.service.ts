@@ -92,7 +92,6 @@ import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   assertEntityCoversPick,
-  async,
   buildBatchMergeRecords,
   buildBatchSplitRecords,
   buildMergeRecords,
@@ -161,6 +160,7 @@ import {
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
   getExpiredEntityPolicy,
+  getNettableDefaultStorageUnitId,
   getOffsetAccount,
   getStorageUnitWithHighestQuantity,
   getTrackedEntityBins,
@@ -1321,7 +1321,9 @@ export async function getSerialNumbersForItem(
  * Available tracked entities for an item at a location, one row per entity, with
  * its bin, on-hand, and FEFO/FIFO order keys — for the shared TrackedEntityPicker.
  * `excludeLineside` drops lineside (work-center) bins (picking sources from the
- * warehouse). `excludeAllocated` nets out quantities already allocated to other
+ * warehouse). `excludeNonNettable` drops non-nettable bins: picking passes it, a
+ * stock transfer does not, since moving a lot out of one is how it is released.
+ * `excludeAllocated` nets out quantities already allocated to other
  * non-cancelled picking lines so the same lot is never recommended twice;
  * `excludeLineId` keeps the current line's own allocation visible.
  */
@@ -1332,6 +1334,7 @@ export async function getAvailableTrackedEntities(
     companyId: string;
     locationId: string;
     excludeLineside?: boolean;
+    excludeNonNettable?: boolean;
     excludeAllocated?: boolean;
     excludeLineId?: string | null;
     /** Only lots in this bin; `id: null` is the unassigned bin. */
@@ -1346,7 +1349,8 @@ export async function getAvailableTrackedEntities(
     p_exclude_allocated: args.excludeAllocated ?? false,
     p_exclude_line_id: args.excludeLineId ?? undefined,
     p_filter_storage_unit: args.inStorageUnit !== undefined,
-    p_storage_unit_id: args.inStorageUnit?.id ?? undefined
+    p_storage_unit_id: args.inStorageUnit?.id ?? undefined,
+    p_exclude_non_nettable: args.excludeNonNettable ?? false
   });
 }
 
@@ -2787,6 +2791,34 @@ export async function upsertBatchProperty(
   });
 }
 
+/**
+ * Refuses a kanban whose To or From storage unit is non-nettable. Stock there is
+ * not supply: replenishing into it builds stock nothing may use, and a Transfer
+ * from it would release quarantined stock to production on every scan.
+ */
+export async function refuseNonNettableKanbanUnits(
+  ctx: ServiceContext,
+  storageUnitIds: (string | null | undefined)[]
+): Promise<CarbonError | null> {
+  const ids = storageUnitIds.filter((id): id is string => !!id);
+  if (ids.length === 0) return null;
+  const { data, error } = await ctx.asCaller.supabase
+    .from("storageUnit")
+    .select("name")
+    .in("id", ids)
+    .eq("companyId", ctx.company.id)
+    .eq("effectiveNettable", false);
+  if (error) {
+    return ctx.error("internal", "Failed to check the storage units", error);
+  }
+  const unit = data?.[0];
+  if (!unit) return null;
+  return ctx.error(
+    "rule",
+    `${unit.name} is non-nettable. A kanban cannot replenish into or from a non-nettable storage unit.`
+  );
+}
+
 export async function upsertKanban(
   client: SupabaseClient<Database>,
   kanban:
@@ -2878,15 +2910,34 @@ export async function upsertReceipt(
     .single();
 }
 
+/**
+ * The form asks "Non-nettable?"; the column stores `nettable`. An omitted
+ * `nonNettable` leaves the column alone, so an update that does not mention it
+ * never makes a unit nettable again. `effectiveNettable` is derived by the
+ * database and is never written from here: the operations' inputs are loose
+ * objects, so an API caller could otherwise send it.
+ */
+function toNettableColumn<
+  T extends { nonNettable?: boolean; effectiveNettable?: unknown }
+>({
+  nonNettable,
+  effectiveNettable: _derived,
+  ...rest
+}: T): Omit<T, "nonNettable" | "effectiveNettable"> & { nettable?: boolean } {
+  return nonNettable === undefined ? rest : { ...rest, nettable: !nonNettable };
+}
+
 export async function upsertStorageUnit(
   client: SupabaseClient<Database>,
   storageUnit:
-    | (Omit<z.infer<typeof storageUnitValidator>, "id"> & {
+    | (Omit<z.infer<typeof storageUnitValidator>, "id" | "nonNettable"> & {
+        nonNettable?: boolean;
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof storageUnitValidator>, "id"> & {
+    | (Omit<z.infer<typeof storageUnitValidator>, "id" | "nonNettable"> & {
+        nonNettable?: boolean;
         id: string;
         updatedBy: string;
         customFields?: Json;
@@ -2896,7 +2947,7 @@ export async function upsertStorageUnit(
     return client
       .from("storageUnit")
       .insert({
-        ...storageUnit,
+        ...toNettableColumn(storageUnit),
         id: nanoid()
       })
       .select("id")
@@ -2905,7 +2956,7 @@ export async function upsertStorageUnit(
   return client
     .from("storageUnit")
     .update({
-      ...sanitize(storageUnit),
+      ...sanitize(toNettableColumn(storageUnit)),
       updatedAt: datetime.timestamp()
     })
     .eq("id", storageUnit.id)
@@ -3281,12 +3332,14 @@ export async function getStorageTypesList(
 export async function upsertStorageType(
   client: SupabaseClient<Database>,
   storageType:
-    | (Omit<z.infer<typeof storageTypeValidator>, "id"> & {
+    | (Omit<z.infer<typeof storageTypeValidator>, "id" | "nonNettable"> & {
+        nonNettable?: boolean;
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof storageTypeValidator>, "id"> & {
+    | (Omit<z.infer<typeof storageTypeValidator>, "id" | "nonNettable"> & {
+        nonNettable?: boolean;
         id: string;
         updatedBy: string;
         customFields?: Json;
@@ -3295,14 +3348,14 @@ export async function upsertStorageType(
   if ("createdBy" in storageType) {
     return client
       .from("storageType")
-      .insert({ ...storageType })
+      .insert(toNettableColumn(storageType))
       .select("id")
       .single();
   }
   return client
     .from("storageType")
     .update({
-      ...sanitize(storageType),
+      ...sanitize(toNettableColumn(storageType)),
       updatedAt: datetime.timestamp()
     })
     .eq("id", storageType.id)
@@ -3999,15 +4052,32 @@ async function getItemOnHandByStorageUnit(
 }
 
 /**
- * Resolve a WAREHOUSE (non-lineside) source storage unit for a pick by on-hand.
+ * The storage units among `storageUnitIds` that a pick may source from: not
+ * lineside (no work center via `get_effective_work_center_id`) and nettable.
+ * Stock in a non-nettable unit (a quarantine area) is not available to pick.
+ */
+async function getWarehouseStorageUnitIds(
+  client: SupabaseClient<Database>,
+  storageUnitIds: string[]
+): Promise<Set<string>> {
+  if (storageUnitIds.length === 0) return new Set();
+  const result = await client.rpc("get_warehouse_storage_unit_ids", {
+    p_storage_unit_ids: storageUnitIds
+  });
+  if (result.error) throw new PickingReadError(result.error);
+  return new Set((result.data ?? []).map((row) => row.storageUnitId));
+}
+
+/**
+ * Resolve a WAREHOUSE source storage unit for a pick by on-hand.
  *
- * Returns the non-lineside storage unit holding the most on-hand of the item at
- * the location, or null when no warehouse stock exists (a shortage — we never
- * source a pick from another work center's lineside bin). A storage unit is
- * "lineside" when it resolves to a work center via `get_effective_work_center_id`.
+ * Returns the warehouse storage unit (see `getWarehouseStorageUnitIds`) holding
+ * the most on-hand of the item at the location, or null when no warehouse stock
+ * exists (a shortage — we never source a pick from another work center's
+ * lineside bin, or from a non-nettable one).
  */
 async function resolveWarehouseSource(
-  client: SupabaseClient<Database>,
+  warehouseUnits: (storageUnitIds: string[]) => Promise<Set<string>>,
   onHandByUnit: Map<string, number>
 ): Promise<string | null> {
   // Consider candidates highest-on-hand first.
@@ -4015,15 +4085,14 @@ async function resolveWarehouseSource(
     .filter(([, qty]) => qty > 0)
     .sort((a, b) => b[1] - a[1]);
 
-  for (const [storageUnitId] of candidates) {
-    const effectiveWc = await client.rpc("get_effective_work_center_id", {
-      p_storage_unit_id: storageUnitId
-    });
-    // First non-lineside bin (no work center) with the most on-hand wins.
-    if (!effectiveWc.data) return storageUnitId;
-  }
-
-  return null;
+  const warehouse = await warehouseUnits(
+    candidates.map(([storageUnitId]) => storageUnitId)
+  );
+  // First warehouse bin with the most on-hand wins.
+  const source = candidates.find(([storageUnitId]) =>
+    warehouse.has(storageUnitId)
+  );
+  return source?.[0] ?? null;
 }
 
 function toPickFactor(value: number | string | null | undefined): number {
@@ -4056,23 +4125,20 @@ async function getWarehouseOnHand(
   total = Math.max(0, total);
 
   const stocked = Array.from(perUnit).filter(([, qty]) => qty > 0);
-  const workCenters = await async.map(
-    stocked,
-    async ([storageUnitId]) =>
-      await client.rpc("get_effective_work_center_id", {
-        p_storage_unit_id: storageUnitId
-      })
+  const warehouse = await getWarehouseStorageUnitIds(
+    client,
+    stocked.map(([storageUnitId]) => storageUnitId)
   );
-  stocked.forEach(([, qty], index) => {
-    if (!workCenters[index]?.data) total += qty;
-  });
+  for (const [storageUnitId, qty] of stocked) {
+    if (warehouse.has(storageUnitId)) total += qty;
+  }
 
   return total;
 }
 
 /**
- * Whether an item has any WAREHOUSE (non-lineside) on-hand at a location,
- * INCLUDING the unassigned (null storage unit) bin.
+ * Whether an item has any WAREHOUSE (not lineside, nettable) on-hand at a
+ * location, INCLUDING the unassigned (null storage unit) bin.
  *
  * This is the stock *test*, deliberately decoupled from `resolveWarehouseSource`
  * (which selects a concrete source shelf and so cannot see null-bin stock). The
@@ -4107,16 +4173,12 @@ async function hasWarehouseStock(
   }
   if (unassignedQty > 0) return true;
 
-  for (const [storageUnitId, qty] of perUnit) {
-    if (qty <= 0) continue;
-    const effectiveWc = await client.rpc("get_effective_work_center_id", {
-      p_storage_unit_id: storageUnitId
-    });
-    // Any non-lineside bin with on-hand counts as available warehouse stock.
-    if (!effectiveWc.data) return true;
-  }
-
-  return false;
+  // Any warehouse bin with on-hand counts as available warehouse stock.
+  const stocked = Array.from(perUnit)
+    .filter(([, qty]) => qty > 0)
+    .map(([storageUnitId]) => storageUnitId);
+  const warehouse = await getWarehouseStorageUnitIds(client, stocked);
+  return warehouse.size > 0;
 }
 
 class PickingReadError extends Error {
@@ -4387,6 +4449,20 @@ export async function generatePickingList(
     unclaimedRemaining.set(key, Math.max(0, current - Math.max(0, used - own)));
   };
 
+  // Whether a storage unit is a warehouse bin (not lineside, nettable), read
+  // once per unit for the whole list.
+  const isWarehouseUnit = new Map<string, boolean>();
+  const warehouseUnits = async (storageUnitIds: string[]) => {
+    const unknown = [...new Set(storageUnitIds)].filter(
+      (id) => !isWarehouseUnit.has(id)
+    );
+    if (unknown.length > 0) {
+      const warehouse = await getWarehouseStorageUnitIds(client, unknown);
+      for (const id of unknown) isWarehouseUnit.set(id, warehouse.has(id));
+    }
+    return new Set(storageUnitIds.filter((id) => isWarehouseUnit.get(id)));
+  };
+
   const onHandFor = async (itemId: string): Promise<Map<string, number>> => {
     const cached = onHandCache.get(itemId);
     if (cached) return cached;
@@ -4438,6 +4514,11 @@ export async function generatePickingList(
     createdBy: string;
   }> = [];
   try {
+    await warehouseUnits(
+      (materials.data ?? [])
+        .map((mat) => mat.storageUnitId)
+        .filter((id): id is string => !!id)
+    );
     for (const mat of materials.data ?? []) {
       const quantityToIssue = Number(mat.quantityToIssue ?? 0);
       if (quantityToIssue <= 0) continue;
@@ -4572,17 +4653,14 @@ export async function generatePickingList(
 
         let sourceStorageUnitId: string | null;
         if (pickItemId === mat.itemId && mat.storageUnitId) {
-          const effectiveWc = await client.rpc("get_effective_work_center_id", {
-            p_storage_unit_id: mat.storageUnitId
-          });
-          const materialEffectiveWc =
-            (effectiveWc.data as string | null) ?? null;
-          sourceStorageUnitId = materialEffectiveWc
-            ? await resolveWarehouseSource(client, onHandByUnit)
-            : mat.storageUnitId;
+          // The material's own bin, unless it is lineside or non-nettable.
+          const warehouse = await warehouseUnits([mat.storageUnitId]);
+          sourceStorageUnitId = warehouse.has(mat.storageUnitId)
+            ? mat.storageUnitId
+            : await resolveWarehouseSource(warehouseUnits, onHandByUnit);
         } else {
           sourceStorageUnitId = await resolveWarehouseSource(
-            client,
+            warehouseUnits,
             onHandByUnit
           );
         }
@@ -8629,7 +8707,9 @@ export const KANBAN_REPLENISH_REASONS = {
   foreignStorageUnit: "Storage unit does not belong to the kanban location",
   missingItem: "Failed to get item",
   notTransfer: "Kanban is not a transfer kanban",
-  notArmed: "Kanban has no replenishment level"
+  notArmed: "Kanban has no replenishment level",
+  nonNettableStorageUnit:
+    "A kanban cannot replenish into or from a non-nettable storage unit"
 } as const;
 
 type KanbanReplenishReason =
@@ -8736,7 +8816,7 @@ export async function replenishKanban(
       storageUnitIds.length > 0
         ? await trx
             .selectFrom("storageUnit")
-            .select(["id", "name", "locationId"])
+            .select(["id", "name", "locationId", "effectiveNettable"])
             .where("companyId", "=", companyId)
             .where("id", "in", storageUnitIds)
             .execute()
@@ -8753,6 +8833,12 @@ export async function replenishKanban(
         to.locationId !== kanban.locationId
       ) {
         invalid(kanban.id, KANBAN_REPLENISH_REASONS.foreignStorageUnit);
+        return false;
+      }
+      // A unit made non-nettable after the kanban was saved: a scan would
+      // release its stock, or stock a unit nothing may use.
+      if (!from.effectiveNettable || !to.effectiveNettable) {
+        invalid(kanban.id, KANBAN_REPLENISH_REASONS.nonNettableStorageUnit);
         return false;
       }
       return true;
@@ -19467,6 +19553,28 @@ export const postPickingPermission = {} satisfies PermissionRule<
  * (pickingListLine.toStorageUnitId). Consumption happens later at production,
  * which is why we also point jobMaterial.storageUnitId at the lineside shelf.
  */
+/** A pick never takes stock out of a non-nettable (quarantine) unit: the bin
+ *  may have become one after the list was generated. A stock transfer is how
+ *  that stock is released. */
+async function assertPickSourceNettable(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  storageUnitId: string | null | undefined
+) {
+  if (!storageUnitId) return;
+  const unit = await trx
+    .selectFrom("storageUnit")
+    .where("id", "=", storageUnitId)
+    .where("companyId", "=", companyId)
+    .select(["name", "effectiveNettable"])
+    .executeTakeFirst();
+  if (unit && !unit.effectiveNettable) {
+    throw new InvalidInputError(
+      `${unit.name} is non-nettable. A picking list never takes stock from a non-nettable storage unit: move the stock with a stock transfer, or generate the picking list again.`
+    );
+  }
+}
+
 export async function postPicking(
   ctx: ServiceContext,
   raw: z.input<typeof postPickingInput>
@@ -19555,6 +19663,7 @@ export async function postPicking(
           .selectAll()
           .forUpdate()
           .executeTakeFirstOrThrow();
+        await assertPickSourceNettable(trx, companyId, line.storageUnitId);
 
         const inserts: ItemLedgerInsert[] = [
           {
@@ -19703,6 +19812,7 @@ export async function postPicking(
           .selectAll()
           .forUpdate()
           .executeTakeFirstOrThrow();
+        await assertPickSourceNettable(trx, companyId, fromStorageUnitId);
 
         const activityId = nanoid();
         await trx
@@ -19830,6 +19940,7 @@ export async function postPicking(
           .selectAll()
           .forUpdate()
           .executeTakeFirstOrThrow();
+        await assertPickSourceNettable(trx, companyId, fromStorageUnitId);
 
         // Lock the source lot too: the split below draws against this
         // on-hand, and a concurrent pick of the same lot must not spend it.
@@ -21017,14 +21128,13 @@ async function returnUntrackedMaterialRemainder(
   let fallbackBin: string | null | undefined;
   const resolveFallbackBin = async () => {
     if (fallbackBin !== undefined) return fallbackBin;
-    const pickMethod = await trx
-      .selectFrom("pickMethod")
-      .where("itemId", "=", material.itemId)
-      .where("locationId", "=", locationId)
-      .where("companyId", "=", companyId)
-      .select("defaultStorageUnitId")
-      .executeTakeFirst();
-    fallbackBin = pickMethod?.defaultStorageUnitId ?? null;
+    // Released stock never goes back into quarantine by default.
+    fallbackBin = await getNettableDefaultStorageUnitId(
+      trx,
+      material.itemId,
+      locationId,
+      companyId
+    );
     return fallbackBin;
   };
 
@@ -21705,28 +21815,27 @@ async function issueJobOperationMaterials(
 
       if (!proposedStorageUnitId) {
         if (material.defaultStorageUnit) {
-          const pickMethod = await trx
-            .selectFrom("pickMethod")
-            .where("itemId", "=", material.itemId)
-            .where("locationId", "=", job.locationId!)
-            .where("companyId", "=", companyId)
-            .select("defaultStorageUnitId")
-            .executeTakeFirst();
-
-          proposedStorageUnitId = pickMethod?.defaultStorageUnitId ?? null;
+          proposedStorageUnitId = await getNettableDefaultStorageUnitId(
+            trx,
+            material.itemId,
+            job.locationId!,
+            companyId
+          );
 
           if (!proposedStorageUnitId) {
             proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
               trx,
               material.itemId,
-              job.locationId!
+              job.locationId!,
+              companyId
             );
           }
         } else {
           proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
             trx,
             material.itemId,
-            job.locationId!
+            job.locationId!,
+            companyId
           );
         }
       }
@@ -21739,13 +21848,26 @@ async function issueJobOperationMaterials(
         .where("storageUnitId", "=", proposedStorageUnitId ?? "")
         .executeTakeFirst();
 
+      // The fallback when the proposed bin is short: the fullest nettable bin.
+      // Stock in no bin counts as nettable.
       const allStorageUnitQuantities = await trx
         .selectFrom("itemLedger")
-        .select(["storageUnitId", (eb) => eb.fn.sum("quantity").as("quantity")])
-        .where("itemId", "=", material.itemId)
-        .where("locationId", "=", job.locationId!)
-        .groupBy("storageUnitId")
-        .having((eb) => eb.fn.sum("quantity"), ">", 0)
+        .leftJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
+        .select([
+          "itemLedger.storageUnitId",
+          (eb) => eb.fn.sum("itemLedger.quantity").as("quantity")
+        ])
+        .where("itemLedger.itemId", "=", material.itemId)
+        .where("itemLedger.locationId", "=", job.locationId!)
+        .where("itemLedger.companyId", "=", companyId)
+        .where((eb) =>
+          eb.or([
+            eb("itemLedger.storageUnitId", "is", null),
+            eb("storageUnit.effectiveNettable", "=", true)
+          ])
+        )
+        .groupBy("itemLedger.storageUnitId")
+        .having((eb) => eb.fn.sum("itemLedger.quantity"), ">", 0)
         .execute();
 
       let finalStorageUnitId = proposedStorageUnitId;
@@ -24304,18 +24426,27 @@ export async function issueMaterial(
           if (material?.storageUnitId) {
             storageUnitId = material.storageUnitId;
           } else if (material?.defaultStorageUnit) {
-            const pickMethod = await trx
-              .selectFrom("pickMethod")
-              .where("itemId", "=", itemId)
-              .where("locationId", "=", job?.locationId!)
-              .select("defaultStorageUnitId")
-              .executeTakeFirst();
-            storageUnitId = pickMethod?.defaultStorageUnitId;
+            // The item's default when it is nettable, else the fullest nettable
+            // bin, as the backflush does.
+            storageUnitId =
+              (await getNettableDefaultStorageUnitId(
+                trx,
+                itemId,
+                job?.locationId!,
+                companyId
+              )) ??
+              (await getStorageUnitWithHighestQuantity(
+                trx,
+                itemId,
+                job?.locationId!,
+                companyId
+              ));
           } else {
             storageUnitId = await getStorageUnitWithHighestQuantity(
               trx,
               itemId,
-              job?.locationId!
+              job?.locationId!,
+              companyId
             );
           }
 
@@ -24452,19 +24583,18 @@ export async function issueMaterial(
         } else {
           let storageUnitId: string | null | undefined;
           if (item?.itemTrackingType === "Inventory") {
-            const pickMethod = await trx
-              .selectFrom("pickMethod")
-              .where("itemId", "=", itemId)
-              .where("locationId", "=", job?.locationId!)
-              .select("defaultStorageUnitId")
-              .executeTakeFirst();
-
             storageUnitId =
-              pickMethod?.defaultStorageUnitId ??
+              (await getNettableDefaultStorageUnitId(
+                trx,
+                itemId,
+                job?.locationId!,
+                companyId
+              )) ??
               (await getStorageUnitWithHighestQuantity(
                 trx,
                 itemId,
-                job?.locationId!
+                job?.locationId!,
+                companyId
               ));
 
             itemLedgerInserts.push({
@@ -26052,7 +26182,12 @@ export async function issueMaterial(
         ) {
           // Get storage unit with highest quantity for this item at this location
           const storageUnitId = locationId
-            ? await getStorageUnitWithHighestQuantity(trx, itemId, locationId)
+            ? await getStorageUnitWithHighestQuantity(
+                trx,
+                itemId,
+                locationId,
+                companyId
+              )
             : null;
 
           await trx
