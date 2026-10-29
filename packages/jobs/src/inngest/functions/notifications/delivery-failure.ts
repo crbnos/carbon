@@ -18,6 +18,12 @@ import { NonRetriableError } from "inngest";
  */
 
 /**
+ * Ours, not nodemailer's: the company sender stopped before any vendor call
+ * (a Gmail token refresh another caller holds).
+ */
+export const NOT_SENT = "ENOTSENT";
+
+/**
  * Nodemailer codes raised while connecting, greeting or authenticating, i.e.
  * before a single recipient or byte of DATA reaches the relay.
  *
@@ -25,7 +31,13 @@ import { NonRetriableError } from "inngest";
  * ANY phase, so either can mean the relay accepted the message and then dropped
  * the connection before the final ack.
  */
-const RETRYABLE_SMTP_CODES = new Set(["ECONNECTION", "EDNS", "EAUTH", "ETLS"]);
+const RETRYABLE_SMTP_CODES = new Set([
+  "ECONNECTION",
+  "EDNS",
+  "EAUTH",
+  "ETLS",
+  NOT_SENT
+]);
 
 /**
  * The only Slack failure that provably posted nothing. A platform error is

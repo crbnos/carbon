@@ -16,8 +16,9 @@ const coded = (code: string, message = "boom") =>
 
 describe("email delivery failure", () => {
   // Raised during connect/greet/auth — before a recipient or any DATA is sent,
-  // so the relay provably has nothing and a replay cannot duplicate.
-  it.each(["ECONNECTION", "EDNS", "EAUTH", "ETLS"])(
+  // so the relay provably has nothing and a replay cannot duplicate. ENOTSENT
+  // is the company sender's own: it stopped before calling the vendor.
+  it.each(["ECONNECTION", "EDNS", "EAUTH", "ETLS", "ENOTSENT"])(
     "retries %s — nothing reached the relay",
     (code) => {
       const error = emailDeliveryFailure(coded(code));
