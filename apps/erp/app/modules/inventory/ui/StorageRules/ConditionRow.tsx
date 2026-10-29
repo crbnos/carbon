@@ -191,7 +191,7 @@ function ConditionRowImpl({
 
         {surfaceNotes && (
           <details className="mt-2 group rounded-md border border-dashed border-border/70 bg-muted/30 px-2 py-1.5 text-xs text-muted-foreground">
-            <summary className="cursor-pointer select-none text-[11px] font-medium uppercase tracking-wider text-muted-foreground/90 hover:text-foreground">
+            <summary className="cursor-pointer select-none text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground/90 hover:text-foreground">
               {t`Value source by surface`}
             </summary>
             <ul className="mt-1.5 flex flex-col gap-1">

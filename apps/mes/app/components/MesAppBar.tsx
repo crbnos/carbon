@@ -61,7 +61,7 @@ export function MesAppBar({ title, subtitle, back, actions }: MesAppBarProps) {
       )}
       {back ? (
         <div className="flex min-w-0 flex-1 flex-col justify-center">
-          <span className="truncate text-[17px] font-semibold leading-tight text-foreground">
+          <span className="truncate text-[1.0625rem] font-semibold leading-tight text-foreground">
             {title}
           </span>
           {subtitle ? (
@@ -79,7 +79,7 @@ export function MesAppBar({ title, subtitle, back, actions }: MesAppBarProps) {
             aria-expanded={openMobile}
             className="flex min-h-11 min-w-0 items-center gap-1 rounded-lg px-1 text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
-            <span className="min-w-0 truncate text-[17px] font-semibold leading-tight">
+            <span className="min-w-0 truncate text-[1.0625rem] font-semibold leading-tight">
               {title}
             </span>
             <LuChevronDown className="size-5 shrink-0 text-muted-foreground" />

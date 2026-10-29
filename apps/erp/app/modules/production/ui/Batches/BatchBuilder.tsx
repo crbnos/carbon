@@ -247,7 +247,7 @@ function StepBadge({ step, active }: { step: number; active: boolean }) {
   return (
     <span
       className={cn(
-        "flex items-center justify-center size-5 rounded-full text-[11px] font-semibold flex-shrink-0",
+        "flex items-center justify-center size-5 rounded-full text-[0.6875rem] font-semibold flex-shrink-0",
         active
           ? "bg-primary text-primary-foreground"
           : "bg-muted text-muted-foreground"
@@ -1505,7 +1505,7 @@ function SuggestionsBanner({
             ? t`due in 1 day`
             : t`due in ${days} days`;
       return (
-        <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[11px] tabular-nums text-amber-600 dark:text-amber-400">
+        <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[0.6875rem] tabular-nums text-amber-600 dark:text-amber-400">
           <LuCalendarClock className="size-3" />
           {label}
         </span>
@@ -1513,7 +1513,7 @@ function SuggestionsBanner({
     }
     if (s.reason === "fills" && s.fillRatio != null) {
       return (
-        <span className="flex items-center gap-1 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[11px] text-sky-600 dark:text-sky-400">
+        <span className="flex items-center gap-1 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[0.6875rem] text-sky-600 dark:text-sky-400">
           <LuLayers className="size-3" />
           {t`fills a run`}
         </span>
@@ -1549,7 +1549,7 @@ function SuggestionsBanner({
             onClick={() => onApply(s.members)}
             className="group flex w-full items-center gap-3 border-t border-border/60 px-3.5 py-2.5 text-left transition-colors hover:bg-emerald-500/[0.06] active:bg-emerald-500/10"
           >
-            <span className="flex size-7 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-[13px] font-semibold tabular-nums text-emerald-700 transition-transform group-active:scale-95 dark:text-emerald-300">
+            <span className="flex size-7 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-[0.8125rem] font-semibold tabular-nums text-emerald-700 transition-transform group-active:scale-95 dark:text-emerald-300">
               {s.members.length}
             </span>
             <div className="min-w-0 flex-1">

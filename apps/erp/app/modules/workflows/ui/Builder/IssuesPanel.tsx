@@ -17,7 +17,7 @@ export function IssuesPanel({ onDismiss }: { onDismiss: () => void }) {
   return (
     <div className="absolute inset-x-0 bottom-0 z-10 max-h-[40%] overflow-auto border-t bg-card shadow-lg">
       <div className="flex items-center justify-between border-b bg-destructive/5 px-3 py-2">
-        <span className="text-[11.5px] font-semibold text-destructive">
+        <span className="text-[0.71875rem] font-semibold text-destructive">
           {issues.length === 1 ? (
             <Trans>1 problem — not published</Trans>
           ) : (

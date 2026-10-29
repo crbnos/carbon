@@ -289,7 +289,7 @@ export default function RuleAssignmentsList({
                   {isBroadcast && (
                     <Badge
                       variant="outline"
-                      className="ml-6 text-[10px] uppercase tracking-wide"
+                      className="ml-6 text-[0.625rem] uppercase tracking-wide"
                     >
                       <Trans>Applies to all</Trans>
                     </Badge>

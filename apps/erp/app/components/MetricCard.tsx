@@ -52,8 +52,8 @@ const MetricCard = ({
           // lines tall, so values line up across a row of tiles. A one-line label
           // is centred in that space, level with the icon and chevron. The box
           // sets the title's own font size and leading so `2lh` is two of its lines.
-          <div className="flex flex-1 min-w-0 min-h-[2lh] items-center text-[13px] leading-none">
-            <CardTitle className="min-w-0 text-[13px]">{title}</CardTitle>
+          <div className="flex flex-1 min-w-0 min-h-[2lh] items-center text-[0.8125rem] leading-none">
+            <CardTitle className="min-w-0 text-[0.8125rem]">{title}</CardTitle>
           </div>
         ) : (
           <CardTitle className="flex-1 min-w-0 line-clamp-none truncate">
@@ -78,7 +78,7 @@ const MetricCard = ({
         )}
       </CardHeader>
       <CardContent>
-        <h3 className="text-4xl font-medium tracking-tighter tabular-nums truncate max-md:text-[26px] max-md:font-semibold max-md:tracking-tight">
+        <h3 className="text-4xl font-medium tracking-tighter tabular-nums truncate max-md:text-[1.625rem] max-md:font-semibold max-md:tracking-tight">
           {value}
         </h3>
         {description && (

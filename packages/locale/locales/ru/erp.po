@@ -4389,6 +4389,9 @@ msgstr "Оптимальное завершение"
 msgid "Beta"
 msgstr "Бета"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Основные причины брака по типу, номенклатуре или рабочему центру"
 
@@ -5531,6 +5534,9 @@ msgstr "Объединить фильтры"
 
 msgid "Combine output into one lot"
 msgstr "Объединить выход в одну партию"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "Скоро"
@@ -8136,6 +8142,9 @@ msgstr "Демо-данные применены"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "Демоданные применены к этой организации. Сохраните их или отмените, чтобы восстановить то, что было раньше."
+
+msgid "Density"
+msgstr ""
 
 msgid "department"
 msgstr "отдел"
@@ -13029,6 +13038,12 @@ msgstr "Единица труда"
 
 msgid "Language"
 msgstr "Язык"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "Последние 6 месяцев"
@@ -22324,6 +22339,12 @@ msgstr "Слайд {0}"
 msgid "Slides"
 msgstr "Слайды"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Минимальный размер партии для комплектования. Оставьте пусто без значения."
 
@@ -25440,6 +25461,9 @@ msgstr "плотно"
 
 msgid "Tightened"
 msgstr "Усиленный"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "Время"

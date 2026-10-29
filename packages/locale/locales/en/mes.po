@@ -305,6 +305,9 @@ msgstr "batch total"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Behind target by {daysBehindTarget} day(s)"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr "Bigger or smaller text. The layout stays put."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Blocked by {0}"
@@ -439,6 +442,12 @@ msgstr "Column: {0}"
 msgid "Columns"
 msgstr "Columns"
 
+msgid "Comfortable"
+msgstr "Comfortable"
+
+msgid "Compact"
+msgstr "Compact"
+
 msgid "Companies"
 msgstr "Companies"
 
@@ -552,6 +561,9 @@ msgstr "Delete Step"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Delete Timecard (<0/>)"
+
+msgid "Density"
+msgstr "Density"
 
 msgid "Describe the problem..."
 msgstr "Describe the problem..."
@@ -979,6 +991,12 @@ msgstr "Kit"
 
 msgid "Labor"
 msgstr "Labor"
+
+msgid "Large"
+msgstr "Large"
+
+msgid "Larger"
+msgstr "Larger"
 
 msgid "Last completed"
 msgstr "Last completed"
@@ -1990,6 +2008,12 @@ msgstr "Size"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Small"
+msgstr "Small"
+
+msgid "Smaller"
+msgstr "Smaller"
+
 msgid "Source"
 msgstr "Source"
 
@@ -2085,6 +2109,9 @@ msgstr "System"
 msgid "Tag"
 msgstr "Tag"
 
+msgid "Text size"
+msgstr "Text size"
+
 msgid "The accent color used across Carbon."
 msgstr "The accent color used across Carbon."
 
@@ -2152,6 +2179,9 @@ msgstr "Thumbnail"
 
 msgid "Tick the jobs this was done for."
 msgstr "Tick the jobs this was done for."
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr "Tighter or roomier layout. The text stays put."
 
 msgid "Time"
 msgstr "Time"

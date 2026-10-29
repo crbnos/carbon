@@ -305,6 +305,9 @@ msgstr "итого серии"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Отставание на {daysBehindTarget} дн."
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Заблокировано {0}"
@@ -439,6 +442,12 @@ msgstr "Столбец: {0}"
 msgid "Columns"
 msgstr "Столбцы"
 
+msgid "Comfortable"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
 msgid "Companies"
 msgstr "Организации"
 
@@ -552,6 +561,9 @@ msgstr "Удалить шаг"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Удалить табель учета рабочего времени (<0/>)"
+
+msgid "Density"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "Опишите проблему..."
@@ -979,6 +991,12 @@ msgstr "Комплект"
 
 msgid "Labor"
 msgstr "Трудозатраты"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Последнее завершено"
@@ -1990,6 +2008,12 @@ msgstr "Размер"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Source"
 msgstr "Источник"
 
@@ -2085,6 +2109,9 @@ msgstr "Система"
 msgid "Tag"
 msgstr "Тег"
 
+msgid "Text size"
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Цвет акцента, используемый во всём Carbon."
 
@@ -2152,6 +2179,9 @@ msgstr "Миниатюра"
 
 msgid "Tick the jobs this was done for."
 msgstr "Отметьте производственные заказы, для которых это было сделано."
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "Время"

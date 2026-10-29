@@ -50,7 +50,7 @@ export function StepRecordsList({ records, jobId }: Props) {
                 />
               </span>
             </div>
-            <div className="text-[10px] text-muted-foreground/70 mt-0.5 truncate flex items-center gap-1.5">
+            <div className="text-[0.625rem] text-muted-foreground/70 mt-0.5 truncate flex items-center gap-1.5">
               {r.operationDescription && (
                 <span className="truncate">{r.operationDescription}</span>
               )}

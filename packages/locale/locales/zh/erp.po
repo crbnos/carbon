@@ -4389,6 +4389,9 @@ msgstr "最佳情况完成日期"
 msgid "Beta"
 msgstr "测试版"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "按原因、物料或工作中心显示最大报废原因"
 
@@ -5531,6 +5534,9 @@ msgstr "合并筛选"
 
 msgid "Combine output into one lot"
 msgstr "将输出合并为一个批次"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "即将推出"
@@ -8136,6 +8142,9 @@ msgstr "演示数据已应用"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "演示数据已应用到此公司。保留它，或还原以恢复之前的确切内容。"
+
+msgid "Density"
+msgstr ""
 
 msgid "department"
 msgstr "部门"
@@ -13029,6 +13038,12 @@ msgstr "人工单位"
 
 msgid "Language"
 msgstr "语言"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "最近6个月"
@@ -22324,6 +22339,12 @@ msgstr "幻灯片 {0}"
 msgid "Slides"
 msgstr "幻灯片"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "最小分批数量。留空表示无。"
 
@@ -25440,6 +25461,9 @@ msgstr "紧张"
 
 msgid "Tightened"
 msgstr "加严检验"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "时间"

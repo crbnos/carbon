@@ -39,7 +39,7 @@ export function ErrorScreen({
 
       {/* Body */}
       <div className="relative z-10 flex flex-1 flex-col justify-center px-5 py-12 sm:px-8">
-        <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.35em] text-muted-foreground sm:text-xs">
+        <p className="mb-4 font-mono text-[0.625rem] uppercase tracking-[0.35em] text-muted-foreground sm:text-xs">
           {eyebrow}
         </p>
 

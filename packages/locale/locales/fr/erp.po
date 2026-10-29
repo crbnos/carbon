@@ -4389,6 +4389,9 @@ msgstr "Meilleur cas de fin"
 msgid "Beta"
 msgstr "Bêta"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Principales causes de rebut par raison, article ou poste de travail"
 
@@ -5531,6 +5534,9 @@ msgstr "Combiner les filtres"
 
 msgid "Combine output into one lot"
 msgstr "Combiner la sortie en un lot unique"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "Bientôt disponible"
@@ -8136,6 +8142,9 @@ msgstr "Données de démonstration appliquées"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "Des données de démonstration ont été appliquées à cette société. Conservez-les ou annulez pour revenir à l'état antérieur."
+
+msgid "Density"
+msgstr ""
 
 msgid "department"
 msgstr "département"
@@ -13029,6 +13038,12 @@ msgstr "Unité de main-d'œuvre"
 
 msgid "Language"
 msgstr "Langue"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "6 derniers mois"
@@ -22324,6 +22339,12 @@ msgstr "Diapositive {0}"
 msgid "Slides"
 msgstr "Diapositives"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Plus petite taille de lot acceptable. Laissez vide pour aucune."
 
@@ -25440,6 +25461,9 @@ msgstr "serré"
 
 msgid "Tightened"
 msgstr "Renforcé"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "Heure"
