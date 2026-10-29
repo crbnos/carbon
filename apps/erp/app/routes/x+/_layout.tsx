@@ -141,7 +141,8 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await requireAuthSession(request, { verify: true });
-  const { accessToken, companyId, expiresAt, expiresIn, userId } = authSession;
+  const { accessToken, companyId, email, expiresAt, expiresIn, userId } =
+    authSession;
 
   // Block ERP access when console mode is active on this terminal.
   // Console terminals should only access the MES app.
@@ -348,7 +349,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     company,
     companies: companies.data ?? [],
     // Feature flags with `browser: true`, read with `useFeatureFlags().feature(key)`.
-    flags: await evaluateBrowserFlags({ companyId, userId }),
+    flags: await evaluateBrowserFlags({ companyId, email }),
     companySettings: companySettings.data ?? null,
     customFields: customFields.data ?? [],
     defaults: defaults.data,

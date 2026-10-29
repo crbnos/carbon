@@ -27849,18 +27849,21 @@ export type Database = {
           companyId: string
           itemId: string
           locationId: string
+          quantityNonNettable: number
           quantityOnHand: number
         }
         Insert: {
           companyId: string
           itemId: string
           locationId?: string
+          quantityNonNettable?: number
           quantityOnHand?: number
         }
         Update: {
           companyId?: string
           itemId?: string
           locationId?: string
+          quantityNonNettable?: number
           quantityOnHand?: number
         }
         Relationships: []
@@ -65225,6 +65228,7 @@ export type Database = {
           customFields: Json | null
           id: string
           name: string
+          nettable: boolean
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -65235,6 +65239,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name: string
+          nettable?: boolean
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -65245,6 +65250,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name?: string
+          nettable?: boolean
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -65356,10 +65362,12 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
+          effectiveNettable: boolean
           id: string
           isWorkCenterDefault: boolean
           locationId: string
           name: string
+          nettable: boolean
           parentId: string | null
           storageTypeIds: string[]
           tags: string[] | null
@@ -65374,10 +65382,12 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
+          effectiveNettable?: boolean
           id?: string
           isWorkCenterDefault?: boolean
           locationId: string
           name: string
+          nettable?: boolean
           parentId?: string | null
           storageTypeIds?: string[]
           tags?: string[] | null
@@ -65392,10 +65402,12 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
+          effectiveNettable?: boolean
           id?: string
           isWorkCenterDefault?: boolean
           locationId?: string
           name?: string
+          nettable?: boolean
           parentId?: string | null
           storageTypeIds?: string[]
           tags?: string[] | null
@@ -78296,11 +78308,13 @@ export type Database = {
           companyId: string | null
           createdAt: string | null
           id: string | null
+          itemPostingGroupId: string | null
           partName: string | null
           partReadableId: string | null
           planCount: number | null
           planNames: string | null
           plans: Json | null
+          tags: string[] | null
           updatedAt: string | null
         }
         Relationships: [
@@ -78372,6 +78386,13 @@ export type Database = {
             columns: ["id"]
             isOneToOne: false
             referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemCost_itemPostingGroupId_fkey"
+            columns: ["itemPostingGroupId"]
+            isOneToOne: false
+            referencedRelation: "itemPostingGroup"
             referencedColumns: ["id"]
           }
         ]
@@ -81188,6 +81209,147 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          }
+        ]
+      }
+      kanbanItems: {
+        Row: {
+          companyId: string | null
+          createdAt: string | null
+          id: string | null
+          itemId: string | null
+          kanbanCount: number | null
+          kanbanIds: string | null
+          kanbans: Json | null
+          locationId: string | null
+          name: string | null
+          readableIdWithRevision: string | null
+          replenishmentSystems:
+            | Database["public"]["Enums"]["kanbanReplenishmentSystem"][]
+            | null
+          supplierIds: string[] | null
+          thumbnailPath: string | null
+          updatedAt: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kanban_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "kanban_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "kanban_itemId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_itemId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_itemId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_itemId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_itemId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_itemId_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
           }
         ]
       }
@@ -91039,6 +91201,7 @@ export type Database = {
           ancestorPath: string[] | null
           companyId: string | null
           depth: number | null
+          effectiveNettable: boolean | null
           id: string | null
           locationId: string | null
           name: string | null
@@ -93521,6 +93684,7 @@ export type Database = {
           p_exclude_allocated?: boolean
           p_exclude_line_id?: string
           p_exclude_lineside?: boolean
+          p_exclude_non_nettable?: boolean
           p_filter_storage_unit?: boolean
           p_item_id: string
           p_location_id: string
@@ -94888,6 +95052,7 @@ export type Database = {
         Returns: {
           active: boolean
           conversionFactor: number
+          defaultSupplierId: string
           demandAccumulationPeriod: number
           demandAccumulationSafetyStock: number
           firstNegativeDate: string
@@ -94973,6 +95138,12 @@ export type Database = {
           week7: number
           week8: number
           week9: number
+        }[]
+      }
+      get_purchasing_planning_suppliers: {
+        Args: { company_id: string; location_id: string; periods: string[] }
+        Returns: {
+          supplierId: string
         }[]
       }
       get_quote_methods: {
@@ -95410,6 +95581,12 @@ export type Database = {
           userCount: number
         }[]
       }
+      get_warehouse_storage_unit_ids: {
+        Args: { p_storage_unit_ids: string[] }
+        Returns: {
+          storageUnitId: string
+        }[]
+      }
       get_webhook_signing_secret: {
         Args: { p_company_id: string; p_webhook_id: string }
         Returns: string
@@ -95843,6 +96020,14 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
+      storage_unit_is_nettable: {
+        Args: { p_storage_unit_id: string }
+        Returns: boolean
+      }
+      storage_unit_release_non_nettable_stock: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       suppliers_search: {
         Args: {
           match_count: number
@@ -96031,6 +96216,14 @@ export type Database = {
         Returns: undefined
       }
       sync_set_job_operation_in_progress: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      sync_storage_type_nettable: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      sync_storage_unit_nettable: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }

@@ -4,7 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
+import { View } from "@react-pdf/renderer";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
@@ -15,6 +15,7 @@ import type { PDF } from "../types";
 import { resolveRegistrationLine } from "../utils/shared";
 import type {
   PurchasingRfqAddress,
+  PurchasingRfqContact,
   PurchasingRfqData,
   PurchasingRfqPdfLine
 } from "./blocks/purchasingRfq";
@@ -22,6 +23,7 @@ import {
   buildPurchasingRfqVars,
   purchasingRfqBlockRegistry
 } from "./blocks/purchasingRfq";
+import { hasContent, resolveTerms } from "./blocks/resolveTerms";
 import { Template } from "./components";
 
 interface PurchasingRfqPDFProps extends PDF {
@@ -29,6 +31,8 @@ interface PurchasingRfqPDFProps extends PDF {
   purchasingRfqLines: PurchasingRfqPdfLine[];
   /** The receiving location the supplier quotes delivery to. */
   shipToAddress?: PurchasingRfqAddress | null;
+  /** The buyer the supplier answers; signs the letter. */
+  contact?: PurchasingRfqContact | null;
   /** Base64 thumbnails keyed by line id. */
   thumbnails?: Record<string, string | null>;
   companySettings?:
@@ -42,8 +46,9 @@ interface PurchasingRfqPDFProps extends PDF {
 }
 
 /**
- * A purchasing RFQ on paper: the lines and quantity breaks the supplier
- * prices, with blank Unit Price, Lead Time and Total cells to fill in.
+ * A purchasing RFQ as a letter to the supplier: letterhead, the request, the
+ * items and quantity breaks, a sign-off, then the terms. The supplier answers
+ * with a quotation in their own format; the share page is the structured path.
  */
 const PurchasingRfqPDF = ({
   company,
@@ -52,6 +57,7 @@ const PurchasingRfqPDF = ({
   purchasingRfq,
   purchasingRfqLines,
   shipToAddress,
+  contact,
   thumbnails,
   terms,
   locale,
@@ -88,6 +94,7 @@ const PurchasingRfqPDF = ({
     purchasingRfq,
     purchasingRfqLines,
     shipToAddress,
+    contact,
     thumbnails,
     terms,
     theme,
@@ -108,6 +115,12 @@ const PurchasingRfqPDF = ({
   const footerContent = footerSection
     ? interpolateContent(footerSection, vars)
     : undefined;
+
+  // Terms start on their own page, after the sign-off.
+  const termsBlock = blocks.find((block) => block.type === "terms");
+  const hasTerms =
+    termsBlock?.type === "terms" &&
+    hasContent(resolveTerms(termsBlock, terms, vars));
 
   const showHeader = headerSectionId !== null;
   const showFooter = footerSectionId !== null;
@@ -134,10 +147,22 @@ const PurchasingRfqPDF = ({
       headerContent={headerContent}
       footerContent={footerContent}
     >
+      {/* Letter margins: the page shell's are sized for dense documents.
+          The fixed spacer holds the top margin on every page; each block gets
+          its own side margins so a block's `break` still starts a page. */}
+      <View fixed style={{ height: 18 }} />
       {visibleBlocks.map((block) => {
         const render = purchasingRfqBlockRegistry[block.type];
         if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
+        return (
+          <View
+            key={block.id}
+            break={block.type === "terms" && hasTerms}
+            style={{ paddingHorizontal: 30 }}
+          >
+            {render({ block, data })}
+          </View>
+        );
       })}
     </Template>
   );

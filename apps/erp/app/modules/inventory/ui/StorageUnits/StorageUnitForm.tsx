@@ -25,6 +25,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
 import { PrintButton } from "~/components";
 import {
+  Boolean,
   Hidden,
   Input,
   Location,
@@ -47,6 +48,8 @@ type StorageUnitFormProps = {
     workCenterId: string;
     workCenterName: string | null;
   } | null;
+  /** What makes this unit non-nettable when its own flag says nettable. */
+  inheritedNonNettable?: { via: "storageType" | "parent"; name: string } | null;
 };
 
 const StorageUnitForm = ({
@@ -55,7 +58,8 @@ const StorageUnitForm = ({
   open = true,
   type = "drawer",
   onClose,
-  inheritedWorkCenter
+  inheritedWorkCenter,
+  inheritedNonNettable = null
 }: StorageUnitFormProps) => {
   // A modal closes once the unit exists, so the picker that opened it can
   // select it; an error is toasted and the form stays.
@@ -65,6 +69,7 @@ const StorageUnitForm = ({
     }
   });
   const { t } = useLingui();
+  const sourceName = inheritedNonNettable?.name;
 
   const permissions = usePermissions();
   const isEditing = !!initialValues?.id;
@@ -183,6 +188,19 @@ const StorageUnitForm = ({
                     helperText={t`Assigns this storage unit to a work center (lineside)`}
                   />
                 )}
+                <Boolean
+                  name="nonNettable"
+                  label={t`Non-nettable`}
+                  termId="non-nettable"
+                  bordered
+                  description={
+                    inheritedNonNettable?.via === "storageType"
+                      ? t`Already non-nettable through its storage type ${sourceName}`
+                      : inheritedNonNettable?.via === "parent"
+                        ? t`Already non-nettable through its parent ${sourceName}`
+                        : t`MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas.`
+                  }
+                />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

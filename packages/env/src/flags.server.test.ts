@@ -474,4 +474,38 @@ describe("flags and evaluateBrowserFlags", () => {
       "multi-company-management": true
     });
   });
+  it("match a user rule by email, in lower case", async () => {
+    const doc = JSON.stringify({
+      flags: {
+        "integration-early-access": {
+          state: "ENABLED",
+          variants: { on: true, off: false },
+          defaultVariant: "off",
+          targeting: {
+            if: [
+              {
+                and: [
+                  { "==": [{ var: "companyId" }, "cmp_A"] },
+                  { in: [{ var: "email" }, ["raul@acme.com"]] }
+                ]
+              },
+              "on",
+              null
+            ]
+          }
+        }
+      }
+    });
+    await OpenFeature.setProviderAndWait(
+      new CarbonFlagsProvider({
+        endpoint: `data:application/json;base64,${Buffer.from(doc).toString("base64")}`
+      })
+    );
+    const read = (companyId: string, email?: string) =>
+      flags.bool("integration-early-access", { companyId, email });
+    expect(await read("cmp_A", " Raul@Acme.com ")).toBe(true);
+    expect(await read("cmp_B", "raul@acme.com")).toBe(false);
+    expect(await read("cmp_A", "sid@acme.com")).toBe(false);
+    expect(await read("cmp_A")).toBe(false);
+  });
 });

@@ -814,6 +814,9 @@ msgstr "{previewCount, plural, one {यह # व्यक्ति-दिन प
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# पंक्ति को स्थायी रूप से हटाएँ?} other {# पंक्तियों को स्थायी रूप से हटाएँ?}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} MRP से बाहर भंडारण में, योजना में शामिल नहीं"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
 
@@ -2724,6 +2727,12 @@ msgstr "आवंटित"
 msgid "Allows acknowledge & continue"
 msgstr "स्वीकार करने और जारी रखने की अनुमति देता है"
 
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "अपनी मूल इकाई {sourceName} के कारण पहले से MRP से बाहर"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "अपने भंडारण प्रकार {sourceName} के कारण पहले से MRP से बाहर"
+
 msgid "Already posted"
 msgstr "पहले से ही पोस्ट किया गया"
 
@@ -3757,6 +3766,12 @@ msgstr "क्या आप निश्चित हैं कि आप {lineN
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "क्या आप इस आइटम के लिए {supplierName} को आपूर्तिकर्ता के रूप में निकालना चाहते हैं? यह वापस नहीं किया जा सकता।"
+
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
 
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "क्या आप निश्चित हैं कि आप इस कर्मचारी को {name} से हटाना चाहते हैं? प्रशिक्षण इतिहास रखा जाता है और कर्मचारी को बाद में फिर से जोड़ा जा सकता है।"
@@ -9194,6 +9209,9 @@ msgstr "मूल्य निर्धारण संपादित करे
 msgid "Edit Pricing Rule"
 msgstr "मूल्य निर्धारण नियम संपादित करें"
 
+msgid "Edit Printer"
+msgstr "प्रिंटर संपादित करें"
+
 msgid "Edit Process"
 msgstr "प्रक्रिया संपादित करें"
 
@@ -9930,6 +9948,9 @@ msgstr "अवधि को बंद करने से पहले प्र
 
 msgid "Every row was imported successfully."
 msgstr "हर पंक्ति सफलतापूर्वक आयात की गई।"
+
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "इस प्रकार की हर भंडारण इकाई MRP से बाहर है: MRP और पिकिंग इसके स्टॉक को अनदेखा करते हैं।"
 
 msgid "Every unit has a rate."
 msgstr "प्रत्येक इकाई की एक दर है।"
@@ -12961,7 +12982,7 @@ msgstr "कानबान"
 msgid "Kanban for {kanbanName}"
 msgstr "{kanbanName} के लिए कानबन"
 
-msgid "Kanban ID"
+msgid "Kanban IDs"
 msgstr "कानबान आईडी"
 
 msgid "Kanban Output"
@@ -13042,7 +13063,7 @@ msgstr "लेबल आकार"
 msgid "Label to complete the current operation for this kanban"
 msgstr "इस कानबान के लिए वर्तमान ऑपरेशन पूर्ण करें"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "इस कानबान के लिए एक {0} बनाएँ"
 
@@ -14394,6 +14415,9 @@ msgstr "माइग्रेशन क्लीयरिंग (डिफ़ॉ
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "माइग्रेशन क्लीयरिंग शून्य तक कुल होना चाहिए। <0>परीक्षा शेष पर जाएँ</0>"
 
+msgid "Min"
+msgstr "न्यूनतम"
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "न्यूनतम {minimumBatchQuantity} — पूरा किया गया"
 
@@ -14679,6 +14703,9 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (योजना)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP और पिकिंग इस इकाई और इसके भीतर की इकाइयों के स्टॉक को अनदेखा करते हैं। क्वारंटाइन और होल्ड क्षेत्रों के लिए इसका उपयोग करें।"
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP हर 3 घंटे में स्वचालित रूप से चलता है, लेकिन आप इसे यहां मैन्युअल रूप से चला सकते हैं।"
 
@@ -14816,6 +14843,9 @@ msgstr "शुद्ध ROU संपत्ति"
 
 msgid "Net Unit Price"
 msgstr "शुद्ध इकाई मूल्य"
+
+msgid "Nettable"
+msgstr "MRP में शामिल"
 
 msgid "Network error"
 msgstr "नेटवर्क त्रुटि"
@@ -16084,6 +16114,9 @@ msgstr "गैर-वर्तमान भाग"
 
 msgid "Non-Inventory"
 msgstr "गैर-इन्वेंटरी"
+
+msgid "Non-nettable"
+msgstr "MRP से बाहर"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "गैर-संचालन व्यय खाता डेबिट किया जाता है जब इस वर्ग की एक संपत्ति इसके शुद्ध बही मूल्य से कम पर बेची या नष्ट की जाती है।"
@@ -18182,6 +18215,13 @@ msgstr "लेबल प्रिंट करें"
 msgid "Print Label"
 msgstr "लेबल प्रिंट करें"
 
+msgid "Print Labels"
+msgstr "लेबल प्रिंट करें"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "लेबल प्रिंट करें ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "प्रिंट आउटपुट ({0})"
@@ -18347,9 +18387,6 @@ msgstr "प्रोजेक्ट शुरुआत"
 
 msgid "Projected"
 msgstr "अनुमानित"
-
-msgid "Projected (To)"
-msgstr "अनुमानित (To)"
 
 msgid "Projected completion"
 msgstr "अनुमानित पूर्णता"
@@ -18708,7 +18745,7 @@ msgstr "अवशिष्ट का PV"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "इस कानबान के लिए वर्तमान ऑपरेशन पूर्ण करने के लिए QR कोड"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "इस कानबान के लिए एक {0} बनाने के लिए QR कोड"
 
@@ -19613,6 +19650,7 @@ msgstr "पुनर्मापन जर्नल (प्रभावी त�
 msgid "Remove"
 msgstr "निकालें"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "निकालें {0}"
@@ -22318,6 +22356,9 @@ msgstr "बजाय इसके साइन आउट करें"
 msgid "Sign-in code"
 msgstr "साइन-इन कोड"
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "अगले चरण में जाने से पहले साइन-ऑफ समीक्षा"
 
@@ -22816,6 +22857,9 @@ msgstr "स्टॉक"
 
 msgid "Stock Availability"
 msgstr "स्टॉक उपलब्धता"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "इस भंडारण इकाई का स्टॉक आपूर्ति नहीं है। MRP और योजना स्क्रीन इसे नहीं गिनतीं, और पिकिंग इससे नहीं लेती। कोई इकाई तब भी MRP से बाहर होती है जब उसकी मूल इकाई या उसका कोई भंडारण प्रकार बाहर हो। क्वारंटाइन और होल्ड क्षेत्रों के लिए इसका उपयोग करें। स्टॉक स्थानांतरण स्टॉक को फिर से बाहर ले जाता है।"
 
 msgid "Stock movement corrected"
 msgstr "स्टॉक आंदोलन सही किया गया"
@@ -25006,6 +25050,9 @@ msgstr "इस RFQ के लिए तुलना करने के लि�
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "इस जॉब से जुड़े बाहरी ऑपरेशन हैं जिनके पास कोई आपूर्तिकर्ता नहीं है। कृपया इसे जारी करने से पहले प्रत्येक बाहरी ऑपरेशन के लिए एक आपूर्तिकर्ता असाइन करें।"
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "इन ऑपरेशन पर कोई सेटअप, श्रम, या मशीन समय नहीं है, इसलिए रन का आकार निर्धारित करने के लिए कुछ नहीं है। यह बार एक नाममात्र मार्कर है और क्षमता नहीं रख रहा है — इसे शेड्यूल करने के लिए ऑपरेशन में समय मानक जोड़ें।"

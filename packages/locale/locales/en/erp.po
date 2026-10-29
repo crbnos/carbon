@@ -814,6 +814,9 @@ msgstr "{previewCount, plural, one {This will set +{hoursInput}h of overtime on 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} in non-nettable storage, not planned against"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# phase left} other {# phases left}}"
 
@@ -2724,6 +2727,12 @@ msgstr "Allocated"
 msgid "Allows acknowledge & continue"
 msgstr "Allows acknowledge & continue"
 
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Already non-nettable through its parent {sourceName}"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Already non-nettable through its storage type {sourceName}"
+
 msgid "Already posted"
 msgstr "Already posted"
 
@@ -3757,6 +3766,12 @@ msgstr "Are you sure you want to remove {lineName} from this contract?"
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
+
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
 
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
@@ -9194,6 +9209,9 @@ msgstr "Edit Pricing"
 msgid "Edit Pricing Rule"
 msgstr "Edit Pricing Rule"
 
+msgid "Edit Printer"
+msgstr "Edit Printer"
+
 msgid "Edit Process"
 msgstr "Edit Process"
 
@@ -9930,6 +9948,9 @@ msgstr "Every required task must be Done or Skipped before the period can be clo
 
 msgid "Every row was imported successfully."
 msgstr "Every row was imported successfully."
+
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
 
 msgid "Every unit has a rate."
 msgstr "Every unit has a rate."
@@ -12961,8 +12982,8 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban for {kanbanName}"
 
-msgid "Kanban ID"
-msgstr "Kanban ID"
+msgid "Kanban IDs"
+msgstr "Kanban IDs"
 
 msgid "Kanban Output"
 msgstr "Kanban Output"
@@ -13042,7 +13063,7 @@ msgstr "Label Size"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Label to complete the current operation for this kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Label to create a {0} for this kanban"
 
@@ -14394,6 +14415,9 @@ msgstr "Migration Clearing (default)"
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 
+msgid "Min"
+msgstr "Min"
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "min {minimumBatchQuantity} — met"
 
@@ -14679,6 +14703,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (planning)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP runs automatically every 3 hours, but you can run it manually here."
 
@@ -14816,6 +14843,9 @@ msgstr "Net ROU Asset"
 
 msgid "Net Unit Price"
 msgstr "Net Unit Price"
+
+msgid "Nettable"
+msgstr "Nettable"
 
 msgid "Network error"
 msgstr "Network error"
@@ -16084,6 +16114,9 @@ msgstr "Non-current portion"
 
 msgid "Non-Inventory"
 msgstr "Non-Inventory"
+
+msgid "Non-nettable"
+msgstr "Non-nettable"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
@@ -18182,6 +18215,13 @@ msgstr "Print label"
 msgid "Print Label"
 msgstr "Print Label"
 
+msgid "Print Labels"
+msgstr "Print Labels"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Print Labels ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Print Output ({0})"
@@ -18347,9 +18387,6 @@ msgstr "Project start"
 
 msgid "Projected"
 msgstr "Projected"
-
-msgid "Projected (To)"
-msgstr "Projected (To)"
 
 msgid "Projected completion"
 msgstr "Projected completion"
@@ -18708,7 +18745,7 @@ msgstr "PV of Residual"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR Code to complete the current operation for this kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR Code to create a {0} for this kanban"
 
@@ -19613,6 +19650,7 @@ msgstr "Remeasurement journal (the effective date and the classification are che
 msgid "Remove"
 msgstr "Remove"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Remove {0}"
@@ -22318,6 +22356,9 @@ msgstr "Sign out instead"
 msgid "Sign-in code"
 msgstr "Sign-in code"
 
+msgid "Sign-in failed. Try again."
+msgstr "Sign-in failed. Try again."
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Sign-off review before moving to the next step"
 
@@ -22816,6 +22857,9 @@ msgstr "Stock"
 
 msgid "Stock Availability"
 msgstr "Stock Availability"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 
 msgid "Stock movement corrected"
 msgstr "Stock movement corrected"
@@ -25006,6 +25050,9 @@ msgstr "There are no active supplier quotes to compare for this RFQ."
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."

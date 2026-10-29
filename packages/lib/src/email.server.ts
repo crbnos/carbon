@@ -72,17 +72,12 @@ const getTransporter = (): Transporter | null => {
   if (transporter !== undefined) return transporter;
 
   if (SMTP_HOST) {
-    const auth =
-      SMTP_USER && SMTP_PASSWORD
-        ? { user: SMTP_USER, pass: SMTP_PASSWORD }
-        : undefined;
-    transporter = nodemailer.createTransport({
+    transporter = createSmtpTransport({
       host: SMTP_HOST,
       port: SMTP_PORT,
       secure: SMTP_PORT === 465,
-      // Never send credentials in plaintext if the relay skips STARTTLS.
-      requireTLS: SMTP_PORT !== 465 && Boolean(auth),
-      auth
+      user: SMTP_USER,
+      pass: SMTP_PASSWORD
     });
   } else if (process.env.RESEND_API_KEY) {
     // Legacy fallback so existing deployments keep sending with zero config
@@ -90,11 +85,12 @@ const getTransporter = (): Transporter | null => {
     log.info(
       "SMTP_* not set — falling back to RESEND_API_KEY via smtp.resend.com; migrate to SMTP_* vars"
     );
-    transporter = nodemailer.createTransport({
+    transporter = createSmtpTransport({
       host: "smtp.resend.com",
       port: 465,
       secure: true,
-      auth: { user: "resend", pass: process.env.RESEND_API_KEY }
+      user: "resend",
+      pass: process.env.RESEND_API_KEY
     });
   } else {
     log.info("SMTP not configured — email disabled");
@@ -104,21 +100,35 @@ const getTransporter = (): Transporter | null => {
   return transporter;
 };
 
-export const sendEmail = async (
+export type SmtpTransportConfig = {
+  host: string;
+  port: number;
+  /** Implicit TLS (port 465). Off means STARTTLS. */
+  secure: boolean;
+  user?: string;
+  pass?: string;
+};
+
+export function createSmtpTransport(config: SmtpTransportConfig): Transporter {
+  const auth =
+    config.user && config.pass
+      ? { user: config.user, pass: config.pass }
+      : undefined;
+  return nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    // Never send credentials in plaintext if the relay skips STARTTLS.
+    requireTLS: !config.secure && Boolean(auth),
+    auth
+  });
+}
+
+/** Never throws: a failure is the result's `error`. */
+export const deliverEmail = async (
+  transport: Transporter,
   payload: SendEmailPayload
 ): Promise<SendEmailResult> => {
-  const transport = getTransporter();
-
-  if (!transport) {
-    // Log only non-sensitive metadata — the full payload carries recipient PII
-    // and the rendered HTML body (which can include verification codes).
-    log.debug("Email send skipped (SMTP not configured)", {
-      to: payload.to,
-      subject: payload.subject
-    });
-    return { data: null, error: null };
-  }
-
   try {
     const info = await transport.sendMail({
       from: payload.from ?? DEFAULT_FROM,
@@ -145,4 +155,22 @@ export const sendEmail = async (
     });
     return { data: null, error: err as Error };
   }
+};
+
+export const sendEmail = async (
+  payload: SendEmailPayload
+): Promise<SendEmailResult> => {
+  const transport = getTransporter();
+
+  if (!transport) {
+    // Log only non-sensitive metadata — the full payload carries recipient PII
+    // and the rendered HTML body (which can include verification codes).
+    log.debug("Email send skipped (SMTP not configured)", {
+      to: payload.to,
+      subject: payload.subject
+    });
+    return { data: null, error: null };
+  }
+
+  return deliverEmail(transport, payload);
 };

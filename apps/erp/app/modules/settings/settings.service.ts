@@ -123,6 +123,7 @@ import {
   pickBomChildRow,
   pickReuseRow,
   pickRevisionBase,
+  picksCredentialFreeEmail,
   proposeItem,
   reconcilePushDefaults,
   releaseBomKey,
@@ -670,7 +671,11 @@ export async function isIntegrationInstallWithheld(
     !isIntegrationComingSoon(integration, {
       edition: CarbonEdition,
       email,
-      hasEarlyAccess: await hasIntegrationEarlyAccess({ companyId, userId })
+      hasEarlyAccess: await hasIntegrationEarlyAccess({
+        companyId,
+        userId,
+        email
+      })
     })
   ) {
     return false;
@@ -2876,14 +2881,18 @@ async function getConnectionHealth(
   // the row's `secretRef` itself (the `integrations` view doesn't expose it) and
   // throws when the secret can't be read — treat that as unhealthy rather than
   // crashing the whole settings page.
+  const metadata = (integration.metadata as Record<string, any>) ?? {};
   let resolvedMetadata: Record<string, any>;
   try {
-    resolvedMetadata = (await resolveIntegrationSecrets(
-      getCarbonServiceRole(),
-      companyId,
-      integration.id!,
-      (integration.metadata as Record<string, any>) ?? {}
-    )) as Record<string, any>;
+    // Email's server mail and Gmail store no secret for the vault to return.
+    resolvedMetadata = picksCredentialFreeEmail(integration.id!, metadata)
+      ? metadata
+      : ((await resolveIntegrationSecrets(
+          getCarbonServiceRole(),
+          companyId,
+          integration.id!,
+          metadata
+        )) as Record<string, any>);
   } catch {
     return {
       ...integration,
@@ -3414,12 +3423,13 @@ export async function refuseUnlessCanManageCompanies(
     .select("email")
     .eq("id", ctx.actor.userId)
     .maybeSingle();
-  if (isInternalEmail(data?.email ?? "")) return null;
+  const email = data?.email ?? "";
+  if (isInternalEmail(email)) return null;
   // The same rule as the Settings → Companies pages: Carbon staff, and the
   // companies the `multi-company-management` flag turns it on for.
   const enabled = await flags.bool("multi-company-management", {
     companyId: ctx.company.id,
-    userId: ctx.actor.userId
+    email
   });
   return enabled ? null : refused;
 }
@@ -8594,6 +8604,7 @@ function methodLinesMissingPullFrom(
   companyId: string,
   locationIds: string[]
 ) {
+  // A line with no Pull From at a location, or a non-nettable (quarantine) one.
   return db
     .selectFrom("methodMaterial")
     .innerJoin("makeMethod", (join) =>
@@ -8614,7 +8625,16 @@ function methodLinesMissingPullFrom(
       sql<boolean>`COALESCE("component"."itemTrackingType", 'Inventory') <> 'Non-Inventory'`
     )
     .where(
-      sql<boolean>`EXISTS (SELECT 1 FROM unnest(${locationIds}::text[]) AS loc WHERE COALESCE("methodMaterial"."storageUnitIds" ->> loc, '') = '')`
+      sql<boolean>`EXISTS (
+        SELECT 1 FROM unnest(${locationIds}::text[]) AS loc
+        WHERE COALESCE("methodMaterial"."storageUnitIds" ->> loc, '') = ''
+          OR EXISTS (
+            SELECT 1 FROM "storageUnit" su
+            WHERE su."id" = "methodMaterial"."storageUnitIds" ->> loc
+              AND su."companyId" = ${companyId}
+              AND su."effectiveNettable" = false
+          )
+      )`
     );
 }
 
@@ -8623,6 +8643,7 @@ function jobLinesMissingStorageUnit(
   companyId: string,
   locationIds: string[]
 ) {
+  // A line with no storage unit, or a non-nettable (quarantine) one.
   return db
     .selectFrom("jobMaterial")
     .innerJoin("job", (join) =>
@@ -8638,7 +8659,20 @@ function jobLinesMissingStorageUnit(
     )
     .where("job.locationId", "in", locationIds)
     .where("jobMaterial.companyId", "=", companyId)
-    .where("jobMaterial.storageUnitId", "is", null)
+    .where((eb) =>
+      eb.or([
+        eb("jobMaterial.storageUnitId", "is", null),
+        eb(
+          "jobMaterial.storageUnitId",
+          "in",
+          eb
+            .selectFrom("storageUnit")
+            .select("storageUnit.id")
+            .where("storageUnit.companyId", "=", companyId)
+            .where("storageUnit.effectiveNettable", "=", false)
+        )
+      ])
+    )
     .where("jobMaterial.methodType", "!=", "Make to Order")
     .where("jobMaterial.itemType", "in", [...PULLED_ITEM_TYPES])
     .where("jobMaterial.requiresBatchTracking", "=", false)
@@ -8715,6 +8749,38 @@ export async function getActiveMethodsMissingPullFrom(
       ])
       .execute();
 
+    // The Pull Froms at these locations that are non-nettable (quarantine),
+    // which count as missing too.
+    const pullFromAt = (storageUnitIds: unknown, locationId: string) => {
+      const value =
+        storageUnitIds && typeof storageUnitIds === "object"
+          ? (storageUnitIds as Record<string, unknown>)[locationId]
+          : undefined;
+      return typeof value === "string" && value.length > 0 ? value : null;
+    };
+    const namedIds = [
+      ...new Set(
+        lines.flatMap((line) =>
+          locationIds.flatMap((id) => pullFromAt(line.storageUnitIds, id) ?? [])
+        )
+      )
+    ];
+    const nonNettable = new Set(
+      namedIds.length === 0
+        ? []
+        : (
+            await db
+              .selectFrom("storageUnit")
+              .where("companyId", "=", companyId)
+              // One array parameter: a large company can name more units
+              // than Postgres allows bound parameters.
+              .where(sql<boolean>`"id" = ANY(${namedIds}::text[])`)
+              .where("effectiveNettable", "=", false)
+              .select("id")
+              .execute()
+          ).map((unit) => unit.id)
+    );
+
     const methods = new Map<
       string,
       Omit<MethodMissingPullFrom, "materials" | "locations"> & {
@@ -8739,6 +8805,12 @@ export async function getActiveMethodsMissingPullFrom(
         locationIds
       ))
         method.locations.add(locationName.get(id) ?? id);
+      for (const id of locationIds) {
+        const pullFrom = pullFromAt(line.storageUnitIds, id);
+        if (pullFrom && nonNettable.has(pullFrom)) {
+          method.locations.add(locationName.get(id) ?? id);
+        }
+      }
       methods.set(line.makeMethodId, method);
     }
 

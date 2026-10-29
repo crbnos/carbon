@@ -150,17 +150,23 @@ export async function getDefaultStorageUnitForJob(
   client: SupabaseClient<Database>,
   itemId: string,
   locationId: string,
-  companyId: string
+  companyId: string,
+  /** A bin stock is taken from (a sales order line ships from it), not one it
+   *  lands in: a non-nettable (quarantine) default is passed over too. */
+  { source = false }: { source?: boolean } = {}
 ): Promise<string | null> {
   const pickMethod = await client
     .from("pickMethod")
-    .select("defaultStorageUnitId")
+    .select("defaultStorageUnitId, storageUnit(effectiveNettable)")
     .eq("itemId", itemId)
     .eq("locationId", locationId)
     .eq("companyId", companyId)
     .maybeSingle();
 
-  if (pickMethod.data?.defaultStorageUnitId) {
+  if (
+    pickMethod.data?.defaultStorageUnitId &&
+    !(source && pickMethod.data.storageUnit?.effectiveNettable === false)
+  ) {
     return pickMethod.data.defaultStorageUnitId;
   }
 
@@ -171,12 +177,35 @@ export async function getDefaultStorageUnitForJob(
     locationId
   );
 
-  if (itemStorageUnitQuantities.data?.length) {
+  // A non-nettable unit (quarantine) is never the guessed default.
+  const stockedIds = Array.from(
+    new Set(
+      (itemStorageUnitQuantities.data ?? [])
+        .map((row) => row.storageUnitId)
+        .filter((id): id is string => !!id)
+    )
+  );
+  const nonNettable =
+    stockedIds.length > 0
+      ? await client
+          .from("storageUnit")
+          .select("id")
+          .in("id", stockedIds)
+          .eq("companyId", companyId)
+          .eq("effectiveNettable", false)
+      : { data: [], error: null };
+  // Without the flags any bin could be a quarantine bin: guess none.
+  if (nonNettable.error) return null;
+  const excluded = new Set((nonNettable.data ?? []).map((row) => row.id));
+  const candidates = (itemStorageUnitQuantities.data ?? []).filter(
+    (row) => !row.storageUnitId || !excluded.has(row.storageUnitId)
+  );
+
+  if (candidates.length) {
     // Find the storage unit with the highest quantity
-    const storageUnitWithHighestQuantity =
-      itemStorageUnitQuantities.data.reduce((max, current) => {
-        return (current.quantity ?? 0) > (max.quantity ?? 0) ? current : max;
-      });
+    const storageUnitWithHighestQuantity = candidates.reduce((max, current) => {
+      return (current.quantity ?? 0) > (max.quantity ?? 0) ? current : max;
+    });
 
     return storageUnitWithHighestQuantity.storageUnitId;
   }
@@ -241,4 +270,48 @@ export async function getItemLedgerActivity(
   const rows =
     direction === "newer" ? (data ?? []).slice().reverse() : (data ?? []);
   return { data: rows, hasMore: (data?.length ?? 0) === pageSize, error };
+}
+
+export type NonNettableUnit = {
+  id: string;
+  name: string;
+  parentId: string | null;
+  nettable: boolean;
+  storageTypeIds: string[] | null;
+};
+
+/**
+ * Why a unit that is nettable by its own flag is non-nettable: one of its own
+ * storage types first, else the nearest parent that is non-nettable by its own
+ * flag or a type. `units` holds the unit's ancestors by id; `nonNettableTypes`
+ * the names of the company's non-nettable storage types by id. Null when
+ * nothing above the unit makes it non-nettable.
+ */
+export function nonNettableSource(
+  unit: Pick<NonNettableUnit, "parentId" | "storageTypeIds">,
+  units: Map<string, NonNettableUnit>,
+  nonNettableTypes: Map<string, string>
+): { via: "storageType" | "parent"; name: string } | null {
+  const ownType = (unit.storageTypeIds ?? []).find((id) =>
+    nonNettableTypes.has(id)
+  );
+  if (ownType) {
+    return { via: "storageType", name: nonNettableTypes.get(ownType)! };
+  }
+
+  const seen = new Set<string>();
+  let parentId = unit.parentId;
+  while (parentId && !seen.has(parentId)) {
+    seen.add(parentId);
+    const parent = units.get(parentId);
+    if (!parent) return null;
+    const hasType = (parent.storageTypeIds ?? []).some((id) =>
+      nonNettableTypes.has(id)
+    );
+    if (!parent.nettable || hasType) {
+      return { via: "parent", name: parent.name };
+    }
+    parentId = parent.parentId;
+  }
+  return null;
 }

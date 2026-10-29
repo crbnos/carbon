@@ -814,6 +814,9 @@ msgstr "{previewCount, plural, one {이것은 # 개의 인원-일에 대해 +{ho
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 행을 영구 삭제하시겠습니까?} other {# 행을 영구 삭제하시겠습니까?}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity}이(가) MRP 제외 보관 위치에 있어 계획에 포함되지 않음"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
 
@@ -2724,6 +2727,12 @@ msgstr "할당됨"
 msgid "Allows acknowledge & continue"
 msgstr "확인 후 계속 진행 허용"
 
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "상위 단위 {sourceName}(으)로 인해 이미 MRP 제외"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "저장 유형 {sourceName}(으)로 인해 이미 MRP 제외"
+
 msgid "Already posted"
 msgstr "이미 전기됨"
 
@@ -3757,6 +3766,12 @@ msgstr "{lineName}을 이 계약에서 제거하시겠습니까?"
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "정말로 이 항목의 공급업체로 {supplierName}을(를) 제거하시겠습니까? 이 작업은 취소할 수 없습니다."
+
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
 
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "{name}에서 이 직원을 제거하시겠습니까? 교육 이력은 유지되며 직원을 나중에 다시 추가할 수 있습니다."
@@ -9194,6 +9209,9 @@ msgstr "가격 책정 편집"
 msgid "Edit Pricing Rule"
 msgstr "가격 규칙 편집"
 
+msgid "Edit Printer"
+msgstr "프린터 편집"
+
 msgid "Edit Process"
 msgstr "공법 편집"
 
@@ -9930,6 +9948,9 @@ msgstr "기간을 마감하기 전에 모든 필수 작업이 완료 또는 건�
 
 msgid "Every row was imported successfully."
 msgstr "모든 행이 성공적으로 가져와졌습니다."
+
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "이 유형의 모든 보관 단위는 MRP 제외입니다. MRP와 피킹은 해당 재고를 무시합니다."
 
 msgid "Every unit has a rate."
 msgstr "모든 단위에 요율이 있습니다."
@@ -12961,7 +12982,7 @@ msgstr "칸반"
 msgid "Kanban for {kanbanName}"
 msgstr "{kanbanName}의 칸반"
 
-msgid "Kanban ID"
+msgid "Kanban IDs"
 msgstr "칸반 ID"
 
 msgid "Kanban Output"
@@ -13042,7 +13063,7 @@ msgstr "라벨 크기"
 msgid "Label to complete the current operation for this kanban"
 msgstr "이 칸반의 현재 공정작업을 완료하는 라벨"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "이 칸반의 {0}을(를) 생성하는 라벨"
 
@@ -14394,6 +14415,9 @@ msgstr "이관 정산(기본값)"
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "이관 정산의 총계는 0이어야 합니다. <0>시산표로 이동</0>"
 
+msgid "Min"
+msgstr "최소"
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "최소 {minimumBatchQuantity} — 충족"
 
@@ -14679,6 +14703,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP(계획)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP와 피킹은 이 단위와 그 안의 단위에 있는 재고를 무시합니다. 격리 및 보류 구역에 사용하세요."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP는 3시간마다 자동으로 실행되지만, 여기서 수동으로 실행할 수도 있습니다."
 
@@ -14816,6 +14843,9 @@ msgstr "순 사용권 자산"
 
 msgid "Net Unit Price"
 msgstr "순 단가"
+
+msgid "Nettable"
+msgstr "MRP 포함"
 
 msgid "Network error"
 msgstr "네트워크 오류"
@@ -16084,6 +16114,9 @@ msgstr "비유동 부분"
 
 msgid "Non-Inventory"
 msgstr "비재고"
+
+msgid "Non-nettable"
+msgstr "MRP 제외"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "이 자산군에 속한 자산이 순장부가액보다 낮은 가격으로 판매되거나 폐기될 때 차감되는 영업외비용 계정입니다."
@@ -18182,6 +18215,13 @@ msgstr "레이블 인쇄"
 msgid "Print Label"
 msgstr "라벨 인쇄"
 
+msgid "Print Labels"
+msgstr "라벨 인쇄"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "라벨 인쇄 ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "인쇄 출력({0})"
@@ -18347,9 +18387,6 @@ msgstr "프로젝트 시작"
 
 msgid "Projected"
 msgstr "예상"
-
-msgid "Projected (To)"
-msgstr "예상 (도착)"
 
 msgid "Projected completion"
 msgstr "예상 완료"
@@ -18708,7 +18745,7 @@ msgstr "잔존가치의 현재가치"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "이 칸반의 현재 공정을 완료 처리하기 위한 QR 코드"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "이 칸반에 대한 {0}을(를) 생성하는 QR 코드"
 
@@ -19613,6 +19650,7 @@ msgstr "재측정 전표 (유효 날짜 및 분류는 확인 시 검증됩니다
 msgid "Remove"
 msgstr "제거"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "{0} 제거"
@@ -22318,6 +22356,9 @@ msgstr "대신 로그아웃"
 msgid "Sign-in code"
 msgstr "로그인 코드"
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "다음 단계로 넘어가기 전 서명 검토"
 
@@ -22816,6 +22857,9 @@ msgstr "재고"
 
 msgid "Stock Availability"
 msgstr "재고 가용성"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "이 보관 단위의 재고는 공급이 아닙니다. MRP와 계획 화면은 이를 집계하지 않으며, 피킹도 여기서 가져가지 않습니다. 상위 단위나 저장 유형 중 하나가 MRP 제외이면 해당 단위도 MRP 제외입니다. 격리 및 보류 구역에 사용하세요. 재고 이송으로 재고를 다시 옮길 수 있습니다."
 
 msgid "Stock movement corrected"
 msgstr "재고 이동 수정됨"
@@ -25006,6 +25050,9 @@ msgstr "이 RFQ와 비교할 활성 공급업체 견적이 없습니다."
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "이 작업 지시와 관련된 외주 공정이 있지만 공급업체가 없습니다. 릴리스하기 전에 각 외주 공정에 공급업체를 할당하십시오."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "이 공정에는 셋업, 노무 또는 기계 시간이 없어서 실행 크기를 정할 근거가 없습니다. 막대는 명목상의 표시일 뿐이며 용량을 보유하지 않습니다 — 공정에 시간 기준을 추가하여 일정을 짜세요."

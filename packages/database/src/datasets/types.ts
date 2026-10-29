@@ -252,6 +252,11 @@ export type FoundationData = {
   employeeJob: EmployeeJobSpec;
   warehouses: WarehouseSpec[];
   storageTypes: string[];
+  /**
+   * Storage types whose units are non-nettable (a quarantine area): MRP and
+   * picking ignore the stock in them. Each is one of storageTypes.
+   */
+  nonNettableStorageTypes: string[];
   /** Insertion order matters — a parent shelf must precede its children. */
   shelves: ShelfSpec[];
   printerRoute: PrinterRouteSpec | null;

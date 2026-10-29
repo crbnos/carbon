@@ -543,10 +543,11 @@ export async function initFlags(
 
 /**
  * `companyId` is required: a call without it would match no company rule and
- * answer the default without telling anyone. Pass `userId` for a flag whose
- * rules name users.
+ * answer the default without telling anyone. Pass `email` for a flag whose
+ * rules name users: staff write rules by email, since a BYOC console cannot
+ * see a customer's user ids. Rules match it in lower case.
  */
-export type FlagContext = { companyId: string; userId?: string };
+export type FlagContext = { companyId: string; email?: string };
 
 let client: Client | undefined;
 const getClient = () => {
@@ -554,11 +555,14 @@ const getClient = () => {
   return client;
 };
 
-const toContext = ({ companyId, userId }: FlagContext): EvaluationContext => ({
-  targetingKey: userId ?? companyId,
-  companyId,
-  ...(userId ? { userId } : {})
-});
+const toContext = ({ companyId, email }: FlagContext): EvaluationContext => {
+  const normalized = email?.trim().toLowerCase();
+  return {
+    targetingKey: normalized || companyId,
+    companyId,
+    ...(normalized ? { email: normalized } : {})
+  };
+};
 
 /**
  * The only way code reads a flag. The default comes from the registry

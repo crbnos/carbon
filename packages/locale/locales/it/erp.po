@@ -814,6 +814,9 @@ msgstr "{previewCount, plural, one {Questo imposterà +{hoursInput}h di straordi
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Eliminare definitivamente # riga?} other {Eliminare definitivamente # righe?}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} in stoccaggio non nettabile, non pianificato"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase rimanente} other {# fasi rimanenti}}"
 
@@ -2724,6 +2727,12 @@ msgstr "Allocato"
 msgid "Allows acknowledge & continue"
 msgstr "Consente di riconoscere e continuare"
 
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Già non nettabile tramite l'unità superiore {sourceName}"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Già non nettabile tramite il tipo di archiviazione {sourceName}"
+
 msgid "Already posted"
 msgstr "Già registrato"
 
@@ -3757,6 +3766,12 @@ msgstr "Sei sicuro di voler rimuovere {lineName} da questo contratto?"
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Sei sicuro di voler rimuovere {supplierName} come fornitore per questo articolo? Questa azione non può essere annullata."
+
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
 
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Sei sicuro di voler rimuovere questo dipendente da {name}? La cronologia della formazione viene mantenuta e il dipendente può essere aggiunto di nuovo in seguito."
@@ -9194,6 +9209,9 @@ msgstr "Modifica Determinazione dei prezzi"
 msgid "Edit Pricing Rule"
 msgstr "Modifica Regola di Prezzo"
 
+msgid "Edit Printer"
+msgstr "Modifica Stampante"
+
 msgid "Edit Process"
 msgstr "Modifica Processo"
 
@@ -9930,6 +9948,9 @@ msgstr "Ogni Attività richiesta deve essere Fatta o Saltata prima che il period
 
 msgid "Every row was imported successfully."
 msgstr "Ogni riga è stata importata correttamente."
+
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "Ogni unità di stoccaggio di questo tipo è non nettabile: MRP e prelievo ignorano la sua giacenza."
 
 msgid "Every unit has a rate."
 msgstr "Ogni unità ha un tasso."
@@ -12961,7 +12982,7 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban per {kanbanName}"
 
-msgid "Kanban ID"
+msgid "Kanban IDs"
 msgstr "ID Kanban"
 
 msgid "Kanban Output"
@@ -13042,7 +13063,7 @@ msgstr "Dimensione etichetta"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Etichetta per completare l'operazione corrente per questo kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Etichetta per creare un {0} per questo kanban"
 
@@ -14394,6 +14415,9 @@ msgstr "Compensazione Migrazione (predefinito)"
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "La Compensazione Migrazione deve totalizzare zero. <0>Vai al Bilancio di verifica</0>"
 
+msgid "Min"
+msgstr "Min."
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "min {minimumBatchQuantity} — soddisfatto"
 
@@ -14679,6 +14703,9 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (pianificazione)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP e prelievo ignorano la giacenza in questa unità e nelle unità che contiene. Da usare per aree di quarantena e blocco."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP viene eseguito automaticamente ogni 3 ore, ma puoi eseguirlo manualmente qui."
 
@@ -14816,6 +14843,9 @@ msgstr "Cespite ROU netto"
 
 msgid "Net Unit Price"
 msgstr "Prezzo unitario netto"
+
+msgid "Nettable"
+msgstr "Nettabile"
 
 msgid "Network error"
 msgstr "Errore di rete"
@@ -16084,6 +16114,9 @@ msgstr "Porzione non corrente"
 
 msgid "Non-Inventory"
 msgstr "Non a magazzino"
+
+msgid "Non-nettable"
+msgstr "Non nettabile"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Conto spese non operative addebitato quando un cespite di questa classe viene venduto o demolito al di sotto del suo valore contabile netto."
@@ -18182,6 +18215,13 @@ msgstr "Stampa etichetta"
 msgid "Print Label"
 msgstr "Stampa Etichetta"
 
+msgid "Print Labels"
+msgstr "Stampa Etichette"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Stampa Etichette ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Output di stampa ({0})"
@@ -18347,9 +18387,6 @@ msgstr "Inizio progetto"
 
 msgid "Projected"
 msgstr "Proiettato"
-
-msgid "Projected (To)"
-msgstr "Previsto (A)"
 
 msgid "Projected completion"
 msgstr "Completamento previsto"
@@ -18708,7 +18745,7 @@ msgstr "VA residuale"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR Code per completare l'operazione corrente per questo kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Codice QR per creare un {0} per questo kanban"
 
@@ -19613,6 +19650,7 @@ msgstr "Prima nota di rivalutazione (la data effettiva e la classificazione veng
 msgid "Remove"
 msgstr "Rimuovi"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Rimuovi {0}"
@@ -22318,6 +22356,9 @@ msgstr "Esci invece"
 msgid "Sign-in code"
 msgstr "Codice di accesso"
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Revisione di approvazione prima di passare al passaggio successivo"
 
@@ -22816,6 +22857,9 @@ msgstr "Giacenza"
 
 msgid "Stock Availability"
 msgstr "Disponibilità di Giacenza"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "La giacenza in questa unità di stoccaggio non è copertura. MRP e le schermate di pianificazione non la contano, e il prelievo non la usa. Un'unità è non nettabile anche quando lo è la sua unità superiore o uno dei suoi tipi di archiviazione. Da usare per aree di quarantena e blocco. Un trasferimento giacenza la sposta di nuovo fuori."
 
 msgid "Stock movement corrected"
 msgstr "Movimento di magazzino corretto"
@@ -25006,6 +25050,9 @@ msgstr "Non ci sono offerte attive del fornitore da confrontare per questa RdO."
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Ci sono operazioni esterne associate a questo lavoro che non hanno fornitori. Assegna un fornitore a ogni operazione esterna prima di rilasciarlo."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "Non c'è attrezzaggio, manodopera, o tempo macchina su queste operazioni, quindi non c'è nulla su cui basare la dimensione della serie. La barra è un marcatore nominale e non rappresenta un vincolo di capacità — aggiungi standard di tempo alle operazioni per programmarla."

@@ -377,15 +377,16 @@ function returnOrderBlocks(): DocumentBlock[] {
 }
 
 /**
- * Layout for a purchasing RFQ: no summary block — nothing is priced yet, the
- * supplier fills the line-items table in.
+ * Layout for a purchasing RFQ, read as a letter: letterhead, the request,
+ * the items, the sign-off (notes block), then the terms. No summary block —
+ * nothing is priced; the supplier quotes in their own format.
  */
 function rfqBlocks(): DocumentBlock[] {
   return [
     { id: "header", type: "header", visible: true },
     { id: "parties", type: "parties", visible: true },
-    { id: "notes", type: "notes", visible: true },
     { id: "lineItems", type: "lineItems", visible: true },
+    { id: "notes", type: "notes", visible: true },
     { id: "terms", type: "terms", visible: true }
   ];
 }

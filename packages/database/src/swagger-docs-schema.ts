@@ -25662,6 +25662,267 @@ export default {
         tags: ["itemLedger"]
       }
     },
+    "/currencyRevaluationLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.exposureType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmountEnteredBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmountEnteredAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.bookedBaseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.revaluedBaseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.differenceAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/currencyRevaluationLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["currencyRevaluationLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.currencyRevaluationLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["currencyRevaluationLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.exposureType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmountEnteredBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmountEnteredAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.bookedBaseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.revaluedBaseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.differenceAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["currencyRevaluationLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.exposureType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmountEnteredBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmountEnteredAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.bookedBaseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.revaluedBaseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.differenceAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.currencyRevaluationLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["currencyRevaluationLine"]
+      }
+    },
     "/shippingTerm": {
       get: {
         parameters: [
@@ -33067,6 +33328,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
           },
           {
+            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -33138,6 +33402,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
           },
           {
+            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -33161,6 +33428,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
           },
           {
             $ref: "#/parameters/body.itemStockQuantities"
@@ -45274,6 +45544,21 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.leaseInterestExpenseAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.unrealizedExchangeGainAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.unrealizedExchangeLossAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.arRevaluationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.apRevaluationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.currencyTranslationOffsetAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -45543,6 +45828,21 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.leaseInterestExpenseAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.unrealizedExchangeGainAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.unrealizedExchangeLossAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.arRevaluationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.apRevaluationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.currencyTranslationOffsetAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -45764,6 +46064,21 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.leaseInterestExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.unrealizedExchangeGainAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.unrealizedExchangeLossAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.arRevaluationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.apRevaluationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.currencyTranslationOffsetAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -49768,6 +50083,9 @@ export default {
             $ref: "#/parameters/rowFilter.account.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.account.currencyCode"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -49881,6 +50199,9 @@ export default {
             $ref: "#/parameters/rowFilter.account.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.account.currencyCode"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -49946,6 +50267,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.account.isSystem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.account.currencyCode"
           },
           {
             $ref: "#/parameters/body.account"
@@ -51439,6 +51763,9 @@ export default {
             $ref: "#/parameters/rowFilter.accounts.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.accounts.currencyCode"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -51552,6 +51879,9 @@ export default {
             $ref: "#/parameters/rowFilter.accounts.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.accounts.currencyCode"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -51617,6 +51947,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accounts.isSystem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accounts.currencyCode"
           },
           {
             $ref: "#/parameters/body.accounts"
@@ -53122,6 +53455,12 @@ export default {
             $ref: "#/parameters/rowFilter.storageUnit.isWorkCenterDefault"
           },
           {
+            $ref: "#/parameters/rowFilter.storageUnit.nettable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.storageUnit.effectiveNettable"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -53229,6 +53568,12 @@ export default {
             $ref: "#/parameters/rowFilter.storageUnit.isWorkCenterDefault"
           },
           {
+            $ref: "#/parameters/rowFilter.storageUnit.nettable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.storageUnit.effectiveNettable"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -53288,6 +53633,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.storageUnit.isWorkCenterDefault"
+          },
+          {
+            $ref: "#/parameters/rowFilter.storageUnit.nettable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.storageUnit.effectiveNettable"
           },
           {
             $ref: "#/parameters/body.storageUnit"
@@ -57166,6 +57517,9 @@ export default {
             $ref: "#/parameters/rowFilter.storageType.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.storageType.nettable"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -57249,6 +57603,9 @@ export default {
             $ref: "#/parameters/rowFilter.storageType.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.storageType.nettable"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -57284,6 +57641,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.storageType.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.storageType.nettable"
           },
           {
             $ref: "#/parameters/body.storageType"
@@ -57509,6 +57869,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionPlanParts.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionPlanParts.itemPostingGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionPlanParts.tags"
           },
           {
             $ref: "#/parameters/select"
@@ -77328,6 +77694,186 @@ export default {
         tags: ["purchaseOrderSuppliers"]
       }
     },
+    "/currencyRevaluationRate": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.rate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.rateSource"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/currencyRevaluationRate"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["currencyRevaluationRate"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.currencyRevaluationRate"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["currencyRevaluationRate"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.rate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.rateSource"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["currencyRevaluationRate"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.rate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.rateSource"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.currencyRevaluationRate"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["currencyRevaluationRate"]
+      }
+    },
     "/workCenterReplacementPart": {
       get: {
         parameters: [
@@ -77875,6 +78421,213 @@ export default {
           }
         },
         tags: ["itemSerialSequence"]
+      }
+    },
+    "/currencyRevaluationRun": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.currencyRevaluationRunId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.periodEnd"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.reversalJournalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.postedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/currencyRevaluationRun"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["currencyRevaluationRun"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.currencyRevaluationRun"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["currencyRevaluationRun"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.currencyRevaluationRunId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.periodEnd"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.reversalJournalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.postedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["currencyRevaluationRun"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.currencyRevaluationRunId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.periodEnd"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.reversalJournalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.postedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.currencyRevaluationRun"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["currencyRevaluationRun"]
       }
     },
     "/batchProperty": {
@@ -100521,6 +101274,90 @@ export default {
         tags: ["suggestions"]
       }
     },
+    "/kanbanItems": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.readableIdWithRevision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.thumbnailPath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.kanbanCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.kanbanIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.replenishmentSystems"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.supplierIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.kanbans"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/kanbanItems"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["kanbanItems"]
+      }
+    },
     "/customField": {
       get: {
         parameters: [
@@ -104356,6 +105193,9 @@ export default {
             $ref: "#/parameters/rowFilter.storageUnits_recursive.ancestorPath"
           },
           {
+            $ref: "#/parameters/rowFilter.storageUnits_recursive.effectiveNettable"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -107048,6 +107888,88 @@ export default {
         tags: ["(rpc) attach_audit_log_append_only"]
       }
     },
+    "/rpc/get_purchasing_planning_suppliers": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "periods",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_purchasing_planning_suppliers"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                periods: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id", "location_id", "periods"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_purchasing_planning_suppliers"]
+      }
+    },
     "/rpc/get_inventory_tie_out": {
       post: {
         parameters: [
@@ -107496,6 +108418,13 @@ export default {
             name: "p_storage_unit_id",
             required: false,
             type: "string"
+          },
+          {
+            format: "boolean",
+            in: "query",
+            name: "p_exclude_non_nettable",
+            required: false,
+            type: "boolean"
           }
         ],
         produces: [
@@ -107531,6 +108460,10 @@ export default {
                   type: "string"
                 },
                 p_exclude_lineside: {
+                  format: "boolean",
+                  type: "boolean"
+                },
+                p_exclude_non_nettable: {
                   format: "boolean",
                   type: "boolean"
                 },
@@ -107803,6 +108736,51 @@ export default {
           }
         },
         tags: ["(rpc) get_item_change_notices"]
+      }
+    },
+    "/rpc/sync_storage_unit_nettable": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_storage_unit_nettable"]
       }
     },
     "/rpc/xid": {
@@ -109562,6 +110540,63 @@ export default {
         tags: ["(rpc) get_sales_order_lines_by_customer_id"]
       }
     },
+    "/rpc/storage_unit_is_nettable": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_storage_unit_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) storage_unit_is_nettable"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_storage_unit_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_storage_unit_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) storage_unit_is_nettable"]
+      }
+    },
     "/rpc/employee_requires_period": {
       get: {
         parameters: [
@@ -109628,6 +110663,66 @@ export default {
           }
         },
         tags: ["(rpc) employee_requires_period"]
+      }
+    },
+    "/rpc/get_warehouse_storage_unit_ids": {
+      get: {
+        parameters: [
+          {
+            format: "text[]",
+            in: "query",
+            name: "p_storage_unit_ids",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_warehouse_storage_unit_ids"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_storage_unit_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["p_storage_unit_ids"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_warehouse_storage_unit_ids"]
       }
     },
     "/rpc/get_my_permission": {
@@ -114909,6 +116004,51 @@ export default {
         tags: ["(rpc) get_job_quantity_on_hand"]
       }
     },
+    "/rpc/storage_unit_release_non_nettable_stock": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) storage_unit_release_non_nettable_stock"]
+      }
+    },
     "/rpc/sync_archive_other_procedures": {
       post: {
         parameters: [
@@ -117849,6 +118989,51 @@ export default {
           }
         },
         tags: ["(rpc) purchaseLinePivotLines"]
+      }
+    },
+    "/rpc/sync_storage_type_nettable": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_storage_type_nettable"]
       }
     },
     "/rpc/update_receipt_line_batch_tracking": {
@@ -124070,7 +125255,9 @@ export default {
             "Revenue Recognition",
             "Asset Transfer",
             "Lease",
-            "Lease Run"
+            "Lease Run",
+            "Currency Revaluation",
+            "Currency Translation"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -131339,6 +132526,113 @@ export default {
       },
       type: "object"
     },
+    currencyRevaluationLine: {
+      required: [
+        "id",
+        "companyId",
+        "runId",
+        "exposureType",
+        "accountId",
+        "currencyCode",
+        "bookedBaseAmount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('fxrl'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        runId: {
+          format: "text",
+          type: "string"
+        },
+        exposureType: {
+          format: "text",
+          type: "string"
+        },
+        documentType: {
+          format: "text",
+          type: "string"
+        },
+        documentId: {
+          format: "text",
+          type: "string"
+        },
+        documentNumber: {
+          format: "text",
+          type: "string"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
+        },
+        openAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        openAmountEnteredBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        openAmountEnteredAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        bookedBaseAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        revaluedBaseAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        differenceAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     shippingTerm: {
       required: ["id", "name", "active", "companyId", "createdAt", "createdBy"],
       properties: {
@@ -134772,7 +136066,13 @@ export default {
       type: "object"
     },
     itemStockQuantities: {
-      required: ["itemId", "companyId", "locationId", "quantityOnHand"],
+      required: [
+        "itemId",
+        "companyId",
+        "locationId",
+        "quantityOnHand",
+        "quantityNonNettable"
+      ],
       properties: {
         itemId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -134791,6 +136091,11 @@ export default {
           type: "string"
         },
         quantityOnHand: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        quantityNonNettable: {
           default: 0,
           format: "numeric",
           type: "number"
@@ -138252,7 +139557,9 @@ export default {
             "Revenue Recognition",
             "Asset Transfer",
             "Lease",
-            "Lease Run"
+            "Lease Run",
+            "Currency Revaluation",
+            "Currency Translation"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -140817,6 +142124,36 @@ export default {
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
           type: "string"
+        },
+        unrealizedExchangeGainAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        unrealizedExchangeLossAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        arRevaluationAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        apRevaluationAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        currencyTranslationOffsetAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -142918,6 +144255,12 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -143774,6 +145117,12 @@ export default {
         isSystem: {
           format: "boolean",
           type: "boolean"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -144407,7 +145756,9 @@ export default {
         "createdAt",
         "name",
         "storageTypeIds",
-        "isWorkCenterDefault"
+        "isWorkCenterDefault",
+        "nettable",
+        "effectiveNettable"
       ],
       properties: {
         id: {
@@ -144495,6 +145846,16 @@ export default {
         },
         isWorkCenterDefault: {
           default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        nettable: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        effectiveNettable: {
+          default: true,
           format: "boolean",
           type: "boolean"
         }
@@ -146535,7 +147896,14 @@ export default {
       type: "object"
     },
     storageType: {
-      required: ["id", "name", "companyId", "createdBy", "createdAt"],
+      required: [
+        "id",
+        "name",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "nettable"
+      ],
       properties: {
         id: {
           default: "public.xid()",
@@ -146576,6 +147944,11 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        nettable: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -146678,6 +148051,19 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        itemPostingGroupId: {
+          description:
+            "Note:\nThis is a Foreign Key to `itemPostingGroup.id`.<fk table='itemPostingGroup' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -153108,7 +154494,9 @@ export default {
             "Revenue Recognition",
             "Asset Transfer",
             "Lease",
-            "Lease Run"
+            "Lease Run",
+            "Currency Revaluation",
+            "Currency Translation"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -155915,6 +157303,72 @@ export default {
       },
       type: "object"
     },
+    currencyRevaluationRate: {
+      required: [
+        "id",
+        "companyId",
+        "runId",
+        "currencyCode",
+        "rate",
+        "rateSource",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('fxrr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        runId: {
+          format: "text",
+          type: "string"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
+        },
+        rate: {
+          format: "numeric",
+          type: "number"
+        },
+        rateSource: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     workCenterReplacementPart: {
       required: [
         "id",
@@ -156117,6 +157571,88 @@ export default {
         },
         serialNumberTiming: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    currencyRevaluationRun: {
+      required: [
+        "id",
+        "currencyRevaluationRunId",
+        "companyId",
+        "periodEnd",
+        "status",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('fxr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        currencyRevaluationRunId: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        periodEnd: {
+          format: "date",
+          type: "string"
+        },
+        status: {
+          default: "Draft",
+          format: "text",
+          type: "string"
+        },
+        journalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        reversalJournalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        postedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        postedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -167240,6 +168776,80 @@ export default {
       },
       type: "object"
     },
+    kanbanItems: {
+      properties: {
+        id: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        readableIdWithRevision: {
+          format: "text",
+          type: "string"
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string"
+        },
+        kanbanCount: {
+          format: "integer",
+          type: "integer"
+        },
+        kanbanIds: {
+          format: "text",
+          type: "string"
+        },
+        replenishmentSystems: {
+          format: 'public."kanbanReplenishmentSystem"[]',
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        supplierIds: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        kanbans: {
+          format: "jsonb"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     customField: {
       required: [
         "id",
@@ -169082,6 +170692,10 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        effectiveNettable: {
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -183096,6 +184710,129 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.currencyRevaluationLine": {
+      name: "currencyRevaluationLine",
+      description: "currencyRevaluationLine",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/currencyRevaluationLine"
+      }
+    },
+    "rowFilter.currencyRevaluationLine.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.runId": {
+      name: "runId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.exposureType": {
+      name: "exposureType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.documentType": {
+      name: "documentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.documentNumber": {
+      name: "documentNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.accountId": {
+      name: "accountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.openAmount": {
+      name: "openAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.openAmountEnteredBy": {
+      name: "openAmountEnteredBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.openAmountEnteredAt": {
+      name: "openAmountEnteredAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.bookedBaseAmount": {
+      name: "bookedBaseAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.revaluedBaseAmount": {
+      name: "revaluedBaseAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.differenceAmount": {
+      name: "differenceAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.shippingTerm": {
       name: "shippingTerm",
       description: "shippingTerm",
@@ -187021,6 +188758,12 @@ export default {
     },
     "rowFilter.itemStockQuantities.quantityOnHand": {
       name: "quantityOnHand",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemStockQuantities.quantityNonNettable": {
+      name: "quantityNonNettable",
       required: false,
       in: "query",
       type: "string"
@@ -193637,6 +195380,36 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.accountDefault.unrealizedExchangeGainAccount": {
+      name: "unrealizedExchangeGainAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.unrealizedExchangeLossAccount": {
+      name: "unrealizedExchangeLossAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.arRevaluationAccount": {
+      name: "arRevaluationAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.apRevaluationAccount": {
+      name: "apRevaluationAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.currencyTranslationOffsetAccount": {
+      name: "currencyTranslationOffsetAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.warehouse": {
       name: "warehouse",
       description: "warehouse",
@@ -195944,6 +197717,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.account.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.leaseScheduleLine": {
       name: "leaseScheduleLine",
       description: "leaseScheduleLine",
@@ -196862,6 +198641,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.accounts.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.maintenanceDispatchWorkCenter": {
       name: "maintenanceDispatchWorkCenter",
       description: "maintenanceDispatchWorkCenter",
@@ -197653,6 +199438,18 @@ export default {
     },
     "rowFilter.storageUnit.isWorkCenterDefault": {
       name: "isWorkCenterDefault",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.storageUnit.nettable": {
+      name: "nettable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.storageUnit.effectiveNettable": {
+      name: "effectiveNettable",
       required: false,
       in: "query",
       type: "string"
@@ -200132,6 +201929,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.storageType.nettable": {
+      name: "nettable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.costCenter": {
       name: "costCenter",
       description: "costCenter",
@@ -200260,6 +202063,18 @@ export default {
     },
     "rowFilter.inspectionPlanParts.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionPlanParts.itemPostingGroupId": {
+      name: "itemPostingGroupId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionPlanParts.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string"
@@ -210513,6 +212328,75 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.currencyRevaluationRate": {
+      name: "currencyRevaluationRate",
+      description: "currencyRevaluationRate",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/currencyRevaluationRate"
+      }
+    },
+    "rowFilter.currencyRevaluationRate.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.runId": {
+      name: "runId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.rate": {
+      name: "rate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.rateSource": {
+      name: "rateSource",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.workCenterReplacementPart": {
       name: "workCenterReplacementPart",
       description: "workCenterReplacementPart",
@@ -210722,6 +212606,93 @@ export default {
     },
     "rowFilter.itemSerialSequence.serialNumberTiming": {
       name: "serialNumberTiming",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.currencyRevaluationRun": {
+      name: "currencyRevaluationRun",
+      description: "currencyRevaluationRun",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/currencyRevaluationRun"
+      }
+    },
+    "rowFilter.currencyRevaluationRun.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.currencyRevaluationRunId": {
+      name: "currencyRevaluationRunId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.periodEnd": {
+      name: "periodEnd",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.journalId": {
+      name: "journalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.reversalJournalId": {
+      name: "reversalJournalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.postedAt": {
+      name: "postedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.postedBy": {
+      name: "postedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -223246,6 +225217,99 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.kanbanItems": {
+      name: "kanbanItems",
+      description: "kanbanItems",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/kanbanItems"
+      }
+    },
+    "rowFilter.kanbanItems.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.readableIdWithRevision": {
+      name: "readableIdWithRevision",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.kanbanCount": {
+      name: "kanbanCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.kanbanIds": {
+      name: "kanbanIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.replenishmentSystems": {
+      name: "replenishmentSystems",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.supplierIds": {
+      name: "supplierIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.kanbans": {
+      name: "kanbans",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.customField": {
       name: "customField",
       description: "customField",
@@ -225195,6 +227259,12 @@ export default {
     },
     "rowFilter.storageUnits_recursive.ancestorPath": {
       name: "ancestorPath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.storageUnits_recursive.effectiveNettable": {
+      name: "effectiveNettable",
       required: false,
       in: "query",
       type: "string"

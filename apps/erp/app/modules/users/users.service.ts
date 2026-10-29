@@ -38,9 +38,8 @@ import {
   seedSsoIdentityForUser,
   uncoveredSsoDomainError
 } from "@carbon/ee/sso.server";
-import { batchTrigger } from "@carbon/jobs";
+import { batchTrigger, trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
-import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import {
   isNotificationTopic,
@@ -59,7 +58,6 @@ import {
 } from "@carbon/utils";
 import { now, parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 import { render } from "react-email";
 import type { z } from "zod";
 import { getAttribute } from "~/modules/people/people.service";
@@ -2328,24 +2326,32 @@ export async function sendInviteEmail(
     invite.code,
     ctx.company.id
   );
-  await sendEmail({
-    to: invite.email,
-    subject: `You have been invited to join ${invite.companyName} on Carbon`,
-    headers: { "X-Entity-Ref-ID": nanoid() },
-    html: await render(
-      InviteEmail({
-        invitedByEmail: invite.invitedBy.email,
-        invitedByName: invite.invitedBy.fullName ?? "",
-        email: invite.email,
-        name: invite.name,
-        companyName: invite.companyName,
-        inviteLink,
-        ip: invite.ip ?? "127.0.0.1",
-        location: invite.city ?? "Unknown",
-        controlledEnvironment: CONTROLLED_ENVIRONMENT
-      })
-    )
+  const email = InviteEmail({
+    invitedByEmail: invite.invitedBy.email,
+    invitedByName: invite.invitedBy.fullName ?? "",
+    email: invite.email,
+    name: invite.name,
+    companyName: invite.companyName,
+    inviteLink,
+    ip: invite.ip ?? "127.0.0.1",
+    location: invite.city ?? "Unknown",
+    controlledEnvironment: CONTROLLED_ENVIRONMENT
   });
+  // Queued so it follows the company's Email settings; a failed dispatch only logs.
+  try {
+    await trigger("send-email", {
+      to: invite.email,
+      subject: `You have been invited to join ${invite.companyName} on Carbon`,
+      html: await render(email),
+      text: await render(email, { plainText: true }),
+      companyId: ctx.company.id
+    });
+  } catch (error) {
+    logger.error("Failed to queue the invite email", {
+      companyId: ctx.company.id,
+      error
+    });
+  }
 }
 
 /** Email a new customer or supplier account its invite link. */

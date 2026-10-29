@@ -814,6 +814,9 @@ msgstr "{previewCount, plural, one {Bu # kişi-gün için +{hoursInput}s fazla m
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# satırı kalıcı olarak sil?} other {# satırı kalıcı olarak sil?}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} MRP dışı depolamada, planlamaya dahil değil"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
 
@@ -2724,6 +2727,12 @@ msgstr "Tahsis edildi"
 msgid "Allows acknowledge & continue"
 msgstr "Onaylayıp devam etmeye izin verir"
 
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Üst birim {sourceName} nedeniyle zaten MRP dışı"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Depolama türü {sourceName} nedeniyle zaten MRP dışı"
+
 msgid "Already posted"
 msgstr "Zaten Muhasebeleştirildi"
 
@@ -3757,6 +3766,12 @@ msgstr "{lineName} öğesini bu sözleşmeden kaldırmak istediğinizden emin mi
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Bu öğe için {supplierName} tedarikçisini kaldırmak istediğinizden emin misiniz? Bu işlem geri alınamaz."
+
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
 
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Bu çalışanı {name}'den kaldırmak istediğinizden emin misiniz? Eğitim geçmişi saklanır ve çalışan daha sonra yeniden eklenebilir."
@@ -9194,6 +9209,9 @@ msgstr "Fiyatlandırmayı Düzenle"
 msgid "Edit Pricing Rule"
 msgstr "Fiyatlandırma Kuralını Düzenle"
 
+msgid "Edit Printer"
+msgstr "Yazıcıyı Düzenle"
+
 msgid "Edit Process"
 msgstr "İşlemi Düzenle"
 
@@ -9930,6 +9948,9 @@ msgstr "Dönem kapatılmadan önce her gerekli görev Bitti veya Atlandı olmal�
 
 msgid "Every row was imported successfully."
 msgstr "Her satır başarıyla içe aktarıldı."
+
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "Bu türdeki her depolama birimi MRP dışıdır: MRP ve toplama içindeki stoku yok sayar."
 
 msgid "Every unit has a rate."
 msgstr "Her adetin bir oranı vardır."
@@ -12961,8 +12982,8 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban için {kanbanName}"
 
-msgid "Kanban ID"
-msgstr "Kanban Kimliği"
+msgid "Kanban IDs"
+msgstr "Kanban Kimlikleri"
 
 msgid "Kanban Output"
 msgstr "Kanban Çıktısı"
@@ -13042,7 +13063,7 @@ msgstr "Etiket Boyutu"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Bu kanban için mevcut işlemi tamamlamak üzere etiket"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Bu kanban için bir {0} oluşturmak için"
 
@@ -14394,6 +14415,9 @@ msgstr "Geçiş Tasfiyesi (varsayılan)"
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "Geçiş Tasfiyesi sıfıra eşit olmalıdır. <0>Deneme Bakiyesine Git</0>"
 
+msgid "Min"
+msgstr "Min."
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "en az {minimumBatchQuantity} — karşılandı"
 
@@ -14679,6 +14703,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (planlama)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP ve toplama bu birimdeki ve içindeki birimlerdeki stoku yok sayar. Karantina ve bekletme alanları için kullanın."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP otomatik olarak her 3 saatte bir çalışır, ancak buradan manuel olarak çalıştırabilirsiniz."
 
@@ -14816,6 +14843,9 @@ msgstr "Net ROU Varlığı"
 
 msgid "Net Unit Price"
 msgstr "Net Birim Fiyat"
+
+msgid "Nettable"
+msgstr "MRP'ye dahil"
 
 msgid "Network error"
 msgstr "Ağ hatası"
@@ -16084,6 +16114,9 @@ msgstr "Uzun vadeli kısım"
 
 msgid "Non-Inventory"
 msgstr "Stok dışı"
+
+msgid "Non-nettable"
+msgstr "MRP dışı"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Bu sınıftaki bir varlık net defter değerinin altında satıldığında veya hurda haline getirildiğinde borç kaydedilen işletme dışı gider hesabı."
@@ -18182,6 +18215,13 @@ msgstr "Etiketi yazdır"
 msgid "Print Label"
 msgstr "Etiket Yazdır"
 
+msgid "Print Labels"
+msgstr "Etiketleri Yazdır"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Etiketleri Yazdır ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Yazdırma Çıktısı ({0})"
@@ -18347,9 +18387,6 @@ msgstr "Proje başlangıcı"
 
 msgid "Projected"
 msgstr "Öngörülen"
-
-msgid "Projected (To)"
-msgstr "Tahmini (To)"
 
 msgid "Projected completion"
 msgstr "Öngörülen tamamlanma"
@@ -18708,7 +18745,7 @@ msgstr "Kalıntıların BDH"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "Bu kanban için geçerli operasyonu tamamlamak için QR Kodu"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Bu kanban için bir {0} oluşturmak için QR Kod"
 
@@ -19613,6 +19650,7 @@ msgstr "Yeniden ölçüm muhasebe fişi (etkinlik tarihi ve sınıflandırma ona
 msgid "Remove"
 msgstr "Kaldır"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Kaldır {0}"
@@ -22318,6 +22356,9 @@ msgstr "Bunun yerine Oturumu Kapat"
 msgid "Sign-in code"
 msgstr "Oturum açma kodu"
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Bir sonraki adıma geçmeden önce onay incelemesi"
 
@@ -22816,6 +22857,9 @@ msgstr "Stok"
 
 msgid "Stock Availability"
 msgstr "Stok Mevcudiyeti"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "Bu depolama birimindeki stok arz değildir. MRP ve planlama ekranları onu saymaz, toplama da ondan almaz. Üst birimi veya depolama türlerinden biri MRP dışıysa birim de MRP dışıdır. Karantina ve bekletme alanları için kullanın. Bir stok transferi stoku yeniden dışarı taşır."
 
 msgid "Stock movement corrected"
 msgstr "Stok hareketi düzeltildi"
@@ -25006,6 +25050,9 @@ msgstr "Bu RFQ için karşılaştırılacak aktif tedarikçi teklifi bulunmamakt
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Bu işle ilgili tedarikçisi olmayan dış operasyonlar bulunmaktadır. İşlemden önce her dış operasyona bir tedarikçi atayınız."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "Bu operasyonlarda kurulum, işçilik veya makine süresi yok, bu nedenle çalıştırmayı boyutlandırmak için hiçbir şey yok. Çubuk nominal bir işarettir ve kapasite tutmaz — operasyonlara zaman standartları ekleyin."

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { Badge, HStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -10,6 +11,8 @@ import {
   LuBox,
   LuCalendar,
   LuFileText,
+  LuGroup,
+  LuTag,
   LuTarget
 } from "react-icons/lu";
 import {
@@ -22,6 +25,8 @@ import {
   searchMatches,
   Table
 } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
+import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useItems } from "~/stores/items";
@@ -32,20 +37,24 @@ type InspectionDocumentTableProps = {
   data: InspectionPlanPart[];
   count: number;
   infinite: InfiniteOptions;
+  tags: { name: string }[];
 };
 
 const defaultColumnVisibility = {
-  createdAt: false
+  createdAt: false,
+  itemPostingGroupId: false,
+  tags: false
 };
 
 /** One row per part; its inspection plans are the expanded row, open while a
  *  search is, with the matches marked. */
 const InspectionDocumentTable = memo(
-  ({ data, count, infinite }: InspectionDocumentTableProps) => {
+  ({ data, count, infinite, tags }: InspectionDocumentTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
     const permissions = usePermissions();
     const [items] = useItems();
+    const itemPostingGroups = useItemPostingGroups();
     const search = params.get("search");
 
     const columns = useMemo<ColumnDef<InspectionPlanPart>[]>(
@@ -53,23 +62,22 @@ const InspectionDocumentTable = memo(
         {
           accessorKey: "partReadableId",
           header: t`Part`,
+          // Clicking the row expands its plans.
           cell: ({ row }) => (
-            <Hyperlink to={path.to.part(row.original.id!)}>
-              <div className="flex flex-col gap-0">
-                <span className="text-sm font-medium">
-                  <Highlight
-                    text={row.original.partReadableId}
-                    ranges={searchMatches(row.original.partReadableId, search)}
-                  />
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  <Highlight
-                    text={row.original.partName}
-                    ranges={searchMatches(row.original.partName, search)}
-                  />
-                </span>
-              </div>
-            </Hyperlink>
+            <div className="flex flex-col gap-0">
+              <span className="text-sm font-medium">
+                <Highlight
+                  text={row.original.partReadableId}
+                  ranges={searchMatches(row.original.partReadableId, search)}
+                />
+              </span>
+              <span className="text-xs text-muted-foreground">
+                <Highlight
+                  text={row.original.partName}
+                  ranges={searchMatches(row.original.partName, search)}
+                />
+              </span>
+            </div>
           ),
           meta: {
             mobile: "P1",
@@ -90,6 +98,57 @@ const InspectionDocumentTable = memo(
             <span className="tabular-nums">{row.original.planCount}</span>
           ),
           meta: { mobile: "P2", icon: <LuTarget /> }
+        },
+        {
+          accessorKey: "itemPostingGroupId",
+          header: t`Item Group`,
+          cell: (item) => {
+            const itemPostingGroupId = item.getValue<string>();
+            const itemPostingGroup = itemPostingGroups.find(
+              (group) => group.value === itemPostingGroupId
+            );
+            return <Enumerable value={itemPostingGroup?.label ?? null} />;
+          },
+          meta: {
+            filter: {
+              type: "static" as const,
+              options: itemPostingGroups.map((group) => ({
+                value: group.value,
+                label: <Enumerable value={group.label} />
+              }))
+            },
+            icon: <LuGroup />,
+            exportValue: (row) =>
+              itemPostingGroups.find(
+                (group) => group.value === row.itemPostingGroupId
+              )?.label ?? null
+          }
+        },
+        {
+          accessorKey: "tags",
+          header: t`Tags`,
+          cell: ({ row }) => (
+            <HStack spacing={0} className="gap-1">
+              {row.original.tags?.map((tag) => (
+                <Badge key={tag} variant="secondary">
+                  {tag}
+                </Badge>
+              ))}
+            </HStack>
+          ),
+          meta: {
+            filter: {
+              type: "static" as const,
+              options: tags?.map((tag) => ({
+                value: tag.name,
+                label: <Badge variant="secondary">{tag.name}</Badge>
+              })),
+              isArray: true
+            },
+            icon: <LuTag />,
+            exportValue: (row) =>
+              row.tags?.length ? row.tags.join(", ") : null
+          }
         },
         {
           accessorKey: "updatedAt",
@@ -114,7 +173,7 @@ const InspectionDocumentTable = memo(
           value: (row) => row.plans.map((plan) => plan.name).join(", ")
         })
       ],
-      [items, search, t]
+      [items, itemPostingGroups, search, tags, t]
     );
 
     const renderExpandedRow = useCallback(

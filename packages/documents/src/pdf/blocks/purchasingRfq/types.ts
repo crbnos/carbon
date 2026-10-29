@@ -30,6 +30,12 @@ export interface PurchasingRfqAddress {
   countryCode?: string | null;
 }
 
+/** The buyer a supplier sends the quotation to; signs the letter. */
+export interface PurchasingRfqContact {
+  name?: string | null;
+  email?: string | null;
+}
+
 /** Everything a purchasing RFQ block renderer might need. */
 export interface PurchasingRfqData {
   company: Company;
@@ -39,6 +45,7 @@ export interface PurchasingRfqData {
   purchasingRfqLines: PurchasingRfqPdfLine[];
   /** The receiving location the supplier quotes delivery to. */
   shipToAddress?: PurchasingRfqAddress | null;
+  contact?: PurchasingRfqContact | null;
   /** Base64 thumbnails keyed by line id. */
   thumbnails?: Record<string, string | null>;
   terms: JSONContent;

@@ -814,6 +814,9 @@ msgstr "{previewCount, plural, one {Dies setzt +{hoursInput}h Überzeit an # Per
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# Zeile dauerhaft löschen?} other {# Zeilen dauerhaft löschen?}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} in nicht disponierbarer Lagerung, nicht eingeplant"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# Phase verbleibend} other {# Phasen verbleibend}}"
 
@@ -2724,6 +2727,12 @@ msgstr "Zugewiesen"
 msgid "Allows acknowledge & continue"
 msgstr "Ermöglicht Bestätigung & Fortfahren"
 
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Bereits nicht disponierbar durch die übergeordnete Einheit {sourceName}"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Bereits nicht disponierbar durch den Lagertyp {sourceName}"
+
 msgid "Already posted"
 msgstr "Bereits gebucht"
 
@@ -3757,6 +3766,12 @@ msgstr "Sind Sie sicher, dass Sie {lineName} von diesem Vertrag entfernen möcht
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie {supplierName} als Lieferant für diesen Artikel entfernen möchten? Dies kann nicht rückgängig gemacht werden."
+
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
 
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Möchten Sie diesen Mitarbeiter wirklich aus {name} entfernen? Der Schulungsverlauf wird beibehalten und der Mitarbeiter kann später erneut hinzugefügt werden."
@@ -9194,6 +9209,9 @@ msgstr "Preisfindung bearbeiten"
 msgid "Edit Pricing Rule"
 msgstr "Preisregel bearbeiten"
 
+msgid "Edit Printer"
+msgstr "Drucker bearbeiten"
+
 msgid "Edit Process"
 msgstr "Prozess bearbeiten"
 
@@ -9930,6 +9948,9 @@ msgstr "Jede erforderliche Aufgabe muss erledigt oder übersprungen werden, bevo
 
 msgid "Every row was imported successfully."
 msgstr "Jede Zeile wurde erfolgreich importiert."
+
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "Jede Lagereinheit dieses Typs ist nicht disponierbar: MRP und Kommissionierung ignorieren ihren Bestand."
 
 msgid "Every unit has a rate."
 msgstr "Jede Einheit hat einen Satz."
@@ -12961,8 +12982,8 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban für {kanbanName}"
 
-msgid "Kanban ID"
-msgstr "Kanban-ID"
+msgid "Kanban IDs"
+msgstr "Kanban-IDs"
 
 msgid "Kanban Output"
 msgstr "Kanban-Ausgabe"
@@ -13042,7 +13063,7 @@ msgstr "Etikettengröße"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Etikett zum Abschließen des aktuellen Vorgangs für dieses Kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Etikett zum Erstellen eines {0} für diesen Kanban"
 
@@ -14394,6 +14415,9 @@ msgstr "Migrationskonto (Standard)"
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "Migrationskonto muss Null ergeben. <0>Gehen Sie zur Probebilanz</0>"
 
+msgid "Min"
+msgstr "Min."
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "min {minimumBatchQuantity} — erfüllt"
 
@@ -14679,6 +14703,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (Planung)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP und Kommissionierung ignorieren den Bestand in dieser Einheit und den Einheiten darin. Für Quarantäne- und Sperrbereiche verwenden."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP wird automatisch alle 3 Stunden ausgeführt, aber Sie können es hier manuell ausführen."
 
@@ -14816,6 +14843,9 @@ msgstr "Netto-ROU-Anlage"
 
 msgid "Net Unit Price"
 msgstr "Netto-Einzelpreis"
+
+msgid "Nettable"
+msgstr "Disponierbar"
 
 msgid "Network error"
 msgstr "Netzwerkfehler"
@@ -16084,6 +16114,9 @@ msgstr "Langfristiger Anteil"
 
 msgid "Non-Inventory"
 msgstr "Nicht lagergeführt"
+
+msgid "Non-nettable"
+msgstr "Nicht disponierbar"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Außergewöhnlicher Aufwand, der belastet wird, wenn eine Anlage dieser Klasse unter ihrem Restbuchwert verkauft oder verschrottet wird."
@@ -18182,6 +18215,13 @@ msgstr "Etikett drucken"
 msgid "Print Label"
 msgstr "Etikett drucken"
 
+msgid "Print Labels"
+msgstr "Etiketten drucken"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Etiketten drucken ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Druckausgabe ({0})"
@@ -18347,9 +18387,6 @@ msgstr "Projektstart"
 
 msgid "Projected"
 msgstr "Prognostiziert"
-
-msgid "Projected (To)"
-msgstr "Geplant (Zu)"
 
 msgid "Projected completion"
 msgstr "Geplante Fertigstellung"
@@ -18708,7 +18745,7 @@ msgstr "GW des Restwerts"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR-Code zum Abschließen des aktuellen Arbeitsgangs für diesen Kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR-Code zum Erstellen eines {0} für diesen Kanban"
 
@@ -19613,6 +19650,7 @@ msgstr "Neubewertungsbuchungssatz (Stichtagsdatum und Klassifizierung werden bei
 msgid "Remove"
 msgstr "Entfernen"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Entfernen {0}"
@@ -22318,6 +22356,9 @@ msgstr "Stattdessen abmelden"
 msgid "Sign-in code"
 msgstr "Anmeldecode"
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Freigabeüberprüfung vor dem Wechsel zum nächsten Schritt"
 
@@ -22816,6 +22857,9 @@ msgstr "Bestand"
 
 msgid "Stock Availability"
 msgstr "Bestandsverfügbarkeit"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "Bestand in dieser Lagereinheit ist keine Deckung. MRP und die Planungsansichten zählen ihn nicht, und die Kommissionierung entnimmt nichts daraus. Eine Einheit ist auch nicht disponierbar, wenn ihre übergeordnete Einheit oder einer ihrer Lagertypen es ist. Für Quarantäne- und Sperrbereiche verwenden. Eine Bestandsumlagerung bringt den Bestand wieder heraus."
 
 msgid "Stock movement corrected"
 msgstr "Lagerbewegung korrigiert"
@@ -25006,6 +25050,9 @@ msgstr "Es gibt keine aktiven Lieferantenofferten zum Vergleichen für diese Anf
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Es gibt Fremdvergabe-Arbeitsgänge, die mit diesem Fertigungsauftrag verknüpft sind und keine Lieferanten haben. Bitte weisen Sie jedem Fremdvergabe-Arbeitsgang einen Lieferant zu, bevor Sie freigeben."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "Es gibt keine Rüstung, kein Personal oder keine Maschinenzeit auf diesen Arbeitsgängen, also gibt es nichts zum Bemessen eines Durchlaufs. Der Balken ist eine nominale Markierung und hält keine Kapazität – fügen Sie Zeitnormen zu den Arbeitsgängen hinzu, um ihn einzuplanen."
