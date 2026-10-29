@@ -19145,6 +19145,9 @@ msgstr "Reçu à"
 msgid "Received By"
 msgstr "Reçu par"
 
+msgid "Received Date"
+msgstr ""
+
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Lignes reçues de ce fournisseur avec quantité restant à retourner"
 
@@ -19878,9 +19881,6 @@ msgstr "Demander une nouvelle invitation"
 
 msgid "Request Approval"
 msgstr "Demander l'approbation"
-
-msgid "Requested"
-msgstr ""
 
 msgid "Requested Date"
 msgstr "Date demandée"
@@ -27435,11 +27435,11 @@ msgstr "Lors de la réponse à un fil de discussion, rendez également le messag
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Quand les réponses des fournisseurs sont attendues ; les fournisseurs voient cette date sur le portail RFQ et Carbon cesse d'accepter les réponses tardives après celle-ci (configurable)."
 
-msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
-msgstr "Quand l'acheteur a demandé les marchandises ; le fournisseur peut promettre quelque chose d'autre à la Date Promise et contabiliser quelque chose d'autre à nouveau à la Date de Livraison."
+msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
+msgstr ""
 
-msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "Date à laquelle l'acheteur a besoin des marchandises de cette ligne sur le quai. Une nouvelle ligne démarre à la Date demandée de la commande ; la planification utilise cette date pour programmer la disponibilité des stocks et la sous-traitance."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr ""
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Quand le contrat s'exécute et ce qui se passe quand il s'achève."

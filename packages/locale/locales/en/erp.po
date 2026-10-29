@@ -19145,6 +19145,9 @@ msgstr "Received At"
 msgid "Received By"
 msgstr "Received By"
 
+msgid "Received Date"
+msgstr "Received Date"
+
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Received lines from this supplier with quantity remaining to return"
 
@@ -19878,9 +19881,6 @@ msgstr "Request a new invite"
 
 msgid "Request Approval"
 msgstr "Request Approval"
-
-msgid "Requested"
-msgstr "Requested"
 
 msgid "Requested Date"
 msgstr "Requested Date"
@@ -27435,11 +27435,11 @@ msgstr "When replying to a thread, also make the message visible to everyone in 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 
-msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
-msgstr "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
+msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
+msgstr "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
 
-msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "When the contract runs and what happens when it completes."

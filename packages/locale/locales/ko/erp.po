@@ -19145,6 +19145,9 @@ msgstr "입고 일시"
 msgid "Received By"
 msgstr "입고 담당자"
 
+msgid "Received Date"
+msgstr ""
+
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "이 공급업체로부터 반품할 수량이 남아 있는 수령된 라인"
 
@@ -19878,9 +19881,6 @@ msgstr "새 초대권 요청"
 
 msgid "Request Approval"
 msgstr "승인 요청"
-
-msgid "Requested"
-msgstr ""
 
 msgid "Requested Date"
 msgstr "요청일"
@@ -27435,11 +27435,11 @@ msgstr "스레드에 회신할 때 채널의 모든 사람이 메시지를 볼 �
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "공급업체 응답이 도착할 것으로 예상되는 시점입니다. 공급업체는 RFQ 포털에서 이 날짜를 확인하며, Carbon은 이 날짜 이후의 지연 응답을 받지 않습니다(설정 가능)."
 
-msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
-msgstr "구매 담당자가 물품을 요청한 시점; 공급업체는 약속일에 다른 것을 약속할 수 있으며 납기일에 다시 다른 것을 전기할 수 있습니다."
+msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
+msgstr ""
 
-msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "구매 담당자가 이 라인의 품목을 하역장(도크)에서 받기를 원하는 날짜입니다. 새 라인은 주문의 요청일로 시작하며, 계획에서는 이 날짜를 재고 가용성 및 외주 공정 일정 산정에 사용합니다."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr ""
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "계약이 실행되는 시간과 완료되면 어떻게 되는가"

@@ -19145,6 +19145,9 @@ msgstr "Empfangen am"
 msgid "Received By"
 msgstr "Empfangen von"
 
+msgid "Received Date"
+msgstr ""
+
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Von diesem Lieferanten eingegangene Zeilen mit verbleibender Menge zur Rückgabe"
 
@@ -19878,9 +19881,6 @@ msgstr "Neue Einladung anfordern"
 
 msgid "Request Approval"
 msgstr "Genehmigung anfordern"
-
-msgid "Requested"
-msgstr ""
 
 msgid "Requested Date"
 msgstr "Wunschtermin"
@@ -27435,11 +27435,11 @@ msgstr "Wenn Sie auf einen Nachrichtenstrang antworten, machen Sie die Nachricht
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Wann Lieferantenreaktionen erwartet werden; Lieferanten sehen dieses Datum auf dem RFQ-Portal und Carbon akzeptiert keine späten Antworten danach (konfigurierbar)."
 
-msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
-msgstr "Wenn der Einkäufer die Ware anforderte; der Lieferant kann am Zugesagten Termin etwas anderes zusagen und am Liefertermin wieder etwas anderes liefern."
+msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
+msgstr ""
 
-msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "Wann der Einkäufer die Ware dieser Position an der Laderampe benötigt. Eine neue Position übernimmt den Wunschtermin des Auftrags; die Planung verwendet dieses Datum für die Terminierung von Lagerverfügbarkeit und Fremdbearbeitung."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr ""
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Wenn der Vertrag läuft und was beim Abschluss passiert."

@@ -1729,8 +1729,8 @@ export const terms = {
     definition: msg`The specific operation on the job above that this PO line is purchasing; only operations marked outside-processing are selectable.`
   },
   "purchase-order-line-required-date": {
-    term: msg`Requested Date`,
-    definition: msg`When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling.`
+    term: msg`Required Date`,
+    definition: msg`When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling.`
   },
   "purchase-order-line-delivery-location": {
     term: msg`Delivery Location`,
@@ -1755,11 +1755,11 @@ export const terms = {
 
   // ── Purchasing: PO delivery (PurchaseOrderDeliveryForm) ─────────────────
   "purchase-order-delivery-requested-date": {
-    term: msg`Requested Date`,
-    definition: msg`When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date.`
+    term: msg`Receipt Requested Date`,
+    definition: msg`When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date.`
   },
   "purchase-order-delivery-promised-date": {
-    term: msg`Promised Date`,
+    term: msg`Receipt Promised Date`,
     definition: msg`When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection.`
   },
   "purchase-order-delivery-actual-date": {

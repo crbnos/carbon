@@ -104,11 +104,11 @@ export function PurchaseOrderLineSummaryDates({
   }[] = [
     {
       field: "requiredDate",
-      label: t`Requested`,
-      dateLabel: t`Requested Date`
+      label: t`Required`,
+      dateLabel: t`Required Date`
     },
     { field: "promisedDate", label: t`Promised`, dateLabel: t`Promised Date` },
-    { field: "receivedDate", label: t`Delivered`, dateLabel: t`Delivery Date` }
+    { field: "receivedDate", label: t`Received`, dateLabel: t`Received Date` }
   ];
 
   return (
@@ -232,11 +232,11 @@ export function PurchaseOrderLineDateFields({
   }[] = [
     {
       field: "requiredDate",
-      label: t`Requested Date`,
+      label: t`Required Date`,
       termId: "purchase-order-line-required-date"
     },
     { field: "promisedDate", label: t`Promised Date` },
-    { field: "receivedDate", label: t`Delivery Date` }
+    { field: "receivedDate", label: t`Received Date` }
   ];
 
   return (
