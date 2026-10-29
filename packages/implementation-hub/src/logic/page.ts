@@ -36,6 +36,7 @@ import {
   memberPageValidator
 } from "../models";
 import type { ImplementationRowData, ReadinessRule, StateKind } from "../types";
+import { isOverdue } from "./assignments";
 import { isCustomizationKind, readCustomization } from "./customization";
 import { checkKey, flagKey, productStepKey, taskKey } from "./keys";
 import { readObjective } from "./objectives";
@@ -686,6 +687,25 @@ export function pageProgress(
     }
   }
   return { done, total };
+}
+
+// Pure: how many of the page's open cards are past their due date, by the
+// rule a card's Overdue badge follows. A card with no done state (training, a
+// requirement, an item removed from the hub) never is.
+export function pageOverdue(
+  sections: PageSection[],
+  states: Map<string, string>,
+  rows: Map<string, ImplementationRowData>,
+  today: string
+): number {
+  let overdue = 0;
+  for (const section of sections) {
+    for (const card of section.cards) {
+      const { done } = cardState(card, states, rows);
+      if (done !== null && isOverdue(card.due, done, today)) overdue += 1;
+    }
+  }
+  return overdue;
 }
 
 // Pure: the records an operational task still waits for.

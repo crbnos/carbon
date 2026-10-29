@@ -15,6 +15,7 @@ import {
   groupHubPeople,
   type HubPagePerson,
   type HubPersonStatus,
+  pageOverdue,
   pageProgress,
   requirementChoices,
   resolveMemberPage,
@@ -314,6 +315,34 @@ describe("resolveMemberPage", () => {
       done: 2,
       total: 4
     });
+  });
+});
+
+describe("pageOverdue", () => {
+  it("counts open cards past their due date, and nothing without a done state", () => {
+    const checked = checkMemberPage(
+      page([
+        { item: "setup:locations", due: "2026-11-01" },
+        // Its row's target date, 2026-11-06, is its due date.
+        { item: "objective:row_obj" },
+        { item: "customization:row_cust", due: "2026-11-01" },
+        { item: "training:pur-1", due: "2026-11-01" },
+        { item: "requirement:SAL.QT.01", due: "2026-11-01" },
+        { item: "question:row_q", due: "2026-11-10" },
+        {
+          custom: { key: "approval-limits", title: "Agree approval limits" },
+          due: "2026-11-01"
+        }
+      ]),
+      items
+    );
+    const sections = resolveMemberPage(checked.page!, items, "user_1");
+    const states = new Map([["check:custom.user_1.approval-limits", "1"]]);
+    // Overdue: setup and objective. The customization is done, the custom
+    // card ticked, training and the requirement have no done state, and the
+    // question is due today.
+    expect(pageOverdue(sections, states, rowsById, "2026-11-10")).toBe(2);
+    expect(pageOverdue(sections, states, rowsById, "2026-11-01")).toBe(0);
   });
 });
 
