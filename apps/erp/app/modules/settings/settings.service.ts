@@ -8767,7 +8767,9 @@ export async function getActiveMethodsMissingPullFrom(
             await db
               .selectFrom("storageUnit")
               .where("companyId", "=", companyId)
-              .where("id", "in", namedIds)
+              // One array parameter: a large company can name more units
+              // than Postgres allows bound parameters.
+              .where(sql<boolean>`"id" = ANY(${namedIds}::text[])`)
               .where("effectiveNettable", "=", false)
               .select("id")
               .execute()

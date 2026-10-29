@@ -19553,6 +19553,28 @@ export const postPickingPermission = {} satisfies PermissionRule<
  * (pickingListLine.toStorageUnitId). Consumption happens later at production,
  * which is why we also point jobMaterial.storageUnitId at the lineside shelf.
  */
+/** A pick never takes stock out of a non-nettable (quarantine) unit: the bin
+ *  may have become one after the list was generated. A stock transfer is how
+ *  that stock is released. */
+async function assertPickSourceNettable(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  storageUnitId: string | null | undefined
+) {
+  if (!storageUnitId) return;
+  const unit = await trx
+    .selectFrom("storageUnit")
+    .where("id", "=", storageUnitId)
+    .where("companyId", "=", companyId)
+    .select(["name", "effectiveNettable"])
+    .executeTakeFirst();
+  if (unit && !unit.effectiveNettable) {
+    throw new InvalidInputError(
+      `${unit.name} is non-nettable. A picking list never takes stock from a non-nettable storage unit: move the stock with a stock transfer, or generate the picking list again.`
+    );
+  }
+}
+
 export async function postPicking(
   ctx: ServiceContext,
   raw: z.input<typeof postPickingInput>
@@ -19641,6 +19663,7 @@ export async function postPicking(
           .selectAll()
           .forUpdate()
           .executeTakeFirstOrThrow();
+        await assertPickSourceNettable(trx, companyId, line.storageUnitId);
 
         const inserts: ItemLedgerInsert[] = [
           {
@@ -19789,6 +19812,7 @@ export async function postPicking(
           .selectAll()
           .forUpdate()
           .executeTakeFirstOrThrow();
+        await assertPickSourceNettable(trx, companyId, fromStorageUnitId);
 
         const activityId = nanoid();
         await trx
@@ -19916,6 +19940,7 @@ export async function postPicking(
           .selectAll()
           .forUpdate()
           .executeTakeFirstOrThrow();
+        await assertPickSourceNettable(trx, companyId, fromStorageUnitId);
 
         // Lock the source lot too: the split below draws against this
         // on-hand, and a concurrent pick of the same lot must not spend it.

@@ -232,8 +232,9 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   beside the lineside test. `get_available_tracked_entities` has its own
   `p_exclude_non_nettable` switch: picking (ERP and MES) and MES suggested allocation pass it,
   a stock transfer does not, since moving stock out is how it is released. `postPicking`
-  itself does not re-check a tracked line's source bin (nor lineside), so this holds for
-  every path the UI and the generator take. Shipments are not restricted: a shipment line can
+  also refuses a pick (untracked, serial or batch) whose source unit is non-nettable at post
+  time (`assertPickSourceNettable`), since a bin can become one after the list was
+  generated; it still does not re-check lineside. Shipments are not restricted: a shipment line can
   name a non-nettable bin.
 - **A guessed bin is never non-nettable.** When no bin was chosen, consumption (the
   completion backflush and manual issue in `issueJobOperationMaterials` / `issueMaterial`,

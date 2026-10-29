@@ -10,7 +10,10 @@
 import { getNonNettableTrackedEntityIds } from "@carbon/database";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect } from "vitest";
-import { issueMaterial as issue } from "../../app/modules/inventory/inventory.service";
+import {
+  issueMaterial as issue,
+  postPicking
+} from "../../app/modules/inventory/inventory.service";
 import { upsertMethodMaterial } from "../../app/modules/items/items.service";
 import {
   getStorageUnitId,
@@ -212,6 +215,101 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
         .where("companyId", "=", f.companyId)
         .execute();
       expect(consumed).toEqual([{ storageUnitId: warehouse, quantity: -2 }]);
+    }
+  );
+
+  databaseTest(
+    "a pick is refused when its source became non-nettable after the list was made",
+    async () => {
+      const item = await newItem("picked");
+      const shelf = `${f.prefix}-pick-shelf`;
+      const lineside = `${f.prefix}-pick-lineside`;
+      const pickingListId = `${f.prefix}-pick-list`;
+      const job = await jobFixture(f, "pick");
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("storageUnit")
+          .values(
+            [shelf, lineside].map((id) => ({
+              id,
+              name: id,
+              locationId: f.locationId,
+              companyId: f.companyId,
+              createdBy: USER
+            }))
+          )
+          .execute();
+        await trx
+          .insertInto("pickingList")
+          .values({
+            id: pickingListId,
+            pickingListId: `${f.prefix}-PL`,
+            status: "In Progress",
+            locationId: f.locationId,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("pickingListLine")
+          .values(
+            ["held", "free"].map((key) => ({
+              id: `${pickingListId}-${key}`,
+              pickingListId,
+              jobId: job.jobId,
+              jobMaterialId: job.materialId,
+              jobOperationId: job.operationId,
+              itemId: item,
+              quantityToPick: 2,
+              storageUnitId: key === "held" ? shelf : warehouse,
+              toStorageUnitId: lineside,
+              companyId: f.companyId,
+              createdBy: USER
+            }))
+          )
+          .execute();
+      });
+      await receive(item, shelf, 5);
+      await receive(item, warehouse, 5);
+      // Quarantined after the list was generated.
+      await f.db
+        .updateTable("storageUnit")
+        .set({ nettable: false })
+        .where("id", "=", shelf)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const pick = (key: string) =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "post-picking",
+          {
+            type: "inventory",
+            pickingListId,
+            pickingListLineId: `${pickingListId}-${key}`,
+            quantity: 2,
+            locationId: f.locationId
+          },
+          postPicking
+        );
+
+      const refused = await pick("held");
+      expect(refused.error?.message).toContain(
+        `${shelf} is non-nettable. A picking list never takes stock from a non-nettable storage unit`
+      );
+      expect((await pick("free")).error).toBeNull();
+      const moved = await f.db
+        .selectFrom("itemLedger")
+        .select(["storageUnitId", "quantity"])
+        .where("itemId", "=", item)
+        .where("documentId", "=", pickingListId)
+        .where("companyId", "=", f.companyId)
+        .orderBy("quantity")
+        .execute();
+      expect(moved).toEqual([
+        { storageUnitId: warehouse, quantity: -2 },
+        { storageUnitId: lineside, quantity: 2 }
+      ]);
     }
   );
 
