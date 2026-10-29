@@ -8,6 +8,7 @@ import type { Database } from "@carbon/database";
 import {
   companyTransport,
   Email,
+  picksCredentialFreeEmail,
   resolveEmailDelivery,
   sharedMailHeaders
 } from "@carbon/ee/email/delivery";
@@ -102,14 +103,17 @@ export async function sendCompanyEmail(
     });
   }
 
+  const { metadata, secretRef } = integration.data;
   const transport = companyTransport(
-    await resolveIntegrationSecrets(
-      serviceClient,
-      companyId,
-      Email.id,
-      integration.data.metadata,
-      integration.data.secretRef
-    )
+    picksCredentialFreeEmail(Email.id, metadata)
+      ? metadata
+      : await resolveIntegrationSecrets(
+          serviceClient,
+          companyId,
+          Email.id,
+          metadata,
+          secretRef
+        )
   );
   const senderName = companyName ?? "Carbon";
 

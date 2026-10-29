@@ -165,6 +165,10 @@ describe("Email settings form", () => {
       false
     );
     expect(picksCredentialFreeEmail("email", { provider: "smtp" })).toBe(false);
+    // A legacy install has no provider and is Resend, which keeps a key.
+    expect(picksCredentialFreeEmail("email", { fromEmail: "a@b.co" })).toBe(
+      false
+    );
     expect(picksCredentialFreeEmail("slack", { provider: "gmail" })).toBe(
       false
     );

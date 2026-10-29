@@ -227,15 +227,16 @@ export function picksServerMail(
 }
 
 /**
- * Whether Email settings save without a credential. Server mail and Gmail have
- * none to enter; Resend and SMTP need their key or password.
+ * Server mail and Gmail hold no credential: they save without one and must skip
+ * the vault, which refuses a row with no secret.
  */
 export function picksCredentialFreeEmail(
   integrationId: string,
-  metadata: Record<string, unknown>
+  metadata: unknown
 ): boolean {
+  const { provider } = withLegacyProvider(metadata);
   return (
     integrationId === Email.id &&
-    (metadata.provider === "server" || metadata.provider === "gmail")
+    (provider === "server" || provider === "gmail")
   );
 }

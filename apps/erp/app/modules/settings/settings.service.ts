@@ -123,6 +123,7 @@ import {
   pickBomChildRow,
   pickReuseRow,
   pickRevisionBase,
+  picksCredentialFreeEmail,
   proposeItem,
   reconcilePushDefaults,
   releaseBomKey,
@@ -2880,14 +2881,18 @@ async function getConnectionHealth(
   // the row's `secretRef` itself (the `integrations` view doesn't expose it) and
   // throws when the secret can't be read — treat that as unhealthy rather than
   // crashing the whole settings page.
+  const metadata = (integration.metadata as Record<string, any>) ?? {};
   let resolvedMetadata: Record<string, any>;
   try {
-    resolvedMetadata = (await resolveIntegrationSecrets(
-      getCarbonServiceRole(),
-      companyId,
-      integration.id!,
-      (integration.metadata as Record<string, any>) ?? {}
-    )) as Record<string, any>;
+    // Email's server mail and Gmail store no secret for the vault to return.
+    resolvedMetadata = picksCredentialFreeEmail(integration.id!, metadata)
+      ? metadata
+      : ((await resolveIntegrationSecrets(
+          getCarbonServiceRole(),
+          companyId,
+          integration.id!,
+          metadata
+        )) as Record<string, any>);
   } catch {
     return {
       ...integration,
