@@ -77613,11 +77613,13 @@ export type Database = {
           companyId: string | null
           createdAt: string | null
           id: string | null
+          itemPostingGroupId: string | null
           partName: string | null
           partReadableId: string | null
           planCount: number | null
           planNames: string | null
           plans: Json | null
+          tags: string[] | null
           updatedAt: string | null
         }
         Relationships: [
@@ -77689,6 +77691,13 @@ export type Database = {
             columns: ["id"]
             isOneToOne: false
             referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemCost_itemPostingGroupId_fkey"
+            columns: ["itemPostingGroupId"]
+            isOneToOne: false
+            referencedRelation: "itemPostingGroup"
             referencedColumns: ["id"]
           }
         ]

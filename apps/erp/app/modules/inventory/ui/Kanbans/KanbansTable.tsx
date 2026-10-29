@@ -633,8 +633,8 @@ const KanbansTable = memo(
     /* Printing kanban cards (one row, or the selection): to a configured
        printer, the location's Kanbans printer first (a Zebra prints at its own
        media size), one card per action, so a Make kanban prints Create, Start
-       and Complete. With no printer, the Create cards' PDF at the company's
-       Label Size. */
+       and Complete. With no printer, the same cards as one PDF at the
+       company's Label Size. */
     const { printerRoutes, resolvePrinterRoute } = usePrinting();
     const printerModal = useDisclosure();
     const defaultPrinter = resolvePrinterRoute(locationId, "kanban");
@@ -652,7 +652,7 @@ const KanbansTable = memo(
           );
           printerModal.onOpen();
         } else {
-          window.open(path.to.file.kanbanLabelsPdf(ids, "order"), "_blank");
+          window.open(path.to.file.kanbanLabelsPdf(ids, "all"), "_blank");
         }
       },
       [printerRoutes, defaultPrinter?.id, printerModal]

@@ -44,7 +44,9 @@ export function PartiesBlock({ data }: { data: SalesInvoiceData }) {
     shipmentCity,
     shipmentStateProvince,
     shipmentPostalCode,
-    shipmentCountryName
+    shipmentCountryName,
+    contactName,
+    contactEmail
   } = salesInvoiceLocations;
 
   const paymentTerm = paymentTerms?.find(
@@ -80,6 +82,8 @@ export function PartiesBlock({ data }: { data: SalesInvoiceData }) {
             ) : null}
             {customerVatNumber ? <Text>VAT: {customerVatNumber}</Text> : null}
             {customerEori ? <Text>EORI: {customerEori}</Text> : null}
+            {contactName ? <Text>Contact: {contactName}</Text> : null}
+            {contactEmail ? <Text>Email: {contactEmail}</Text> : null}
           </View>
         </View>
 

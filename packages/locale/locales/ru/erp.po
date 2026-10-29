@@ -9151,6 +9151,9 @@ msgstr "Изменить Ценообразование"
 msgid "Edit Pricing Rule"
 msgstr "Изменить Правило ценообразования"
 
+msgid "Edit Printer"
+msgstr "Изменить Принтер"
+
 msgid "Edit Process"
 msgstr "Изменить Процесс"
 

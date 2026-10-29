@@ -9151,6 +9151,9 @@ msgstr "Editar Fijación de precios"
 msgid "Edit Pricing Rule"
 msgstr "Editar Regla de Precios"
 
+msgid "Edit Printer"
+msgstr "Editar Impresora"
+
 msgid "Edit Process"
 msgstr "Editar Proceso"
 

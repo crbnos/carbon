@@ -4,6 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { KanbanLabelPDF } from "@carbon/documents/pdf";
+import type { KanbanLabelAction } from "@carbon/documents/zpl";
 import { getLogger } from "@carbon/logger";
 import { getRequestOrigin, labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
@@ -17,7 +18,9 @@ import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
 const logger = getLogger("erp", "kanban-labels-pdf");
 
-const ACTIONS = ["order", "start", "complete"] as const;
+// `all` prints every card a kanban has: Create, Start and Complete for Make,
+// Create only for Buy and Transfer.
+const ACTIONS = ["order", "start", "complete", "all"] as const;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -97,28 +100,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const labels = rows.map((kanban) => ({
-    id: kanban.id!,
-    kanbanId: kanban.kanbanId,
-    itemName: kanban.name || "",
-    itemReadableId: kanban.readableIdWithRevision || kanban.itemId || "",
-    locationName: kanban.locationName || "",
-    storageUnitName: kanban.storageUnitName,
-    fromStorageUnitName: kanban.fromStorageUnitName,
-    supplierName: kanban.supplierName,
-    quantity: kanban.quantity ?? 0,
-    replenishmentLevel: kanban.replenishmentLevel,
-    unitOfMeasureCode: kanban.purchaseUnitOfMeasureCode,
-    thumbnail: thumbnails[kanban.id!] ?? null
-  }));
+  const labels = rows.flatMap((kanban) => {
+    const actions: KanbanLabelAction[] =
+      action !== "all"
+        ? [action]
+        : kanban.replenishmentSystem === "Make"
+          ? ["order", "start", "complete"]
+          : ["order"];
+    return actions.map((cardAction) => ({
+      action: cardAction,
+      id: kanban.id!,
+      kanbanId: kanban.kanbanId,
+      itemName: kanban.name || "",
+      itemReadableId: kanban.readableIdWithRevision || kanban.itemId || "",
+      locationName: kanban.locationName || "",
+      storageUnitName: kanban.storageUnitName,
+      fromStorageUnitName: kanban.fromStorageUnitName,
+      supplierName: kanban.supplierName,
+      quantity: kanban.quantity ?? 0,
+      replenishmentLevel: kanban.replenishmentLevel,
+      unitOfMeasureCode: kanban.purchaseUnitOfMeasureCode,
+      thumbnail: thumbnails[kanban.id!] ?? null
+    }));
+  });
 
   const stream = await renderToStream(
-    <KanbanLabelPDF
-      baseUrl={baseUrl}
-      labels={labels}
-      action={action}
-      labelSize={labelSize}
-    />
+    <KanbanLabelPDF baseUrl={baseUrl} labels={labels} labelSize={labelSize} />
   );
 
   const body: Buffer = await new Promise((resolve, reject) => {

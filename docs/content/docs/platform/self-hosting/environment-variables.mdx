@@ -18,7 +18,7 @@ Platform-wide behavior and edition.
 <EnvVar name="ERP_URL" type="url">Public URL of the ERP app. Required for the MES: it sends shop-floor postings (material issues, completions, picking) to this address.</EnvVar>
 <EnvVar name="MES_URL" type="url">Public URL of the MES app.</EnvVar>
 <EnvVar name="DEFAULT_LANGUAGE" type="string">Default UI language.</EnvVar>
-<EnvVar name="RATE_LIMIT" type="number">Requests per window allowed against the API.</EnvVar>
+<EnvVar name="RATE_LIMIT" type="number">Sign-in, MFA and unlock attempts allowed per IP every 5 minutes (default 10).</EnvVar>
 </EnvVars>
 
 ## Database — Supabase

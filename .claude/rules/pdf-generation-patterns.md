@@ -19,7 +19,7 @@ print-queue/ZPL side in [printing-system.md](printing-system.md).
 1. **Block-registry driven** (customizable docs + tracking label): the PDF file is
    a thin driver that resolves a `documentTemplate` and renders an ordered list of
    block components. Files: `SalesInvoicePDF`, `SalesOrderPDF`, `PurchaseOrderPDF`,
-   `QuotePDF`, `PackingSlipPDF`, `StockTransferPDF`, `JobTravelerPDF`, `IssuePDF`,
+   `PurchaseReturnOrderPDF`, `PurchasingRfqPDF`, `QuotePDF`, `PackingSlipPDF`, `StockTransferPDF`, `JobTravelerPDF`, `IssuePDF`,
    `ProductLabelPDF` (trackingLabel). Add new ones via the template engine — see
    document-template-customizer.md. Every one is registered in
    `pdf/preview-documents.tsx` `DOCUMENT_PDFS[type] = { Component, sample }`.
@@ -107,7 +107,7 @@ Times-Roman / Courier are PDF built-ins (no registration).
   `Offset is outside the bounds of the DataView` at embed. woff (zlib) is stateless.
   Also avoid OpenType **variable** fonts — react-pdf can't subset them (PDF 2.0).
 - `pdf/fonts.data.ts` — **generated, gitignored** `BUNDLED_FONTS` (base64 woff,
-  ~720 KiB). Produced by `scripts/generate-fonts.mjs` from the `@fontsource/*`
+  ~1.4 MiB). Produced by `scripts/generate-fonts.mjs` from the `@fontsource/*`
   devDeps (static, numeric-weight instances — NOT the variable packages). The
   `@carbon/documents` **`build`** script is the single entry point; it runs:
   - on the **root `postinstall`** (`pnpm --filter @carbon/documents build`) — so the
@@ -124,8 +124,18 @@ Times-Roman / Courier are PDF built-ins (no registration).
   `getSafeFontFamily` — no crash.
 - `ensureFont(family)` — back-compat async wrapper (routes still `await` it); just
   calls `registerDocumentFonts()`. The `family` arg is ignored (all registered up front).
-- `getSafeFontFamily(family)` — returns the family if built-in/registered, else
-  `"Helvetica"`. **Every render path must route the settings font through this**
+- **Two subsets per face.** Fontsource splits a face by unicode range and react-pdf
+  has no unicode-range, so each family is registered twice: `Inter` (`latin`) and
+  `Inter Latin Ext` (`latin-ext`: ś, ł, ő, č, ș…). With `latin` alone "Przemyśl"
+  printed as "Przemy[" (react-pdf fell back to Helvetica, which cannot encode ś).
+  The generator renames each Latin Ext face's PostScript name (`-LatinExt`,
+  `renamePostScript`): pdfkit reuses an embedded font by that name, so two faces
+  sharing one drew Latin Ext glyph ids from the latin subset — wrong letters.
+- `getSafeFontFamily(family)` — returns a font **stack** (`string[]`): the family if
+  built-in/registered (else `"Helvetica"`), then its Latin Ext face, `Inter` and
+  `Inter Latin Ext`, registered names only. react-pdf picks the first font with a
+  glyph per character, so built-ins and Lato (whose `latin-ext` is nearly empty)
+  borrow Inter's letters. Pinned by `pdf/fonts.test.ts`. **Every render path must route the settings font through this**
   (both `Template` and the hand-built job traveler, `renderJobTravelerPdf` in
   `apps/erp/app/modules/production/production.pdf.tsx`, which both traveler routes call)
   so an unregistered family can never throw.

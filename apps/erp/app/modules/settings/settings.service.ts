@@ -670,7 +670,11 @@ export async function isIntegrationInstallWithheld(
     !isIntegrationComingSoon(integration, {
       edition: CarbonEdition,
       email,
-      hasEarlyAccess: await hasIntegrationEarlyAccess({ companyId, userId })
+      hasEarlyAccess: await hasIntegrationEarlyAccess({
+        companyId,
+        userId,
+        email
+      })
     })
   ) {
     return false;
@@ -3414,12 +3418,13 @@ export async function refuseUnlessCanManageCompanies(
     .select("email")
     .eq("id", ctx.actor.userId)
     .maybeSingle();
-  if (isInternalEmail(data?.email ?? "")) return null;
+  const email = data?.email ?? "";
+  if (isInternalEmail(email)) return null;
   // The same rule as the Settings → Companies pages: Carbon staff, and the
   // companies the `multi-company-management` flag turns it on for.
   const enabled = await flags.bool("multi-company-management", {
     companyId: ctx.company.id,
-    userId: ctx.actor.userId
+    email
   });
   return enabled ? null : refused;
 }

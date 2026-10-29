@@ -28,9 +28,12 @@ export const config = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "settings"
-  });
+  const { client, companyId, email, userId } = await requirePermissions(
+    request,
+    {
+      view: "settings"
+    }
+  );
 
   const integrations = await getIntegrationsWithHealth(client, companyId);
   if (integrations.error) {
@@ -79,7 +82,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     integrations: items,
     activeRoles,
     // Decided here so the flag's rules never reach the browser.
-    hasEarlyAccess: await hasIntegrationEarlyAccess({ companyId, userId })
+    hasEarlyAccess: await hasIntegrationEarlyAccess({
+      companyId,
+      userId,
+      email
+    })
     // No OAuth state here. Every OAuth install now starts at
     // `api+/integrations.$id.connect`, which issues a SIGNED, browser-bound,
     // single-use state — strictly better than the unsigned correlation value this

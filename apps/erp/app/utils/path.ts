@@ -1154,7 +1154,7 @@ export const path = {
         generatePath(`${file}/job/${jobId}/traveler.pdf`),
       kanbanLabelsPdf: (
         ids: string | string[],
-        action: "order" | "start" | "complete"
+        action: "order" | "start" | "complete" | "all"
       ) => {
         const idString = Array.isArray(ids) ? ids.join(",") : ids;
         return generatePath(
@@ -1210,6 +1210,8 @@ export const path = {
 
       purchaseReturnOrder: (id: string) =>
         generatePath(`${file}/purchase-return-order/${id}.pdf`),
+      purchasingRfq: (id: string) =>
+        generatePath(`${file}/purchasing-rfq/${id}.pdf`),
       quote: (id: string) => generatePath(`${file}/quote/${id}.pdf`),
       receiptLabelsPdf: (
         id: string,

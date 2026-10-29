@@ -335,7 +335,7 @@ export const DEFAULT_LANGUAGE = getEnv("DEFAULT_LANGUAGE") ?? "en";
 // browser prod: warning), so an invalid/absent value never throws.
 export const LOG_LEVEL = getEnv("LOG_LEVEL");
 
-export const RATE_LIMIT = parseInt(getEnv("RATE_LIMIT") || "5", 10);
+export const RATE_LIMIT = parseInt(getEnv("RATE_LIMIT") || "10", 10);
 
 // Vercel's own VERCEL_URL is a bare host; an APP_URL set by hand is an origin.
 const previewUrl = () =>

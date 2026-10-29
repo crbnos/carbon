@@ -376,6 +376,21 @@ function returnOrderBlocks(): DocumentBlock[] {
   ];
 }
 
+/**
+ * Layout for a purchasing RFQ, read as a letter: letterhead, the request,
+ * the items, the sign-off (notes block), then the terms. No summary block —
+ * nothing is priced; the supplier quotes in their own format.
+ */
+function rfqBlocks(): DocumentBlock[] {
+  return [
+    { id: "header", type: "header", visible: true },
+    { id: "parties", type: "parties", visible: true },
+    { id: "lineItems", type: "lineItems", visible: true },
+    { id: "notes", type: "notes", visible: true },
+    { id: "terms", type: "terms", visible: true }
+  ];
+}
+
 /** Standard layout for a fulfillment document (packing slip): no summary. */
 function fulfillmentBlocks(): DocumentBlock[] {
   return [
@@ -516,6 +531,15 @@ export const DEFAULT_TEMPLATES: Record<DocumentTemplateType, DocumentTemplate> =
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
       documentType: "purchaseReturnOrder",
       blocks: returnOrderBlocks(),
+      theme: { ...DEFAULT_THEME },
+      settings: { ...DEFAULT_DOCUMENT_SETTINGS },
+      headerSectionId: BUILT_IN_SECTION_IDS.header,
+      footerSectionId: BUILT_IN_SECTION_IDS.footer
+    },
+    purchasingRfq: {
+      formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
+      documentType: "purchasingRfq",
+      blocks: rfqBlocks(),
       theme: { ...DEFAULT_THEME },
       settings: { ...DEFAULT_DOCUMENT_SETTINGS },
       headerSectionId: BUILT_IN_SECTION_IDS.header,
@@ -764,6 +788,13 @@ export const DOCUMENT_CATALOG: DocumentCatalogEntry[] = [
     type: "salesReturnOrder",
     label: "RMA",
     group: "Sales",
+    supported: true,
+    themeColors: "full"
+  },
+  {
+    type: "purchasingRfq",
+    label: "Request for Quote",
+    group: "Purchasing",
     supported: true,
     themeColors: "full"
   },
