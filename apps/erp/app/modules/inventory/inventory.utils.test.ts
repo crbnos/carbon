@@ -226,9 +226,21 @@ describe("stockIncreaseRefusal", () => {
     expect(increase()).toBeNull();
   });
 
-  it("adds to an existing unit without its number", () => {
-    expect(increase({ createsUnit: false, readableId: undefined })).toBeNull();
-  });
+  it.each([undefined, null])(
+    "adds to an existing unit when its number is %j",
+    (readableId) => {
+      expect(increase({ createsUnit: false, readableId })).toBeNull();
+    }
+  );
+
+  it.each(["", "  "])(
+    "refuses blanking an existing unit's number with %j",
+    (readableId) => {
+      expect(increase({ createsUnit: false, readableId })).toEqual(
+        expect.any(String)
+      );
+    }
+  );
 
   it.each(["Inventory", "Non-Inventory", null] as const)(
     "leaves a %s item's increase alone",

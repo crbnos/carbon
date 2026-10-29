@@ -111,36 +111,44 @@ export const setItemTrackingType = defineServiceFn({
 
   async run(ctx, { ids, itemTrackingType }) {
     const companyId = ctx.company.id;
-    if (itemTrackingType === "Batch" || itemTrackingType === "Serial") {
-      let withStock: string[];
-      try {
-        withStock = await service.getItemsWithUntrackedStock(ctx.asSystem.pg, {
-          itemIds: ids,
-          companyId,
-          trackingType: itemTrackingType
-        });
-      } catch (err) {
-        return ctx.error("internal", "Failed to read the items' stock", err);
-      }
-      const refusal = utils.trackingTypeChangeRefusal(
-        itemTrackingType,
-        withStock
-      );
-      if (refusal) return ctx.error("rule", refusal);
-    }
+    // The stock check and the write share one transaction, with the items
+    // locked first: the adjustment posting reads the tracking type under a
+    // share lock, so stock posted meanwhile is seen or waits for the change.
+    const changed = await ctx.transaction(async (tx) => {
+      await tx.asSystem.pg
+        .selectFrom("item")
+        .select("id")
+        .where("id", "in", ids)
+        .where("companyId", "=", companyId)
+        .orderBy("id")
+        .forUpdate()
+        .execute();
 
-    const update = await ctx.asCaller.supabase
-      .from("item")
-      .update({
-        itemTrackingType,
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .in("id", ids)
-      .eq("companyId", companyId);
-    if (update.error) {
-      return ctx.error("internal", update.error.message, update.error);
-    }
+      if (itemTrackingType === "Batch" || itemTrackingType === "Serial") {
+        const withStock = await service.getItemsWithUntrackedStock(
+          tx.asSystem.pg,
+          { itemIds: ids, companyId, trackingType: itemTrackingType }
+        );
+        const refusal = utils.trackingTypeChangeRefusal(
+          itemTrackingType,
+          withStock
+        );
+        if (refusal) return ctx.error("rule", refusal);
+      }
+
+      await tx.asSystem.pg
+        .updateTable("item")
+        .set({
+          itemTrackingType,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "in", ids)
+        .where("companyId", "=", companyId)
+        .execute();
+      return { ids };
+    });
+    if (changed.error) return changed.error;
 
     try {
       await service.cascadeItemTrackingType(ctx.asSystem.pg, {

@@ -78,9 +78,10 @@ function unitWording(itemTrackingType: ItemTrackingType | null | undefined) {
 /**
  * Why an adjustment that adds stock cannot post, or null. Batch and serial
  * stock belongs to a unit: the increase names one (`trackedEntityId`), and a
- * unit it creates carries its batch or serial number (`readableId`). The
- * adjustment posting reads it, so the quantities page, the API, MCP and the
- * MES refuse alike.
+ * unit it creates carries its batch or serial number (`readableId`). A number
+ * sent for an existing unit is never blank; leaving it out keeps the unit's
+ * number. The adjustment posting reads it, so the quantities page, the API,
+ * MCP and the MES refuse alike.
  */
 export function stockIncreaseRefusal({
   itemTrackingType,
@@ -99,7 +100,8 @@ export function stockIncreaseRefusal({
   if (!trackedEntityId) {
     return `${wording.tracked} stock must go into a ${wording.unit}: send its trackedEntityId, or a new id with its ${wording.number.toLowerCase()} as readableId`;
   }
-  if (createsUnit && !readableId?.trim()) {
+  const blank = !readableId?.trim();
+  if (createsUnit ? blank : readableId != null && blank) {
     return `${wording.number} is required`;
   }
   return null;
