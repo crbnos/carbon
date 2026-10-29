@@ -11,6 +11,7 @@ import { getNonNettableTrackedEntityIds } from "@carbon/database";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect } from "vitest";
 import { issueMaterial as issue } from "../../app/modules/inventory/inventory.service";
+import { upsertMethodMaterial } from "../../app/modules/items/items.service";
 import {
   getStorageUnitId,
   getStorageUnitWithHighestQuantity,
@@ -346,4 +347,103 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
       expect(consumed).toEqual([{ storageUnitId: warehouse, quantity: -2 }]);
     }
   );
+
+  databaseTest(
+    "a new BoM line seeds its Pull From only from a nettable default",
+    async () => {
+      const makeMethodId = `${f.prefix}-seeded-method`;
+      await seed(f, (trx) =>
+        trx
+          .insertInto("makeMethod")
+          .values({
+            id: makeMethodId,
+            itemId: f.assemblyId,
+            version: 77,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute()
+      );
+      const addLine = async (itemId: string) => {
+        const line = await upsertMethodMaterial(localServiceRoleClient()!, {
+          makeMethodId,
+          order: 1,
+          itemType: "Part",
+          kit: false,
+          methodType: "Pull from Inventory",
+          sourcingType: "Purchased",
+          itemId,
+          quantity: 1,
+          unitOfMeasureCode: "EA",
+          companyId: f.companyId,
+          createdBy: USER
+        } as never);
+        expect(line.error).toBeNull();
+        const row = await f.db
+          .selectFrom("methodMaterial")
+          .select("storageUnitIds")
+          .where("makeMethodId", "=", makeMethodId)
+          .where("itemId", "=", itemId)
+          .where("companyId", "=", f.companyId)
+          .executeTakeFirstOrThrow();
+        return row.storageUnitIds;
+      };
+
+      const onShelf = await newItem("seeded-shelf");
+      await setDefaultBin(onShelf, warehouse);
+      expect(await addLine(onShelf)).toEqual({ [f.locationId]: warehouse });
+
+      const onHold = await newItem("seeded-hold");
+      await setDefaultBin(onHold, quarantine);
+      expect(await addLine(onHold)).toEqual({});
+    }
+  );
+});
+
+describe.skipIf(!hasLocalDatabase)("job completion's default bin", () => {
+  // Completes one assembly into a new unit and reads the pick method default
+  // the completion leaves for it.
+  const completeInto = async (nettable: boolean) => {
+    const f = await alwaysPostFixture();
+    try {
+      const unit = `${f.prefix}-output`;
+      await seed(f, (trx) =>
+        trx
+          .insertInto("storageUnit")
+          .values({
+            id: unit,
+            name: "Output",
+            locationId: f.locationId,
+            nettable,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute()
+      );
+      const job = await jobFixture(f, "complete");
+      await sql`SELECT complete_job_to_inventory(${job.jobId}, ${1}::numeric, ${unit}, ${f.locationId}, ${f.companyId}, ${USER})`.execute(
+        f.db
+      );
+      const pickMethod = await f.db
+        .selectFrom("pickMethod")
+        .select("defaultStorageUnitId")
+        .where("itemId", "=", f.assemblyId)
+        .where("locationId", "=", f.locationId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirst();
+      return { unit, defaultStorageUnitId: pickMethod?.defaultStorageUnitId ?? null };
+    } finally {
+      await f.cleanup();
+    }
+  };
+
+  databaseTest("makes a nettable output unit the item's default", async () => {
+    const { unit, defaultStorageUnitId } = await completeInto(true);
+    expect(defaultStorageUnitId).toBe(unit);
+  });
+
+  databaseTest("never makes a non-nettable output unit the default", async () => {
+    const { defaultStorageUnitId } = await completeInto(false);
+    expect(defaultStorageUnitId).toBeNull();
+  });
 });

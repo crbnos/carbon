@@ -13,7 +13,10 @@ import {
   getMethod as getMethodBody,
   getJobReleaseReadiness
 } from "../../app/modules/production/production.service";
-import { getStrictBackflushGapCounts } from "../../app/modules/settings/settings.service";
+import {
+  getActiveMethodsMissingPullFrom,
+  getStrictBackflushGapCounts
+} from "../../app/modules/settings/settings.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import { assertMethodHasPullFrom } from "../../app/modules/shared/strict-backflush";
 import {
@@ -904,6 +907,19 @@ databaseTest(
       ).rejects.toThrow(
         `Set a Pull From storage unit before you activate this version: ${label}`
       );
+
+      // An Active method with that line is listed, at the line's location.
+      await f.db
+        .updateTable("makeMethod")
+        .set({ status: "Active" })
+        .where("id", "=", makeMethodId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const listed = (
+        await getActiveMethodsMissingPullFrom(f.db, f.companyId)
+      ).data?.find((method) => method.makeMethodId === makeMethodId);
+      expect(listed?.materials).toEqual([`${f.prefix}-PART`]);
+      expect(listed?.locations).toHaveLength(1);
 
       const job = await jobFixture(f);
       await f.db
