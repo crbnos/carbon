@@ -54,7 +54,6 @@ import {
   useQuantityFormatter,
   useUser
 } from "~/hooks";
-import type { SupplierPart } from "~/modules/items/types";
 import {
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
@@ -108,6 +107,9 @@ type PlanningTableProps = {
   /** The Actions-column filter in effect; null when the grid is not filtered
    *  by action type. */
   actionTypes: string[] | null;
+  /** The suppliers the Supplier filter offers: those the plan lists. Null
+   *  offers every supplier. */
+  supplierIds: string[] | null;
   /** Today on the location's calendar (ISO date). */
   locationToday: string;
 };
@@ -121,6 +123,7 @@ const PlanningTable = memo(
     locationId,
     periods,
     actionTypes,
+    supplierIds,
     locationToday
   }: PlanningTableProps) => {
     const { t, i18n } = useLingui();
@@ -133,6 +136,21 @@ const PlanningTable = memo(
     const unitOfMeasures = useUnitOfMeasure();
     const [suppliers] = useSuppliers();
     const itemPostingGroups = useItemPostingGroups();
+
+    // The Supplier filter offers only the suppliers the plan's rows order
+    // from (their default supplier), not every supplier of the company.
+    const supplierOptions = useMemo(() => {
+      if (!supplierIds) {
+        return suppliers.map((supplier) => ({
+          label: supplier.name,
+          value: supplier.id
+        }));
+      }
+      const listed = new Set(supplierIds);
+      return suppliers
+        .filter((supplier) => listed.has(supplier.id))
+        .map((supplier) => ({ label: supplier.name, value: supplier.id }));
+    }, [suppliers, supplierIds]);
 
     const mrpFetcher = useAction<typeof mrpAction>({
       onSettled: (data) => {
@@ -264,17 +282,10 @@ const PlanningTable = memo(
       () => {
         const initial: Record<string, string> = {};
         data.forEach((item) => {
-          // If there's a preferred supplier, use it
-          if (item.preferredSupplierId) {
-            initial[item.id] = item.preferredSupplierId;
-          }
-          // If there's only one supplier, auto-select it regardless of preference
-          else if ((item.suppliers as SupplierPart[])?.length === 1) {
-            initial[item.id] = (item.suppliers as SupplierPart[])[0].supplierId;
-          }
-          // Otherwise, use the first available supplier if any
-          else if ((item.suppliers as SupplierPart[])?.length > 0) {
-            initial[item.id] = (item.suppliers as SupplierPart[])[0].supplierId;
+          // The preferred supplier, else the earliest supplier part — the
+          // same supplier the Supplier column filters on.
+          if (item.defaultSupplierId) {
+            initial[item.id] = item.defaultSupplierId;
           }
         });
 
@@ -296,9 +307,7 @@ const PlanningTable = memo(
         let changed = false;
         for (const item of drawerRows) {
           if (next[item.id]) continue;
-          const seed =
-            item.preferredSupplierId ??
-            (item.suppliers as SupplierPart[] | null)?.[0]?.supplierId;
+          const seed = item.defaultSupplierId;
           if (seed) {
             next[item.id] = seed;
             changed = true;
@@ -665,7 +674,7 @@ const PlanningTable = memo(
         ...shared.periods,
         shared.reorderPolicy,
         {
-          accessorKey: "preferredSupplierId",
+          accessorKey: "defaultSupplierId",
           header: t`Supplier`,
           cell: ({ row }) => {
             const supplierId = suppliersMap[row.original.id];
@@ -689,10 +698,7 @@ const PlanningTable = memo(
             mobile: "P3",
             filter: {
               type: "static",
-              options: suppliers.map((supplier) => ({
-                label: supplier.name,
-                value: supplier.id
-              }))
+              options: supplierOptions
             },
             icon: <LuContainer />
           }
@@ -779,7 +785,7 @@ const PlanningTable = memo(
     }, [
       t,
       i18n,
-      suppliers,
+      supplierOptions,
       formatQuantity,
       unitOfMeasures,
       suppliersMap,

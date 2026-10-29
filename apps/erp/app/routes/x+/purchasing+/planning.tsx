@@ -24,6 +24,7 @@ import { getPlanningActions } from "~/modules/production/production.service";
 import { withPlanningActions } from "~/modules/production/ui/Planning/planning-action-scope";
 import {
   getPurchasingPlanning,
+  getPurchasingPlanningSuppliers,
   PURCHASING_PLANNING_PAGING
 } from "~/modules/purchasing/purchasing.service";
 import type { PurchasingPlanningItem } from "~/modules/purchasing/types";
@@ -95,7 +96,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // A later page (`?after=`) is read for its rows and their actions only.
   const drawerItemId = cursor ? null : searchParams.get(PLANNING_DRAWER_PARAM);
 
-  const [items, drawerItemRead] = await Promise.all([
+  // The Supplier filter's options: the suppliers the plan lists. A later page
+  // keeps the first page's filter, so only the first page reads them.
+  const [items, drawerItemRead, supplierRead] = await Promise.all([
     getPurchasingPlanning(client, locationId, companyId, periodIds, {
       search,
       limit,
@@ -115,7 +118,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
           filters: [{ column: "id", operator: "eq", value: drawerItemId }],
           asOf
         })
-      : null
+      : null,
+    cursor
+      ? null
+      : getPurchasingPlanningSuppliers(client, locationId, companyId, periodIds)
   ]);
 
   if (items.error) {
@@ -142,6 +148,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
       error: drawerItemRead.error
     });
   }
+  // A failed read leaves the filter offering every supplier, as it did before.
+  if (supplierRead?.error) {
+    logger.error("Failed to load the planning suppliers", {
+      companyId,
+      locationId,
+      error: supplierRead.error
+    });
+  }
+  const supplierIds =
+    supplierRead && !supplierRead.error
+      ? (supplierRead.data ?? []).map((row) => row.supplierId)
+      : null;
+
   const page = toPage(
     (items.data ?? []) as PurchasingPlanningItem[],
     { limit, sorts },
@@ -195,6 +214,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     actionTypes: actionTypes ?? null,
     periods,
     locationId,
+    // The Supplier filter's options; null offers every supplier.
+    supplierIds,
     // Planned-order date defaults are business dates on the plant's calendar —
     // the drawer must not seed them from the planner's browser zone.
     locationToday: locationToday.toString()
@@ -210,6 +231,7 @@ export default function PurchasingPlanningRoute() {
     locationId,
     periods,
     actionTypes,
+    supplierIds,
     locationToday
   } = useLoaderData<typeof loader>();
 
@@ -230,6 +252,7 @@ export default function PurchasingPlanningRoute() {
             locationId={locationId}
             periods={periods}
             actionTypes={actionTypes}
+            supplierIds={supplierIds}
             locationToday={locationToday}
           />
         </ResizablePanel>
