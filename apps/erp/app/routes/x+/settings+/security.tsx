@@ -293,14 +293,15 @@ function SsoDomainRow({
               >
                 <Trans>Cancel</Trans>
               </Button>
-              <fetcher.Form
-                method="post"
-                action={path.to.sso}
-                onSubmit={() => setRemoveModalOpen(false)}
-              >
+              <fetcher.Form method="post" action={path.to.sso}>
                 <input type="hidden" name="intent" value="removeDomain" />
                 <input type="hidden" name="domainId" value={domain.id} />
-                <Button variant="destructive" type="submit">
+                <Button
+                  variant="destructive"
+                  type="submit"
+                  isLoading={isBusy && submitting === "removeDomain"}
+                  isDisabled={isBusy}
+                >
                   <Trans>Remove</Trans>
                 </Button>
               </fetcher.Form>
