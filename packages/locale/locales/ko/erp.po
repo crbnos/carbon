@@ -3745,6 +3745,12 @@ msgstr "{lineName}을 이 계약에서 제거하시겠습니까?"
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "정말로 이 항목의 공급업체로 {supplierName}을(를) 제거하시겠습니까? 이 작업은 취소할 수 없습니다."
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "{name}에서 이 직원을 제거하시겠습니까? 교육 이력은 유지되며 직원을 나중에 다시 추가할 수 있습니다."
 
@@ -19523,6 +19529,7 @@ msgstr "재측정 전표 (유효 날짜 및 분류는 확인 시 검증됩니다
 msgid "Remove"
 msgstr "제거"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "{0} 제거"
@@ -22219,6 +22226,9 @@ msgstr "대신 로그아웃"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "다음 단계로 넘어가기 전 서명 검토"
 
@@ -24904,6 +24914,9 @@ msgstr "이 RFQ와 비교할 활성 공급업체 견적이 없습니다."
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "이 작업 지시와 관련된 외주 공정이 있지만 공급업체가 없습니다. 릴리스하기 전에 각 외주 공정에 공급업체를 할당하십시오."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "이 공정에는 셋업, 노무 또는 기계 시간이 없어서 실행 크기를 정할 근거가 없습니다. 막대는 명목상의 표시일 뿐이며 용량을 보유하지 않습니다 — 공정에 시간 기준을 추가하여 일정을 짜세요."

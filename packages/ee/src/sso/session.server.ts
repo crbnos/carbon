@@ -82,3 +82,35 @@ export function getSsoProviderIdFromSession(
 
   return getSsoProviderIdFromUser(user);
 }
+
+/**
+ * When THIS SESSION authenticated through SAML, in epoch ms, with the user it
+ * belongs to — or null when the token is not a SAML session or carries no
+ * readable time. GoTrue stamps each `amr` entry with the Unix-seconds time the
+ * method was recorded on the session (its creation, for a sign-in), and a
+ * refresh keeps it, so this is the time of the sign-in, not of the token.
+ */
+export function getSsoSignIn(
+  accessToken: string
+): { userId: string; atMs: number } | null {
+  let payload: Record<string, unknown>;
+  try {
+    payload = decodeJwt(accessToken);
+  } catch {
+    return null;
+  }
+  if (typeof payload.sub !== "string" || !Array.isArray(payload.amr)) {
+    return null;
+  }
+
+  const saml = payload.amr.find(
+    (entry) =>
+      typeof entry === "object" &&
+      entry !== null &&
+      (entry as { method?: unknown }).method === "sso/saml"
+  ) as { timestamp?: unknown } | undefined;
+  if (typeof saml?.timestamp !== "number" || !Number.isFinite(saml.timestamp)) {
+    return null;
+  }
+  return { userId: payload.sub, atMs: saml.timestamp * 1000 };
+}

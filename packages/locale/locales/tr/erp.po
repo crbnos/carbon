@@ -3745,6 +3745,12 @@ msgstr "{lineName} öğesini bu sözleşmeden kaldırmak istediğinizden emin mi
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Bu öğe için {supplierName} tedarikçisini kaldırmak istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Bu çalışanı {name}'den kaldırmak istediğinizden emin misiniz? Eğitim geçmişi saklanır ve çalışan daha sonra yeniden eklenebilir."
 
@@ -19523,6 +19529,7 @@ msgstr "Yeniden ölçüm muhasebe fişi (etkinlik tarihi ve sınıflandırma ona
 msgid "Remove"
 msgstr "Kaldır"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Kaldır {0}"
@@ -22219,6 +22226,9 @@ msgstr "Bunun yerine Oturumu Kapat"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Bir sonraki adıma geçmeden önce onay incelemesi"
 
@@ -24904,6 +24914,9 @@ msgstr "Bu RFQ için karşılaştırılacak aktif tedarikçi teklifi bulunmamakt
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Bu işle ilgili tedarikçisi olmayan dış operasyonlar bulunmaktadır. İşlemden önce her dış operasyona bir tedarikçi atayınız."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "Bu operasyonlarda kurulum, işçilik veya makine süresi yok, bu nedenle çalıştırmayı boyutlandırmak için hiçbir şey yok. Çubuk nominal bir işarettir ve kapasite tutmaz — operasyonlara zaman standartları ekleyin."

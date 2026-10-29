@@ -3745,6 +3745,12 @@ msgstr "Вы уверены, что хотите убрать {lineName} из э
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Вы уверены, что хотите убрать {supplierName} в качестве поставщика для этой номенклатуры? Это невозможно отменить."
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Вы уверены, что хотите удалить этого сотрудника из {name}? История обучения сохраняется и сотрудник может быть добавлен позже."
 
@@ -19523,6 +19529,7 @@ msgstr "Операция переоценки (дата вступления в 
 msgid "Remove"
 msgstr "Убрать"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Убрать {0}"
@@ -22219,6 +22226,9 @@ msgstr "Вместо этого выйти"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Подтверждение рассмотрения перед переходом к следующему шагу"
 
@@ -24904,6 +24914,9 @@ msgstr "Нет активных предложений поставщиков д
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "В этой работе есть внешние операции, которым не назначены поставщики. Пожалуйста, назначьте поставщика для каждой внешней операции перед выпуском."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "На этих операциях нет наладки, труда или машинного времени, поэтому нет ничего, на основе чего можно определить размер запуска. Полоса — это номинальный маркер и не определяет производительность — добавьте стандарты времени к операциям для планирования."

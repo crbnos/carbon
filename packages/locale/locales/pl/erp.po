@@ -3745,6 +3745,12 @@ msgstr "Czy na pewno chcesz usunąć {lineName} z tej umowy?"
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Czy chcesz usunąć {supplierName} z listy dostawców dla tego artykułu? Tej czynności nie można cofnąć."
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Czy na pewno chcesz usunąć tego pracownika z {name}? Historia szkolenia jest zachowywana i pracownik może być dodany ponownie później."
 
@@ -19523,6 +19529,7 @@ msgstr "Dowód księgowy przeszacowania (data wejścia w życie i klasyfikacja s
 msgid "Remove"
 msgstr "Usuń z listy"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Usuń z listy {0}"
@@ -22219,6 +22226,9 @@ msgstr "Zamiast tego wyloguj się"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Przegląd zatwierdzający przed przejściem do następnego kroku"
 
@@ -24904,6 +24914,9 @@ msgstr "Brak aktywnych ofert dostawców do porównania dla tego zapytania oferto
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Istnieją operacje zewnętrzne powiązane z tym zadaniem, które nie mają dostawców. Proszę przypisać dostawcę do każdej operacji zewnętrznej przed jej uruchomieniem."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "Na tych operacjach nie ma przezbrojenia, robocizny ani czasu maszynowego, dlatego nie ma nic do określenia rozmiaru przebiegu. Pasek to nominalny marker i nie zajmuje pojemności — dodaj normy czasowe do operacji, aby je zaplanować."

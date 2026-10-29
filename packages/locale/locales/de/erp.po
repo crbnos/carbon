@@ -3745,6 +3745,12 @@ msgstr "Sind Sie sicher, dass Sie {lineName} von diesem Vertrag entfernen möcht
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie {supplierName} als Lieferant für diesen Artikel entfernen möchten? Dies kann nicht rückgängig gemacht werden."
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Möchten Sie diesen Mitarbeiter wirklich aus {name} entfernen? Der Schulungsverlauf wird beibehalten und der Mitarbeiter kann später erneut hinzugefügt werden."
 
@@ -19523,6 +19529,7 @@ msgstr "Neubewertungsbuchungssatz (Stichtagsdatum und Klassifizierung werden bei
 msgid "Remove"
 msgstr "Entfernen"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Entfernen {0}"
@@ -22219,6 +22226,9 @@ msgstr "Stattdessen abmelden"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Freigabeüberprüfung vor dem Wechsel zum nächsten Schritt"
 
@@ -24904,6 +24914,9 @@ msgstr "Es gibt keine aktiven Lieferantenofferten zum Vergleichen für diese Anf
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Es gibt Fremdvergabe-Arbeitsgänge, die mit diesem Fertigungsauftrag verknüpft sind und keine Lieferanten haben. Bitte weisen Sie jedem Fremdvergabe-Arbeitsgang einen Lieferant zu, bevor Sie freigeben."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "Es gibt keine Rüstung, kein Personal oder keine Maschinenzeit auf diesen Arbeitsgängen, also gibt es nichts zum Bemessen eines Durchlaufs. Der Balken ist eine nominale Markierung und hält keine Kapazität – fügen Sie Zeitnormen zu den Arbeitsgängen hinzu, um ihn einzuplanen."

@@ -3745,6 +3745,12 @@ msgstr "{lineName} をこの契約から除去してもよろしいですか？"
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "{supplierName}をこの品目の仕入先として除去してもよろしいですか？これは取り消せません。"
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "この従業員を「{name}」から除去してもよろしいですか？教育訓練履歴は保持されており、従業員は後で再度追加できます。"
 
@@ -19523,6 +19529,7 @@ msgstr "再測定仕訳（有効日と分類は確認時にチェックされま
 msgid "Remove"
 msgstr "除去"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "{0}を除去"
@@ -22219,6 +22226,9 @@ msgstr "代わりにサインアウト"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "次のステップに進む前のサインオフレビュー"
 
@@ -24904,6 +24914,9 @@ msgstr "このRFQに対して比較する有効な仕入先見積がありませ
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "この製造指図に関連する外注工程があり、それらに仕入先が割り当てられていません。リリースする前に、各外注工程に仕入先を割り当ててください。"
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "これらの工程に段取り、労務、機械時間がないため、実行サイズの根拠となるものがありません。バーは名目的なマーカーであり、容量を保持していません — スケジュール設定するには、工程に時間基準を追加してください。"

@@ -3745,6 +3745,12 @@ msgstr "Êtes-vous sûr de vouloir retirer {lineName} de ce contrat ?"
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Êtes-vous sûr de vouloir retirer {supplierName} en tant que fournisseur pour cet article ? Cette action ne peut pas être annulée."
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Êtes-vous sûr de vouloir supprimer cet employé de {name} ? L'historique de formation est conservé et l'employé peut être rajouté ultérieurement."
 
@@ -19523,6 +19529,7 @@ msgstr "Journal de réévaluation (la date d'effet et la classification sont vé
 msgid "Remove"
 msgstr "Retirer"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Retirer {0}"
@@ -22219,6 +22226,9 @@ msgstr "Se déconnecter à la place"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Revue de validation avant de passer à l'étape suivante"
 
@@ -24904,6 +24914,9 @@ msgstr "Il n'y a pas de devis fournisseurs actifs à comparer pour cette demande
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Il existe des opérations sous-traitées associées à cet ordre de fabrication qui n'ont pas de fournisseur. Veuillez attribuer un fournisseur à chaque opération sous-traitée avant sa libération."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "Il n'y a pas de réglage, de main-d'œuvre ou de temps machine sur ces opérations, donc il n'y a rien pour dimensionner une série. La barre est un marqueur nominal et ne réserve pas la capacité — ajoutez des normes de temps aux opérations pour la planifier."
