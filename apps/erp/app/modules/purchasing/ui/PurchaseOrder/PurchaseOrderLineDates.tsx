@@ -116,7 +116,7 @@ export function PurchaseOrderLineSummaryDates({
     // biome-ignore lint/a11y/noStaticElementInteractions: only stops clicks from bubbling to the summary row; the date pills inside are the controls
     <div
       role="presentation"
-      className="flex shrink-0 items-center gap-4 pr-px text-sm whitespace-nowrap"
+      className="mt-2 flex max-w-full flex-wrap items-center justify-end gap-x-4 gap-y-1 self-end pr-px text-sm whitespace-nowrap"
       onClick={(e) => e.stopPropagation()}
     >
       {fields.map(({ field, label, dateLabel }) => {
