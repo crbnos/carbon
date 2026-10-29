@@ -22182,6 +22182,8 @@ msgstr "打开 Scheduled"
 
 msgid "Open service job"
 msgstr "打开服务工单"
+msgid "Open Settings"
+msgstr ""
 
 msgid "Open Sub-Assembly"
 msgstr "打开子装配"
@@ -22757,6 +22759,9 @@ msgid "Page title"
 msgstr ""
 
 msgid "Pages"
+msgstr ""
+
+msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is switched to Personal Pages."
 msgstr ""
 
 msgid "Paid Amount:"
@@ -32929,6 +32934,9 @@ msgstr "此变更通知已关闭，因此其更改为只读。"
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "此变更通知待审批。其变更已锁定，直到被审批或拒绝。"
 
+msgid "This company uses the Company Plan hub"
+msgstr ""
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "此公司的数据将替换为此备份的内容。首先保存今天的数据，以便您可以恢复。"
 
@@ -32970,6 +32978,8 @@ msgstr "此下载链接无效或已被篡改。"
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "此数字必须保留。请使用“插入值”重新添加。"
+msgid "This file is for {otherPerson}, not {viewing}. Loading it replaces any page they already have."
+msgstr ""
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "此文件不再可用，或您没有权限下载它。"

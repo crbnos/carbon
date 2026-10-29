@@ -22182,6 +22182,8 @@ msgstr "Agendado Aberto"
 
 msgid "Open service job"
 msgstr "Abrir ordem de serviço"
+msgid "Open Settings"
+msgstr ""
 
 msgid "Open Sub-Assembly"
 msgstr "Abrir Sub-Conjunto"
@@ -22757,6 +22759,9 @@ msgid "Page title"
 msgstr ""
 
 msgid "Pages"
+msgstr ""
+
+msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is switched to Personal Pages."
 msgstr ""
 
 msgid "Paid Amount:"
@@ -32929,6 +32934,9 @@ msgstr "Este aviso de mudança está fechado, portanto suas alterações são so
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "Este aviso de alteração está aguardando aprovação. Suas alterações estão bloqueadas até que seja aprovado ou rejeitado."
 
+msgid "This company uses the Company Plan hub"
+msgstr ""
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "Os dados desta empresa são substituídos pelo conteúdo deste backup. Os dados de hoje são salvos primeiro, para que você possa reverter."
 
@@ -32970,6 +32978,8 @@ msgstr "Este link de download é inválido ou foi adulterado."
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "Este valor deve permanecer. Adicione-o novamente com Inserir valor."
+msgid "This file is for {otherPerson}, not {viewing}. Loading it replaces any page they already have."
+msgstr ""
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "Este arquivo não está mais disponível, ou você não tem permissão para baixá-lo."

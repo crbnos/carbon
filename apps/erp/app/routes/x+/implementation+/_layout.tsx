@@ -244,7 +244,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     userId,
     // Staff previewing the customer's view (useImplementationPreview).
     previewAsCustomer:
-      isStaff && isImplementationPreview(request.headers.get("cookie"))
+      isStaff && isImplementationPreview(request.headers.get("cookie")),
+    // False while staff open the hub of a Company Plan company: only pages and
+    // the priority set save until the switch.
+    personalPages: usesPersonalPages(hub.data)
   };
 }
 
@@ -261,7 +264,8 @@ export default function ImplementationHubLayout() {
   const [allPeople] = usePeople();
 
   const loaderData = useLoaderData<typeof loader>();
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{ success: boolean; message?: string }>();
+  const refused = fetcher.data?.success === false ? fetcher.data : undefined;
 
   // The hub's single write path: every mutation submits to the /state action,
   // which persists + revalidates the loader (server stays the source of truth).
@@ -324,6 +328,7 @@ export default function ImplementationHubLayout() {
         dispatch={dispatch}
         resolveScreenUrl={resolveScreenUrl}
         resolveVideoUrl={resolveVideoUrl}
+        refused={refused}
       >
         <RecordOutlet />
       </HubProvider>

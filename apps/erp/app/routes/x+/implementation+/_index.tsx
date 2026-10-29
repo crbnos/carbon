@@ -30,6 +30,9 @@ import {
 } from "@carbon/implementation-hub/ui";
 import { getLogger } from "@carbon/logger";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Badge,
   Button,
   Command,
@@ -52,7 +55,8 @@ import {
   PopoverTrigger,
   Textarea,
   toast,
-  useDisclosure
+  useDisclosure,
+  useRouteData
 } from "@carbon/react";
 import { isInternalEmail } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
@@ -64,10 +68,11 @@ import {
   LuEye,
   LuEyeOff,
   LuFileUp,
-  LuTrash2
+  LuTrash2,
+  LuTriangleAlert
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData, useSearchParams } from "react-router";
+import { Link, useFetcher, useLoaderData, useSearchParams } from "react-router";
 import { FileDropzone } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import {
@@ -151,6 +156,9 @@ export default function GetStartedRoute() {
   const { members, people, isInternal, userId } =
     useLoaderData<typeof loader>();
   const [livePeople] = usePeople();
+  const hubLayout = useRouteData<{ personalPages: boolean }>(
+    path.to.implementation
+  );
   const [params, setParams] = useSearchParams();
   // The page file being loaded; null while the load modal is closed.
   const [loadText, setLoadText] = useState<string | null>(null);
@@ -291,6 +299,9 @@ export default function GetStartedRoute() {
             onLoad={() => setLoadText("")}
           />
         ) : null}
+        {isInternal && hubLayout?.personalPages === false ? (
+          <CompanyPlanNotice />
+        ) : null}
         {shownPage && selectedId ? (
           <MemberPageView
             page={shownPage}
@@ -337,6 +348,8 @@ export default function GetStartedRoute() {
         {loadText !== null ? (
           <LoadPageModal
             initialText={loadText}
+            person={selected}
+            people={everyone}
             onClose={() => setLoadText(null)}
             onLoaded={(memberId) => {
               setLoadText(null);
@@ -346,6 +359,32 @@ export default function GetStartedRoute() {
         ) : null}
       </div>
     </div>
+  );
+}
+
+// Carbon staff only, on a Company Plan company: the page edits in full, but
+// the server refuses every write the Company Plan hub also reads.
+function CompanyPlanNotice() {
+  return (
+    <Alert variant="warning">
+      <LuTriangleAlert />
+      <AlertTitle>
+        <Trans>This company uses the Company Plan hub</Trans>
+      </AlertTitle>
+      <AlertDescription>
+        <Trans>
+          Pages and the priority set save here. Ticks, answers and company items
+          save once the company is switched to Personal Pages.
+        </Trans>
+        <div className="mt-2">
+          <Button asChild size="sm" variant="secondary">
+            <Link to={path.to.implementationSettings}>
+              <Trans>Open Settings</Trans>
+            </Link>
+          </Button>
+        </div>
+      </AlertDescription>
+    </Alert>
   );
 }
 
@@ -712,10 +751,15 @@ function StaffBar({
 // sent; the server checks it again, with the person.
 function LoadPageModal({
   initialText,
+  person,
+  people,
   onClose,
   onLoaded
 }: {
   initialText: string;
+  // The person on screen, and everyone the file could name.
+  person: HubPagePerson | undefined;
+  people: HubPagePerson[];
   onClose: () => void;
   onLoaded: (memberId: string) => void;
 }) {
@@ -742,6 +786,15 @@ function LoadPageModal({
       ? result.message.split("\n")
       : [];
   const shown = problems.length ? problems : serverProblems;
+
+  // The file goes to the person it names, who may not be the one on screen.
+  const fileUser = pageFileUser(text);
+  const viewing = person?.name;
+  const otherPerson =
+    fileUser && person?.email && fileUser !== person.email.toLowerCase()
+      ? people.find((p) => p.email?.toLowerCase() === fileUser)?.name ||
+        fileUser
+      : null;
 
   const submit = () => {
     const checked = checkMemberPage(text, items);
@@ -797,6 +850,17 @@ function LoadPageModal({
               placeholder={t`Paste the page file here`}
               aria-label={t`Page file contents`}
             />
+            {otherPerson ? (
+              <Alert variant="warning">
+                <LuTriangleAlert />
+                <AlertDescription>
+                  <Trans>
+                    This file is for {otherPerson}, not {viewing}. Loading it
+                    replaces any page they already have.
+                  </Trans>
+                </AlertDescription>
+              </Alert>
+            ) : null}
             {shown.length ? (
               <ul className="flex flex-col gap-1 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
                 {shown.map((problem) => (
@@ -825,6 +889,17 @@ function LoadPageModal({
 
 // Page files are JSON.
 const JSON_FILE = { "application/json": [".json"] };
+
+// Whose page a page file is, read loosely so a file with other problems still
+// says it.
+function pageFileUser(text: string): string | null {
+  try {
+    const user = (JSON.parse(text) as { user?: unknown } | null)?.user;
+    return typeof user === "string" ? user.trim().toLowerCase() : null;
+  } catch {
+    return null;
+  }
+}
 
 function download(filename: string, value: unknown) {
   const blob = new Blob([JSON.stringify(value, null, 2)], {

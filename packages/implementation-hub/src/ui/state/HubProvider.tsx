@@ -44,6 +44,7 @@ export function HubProvider({
   dispatch,
   resolveScreenUrl = noScreenUrl,
   resolveVideoUrl = noScreenUrl,
+  refused,
   children
 }: {
   data: HubData;
@@ -51,6 +52,8 @@ export function HubProvider({
   dispatch: (m: HubMutation) => void;
   resolveScreenUrl?: ResolveScreenUrl;
   resolveVideoUrl?: ResolveScreenUrl;
+  // The server's answer to a refused write; a new value for each refusal.
+  refused?: unknown;
   children: ReactNode;
 }) {
   const storeRef = useRef<HubStore | null>(null);
@@ -68,6 +71,12 @@ export function HubProvider({
       ?.getState()
       .setData(data, flags, dispatch, resolveScreenUrl, resolveVideoUrl);
   }, [data, flags, dispatch, resolveScreenUrl, resolveVideoUrl]);
+
+  // A refused write never lands, so its pending tick or answer would wait for
+  // the loader forever. Runs after the re-hydration above.
+  useEffect(() => {
+    if (refused) storeRef.current?.getState().discardPending();
+  }, [refused]);
 
   return (
     <HubContext.Provider value={storeRef.current}>

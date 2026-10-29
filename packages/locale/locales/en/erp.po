@@ -22175,6 +22175,8 @@ msgstr "Open Scheduled"
 
 msgid "Open service job"
 msgstr "Open service job"
+msgid "Open Settings"
+msgstr "Open Settings"
 
 msgid "Open Sub-Assembly"
 msgstr "Open Sub-Assembly"
@@ -22751,6 +22753,9 @@ msgstr "Page title"
 
 msgid "Pages"
 msgstr "Pages"
+
+msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is switched to Personal Pages."
+msgstr "Pages and the priority set save here. Ticks, answers and company items save once the company is switched to Personal Pages."
 
 msgid "Paid Amount:"
 msgstr "Paid Amount:"
@@ -32924,6 +32929,9 @@ msgstr "This change notice is closed, so its changes are read-only."
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 
+msgid "This company uses the Company Plan hub"
+msgstr "This company uses the Company Plan hub"
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 
@@ -32965,6 +32973,8 @@ msgstr "This download link is invalid or has been tampered with."
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "This figure must stay. Add it back with Insert value."
+msgid "This file is for {otherPerson}, not {viewing}. Loading it replaces any page they already have."
+msgstr "This file is for {otherPerson}, not {viewing}. Loading it replaces any page they already have."
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "This file is no longer available, or you don't have permission to download it."

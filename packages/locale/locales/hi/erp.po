@@ -22182,6 +22182,8 @@ msgstr "खुली अनुसूचित"
 
 msgid "Open service job"
 msgstr "सेवा जॉब खोलें"
+msgid "Open Settings"
+msgstr ""
 
 msgid "Open Sub-Assembly"
 msgstr "उप-असेंबली खोलें"
@@ -22757,6 +22759,9 @@ msgid "Page title"
 msgstr ""
 
 msgid "Pages"
+msgstr ""
+
+msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is switched to Personal Pages."
 msgstr ""
 
 msgid "Paid Amount:"
@@ -32929,6 +32934,9 @@ msgstr "यह परिवर्तन सूचना बंद है, इस
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "यह परिवर्तन सूचना अनुमोदन की प्रतीक्षा कर रही है। इसके परिवर्तन लॉक हैं जब तक इसे अनुमोदित या अस्वीकार नहीं किया जाता।"
 
+msgid "This company uses the Company Plan hub"
+msgstr ""
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "इस कंपनी का डेटा इस बैकअप की सामग्री के साथ प्रतिस्थापित किया जाता है। आज का डेटा पहले सहेजा जाता है, इसलिए आप पूर्ववत कर सकते हैं।"
 
@@ -32970,6 +32978,8 @@ msgstr "यह डाउनलोड लिंक अमान्य है य�
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "यह आंकड़ा रहना चाहिए। इसे मान डालें से वापस जोड़ें।"
+msgid "This file is for {otherPerson}, not {viewing}. Loading it replaces any page they already have."
+msgstr ""
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "यह फाइल अब उपलब्ध नहीं है, या आपके पास इसे डाउनलोड करने की अनुमति नहीं है।"

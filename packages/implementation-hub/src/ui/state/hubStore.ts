@@ -23,7 +23,8 @@
 // lands. An answer to an open question (`answerQuestion`) is held the same
 // way: `optimisticAnswers` is layered over the server rows, and the question's
 // tick over `checkMap`. No other intent is patched locally; everything else
-// waits for the loader.
+// waits for the loader. A write the server refuses never lands, so the route
+// calls `discardPending` and the page shows the server's state again.
 //
 // `checkMap` / `fieldMap` are cheap derived lookups rebuilt on hydration so view
 // components do O(1) reads instead of each rebuilding a Map per render.
@@ -124,8 +125,13 @@ export interface HubState extends HubData, HubFlags {
   // Pending answers to open questions (row id -> answer), layered over the
   // server rows until the loader reports them. Internal; views read rows.
   optimisticAnswers: Map<string, QuestionChange>;
+  // The rows as the loader sent them, before pending answers are layered on.
+  serverRows: ImplementationRowData[];
   // Public write path: optimistic check override (setCheck/setChecks) + round-trip.
   dispatch: (m: HubMutation) => void;
+  // Drops every pending tick and answer: the server refused the write, so the
+  // loader will never report it.
+  discardPending: () => void;
   // The raw server round-trip the route injects; `dispatch` wraps it.
   serverDispatch: (m: HubMutation) => void;
   resolveScreenUrl: ResolveScreenUrl;
@@ -176,6 +182,7 @@ export function createHubStore(initial: Partial<HubData & HubFlags> = {}) {
     ...seed,
     optimisticChecks: new Map(),
     optimisticAnswers: new Map(),
+    serverRows: seed.rows,
     checkMap: stateMap(seed.checkStates),
     fieldMap: fieldMap(seed.fieldValues),
     checkRowMap: checkRows(seed.checkStates),
@@ -228,6 +235,15 @@ export function createHubStore(initial: Partial<HubData & HubFlags> = {}) {
       }
       get().serverDispatch(m);
     },
+    discardPending: () => {
+      const optimisticChecks = new Map<string, string>();
+      set({
+        optimisticChecks,
+        optimisticAnswers: new Map(),
+        rows: get().serverRows,
+        checkMap: mergeChecks(get().checkStates, optimisticChecks)
+      });
+    },
     // Real server dispatch + resolvers are injected by the provider via setData.
     serverDispatch: () => undefined,
     resolveScreenUrl: () => undefined,
@@ -256,6 +272,7 @@ export function createHubStore(initial: Partial<HubData & HubFlags> = {}) {
         ...data,
         ...flags,
         rows: answers.rows,
+        serverRows: data.rows,
         optimisticAnswers: answers.pending,
         optimisticChecks,
         checkMap: mergeChecks(data.checkStates, optimisticChecks),

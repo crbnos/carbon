@@ -22182,6 +22182,8 @@ msgstr "スケジュール済みを開く"
 
 msgid "Open service job"
 msgstr "サービス製造指図を開く"
+msgid "Open Settings"
+msgstr ""
 
 msgid "Open Sub-Assembly"
 msgstr "サブアセンブリを開く"
@@ -22757,6 +22759,9 @@ msgid "Page title"
 msgstr ""
 
 msgid "Pages"
+msgstr ""
+
+msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is switched to Personal Pages."
 msgstr ""
 
 msgid "Paid Amount:"
@@ -32929,6 +32934,9 @@ msgstr "この変更通知は閉じられているため、変更は読み取り
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "この変更通知は承認を待機中です。その変更は承認されるか却下されるまでロック中です。"
 
+msgid "This company uses the Company Plan hub"
+msgstr ""
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "この会社のデータはこのバックアップの内容に置き換えられます。今日のデータが最初に保存されるため、元に戻すことができます。"
 
@@ -32970,6 +32978,8 @@ msgstr "このダウンロードリンクは無効であるか、改ざんされ
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "この数値は残す必要があります。「値を挿入」で戻してください。"
+msgid "This file is for {otherPerson}, not {viewing}. Loading it replaces any page they already have."
+msgstr ""
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "このファイルは利用できなくなったか、ダウンロードする権限がありません。"

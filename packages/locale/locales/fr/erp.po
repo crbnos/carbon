@@ -22182,6 +22182,8 @@ msgstr "Planifiés ouverts"
 
 msgid "Open service job"
 msgstr "Ouvrir l'ordre de prestation"
+msgid "Open Settings"
+msgstr ""
 
 msgid "Open Sub-Assembly"
 msgstr "Ouvrir le sous-ensemble"
@@ -22757,6 +22759,9 @@ msgid "Page title"
 msgstr ""
 
 msgid "Pages"
+msgstr ""
+
+msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is switched to Personal Pages."
 msgstr ""
 
 msgid "Paid Amount:"
@@ -32929,6 +32934,9 @@ msgstr "Cet avis de modification est clôturé, donc ses modifications sont en l
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "Cet avis de modification est en attente d'approbation. Ses modifications sont verrouillées jusqu'à ce qu'il soit approuvé ou rejeté."
 
+msgid "This company uses the Company Plan hub"
+msgstr ""
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "Les données de cette société sont remplacées par le contenu de cette sauvegarde. Les données d'aujourd'hui sont d'abord enregistrées, afin que vous puissiez revenir en arrière."
 
@@ -32970,6 +32978,8 @@ msgstr "Ce lien de téléchargement est invalide ou a été modifié."
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "Ce chiffre doit rester. Rajoutez-le avec Insérer une valeur."
+msgid "This file is for {otherPerson}, not {viewing}. Loading it replaces any page they already have."
+msgstr ""
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "Ce fichier n'est plus disponible, ou vous n'avez pas l'autorisation de le télécharger."
