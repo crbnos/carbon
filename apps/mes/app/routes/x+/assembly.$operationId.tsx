@@ -78,7 +78,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
     throw redirect(
       path.to.operations,
-      await flash(request, error(null, "Operation not found"))
+      await flash(request, error(ownedOperation.error, "Operation not found"))
     );
   }
 

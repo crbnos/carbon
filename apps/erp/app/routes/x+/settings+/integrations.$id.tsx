@@ -1550,7 +1550,7 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
         await flash(
           request,
           error(
-            "onshape connection is read-only",
+            null,
             `${integration.name} is connected with read-only access. ${reconnect}, then enable asset sync.`
           )
         )

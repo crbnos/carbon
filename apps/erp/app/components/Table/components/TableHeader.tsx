@@ -23,7 +23,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
+  toastError,
   useDisclosure
 } from "@carbon/react";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
@@ -174,7 +174,7 @@ const TableHeader = <T extends object>({
       setParams({ view: fetcher.data.id });
       savedViewDisclosure.onClose();
     } else if (fetcher.data?.success === false) {
-      toast.error(fetcher.data.message);
+      toastError(fetcher.data.message, fetcher.data);
     }
   }, [fetcher.state, fetcher.data?.success]);
 

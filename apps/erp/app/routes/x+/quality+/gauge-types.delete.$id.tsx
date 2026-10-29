@@ -44,7 +44,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) {
     throw redirect(
       `${path.to.gaugeTypes}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get a gauge type id"))
+      await flash(request, error(null, "Failed to get a gauge type id"))
     );
   }
 

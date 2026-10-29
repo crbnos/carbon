@@ -34,7 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (result.error) {
     return data(
       {},
-      await flash(request, error(result, "Failed to favorite Quote"))
+      await flash(request, error(result.error, "Failed to favorite Quote"))
     );
   }
 

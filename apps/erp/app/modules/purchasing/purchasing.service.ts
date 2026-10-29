@@ -104,6 +104,7 @@ import {
   openEndedLeaseHorizon,
   paymentMonthIndex,
   remeasureLease,
+  requireAffected,
   round,
   SIGNATURES_BUCKET,
   searchFilter
@@ -232,7 +233,9 @@ export async function deletePurchaseOrder(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
 ) {
-  return client.from("purchaseOrder").delete().eq("id", purchaseOrderId);
+  return requireAffected(
+    client.from("purchaseOrder").delete().eq("id", purchaseOrderId).select("id")
+  );
 }
 
 /**
@@ -275,10 +278,13 @@ export async function deletePurchaseOrderLine(
 ) {
   const cleared = await clearPlanningOrigin(client, { purchaseOrderLineId });
   if (cleared.error) return { data: null, error: cleared.error };
-  return client
-    .from("purchaseOrderLine")
-    .delete()
-    .eq("id", purchaseOrderLineId);
+  return requireAffected(
+    client
+      .from("purchaseOrderLine")
+      .delete()
+      .eq("id", purchaseOrderLineId)
+      .select("id")
+  );
 }
 
 // Creates a new Draft PO header + delivery + payment via insertPurchaseOrder
@@ -379,7 +385,9 @@ export async function deleteSupplier(
   client: SupabaseClient<Database>,
   supplierId: string
 ) {
-  return client.from("supplier").delete().eq("id", supplierId);
+  return requireAffected(
+    client.from("supplier").delete().eq("id", supplierId).select("id")
+  );
 }
 
 export async function deleteSupplierContact(
@@ -394,10 +402,13 @@ export async function deleteSupplierContact(
     .eq("id", supplierContactId)
     .single();
   if (supplierContact.data) {
-    const contactDelete = await client
-      .from("contact")
-      .delete()
-      .eq("id", supplierContact.data.contactId);
+    const contactDelete = await requireAffected(
+      client
+        .from("contact")
+        .delete()
+        .eq("id", supplierContact.data.contactId)
+        .select("id")
+    );
 
     if (contactDelete.error) {
       return contactDelete;
@@ -419,14 +430,23 @@ export async function deleteSupplierLocation(
     .single();
 
   if (supplierLocation?.addressId) {
-    return client.from("address").delete().eq("id", supplierLocation.addressId);
+    return requireAffected(
+      client
+        .from("address")
+        .delete()
+        .eq("id", supplierLocation.addressId)
+        .select("id")
+    );
   } else {
     // The supplierLocation should always have an addressId, but just in case
-    return client
-      .from("supplierLocation")
-      .delete()
-      .eq("supplierId", supplierId)
-      .eq("id", supplierLocationId);
+    return requireAffected(
+      client
+        .from("supplierLocation")
+        .delete()
+        .eq("supplierId", supplierId)
+        .eq("id", supplierLocationId)
+        .select("id")
+    );
   }
 }
 
@@ -434,7 +454,9 @@ export async function deleteSupplierBankAccount(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("supplierBankAccount").delete().eq("id", id);
+  return requireAffected(
+    client.from("supplierBankAccount").delete().eq("id", id).select("id")
+  );
 }
 
 /**
@@ -520,28 +542,40 @@ export async function deleteSupplierProcess(
   client: SupabaseClient<Database>,
   supplierProcessId: string
 ) {
-  return client.from("supplierProcess").delete().eq("id", supplierProcessId);
+  return requireAffected(
+    client
+      .from("supplierProcess")
+      .delete()
+      .eq("id", supplierProcessId)
+      .select("id")
+  );
 }
 
 export async function deleteSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
 ) {
-  return client.from("supplierQuote").delete().eq("id", supplierQuoteId);
+  return requireAffected(
+    client.from("supplierQuote").delete().eq("id", supplierQuoteId).select("id")
+  );
 }
 
 export async function deleteSupplierQuoteLine(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("supplierQuoteLine").delete().eq("id", id);
+  return requireAffected(
+    client.from("supplierQuoteLine").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteSupplierType(
   client: SupabaseClient<Database>,
   supplierTypeId: string
 ) {
-  return client.from("supplierType").delete().eq("id", supplierTypeId);
+  return requireAffected(
+    client.from("supplierType").delete().eq("id", supplierTypeId).select("id")
+  );
 }
 
 export async function getPurchaseOrder(
@@ -1519,10 +1553,13 @@ export async function finalizePurchaseOrder(
     updateData.orderDate = datetime.today(companyTz).toString();
   }
 
-  return client
-    .from("purchaseOrder")
-    .update(updateData)
-    .eq("id", purchaseOrderId);
+  return requireAffected(
+    client
+      .from("purchaseOrder")
+      .update(updateData)
+      .eq("id", purchaseOrderId)
+      .select("id")
+  );
 }
 
 /** Not published: `purchasing_sendSupplierQuoteToSupplier` sends a quote, with its share link and email. */
@@ -1532,13 +1569,16 @@ export async function sendSupplierQuote(
   userId: string
 ) {
   // Send keeps status as Draft, just updates timestamp
-  const quoteUpdate = await client
-    .from("supplierQuote")
-    .update({
-      updatedAt: datetime.timestamp(),
-      updatedBy: userId
-    })
-    .eq("id", supplierQuoteId);
+  const quoteUpdate = await requireAffected(
+    client
+      .from("supplierQuote")
+      .update({
+        updatedAt: datetime.timestamp(),
+        updatedBy: userId
+      })
+      .eq("id", supplierQuoteId)
+      .select("id")
+  );
 
   if (quoteUpdate.error) {
     return quoteUpdate;
@@ -1560,7 +1600,9 @@ export async function updatePurchaseOrderExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("purchaseOrder").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("purchaseOrder").update(update).eq("id", update.id).select("id")
+  );
 }
 
 export async function updatePurchaseOrderFavorite(
@@ -1595,7 +1637,9 @@ export async function updatePurchaseOrderStatus(
     updatedBy: string;
   }
 ) {
-  return client.from("purchaseOrder").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("purchaseOrder").update(update).eq("id", update.id).select("id")
+  );
 }
 
 /** `updatePurchaseOrderStatus` on a Kysely handle, for a status change that
@@ -1830,7 +1874,9 @@ export async function updateSupplierQuoteExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("supplierQuote").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("supplierQuote").update(update).eq("id", update.id).select("id")
+  );
 }
 
 export async function updateSupplierQuoteFavorite(
@@ -1864,7 +1910,9 @@ export async function updateSupplierQuoteStatus(
     updatedBy: string;
   }
 ) {
-  return client.from("supplierQuote").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("supplierQuote").update(update).eq("id", update.id).select("id")
+  );
 }
 
 export async function updateSupplierShipping(
@@ -3110,10 +3158,13 @@ export async function upsertSupplierType(
       .select("id")
       .single();
   } else {
-    return client
-      .from("supplierType")
-      .update(sanitize(supplierType))
-      .eq("id", supplierType.id);
+    return requireAffected(
+      client
+        .from("supplierType")
+        .update(sanitize(supplierType))
+        .eq("id", supplierType.id)
+        .select("id")
+    );
   }
 }
 
@@ -3125,17 +3176,22 @@ export async function deletePurchasingRFQ(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ) {
-  return client.from("purchasingRfq").delete().eq("id", purchasingRfqId);
+  return requireAffected(
+    client.from("purchasingRfq").delete().eq("id", purchasingRfqId).select("id")
+  );
 }
 
 export async function deletePurchasingRFQLine(
   client: SupabaseClient<Database>,
   purchasingRfqLineId: string
 ) {
-  return client
-    .from("purchasingRfqLine")
-    .delete()
-    .eq("id", purchasingRfqLineId);
+  return requireAffected(
+    client
+      .from("purchasingRfqLine")
+      .delete()
+      .eq("id", purchasingRfqLineId)
+      .select("id")
+  );
 }
 
 export async function getPurchasingRFQ(
@@ -4133,17 +4189,26 @@ export async function deletePurchaseReturnOrder(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string
 ) {
-  return client
-    .from("purchaseReturnOrder")
-    .delete()
-    .eq("id", purchaseReturnOrderId);
+  return requireAffected(
+    client
+      .from("purchaseReturnOrder")
+      .delete()
+      .eq("id", purchaseReturnOrderId)
+      .select("id")
+  );
 }
 
 export async function deletePurchaseReturnOrderLine(
   client: SupabaseClient<Database>,
   lineId: string
 ) {
-  return client.from("purchaseReturnOrderLine").delete().eq("id", lineId);
+  return requireAffected(
+    client
+      .from("purchaseReturnOrderLine")
+      .delete()
+      .eq("id", lineId)
+      .select("id")
+  );
 }
 
 /** Not published: `purchasing_updateReturnOrderLine` sets a line's entities, with its lock check. */
@@ -5221,15 +5286,18 @@ export async function createReplacementPurchaseOrder(
     return { data: null, error: insertLines.error };
   }
 
-  const link = await client
-    .from("purchaseReturnOrder")
-    .update({
-      replacementPurchaseOrderId: purchaseOrderId,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", purchaseReturnOrderId)
-    .eq("companyId", companyId);
+  const link = await requireAffected(
+    client
+      .from("purchaseReturnOrder")
+      .update({
+        replacementPurchaseOrderId: purchaseOrderId,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", purchaseReturnOrderId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
   if (link.error) return { data: null, error: link.error };
 
   return { data: { id: purchaseOrderId }, error: null };

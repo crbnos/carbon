@@ -239,9 +239,12 @@ export async function action({ request }: ActionFunctionArgs) {
         reason: "magic link send failed"
       });
       const message = getMagicLinkErrorMessage(magicLink.error);
+      getLogger("mes", "login").error("Failed to send magic link", {
+        error: magicLink.error
+      });
       return data(
-        error(magicLink, message),
-        await flash(request, error(magicLink, message))
+        error(null, message),
+        await flash(request, error(null, message))
       );
     }
     logAuthEvent("magic_link_sent", { actor: email, ip });

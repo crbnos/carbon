@@ -70,7 +70,7 @@ import { invalidatePrinterCache } from "@carbon/printing/printing.server";
 import type { JSONContent } from "@carbon/react";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import { getBillingPortalRedirectUrl } from "@carbon/stripe/stripe.server";
-import { datetime, unchecked } from "@carbon/utils";
+import { datetime, requireAffected, unchecked } from "@carbon/utils";
 import { parseTime } from "@internationalized/date";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -437,11 +437,14 @@ export const updateProductionSettings = defineServiceFn({
         return ctx.error("notFound", "Location not found");
       }
       if (current.data.requiresStaffing !== requiresStaffing) {
-        const { error } = await ctx.asSystem.supabase
-          .from("location")
-          .update({ requiresStaffing })
-          .eq("id", locationId)
-          .eq("companyId", ctx.company.id);
+        const { error } = await requireAffected(
+          ctx.asSystem.supabase
+            .from("location")
+            .update({ requiresStaffing })
+            .eq("id", locationId)
+            .eq("companyId", ctx.company.id)
+            .select("id")
+        );
         if (error) {
           return ctx.error(
             "internal",
@@ -584,10 +587,13 @@ export const updateResourcesSettings = defineServiceFn({
 
     // The suggestion group lives on the company row, not its settings.
     if (suggestionNotificationGroup) {
-      const { error } = await ctx.asCaller.supabase
-        .from("company")
-        .update({ suggestionNotificationGroup })
-        .eq("id", ctx.company.id);
+      const { error } = await requireAffected(
+        ctx.asCaller.supabase
+          .from("company")
+          .update({ suggestionNotificationGroup })
+          .eq("id", ctx.company.id)
+          .select("id")
+      );
       if (error) {
         return ctx.error(
           "internal",
@@ -1472,11 +1478,14 @@ export const deletePrintJob = defineServiceFn({
   input: z.object({ printJobId: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { printJobId }) {
-    const { error } = await ctx.asCaller.supabase
-      .from("printJob")
-      .delete()
-      .eq("id", printJobId)
-      .eq("companyId", ctx.company.id);
+    const { error } = await requireAffected(
+      ctx.asCaller.supabase
+        .from("printJob")
+        .delete()
+        .eq("id", printJobId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (error) return ctx.error("internal", "Failed to delete job", error);
     return { id: printJobId };
   }
@@ -1976,10 +1985,13 @@ export const transferCompanyOwnership = defineServiceFn({
   input: z.object({ newOwnerId: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { newOwnerId }) {
-    const { error } = await ctx.asCaller.supabase
-      .from("companyGroup")
-      .update({ ownerId: newOwnerId })
-      .eq("id", ctx.company.groupId);
+    const { error } = await requireAffected(
+      ctx.asCaller.supabase
+        .from("companyGroup")
+        .update({ ownerId: newOwnerId })
+        .eq("id", ctx.company.groupId)
+        .select("id")
+    );
     if (error) {
       return ctx.error("internal", "Failed to transfer ownership", error);
     }

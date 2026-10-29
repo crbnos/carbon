@@ -106,6 +106,7 @@ import {
   isFullDraw,
   PickGuardError,
   pluckUnique,
+  requireAffected,
   resolvePick,
   resolveReturnUnitCost,
   resolveTrackedEntityBin,
@@ -257,28 +258,36 @@ export async function deleteBatchProperty(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("batchProperty").delete().eq("id", id);
+  return requireAffected(
+    client.from("batchProperty").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteKanban(
   client: SupabaseClient<Database>,
   kanbanId: string
 ) {
-  return client.from("kanban").delete().eq("id", kanbanId);
+  return requireAffected(
+    client.from("kanban").delete().eq("id", kanbanId).select("id")
+  );
 }
 
 export async function deleteReceipt(
   client: SupabaseClient<Database>,
   receiptId: string
 ) {
-  return client.from("receipt").delete().eq("id", receiptId);
+  return requireAffected(
+    client.from("receipt").delete().eq("id", receiptId).select("id")
+  );
 }
 
 export async function deleteReceiptLine(
   client: SupabaseClient<Database>,
   receiptLineId: string
 ) {
-  return client.from("receiptLine").delete().eq("id", receiptLineId);
+  return requireAffected(
+    client.from("receiptLine").delete().eq("id", receiptLineId).select("id")
+  );
 }
 
 /** Not published: `removeStorageUnit` deletes a unit, or with `cascade` its subtree. */
@@ -286,7 +295,9 @@ export async function deleteStorageUnit(
   client: SupabaseClient<Database>,
   storageUnitId: string
 ) {
-  return client.from("storageUnit").delete().eq("id", storageUnitId);
+  return requireAffected(
+    client.from("storageUnit").delete().eq("id", storageUnitId).select("id")
+  );
 }
 
 /**
@@ -329,48 +340,62 @@ export async function deleteShipment(
   client: SupabaseClient<Database>,
   shipmentId: string
 ) {
-  return client.from("shipment").delete().eq("id", shipmentId);
+  return requireAffected(
+    client.from("shipment").delete().eq("id", shipmentId).select("id")
+  );
 }
 
 export async function deleteShipmentLine(
   client: SupabaseClient<Database>,
   shipmentLineId: string
 ) {
-  return client.from("shipmentLine").delete().eq("id", shipmentLineId);
+  return requireAffected(
+    client.from("shipmentLine").delete().eq("id", shipmentLineId).select("id")
+  );
 }
 
 export async function deleteShippingMethod(
   client: SupabaseClient<Database>,
   shippingMethodId: string
 ) {
-  return client
-    .from("shippingMethod")
-    .update({ active: false })
-    .eq("id", shippingMethodId);
+  return requireAffected(
+    client
+      .from("shippingMethod")
+      .update({ active: false })
+      .eq("id", shippingMethodId)
+      .select("id")
+  );
 }
 
 export async function deleteStockTransfer(
   client: SupabaseClient<Database>,
   stockTransferId: string
 ) {
-  return client.from("stockTransfer").delete().eq("id", stockTransferId);
+  return requireAffected(
+    client.from("stockTransfer").delete().eq("id", stockTransferId).select("id")
+  );
 }
 
 export async function deleteStockTransferLine(
   client: SupabaseClient<Database>,
   stockTransferLineId: string
 ) {
-  return client
-    .from("stockTransferLine")
-    .delete()
-    .eq("id", stockTransferLineId);
+  return requireAffected(
+    client
+      .from("stockTransferLine")
+      .delete()
+      .eq("id", stockTransferLineId)
+      .select("id")
+  );
 }
 
 export async function deleteWarehouseTransfer(
   client: SupabaseClient<Database>,
   transferId: string
 ) {
-  return client.from("warehouseTransfer").delete().eq("id", transferId);
+  return requireAffected(
+    client.from("warehouseTransfer").delete().eq("id", transferId).select("id")
+  );
 }
 
 /** Not published: it skips the lock check `removeWarehouseTransferLine` makes. */
@@ -378,7 +403,13 @@ export async function deleteWarehouseTransferLine(
   client: SupabaseClient<Database>,
   transferLineId: string
 ) {
-  return client.from("warehouseTransferLine").delete().eq("id", transferLineId);
+  return requireAffected(
+    client
+      .from("warehouseTransferLine")
+      .delete()
+      .eq("id", transferLineId)
+      .select("id")
+  );
 }
 
 export async function getItemLedgerPage(
@@ -2097,13 +2128,16 @@ export async function updateTrackedEntityExpiry(
     ]
   };
 
-  return client
-    .from("trackedEntity")
-    .update({
-      expirationDate: args.expirationDate,
-      attributes: nextAttrs as unknown as Json
-    })
-    .eq("id", args.trackedEntityId);
+  return requireAffected(
+    client
+      .from("trackedEntity")
+      .update({
+        expirationDate: args.expirationDate,
+        attributes: nextAttrs as unknown as Json
+      })
+      .eq("id", args.trackedEntityId)
+      .select("id")
+  );
 }
 
 export async function getTrackedEntitiesByOperationId(
@@ -2501,11 +2535,14 @@ export async function deleteInventoryCount(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("inventoryCount")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("inventoryCount")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 // Snapshot the current on-hand into count lines: one line per
@@ -2726,7 +2763,13 @@ export async function updateBatchPropertyOrder(
 ) {
   // batchProperty has no group column; the group is not stored.
   const { batchPropertyGroupId: _group, ...order } = data;
-  return client.from("batchProperty").update(sanitize(order)).eq("id", data.id);
+  return requireAffected(
+    client
+      .from("batchProperty")
+      .update(sanitize(order))
+      .eq("id", data.id)
+      .select("id")
+  );
 }
 
 /**
@@ -2745,15 +2788,18 @@ export async function updateStockTransferStatus(
   }
 ) {
   const { id, status, assignee, completedAt, updatedBy } = args;
-  return client
-    .from("stockTransfer")
-    .update({
-      status,
-      assignee,
-      completedAt,
-      updatedBy
-    })
-    .eq("id", id);
+  return requireAffected(
+    client
+      .from("stockTransfer")
+      .update({
+        status,
+        assignee,
+        completedAt,
+        updatedBy
+      })
+      .eq("id", id)
+      .select("id")
+  );
 }
 
 export async function upsertBatchProperty(
@@ -2769,16 +2815,19 @@ export async function upsertBatchProperty(
     ...data
   } = batchProperty;
   if (batchProperty.id) {
-    return client
-      .from("batchProperty")
-      .update(
-        sanitize({
-          ...data,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-      )
-      .eq("id", batchProperty.id);
+    return requireAffected(
+      client
+        .from("batchProperty")
+        .update(
+          sanitize({
+            ...data,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
+        .eq("id", batchProperty.id)
+        .select("id")
+    );
   }
 
   return client.from("batchProperty").insert({
@@ -3104,14 +3153,17 @@ export async function updateWarehouseTransferStatus(
   status: Database["public"]["Tables"]["warehouseTransfer"]["Row"]["status"],
   updatedBy: string
 ) {
-  return client
-    .from("warehouseTransfer")
-    .update({
-      status,
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", transferId);
+  return requireAffected(
+    client
+      .from("warehouseTransfer")
+      .update({
+        status,
+        updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", transferId)
+      .select("id")
+  );
 }
 
 /**
@@ -3900,14 +3952,17 @@ export async function updatePickingListStatus(
   status: Database["public"]["Enums"]["pickingListStatus"],
   updatedBy: string
 ) {
-  return client
-    .from("pickingList")
-    .update({
-      status,
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", pickingListId);
+  return requireAffected(
+    client
+      .from("pickingList")
+      .update({
+        status,
+        updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", pickingListId)
+      .select("id")
+  );
 }
 
 export async function upsertPickingListLine(
@@ -3940,14 +3995,18 @@ export async function deletePickingList(
   client: SupabaseClient<Database>,
   pickingListId: string
 ) {
-  return client.from("pickingList").delete().eq("id", pickingListId);
+  return requireAffected(
+    client.from("pickingList").delete().eq("id", pickingListId).select("id")
+  );
 }
 
 export async function deletePickingListLine(
   client: SupabaseClient<Database>,
   lineId: string
 ) {
-  return client.from("pickingListLine").delete().eq("id", lineId);
+  return requireAffected(
+    client.from("pickingListLine").delete().eq("id", lineId).select("id")
+  );
 }
 
 // ----------------------------------------------------------------------------
@@ -4766,16 +4825,19 @@ export async function pickPickingListLine(
 
   // Short overrides the status the server function derived from quantities.
   if (args.markShort) {
-    const update = await client
-      .from("pickingListLine")
-      .update({
-        status: "Short",
-        quantityPicked: target,
-        updatedBy: args.userId,
-        updatedAt: new Date().toISOString()
-      })
-      .eq("id", line.id)
-      .eq("companyId", args.companyId);
+    const update = await requireAffected(
+      client
+        .from("pickingListLine")
+        .update({
+          status: "Short",
+          quantityPicked: target,
+          updatedBy: args.userId,
+          updatedAt: new Date().toISOString()
+        })
+        .eq("id", line.id)
+        .eq("companyId", args.companyId)
+        .select("id")
+    );
     if (update.error) {
       return { data: null, error: update.error };
     }

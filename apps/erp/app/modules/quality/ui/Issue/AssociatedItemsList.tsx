@@ -10,7 +10,7 @@ import {
   Submit,
   ValidatedForm
 } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -82,9 +82,7 @@ function DispositionQuantityInput({
   const { t } = useLingui();
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
 
@@ -180,9 +178,7 @@ export function AssociatedItemsList({
   const permissions = usePermissions();
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   const splitFetcher = useFetcher<typeof splitAction>();

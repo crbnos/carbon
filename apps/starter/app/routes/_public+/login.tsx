@@ -122,7 +122,7 @@ export async function action({ request }: ActionFunctionArgs) {
   } else {
     return data(
       error(user, "User record not found"),
-      await flash(request, error(user.error, "User record not found"))
+      await flash(request, error(null, "User record not found"))
     );
   }
 

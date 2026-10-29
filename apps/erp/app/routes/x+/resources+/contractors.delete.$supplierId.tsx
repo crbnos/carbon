@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!supplierId) {
     throw redirect(
       path.to.contractors,
-      await flash(request, error(params, "Failed to get contractor id"))
+      await flash(request, error(null, "Failed to get contractor id"))
     );
   }
 

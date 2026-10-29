@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!groupId) {
     throw redirect(
       path.to.itemPostingGroups,
-      await flash(request, error(params, "Failed to get an item group id"))
+      await flash(request, error(null, "Failed to get an item group id"))
     );
   }
 

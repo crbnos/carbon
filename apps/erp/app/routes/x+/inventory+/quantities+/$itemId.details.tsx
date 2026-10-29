@@ -142,7 +142,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (quantities.error) {
     throw redirect(
       path.to.inventory,
-      await flash(request, error(quantities, "Failed to load part quantities"))
+      await flash(
+        request,
+        error(quantities.error, "Failed to load part quantities")
+      )
     );
   }
 

@@ -31,7 +31,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   Tr,
-  toast,
+  toastError,
   useViewport,
   VStack
 } from "@carbon/react";
@@ -123,7 +123,7 @@ const JobEstimatesVsActuals = ({
       .in("itemId", itemIds);
 
     if (!itemCosts?.data) {
-      toast.error(t`Failed to fetch item costs`);
+      toastError(t`Failed to fetch item costs`, itemCosts?.error);
       return;
     }
 

@@ -13,7 +13,7 @@ import {
   MediaUploader,
   wasConvertedFromHeic
 } from "@carbon/files/media";
-import { toast } from "@carbon/react";
+import { toast, toastError } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useState } from "react";
 import { useUser } from "./useUser";
@@ -105,10 +105,11 @@ export function useFileUpload(options: FileUploadOptions = {}) {
         try {
           prepared = await uploader.prepareForUpload(nameable);
         } catch (error) {
-          toast.error(
+          toastError(
             error instanceof DuplicateFileNameError
               ? t`Duplicate file names after image conversion`
-              : t`Failed to convert image`
+              : t`Failed to convert image`,
+            error
           );
           return;
         }
@@ -140,7 +141,7 @@ export function useFileUpload(options: FileUploadOptions = {}) {
             });
 
           if (result.error || !result.data?.path) {
-            toast.error(t`Failed to upload file: ${file.name}`);
+            toastError(t`Failed to upload file: ${file.name}`, result.error);
             onError?.(file);
             continue;
           }

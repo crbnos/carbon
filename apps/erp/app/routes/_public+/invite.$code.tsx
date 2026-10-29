@@ -19,6 +19,7 @@ import {
 import { InviteEmail } from "@carbon/documents/email";
 import { Ratelimit, redis } from "@carbon/kv";
 import { sendEmail } from "@carbon/lib/email.server";
+import { getLogger } from "@carbon/logger";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
 import {
   datetime,
@@ -42,6 +43,9 @@ import {
 } from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+// A public page: errors are logged here and the toast stays generic.
+const logger = getLogger("erp", "invite");
 
 export const meta: MetaFunction = () => {
   return [{ title: "Accept Invite | Carbon" }];
@@ -98,11 +102,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     request
   );
   if (accept.error) {
+    logger.error("Failed to accept invite", { error: accept.error });
     throw redirect(
       path.to.root,
       await flash(
         request,
-        error(accept.error, accept.error.message ?? "Failed to accept invite")
+        error(null, accept.error.message ?? "Failed to accept invite")
       )
     );
   }
@@ -169,9 +174,12 @@ async function requestNewInvite(
     .maybeSingle();
 
   if (invite.error || !invite.data) {
+    if (invite.error) {
+      logger.error("Failed to read invite", { error: invite.error });
+    }
     throw redirect(
       path.to.root,
-      await flash(request, error(invite.error, "Invite not found"))
+      await flash(request, error(null, "Invite not found"))
     );
   }
 
@@ -223,12 +231,12 @@ async function requestNewInvite(
     .single();
 
   if (refreshed.error || !refreshed.data) {
+    if (refreshed.error) {
+      logger.error("Failed to create a new invite", { error: refreshed.error });
+    }
     throw redirect(
       path.to.root,
-      await flash(
-        request,
-        error(refreshed.error, "Failed to create a new invite")
-      )
+      await flash(request, error(null, "Failed to create a new invite"))
     );
   }
 

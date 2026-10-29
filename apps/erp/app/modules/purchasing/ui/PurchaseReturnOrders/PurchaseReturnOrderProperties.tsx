@@ -10,7 +10,7 @@ import {
   InputControlled,
   ValidatedForm
 } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -26,7 +26,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -92,9 +92,7 @@ const PurchaseReturnOrderProperties = () => {
 
   const fetcher = useAction<{ error: { message: string } | null }>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   const { carbon } = useCarbon();
@@ -138,7 +136,7 @@ const PurchaseReturnOrderProperties = () => {
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) {
-          toast.error(t`Failed to load purchase orders`);
+          toastError(t`Failed to load purchase orders`, error);
           setPurchaseOrderOptions([]);
           return;
         }

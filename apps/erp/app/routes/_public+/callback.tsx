@@ -121,7 +121,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!authSession) {
     return redirect(
       path.to.root,
-      await flash(request, error(authSession, "Invalid refresh token"))
+      await flash(request, error(null, "Invalid refresh token"))
     );
   }
 
@@ -161,12 +161,18 @@ export async function action({ request }: ActionFunctionArgs) {
       ssoProviderId
     );
     if (!connection.data) {
+      if (connection.error) {
+        logger.error("Failed to read the SAML SSO connection on sign-in", {
+          error: connection.error,
+          userId
+        });
+      }
       return redirect(
         path.to.root,
         await flash(
           request,
           error(
-            connection.error,
+            null,
             "SAML SSO connection is not active. Contact your administrator."
           )
         )
@@ -226,12 +232,16 @@ export async function action({ request }: ActionFunctionArgs) {
         toUserId: existingUser.id
       });
       if (linked.error) {
+        logger.error("Failed to link the SAML SSO identity on sign-in", {
+          error: linked.error,
+          userId
+        });
         return redirect(
           path.to.root,
           await flash(
             request,
             error(
-              linked.error,
+              null,
               "SAML SSO sign-in failed while linking your account. Contact your administrator."
             )
           )
@@ -262,12 +272,18 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!linkedSession) {
         // The identity IS linked — the next SSO attempt resolves directly
         // to the existing account, so this is self-healing.
+        if (link.error ?? verified?.error) {
+          logger.error("Failed to mint a session for the linked SSO account", {
+            error: link.error ?? verified?.error,
+            userId
+          });
+        }
         return redirect(
           path.to.root,
           await flash(
             request,
             error(
-              link.error ?? verified?.error,
+              null,
               "Your single sign-on identity was linked. Sign in with your work email again to continue."
             )
           )
@@ -311,12 +327,18 @@ export async function action({ request }: ActionFunctionArgs) {
         if (memberships.length === 0 && authSession.userId === userId) {
           await deleteJitSsoUser(serviceRole, getDatabaseClient(), userId);
         }
+        if (invite.error) {
+          logger.error("Failed to look up the SAML SSO invite on sign-in", {
+            error: invite.error,
+            userId
+          });
+        }
         return redirect(
           path.to.root,
           await flash(
             request,
             error(
-              invite.error,
+              null,
               `SAML SSO sign-in succeeded but no invite exists for ${authSession.email}. Contact your administrator.`
             )
           )
@@ -335,12 +357,16 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (migration.error) {
+        logger.error("Failed to activate the SAML SSO account on sign-in", {
+          error: migration.error,
+          userId
+        });
         return redirect(
           path.to.root,
           await flash(
             request,
             error(
-              migration.error,
+              null,
               "SAML SSO sign-in failed while activating your account. Contact your administrator."
             )
           )
@@ -552,9 +578,15 @@ export async function action({ request }: ActionFunctionArgs) {
       headers
     });
   } else {
+    if (user.error) {
+      logger.error("Failed to look up the user on sign-in", {
+        error: user.error,
+        userId
+      });
+    }
     return redirect(
       path.to.root,
-      await flash(request, error(user.error, "User not found"))
+      await flash(request, error(null, "User not found"))
     );
   }
 }

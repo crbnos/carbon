@@ -12,7 +12,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -50,7 +50,7 @@ const CustomerContactForm = ({
   const fetcher = useAsyncFetcher<{ success?: boolean; message: string }>({
     onStateChange(state) {
       if (state === "idle" && fetcher.data && !fetcher.data.success) {
-        toast.error(fetcher.data.message);
+        toastError(fetcher.data.message, fetcher.data);
       }
     }
   });

@@ -13,6 +13,7 @@ import {
   CardTitle,
   cn,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -98,7 +99,7 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
         .eq("id", newValue.value)
         .single();
       if (error) {
-        toast.error(t`Error fetching supplier data`);
+        toastError(t`Error fetching supplier data`, error);
       } else {
         setSupplier((prev) => ({
           ...prev,

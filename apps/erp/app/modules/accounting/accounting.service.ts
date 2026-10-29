@@ -177,6 +177,7 @@ import {
   MONTH_NUMBER,
   parseIsoDate,
   REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
+  requireAffected,
   round,
   type SalesPostingAccount,
   searchFilter,
@@ -2497,11 +2498,14 @@ export async function deleteReportView(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("reportView")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("reportView")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function getCompaniesInGroup(
@@ -2523,17 +2527,22 @@ export async function deleteAccount(
   client: SupabaseClient<Database>,
   accountId: string
 ) {
-  return client.from("account").delete().eq("id", accountId);
+  return requireAffected(
+    client.from("account").delete().eq("id", accountId).select("id")
+  );
 }
 
 export async function deletePaymentTerm(
   client: SupabaseClient<Database>,
   paymentTermId: string
 ) {
-  return client
-    .from("paymentTerm")
-    .update({ active: false })
-    .eq("id", paymentTermId);
+  return requireAffected(
+    client
+      .from("paymentTerm")
+      .update({ active: false })
+      .eq("id", paymentTermId)
+      .select("id")
+  );
 }
 
 export async function getAccount(
@@ -3148,10 +3157,13 @@ export async function deleteAccountingPeriod(
     };
   }
 
-  return (client.from("accountingPeriod") as any)
-    .delete()
-    .eq("companyId", args.companyId)
-    .eq("id", args.periodId);
+  return requireAffected(
+    (client.from("accountingPeriod") as any)
+      .delete()
+      .eq("companyId", args.companyId)
+      .eq("id", args.periodId)
+      .select("id")
+  );
 }
 
 // The fiscal-year START month is fixed once the calendar is "committed" — any
@@ -4763,11 +4775,14 @@ export async function deletePeriodCloseTaskDefinition(
       }
     };
   }
-  return (client as any)
-    .from("periodCloseTaskDefinition")
-    .delete()
-    .eq("id", args.id)
-    .eq("companyId", args.companyId);
+  return requireAffected(
+    (client as any)
+      .from("periodCloseTaskDefinition")
+      .delete()
+      .eq("id", args.id)
+      .eq("companyId", args.companyId)
+      .select("id")
+  );
 }
 
 export async function getDefaultAccounts(
@@ -5042,7 +5057,9 @@ export async function deleteCostCenter(
   client: SupabaseClient<Database>,
   costCenterId: string
 ) {
-  return client.from("costCenter").delete().eq("id", costCenterId);
+  return requireAffected(
+    client.from("costCenter").delete().eq("id", costCenterId).select("id")
+  );
 }
 
 export async function getCostCenter(
@@ -5332,10 +5349,13 @@ export async function deleteDimension(
   client: SupabaseClient<Database>,
   dimensionId: string
 ) {
-  return client
-    .from("dimension")
-    .update({ active: false })
-    .eq("id", dimensionId);
+  return requireAffected(
+    client
+      .from("dimension")
+      .update({ active: false })
+      .eq("id", dimensionId)
+      .select("id")
+  );
 }
 
 export async function getActiveDimensionsWithValues(
@@ -6866,7 +6886,9 @@ export async function deleteJournalEntryLine(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("journalLine").delete().eq("id", id);
+  return requireAffected(
+    client.from("journalLine").delete().eq("id", id).select("id")
+  );
 }
 
 /** Not published: `accounting_saveJournalEntry` saves, with the one-sided line rule this skips. */
@@ -7176,14 +7198,17 @@ export async function reverseJournalEntry(
   }
 
   // 4. Mark original as Reversed and store back-reference
-  const updateResult = await client
-    .from("journal")
-    .update({
-      status: "Reversed" as const,
-      reversedById: reversed.data.id,
-      updatedBy: data.userId
-    })
-    .eq("id", id);
+  const updateResult = await requireAffected(
+    client
+      .from("journal")
+      .update({
+        status: "Reversed" as const,
+        reversedById: reversed.data.id,
+        updatedBy: data.userId
+      })
+      .eq("id", id)
+      .select("id")
+  );
 
   if (updateResult.error) return updateResult;
 
@@ -7272,7 +7297,9 @@ export async function deleteFixedAssetClass(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("fixedAssetClass").delete().eq("id", id);
+  return requireAffected(
+    client.from("fixedAssetClass").delete().eq("id", id).select("id")
+  );
 }
 
 // -- Fixed Assets --

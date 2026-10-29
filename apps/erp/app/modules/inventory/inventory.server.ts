@@ -25,6 +25,7 @@ import {
   getErrorMessage,
   getOverReceiptViolations,
   isUniqueViolation,
+  requireAffected,
   round,
   type Violation
 } from "@carbon/utils";
@@ -801,14 +802,17 @@ export const updateReceiptFixedAssetLine = defineServiceFn({
       return ctx.error("rule", "A posted receipt can no longer be changed");
     }
 
-    const update = await serviceRole
-      .from("receiptFixedAssetLine")
-      .update({
-        ...service.receiptFixedAssetLineChange(change),
-        updatedBy: ctx.auditUserId
-      })
-      .eq("id", id)
-      .eq("companyId", ctx.company.id);
+    const update = await requireAffected(
+      serviceRole
+        .from("receiptFixedAssetLine")
+        .update({
+          ...service.receiptFixedAssetLineChange(change),
+          updatedBy: ctx.auditUserId
+        })
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (update.error) {
       return ctx.error("internal", "Failed to update the line", update.error);
     }
@@ -1159,18 +1163,21 @@ export const assignReceiptReturnEntity = defineServiceFn({
         .eq("companyId", companyId);
     }
 
-    const assigned = await serviceRole
-      .from("trackedEntity")
-      .update({
-        attributes: {
-          ...service.withoutReceiptTracking(attributes),
-          Receipt: receiptId,
-          "Receipt Line": receiptLineId,
-          ...(index != null ? { "Receipt Line Index": index } : {})
-        } as Json
-      })
-      .eq("id", trackedEntityId)
-      .eq("companyId", companyId);
+    const assigned = await requireAffected(
+      serviceRole
+        .from("trackedEntity")
+        .update({
+          attributes: {
+            ...service.withoutReceiptTracking(attributes),
+            Receipt: receiptId,
+            "Receipt Line": receiptLineId,
+            ...(index != null ? { "Receipt Line Index": index } : {})
+          } as Json
+        })
+        .eq("id", trackedEntityId)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (assigned.error) {
       return ctx.error("internal", "Failed to update tracking", assigned.error);
     }
@@ -1227,13 +1234,16 @@ export const removeReceiptReturnEntity = defineServiceFn({
       return ctx.error("rule", "Entity is not assigned to this receipt line");
     }
 
-    const cleared = await ctx.asSystem.supabase
-      .from("trackedEntity")
-      .update({
-        attributes: service.withoutReceiptTracking(attributes) as Json
-      })
-      .eq("id", trackedEntityId)
-      .eq("companyId", ctx.company.id);
+    const cleared = await requireAffected(
+      ctx.asSystem.supabase
+        .from("trackedEntity")
+        .update({
+          attributes: service.withoutReceiptTracking(attributes) as Json
+        })
+        .eq("id", trackedEntityId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (cleared.error) {
       return ctx.error("internal", "Failed to update tracking", cleared.error);
     }
@@ -1992,18 +2002,21 @@ export const updateShipmentFixedAssetLine = defineServiceFn({
       return ctx.error("rule", "A posted shipment can no longer be changed");
     }
 
-    const update = await serviceRole
-      .from("shipmentFixedAssetLine")
-      .update({
-        ...(change.field === "shipped"
-          ? { shipped: change.value }
-          : change.field === "serialNumber"
-            ? { serialNumber: change.value || null }
-            : { meter: change.value === "" ? null : Number(change.value) }),
-        updatedBy: ctx.auditUserId
-      })
-      .eq("id", id)
-      .eq("companyId", ctx.company.id);
+    const update = await requireAffected(
+      serviceRole
+        .from("shipmentFixedAssetLine")
+        .update({
+          ...(change.field === "shipped"
+            ? { shipped: change.value }
+            : change.field === "serialNumber"
+              ? { serialNumber: change.value || null }
+              : { meter: change.value === "" ? null : Number(change.value) }),
+          updatedBy: ctx.auditUserId
+        })
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (update.error) {
       return ctx.error("internal", "Failed to update the line", update.error);
     }

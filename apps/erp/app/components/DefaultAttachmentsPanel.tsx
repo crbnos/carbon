@@ -33,7 +33,8 @@ import {
   Th,
   Thead,
   Tr,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
@@ -101,7 +102,8 @@ export default function DefaultAttachmentsPanel({
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
           });
-        if (upload.error) toast.error(t`Failed to upload ${file.name}`);
+        if (upload.error)
+          toastError(t`Failed to upload ${file.name}`, upload.error);
       }
       revalidator.revalidate();
     },
@@ -114,7 +116,7 @@ export default function DefaultAttachmentsPanel({
       try {
         await downloadUrl(url, name);
       } catch (err) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, err);
         logger.error("Error", { error: err });
       }
     },
@@ -134,7 +136,7 @@ export default function DefaultAttachmentsPanel({
           .company(company.id)
           .remove([storagePath]);
         if (error) {
-          toast.error(error.message || t`Error deleting file`);
+          toastError(t`Error deleting file`, error);
         } else {
           toast.success(t`${name} deleted`);
           revalidator.revalidate();

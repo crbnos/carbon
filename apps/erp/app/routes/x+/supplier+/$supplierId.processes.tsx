@@ -28,7 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.supplier(supplierId),
       await flash(
         request,
-        error(processes.error, "Failed to load supplier payment")
+        error(processes.error, "Failed to load supplier processes")
       )
     );
   }

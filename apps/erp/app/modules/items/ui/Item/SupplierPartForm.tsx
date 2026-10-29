@@ -26,6 +26,7 @@ import {
   Thead,
   Tr,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import {
@@ -160,7 +161,7 @@ const SupplierPartForm = ({
       .eq("id", supplierId)
       .single();
     if (error) {
-      toast.error(t`Error fetching supplier data`);
+      toastError(t`Error fetching supplier data`, error);
       return;
     }
     setCurrencyCode(data.currencyCode ?? baseCurrency);

@@ -26,10 +26,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (notes.error) {
     throw redirect(
       path.to.people,
-      await flash(
-        request,
-        error(notes.error, "Failed to load public attributes")
-      )
+      await flash(request, error(notes.error, "Failed to load notes"))
     );
   }
 

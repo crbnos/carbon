@@ -187,7 +187,7 @@ async function productionEventAction({ request }: ActionFunctionArgs) {
   }
 
   if (!id) {
-    return data({}, await flash(request, error("No event id provided")));
+    return data({}, await flash(request, error(null, "No event id provided")));
   }
   // End on the event's own work center and type, not the form's.
   const event = await client

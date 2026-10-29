@@ -22,6 +22,7 @@ import {
   datetime,
   getErrorMessage,
   getSalesOrderStatus,
+  requireAffected,
   round,
   suggestContractType,
   unchecked
@@ -524,11 +525,14 @@ export const attachSalesRfqFile = defineServiceFn({
       size: input.size,
       documentFolder: `opportunity-line/${lineId}`,
       setModel: (modelUploadId) =>
-        client
-          .from("salesRfqLine")
-          .update({ modelUploadId })
-          .eq("id", lineId)
-          .eq("companyId", companyId),
+        requireAffected(
+          client
+            .from("salesRfqLine")
+            .update({ modelUploadId })
+            .eq("id", lineId)
+            .eq("companyId", companyId)
+            .select("id")
+        ),
       lineName: "RFQ line"
     });
     if (moved) return moved;
@@ -1327,14 +1331,17 @@ export const configureQuoteLine = defineServiceFn({
     if (refused) return refused;
 
     const [updated, quoteLine] = await Promise.all([
-      client
-        .from("quoteLine")
-        .update({
-          configuration: configuration as Json,
-          updatedAt: datetime.timestamp(),
-          updatedBy: userId
-        })
-        .eq("id", lineId),
+      requireAffected(
+        client
+          .from("quoteLine")
+          .update({
+            configuration: configuration as Json,
+            updatedAt: datetime.timestamp(),
+            updatedBy: userId
+          })
+          .eq("id", lineId)
+          .select("id")
+      ),
       client.from("quoteLine").select("itemId").eq("id", lineId).single(),
       client.from("quoteLinePrice").delete().eq("quoteLineId", lineId)
     ]);
@@ -1654,15 +1661,18 @@ export const rejectDigitalQuote = defineServiceFn({
     const quote = await service.sentQuote(ctx, quoteId);
     if (quote instanceof Error) return quote;
 
-    const rejected = await ctx.asSystem.supabase
-      .from("quote")
-      .update({
-        status: "Lost",
-        digitalQuoteRejectedBy: rejectedBy,
-        digitalQuoteRejectedByEmail: rejectedByEmail
-      })
-      .eq("id", quoteId)
-      .eq("companyId", ctx.company.id);
+    const rejected = await requireAffected(
+      ctx.asSystem.supabase
+        .from("quote")
+        .update({
+          status: "Lost",
+          digitalQuoteRejectedBy: rejectedBy,
+          digitalQuoteRejectedByEmail: rejectedByEmail
+        })
+        .eq("id", quoteId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (rejected.error) {
       return ctx.error("internal", "Failed to reject quote", rejected.error);
     }
@@ -2034,19 +2044,22 @@ export const confirmSalesOrder = defineServiceFn({
 
     const lines = await service.getSalesOrderLines(serviceRole, salesOrderId);
     const { status } = getSalesOrderStatus(lines.data || []);
-    const confirmed = await client
-      .from("salesOrder")
-      .update({
-        status,
-        orderDate:
-          order.data.orderDate ??
-          datetime
-            .today(await getCompanyTimeZone(client, companyId))
-            .toString(),
-        updatedAt: datetime.timestamp(),
-        updatedBy: userId
-      })
-      .eq("id", salesOrderId);
+    const confirmed = await requireAffected(
+      client
+        .from("salesOrder")
+        .update({
+          status,
+          orderDate:
+            order.data.orderDate ??
+            datetime
+              .today(await getCompanyTimeZone(client, companyId))
+              .toString(),
+          updatedAt: datetime.timestamp(),
+          updatedBy: userId
+        })
+        .eq("id", salesOrderId)
+        .select("id")
+    );
     if (confirmed.error) {
       return ctx.error(
         "internal",
@@ -3419,11 +3432,14 @@ export const deleteQuoteOperationAndReprice = defineServiceFn({
       .eq("companyId", companyId)
       .single();
 
-    const deleted = await client
-      .from("quoteOperation")
-      .delete()
-      .eq("id", id)
-      .eq("companyId", companyId);
+    const deleted = await requireAffected(
+      client
+        .from("quoteOperation")
+        .delete()
+        .eq("id", id)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (deleted.error) {
       return ctx.error(
         "internal",

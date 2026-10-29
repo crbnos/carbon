@@ -18,6 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { distinctItemText } from "@carbon/utils";
@@ -223,7 +224,7 @@ const PlanningTable = memo(
         bulkUpdateFetcher.data?.success === false &&
         bulkUpdateFetcher.data?.message
       ) {
-        toast.error(bulkUpdateFetcher.data.message);
+        toastError(bulkUpdateFetcher.data.message, bulkUpdateFetcher.data);
       }
 
       if (bulkUpdateFetcher.data?.success === true) {

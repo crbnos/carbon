@@ -41,7 +41,7 @@ import {
   Tbody,
   Td,
   Tr,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -125,7 +125,7 @@ const GaugeCalibrationRecordForm = ({
       .eq("id", gaugeId)
       .single();
     if (!result?.data) {
-      toast.error(t`Gauge not found`);
+      toastError(t`Gauge not found`, result?.error);
       setSelectedGauge(null);
       setLoading(false);
       return;

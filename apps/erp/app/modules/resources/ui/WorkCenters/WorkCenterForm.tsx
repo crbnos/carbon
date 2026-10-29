@@ -38,6 +38,7 @@ import {
   Thead,
   Tr,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
@@ -132,9 +133,7 @@ const WorkCenterForm = ({
       onClose?.();
       toast.success(t`Created work center`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(
-        t`Failed to create work center: ${fetcher.data.error.message}`
-      );
+      toastError(t`Failed to create work center`, fetcher.data.error);
     }
   }, [fetcher.data, fetcher.state, onClose, type, t]);
 
