@@ -242,8 +242,21 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   nettable (`getNettableDefaultStorageUnitId`, `shared.service.ts`), then fall back to
   `getStorageUnitWithHighestQuantity`, which only considers nettable units; the backflush's
   second fallback (the fullest bin when the proposed one is short) and
-  `getDefaultStorageUnitForJob` (`inventory.utils.ts`) skip them the same way. The bin the
-  material itself names is still used as named. A DESTINATION is not guessed: a job's output
+  `getDefaultStorageUnitForJob` (`inventory.utils.ts`) skip them the same way, and so does
+  job completion's SQL backflush (`backflush_job_materials`, migration
+  `20261029091503_non-nettable-guessed-bins.sql`). The bin the material itself names is
+  still used as named.
+- **A non-nettable unit is never made a default by itself.** Placing an item's first stock
+  in one does not set it as the pick method default (`updatePickMethodDefaultStorageUnitIfNeeded`,
+  and `complete_job_to_inventory` in the same migration). A new BoM line does not seed its
+  Pull From from a non-nettable default (`resolveMethodMaterialStorageUnitIds`,
+  `seedStorageUnitIds`), a sales order line does not ship from one
+  (`getDefaultStorageUnitForJob(…, { source: true })`, quote-to-order conversion), and
+  returned picked material does not go back into one.
+- **Consumption lot pickers leave quarantined lots out.** The MES issue modal's serial and
+  batch lists (`getSerialNumbersForItem` / `getBatchNumbersForItem`) and both maintenance
+  add-part modals drop lots whose stock is in a non-nettable unit
+  (`getNonNettableTrackedEntityIds`, `@carbon/database`); a failed read offers none. A DESTINATION is not guessed: a job's output
   bin and a PO line's bin (a kanban scan included) keep a non-nettable pick method default,
   since receiving into an inspection area is a deliberate setup. Under strict backflush a
   non-nettable Pull From counts as none at activation and release (production `AGENTS.md` →

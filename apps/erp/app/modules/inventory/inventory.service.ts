@@ -21103,14 +21103,13 @@ async function returnUntrackedMaterialRemainder(
   let fallbackBin: string | null | undefined;
   const resolveFallbackBin = async () => {
     if (fallbackBin !== undefined) return fallbackBin;
-    const pickMethod = await trx
-      .selectFrom("pickMethod")
-      .where("itemId", "=", material.itemId)
-      .where("locationId", "=", locationId)
-      .where("companyId", "=", companyId)
-      .select("defaultStorageUnitId")
-      .executeTakeFirst();
-    fallbackBin = pickMethod?.defaultStorageUnitId ?? null;
+    // Released stock never goes back into quarantine by default.
+    fallbackBin = await getNettableDefaultStorageUnitId(
+      trx,
+      material.itemId,
+      locationId,
+      companyId
+    );
     return fallbackBin;
   };
 

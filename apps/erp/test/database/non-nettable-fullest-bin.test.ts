@@ -7,12 +7,15 @@
 // bin. Neither may be a non-nettable (quarantine) unit, or quarantined stock is
 // consumed silently.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
+import { getNonNettableTrackedEntityIds } from "@carbon/database";
+import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect } from "vitest";
 import { issueMaterial as issue } from "../../app/modules/inventory/inventory.service";
 import {
   getStorageUnitId,
   getStorageUnitWithHighestQuantity,
-  invokePosting
+  invokePosting,
+  updatePickMethodDefaultStorageUnitIfNeeded
 } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
@@ -24,6 +27,7 @@ import {
 } from "./fixtures/always-post";
 import { handlesOf } from "./fixtures/handles";
 import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
+import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
   let f: Fixture;
@@ -101,6 +105,151 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
       expect(await guess(f.assemblyId)).toBeNull();
     }
   );
+
+  const newItem = (suffix: string, tracking = "Inventory") =>
+    seed(f, (trx) =>
+      trx
+        .insertInto("item")
+        .values({
+          id: `${f.prefix}-${suffix}`,
+          readableId: `${f.prefix}-${suffix.toUpperCase()}`,
+          name: suffix,
+          type: "Part",
+          itemTrackingType: tracking as "Inventory",
+          replenishmentSystem: "Buy",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute()
+    ).then(() => `${f.prefix}-${suffix}`);
+
+  const setDefaultBin = (itemId: string, storageUnitId: string) =>
+    seed(f, (trx) =>
+      trx
+        .insertInto("pickMethod")
+        .values({
+          itemId,
+          locationId: f.locationId,
+          defaultStorageUnitId: storageUnitId,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .onConflict((oc) =>
+          oc
+            .columns(["itemId", "locationId"])
+            .doUpdateSet({ defaultStorageUnitId: storageUnitId })
+        )
+        .execute()
+    );
+
+  databaseTest(
+    "job completion's SQL backflush passes over a non-nettable default and fullest bin",
+    async () => {
+      const item = await newItem("completed");
+      await setDefaultBin(item, quarantine);
+      await receive(item, warehouse, 5);
+      await receive(item, quarantine, 30);
+      const job = await jobFixture(f, "sql-backflush");
+      await f.db
+        .updateTable("jobMaterial")
+        .set({ itemId: item, storageUnitId: null, defaultStorageUnit: true })
+        .where("id", "=", job.materialId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      await sql`SELECT backflush_job_materials(${job.jobId}, 1, ${f.companyId}, ${USER})`.execute(
+        f.db
+      );
+
+      const consumed = await f.db
+        .selectFrom("itemLedger")
+        .select(["storageUnitId", "quantity"])
+        .where("itemId", "=", item)
+        .where("documentType", "=", "Job Consumption")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(consumed).toEqual([{ storageUnitId: warehouse, quantity: -2 }]);
+    }
+  );
+
+  databaseTest(
+    "stock placed only in a non-nettable unit never becomes the default bin",
+    async () => {
+      const item = await newItem("first-stock");
+      await receive(item, quarantine, 4);
+
+      await f.db
+        .transaction()
+        .execute((trx) =>
+          updatePickMethodDefaultStorageUnitIfNeeded(
+            trx,
+            item,
+            f.locationId,
+            quarantine,
+            f.companyId,
+            USER
+          )
+        );
+      const quarantinedDefault = await f.db
+        .selectFrom("pickMethod")
+        .select("defaultStorageUnitId")
+        .where("itemId", "=", item)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirst();
+      expect(quarantinedDefault?.defaultStorageUnitId ?? null).toBeNull();
+    }
+  );
+
+  databaseTest("finds the lots held in a non-nettable unit", async () => {
+    const item = await newItem("lots", "Batch");
+    const held = `${f.prefix}-lot-held`;
+    const free = `${f.prefix}-lot-free`;
+    await seed(f, (trx) =>
+      trx
+        .insertInto("trackedEntity")
+        .values(
+          ["held", "free"].map((name) => ({
+            id: `${f.prefix}-lot-${name}`,
+            readableId: name,
+            itemId: item,
+            sourceDocument: "Item",
+            sourceDocumentId: item,
+            quantity: 3,
+            status: "Available" as const,
+            companyId: f.companyId,
+            createdBy: USER
+          }))
+        )
+        .execute()
+    );
+    await seed(f, (trx) =>
+      trx
+        .insertInto("itemLedger")
+        .values([
+          [held, quarantine],
+          [free, warehouse]
+        ].map(([trackedEntityId, storageUnitId]) => ({
+          entryType: "Positive Adjmt." as const,
+          documentType: "Inventory Receipt" as const,
+          itemId: item,
+          locationId: f.locationId,
+          storageUnitId,
+          trackedEntityId,
+          quantity: 3,
+          companyId: f.companyId,
+          createdBy: USER
+        })))
+        .execute()
+    );
+
+    const result = await getNonNettableTrackedEntityIds(
+      localServiceRoleClient()!,
+      f.companyId,
+      [held, free]
+    );
+    expect(result.error).toBeNull();
+    expect([...(result.data ?? [])]).toEqual([held]);
+  });
 
   databaseTest(
     "a new job material passes over a non-nettable pick method default",

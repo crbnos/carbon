@@ -4584,10 +4584,15 @@ async function resolveMethodMaterialStorageUnitIds(
   const current = { ...(args.current ?? {}) };
   if (!args.itemId) return current;
 
+  // A non-nettable (quarantine) default is not seeded: the line would then
+  // name it, and jobs would consume quarantined stock as named.
   const pickMethods = await client
     .from("pickMethod")
-    .select("locationId, defaultStorageUnitId")
-    .eq("itemId", args.itemId);
+    .select(
+      "locationId, defaultStorageUnitId, storageUnit!inner(effectiveNettable)"
+    )
+    .eq("itemId", args.itemId)
+    .eq("storageUnit.effectiveNettable", true);
 
   for (const row of pickMethods.data ?? []) {
     if (

@@ -4,7 +4,10 @@
 
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
-import { getLocationTimeZone } from "@carbon/database";
+import {
+  getLocationTimeZone,
+  getNonNettableTrackedEntityIds
+} from "@carbon/database";
 import type {
   DocumentTemplate,
   DocumentTemplateType
@@ -76,15 +79,43 @@ export async function getBatchNumbersForItem(
 
   // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
   // first (FIFO).
-  return client
-    .from("trackedEntity")
-    .select("*")
-    .eq("sourceDocument", "Item")
-    .in("sourceDocumentId", itemIds)
-    .eq("companyId", args.companyId)
-    .gt("quantity", 0)
-    .order("expirationDate", { ascending: true, nullsFirst: false })
-    .order("createdAt", { ascending: true });
+  return withoutNonNettableLots(
+    client,
+    args.companyId,
+    await client
+      .from("trackedEntity")
+      .select("*")
+      .eq("sourceDocument", "Item")
+      .in("sourceDocumentId", itemIds)
+      .eq("companyId", args.companyId)
+      .gt("quantity", 0)
+      .order("expirationDate", { ascending: true, nullsFirst: false })
+      .order("createdAt", { ascending: true })
+  );
+}
+
+/** Issue pickers never offer a lot held in a non-nettable (quarantine) unit. */
+async function withoutNonNettableLots<
+  T extends { id: string },
+  E extends { message: string } | null
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lots: { data: T[] | null; error: E }
+) {
+  if (lots.error || !lots.data) return lots;
+  const quarantined = await getNonNettableTrackedEntityIds(
+    client,
+    companyId,
+    lots.data.map((lot) => lot.id)
+  );
+  if (quarantined.error) {
+    return { ...lots, data: null, error: quarantined.error as unknown as E };
+  }
+  return {
+    ...lots,
+    data: lots.data.filter((lot) => !quarantined.data?.has(lot.id))
+  };
 }
 
 export async function getCompanySettings(
@@ -153,16 +184,20 @@ export async function getSerialNumbersForItem(
 
   // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
   // first (FIFO).
-  return client
-    .from("trackedEntity")
-    .select("*")
-    .eq("sourceDocument", "Item")
-    .in("sourceDocumentId", itemIds)
-    .eq("companyId", args.companyId)
-    .eq("status", "Available")
-    .gt("quantity", 0)
-    .order("expirationDate", { ascending: true, nullsFirst: false })
-    .order("createdAt", { ascending: true });
+  return withoutNonNettableLots(
+    client,
+    args.companyId,
+    await client
+      .from("trackedEntity")
+      .select("*")
+      .eq("sourceDocument", "Item")
+      .in("sourceDocumentId", itemIds)
+      .eq("companyId", args.companyId)
+      .eq("status", "Available")
+      .gt("quantity", 0)
+      .order("expirationDate", { ascending: true, nullsFirst: false })
+      .order("createdAt", { ascending: true })
+  );
 }
 
 /**

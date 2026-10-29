@@ -4978,10 +4978,18 @@ async function seedStorageUnitIds(
   itemId: string
 ): Promise<Record<string, string>> {
   const current: Record<string, string> = {};
+  // A non-nettable (quarantine) default is not seeded: the line would then
+  // name it, and jobs would consume quarantined stock as named.
   const rows = await trx
     .selectFrom("pickMethod")
-    .select(["locationId", "defaultStorageUnitId"])
-    .where("itemId", "=", itemId)
+    .innerJoin("storageUnit", (join) =>
+      join
+        .onRef("storageUnit.id", "=", "pickMethod.defaultStorageUnitId")
+        .onRef("storageUnit.companyId", "=", "pickMethod.companyId")
+    )
+    .select(["pickMethod.locationId", "pickMethod.defaultStorageUnitId"])
+    .where("pickMethod.itemId", "=", itemId)
+    .where("storageUnit.effectiveNettable", "=", true)
     .execute();
   for (const row of rows) {
     if (
@@ -9593,6 +9601,14 @@ export async function convertDocument(
                 pickedLines.map((line) => line.locationId)
               )
               .where("companyId", "=", companyId)
+              // A line never ships from a non-nettable (quarantine) default.
+              .where("defaultStorageUnitId", "in", (eb) =>
+                eb
+                  .selectFrom("storageUnit")
+                  .select("storageUnit.id")
+                  .where("storageUnit.companyId", "=", companyId)
+                  .where("storageUnit.effectiveNettable", "=", true)
+              )
               .select(["itemId", "locationId", "defaultStorageUnitId"])
               .execute()
           : [];
@@ -17233,6 +17249,15 @@ export async function updatePickMethodDefaultStorageUnitIfNeeded(
 ): Promise<void> {
   // Only proceed if storageUnitId and locationId are not null
   if (!storageUnitId || !locationId) return;
+
+  // Never a non-nettable (quarantine) unit: nobody chose it as the default.
+  const unit = await trx
+    .selectFrom("storageUnit")
+    .where("id", "=", storageUnitId)
+    .where("companyId", "=", companyId)
+    .select("effectiveNettable")
+    .executeTakeFirst();
+  if (unit && !unit.effectiveNettable) return;
 
   // Check if there are other non-null storage units for this item/location
   const otherStorageUnits = await trx

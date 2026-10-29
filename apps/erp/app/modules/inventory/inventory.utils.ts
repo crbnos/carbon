@@ -150,17 +150,23 @@ export async function getDefaultStorageUnitForJob(
   client: SupabaseClient<Database>,
   itemId: string,
   locationId: string,
-  companyId: string
+  companyId: string,
+  /** A bin stock is taken from (a sales order line ships from it), not one it
+   *  lands in: a non-nettable (quarantine) default is passed over too. */
+  { source = false }: { source?: boolean } = {}
 ): Promise<string | null> {
   const pickMethod = await client
     .from("pickMethod")
-    .select("defaultStorageUnitId")
+    .select("defaultStorageUnitId, storageUnit(effectiveNettable)")
     .eq("itemId", itemId)
     .eq("locationId", locationId)
     .eq("companyId", companyId)
     .maybeSingle();
 
-  if (pickMethod.data?.defaultStorageUnitId) {
+  if (
+    pickMethod.data?.defaultStorageUnitId &&
+    !(source && pickMethod.data.storageUnit?.effectiveNettable === false)
+  ) {
     return pickMethod.data.defaultStorageUnitId;
   }
 
