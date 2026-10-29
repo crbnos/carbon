@@ -19450,15 +19450,15 @@ export async function postInventoryAdjustment(
       return;
     }
 
-    if (entryType === "Positive Adjmt.") {
+    // A zero-quantity new unit creates nothing: the no-op below returns
+    // success, so repeated scanner posts stay idempotent.
+    const createsNothing =
+      !!trackedEntityId && !currentQuantity && round(adjustmentQuantity) === 0;
+    if (entryType === "Positive Adjmt." && !createsNothing) {
       const refusal = stockIncreaseRefusal({
         itemTrackingType: item.itemTrackingType,
         trackedEntityId,
-        // A zero-quantity new unit creates nothing (the no-op below).
-        createsUnit:
-          !!trackedEntityId &&
-          !currentQuantity &&
-          round(adjustmentQuantity) !== 0,
+        createsUnit: !!trackedEntityId && !currentQuantity,
         readableId,
         currentReadableId: currentQuantity?.readableId
       });
