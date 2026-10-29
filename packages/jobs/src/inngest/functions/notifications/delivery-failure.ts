@@ -36,6 +36,9 @@ const RETRYABLE_SMTP_CODES = new Set([
   "EDNS",
   "EAUTH",
   "ETLS",
+  // An attachment URL that failed to download: the message never finished, and
+  // a relay accepts nothing until it does.
+  "EFETCH",
   NOT_SENT
 ]);
 
@@ -78,6 +81,20 @@ export const isRetryableEmailFailure = (error: unknown): boolean => {
 export const isRetryableSlackFailure = (error: unknown): boolean => {
   const code = codeOf(error);
   return code !== undefined && RETRYABLE_SLACK_CODES.has(code);
+};
+
+/**
+ * An HTTP 429 from a vendor API (Gmail through googleapis): the vendor refused
+ * the message before accepting it, so a replay cannot duplicate.
+ */
+export const isRateLimitedResponse = (error: unknown): boolean => {
+  if (typeof error !== "object" || error === null) return false;
+  const { status, code, response } = error as {
+    status?: unknown;
+    code?: unknown;
+    response?: { status?: unknown };
+  };
+  return [status, code, response?.status].some((v) => String(v) === "429");
 };
 
 /** The error to throw for a failed email send, classified. */

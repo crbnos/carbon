@@ -6,6 +6,7 @@ import { NonRetriableError } from "inngest";
 import { describe, expect, it } from "vitest";
 import {
   emailDeliveryFailure,
+  isRateLimitedResponse,
   isRetryableEmailFailure,
   isRetryableSlackFailure,
   slackDeliveryFailure
@@ -18,7 +19,7 @@ describe("email delivery failure", () => {
   // Raised during connect/greet/auth — before a recipient or any DATA is sent,
   // so the relay provably has nothing and a replay cannot duplicate. ENOTSENT
   // is the company sender's own: it stopped before calling the vendor.
-  it.each(["ECONNECTION", "EDNS", "EAUTH", "ETLS", "ENOTSENT"])(
+  it.each(["ECONNECTION", "EDNS", "EAUTH", "ETLS", "EFETCH", "ENOTSENT"])(
     "retries %s — nothing reached the relay",
     (code) => {
       const error = emailDeliveryFailure(coded(code));
@@ -104,4 +105,24 @@ describe("slack delivery failure", () => {
       slackDeliveryFailure(coded("slack_webapi_platform_error", "nope")).message
     ).toBe("Slack error (slack_webapi_platform_error): nope");
   });
+});
+
+describe("vendor rate limit", () => {
+  // googleapis reports the HTTP status on `status`, `code` or `response.status`
+  // depending on the version; a 429 means Google refused before accepting.
+  it.each([
+    { status: 429 },
+    { code: 429 },
+    { code: "429" },
+    { response: { status: 429 } }
+  ])("treats %o as a refused send", (error) => {
+    expect(isRateLimitedResponse(error)).toBe(true);
+  });
+
+  it.each([{ status: 500 }, { code: "ETIMEDOUT" }, new Error("boom"), null])(
+    "does not treat %o as a refused send",
+    (error) => {
+      expect(isRateLimitedResponse(error)).toBe(false);
+    }
+  );
 });
