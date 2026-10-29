@@ -24395,6 +24395,18 @@ export async function postInventoryAdjustment(
   await db.transaction().execute(async (trx) => {
     await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
+    // Re-read under a share lock: a tracking type change writes the item
+    // row, so it and this adjustment cannot cross, and the refusals and the
+    // valuation below see the type that is committed.
+    const tracking = await trx
+      .selectFrom("item")
+      .select("itemTrackingType")
+      .where("id", "=", itemId)
+      .where("companyId", "=", companyId)
+      .forShare()
+      .executeTakeFirstOrThrow();
+    item.itemTrackingType = tracking.itemTrackingType;
+
     if (adjustmentType === "Scrap") {
       const scrapLedgerBase = {
         ...ledgerBase,
@@ -24801,6 +24813,14 @@ export async function postInventoryAdjustment(
           "Location is required to unscrap untracked stock"
         );
       }
+      // Batch and serial stock comes back by unit, as it was scrapped.
+      const untrackedRefusal = stockIncreaseRefusal({
+        itemTrackingType: item.itemTrackingType,
+        trackedEntityId: null,
+        createsUnit: false,
+        readableId: undefined
+      });
+      if (untrackedRefusal) throw new InvalidInputError(untrackedRefusal);
       const booked = await bookAdjustment(trx, {
         ledger: {
           ...unscrapLedgerBase,
@@ -25022,24 +25042,16 @@ export async function postInventoryAdjustment(
     }
 
     if (entryType === "Positive Adjmt.") {
-      // Read under a share lock: setItemTrackingType takes the item row FOR
-      // UPDATE, so a tracking change and this increase cannot cross.
-      const tracking = await trx
-        .selectFrom("item")
-        .select("itemTrackingType")
-        .where("id", "=", itemId)
-        .where("companyId", "=", companyId)
-        .forShare()
-        .executeTakeFirstOrThrow();
       const refusal = stockIncreaseRefusal({
-        itemTrackingType: tracking.itemTrackingType,
+        itemTrackingType: item.itemTrackingType,
         trackedEntityId,
         // A zero-quantity new unit creates nothing (the no-op below).
         createsUnit:
           !!trackedEntityId &&
           !currentQuantity &&
           round(adjustmentQuantity) !== 0,
-        readableId
+        readableId,
+        currentReadableId: currentQuantity?.readableId
       });
       if (refusal) throw new InvalidInputError(refusal);
     }
@@ -30881,6 +30893,7 @@ export async function issueMaterial(
             .where("companyId", "=", companyId)
             .select(["locationId", "jobId", "projectId"])
             .executeTakeFirst(),
+          // A share lock holds the tracking type until the issue commits.
           trx
             .selectFrom("item")
             .where("id", "=", itemId)
@@ -30892,6 +30905,7 @@ export async function issueMaterial(
               "readableIdWithRevision",
               "type"
             ])
+            .forShare()
             .executeTakeFirst()
         ]);
 
@@ -30993,6 +31007,7 @@ export async function issueMaterial(
                 .where("id", "=", materialOwner.itemId)
                 .where("companyId", "=", companyId)
                 .select(["id", "itemTrackingType", "readableIdWithRevision"])
+                .forShare()
                 .executeTakeFirst()
             : item;
 
@@ -31023,14 +31038,14 @@ export async function issueMaterial(
             storageUnitId =
               (await getNettableDefaultStorageUnitId(
                 trx,
-                itemId,
+                material.itemId,
                 job?.locationId!,
                 companyId
               )) ??
               (
                 await getStorageUnitWithHighestQuantity(trx, {
                   companyId,
-                  itemId: itemId,
+                  itemId: material.itemId,
                   locationId: job?.locationId!,
                   stripes
                 })
@@ -31041,7 +31056,7 @@ export async function issueMaterial(
               (
                 await getStorageUnitWithHighestQuantity(trx, {
                   companyId,
-                  itemId: itemId,
+                  itemId: material.itemId,
                   locationId: job?.locationId!,
                   stripes
                 })
@@ -32893,6 +32908,7 @@ export async function issueMaterial(
           .where("id", "=", itemId)
           .where("companyId", "=", companyId)
           .select(["id", "itemTrackingType", "readableIdWithRevision"])
+          .forShare()
           .executeTakeFirstOrThrow();
 
         const untracked = untrackedIssueRefusal(item);
