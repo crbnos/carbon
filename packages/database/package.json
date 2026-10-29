@@ -40,6 +40,7 @@
     "./revenue-schedule": "./src/revenue-schedule.ts",
     "./lease-months": "./src/lease-months.ts",
     "./run-journals": "./src/run-journals.ts",
+    "./currency-revaluation": "./src/currency-revaluation.ts",
     "./run-type": "./src/run-type.ts",
     "./picked-consumption": "./src/picked-consumption.ts",
     "./realtime-tables": "./src/realtime-tables.ts",

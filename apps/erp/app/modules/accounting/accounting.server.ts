@@ -528,6 +528,326 @@ export const reverseDepreciationRun = defineServiceFn({
   }
 });
 
+// ── Currency revaluation runs ───────────────────────────────────────────────
+/**
+ * Create a Draft currency revaluation run.
+ *
+ * @remarks
+ * `periodEnd` snaps to its month end. The run revalues every open
+ * foreign-currency item of the company at that date — open invoices and
+ * memos, and unapplied customer receipts and supplier disbursements — at the
+ * company's exchange rate on that date. Refuses a month that has not started,
+ * a period that already has a run, a company with nothing open in a foreign
+ * currency, and a company without the four revaluation account defaults.
+ * Refused before the company's accounting cutover.
+ *
+ * @mcp
+ */
+export const createCurrencyRevaluationRun = defineServiceFn({
+  input: z.object({ periodEnd: z.string() }),
+  permission: { create: "accounting" },
+  async run(ctx, { periodEnd }) {
+    return service.createCurrencyRevaluationRunAt(ctx, monthEndOf(periodEnd));
+  }
+});
+
+/**
+ * Recalculate a Draft currency revaluation run.
+ *
+ * @remarks
+ * Rebuilds the lines from what is open at the run's period end now. Keeps the
+ * run's stored rate of each currency and adds the default rate for a new one.
+ *
+ * @mcp
+ */
+export const recalculateCurrencyRevaluationRun = defineServiceFn({
+  input: z.object({ runId: z.string() }),
+  permission: { update: "accounting" },
+  async run(ctx, { runId }) {
+    try {
+      const result = await service.recalculateCurrencyRevaluationRun(
+        ctx.asSystem.pg,
+        { runId, companyId: ctx.company.id, userId: ctx.auditUserId }
+      );
+      return { id: runId, ...result };
+    } catch (err) {
+      return service.refusal(
+        ctx,
+        err,
+        "Failed to recalculate currency revaluation run"
+      );
+    }
+  }
+});
+
+/**
+ * Set the rate of one currency on a Draft currency revaluation run.
+ *
+ * @remarks
+ * `rate` is units of the currency per one unit of the company's base
+ * currency. Marks the rate Manual and revalues that currency's lines.
+ *
+ * @mcp
+ */
+export const updateCurrencyRevaluationRate = defineServiceFn({
+  input: z.object({
+    runId: z.string(),
+    currencyCode: z.string(),
+    rate: z.number().positive()
+  }),
+  permission: { update: "accounting" },
+  async run(ctx, { runId, currencyCode, rate }) {
+    try {
+      await service.updateCurrencyRevaluationRate(ctx.asSystem.pg, {
+        runId,
+        currencyCode,
+        rate,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+      return { id: runId };
+    } catch (err) {
+      return service.refusal(ctx, err, "Failed to update the rate");
+    }
+  }
+});
+
+/**
+ * Enter the statement balance of an account balance line.
+ *
+ * @remarks
+ * On a Draft currency revaluation run, sets the period-end balance of a
+ * foreign-currency account (in the account's currency) from its statement,
+ * records who entered it, and revalues the line. A run cannot post while an
+ * account balance line has no statement balance.
+ *
+ * @mcp
+ */
+export const updateCurrencyRevaluationBalance = defineServiceFn({
+  input: z.object({
+    runId: z.string(),
+    lineId: z.string(),
+    openAmount: z.number()
+  }),
+  permission: { update: "accounting" },
+  async run(ctx, { runId, lineId, openAmount }) {
+    try {
+      await service.updateCurrencyRevaluationBalance(ctx.asSystem.pg, {
+        runId,
+        lineId,
+        openAmount,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+      return { id: runId };
+    } catch (err) {
+      return service.refusal(ctx, err, "Failed to save the statement balance");
+    }
+  }
+});
+
+/**
+ * Post a Draft currency revaluation run.
+ *
+ * @remarks
+ * Posts the unrealized exchange gains and losses at the period end and the
+ * reversal on the next day. Refuses a run that is not Draft, a month that has
+ * not started, and a run whose lines no longer match what is open
+ * (recalculate it first). Refused before the company's accounting cutover.
+ *
+ * @mcp
+ */
+export const postCurrencyRevaluationRun = defineServiceFn({
+  input: z.object({ runId: z.string() }),
+  permission: { update: "accounting" },
+  async run(ctx, { runId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    const run = await client
+      .from("currencyRevaluationRun")
+      .select("id, currencyRevaluationRunId, status, periodEnd")
+      .eq("id", runId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (run.error) {
+      return ctx.error("internal", "Failed to load the run", run.error);
+    }
+    if (!run.data) return ctx.error("notFound", "Run not found");
+    if (run.data.status !== "Draft") {
+      return ctx.error("conflict", "Run is not in Draft status");
+    }
+    const { periodEnd, currencyRevaluationRunId: readableId } = run.data;
+
+    const futureError = await service.futureRunPeriodError(
+      client,
+      companyId,
+      periodEnd
+    );
+    if (futureError) return ctx.error("rule", futureError);
+
+    try {
+      const [defaults, periods] = await Promise.all([
+        service.readRevaluationDefaults(ctx.asSystem.pg, companyId),
+        service.resolveRevaluationPeriods(client, companyId, periodEnd)
+      ]);
+      if (!periods.data) {
+        return ctx.error("rule", periods.error.message);
+      }
+      await service.postCurrencyRevaluationRun(ctx.asSystem.pg, {
+        runId,
+        valuationPeriod: periods.data.valuationPeriod,
+        reversalPeriod: periods.data.reversalPeriod,
+        gainAccountId: defaults.unrealizedExchangeGainAccount,
+        lossAccountId: defaults.unrealizedExchangeLossAccount,
+        companyId,
+        userId: ctx.auditUserId
+      });
+      return { id: runId, readableId };
+    } catch (err) {
+      return err instanceof service.RunOutOfDateError
+        ? ctx.error("conflict", err.message, err)
+        : service.refusal(ctx, err, "Failed to post currency revaluation run");
+    }
+  }
+});
+
+/**
+ * Undo a posted currency revaluation run.
+ *
+ * @remarks
+ * Reverses the run's valuation journal and its next-day reversal, each on its
+ * own date or on today when that period is Closed, and returns the run to
+ * Draft.
+ *
+ * @mcp destructive
+ */
+export const reverseCurrencyRevaluationRun = defineServiceFn({
+  input: z.object({ runId: z.string() }),
+  permission: { update: "accounting" },
+  async run(ctx, { runId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    const run = await client
+      .from("currencyRevaluationRun")
+      .select(
+        "id, journal:journalId(postingDate), reversalJournal:reversalJournalId(postingDate)"
+      )
+      .eq("id", runId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (run.error) {
+      return ctx.error("internal", "Failed to load the run", run.error);
+    }
+    if (!run.data) return ctx.error("notFound", "Run not found");
+
+    const periods = await service.resolveReversalPeriods(client, {
+      companyId,
+      postingDates: [
+        run.data.journal?.postingDate,
+        run.data.reversalJournal?.postingDate
+      ].filter((date): date is string => Boolean(date))
+    });
+    if (!periods.data) {
+      return ctx.error(
+        "internal",
+        "Failed to get accounting period",
+        periods.error
+      );
+    }
+
+    try {
+      const reversed = await service.reverseCurrencyRevaluationRun(
+        ctx.asSystem.pg,
+        {
+          runId,
+          periods: periods.data,
+          companyId,
+          userId: ctx.auditUserId
+        }
+      );
+      return { id: runId, readableId: reversed.readableId };
+    } catch (err) {
+      return err instanceof service.RunReversalError
+        ? ctx.error("rule", err.message, err)
+        : ctx.error(
+            "internal",
+            "Failed to reverse currency revaluation run",
+            err
+          );
+    }
+  }
+});
+
+/**
+ * Delete a Draft currency revaluation run.
+ *
+ * @mcp destructive
+ */
+export const deleteCurrencyRevaluationRun = defineServiceFn({
+  input: z.object({ runId: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, { runId }) {
+    try {
+      await service.deleteCurrencyRevaluationRun(ctx.asSystem.pg, {
+        runId,
+        companyId: ctx.company.id
+      });
+      return { id: runId };
+    } catch (err) {
+      return service.refusal(
+        ctx,
+        err,
+        "Failed to delete currency revaluation run"
+      );
+    }
+  }
+});
+
+// ── Posted CTA ──────────────────────────────────────────────────────────────
+/**
+ * Preview the currency translation adjustment for one of the root company's
+ * periods.
+ *
+ * @remarks
+ * Returns the consolidated balance sheet's CTA for the period, the CTA the
+ * root's elimination entity already carries, the movement a posting would
+ * write, and the foreign-currency subsidiaries with no posted revaluation run
+ * for the period. Not applicable (applicable false) when every company in the
+ * group shares the root's currency. Only the group's root company may ask.
+ *
+ * @mcp read
+ */
+export const previewCurrencyTranslation = defineServiceFn({
+  input: z.object({ periodId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, { periodId }) {
+    return service.previewCurrencyTranslationAt(ctx, periodId);
+  }
+});
+
+/**
+ * Post the currency translation adjustment for one of the root company's
+ * periods.
+ *
+ * @remarks
+ * Posts the movement between the consolidated CTA and the CTA already posted
+ * as one journal on the root's elimination entity: Cr Currency Translation /
+ * Dr Currency Translation Offset for a positive movement. Posts nothing when
+ * the movement is zero. Refuses a Locked or Closed elimination-entity period,
+ * and any company other than the group's root.
+ *
+ * @mcp
+ */
+export const postCurrencyTranslation = defineServiceFn({
+  input: z.object({ periodId: z.string() }),
+  permission: { update: "accounting" },
+  async run(ctx, { periodId }) {
+    return service.postCurrencyTranslationAt(ctx, periodId);
+  }
+});
+
 // ── Revenue recognition and lease runs ──────────────────────────────────────
 /**
  * Create a Draft revenue recognition or lease run.
@@ -984,18 +1304,18 @@ export const closePeriod = defineServiceFn({
  * Create the run a period close task waits on.
  *
  * @remarks
- * `run` names it: a revenue recognition, lease or depreciation run for the
- * period's end date. Refuses a period that ends in a month that has not
- * started, and a period that already has a Draft run of that kind
- * (recalculate it instead). Otherwise it creates the run as New Run does,
- * which refuses a period with nothing due.
+ * `run` names it: a revenue recognition, lease, depreciation or currency
+ * revaluation run for the period's end date. Refuses a period that ends in a
+ * month that has not started, and a period that already has a Draft run of
+ * that kind (recalculate it instead). Otherwise it creates the run as New Run
+ * does, which refuses a period with nothing due.
  *
  * @mcp
  */
 export const createRunForPeriod = defineServiceFn({
   input: z.object({
     periodId: z.string(),
-    run: z.enum([...runTypes, "Depreciation"])
+    run: z.enum([...runTypes, "Depreciation", "Currency Revaluation"])
   }),
   permission: { create: "accounting", update: "accounting" },
   async run(ctx, { periodId, run }) {
@@ -1011,6 +1331,14 @@ export const createRunForPeriod = defineServiceFn({
     }
     if (!period.data) return ctx.error("notFound", "Period not found");
     const periodEnd = period.data.endDate;
+
+    if (run === "Currency Revaluation") {
+      const created = await service.createCurrencyRevaluationRunAt(
+        ctx,
+        periodEnd
+      );
+      return created instanceof Error ? created : { ...created, run };
+    }
 
     if (run !== "Depreciation") {
       const created = await service.proposeRunAt(ctx, periodEnd, run);
@@ -3103,7 +3431,12 @@ export const updateDefaultAccounts = defineServiceFn({
     operatingLeaseExpenseAccount: z.string().optional(),
     variableLeaseExpenseAccount: z.string().optional(),
     rightOfUseAmortizationExpenseAccount: z.string().optional(),
-    leaseInterestExpenseAccount: z.string().optional()
+    leaseInterestExpenseAccount: z.string().optional(),
+    unrealizedExchangeGainAccount: z.string().optional(),
+    unrealizedExchangeLossAccount: z.string().optional(),
+    arRevaluationAccount: z.string().optional(),
+    apRevaluationAccount: z.string().optional(),
+    currencyTranslationOffsetAccount: z.string().optional()
   }),
   permission: { update: "accounting" },
   async run(ctx, input) {

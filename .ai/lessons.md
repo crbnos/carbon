@@ -4303,3 +4303,23 @@ the error set against an untouched checkout of `main`.
 **Rule:** In an Inngest function, every database read that decides something and every write goes inside a `step.run`; the body between steps must be safe to run again. Collect the events in the step and send them with one `step.sendEvent` after it.
 
 **Applies to:** `packages/jobs/src/inngest/functions/**` — any function that writes outside `step.run` and then calls a `step.*` method.
+
+## A bulk translation fill needs a glossary check against a baseline
+
+**Context:** `/translate` filled the new FX revaluation and CTA strings on branch `consolidation-exchange-rates` (PR #2062, 2026-10-28).
+
+**Problem:** The fill rendered "currency translation" (restating amounts in another currency) as language translation, and the catalogs shipped that way. `pnpm exec linguito check` passed, because it only checks that no `msgstr` is empty. The glossary has an approved rendering for "Currency Translation", so `check-glossary.mjs` reports such a string. But the checker already reports more than 17,000 older hits, so a new violation is invisible in its full output.
+
+**Rule:** Before a bulk fill, save `node .claude/skills/translate/scripts/check-glossary.mjs --json` as a baseline. After the fill, run it again and diff the two outputs. A new violation on a filled `msgstr` blocks the commit. Fix it, or clear it with `reset-violations.mjs` and fill it again. If an accounting term is also an everyday word ("translation", "close", "run", "posting"), make sure the glossary has it before the fill.
+
+**Applies to:** `.claude/skills/translate/`, `packages/locale/locales/*/*.po`, and every commit that fills catalogs.
+
+## A journal that posts to the balance it values must be left out of that balance
+
+**Context:** A currency revaluation run revalues an account with an Account Currency, such as a EUR bank account. Its valuation journal posts the difference straight to that account, dated the period end (2026-10-27).
+
+**Problem:** The run read the account's booked balance from the GL at the period end. After Post, that balance included the run's own valuation journal. The drift check (`isCurrencyRevaluationRunCurrent`) then found a booked amount that differed from the stored line. So every posted run read as out of date, and the `fx-revaluation` close task failed on a correct run.
+
+**Rule:** Sometimes a journal posts straight to the balance it values, with no subledger or adjustment account between them. Then read the booked balance without that journal's source type. `readRevaluationExposures` subtracts every `Currency Revaluation` journal dated on or before `periodEnd`. It also does not count those journals as activity that makes the account an exposure. To test it, post the run, then ask the drift check whether the run is still current.
+
+**Applies to:** `readRevaluationExposures` and `isCurrencyRevaluationRunCurrent` in `apps/erp/app/modules/accounting/accounting.service.ts`, and any later run that posts to an account it also reads.

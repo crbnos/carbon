@@ -233,7 +233,7 @@ msgid "Are you sure you want to mark this operation as done? This will end all a
 msgstr "您确定要将此工序标记为完成吗？这会结束此工序的所有活跃生产事件。"
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
-msgstr ""
+msgstr "请主管为您的个人资料添加 {processName} 技能。"
 
 msgid "Assembly steps"
 msgstr "装配步骤"
@@ -465,7 +465,7 @@ msgid "Complete passed"
 msgstr "完成已通过"
 
 msgid "Complete the {trainingName} training to get the {processName} ability."
-msgstr ""
+msgstr "完成 {trainingName} 培训以获得 {processName} 技能。"
 
 msgid "Completed"
 msgstr "已完成"
@@ -1949,7 +1949,7 @@ msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by 
 msgstr "使用生物识别功能而非魔法链接登录。通行密钥由 Face ID、Touch ID 或设备 PIN 保护。"
 
 msgid "Sign in with code"
-msgstr ""
+msgstr "使用代码登录"
 
 msgid "Sign in with Google"
 msgstr "使用 Google 登录"
@@ -1970,7 +1970,7 @@ msgid "Sign out instead"
 msgstr "改为登出"
 
 msgid "Sign-in code"
-msgstr ""
+msgstr "登录代码"
 
 msgid "Signature"
 msgstr ""
@@ -2295,7 +2295,7 @@ msgid "Updated {0}"
 msgstr "更新于 {0}"
 
 msgid "Updated avatar"
-msgstr ""
+msgstr "已更新头像"
 
 msgid "Updated successfully"
 msgstr "更新成功"
@@ -2345,7 +2345,7 @@ msgid "View or open"
 msgstr "查看或打开"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
-msgstr ""
+msgstr "我们已向您发送了登录链接和 6 位代码。请点击链接或在此输入代码。"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}是什么?"
@@ -2372,19 +2372,19 @@ msgid "Yes"
 msgstr "是"
 
 msgid "You can still start this operation."
-msgstr ""
+msgstr "您仍可以启动这个工序。"
 
 msgid "You can't work on this operation"
-msgstr ""
+msgstr "您无法处理这个工序。"
 
 msgid "You don't have the {processName} ability"
-msgstr ""
+msgstr "您没有 {processName} 技能。"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "您已打卡 {hoursElapsed} 小时。您是否忘记收工？"
 
 msgid "Your {processName} qualification expired on {expiredDate}."
-msgstr ""
+msgstr "您的 {processName} 资格认证已过期，过期日期：{expiredDate}。"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "您的账户尚未属于任何公司。完成 Carbon ERP 入职流程以继续。"

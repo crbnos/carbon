@@ -288,6 +288,9 @@ export const manifest = {
   country: policies({ select: authenticated }),
   currency: group("accounting"),
   currencyCode: policies({ select: authenticated }),
+  currencyRevaluationLine: company("accounting", { read: "accounting_view" }),
+  currencyRevaluationRate: company("accounting", { read: "accounting_view" }),
+  currencyRevaluationRun: company("accounting", { read: "accounting_view" }),
   customer: policies({
     select: or(
       inCompany("companyId", "sales_view"),

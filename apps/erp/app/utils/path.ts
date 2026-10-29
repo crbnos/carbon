@@ -65,6 +65,8 @@ export const path = {
     accountingJournals: `${x}/accounting/journals`,
     accountingPeriodClose: (id: string) =>
       generatePath(`${x}/accounting/periods/${id}/close`),
+    accountingPeriodCloseCta: (id: string) =>
+      generatePath(`${x}/accounting/periods/${id}/close/cta`),
     accountingPeriodDelete: (id: string) =>
       generatePath(`${x}/accounting/periods/${id}/delete`),
     accountingPeriods: `${x}/accounting/periods`,
@@ -686,6 +688,13 @@ export const path = {
       generatePath(`${x}/accounting/cost-centers/${id}`),
     costCenters: `${x}/accounting/cost-centers`,
     creditMemos: `${x}/invoicing/credit-memos`,
+    currencyRevaluationRun: (id: string) =>
+      generatePath(`${x}/currency-revaluation-run/${id}`),
+    currencyRevaluationRunBalance: (id: string) =>
+      generatePath(`${x}/currency-revaluation-run/${id}/balance`),
+    currencyRevaluationRunRate: (id: string) =>
+      generatePath(`${x}/currency-revaluation-run/${id}/rate`),
+    currencyRevaluationRuns: `${x}/accounting/currency-revaluation-runs`,
     customer: (id: string) => generatePath(`${x}/customer/${id}`),
     customerAccounting: (id: string) =>
       generatePath(`${x}/customer/${id}/accounting`),
@@ -805,6 +814,8 @@ export const path = {
       generatePath(`${x}/resources/contractors/delete/${id}`),
     deleteCostCenter: (id: string) =>
       generatePath(`${x}/accounting/cost-centers/delete/${id}`),
+    deleteCurrencyRevaluationRun: (id: string) =>
+      generatePath(`${x}/currency-revaluation-run/${id}/delete`),
     deleteCustomer: (id: string) => generatePath(`${x}/customer/${id}/delete`),
     deleteCustomerBankAccount: (customerId: string, id: string) =>
       generatePath(`${x}/customer/${customerId}/bank-accounts/delete/${id}`),
@@ -1746,6 +1757,7 @@ export const path = {
       generatePath(`${x}/contract/${id}/lines/new`),
     newContractor: `${x}/resources/contractors/new`,
     newCostCenter: `${x}/accounting/cost-centers/new`,
+    newCurrencyRevaluationRun: `${x}/accounting/currency-revaluation-runs/new`,
     newCustomer: `${x}/customer/new`,
     newCustomerAccount: `${x}/users/customers/new`,
     newCustomerBankAccount: (id: string) =>
@@ -2222,6 +2234,8 @@ export const path = {
     quoteShipment: (id: string) => generatePath(`${x}/quote/${id}/shipment`),
     quoteStatus: (id: string) => generatePath(`${x}/quote/${id}/status`),
     quotes: `${x}/sales/quotes`,
+    recalculateCurrencyRevaluationRun: (id: string) =>
+      generatePath(`${x}/currency-revaluation-run/${id}/recalculate`),
     recalculateDepreciationRun: (id: string) =>
       generatePath(`${x}/depreciation-run/${id}/recalculate`),
     recalculateRevenueRecognitionRun: (id: string) =>
@@ -2312,6 +2326,8 @@ export const path = {
       generatePath(`${x}/revenue-recognition-run/${id}`),
     revenueRecognitionRuns: `${x}/accounting/revenue-recognition-runs`,
     revenueWaterfall: `${x}/reports/revenue-waterfall`,
+    reverseCurrencyRevaluationRun: (id: string) =>
+      generatePath(`${x}/currency-revaluation-run/${id}/reverse`),
     reverseDepreciationRun: (id: string) =>
       generatePath(`${x}/depreciation-run/${id}/reverse`),
     reverseJournalEntry: (id: string) =>

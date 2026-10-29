@@ -233,7 +233,7 @@ msgid "Are you sure you want to mark this operation as done? This will end all a
 msgstr "Bu işlemi tamamlandı olarak işaretlemek istediğinizden emin misiniz? Bu, bu işlem için tüm aktif üretim olaylarını sonlandıracaktır."
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
-msgstr ""
+msgstr "Bir yöneticiden {processName} yetkinliğini profilinize eklemesini isteyin."
 
 msgid "Assembly steps"
 msgstr "Montaj adımları"
@@ -465,7 +465,7 @@ msgid "Complete passed"
 msgstr "Tamamlanan geçti"
 
 msgid "Complete the {trainingName} training to get the {processName} ability."
-msgstr ""
+msgstr "{trainingName} eğitimini tamamlayarak {processName} yetkinliğini kazanın."
 
 msgid "Completed"
 msgstr "Tamamlandı"
@@ -1949,7 +1949,7 @@ msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by 
 msgstr "Sihirli bir bağlantı yerine biyometrik veriler ile oturum açın. Geçiş anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
 
 msgid "Sign in with code"
-msgstr ""
+msgstr "Kod ile giriş yapın"
 
 msgid "Sign in with Google"
 msgstr "Google ile giriş yap"
@@ -1970,7 +1970,7 @@ msgid "Sign out instead"
 msgstr "Bunun yerine oturumu kapat"
 
 msgid "Sign-in code"
-msgstr ""
+msgstr "Giriş kodu"
 
 msgid "Signature"
 msgstr ""
@@ -2295,7 +2295,7 @@ msgid "Updated {0}"
 msgstr "{0} tarihinde güncellendi"
 
 msgid "Updated avatar"
-msgstr ""
+msgstr "Avatar güncellendi"
 
 msgid "Updated successfully"
 msgstr "Başarıyla güncellendi"
@@ -2345,7 +2345,7 @@ msgid "View or open"
 msgstr "Görüntüle veya aç"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
-msgstr ""
+msgstr "Size bir giriş bağlantısı ve 6 haneli bir kod gönderdik. Bağlantıyı takip edin veya kodu buraya girin."
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} nedir?"
@@ -2372,19 +2372,19 @@ msgid "Yes"
 msgstr "Evet"
 
 msgid "You can still start this operation."
-msgstr ""
+msgstr "Bu operasyonu yine de başlatabilirsiniz."
 
 msgid "You can't work on this operation"
-msgstr ""
+msgstr "Bu operasyon üzerinde çalışamazsınız."
 
 msgid "You don't have the {processName} ability"
-msgstr ""
+msgstr "Sizde {processName} yetkinliği yok."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed} saattir zaman kaydı yapıyorsunuz. İş bitişini yapmayı unuttunuz mu?"
 
 msgid "Your {processName} qualification expired on {expiredDate}."
-msgstr ""
+msgstr "{processName} yetkinliğinizin süresi {expiredDate} tarihinde doldu."
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Hesabınız henüz bir şirkete ait değildir. Devam etmek için Carbon ERP'de yerleşimi tamamlayın."

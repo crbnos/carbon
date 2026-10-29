@@ -122,6 +122,11 @@ export const ACCOUNT_DEFAULT_COLUMNS = [
   "variableLeaseExpenseAccount",
   "rightOfUseAmortizationExpenseAccount",
   "leaseInterestExpenseAccount",
+  "unrealizedExchangeGainAccount",
+  "unrealizedExchangeLossAccount",
+  "arRevaluationAccount",
+  "apRevaluationAccount",
+  "currencyTranslationOffsetAccount",
   "migrationClearingAccount"
 ] as const satisfies readonly (keyof AccountDefaults)[];
 

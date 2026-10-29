@@ -11,6 +11,7 @@ import type {
   getCostCenters,
   getCostCentersTree,
   getCurrencies,
+  getCurrencyRevaluationRuns,
   getDimension,
   getDimensionPivot,
   getDimensionPivotLines,
@@ -50,6 +51,10 @@ export type Chart = Account & Transaction;
 // (undistributed current earnings rolled into equity — never a posted account).
 // Shared so the report tree can recognize and order/decorate the row.
 export const NET_INCOME_ACCOUNT_ID = "net-income";
+
+// Synthetic id for the "Unposted translation adjustment" equity line: the part
+// of the report's CTA no CTA journal has posted yet (never a posted account).
+export const UNPOSTED_CTA_ACCOUNT_ID = "unposted-cta";
 
 export type CostCenter = NonNullable<
   Awaited<ReturnType<typeof getCostCenters>>["data"]
@@ -557,6 +562,10 @@ export type DepreciationRun = NonNullable<
 
 export type DepreciationRunListItem = NonNullable<
   NonNullable<Awaited<ReturnType<typeof getDepreciationRuns>>>["data"]
+>[number];
+
+export type CurrencyRevaluationRunListItem = NonNullable<
+  NonNullable<Awaited<ReturnType<typeof getCurrencyRevaluationRuns>>>["data"]
 >[number];
 
 export type DepreciationRunLineItem = NonNullable<

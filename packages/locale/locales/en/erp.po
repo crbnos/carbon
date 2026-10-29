@@ -366,6 +366,10 @@ msgstr "{0} of {maxSlots} provider slots used"
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr "{0} open foreign-currency items · {amount}"
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} operations · {totalQuantity} parts"
@@ -985,6 +989,9 @@ msgstr "1 job created"
 
 msgid "1 line"
 msgstr "1 line"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr "1 open foreign-currency item · {amount}"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 part skipped — it already has an open job"
@@ -1821,8 +1828,14 @@ msgstr "Account {accountNumber} is not an active posting account."
 msgid "Account & Details"
 msgstr "Account & Details"
 
+msgid "Account Balance"
+msgstr "Account Balance"
+
 msgid "Account balances with debits and credits"
 msgstr "Account balances with debits and credits"
+
+msgid "Account Currency"
+msgstr "Account Currency"
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Account for advance payments made before goods or services are received"
@@ -2720,6 +2733,9 @@ msgstr "Already non-nettable through its parent {sourceName}"
 msgid "Already non-nettable through its storage type {sourceName}"
 msgstr "Already non-nettable through its storage type {sourceName}"
 
+msgid "Already posted"
+msgstr "Already posted"
+
 msgid "also at {otherStationNames}"
 msgstr "also at {otherStationNames}"
 
@@ -3066,6 +3082,9 @@ msgstr "AP Outstanding"
 msgid "AP Overdue"
 msgstr "AP Overdue"
 
+msgid "AP Revaluation Adjustment"
+msgstr "AP Revaluation Adjustment"
+
 msgid "API Docs"
 msgstr "API Docs"
 
@@ -3256,6 +3275,9 @@ msgstr "AR Outstanding"
 
 msgid "AR Overdue"
 msgstr "AR Overdue"
+
+msgid "AR Revaluation Adjustment"
+msgstr "AR Revaluation Adjustment"
 
 msgid "AR/AP"
 msgstr "AR/AP"
@@ -3837,6 +3859,9 @@ msgstr "Asks depreciation what a new run for this period would depreciate now, a
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 
@@ -3869,6 +3894,9 @@ msgstr "Asset Account"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Asset account for advance payments made to suppliers before goods or services are received"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
 
 msgid "Asset Acquisition Cost"
 msgstr "Asset Acquisition Cost"
@@ -4565,6 +4593,9 @@ msgstr "Book a call with Carbon"
 msgid "Book Depreciation"
 msgstr "Book Depreciation"
 
+msgid "Booked"
+msgstr "Booked"
+
 msgid "Books lock date (manual)"
 msgstr "Books lock date (manual)"
 
@@ -5233,6 +5264,9 @@ msgstr "Check operations on the left to build the batch."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "Check these accounts' consolidation rate"
 
 msgid "Check your email"
 msgstr "Check your email"
@@ -5942,6 +5976,12 @@ msgstr "Console Operator"
 
 msgid "Console Operator Created"
 msgstr "Console Operator Created"
+
+msgid "Consolidated CTA"
+msgstr "Consolidated CTA"
+
+msgid "Consolidation Rate"
+msgstr "Consolidation Rate"
 
 msgid "Construction in Progress"
 msgstr "Construction in Progress"
@@ -7016,11 +7056,23 @@ msgstr "Currency code"
 msgid "Currency display updated"
 msgstr "Currency display updated"
 
+msgid "Currency Revaluation"
+msgstr "Currency Revaluation"
+
+msgid "Currency Revaluation Run"
+msgstr "Currency Revaluation Run"
+
 msgid "Currency Translation"
 msgstr "Currency Translation"
 
 msgid "Currency Translation (default)"
 msgstr "Currency Translation (default)"
+
+msgid "Currency Translation Adjustment"
+msgstr "Currency Translation Adjustment"
+
+msgid "Currency Translation Offset"
+msgstr "Currency Translation Offset"
 
 msgid "current"
 msgstr "current"
@@ -9632,8 +9684,14 @@ msgstr "Enter the quantity this movement should have been. An opposite movement 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 
+msgid "Entered"
+msgstr "Entered"
+
 msgid "Entered At Receipt"
 msgstr "Entered At Receipt"
+
+msgid "Entered By"
+msgstr "Entered By"
 
 msgid "Enterprise"
 msgstr "Enterprise"
@@ -9691,6 +9749,9 @@ msgstr "Equity account for accumulated profits or losses"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Equity account for currency translation adjustments (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Equity account that offsets the opening balances when accounting is set up. It must total zero."
@@ -9848,6 +9909,9 @@ msgstr "Every change to an active lease, with the amounts before and after."
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "Every check must pass before accounting can be enabled."
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr "Every company in the group uses this company's currency, so there is no translation adjustment."
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
@@ -10054,6 +10118,9 @@ msgstr "Expense account for equipment and facility maintenance"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "Expense account for non-inventory purchases (services, supplies)"
 
@@ -10149,6 +10216,9 @@ msgstr "Export your chart from your current system as a CSV, one row per account
 
 msgid "Exported the first {exportedCount} rows."
 msgstr "Exported the first {exportedCount} rows."
+
+msgid "Exposure"
+msgstr "Exposure"
 
 msgid "Extended Price"
 msgstr "Extended Price"
@@ -11072,6 +11142,9 @@ msgstr "Gain on Lease Termination"
 msgid "Gain/Loss"
 msgstr "Gain/Loss"
 
+msgid "Gains"
+msgstr "Gains"
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Gains recognized on disposal of fixed assets"
 
@@ -11330,6 +11403,9 @@ msgstr "Go live right the first time — with our team alongside you"
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "Go to {0}"
+
+msgid "Go to currency revaluation runs"
+msgstr "Go to currency revaluation runs"
 
 msgid "Go to depreciation runs"
 msgstr "Go to depreciation runs"
@@ -12879,6 +12955,12 @@ msgstr "Journal Entry"
 msgid "Journal Entry · {asset}"
 msgstr "Journal Entry · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr "Journal Entry · Reversal"
+
+msgid "Journal Entry · Valuation"
+msgstr "Journal Entry · Valuation"
+
 msgid "Journal lines"
 msgstr "Journal lines"
 
@@ -13311,6 +13393,9 @@ msgstr "Liability account for sales tax collected from customers"
 msgid "Liability account for tax paid on purchases"
 msgstr "Liability account for tax paid on purchases"
 
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 
@@ -13633,6 +13718,9 @@ msgstr "Loss on Disposal Account"
 
 msgid "Loss on Lease Termination"
 msgstr "Loss on Lease Termination"
+
+msgid "Losses"
+msgstr "Losses"
 
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Losses recognized on disposal of fixed assets"
@@ -13983,6 +14071,9 @@ msgstr "Mark Short"
 
 msgid "Mark to delete"
 msgstr "Mark to delete"
+
+msgid "Market"
+msgstr "Market"
 
 msgid "Market rate"
 msgstr "Market rate"
@@ -16096,6 +16187,9 @@ msgstr "Not Required"
 msgid "Not restorable"
 msgstr "Not restorable"
 
+msgid "Not revalued"
+msgstr "Not revalued"
+
 msgid "Not scheduled"
 msgstr "Not scheduled"
 
@@ -16186,6 +16280,9 @@ msgstr "Nothing to post for this period."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nothing to recognize yet. Revenue follows what the invoices bill."
+
+msgid "Nothing to revalue for this period."
+msgstr "Nothing to revalue for this period."
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nothing yet. A step only offers values once it is configured."
@@ -16353,6 +16450,9 @@ msgstr "On Sales Order"
 
 msgid "On Storage Unit"
 msgstr "On Storage Unit"
+
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
 
 msgid "On this operation"
 msgstr "On this operation"
@@ -16538,6 +16638,9 @@ msgstr "Open Account Mapping"
 
 msgid "Open Actions"
 msgstr "Open Actions"
+
+msgid "Open Amount"
+msgstr "Open Amount"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Open an NCR for MRB disposition"
@@ -16941,6 +17044,9 @@ msgstr "Other Income"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "Other Income account for supplier balances cleared without full payment on AP settlement"
 
@@ -17297,6 +17403,9 @@ msgstr "Pay"
 
 msgid "Pay expense"
 msgstr "Pay expense"
+
+msgid "Payable"
+msgstr "Payable"
 
 msgid "Payables"
 msgstr "Payables"
@@ -17841,6 +17950,9 @@ msgstr "Post and send via Stripe"
 msgid "Post Comment"
 msgstr "Post Comment"
 
+msgid "Post CTA"
+msgstr "Post CTA"
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "Post draft run {0}"
@@ -17901,6 +18013,9 @@ msgstr "Posting date"
 
 msgid "Posting Date"
 msgstr "Posting Date"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr "Posts the change in the consolidated CTA to equity on the elimination company."
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
@@ -17973,6 +18088,9 @@ msgstr "Preventive maintenance schedules for your equipment"
 
 msgid "Preview"
 msgstr "Preview"
+
+msgid "Preview CTA"
+msgstr "Preview CTA"
 
 msgid "Preview failed: {error}"
 msgstr "Preview failed: {error}"
@@ -19095,6 +19213,9 @@ msgstr "Receipts"
 
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
+
+msgid "Receivable"
+msgstr "Receivable"
 
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
@@ -20227,6 +20348,15 @@ msgstr "Rev {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "Rev {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr "Revaluation Lines"
+
+msgid "Revalue these companies first"
+msgstr "Revalue these companies first"
+
+msgid "Revalued"
+msgstr "Revalued"
 
 msgid "Reveal"
 msgstr "Reveal"
@@ -22624,6 +22754,12 @@ msgstr "State / Province"
 msgid "State province"
 msgstr "State province"
 
+msgid "Statement Balance"
+msgstr "Statement Balance"
+
+msgid "Statement Balances"
+msgstr "Statement Balances"
+
 msgid "Station"
 msgstr "Station"
 
@@ -24930,6 +25066,9 @@ msgstr "Thereafter"
 msgid "These accounts need a replacement"
 msgstr "These accounts need a replacement"
 
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "These custom fields will only be available for entities with the same tags"
 
@@ -24974,6 +25113,9 @@ msgstr "These units are treated as sales. Activating derecognizes each one and p
 
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
+
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
 
 msgid "this ability"
 msgstr "this ability"
@@ -25256,6 +25398,9 @@ msgstr "This revision is released (Production). Changes should normally flow thr
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "This revision is released (Production). Open a change notice to modify it."
 
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 
@@ -25328,6 +25473,10 @@ msgid "This week"
 msgstr "This week"
 
 #. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft currency revaluation run for the period ending {0}. Every open foreign-currency item will be revalued at the exchange rate on that date."
+msgstr "This will create a draft currency revaluation run for the period ending {0}. Every open foreign-currency item will be revalued at the exchange rate on that date."
+
+#. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
 msgstr "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
 
@@ -25373,6 +25522,11 @@ msgstr "This will rebuild {0} from its schedule as it is now: every schedule row
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 
@@ -25395,6 +25549,7 @@ msgstr "This will replace all method materials of other revisions with this revi
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "This will replace all method materials of other sizes with this size."
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
@@ -25538,6 +25693,9 @@ msgstr "To next week"
 
 msgid "To pick"
 msgstr "To pick"
+
+msgid "To post"
+msgstr "To post"
 
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
@@ -25699,6 +25857,9 @@ msgstr "Total Estimated Cost"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 
+msgid "Total gains"
+msgstr "Total gains"
+
 msgid "Total Hours"
 msgstr "Total Hours"
 
@@ -25707,6 +25868,9 @@ msgstr "Total Indirect Cost"
 
 msgid "Total lease cost"
 msgstr "Total lease cost"
+
+msgid "Total losses"
+msgstr "Total losses"
 
 msgid "Total Material Cost"
 msgstr "Total Material Cost"
@@ -26060,6 +26224,12 @@ msgstr "Unapplied"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 
+msgid "Unapplied Disbursement"
+msgstr "Unapplied Disbursement"
+
+msgid "Unapplied Receipt"
+msgstr "Unapplied Receipt"
+
 msgid "Unapproved Supplier"
 msgstr "Unapproved Supplier"
 
@@ -26113,6 +26283,13 @@ msgstr "Undiscounted payments still to come, by fiscal year, less the interest t
 
 msgid "Undo"
 msgstr "Undo"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr "Undo {0}"
+
+msgid "Undo Run"
+msgstr "Undo Run"
 
 msgid "Unfurl Links"
 msgstr "Unfurl Links"
@@ -26274,6 +26451,12 @@ msgstr "Unpublish"
 
 msgid "Unpublish {name}?"
 msgstr "Unpublish {name}?"
+
+msgid "Unrealized Exchange Gain"
+msgstr "Unrealized Exchange Gain"
+
+msgid "Unrealized Exchange Loss"
+msgstr "Unrealized Exchange Loss"
 
 msgid "Unreceived POs"
 msgstr "Unreceived POs"

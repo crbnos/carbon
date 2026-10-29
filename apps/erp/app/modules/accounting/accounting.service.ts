@@ -68,6 +68,7 @@ import type {
   KyselyDatabase,
   KyselyTx
 } from "@carbon/database/client";
+import { withTransaction } from "@carbon/database/client";
 import {
   addMovement,
   applyContractMovement,
@@ -80,6 +81,13 @@ import {
   type ReliefEvent,
   replayReliefs
 } from "@carbon/database/cost-relief";
+import {
+  buildCurrencyRevaluationJournals,
+  type ExposureType,
+  type RevaluationExposure,
+  type RevaluedLine,
+  revalueExposure
+} from "@carbon/database/currency-revaluation";
 import { fetchAll } from "@carbon/database/fetch-all";
 import {
   type AutomaticJournalStatus,
@@ -177,12 +185,14 @@ import {
   MONTH_NUMBER,
   parseIsoDate,
   REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
+  remainingFundingSources,
   round,
   type SalesPostingAccount,
   searchFilter,
   toBaseAmount,
   toDisplayCredit,
   toDisplayDebit,
+  toDocumentAmount,
   toStoredAmount,
   unchecked
 } from "@carbon/utils";
@@ -296,6 +306,7 @@ import {
   acquisitionLines,
   activationCutoverDates,
   buildDepreciationLines,
+  ctaMovement,
   type DepreciationLine,
   depreciationFloor,
   depreciationRunLinesMatch,
@@ -329,7 +340,7 @@ import type {
   Transaction,
   TranslatedBalance
 } from "./types";
-import { NET_INCOME_ACCOUNT_ID } from "./types";
+import { NET_INCOME_ACCOUNT_ID, UNPOSTED_CTA_ACCOUNT_ID } from "./types";
 
 /**
  * Sign multiplier for root account aggregation.
@@ -1121,6 +1132,8 @@ export async function applyCtaToReportPeriodSeries(
   args: {
     accounts: ChartPeriodSeries[];
     bucketKeys: string[];
+    /** Each bucket's last day: the posted CTA is read as of it. */
+    bucketEnds: Record<string, string>;
     ctaByBucket: Record<string, number>;
   }
 ): Promise<{
@@ -1142,19 +1155,106 @@ export async function applyCtaToReportPeriodSeries(
       }
     };
   }
-  return applyReportCta({ ...args, companyGroupId, ctaAccountId: accountId });
+  const ctaJournalBalances = await readCtaJournalBalances(client, {
+    companyGroupId,
+    rootCompanyId: reportingCompanyId,
+    bucketEnds: args.bucketEnds
+  });
+  if (ctaJournalBalances.error) {
+    return { data: null, error: ctaJournalBalances.error };
+  }
+  return applyReportCta({
+    accounts: args.accounts,
+    bucketKeys: args.bucketKeys,
+    ctaByBucket: args.ctaByBucket,
+    companyGroupId,
+    ctaAccountId: accountId,
+    ctaJournalBalances: ctaJournalBalances.data
+  });
+}
+
+/**
+ * What the root's Posted `Currency Translation` journals (on its elimination
+ * entity) put on each account, as of each bucket's last day. The same journals
+ * `readPostedCta` reads for the CTA preview.
+ */
+async function readCtaJournalBalances(
+  client: SupabaseClient<Database>,
+  args: {
+    companyGroupId: string;
+    rootCompanyId: string;
+    bucketEnds: Record<string, string>;
+  }
+): Promise<
+  | { data: Record<string, Record<string, number>>; error: null }
+  | { data: null; error: { message: string } }
+> {
+  const elimination = await client
+    .from("company")
+    .select("id")
+    .eq("companyGroupId", args.companyGroupId)
+    .eq("parentCompanyId", args.rootCompanyId)
+    .eq("isEliminationEntity", true)
+    .maybeSingle();
+  if (elimination.error) return { data: null, error: elimination.error };
+  const ends = Object.values(args.bucketEnds).sort();
+  const latest = ends[ends.length - 1];
+  const eliminationId = elimination.data?.id;
+  if (!eliminationId || !latest) return { data: {}, error: null };
+
+  const lines = await fetchAllRecords(() =>
+    client
+      .from("journalLine")
+      .select(
+        "id, accountId, amount, journal!inner(postingDate, status, sourceType)"
+      )
+      .eq("companyId", eliminationId)
+      .eq("journal.sourceType", "Currency Translation")
+      .eq("journal.status", "Posted")
+      .lte("journal.postingDate", latest)
+      .order("id")
+  );
+  if (lines.error || !lines.data) {
+    return {
+      data: null,
+      error: lines.error ?? { message: "Failed to load the posted CTA" }
+    };
+  }
+
+  const balances: Record<string, Record<string, number>> = {};
+  for (const [key, end] of Object.entries(args.bucketEnds)) {
+    const byAccount: Record<string, number> = {};
+    for (const line of lines.data) {
+      if (!line.accountId || line.journal.postingDate > end) continue;
+      byAccount[line.accountId] =
+        (byAccount[line.accountId] ?? 0) + Number(line.amount);
+    }
+    balances[key] = byAccount;
+  }
+  return { data: balances, error: null };
 }
 
 /** Add each bucket's report CTA to the configured Equity account, fill the
  *  synthetic net income from the translated income statement when the
  *  translation left it empty, then roll the translated values up. Returns a
- *  new chart; the input is never mutated. */
+ *  new chart; the input is never mutated.
+ *
+ *  When the root has posted CTA journals, `ctaJournalBalances` holds what
+ *  they put on each account by bucket. The CTA account already carries the
+ *  posted CTA, so only the unposted rest (report CTA − posted CTA) is shown,
+ *  on a synthetic "Unposted translation adjustment" line beside the CTA
+ *  account. The CTA journals' amounts are taken off every other account they
+ *  posted to (the offset account), so equity counts the CTA once; such a row
+ *  is removed when nothing else is left on it. */
 export function applyReportCta(args: {
   accounts: ChartPeriodSeries[];
   bucketKeys: string[];
   ctaByBucket: Record<string, number>;
   companyGroupId: string;
   ctaAccountId: string;
+  /** Bucket key → account id → natural-signed amount posted by the root's
+   *  Posted CTA journals up to the bucket's end. */
+  ctaJournalBalances: Record<string, Record<string, number>>;
 }): {
   data: ChartPeriodSeries[] | null;
   error: { message: string } | null;
@@ -1187,13 +1287,27 @@ export function applyReportCta(args: {
     };
   }
 
-  const accounts = args.accounts.map((account) => ({
+  const hasPostedCta = args.bucketKeys.some((key) =>
+    Object.values(args.ctaJournalBalances[key] ?? {}).some(
+      (amount) => amount !== 0
+    )
+  );
+  const offsetAccountIds = new Set(
+    args.bucketKeys.flatMap((key) =>
+      Object.keys(args.ctaJournalBalances[key] ?? {}).filter(
+        (id) => id !== accountId
+      )
+    )
+  );
+
+  let accounts = args.accounts.map((account) => ({
     ...account,
     periods: Object.fromEntries(
       Object.entries(account.periods).map(([key, cell]) => [key, { ...cell }])
     )
   }));
   const translatedCta = accounts.find((account) => account.id === accountId)!;
+  const residuals: Record<string, number> = {};
   const netIncome = accounts.find(
     (account) => account.id === NET_INCOME_ACCOUNT_ID
   );
@@ -1215,10 +1329,27 @@ export function applyReportCta(args: {
         }
       };
     }
-    translatedCta.periods[key] = {
-      ...cell,
-      translatedBalance: round(cell.translatedBalance + cta)
-    };
+    if (hasPostedCta) {
+      const postedCta = args.ctaJournalBalances[key]?.[accountId] ?? 0;
+      residuals[key] = round(cta - postedCta);
+      for (const offset of accounts) {
+        if (!offsetAccountIds.has(offset.id)) continue;
+        const offsetCell = offset.periods[key];
+        if (!offsetCell) continue;
+        offset.periods[key] = {
+          ...offsetCell,
+          translatedBalance: round(
+            (offsetCell.translatedBalance ?? 0) -
+              (args.ctaJournalBalances[key]?.[offset.id] ?? 0)
+          )
+        };
+      }
+    } else {
+      translatedCta.periods[key] = {
+        ...cell,
+        translatedBalance: round(cell.translatedBalance + cta)
+      };
+    }
 
     // Single-company translation deliberately excludes the synthetic income
     // leaf. Derive its translated values from the full income statement before
@@ -1245,6 +1376,37 @@ export function applyReportCta(args: {
         translatedBalance: round(translatedBalance),
         translatedNetChange: round(translatedNetChange)
       };
+    }
+  }
+
+  if (hasPostedCta) {
+    accounts = accounts.filter(
+      (account) =>
+        !offsetAccountIds.has(account.id) ||
+        args.bucketKeys.some(
+          (key) => (account.periods[key]?.translatedBalance ?? 0) !== 0
+        )
+    );
+    if (args.bucketKeys.some((key) => residuals[key] !== 0)) {
+      const index = accounts.findIndex((account) => account.id === accountId);
+      accounts.splice(index + 1, 0, {
+        ...translatedCta,
+        id: UNPOSTED_CTA_ACCOUNT_ID,
+        number: null,
+        name: "Unposted translation adjustment",
+        isSystem: false,
+        periods: Object.fromEntries(
+          args.bucketKeys.map((key) => [
+            key,
+            {
+              netChange: 0,
+              balanceAtDate: 0,
+              translatedBalance: residuals[key] ?? 0,
+              translatedNetChange: 0
+            }
+          ])
+        )
+      });
     }
   }
 
@@ -3565,6 +3727,10 @@ export type PeriodReadinessCheck = {
   due?: RunPreview;
   /** Run checks only: the Draft runs the check is waiting on. */
   draftRuns?: { id: string; readableId: string; periodEnd: string }[];
+  /** False when the task does not apply to this company and period (no
+   *  foreign-currency items to revalue; not the root of a multi-currency
+   *  group). The checklist then hides the task. Absent means it applies. */
+  applicable?: boolean;
 };
 
 // An operational document (receipt, shipment, invoice) that has not posted to
@@ -3728,6 +3894,9 @@ export type RunPreview = {
   count: number;
   amount: number;
   error: string | null;
+  /** False when a run of this kind does not apply to the company at all.
+   *  Absent means it applies. */
+  applicable?: boolean;
 };
 
 /**
@@ -3739,6 +3908,8 @@ export type PeriodRunPreview = {
   revenue: RunPreview;
   lease: RunPreview;
   depreciation: RunPreview;
+  currencyRevaluation: RunPreview;
+  currencyTranslation: RunPreview;
 };
 
 export type PeriodRunPreviewer = (
@@ -3801,10 +3972,20 @@ export async function getPeriodRunPreview(
           error: previewError(error, fallback)
         })
       );
-  const [revenue, lease, depreciation] = await Promise.all([
+  const [
+    revenue,
+    lease,
+    depreciation,
+    currencyRevaluation,
+    currencyTranslation
+  ] = await Promise.all([
     previewRun("Revenue Recognition", "Failed to preview revenue recognition"),
     previewRun("Lease", "Failed to preview the lease run"),
-    buildDepreciationRunLines(client, { companyId, companyGroupId, periodEnd })
+    buildDepreciationRunLines(client, {
+      companyId,
+      companyGroupId,
+      periodEnd
+    })
       .then((result): RunPreview => {
         if (!result.data) {
           return {
@@ -3832,9 +4013,86 @@ export async function getPeriodRunPreview(
           amount: 0,
           error: previewError(error, "Failed to calculate depreciation")
         })
-      )
+      ),
+    previewCurrencyRevaluation(db, { companyId, periodEnd }).catch(
+      (error): RunPreview => ({
+        count: 0,
+        amount: 0,
+        error: previewError(error, "Failed to preview currency revaluation")
+      })
+    ),
+    previewCurrencyTranslationMovement(db, {
+      companyId,
+      companyGroupId,
+      periodEnd
+    }).catch(
+      (error): RunPreview => ({
+        count: 0,
+        amount: 0,
+        error: previewError(
+          error,
+          "Failed to preview the currency translation adjustment"
+        )
+      })
+    )
   ]);
-  return { revenue, lease, depreciation };
+  return {
+    revenue,
+    lease,
+    depreciation,
+    currencyRevaluation,
+    currencyTranslation
+  };
+}
+
+/**
+ * The CTA movement a posting for `periodEnd` would write, for the close
+ * checklist: one item while the root company's posted CTA differs from the
+ * consolidated CTA. Nothing for a company that is not the group's root, or a
+ * group with one currency.
+ */
+async function previewCurrencyTranslationMovement(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; companyGroupId: string; periodEnd: string }
+): Promise<RunPreview> {
+  const { companyId, companyGroupId, periodEnd } = args;
+  const nothing: RunPreview = { count: 0, amount: 0, error: null };
+  const company = await db
+    .selectFrom("company")
+    .select("parentCompanyId")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  const notApplicable: RunPreview = { ...nothing, applicable: false };
+  if (!company || company.parentCompanyId !== null) return notApplicable;
+
+  const period = await db
+    .selectFrom("accountingPeriod")
+    .select([sql<string>`"startDate"::text`.as("startDate"), "fiscalYear"])
+    .where("companyId", "=", companyId)
+    .where("endDate", "=", periodEnd)
+    .executeTakeFirst();
+  const preview = await computeCurrencyTranslationPreview({
+    client: getCarbonServiceRole(),
+    db,
+    companyId,
+    companyGroupId,
+    startDate:
+      period?.startDate ?? startOfMonth(parseDate(periodEnd)).toString(),
+    periodEnd,
+    fiscalYear: period?.fiscalYear ?? null
+  });
+  if (preview.error) {
+    return preview.error.category === "forbidden"
+      ? notApplicable
+      : { count: 0, amount: 0, error: preview.error.message };
+  }
+  if (!preview.data.applicable) return notApplicable;
+  if (preview.data.movement === 0) return nothing;
+  return {
+    count: 1,
+    amount: round(Math.abs(preview.data.movement)),
+    error: null
+  };
 }
 
 /** The previewer the close checklist uses outside tests. */
@@ -3877,8 +4135,19 @@ export function periodRunChecks(args: {
       | null;
     error: unknown;
   };
+  draftCurrencyRevaluationRuns: {
+    data:
+      | { id: string; currencyRevaluationRunId: string; periodEnd: string }[]
+      | null;
+    error: unknown;
+  };
 }): PeriodReadinessCheck[] {
-  const { runPreview, heldRunRows, draftDepreciationRuns } = args;
+  const {
+    runPreview,
+    heldRunRows,
+    draftDepreciationRuns,
+    draftCurrencyRevaluationRuns
+  } = args;
 
   const heldByType = (type: RunType) => {
     const draftRuns = new Map<
@@ -3918,6 +4187,11 @@ export function periodRunChecks(args: {
     runPreview.depreciation.count +
     (draftDepreciationRuns.error ? 1 : depreciationDraftRuns.length);
 
+  const revaluationDraftRuns = draftCurrencyRevaluationRuns.data ?? [];
+  const revaluationCount =
+    runPreview.currencyRevaluation.count +
+    (draftCurrencyRevaluationRuns.error ? 1 : revaluationDraftRuns.length);
+
   return [
     {
       autoCheckKey: "draft-depreciation",
@@ -3933,6 +4207,39 @@ export function periodRunChecks(args: {
         readableId: run.depreciationRunId,
         periodEnd: run.periodEnd
       }))
+    },
+    {
+      autoCheckKey: "fx-revaluation",
+      severity: "Warning",
+      label:
+        "Open foreign-currency balances a revaluation run would revalue at this period end, and Draft revaluation runs ending in it",
+      failing:
+        revaluationCount > 0 || runPreview.currencyRevaluation.error !== null,
+      applicable:
+        runPreview.currencyRevaluation.applicable !== false ||
+        revaluationCount > 0,
+      count: revaluationCount,
+      amount: runPreview.currencyRevaluation.amount,
+      due: runPreview.currencyRevaluation,
+      draftRuns: revaluationDraftRuns.map((run) => ({
+        id: run.id,
+        readableId: run.currencyRevaluationRunId,
+        periodEnd: run.periodEnd
+      }))
+    },
+    {
+      autoCheckKey: "cta-posted",
+      severity: "Warning",
+      label:
+        "The consolidated currency translation adjustment not yet posted on the elimination entity for this period (root company only)",
+      failing:
+        runPreview.currencyTranslation.count > 0 ||
+        runPreview.currencyTranslation.error !== null,
+      applicable: runPreview.currencyTranslation.applicable !== false,
+      count: runPreview.currencyTranslation.count,
+      amount: runPreview.currencyTranslation.amount,
+      due: runPreview.currencyTranslation,
+      draftRuns: []
     },
     {
       autoCheckKey: "unposted-revenue-schedules",
@@ -3987,6 +4294,7 @@ export async function computePeriodReadiness(
     draftJournals,
     journalsInPeriod,
     draftDepreciationRuns,
+    draftCurrencyRevaluationRuns,
     unmatchedIC,
     pendingReceipts,
     pendingShipments,
@@ -4022,6 +4330,16 @@ export async function computePeriodReadiness(
       .gte("periodEnd", startDate)
       .lte("periodEnd", endDate)
       .order("depreciationRunId"),
+    // A Draft revaluation run ending in the period: its preview counts zero
+    // while the Draft waits, so the Draft itself fails the check.
+    client
+      .from("currencyRevaluationRun")
+      .select("id, currencyRevaluationRunId, periodEnd")
+      .eq("companyId", companyId)
+      .eq("status", "Draft")
+      .gte("periodEnd", startDate)
+      .lte("periodEnd", endDate)
+      .order("currencyRevaluationRunId"),
     client
       .from("intercompanyTransaction")
       .select("id", { count: "exact", head: true })
@@ -4113,7 +4431,8 @@ export async function computePeriodReadiness(
   const runChecks = periodRunChecks({
     runPreview,
     heldRunRows,
-    draftDepreciationRuns
+    draftDepreciationRuns,
+    draftCurrencyRevaluationRuns
   });
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
@@ -4357,38 +4676,53 @@ export function evaluateCloseChecklist(
 } {
   const checkByKey = new Map(checks.map((c) => [c.autoCheckKey, c]));
 
-  const views: PeriodCloseTaskView[] = tasks.map((task) => {
-    if (task.taskType === "Auto" && task.autoCheckKey) {
-      // An Auto task whose autoCheckKey has no registered evaluator cannot be
-      // verified, so it fails closed instead of silently passing: synthesize a
-      // failing check (inheriting the task's declared severity, defaulting to
-      // Blocker) so the close is gated and the reason is visible rather than a
-      // quiet Done. Every seeded key has an evaluator; this guards future
-      // custom Auto tasks added without one.
-      const autoCheck: PeriodReadinessCheck = checkByKey.get(
-        task.autoCheckKey
-      ) ?? {
-        autoCheckKey: task.autoCheckKey,
-        severity: task.severity ?? "Blocker",
-        label: `No automated check is implemented for "${task.autoCheckKey}"`,
-        failing: true,
-        count: 0
-      };
-      const effectiveStatus =
-        task.status === "Skipped"
-          ? "Skipped"
-          : autoCheck.failing
-            ? "Open"
-            : "Done";
-      return { ...task, autoCheck, effectiveStatus };
-    }
-    if (task.taskType === "Action" && task.name === LOCK_PERIOD_TASK_NAME) {
-      const effectiveStatus =
-        closeStatus === "Locked" || closeStatus === "Closed" ? "Done" : "Open";
-      return { ...task, autoCheck: null, effectiveStatus };
-    }
-    return { ...task, autoCheck: null, effectiveStatus: task.status };
-  });
+  // A task whose check says it does not apply here (a company with nothing in
+  // a foreign currency has no revaluation to do) is not shown and never gates
+  // the close; its stored state is flushed to Done.
+  const notApplicable = tasks.filter(
+    (task) =>
+      task.taskType === "Auto" &&
+      !!task.autoCheckKey &&
+      checkByKey.get(task.autoCheckKey)?.applicable === false
+  );
+  const hidden = new Set(notApplicable.map((task) => task.id));
+
+  const views: PeriodCloseTaskView[] = tasks
+    .filter((task) => !hidden.has(task.id))
+    .map((task) => {
+      if (task.taskType === "Auto" && task.autoCheckKey) {
+        // An Auto task whose autoCheckKey has no registered evaluator cannot be
+        // verified, so it fails closed instead of silently passing: synthesize a
+        // failing check (inheriting the task's declared severity, defaulting to
+        // Blocker) so the close is gated and the reason is visible rather than a
+        // quiet Done. Every seeded key has an evaluator; this guards future
+        // custom Auto tasks added without one.
+        const autoCheck: PeriodReadinessCheck = checkByKey.get(
+          task.autoCheckKey
+        ) ?? {
+          autoCheckKey: task.autoCheckKey,
+          severity: task.severity ?? "Blocker",
+          label: `No automated check is implemented for "${task.autoCheckKey}"`,
+          failing: true,
+          count: 0
+        };
+        const effectiveStatus =
+          task.status === "Skipped"
+            ? "Skipped"
+            : autoCheck.failing
+              ? "Open"
+              : "Done";
+        return { ...task, autoCheck, effectiveStatus };
+      }
+      if (task.taskType === "Action" && task.name === LOCK_PERIOD_TASK_NAME) {
+        const effectiveStatus =
+          closeStatus === "Locked" || closeStatus === "Closed"
+            ? "Done"
+            : "Open";
+        return { ...task, autoCheck: null, effectiveStatus };
+      }
+      return { ...task, autoCheck: null, effectiveStatus: task.status };
+    });
 
   const failingBlocker = views.find(
     (v) =>
@@ -4409,9 +4743,14 @@ export function evaluateCloseChecklist(
 
   // Auto tasks whose derived state differs from what is persisted get flushed
   // to the DB at close time (acceptance criterion 10).
-  const autoTaskStates = views
-    .filter((v) => v.taskType === "Auto" && v.status !== v.effectiveStatus)
-    .map((v) => ({ id: v.id, status: v.effectiveStatus }));
+  const autoTaskStates = [
+    ...views
+      .filter((v) => v.taskType === "Auto" && v.status !== v.effectiveStatus)
+      .map((v) => ({ id: v.id, status: v.effectiveStatus })),
+    ...notApplicable
+      .filter((task) => task.status !== "Done" && task.status !== "Skipped")
+      .map((task) => ({ id: task.id, status: "Done" as const }))
+  ];
 
   return { tasks: views, canClose, blockingReason, autoTaskStates };
 }
@@ -6308,7 +6647,8 @@ export type JournalSourceDocument = {
     | "memo"
     | "depreciationRun"
     | "revenueRecognitionRun"
-    | "leaseRun";
+    | "leaseRun"
+    | "currencyRevaluationRun";
   id: string;
   readableId: string;
 };
@@ -6715,6 +7055,22 @@ export async function getJournalEntryRelatedItems(
               readableId: runId
             }));
           })
+      : none,
+    // A revaluation run stores both journals it posts: the valuation at the
+    // period end and its next-day reversal.
+    journal.sourceType === "Currency Revaluation"
+      ? client
+          .from("currencyRevaluationRun")
+          .select("id, currencyRevaluationRunId")
+          .or(`journalId.eq.${journal.id},reversalJournalId.eq.${journal.id}`)
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "currencyRevaluationRun" as const,
+              id: r.id,
+              readableId: r.currencyRevaluationRunId
+            }))
+          )
       : none
   ];
 
@@ -12000,6 +12356,1570 @@ export async function reverseDepreciationRun(
 
     return { depreciationRunId: run.depreciationRunId };
   });
+}
+
+// -- Currency revaluation --------------------------------------------------
+// Spec: .ai/specs/2026-10-26-fx-revaluation-and-cta-posting.md
+
+/** A foreign-currency memo the subledger readers leave out because one of
+ *  its settlements predates `sourceAmount`. The run lists it, not revalues. */
+export type NotRevaluedDocument = {
+  documentType: string;
+  documentId: string;
+  documentNumber: string;
+};
+
+type OpenSubledgerRow = {
+  documentId: string;
+  documentNumber: string;
+  documentType: string;
+  currencyCode: string;
+  exchangeRate: number;
+  openInCurrency: number;
+  openInBase: number;
+};
+
+/**
+ * Every open foreign-currency monetary item of a company at `periodEnd`:
+ * open invoices and memos from the AR/AP subledger readers, and the
+ * unapplied remainder of customer receipts and supplier disbursements
+ * (deposits excluded — IFRIC 22). The as-of rule for cash matches
+ * `get_ar_tie_out`: a payment and an applying payment count when Posted on or
+ * before `periodEnd`.
+ */
+export async function readRevaluationExposures(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    periodEnd: string;
+    defaults: { arRevaluationAccount: string; apRevaluationAccount: string };
+  }
+): Promise<{
+  exposures: RevaluationExposure[];
+  notRevalued: NotRevaluedDocument[];
+}> {
+  const { companyId, periodEnd, defaults } = args;
+
+  const company = await db
+    .selectFrom("company")
+    .select(["baseCurrencyCode", "companyGroupId"])
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const base = company.baseCurrencyCode;
+
+  const [receivables, payables, currencies] = await Promise.all([
+    sql<OpenSubledgerRow>`
+      SELECT "documentId", "documentNumber", "documentType", "currencyCode",
+        "exchangeRate", "openInCurrency", "openInBase"
+      FROM get_ar_open_by_customer(${companyId}, ${periodEnd}::date)
+      WHERE "currencyCode" <> ${base}
+    `.execute(db),
+    sql<OpenSubledgerRow>`
+      SELECT "documentId", "documentNumber", "documentType", "currencyCode",
+        "exchangeRate", "openInCurrency", "openInBase"
+      FROM get_ap_open_by_supplier(${companyId}, ${periodEnd}::date)
+      WHERE "currencyCode" <> ${base}
+    `.execute(db),
+    db
+      .selectFrom("currency")
+      .select(["code", "decimalPlaces"])
+      .where("companyGroupId", "=", company.companyGroupId!)
+      .execute()
+  ]);
+  const decimals = new Map(
+    currencies.map((c) => [c.code, Number(c.decimalPlaces)])
+  );
+  const decimalsOf = (code: string) => {
+    const places = decimals.get(code);
+    if (places == null || !Number.isFinite(places)) {
+      throw new Error(`Currency ${code} requires configured decimal places`);
+    }
+    return places;
+  };
+
+  // The readers count a settlement with no sourceAmount as zero document
+  // principal, so openInCurrency is too high for an invoice that has one.
+  // Such an invoice's open document amount comes from its base balance.
+  const salesInvoiceIds = receivables.rows
+    .filter((row) => row.documentType === "Invoice")
+    .map((row) => row.documentId);
+  const purchaseInvoiceIds = payables.rows
+    .filter((row) => row.documentType === "Invoice")
+    .map((row) => row.documentId);
+  const [legacySales, legacyPurchases] = await Promise.all([
+    salesInvoiceIds.length === 0
+      ? []
+      : db
+          .selectFrom("invoiceSettlement")
+          .select("targetSalesInvoiceId as id")
+          .distinct()
+          .where("companyId", "=", companyId)
+          .where("sourceAmount", "is", null)
+          .where("targetSalesInvoiceId", "in", salesInvoiceIds)
+          .execute(),
+    purchaseInvoiceIds.length === 0
+      ? []
+      : db
+          .selectFrom("invoiceSettlement")
+          .select("targetPurchaseInvoiceId as id")
+          .distinct()
+          .where("companyId", "=", companyId)
+          .where("sourceAmount", "is", null)
+          .where("targetPurchaseInvoiceId", "in", purchaseInvoiceIds)
+          .execute()
+  ]);
+  const legacyInvoiceIds = new Set(
+    [...legacySales, ...legacyPurchases]
+      .map((row) => row.id)
+      .filter((id): id is string => id !== null)
+  );
+
+  const subledgerExposure =
+    (exposureType: "Receivable" | "Payable") =>
+    (row: OpenSubledgerRow): RevaluationExposure => {
+      const isInvoice = row.documentType === "Invoice";
+      const openAmount =
+        isInvoice && legacyInvoiceIds.has(row.documentId)
+          ? toDocumentAmount(
+              Number(row.openInBase),
+              Number(row.exchangeRate),
+              decimalsOf(row.currencyCode)
+            )
+          : Number(row.openInCurrency);
+      return {
+        exposureType,
+        documentType: isInvoice ? "Invoice" : "Memo",
+        documentId: row.documentId,
+        documentNumber: row.documentNumber,
+        accountId:
+          exposureType === "Receivable"
+            ? defaults.arRevaluationAccount
+            : defaults.apRevaluationAccount,
+        accountClass: exposureType === "Receivable" ? "Asset" : "Liability",
+        currencyCode: row.currencyCode,
+        openAmount,
+        bookedBaseAmount: Number(row.openInBase)
+      };
+    };
+
+  const exposures: RevaluationExposure[] = [
+    ...receivables.rows.map(subledgerExposure("Receivable")),
+    ...payables.rows.map(subledgerExposure("Payable"))
+  ];
+
+  // The readers drop a memo with a legacy settlement entirely; list it.
+  const notRevalued = await listRevaluationNotRevalued(db, {
+    companyId,
+    periodEnd,
+    baseCurrencyCode: base
+  });
+
+  // Unapplied cash: customer receipts (not deposits) and supplier
+  // disbursements in a foreign currency.
+  const payments = await db
+    .selectFrom("payment")
+    .select([
+      "id",
+      "paymentId",
+      "paymentType",
+      "totalAmount",
+      "exchangeRate",
+      sql<string | null>`"postingDate"::text`.as("postingDate"),
+      sql<string>`"paymentDate"::text`.as("paymentDate"),
+      "currencyCode"
+    ])
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Posted")
+    .where("postingDate", "<=", periodEnd)
+    .where("currencyCode", "<>", base)
+    .where((eb) =>
+      eb.or([
+        eb.and([
+          eb("paymentType", "=", "Receipt"),
+          eb("customerId", "is not", null),
+          eb("salesOrderId", "is", null),
+          eb("rentalAgreementId", "is", null)
+        ]),
+        eb.and([
+          eb("paymentType", "=", "Disbursement"),
+          eb("supplierId", "is not", null)
+        ])
+      ])
+    )
+    .orderBy("id")
+    .execute();
+
+  if (payments.length > 0) {
+    const paymentIds = payments.map((payment) => payment.id);
+    const consumption = await db
+      .selectFrom("invoiceSettlement as s")
+      .innerJoin("payment as applying", (join) =>
+        join
+          .onRef("applying.id", "=", "s.paymentId")
+          .onRef("applying.companyId", "=", "s.companyId")
+      )
+      .select([
+        "s.paymentId",
+        "s.sourcePaymentId",
+        "s.sourceAmount",
+        "s.appliedAmount",
+        "s.fxGainLossAmount"
+      ])
+      .where("s.companyId", "=", companyId)
+      .where("applying.status", "=", "Posted")
+      .where("applying.postingDate", "<=", periodEnd)
+      .where(
+        sql<string>`COALESCE(s."sourcePaymentId", s."paymentId")`,
+        "in",
+        paymentIds
+      )
+      .execute();
+
+    const byType = (type: "Receipt" | "Disbursement") => {
+      const typed = payments.filter((payment) => payment.paymentType === type);
+      const ids = new Set(typed.map((payment) => payment.id));
+      return remainingFundingSources(
+        typed.map((payment) => ({
+          id: payment.id,
+          totalAmount: Number(payment.totalAmount),
+          exchangeRate: Number(payment.exchangeRate),
+          postingDate: payment.postingDate,
+          paymentDate: payment.paymentDate,
+          currencyCode: payment.currencyCode
+        })),
+        consumption
+          .filter((row) => ids.has(row.sourcePaymentId ?? row.paymentId ?? ""))
+          .map((row) => ({
+            paymentId: row.paymentId,
+            sourcePaymentId: row.sourcePaymentId,
+            sourceAmount:
+              row.sourceAmount === null ? null : Number(row.sourceAmount),
+            appliedAmount: Number(row.appliedAmount),
+            fxGainLossAmount:
+              row.fxGainLossAmount === null
+                ? null
+                : Number(row.fxGainLossAmount)
+          })),
+        decimals,
+        type === "Receipt"
+      );
+    };
+
+    const paymentById = new Map(
+      payments.map((payment) => [payment.id, payment])
+    );
+    for (const [type, exposureType] of [
+      ["Receipt", "Unapplied Receipt"],
+      ["Disbursement", "Unapplied Disbursement"]
+    ] as const) {
+      for (const source of byType(type)) {
+        const payment = paymentById.get(source.paymentId)!;
+        exposures.push({
+          exposureType,
+          documentType: "Payment",
+          documentId: payment.id,
+          documentNumber: payment.paymentId,
+          accountId:
+            type === "Receipt"
+              ? defaults.arRevaluationAccount
+              : defaults.apRevaluationAccount,
+          accountClass: type === "Receipt" ? "Asset" : "Liability",
+          currencyCode: payment.currencyCode,
+          openAmount: source.remainingDocument,
+          bookedBaseAmount: source.remainingBase
+        });
+      }
+    }
+  }
+
+  // Balance accounts held in a foreign currency (bank, cash, loans). Their
+  // foreign balance comes from the statement: the accountant enters it on
+  // the run, so openAmount starts empty. The chart is shared by the group,
+  // so only the accounts THIS company has posted to by `periodEnd` count — a
+  // sibling's EUR bank account is not this company's exposure. Revaluation
+  // journals do not count as activity: an account they alone touch holds no
+  // foreign currency.
+  const balanceAccounts = await db
+    .selectFrom("account")
+    .select(["id", "number", "name", "class", "currencyCode"])
+    .where("companyGroupId", "=", company.companyGroupId!)
+    .where("isGroup", "=", false)
+    .where("active", "=", true)
+    .where("currencyCode", "is not", null)
+    .where("currencyCode", "<>", base)
+    .where("class", "in", ["Asset", "Liability"])
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("journalLine as jl")
+          .innerJoin("journal as j", "j.id", "jl.journalId")
+          .select("jl.id")
+          .whereRef("jl.accountId", "=", "account.id")
+          .where("jl.companyId", "=", companyId)
+          .where("j.companyId", "=", companyId)
+          .where("j.sourceType", "<>", "Currency Revaluation")
+          .where("j.status", "in", [...GL_JOURNAL_STATUSES])
+          .where("j.postingDate", "<=", periodEnd)
+      )
+    )
+    .orderBy("number")
+    .execute();
+  if (balanceAccounts.length > 0) {
+    const balances = await sql<{ accountId: string; balanceAtDate: number }>`
+      SELECT "accountId", "balanceAtDate"
+      FROM "accountTreeBalancesByCompany"(
+        ${company.companyGroupId}, ${companyId}, ${periodEnd}::date, ${periodEnd}::date
+      )
+      WHERE "accountId" = ANY(${balanceAccounts.map((a) => a.id)}::text[])
+    `.execute(db);
+    // The booked balance is what the ledger holds WITHOUT revaluation: a
+    // run's valuation is dated periodEnd and posts to the account itself, so
+    // counting it would make a posted run look stale against its own entry.
+    // Earlier runs' valuations and their next-day reversals both fall on or
+    // before periodEnd and net to zero either way.
+    const revaluations = await db
+      .selectFrom("journalLine as jl")
+      .innerJoin("journal as j", "j.id", "jl.journalId")
+      .select([
+        "jl.accountId",
+        sql<number>`COALESCE(SUM(jl."amount"), 0)`.as("amount")
+      ])
+      .where("jl.companyId", "=", companyId)
+      .where("j.companyId", "=", companyId)
+      .where("j.sourceType", "=", "Currency Revaluation")
+      .where("j.status", "in", [...GL_JOURNAL_STATUSES])
+      .where("j.postingDate", "<=", periodEnd)
+      .where(
+        "jl.accountId",
+        "in",
+        balanceAccounts.map((a) => a.id)
+      )
+      .groupBy("jl.accountId")
+      .execute();
+    const revaluedOf = new Map(
+      revaluations.map((row) => [row.accountId, Number(row.amount)])
+    );
+    const balanceOf = new Map(
+      balances.rows.map((row) => [
+        row.accountId,
+        round(Number(row.balanceAtDate) - (revaluedOf.get(row.accountId) ?? 0))
+      ])
+    );
+    for (const account of balanceAccounts) {
+      exposures.push({
+        exposureType: "Account Balance",
+        documentType: null,
+        documentId: null,
+        documentNumber: [account.number, account.name]
+          .filter(Boolean)
+          .join(" "),
+        accountId: account.id,
+        accountClass: account.class === "Liability" ? "Liability" : "Asset",
+        currencyCode: account.currencyCode!,
+        openAmount: null,
+        bookedBaseAmount: balanceOf.get(account.id) ?? 0
+      });
+    }
+  }
+
+  return { exposures, notRevalued };
+}
+
+/** The key an entered statement balance keeps across a recalculation: the
+ *  account AND its currency, so a balance entered in one currency is never
+ *  revalued at another's rate after the account's currency changes. */
+function enteredBalanceKey(line: {
+  accountId: string;
+  currencyCode: string;
+}): string {
+  return `${line.accountId}|${line.currencyCode}`;
+}
+
+/** Carry the statement balances already entered on a run's Account Balance
+ *  lines onto freshly read exposures, matched by account and currency. */
+function withEnteredBalances(
+  exposures: RevaluationExposure[],
+  stored: {
+    exposureType: string;
+    accountId: string;
+    currencyCode: string;
+    openAmount: number | null;
+  }[]
+): RevaluationExposure[] {
+  const entered = new Map(
+    stored
+      .filter((line) => line.exposureType === "Account Balance")
+      .map((line) => [enteredBalanceKey(line), line.openAmount])
+  );
+  return exposures.map((exposure) => {
+    const key = enteredBalanceKey(exposure);
+    if (exposure.exposureType !== "Account Balance" || !entered.has(key)) {
+      return exposure;
+    }
+    const openAmount = entered.get(key);
+    return {
+      ...exposure,
+      openAmount: openAmount == null ? null : Number(openAmount)
+    };
+  });
+}
+
+/**
+ * The Posted foreign-currency memos dated on or before `periodEnd` that have a
+ * settlement with no `sourceAmount`. The subledger readers drop them, so the
+ * revaluation run cannot revalue them; its page lists them instead.
+ */
+export async function listRevaluationNotRevalued(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; periodEnd: string; baseCurrencyCode?: string }
+): Promise<NotRevaluedDocument[]> {
+  const { companyId, periodEnd } = args;
+  const base =
+    args.baseCurrencyCode ??
+    (
+      await db
+        .selectFrom("company")
+        .select("baseCurrencyCode")
+        .where("id", "=", companyId)
+        .executeTakeFirstOrThrow()
+    ).baseCurrencyCode;
+  const memos = await db
+    .selectFrom("memo")
+    .select(["id", "memoId", "direction"])
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Posted")
+    .where("currencyCode", "<>", base)
+    .where("postingDate", "<=", periodEnd)
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("invoiceSettlement as s")
+          .select("s.id")
+          .where("s.companyId", "=", companyId)
+          .where("s.sourceAmount", "is", null)
+          .where((inner) =>
+            inner.or([
+              inner("s.memoId", "=", eb.ref("memo.id")),
+              inner("s.targetMemoId", "=", eb.ref("memo.id"))
+            ])
+          )
+      )
+    )
+    .orderBy("memoId")
+    .execute();
+  return memos.map((memo) => ({
+    documentType: `${memo.direction} Memo`,
+    documentId: memo.id,
+    documentNumber: memo.memoId
+  }));
+}
+
+export type RevaluationRateSource = "Market" | "Override" | "Manual";
+type RevaluationRate = { rate: number; rateSource: RevaluationRateSource };
+
+/** The four account defaults a revaluation run posts to. Refuses with the
+ *  names of the missing ones. */
+export async function readRevaluationDefaults(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<{
+  unrealizedExchangeGainAccount: string;
+  unrealizedExchangeLossAccount: string;
+  arRevaluationAccount: string;
+  apRevaluationAccount: string;
+}> {
+  const defaults = await db
+    .selectFrom("accountDefault")
+    .select([
+      "unrealizedExchangeGainAccount",
+      "unrealizedExchangeLossAccount",
+      "arRevaluationAccount",
+      "apRevaluationAccount"
+    ])
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (
+    !defaults?.unrealizedExchangeGainAccount ||
+    !defaults.unrealizedExchangeLossAccount ||
+    !defaults.arRevaluationAccount ||
+    !defaults.apRevaluationAccount
+  ) {
+    throw new Error(
+      "Set the Unrealized Exchange Gain, Unrealized Exchange Loss, AR Revaluation Adjustment and AP Revaluation Adjustment account defaults first"
+    );
+  }
+  return {
+    unrealizedExchangeGainAccount: defaults.unrealizedExchangeGainAccount,
+    unrealizedExchangeLossAccount: defaults.unrealizedExchangeLossAccount,
+    arRevaluationAccount: defaults.arRevaluationAccount,
+    apRevaluationAccount: defaults.apRevaluationAccount
+  };
+}
+
+/**
+ * The closing rate of each currency at `periodEnd`: the company's rate
+ * (`get_exchange_rate`, foreign units per base unit). `Override` when the
+ * company pins the currency — the pin has no date, so the run shows it.
+ */
+export async function resolveRevaluationRates(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; periodEnd: string; currencyCodes: string[] }
+): Promise<Map<string, RevaluationRate>> {
+  const { companyId, periodEnd } = args;
+  const codes = [...new Set(args.currencyCodes)].sort();
+  if (codes.length === 0) return new Map();
+  const [rates, overrides] = await Promise.all([
+    sql<{ code: string; rate: number }>`
+      SELECT c.code, get_exchange_rate(${companyId}, c.code, ${periodEnd}::date) AS rate
+      FROM unnest(${codes}::text[]) AS c(code)
+    `.execute(db),
+    db
+      .selectFrom("exchangeRateOverride")
+      .select("currencyCode")
+      .where("companyId", "=", companyId)
+      .where("currencyCode", "in", codes)
+      .execute()
+  ]);
+  const overridden = new Set(overrides.map((row) => row.currencyCode));
+  return new Map(
+    rates.rows.map((row) => [
+      row.code,
+      {
+        rate: Number(row.rate),
+        rateSource: overridden.has(row.code) ? "Override" : "Market"
+      }
+    ])
+  );
+}
+
+function revalueAll(
+  exposures: RevaluationExposure[],
+  rates: Map<string, RevaluationRate>
+): RevaluedLine[] {
+  return exposures.map((exposure) => {
+    const rate = rates.get(exposure.currencyCode);
+    if (!rate) {
+      throw new Error(`No revaluation rate for ${exposure.currencyCode}`);
+    }
+    return revalueExposure(exposure, rate.rate);
+  });
+}
+
+function revaluationLineRow(
+  line: RevaluedLine,
+  args: {
+    runId: string;
+    companyId: string;
+    userId: string;
+    entered?: Map<string, { by: string | null; at: string | null }>;
+  }
+) {
+  const entered =
+    line.exposureType === "Account Balance"
+      ? args.entered?.get(enteredBalanceKey(line))
+      : undefined;
+  return {
+    openAmountEnteredBy: entered?.by ?? null,
+    openAmountEnteredAt: entered?.at ?? null,
+    companyId: args.companyId,
+    runId: args.runId,
+    exposureType: line.exposureType,
+    documentType: line.documentType,
+    documentId: line.documentId,
+    documentNumber: line.documentNumber,
+    accountId: line.accountId,
+    currencyCode: line.currencyCode,
+    openAmount: line.openAmount,
+    bookedBaseAmount: line.bookedBaseAmount,
+    revaluedBaseAmount: line.revaluedBaseAmount,
+    differenceAmount: line.differenceAmount,
+    createdBy: args.userId
+  };
+}
+
+/** Insert a run's lines, 500 rows per statement: one statement for every
+ *  line would pass Postgres's 65,535 bind-parameter limit on a large run. */
+async function insertRevaluationLines(
+  trx: KyselyTx,
+  rows: ReturnType<typeof revaluationLineRow>[]
+): Promise<void> {
+  for (const chunk of chunkArray(rows, 500)) {
+    await trx.insertInto("currencyRevaluationLine").values(chunk).execute();
+  }
+}
+
+/** The key a line keeps across a recalculation. */
+function revaluationLineKey(line: {
+  exposureType: string;
+  documentId: string | null;
+  accountId: string;
+  currencyCode: string;
+}): string {
+  return [
+    line.exposureType,
+    line.documentId ?? "",
+    line.accountId,
+    line.currencyCode
+  ].join("|");
+}
+
+type RevaluationLineValues = {
+  exposureType: string;
+  documentId: string | null;
+  accountId: string;
+  currencyCode: string;
+  openAmount: number | null;
+  bookedBaseAmount: number;
+  differenceAmount: number | null;
+};
+
+/** One string for a set of lines: equal when every line has the same key,
+ *  open amount, booked amount and difference. Order does not matter. */
+function revaluationLinesSignature(lines: RevaluationLineValues[]): string {
+  return lines
+    .map((line) =>
+      [
+        revaluationLineKey(line),
+        line.openAmount === null ? "" : round(Number(line.openAmount)),
+        round(Number(line.bookedBaseAmount)),
+        line.differenceAmount === null
+          ? ""
+          : round(Number(line.differenceAmount))
+      ].join("|")
+    )
+    .sort()
+    .join("\n");
+}
+
+/**
+ * A Draft revaluation run for `periodEnd`: one line per open
+ * foreign-currency exposure, revalued at the company's rate on that date.
+ * Throws a readable message when accounting has not started, a default is
+ * missing, or nothing is open in a foreign currency.
+ */
+export async function createCurrencyRevaluationRun(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; periodEnd: string; userId: string }
+): Promise<{ id: string; readableId: string }> {
+  const { companyId, periodEnd, userId } = args;
+  if (!(await readAccountingCutoverDate(db, companyId))) {
+    throw new Error(ACCOUNTING_NOT_STARTED);
+  }
+  const defaults = await readRevaluationDefaults(db, companyId);
+  const { exposures } = await readRevaluationExposures(db, {
+    companyId,
+    periodEnd,
+    defaults
+  });
+  if (exposures.length === 0) {
+    throw new Error(
+      `Nothing is open in a foreign currency on ${periodEnd}, so there is nothing to revalue`
+    );
+  }
+  const rates = await resolveRevaluationRates(db, {
+    companyId,
+    periodEnd,
+    currencyCodes: exposures.map((exposure) => exposure.currencyCode)
+  });
+  const lines = revalueAll(exposures, rates);
+
+  return withTransaction(db, async (trx) => {
+    const readableId = await getNextSequenceInTransaction(
+      trx,
+      "currencyRevaluationRun",
+      companyId
+    );
+    const run = await trx
+      .insertInto("currencyRevaluationRun")
+      .values({
+        currencyRevaluationRunId: readableId,
+        companyId,
+        periodEnd,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    await trx
+      .insertInto("currencyRevaluationRate")
+      .values(
+        [...rates].map(([currencyCode, rate]) => ({
+          companyId,
+          runId: run.id,
+          currencyCode,
+          rate: rate.rate,
+          rateSource: rate.rateSource,
+          createdBy: userId
+        }))
+      )
+      .execute();
+    await insertRevaluationLines(
+      trx,
+      lines.map((line) =>
+        revaluationLineRow(line, { runId: run.id, companyId, userId })
+      )
+    );
+    return { id: run.id, readableId };
+  });
+}
+
+/** Lock a run and refuse unless it is a Draft. */
+async function lockDraftRevaluationRun(
+  trx: KyselyTx,
+  args: { runId: string; companyId: string }
+) {
+  const run = await trx
+    .selectFrom("currencyRevaluationRun")
+    .select([
+      "id",
+      "currencyRevaluationRunId",
+      "status",
+      sql<string>`"periodEnd"::text`.as("periodEnd")
+    ])
+    .where("id", "=", args.runId)
+    .where("companyId", "=", args.companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!run) throw new Error("Currency revaluation run not found");
+  if (run.status !== "Draft") {
+    throw new RunOutOfDateError(
+      `Currency revaluation run ${run.currencyRevaluationRunId} is ${run.status}; only a draft run can change`
+    );
+  }
+  return run;
+}
+
+/**
+ * Rebuild a Draft run's lines from the exposures open now. Keeps the stored
+ * rate of each currency, and adds the default rate for a new currency.
+ */
+export async function recalculateCurrencyRevaluationRun(
+  db: Kysely<KyselyDatabase>,
+  args: { runId: string; companyId: string; userId: string }
+): Promise<{ changed: boolean; readableId: string }> {
+  const { runId, companyId, userId } = args;
+  const defaults = await readRevaluationDefaults(db, companyId);
+
+  return withTransaction(db, async (trx) => {
+    const run = await lockDraftRevaluationRun(trx, { runId, companyId });
+    const { exposures } = await readRevaluationExposures(trx, {
+      companyId,
+      periodEnd: run.periodEnd,
+      defaults
+    });
+
+    const storedRates = await trx
+      .selectFrom("currencyRevaluationRate")
+      .select(["currencyCode", "rate", "rateSource"])
+      .where("runId", "=", runId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const rates = new Map<string, RevaluationRate>(
+      storedRates.map((row) => [
+        row.currencyCode,
+        {
+          rate: Number(row.rate),
+          rateSource: row.rateSource as RevaluationRateSource
+        }
+      ])
+    );
+    const missing = exposures
+      .map((exposure) => exposure.currencyCode)
+      .filter((code) => !rates.has(code));
+    if (missing.length > 0) {
+      const added = await resolveRevaluationRates(trx, {
+        companyId,
+        periodEnd: run.periodEnd,
+        currencyCodes: missing
+      });
+      await trx
+        .insertInto("currencyRevaluationRate")
+        .values(
+          [...added].map(([currencyCode, rate]) => ({
+            companyId,
+            runId,
+            currencyCode,
+            rate: rate.rate,
+            rateSource: rate.rateSource,
+            createdBy: userId
+          }))
+        )
+        .execute();
+      for (const [code, rate] of added) rates.set(code, rate);
+    }
+
+    const previous = await trx
+      .selectFrom("currencyRevaluationLine")
+      .select([
+        "exposureType",
+        "documentId",
+        "accountId",
+        "currencyCode",
+        "openAmount",
+        "bookedBaseAmount",
+        "differenceAmount",
+        "openAmountEnteredBy",
+        sql<string | null>`"openAmountEnteredAt"::text`.as(
+          "openAmountEnteredAt"
+        )
+      ])
+      .where("runId", "=", runId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const lines = revalueAll(withEnteredBalances(exposures, previous), rates);
+    const entered = new Map(
+      previous
+        .filter((line) => line.exposureType === "Account Balance")
+        .map((line) => [
+          enteredBalanceKey(line),
+          { by: line.openAmountEnteredBy, at: line.openAmountEnteredAt }
+        ])
+    );
+    const changed =
+      revaluationLinesSignature(previous) !== revaluationLinesSignature(lines);
+
+    if (changed) {
+      await trx
+        .deleteFrom("currencyRevaluationLine")
+        .where("runId", "=", runId)
+        .where("companyId", "=", companyId)
+        .execute();
+      await insertRevaluationLines(
+        trx,
+        lines.map((line) =>
+          revaluationLineRow(line, { runId, companyId, userId, entered })
+        )
+      );
+    }
+    await trx
+      .updateTable("currencyRevaluationRun")
+      .set({ updatedBy: userId, updatedAt: datetime.timestamp() })
+      .where("id", "=", runId)
+      .where("companyId", "=", companyId)
+      .execute();
+    return { changed, readableId: run.currencyRevaluationRunId };
+  });
+}
+
+/** Write recomputed results onto existing lines, 500 rows per statement. */
+async function updateRevaluationLineResults(
+  trx: KyselyTx,
+  args: {
+    companyId: string;
+    userId: string;
+    rows: {
+      id: string;
+      revaluedBaseAmount: number | null;
+      differenceAmount: number | null;
+    }[];
+  }
+): Promise<void> {
+  const now = datetime.timestamp();
+  for (const chunk of chunkArray(args.rows, 500)) {
+    const values = sql.join(
+      chunk.map(
+        (row) =>
+          sql`(${row.id}, ${row.revaluedBaseAmount}::numeric, ${row.differenceAmount}::numeric)`
+      )
+    );
+    await sql`
+      UPDATE "currencyRevaluationLine" AS l
+      SET "revaluedBaseAmount" = v.revalued, "differenceAmount" = v.difference,
+        "updatedBy" = ${args.userId}, "updatedAt" = ${now}
+      FROM (VALUES ${values}) AS v(id, revalued, difference)
+      WHERE l."id" = v.id AND l."companyId" = ${args.companyId}
+    `.execute(trx);
+  }
+}
+
+/** Revalue the stored lines of one currency at the run's stored rate. */
+async function revalueStoredLines(
+  trx: KyselyTx,
+  args: {
+    runId: string;
+    companyId: string;
+    userId: string;
+    currencyCode: string;
+    rate: number;
+    lineIds?: string[];
+  }
+): Promise<void> {
+  let query = trx
+    .selectFrom("currencyRevaluationLine as l")
+    .innerJoin("account as a", "a.id", "l.accountId")
+    .select([
+      "l.id",
+      "l.exposureType",
+      "l.documentType",
+      "l.documentId",
+      "l.documentNumber",
+      "l.accountId",
+      "a.class",
+      "l.currencyCode",
+      "l.openAmount",
+      "l.bookedBaseAmount"
+    ])
+    .where("l.runId", "=", args.runId)
+    .where("l.companyId", "=", args.companyId)
+    .where("l.currencyCode", "=", args.currencyCode);
+  if (args.lineIds) query = query.where("l.id", "in", args.lineIds);
+  const lines = await query.execute();
+  const rows = lines.map((line) => {
+    const revalued = revalueExposure(
+      {
+        exposureType: line.exposureType as ExposureType,
+        documentType: line.documentType as RevaluationExposure["documentType"],
+        documentId: line.documentId,
+        documentNumber: line.documentNumber,
+        accountId: line.accountId,
+        accountClass: line.class === "Liability" ? "Liability" : "Asset",
+        currencyCode: line.currencyCode,
+        openAmount: line.openAmount === null ? null : Number(line.openAmount),
+        bookedBaseAmount: Number(line.bookedBaseAmount)
+      },
+      args.rate
+    );
+    return {
+      id: line.id,
+      revaluedBaseAmount: revalued.revaluedBaseAmount,
+      differenceAmount: revalued.differenceAmount
+    };
+  });
+  await updateRevaluationLineResults(trx, {
+    companyId: args.companyId,
+    userId: args.userId,
+    rows
+  });
+}
+
+/** Set one currency's rate on a Draft run (source Manual) and revalue its
+ *  lines. */
+export async function updateCurrencyRevaluationRate(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    runId: string;
+    currencyCode: string;
+    rate: number;
+    companyId: string;
+    userId: string;
+  }
+): Promise<void> {
+  const { runId, currencyCode, rate, companyId, userId } = args;
+  assertExchangeRate(rate);
+  await withTransaction(db, async (trx) => {
+    await lockDraftRevaluationRun(trx, { runId, companyId });
+    const updated = await trx
+      .updateTable("currencyRevaluationRate")
+      .set({
+        rate,
+        rateSource: "Manual",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("runId", "=", runId)
+      .where("companyId", "=", companyId)
+      .where("currencyCode", "=", currencyCode)
+      .executeTakeFirst();
+    if (Number(updated.numUpdatedRows) === 0) {
+      throw new Error(`The run has no ${currencyCode} rate`);
+    }
+    await revalueStoredLines(trx, {
+      runId,
+      companyId,
+      userId,
+      currencyCode,
+      rate
+    });
+  });
+}
+
+/**
+ * Post a Draft revaluation run: the valuation journal at the period end and
+ * its reversal on the next day, both Posted. The run links them through its
+ * own columns, never `journal.reversedById` — that would mark the valuation
+ * Reversed, and Undo (`reverseRunJournals`) refuses a Reversed journal.
+ * Periods are resolved by the caller, before the transaction.
+ */
+export async function postCurrencyRevaluationRun(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    runId: string;
+    valuationPeriod: { accountingPeriodId: string; postingDate: string };
+    reversalPeriod: { accountingPeriodId: string; postingDate: string };
+    gainAccountId: string;
+    lossAccountId: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ journalId: string | null; reversalJournalId: string | null }> {
+  const { runId, companyId, userId } = args;
+  if (!(await readAccountingCutoverDate(db, companyId))) {
+    throw new Error(ACCOUNTING_NOT_STARTED);
+  }
+  const now = datetime.timestamp();
+
+  return withTransaction(db, async (trx) => {
+    const run = await lockDraftRevaluationRun(trx, { runId, companyId });
+    const stored = await trx
+      .selectFrom("currencyRevaluationLine as l")
+      .innerJoin("account as a", "a.id", "l.accountId")
+      .select([
+        "l.id",
+        "l.exposureType",
+        "l.documentType",
+        "l.documentId",
+        "l.documentNumber",
+        "l.accountId",
+        "a.class",
+        "l.currencyCode",
+        "l.openAmount",
+        "l.bookedBaseAmount",
+        "l.revaluedBaseAmount",
+        "l.differenceAmount"
+      ])
+      .where("l.runId", "=", runId)
+      .where("l.companyId", "=", companyId)
+      .execute();
+
+    if (
+      stored.some(
+        (line) =>
+          line.exposureType === "Account Balance" && line.openAmount === null
+      )
+    ) {
+      throw new RunOutOfDateError(
+        "Enter the statement balance for every account before posting"
+      );
+    }
+    // Under the run's lock, so a document posted or a run recalculated
+    // between the check and the post cannot slip through.
+    if (!(await isCurrencyRevaluationRunCurrent(trx, { runId, companyId }))) {
+      throw new RunOutOfDateError(
+        "The run is out of date. Recalculate it, then post."
+      );
+    }
+
+    const { valuation, reversal } = buildCurrencyRevaluationJournals({
+      readableId: run.currencyRevaluationRunId,
+      gainAccountId: args.gainAccountId,
+      lossAccountId: args.lossAccountId,
+      lines: stored.map((line) => ({
+        exposureType: line.exposureType as ExposureType,
+        documentType: line.documentType as RevaluationExposure["documentType"],
+        documentId: line.documentId,
+        documentNumber: line.documentNumber,
+        accountId: line.accountId,
+        accountClass: line.class === "Liability" ? "Liability" : "Asset",
+        currencyCode: line.currencyCode,
+        openAmount: line.openAmount === null ? null : Number(line.openAmount),
+        bookedBaseAmount: Number(line.bookedBaseAmount),
+        revaluedBaseAmount:
+          line.revaluedBaseAmount === null
+            ? null
+            : Number(line.revaluedBaseAmount),
+        differenceAmount:
+          line.differenceAmount === null ? null : Number(line.differenceAmount)
+      }))
+    });
+
+    // A run with nothing to revalue (no lines, or every difference zero)
+    // still posts, so the period records that it was revalued, but writes
+    // no empty journals for Undo to reverse.
+    const hasDifference = valuation.lines.length > 0;
+    const journal = hasDifference
+      ? await insertPostedRunJournal(trx, valuation, {
+          ...args.valuationPeriod,
+          dimensionIds: {},
+          companyId,
+          userId,
+          now
+        })
+      : null;
+    const reversalJournal = hasDifference
+      ? await insertPostedRunJournal(trx, reversal, {
+          ...args.reversalPeriod,
+          dimensionIds: {},
+          companyId,
+          userId,
+          now
+        })
+      : null;
+
+    await trx
+      .updateTable("currencyRevaluationRun")
+      .set({
+        status: "Posted",
+        journalId: journal?.id ?? null,
+        reversalJournalId: reversalJournal?.id ?? null,
+        postedAt: now,
+        postedBy: userId,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", runId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return {
+      journalId: journal?.id ?? null,
+      reversalJournalId: reversalJournal?.id ?? null
+    };
+  });
+}
+
+/**
+ * Undo a posted revaluation run: reverse both of its journals (each dated
+ * by `periods`, keyed by the original's posting date) and return the run to
+ * Draft. Refused once the run's own period is Closed: the valuation's
+ * reversal would move to today while the day-1 reversal's stays in the next
+ * period, leaving a revaluation on the books in between, and the Draft could
+ * never post again into a Closed month.
+ */
+export async function reverseCurrencyRevaluationRun(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    runId: string;
+    periods: RunPostingPeriods;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ readableId: string }> {
+  const { runId, periods, companyId, userId } = args;
+
+  return withTransaction(db, async (trx) => {
+    const run = await trx
+      .selectFrom("currencyRevaluationRun")
+      .select([
+        "currencyRevaluationRunId",
+        "status",
+        "journalId",
+        "reversalJournalId",
+        sql<string>`"periodEnd"::text`.as("periodEnd")
+      ])
+      .where("id", "=", runId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+    if (run.status !== "Posted") {
+      throw new RunReversalError(
+        `Currency revaluation run ${run.currencyRevaluationRunId} is ${run.status}; only a posted run can be reversed`
+      );
+    }
+    const closedPeriod = await trx
+      .selectFrom("accountingPeriod")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("startDate", "<=", run.periodEnd)
+      .where("endDate", ">=", run.periodEnd)
+      .where((eb) =>
+        eb.or([
+          eb("closeStatus", "=", "Closed"),
+          eb("closedAt", "is not", null)
+        ])
+      )
+      .executeTakeFirst();
+    if (closedPeriod) {
+      throw new RunReversalError(
+        `The period of currency revaluation run ${run.currencyRevaluationRunId} is closed, so the run can no longer be undone`
+      );
+    }
+    const journalIds = [run.journalId, run.reversalJournalId].filter(
+      (id): id is string => id !== null
+    );
+    await reverseRunJournals(trx, { journalIds, periods, companyId, userId });
+    await trx
+      .updateTable("currencyRevaluationRun")
+      .set({
+        status: "Draft",
+        journalId: null,
+        reversalJournalId: null,
+        postedAt: null,
+        postedBy: null,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", runId)
+      .where("companyId", "=", companyId)
+      .execute();
+    return { readableId: run.currencyRevaluationRunId };
+  });
+}
+
+/**
+ * Whether a run's stored lines still match the exposures open at its period
+ * end, revalued at its stored rates. Entered statement balances (Account
+ * Balance lines) count as stored. Post and the close checklist both ask.
+ */
+export async function isCurrencyRevaluationRunCurrent(
+  db: Kysely<KyselyDatabase>,
+  args: { runId: string; companyId: string }
+): Promise<boolean> {
+  const { runId, companyId } = args;
+  const run = await db
+    .selectFrom("currencyRevaluationRun")
+    .select(sql<string>`"periodEnd"::text`.as("periodEnd"))
+    .where("id", "=", runId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const [defaults, storedRates, stored] = await Promise.all([
+    readRevaluationDefaults(db, companyId),
+    db
+      .selectFrom("currencyRevaluationRate")
+      .select(["currencyCode", "rate", "rateSource"])
+      .where("runId", "=", runId)
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("currencyRevaluationLine")
+      .select([
+        "exposureType",
+        "documentId",
+        "accountId",
+        "currencyCode",
+        "openAmount",
+        "bookedBaseAmount",
+        "differenceAmount"
+      ])
+      .where("runId", "=", runId)
+      .where("companyId", "=", companyId)
+      .execute()
+  ]);
+  const { exposures } = await readRevaluationExposures(db, {
+    companyId,
+    periodEnd: run.periodEnd,
+    defaults
+  });
+  const rates = new Map<string, RevaluationRate>(
+    storedRates.map((row) => [
+      row.currencyCode,
+      {
+        rate: Number(row.rate),
+        rateSource: row.rateSource as RevaluationRateSource
+      }
+    ])
+  );
+  if (exposures.some((exposure) => !rates.has(exposure.currencyCode))) {
+    return false;
+  }
+  return (
+    revaluationLinesSignature(stored) ===
+    revaluationLinesSignature(
+      revalueAll(withEnteredBalances(exposures, stored), rates)
+    )
+  );
+}
+
+/** The periods a revaluation run posts into: its period end, and the day
+ *  after for the reversal. Resolved before the posting transaction. */
+export async function resolveRevaluationPeriods(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  periodEnd: string
+): Promise<
+  | {
+      data: {
+        valuationPeriod: { accountingPeriodId: string; postingDate: string };
+        reversalPeriod: { accountingPeriodId: string; postingDate: string };
+      };
+      error: null;
+    }
+  | { data: null; error: { message: string } }
+> {
+  const reversalDate = parseDate(periodEnd).add({ days: 1 }).toString();
+  const [valuation, reversal] = await Promise.all([
+    getOrCreateAccountingPeriod(client, companyId, periodEnd, "accounting"),
+    getOrCreateAccountingPeriod(client, companyId, reversalDate, "accounting")
+  ]);
+  if (valuation.error || !valuation.data) {
+    return {
+      data: null,
+      error: valuation.error ?? {
+        message: `No accounting period for ${periodEnd}`
+      }
+    };
+  }
+  if (reversal.error || !reversal.data) {
+    return {
+      data: null,
+      error: reversal.error ?? {
+        message: `No accounting period for ${reversalDate}`
+      }
+    };
+  }
+  return {
+    data: {
+      valuationPeriod: {
+        accountingPeriodId: valuation.data,
+        postingDate: periodEnd
+      },
+      reversalPeriod: {
+        accountingPeriodId: reversal.data,
+        postingDate: reversalDate
+      }
+    },
+    error: null
+  };
+}
+
+/** A Draft revaluation run for `periodEnd`, unless the month has not started
+ *  or the period already has a run. Shared by New Run and the period close. */
+export async function createCurrencyRevaluationRunAt(
+  ctx: ServiceContext,
+  periodEnd: string
+) {
+  const client = ctx.asCaller.supabase;
+  const futureError = await futureRunPeriodError(
+    client,
+    ctx.company.id,
+    periodEnd
+  );
+  if (futureError) return ctx.error("rule", futureError);
+
+  // One run per period end: Undo returns a posted run to Draft.
+  const existing = await client
+    .from("currencyRevaluationRun")
+    .select("id, currencyRevaluationRunId, status")
+    .eq("periodEnd", periodEnd)
+    .eq("companyId", ctx.company.id)
+    .limit(1)
+    .maybeSingle();
+  if (existing.error) {
+    return ctx.error(
+      "internal",
+      "Failed to load revaluation runs",
+      existing.error
+    );
+  }
+  if (existing.data) {
+    return ctx.error(
+      "conflict",
+      existing.data.status === "Draft"
+        ? `${existing.data.currencyRevaluationRunId} is already a draft for this period. Recalculate it instead.`
+        : `${existing.data.currencyRevaluationRunId} is already posted for this period. Undo it to change it.`,
+      { draftRunId: existing.data.id }
+    );
+  }
+
+  try {
+    return await createCurrencyRevaluationRun(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      periodEnd,
+      userId: ctx.auditUserId
+    });
+  } catch (err) {
+    return refusal(ctx, err, "Failed to create currency revaluation run");
+  }
+}
+
+/**
+ * What a new revaluation run for `periodEnd` would revalue, for the close
+ * checklist. Zero while a Draft run for the period waits (the Draft fails the
+ * check itself), and when the Posted run still matches what is open. A Posted
+ * run that no longer matches counts even when nothing is open now — a
+ * back-dated payment that cleared its only item leaves a posted unrealized
+ * gain on a paid invoice. Otherwise every open exposure, and the total size of
+ * the differences at the default rates.
+ */
+export async function previewCurrencyRevaluation(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; periodEnd: string }
+): Promise<RunPreview> {
+  const { companyId, periodEnd } = args;
+  const nothing: RunPreview = { count: 0, amount: 0, error: null };
+
+  const run = await db
+    .selectFrom("currencyRevaluationRun")
+    .select(["id", "status"])
+    .where("companyId", "=", companyId)
+    .where("periodEnd", "=", periodEnd)
+    .executeTakeFirst();
+  // A run for the period means the task applies, even once its items close.
+  if (run?.status === "Draft") return nothing;
+  if (
+    run?.status === "Posted" &&
+    (await isCurrencyRevaluationRunCurrent(db, { runId: run.id, companyId }))
+  ) {
+    return nothing;
+  }
+
+  const defaults = await db
+    .selectFrom("accountDefault")
+    .select(["arRevaluationAccount", "apRevaluationAccount"])
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  const { exposures } = await readRevaluationExposures(db, {
+    companyId,
+    periodEnd,
+    defaults: {
+      arRevaluationAccount: defaults?.arRevaluationAccount ?? "",
+      apRevaluationAccount: defaults?.apRevaluationAccount ?? ""
+    }
+  });
+  if (exposures.length === 0) {
+    // Only reached with no run, or a Posted run that is out of date. With no
+    // run and nothing open in a foreign currency, revaluation does not apply.
+    return run
+      ? { count: 1, amount: 0, error: null }
+      : { ...nothing, applicable: false };
+  }
+
+  const rates = await resolveRevaluationRates(db, {
+    companyId,
+    periodEnd,
+    currencyCodes: exposures.map((exposure) => exposure.currencyCode)
+  });
+  const lines = revalueAll(exposures, rates);
+  return {
+    count: exposures.length,
+    amount: round(
+      lines.reduce((sum, line) => sum + Math.abs(line.differenceAmount ?? 0), 0)
+    ),
+    error: null
+  };
+}
+
+/** Enter the statement balance (in the account's currency) of one Account
+ *  Balance line on a Draft run, and revalue the line at the run's rate. */
+export async function updateCurrencyRevaluationBalance(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    runId: string;
+    lineId: string;
+    openAmount: number;
+    companyId: string;
+    userId: string;
+  }
+): Promise<void> {
+  const { runId, lineId, openAmount, companyId, userId } = args;
+  if (!Number.isFinite(openAmount)) {
+    throw new Error("The statement balance must be a number");
+  }
+  await withTransaction(db, async (trx) => {
+    await lockDraftRevaluationRun(trx, { runId, companyId });
+    const line = await trx
+      .selectFrom("currencyRevaluationLine")
+      .select(["exposureType", "currencyCode"])
+      .where("id", "=", lineId)
+      .where("runId", "=", runId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!line) throw new Error("Revaluation line not found");
+    if (line.exposureType !== "Account Balance") {
+      throw new Error("Only an account balance line takes a statement balance");
+    }
+    const rate = await trx
+      .selectFrom("currencyRevaluationRate")
+      .select("rate")
+      .where("runId", "=", runId)
+      .where("companyId", "=", companyId)
+      .where("currencyCode", "=", line.currencyCode)
+      .executeTakeFirstOrThrow();
+    const now = datetime.timestamp();
+    await trx
+      .updateTable("currencyRevaluationLine")
+      .set({
+        openAmount,
+        openAmountEnteredBy: userId,
+        openAmountEnteredAt: now,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", lineId)
+      .where("companyId", "=", companyId)
+      .execute();
+    await revalueStoredLines(trx, {
+      runId,
+      companyId,
+      userId,
+      currencyCode: line.currencyCode,
+      rate: Number(rate.rate),
+      lineIds: [lineId]
+    });
+  });
+}
+
+/** Delete a Draft run; its rates and lines cascade. */
+export async function deleteCurrencyRevaluationRun(
+  db: Kysely<KyselyDatabase>,
+  args: { runId: string; companyId: string }
+): Promise<void> {
+  await withTransaction(db, async (trx) => {
+    await lockDraftRevaluationRun(trx, args);
+    await trx
+      .deleteFrom("currencyRevaluationRun")
+      .where("id", "=", args.runId)
+      .where("companyId", "=", args.companyId)
+      .where("status", "=", "Draft")
+      .execute();
+  });
+}
+
+export const CURRENCY_REVALUATION_RUNS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
+export async function getCurrencyRevaluationRuns(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("currencyRevaluationRun")
+    .select(
+      "id, currencyRevaluationRunId, periodEnd, status, postedAt, createdAt",
+      { count: listCount(args) }
+    )
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("currencyRevaluationRunId", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, CURRENCY_REVALUATION_RUNS_PAGING);
+  return query;
+}
+
+export async function getCurrencyRevaluationRun(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("currencyRevaluationRun")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getCurrencyRevaluationLines(
+  client: SupabaseClient<Database>,
+  runId: string,
+  companyId: string
+) {
+  return fetchAllRecords(() =>
+    client
+      .from("currencyRevaluationLine")
+      .select("*")
+      .eq("runId", runId)
+      .eq("companyId", companyId)
+      .order("exposureType")
+      .order("currencyCode")
+      .order("documentNumber")
+      .order("id")
+  );
+}
+
+export async function getCurrencyRevaluationRates(
+  client: SupabaseClient<Database>,
+  runId: string,
+  companyId: string
+) {
+  return client
+    .from("currencyRevaluationRate")
+    .select("*")
+    .eq("runId", runId)
+    .eq("companyId", companyId)
+    .order("currencyCode");
 }
 
 /** Deletes a Draft run and releases its claimed schedule rows (`runLineId`
@@ -21932,4 +23852,505 @@ export async function recalculateRevenueRecognitionRun(
       deleted: false
     };
   });
+}
+
+// -- Posted CTA ---------------------------------------------------------------
+// Spec: .ai/specs/2026-10-26-fx-revaluation-and-cta-posting.md (Phase 3)
+
+export type CurrencyTranslationPreview = {
+  /** False when the company is not the root of a multi-currency group. */
+  applicable: boolean;
+  periodEnd: string;
+  liveCta: number;
+  postedCta: number;
+  movement: number;
+  eliminationCompanyId: string | null;
+  /** The two accounts the movement posts to: the root's defaults. */
+  ctaAccountId: string | null;
+  offsetAccountId: string | null;
+  /** Foreign-currency subsidiaries with no posted revaluation run for the
+   *  period: revalue them first (NetSuite close order). */
+  unrevaluedCompanies: { id: string; name: string }[];
+  /** Asset and liability leaves translated at the Average rate. The current
+   *  rate method translates them at Current; the account form saved Average
+   *  for every account it edited until the posted CTA shipped, so review
+   *  them before posting. */
+  averageRateAccounts: { id: string; number: string | null; name: string }[];
+};
+
+type CurrencyTranslationRefusal = {
+  category: "rule" | "forbidden" | "internal";
+  message: string;
+  cause?: unknown;
+};
+
+/**
+ * What a CTA posting for `periodEnd` would post: the consolidated balance
+ * sheet's CTA for the period (one bucket from `startDate`), the CTA already
+ * posted on the root's elimination entity (−1 × its offset account balance),
+ * and the movement between them. Refuses (forbidden) any company other than
+ * the group's root. `eliminationClient` reads the elimination entity's ledger,
+ * as the consolidated report's does.
+ */
+export async function computeCurrencyTranslationPreview(args: {
+  /** A service-role client: the CTA covers every operating company in the
+   *  group, whatever the caller can read. Every read is filtered by
+   *  `companyGroupId`. */
+  client: SupabaseClient<Database>;
+  db: Kysely<KyselyDatabase>;
+  companyId: string;
+  companyGroupId: string;
+  startDate: string;
+  periodEnd: string;
+  fiscalYear: number | null;
+}): Promise<
+  | { data: CurrencyTranslationPreview; error: null }
+  | { data: null; error: CurrencyTranslationRefusal }
+> {
+  const { client, db, companyId, companyGroupId, periodEnd } = args;
+  const refuse = (
+    category: CurrencyTranslationRefusal["category"],
+    message: string,
+    cause?: unknown
+  ) => ({ data: null, error: { category, message, cause } }) as const;
+
+  const root = await db
+    .selectFrom("company")
+    .select(["id", "parentCompanyId", "baseCurrencyCode"])
+    .where("id", "=", companyId)
+    .where("companyGroupId", "=", companyGroupId)
+    .executeTakeFirst();
+  if (!root || root.parentCompanyId !== null) {
+    return refuse(
+      "forbidden",
+      "Only the group's root company posts the currency translation adjustment"
+    );
+  }
+  const notApplicable: CurrencyTranslationPreview = {
+    applicable: false,
+    periodEnd,
+    liveCta: 0,
+    postedCta: 0,
+    movement: 0,
+    eliminationCompanyId: null,
+    ctaAccountId: null,
+    offsetAccountId: null,
+    unrevaluedCompanies: [],
+    averageRateAccounts: []
+  };
+
+  const companies = await getCompaniesInGroup(client, companyGroupId);
+  if (companies.error) {
+    return refuse("internal", "Failed to load the group", companies.error);
+  }
+  const operating = companies.data ?? [];
+  const foreign = operating.filter(
+    (company) => company.baseCurrencyCode !== root.baseCurrencyCode
+  );
+  if (foreign.length === 0) return { data: notApplicable, error: null };
+
+  // The elimination entity has no cutover of its own: the root's decides.
+  // Checked after applicability, so a one-currency group never sees it.
+  if (!(await readAccountingCutoverDate(db, companyId))) {
+    return refuse("rule", ACCOUNTING_NOT_STARTED);
+  }
+
+  const [elimination, defaults] = await Promise.all([
+    db
+      .selectFrom("company")
+      .select("id")
+      .where("companyGroupId", "=", companyGroupId)
+      .where("parentCompanyId", "=", companyId)
+      .where("isEliminationEntity", "=", true)
+      .executeTakeFirst(),
+    db
+      .selectFrom("accountDefault")
+      .select([
+        "currencyTranslationAccount",
+        "currencyTranslationOffsetAccount"
+      ])
+      .where("companyId", "=", companyId)
+      .executeTakeFirst()
+  ]);
+  if (!elimination)
+    return refuse("rule", "The group has no elimination entity");
+  if (
+    !defaults?.currencyTranslationAccount ||
+    !defaults.currencyTranslationOffsetAccount
+  ) {
+    return refuse(
+      "rule",
+      "Set the Currency Translation and Currency Translation Offset account defaults first"
+    );
+  }
+  const [accountClasses, averageRateAccounts] = await Promise.all([
+    readCtaAccountClasses(db, companyGroupId, [
+      defaults.currencyTranslationAccount,
+      defaults.currencyTranslationOffsetAccount
+    ]),
+    db
+      .selectFrom("account")
+      .select(["id", "number", "name"])
+      .where("companyGroupId", "=", companyGroupId)
+      .where("isGroup", "=", false)
+      .where("class", "in", ["Asset", "Liability"])
+      .where("consolidatedRate", "=", "Average")
+      .orderBy("number")
+      .orderBy("id")
+      .execute()
+  ]);
+  if (
+    accountClasses.length !== 2 ||
+    accountClasses.some((account) => account.class !== "Equity")
+  ) {
+    return refuse("rule", CTA_ACCOUNTS_NOT_EQUITY);
+  }
+
+  const consolidated = await getConsolidatedPeriodSeries(
+    client,
+    companyGroupId,
+    operating.map((company) => company.id),
+    root.baseCurrencyCode,
+    {
+      buckets: [
+        {
+          key: "cta",
+          start: args.startDate,
+          end: periodEnd,
+          fiscalYear: args.fiscalYear ?? Number(periodEnd.slice(0, 4)),
+          isPartial: false
+        }
+      ],
+      includeCurrentYearEarnings: true
+    },
+    client
+  );
+  if (consolidated.error) return refuse("rule", consolidated.error);
+
+  const [postedCtaBalance, posted, decimals] = await Promise.all([
+    readPostedCta(db, {
+      eliminationCompanyId: elimination.id,
+      ctaAccountId: defaults.currencyTranslationAccount,
+      periodEnd
+    }),
+    db
+      .selectFrom("currencyRevaluationRun")
+      .select("companyId")
+      .where(
+        "companyId",
+        "in",
+        foreign.map((company) => company.id)
+      )
+      .where("periodEnd", "=", periodEnd)
+      .where("status", "=", "Posted")
+      .execute(),
+    db
+      .selectFrom("currency")
+      .select("decimalPlaces")
+      .where("companyGroupId", "=", companyGroupId)
+      .where("code", "=", root.baseCurrencyCode)
+      .executeTakeFirst()
+  ]);
+
+  if (!decimals) {
+    return refuse(
+      "internal",
+      `Currency ${root.baseCurrencyCode} is missing from the group's currencies`
+    );
+  }
+  const { postedCta, movement } = ctaMovement({
+    liveCta: consolidated.ctaByBucket.cta ?? 0,
+    postedCta: postedCtaBalance,
+    decimalPlaces: Number(decimals.decimalPlaces)
+  });
+  const revalued = new Set(posted.map((row) => row.companyId));
+
+  return {
+    data: {
+      applicable: true,
+      periodEnd,
+      liveCta: round(consolidated.ctaByBucket.cta ?? 0),
+      postedCta,
+      movement,
+      eliminationCompanyId: elimination.id,
+      ctaAccountId: defaults.currencyTranslationAccount,
+      offsetAccountId: defaults.currencyTranslationOffsetAccount,
+      unrevaluedCompanies: foreign
+        .filter((company) => !revalued.has(company.id))
+        .map((company) => ({ id: company.id, name: company.name })),
+      averageRateAccounts
+    },
+    error: null
+  };
+}
+
+/**
+ * The CTA posted on the elimination entity up to `periodEnd`: the CTA
+ * account's lines in its Posted `Currency Translation` journals. Read from
+ * those journals, not from the offset account's balance, so a changed offset
+ * default or a manual entry on the offset account never moves it. A CTA
+ * journal reversed by hand is Reversed, and its reversal is a Manual
+ * journal, so neither counts.
+ */
+async function readPostedCta(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    eliminationCompanyId: string;
+    ctaAccountId: string;
+    periodEnd: string;
+  }
+): Promise<number> {
+  const row = await db
+    .selectFrom("journalLine as l")
+    .innerJoin("journal as j", "j.id", "l.journalId")
+    .select(sql<number>`COALESCE(SUM(l."amount"), 0)`.as("posted"))
+    .where("l.companyId", "=", args.eliminationCompanyId)
+    .where("j.companyId", "=", args.eliminationCompanyId)
+    .where("j.sourceType", "=", "Currency Translation")
+    .where("j.status", "=", "Posted")
+    .where("j.postingDate", "<=", args.periodEnd)
+    .where("l.accountId", "=", args.ctaAccountId)
+    .executeTakeFirst();
+  return Number(row?.posted ?? 0);
+}
+
+const CTA_ACCOUNTS_NOT_EQUITY =
+  "The Currency Translation and Currency Translation Offset account defaults must be two different Equity accounts";
+
+/** The class of each CTA account, read from the group's chart. Both must be
+ *  Equity: the journal's amounts are natural-signed, so an offset account of
+ *  any other class would post on the same side as the CTA line. */
+function readCtaAccountClasses(
+  db: Kysely<KyselyDatabase>,
+  companyGroupId: string,
+  accountIds: string[]
+) {
+  return db
+    .selectFrom("account")
+    .select(["id", "class"])
+    .where("companyGroupId", "=", companyGroupId)
+    .where("id", "in", accountIds)
+    .execute();
+}
+
+/** `computeCurrencyTranslationPreview` for one of the caller company's
+ *  periods, with the caller's clients. */
+export async function previewCurrencyTranslationAt(
+  ctx: ServiceContext,
+  periodId: string
+): Promise<CurrencyTranslationPreview | CarbonError> {
+  const period = await ctx.asCaller.supabase
+    .from("accountingPeriod")
+    .select("startDate, endDate, fiscalYear")
+    .eq("id", periodId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (period.error) {
+    return ctx.error("internal", "Failed to load the period", period.error);
+  }
+  if (!period.data) return ctx.error("notFound", "Period not found");
+
+  const preview = await computeCurrencyTranslationPreview({
+    client: ctx.asSystem.supabase,
+    db: ctx.asSystem.pg,
+    companyId: ctx.company.id,
+    companyGroupId: ctx.company.groupId,
+    startDate: period.data.startDate,
+    periodEnd: period.data.endDate,
+    fiscalYear: period.data.fiscalYear
+  });
+  if (preview.error) {
+    return ctx.error(
+      preview.error.category,
+      preview.error.message,
+      preview.error.cause
+    );
+  }
+  return preview.data;
+}
+
+/**
+ * Post a CTA movement on the root's elimination entity: one Posted journal,
+ * `sourceType` Currency Translation, no `eliminationKind` (so the
+ * intercompany workbench's Regenerate never reverses it), crediting the CTA
+ * account and debiting the offset account for a positive movement. The
+ * movement is `liveCta` less the CTA posted so far, re-read inside the
+ * transaction under a lock on the elimination entity — two posts at once
+ * would otherwise both post the same movement. Returns null when nothing is
+ * left to post. The period is found or created on the elimination entity; a
+ * Locked or Closed period refuses.
+ */
+export async function insertCurrencyTranslationJournal(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyGroupId: string;
+    eliminationCompanyId: string;
+    periodEnd: string;
+    liveCta: number;
+    ctaAccountId: string;
+    offsetAccountId: string;
+    userId: string;
+  }
+): Promise<{
+  journalId: string;
+  journalEntryId: string;
+  movement: number;
+} | null> {
+  const {
+    companyGroupId,
+    eliminationCompanyId,
+    periodEnd,
+    liveCta,
+    ctaAccountId,
+    offsetAccountId,
+    userId
+  } = args;
+  return withTransaction(db, async (trx) => {
+    await sql`SELECT pg_advisory_xact_lock(hashtext(${`currency-translation:${eliminationCompanyId}`}))`.execute(
+      trx
+    );
+    const accountClasses = await readCtaAccountClasses(trx, companyGroupId, [
+      ctaAccountId,
+      offsetAccountId
+    ]);
+    if (
+      accountClasses.length !== 2 ||
+      accountClasses.some((account) => account.class !== "Equity")
+    ) {
+      throw new Error(CTA_ACCOUNTS_NOT_EQUITY);
+    }
+    const [postedCta, decimals] = await Promise.all([
+      readPostedCta(trx, { eliminationCompanyId, ctaAccountId, periodEnd }),
+      trx
+        .selectFrom("currency")
+        .innerJoin("company", (join) =>
+          join
+            .onRef("company.baseCurrencyCode", "=", "currency.code")
+            .onRef("company.companyGroupId", "=", "currency.companyGroupId")
+        )
+        .select("currency.decimalPlaces")
+        .where("company.id", "=", eliminationCompanyId)
+        .executeTakeFirst()
+    ]);
+    if (!decimals) {
+      throw new Error(
+        "The elimination company's currency is missing from the group's currencies"
+      );
+    }
+    const { movement } = ctaMovement({
+      liveCta,
+      postedCta,
+      decimalPlaces: Number(decimals.decimalPlaces)
+    });
+    if (movement === 0) return null;
+
+    const period = await resolveAccountingPeriod(
+      trx,
+      eliminationCompanyId,
+      periodEnd,
+      "historical"
+    );
+    const journal: RunJournal = {
+      description: `Currency translation adjustment ${periodEnd}`,
+      sourceType: "Currency Translation",
+      lines: [
+        {
+          accountId: ctaAccountId,
+          description: "Currency translation adjustment",
+          // Natural (credit-positive) sign: a positive movement credits CTA.
+          amount: movement,
+          dimensions: {}
+        },
+        {
+          accountId: offsetAccountId,
+          description: "Currency translation offset",
+          amount: -movement,
+          dimensions: {}
+        }
+      ]
+    };
+    const inserted = await insertPostedRunJournal(trx, journal, {
+      accountingPeriodId: period.id,
+      postingDate: period.postingDate,
+      dimensionIds: {},
+      companyId: eliminationCompanyId,
+      userId,
+      now: datetime.timestamp()
+    });
+    return {
+      journalId: inserted.id,
+      journalEntryId: inserted.journalEntryId,
+      movement
+    };
+  });
+}
+
+/** Recompute the CTA preview, then post its movement on the elimination
+ *  entity. Posts nothing when the movement is zero or the group has one
+ *  currency. */
+export async function postCurrencyTranslationAt(
+  ctx: ServiceContext,
+  periodId: string
+): Promise<
+  | { posted: false; movement: 0 }
+  | {
+      posted: true;
+      movement: number;
+      journalId: string;
+      journalEntryId: string;
+    }
+  | CarbonError
+> {
+  // The root's own period decides: once it is Locked or Closed, its
+  // consolidated equity is final, whatever the elimination entity's period.
+  const rootPeriod = await ctx.asCaller.supabase
+    .from("accountingPeriod")
+    .select("closeStatus, closedAt")
+    .eq("id", periodId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (rootPeriod.error) {
+    return ctx.error("internal", "Failed to load the period", rootPeriod.error);
+  }
+  if (!rootPeriod.data) return ctx.error("notFound", "Period not found");
+  if (
+    rootPeriod.data.closeStatus !== "Open" ||
+    rootPeriod.data.closedAt !== null
+  ) {
+    return ctx.error(
+      "rule",
+      "The period is locked or closed, so its currency translation adjustment can no longer be posted"
+    );
+  }
+
+  const preview = await previewCurrencyTranslationAt(ctx, periodId);
+  if (preview instanceof Error) return preview;
+  if (
+    !preview.applicable ||
+    preview.movement === 0 ||
+    !preview.eliminationCompanyId ||
+    !preview.ctaAccountId ||
+    !preview.offsetAccountId
+  ) {
+    return { posted: false, movement: 0 };
+  }
+  try {
+    const journal = await insertCurrencyTranslationJournal(ctx.asSystem.pg, {
+      companyGroupId: ctx.company.groupId,
+      eliminationCompanyId: preview.eliminationCompanyId,
+      periodEnd: preview.periodEnd,
+      liveCta: preview.liveCta,
+      ctaAccountId: preview.ctaAccountId,
+      offsetAccountId: preview.offsetAccountId,
+      userId: ctx.auditUserId
+    });
+    if (!journal) return { posted: false, movement: 0 };
+    return { posted: true, ...journal };
+  } catch (err) {
+    return refusal(
+      ctx,
+      err,
+      "Failed to post the currency translation adjustment"
+    );
+  }
 }

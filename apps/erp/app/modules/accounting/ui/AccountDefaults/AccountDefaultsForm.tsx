@@ -124,6 +124,12 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
             badgeType: "Expense"
           },
           {
+            name: "arRevaluationAccount",
+            label: t`AR Revaluation Adjustment`,
+            description: t`Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices`,
+            badgeType: "Asset"
+          },
+          {
             name: "deferredRevenueAccount",
             label: t`Deferred Revenue`,
             description: t`Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs`,
@@ -290,6 +296,12 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
             badgeType: "Revenue"
           },
           {
+            name: "apRevaluationAccount",
+            label: t`AP Revaluation Adjustment`,
+            description: t`Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices`,
+            badgeType: "Liability"
+          },
+          {
             name: "employeeReimbursementsPayableAccount",
             label: t`Employee Reimbursements Payable`,
             description: t`Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset`,
@@ -352,6 +364,12 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
             termId: "account-default-currency-translation"
           },
           {
+            name: "currencyTranslationOffsetAccount",
+            label: t`Currency Translation Offset`,
+            description: t`Equity account that balances the posted CTA on the elimination company; consolidated reports hide it`,
+            badgeType: "Equity"
+          },
+          {
             name: "migrationClearingAccount",
             label: t`Migration Clearing`,
             description: t`Equity account that offsets the opening balances when accounting is set up. It must total zero.`,
@@ -397,6 +415,12 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
             name: "realizedExchangeGainAccount",
             label: t`Realized Exchange Gain`,
             description: t`Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate`,
+            badgeType: "Revenue"
+          },
+          {
+            name: "unrealizedExchangeGainAccount",
+            label: t`Unrealized Exchange Gain`,
+            description: t`Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance`,
             badgeType: "Revenue"
           },
           {
@@ -598,6 +622,12 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
             name: "realizedExchangeLossAccount",
             label: t`Realized Exchange Loss`,
             description: t`Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate`,
+            badgeType: "Expense"
+          },
+          {
+            name: "unrealizedExchangeLossAccount",
+            label: t`Unrealized Exchange Loss`,
+            description: t`Expense account for FX losses when period-end revaluation restates an open foreign-currency balance`,
             badgeType: "Expense"
           }
         ]

@@ -233,7 +233,7 @@ msgid "Are you sure you want to mark this operation as done? This will end all a
 msgstr "क्या आप सुनिश्चित हैं कि आप इस ऑपरेशन को पूर्ण के रूप में चिह्नित करना चाहते हैं? यह इस ऑपरेशन के लिए सभी सक्रिय उत्पादन इवेंट को समाप्त कर देगा।"
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
-msgstr ""
+msgstr "एक पर्यवेक्षक से कहें कि वह आपकी प्रोफाइल में {processName} कौशल जोड़ें।"
 
 msgid "Assembly steps"
 msgstr "असेंबली चरण"
@@ -465,7 +465,7 @@ msgid "Complete passed"
 msgstr "उत्तीर्ण को पूर्ण करें"
 
 msgid "Complete the {trainingName} training to get the {processName} ability."
-msgstr ""
+msgstr "{trainingName} प्रशिक्षण को पूर्ण करें ताकि आप {processName} कौशल प्राप्त कर सकें।"
 
 msgid "Completed"
 msgstr "पूर्ण"
@@ -1949,7 +1949,7 @@ msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by 
 msgstr "जादुई लिंक के बजाय बायोमेट्रिक्स से साइन इन करें। पासकी को Face ID, Touch ID, या आपकी डिवाइस PIN द्वारा सुरक्षित किया जाता है।"
 
 msgid "Sign in with code"
-msgstr ""
+msgstr "कोड से साइन इन करें"
 
 msgid "Sign in with Google"
 msgstr "Google के साथ साइन इन करें"
@@ -1970,7 +1970,7 @@ msgid "Sign out instead"
 msgstr "इसके बजाय साइन आउट करें"
 
 msgid "Sign-in code"
-msgstr ""
+msgstr "साइन-इन कोड"
 
 msgid "Signature"
 msgstr ""
@@ -2295,7 +2295,7 @@ msgid "Updated {0}"
 msgstr "अपडेट किया गया {0}"
 
 msgid "Updated avatar"
-msgstr ""
+msgstr "अवतार अपडेट किया गया"
 
 msgid "Updated successfully"
 msgstr "सफलतापूर्वक अपडेट किया गया"
@@ -2345,7 +2345,7 @@ msgid "View or open"
 msgstr "देखें या खोलें"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
-msgstr ""
+msgstr "हमने आपको साइन-इन लिंक और 6-अंकीय कोड ईमेल किया है। लिंक का पालन करें, या यहाँ कोड दर्ज करें।"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} क्या है?"
@@ -2372,19 +2372,19 @@ msgid "Yes"
 msgstr "हां"
 
 msgid "You can still start this operation."
-msgstr ""
+msgstr "आप अभी भी यह ऑपरेशन शुरू कर सकते हैं।"
 
 msgid "You can't work on this operation"
-msgstr ""
+msgstr "आप इस ऑपरेशन पर काम नहीं कर सकते।"
 
 msgid "You don't have the {processName} ability"
-msgstr ""
+msgstr "आपके पास {processName} कौशल नहीं है।"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटों से कार्य पर हैं। क्या आप कार्य समाप्त करना भूल गए?"
 
 msgid "Your {processName} qualification expired on {expiredDate}."
-msgstr ""
+msgstr "आपकी {processName} योग्यता {expiredDate} को समाप्त हुई।"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "आपका खाता अभी तक किसी कंपनी का हिस्सा नहीं है। जारी रखने के लिए Carbon ERP में ऑनबोर्डिंग पूर्ण करें।"

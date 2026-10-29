@@ -665,6 +665,8 @@ export const JournalEntrySourceTypeIcon = ({
     case "Revenue Recognition":
       return <LuCalendarClock className={className} />;
     case "Asset Transfer":
+    case "Currency Revaluation":
+    case "Currency Translation":
       return <LuArrowLeftRight className={className} />;
     case "Lease":
     case "Lease Run":

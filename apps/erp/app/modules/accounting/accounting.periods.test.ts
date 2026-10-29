@@ -78,6 +78,38 @@ describe("checklistTasksToCreate", () => {
 });
 
 describe("evaluateCloseChecklist", () => {
+  it("hides a task that does not apply, never gates on it and flushes it to Done", () => {
+    // A company with nothing in a foreign currency: the revaluation task's
+    // check says it does not apply, even though it is required and Open.
+    const fxTask = task({
+      id: "fx1",
+      taskType: "Auto",
+      autoCheckKey: "fx-revaluation",
+      severity: "Warning",
+      name: "Revalue foreign currency balances"
+    });
+    const result = evaluateCloseChecklist(
+      [fxTask],
+      [
+        {
+          autoCheckKey: "fx-revaluation",
+          severity: "Warning",
+          label: "Open foreign-currency balances",
+          failing: false,
+          count: 0,
+          applicable: false
+        }
+      ],
+      "Locked"
+    );
+    expect(result).toEqual({
+      tasks: [],
+      canClose: true,
+      blockingReason: null,
+      autoTaskStates: [{ id: "fx1", status: "Done" }]
+    });
+  });
+
   it("blocks the close while a required manual task is Open, naming it", () => {
     const result = evaluateCloseChecklist(
       [task({ name: "Review financials" })],
@@ -221,7 +253,9 @@ describe("periodRunChecks", () => {
   const nothingDue: PeriodRunPreview = {
     revenue: { count: 0, amount: 0, error: null },
     lease: { count: 0, amount: 0, error: null },
-    depreciation: { count: 0, amount: 0, error: null }
+    depreciation: { count: 0, amount: 0, error: null },
+    currencyRevaluation: { count: 0, amount: 0, error: null },
+    currencyTranslation: { count: 0, amount: 0, error: null }
   };
 
   function base(
@@ -231,6 +265,7 @@ describe("periodRunChecks", () => {
       runPreview: nothingDue,
       heldRunRows: { data: [], error: null },
       draftDepreciationRuns: { data: [], error: null },
+      draftCurrencyRevaluationRuns: { data: [], error: null },
       ...overrides
     };
   }
@@ -254,6 +289,8 @@ describe("periodRunChecks", () => {
       periodRunChecks(base()).map((c) => [c.autoCheckKey, c.failing, c.count])
     ).toEqual([
       ["draft-depreciation", false, 0],
+      ["fx-revaluation", false, 0],
+      ["cta-posted", false, 0],
       ["unposted-revenue-schedules", false, 0],
       ["unposted-lease-schedules", false, 0]
     ]);
@@ -371,5 +408,132 @@ describe("periodRunChecks", () => {
         { id: "D1", readableId: "DEP-000001", periodEnd: "2026-10-31" }
       ]
     });
+  });
+  it("fails the revaluation check with the exposures a new run would revalue", () => {
+    // Two open EUR invoices, differences of 65.36 and 20 → 2 / 85.36.
+    expect(
+      check(
+        base({
+          runPreview: {
+            ...nothingDue,
+            currencyRevaluation: { count: 2, amount: 85.36, error: null }
+          }
+        }),
+        "fx-revaluation"
+      )
+    ).toMatchObject({ failing: true, count: 2, amount: 85.36, draftRuns: [] });
+  });
+
+  it("fails the revaluation check while a Draft revaluation run waits", () => {
+    expect(
+      check(
+        base({
+          draftCurrencyRevaluationRuns: {
+            data: [
+              {
+                id: "F1",
+                currencyRevaluationRunId: "FXR000001",
+                periodEnd: "2026-10-31"
+              }
+            ],
+            error: null
+          }
+        }),
+        "fx-revaluation"
+      )
+    ).toMatchObject({
+      failing: true,
+      count: 1,
+      draftRuns: [
+        { id: "F1", readableId: "FXR000001", periodEnd: "2026-10-31" }
+      ]
+    });
+  });
+
+  it("fails the revaluation check closed when its Draft runs cannot be read", () => {
+    expect(
+      check(
+        base({
+          draftCurrencyRevaluationRuns: { data: null, error: { message: "x" } }
+        }),
+        "fx-revaluation"
+      )?.failing
+    ).toBe(true);
+  });
+
+  it("fails the CTA check while the root's posted CTA trails the consolidated CTA", () => {
+    // Consolidated CTA 41,000 against 38,400 posted: a movement of 2,600.
+    expect(
+      check(
+        base({
+          runPreview: {
+            ...nothingDue,
+            currencyTranslation: { count: 1, amount: 2600, error: null }
+          }
+        }),
+        "cta-posted"
+      )
+    ).toMatchObject({ failing: true, count: 1, amount: 2600, draftRuns: [] });
+  });
+
+  it("passes the CTA check when there is nothing to post (non-root or one currency)", () => {
+    expect(check(base(), "cta-posted")).toMatchObject({
+      failing: false,
+      count: 0
+    });
+  });
+
+  it("marks the FX checks not applicable when their previews say so, unless a Draft run waits", () => {
+    const notApplicable = {
+      count: 0,
+      amount: 0,
+      error: null,
+      applicable: false
+    };
+    const runPreview = {
+      ...nothingDue,
+      currencyRevaluation: notApplicable,
+      currencyTranslation: notApplicable
+    };
+    expect(check(base({ runPreview }), "fx-revaluation")?.applicable).toBe(
+      false
+    );
+    expect(check(base({ runPreview }), "cta-posted")?.applicable).toBe(false);
+    expect(
+      check(
+        base({
+          runPreview,
+          draftCurrencyRevaluationRuns: {
+            data: [
+              {
+                id: "F1",
+                currencyRevaluationRunId: "FXR000001",
+                periodEnd: "2026-10-31"
+              }
+            ],
+            error: null
+          }
+        }),
+        "fx-revaluation"
+      )?.applicable
+    ).toBe(true);
+  });
+
+  it("fails the CTA check closed when the preview fails", () => {
+    expect(
+      check(
+        base({
+          runPreview: {
+            ...nothingDue,
+            currencyTranslation: {
+              count: 0,
+              amount: 0,
+              error: "The group has no elimination entity"
+            }
+          }
+        }),
+        "cta-posted"
+      )?.failing
+    ).toBe(true);
   });
 });

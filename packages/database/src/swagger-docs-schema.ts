@@ -25662,6 +25662,267 @@ export default {
         tags: ["itemLedger"]
       }
     },
+    "/currencyRevaluationLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.exposureType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmountEnteredBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmountEnteredAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.bookedBaseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.revaluedBaseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.differenceAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/currencyRevaluationLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["currencyRevaluationLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.currencyRevaluationLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["currencyRevaluationLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.exposureType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmountEnteredBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmountEnteredAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.bookedBaseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.revaluedBaseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.differenceAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["currencyRevaluationLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.exposureType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.documentNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmountEnteredBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.openAmountEnteredAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.bookedBaseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.revaluedBaseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.differenceAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.currencyRevaluationLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["currencyRevaluationLine"]
+      }
+    },
     "/shippingTerm": {
       get: {
         parameters: [
@@ -45283,6 +45544,21 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.leaseInterestExpenseAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.unrealizedExchangeGainAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.unrealizedExchangeLossAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.arRevaluationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.apRevaluationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.currencyTranslationOffsetAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -45552,6 +45828,21 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.leaseInterestExpenseAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.unrealizedExchangeGainAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.unrealizedExchangeLossAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.arRevaluationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.apRevaluationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.currencyTranslationOffsetAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -45773,6 +46064,21 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.leaseInterestExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.unrealizedExchangeGainAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.unrealizedExchangeLossAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.arRevaluationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.apRevaluationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.currencyTranslationOffsetAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -49777,6 +50083,9 @@ export default {
             $ref: "#/parameters/rowFilter.account.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.account.currencyCode"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -49890,6 +50199,9 @@ export default {
             $ref: "#/parameters/rowFilter.account.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.account.currencyCode"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -49955,6 +50267,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.account.isSystem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.account.currencyCode"
           },
           {
             $ref: "#/parameters/body.account"
@@ -51448,6 +51763,9 @@ export default {
             $ref: "#/parameters/rowFilter.accounts.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.accounts.currencyCode"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -51561,6 +51879,9 @@ export default {
             $ref: "#/parameters/rowFilter.accounts.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.accounts.currencyCode"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -51626,6 +51947,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accounts.isSystem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accounts.currencyCode"
           },
           {
             $ref: "#/parameters/body.accounts"
@@ -77370,6 +77694,186 @@ export default {
         tags: ["purchaseOrderSuppliers"]
       }
     },
+    "/currencyRevaluationRate": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.rate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.rateSource"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/currencyRevaluationRate"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["currencyRevaluationRate"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.currencyRevaluationRate"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["currencyRevaluationRate"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.rate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.rateSource"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["currencyRevaluationRate"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.rate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.rateSource"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.currencyRevaluationRate"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["currencyRevaluationRate"]
+      }
+    },
     "/workCenterReplacementPart": {
       get: {
         parameters: [
@@ -77917,6 +78421,213 @@ export default {
           }
         },
         tags: ["itemSerialSequence"]
+      }
+    },
+    "/currencyRevaluationRun": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.currencyRevaluationRunId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.periodEnd"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.reversalJournalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.postedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/currencyRevaluationRun"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["currencyRevaluationRun"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.currencyRevaluationRun"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["currencyRevaluationRun"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.currencyRevaluationRunId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.periodEnd"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.reversalJournalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.postedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["currencyRevaluationRun"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.currencyRevaluationRunId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.periodEnd"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.reversalJournalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.postedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyRevaluationRun.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.currencyRevaluationRun"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["currencyRevaluationRun"]
       }
     },
     "/batchProperty": {
@@ -124544,7 +125255,9 @@ export default {
             "Revenue Recognition",
             "Asset Transfer",
             "Lease",
-            "Lease Run"
+            "Lease Run",
+            "Currency Revaluation",
+            "Currency Translation"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -131813,6 +132526,113 @@ export default {
       },
       type: "object"
     },
+    currencyRevaluationLine: {
+      required: [
+        "id",
+        "companyId",
+        "runId",
+        "exposureType",
+        "accountId",
+        "currencyCode",
+        "bookedBaseAmount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('fxrl'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        runId: {
+          format: "text",
+          type: "string"
+        },
+        exposureType: {
+          format: "text",
+          type: "string"
+        },
+        documentType: {
+          format: "text",
+          type: "string"
+        },
+        documentId: {
+          format: "text",
+          type: "string"
+        },
+        documentNumber: {
+          format: "text",
+          type: "string"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
+        },
+        openAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        openAmountEnteredBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        openAmountEnteredAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        bookedBaseAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        revaluedBaseAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        differenceAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     shippingTerm: {
       required: ["id", "name", "active", "companyId", "createdAt", "createdBy"],
       properties: {
@@ -138737,7 +139557,9 @@ export default {
             "Revenue Recognition",
             "Asset Transfer",
             "Lease",
-            "Lease Run"
+            "Lease Run",
+            "Currency Revaluation",
+            "Currency Translation"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -141302,6 +142124,36 @@ export default {
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
           type: "string"
+        },
+        unrealizedExchangeGainAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        unrealizedExchangeLossAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        arRevaluationAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        apRevaluationAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        currencyTranslationOffsetAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -143403,6 +144255,12 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -144259,6 +145117,12 @@ export default {
         isSystem: {
           format: "boolean",
           type: "boolean"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -153630,7 +154494,9 @@ export default {
             "Revenue Recognition",
             "Asset Transfer",
             "Lease",
-            "Lease Run"
+            "Lease Run",
+            "Currency Revaluation",
+            "Currency Translation"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -156437,6 +157303,72 @@ export default {
       },
       type: "object"
     },
+    currencyRevaluationRate: {
+      required: [
+        "id",
+        "companyId",
+        "runId",
+        "currencyCode",
+        "rate",
+        "rateSource",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('fxrr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        runId: {
+          format: "text",
+          type: "string"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
+        },
+        rate: {
+          format: "numeric",
+          type: "number"
+        },
+        rateSource: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     workCenterReplacementPart: {
       required: [
         "id",
@@ -156639,6 +157571,88 @@ export default {
         },
         serialNumberTiming: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    currencyRevaluationRun: {
+      required: [
+        "id",
+        "currencyRevaluationRunId",
+        "companyId",
+        "periodEnd",
+        "status",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('fxr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        currencyRevaluationRunId: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        periodEnd: {
+          format: "date",
+          type: "string"
+        },
+        status: {
+          default: "Draft",
+          format: "text",
+          type: "string"
+        },
+        journalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        reversalJournalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        postedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        postedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -183696,6 +184710,129 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.currencyRevaluationLine": {
+      name: "currencyRevaluationLine",
+      description: "currencyRevaluationLine",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/currencyRevaluationLine"
+      }
+    },
+    "rowFilter.currencyRevaluationLine.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.runId": {
+      name: "runId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.exposureType": {
+      name: "exposureType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.documentType": {
+      name: "documentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.documentNumber": {
+      name: "documentNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.accountId": {
+      name: "accountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.openAmount": {
+      name: "openAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.openAmountEnteredBy": {
+      name: "openAmountEnteredBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.openAmountEnteredAt": {
+      name: "openAmountEnteredAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.bookedBaseAmount": {
+      name: "bookedBaseAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.revaluedBaseAmount": {
+      name: "revaluedBaseAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.differenceAmount": {
+      name: "differenceAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationLine.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.shippingTerm": {
       name: "shippingTerm",
       description: "shippingTerm",
@@ -194243,6 +195380,36 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.accountDefault.unrealizedExchangeGainAccount": {
+      name: "unrealizedExchangeGainAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.unrealizedExchangeLossAccount": {
+      name: "unrealizedExchangeLossAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.arRevaluationAccount": {
+      name: "arRevaluationAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.apRevaluationAccount": {
+      name: "apRevaluationAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.currencyTranslationOffsetAccount": {
+      name: "currencyTranslationOffsetAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.warehouse": {
       name: "warehouse",
       description: "warehouse",
@@ -196550,6 +197717,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.account.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.leaseScheduleLine": {
       name: "leaseScheduleLine",
       description: "leaseScheduleLine",
@@ -197464,6 +198637,12 @@ export default {
     },
     "rowFilter.accounts.isSystem": {
       name: "isSystem",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accounts.currencyCode": {
+      name: "currencyCode",
       required: false,
       in: "query",
       type: "string"
@@ -211149,6 +212328,75 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.currencyRevaluationRate": {
+      name: "currencyRevaluationRate",
+      description: "currencyRevaluationRate",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/currencyRevaluationRate"
+      }
+    },
+    "rowFilter.currencyRevaluationRate.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.runId": {
+      name: "runId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.rate": {
+      name: "rate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.rateSource": {
+      name: "rateSource",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRate.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.workCenterReplacementPart": {
       name: "workCenterReplacementPart",
       description: "workCenterReplacementPart",
@@ -211358,6 +212606,93 @@ export default {
     },
     "rowFilter.itemSerialSequence.serialNumberTiming": {
       name: "serialNumberTiming",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.currencyRevaluationRun": {
+      name: "currencyRevaluationRun",
+      description: "currencyRevaluationRun",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/currencyRevaluationRun"
+      }
+    },
+    "rowFilter.currencyRevaluationRun.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.currencyRevaluationRunId": {
+      name: "currencyRevaluationRunId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.periodEnd": {
+      name: "periodEnd",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.journalId": {
+      name: "journalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.reversalJournalId": {
+      name: "reversalJournalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.postedAt": {
+      name: "postedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.postedBy": {
+      name: "postedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencyRevaluationRun.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

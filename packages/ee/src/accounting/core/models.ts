@@ -566,6 +566,20 @@ export const POSTING_POLICY: Record<
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
+  // Period-end FX revaluation (valuation + day-1 reversal). Off by default, like
+  // every newer type, so an existing integration never starts pushing it unasked.
+  "Currency Revaluation": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  // The posted CTA lives on an elimination entity, which has no integration.
+  "Currency Translation": {
+    representation: "journal",
+    syncable: false,
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Non-Conformance": {
     representation: "journal",
     defaultEnabled: true,

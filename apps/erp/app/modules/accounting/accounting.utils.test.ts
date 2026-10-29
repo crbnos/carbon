@@ -14,6 +14,8 @@ import {
   calculateMacrsDepreciation,
   calculateTaxDepreciation,
   computeDisposalGainLoss,
+  ctaMovement,
+  defaultConsolidatedRate,
   depreciationFloor,
   depreciationRunLineDisplay,
   depreciationRunLinesMatch,
@@ -1459,4 +1461,43 @@ describe("generalLedgerCounterparty", () => {
       supplierInvoiceNumber: null
     });
   });
+});
+
+describe("defaultConsolidatedRate", () => {
+  it.each([
+    ["Asset", "Current"],
+    ["Liability", "Current"],
+    ["Equity", "Historical"],
+    ["Revenue", "Average"],
+    ["Expense", "Average"]
+  ] as const)(
+    "translates a new %s account at the %s rate",
+    (accountClass, rate) => {
+      expect(defaultConsolidatedRate(accountClass)).toBe(rate);
+    }
+  );
+});
+
+describe("ctaMovement", () => {
+  it.each([
+    // [report CTA, CTA posted so far, decimals, posted, movement]
+    [38_400, 0, 2, 0, 38_400],
+    [41_000, 38_400, 2, 38_400, 2_600],
+    [38_400, 38_400, 2, 38_400, 0],
+    [-1_200, -500, 2, -500, -700],
+    // A -0 posted CTA reads as 0.
+    [10, -0, 2, 0, 10],
+    // Less than one cent of drift is nothing to post.
+    [100.004, 100, 2, 100, 0],
+    // JPY's minor unit is 1: half a yen of drift is nothing to post.
+    [1_000.5, 1_000, 0, 1_000, 0],
+    [1_002, 1_000, 0, 1_000, 2]
+  ] as const)(
+    "with a report CTA of %d and %d already posted (%d decimals) posts %d and moves %d",
+    (liveCta, posted, decimalPlaces, postedCta, movement) => {
+      expect(
+        ctaMovement({ liveCta, postedCta: posted, decimalPlaces })
+      ).toEqual({ postedCta, movement });
+    }
+  );
 });

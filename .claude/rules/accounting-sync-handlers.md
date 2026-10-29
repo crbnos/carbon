@@ -708,8 +708,8 @@ is dead config for Rillet only, left in place for the capped providers.
   disabled — enable it in the accounting sync settings to push these
   journals") unless the company's per-type config sets `enabled`. The
   default-off set (`POSTING_SYNC_DEFAULT_SOURCE_TYPES` excludes them) is the
-  three return types, `'Revenue Recognition'`, `'Asset Transfer'`, `'Lease'`
-  and `'Lease Run'`: a new journal type never starts pushing to a customer's
+  three return types, `'Revenue Recognition'`, `'Asset Transfer'`, `'Lease'`,
+  `'Lease Run'` and `'Currency Revaluation'`: a new journal type never starts pushing to a customer's
   external ledger unasked (plan decision 1 of
   `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I).
   **`'Lease'`** (migration `20261006220301_fleet-rental-lease-enums.sql`,
@@ -736,6 +736,14 @@ is dead config for Rillet only, left in place for the capped providers.
   invoice mappers (the Rental-line spike above). <!-- UNVERIFIED: no provider
   has been exercised with a Lease or Lease Run journal or a sales-type rental
   invoice -->
+
+  **`'Currency Revaluation'`** (`20261029181207_fx-revaluation-enums.sql`, same
+  models file and granularity) carries the currency revaluation run's two
+  journals: the period-end unrealized exchange gain/loss and its next-day
+  reversal. **`'Currency Translation'`** is `syncable: false`: the posted CTA
+  lives on the group's elimination entity, which has no integration.
+  <!-- UNVERIFIED: no provider has been exercised with a Currency Revaluation
+  journal -->
 
 ## Credit memos and supplier credits as provider documents
 

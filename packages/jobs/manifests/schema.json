@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261029130430",
+  "schemaVersion": "20261029182918",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-29T13:47:41.976Z",
+  "exportedAt": "2026-10-29T19:28:40.780Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -31,7 +31,8 @@
         "parentId",
         "isGroup",
         "accountType",
-        "isSystem"
+        "isSystem",
+        "currencyCode"
       ]
     },
     {
@@ -107,7 +108,12 @@
         "operatingLeaseExpenseAccount",
         "variableLeaseExpenseAccount",
         "rightOfUseAmortizationExpenseAccount",
-        "leaseInterestExpenseAccount"
+        "leaseInterestExpenseAccount",
+        "unrealizedExchangeGainAccount",
+        "unrealizedExchangeLossAccount",
+        "arRevaluationAccount",
+        "apRevaluationAccount",
+        "currencyTranslationOffsetAccount"
       ]
     },
     {
@@ -1135,6 +1141,66 @@
         "updatedAt",
         "updatedBy",
         "eliminationKind"
+      ]
+    },
+    {
+      "name": "currencyRevaluationRun",
+      "rows": 0,
+      "columns": [
+        "id",
+        "currencyRevaluationRunId",
+        "companyId",
+        "periodEnd",
+        "status",
+        "journalId",
+        "reversalJournalId",
+        "postedAt",
+        "postedBy",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "currencyRevaluationLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "runId",
+        "exposureType",
+        "documentType",
+        "documentId",
+        "documentNumber",
+        "accountId",
+        "currencyCode",
+        "openAmount",
+        "openAmountEnteredBy",
+        "openAmountEnteredAt",
+        "bookedBaseAmount",
+        "revaluedBaseAmount",
+        "differenceAmount",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "currencyRevaluationRate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "runId",
+        "currencyCode",
+        "rate",
+        "rateSource",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {

@@ -344,8 +344,16 @@ export const accountValidator = z
     class: z.enum(accountClassTypes, {
       error: "Class is required"
     }),
-    consolidatedRate: z.enum(consolidatedRateTypes)
+    consolidatedRate: z.enum(consolidatedRateTypes),
+    currencyCode: zfd.text(z.string().optional())
   })
+  .refine(
+    (data) => !data.currencyCode || ["Asset", "Liability"].includes(data.class),
+    {
+      message: "Only an asset or liability account holds a currency",
+      path: ["currencyCode"]
+    }
+  )
   .refine(
     (data) => {
       if (["Asset", "Liability", "Equity"].includes(data.class)) {
@@ -504,7 +512,10 @@ export const defaultBalanceSheetAccountValidator = z.object({
   netInvestmentInLeasesAccount: z.string().optional(),
   rightOfUseAssetAccount: z.string().optional(),
   accumulatedRightOfUseAmortizationAccount: z.string().optional(),
-  leaseLiabilityAccount: z.string().optional()
+  leaseLiabilityAccount: z.string().optional(),
+  arRevaluationAccount: z.string().optional(),
+  apRevaluationAccount: z.string().optional(),
+  currencyTranslationOffsetAccount: z.string().optional()
 });
 
 export const defaultIncomeAcountValidator = z.object({
@@ -598,7 +609,9 @@ export const defaultIncomeAcountValidator = z.object({
   operatingLeaseExpenseAccount: z.string().optional(),
   variableLeaseExpenseAccount: z.string().optional(),
   rightOfUseAmortizationExpenseAccount: z.string().optional(),
-  leaseInterestExpenseAccount: z.string().optional()
+  leaseInterestExpenseAccount: z.string().optional(),
+  unrealizedExchangeGainAccount: z.string().optional(),
+  unrealizedExchangeLossAccount: z.string().optional()
 });
 
 export const defaultAccountValidator =
@@ -745,7 +758,9 @@ export const journalEntrySourceTypes = [
   "Reimbursement",
   "Revenue Recognition",
   "Lease",
-  "Lease Run"
+  "Lease Run",
+  "Currency Revaluation",
+  "Currency Translation"
 ] as const;
 
 // Provisional: written before the accounting cutover, counts nowhere.
@@ -1223,5 +1238,6 @@ export const JOURNAL_BALANCE_TOLERANCE = 0.001;
 export const RUN_JOURNAL_SOURCES: Record<string, string> = {
   "Revenue Recognition": "revenue recognition",
   "Lease Run": "lease",
-  "Asset Depreciation": "depreciation"
+  "Asset Depreciation": "depreciation",
+  "Currency Revaluation": "currency revaluation"
 };

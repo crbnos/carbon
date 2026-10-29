@@ -117,6 +117,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id,
     ...d,
     parentId: d.parentId || undefined,
+    // Always sent: sanitize turns an emptied (or hidden) Account Currency
+    // into null, which clears the column.
+    currencyCode: d.currencyCode,
     customFields: setCustomFields(formData),
     updatedBy: userId
   });
@@ -172,6 +175,7 @@ export default function EditChartOfAccountsRoute() {
     class: account?.class ?? "Asset",
     incomeBalance: account?.incomeBalance ?? "Balance Sheet",
     consolidatedRate: account?.consolidatedRate ?? "Average",
+    currencyCode: account?.currencyCode ?? undefined,
     ...getCustomFields(account?.customFields)
   };
 
