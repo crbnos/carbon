@@ -964,7 +964,7 @@
     {"name":"purchasing_getPurchaseReturnOrders","classification":"READ","schema":"c70a80cf081d","response":"248fa6073d74","permission":"purchasing:view","paginates":true},
     {"name":"purchasing_getPurchaseReturnOrderShipments","classification":"READ","schema":"ceebeb4f9cac","response":"fcf875f84b9b","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchasingDocumentsAssignedToMe","classification":"READ","schema":"31b84d65b2ac","response":"da511db6b83a","permission":"purchasing:view","paginates":false},
-    {"name":"purchasing_getPurchasingPlanning","classification":"READ","schema":"fc88f1909ce3","response":"2853f93ce584","permission":"purchasing:view","paginates":true},
+    {"name":"purchasing_getPurchasingPlanning","classification":"READ","schema":"fc88f1909ce3","response":"e99a1b0b16f8","permission":"purchasing:view","paginates":true},
     {"name":"purchasing_getPurchasingRFQ","classification":"READ","schema":"7f8214d1083f","response":"08cb90c207da","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchasingRFQLine","classification":"READ","schema":"e2b1df794940","response":"453aec159c67","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchasingRFQLines","classification":"READ","schema":"a03ea9b74e8a","response":"9507bd698de0","permission":"purchasing:view","paginates":false},

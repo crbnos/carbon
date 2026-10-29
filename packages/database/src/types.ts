@@ -94202,6 +94202,7 @@ export type Database = {
         Returns: {
           active: boolean
           conversionFactor: number
+          defaultSupplierId: string
           demandAccumulationPeriod: number
           demandAccumulationSafetyStock: number
           firstNegativeDate: string
@@ -94287,6 +94288,12 @@ export type Database = {
           week7: number
           week8: number
           week9: number
+        }[]
+      }
+      get_purchasing_planning_suppliers: {
+        Args: { company_id: string; location_id: string; periods: string[] }
+        Returns: {
+          supplierId: string
         }[]
       }
       get_quote_methods: {

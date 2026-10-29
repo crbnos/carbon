@@ -64,9 +64,14 @@ export type PurchasingPlanningItem = Omit<
   NonNullable<
     Awaited<ReturnType<typeof getPurchasingPlanning>>["data"]
   >[number],
-  keyof PlanningGridColumns
+  keyof PlanningGridColumns | "defaultSupplierId"
 > &
-  PlanningGridColumns;
+  PlanningGridColumns & {
+    /** The supplier the row orders from by default: the preferred supplier,
+     *  else the earliest active supplier part; null when the item has
+     *  neither. The Supplier column shows and filters on it. */
+    defaultSupplierId: string | null;
+  };
 
 export type PurchasingRFQ = NonNullable<
   Awaited<ReturnType<typeof getPurchasingRFQs>>["data"]

@@ -837,6 +837,22 @@ export async function getPurchasingPlanning(
   return query;
 }
 
+/** The default suppliers (`defaultSupplierId`) of the items the purchasing
+ *  plan lists, each once: the options of the grid's Supplier filter. Read over
+ *  the whole plan, not the loaded page, and before the grid's filters. */
+export async function getPurchasingPlanningSuppliers(
+  client: SupabaseClient<Database>,
+  locationId: string,
+  companyId: string,
+  periods: string[]
+) {
+  return client.rpc("get_purchasing_planning_suppliers", {
+    location_id: locationId,
+    company_id: companyId,
+    periods
+  });
+}
+
 export async function getPurchasingTerms(
   client: SupabaseClient<Database>,
   companyId: string
