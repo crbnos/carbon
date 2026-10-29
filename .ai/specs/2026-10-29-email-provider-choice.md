@@ -1,6 +1,6 @@
 # Choose how a company sends email: Gmail, Resend, SMTP or server mail
 
-> Status: in-progress
+> Status: Approved
 > Author: Aashu
 > Date: 2026-10-29
 
