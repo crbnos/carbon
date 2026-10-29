@@ -19,7 +19,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback } from "react";
+import { Suspense, useCallback, useState } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { Await, Link, useParams } from "react-router";
 import { z } from "zod";
@@ -143,11 +143,15 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
   //     ? optimisticAssignment
   //     : routeData?.toolSummary?.assignee;
 
+  // A refused write leaves the loader data unchanged, so remount the
+  // tracking type form to show the stored value again.
+  const [trackingTypeResets, setTrackingTypeResets] = useState(0);
   const fetcher = useAction<typeof action>({
     onError: (data) => {
       if (data?.error) {
         toast.error(data.error.message);
       }
+      setTrackingTypeResets((count) => count + 1);
     }
   });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -417,6 +421,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
       </ValidatedForm>
 
       <ValidatedForm
+        key={`itemTrackingType-${routeData?.toolSummary?.itemTrackingType}-${trackingTypeResets}`}
         defaultValues={{
           itemTrackingType:
             routeData?.toolSummary?.itemTrackingType ?? undefined
