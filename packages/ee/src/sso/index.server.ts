@@ -29,6 +29,7 @@ export {
   buildArchivedEmail,
   deleteJitSsoUser,
   emailDomain,
+  isThrowawaySsoAccount,
   linkSsoIdentityToUser,
   mergeInvitePermissions,
   migrateUserToSso,
