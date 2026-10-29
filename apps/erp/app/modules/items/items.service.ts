@@ -4578,6 +4578,7 @@ async function resolveMethodMaterialStorageUnitIds(
   client: SupabaseClient<Database>,
   args: {
     itemId?: string | null;
+    companyId: string;
     current?: Record<string, string>;
   }
 ): Promise<Record<string, string>> {
@@ -4592,6 +4593,7 @@ async function resolveMethodMaterialStorageUnitIds(
       "locationId, defaultStorageUnitId, storageUnit!inner(effectiveNettable)"
     )
     .eq("itemId", args.itemId)
+    .eq("companyId", args.companyId)
     .eq("storageUnit.effectiveNettable", true);
 
   for (const row of pickMethods.data ?? []) {
@@ -4672,6 +4674,7 @@ export async function upsertMethodMaterial(
       client,
       {
         itemId: methodMaterial.itemId,
+        companyId: methodMaterial.companyId,
         current: normalizeStorageUnitIds(methodMaterial.storageUnitIds)
       }
     );

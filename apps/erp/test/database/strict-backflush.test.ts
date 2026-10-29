@@ -30,7 +30,7 @@ import {
 } from "./fixtures/always-post";
 import { handlesOf } from "./fixtures/handles";
 import { databaseTest } from "./fixtures/local-database";
-import { localServiceRoleClient } from "./fixtures/local-supabase";
+import { postgrestTest } from "./fixtures/local-supabase";
 
 type Ctx = Fixture["ctx"];
 
@@ -859,11 +859,10 @@ databaseTest(
   }
 );
 
-databaseTest(
+postgrestTest(
   "under strict backflush, a non-nettable Pull From blocks activation and release",
-  async () => {
+  async (client) => {
     const f = await alwaysPostFixture();
-    const client = localServiceRoleClient();
     try {
       const quarantine = await storageUnit(f, "Quarantine", {
         nettable: false
@@ -929,7 +928,7 @@ databaseTest(
         .where("companyId", "=", f.companyId)
         .execute();
       const readiness = async () =>
-        (await getJobReleaseReadiness(client!, [job.jobId], f.companyId)).data
+        (await getJobReleaseReadiness(client, [job.jobId], f.companyId)).data
           ?.jobs[0]?.materialsWithoutStorageUnit;
       const gaps = async () =>
         (await getStrictBackflushGapCounts(f.db, f.companyId)).data?.jobs;

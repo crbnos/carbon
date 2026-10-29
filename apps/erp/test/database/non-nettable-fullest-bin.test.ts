@@ -28,7 +28,7 @@ import {
 } from "./fixtures/always-post";
 import { handlesOf } from "./fixtures/handles";
 import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
-import { localServiceRoleClient } from "./fixtures/local-supabase";
+import { postgrestTest } from "./fixtures/local-supabase";
 
 describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
   let f: Fixture;
@@ -174,6 +174,48 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
   );
 
   databaseTest(
+    "a manual issue passes over a non-nettable default to the fullest nettable bin",
+    async () => {
+      const item = await newItem("issued");
+      await setDefaultBin(item, quarantine);
+      await receive(item, warehouse, 5);
+      await receive(item, quarantine, 30);
+      const job = await jobFixture(f, "manual-issue");
+      await f.db
+        .updateTable("jobMaterial")
+        .set({ itemId: item, storageUnitId: null, defaultStorageUnit: true })
+        .where("id", "=", job.materialId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      unwrap(
+        await invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "partToOperation",
+            id: job.operationId,
+            itemId: item,
+            materialId: job.materialId,
+            quantity: 2,
+            adjustmentType: "Negative Adjmt."
+          },
+          issue
+        )
+      );
+
+      const consumed = await f.db
+        .selectFrom("itemLedger")
+        .select(["storageUnitId", "quantity"])
+        .where("itemId", "=", item)
+        .where("documentType", "=", "Job Consumption")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(consumed).toEqual([{ storageUnitId: warehouse, quantity: -2 }]);
+    }
+  );
+
+  databaseTest(
     "stock placed only in a non-nettable unit never becomes the default bin",
     async () => {
       const item = await newItem("first-stock");
@@ -198,10 +240,33 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
         .where("companyId", "=", f.companyId)
         .executeTakeFirst();
       expect(quarantinedDefault?.defaultStorageUnitId ?? null).toBeNull();
+
+      // A nettable unit does become the default, for an item with no other bin.
+      const onShelf = await newItem("first-stock-shelf");
+      await receive(onShelf, warehouse, 2);
+      await f.db
+        .transaction()
+        .execute((trx) =>
+          updatePickMethodDefaultStorageUnitIfNeeded(
+            trx,
+            onShelf,
+            f.locationId,
+            warehouse,
+            f.companyId,
+            USER
+          )
+        );
+      const shelfDefault = await f.db
+        .selectFrom("pickMethod")
+        .select("defaultStorageUnitId")
+        .where("itemId", "=", onShelf)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirst();
+      expect(shelfDefault?.defaultStorageUnitId).toBe(warehouse);
     }
   );
 
-  databaseTest("finds the lots held in a non-nettable unit", async () => {
+  postgrestTest("finds the lots held in a non-nettable unit", async (client) => {
     const item = await newItem("lots", "Batch");
     const held = `${f.prefix}-lot-held`;
     const free = `${f.prefix}-lot-free`;
@@ -244,7 +309,7 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
     );
 
     const result = await getNonNettableTrackedEntityIds(
-      localServiceRoleClient()!,
+      client,
       f.companyId,
       [held, free]
     );
@@ -348,9 +413,9 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
     }
   );
 
-  databaseTest(
+  postgrestTest(
     "a new BoM line seeds its Pull From only from a nettable default",
-    async () => {
+    async (client) => {
       const makeMethodId = `${f.prefix}-seeded-method`;
       await seed(f, (trx) =>
         trx
@@ -365,7 +430,7 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
           .execute()
       );
       const addLine = async (itemId: string) => {
-        const line = await upsertMethodMaterial(localServiceRoleClient()!, {
+        const line = await upsertMethodMaterial(client, {
           makeMethodId,
           order: 1,
           itemType: "Part",

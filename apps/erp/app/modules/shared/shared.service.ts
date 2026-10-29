@@ -4524,7 +4524,11 @@ async function writeGroup(
           );
         }
 
-        const storageUnitIds = await seedStorageUnitIds(trx, component.id);
+        const storageUnitIds = await seedStorageUnitIds(
+          trx,
+          component.id,
+          companyId
+        );
 
         await trx
           .insertInto("methodMaterial")
@@ -4975,7 +4979,8 @@ async function loadOperationChildren(
 // resolveMethodMaterialStorageUnitIds in items.service.ts).
 async function seedStorageUnitIds(
   trx: Transaction<KyselyDatabase>,
-  itemId: string
+  itemId: string,
+  companyId: string
 ): Promise<Record<string, string>> {
   const current: Record<string, string> = {};
   // A non-nettable (quarantine) default is not seeded: the line would then
@@ -4989,6 +4994,7 @@ async function seedStorageUnitIds(
     )
     .select(["pickMethod.locationId", "pickMethod.defaultStorageUnitId"])
     .where("pickMethod.itemId", "=", itemId)
+    .where("pickMethod.companyId", "=", companyId)
     .where("storageUnit.effectiveNettable", "=", true)
     .execute();
   for (const row of rows) {

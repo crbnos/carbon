@@ -24401,12 +24401,21 @@ export async function issueMaterial(
           if (material?.storageUnitId) {
             storageUnitId = material.storageUnitId;
           } else if (material?.defaultStorageUnit) {
-            storageUnitId = await getNettableDefaultStorageUnitId(
-              trx,
-              itemId,
-              job?.locationId!,
-              companyId
-            );
+            // The item's default when it is nettable, else the fullest nettable
+            // bin, as the backflush does.
+            storageUnitId =
+              (await getNettableDefaultStorageUnitId(
+                trx,
+                itemId,
+                job?.locationId!,
+                companyId
+              )) ??
+              (await getStorageUnitWithHighestQuantity(
+                trx,
+                itemId,
+                job?.locationId!,
+                companyId
+              ));
           } else {
             storageUnitId = await getStorageUnitWithHighestQuantity(
               trx,
