@@ -50,8 +50,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     inheritedWorkCenterName = wc?.name ?? null;
   }
 
-  // Its own flag is on, yet a parent or one of its storage types makes it
-  // non-nettable: say which.
+  // Nettable by its own flag, yet a parent or one of its storage types makes
+  // it non-nettable: say which.
   const unit = storageUnit?.data;
   let inheritedNonNettable: ReturnType<typeof nonNettableSource> = null;
   if (unit?.nettable === true && unit.effectiveNettable === false) {

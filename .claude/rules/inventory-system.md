@@ -245,7 +245,12 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   `getDefaultStorageUnitForJob` (`inventory.utils.ts`) skip them the same way, and so does
   job completion's SQL backflush (`backflush_job_materials`, migration
   `20261029091503_non-nettable-guessed-bins.sql`). The bin the material itself names is
-  still used as named.
+  still used as named. A DESTINATION is not guessed: a job's output bin and a PO line's bin
+  (a kanban scan included) keep a non-nettable pick method default, since receiving into an
+  inspection area is a deliberate setup. Under strict backflush a non-nettable Pull From
+  counts as none at activation and release (production `AGENTS.md` → Strict backflush).
+  Pinned by `apps/erp/test/database/non-nettable-fullest-bin.test.ts` and
+  `strict-backflush.test.ts`.
 - **A non-nettable unit is never made a default by itself.** Placing an item's first stock
   in one does not set it as the pick method default (`updatePickMethodDefaultStorageUnitIfNeeded`,
   and `complete_job_to_inventory` in the same migration). A new BoM line does not seed its
@@ -256,12 +261,7 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
 - **Consumption lot pickers leave quarantined lots out.** The MES issue modal's serial and
   batch lists (`getSerialNumbersForItem` / `getBatchNumbersForItem`) and both maintenance
   add-part modals drop lots whose stock is in a non-nettable unit
-  (`getNonNettableTrackedEntityIds`, `@carbon/database`); a failed read offers none. A DESTINATION is not guessed: a job's output
-  bin and a PO line's bin (a kanban scan included) keep a non-nettable pick method default,
-  since receiving into an inspection area is a deliberate setup. Under strict backflush a
-  non-nettable Pull From counts as none at activation and release (production `AGENTS.md` →
-  Strict backflush). Pinned by
-  `apps/erp/test/database/non-nettable-fullest-bin.test.ts` and `strict-backflush.test.ts`.
+  (`getNonNettableTrackedEntityIds`, `@carbon/database`); a failed read offers none.
 - **CSV import** has a "Non-nettable" column for storage units and storage types
   (`parseCsvNonNettable`, `shared.service.ts`): blank leaves an existing unit's flag alone,
   true/false (also yes/no, y/n, 1/0, on/off) sets it, and anything else is a row error.

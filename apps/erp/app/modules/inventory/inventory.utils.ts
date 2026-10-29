@@ -281,11 +281,11 @@ export type NonNettableUnit = {
 };
 
 /**
- * Why a unit whose own flag is on is non-nettable: one of its own storage types
- * first, else the nearest parent that is non-nettable by its own flag or a
- * type. `units` holds the unit's ancestors by id; `nonNettableTypes` the names
- * of the company's non-nettable storage types by id. Null when nothing above
- * the unit makes it non-nettable.
+ * Why a unit that is nettable by its own flag is non-nettable: one of its own
+ * storage types first, else the nearest parent that is non-nettable by its own
+ * flag or a type. `units` holds the unit's ancestors by id; `nonNettableTypes`
+ * the names of the company's non-nettable storage types by id. Null when
+ * nothing above the unit makes it non-nettable.
  */
 export function nonNettableSource(
   unit: Pick<NonNettableUnit, "parentId" | "storageTypeIds">,

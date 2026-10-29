@@ -21823,8 +21823,8 @@ async function issueJobOperationMaterials(
         .where("storageUnitId", "=", proposedStorageUnitId ?? "")
         .executeTakeFirst();
 
-      // The fallback when the proposed bin is short: the fullest bin that is
-      // not non-nettable (no bin counts as nettable).
+      // The fallback when the proposed bin is short: the fullest nettable bin.
+      // Stock in no bin counts as nettable.
       const allStorageUnitQuantities = await trx
         .selectFrom("itemLedger")
         .leftJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")

@@ -1,14 +1,14 @@
 -- A guessed bin is never non-nettable (quarantine).
 --
 -- backflush_job_materials (forked from 20261015163040_strict-backflush.sql):
--- a material with no bin took the item's pick method default, else the fullest
--- bin, with no nettable test, so job completion consumed quarantined stock.
--- The fullest-bin read is now also scoped by company.
+-- a material with no bin takes the item's pick method default only when it is
+-- nettable, else the fullest nettable bin, so job completion never consumes
+-- quarantined stock. The fullest-bin read is also scoped by company.
 --
 -- complete_job_to_inventory (forked from
 -- 20261028153518_serial-number-timing-completion.sql): the first receipt of an
--- item into a non-nettable unit no longer makes that unit the item's pick
--- method default.
+-- item into a non-nettable unit never makes that unit the item's pick method
+-- default.
 
 CREATE OR REPLACE FUNCTION public.backflush_job_materials(p_job_id text, p_quantity_complete numeric, p_company_id text, p_user_id text)
  RETURNS void

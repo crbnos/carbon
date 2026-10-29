@@ -48,7 +48,7 @@ type StorageUnitFormProps = {
     workCenterId: string;
     workCenterName: string | null;
   } | null;
-  /** What makes this unit non-nettable when its own flag is on. */
+  /** What makes this unit non-nettable when its own flag says nettable. */
   inheritedNonNettable?: { via: "storageType" | "parent"; name: string } | null;
 };
 

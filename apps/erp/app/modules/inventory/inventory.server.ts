@@ -3462,8 +3462,8 @@ export const scanKanban = defineServiceFn({
     }
     const card = kanban.data;
 
-    // A Transfer card is refused by replenishKanban, which also serves the
-    // level checks.
+    // replenishKanban checks a Transfer card's units itself, for scans and
+    // level checks alike.
     if (card.replenishmentSystem !== "Transfer") {
       const refused = await service.refuseNonNettableKanbanUnits(ctx, [
         card.storageUnitId
