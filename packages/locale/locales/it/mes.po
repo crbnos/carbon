@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "(Inactive)"
 msgstr "(Inattivo)"
 
@@ -84,6 +87,12 @@ msgstr "{0} esecuzioni nel lotto di produzione {1}"
 msgid "{0} Scrapped"
 msgstr "{0} Scartati"
 
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} di {quantity}"
 
@@ -109,6 +118,21 @@ msgstr "🚨 Attenzione: il {0} il tuo account verrà trasferito su erp.try.carb
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Un completamento precedente non è terminato. Riprovare riprende i passaggi rimanenti — le quantità non vengono conteggiate due volte."
+
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
+msgid "A required field was missing."
+msgstr ""
+
+msgid "A value is not valid."
+msgstr ""
 
 msgid "About"
 msgstr "Informazioni"
@@ -944,6 +968,9 @@ msgstr "Emesso {issuedQuantity} di {lotLabel}"
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "Emesso {issuedQuantity} di {lotLabel} — restano {remainingQuantity}"
 
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
+
 msgid "Item"
 msgstr "Articolo"
 
@@ -1236,6 +1263,9 @@ msgstr "Nessuna manutenzione programmata per oggi"
 
 msgid "No matches. Type to create one."
 msgstr "Nessuna corrispondenza. Digita per crearne una."
+
+msgid "No matching record was found."
+msgstr ""
 
 msgid "No matching time"
 msgstr "Nessun orario corrispondente"
@@ -2111,6 +2141,12 @@ msgstr "Il lotto sarà comunque disposizionato, ma non è possibile creare un NC
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Il timer e il completamento sono condivisi da tutti gli {0} ordini di produzione. I passi, i materiali e i file qui sono di questo ordine di produzione."
 
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
+
 msgid "Theme color"
 msgstr "Colore del tema"
 
@@ -2375,6 +2411,12 @@ msgid "You can still start this operation."
 msgstr ""
 
 msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You do not have permission to do this"
+msgstr ""
+
+msgid "You don't have permission to change this record, or it no longer exists."
 msgstr ""
 
 msgid "You don't have the {processName} ability"

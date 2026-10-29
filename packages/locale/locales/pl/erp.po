@@ -35,6 +35,9 @@ msgstr ", {years}r"
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "\"{0}\" nie jest dostępne na wybranej powierzchni/powierzchniach. Wybierz inne pole."
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "„{storageUnitName}\" ma {childCount} bezpośrednio zagnieżdżonych jednostek magazynowych. Usunięcie go spowoduje również usunięcie ich i wszystkiego pod nimi. Tej operacji nie można cofnąć."
 
@@ -561,6 +564,12 @@ msgstr "{behindDays, plural, one {Opóźniony o # dzień} other {Opóźniony o #
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Rozważ wskazanie tej części bezpośrednio na ostatecznego następcę."
+
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines} z {lines} pozycji ukończone"
@@ -1529,11 +1538,23 @@ msgstr "Status rachunku zmienia się"
 msgid "A receipt's supplier changes"
 msgstr "Dostawca rachunku zmienia się"
 
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Umowa wynajmu musi być w bazowej walucie firmy, aby mogła być aktywowana. Najpierw zmień walutę umowy."
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Wynajem spełniający którykolwiek z pięciu testów leasingu ASC 842, zaksięgowany jako sprzedaż, gdy jego umowa się aktywuje: jednostka opuszcza flotę, przychody ze sprzedaży i koszt własny sprzedaży są zaksięgowane, a na ich miejsce pojawia się inwestycja netto w leasing."
+
+msgid "A required field was missing."
+msgstr ""
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "Autoryzacja zwrotu produktów (RMA) upoważnia klienta do zwrotu towarów w celu uzyskania kredytu, wymiany lub naprawy."
@@ -1747,6 +1768,9 @@ msgstr "Sztuka jest traktowana jako sprzedaż, gdy którykolwiek z tych warunkó
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Użytkownik notuje termin ważności dla każdej partii produkcyjnej lub serii, gdy towary są odbierane. Użyj, gdy dostawcy wysyłają partie z różnymi terminami ważności."
+
+msgid "A value is not valid."
+msgstr ""
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Zmienna opłata — przejazd nadmiarowy, uszkodzenie, dostawa, czyszczenie — jest rozliczana na następnej fakturze umowy."
@@ -10253,9 +10277,8 @@ msgstr "Nie udało się utworzyć typu przyrządu: {0}"
 msgid "Failed to create item group: {0}"
 msgstr "Nie udało się utworzyć grupy pozycji: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create location: {0}"
-msgstr "Nie udało się utworzyć lokalizacji: {0}"
+msgid "Failed to create location"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create material dimension: {0}"
@@ -10289,17 +10312,15 @@ msgstr "Nie udało się utworzyć materiału: {0}"
 msgid "Failed to create no quote reason: {0}"
 msgstr "Nie udało się utworzyć przyczyny odmowy oferty: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create part: {0}"
-msgstr "Nie udało się utworzyć części: {0}"
+msgid "Failed to create part"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create payment term: {0}"
 msgstr "Nie udało się utworzyć warunku płatności: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create process: {0}"
-msgstr "Nie udało się utworzyć procesu: {0}"
+msgid "Failed to create process"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
@@ -10325,9 +10346,8 @@ msgstr "Nie udało się utworzyć narzędzia: {0}"
 msgid "Failed to create webhook: {0}"
 msgstr "Nie udało się utworzyć webhook: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create work center: {0}"
-msgstr "Nie udało się utworzyć stanowiska roboczego: {0}"
+msgid "Failed to create work center"
+msgstr ""
 
 msgid "Failed to delete file from old location"
 msgstr "Nie udało się usunąć pliku ze starej lokalizacji"
@@ -12643,6 +12663,9 @@ msgstr ""
 
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "Wkrótce będzie dostępna. Skontaktuj się z Carbon, aby skonfigurować ją dla Twojej firmy."
+
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
 
 msgid "It was removed after this page loaded. Reload the page and try again."
 msgstr "Usunięto to po załadowaniu tej strony. Odśwież stronę i spróbuj ponownie."
@@ -15571,6 +15594,9 @@ msgstr "Brak pasujących pojemników"
 
 msgid "No matching operations"
 msgstr "Brak zgodnych operacji"
+
+msgid "No matching record was found."
+msgstr ""
 
 msgid "No matching time"
 msgstr "Brak pasującej godziny"
@@ -24808,6 +24834,12 @@ msgstr "Użytkownicy w tej grupie; uprawnienia i powiadomienia o zakresie grupy 
 msgid "The value of the cost layers dated before the cutover."
 msgstr "Wartość warstw kosztów sprzed przejścia."
 
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
+
 msgid "The version of the new document"
 msgstr "Wersja nowego dokumentu"
 
@@ -27892,11 +27924,17 @@ msgid "You completed {leftoverQuantity} more \n"
 "                        to do with the extra parts?"
 msgstr "Ukończyłeś {leftoverQuantity} więcej {0} niż zamówiona ilość {1}. Co chciałbyś zrobić z dodatkowymi częściami?"
 
+msgid "You do not have permission to do this"
+msgstr ""
+
 msgid "You do not have permission to do this on every matching row."
 msgstr ""
 
 msgid "You do not have permission to edit workflows"
 msgstr "Nie masz uprawnień do edytowania przepływów pracy"
+
+msgid "You don't have permission to change this record, or it no longer exists."
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "Nie masz uprawnień do edytowania tej listy materiałów."

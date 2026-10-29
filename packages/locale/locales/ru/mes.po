@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "(Inactive)"
 msgstr "(Неактивный)"
 
@@ -84,6 +87,12 @@ msgstr "{0} запусков в серии {1}"
 msgid "{0} Scrapped"
 msgstr "{0} Списано"
 
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} из {quantity}"
 
@@ -109,6 +118,21 @@ msgstr "🚨 Внимание: {0} ваша учётная запись буде
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Предыдущее выполнение не завершилось. Повторное выполнение возобновляет оставшиеся шаги — количество не учитывается дважды."
+
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
+msgid "A required field was missing."
+msgstr ""
+
+msgid "A value is not valid."
+msgstr ""
 
 msgid "About"
 msgstr "О системе"
@@ -944,6 +968,9 @@ msgstr "Выпущено {issuedQuantity} из {lotLabel}"
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "Выпущено {issuedQuantity} из {lotLabel} — осталось {remainingQuantity}"
 
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
+
 msgid "Item"
 msgstr "Номенклатура"
 
@@ -1236,6 +1263,9 @@ msgstr "На сегодня техобслуживание не запланир
 
 msgid "No matches. Type to create one."
 msgstr "Совпадений не найдено. Введите текст для создания."
+
+msgid "No matching record was found."
+msgstr ""
 
 msgid "No matching time"
 msgstr "Нет подходящего времени"
@@ -2111,6 +2141,12 @@ msgstr "Партия все еще будет распределена, но NCR
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Таймер и завершение общие для всех {0} производственных заказов. Шаги, материалы и файлы здесь — собственность этого производственного заказа."
 
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
+
 msgid "Theme color"
 msgstr "Цвет темы"
 
@@ -2375,6 +2411,12 @@ msgid "You can still start this operation."
 msgstr ""
 
 msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You do not have permission to do this"
+msgstr ""
+
+msgid "You don't have permission to change this record, or it no longer exists."
 msgstr ""
 
 msgid "You don't have the {processName} ability"

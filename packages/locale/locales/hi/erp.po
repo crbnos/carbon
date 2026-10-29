@@ -35,6 +35,9 @@ msgstr ", {years}वर्ष"
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "\"{0}\" चयनित सतह(सतहों) पर उपलब्ध नहीं है। कोई अन्य फ़ील्ड चुनें।"
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "\"{storageUnitName}\" में {childCount} प्रत्यक्ष नेस्ट की गई भंडारण इकाई हैं। इसे हटाने से वे और इनके नीचे सब कुछ भी हटा दिए जाएंगे। इसे पूर्ववत नहीं किया जा सकता।"
 
@@ -561,6 +564,12 @@ msgstr "{behindDays, plural, one {लक्ष्य से # दिन पी�
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
+
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines} में से {lines} पंक्तियाँ पूर्ण"
@@ -1529,11 +1538,23 @@ msgstr "किसी रसीद की स्थिति में परि�
 msgid "A receipt's supplier changes"
 msgstr "किसी रसीद के आपूर्तिकर्ता में परिवर्तन होता है"
 
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "एक किराया समझौता सक्रिय होने के लिए कंपनी की मूल मुद्रा में होना चाहिए। पहले समझौते की मुद्रा बदलें।"
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "एक किराया जो किसी भी पाँच ASC 842 लीज परीक्षण को पूरा करता है, बिक्रय के रूप में बुक किया जाता है जब इसका समझौता सक्रिय होता है: इकाई बेड़े को छोड़ देती है, लीज राजस्व और बेचे गए माल की लागत पोस्ट होती है, और लीज में शुद्ध निवेश इसकी जगह लेता है।"
+
+msgid "A required field was missing."
+msgstr ""
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "एक रिटर्न मर्चेंडाइज ऑथराइजेशन (RMA) एक ग्राहक को क्रेडिट, प्रतिस्थापन या मरम्मत के लिए सामान वापस करने का अधिकार देता है।"
@@ -1747,6 +1768,9 @@ msgstr "एक इकाई को बिक्री के रूप में
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "एक उपयोगकर्ता प्रत्येक बैच या सीरीज पर समाप्ति तिथि दर्ज करता है जब माल प्राप्त होता है। जब आपूर्तिकर्ता विभिन्न समाप्ति तिथियों के साथ लॉट भेजते हैं तो इसका उपयोग करें।"
+
+msgid "A value is not valid."
+msgstr ""
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "एक परिवर्तनीय शुल्क — माइलेज अधिकता, क्षति, डिलीवरी, सफाई — समझौते के अगले चालान पर बिल किया जाता है।"
@@ -10253,9 +10277,8 @@ msgstr "गेज प्रकार बनाने में विफल: {0}
 msgid "Failed to create item group: {0}"
 msgstr "आइटम समूह बनाने में विफल: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create location: {0}"
-msgstr "स्थान बनाने में विफल: {0}"
+msgid "Failed to create location"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create material dimension: {0}"
@@ -10289,17 +10312,15 @@ msgstr "सामग्री बनाने में विफल: {0}"
 msgid "Failed to create no quote reason: {0}"
 msgstr "कोई कोटेशन नहीं कारण बनाने में विफल: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create part: {0}"
-msgstr "पार्ट बनाने में विफल: {0}"
+msgid "Failed to create part"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create payment term: {0}"
 msgstr "भुगतान शर्तें बनाने में विफल: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create process: {0}"
-msgstr "प्रक्रिया बनाने में विफल: {0}"
+msgid "Failed to create process"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
@@ -10325,9 +10346,8 @@ msgstr "टूल बनाने में विफल: {0}"
 msgid "Failed to create webhook: {0}"
 msgstr "वेबहुक बनाने में विफल: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create work center: {0}"
-msgstr "वर्क सेंटर बनाने में विफल: {0}"
+msgid "Failed to create work center"
+msgstr ""
 
 msgid "Failed to delete file from old location"
 msgstr "पुराने स्थान से फ़ाइल हटाने में विफल"
@@ -12643,6 +12663,9 @@ msgstr ""
 
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "यह जल्द ही आ रहा है। इसे अपनी कंपनी के लिए सेट अप करवाने के लिए Carbon से संपर्क करें।"
+
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
 
 msgid "It was removed after this page loaded. Reload the page and try again."
 msgstr "इस पृष्ठ के लोड होने के बाद इसे हटा दिया गया। पृष्ठ पुनः लोड करें और फिर से कोशिश करें।"
@@ -15571,6 +15594,9 @@ msgstr "कोई मिलान बिन नहीं"
 
 msgid "No matching operations"
 msgstr "कोई मेल खाने वाला ऑपरेशन नहीं"
+
+msgid "No matching record was found."
+msgstr ""
 
 msgid "No matching time"
 msgstr "कोई मेल खाता समय नहीं"
@@ -24808,6 +24834,12 @@ msgstr "इस समूह में उपयोगकर्ता; समू�
 msgid "The value of the cost layers dated before the cutover."
 msgstr "कटओवर से पहले दिनांकित लागत परतों का मूल्य।"
 
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
+
 msgid "The version of the new document"
 msgstr "नई दस्तावेज़ का संस्करण"
 
@@ -27895,11 +27927,17 @@ msgstr "आप {leftoverQuantity} अधिक \n"
 "                        मात्रा से पूरा कर चुके हैं। आप अतिरिक्त पार्ट्स के साथ \n"
 "                        क्या करना चाहेंगे?"
 
+msgid "You do not have permission to do this"
+msgstr ""
+
 msgid "You do not have permission to do this on every matching row."
 msgstr ""
 
 msgid "You do not have permission to edit workflows"
 msgstr "आपके पास वर्कफ़्लो संपादित करने की अनुमति नहीं है"
+
+msgid "You don't have permission to change this record, or it no longer exists."
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "आपके पास इस सामग्री विधि को संपादित करने की अनुमति नहीं है।"

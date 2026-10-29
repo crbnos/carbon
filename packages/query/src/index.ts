@@ -6,6 +6,7 @@ export { useRevalidator } from "@carbon/react";
 export * from "./cache";
 export type { Cursor } from "./liveList";
 export { matchesFilter } from "./realtimeFilter";
+export { toastServiceError } from "./toastServiceError";
 export { actionOutcome, serviceErrorMessage, useAction } from "./useAction";
 export type { ChangedRows } from "./useChangedRows";
 export { useChangedRows } from "./useChangedRows";

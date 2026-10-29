@@ -4,7 +4,7 @@
 
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { Edition, redirect } from "@carbon/utils";
+import { Edition, type FailureReason, redirect } from "@carbon/utils";
 import type { AuthSession as SupabaseAuthSession } from "@supabase/supabase-js";
 import {
   type CookieOptions,
@@ -302,6 +302,9 @@ export async function flash(request: Request, result: Result) {
     if (result.description) {
       session.flash("description", result.description);
     }
+    if (result.reason) {
+      session.flash("reason", result.reason);
+    }
     if (result.flash) {
       session.flash("flash", result.flash);
     }
@@ -345,6 +348,7 @@ export async function getSessionFlash(request: Request) {
     success: session.get("success") === true,
     message: session.get("message"),
     description: session.get("description"),
+    reason: session.get("reason") as FailureReason | undefined,
     flash: session.get("flash") as "success" | "error" | undefined
   };
 

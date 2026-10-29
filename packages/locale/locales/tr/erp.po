@@ -35,6 +35,9 @@ msgstr ", {years}yr"
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "\"{0}\" seçili yüzey(ler)de kullanılabilir değildir. Başka bir alan seçin."
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "\"{storageUnitName}\" {childCount} adet doğrudan iç içe geçmiş depolama birimine sahip. Bunu silmek, onları ve altlarındaki her şeyi de silecektir. Bu geri alınamaz."
 
@@ -561,6 +564,12 @@ msgstr "{behindDays, plural, one {Hedeften # gün geride} other {Hedeften # gün
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Bu parçayı doğrudan nihai ardıla yönlendirmeyi düşünün."
+
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines}/{lines} satır tamamlandı"
@@ -1529,11 +1538,23 @@ msgstr "Makbuzun durumu değişti"
 msgid "A receipt's supplier changes"
 msgstr "Makbuzun tedarikçisi değişti"
 
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Bir kira sözleşmesi, etkinleştirilmek için şirketin temel para biriminde olmalıdır. Önce sözleşmenin para birimini değiştirin."
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Beş ASC 842 kira testinden herhangi birini karşılayan bir kiralama, sözleşmesi etkinleştirildiğinde satış olarak muhasebeleştirilen: birim filo ayrılır, kira hasılatı ve satılan malın maliyeti muhasebeleştirilir ve kiralamada net yatırım yerini alır."
+
+msgid "A required field was missing."
+msgstr ""
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "İade malı yetkilendirmesi (RMA), bir müşterinin kredi, yedek veya onarım için malları iade etmesine yetki verir."
@@ -1747,6 +1768,9 @@ msgstr "Bunlardan biri doğru olduğunda bir adet satış olarak muhasebeleştir
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Kullanıcı, mallar alındığında her parti veya seri için son kullanma tarihini kaydeder. Tedarikçiler farklı son kullanma tarihlerine sahip partiler gönderdiğinde kullanılır."
+
+msgid "A value is not valid."
+msgstr ""
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Değişken bir ücret — kilometre fazlası, hasar, teslimat, temizlik — sözleşmenin bir sonraki faturasında faturalandırılır."
@@ -10253,9 +10277,8 @@ msgstr "Ölçüm aleti türü oluşturulamadı: {0}"
 msgid "Failed to create item group: {0}"
 msgstr "Ürün grubu oluşturulamadı: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create location: {0}"
-msgstr "Konum oluşturulamadı: {0}"
+msgid "Failed to create location"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create material dimension: {0}"
@@ -10289,17 +10312,15 @@ msgstr "Malzeme oluşturulamadı: {0}"
 msgid "Failed to create no quote reason: {0}"
 msgstr "Teklif yok nedeni oluşturulamadı: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create part: {0}"
-msgstr "Parça oluşturulamadı: {0}"
+msgid "Failed to create part"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create payment term: {0}"
 msgstr "Ödeme koşulu oluşturulamadı: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create process: {0}"
-msgstr "İşlemi oluşturulamadı: {0}"
+msgid "Failed to create process"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
@@ -10325,9 +10346,8 @@ msgstr "Araç oluşturulamadı: {0}"
 msgid "Failed to create webhook: {0}"
 msgstr "Webhook oluşturulamadı: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create work center: {0}"
-msgstr "İş merkezi oluşturulamadı: {0}"
+msgid "Failed to create work center"
+msgstr ""
 
 msgid "Failed to delete file from old location"
 msgstr "Eski konumdan dosya silinemedi"
@@ -12643,6 +12663,9 @@ msgstr ""
 
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "Yakında kullanıma sunulacak. Şirketiniz için kurulması için Carbon ile iletişime geçin."
+
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
 
 msgid "It was removed after this page loaded. Reload the page and try again."
 msgstr "Bu sayfa yüklendikten sonra kaldırıldı. Sayfayı yeniden yükleyin ve tekrar deneyin."
@@ -15571,6 +15594,9 @@ msgstr "Eşleşen göz yok"
 
 msgid "No matching operations"
 msgstr "Eşleşen operasyon yok"
+
+msgid "No matching record was found."
+msgstr ""
 
 msgid "No matching time"
 msgstr "Eşleşen saat yok"
@@ -24808,6 +24834,12 @@ msgstr "Bu gruptaki kullanıcılar; grup kapsamlı izinler ve bildirimler her ü
 msgid "The value of the cost layers dated before the cutover."
 msgstr "Kesinti tarihinden öncesine ait maliyet katmanlarının değeri."
 
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
+
 msgid "The version of the new document"
 msgstr "Yeni belgenin versiyonu"
 
@@ -27892,11 +27924,17 @@ msgid "You completed {leftoverQuantity} more \n"
 "                        to do with the extra parts?"
 msgstr "Sipariş edilen miktardan {leftoverQuantity} fazla {0} tamamladınız. Fazla parçalarla ne yapmak istersiniz?{1}"
 
+msgid "You do not have permission to do this"
+msgstr ""
+
 msgid "You do not have permission to do this on every matching row."
 msgstr ""
 
 msgid "You do not have permission to edit workflows"
 msgstr "İş akışlarını Düzenlemek için İzniniz yok"
+
+msgid "You don't have permission to change this record, or it no longer exists."
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "Bu Malzeme listesini Düzenlemek için İzniniz yok."
