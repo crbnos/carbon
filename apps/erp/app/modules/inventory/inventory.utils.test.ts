@@ -227,20 +227,39 @@ describe("stockIncreaseRefusal", () => {
   });
 
   it.each([undefined, null])(
-    "adds to an existing unit when its number is %j",
+    "adds to a numbered unit when the number sent is %j",
     (readableId) => {
-      expect(increase({ createsUnit: false, readableId })).toBeNull();
+      expect(
+        increase({ createsUnit: false, readableId, currentReadableId: "LOT-1" })
+      ).toBeNull();
     }
   );
 
   it.each(["", "  "])(
     "refuses blanking an existing unit's number with %j",
     (readableId) => {
-      expect(increase({ createsUnit: false, readableId })).toEqual(
-        expect.any(String)
-      );
+      expect(
+        increase({ createsUnit: false, readableId, currentReadableId: "LOT-1" })
+      ).toEqual(expect.any(String));
     }
   );
+
+  it("refuses adding to a unit with no number unless one is sent", () => {
+    expect(
+      increase({
+        createsUnit: false,
+        readableId: undefined,
+        currentReadableId: null
+      })
+    ).toEqual(expect.any(String));
+    expect(
+      increase({
+        createsUnit: false,
+        readableId: "LOT-9",
+        currentReadableId: null
+      })
+    ).toBeNull();
+  });
 
   it.each(["Inventory", "Non-Inventory", null] as const)(
     "leaves a %s item's increase alone",

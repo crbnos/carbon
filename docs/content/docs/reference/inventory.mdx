@@ -74,7 +74,7 @@ Recost works on FIFO and LIFO items only. Change the item's cost on its **Costin
 The unit has left stock, or the entered cost equals what it already carries.
 
 ### "Batch number is required" / "Serial number is required"
-The adjustment adds a new batch or serial unit but gives it no number. Enter the batch or serial number, or open the existing unit's row to add to it.
+The adjustment adds stock to a batch or serial unit with no number: a new unit, or an existing one that never had a number. Enter the batch or serial number, or open a numbered unit's row to add to it.
 
 ### "Batch-tracked stock must go into a batch…" / "Serial-tracked stock must go into a serial unit…"
 An increase of a batch- or serial-tracked item named no unit, typically from the API or MCP. Send the unit's `trackedEntityId`, or a new id with its number as `readableId` to create the unit.

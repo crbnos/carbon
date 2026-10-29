@@ -32,7 +32,7 @@ Key service functions (verified):
   The posting owns positive/negative/set-quantity **plus Scrap/Unscrap**
   (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`) resolution, tracked-entity storage-unit
   transfers, expiry override, batch/serial assignment (an increase of a Batch or Serial item
-  must name its unit, and a new unit needs its number: `stockIncreaseRefusal`,
+  must name its unit, and the unit, new or existing, needs its number: `stockIncreaseRefusal`,
   `inventory.utils.ts`) — and, in one Kysely transaction, maintains
   `costLedger` layers (consume via `calculateCOGS` on decreases, new layer at current cost on
   increases) and posts a journal (Dr/Cr `resolveInventoryAccount` vs
