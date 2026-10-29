@@ -11,6 +11,7 @@ import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import { sql } from "kysely";
+import { getSsoSignIn } from "./session.server";
 
 const logger = getLogger("ee");
 
@@ -354,6 +355,45 @@ export async function removeSsoIdentitiesForProvider(
   }
 }
 
+// The longest a SAML sign-in that created an account can take to reach the
+// callback: GoTrue creates the user at the ACS and records the session's
+// `sso/saml` time when the PKCE code is exchanged, and that code expires after
+// five minutes. The same bound says the session is the sign-in happening now.
+const JIT_SSO_SIGN_IN_WINDOW_MS = 5 * 60 * 1000;
+// `amr` times are whole seconds; the user row's are not.
+const AMR_TIMESTAMP_RESOLUTION_MS = 1000;
+
+/**
+ * Whether the sign-in being refused created this account — GoTrue's throwaway
+ * JIT user: every identity is "sso:", the account was created within
+ * `JIT_SSO_SIGN_IN_WINDOW_MS` before this session authenticated, and that
+ * authentication is itself recent. Having no company membership is not enough
+ * — with sign-ups disabled GoTrue creates no user, so the account a refusal
+ * reaches is usually a real one: invited then revoked, removed from every
+ * company, or a fresh instance's seed admin. Those carry an email identity, or
+ * existed before this sign-in. Without the sign-in time there is no evidence,
+ * and the account is kept.
+ */
+export function isThrowawaySsoAccount(
+  user: { created_at: string; identities?: { provider: string }[] | null },
+  { signedInAtMs, nowMs }: { signedInAtMs: number | null; nowMs: number }
+): boolean {
+  if (signedInAtMs === null) return false;
+  const identities = user.identities ?? [];
+  if (identities.length === 0) return false;
+  if (!identities.every((identity) => identity.provider.startsWith("sso:"))) {
+    return false;
+  }
+  // Absolute instants compared in epoch ms (date-handling's exception).
+  const createdMs = Date.parse(user.created_at);
+  if (!Number.isFinite(createdMs)) return false;
+  return (
+    createdMs <= signedInAtMs + AMR_TIMESTAMP_RESOLUTION_MS &&
+    signedInAtMs - createdMs <= JIT_SSO_SIGN_IN_WINDOW_MS &&
+    nowMs - signedInAtMs <= JIT_SSO_SIGN_IN_WINDOW_MS
+  );
+}
+
 /**
  * Remove a throwaway JIT SSO auth user COMPLETELY — the auth user AND the
  * `public."user"` / `userPermission` rows the `on_auth_user_created` trigger
@@ -364,44 +404,17 @@ export async function removeSsoIdentitiesForProvider(
  *
  * Guarded on zero `userToCompany` memberships — re-checked here, not just at
  * the caller — so a linked or real account can never be deleted: a membership
- * means the id was attached to a company and is not a throwaway. Public rows
- * are deleted BEFORE the auth user: if the auth delete then fails, the remnant
- * is auth-only, which the next SSO attempt (or invite) resolves by itself —
- * never the un-invitable orphan.
+ * means the id was attached to a company and is not a throwaway. Also guarded
+ * on `isThrowawaySsoAccount`, with the sign-in time read from `accessToken`,
+ * the refused session's own token. Public rows are deleted BEFORE the auth
+ * user: if the auth delete then fails, the remnant is auth-only, which the
+ * next SSO attempt (or invite) resolves by itself — never the un-invitable
+ * orphan.
  */
-// How long after GoTrue created a user it still counts as made by the sign-in
-// being refused. The SAML ACS creates it and the callback runs seconds later.
-const JIT_SSO_ACCOUNT_MAX_AGE_MS = 10 * 60 * 1000;
-
-/**
- * Whether GoTrue created this account just now, through SSO, as the throwaway
- * JIT user of the sign-in being refused: every identity is "sso:" and it is
- * minutes old. Having no company membership is not enough — with sign-ups
- * disabled GoTrue creates no user, so the account a refusal reaches is usually
- * a real one: invited then revoked, removed from every company, or a fresh
- * instance's seed admin. Those carry an email identity, or are older.
- */
-export function isThrowawaySsoAccount(
-  user: { created_at: string; identities?: { provider: string }[] | null },
-  nowMs: number
-): boolean {
-  const identities = user.identities ?? [];
-  if (identities.length === 0) return false;
-  if (!identities.every((identity) => identity.provider.startsWith("sso:"))) {
-    return false;
-  }
-  // Two absolute instants compared in epoch ms (date-handling's exception).
-  const createdMs = Date.parse(user.created_at);
-  return (
-    Number.isFinite(createdMs) &&
-    nowMs - createdMs <= JIT_SSO_ACCOUNT_MAX_AGE_MS
-  );
-}
-
 export async function deleteJitSsoUser(
   serviceRole: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  userId: string
+  { userId, accessToken }: { userId: string; accessToken: string }
 ): Promise<{ data: { deleted: boolean } | null; error: string | null }> {
   try {
     const membership = await db
@@ -426,9 +439,16 @@ export async function deleteJitSsoUser(
       });
       return { data: null, error: authUser.error.message };
     }
+    // The sign-in's own record of when it authenticated, from the session
+    // being refused — never another user's token.
+    const signIn = getSsoSignIn(accessToken);
+    const signedInAtMs = signIn?.userId === userId ? signIn.atMs : null;
     if (
       !authUser.data.user ||
-      !isThrowawaySsoAccount(authUser.data.user, Date.now())
+      !isThrowawaySsoAccount(authUser.data.user, {
+        signedInAtMs,
+        nowMs: Date.now()
+      })
     ) {
       logger.warn(
         "Refused to delete an account this SSO sign-in did not create",

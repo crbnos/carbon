@@ -159,7 +159,10 @@ export async function action({ request }: ActionFunctionArgs) {
       // As in the ERP callback: remove the JIT-created user, or its profile
       // row makes the email un-invitable.
       if (memberships.length === 0) {
-        await deleteJitSsoUser(serviceRole, getDatabaseClient(), userId);
+        await deleteJitSsoUser(serviceRole, getDatabaseClient(), {
+          userId,
+          accessToken: authSession.accessToken
+        });
       }
       return redirect(
         path.to.root,
@@ -191,7 +194,10 @@ export async function action({ request }: ActionFunctionArgs) {
           .is("revokedAt", null)
           .limit(1);
         if (!invite.error && !invite.data?.length) {
-          await deleteJitSsoUser(serviceRole, getDatabaseClient(), userId);
+          await deleteJitSsoUser(serviceRole, getDatabaseClient(), {
+            userId,
+            accessToken: authSession.accessToken
+          });
         }
       }
       return redirect(

@@ -170,10 +170,14 @@ querying), and every route entry point checks it too — login buttons, the
   `deleteJitSsoUser` removes the WHOLE throwaway JIT user — auth user plus the
   trigger-created `user`/`userPermission` rows (no FK cascade between the schemas),
   guarded on zero memberships AND `isThrowawaySsoAccount` (every identity is
-  `sso:` and GoTrue created it in the last 10 minutes — with sign-ups disabled
-  the account a refusal reaches is usually a real one, which has an `email`
-  identity or is older, and is kept) — or the leftover profile trips `authIdentityExists`
-  and makes the email un-invitable. MES defers first login to ERP; its callback
+  `sso:` and the refused sign-in created it: the account is at most 5 minutes
+  older than the session's `sso/saml` `amr` time, read by `getSsoSignIn` from
+  the session's own access token, which every caller passes, and that time is
+  itself recent. Account age alone is no evidence — with sign-ups disabled the
+  account a refusal reaches is usually a real one, which has an `email`
+  identity or existed before the sign-in, and is kept; so is any account when
+  the token carries no SAML sign-in time) — or the leftover profile trips
+  `authIdentityExists` and makes the email un-invitable. MES defers first login to ERP; its callback
   runs the same `deleteJitSsoUser` on a domain mismatch, and on a not-yet-member
   with no pending invite for the connection's company (an invitee keeps the
   account the ERP sign-in accepts the invite into).
