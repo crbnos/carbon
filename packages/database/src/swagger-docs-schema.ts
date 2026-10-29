@@ -100563,6 +100563,90 @@ export default {
         tags: ["suggestions"]
       }
     },
+    "/kanbanItems": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.readableIdWithRevision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.thumbnailPath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.kanbanCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.kanbanIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.replenishmentSystems"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.supplierIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.kanbans"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/kanbanItems"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["kanbanItems"]
+      }
+    },
     "/customField": {
       get: {
         parameters: [
@@ -167678,6 +167762,80 @@ export default {
       },
       type: "object"
     },
+    kanbanItems: {
+      properties: {
+        id: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        readableIdWithRevision: {
+          format: "text",
+          type: "string"
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string"
+        },
+        kanbanCount: {
+          format: "integer",
+          type: "integer"
+        },
+        kanbanIds: {
+          format: "text",
+          type: "string"
+        },
+        replenishmentSystems: {
+          format: 'public."kanbanReplenishmentSystem"[]',
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        supplierIds: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        kanbans: {
+          format: "jsonb"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     customField: {
       required: [
         "id",
@@ -223720,6 +223878,99 @@ export default {
     },
     "rowFilter.suggestions.employeeAvatarUrl": {
       name: "employeeAvatarUrl",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.kanbanItems": {
+      name: "kanbanItems",
+      description: "kanbanItems",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/kanbanItems"
+      }
+    },
+    "rowFilter.kanbanItems.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.readableIdWithRevision": {
+      name: "readableIdWithRevision",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.kanbanCount": {
+      name: "kanbanCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.kanbanIds": {
+      name: "kanbanIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.replenishmentSystems": {
+      name: "replenishmentSystems",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.supplierIds": {
+      name: "supplierIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.kanbans": {
+      name: "kanbans",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

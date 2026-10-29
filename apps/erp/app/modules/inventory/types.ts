@@ -11,7 +11,7 @@ import type {
   getInventoryValuation,
   getInventoryValuationTieOut,
   getItemLedgerPage,
-  getKanbans,
+  getKanbanItems,
   getPurchaseOrderLinesToReceive,
   getReceiptLines,
   getReceipts,
@@ -54,9 +54,11 @@ export type ItemTracking = NonNullable<
   Awaited<ReturnType<typeof getReceiptTracking>>["data"]
 >[number];
 
-export type Kanban = NonNullable<
-  Awaited<ReturnType<typeof getKanbans>>["data"]
+export type KanbanItem = NonNullable<
+  Awaited<ReturnType<typeof getKanbanItems>>["data"]
 >[number];
+
+export type { KanbanSummary } from "./inventory.service";
 
 export type InventoryCount = NonNullable<
   Awaited<ReturnType<typeof getInventoryCounts>>["data"]

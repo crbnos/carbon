@@ -12894,8 +12894,8 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban para {kanbanName}"
 
-msgid "Kanban ID"
-msgstr "ID de Kanban"
+msgid "Kanban IDs"
+msgstr "IDs de Kanban"
 
 msgid "Kanban Output"
 msgstr "Salida Kanban"
@@ -12975,7 +12975,7 @@ msgstr "Tamaño de etiqueta"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Etiqueta para completar la operación actual de este kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Etiqueta para crear un {0} para este kanban"
 
@@ -14317,6 +14317,9 @@ msgstr "Liquidación de Migración (predeterminado)"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "Liquidación de Migración debe totalizar cero. <0>Ir a Saldo de Prueba</0>"
+
+msgid "Min"
+msgstr "Mín."
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "mín {minimumBatchQuantity} — cumplido"
@@ -18088,6 +18091,13 @@ msgstr "Imprimir etiqueta"
 msgid "Print Label"
 msgstr "Imprimir Etiqueta"
 
+msgid "Print Labels"
+msgstr "Imprimir Etiquetas"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Imprimir Etiquetas ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Salida de Impresión ({0})"
@@ -18253,9 +18263,6 @@ msgstr "Inicio del proyecto"
 
 msgid "Projected"
 msgstr "Proyectado"
-
-msgid "Projected (To)"
-msgstr "Proyectado (A)"
 
 msgid "Projected completion"
 msgstr "Finalización proyectada"
@@ -18614,7 +18621,7 @@ msgstr "VP de Residual"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR Code para completar la operación actual para este kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Código QR para crear un {0} para este kanban"
 

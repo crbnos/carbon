@@ -12894,8 +12894,8 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban için {kanbanName}"
 
-msgid "Kanban ID"
-msgstr "Kanban Kimliği"
+msgid "Kanban IDs"
+msgstr "Kanban Kimlikleri"
 
 msgid "Kanban Output"
 msgstr "Kanban Çıktısı"
@@ -12975,7 +12975,7 @@ msgstr "Etiket Boyutu"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Bu kanban için mevcut işlemi tamamlamak üzere etiket"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Bu kanban için bir {0} oluşturmak için"
 
@@ -14317,6 +14317,9 @@ msgstr "Geçiş Tasfiyesi (varsayılan)"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "Geçiş Tasfiyesi sıfıra eşit olmalıdır. <0>Deneme Bakiyesine Git</0>"
+
+msgid "Min"
+msgstr "Min."
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "en az {minimumBatchQuantity} — karşılandı"
@@ -18088,6 +18091,13 @@ msgstr "Etiketi yazdır"
 msgid "Print Label"
 msgstr "Etiket Yazdır"
 
+msgid "Print Labels"
+msgstr "Etiketleri Yazdır"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Etiketleri Yazdır ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Yazdırma Çıktısı ({0})"
@@ -18253,9 +18263,6 @@ msgstr "Proje başlangıcı"
 
 msgid "Projected"
 msgstr "Öngörülen"
-
-msgid "Projected (To)"
-msgstr "Tahmini (To)"
 
 msgid "Projected completion"
 msgstr "Öngörülen tamamlanma"
@@ -18614,7 +18621,7 @@ msgstr "Kalıntıların BDH"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "Bu kanban için geçerli operasyonu tamamlamak için QR Kodu"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Bu kanban için bir {0} oluşturmak için QR Kod"
 

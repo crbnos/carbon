@@ -12894,7 +12894,7 @@ msgstr "かんばん"
 msgid "Kanban for {kanbanName}"
 msgstr "{kanbanName}のかんばん"
 
-msgid "Kanban ID"
+msgid "Kanban IDs"
 msgstr "かんばんID"
 
 msgid "Kanban Output"
@@ -12975,7 +12975,7 @@ msgstr "ラベルサイズ"
 msgid "Label to complete the current operation for this kanban"
 msgstr "このかんばんの現在の工程を完了するためのラベル"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "このかんばんの{0}を作成するためのラベル"
 
@@ -14317,6 +14317,9 @@ msgstr "マイグレーション清算（デフォルト）"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "マイグレーション清算は合計がゼロである必要があります。<0>試算表に移動</0>"
+
+msgid "Min"
+msgstr "最小"
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "最小 {minimumBatchQuantity} — 達成済み"
@@ -18088,6 +18091,13 @@ msgstr "ラベル印刷"
 msgid "Print Label"
 msgstr "ラベルを印刷"
 
+msgid "Print Labels"
+msgstr "ラベルを印刷"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "ラベルを印刷 ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "印刷出力 ({0})"
@@ -18253,9 +18263,6 @@ msgstr "プロジェクト開始"
 
 msgid "Projected"
 msgstr "予測"
-
-msgid "Projected (To)"
-msgstr "予定 (To)"
 
 msgid "Projected completion"
 msgstr "予測完了"
@@ -18614,7 +18621,7 @@ msgstr "残存価値のPV"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "このかんばんの現在の工程を完了するためのQRコード"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "このかんばんの{0}を作成するためのQR Code"
 

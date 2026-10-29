@@ -12894,7 +12894,7 @@ msgstr "कानबान"
 msgid "Kanban for {kanbanName}"
 msgstr "{kanbanName} के लिए कानबन"
 
-msgid "Kanban ID"
+msgid "Kanban IDs"
 msgstr "कानबान आईडी"
 
 msgid "Kanban Output"
@@ -12975,7 +12975,7 @@ msgstr "लेबल आकार"
 msgid "Label to complete the current operation for this kanban"
 msgstr "इस कानबान के लिए वर्तमान ऑपरेशन पूर्ण करें"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "इस कानबान के लिए एक {0} बनाएँ"
 
@@ -14317,6 +14317,9 @@ msgstr "माइग्रेशन क्लीयरिंग (डिफ़ॉ
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "माइग्रेशन क्लीयरिंग शून्य तक कुल होना चाहिए। <0>परीक्षा शेष पर जाएँ</0>"
+
+msgid "Min"
+msgstr "न्यूनतम"
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "न्यूनतम {minimumBatchQuantity} — पूरा किया गया"
@@ -18088,6 +18091,13 @@ msgstr "लेबल प्रिंट करें"
 msgid "Print Label"
 msgstr "लेबल प्रिंट करें"
 
+msgid "Print Labels"
+msgstr "लेबल प्रिंट करें"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "लेबल प्रिंट करें ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "प्रिंट आउटपुट ({0})"
@@ -18253,9 +18263,6 @@ msgstr "प्रोजेक्ट शुरुआत"
 
 msgid "Projected"
 msgstr "अनुमानित"
-
-msgid "Projected (To)"
-msgstr "अनुमानित (To)"
 
 msgid "Projected completion"
 msgstr "अनुमानित पूर्णता"
@@ -18614,7 +18621,7 @@ msgstr "अवशिष्ट का PV"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "इस कानबान के लिए वर्तमान ऑपरेशन पूर्ण करने के लिए QR कोड"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "इस कानबान के लिए एक {0} बनाने के लिए QR कोड"
 

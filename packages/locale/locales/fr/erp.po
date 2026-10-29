@@ -12894,8 +12894,8 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban pour {kanbanName}"
 
-msgid "Kanban ID"
-msgstr "ID du kanban"
+msgid "Kanban IDs"
+msgstr "ID des kanbans"
 
 msgid "Kanban Output"
 msgstr "Sortie Kanban"
@@ -12975,7 +12975,7 @@ msgstr "Taille d'étiquette"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Étiquette pour terminer l'opération actuelle pour ce kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Étiquette pour créer un {0} pour ce kanban"
 
@@ -14317,6 +14317,9 @@ msgstr "Compensation de migration (par défaut)"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "La compensation de migration doit totaliser zéro. <0>Aller au bilan de vérification</0>"
+
+msgid "Min"
+msgstr "Min."
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "min {minimumBatchQuantity} — atteint"
@@ -18088,6 +18091,13 @@ msgstr "Imprimer l'étiquette"
 msgid "Print Label"
 msgstr "Imprimer l'étiquette"
 
+msgid "Print Labels"
+msgstr "Imprimer les étiquettes"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Imprimer les étiquettes ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Imprimer la sortie ({0})"
@@ -18253,9 +18263,6 @@ msgstr "Démarrage du projet"
 
 msgid "Projected"
 msgstr "Prévue"
-
-msgid "Projected (To)"
-msgstr "Projeté (Vers)"
 
 msgid "Projected completion"
 msgstr "Achèvement projeté"
@@ -18614,7 +18621,7 @@ msgstr "VA de la valeur résiduelle"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR Code pour terminer l'opération en cours pour ce kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Code QR pour créer un {0} pour ce kanban"
 
