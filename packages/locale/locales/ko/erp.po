@@ -12894,7 +12894,7 @@ msgstr "칸반"
 msgid "Kanban for {kanbanName}"
 msgstr "{kanbanName}의 칸반"
 
-msgid "Kanban ID"
+msgid "Kanban IDs"
 msgstr "칸반 ID"
 
 msgid "Kanban Output"
@@ -12975,7 +12975,7 @@ msgstr "라벨 크기"
 msgid "Label to complete the current operation for this kanban"
 msgstr "이 칸반의 현재 공정작업을 완료하는 라벨"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "이 칸반의 {0}을(를) 생성하는 라벨"
 
@@ -14317,6 +14317,9 @@ msgstr "이관 정산(기본값)"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "이관 정산의 총계는 0이어야 합니다. <0>시산표로 이동</0>"
+
+msgid "Min"
+msgstr "최소"
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "최소 {minimumBatchQuantity} — 충족"
@@ -18088,6 +18091,13 @@ msgstr "레이블 인쇄"
 msgid "Print Label"
 msgstr "라벨 인쇄"
 
+msgid "Print Labels"
+msgstr "라벨 인쇄"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "라벨 인쇄 ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "인쇄 출력({0})"
@@ -18253,9 +18263,6 @@ msgstr "프로젝트 시작"
 
 msgid "Projected"
 msgstr "예상"
-
-msgid "Projected (To)"
-msgstr "예상 (도착)"
 
 msgid "Projected completion"
 msgstr "예상 완료"
@@ -18614,7 +18621,7 @@ msgstr "잔존가치의 현재가치"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "이 칸반의 현재 공정을 완료 처리하기 위한 QR 코드"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "이 칸반에 대한 {0}을(를) 생성하는 QR 코드"
 

@@ -12894,8 +12894,8 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban dla {kanbanName}"
 
-msgid "Kanban ID"
-msgstr "ID kanbanu"
+msgid "Kanban IDs"
+msgstr "ID kanbanów"
 
 msgid "Kanban Output"
 msgstr "Wyjście Kanban"
@@ -12975,7 +12975,7 @@ msgstr "Rozmiar etykiety"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Etykieta do ukończenia bieżącej operacji dla tego kanbanu"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Etykieta do utworzenia {0} dla tego kanbanu"
 
@@ -14317,6 +14317,9 @@ msgstr "Rozliczenie migracji (domyślnie)"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "Rozliczenie migracji musi sumować się do zera. <0>Przejdź do Bilansu próbnego</0>"
+
+msgid "Min"
+msgstr "Min."
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "min {minimumBatchQuantity} — osiągnięto"
@@ -18088,6 +18091,13 @@ msgstr "Drukuj etykietę"
 msgid "Print Label"
 msgstr "Drukuj etykietę"
 
+msgid "Print Labels"
+msgstr "Drukuj etykiety"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Drukuj etykiety ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Wydruk ({0})"
@@ -18253,9 +18263,6 @@ msgstr "Początek projektu"
 
 msgid "Projected"
 msgstr "Prognozowane"
-
-msgid "Projected (To)"
-msgstr "Prognozowane (Do)"
 
 msgid "Projected completion"
 msgstr "Przewidywane zakończenie"
@@ -18614,7 +18621,7 @@ msgstr "WO wartości resztkowej"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR Code do zakończenia bieżącej operacji dla tego kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Kod QR do utworzenia {0} dla tego kanbanu"
 

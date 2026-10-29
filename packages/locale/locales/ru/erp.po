@@ -12894,8 +12894,8 @@ msgstr "Канбан"
 msgid "Kanban for {kanbanName}"
 msgstr "Канбан для {kanbanName}"
 
-msgid "Kanban ID"
-msgstr "ID канбана"
+msgid "Kanban IDs"
+msgstr "ID канбанов"
 
 msgid "Kanban Output"
 msgstr "Выпуск Канбана"
@@ -12975,7 +12975,7 @@ msgstr "Размер этикетки"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Этикетка для завершения текущей операции для этого канбана"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Этикетка для создания {0} для этого канбана"
 
@@ -14317,6 +14317,9 @@ msgstr "Очистка миграции (по умолчанию)"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "Очистка миграции должна в сумме равняться нулю. <0>Перейти к пробному балансу</0>"
+
+msgid "Min"
+msgstr "Мин."
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "мин {minimumBatchQuantity} — достигнуто"
@@ -18088,6 +18091,13 @@ msgstr "Печать этикетки"
 msgid "Print Label"
 msgstr "Печать этикетки"
 
+msgid "Print Labels"
+msgstr "Печать этикеток"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Печать этикеток ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Вывод печати ({0})"
@@ -18253,9 +18263,6 @@ msgstr "Начало проекта"
 
 msgid "Projected"
 msgstr "Спрогнозировано"
-
-msgid "Projected (To)"
-msgstr "Спроецировано (целевое)"
 
 msgid "Projected completion"
 msgstr "Прогнозное завершение"
@@ -18614,7 +18621,7 @@ msgstr "ТС остатка"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR-код для завершения текущей операции для этого канбана"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR-код для создания {0} для этого канбана"
 

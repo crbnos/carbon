@@ -682,6 +682,60 @@ export async function getKanbans(
   return query;
 }
 
+export const KANBAN_ITEMS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
+/** One kanban in an item's `kanbans` rollup (the `kanbanItems` view). */
+export type KanbanSummary = {
+  id: string;
+  kanbanId: string | null;
+  replenishmentSystem: Database["public"]["Enums"]["kanbanReplenishmentSystem"];
+  quantity: number;
+  purchaseUnitOfMeasureCode: string | null;
+  replenishmentLevel: number | null;
+  storageUnitName: string | null;
+  fromStorageUnitName: string | null;
+  supplierId: string | null;
+  jobId: string | null;
+  jobReadableId: string | null;
+};
+
+/** The Kanbans list: one row per item at the location, with its kanbans. */
+export async function getKanbanItems(
+  client: SupabaseClient<Database>,
+  locationId: string,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("kanbanItems")
+    .select("*", { count: listCount(args) })
+    .eq("companyId", companyId)
+    .eq("locationId", locationId);
+
+  if (args.search) {
+    query = query.or(
+      searchFilter(["kanbanIds", "name", "readableIdWithRevision"], args.search)
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, KANBAN_ITEMS_PAGING);
+
+  const result = await query;
+
+  return {
+    data: (result.data ?? []).map((row) => ({
+      ...row,
+      kanbans: (row.kanbans as KanbanSummary[] | null) ?? []
+    })),
+    count: result.count ?? 0,
+    error: result.error
+  };
+}
+
 export async function getKanban(
   client: SupabaseClient<Database>,
   kanbanId: string,

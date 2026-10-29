@@ -12894,8 +12894,8 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban for {kanbanName}"
 
-msgid "Kanban ID"
-msgstr "Kanban ID"
+msgid "Kanban IDs"
+msgstr "Kanban IDs"
 
 msgid "Kanban Output"
 msgstr "Kanban Output"
@@ -12975,7 +12975,7 @@ msgstr "Label Size"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Label to complete the current operation for this kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Label to create a {0} for this kanban"
 
@@ -14317,6 +14317,9 @@ msgstr "Migration Clearing (default)"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
+
+msgid "Min"
+msgstr "Min"
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "min {minimumBatchQuantity} — met"
@@ -18088,6 +18091,13 @@ msgstr "Print label"
 msgid "Print Label"
 msgstr "Print Label"
 
+msgid "Print Labels"
+msgstr "Print Labels"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Print Labels ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Print Output ({0})"
@@ -18253,9 +18263,6 @@ msgstr "Project start"
 
 msgid "Projected"
 msgstr "Projected"
-
-msgid "Projected (To)"
-msgstr "Projected (To)"
 
 msgid "Projected completion"
 msgstr "Projected completion"
@@ -18614,7 +18621,7 @@ msgstr "PV of Residual"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR Code to complete the current operation for this kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR Code to create a {0} for this kanban"
 
