@@ -264,4 +264,10 @@ describe("uncoveredSsoDomainError", () => {
     expect(uncoveredSsoDomainError(domains, "jane")).not.toBeNull();
     expect(uncoveredSsoDomainError(domains, "jane@")).not.toBeNull();
   });
+
+  // A connection whose domains are all still pending routes no sign-in to SSO,
+  // so a magic-link invite bypasses nothing.
+  it("allows any email while the connection has no verified domain", () => {
+    expect(uncoveredSsoDomainError([], "jane@acme.com")).toBeNull();
+  });
 });

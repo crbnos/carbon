@@ -3736,6 +3736,12 @@ msgstr "Are you sure you want to remove {lineName} from this contract?"
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 
@@ -19495,6 +19501,7 @@ msgstr "Remeasurement journal (the effective date and the classification are che
 msgid "Remove"
 msgstr "Remove"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Remove {0}"
@@ -22191,6 +22198,9 @@ msgstr "Sign out instead"
 msgid "Sign-in code"
 msgstr "Sign-in code"
 
+msgid "Sign-in failed. Try again."
+msgstr "Sign-in failed. Try again."
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Sign-off review before moving to the next step"
 
@@ -24873,6 +24883,9 @@ msgstr "There are no active supplier quotes to compare for this RFQ."
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."

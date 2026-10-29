@@ -3736,6 +3736,12 @@ msgstr "确定要从此合约中移除 {lineName} 吗？"
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "您确定要将 {supplierName} 从此项目的供应商中移除吗？此操作无法撤销。"
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "您确定要从 {name} 中移除此员工？培训历史被保留，员工可以稍后重新添加。"
 
@@ -19495,6 +19501,7 @@ msgstr "重新计量凭证（确认时检查生效日期和分类）："
 msgid "Remove"
 msgstr "移除"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "移除{0}"
@@ -22191,6 +22198,9 @@ msgstr "改为登出"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "在进入下一步骤前进行签署评审"
 
@@ -24873,6 +24883,9 @@ msgstr "此询价单没有可比较的启用供应商报价。"
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "有与此工单相关的外包工序但没有分配供应商。请在发放之前为每个外包工序分配一个供应商。"
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "这些工序上没有换型、人工或机器工时，因此没有任何东西来确定运行大小。该栏是一个名义标记，并不保持容量 — 向工序添加时间标准来排程它。"

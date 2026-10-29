@@ -33,6 +33,7 @@ export {
   mergeInvitePermissions,
   migrateUserToSso,
   removeSsoIdentitiesForDomain,
+  removeSsoIdentitiesForProvider,
   seedSsoIdentityForUser,
   ssoProviderColumn,
   uncoveredSsoDomainError

@@ -135,7 +135,23 @@ querying), and every route entry point checks it too — login buttons, the
   Domain admin flows: `addSsoDomain` / `verifySsoDomain` / `removeSsoDomain`
   intents on `x+/settings+/sso.tsx`; UI is the Email Domains card on
   Settings → Security. Deactivating a connection DELETES its `ssoDomain` rows
-  (releases the claims; re-activation re-verifies). Public email providers are
+  (releases the claims; re-activation re-verifies) and, once the GoTrue provider
+  is gone, every `sso:<providerId>` identity (`removeSsoIdentitiesForProvider`).
+  The rows are deleted in a Kysely transaction that commits only after GoTrue
+  deleted the provider, so a GoTrue failure changes nothing. If the commit
+  fails after GoTrue succeeded, the connection stays inactive, deactivate
+  retries the release and succeeds; any claim still held by an inactive
+  connection is removed by `releaseDeadDomainClaims` on the next connect (that
+  company), add or verify (that domain, any company). A GoTrue provider left alive
+  under an inactive connection (provider delete AND row restore both failed)
+  still owns the IdP's entity id and the domain, so GoTrue refuses a reconnect
+  (`saml_idp_already_exists`) and a re-verify; `releaseOrphanedProviders`
+  (`findOrphanedSsoProviders`, provisioning) deletes it on connect (that
+  company's inactive connections) and on verify after the DNS check passes
+  (that domain), never a provider an active connection uses.
+  A dead provider's identity beside a later connection's one let the first-match
+  `getSsoProviderIdFromUser` resolve the dead provider and refuse every SAML
+  sign-in as "connection is not active". Public email providers are
   denied at validation (`PUBLIC_EMAIL_DOMAINS`, `settings.models.ts`).
 - **Session classification**: `getSsoProviderIdFromSession(accessToken, user)` requires
   an `amr` entry with `method: "sso/saml"` before resolving the provider id; fails
@@ -154,7 +170,10 @@ querying), and every route entry point checks it too — login buttons, the
   `deleteJitSsoUser` removes the WHOLE throwaway JIT user — auth user plus the
   trigger-created `user`/`userPermission` rows (no FK cascade between the schemas),
   guarded on zero memberships — or the leftover profile trips `authIdentityExists`
-  and makes the email un-invitable. MES defers first login to ERP.
+  and makes the email un-invitable. MES defers first login to ERP; its callback
+  runs the same `deleteJitSsoUser` on a domain mismatch, and on a not-yet-member
+  with no pending invite for the connection's company (an invitee keeps the
+  account the ERP sign-in accepts the invite into).
 - **Pre-seeded account linking** (`provisioning.server.ts`; spec
   `.ai/specs/2026-08-29-saml-sso-account-linking.md`): Carbon runs GoTrue with
   `GOTRUE_DISABLE_SIGNUP=true`, so a SAML sign-in that GoTrue classifies as
@@ -173,7 +192,9 @@ querying), and every route entry point checks it too — login buttons, the
   `seedSsoIdentityForNewUser` in all three ERP account-creation flows
   (`users.service.ts` create{Customer,Employee,Supplier}Account); and, run from the
   domain-claim flows, `backfillSsoIdentitiesForDomain` (verify → seed EVERY
-  existing non-SSO user on the domain) and `removeSsoIdentitiesForDomain` (unregister
+  existing user on the domain — an `is_sso_user` one only when it is the sole
+  holder of its email — first deleting their `sso:` identities whose
+  provider no longer exists in `auth.sso_providers`) and `removeSsoIdentitiesForDomain` (unregister
   → delete, keyed on the email column so it also removes GoTrue's self-healed
   NameID rows). Backfill/remove are deliberately **not** `companyId`-scoped: the
   adopted policy is that the verified domain owner controls identity for that
@@ -203,7 +224,8 @@ querying), and every route entry point checks it too — login buttons, the
   `/login?email=...` instead of `/invite/<code>`, so the IdP is never bypassed.
   Employee invites outside the covered domains are refused up front
   (`refuseEmailOutsideSso` in ERP `users.service.ts` → `uncoveredSsoDomainError`: a
-  `rule` refusal, or `unavailable` when the domains cannot be read).
+  `rule` refusal, or `unavailable` when the domains cannot be read). A connection
+  with no VERIFIED domain covers nothing and refuses no invite.
 - **Config**: GoTrue SAML via `SAML_ENABLED` / `SAML_PRIVATE_KEY` in root `.env`
   (compose substitution → `GOTRUE_SAML_*`; `crbn reload` does not read root `.env` —
   see `.ai/lessons.md`).

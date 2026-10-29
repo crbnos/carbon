@@ -153,11 +153,22 @@ export async function seedSsoIdentityForUser(
 }
 
 /**
- * Backfill SSO identities for EVERY existing non-SSO user whose email is on the
- * domain — run when a domain is verified. Not company-scoped: the adopted policy
+ * Backfill SSO identities for EVERY existing user whose email is on the domain
+ * — run when a domain is verified. A user GoTrue created through an earlier SSO
+ * connection (`is_sso_user`) is included only when no other user holds its
+ * email: GoTrue lets an SSO user share an email with another account, and the
+ * seed keys on the email, so it must land on the one account that owns it.
+ * Skipping them all left such a member with no identity for the new provider,
+ * which GoTrue refuses when sign-ups are disabled. Not company-scoped: the adopted policy
  * is that the verified domain owner controls identity for that domain
  * instance-wide (GoTrue keys linking on domain, not company). Returns the linked
  * user ids so the caller can write an audit record. Idempotent.
+ *
+ * It first deletes the domain's users' "sso:" identities whose GoTrue provider
+ * no longer exists. Re-creating a connection always re-verifies its domains, so
+ * this is where an identity left by an earlier deactivate is cleared; left in
+ * place beside the new one, getSsoProviderIdFromUser could resolve the dead
+ * provider and refuse every SAML sign-in as "connection is not active".
  */
 export async function backfillSsoIdentitiesForDomain(
   db: Kysely<KyselyDatabase>,
@@ -173,6 +184,17 @@ export async function backfillSsoIdentitiesForDomain(
   const provider = ssoProviderColumn(providerId);
   try {
     const result = await sql<{ user_id: string }>`
+      WITH dead AS (
+        DELETE FROM auth.identities i
+        USING auth.users u
+        WHERE i.user_id = u.id
+          AND i.provider LIKE 'sso:%'
+          AND lower(split_part(u.email, '@', 2)) = ${lowerDomain}
+          AND NOT EXISTS (
+            SELECT 1 FROM auth.sso_providers p
+            WHERE i.provider = 'sso:' || p.id::text
+          )
+      )
       INSERT INTO auth.identities
         (provider_id, user_id, identity_data, provider, created_at, updated_at)
       SELECT
@@ -184,8 +206,14 @@ export async function backfillSsoIdentitiesForDomain(
         now()
       FROM auth.users u
       WHERE u.email IS NOT NULL
-        AND u.is_sso_user = false
         AND lower(split_part(u.email, '@', 2)) = ${lowerDomain}
+        AND (
+          u.is_sso_user = false
+          OR NOT EXISTS (
+            SELECT 1 FROM auth.users o
+            WHERE lower(o.email) = lower(u.email) AND o.id <> u.id
+          )
+        )
       ON CONFLICT (provider_id, provider) DO NOTHING
       RETURNING user_id
     `.execute(db);
@@ -238,6 +266,84 @@ export async function removeSsoIdentitiesForDomain(
     logger.error("Failed to remove SSO identities", {
       providerId,
       domain,
+      error: err
+    });
+    return {
+      data: null,
+      error:
+        err instanceof Error ? err.message : "Failed to remove SSO identities"
+    };
+  }
+}
+
+/**
+ * GoTrue providers that belong only to an INACTIVE connection — of `companyId`,
+ * or holding `domain`. Deactivating deletes the provider; when that delete
+ * failed and restoring the row also failed, the connection is left inactive
+ * with its provider alive. GoTrue then refuses both reconnecting the same IdP
+ * (one provider per IdP entity id) and verifying the domain for any new
+ * connection (one provider per domain). Such a provider can route no sign-in
+ * Carbon accepts, so it is safe to delete.
+ */
+export async function findOrphanedSsoProviders(
+  db: Kysely<KyselyDatabase>,
+  filter: { domain: string } | { companyId: string }
+): Promise<{ data: string[] | null; error: string | null }> {
+  const scope =
+    "domain" in filter
+      ? sql`EXISTS (
+          SELECT 1 FROM auth.sso_domains d
+          WHERE d.sso_provider_id = p.id
+            AND lower(d.domain) = ${filter.domain.toLowerCase()}
+        )`
+      : sql`c."companyId" = ${filter.companyId}`;
+  try {
+    const result = await sql<{ id: string }>`
+      SELECT DISTINCT p.id::text AS id
+      FROM auth.sso_providers p
+      JOIN public."ssoConnection" c ON c."providerId" = p.id::text
+      WHERE c.active = false
+        AND ${scope}
+        AND NOT EXISTS (
+          SELECT 1 FROM public."ssoConnection" a
+          WHERE a."providerId" = p.id::text AND a.active = true
+        )
+    `.execute(db);
+    return { data: result.rows.map((r) => r.id), error: null };
+  } catch (err) {
+    logger.error("Failed to look up orphaned SSO providers", {
+      ...filter,
+      error: err
+    });
+    return {
+      data: null,
+      error:
+        err instanceof Error ? err.message : "Failed to look up SSO providers"
+    };
+  }
+}
+
+/**
+ * Remove every identity of a deleted GoTrue provider — run when a connection is
+ * deactivated. No sign-in can use them again, and a user who keeps one beside a
+ * later connection's identity can be resolved to the dead provider.
+ */
+export async function removeSsoIdentitiesForProvider(
+  db: Kysely<KyselyDatabase>,
+  { providerId }: { providerId: string }
+): Promise<{ data: { removed: number } | null; error: string | null }> {
+  try {
+    const result = await sql`
+      DELETE FROM auth.identities
+      WHERE provider = ${ssoProviderColumn(providerId)}
+    `.execute(db);
+    return {
+      data: { removed: Number(result.numAffectedRows ?? 0) },
+      error: null
+    };
+  } catch (err) {
+    logger.error("Failed to remove SSO identities for provider", {
+      providerId,
       error: err
     });
     return {
@@ -342,12 +448,14 @@ export function mergeInvitePermissions(
  * company's active SSO connection, or null when the invite may proceed. Match
  * is exact per domain (a connection covering example.com does not cover
  * sub.example.com — GoTrue routes SSO logins the same way). Stored domains are
- * lowercased by the settings validator; the email is lowercased here.
+ * lowercased by the settings validator; the email is lowercased here. With no
+ * verified domain the connection routes no sign-in, so nothing is refused.
  */
 export function uncoveredSsoDomainError(
   domains: string[],
   email: string
 ): string | null {
+  if (domains.length === 0) return null;
   const domain = email.split("@")[1]?.trim().toLowerCase();
   if (domain && domains.includes(domain)) {
     return null;

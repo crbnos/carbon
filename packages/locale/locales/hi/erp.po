@@ -3736,6 +3736,12 @@ msgstr "क्या आप निश्चित हैं कि आप {lineN
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "क्या आप इस आइटम के लिए {supplierName} को आपूर्तिकर्ता के रूप में निकालना चाहते हैं? यह वापस नहीं किया जा सकता।"
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "क्या आप निश्चित हैं कि आप इस कर्मचारी को {name} से हटाना चाहते हैं? प्रशिक्षण इतिहास रखा जाता है और कर्मचारी को बाद में फिर से जोड़ा जा सकता है।"
 
@@ -19495,6 +19501,7 @@ msgstr "पुनर्मापन जर्नल (प्रभावी त�
 msgid "Remove"
 msgstr "निकालें"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "निकालें {0}"
@@ -22191,6 +22198,9 @@ msgstr "बजाय इसके साइन आउट करें"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "अगले चरण में जाने से पहले साइन-ऑफ समीक्षा"
 
@@ -24873,6 +24883,9 @@ msgstr "इस RFQ के लिए तुलना करने के लि�
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "इस जॉब से जुड़े बाहरी ऑपरेशन हैं जिनके पास कोई आपूर्तिकर्ता नहीं है। कृपया इसे जारी करने से पहले प्रत्येक बाहरी ऑपरेशन के लिए एक आपूर्तिकर्ता असाइन करें।"
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "इन ऑपरेशन पर कोई सेटअप, श्रम, या मशीन समय नहीं है, इसलिए रन का आकार निर्धारित करने के लिए कुछ नहीं है। यह बार एक नाममात्र मार्कर है और क्षमता नहीं रख रहा है — इसे शेड्यूल करने के लिए ऑपरेशन में समय मानक जोड़ें।"
