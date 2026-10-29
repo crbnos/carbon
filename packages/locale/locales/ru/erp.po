@@ -19879,6 +19879,9 @@ msgstr "Запросить новое приглашение"
 msgid "Request Approval"
 msgstr "Запросить утверждение"
 
+msgid "Requested"
+msgstr ""
+
 msgid "Requested Date"
 msgstr "Запрошенная дата"
 

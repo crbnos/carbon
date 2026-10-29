@@ -82,58 +82,81 @@ export function useSavePurchaseOrderLineDate(line: {
   return { save, failures };
 }
 
-export function PurchaseOrderLinePromisedDate({
+/**
+ * A line's dates in the order summary, one pill each, under the same rules as
+ * the line page's Dates section.
+ */
+export function PurchaseOrderLineSummaryDates({
   line,
   order
 }: {
-  line: Pick<LineDates, "id" | "purchaseOrderId" | "receivedComplete"> & {
-    promisedDate: string | null;
-  };
+  line: LineDates;
   order: OrderStatus | undefined;
 }) {
+  const { t } = useLingui();
   const permissions = usePermissions();
+  const canUpdate = permissions.can("update", "purchasing");
   const { save, failures } = useSavePurchaseOrderLineDate(line);
-  const value = line.promisedDate;
-  const isDisabled =
-    !permissions.can("update", "purchasing") ||
-    purchaseOrderLineDateRefusal("promisedDate", {
-      status: order?.status ?? null,
-      receivedComplete: line.receivedComplete
-    }) !== null;
+  const fields: {
+    field: PurchaseOrderLineDateField;
+    label: string;
+    dateLabel: string;
+  }[] = [
+    {
+      field: "requiredDate",
+      label: t`Requested`,
+      dateLabel: t`Requested Date`
+    },
+    { field: "promisedDate", label: t`Promised`, dateLabel: t`Promised Date` },
+    { field: "receivedDate", label: t`Delivered`, dateLabel: t`Delivery Date` }
+  ];
 
   return (
     // The summary row toggles open on click; picking a date must not. The
-    // pill's 1px shadow ring sits outside it, so pad it in from the edge.
+    // pills' 1px shadow ring sits outside them, so pad them in from the edge.
     <div
-      className="flex shrink-0 items-center gap-2 pr-px text-sm whitespace-nowrap"
+      className="flex shrink-0 items-center gap-4 pr-px text-sm whitespace-nowrap"
       onClick={(e) => e.stopPropagation()}
     >
-      <span className="text-muted-foreground whitespace-nowrap">
-        <Trans>Promised</Trans>
-      </span>
-      <DatePill
-        key={`${value ?? ""}:${failures("promisedDate")}`}
-        value={value}
-        isDisabled={isDisabled}
-        onChange={(date) => {
-          if (date === value) return;
-          save("promisedDate", date);
-        }}
-      />
+      {fields.map(({ field, label, dateLabel }) => {
+        const value = line[field];
+        const isDisabled =
+          !canUpdate ||
+          purchaseOrderLineDateRefusal(field, {
+            status: order?.status ?? null,
+            receivedComplete: line.receivedComplete
+          }) !== null;
+        return (
+          <div key={field} className="flex items-center gap-2">
+            <span className="text-muted-foreground">{label}</span>
+            <DatePill
+              key={`${value ?? ""}:${failures(field)}`}
+              label={dateLabel}
+              value={value}
+              isDisabled={isDisabled}
+              onChange={(date) => {
+                if (date === value) return;
+                save(field, date);
+              }}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 function DatePill({
+  label,
   value,
   isDisabled,
   onChange
 }: {
+  label: string;
   value: string | null;
   isDisabled: boolean;
   onChange: (date: string | null) => void;
 }) {
-  const { t } = useLingui();
   const { locale } = useLocale();
   // What was picked, shown until the saved date comes back with the page.
   const [picked, setPicked] = useState<string | null | undefined>(undefined);
@@ -156,7 +179,7 @@ function DatePill({
             size="sm"
             isDisabled={isDisabled}
             rightIcon={<LuCalendarClock />}
-            aria-label={t`Promised Date`}
+            aria-label={label}
           >
             <span className="tabular-nums">
               {formatDate(shown, undefined, locale)}
@@ -168,7 +191,7 @@ function DatePill({
             size="sm"
             isDisabled={isDisabled}
             icon={<LuCalendarClock />}
-            aria-label={t`Promised Date`}
+            aria-label={label}
           />
         )}
       </PopoverTrigger>

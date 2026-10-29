@@ -19879,6 +19879,9 @@ msgstr "新しい招待をリクエストする"
 msgid "Request Approval"
 msgstr "承認を依頼"
 
+msgid "Requested"
+msgstr ""
+
 msgid "Requested Date"
 msgstr "希望納期"
 

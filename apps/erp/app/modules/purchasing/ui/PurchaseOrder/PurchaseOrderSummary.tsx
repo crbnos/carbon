@@ -52,7 +52,7 @@ import type {
   PurchaseOrderLine,
   Supplier
 } from "../../types";
-import { PurchaseOrderLinePromisedDate } from "./PurchaseOrderLineDates";
+import { PurchaseOrderLineSummaryDates } from "./PurchaseOrderLineDates";
 
 const LineItems = ({
   currencyCode,
@@ -250,12 +250,14 @@ const LineItems = ({
                     ) : null}
                   </div>
                   {!isIndirect && (
-                    <PurchaseOrderLinePromisedDate
+                    <PurchaseOrderLineSummaryDates
                       line={{
                         id: line.id,
                         purchaseOrderId: orderId,
                         receivedComplete: line.receivedComplete ?? false,
-                        promisedDate: line.promisedDate
+                        requiredDate: line.requiredDate,
+                        promisedDate: line.promisedDate,
+                        receivedDate: line.receivedDate
                       }}
                       order={order}
                     />

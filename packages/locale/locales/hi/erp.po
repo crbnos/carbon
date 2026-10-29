@@ -19879,6 +19879,9 @@ msgstr "नया आमंत्रण का अनुरोध करें"
 msgid "Request Approval"
 msgstr "अनुमोदन का अनुरोध करें"
 
+msgid "Requested"
+msgstr ""
+
 msgid "Requested Date"
 msgstr "अनुरोधित तिथि"
 

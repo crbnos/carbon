@@ -19879,6 +19879,9 @@ msgstr "Neue Einladung anfordern"
 msgid "Request Approval"
 msgstr "Genehmigung anfordern"
 
+msgid "Requested"
+msgstr ""
+
 msgid "Requested Date"
 msgstr "Wunschtermin"
 
