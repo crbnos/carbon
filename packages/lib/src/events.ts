@@ -84,8 +84,8 @@ export type Events = {
       >;
       companyId: string;
       // A quote, order, invoice, purchase order or RFQ to a customer or
-      // supplier: only these follow the company's Email settings (its From
-      // address). Everything else always goes from the server's address.
+      // supplier. Every event follows the company's Email settings; on
+      // server mail this flag also puts the company's name on the From.
       document?: true;
       // Recurring notification emails only: after the provider accepts the
       // send, the send-email function bumps the delivery counters for these.
