@@ -115,7 +115,7 @@ export function PurchaseOrderLineSummaryDates({
     // The summary row toggles open on click; picking a date must not. The
     // pills' 1px shadow ring sits outside them, so pad them in from the edge.
     <div
-      className="flex shrink-0 items-center gap-4 pr-px text-sm whitespace-nowrap"
+      className="mt-2 flex max-w-full flex-wrap items-center justify-end gap-x-4 gap-y-1 self-end pr-px text-sm whitespace-nowrap"
       onClick={(e) => e.stopPropagation()}
     >
       {fields.map(({ field, label, dateLabel }) => {

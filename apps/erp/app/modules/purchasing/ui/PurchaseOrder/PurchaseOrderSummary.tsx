@@ -249,21 +249,24 @@ const LineItems = ({
                       </Badge>
                     ) : null}
                   </div>
-                  {!isIndirect && (
-                    <PurchaseOrderLineSummaryDates
-                      line={{
-                        id: line.id,
-                        purchaseOrderId: orderId,
-                        receivedComplete: line.receivedComplete ?? false,
-                        requiredDate: line.requiredDate,
-                        promisedDate: line.promisedDate,
-                        receivedDate: line.receivedDate
-                      }}
-                      order={order}
-                    />
-                  )}
                 </VStack>
               </div>
+              {/* Below the header, not in the totals column: in that
+                      shrink-0 column the dates' width came out of the item
+                      name's. */}
+              {!isIndirect && (
+                <PurchaseOrderLineSummaryDates
+                  line={{
+                    id: line.id,
+                    purchaseOrderId: orderId,
+                    receivedComplete: line.receivedComplete ?? false,
+                    requiredDate: line.requiredDate,
+                    promisedDate: line.promisedDate,
+                    receivedDate: line.receivedDate
+                  }}
+                  order={order}
+                />
+              )}
             </div>
           </VStack>
         </HStack>
