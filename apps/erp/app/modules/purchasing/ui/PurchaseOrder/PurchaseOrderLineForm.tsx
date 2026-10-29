@@ -1286,7 +1286,7 @@ function NewLineDates({
     <FormSection title={t`Dates`}>
       <DatePicker
         name="requiredDate"
-        label={t`Requested Date`}
+        label={t`Required Date`}
         termId="purchase-order-line-required-date"
         value={requiredDate ?? undefined}
         onChange={onRequiredDateChange}
