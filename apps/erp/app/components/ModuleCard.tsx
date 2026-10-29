@@ -23,7 +23,7 @@ export const ModuleCard = ({ module }: { module: Authenticated<NavItem> }) => {
       <div className="shrink-0 p-2.5 rounded-lg border border-border group-hover:border-foreground/20 transition-colors max-md:flex max-md:size-10 max-md:items-center max-md:justify-center max-md:border-0 max-md:bg-muted max-md:p-0 max-md:text-muted-foreground">
         <module.icon className="text-xl max-md:text-lg" />
       </div>
-      <span className="text-sm py-1 px-4 border border-border rounded-full group-hover:bg-background font-medium tracking-tight transition-colors max-md:min-w-0 max-md:truncate max-md:border-0 max-md:p-0 max-md:text-[15px]">
+      <span className="text-sm py-1 px-4 border border-border rounded-full group-hover:bg-background font-medium tracking-tight transition-colors max-md:min-w-0 max-md:truncate max-md:border-0 max-md:p-0 max-md:text-[0.9375rem]">
         {module.name}
       </span>
     </Anchor>

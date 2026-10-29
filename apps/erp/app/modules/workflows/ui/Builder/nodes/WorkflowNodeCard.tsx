@@ -262,7 +262,7 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
           </div>
         )}
         {hasFailureHandle && !hasFailureEdge && (
-          <p className="mt-1 flex items-center gap-1 text-[10.5px] text-amber-600 dark:text-amber-400">
+          <p className="mt-1 flex items-center gap-1 text-[0.65625rem] text-amber-600 dark:text-amber-400">
             <LuTriangleAlert className="size-3 shrink-0" />
             <Trans>
               No failure path — the run stops here and is marked failed

@@ -18,7 +18,7 @@ export type CompactTabItem = {
 };
 
 const tabClassName =
-  "relative flex disabled:opacity-50 min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap text-[15px] font-medium text-muted-foreground outline-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full data-[active=true]:text-foreground data-[active=true]:after:bg-foreground";
+  "relative flex disabled:opacity-50 min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap text-[0.9375rem] font-medium text-muted-foreground outline-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full data-[active=true]:text-foreground data-[active=true]:after:bg-foreground";
 
 /** Phones: a horizontally scrolling underline tab row. */
 export function CompactTabRow({

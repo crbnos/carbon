@@ -4395,6 +4395,9 @@ msgstr "최단 완료"
 msgid "Beta"
 msgstr "베타"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "이유, 품목 또는 작업장별 스크랩의 가장 큰 원인"
 
@@ -5537,6 +5540,9 @@ msgstr "필터 결합"
 
 msgid "Combine output into one lot"
 msgstr "산출물을 한 로트로 병합"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "출시 예정"
@@ -8142,6 +8148,9 @@ msgstr "데모 데이터 적용됨"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "데모 데이터가 이 회사에 적용되었습니다. 유지하거나 이전 상태로 복원할 수 있습니다."
+
+msgid "Density"
+msgstr ""
 
 msgid "department"
 msgstr "부서"
@@ -13035,6 +13044,12 @@ msgstr "노무 단위"
 
 msgid "Language"
 msgstr "언어"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "지난 6개월"
@@ -22341,6 +22356,12 @@ msgstr "슬라이드 {0}"
 msgid "Slides"
 msgstr "슬라이드"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "배치할 가치가 있는 가장 작은 실행. 없으면 비워두세요."
 
@@ -25460,6 +25481,9 @@ msgstr "빠듯함"
 
 msgid "Tightened"
 msgstr "까다로운 검사"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "시간"

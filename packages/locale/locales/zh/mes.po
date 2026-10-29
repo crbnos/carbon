@@ -305,6 +305,9 @@ msgstr "生产批次总计"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "落后于目标 {daysBehindTarget} 天"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "被 {0} 阻塞"
@@ -439,6 +442,12 @@ msgstr "列：{0}"
 msgid "Columns"
 msgstr "列"
 
+msgid "Comfortable"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
 msgid "Companies"
 msgstr "公司"
 
@@ -552,6 +561,9 @@ msgstr "删除步骤"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "删除工时表 (<0/>)"
+
+msgid "Density"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "描述问题..."
@@ -979,6 +991,12 @@ msgstr "套件"
 
 msgid "Labor"
 msgstr "人工"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last completed"
 msgstr "最后完成"
@@ -1990,6 +2008,12 @@ msgstr "大小"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Source"
 msgstr "来源"
 
@@ -2085,6 +2109,9 @@ msgstr "系统"
 msgid "Tag"
 msgstr "标签"
 
+msgid "Text size"
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "整个 Carbon 中使用的强调色。"
 
@@ -2152,6 +2179,9 @@ msgstr "缩略图"
 
 msgid "Tick the jobs this was done for."
 msgstr "标记完成此项工作的工单。"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "时间"

@@ -62,7 +62,7 @@ function JobOperationNodeImpl({ data }: NodeProps) {
         )}
       >
         {d.itemId && (
-          <div className="truncate text-[11px] text-muted-foreground leading-tight">
+          <div className="truncate text-[0.6875rem] text-muted-foreground leading-tight">
             {d.itemId}
           </div>
         )}
@@ -71,12 +71,12 @@ function JobOperationNodeImpl({ data }: NodeProps) {
             {d.description}
           </span>
           {d.isRework && (
-            <span className="shrink-0 text-[10px] font-semibold text-red-600 bg-red-100 rounded px-1">
+            <span className="shrink-0 text-[0.625rem] font-semibold text-red-600 bg-red-100 rounded px-1">
               Rework
             </span>
           )}
           {d.batchReadableId && (
-            <Badge variant="blue" className="shrink-0 px-1 text-[10px]">
+            <Badge variant="blue" className="shrink-0 px-1 text-[0.625rem]">
               {d.batchReadableId}
             </Badge>
           )}
@@ -93,7 +93,7 @@ function JobOperationNodeImpl({ data }: NodeProps) {
           className="mt-1"
         />
         {d.quantityScrapped > 0 && (
-          <div className="mt-0.5 text-right text-[11px] text-red-500">
+          <div className="mt-0.5 text-right text-[0.6875rem] text-red-500">
             {d.quantityScrapped} scrapped
           </div>
         )}

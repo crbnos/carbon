@@ -97,7 +97,10 @@ const ItemQualityView = ({
                       {doc.drawingNumber ?? doc.fileName ?? doc.id}
                     </span>
                   </Hyperlink>
-                  <Badge variant="secondary" className="font-mono text-[10px]">
+                  <Badge
+                    variant="secondary"
+                    className="font-mono text-[0.625rem]"
+                  >
                     v{doc.version}
                   </Badge>
                 </HStack>

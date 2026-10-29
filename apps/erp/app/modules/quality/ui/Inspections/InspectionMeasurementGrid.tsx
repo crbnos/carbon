@@ -715,7 +715,7 @@ const InspectionMeasurementGrid = ({
                     ? "green"
                     : "secondary"
               }
-              className="font-mono text-[10px]"
+              className="font-mono text-[0.625rem]"
             >
               {counts.passed}/{row.original.sampleSize}
               {counts.failed > 0 ? ` · ${counts.failed}F` : ""}

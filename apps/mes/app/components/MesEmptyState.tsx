@@ -33,7 +33,7 @@ export function MesEmptyState({
         <LuTriangleAlert className="h-6 w-6 max-md:hidden" />
         <LuInbox className="hidden h-6 w-6 max-md:block" />
       </div>
-      <span className="text-xs font-mono font-light text-foreground uppercase max-md:mt-2 max-md:font-sans max-md:text-[17px] max-md:font-semibold max-md:normal-case">
+      <span className="text-xs font-mono font-light text-foreground uppercase max-md:mt-2 max-md:font-sans max-md:text-[1.0625rem] max-md:font-semibold max-md:normal-case">
         {title}
       </span>
       {action}

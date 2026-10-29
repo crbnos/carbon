@@ -4395,6 +4395,9 @@ msgstr "En iyi ihtimalde bitiş"
 msgid "Beta"
 msgstr "Beta"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Fire'in nedene, stok kartına veya iş merkezine göre en büyük nedenleri"
 
@@ -5537,6 +5540,9 @@ msgstr "Filtreleri birleştir"
 
 msgid "Combine output into one lot"
 msgstr "Çıktıyı bir Lota birleştir"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "Yakında"
@@ -8142,6 +8148,9 @@ msgstr "Demo verisi uygulandı"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "Demo verisi bu şirkete uygulandı. Tutun veya önceki duruma geri döndürmek için geri al."
+
+msgid "Density"
+msgstr ""
 
 msgid "department"
 msgstr "departman"
@@ -13035,6 +13044,12 @@ msgstr "İşçilik Birimi"
 
 msgid "Language"
 msgstr "Dil"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "Son 6 Ay"
@@ -22341,6 +22356,12 @@ msgstr "Slayt {0}"
 msgid "Slides"
 msgstr "Slaytlar"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Partilemeye değer en küçük çalışma. Hiçbiri için boş bırakın."
 
@@ -25460,6 +25481,9 @@ msgstr "dar"
 
 msgid "Tightened"
 msgstr "Sıkılaştırılmış"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "Saat"

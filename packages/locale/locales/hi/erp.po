@@ -4395,6 +4395,9 @@ msgstr "सर्वश्रेष्ठ स्थिति में समा
 msgid "Beta"
 msgstr "बीटा"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "कारण, आइटम या वर्क सेंटर के अनुसार स्क्रैप के सबसे बड़े कारण"
 
@@ -5537,6 +5540,9 @@ msgstr "फ़िल्टर को संयोजित करें"
 
 msgid "Combine output into one lot"
 msgstr "एक लॉट में आउटपुट को मिलाएं"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "जल्द ही आ रहा है"
@@ -8142,6 +8148,9 @@ msgstr "डेमो डेटा लागू किया गया"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "डेमो डेटा इस कंपनी पर लागू किया गया था। इसे रखें, या पूर्ववत् करके ठीक वही वापस करें जो पहले यहां था।"
+
+msgid "Density"
+msgstr ""
 
 msgid "department"
 msgstr "विभाग"
@@ -13035,6 +13044,12 @@ msgstr "श्रम इकाई"
 
 msgid "Language"
 msgstr "भाषा"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "पिछले 6 महीने"
@@ -22341,6 +22356,12 @@ msgstr "स्लाइड {0}"
 msgid "Slides"
 msgstr "स्लाइड"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "बैचिंग के लायक सबसे छोटा रन। कोई नहीं के लिए खाली छोड़ें।"
 
@@ -25460,6 +25481,9 @@ msgstr "तंग"
 
 msgid "Tightened"
 msgstr "कठोर"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "समय"

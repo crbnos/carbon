@@ -173,7 +173,7 @@ export default function TraceabilityRoute() {
               {entities.length > 0 ? (
                 <CommandGroup
                   heading={t`Entities`}
-                  className="[&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5"
+                  className="[&_[cmdk-group-heading]]:text-[0.625rem] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5"
                 >
                   {entities.map((entity) => (
                     <EntityRowItem
@@ -192,7 +192,7 @@ export default function TraceabilityRoute() {
           ) : recentSearches.length > 0 ? (
             <CommandGroup
               heading={t`Recent`}
-              className="[&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5"
+              className="[&_[cmdk-group-heading]]:text-[0.625rem] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5"
             >
               {recentSearches.map((entity) => (
                 <EntityRowItem
@@ -241,10 +241,10 @@ function EntityRowItem({
         <span className="block text-sm font-medium truncate leading-5">
           {headline}
         </span>
-        <p className="text-[11px] text-muted-foreground truncate leading-4">
+        <p className="text-[0.6875rem] text-muted-foreground truncate leading-4">
           {trackingHint}
         </p>
-        <div className="flex items-center gap-1 text-[11px] text-muted-foreground leading-4 min-w-0">
+        <div className="flex items-center gap-1 text-[0.6875rem] text-muted-foreground leading-4 min-w-0">
           <span className="block min-w-0 truncate">
             {`Tracking ${trackingIdHint}`}
           </span>
@@ -254,7 +254,7 @@ function EntityRowItem({
         {entity.status && (
           <Badge
             variant="secondary"
-            className="text-[10px] uppercase tracking-wide font-semibold px-1.5 py-0.5"
+            className="text-[0.625rem] uppercase tracking-wide font-semibold px-1.5 py-0.5"
           >
             {entity.status}
           </Badge>

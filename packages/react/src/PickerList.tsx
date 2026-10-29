@@ -16,6 +16,7 @@ import {
   CommandInput,
   CommandItem
 } from "./Command";
+import { useDensityScale } from "./hooks/useUiScale";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { optionLabelText } from "./utils/react";
@@ -103,7 +104,10 @@ function PickerList({
 }: PickerListProps) {
   const { t } = useLingui();
   const { isPhone } = useViewport();
-  const itemHeight = isPhone ? COMPACT_ITEM_HEIGHT : itemHeightProp;
+  // Heights are px at the default density; scale them with the spacing.
+  const densityScale = useDensityScale();
+  const itemHeight =
+    (isPhone ? COMPACT_ITEM_HEIGHT : itemHeightProp) * densityScale;
   const [ownSearch, setOwnSearch] = useState("");
   const search = searchProp ?? ownSearch;
   const setSearch = onSearchChange ?? setOwnSearch;

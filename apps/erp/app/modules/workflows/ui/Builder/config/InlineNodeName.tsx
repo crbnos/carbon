@@ -81,7 +81,7 @@ export function InlineNodeName({ name, isReadOnly, isTaken, onCommit }: Props) {
           }}
         />
         {error && (
-          <p className="mt-0.5 text-[10px] text-destructive">{error}</p>
+          <p className="mt-0.5 text-[0.625rem] text-destructive">{error}</p>
         )}
       </div>
     );

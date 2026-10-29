@@ -783,7 +783,7 @@ function PanelDiagnostics({ diagnostics }: { diagnostics: unknown }) {
         </Button>
       </HStack>
       {open ? (
-        <pre className="mt-1 max-h-64 select-all overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-2 font-mono text-[11px] text-foreground">
+        <pre className="mt-1 max-h-64 select-all overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-2 font-mono text-[0.6875rem] text-foreground">
           {report}
         </pre>
       ) : null}

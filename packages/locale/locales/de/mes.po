@@ -305,6 +305,9 @@ msgstr "Los-Gesamtbetrag"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Hinter dem Ziel um {daysBehindTarget} Tag(e)"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Blockiert durch {0}"
@@ -439,6 +442,12 @@ msgstr "Spalte: {0}"
 msgid "Columns"
 msgstr "Spalten"
 
+msgid "Comfortable"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
 msgid "Companies"
 msgstr "Unternehmen"
 
@@ -552,6 +561,9 @@ msgstr "Schritt löschen"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Zeitkarte löschen (<0/>)"
+
+msgid "Density"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "Beschreiben Sie das Problem..."
@@ -979,6 +991,12 @@ msgstr "Set"
 
 msgid "Labor"
 msgstr "Personal"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Zuletzt abgeschlossen"
@@ -1990,6 +2008,12 @@ msgstr "Größe"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Source"
 msgstr "Quelle"
 
@@ -2085,6 +2109,9 @@ msgstr "System"
 msgid "Tag"
 msgstr "Tag"
 
+msgid "Text size"
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Die in Carbon verwendete Akzentfarbe."
 
@@ -2152,6 +2179,9 @@ msgstr "Vorschaubild"
 
 msgid "Tick the jobs this was done for."
 msgstr "Markieren Sie die Fertigungsaufträge, für die dies erledigt wurde."
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "Uhrzeit"

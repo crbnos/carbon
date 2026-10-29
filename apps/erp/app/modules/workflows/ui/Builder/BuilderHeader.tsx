@@ -50,7 +50,7 @@ function SaveMarker() {
   if (saveState === "idle") return null;
 
   return (
-    <span className="text-[11px] text-muted-foreground">
+    <span className="text-[0.6875rem] text-muted-foreground">
       {saveState === "saving" ? (
         <Trans>Saving…</Trans>
       ) : saveState === "saved" ? (

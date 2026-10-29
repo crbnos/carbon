@@ -400,7 +400,7 @@ export default function MessageWithTokens({
             {groups.map((group, gi) => (
               <DropdownMenuGroup key={`${group.heading}-${gi}`}>
                 {gi > 0 && <DropdownMenuSeparator />}
-                <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider">
+                <DropdownMenuLabel className="text-[0.625rem] font-semibold uppercase tracking-wider">
                   {group.heading}
                 </DropdownMenuLabel>
                 {group.tokens.map((tok) => (

@@ -146,7 +146,9 @@ function renderQuantity(job: Job, unit?: string | null) {
     return (
       <>
         {quantity}
-        <span className="ml-1 text-[13px] text-muted-foreground">{unit}</span>
+        <span className="ml-1 text-[0.8125rem] text-muted-foreground">
+          {unit}
+        </span>
       </>
     );
   }

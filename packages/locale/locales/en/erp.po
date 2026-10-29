@@ -4395,6 +4395,9 @@ msgstr "Best-case finish"
 msgid "Beta"
 msgstr "Beta"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr "Bigger or smaller text. The layout stays put."
+
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Biggest causes of scrap by reason, item, or work center"
 
@@ -5537,6 +5540,9 @@ msgstr "Combine filters"
 
 msgid "Combine output into one lot"
 msgstr "Combine output into one lot"
+
+msgid "Comfortable"
+msgstr "Comfortable"
 
 msgid "Coming soon"
 msgstr "Coming soon"
@@ -8142,6 +8148,9 @@ msgstr "Demo data applied"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+
+msgid "Density"
+msgstr "Density"
 
 msgid "department"
 msgstr "department"
@@ -13035,6 +13044,12 @@ msgstr "Labor Unit"
 
 msgid "Language"
 msgstr "Language"
+
+msgid "Large"
+msgstr "Large"
+
+msgid "Larger"
+msgstr "Larger"
 
 msgid "Last 6 Months"
 msgstr "Last 6 Months"
@@ -22341,6 +22356,12 @@ msgstr "Slide {0}"
 msgid "Slides"
 msgstr "Slides"
 
+msgid "Small"
+msgstr "Small"
+
+msgid "Smaller"
+msgstr "Smaller"
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Smallest run worth batching. Leave empty for none."
 
@@ -25460,6 +25481,9 @@ msgstr "tight"
 
 msgid "Tightened"
 msgstr "Tightened"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr "Tighter or roomier layout. The text stays put."
 
 msgid "Time"
 msgstr "Time"

@@ -417,7 +417,7 @@ export function PeopleMatrix({
                       })}
                       {/* overtime is the day's, not any one station's */}
                       {dayOvertime(dayAssignments) > 0 && (
-                        <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 tabular-nums">
+                        <span className="text-[0.6875rem] font-medium text-amber-700 dark:text-amber-400 tabular-nums">
                           +{dayOvertime(dayAssignments)}h OT
                         </span>
                       )}
