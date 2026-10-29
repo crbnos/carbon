@@ -42,9 +42,9 @@ The status is computed from the state of its lines, never set by hand.
 
 The order and every line each carry three dates. The order's are the <Term id="purchase-order-delivery-requested-date">Receipt Requested Date</Term>, the <Term id="purchase-order-delivery-promised-date">Receipt Promised Date</Term> and the <Term id="purchase-order-delivery-actual-date">Delivery Date</Term>. A line's are the <Term id="purchase-order-line-required-date">Required Date</Term>, the Promised Date and the Received Date. The PDF prints the line's Required Date in its **Required** column.
 
-The order's dates are set on the **Shipping** card and in the properties panel. A line's dates are set in the **Dates** section of the line page, and the order summary shows each line's dates as **Required**, **Promised** and **Received** pills you can change in place, under the same rules as the line page.
+The order's dates are set on the **Shipping** card and in the properties panel. A line's dates are set in the **Dates** section of the line page, and the order summary shows each item line's dates as **Required**, **Promised** and **Received** pills you can change in place, under the same rules as the line page. The summary has no date pills on a phone or for a G/L Account or Fixed Asset line; open the line page for those.
 
-A new line starts on the order's Receipt Requested Date and Receipt Promised Date. When you change an order date, every line whose matching date is empty or still the old order date takes the new one. A line you gave its own date keeps it.
+A new line starts on the order's Receipt Requested Date and Receipt Promised Date. When you change an order date, every line whose matching date is empty or still the old order date takes the new one. A line you gave its own date keeps it. Clearing an order date leaves the lines' dates as they are.
 
 <Callout type="info" title="The Delivery Date only reaches lines that received goods">
 The Delivery Date records when goods arrived, so a new order Delivery Date moves the Received Date only of lines with a quantity received. Posting a receipt also sets each received line's Received Date to the day of the receipt, which replaces a date you corrected by hand.
