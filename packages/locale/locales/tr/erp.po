@@ -4310,6 +4310,9 @@ msgstr "Lot numarası"
 msgid "Batch Number"
 msgstr "Lot Numarası"
 
+msgid "Batch or Serial Number"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Toplu Özellikler"
 

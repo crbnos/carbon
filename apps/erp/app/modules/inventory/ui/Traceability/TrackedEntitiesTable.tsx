@@ -306,6 +306,7 @@ const TrackedEntitiesTable = memo(
               itemId={unscrapping.itemId}
               trackedEntityId={unscrapping.id}
               quantity={Number(unscrapping.quantity)}
+              needsNumber={!unscrapping.readableId?.trim()}
               label={
                 unscrapping.readableId ??
                 unscrapping.sourceDocumentReadableId ??

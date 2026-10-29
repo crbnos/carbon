@@ -27,7 +27,7 @@ Item type, replenishment system, and tracking type determine whether the item is
 
 The tracking type sets how units are counted. *Inventory* items are quantity-tracked stock; *Non-Inventory* items aren't counted; *Serial* items carry one record per unit; *<Term id="batch">Batch</Term>* items are lot-tracked with their own batch numbers and dates.
 
-An item can't become *Serial* or *Batch* while it holds stock with no serial or batch number, at any location. Adjust that stock to zero, change the tracking type, then add the stock back by serial or batch number. The change carries to open jobs: every material line of a Draft or Planned job, and each line of a released job that has nothing issued yet. A line with material already issued keeps the tracking it was issued under.
+An item can't become *Serial* or *Batch* while it holds stock with no serial or batch number, at any location. Adjust that stock to zero, change the tracking type, then add the stock back by serial or batch number. It also can't change while an open job has the item issued with no number, since serial and batch material is returned by unit. Return that material, or complete or cancel the job, first. The change carries to open jobs: every material line of a Draft or Planned job, and each line of a released job that has nothing issued yet. A line with material already issued keeps the tracking it was issued under.
 
 ## Revisions
 

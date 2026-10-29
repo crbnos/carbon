@@ -4310,6 +4310,9 @@ msgstr "बैच नंबर"
 msgid "Batch Number"
 msgstr "बैच नंबर"
 
+msgid "Batch or Serial Number"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "बैच प्रॉपर्टीज़"
 

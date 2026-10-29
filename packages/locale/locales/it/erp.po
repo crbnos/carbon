@@ -4310,6 +4310,9 @@ msgstr "Numero di lotto"
 msgid "Batch Number"
 msgstr "Numero Lotto"
 
+msgid "Batch or Serial Number"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Proprietà Batch"
 

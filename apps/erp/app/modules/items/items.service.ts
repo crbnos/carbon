@@ -3164,6 +3164,53 @@ export async function getItemsWithUntrackedStock(
 }
 
 /**
+ * The items, among `itemIds`, whose tracking type is not `trackingType`, with
+ * the open jobs (not Completed, Closed or Cancelled) that issued them by
+ * quantity. A batch or serial item can only be returned by unit, so
+ * `setItemTrackingType` refuses to make those Batch or Serial
+ * (`trackingTypeIssueRefusal`, `items.utils.ts`).
+ */
+export async function getItemsIssuedUntrackedToOpenJobs(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    itemIds: string[];
+    companyId: string;
+    trackingType: InventoryItemType;
+  }
+): Promise<{ item: string; job: string }[]> {
+  if (args.itemIds.length === 0) return [];
+  const rows = await db
+    .selectFrom("jobMaterial")
+    .innerJoin("job", (join) =>
+      join
+        .onRef("job.id", "=", "jobMaterial.jobId")
+        .onRef("job.companyId", "=", "jobMaterial.companyId")
+    )
+    .innerJoin("item", (join) =>
+      join
+        .onRef("item.id", "=", "jobMaterial.itemId")
+        .onRef("item.companyId", "=", "jobMaterial.companyId")
+    )
+    .where("jobMaterial.itemId", "in", args.itemIds)
+    .where("jobMaterial.companyId", "=", args.companyId)
+    .where("jobMaterial.quantityIssued", ">", 0)
+    .where("jobMaterial.requiresBatchTracking", "=", false)
+    .where("jobMaterial.requiresSerialTracking", "=", false)
+    .where("job.status", "not in", [...JOB_LOCKED_STATUSES])
+    .where("item.itemTrackingType", "!=", args.trackingType)
+    .select(["item.readableIdWithRevision", "job.jobId"])
+    .distinct()
+    .execute();
+  return rows
+    .map((row) => ({
+      item: row.readableIdWithRevision ?? "",
+      job: row.jobId ?? ""
+    }))
+    .filter((row) => row.item && row.job)
+    .sort((a, b) => a.item.localeCompare(b.item) || a.job.localeCompare(b.job));
+}
+
+/**
  * Cascades a change to item.itemTrackingType onto the snapshot columns
  * `requiresSerialTracking` and `requiresBatchTracking` on child rows that
  * belong to OPEN parents (jobs, receipts, shipments, stock transfers).

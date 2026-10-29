@@ -98,7 +98,10 @@ const itemIdsInput = z.array(z.string()).min(1);
  *
  * Making an item Batch or Serial is refused while it holds stock with no
  * batch or serial number, at any location; nothing is changed. Adjust that
- * stock to zero first, then add it back by batch or serial number.
+ * stock to zero first, then add it back by batch or serial number. It is
+ * also refused while an open job has the item issued with no number, since
+ * that quantity could no longer be returned; return it, or complete or
+ * cancel the job, first.
  *
  * @mcp
  */
@@ -134,6 +137,16 @@ export const setItemTrackingType = defineServiceFn({
           withStock
         );
         if (refusal) return ctx.error("rule", refusal);
+
+        const issued = await service.getItemsIssuedUntrackedToOpenJobs(
+          tx.asSystem.pg,
+          { itemIds: ids, companyId, trackingType: itemTrackingType }
+        );
+        const issueRefusal = utils.trackingTypeIssueRefusal(
+          itemTrackingType,
+          issued
+        );
+        if (issueRefusal) return ctx.error("rule", issueRefusal);
       }
 
       await tx.asSystem.pg

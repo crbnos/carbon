@@ -24,6 +24,7 @@ const budget = (overrides: Partial<PickedBudget>): PickedBudget => {
     storageUnitId: "shelf",
     sharedStorageUnitId: "shelf",
     isInventory: true,
+    isBatchOrSerial: false,
     isPredecessor: false,
     ...overrides,
     own,

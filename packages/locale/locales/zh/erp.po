@@ -4310,6 +4310,9 @@ msgstr "批号"
 msgid "Batch Number"
 msgstr "批号"
 
+msgid "Batch or Serial Number"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "批量属性"
 

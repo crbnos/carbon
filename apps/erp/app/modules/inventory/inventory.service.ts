@@ -19069,7 +19069,7 @@ export async function postInventoryAdjustment(
       if (trackedEntityId) {
         const entity = await trx
           .selectFrom("trackedEntity")
-          .select(["id", "quantity", "status"])
+          .select(["id", "quantity", "status", "readableId"])
           .where("id", "=", trackedEntityId)
           .where("companyId", "=", companyId)
           .executeTakeFirst();
@@ -19079,6 +19079,16 @@ export async function postInventoryAdjustment(
             "Only scrapped tracked entities can be unscrapped"
           );
         }
+        // A batch or serial unit comes back with its number: one scrapped
+        // with none needs it sent.
+        const numberRefusal = stockIncreaseRefusal({
+          itemTrackingType: item.itemTrackingType,
+          trackedEntityId,
+          createsUnit: false,
+          readableId,
+          currentReadableId: entity.readableId
+        });
+        if (numberRefusal) throw new InvalidInputError(numberRefusal);
         const entityQuantity = Number(entity.quantity) || 0;
         if (entityQuantity <= 0) {
           throw new InvalidInputError(
@@ -19156,7 +19166,12 @@ export async function postInventoryAdjustment(
 
         await trx
           .updateTable("trackedEntity")
-          .set({ status: "Available" })
+          .set({
+            status: "Available",
+            ...(readableId !== undefined && readableId !== null
+              ? { readableId }
+              : {})
+          })
           .where("id", "=", trackedEntityId)
           .where("companyId", "=", companyId)
           .execute();
@@ -21730,6 +21745,17 @@ async function issueJobOperationMaterials(
   const itemIdIsTracked = new Map(
     items.map((item) => [item.id, item.itemTrackingType === "Inventory"])
   );
+  // A line copied before its item became batch or serial tracked still says
+  // untracked. Its units are issued by number, never by backflush.
+  const numberedItemIds = new Set(
+    items
+      .filter(
+        (item) =>
+          item.itemTrackingType === "Batch" ||
+          item.itemTrackingType === "Serial"
+      )
+      .map((item) => item.id)
+  );
 
   // Company business day — item/cost ledgers and this function's journals must
   // all post on the same day (they previously relied on the CURRENT_DATE default,
@@ -21769,6 +21795,7 @@ async function issueJobOperationMaterials(
   const strictProblems: string[] = [];
   const takenShared: SharedTakes = new Map();
   for await (const material of materialsToIssue) {
+    if (numberedItemIds.has(material.itemId)) continue;
     // Cap the backflush at the material's remaining unissued requirement,
     // mirroring backflush_job_materials. Without this, materials already
     // issued manually (e.g. from MES after skipping the operation) get
@@ -21784,14 +21811,18 @@ async function issueJobOperationMaterials(
 
     if (quantityToIssue <= 0) continue;
 
+    // Only untracked stock is taken by quantity: a batch or serial
+    // substitute picked to the line is issued by number.
     const budgets = orderOldFirst(
-      await getPickedBudgets(trx, {
-        material,
-        locationId: job.locationId,
-        companyId,
-        opStorageUnitId,
-        takenShared
-      }),
+      (
+        await getPickedBudgets(trx, {
+          material,
+          locationId: job.locationId,
+          companyId,
+          opStorageUnitId,
+          takenShared
+        })
+      ).filter((budget) => !budget.isBatchOrSerial),
       material.itemId
     );
     const { takes, remaining } = allocateAcrossBudgets(
@@ -24525,16 +24556,20 @@ export async function issueMaterial(
           if (material && material.methodType !== "Make to Order") {
             let remaining = Number(quantityToIssue);
             if (adjustmentType !== "Positive Adjmt." && remaining > 0) {
+              // Only untracked stock is taken by quantity: a batch or
+              // serial substitute picked to the line is issued by number.
               const budgets = orderOldFirst(
-                await getPickedBudgets(trx, {
-                  material,
-                  locationId: job?.locationId!,
-                  companyId,
-                  opStorageUnitId: await getOperationLinesideBin(trx, {
-                    jobOperationId: material.jobOperationId,
-                    companyId
+                (
+                  await getPickedBudgets(trx, {
+                    material,
+                    locationId: job?.locationId!,
+                    companyId,
+                    opStorageUnitId: await getOperationLinesideBin(trx, {
+                      jobOperationId: material.jobOperationId,
+                      companyId
+                    })
                   })
-                }),
+                ).filter((budget) => !budget.isBatchOrSerial),
                 material.itemId
               );
               const allocation = allocateAcrossBudgets(

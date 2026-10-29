@@ -33,7 +33,8 @@ Key service functions (verified):
   (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`) resolution, tracked-entity storage-unit
   transfers, expiry override, batch/serial assignment (an increase of a Batch or Serial item
   must name its unit, and the unit, new or existing, needs its number: `stockIncreaseRefusal`,
-  `inventory.utils.ts`) — and, in one Kysely transaction, maintains
+  `inventory.utils.ts`; an Unscrap restores a unit with no number only when one is sent) — and,
+  in one Kysely transaction, maintains
   `costLedger` layers (consume via `calculateCOGS` on decreases, new layer at current cost on
   increases) and posts a journal (Dr/Cr `resolveInventoryAccount` vs
   `accountDefault.inventoryAdjustmentVarianceAccount`) for every company — Provisional before the

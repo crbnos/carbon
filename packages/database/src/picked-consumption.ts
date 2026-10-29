@@ -43,6 +43,8 @@ export type PickedBudget = {
   unclaimed: number;
   available: number;
   isInventory: boolean;
+  /** Batch or serial stock leaves by unit, never by a quantity-only issue. */
+  isBatchOrSerial: boolean;
   isPredecessor: boolean;
 };
 
@@ -458,6 +460,9 @@ export async function getPickedBudgets(
       unclaimed,
       available: own + unclaimed,
       isInventory: trackingByItem.get(itemId) === "Inventory",
+      isBatchOrSerial:
+        trackingByItem.get(itemId) === "Batch" ||
+        trackingByItem.get(itemId) === "Serial",
       isPredecessor:
         !!successor && successor !== itemId && involvedSet.has(successor)
     };

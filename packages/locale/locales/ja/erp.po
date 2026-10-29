@@ -4310,6 +4310,9 @@ msgstr "バッチ番号"
 msgid "Batch Number"
 msgstr "バッチ番号"
 
+msgid "Batch or Serial Number"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "バッチプロパティ"
 
