@@ -21836,11 +21836,6 @@ async function issueJobOperationMaterials(
       Number(material.quantity ?? 0)
     );
     recordSharedTakes(takenShared, takes);
-    // A batch or serial substitute picked to the line covers its share of
-    // the demand, which stays unissued until its units are issued by number.
-    const heldForNumber = takes
-      .filter((take) => take.budget.isBatchOrSerial)
-      .reduce((sum, take) => sum + take.quantity / take.budget.factor, 0);
     for (const take of takes) {
       if (!take.budget.isInventory) continue;
       for (const row of splitTakeByBin(take)) {
@@ -21982,8 +21977,7 @@ async function issueJobOperationMaterials(
       .updateTable("jobMaterial")
       .set({
         quantityIssued: round(
-          round(Number(material.quantityIssued) ?? 0) +
-            round(quantityToIssue - heldForNumber)
+          round(Number(material.quantityIssued) ?? 0) + round(quantityToIssue)
         )
       })
       .where("id", "=", material.id)
@@ -24584,23 +24578,6 @@ export async function issueMaterial(
                 budgets,
                 Number(material.quantity ?? 0)
               );
-              // A batch or serial substitute picked to the line is issued by
-              // number, never counted here.
-              const numbered = allocation.takes.find(
-                (take) => take.budget.isBatchOrSerial
-              );
-              if (numbered) {
-                const substitute = await trx
-                  .selectFrom("item")
-                  .where("id", "=", numbered.budget.itemId)
-                  .where("companyId", "=", companyId)
-                  .select(["itemTrackingType", "readableIdWithRevision"])
-                  .executeTakeFirst();
-                throw new InvalidInputError(
-                  (substitute ? untrackedIssueRefusal(substitute) : null) ??
-                    "A batch or serial substitute was picked to this line: issue it by number"
-                );
-              }
               remaining = allocation.remaining;
               for (const take of allocation.takes) {
                 if (!take.budget.isInventory) continue;
