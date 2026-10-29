@@ -1214,6 +1214,8 @@ msgstr "{overdueBorrowCount, plural, one {# emprunt a dépassé sa date d'éché
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} doit à {lender}, exigible le {due}"
+msgid "{overdue, plural, one {# overdue} other {# overdue}}"
+msgstr ""
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# pièce} other {# pièces}}"

@@ -13,6 +13,9 @@ import {
   type HubPersonStatus,
   type MemberPage,
   memberPageValidator,
+  pageOverdue,
+  pageProgress,
+  resolveMemberPage,
   starterMemberPage
 } from "@carbon/implementation-hub";
 import { getImplementationMembers } from "@carbon/implementation-hub/server";
@@ -20,11 +23,14 @@ import {
   MemberPageEmpty,
   MemberPageView,
   type PageEditor,
+  ProgressPill,
   toFormFields,
+  useCheckMap,
   useHub
 } from "@carbon/implementation-hub/ui";
 import { getLogger } from "@carbon/logger";
 import {
+  Badge,
   Button,
   Command,
   CommandEmpty,
@@ -49,7 +55,8 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { isInternalEmail } from "@carbon/utils";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { getLocalTimeZone, today } from "@internationalized/date";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
 import {
   LuCheck,
@@ -178,6 +185,28 @@ export default function GetStartedRoute() {
     [groups]
   );
 
+  // Staff see where each page stands in the picker, so late work is found
+  // without opening every page.
+  const rows = useHub((s) => s.rows);
+  const states = useCheckMap();
+  const todayIso = today(getLocalTimeZone()).toString();
+  const standings = useMemo(() => {
+    const standing = new Map<string, PageStanding>();
+    if (!isInternal) return standing;
+    const items = catalogueByItem(buildPageCatalogue(rows));
+    const rowsById = new Map(rows.map((row) => [row.id, row]));
+    for (const member of members) {
+      const parsed = memberPageValidator.safeParse(member.page);
+      if (!parsed.success) continue;
+      const sections = resolveMemberPage(parsed.data, items, member.userId);
+      standing.set(member.userId, {
+        ...pageProgress(sections, states, rowsById),
+        overdue: pageOverdue(sections, states, rowsById, todayIso)
+      });
+    }
+    return standing;
+  }, [isInternal, members, rows, states, todayIso]);
+
   const requested = params.get("as");
   const selectedId = isInternal
     ? (everyone.find((person) => person.id === requested)?.id ??
@@ -254,6 +283,7 @@ export default function GetStartedRoute() {
         {isInternal ? (
           <StaffBar
             groups={groups}
+            standings={standings}
             selectedId={selectedId}
             hasPage={member !== undefined}
             page={member?.page}
@@ -363,14 +393,20 @@ function NoPage({
   );
 }
 
-// Carbon staff only: whose hub to see, in three groups. Choosing someone
-// without a page shows the way to set one up.
+// Where a person's page stands: cards done over the cards that can be, and the
+// open ones past their due date.
+type PageStanding = { done: number; total: number; overdue: number };
+
+// Carbon staff only: whose hub to see, in three groups, with where each page
+// stands. Choosing someone without a page shows the way to set one up.
 function PersonPicker({
   groups,
+  standings,
   selectedId,
   onSelect
 }: {
   groups: HubPeopleGroups;
+  standings: Map<string, PageStanding>;
   selectedId: string | null;
   onSelect: (userId: string) => void;
 }) {
@@ -428,7 +464,7 @@ function PersonPicker({
           )}
         </CommandTrigger>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 p-0">
+      <PopoverContent align="start" className="w-96 p-0">
         <Command>
           <CommandInput placeholder={t`Search people`} />
           <CommandList>
@@ -466,11 +502,10 @@ function PersonPicker({
                           </span>
                         ) : null}
                       </span>
-                      {person.hasPage ? (
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          <Trans>Configured</Trans>
-                        </span>
-                      ) : null}
+                      <PageStandingTags
+                        standing={standings.get(person.id)}
+                        hasPage={person.hasPage}
+                      />
                       <LuCheck
                         className={cn(
                           "ml-2 size-4 shrink-0",
@@ -489,6 +524,36 @@ function PersonPicker({
   );
 }
 
+// Carbon staff only, beside a name: the page's overdue cards and its progress.
+// A Carbon user's page with nothing to tick says only that it is configured.
+function PageStandingTags({
+  standing,
+  hasPage
+}: {
+  standing?: PageStanding;
+  hasPage?: boolean;
+}) {
+  const { t } = useLingui();
+  if (!standing?.total) {
+    return hasPage ? (
+      <span className="shrink-0 text-xs text-muted-foreground">
+        <Trans>Configured</Trans>
+      </span>
+    ) : null;
+  }
+  const { done, total, overdue } = standing;
+  return (
+    <span className="flex shrink-0 items-center gap-1.5">
+      {overdue > 0 ? (
+        <Badge variant="red" className="font-normal">
+          <Plural value={overdue} one="# overdue" other="# overdue" />
+        </Badge>
+      ) : null}
+      <ProgressPill done={done} total={total} label={t`done`} />
+    </span>
+  );
+}
+
 // A quiet marker beside a name for anyone not active: invited and waiting, or
 // inactive (deactivated, or their invite was revoked). Active people get none.
 function PersonStatus({ status }: { status: HubPersonStatus }) {
@@ -503,6 +568,7 @@ function PersonStatus({ status }: { status: HubPersonStatus }) {
 // Carbon staff only: whose page this is, and the page file actions.
 function StaffBar({
   groups,
+  standings,
   selectedId,
   hasPage,
   page,
@@ -510,6 +576,7 @@ function StaffBar({
   onLoad
 }: {
   groups: HubPeopleGroups;
+  standings: Map<string, PageStanding>;
   selectedId: string | null;
   hasPage: boolean;
   page: unknown;
@@ -572,6 +639,7 @@ function StaffBar({
       </span>
       <PersonPicker
         groups={groups}
+        standings={standings}
         selectedId={selectedId}
         onSelect={onSelect}
       />
