@@ -24745,6 +24745,8 @@ msgstr "Запрошено"
 
 msgid "Requested By"
 msgstr "Запрошено"
+msgid "Requested"
+msgstr ""
 
 msgid "Requested Date"
 msgstr "Запрошенная дата"

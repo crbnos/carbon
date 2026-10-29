@@ -24745,6 +24745,8 @@ msgstr "Żądane"
 
 msgid "Requested By"
 msgstr "Zażądane przez"
+msgid "Requested"
+msgstr ""
 
 msgid "Requested Date"
 msgstr "Data żądana"

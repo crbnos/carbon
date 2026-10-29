@@ -24745,6 +24745,8 @@ msgstr "요청됨"
 
 msgid "Requested By"
 msgstr "요청한 사람"
+msgid "Requested"
+msgstr ""
 
 msgid "Requested Date"
 msgstr "요청일"

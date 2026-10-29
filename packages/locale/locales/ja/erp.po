@@ -24745,6 +24745,8 @@ msgstr "リクエスト済み"
 
 msgid "Requested By"
 msgstr "要求者"
+msgid "Requested"
+msgstr ""
 
 msgid "Requested Date"
 msgstr "希望納期"
