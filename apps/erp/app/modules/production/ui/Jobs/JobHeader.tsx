@@ -729,11 +729,10 @@ export function JobStartModal({
           ? carbon
               .from("jobMaterial")
               .select(
-                "id, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision)"
+                "id, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision), storageUnit(name, effectiveNettable)"
               )
               .eq("jobId", job.id!)
               .eq("companyId", job.companyId!)
-              .is("storageUnitId", null)
           : Promise.resolve({ data: [], error: null })
       ]);
 

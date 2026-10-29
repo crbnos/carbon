@@ -245,8 +245,10 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   `getDefaultStorageUnitForJob` (`inventory.utils.ts`) skip them the same way. The bin the
   material itself names is still used as named. A DESTINATION is not guessed: a job's output
   bin and a PO line's bin (a kanban scan included) keep a non-nettable pick method default,
-  since receiving into an inspection area is a deliberate setup. Pinned by
-  `apps/erp/test/database/non-nettable-fullest-bin.test.ts`.
+  since receiving into an inspection area is a deliberate setup. Under strict backflush a
+  non-nettable Pull From counts as none at activation and release (production `AGENTS.md` →
+  Strict backflush). Pinned by
+  `apps/erp/test/database/non-nettable-fullest-bin.test.ts` and `strict-backflush.test.ts`.
 - **CSV import** has a "Non-nettable" column for storage units and storage types
   (`parseCsvNonNettable`, `shared.service.ts`): blank leaves an existing unit's flag alone,
   true/false (also yes/no, y/n, 1/0, on/off) sets it, and anything else is a row error.

@@ -8599,6 +8599,7 @@ function methodLinesMissingPullFrom(
   companyId: string,
   locationIds: string[]
 ) {
+  // A line with no Pull From at a location, or a non-nettable (quarantine) one.
   return db
     .selectFrom("methodMaterial")
     .innerJoin("makeMethod", (join) =>
@@ -8619,7 +8620,16 @@ function methodLinesMissingPullFrom(
       sql<boolean>`COALESCE("component"."itemTrackingType", 'Inventory') <> 'Non-Inventory'`
     )
     .where(
-      sql<boolean>`EXISTS (SELECT 1 FROM unnest(${locationIds}::text[]) AS loc WHERE COALESCE("methodMaterial"."storageUnitIds" ->> loc, '') = '')`
+      sql<boolean>`EXISTS (
+        SELECT 1 FROM unnest(${locationIds}::text[]) AS loc
+        WHERE COALESCE("methodMaterial"."storageUnitIds" ->> loc, '') = ''
+          OR EXISTS (
+            SELECT 1 FROM "storageUnit" su
+            WHERE su."id" = "methodMaterial"."storageUnitIds" ->> loc
+              AND su."companyId" = ${companyId}
+              AND su."effectiveNettable" = false
+          )
+      )`
     );
 }
 
@@ -8628,6 +8638,7 @@ function jobLinesMissingStorageUnit(
   companyId: string,
   locationIds: string[]
 ) {
+  // A line with no storage unit, or a non-nettable (quarantine) one.
   return db
     .selectFrom("jobMaterial")
     .innerJoin("job", (join) =>
@@ -8643,7 +8654,20 @@ function jobLinesMissingStorageUnit(
     )
     .where("job.locationId", "in", locationIds)
     .where("jobMaterial.companyId", "=", companyId)
-    .where("jobMaterial.storageUnitId", "is", null)
+    .where((eb) =>
+      eb.or([
+        eb("jobMaterial.storageUnitId", "is", null),
+        eb(
+          "jobMaterial.storageUnitId",
+          "in",
+          eb
+            .selectFrom("storageUnit")
+            .select("storageUnit.id")
+            .where("storageUnit.companyId", "=", companyId)
+            .where("storageUnit.effectiveNettable", "=", false)
+        )
+      ])
+    )
     .where("jobMaterial.methodType", "!=", "Make to Order")
     .where("jobMaterial.itemType", "in", [...PULLED_ITEM_TYPES])
     .where("jobMaterial.requiresBatchTracking", "=", false)

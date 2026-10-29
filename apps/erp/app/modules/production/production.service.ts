@@ -3274,11 +3274,10 @@ async function getMaterialsWithoutStorageUnit(
     client
       .from("jobMaterial")
       .select(
-        "id, jobId, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision), job(locationId)"
+        "id, jobId, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision), job(locationId), storageUnit(name, effectiveNettable)"
       )
       .in("jobId", batch)
       .eq("companyId", companyId)
-      .is("storageUnitId", null)
       .order("id")
   );
   if (lines.error) return { data: {}, error: lines.error };
