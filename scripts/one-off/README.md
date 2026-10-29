@@ -40,11 +40,6 @@ Nobody runs these by hand in production. Merging is what ships them.
   runners have no IPv6 (`ENETUNREACH`). Failing that, the workspace's pooler
   URL, as the deployed app gets it, else its connection string when that starts
   with `postgresql://`. A workspace with none passes no `SUPABASE_DB_URL`.
-- `ERP_URL`: `https://<url_erp>`, the app's public origin as the deployed app
-  gets it, when the workspace has a `url_erp`; otherwise unset. Unset,
-  `getAppUrl()` (`@carbon/env`) falls back to `https://app.carbon.ms`, so a
-  script that builds a URL for this workspace checks `ERP_URL` itself and
-  defers without it.
 - **No database password.** The runner removes `SUPABASE_DB_PASSWORD`; only
   `supabase db push` uses it. A script never needs it and must not read it.
 

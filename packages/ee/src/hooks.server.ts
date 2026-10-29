@@ -34,8 +34,8 @@ import {
   rilletOnUninstall
 } from "./rillet/hooks.server";
 import {
-  ensureSenseWebhook,
   senseHealthcheck,
+  senseOnSave,
   senseOnUninstall
 } from "./sense/hooks.server";
 import { slackOnConnect } from "./slack/hooks.server";
@@ -141,8 +141,8 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   },
   sense: {
     onHealthcheck: senseHealthcheck,
-    onInstall: ensureSenseWebhook,
-    onUpdate: ensureSenseWebhook,
+    onInstall: senseOnSave,
+    onUpdate: senseOnSave,
     onUninstall: senseOnUninstall
   },
   xero: {

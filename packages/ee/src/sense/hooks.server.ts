@@ -14,9 +14,17 @@ import { WEBHOOK_SIGNING_SECRET_KEY } from "../integrations/secrets";
 import { postEndedMachineEvents } from "../oee/service.server";
 import type { IntegrationHealthcheckResult } from "../types";
 import { senseWebhookUrl } from "./webhook";
-import { senseFromMetadata, webhookOrigin } from "./webhook.server";
 
-export { ensureSenseWebhook } from "./webhook.server";
+import {
+  ensureSenseWebhook,
+  senseFromMetadata,
+  webhookOrigin
+} from "./webhook.server";
+
+/** `onInstall` and `onUpdate`: register or repair the company's webhook. */
+export async function senseOnSave(companyId: string) {
+  await ensureSenseWebhook(companyId);
+}
 
 /** `metadata` arrives with the vaulted secrets already resolved. */
 export async function senseHealthcheck(

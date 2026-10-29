@@ -63,7 +63,6 @@ export type Workspace = {
   service_role_key: string | null;
   inngest_base_url: string | null;
   inngest_event_key: string | null;
-  url_erp: string | null;
 };
 
 /**
@@ -355,7 +354,6 @@ async function migrate(): Promise<void> {
               ))) ||
             database_connection_pooler_url,
           connectionString: connection_string,
-          erpHost: workspace.url_erp,
         }),
       });
       if (!(await runPendingScripts(workspace, scripts$))) {
