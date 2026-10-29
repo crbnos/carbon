@@ -237,12 +237,16 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   name a non-nettable bin.
 - **A guessed bin is never non-nettable.** When no bin was chosen, consumption (the
   completion backflush and manual issue in `issueJobOperationMaterials` / `issueMaterial`,
-  the maintenance spare-part issue) and a new job material (`getStorageUnitId`) fall back to
-  `getStorageUnitWithHighestQuantity` (`shared.service.ts`), which only considers nettable
-  units; the backflush's second fallback (the fullest bin when the proposed one is short) and
-  `getDefaultStorageUnitForJob` (`inventory.utils.ts`) skip them the same way. A bin
-  someone named (the material's own, the item's `pickMethod.defaultStorageUnitId`) is still
-  used as named. Pinned by `apps/erp/test/database/non-nettable-fullest-bin.test.ts`.
+  the maintenance spare-part issue) and a new job material (`getStorageUnitId`, and its
+  set-based twins in get-method) take the item's pick method default only when it is
+  nettable (`getNettableDefaultStorageUnitId`, `shared.service.ts`), then fall back to
+  `getStorageUnitWithHighestQuantity`, which only considers nettable units; the backflush's
+  second fallback (the fullest bin when the proposed one is short) and
+  `getDefaultStorageUnitForJob` (`inventory.utils.ts`) skip them the same way. The bin the
+  material itself names is still used as named. A DESTINATION is not guessed: a job's output
+  bin and a PO line's bin (a kanban scan included) keep a non-nettable pick method default,
+  since receiving into an inspection area is a deliberate setup. Pinned by
+  `apps/erp/test/database/non-nettable-fullest-bin.test.ts`.
 - **CSV import** has a "Non-nettable" column for storage units and storage types
   (`parseCsvNonNettable`, `shared.service.ts`): blank leaves an existing unit's flag alone,
   true/false (also yes/no, y/n, 1/0, on/off) sets it, and anything else is a row error.

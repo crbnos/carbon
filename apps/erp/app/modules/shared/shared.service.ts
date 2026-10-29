@@ -17085,26 +17085,54 @@ export async function getStorageUnitId(
   trx: Transaction<DB>,
   itemId: string,
   locationId: string,
+  companyId: string,
   storageUnitId?: string,
   /** False under strict backflush: the fullest bin is a guess, not a choice. */
   allowFullestBin = true
 ): Promise<string | undefined> {
   if (storageUnitId) return storageUnitId;
 
-  const pickMethod = await trx
-    .selectFrom("pickMethod")
-    .where("itemId", "=", itemId)
-    .where("locationId", "=", locationId)
-    .select("defaultStorageUnitId")
-    .executeTakeFirst();
-
-  if (pickMethod?.defaultStorageUnitId) return pickMethod.defaultStorageUnitId;
+  const defaultStorageUnitId = await getNettableDefaultStorageUnitId(
+    trx,
+    itemId,
+    locationId,
+    companyId
+  );
+  if (defaultStorageUnitId) return defaultStorageUnitId;
   if (!allowFullestBin) return undefined;
 
   const storageUnitWithHighestQuantity =
-    await getStorageUnitWithHighestQuantity(trx, itemId, locationId);
+    await getStorageUnitWithHighestQuantity(trx, itemId, locationId, companyId);
 
   return storageUnitWithHighestQuantity ?? undefined;
+}
+
+/**
+ * The item's pick method default bin at the location, when it is nettable.
+ * Material is consumed from it, and stock in a non-nettable unit (quarantine)
+ * is never consumed unless someone names that bin on the material.
+ */
+export async function getNettableDefaultStorageUnitId(
+  trx: Transaction<DB>,
+  itemId: string,
+  locationId: string,
+  companyId: string
+): Promise<string | null> {
+  const pickMethod = await trx
+    .selectFrom("pickMethod")
+    .innerJoin("storageUnit", (join) =>
+      join
+        .onRef("storageUnit.id", "=", "pickMethod.defaultStorageUnitId")
+        .onRef("storageUnit.companyId", "=", "pickMethod.companyId")
+    )
+    .where("pickMethod.itemId", "=", itemId)
+    .where("pickMethod.locationId", "=", locationId)
+    .where("pickMethod.companyId", "=", companyId)
+    .where("storageUnit.effectiveNettable", "=", true)
+    .select("pickMethod.defaultStorageUnitId")
+    .executeTakeFirst();
+
+  return pickMethod?.defaultStorageUnitId ?? null;
 }
 
 /**
@@ -17171,13 +17199,16 @@ export async function getTrackedEntityOnHandInBin(
 export async function getStorageUnitWithHighestQuantity(
   trx: Transaction<DB>,
   itemId: string,
-  locationId: string
+  locationId: string,
+  companyId: string
 ): Promise<string | null> {
   const storageUnitWithHighestQuantity = await trx
     .selectFrom("itemLedger")
     .innerJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
     .where("itemLedger.itemId", "=", itemId)
     .where("itemLedger.locationId", "=", locationId)
+    .where("itemLedger.companyId", "=", companyId)
+    .where("storageUnit.companyId", "=", companyId)
     .where("storageUnit.effectiveNettable", "=", true)
     .groupBy("itemLedger.storageUnitId")
     .select([

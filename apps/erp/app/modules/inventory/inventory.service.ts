@@ -160,6 +160,7 @@ import {
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
   getExpiredEntityPolicy,
+  getNettableDefaultStorageUnitId,
   getOffsetAccount,
   getStorageUnitWithHighestQuantity,
   getTrackedEntityBins,
@@ -4076,7 +4077,7 @@ async function getWarehouseStorageUnitIds(
  * lineside bin, or from a non-nettable one).
  */
 async function resolveWarehouseSource(
-  client: SupabaseClient<Database>,
+  warehouseUnits: (storageUnitIds: string[]) => Promise<Set<string>>,
   onHandByUnit: Map<string, number>
 ): Promise<string | null> {
   // Consider candidates highest-on-hand first.
@@ -4084,8 +4085,7 @@ async function resolveWarehouseSource(
     .filter(([, qty]) => qty > 0)
     .sort((a, b) => b[1] - a[1]);
 
-  const warehouse = await getWarehouseStorageUnitIds(
-    client,
+  const warehouse = await warehouseUnits(
     candidates.map(([storageUnitId]) => storageUnitId)
   );
   // First warehouse bin with the most on-hand wins.
@@ -4449,6 +4449,20 @@ export async function generatePickingList(
     unclaimedRemaining.set(key, Math.max(0, current - Math.max(0, used - own)));
   };
 
+  // Whether a storage unit is a warehouse bin (not lineside, nettable), read
+  // once per unit for the whole list.
+  const isWarehouseUnit = new Map<string, boolean>();
+  const warehouseUnits = async (storageUnitIds: string[]) => {
+    const unknown = [...new Set(storageUnitIds)].filter(
+      (id) => !isWarehouseUnit.has(id)
+    );
+    if (unknown.length > 0) {
+      const warehouse = await getWarehouseStorageUnitIds(client, unknown);
+      for (const id of unknown) isWarehouseUnit.set(id, warehouse.has(id));
+    }
+    return new Set(storageUnitIds.filter((id) => isWarehouseUnit.get(id)));
+  };
+
   const onHandFor = async (itemId: string): Promise<Map<string, number>> => {
     const cached = onHandCache.get(itemId);
     if (cached) return cached;
@@ -4500,6 +4514,11 @@ export async function generatePickingList(
     createdBy: string;
   }> = [];
   try {
+    await warehouseUnits(
+      (materials.data ?? [])
+        .map((mat) => mat.storageUnitId)
+        .filter((id): id is string => !!id)
+    );
     for (const mat of materials.data ?? []) {
       const quantityToIssue = Number(mat.quantityToIssue ?? 0);
       if (quantityToIssue <= 0) continue;
@@ -4635,15 +4654,13 @@ export async function generatePickingList(
         let sourceStorageUnitId: string | null;
         if (pickItemId === mat.itemId && mat.storageUnitId) {
           // The material's own bin, unless it is lineside or non-nettable.
-          const warehouse = await getWarehouseStorageUnitIds(client, [
-            mat.storageUnitId
-          ]);
+          const warehouse = await warehouseUnits([mat.storageUnitId]);
           sourceStorageUnitId = warehouse.has(mat.storageUnitId)
             ? mat.storageUnitId
-            : await resolveWarehouseSource(client, onHandByUnit);
+            : await resolveWarehouseSource(warehouseUnits, onHandByUnit);
         } else {
           sourceStorageUnitId = await resolveWarehouseSource(
-            client,
+            warehouseUnits,
             onHandByUnit
           );
         }
@@ -21774,28 +21791,27 @@ async function issueJobOperationMaterials(
 
       if (!proposedStorageUnitId) {
         if (material.defaultStorageUnit) {
-          const pickMethod = await trx
-            .selectFrom("pickMethod")
-            .where("itemId", "=", material.itemId)
-            .where("locationId", "=", job.locationId!)
-            .where("companyId", "=", companyId)
-            .select("defaultStorageUnitId")
-            .executeTakeFirst();
-
-          proposedStorageUnitId = pickMethod?.defaultStorageUnitId ?? null;
+          proposedStorageUnitId = await getNettableDefaultStorageUnitId(
+            trx,
+            material.itemId,
+            job.locationId!,
+            companyId
+          );
 
           if (!proposedStorageUnitId) {
             proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
               trx,
               material.itemId,
-              job.locationId!
+              job.locationId!,
+              companyId
             );
           }
         } else {
           proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
             trx,
             material.itemId,
-            job.locationId!
+            job.locationId!,
+            companyId
           );
         }
       }
@@ -24386,18 +24402,18 @@ export async function issueMaterial(
           if (material?.storageUnitId) {
             storageUnitId = material.storageUnitId;
           } else if (material?.defaultStorageUnit) {
-            const pickMethod = await trx
-              .selectFrom("pickMethod")
-              .where("itemId", "=", itemId)
-              .where("locationId", "=", job?.locationId!)
-              .select("defaultStorageUnitId")
-              .executeTakeFirst();
-            storageUnitId = pickMethod?.defaultStorageUnitId;
+            storageUnitId = await getNettableDefaultStorageUnitId(
+              trx,
+              itemId,
+              job?.locationId!,
+              companyId
+            );
           } else {
             storageUnitId = await getStorageUnitWithHighestQuantity(
               trx,
               itemId,
-              job?.locationId!
+              job?.locationId!,
+              companyId
             );
           }
 
@@ -24534,19 +24550,18 @@ export async function issueMaterial(
         } else {
           let storageUnitId: string | null | undefined;
           if (item?.itemTrackingType === "Inventory") {
-            const pickMethod = await trx
-              .selectFrom("pickMethod")
-              .where("itemId", "=", itemId)
-              .where("locationId", "=", job?.locationId!)
-              .select("defaultStorageUnitId")
-              .executeTakeFirst();
-
             storageUnitId =
-              pickMethod?.defaultStorageUnitId ??
+              (await getNettableDefaultStorageUnitId(
+                trx,
+                itemId,
+                job?.locationId!,
+                companyId
+              )) ??
               (await getStorageUnitWithHighestQuantity(
                 trx,
                 itemId,
-                job?.locationId!
+                job?.locationId!,
+                companyId
               ));
 
             itemLedgerInserts.push({
@@ -26134,7 +26149,12 @@ export async function issueMaterial(
         ) {
           // Get storage unit with highest quantity for this item at this location
           const storageUnitId = locationId
-            ? await getStorageUnitWithHighestQuantity(trx, itemId, locationId)
+            ? await getStorageUnitWithHighestQuantity(
+                trx,
+                itemId,
+                locationId,
+                companyId
+              )
             : null;
 
           await trx

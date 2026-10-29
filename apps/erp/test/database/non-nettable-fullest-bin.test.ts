@@ -3,12 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // When no bin was chosen, an issue, a backflush, a maintenance issue and a new
-// job material fall back to the item's fullest bin. That guess must never be a
-// non-nettable (quarantine) unit, or quarantined stock is consumed silently.
+// job material fall back to the item's pick method default, then its fullest
+// bin. Neither may be a non-nettable (quarantine) unit, or quarantined stock is
+// consumed silently.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 import { afterAll, beforeAll, describe, expect } from "vitest";
 import { issueMaterial as issue } from "../../app/modules/inventory/inventory.service";
 import {
+  getStorageUnitId,
   getStorageUnitWithHighestQuantity,
   invokePosting
 } from "../../app/modules/shared/shared.service";
@@ -81,7 +83,7 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
     f.db
       .transaction()
       .execute((trx) =>
-        getStorageUnitWithHighestQuantity(trx, itemId, f.locationId)
+        getStorageUnitWithHighestQuantity(trx, itemId, f.locationId, f.companyId)
       );
 
   databaseTest("passes over a fuller non-nettable unit", async () => {
@@ -97,6 +99,52 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
       await receive(f.assemblyId, quarantine, 12);
 
       expect(await guess(f.assemblyId)).toBeNull();
+    }
+  );
+
+  databaseTest(
+    "a new job material passes over a non-nettable pick method default",
+    async () => {
+      const item = `${f.prefix}-defaulted`;
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("item")
+          .values({
+            id: item,
+            readableId: `${f.prefix}-DF`,
+            name: "Defaulted part",
+            type: "Part",
+            itemTrackingType: "Inventory",
+            replenishmentSystem: "Buy",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("pickMethod")
+          .values({
+            itemId: item,
+            locationId: f.locationId,
+            defaultStorageUnitId: quarantine,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .onConflict((oc) =>
+            oc
+              .columns(["itemId", "locationId"])
+              .doUpdateSet({ defaultStorageUnitId: quarantine })
+          )
+          .execute();
+      });
+      await receive(item, warehouse, 3);
+      await receive(item, quarantine, 30);
+
+      const bin = await f.db
+        .transaction()
+        .execute((trx) =>
+          getStorageUnitId(trx, item, f.locationId, f.companyId)
+        );
+      expect(bin).toBe(warehouse);
     }
   );
 

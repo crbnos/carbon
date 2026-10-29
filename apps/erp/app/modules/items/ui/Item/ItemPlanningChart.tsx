@@ -55,6 +55,7 @@ import {
   YAxis
 } from "recharts";
 import { DateTime, Empty, Hyperlink } from "~/components";
+import { useQuantityFormatter } from "~/hooks";
 import type { DemandForecastSourceRow } from "~/modules/items/items.service";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
@@ -193,6 +194,7 @@ export const ItemPlanningChart = ({
   });
 
   const numberFormatter = useNumberFormatter();
+  const formatQuantity = useQuantityFormatter();
   const nonNettableQuantity = forecastFetcher.data?.quantityNonNettable ?? 0;
 
   const hasSafetyStock = typeof safetyStock === "number" && safetyStock > 0;
@@ -841,7 +843,7 @@ export const ItemPlanningChart = ({
                   </CardTitle>
                   {nonNettableQuantity > 0 && (
                     <NonNettableNote
-                      quantity={numberFormatter.format(nonNettableQuantity)}
+                      quantity={formatQuantity(nonNettableQuantity)}
                     />
                   )}
                 </CardHeader>
