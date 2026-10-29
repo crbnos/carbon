@@ -9,6 +9,7 @@
 import { isInternalEmail } from "@carbon/utils";
 import type { MessageDescriptor } from "@lingui/core";
 import { BOARD_TASKS } from "../content/board";
+import { CUSTOMIZATION_KINDS } from "../content/customization";
 import { DATA_GROUPS } from "../content/data";
 import {
   PRODUCT_STEP_EVIDENCE,
@@ -35,7 +36,7 @@ import {
   memberPageValidator
 } from "../models";
 import type { ImplementationRowData, ReadinessRule, StateKind } from "../types";
-import { readCustomization } from "./customization";
+import { isCustomizationKind, readCustomization } from "./customization";
 import { checkKey, flagKey, productStepKey, taskKey } from "./keys";
 import { readObjective } from "./objectives";
 import type { OnboardingCountKey } from "./status";
@@ -80,6 +81,11 @@ export interface PageCatalogueEntry {
   rowId?: string;
   // The row's own target date, used when the page sets no due date.
   targetDate?: string;
+  // A customization's estimate, in days.
+  estimateDays?: number;
+  // The title of the requirement a customization serves; none once that
+  // requirement is deleted.
+  serves?: Text;
 }
 
 export interface PageCard extends Omit<PageCatalogueEntry, "kind" | "item"> {
@@ -371,10 +377,16 @@ function rowEntry(row: ImplementationRowData): PageCatalogueEntry | null {
         kind: "customization",
         title: customization.title || row.id,
         detail: customization.detail,
+        // Its type of work, where other cards show their group. A row whose
+        // type was never set shows none, not the default.
+        group: isCustomizationKind(p.kind)
+          ? CUSTOMIZATION_KINDS[p.kind]
+          : undefined,
         tick: null,
         evidence: [],
         rowId: row.id,
-        targetDate: customization.targetDate
+        targetDate: customization.targetDate,
+        estimateDays: customization.estimateDays
       };
     }
     default:
@@ -387,13 +399,54 @@ export function buildPageCatalogue(
   rows: ImplementationRowData[]
 ): PageCatalogueEntry[] {
   template ??= templateEntries();
-  return [
+  const catalogue = [
     ...template,
     ...rows.flatMap((row) => {
       const entry = rowEntry(row);
       return entry ? [entry] : [];
     })
   ];
+  // A customization stores the requirement it serves by id: a template
+  // requirement's code or a requirement row's id.
+  const items = catalogueByItem(catalogue);
+  for (const row of rows) {
+    if (row.collection !== "customization") continue;
+    const served = readCustomization(row.payload ?? {}).requirementRowId;
+    const entry = items.get(`customization:${row.id}`);
+    if (served && entry)
+      entry.serves = items.get(`requirement:${served}`)?.title;
+  }
+  return catalogue;
+}
+
+// A requirement's scope toggle: in scope until someone says otherwise.
+const inScope = (tick: PageTick, states: Map<string, string>) =>
+  (states.get(tick.itemKey) ?? tick.on) === tick.on;
+
+export interface RequirementChoice {
+  // What a customization stores: a template requirement's code or a
+  // requirement row's id.
+  id: string;
+  title: Text;
+  inScope: boolean;
+}
+
+// Pure: the requirements a customization can serve, in catalogue order.
+export function requirementChoices(
+  catalogue: PageCatalogueEntry[],
+  states: Map<string, string>
+): RequirementChoice[] {
+  return catalogue.flatMap((entry) =>
+    entry.kind === "requirement" && entry.tick
+      ? [
+          {
+            id: entry.item.slice("requirement:".length),
+            title: entry.title,
+            inScope: inScope(entry.tick, states)
+          }
+        ]
+      : []
+  );
 }
 
 export function catalogueByItem(
@@ -608,11 +661,10 @@ export function cardState(
     return { on: done, done };
   }
   if (!card.tick) return { on: false, done: null };
-  const stored = states.get(card.tick.itemKey);
   if (card.tick.meaning === "scope") {
-    return { on: (stored ?? card.tick.on) === card.tick.on, done: null };
+    return { on: inScope(card.tick, states), done: null };
   }
-  const on = stored === card.tick.on;
+  const on = states.get(card.tick.itemKey) === card.tick.on;
   return { on, done: on };
 }
 

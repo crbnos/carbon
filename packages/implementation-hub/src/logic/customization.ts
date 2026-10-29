@@ -29,7 +29,9 @@ const COMMITTED: ReadonlySet<CustomizationStatus> = new Set([
   "inProgress"
 ]);
 
-const isKind = (value: unknown): value is CustomizationKind =>
+export const isCustomizationKind = (
+  value: unknown
+): value is CustomizationKind =>
   typeof value === "string" && value in CUSTOMIZATION_KINDS;
 
 const isStatus = (value: unknown): value is CustomizationStatus =>
@@ -52,7 +54,7 @@ export function readCustomization(
       : undefined;
   return {
     title: typeof payload.title === "string" ? payload.title : "",
-    kind: isKind(payload.kind) ? payload.kind : "configuration",
+    kind: isCustomizationKind(payload.kind) ? payload.kind : "configuration",
     status: isStatus(payload.status) ? payload.status : "proposed",
     ...(text(payload.detail) ? { detail: text(payload.detail) } : {}),
     ...(text(payload.requirementRowId)
