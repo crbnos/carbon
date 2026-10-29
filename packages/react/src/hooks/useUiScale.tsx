@@ -25,7 +25,12 @@ export function useUiScale(): UiScale {
   };
 }
 
-/** The density's spacing factor, for a height kept in px (a virtual row). */
+/**
+ * The saved density's spacing factor, for a height kept in px (a virtual
+ * row). Reads loader data only: a pending pick does not matter to an open
+ * picker, and watching every fetcher would re-render it on each save.
+ */
 export function useDensityScale(): number {
-  return DENSITIES[useUiScale().density];
+  const routeData = useRouteData<Partial<UiScale>>("/");
+  return DENSITIES[asDensity(routeData?.density)];
 }
