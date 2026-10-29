@@ -66,6 +66,21 @@ export function trackingTypeChangeRefusal(
 }
 
 /**
+ * Why items cannot become serial tracked, or null, when they hold lots of
+ * more than one unit (`itemsWithMultiUnitLots`, readable ids). A serial number
+ * is one unit.
+ */
+export function trackingTypeLotRefusal(
+  newType: Database["public"]["Enums"]["itemTrackingType"],
+  itemsWithMultiUnitLots: string[]
+): string | null {
+  if (newType !== "Serial") return null;
+  if (itemsWithMultiUnitLots.length === 0) return null;
+  const verb = itemsWithMultiUnitLots.length === 1 ? "has" : "have";
+  return `${nameFew(itemsWithMultiUnitLots)} ${verb} batches of more than one unit, and a serial number is one unit. Adjust those batches to zero, change the tracking type, then add the stock back by serial number.`;
+}
+
+/**
  * Why items cannot become batch or serial tracked, or null, when open jobs
  * issued them by quantity (`issues`: readable item and job ids). Batch and
  * serial stock is returned by unit, so that quantity could never be returned.

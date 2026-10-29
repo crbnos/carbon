@@ -5,7 +5,8 @@
 import { describe, expect, it } from "vitest";
 import {
   trackingTypeChangeRefusal,
-  trackingTypeIssueRefusal
+  trackingTypeIssueRefusal,
+  trackingTypeLotRefusal
 } from "./items.utils";
 
 // Batch and serial stock belongs to a numbered unit, so an item holding stock
@@ -67,6 +68,27 @@ describe("trackingTypeIssueRefusal", () => {
       expect(
         trackingTypeIssueRefusal(newType, [{ item: "PART-1", job: "J000001" }])
       ).toBeNull();
+    }
+  );
+});
+
+// A serial number is one unit, so a batch of several units keeps the item
+// from becoming Serial until it is adjusted out.
+describe("trackingTypeLotRefusal", () => {
+  it("refuses making an item with a multi-unit batch Serial, naming it", () => {
+    expect(trackingTypeLotRefusal("Serial", ["PART-1"])).toContain(
+      "PART-1 has batches"
+    );
+  });
+
+  it("allows Serial when no batch holds more than one unit", () => {
+    expect(trackingTypeLotRefusal("Serial", [])).toBeNull();
+  });
+
+  it.each(["Batch", "Inventory", "Non-Inventory"] as const)(
+    "never refuses a change to %s",
+    (newType) => {
+      expect(trackingTypeLotRefusal(newType, ["PART-1"])).toBeNull();
     }
   );
 });

@@ -306,7 +306,11 @@ const TrackedEntitiesTable = memo(
               itemId={unscrapping.itemId}
               trackedEntityId={unscrapping.id}
               quantity={Number(unscrapping.quantity)}
-              needsNumber={!unscrapping.readableId?.trim()}
+              needsNumber={
+                !unscrapping.readableId?.trim() &&
+                (unscrapping.item?.itemTrackingType === "Batch" ||
+                  unscrapping.item?.itemTrackingType === "Serial")
+              }
               label={
                 unscrapping.readableId ??
                 unscrapping.sourceDocumentReadableId ??

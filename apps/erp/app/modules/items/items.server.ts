@@ -101,7 +101,8 @@ const itemIdsInput = z.array(z.string()).min(1);
  * stock to zero first, then add it back by batch or serial number. It is
  * also refused while an open job has the item issued with no number, since
  * that quantity could no longer be returned; return it, or complete or
- * cancel the job, first.
+ * cancel the job, first. Making an item Serial is refused while it holds a
+ * batch of more than one unit, in stock, on hold, rejected or scrapped.
  *
  * @mcp
  */
@@ -147,6 +148,18 @@ export const setItemTrackingType = defineServiceFn({
           issued
         );
         if (issueRefusal) return ctx.error("rule", issueRefusal);
+
+        if (itemTrackingType === "Serial") {
+          const withLots = await service.getItemsWithMultiUnitLots(
+            tx.asSystem.pg,
+            { itemIds: ids, companyId }
+          );
+          const lotRefusal = utils.trackingTypeLotRefusal(
+            itemTrackingType,
+            withLots
+          );
+          if (lotRefusal) return ctx.error("rule", lotRefusal);
+        }
       }
 
       await tx.asSystem.pg

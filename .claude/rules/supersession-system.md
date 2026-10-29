@@ -274,9 +274,10 @@ against the pick bin, the shared portion against the lineside bin — so a
 take that draws on both pools is never charged to one bin.
 
 Used by `issue` (`issueJobOperationMaterials` completion backflush and
-`partToOperation` manual/step issue, negative adjustments only; both drop a
-budget whose item is Batch or Serial, `isBatchOrSerial`, since a
-quantity-only issue cannot take a numbered unit) and by
+`partToOperation` manual/step issue, negative adjustments only. A take from
+a Batch or Serial budget, `isBatchOrSerial`, is never issued by quantity: the
+backflush leaves that share of the demand unissued for issue by number, and
+`partToOperation` refuses) and by
 `post-picking` (`returnUntrackedMaterialRemainder` holds `owed` back
 predecessor-first and returns the rest per item; `maybeRestoreJobMaterialSource`
 keeps the lineside pointer while any budget is still available). Pinned by

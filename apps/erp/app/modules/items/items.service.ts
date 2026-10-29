@@ -3211,6 +3211,43 @@ export async function getItemsIssuedUntrackedToOpenJobs(
 }
 
 /**
+ * The readable ids of the items, among `itemIds`, that are not Serial and
+ * hold a lot of more than one unit: in stock, on hold, rejected or scrapped
+ * (Unscrap restores it). A serial number is one unit, so `setItemTrackingType`
+ * refuses to make those Serial (`trackingTypeLotRefusal`, `items.utils.ts`).
+ */
+export async function getItemsWithMultiUnitLots(
+  db: Kysely<KyselyDatabase>,
+  args: { itemIds: string[]; companyId: string }
+): Promise<string[]> {
+  if (args.itemIds.length === 0) return [];
+  const rows = await db
+    .selectFrom("trackedEntity")
+    .innerJoin("item", (join) =>
+      join
+        .onRef("item.id", "=", "trackedEntity.itemId")
+        .onRef("item.companyId", "=", "trackedEntity.companyId")
+    )
+    .where("trackedEntity.itemId", "in", args.itemIds)
+    .where("trackedEntity.companyId", "=", args.companyId)
+    .where("trackedEntity.status", "in", [
+      "Available",
+      "On Hold",
+      "Rejected",
+      "Scrapped"
+    ])
+    .where("trackedEntity.quantity", ">", 1)
+    .where("item.itemTrackingType", "!=", "Serial")
+    .select("item.readableIdWithRevision")
+    .distinct()
+    .execute();
+  return rows
+    .map((row) => row.readableIdWithRevision ?? "")
+    .filter(Boolean)
+    .sort();
+}
+
+/**
  * Cascades a change to item.itemTrackingType onto the snapshot columns
  * `requiresSerialTracking` and `requiresBatchTracking` on child rows that
  * belong to OPEN parents (jobs, receipts, shipments, stock transfers).

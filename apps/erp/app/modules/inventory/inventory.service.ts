@@ -1989,7 +1989,8 @@ export async function getTrackedEntities(
 ) {
   let query = client
     .from("trackedEntity")
-    .select("*", {
+    // The item's tracking type decides whether Unscrap asks for a number.
+    .select("*, item(itemTrackingType)", {
       count: listCount(args)
     })
     .eq("companyId", companyId)
@@ -19069,11 +19070,15 @@ export async function postInventoryAdjustment(
       if (trackedEntityId) {
         const entity = await trx
           .selectFrom("trackedEntity")
-          .select(["id", "quantity", "status", "readableId"])
+          .select(["id", "quantity", "status", "readableId", "itemId"])
           .where("id", "=", trackedEntityId)
           .where("companyId", "=", companyId)
           .executeTakeFirst();
         if (!entity) throw new InvalidInputError("Tracked entity not found");
+        // The number rule and the ledger row read the request's item.
+        if (entity.itemId && entity.itemId !== itemId) {
+          throw new InvalidInputError("Tracked entity is not of this item");
+        }
         if (entity.status !== "Scrapped") {
           throw new InvalidInputError(
             "Only scrapped tracked entities can be unscrapped"
@@ -21735,6 +21740,10 @@ async function issueJobOperationMaterials(
         materialsToIssue.map((material) => material.itemId)
       )
       .select(["id", "item.itemTrackingType"])
+      // Against setItemTrackingType's FOR UPDATE: a tracking change waits
+      // for this issue, then sees what it issued.
+      .orderBy("id")
+      .forShare()
       .execute()
   ]);
 
@@ -21811,18 +21820,14 @@ async function issueJobOperationMaterials(
 
     if (quantityToIssue <= 0) continue;
 
-    // Only untracked stock is taken by quantity: a batch or serial
-    // substitute picked to the line is issued by number.
     const budgets = orderOldFirst(
-      (
-        await getPickedBudgets(trx, {
-          material,
-          locationId: job.locationId,
-          companyId,
-          opStorageUnitId,
-          takenShared
-        })
-      ).filter((budget) => !budget.isBatchOrSerial),
+      await getPickedBudgets(trx, {
+        material,
+        locationId: job.locationId,
+        companyId,
+        opStorageUnitId,
+        takenShared
+      }),
       material.itemId
     );
     const { takes, remaining } = allocateAcrossBudgets(
@@ -21831,6 +21836,11 @@ async function issueJobOperationMaterials(
       Number(material.quantity ?? 0)
     );
     recordSharedTakes(takenShared, takes);
+    // A batch or serial substitute picked to the line covers its share of
+    // the demand, which stays unissued until its units are issued by number.
+    const heldForNumber = takes
+      .filter((take) => take.budget.isBatchOrSerial)
+      .reduce((sum, take) => sum + take.quantity / take.budget.factor, 0);
     for (const take of takes) {
       if (!take.budget.isInventory) continue;
       for (const row of splitTakeByBin(take)) {
@@ -21972,7 +21982,8 @@ async function issueJobOperationMaterials(
       .updateTable("jobMaterial")
       .set({
         quantityIssued: round(
-          round(Number(material.quantityIssued) ?? 0) + round(quantityToIssue)
+          round(Number(material.quantityIssued) ?? 0) +
+            round(quantityToIssue - heldForNumber)
         )
       })
       .where("id", "=", material.id)
@@ -24556,20 +24567,16 @@ export async function issueMaterial(
           if (material && material.methodType !== "Make to Order") {
             let remaining = Number(quantityToIssue);
             if (adjustmentType !== "Positive Adjmt." && remaining > 0) {
-              // Only untracked stock is taken by quantity: a batch or
-              // serial substitute picked to the line is issued by number.
               const budgets = orderOldFirst(
-                (
-                  await getPickedBudgets(trx, {
-                    material,
-                    locationId: job?.locationId!,
-                    companyId,
-                    opStorageUnitId: await getOperationLinesideBin(trx, {
-                      jobOperationId: material.jobOperationId,
-                      companyId
-                    })
+                await getPickedBudgets(trx, {
+                  material,
+                  locationId: job?.locationId!,
+                  companyId,
+                  opStorageUnitId: await getOperationLinesideBin(trx, {
+                    jobOperationId: material.jobOperationId,
+                    companyId
                   })
-                ).filter((budget) => !budget.isBatchOrSerial),
+                }),
                 material.itemId
               );
               const allocation = allocateAcrossBudgets(
@@ -24577,6 +24584,23 @@ export async function issueMaterial(
                 budgets,
                 Number(material.quantity ?? 0)
               );
+              // A batch or serial substitute picked to the line is issued by
+              // number, never counted here.
+              const numbered = allocation.takes.find(
+                (take) => take.budget.isBatchOrSerial
+              );
+              if (numbered) {
+                const substitute = await trx
+                  .selectFrom("item")
+                  .where("id", "=", numbered.budget.itemId)
+                  .where("companyId", "=", companyId)
+                  .select(["itemTrackingType", "readableIdWithRevision"])
+                  .executeTakeFirst();
+                throw new InvalidInputError(
+                  (substitute ? untrackedIssueRefusal(substitute) : null) ??
+                    "A batch or serial substitute was picked to this line: issue it by number"
+                );
+              }
               remaining = allocation.remaining;
               for (const take of allocation.takes) {
                 if (!take.budget.isInventory) continue;

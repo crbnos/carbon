@@ -248,7 +248,7 @@
     {"name":"inventory_getStorageUnitsListForLocation","classification":"READ","schema":"75b90f67d533","response":"ce08332e0ce6","permission":"inventory:view","paginates":false},
     {"name":"inventory_getStorageUnitsTreeForLocation","classification":"READ","schema":"75b90f67d533","response":"ecdf2c570468","permission":"inventory:view","paginates":false},
     {"name":"inventory_getStorageUnitSubtrees","classification":"READ","schema":"b9bea08b8fcd","response":"330afe5b7719","permission":"inventory:view","paginates":false},
-    {"name":"inventory_getTrackedEntities","classification":"READ","schema":"cd40ae40fad5","response":"15f4dee0e3cd","permission":"inventory:view","paginates":true},
+    {"name":"inventory_getTrackedEntities","classification":"READ","schema":"cd40ae40fad5","response":"978a91d238e3","permission":"inventory:view","paginates":true},
     {"name":"inventory_getTrackedEntitiesByMakeMethodId","classification":"READ","schema":"7679db37b5f9","response":"ec54684c77fb","permission":"inventory:view","paginates":false},
     {"name":"inventory_getTrackedEntity","classification":"READ","schema":"461bb7f6bafb","response":"1007059c8406","permission":"inventory:view","paginates":false},
     {"name":"inventory_getTrackedEntityExpirations","classification":"READ","schema":"518b9dee6f55","response":"fff84b1ee888","permission":"inventory:view","paginates":false},
