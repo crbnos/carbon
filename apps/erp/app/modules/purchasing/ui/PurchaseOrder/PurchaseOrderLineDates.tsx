@@ -41,32 +41,23 @@ type LineDates = {
 type OrderStatus = Pick<PurchaseOrder, "status">;
 
 /**
- * Saves one line date. A refused save is toasted and bumps that field's
- * `failures`, which its control keys on to show the saved date again.
+ * Saves one date of one line. Each date has its own fetcher, so saving another
+ * date never cancels this one's response. A refused save is toasted and bumps
+ * `failures`, which the control keys on to show the saved date again.
  */
-export function useSavePurchaseOrderLineDate(line: {
-  id: string;
-  purchaseOrderId: string;
-}) {
-  const [refused, setRefused] = useState<
-    Partial<Record<PurchaseOrderLineDateField, number>>
-  >({});
-  const saving = useRef<PurchaseOrderLineDateField | null>(null);
+export function useSavePurchaseOrderLineDate(
+  line: { id: string; purchaseOrderId: string },
+  field: PurchaseOrderLineDateField
+) {
+  const [failures, setFailures] = useState(0);
   const fetcher = useAction<typeof action>({
     onError: (data) => {
       toastServiceError(data);
-      const field = saving.current;
-      if (field) {
-        setRefused((counts) => ({
-          ...counts,
-          [field]: (counts[field] ?? 0) + 1
-        }));
-      }
+      setFailures((count) => count + 1);
     }
   });
 
-  const save = (field: PurchaseOrderLineDateField, value: string | null) => {
-    saving.current = field;
+  const save = (value: string | null) => {
     const formData = new FormData();
     formData.append("field", field);
     formData.append("value", value ?? "");
@@ -75,8 +66,6 @@ export function useSavePurchaseOrderLineDate(line: {
       action: path.to.purchaseOrderLineDate(line.purchaseOrderId, line.id)
     });
   };
-
-  const failures = (field: PurchaseOrderLineDateField) => refused[field] ?? 0;
 
   return { save, failures };
 }
@@ -95,7 +84,6 @@ export function PurchaseOrderLineSummaryDates({
   const { t } = useLingui();
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "purchasing");
-  const { save, failures } = useSavePurchaseOrderLineDate(line);
   const fields: {
     field: PurchaseOrderLineDateField;
     label: string;
@@ -119,30 +107,55 @@ export function PurchaseOrderLineSummaryDates({
       className="mt-2 flex max-w-full flex-wrap items-center justify-end gap-x-4 gap-y-1 self-end pr-px text-sm whitespace-nowrap"
       onClick={(e) => e.stopPropagation()}
     >
-      {fields.map(({ field, label, dateLabel }) => {
-        const value = line[field];
-        const isDisabled =
-          !canUpdate ||
-          purchaseOrderLineDateRefusal(field, {
-            status: order?.status ?? null,
-            receivedComplete: line.receivedComplete
-          }) !== null;
-        return (
-          <div key={field} className="flex items-center gap-2">
-            <span className="text-muted-foreground">{label}</span>
-            <DatePill
-              key={`${value ?? ""}:${failures(field)}`}
-              label={dateLabel}
-              value={value}
-              isDisabled={isDisabled}
-              onChange={(date) => {
-                if (date === value) return;
-                save(field, date);
-              }}
-            />
-          </div>
-        );
-      })}
+      {fields.map(({ field, label, dateLabel }) => (
+        <SummaryDate
+          key={field}
+          line={line}
+          field={field}
+          label={label}
+          dateLabel={dateLabel}
+          isDisabled={
+            !canUpdate ||
+            purchaseOrderLineDateRefusal(field, {
+              status: order?.status ?? null,
+              receivedComplete: line.receivedComplete
+            }) !== null
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
+function SummaryDate({
+  line,
+  field,
+  label,
+  dateLabel,
+  isDisabled
+}: {
+  line: LineDates;
+  field: PurchaseOrderLineDateField;
+  label: string;
+  dateLabel: string;
+  isDisabled: boolean;
+}) {
+  const { save, failures } = useSavePurchaseOrderLineDate(line, field);
+  const value = line[field];
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-muted-foreground">{label}</span>
+      <DatePill
+        key={`${value ?? ""}:${failures}`}
+        label={dateLabel}
+        value={value}
+        isDisabled={isDisabled}
+        onChange={(date) => {
+          if (date === value) return;
+          save(date);
+        }}
+      />
     </div>
   );
 }
@@ -171,6 +184,8 @@ function DatePill({
     onChange(next);
   };
 
+  const formatted = shown ? formatDate(shown, undefined, locale) : null;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -180,11 +195,9 @@ function DatePill({
             size="sm"
             isDisabled={isDisabled}
             rightIcon={<LuCalendarClock />}
-            aria-label={label}
+            aria-label={`${label}, ${formatted}`}
           >
-            <span className="tabular-nums">
-              {formatDate(shown, undefined, locale)}
-            </span>
+            <span className="tabular-nums">{formatted}</span>
           </Button>
         ) : (
           <IconButton
@@ -225,7 +238,6 @@ export function PurchaseOrderLineDateFields({
   const { t } = useLingui();
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "purchasing");
-  const { save, failures } = useSavePurchaseOrderLineDate(line);
   const fields: {
     field: PurchaseOrderLineDateField;
     label: string;
@@ -242,24 +254,51 @@ export function PurchaseOrderLineDateFields({
 
   return (
     <>
-      {fields.map(({ field, label, termId }) => {
-        const value = line[field];
-        const refusal = purchaseOrderLineDateRefusal(field, {
-          status: order?.status ?? null,
-          receivedComplete: line.receivedComplete
-        });
-        return (
-          <LineDateField
-            key={`${field}:${value ?? ""}:${failures(field)}`}
-            label={label}
-            termId={termId}
-            value={value}
-            isDisabled={!canUpdate || refusal !== null}
-            onChange={(date) => save(field, date)}
-          />
-        );
-      })}
+      {fields.map(({ field, label, termId }) => (
+        <SavedLineDateField
+          key={field}
+          line={line}
+          field={field}
+          label={label}
+          termId={termId}
+          isDisabled={
+            !canUpdate ||
+            purchaseOrderLineDateRefusal(field, {
+              status: order?.status ?? null,
+              receivedComplete: line.receivedComplete
+            }) !== null
+          }
+        />
+      ))}
     </>
+  );
+}
+
+function SavedLineDateField({
+  line,
+  field,
+  label,
+  termId,
+  isDisabled
+}: {
+  line: LineDates;
+  field: PurchaseOrderLineDateField;
+  label: string;
+  termId?: TermId;
+  isDisabled: boolean;
+}) {
+  const { save, failures } = useSavePurchaseOrderLineDate(line, field);
+  const value = line[field];
+
+  return (
+    <LineDateField
+      key={`${value ?? ""}:${failures}`}
+      label={label}
+      termId={termId}
+      value={value}
+      isDisabled={isDisabled}
+      onChange={save}
+    />
   );
 }
 
