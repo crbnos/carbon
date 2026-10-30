@@ -338,6 +338,10 @@ msgstr "{0} lignes"
 msgid "{0} lines to map"
 msgstr "{0} lignes à mapper"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr ""
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -994,6 +998,9 @@ msgstr "1 tâche créée"
 
 msgid "1 line"
 msgstr "1 ligne"
+
+msgid "1 member"
+msgstr ""
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 pièce ignorée — elle a déjà une tâche ouverte"
@@ -2101,6 +2108,9 @@ msgstr "Actif"
 msgid "Active Jobs"
 msgstr "Ordres de fabrication actifs"
 
+msgid "Active members"
+msgstr ""
+
 msgid "Active Methods Missing a Pull From"
 msgstr "Méthodes actives sans Prélèvement depuis"
 
@@ -2211,6 +2221,9 @@ msgstr "Ajouter une couche de sécurité supplémentaire en exigeant un code d'u
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "Ajouter une section d'opérations qui répertorie chaque opération de la gamme avec ses temps prévus et ses codes à barres à scanner."
+
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr ""
 
 msgid "Add any notes about your decision..."
 msgstr "Ajoutez des notes sur votre décision..."
@@ -7601,6 +7614,9 @@ msgstr "CC par défaut"
 msgid "Default CC Recipients"
 msgstr "Destinataires CC par défaut"
 
+msgid "Default employee type"
+msgstr ""
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "Compte GL par défaut crédité lorsqu'une cession d'immobilisation se solde par un gain."
 
@@ -7618,6 +7634,9 @@ msgstr "Compte général de charge par défaut pour les cycles d'amortissement p
 
 msgid "Default horizon (days)"
 msgstr "Horizon par défaut (jours)"
+
+msgid "Default location"
+msgstr ""
 
 msgid "Default Method"
 msgstr "Méthode par défaut"
@@ -9382,6 +9401,9 @@ msgstr "Comptes Employés"
 msgid "Employee Reimbursements Payable"
 msgstr "Remboursements aux employés à payer"
 
+msgid "Employee type"
+msgstr ""
+
 msgid "Employee Type"
 msgstr "Type d'employé"
 
@@ -9649,6 +9671,9 @@ msgstr "Entrez le code à 6 chiffres de votre application d'authentification"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Entrez le code à 6 chiffres de votre application d'authentification pour continuer."
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr ""
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Entrez l'URL Onshape, l'ID client et le secret client de votre application OAuth privée, puis enregistrez."
@@ -11173,6 +11198,9 @@ msgstr "Générer les IDs de matériaux et les descriptions en fonction des prop
 msgid "Generate Picking List"
 msgstr "Générer la liste de prélèvement"
 
+msgid "Generate token"
+msgstr ""
+
 msgid "Generated {created} steps from the motion plan"
 msgstr ""
 
@@ -11461,6 +11489,9 @@ msgstr "Grouper par"
 
 msgid "Group by material"
 msgstr "Grouper par matériau"
+
+msgid "Group Mappings"
+msgstr ""
 
 msgid "Group Members"
 msgstr "Membres du groupe"
@@ -11857,6 +11888,9 @@ msgstr "Clé d'idempotence"
 
 msgid "Identifiers"
 msgstr "Identifiants"
+
+msgid "Identity provider"
+msgstr ""
 
 msgid "Identity Provider"
 msgstr "Fournisseur d'identité"
@@ -13123,6 +13157,9 @@ msgstr "Dernière mise à jour le {lastPushed}."
 msgid "Last Quarter"
 msgstr "Dernier trimestre"
 
+msgid "Last request"
+msgstr ""
+
 msgid "Last Run"
 msgstr "Dernière exécution"
 
@@ -13312,6 +13349,9 @@ msgstr "Taux d'escompte du bailleur (%)"
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "Permettez aux membres de se connecter par le biais de votre fournisseur d'identité avec SAML."
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr ""
 
 msgid "Let's Build"
 msgstr "Allons construire"
@@ -13940,6 +13980,9 @@ msgstr "la production est bloquée"
 msgid "Map accounts"
 msgstr "Mapper les comptes"
 
+msgid "Map each group your identity provider pushes to an employee type. A member of several mapped groups gets the type of the lowest priority."
+msgstr ""
+
 msgid "Map Extracted Invoice Lines"
 msgstr "Mapper les lignes de facture extraites"
 
@@ -14270,6 +14313,9 @@ msgstr "Membre"
 
 msgid "Members"
 msgstr "Membres"
+
+msgid "Members in no mapped group get this type"
+msgstr ""
 
 msgid "Memo"
 msgstr "Mémo"
@@ -15549,6 +15595,9 @@ msgstr "Aucune notification groupée"
 
 msgid "No groups assigned"
 msgstr "Aucun groupe assigné"
+
+msgid "No groups yet. Push groups from your identity provider to map them to employee types."
+msgstr ""
 
 msgid "No image"
 msgstr "Aucune image"
@@ -18415,6 +18464,9 @@ msgstr "Provisoire"
 msgid "Provisional journal"
 msgstr "Écriture provisoire"
 
+msgid "Provisioning"
+msgstr ""
+
 msgid "Public"
 msgstr "Public"
 
@@ -19410,11 +19462,17 @@ msgstr "Régénérer à partir des conditions"
 msgid "Regenerate payments from the terms?"
 msgstr "Régénérer les paiements à partir des conditions ?"
 
+msgid "Regenerate SCIM token"
+msgstr ""
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Régénérez le planning pour ce site maintenant. Il s'exécute également automatiquement environ 30 secondes après le dernier changement de planning (les modifications sont regroupées, de sorte que plusieurs changements rapides déclenchent une seule régénération)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Régénérer la miniature à partir du modèle 3D"
+
+msgid "Regenerate token"
+msgstr ""
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr ""
@@ -21058,6 +21116,15 @@ msgstr "Planification"
 msgid "Scheduling conflict"
 msgstr "Conflit de planification"
 
+msgid "SCIM base URL"
+msgstr ""
+
+msgid "SCIM Connection"
+msgstr ""
+
+msgid "SCIM Provisioning"
+msgstr ""
+
 msgid "Scope"
 msgstr "Portée"
 
@@ -21806,6 +21873,9 @@ msgstr "Configurer la comptabilité pour utiliser les rapports, les écritures c
 
 msgid "Set up authenticator app"
 msgstr "Configurer l'application d'authentification"
+
+msgid "Set up SCIM"
+msgstr ""
 
 msgid "Set up the right way"
 msgstr "Configurer correctement"
@@ -23954,6 +24024,9 @@ msgstr "Le CSV n'a pas été importé"
 msgid "The currencies you trade in and their rates"
 msgstr "Les devises dans lesquelles vous négociez et leurs taux"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr ""
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "Le client achète effectivement l'unité. Elle quitte vos immobilisations au démarrage, la vente est comptabilisée et des intérêts sont gagnés sur la créance au cours de la durée."
 
@@ -25658,6 +25731,9 @@ msgstr "Basculer les propriétés"
 msgid "Toggle views"
 msgstr "Basculer les vues"
 
+msgid "Token"
+msgstr ""
+
 msgid "Tol-"
 msgstr "Tol-"
 
@@ -26018,6 +26094,12 @@ msgstr "Réessayer"
 
 msgid "Tuesday"
 msgstr "Mardi"
+
+msgid "Turn off"
+msgstr ""
+
+msgid "Turn off SCIM provisioning"
+msgstr ""
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Activez <0>l'option de simplification des baux à court terme dans Paramètres → Comptabilité</0>, ou"
@@ -28107,6 +28189,15 @@ msgstr "Votre exportation est en cours de préparation. Nous vous préviendrons 
 msgid "Your GL accounts"
 msgstr "Vos comptes GL"
 
+msgid "Your identity provider can no longer add or remove members, and the group mappings are deleted. Members it provisioned stay in this company as they are."
+msgstr ""
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr ""
+
+msgid "Your identity provider owns each provisioned member's name, active state and, for mapped groups, employee type. Changes made here are overwritten on its next update. Deactivating a member removes them from this company, deletes their API keys here, and ends their sessions when they have no other company."
+msgstr ""
+
 msgid "your Implementation Lead"
 msgstr "votre responsable de mise en œuvre"
 
@@ -28151,6 +28242,9 @@ msgstr "Votre taux"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Vos données réelles sont chargées et vous avez vérifié un échantillon et l'avez approuvé."
+
+msgid "Your SCIM token"
+msgstr ""
 
 msgid "Your session was locked after inactivity."
 msgstr "Votre session a été verrouillée suite à l'inactivité."

@@ -338,6 +338,10 @@ msgstr "{0} 明細"
 msgid "{0} lines to map"
 msgstr "{0}件のラインをマップします"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr ""
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -994,6 +998,9 @@ msgstr "1件のジョブが作成されました"
 
 msgid "1 line"
 msgstr "1明細"
+
+msgid "1 member"
+msgstr ""
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1個の部品はスキップ済 — 既に進行中の製造指図があります"
@@ -2101,6 +2108,9 @@ msgstr "有効"
 msgid "Active Jobs"
 msgstr "有効な製造指図"
 
+msgid "Active members"
+msgstr ""
+
 msgid "Active Methods Missing a Pull From"
 msgstr "引き出し元未設定の有効な製法"
 
@@ -2211,6 +2221,9 @@ msgstr "認証器アプリからのコードを要求することで、サイン
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "各工順工程とその予想時間及びスキャンバーコードをリストアップした工程セクションを追加します。"
+
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr ""
 
 msgid "Add any notes about your decision..."
 msgstr "あなたの決定についてのメモを追加してください..."
@@ -7601,6 +7614,9 @@ msgstr "デフォルトCC"
 msgid "Default CC Recipients"
 msgstr "デフォルトCC受信者"
 
+msgid "Default employee type"
+msgstr ""
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "固定資産の除却により利益が生じた場合にクレジットされるデフォルト勘定科目"
 
@@ -7618,6 +7634,9 @@ msgstr "定期的な減価償却実行のデフォルトGL費用勘定科目"
 
 msgid "Default horizon (days)"
 msgstr "デフォルト計画期間（日数）"
+
+msgid "Default location"
+msgstr ""
 
 msgid "Default Method"
 msgstr "デフォルト方法"
@@ -9382,6 +9401,9 @@ msgstr "従業員アカウント"
 msgid "Employee Reimbursements Payable"
 msgstr "従業員払戻金"
 
+msgid "Employee type"
+msgstr ""
+
 msgid "Employee Type"
 msgstr "従業員タイプ"
 
@@ -9649,6 +9671,9 @@ msgstr "認証アプリから6桁のコードを入力してください"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "認証器アプリから6桁のコードを入力して再開します。"
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr ""
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "プライベートOAuthアプリケーションのOnshape URL、クライアントID、クライアントシークレットを入力して保存します。"
@@ -11173,6 +11198,9 @@ msgstr "材料のプロパティに基づいて材料IDと説明を生成しま�
 msgid "Generate Picking List"
 msgstr "ピッキングリストを生成"
 
+msgid "Generate token"
+msgstr ""
+
 msgid "Generated {created} steps from the motion plan"
 msgstr ""
 
@@ -11461,6 +11489,9 @@ msgstr "グループ化"
 
 msgid "Group by material"
 msgstr "材料でグループ化"
+
+msgid "Group Mappings"
+msgstr ""
 
 msgid "Group Members"
 msgstr "グループメンバー"
@@ -11857,6 +11888,9 @@ msgstr "冪等性キー"
 
 msgid "Identifiers"
 msgstr "識別子"
+
+msgid "Identity provider"
+msgstr ""
 
 msgid "Identity Provider"
 msgstr "IDプロバイダー"
@@ -13123,6 +13157,9 @@ msgstr "最終プッシュ: {lastPushed}"
 msgid "Last Quarter"
 msgstr "前四半期"
 
+msgid "Last request"
+msgstr ""
+
 msgid "Last Run"
 msgstr "最終実行"
 
@@ -13312,6 +13349,9 @@ msgstr "貸手割引率(%)"
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "SAMLを使用してIDプロバイダーを通じてメンバーがサインインできるようにします。"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr ""
 
 msgid "Let's Build"
 msgstr "ビルドしましょう"
@@ -13940,6 +13980,9 @@ msgstr "製造がブロックされています"
 msgid "Map accounts"
 msgstr "勘定をマップ"
 
+msgid "Map each group your identity provider pushes to an employee type. A member of several mapped groups gets the type of the lowest priority."
+msgstr ""
+
 msgid "Map Extracted Invoice Lines"
 msgstr "抽出された請求書明細をマップ"
 
@@ -14270,6 +14313,9 @@ msgstr "メンバー"
 
 msgid "Members"
 msgstr "メンバー"
+
+msgid "Members in no mapped group get this type"
+msgstr ""
 
 msgid "Memo"
 msgstr "メモ"
@@ -15549,6 +15595,9 @@ msgstr "グループ化された通知がありません"
 
 msgid "No groups assigned"
 msgstr "グループが割り当てられていません"
+
+msgid "No groups yet. Push groups from your identity provider to map them to employee types."
+msgstr ""
 
 msgid "No image"
 msgstr "画像なし"
@@ -18415,6 +18464,9 @@ msgstr "暫定"
 msgid "Provisional journal"
 msgstr "仮仕訳"
 
+msgid "Provisioning"
+msgstr ""
+
 msgid "Public"
 msgstr "公開"
 
@@ -19410,11 +19462,17 @@ msgstr "支払条件から再生成"
 msgid "Regenerate payments from the terms?"
 msgstr "支払条件から支払を再生成しますか？"
 
+msgid "Regenerate SCIM token"
+msgstr ""
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "この拠点のスケジュールを今すぐ再生成してください。最後のスケジュール変更から約30秒後に自動的にも実行されます（編集はバッチ処理されるため、いくつかの迅速な変更により1つの再生成がトリガーされます）。"
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3Dモデルからサムネイルを再生成"
+
+msgid "Regenerate token"
+msgstr ""
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr ""
@@ -21058,6 +21116,15 @@ msgstr "スケジューリング"
 msgid "Scheduling conflict"
 msgstr "スケジュール競合"
 
+msgid "SCIM base URL"
+msgstr ""
+
+msgid "SCIM Connection"
+msgstr ""
+
+msgid "SCIM Provisioning"
+msgstr ""
+
 msgid "Scope"
 msgstr "スコープ"
 
@@ -21806,6 +21873,9 @@ msgstr "レポート、仕訳、会計期間、減価償却実行などを使用
 
 msgid "Set up authenticator app"
 msgstr "認証アプリをセットアップ"
+
+msgid "Set up SCIM"
+msgstr ""
 
 msgid "Set up the right way"
 msgstr "正しい方法でセットアップ"
@@ -23954,6 +24024,9 @@ msgstr "CSVはインポートされませんでした。"
 msgid "The currencies you trade in and their rates"
 msgstr "あなたが取引する通貨とそのレート"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr ""
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "得意先は事実上その単位を購入します。開始時点で固定資産から外れ、販売が記録され、契約期間にわたって受取利息が発生します。"
 
@@ -25658,6 +25731,9 @@ msgstr "プロパティを切り替え"
 msgid "Toggle views"
 msgstr "ビューを切り替える"
 
+msgid "Token"
+msgstr ""
+
 msgid "Tol-"
 msgstr "許容差-"
 
@@ -26018,6 +26094,12 @@ msgstr "もう一度お試しください"
 
 msgid "Tuesday"
 msgstr "火曜日"
+
+msgid "Turn off"
+msgstr ""
+
+msgid "Turn off SCIM provisioning"
+msgstr ""
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "<0>設定 → 会計で短期リースの簡便処理をオンにしてください</0>、または"
@@ -28107,6 +28189,15 @@ msgstr "エクスポートを準備しています。準備ができたら通知
 msgid "Your GL accounts"
 msgstr "あなたのGL勘定"
 
+msgid "Your identity provider can no longer add or remove members, and the group mappings are deleted. Members it provisioned stay in this company as they are."
+msgstr ""
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr ""
+
+msgid "Your identity provider owns each provisioned member's name, active state and, for mapped groups, employee type. Changes made here are overwritten on its next update. Deactivating a member removes them from this company, deletes their API keys here, and ends their sessions when they have no other company."
+msgstr ""
+
 msgid "your Implementation Lead"
 msgstr "あなたの実施リード"
 
@@ -28151,6 +28242,9 @@ msgstr "カスタムレート"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "あなたの実際のデータが読み込まれ、サンプルを確認して承認しました。"
+
+msgid "Your SCIM token"
+msgstr ""
 
 msgid "Your session was locked after inactivity."
 msgstr "非アクティブのためセッションがロック中になりました。"
