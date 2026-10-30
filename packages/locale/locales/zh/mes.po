@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "(Inactive)"
 msgstr "（已停用）"
 
@@ -84,6 +87,12 @@ msgstr "工单 {0} 在生产批次 {1}"
 msgid "{0} Scrapped"
 msgstr "{0} 已报废"
 
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} 的 {quantity}"
 
@@ -109,6 +118,21 @@ msgstr "🚨 提醒：您的账户将于 {0} 迁移至 erp.try.carbon.ms"
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "之前的完成未完成。重试会恢复剩余步骤 — 数量不会重复计数。"
+
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
+msgid "A required field was missing."
+msgstr ""
+
+msgid "A value is not valid."
+msgstr ""
 
 msgid "About"
 msgstr "关于"
@@ -956,6 +980,9 @@ msgstr "已发放 {issuedQuantity} 个 {lotLabel}"
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "已发放 {issuedQuantity} 个 {lotLabel} — 还剩 {remainingQuantity} 件"
 
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
+
 msgid "Item"
 msgstr "物料"
 
@@ -1254,6 +1281,9 @@ msgstr "今天没有计划的维护"
 
 msgid "No matches. Type to create one."
 msgstr "没有匹配项。输入以创建一个。"
+
+msgid "No matching record was found."
+msgstr ""
 
 msgid "No matching time"
 msgstr "没有匹配的时间"
@@ -2138,6 +2168,12 @@ msgstr "该批次仍将进行处置，但在至少配置一个问题类型之前
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "计时器和完成状态由所有 {0} 个工单共享。此处的步骤、物料和文件属于此工单。"
 
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
+
 msgid "Theme color"
 msgstr "主题颜色"
 
@@ -2405,6 +2441,12 @@ msgid "You can still start this operation."
 msgstr ""
 
 msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You do not have permission to do this"
+msgstr ""
+
+msgid "You don't have permission to change this record, or it no longer exists."
 msgstr ""
 
 msgid "You don't have the {processName} ability"

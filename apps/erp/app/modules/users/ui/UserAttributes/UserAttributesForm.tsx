@@ -11,6 +11,7 @@ import {
   HStack,
   Switch,
   toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -790,7 +791,7 @@ function FileAttributeForm({
       });
 
     if (upload.error) {
-      toast.error(t`Failed to upload file: ${fileUpload.name}`);
+      toastError(t`Failed to upload file: ${fileUpload.name}`, upload.error);
     } else if (upload.data?.path) {
       toast.success(t`Uploaded: ${fileUpload.name}`);
       setFilePath(upload.data.path);

@@ -6,6 +6,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
+import { toastServiceError } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -156,8 +157,10 @@ function TrainingContent() {
       const body = (await response?.json().catch(() => null)) as {
         error?: { message: string } | null;
       } | null;
-      if (!response?.ok || body?.error) {
-        toast.error(body?.error?.message ?? t`Failed to save the content`);
+      if (body?.error) {
+        toastServiceError(body);
+      } else if (!response?.ok) {
+        toast.error(t`Failed to save the content`);
       }
     },
     500,

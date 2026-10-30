@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!processId) {
     throw redirect(
       path.to.processes,
-      await flash(request, error(params, "Failed to get process id"))
+      await flash(request, error(null, "Failed to get process id"))
     );
   }
 

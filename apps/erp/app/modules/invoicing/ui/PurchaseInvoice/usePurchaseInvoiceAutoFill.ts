@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { toast } from "@carbon/react";
+import { toast, toastError } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { flushSync } from "react-dom";
@@ -256,7 +256,10 @@ export function usePurchaseInvoiceAutoFill(
       ]);
 
       if (supplierData.error || paymentTermData.error) {
-        toast.error(t`Error fetching supplier data`);
+        toastError(
+          t`Error fetching supplier data`,
+          supplierData.error ?? paymentTermData.error
+        );
       } else {
         setInvoiceSupplier((prev) => ({
           ...prev,

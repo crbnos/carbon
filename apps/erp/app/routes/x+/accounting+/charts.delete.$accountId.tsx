@@ -73,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!accountId) {
     throw redirect(
       path.to.chartOfAccounts,
-      await flash(request, error(params, "Failed to get an account id"))
+      await flash(request, error(null, "Failed to get an account id"))
     );
   }
 

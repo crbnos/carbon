@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!scrapReasonId) {
     throw redirect(
       `${path.to.scrapReasons}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get an scrap reason id"))
+      await flash(request, error(null, "Failed to get an scrap reason id"))
     );
   }
 

@@ -69,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
       path.to.departments,
       await flash(
         request,
-        error(updateDepartment.error, "Failed to create department.")
+        error(updateDepartment.error, "Failed to update department")
       )
     );
   }

@@ -5,7 +5,7 @@
 "use client";
 
 import { useCarbon } from "@carbon/auth";
-import { Button, NavRailItem, Spinner, toast } from "@carbon/react";
+import { Button, NavRailItem, Spinner, toast, toastError } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
@@ -52,7 +52,7 @@ export function EndShift() {
       companyId: user.company.id
     });
     if (error) {
-      toast.error(t`Failed to fetch active operations`);
+      toastError(t`Failed to fetch active operations`, error);
     }
     setOperations((data ?? []) as Operation[]);
     setLoading(false);

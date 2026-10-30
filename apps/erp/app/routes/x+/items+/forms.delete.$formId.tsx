@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!formId) {
     throw redirect(
       path.to.materialForms,
-      await flash(request, error(params, "Failed to get an material form id"))
+      await flash(request, error(null, "Failed to get an material form id"))
     );
   }
 

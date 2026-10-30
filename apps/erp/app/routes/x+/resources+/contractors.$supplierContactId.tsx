@@ -70,7 +70,7 @@ export async function action({ request }: ActionFunctionArgs) {
       path.to.contractors,
       await flash(
         request,
-        error(updateContractor.error, "Failed to create contractor")
+        error(updateContractor.error, "Failed to update contractor")
       )
     );
   }

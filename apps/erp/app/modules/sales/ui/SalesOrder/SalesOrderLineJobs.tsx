@@ -25,6 +25,7 @@ import {
   ModalHeader,
   ModalTitle,
   toast,
+  toastError,
   useDisclosure,
   useMount,
   VStack
@@ -419,7 +420,7 @@ function JobDetails({ job }: { job: Job }) {
     ]);
 
     if (operations.error) {
-      toast.error("Failed to load job operations");
+      toastError("Failed to load job operations", operations.error);
       return;
     }
 

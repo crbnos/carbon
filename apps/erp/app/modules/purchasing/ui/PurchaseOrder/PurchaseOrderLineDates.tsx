@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { TermId } from "@carbon/content/glossary";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Button,
   Calendar,
@@ -15,8 +15,7 @@ import {
   Popover,
   PopoverContent,
   PopoverFooter,
-  PopoverTrigger,
-  toast
+  PopoverTrigger
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { parseDate, toCalendarDate } from "@internationalized/date";
@@ -55,7 +54,7 @@ export function useSavePurchaseOrderLineDate(line: {
   const saving = useRef<PurchaseOrderLineDateField | null>(null);
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) toast.error(data.error.message);
+      toastServiceError(data);
       const field = saving.current;
       if (field) {
         setRefused((counts) => ({

@@ -11,13 +11,13 @@ import {
   Select,
   ValidatedForm
 } from "@carbon/form";
+import { toastServiceError } from "@carbon/query";
 import {
   Button,
   HStack,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
@@ -119,7 +119,7 @@ const RentalAgreementProperties = () => {
   const fetcher = useFetcher<{ error: { message: string } | null }>();
   useEffect(() => {
     if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+      toastServiceError(fetcher.data);
     }
   }, [fetcher.data]);
 

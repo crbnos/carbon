@@ -102,7 +102,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!authSession) {
     return redirect(
       path.to.root,
-      await flash(request, error(authSession, "Invalid refresh token"))
+      await flash(request, error(null, "Invalid refresh token"))
     );
   }
 
@@ -140,12 +140,18 @@ export async function action({ request }: ActionFunctionArgs) {
       ssoProviderId
     );
     if (!connection.data) {
+      if (connection.error) {
+        logger.error("Failed to read the SAML SSO connection", {
+          ssoProviderId,
+          error: connection.error
+        });
+      }
       return redirect(
         path.to.root,
         await flash(
           request,
           error(
-            connection.error,
+            null,
             "SAML SSO connection is not active. Contact your administrator."
           )
         )
@@ -325,9 +331,15 @@ export async function action({ request }: ActionFunctionArgs) {
       ]
     });
   } else {
+    if (user?.error) {
+      logger.error("Failed to read the signed-in user", {
+        userId: authSession.userId,
+        error: user.error
+      });
+    }
     return redirect(
       path.to.root,
-      await flash(request, error(user.error, "User not found"))
+      await flash(request, error(null, "User not found"))
     );
   }
 }

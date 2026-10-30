@@ -23,7 +23,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -111,7 +111,7 @@ const SalesRFQLineForm = ({
       .maybeSingle();
 
     if (customerPart.error) {
-      toast.error(t`Failed to load customer part details`);
+      toastError(t`Failed to load customer part details`, customerPart.error);
       return;
     }
 
@@ -137,7 +137,7 @@ const SalesRFQLineForm = ({
       .maybeSingle();
 
     if (customerPart.error) {
-      toast.error("Failed to load customer part details");
+      toastError("Failed to load customer part details", customerPart.error);
       return;
     }
 
@@ -165,7 +165,7 @@ const SalesRFQLineForm = ({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 

@@ -3,13 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { DatePicker, Select } from "@carbon/form";
-import {
-  Button,
-  Checkbox,
-  ChoiceCardGroup,
-  Switch,
-  toast
-} from "@carbon/react";
+import { toastServiceError } from "@carbon/query";
+import { Button, Checkbox, ChoiceCardGroup, Switch } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -61,7 +56,7 @@ const COMPANY_DEFAULT = "default";
 export function useContractTermSave(contractId: string) {
   const fetcher = useFetcher<{ error: { message: string } | null }>();
   useEffect(() => {
-    if (fetcher.data?.error) toast.error(fetcher.data.error.message);
+    if (fetcher.data?.error) toastServiceError(fetcher.data);
   }, [fetcher.data]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable

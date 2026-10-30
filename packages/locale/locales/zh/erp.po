@@ -35,6 +35,9 @@ msgstr ", {years}年"
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "\"{0}\"在所选表面上不可用。请选择另一个字段。"
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "\"{storageUnitName}\"有{childCount}个直接嵌套的存储单元。删除它也会删除它们及其下面的所有内容。此操作无法撤销。"
 
@@ -561,6 +564,12 @@ msgstr "{behindDays, plural, one {目标延后 # 天} other {目标延后 # 天}
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
+
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines}的{lines}行已完成"
@@ -1532,11 +1541,23 @@ msgstr "收据的状态已更改"
 msgid "A receipt's supplier changes"
 msgstr "收据的供应商已更改"
 
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "租赁协议必须使用公司的基础货币才能启用。请先更改协议的货币。"
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "满足五项ASC 842租赁测试之一的租赁，在其协议激活时作为销售入账：该件设备离开租赁队伍，租赁收入和销售成本过账，租赁净投资代替其位置。"
+
+msgid "A required field was missing."
+msgstr ""
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "退货授权（RMA）授权客户退回商品以换取贷项、替代品或维修。"
@@ -1750,6 +1771,9 @@ msgstr "当以下任何条件为真时，件作为销售处理，否则作为租
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "用户在收货时记录每个生产批次或序列号的有效期。当供应商发运具有不同有效期的批次时使用。"
+
+msgid "A value is not valid."
+msgstr ""
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "可变费用（如里程超额、损害、交付、清洁）在协议的下一份发票上计费。"
@@ -10280,9 +10304,8 @@ msgstr "创建量具类型失败：{0}"
 msgid "Failed to create item group: {0}"
 msgstr "创建项目组失败：{0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create location: {0}"
-msgstr "创建位置失败：{0}"
+msgid "Failed to create location"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create material dimension: {0}"
@@ -10316,17 +10339,15 @@ msgstr "创建原材料失败：{0}"
 msgid "Failed to create no quote reason: {0}"
 msgstr "创建不报价原因失败：{0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create part: {0}"
-msgstr "创建零件失败：{0}"
+msgid "Failed to create part"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create payment term: {0}"
 msgstr "创建付款条件失败：{0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create process: {0}"
-msgstr "创建流程失败：{0}"
+msgid "Failed to create process"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
@@ -10352,9 +10373,8 @@ msgstr "创建工具失败：{0}"
 msgid "Failed to create webhook: {0}"
 msgstr "创建webhook失败: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create work center: {0}"
-msgstr "创建工作中心失败：{0}"
+msgid "Failed to create work center"
+msgstr ""
 
 msgid "Failed to delete file from old location"
 msgstr "删除旧位置的文件失败"
@@ -12670,6 +12690,9 @@ msgstr ""
 
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "即将推出。请联系 Carbon 为您的公司进行设置。"
+
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
 
 msgid "It was removed after this page loaded. Reload the page and try again."
 msgstr "此页面加载后它已被删除。请重新加载页面并重试。"
@@ -15613,6 +15636,9 @@ msgstr "没有匹配的料箱"
 
 msgid "No matching operations"
 msgstr "没有匹配的操作"
+
+msgid "No matching record was found."
+msgstr ""
 
 msgid "No matching time"
 msgstr "没有匹配的时间"
@@ -24870,6 +24896,12 @@ msgstr "此组中的用户；组范围的权限和通知适用于每个成员，
 msgid "The value of the cost layers dated before the cutover."
 msgstr "启用前的成本层的价值。"
 
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
+
 msgid "The version of the new document"
 msgstr "新文件的版本"
 
@@ -27963,11 +27995,17 @@ msgstr "您完成了 {leftoverQuantity} 个以上 \n"
 "                        订购数量 {1} 多。您想 \n"
 "                        用多余的零件怎么办？"
 
+msgid "You do not have permission to do this"
+msgstr ""
+
 msgid "You do not have permission to do this on every matching row."
 msgstr ""
 
 msgid "You do not have permission to edit workflows"
 msgstr "您没有权限编辑工作流"
+
+msgid "You don't have permission to change this record, or it no longer exists."
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "您没有权限编辑此物料清单。"

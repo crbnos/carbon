@@ -32,7 +32,8 @@ import {
   Th,
   Thead,
   Tr,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
@@ -300,7 +301,7 @@ export const useRecordDocuments = ({
         .remove([getPath(file)]);
 
       if (error) {
-        toast.error(error.message || t`Error deleting file`);
+        toastError(t`Error deleting file`, error);
         return;
       }
 
@@ -329,7 +330,7 @@ export const useRecordDocuments = ({
       try {
         await downloadUrl(url, file.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Error", { error });
       }
     },

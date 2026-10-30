@@ -18,10 +18,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!groupId) {
     return data(
       { groups: [], users: [] },
-      await flash(
-        request,
-        error(new Error("groupId is required"), "Group id is required")
-      )
+      await flash(request, error(null, "Group id is required"))
     );
   }
 

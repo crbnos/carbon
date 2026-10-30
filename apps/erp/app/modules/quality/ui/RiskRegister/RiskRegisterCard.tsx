@@ -15,7 +15,7 @@ import {
   HStack,
   IconButton,
   Loading,
-  toast,
+  toastError,
   useDisclosure,
   useViewport
 } from "@carbon/react";
@@ -73,7 +73,7 @@ export default function RiskRegisterCard({
       .order("createdAt", { ascending: false });
 
     if (error) {
-      toast.error(t`Failed to fetch risks`);
+      toastError(t`Failed to fetch risks`, error);
       return;
     }
 

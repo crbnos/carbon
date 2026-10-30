@@ -26,6 +26,7 @@ import {
   PrefetchLink,
   TrackedEntityPicker,
   toast,
+  toastError,
   useDisclosure,
   useMount,
   VStack
@@ -172,7 +173,7 @@ const PurchaseReturnOrderLineForm = ({
       .order("name")
       .then(({ data, error }) => {
         if (error) {
-          toast.error(t`Failed to load return reasons`);
+          toastError(t`Failed to load return reasons`, error);
           return;
         }
         setReasons(data ?? []);
@@ -206,7 +207,7 @@ const PurchaseReturnOrderLineForm = ({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item data`);
+      toastError(t`Failed to load item data`, item.error);
       return;
     }
 

@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!scheduleId) {
     throw redirect(
       `${path.to.maintenanceSchedules}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get a schedule id"))
+      await flash(request, error(null, "Failed to get a schedule id"))
     );
   }
 

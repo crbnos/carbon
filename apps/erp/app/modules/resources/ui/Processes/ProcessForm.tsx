@@ -23,6 +23,7 @@ import {
   ModalDrawerTitle,
   Subheading,
   toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -82,7 +83,7 @@ const ProcessForm = ({
       onClose?.();
       toast.success(t`Created process`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(t`Failed to create process: ${fetcher.data.error.message}`);
+      toastError(t`Failed to create process`, fetcher.data.error);
     }
   }, [fetcher.data, fetcher.state, onClose, type, t]);
 

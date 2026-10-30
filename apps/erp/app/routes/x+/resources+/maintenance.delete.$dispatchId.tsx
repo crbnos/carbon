@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!dispatchId) {
     throw redirect(
       `${path.to.maintenanceDispatches}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get a dispatch id"))
+      await flash(request, error(null, "Failed to get a dispatch id"))
     );
   }
 

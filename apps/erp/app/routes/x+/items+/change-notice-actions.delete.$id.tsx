@@ -53,7 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       `${path.to.changeNoticeRequiredActions}?${getParams(request)}`,
       await flash(
         request,
-        error(params, "Failed to get a change notice action id")
+        error(null, "Failed to get a change notice action id")
       )
     );
   }

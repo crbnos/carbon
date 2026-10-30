@@ -37,6 +37,7 @@ import {
   Thead,
   Tr,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
@@ -114,7 +115,7 @@ const useOpportunityLineDocuments = ({
         .remove([getPath(file, bucket as "opportunity-line" | "parts")]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 
@@ -153,22 +154,34 @@ const useOpportunityLineDocuments = ({
       ]);
 
       if (salesRfqLineResult.error) {
-        toast.error(t`Error removing model from RFQ line`);
+        toastError(
+          t`Error removing model from RFQ line`,
+          salesRfqLineResult.error
+        );
         return;
       }
 
       if (quoteLineResult.error) {
-        toast.error(t`Error removing model from quote line`);
+        toastError(
+          t`Error removing model from quote line`,
+          quoteLineResult.error
+        );
         return;
       }
 
       if (salesOrderLineResult.error) {
-        toast.error(t`Error removing model from sales order line`);
+        toastError(
+          t`Error removing model from sales order line`,
+          salesOrderLineResult.error
+        );
         return;
       }
 
       if (salesInvoiceLineResult.error) {
-        toast.error(t`Error removing model from sales invoice line`);
+        toastError(
+          t`Error removing model from sales invoice line`,
+          salesInvoiceLineResult.error
+        );
         return;
       }
 
@@ -201,7 +214,7 @@ const useOpportunityLineDocuments = ({
       try {
         await downloadUrl(url, file.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Failed to process file operation", { error });
       }
     },
@@ -316,7 +329,7 @@ const useOpportunityLineDocuments = ({
           });
 
         if (uploadError) {
-          toast.error(t`Failed to upload file to new location`);
+          toastError(t`Failed to upload file to new location`, uploadError);
           return;
         }
 
@@ -326,7 +339,7 @@ const useOpportunityLineDocuments = ({
           .remove([sourcePath]);
 
         if (deleteError) {
-          toast.error(t`Failed to delete file from old location`);
+          toastError(t`Failed to delete file from old location`, deleteError);
           return;
         }
 
@@ -337,7 +350,7 @@ const useOpportunityLineDocuments = ({
         );
         revalidator.revalidate();
       } catch (error) {
-        toast.error(t`Error moving file`);
+        toastError(t`Error moving file`, error);
         logger.error("Failed to process file operation", { error });
       }
     },
