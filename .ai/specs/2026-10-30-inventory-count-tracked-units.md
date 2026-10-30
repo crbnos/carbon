@@ -399,3 +399,4 @@ Page archetype: document detail with a line table, the count's existing
 
 - 2026-10-30: Created from the IC000005 question. Answers accepted as recommended.
 - 2026-10-30: While planning: a move posts with `documentType` `Inventory Count`; the import uses fixed columns, not `ImportCSVModal`.
+- 2026-10-30: From the browser test: a serial unit is marked Found or Missing, not typed as 0 or 1. A unit counted in 2 bins reads "Moved to" and "Moved from". Group variance covers counted lines only. Stock of a serial item with no unit record is counted as a quantity, and the 0-or-1 check applies to units only.

@@ -466,3 +466,50 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "stock of a serial item with no unit record is counted as a quantity",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const units = await countUnits(f);
+      // 4 units booked with no tracked entity.
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("itemLedger")
+          .values({
+            postingDate: f.today,
+            entryType: "Positive Adjmt.",
+            itemId: units.serialItemId,
+            locationId: f.locationId,
+            storageUnitId: units.binB,
+            quantity: 4,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+      const countId = await draftCount(f, "1", (args) =>
+        generateInventoryCountLines(f.db, args)
+      );
+      await f.db
+        .updateTable("inventoryCountLine")
+        .set({ countedQuantity: 3 })
+        .where("inventoryCountId", "=", countId)
+        .where("itemId", "=", units.serialItemId)
+        .where("trackedEntityId", "is", null)
+        .execute();
+      const result = await post(f, countId);
+      expect(result.error).toBeNull();
+      const ledger = await f.db
+        .selectFrom("itemLedger")
+        .select(["entryType", "quantity"])
+        .where("documentId", "=", countId)
+        .where("trackedEntityId", "is", null)
+        .execute();
+      expect(ledger).toEqual([{ entryType: "Negative Adjmt.", quantity: -1 }]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

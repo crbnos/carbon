@@ -7,7 +7,12 @@ import { useAction } from "@carbon/query";
 import { HStack, toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
-import { InputControlled, StorageUnit, Submit } from "~/components/Form";
+import {
+  Hidden,
+  InputControlled,
+  StorageUnit,
+  Submit
+} from "~/components/Form";
 import { inventoryCountScanValidator } from "~/modules/inventory/inventory.models";
 import type { InventoryCountUnitOutcome } from "~/modules/inventory/inventory.service";
 import type { action as scanAction } from "~/routes/x+/inventory-count+/$id.scan";
@@ -90,11 +95,17 @@ const InventoryCountScanBar = ({
         fetcher={fetcher}
         className="w-full"
       >
+        {/* Held in state, not in the form: the form resets after each scan,
+            and the counter keeps scanning into the same bin. Outside the row,
+            so its wrapper takes no space in it. */}
+        <div className="hidden">
+          <Hidden name="storageUnitId" value={storageUnitId ?? ""} />
+        </div>
         <HStack spacing={2} className="w-full items-end px-4 py-2">
-          <div className="w-64 shrink-0">
+          <div className="flex w-64 shrink-0 flex-col gap-2">
+            <span className="text-sm font-medium">{t`Counting in`}</span>
             <StorageUnit
-              name="storageUnitId"
-              label={t`Storage Unit`}
+              placeholder={t`No storage unit`}
               locationId={locationId}
               value={storageUnitId ?? undefined}
               allowCreate={false}
@@ -108,7 +119,8 @@ const InventoryCountScanBar = ({
             <InputControlled
               ref={codeRef}
               name="code"
-              label={t`Scan serial, batch or item`}
+              label={t`Scan or type a serial, batch or item number`}
+              placeholder={t`Scan here, then press Enter`}
               value={code}
               onChange={setCode}
               autoComplete="off"

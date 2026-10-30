@@ -739,6 +739,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# 个启用的方法有物料没�
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount}个月的总计不匹配"
 
+msgid "{missing} missing"
+msgstr ""
+
 msgid "{missingCount} journals missing in the provider"
 msgstr "提供商中缺少{missingCount}个凭证"
 
@@ -2149,6 +2152,9 @@ msgstr "添加 {0} 个已选择的"
 msgid "Add & Issue"
 msgstr "添加并发放"
 
+msgid "Add a batch found here"
+msgstr ""
+
 msgid "Add a column below to sort the view"
 msgstr "在下方添加一列以对视图进行排序"
 
@@ -2187,6 +2193,9 @@ msgstr "添加步骤"
 
 msgid "Add a step or question"
 msgstr "添加步骤或问题"
+
+msgid "Add a unit found here"
+msgstr ""
 
 msgid "Add Ability"
 msgstr "添加能力"
@@ -2486,9 +2495,6 @@ msgstr "添加到库存以供将来使用"
 
 msgid "Add tools"
 msgstr "添加工具"
-
-msgid "Add unit"
-msgstr ""
 
 msgid "Add Unit"
 msgstr "添加 件"
@@ -6633,14 +6639,14 @@ msgstr ""
 msgid "Counted {total}."
 msgstr "已计数 {total} 个。"
 
-msgid "Counted with no serial number"
-msgstr ""
-
 msgid "Counterparties"
 msgstr "交易对手"
 
 msgid "Counterparty"
 msgstr "交易对手"
+
+msgid "Counting in"
+msgstr ""
 
 msgid "Counting…"
 msgstr "统计中…"
@@ -11016,6 +11022,9 @@ msgstr "格式"
 msgid "Forward deployed engineer"
 msgstr "驻场工程师"
 
+msgid "Found"
+msgstr ""
+
 #. placeholder {0}: group.foundCount
 msgid "Found {0}"
 msgstr ""
@@ -14680,6 +14689,14 @@ msgstr "将 {employeeName} 的周移至 {targetName}"
 msgid "Moved account"
 msgstr "已移动账户"
 
+#. placeholder {0}: line.otherBinName
+msgid "Moved from {0}"
+msgstr ""
+
+#. placeholder {0}: line.otherBinName
+msgid "Moved to {0}"
+msgstr ""
+
 msgid "Movements"
 msgstr "移动"
 
@@ -15369,6 +15386,9 @@ msgstr "未找到可用的追踪实体"
 msgid "No bank accounts have been added yet."
 msgstr "尚未添加银行账户。"
 
+msgid "No batch number"
+msgstr ""
+
 msgid "No batches"
 msgstr "无生产批次"
 
@@ -16014,10 +16034,10 @@ msgstr "未分配培训"
 msgid "No transactions in this period"
 msgstr "此期间无交易"
 
-msgid "No units counted yet"
+msgid "No units counted yet. Scan a unit to count it."
 msgstr ""
 
-msgid "No units in this storage unit"
+msgid "No units in this storage unit."
 msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
@@ -16152,6 +16172,9 @@ msgstr "未配置"
 
 msgid "Not Configured"
 msgstr "未配置"
+
+msgid "Not counted"
+msgstr ""
 
 #. placeholder {0}: group.notCountedCount
 msgid "Not counted {0}"
@@ -19076,6 +19099,9 @@ msgstr "重新激活"
 msgid "Reactivation"
 msgstr "重新激活"
 
+msgid "Read a serial number off a unit to record it. Optional."
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "仔细阅读此内容——Carbon将为您的设置做什么和不做什么。当看起来正确时，在下面标记同意。"
 
@@ -21051,6 +21077,9 @@ msgstr "扫码"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "扫码或按物料ID或追踪ID搜索。"
 
+msgid "Scan here, then press Enter"
+msgstr ""
+
 msgid "Scan or choose a batch number"
 msgstr "扫码或选择一个生产批次号"
 
@@ -21069,7 +21098,7 @@ msgstr "扫码或搜索..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "扫码或从此批次中选择一个追踪实体，将其添加为采样列，然后在网格中记录其结果。"
 
-msgid "Scan serial, batch or item"
+msgid "Scan or type a serial, batch or item number"
 msgstr ""
 
 msgid "Scan the serial or batch number, not the item"
@@ -21685,12 +21714,11 @@ msgstr "序列号"
 msgid "Serial / Batch"
 msgstr "序列号 / 批次"
 
-#. placeholder {0}: index + 1
-msgid "Serial for unit {0}"
-msgstr ""
-
 msgid "Serial items require a sales order"
 msgstr "序列号物料需要销售订单"
+
+msgid "Serial number"
+msgstr ""
 
 msgid "Serial Number"
 msgstr "序列号"
@@ -22867,6 +22895,9 @@ msgstr "库存转移向导"
 
 msgid "Stock Transfers"
 msgstr "库存转移"
+
+msgid "Stock with no unit record"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
@@ -26245,6 +26276,9 @@ msgstr "仍待支付的未折现支付额，按会计年度列示，扣除剩余
 msgid "Undo"
 msgstr "撤销"
 
+msgid "Unexpected"
+msgstr ""
+
 #. placeholder {0}: group.unexpectedCount
 msgid "Unexpected {0}"
 msgstr ""
@@ -26279,6 +26313,10 @@ msgstr "唯一、大写、无空格（最多 10 个字符）"
 
 msgid "Unit"
 msgstr "单位"
+
+#. placeholder {0}: index + 1
+msgid "Unit {0}"
+msgstr ""
 
 msgid "Unit actions"
 msgstr "件操作"
@@ -26334,6 +26372,12 @@ msgstr "计量单位"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "在操作中报告为无法恢复的单位,带有原因 — 返工的替代方案。"
+
+msgid "Units with no serial number"
+msgstr ""
+
+msgid "Units with no serial number on the shelf"
+msgstr ""
 
 msgid "Unknown"
 msgstr "未知"

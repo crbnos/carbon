@@ -739,6 +739,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# aktif yöntemin çekme kaynağı
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} ay tutarları uyuşmazlığı"
 
+msgid "{missing} missing"
+msgstr ""
+
 msgid "{missingCount} journals missing in the provider"
 msgstr "{missingCount} muhasebe fişi sağlayıcıda eksik"
 
@@ -2149,6 +2152,9 @@ msgstr "Ekle {0} seçili"
 msgid "Add & Issue"
 msgstr "Ekle ve Çıkış Yap"
 
+msgid "Add a batch found here"
+msgstr ""
+
 msgid "Add a column below to sort the view"
 msgstr "Görünümü sıralamak için aşağı bir sütun ekleyin"
 
@@ -2187,6 +2193,9 @@ msgstr "Bir adım ekle"
 
 msgid "Add a step or question"
 msgstr "Bir adım veya soru ekle"
+
+msgid "Add a unit found here"
+msgstr ""
 
 msgid "Add Ability"
 msgstr "Yetkinlik Ekle"
@@ -2486,9 +2495,6 @@ msgstr "Gelecekteki kullanım için stoğa ekle"
 
 msgid "Add tools"
 msgstr "Araç ekle"
-
-msgid "Add unit"
-msgstr ""
 
 msgid "Add Unit"
 msgstr "Birim Ekle"
@@ -6633,14 +6639,14 @@ msgstr ""
 msgid "Counted {total}."
 msgstr "{total} sayıldı."
 
-msgid "Counted with no serial number"
-msgstr ""
-
 msgid "Counterparties"
 msgstr "Muhasebeleştirilecek Taraflar"
 
 msgid "Counterparty"
 msgstr "Karşı Taraf"
+
+msgid "Counting in"
+msgstr ""
 
 msgid "Counting…"
 msgstr "Sayılıyor…"
@@ -11016,6 +11022,9 @@ msgstr "Biçim"
 msgid "Forward deployed engineer"
 msgstr "Sahadaki mühendis"
 
+msgid "Found"
+msgstr ""
+
 #. placeholder {0}: group.foundCount
 msgid "Found {0}"
 msgstr ""
@@ -14680,6 +14689,14 @@ msgstr "{employeeName} öğesinin haftası {targetName} adresine taşındı"
 msgid "Moved account"
 msgstr "Taşınan hesap"
 
+#. placeholder {0}: line.otherBinName
+msgid "Moved from {0}"
+msgstr ""
+
+#. placeholder {0}: line.otherBinName
+msgid "Moved to {0}"
+msgstr ""
+
 msgid "Movements"
 msgstr "Hareketler"
 
@@ -15369,6 +15386,9 @@ msgstr "Kullanılabilir izlenen varlık bulunamadı"
 msgid "No bank accounts have been added yet."
 msgstr "Henüz hiçbir banka hesabı eklenmemiştir."
 
+msgid "No batch number"
+msgstr ""
+
 msgid "No batches"
 msgstr "Parti yok"
 
@@ -16014,10 +16034,10 @@ msgstr "Atanan eğitim yok"
 msgid "No transactions in this period"
 msgstr "Bu dönemde işlem yok"
 
-msgid "No units counted yet"
+msgid "No units counted yet. Scan a unit to count it."
 msgstr ""
 
-msgid "No units in this storage unit"
+msgid "No units in this storage unit."
 msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
@@ -16152,6 +16172,9 @@ msgstr "Yapılandırılmadı"
 
 msgid "Not Configured"
 msgstr "Yapılandırılmadı"
+
+msgid "Not counted"
+msgstr ""
 
 #. placeholder {0}: group.notCountedCount
 msgid "Not counted {0}"
@@ -19076,6 +19099,9 @@ msgstr "Yeniden etkinleştir"
 msgid "Reactivation"
 msgstr "Yeniden Etkinleştirme"
 
+msgid "Read a serial number off a unit to record it. Optional."
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Bunu okuyun — Carbon'un kurulumunuz için neler yapacağını ve yapmayacağını öğrenin. Doğru görünüyorsa, aşağıda kabul ettiğinizi işaretleyin."
 
@@ -21051,6 +21077,9 @@ msgstr "Tara"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Bir etiketi tarayın veya ürün kimliği veya takip kimliği ile arama yapın."
 
+msgid "Scan here, then press Enter"
+msgstr ""
+
 msgid "Scan or choose a batch number"
 msgstr "Toplu iş numarasını tarayın veya seçin"
 
@@ -21069,7 +21098,7 @@ msgstr "Tarama veya arayın..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Bu lottan izlenen bir varlığı taramak veya seçmek için bunu örnek sütun olarak ekleyin, ardından sonucunu ızgarada kaydedin."
 
-msgid "Scan serial, batch or item"
+msgid "Scan or type a serial, batch or item number"
 msgstr ""
 
 msgid "Scan the serial or batch number, not the item"
@@ -21685,12 +21714,11 @@ msgstr "Seri"
 msgid "Serial / Batch"
 msgstr "Seri / Parti"
 
-#. placeholder {0}: index + 1
-msgid "Serial for unit {0}"
-msgstr ""
-
 msgid "Serial items require a sales order"
 msgstr "Seri ürünler satış siparişi gerektirir"
+
+msgid "Serial number"
+msgstr ""
 
 msgid "Serial Number"
 msgstr "Seri Numarası"
@@ -22867,6 +22895,9 @@ msgstr "Stok Transfer Sihirbazı"
 
 msgid "Stock Transfers"
 msgstr "Stok Transferleri"
+
+msgid "Stock with no unit record"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
@@ -26245,6 +26276,9 @@ msgstr "Mali yılına göre henüz gelecek iskonto uygulanmamış ödemeler, kal
 msgid "Undo"
 msgstr "Geri Al"
 
+msgid "Unexpected"
+msgstr ""
+
 #. placeholder {0}: group.unexpectedCount
 msgid "Unexpected {0}"
 msgstr ""
@@ -26279,6 +26313,10 @@ msgstr "Benzersiz, büyük harf, boşluksuz (en fazla 10 karakter)"
 
 msgid "Unit"
 msgstr "Birim"
+
+#. placeholder {0}: index + 1
+msgid "Unit {0}"
+msgstr ""
 
 msgid "Unit actions"
 msgstr "Adet İşlemleri"
@@ -26334,6 +26372,12 @@ msgstr "Ölçü birimleri"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Bir işlemde kurtarılamaz olarak raporlanan birimler, bir nedenle — yeniden işlem için bir alternatif."
+
+msgid "Units with no serial number"
+msgstr ""
+
+msgid "Units with no serial number on the shelf"
+msgstr ""
 
 msgid "Unknown"
 msgstr "Bilinmeyen"

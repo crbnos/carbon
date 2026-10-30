@@ -79,6 +79,11 @@ type InventoryCountGroupsProps = {
 const isTrackedGroup = (group: InventoryCountGroup) =>
   group.itemTrackingType === "Serial" || group.itemTrackingType === "Batch";
 
+// An untracked item has one line per storage unit and is counted on its
+// group row. A tracked group is counted unit by unit when expanded.
+const isCountedOnGroupRow = (group: InventoryCountGroup) =>
+  Boolean(group.lineId) && !isTrackedGroup(group);
+
 const InventoryCountGroups = ({
   inventoryCountId,
   groups,
@@ -510,9 +515,16 @@ const InventoryCountGroups = ({
       cell: (item) => {
         const value = item.getValue<number | null>();
         // Marked so the keyboard "Start counting" entry can locate the first
-        // editable cell and seed the table's selection (see below).
+        // editable cell and seed the table's selection (see below). Only a
+        // group with one line is counted here: a tracked group is counted by
+        // unit, and clicking it would open it.
         return (
-          <span data-counted-qty className="tabular-nums">
+          <span
+            data-counted-qty={
+              isCountedOnGroupRow(item.row.original) ? "" : undefined
+            }
+            className="tabular-nums"
+          >
             {value === null ? "—" : value}
           </span>
         );
@@ -709,7 +721,7 @@ const InventoryCountGroups = ({
         // group row; a tracked group is counted unit by unit when expanded.
         (row) => ({
           minValue: 0,
-          isReadOnly: !row.lineId
+          isReadOnly: !isCountedOnGroupRow(row)
         }),
         { clearable: true }
       )

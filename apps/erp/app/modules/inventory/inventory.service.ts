@@ -2594,6 +2594,49 @@ export async function getInventoryCountGroupLines(
     .order("id", { ascending: true });
 }
 
+// For each unit, the other storage unit of the count where it is counted
+// above 0: the bin it moved to or from. Units counted in one bin are absent.
+export async function getInventoryCountOtherBins(
+  client: SupabaseClient<Database>,
+  args: {
+    inventoryCountId: string;
+    companyId: string;
+    storageUnitId: string | null;
+    trackedEntityIds: string[];
+  }
+): Promise<Map<string, string>> {
+  if (args.trackedEntityIds.length === 0) return new Map();
+  const others = await client
+    .from("inventoryCountLine")
+    .select("trackedEntityId, storageUnitId, countedQuantity, foundDuringCount")
+    .eq("inventoryCountId", args.inventoryCountId)
+    .eq("companyId", args.companyId)
+    .in("trackedEntityId", args.trackedEntityIds);
+  const elsewhere = (others.data ?? []).filter(
+    (line) => (line.storageUnitId ?? null) !== args.storageUnitId
+  );
+  const unitIds = pluckUnique(
+    elsewhere.filter((line) => line.storageUnitId),
+    (line) => line.storageUnitId as string
+  );
+  const units = unitIds.length
+    ? await client
+        .from("storageUnit")
+        .select("id, name")
+        .in("id", unitIds)
+        .eq("companyId", args.companyId)
+    : { data: [] };
+  const nameById = new Map((units.data ?? []).map((u) => [u.id, u.name]));
+  return new Map(
+    elsewhere.map((line) => [
+      line.trackedEntityId as string,
+      line.storageUnitId
+        ? (nameById.get(line.storageUnitId) ?? "")
+        : "No storage unit"
+    ])
+  );
+}
+
 // Aggregate counts for the confirm dialog. Computed server-side so the warnings
 // stay accurate regardless of which page of lines is currently loaded.
 export async function getInventoryCountLineSummary(
@@ -8091,6 +8134,8 @@ export async function postInventoryCount(
   const serialInvalidLineIds = countedLines
     .filter((line) => {
       if (trackingTypeByItem.get(line.itemId) !== "Serial") return false;
+      // Only a unit is 0 or 1. Stock booked with no unit record is a quantity.
+      if (!line.trackedEntityId && !line.readableId) return false;
       const counted = Number(line.countedQuantity);
       return counted !== 0 && counted !== 1;
     })

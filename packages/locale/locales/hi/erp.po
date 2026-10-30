@@ -739,6 +739,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# सक्रिय विधि 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} महीने बेमेल कुल के साथ"
 
+msgid "{missing} missing"
+msgstr ""
+
 msgid "{missingCount} journals missing in the provider"
 msgstr "प्रदाता में {missingCount} जर्नल गायब हैं"
 
@@ -2149,6 +2152,9 @@ msgstr "{0} चयनित जोड़ें"
 msgid "Add & Issue"
 msgstr "जोड़ें और जारी करें"
 
+msgid "Add a batch found here"
+msgstr ""
+
 msgid "Add a column below to sort the view"
 msgstr "इस दृश्य को सॉर्ट करने के लिए नीचे एक कॉलम जोड़ें"
 
@@ -2187,6 +2193,9 @@ msgstr "एक चरण जोड़ें"
 
 msgid "Add a step or question"
 msgstr "एक चरण या प्रश्न जोड़ें"
+
+msgid "Add a unit found here"
+msgstr ""
 
 msgid "Add Ability"
 msgstr "कौशल जोड़ें"
@@ -2486,9 +2495,6 @@ msgstr "भविष्य के उपयोग के लिए स्टॉ�
 
 msgid "Add tools"
 msgstr "उपकरण जोड़ें"
-
-msgid "Add unit"
-msgstr ""
 
 msgid "Add Unit"
 msgstr "इकाई जोड़ें"
@@ -6633,14 +6639,14 @@ msgstr ""
 msgid "Counted {total}."
 msgstr "{total} गिने गए।"
 
-msgid "Counted with no serial number"
-msgstr ""
-
 msgid "Counterparties"
 msgstr "प्रतिपक्ष"
 
 msgid "Counterparty"
 msgstr "प्रतिपक्ष"
+
+msgid "Counting in"
+msgstr ""
 
 msgid "Counting…"
 msgstr "गिनती हो रही है…"
@@ -11016,6 +11022,9 @@ msgstr "प्रारूप"
 msgid "Forward deployed engineer"
 msgstr "अग्रपंक्ति में तैनात इंजीनियर"
 
+msgid "Found"
+msgstr ""
+
 #. placeholder {0}: group.foundCount
 msgid "Found {0}"
 msgstr ""
@@ -14680,6 +14689,14 @@ msgstr "{employeeName} के सप्ताह को {targetName} में �
 msgid "Moved account"
 msgstr "खाता स्थानांतरित किया गया"
 
+#. placeholder {0}: line.otherBinName
+msgid "Moved from {0}"
+msgstr ""
+
+#. placeholder {0}: line.otherBinName
+msgid "Moved to {0}"
+msgstr ""
+
 msgid "Movements"
 msgstr "मूवमेंट्स"
 
@@ -15369,6 +15386,9 @@ msgstr "कोई उपलब्ध ट्रैक किए गए इका�
 msgid "No bank accounts have been added yet."
 msgstr "अभी तक कोई बैंक खाता जोड़ा नहीं गया है।"
 
+msgid "No batch number"
+msgstr ""
+
 msgid "No batches"
 msgstr "कोई बैच नहीं"
 
@@ -16014,10 +16034,10 @@ msgstr "कोई प्रशिक्षण निर्धारित नह
 msgid "No transactions in this period"
 msgstr "इस अवधि में कोई लेनदेन नहीं"
 
-msgid "No units counted yet"
+msgid "No units counted yet. Scan a unit to count it."
 msgstr ""
 
-msgid "No units in this storage unit"
+msgid "No units in this storage unit."
 msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
@@ -16152,6 +16172,9 @@ msgstr "कॉन्फ़िगर नहीं किया गया"
 
 msgid "Not Configured"
 msgstr "कॉन्फ़िगर नहीं किया गया"
+
+msgid "Not counted"
+msgstr ""
 
 #. placeholder {0}: group.notCountedCount
 msgid "Not counted {0}"
@@ -19076,6 +19099,9 @@ msgstr "पुनः सक्रिय करें"
 msgid "Reactivation"
 msgstr "पुनः सक्रियण"
 
+msgid "Read a serial number off a unit to record it. Optional."
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "इसे पूरी तरह पढ़ें — Carbon आपके सेटअप के लिए क्या करेगा और क्या नहीं करेगा। जब यह सही लगे, तो नीचे सहमत के रूप में चिह्नित करें।"
 
@@ -21051,6 +21077,9 @@ msgstr "स्कैन करें"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "एक लेबल स्कैन करें या आइटम ID या ट्रैकिंग ID से खोजें।"
 
+msgid "Scan here, then press Enter"
+msgstr ""
+
 msgid "Scan or choose a batch number"
 msgstr "बैच नंबर स्कैन करें या चुनें"
 
@@ -21069,7 +21098,7 @@ msgstr "स्कैन करें या खोजें..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "इस लॉट से एक ट्रैक की गई इकाई को स्कैन या चुनें और इसे एक नमूना स्तंभ के रूप में जोड़ें, फिर ग्रिड में इसका परिणाम रिकॉर्ड करें।"
 
-msgid "Scan serial, batch or item"
+msgid "Scan or type a serial, batch or item number"
 msgstr ""
 
 msgid "Scan the serial or batch number, not the item"
@@ -21685,12 +21714,11 @@ msgstr "सीरीज़"
 msgid "Serial / Batch"
 msgstr "सीरियल / बैच"
 
-#. placeholder {0}: index + 1
-msgid "Serial for unit {0}"
-msgstr ""
-
 msgid "Serial items require a sales order"
 msgstr "सीरियल आइटम को विक्रय आदेश की आवश्यकता है"
+
+msgid "Serial number"
+msgstr ""
 
 msgid "Serial Number"
 msgstr "सीरियल नंबर"
@@ -22867,6 +22895,9 @@ msgstr "स्टॉक ट्रांसफर विज़ार्ड"
 
 msgid "Stock Transfers"
 msgstr "स्टॉक ट्रांसफर"
+
+msgid "Stock with no unit record"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
@@ -26245,6 +26276,9 @@ msgstr "अभी भी आने वाले बिना छूट के �
 msgid "Undo"
 msgstr "पूर्ववत करें"
 
+msgid "Unexpected"
+msgstr ""
+
 #. placeholder {0}: group.unexpectedCount
 msgid "Unexpected {0}"
 msgstr ""
@@ -26279,6 +26313,10 @@ msgstr "अद्वितीय, बड़े अक्षरों में, 
 
 msgid "Unit"
 msgstr "इकाई"
+
+#. placeholder {0}: index + 1
+msgid "Unit {0}"
+msgstr ""
 
 msgid "Unit actions"
 msgstr "इकाई क्रियाएं"
@@ -26334,6 +26372,12 @@ msgstr "माप की इकाइयाँ"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "एक ऑपरेशन पर अपूरणीय के रूप में रिपोर्ट की गई इकाइयाँ, एक कारण के साथ — पुनः कार्य का विकल्प।"
+
+msgid "Units with no serial number"
+msgstr ""
+
+msgid "Units with no serial number on the shelf"
+msgstr ""
 
 msgid "Unknown"
 msgstr "अज्ञात"

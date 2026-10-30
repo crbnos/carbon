@@ -25,6 +25,7 @@ import {
   getErrorMessage,
   getOverReceiptViolations,
   isUniqueViolation,
+  pluckUnique,
   requireAffected,
   round,
   type Violation
@@ -5641,9 +5642,27 @@ export const getInventoryCountGroupLines = defineServiceFn({
       );
     }
     const blind = utils.isBlindCountEntry(header.data);
-    return (lines.data ?? []).map((line) =>
-      blind ? { ...line, systemQuantity: null, variance: null } : line
+    // A unit counted in 2 bins of this count moved between them: name the
+    // other bin, so the sheet reads "Moved to" / "Moved from".
+    const otherBins = await service.getInventoryCountOtherBins(
+      ctx.asCaller.supabase,
+      {
+        inventoryCountId: input.inventoryCountId,
+        companyId: ctx.company.id,
+        storageUnitId: input.storageUnitId ?? null,
+        trackedEntityIds: pluckUnique(
+          (lines.data ?? []).filter((line) => line.trackedEntityId),
+          (line) => line.trackedEntityId as string
+        )
+      }
     );
+    return (lines.data ?? []).map((line) => ({
+      ...line,
+      ...(blind ? { systemQuantity: null, variance: null } : {}),
+      otherBinName: line.trackedEntityId
+        ? (otherBins.get(line.trackedEntityId) ?? null)
+        : null
+    }));
   }
 });
 

@@ -739,6 +739,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# 개의 활성 방법이 출처�
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "총액이 일치하지 않는 {mismatchCount}개월"
 
+msgid "{missing} missing"
+msgstr ""
+
 msgid "{missingCount} journals missing in the provider"
 msgstr "{missingCount}개의 전표가 공급자에서 누락됨"
 
@@ -2149,6 +2152,9 @@ msgstr "선택된 {0}개 추가"
 msgid "Add & Issue"
 msgstr "추가 및 출고"
 
+msgid "Add a batch found here"
+msgstr ""
+
 msgid "Add a column below to sort the view"
 msgstr "보기를 정렬하려면 아래에 열을 추가하세요"
 
@@ -2187,6 +2193,9 @@ msgstr "단계 추가"
 
 msgid "Add a step or question"
 msgstr "단계 또는 질문 추가"
+
+msgid "Add a unit found here"
+msgstr ""
 
 msgid "Add Ability"
 msgstr "역량 추가"
@@ -2486,9 +2495,6 @@ msgstr "향후 사용을 위해 재고에 추가"
 
 msgid "Add tools"
 msgstr "도구 추가"
-
-msgid "Add unit"
-msgstr ""
 
 msgid "Add Unit"
 msgstr "개 추가"
@@ -6633,14 +6639,14 @@ msgstr ""
 msgid "Counted {total}."
 msgstr "{total}개를 셌습니다."
 
-msgid "Counted with no serial number"
-msgstr ""
-
 msgid "Counterparties"
 msgstr "거래처"
 
 msgid "Counterparty"
 msgstr "거래처"
+
+msgid "Counting in"
+msgstr ""
 
 msgid "Counting…"
 msgstr "집계 중…"
@@ -11016,6 +11022,9 @@ msgstr "형식"
 msgid "Forward deployed engineer"
 msgstr "현장 배치 엔지니어"
 
+msgid "Found"
+msgstr ""
+
 #. placeholder {0}: group.foundCount
 msgid "Found {0}"
 msgstr ""
@@ -14680,6 +14689,14 @@ msgstr "{employeeName}의 주간을 {targetName}으로 이동"
 msgid "Moved account"
 msgstr "이동된 계정"
 
+#. placeholder {0}: line.otherBinName
+msgid "Moved from {0}"
+msgstr ""
+
+#. placeholder {0}: line.otherBinName
+msgid "Moved to {0}"
+msgstr ""
+
 msgid "Movements"
 msgstr "이동"
 
@@ -15369,6 +15386,9 @@ msgstr "추적된 가용 객체를 찾을 수 없습니다"
 msgid "No bank accounts have been added yet."
 msgstr "아직 추가된 은행 계좌가 없습니다."
 
+msgid "No batch number"
+msgstr ""
+
 msgid "No batches"
 msgstr "배치 없음"
 
@@ -16014,10 +16034,10 @@ msgstr "할당된 교육 없음"
 msgid "No transactions in this period"
 msgstr "이 기간에 거래가 없습니다"
 
-msgid "No units counted yet"
+msgid "No units counted yet. Scan a unit to count it."
 msgstr ""
 
-msgid "No units in this storage unit"
+msgid "No units in this storage unit."
 msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
@@ -16152,6 +16172,9 @@ msgstr "구성되지 않음"
 
 msgid "Not Configured"
 msgstr "미설정"
+
+msgid "Not counted"
+msgstr ""
 
 #. placeholder {0}: group.notCountedCount
 msgid "Not counted {0}"
@@ -19076,6 +19099,9 @@ msgstr "재활성화"
 msgid "Reactivation"
 msgstr "재활성화"
 
+msgid "Read a serial number off a unit to record it. Optional."
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Carbon이 귀사의 설정에서 무엇을 하고 무엇을 하지 않을지 내용을 확인하세요. 내용이 맞다면 아래에서 동의로 표시하세요."
 
@@ -21051,6 +21077,9 @@ msgstr "스캔"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "라벨을 스캔하거나 품목 ID 또는 추적 ID로 검색하세요."
 
+msgid "Scan here, then press Enter"
+msgstr ""
+
 msgid "Scan or choose a batch number"
 msgstr "배치 번호를 스캔하거나 선택하세요"
 
@@ -21069,7 +21098,7 @@ msgstr "스캔 또는 검색..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "이 로트에서 추적 대상을 스캔하거나 선택하여 표본 열로 추가한 후, 그리드에 그 결과를 기록하세요."
 
-msgid "Scan serial, batch or item"
+msgid "Scan or type a serial, batch or item number"
 msgstr ""
 
 msgid "Scan the serial or batch number, not the item"
@@ -21685,12 +21714,11 @@ msgstr "일련번호"
 msgid "Serial / Batch"
 msgstr "일련번호/배치"
 
-#. placeholder {0}: index + 1
-msgid "Serial for unit {0}"
-msgstr ""
-
 msgid "Serial items require a sales order"
 msgstr "일련번호 품목은 수주가 필요합니다."
+
+msgid "Serial number"
+msgstr ""
 
 msgid "Serial Number"
 msgstr "시리얼 번호"
@@ -22867,6 +22895,9 @@ msgstr "재고 이동 마법사"
 
 msgid "Stock Transfers"
 msgstr "재고 이동"
+
+msgid "Stock with no unit record"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
@@ -26245,6 +26276,9 @@ msgstr "남은 개월이 부과할 이자를 제외한, 아직 올 할인되지 
 msgid "Undo"
 msgstr "실행 취소"
 
+msgid "Unexpected"
+msgstr ""
+
 #. placeholder {0}: group.unexpectedCount
 msgid "Unexpected {0}"
 msgstr ""
@@ -26279,6 +26313,10 @@ msgstr "고유하고 대문자이며 공백 없이(최대 10자)"
 
 msgid "Unit"
 msgstr "단위"
+
+#. placeholder {0}: index + 1
+msgid "Unit {0}"
+msgstr ""
 
 msgid "Unit actions"
 msgstr "항목 작업"
@@ -26334,6 +26372,12 @@ msgstr "측정 단위"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "공정작업에서 사유와 함께 회복 불가로 보고된 수량으로, 재작업의 대안입니다."
+
+msgid "Units with no serial number"
+msgstr ""
+
+msgid "Units with no serial number on the shelf"
+msgstr ""
 
 msgid "Unknown"
 msgstr "알 수 없음"

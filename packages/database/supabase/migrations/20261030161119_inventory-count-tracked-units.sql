@@ -85,7 +85,10 @@ WITH g AS (
     icl."storageUnitId",
     SUM(icl."systemQuantity") AS "expectedQuantity",
     SUM(icl."countedQuantity") AS "countedQuantity",
-    SUM(icl."countedQuantity") - SUM(icl."systemQuantity") AS "variance",
+    -- Over counted lines only: a line not counted yet is not posted.
+    SUM(icl."countedQuantity")
+      - SUM(icl."systemQuantity") FILTER (WHERE icl."countedQuantity" IS NOT NULL)
+      AS "variance",
     COUNT(*) AS "lineCount",
     COUNT(*) FILTER (WHERE NOT icl."foundDuringCount" AND icl."countedQuantity" > 0) AS "foundCount",
     COUNT(*) FILTER (WHERE NOT icl."foundDuringCount" AND icl."countedQuantity" = 0) AS "missingCount",

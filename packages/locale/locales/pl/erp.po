@@ -739,6 +739,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# aktywna metoda ma materiały bez
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} miesięcy z niezgodnymi sumami"
 
+msgid "{missing} missing"
+msgstr ""
+
 msgid "{missingCount} journals missing in the provider"
 msgstr "Brakuje {missingCount} dowodów księgowych u dostawcy"
 
@@ -2149,6 +2152,9 @@ msgstr "Dodaj {0} wybranych"
 msgid "Add & Issue"
 msgstr "Dodaj i wydaj"
 
+msgid "Add a batch found here"
+msgstr ""
+
 msgid "Add a column below to sort the view"
 msgstr "Dodaj kolumnę poniżej, aby posortować widok"
 
@@ -2187,6 +2193,9 @@ msgstr "Dodaj krok"
 
 msgid "Add a step or question"
 msgstr "Dodaj krok lub pytanie"
+
+msgid "Add a unit found here"
+msgstr ""
 
 msgid "Add Ability"
 msgstr "Dodaj Umiejętność"
@@ -2486,9 +2495,6 @@ msgstr "Dodaj do zapasów do przyszłego użytku"
 
 msgid "Add tools"
 msgstr "Dodaj narzędzia"
-
-msgid "Add unit"
-msgstr ""
 
 msgid "Add Unit"
 msgstr "Dodaj Sztukę"
@@ -6633,14 +6639,14 @@ msgstr ""
 msgid "Counted {total}."
 msgstr "Policzono: {total}."
 
-msgid "Counted with no serial number"
-msgstr ""
-
 msgid "Counterparties"
 msgstr "Kontrahenci"
 
 msgid "Counterparty"
 msgstr "Kontrahent"
+
+msgid "Counting in"
+msgstr ""
 
 msgid "Counting…"
 msgstr "Liczenie…"
@@ -11016,6 +11022,9 @@ msgstr "Format"
 msgid "Forward deployed engineer"
 msgstr "Inżynier wdrażający"
 
+msgid "Found"
+msgstr ""
+
 #. placeholder {0}: group.foundCount
 msgid "Found {0}"
 msgstr ""
@@ -14680,6 +14689,14 @@ msgstr "Przeniesiono tydzień {employeeName} do {targetName}"
 msgid "Moved account"
 msgstr "Przeniesione konto"
 
+#. placeholder {0}: line.otherBinName
+msgid "Moved from {0}"
+msgstr ""
+
+#. placeholder {0}: line.otherBinName
+msgid "Moved to {0}"
+msgstr ""
+
 msgid "Movements"
 msgstr "Ruchy"
 
@@ -15369,6 +15386,9 @@ msgstr "Nie znaleziono dostępnych śledzonych jednostek"
 msgid "No bank accounts have been added yet."
 msgstr "Brak dodanych kont bankowych."
 
+msgid "No batch number"
+msgstr ""
+
 msgid "No batches"
 msgstr "Brak partii produkcyjnych"
 
@@ -16014,10 +16034,10 @@ msgstr "Brak przydzielonych szkoleń"
 msgid "No transactions in this period"
 msgstr "Brak transakcji w tym okresie"
 
-msgid "No units counted yet"
+msgid "No units counted yet. Scan a unit to count it."
 msgstr ""
 
-msgid "No units in this storage unit"
+msgid "No units in this storage unit."
 msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
@@ -16152,6 +16172,9 @@ msgstr "Nie skonfigurowano"
 
 msgid "Not Configured"
 msgstr "Nie skonfigurowane"
+
+msgid "Not counted"
+msgstr ""
 
 #. placeholder {0}: group.notCountedCount
 msgid "Not counted {0}"
@@ -19076,6 +19099,9 @@ msgstr "Ponownie aktywuj"
 msgid "Reactivation"
 msgstr "Ponowna aktywacja"
 
+msgid "Read a serial number off a unit to record it. Optional."
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Przeczytaj to uważnie — co Carbon będzie i nie będzie robić dla Twojej konfiguracji. Gdy będzie wyglądać dobrze, oznacz to jako zaakceptowane poniżej."
 
@@ -21051,6 +21077,9 @@ msgstr "Skanuj"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Skanuj etykietę lub wyszukaj po ID artykułu lub ID śledzenia."
 
+msgid "Scan here, then press Enter"
+msgstr ""
+
 msgid "Scan or choose a batch number"
 msgstr "Zeskanuj lub wybierz numer partii"
 
@@ -21069,7 +21098,7 @@ msgstr "Skanuj lub wyszukaj..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Skanuj lub wybierz śledzoną jednostkę z tej partii, aby dodać ją jako kolumnę próbną, a następnie zanotuj jej wynik w siatce."
 
-msgid "Scan serial, batch or item"
+msgid "Scan or type a serial, batch or item number"
 msgstr ""
 
 msgid "Scan the serial or batch number, not the item"
@@ -21685,12 +21714,11 @@ msgstr "Seryjny"
 msgid "Serial / Batch"
 msgstr "Numer seryjny / Partia"
 
-#. placeholder {0}: index + 1
-msgid "Serial for unit {0}"
-msgstr ""
-
 msgid "Serial items require a sales order"
 msgstr "Artykuły seryjne wymagają zamówienia sprzedaży"
+
+msgid "Serial number"
+msgstr ""
 
 msgid "Serial Number"
 msgstr "Numer seryjny"
@@ -22867,6 +22895,9 @@ msgstr "Kreator Transferu Zapasów"
 
 msgid "Stock Transfers"
 msgstr "Transfery Zapasów"
+
+msgid "Stock with no unit record"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
@@ -26245,6 +26276,9 @@ msgstr "Płatności bez dyskonta, które jeszcze przyjdą, wg roku obrachunkoweg
 msgid "Undo"
 msgstr "Cofnij"
 
+msgid "Unexpected"
+msgstr ""
+
 #. placeholder {0}: group.unexpectedCount
 msgid "Unexpected {0}"
 msgstr ""
@@ -26279,6 +26313,10 @@ msgstr "Unikalny, wielkie litery, bez spacji (maks. 10 znaków)"
 
 msgid "Unit"
 msgstr "Jednostka"
+
+#. placeholder {0}: index + 1
+msgid "Unit {0}"
+msgstr ""
 
 msgid "Unit actions"
 msgstr "Akcje jednostki"
@@ -26334,6 +26372,12 @@ msgstr "Jednostki miary"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Sztuki zgłoszone jako nie do odzyskania na operacji, z podaniem przyczyny — alternatywa dla poprawki."
+
+msgid "Units with no serial number"
+msgstr ""
+
+msgid "Units with no serial number on the shelf"
+msgstr ""
 
 msgid "Unknown"
 msgstr "Nieznany"
