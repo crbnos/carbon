@@ -121,6 +121,11 @@ export const schema = define({
     description: "true for an ITAR / controlled deployment",
     browser: true
   },
+  FEDERATION_ALLOW_PRIVATE_ISSUERS: {
+    group: "core",
+    description:
+      "true to let identity federation trust an OIDC issuer on a private network (self-hosted)"
+  },
   TENANT_TYPE: {
     group: "core",
     type: z.enum(["single", "multi"]),

@@ -123,6 +123,13 @@ const itarEnvironment = getEnv("CONTROLLED_ENVIRONMENT");
 
 export const CONTROLLED_ENVIRONMENT = parseBoolean(itarEnvironment, false);
 
+// Identity federation refuses an issuer on a private network unless a
+// self-hosted install opts in (an internal GitLab, Keycloak or Kubernetes).
+export const FEDERATION_ALLOW_PRIVATE_ISSUERS = parseBoolean(
+  getEnv("FEDERATION_ALLOW_PRIVATE_ISSUERS"),
+  false
+);
+
 export const MAINTENANCE_MODE = parseBoolean(getEnv("MAINTENANCE_MODE"), false);
 
 // "single": one customer owns this deployment and everything in it (BYOC, a
