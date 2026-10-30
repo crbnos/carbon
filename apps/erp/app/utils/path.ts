@@ -174,6 +174,14 @@ export const path = {
         `${generatePath(`${api}/integrations/${id}/sync-activity.csv`)}${
           status ? `?${new URLSearchParams({ status })}` : ""
         }`,
+      inventoryCountGroup: (
+        inventoryCountId: string,
+        itemId: string,
+        storageUnitId: string | null
+      ) =>
+        `${generatePath(`${api}/inventory-count/${inventoryCountId}/group`)}?${new URLSearchParams(
+          { itemId, storageUnitId: storageUnitId ?? "" }
+        )}`,
       issueTypes: `${api}/quality/issue-types`,
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemConfigurable: `${api}/items/configurable`,

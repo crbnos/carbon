@@ -4325,9 +4325,6 @@ msgstr "基本信息"
 msgid "Batch"
 msgstr "批次"
 
-msgid "Batch / Serial"
-msgstr "批次 / 序列号"
-
 msgid "Batch Capacity"
 msgstr "生产批次容量"
 
@@ -6620,11 +6617,11 @@ msgstr "盘点ID"
 msgid "Count items"
 msgstr "计数物料"
 
+msgid "Counted"
+msgstr ""
+
 msgid "Counted {total}."
 msgstr "已计数 {total} 个。"
-
-msgid "Counted Qty"
-msgstr "已计数数量"
 
 msgid "Counterparties"
 msgstr "交易对手"
@@ -10054,6 +10051,9 @@ msgstr "展开子树"
 msgid "Expansion"
 msgstr "扩展"
 
+msgid "Expected"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "预期的制造零件未来需求，在任何销售订单存在之前逐周输入；计划根据供应进行净额计算并爆炸方法以提前订购组件。"
 
@@ -10987,6 +10987,10 @@ msgstr "格式"
 
 msgid "Forward deployed engineer"
 msgstr "驻场工程师"
+
+#. placeholder {0}: group.foundCount
+msgid "Found {0}"
+msgstr ""
 
 msgid "Foundation"
 msgstr "基础"
@@ -14410,6 +14414,10 @@ msgstr "不匹配"
 msgid "Missing"
 msgstr "缺失"
 
+#. placeholder {0}: group.missingCount
+msgid "Missing {0}"
+msgstr ""
+
 msgid "Missing Information"
 msgstr "缺少信息"
 
@@ -15887,6 +15895,9 @@ msgstr "无日程行。"
 msgid "No scheduled work in this window"
 msgstr "此时间窗内无排程工作"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "尚未选择序列号。"
 
@@ -15967,6 +15978,12 @@ msgstr "未分配培训"
 
 msgid "No transactions in this period"
 msgstr "此期间无交易"
+
+msgid "No units counted yet"
+msgstr ""
+
+msgid "No units in this storage unit"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "还没有单位。在启用协议前，从单位列表中添加一个车队单位。"
@@ -16100,6 +16117,10 @@ msgstr "未配置"
 
 msgid "Not Configured"
 msgstr "未配置"
+
+#. placeholder {0}: group.notCountedCount
+msgid "Not counted {0}"
+msgstr ""
 
 msgid "Not delivered"
 msgstr "未交付"
@@ -23422,9 +23443,6 @@ msgstr "系统"
 msgid "System configured"
 msgstr "系统已配置"
 
-msgid "System Qty"
-msgstr "系统数量"
-
 msgid "Table"
 msgstr "表"
 
@@ -26169,6 +26187,10 @@ msgstr "仍待支付的未折现支付额，按会计年度列示，扣除剩余
 
 msgid "Undo"
 msgstr "撤销"
+
+#. placeholder {0}: group.unexpectedCount
+msgid "Unexpected {0}"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "展开链接"

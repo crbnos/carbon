@@ -93,7 +93,10 @@ WITH g AS (
     COUNT(*) FILTER (WHERE icl."countedQuantity" IS NULL) AS "notCountedCount",
     COUNT(*) FILTER (WHERE icl."trackedEntityId" IS NOT NULL AND te."readableId" IS NULL) AS "unnumberedCount",
     -- every unit number in the group, so a search for a serial finds its group
-    string_agg(COALESCE(icl."assignedReadableId", icl."readableId"), ' ') AS "unitNumbers"
+    string_agg(COALESCE(icl."assignedReadableId", icl."readableId"), ' ') AS "unitNumbers",
+    -- the line of a group that has only one (an untracked item), so its count
+    -- can be typed on the group row
+    CASE WHEN COUNT(*) = 1 THEN MIN(icl."id") END AS "lineId"
   FROM "inventoryCountLine" icl
     LEFT JOIN "trackedEntity" te
       ON te."id" = icl."trackedEntityId" AND te."companyId" = icl."companyId"

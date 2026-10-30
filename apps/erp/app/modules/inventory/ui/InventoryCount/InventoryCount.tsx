@@ -29,15 +29,15 @@ import {
   RecordHero,
   RecordPhoneChrome
 } from "~/components/Layout/RecordHeader";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import type {
-  InventoryCountLine,
+  InventoryCountGroup,
   InventoryCount as InventoryCountType,
   StockMovement
 } from "~/modules/inventory/types";
 import {
   InventoryCountConfirmModal,
-  InventoryCountLines,
+  InventoryCountGroups,
   InventoryCountStatus
 } from "~/modules/inventory/ui";
 import type { action as postAction } from "~/routes/x+/inventory-count+/$id.post";
@@ -47,9 +47,9 @@ import InventoryCountHistory from "./InventoryCountHistory";
 
 type InventoryCountDetailsProps = {
   inventoryCount: InventoryCountType;
-  lines: InventoryCountLine[];
+  groups: InventoryCountGroup[];
   count: number;
-  // The loader's cursor for the next page of lines (infinite scroll).
+  // The loader's cursor for the next page of groups (infinite scroll).
   nextCursor: string | null;
   summary: { uncounted: number; variances: number };
   // Ledger adjustments this count has posted (empty for a never-posted Draft).
@@ -64,7 +64,7 @@ type InventoryCountDetailsProps = {
 
 const InventoryCountDetails = ({
   inventoryCount,
-  lines,
+  groups,
   count,
   nextCursor,
   summary,
@@ -97,6 +97,11 @@ const InventoryCountDetails = ({
   const posted = postFetcher.data;
   const invalidLineIds =
     posted && "invalidLineIds" in posted ? posted.invalidLineIds : undefined;
+  const invalidGroupIds =
+    posted && "invalidGroupIds" in posted ? posted.invalidGroupIds : undefined;
+  // A search opens the groups it matches, so a serial number shows in place.
+  const [params] = useUrlParams();
+  const search = params.get("search");
 
   const status = inventoryCount.status;
   // Counted quantities are entered while Draft; every later state is read-only.
@@ -193,8 +198,9 @@ const InventoryCountDetails = ({
       <RecordHero status={statusBadge} />
       <RecordPhoneChrome />
       <div className="flex-1 min-h-0 w-full">
-        <InventoryCountLines
-          lines={lines}
+        <InventoryCountGroups
+          inventoryCountId={inventoryCount.id!}
+          groups={groups}
           count={count}
           nextCursor={nextCursor}
           hideSystemQuantity={hideSystemQuantity}
@@ -204,6 +210,8 @@ const InventoryCountDetails = ({
           titleBadge={statusBadge}
           primaryAction={actions}
           invalidLineIds={invalidLineIds}
+          invalidGroupIds={invalidGroupIds}
+          expandGroupsFor={search || null}
           forms={forms}
           substances={substances}
           tags={tags}

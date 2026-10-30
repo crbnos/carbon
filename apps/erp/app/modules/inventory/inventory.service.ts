@@ -230,6 +230,7 @@ import {
 } from "./inventory.models";
 import {
   clampDepth,
+  inventoryCountGroupId,
   receivingSearchTerms,
   writeOffRestoreQuantity
 } from "./inventory.utils";
@@ -5362,14 +5363,31 @@ export function postingFailure(
  * A count that cannot post names the lines to fix, so the page can mark them;
  * the count stays Pending. Any other failure is an error.
  */
-export function inventoryCountPostingFailure(
+export async function inventoryCountPostingFailure(
   ctx: ServiceContext,
   error: ServerFnError
-): { invalidLineIds: string[]; message: string } | CarbonError {
+): Promise<
+  | { invalidLineIds: string[]; invalidGroupIds: string[]; message: string }
+  | CarbonError
+> {
   const message = getErrorMessage(error, "Failed to post inventory count");
   const invalidLineIds = error.body.invalidLineIds;
   if (Array.isArray(invalidLineIds)) {
-    return { invalidLineIds: invalidLineIds as string[], message };
+    // The count sheet shows groups, so name the groups that hold the lines.
+    const lines =
+      invalidLineIds.length > 0
+        ? await ctx.asSystem.pg
+            .selectFrom("inventoryCountLine")
+            .select(["inventoryCountId", "itemId", "storageUnitId"])
+            .where("id", "in", invalidLineIds as string[])
+            .where("companyId", "=", ctx.company.id)
+            .execute()
+        : [];
+    return {
+      invalidLineIds: invalidLineIds as string[],
+      invalidGroupIds: [...new Set(lines.map(inventoryCountGroupId))],
+      message
+    };
   }
   return serverFnFailure(ctx, error, message);
 }

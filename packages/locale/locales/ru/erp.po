@@ -4325,9 +4325,6 @@ msgstr "Основная информация"
 msgid "Batch"
 msgstr "Партия"
 
-msgid "Batch / Serial"
-msgstr "Партия / Серийный номер"
-
 msgid "Batch Capacity"
 msgstr "Вместимость серии"
 
@@ -6620,11 +6617,11 @@ msgstr "ID подсчета"
 msgid "Count items"
 msgstr "Подсчет элементов"
 
+msgid "Counted"
+msgstr ""
+
 msgid "Counted {total}."
 msgstr "Подсчитано: {total}."
-
-msgid "Counted Qty"
-msgstr "Подсчитанное кол-во"
 
 msgid "Counterparties"
 msgstr "Контрагенты"
@@ -10054,6 +10051,9 @@ msgstr "Развернуть поддерево"
 msgid "Expansion"
 msgstr "Расширение"
 
+msgid "Expected"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "Ожидаемая будущая потребность для производимой номенклатуры, вводимая еженедельно до создания заказа покупателя; планирование согласует её с обеспечением и разворачивает метод для заказа компонентов заранее."
 
@@ -10987,6 +10987,10 @@ msgstr "Формат"
 
 msgid "Forward deployed engineer"
 msgstr "Инженер на месте"
+
+#. placeholder {0}: group.foundCount
+msgid "Found {0}"
+msgstr ""
 
 msgid "Foundation"
 msgstr "Основа"
@@ -14410,6 +14414,10 @@ msgstr "Несовпадение"
 msgid "Missing"
 msgstr "Отсутствует"
 
+#. placeholder {0}: group.missingCount
+msgid "Missing {0}"
+msgstr ""
+
 msgid "Missing Information"
 msgstr "Отсутствует информация"
 
@@ -15887,6 +15895,9 @@ msgstr "Нет строк графика."
 msgid "No scheduled work in this window"
 msgstr "Нет запланированной работы в этом окне"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "Серийные номера ещё не выбраны."
 
@@ -15967,6 +15978,12 @@ msgstr "Обучение не назначено"
 
 msgid "No transactions in this period"
 msgstr "Нет транзакций в этом периоде"
+
+msgid "No units counted yet"
+msgstr ""
+
+msgid "No units in this storage unit"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Нет единиц. Добавьте единицу парка из списка Единицы перед активацией соглашения."
@@ -16100,6 +16117,10 @@ msgstr "Не настроено"
 
 msgid "Not Configured"
 msgstr "Не настроено"
+
+#. placeholder {0}: group.notCountedCount
+msgid "Not counted {0}"
+msgstr ""
 
 msgid "Not delivered"
 msgstr "Не доставлено"
@@ -23422,9 +23443,6 @@ msgstr "Система"
 msgid "System configured"
 msgstr "Система настроена"
 
-msgid "System Qty"
-msgstr "Системное кол-во"
-
 msgid "Table"
 msgstr "Таблица"
 
@@ -26169,6 +26187,10 @@ msgstr "Недисконтированные платежи, которые ещ
 
 msgid "Undo"
 msgstr "Отменить"
+
+#. placeholder {0}: group.unexpectedCount
+msgid "Unexpected {0}"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "Развернуть ссылки"

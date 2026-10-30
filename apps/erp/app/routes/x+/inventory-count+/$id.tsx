@@ -13,12 +13,12 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   getInventoryCount,
+  getInventoryCountGroups,
   getInventoryCountLineSummary,
-  getInventoryCountLines,
   getInventoryCountMovements,
   getStorageTypesList,
   getStorageUnitsListForLocation,
-  INVENTORY_COUNT_LINES_PAGING
+  INVENTORY_COUNT_GROUPS_PAGING
 } from "~/modules/inventory/inventory.service";
 import { InventoryCountDetails } from "~/modules/inventory/ui";
 import {
@@ -82,7 +82,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const isBlindEntry =
     inventoryCount.data.isBlind && inventoryCount.data.status !== "Posted";
   const isWithheld = (column: string) =>
-    ["systemQuantity", "variance"].includes(column);
+    [
+      "expectedQuantity",
+      "variance",
+      "missingCount",
+      "notCountedCount"
+    ].includes(column);
   const allowedFilters = isBlindEntry
     ? filters?.filter((f) => !isWithheld(f.column))
     : filters;
@@ -91,7 +96,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     : sorts;
 
   const [
-    lines,
+    groups,
     summary,
     movements,
     forms,
@@ -100,7 +105,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     storageTypes,
     storageUnits
   ] = await Promise.all([
-    getInventoryCountLines(client, id, companyId, {
+    getInventoryCountGroups(client, id, companyId, {
       search,
       limit,
       cursor,
@@ -125,36 +130,41 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null
   ]);
 
-  if (lines.error && cursor) {
-    logger.error("Failed to load a later page of inventory count lines", {
+  if (groups.error && cursor) {
+    logger.error("Failed to load a later page of inventory count groups", {
       companyId,
-      error: lines.error
+      error: groups.error
     });
-    return listErrorPage("lines");
+    return listErrorPage("groups");
   }
 
   const page = toPage(
-    lines.data ?? [],
+    groups.data ?? [],
     { limit, sorts: allowedSorts },
-    INVENTORY_COUNT_LINES_PAGING
+    INVENTORY_COUNT_GROUPS_PAGING
   );
 
   // Hiding the columns client-side isn't enough — the values would ship in the
   // loader payload and CSV export. Strip them server-side through Draft AND
   // Pending; they are revealed only once Posted.
-  const lineData = page.rows.map((line) =>
+  const groupData = page.rows.map((group) =>
     isBlindEntry
-      ? // Withhold System Qty (and the variance it can be derived from). Use null,
-        // not 0, so it reads as "not available" (blank / "—" in the UI and CSV)
-        // rather than a misleading real value.
-        { ...line, systemQuantity: null as unknown as number, variance: null }
-      : line
+      ? // Withhold what the system expects (and what can be derived from it).
+        // Use null, not 0, so it reads as "not available" rather than a value.
+        {
+          ...group,
+          expectedQuantity: null,
+          variance: null,
+          missingCount: null,
+          notCountedCount: null
+        }
+      : group
   );
 
   return {
     inventoryCount: inventoryCount.data,
-    lines: lineData,
-    count: lines.count ?? 0,
+    groups: groupData,
+    count: groups.count ?? 0,
     nextCursor: page.nextCursor,
     summary: summary ?? { uncounted: 0, variances: 0 },
     movements: movements?.data ?? [],
@@ -169,7 +179,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function InventoryCountDetailRoute() {
   const {
     inventoryCount,
-    lines,
+    groups,
     count,
     nextCursor,
     summary,
@@ -186,7 +196,7 @@ export default function InventoryCountDetailRoute() {
       <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] w-full overflow-hidden">
         <InventoryCountDetails
           inventoryCount={inventoryCount}
-          lines={lines}
+          groups={groups}
           count={count}
           nextCursor={nextCursor}
           summary={summary}

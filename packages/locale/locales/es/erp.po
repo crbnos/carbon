@@ -4325,9 +4325,6 @@ msgstr "Información Básica"
 msgid "Batch"
 msgstr "Lote"
 
-msgid "Batch / Serial"
-msgstr "Lote / Serie"
-
 msgid "Batch Capacity"
 msgstr "Capacidad del Lote"
 
@@ -6620,11 +6617,11 @@ msgstr "ID de Conteo"
 msgid "Count items"
 msgstr "Contar artículos"
 
+msgid "Counted"
+msgstr ""
+
 msgid "Counted {total}."
 msgstr "Se contaron {total}."
-
-msgid "Counted Qty"
-msgstr "Cantidad Contada"
 
 msgid "Counterparties"
 msgstr "Contrapartes"
@@ -10054,6 +10051,9 @@ msgstr "Expandir subárbol"
 msgid "Expansion"
 msgstr "Expansión"
 
+msgid "Expected"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "Demanda futura esperada para una pieza de fabricación ingresada semana tras semana antes de que exista cualquier pedido de venta; la planificación la neta contra el suministro y explota el método para ordenar componentes anticipadamente."
 
@@ -10987,6 +10987,10 @@ msgstr "Formato"
 
 msgid "Forward deployed engineer"
 msgstr "Ingeniero desplegado en sitio"
+
+#. placeholder {0}: group.foundCount
+msgid "Found {0}"
+msgstr ""
 
 msgid "Foundation"
 msgstr "Fundación"
@@ -14410,6 +14414,10 @@ msgstr "No Coincide"
 msgid "Missing"
 msgstr "Faltante"
 
+#. placeholder {0}: group.missingCount
+msgid "Missing {0}"
+msgstr ""
+
 msgid "Missing Information"
 msgstr "Información Faltante"
 
@@ -15887,6 +15895,9 @@ msgstr "Sin líneas de cronograma."
 msgid "No scheduled work in this window"
 msgstr "Sin trabajo programado en esta ventana"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "Aún no hay números de serie seleccionados."
 
@@ -15967,6 +15978,12 @@ msgstr "Sin Capacitaciones asignadas"
 
 msgid "No transactions in this period"
 msgstr "No hay transacciones en este período"
+
+msgid "No units counted yet"
+msgstr ""
+
+msgid "No units in this storage unit"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Sin unidades aún. Agrega una unidad de flota de la lista de Unidades antes de activar el acuerdo."
@@ -16100,6 +16117,10 @@ msgstr "No configurado"
 
 msgid "Not Configured"
 msgstr "No configurado"
+
+#. placeholder {0}: group.notCountedCount
+msgid "Not counted {0}"
+msgstr ""
 
 msgid "Not delivered"
 msgstr "No entregado"
@@ -23422,9 +23443,6 @@ msgstr "Sistema"
 msgid "System configured"
 msgstr "Sistema configurado"
 
-msgid "System Qty"
-msgstr "Cantidad del Sistema"
-
 msgid "Table"
 msgstr "Tabla"
 
@@ -26169,6 +26187,10 @@ msgstr "Pagos sin descuento aún por venir, por ejercicio fiscal, menos el inter
 
 msgid "Undo"
 msgstr "Deshacer"
+
+#. placeholder {0}: group.unexpectedCount
+msgid "Unexpected {0}"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "Desplegar enlaces"

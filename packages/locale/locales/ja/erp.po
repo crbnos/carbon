@@ -4325,9 +4325,6 @@ msgstr "基本情報"
 msgid "Batch"
 msgstr "バッチ"
 
-msgid "Batch / Serial"
-msgstr "バッチ / シリアル"
-
 msgid "Batch Capacity"
 msgstr "バッチ容量"
 
@@ -6620,11 +6617,11 @@ msgstr "カウントID"
 msgid "Count items"
 msgstr "品目をカウント"
 
+msgid "Counted"
+msgstr ""
+
 msgid "Counted {total}."
 msgstr "{total} 件をカウントしました。"
-
-msgid "Counted Qty"
-msgstr "計数数量"
 
 msgid "Counterparties"
 msgstr "取引先"
@@ -10054,6 +10051,9 @@ msgstr "サブツリーを展開"
 msgid "Expansion"
 msgstr "拡張"
 
+msgid "Expected"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "販売受注が存在する前に週単位で入力される内製品目の所要量見通し。計画はこれを供給に対して相殺し、先行して部品を発注するために製法を展開します。"
 
@@ -10987,6 +10987,10 @@ msgstr "フォーマット"
 
 msgid "Forward deployed engineer"
 msgstr "現地配置エンジニア"
+
+#. placeholder {0}: group.foundCount
+msgid "Found {0}"
+msgstr ""
 
 msgid "Foundation"
 msgstr "基礎"
@@ -14410,6 +14414,10 @@ msgstr "不一致"
 msgid "Missing"
 msgstr "見つかりません"
 
+#. placeholder {0}: group.missingCount
+msgid "Missing {0}"
+msgstr ""
+
 msgid "Missing Information"
 msgstr "不足している情報"
 
@@ -15887,6 +15895,9 @@ msgstr "スケジュール明細がありません。"
 msgid "No scheduled work in this window"
 msgstr "このウィンドウにはスケジュール済みの作業がありません"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "シリアル番号がまだ選択されていません。"
 
@@ -15967,6 +15978,12 @@ msgstr "割り当てられた教育訓練がありません"
 
 msgid "No transactions in this period"
 msgstr "この期間に取引がありません"
+
+msgid "No units counted yet"
+msgstr ""
+
+msgid "No units in this storage unit"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "個がまだありません。契約を有効化する前に、ユニットリストからフリートユニットを追加してください。"
@@ -16100,6 +16117,10 @@ msgstr "未設定"
 
 msgid "Not Configured"
 msgstr "未設定"
+
+#. placeholder {0}: group.notCountedCount
+msgid "Not counted {0}"
+msgstr ""
 
 msgid "Not delivered"
 msgstr "未配送"
@@ -23422,9 +23443,6 @@ msgstr "システム"
 msgid "System configured"
 msgstr "システムが構成されました"
 
-msgid "System Qty"
-msgstr "システム数量"
-
 msgid "Table"
 msgstr "テーブル"
 
@@ -26169,6 +26187,10 @@ msgstr "今後の割引前支払額（会計年度ごと）から、残りの月
 
 msgid "Undo"
 msgstr "元に戻す"
+
+#. placeholder {0}: group.unexpectedCount
+msgid "Unexpected {0}"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "リンクを展開"

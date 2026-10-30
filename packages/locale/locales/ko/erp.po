@@ -4325,9 +4325,6 @@ msgstr "기본 정보"
 msgid "Batch"
 msgstr "배치"
 
-msgid "Batch / Serial"
-msgstr "배치/일련번호"
-
 msgid "Batch Capacity"
 msgstr "배치 용량"
 
@@ -6620,11 +6617,11 @@ msgstr "실사 ID"
 msgid "Count items"
 msgstr "품목 수 계산"
 
+msgid "Counted"
+msgstr ""
+
 msgid "Counted {total}."
 msgstr "{total}개를 셌습니다."
-
-msgid "Counted Qty"
-msgstr "실사 수량"
 
 msgid "Counterparties"
 msgstr "거래처"
@@ -10054,6 +10051,9 @@ msgstr "하위 트리 펼치기"
 msgid "Expansion"
 msgstr "확대"
 
+msgid "Expected"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "수주가 존재하기 전에 주별로 입력되는 사내 생산 부품의 예상 향후 소요량; 계획이 이를 공급과 상계하고 방법을 전개하여 구성 요소를 미리 주문합니다."
 
@@ -10987,6 +10987,10 @@ msgstr "형식"
 
 msgid "Forward deployed engineer"
 msgstr "현장 배치 엔지니어"
+
+#. placeholder {0}: group.foundCount
+msgid "Found {0}"
+msgstr ""
 
 msgid "Foundation"
 msgstr "파운데이션"
@@ -14410,6 +14414,10 @@ msgstr "불일치"
 msgid "Missing"
 msgstr "누락"
 
+#. placeholder {0}: group.missingCount
+msgid "Missing {0}"
+msgstr ""
+
 msgid "Missing Information"
 msgstr "누락된 정보"
 
@@ -15887,6 +15895,9 @@ msgstr "일정 라인이 없습니다."
 msgid "No scheduled work in this window"
 msgstr "이 시간대에 스케줄된 작업이 없습니다"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "아직 선택된 시리얼 번호가 없습니다."
 
@@ -15967,6 +15978,12 @@ msgstr "할당된 교육 없음"
 
 msgid "No transactions in this period"
 msgstr "이 기간에 거래가 없습니다"
+
+msgid "No units counted yet"
+msgstr ""
+
+msgid "No units in this storage unit"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "아직 개가 없습니다. 계약을 활성화하기 전에 개 목록에서 차량 개를 추가하세요."
@@ -16100,6 +16117,10 @@ msgstr "구성되지 않음"
 
 msgid "Not Configured"
 msgstr "미설정"
+
+#. placeholder {0}: group.notCountedCount
+msgid "Not counted {0}"
+msgstr ""
 
 msgid "Not delivered"
 msgstr "배송되지 않음"
@@ -23422,9 +23443,6 @@ msgstr "시스템"
 msgid "System configured"
 msgstr "시스템이 설정되었습니다"
 
-msgid "System Qty"
-msgstr "시스템 수량"
-
 msgid "Table"
 msgstr "테이블"
 
@@ -26169,6 +26187,10 @@ msgstr "남은 개월이 부과할 이자를 제외한, 아직 올 할인되지 
 
 msgid "Undo"
 msgstr "실행 취소"
+
+#. placeholder {0}: group.unexpectedCount
+msgid "Unexpected {0}"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "링크 펼치기"

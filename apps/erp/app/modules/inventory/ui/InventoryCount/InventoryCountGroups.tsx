@@ -34,21 +34,23 @@ import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
 import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
-import type { InventoryCountLine } from "~/modules/inventory/types";
+import type { InventoryCountGroup } from "~/modules/inventory/types";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
+import InventoryCountGroupUnits from "./InventoryCountGroupUnits";
 
 // Quick-filter toggles write full `filter` URL params (column:operator:value)
 // so the loader's generic query filters apply them server-side — required
 // because pagination is server-side. `useFilters().addFilter` can't express
 // these operators (it hardcodes eq/contains), so the raw strings are toggled.
-const IN_STOCK_FILTER = "systemQuantity:gt:0";
+const IN_STOCK_FILTER = "expectedQuantity:gt:0";
 const VARIANCE_FILTER = "variance:neq:0";
 
-type InventoryCountLinesProps = {
-  lines: InventoryCountLine[];
+type InventoryCountGroupsProps = {
+  inventoryCountId: string;
+  groups: InventoryCountGroup[];
   count: number;
-  // The loader's cursor for the next page of lines (infinite scroll).
+  // The loader's cursor for the next page of groups (infinite scroll).
   nextCursor: string | null;
   // Blind counting withholds System Qty + Variance until Posted; the caller
   // decides when — kept separate from the read-only (Draft) edit gate.
@@ -59,8 +61,11 @@ type InventoryCountLinesProps = {
   titleBadge?: ReactNode;
   primaryAction?: ReactNode;
   // Line ids the last post attempt rejected (snapshot drift or invalid serial
-  // quantity) — highlighted red until fixed.
+  // quantity) — highlighted red until fixed, with the groups that hold them.
   invalidLineIds?: string[];
+  invalidGroupIds?: string[];
+  // A group to open: the search, or the group of the last scan.
+  expandGroupsFor?: string | null;
   // Option lists for the column filters (same set the quantities screen uses).
   forms: ListItem[];
   substances: ListItem[];
@@ -69,8 +74,12 @@ type InventoryCountLinesProps = {
   storageUnits: { id: string; name: string }[];
 };
 
-const InventoryCountLines = ({
-  lines,
+const isTrackedGroup = (group: InventoryCountGroup) =>
+  group.itemTrackingType === "Serial" || group.itemTrackingType === "Batch";
+
+const InventoryCountGroups = ({
+  inventoryCountId,
+  groups,
   count,
   nextCursor,
   hideSystemQuantity,
@@ -80,17 +89,19 @@ const InventoryCountLines = ({
   titleBadge,
   primaryAction,
   invalidLineIds,
+  invalidGroupIds,
+  expandGroupsFor,
   forms,
   substances,
   tags,
   storageTypes,
   storageUnits
-}: InventoryCountLinesProps) => {
+}: InventoryCountGroupsProps) => {
   const { t } = useLingui();
 
-  const invalidLineIdSet = useMemo(
-    () => new Set(invalidLineIds ?? []),
-    [invalidLineIds]
+  const invalidGroupIdSet = useMemo(
+    () => new Set(invalidGroupIds ?? []),
+    [invalidGroupIds]
   );
 
   // Build the inventory query filter: scope to this count's location and search
@@ -161,10 +172,10 @@ const InventoryCountLines = ({
     async (
       _accessorKey: string,
       value: unknown,
-      row: InventoryCountLine
+      row: InventoryCountGroup
     ): Promise<PostgrestSingleResponse<unknown>> => {
       const formData = new FormData();
-      formData.set("id", row.id!);
+      formData.set("id", row.lineId!);
       formData.set(
         "countedQuantity",
         value === "" || value == null ? "" : String(value)
@@ -185,8 +196,8 @@ const InventoryCountLines = ({
     [t]
   );
 
-  const columns = useMemo<ColumnDef<InventoryCountLine>[]>(() => {
-    const cols: ColumnDef<InventoryCountLine>[] = [
+  const columns = useMemo<ColumnDef<InventoryCountGroup>[]>(() => {
+    const cols: ColumnDef<InventoryCountGroup>[] = [
       {
         id: "item",
         header: t`Item`,
@@ -231,16 +242,50 @@ const InventoryCountLines = ({
             row.itemReadableIdWithRevision ?? row.itemId ?? null
         }
       },
-      exportOnlyColumn<InventoryCountLine>({
+      exportOnlyColumn<InventoryCountGroup>({
         id: "itemName",
         header: t`Item Name`,
         value: (row) => row.itemName ?? null
       }),
       {
-        accessorKey: "readableId",
-        header: t`Batch / Serial`,
-        cell: (item) => item.getValue<string>() ?? "—",
-        meta: { icon: <LuHash /> }
+        id: "units",
+        header: t`Units`,
+        cell: ({ row }) => {
+          const group = row.original;
+          if (!group.itemTrackingType || group.itemTrackingType === "Inventory")
+            return "—";
+          return (
+            <HStack spacing={1} className="whitespace-nowrap text-xs">
+              {Number(group.foundCount) > 0 && (
+                <Badge variant="green">{t`Found ${group.foundCount}`}</Badge>
+              )}
+              {!hideSystem && Number(group.missingCount) > 0 && (
+                <Badge variant="red">{t`Missing ${group.missingCount}`}</Badge>
+              )}
+              {Number(group.unexpectedCount) > 0 && (
+                <Badge variant="blue">
+                  {t`Unexpected ${group.unexpectedCount}`}
+                </Badge>
+              )}
+              {!hideSystem && Number(group.notCountedCount) > 0 && (
+                <Badge variant="gray">
+                  {t`Not counted ${group.notCountedCount}`}
+                </Badge>
+              )}
+            </HStack>
+          );
+        },
+        meta: {
+          icon: <LuHash />,
+          exportValue: (group) =>
+            [
+              `Found ${group.foundCount ?? 0}`,
+              hideSystem ? null : `Missing ${group.missingCount ?? 0}`,
+              `Unexpected ${group.unexpectedCount ?? 0}`
+            ]
+              .filter(Boolean)
+              .join(", ")
+        }
       },
       {
         accessorKey: "type",
@@ -447,8 +492,8 @@ const InventoryCountLines = ({
 
     if (!hideSystem) {
       cols.push({
-        accessorKey: "systemQuantity",
-        header: t`System Qty`,
+        accessorKey: "expectedQuantity",
+        header: t`Expected`,
         cell: (item) => (
           <span className="tabular-nums">{Number(item.getValue() ?? 0)}</span>
         ),
@@ -458,7 +503,7 @@ const InventoryCountLines = ({
 
     cols.push({
       accessorKey: "countedQuantity",
-      header: t`Counted Qty`,
+      header: t`Counted`,
       cell: (item) => {
         const value = item.getValue<number | null>();
         // Marked so the keyboard "Start counting" entry can locate the first
@@ -479,8 +524,7 @@ const InventoryCountLines = ({
         cell: ({ row }) => {
           const counted = row.original.countedQuantity;
           if (counted === null || counted === undefined) return "—";
-          const variance =
-            Number(counted) - Number(row.original.systemQuantity);
+          const variance = Number(row.original.variance ?? 0);
           if (variance === 0) return <span className="tabular-nums">0</span>;
           return (
             <Badge variant={variance < 0 ? "destructive" : "green"}>
@@ -522,6 +566,19 @@ const InventoryCountLines = ({
     tags: false
   };
 
+  const renderExpandedRow = useCallback(
+    (group: InventoryCountGroup) => (
+      <InventoryCountGroupUnits
+        inventoryCountId={inventoryCountId}
+        group={group}
+        hideSystemQuantity={hideSystem}
+        isReadOnly={isReadOnly}
+        invalidLineIds={invalidLineIds}
+      />
+    ),
+    [inventoryCountId, hideSystem, isReadOnly, invalidLineIds]
+  );
+
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Last-resolved Counted Qty column index, cached as a fallback. It's resolved
@@ -560,10 +617,10 @@ const InventoryCountLines = ({
   // is immediately keyboard-driveable without hunting for an entry point.
   const hasAutoFocusedRef = useRef(false);
   useEffect(() => {
-    if (isReadOnly || hasAutoFocusedRef.current || lines.length === 0) return;
+    if (isReadOnly || hasAutoFocusedRef.current || groups.length === 0) return;
     hasAutoFocusedRef.current = true;
     enterGrid();
-  }, [isReadOnly, lines.length, enterGrid]);
+  }, [isReadOnly, groups.length, enterGrid]);
 
   // Spreadsheet-style entry: Enter/Tab commit the current count and move to the
   // NEXT line's Counted Qty cell; Shift+Tab moves to the PREVIOUS line. A keypress
@@ -643,13 +700,13 @@ const InventoryCountLines = ({
 
   const editableComponents = useMemo(
     () => ({
-      countedQuantity: EditableNumber<InventoryCountLine>(
+      countedQuantity: EditableNumber<InventoryCountGroup>(
         onCellEdit,
-        // Serial-tracked lines are a single unique unit — cap the counted
-        // quantity at 1 (per row, since tracking type varies by line).
+        // Only a group with one line (an untracked item) takes its count on the
+        // group row; a tracked group is counted unit by unit when expanded.
         (row) => ({
           minValue: 0,
-          maxValue: row.itemTrackingType === "Serial" ? 1 : undefined
+          isReadOnly: !row.lineId
         }),
         { clearable: true }
       )
@@ -666,7 +723,7 @@ const InventoryCountLines = ({
       {/* Keyboard skip-link into the grid: revealed on focus, activates the
           first Counted Qty cell so counters can enter and drive the grid
           without a mouse. */}
-      {!isReadOnly && lines.length > 0 && (
+      {!isReadOnly && groups.length > 0 && (
         <button
           type="button"
           onClick={enterGrid}
@@ -675,24 +732,27 @@ const InventoryCountLines = ({
           {t`Start counting`}
         </button>
       )}
-      <Table<InventoryCountLine>
+      <Table<InventoryCountGroup>
         compact
         mobileLayout="table"
         columns={columns}
-        data={lines}
-        // One count's lines: no list registry entry, so no `listKey`.
-        infinite={{ dataKey: "lines", nextCursor }}
+        data={groups}
+        renderExpandedRow={renderExpandedRow}
+        canExpandRow={isTrackedGroup}
+        expandRowsFor={expandGroupsFor ?? null}
+        // One count's groups: no list registry entry, so no `listKey`.
+        infinite={{ dataKey: "groups", nextCursor }}
         count={count}
         defaultColumnVisibility={defaultColumnVisibility}
         editableComponents={editableComponents}
         getRowClassName={(row) =>
-          invalidLineIdSet.has(row.id ?? "")
+          invalidGroupIdSet.has(row.id ?? "")
             ? "bg-destructive/30 hover:bg-destructive/40"
             : undefined
         }
         primaryAction={primaryAction}
         headerActions={quickFilters}
-        title={title ?? t`Lines`}
+        title={title ?? t`Items`}
         titleBadge={titleBadge}
         withInlineEditing={!isReadOnly}
         // Draft counts are inherently editable — no Edit/Lock toggle, always on.
@@ -702,4 +762,4 @@ const InventoryCountLines = ({
   );
 };
 
-export default InventoryCountLines;
+export default InventoryCountGroups;

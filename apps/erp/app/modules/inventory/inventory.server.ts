@@ -2988,7 +2988,7 @@ export const postInventoryCount = defineServiceFn({
       service.postInventoryCount
     );
     if (posted.error) {
-      return service.inventoryCountPostingFailure(ctx, posted.error);
+      return await service.inventoryCountPostingFailure(ctx, posted.error);
     }
     return { inventoryCountId };
   }

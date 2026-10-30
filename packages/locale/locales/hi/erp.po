@@ -4325,9 +4325,6 @@ msgstr "बुनियादी जानकारी"
 msgid "Batch"
 msgstr "बैच"
 
-msgid "Batch / Serial"
-msgstr "बैच / सीरीज़"
-
 msgid "Batch Capacity"
 msgstr "बैच क्षमता"
 
@@ -6620,11 +6617,11 @@ msgstr "गणना आईडी"
 msgid "Count items"
 msgstr "आइटम गिनें"
 
+msgid "Counted"
+msgstr ""
+
 msgid "Counted {total}."
 msgstr "{total} गिने गए।"
-
-msgid "Counted Qty"
-msgstr "गिनी गई मात्रा"
 
 msgid "Counterparties"
 msgstr "प्रतिपक्ष"
@@ -10054,6 +10051,9 @@ msgstr "सबट्री को विस्तृत करें"
 msgid "Expansion"
 msgstr "विस्तार"
 
+msgid "Expected"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "एक निर्माण पार्ट के लिए अपेक्षित भविष्य मांग को किसी भी विक्रय आदेश के मौजूद होने से पहले सप्ताह दर सप्ताह दर्ज किया जाता है; योजना इसे आपूर्ति के विरुद्ध नेट करती है और घटकों को आगे के लिए आदेश देने के लिए विधि को विस्तृत करती है।"
 
@@ -10987,6 +10987,10 @@ msgstr "प्रारूप"
 
 msgid "Forward deployed engineer"
 msgstr "अग्रपंक्ति में तैनात इंजीनियर"
+
+#. placeholder {0}: group.foundCount
+msgid "Found {0}"
+msgstr ""
 
 msgid "Foundation"
 msgstr "आधार"
@@ -14410,6 +14414,10 @@ msgstr "बेमेल"
 msgid "Missing"
 msgstr "नहीं मिला"
 
+#. placeholder {0}: group.missingCount
+msgid "Missing {0}"
+msgstr ""
+
 msgid "Missing Information"
 msgstr "लापता जानकारी"
 
@@ -15887,6 +15895,9 @@ msgstr "कोई शेड्यूल पंक्तियां नहीं
 msgid "No scheduled work in this window"
 msgstr "इस विंडो में कोई शेड्यूल किया हुआ काम नहीं"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "अभी तक कोई सीरियल नंबर चयनित नहीं।"
 
@@ -15967,6 +15978,12 @@ msgstr "कोई प्रशिक्षण निर्धारित नह
 
 msgid "No transactions in this period"
 msgstr "इस अवधि में कोई लेनदेन नहीं"
+
+msgid "No units counted yet"
+msgstr ""
+
+msgid "No units in this storage unit"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "अभी कोई इकाई नहीं। समझौते को सक्रिय करने से पहले यूनिट सूची से एक फ्लीट इकाई जोड़ें।"
@@ -16100,6 +16117,10 @@ msgstr "कॉन्फ़िगर नहीं किया गया"
 
 msgid "Not Configured"
 msgstr "कॉन्फ़िगर नहीं किया गया"
+
+#. placeholder {0}: group.notCountedCount
+msgid "Not counted {0}"
+msgstr ""
 
 msgid "Not delivered"
 msgstr "डिलीवर नहीं किया गया"
@@ -23422,9 +23443,6 @@ msgstr "सिस्टम"
 msgid "System configured"
 msgstr "सिस्टम कॉन्फ़िगर किया गया"
 
-msgid "System Qty"
-msgstr "सिस्टम मात्रा"
-
 msgid "Table"
 msgstr "तालिका"
 
@@ -26169,6 +26187,10 @@ msgstr "अभी भी आने वाले बिना छूट के �
 
 msgid "Undo"
 msgstr "पूर्ववत करें"
+
+#. placeholder {0}: group.unexpectedCount
+msgid "Unexpected {0}"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "लिंक्स को विस्तृत करें"

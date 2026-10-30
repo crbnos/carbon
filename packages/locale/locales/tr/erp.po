@@ -4325,9 +4325,6 @@ msgstr "Temel Bilgiler"
 msgid "Batch"
 msgstr "Parti"
 
-msgid "Batch / Serial"
-msgstr "Parti / Seri"
-
 msgid "Batch Capacity"
 msgstr "Parti Kapasitesi"
 
@@ -6620,11 +6617,11 @@ msgstr "Sayım Kimliği"
 msgid "Count items"
 msgstr "Öğeleri say"
 
+msgid "Counted"
+msgstr ""
+
 msgid "Counted {total}."
 msgstr "{total} sayıldı."
-
-msgid "Counted Qty"
-msgstr "Sayılan Mik."
 
 msgid "Counterparties"
 msgstr "Muhasebeleştirilecek Taraflar"
@@ -10054,6 +10051,9 @@ msgstr "Alt ağacı genişlet"
 msgid "Expansion"
 msgstr "Genişleme"
 
+msgid "Expected"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "İmalat yapılan bir parça için herhangi bir satış siparişi oluşturulmadan önceden hafta hafta girilen beklenen gelecek talep; planlama bunu arz karşısında hesaplar ve yöntem açıklarını bileşenleri önceden sipariş etmek için açar."
 
@@ -10987,6 +10987,10 @@ msgstr "Biçim"
 
 msgid "Forward deployed engineer"
 msgstr "Sahadaki mühendis"
+
+#. placeholder {0}: group.foundCount
+msgid "Found {0}"
+msgstr ""
 
 msgid "Foundation"
 msgstr "Temel"
@@ -14410,6 +14414,10 @@ msgstr "Uyuşmazlık"
 msgid "Missing"
 msgstr "Eksik"
 
+#. placeholder {0}: group.missingCount
+msgid "Missing {0}"
+msgstr ""
+
 msgid "Missing Information"
 msgstr "Eksik Bilgi"
 
@@ -15887,6 +15895,9 @@ msgstr "Çizelge satırı yok."
 msgid "No scheduled work in this window"
 msgstr "Bu zaman penceresinde planlanmış iş yok"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "Henüz hiçbir seri numarası seçilmemiştir."
 
@@ -15967,6 +15978,12 @@ msgstr "Atanan eğitim yok"
 
 msgid "No transactions in this period"
 msgstr "Bu dönemde işlem yok"
+
+msgid "No units counted yet"
+msgstr ""
+
+msgid "No units in this storage unit"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Henüz adet yok. Anlaşmayı etkinleştirmeden önce Adet listesinden bir filo adetini ekleyin."
@@ -16100,6 +16117,10 @@ msgstr "Yapılandırılmadı"
 
 msgid "Not Configured"
 msgstr "Yapılandırılmadı"
+
+#. placeholder {0}: group.notCountedCount
+msgid "Not counted {0}"
+msgstr ""
 
 msgid "Not delivered"
 msgstr "Teslim Edilmedi"
@@ -23422,9 +23443,6 @@ msgstr "Sistem"
 msgid "System configured"
 msgstr "Sistem yapılandırıldı"
 
-msgid "System Qty"
-msgstr "Sistem Mik."
-
 msgid "Table"
 msgstr "Tablo"
 
@@ -26169,6 +26187,10 @@ msgstr "Mali yılına göre henüz gelecek iskonto uygulanmamış ödemeler, kal
 
 msgid "Undo"
 msgstr "Geri Al"
+
+#. placeholder {0}: group.unexpectedCount
+msgid "Unexpected {0}"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "Bağlantıları Aç"

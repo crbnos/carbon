@@ -333,6 +333,15 @@ export function inventoryCountLineState(line: {
   return "Found";
 }
 
+// The id of a count group, as the `inventoryCountGroups` view builds it.
+export function inventoryCountGroupId(line: {
+  inventoryCountId: string;
+  itemId: string;
+  storageUnitId: string | null;
+}): string {
+  return `${line.inventoryCountId}:${line.itemId}:${line.storageUnitId ?? ""}`;
+}
+
 // A blind count withholds what the system expects until it is posted.
 export function isBlindCountEntry(count: {
   isBlind: boolean | null;

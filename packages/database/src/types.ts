@@ -77740,6 +77740,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
           lineCount: number | null
+          lineId: string | null
           materialFormId: string | null
           materialSubstanceId: string | null
           materialType: string | null

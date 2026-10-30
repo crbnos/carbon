@@ -5,7 +5,7 @@
 import InventoryCountDetails from "./InventoryCount";
 import InventoryCountConfirmModal from "./InventoryCountConfirmModal";
 import InventoryCountForm from "./InventoryCountForm";
-import InventoryCountLines from "./InventoryCountLines";
+import InventoryCountGroups from "./InventoryCountGroups";
 import InventoryCountStatus from "./InventoryCountStatus";
 import InventoryCountsTable from "./InventoryCountsTable";
 
@@ -13,7 +13,7 @@ export {
   InventoryCountConfirmModal,
   InventoryCountDetails,
   InventoryCountForm,
-  InventoryCountLines,
+  InventoryCountGroups,
   InventoryCountStatus,
   InventoryCountsTable
 };
