@@ -614,6 +614,8 @@ export const manifest = {
     )
   }),
   feedback: serviceOnly(),
+  // Same access as apiKey: the rules mint API keys.
+  federationRule: company("settings", { read: "settings_view" }),
   fiscalYearSettings: company("settings", { read: "settings_view" }),
   fixedAsset: company("accounting", { read: "accounting_view" }),
   fixedAssetCipCost: company("accounting", { read: "accounting_view" }),

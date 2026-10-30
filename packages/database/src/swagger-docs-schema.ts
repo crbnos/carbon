@@ -76698,6 +76698,249 @@ export default {
         tags: ["methodOperation"]
       }
     },
+    "/federationRule": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.federationRule.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.provider"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.issuer"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.audience"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.subject"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.claimConditions"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.scopes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.tokenLifetimeMinutes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.lastExchangeAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.lastFailureAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.lastFailureReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/federationRule"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["federationRule"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.federationRule"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["federationRule"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.federationRule.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.provider"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.issuer"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.audience"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.subject"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.claimConditions"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.scopes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.tokenLifetimeMinutes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.lastExchangeAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.lastFailureAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.lastFailureReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["federationRule"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.federationRule.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.provider"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.issuer"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.audience"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.subject"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.claimConditions"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.scopes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.tokenLifetimeMinutes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.lastExchangeAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.lastFailureAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.lastFailureReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.federationRule"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["federationRule"]
+      }
+    },
     "/jobMaterial": {
       get: {
         parameters: [
@@ -89482,6 +89725,9 @@ export default {
             $ref: "#/parameters/rowFilter.apiKey.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.apiKey.federationRuleId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -89580,6 +89826,9 @@ export default {
             $ref: "#/parameters/rowFilter.apiKey.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.apiKey.federationRuleId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -89630,6 +89879,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.apiKey.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.apiKey.federationRuleId"
           },
           {
             $ref: "#/parameters/body.apiKey"
@@ -156128,6 +156380,107 @@ export default {
       },
       type: "object"
     },
+    federationRule: {
+      required: [
+        "id",
+        "companyId",
+        "name",
+        "provider",
+        "issuer",
+        "audience",
+        "claimConditions",
+        "scopes",
+        "tokenLifetimeMinutes",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('fedr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        provider: {
+          enum: [
+            "GitHub Actions",
+            "AWS",
+            "Google Cloud",
+            "Microsoft Entra ID",
+            "Custom OIDC"
+          ],
+          format: 'public."federationProvider"',
+          type: "string"
+        },
+        issuer: {
+          format: "text",
+          type: "string"
+        },
+        audience: {
+          format: "text",
+          type: "string"
+        },
+        subject: {
+          format: "text",
+          type: "string"
+        },
+        claimConditions: {
+          format: "jsonb"
+        },
+        scopes: {
+          format: "jsonb"
+        },
+        tokenLifetimeMinutes: {
+          default: 15,
+          format: "integer",
+          type: "integer"
+        },
+        lastExchangeAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        lastFailureAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        lastFailureReason: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     jobMaterial: {
       required: [
         "id",
@@ -162110,6 +162463,12 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        federationRuleId: {
+          description:
+            "Note:\nThis is a Foreign Key to `federationRule.id`.<fk table='federationRule' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -210808,6 +211167,117 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.federationRule": {
+      name: "federationRule",
+      description: "federationRule",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/federationRule"
+      }
+    },
+    "rowFilter.federationRule.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.provider": {
+      name: "provider",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.issuer": {
+      name: "issuer",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.audience": {
+      name: "audience",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.subject": {
+      name: "subject",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.claimConditions": {
+      name: "claimConditions",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.scopes": {
+      name: "scopes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.tokenLifetimeMinutes": {
+      name: "tokenLifetimeMinutes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.lastExchangeAt": {
+      name: "lastExchangeAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.lastFailureAt": {
+      name: "lastFailureAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.lastFailureReason": {
+      name: "lastFailureReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.jobMaterial": {
       name: "jobMaterial",
       description: "jobMaterial",
@@ -217541,6 +218011,12 @@ export default {
     },
     "rowFilter.apiKey.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.apiKey.federationRuleId": {
+      name: "federationRuleId",
       required: false,
       in: "query",
       type: "string"

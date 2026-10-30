@@ -2957,6 +2957,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           expiresAt: string | null
+          federationRuleId: string | null
           id: string
           keyHash: string
           keyPreview: string | null
@@ -2972,6 +2973,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           expiresAt?: string | null
+          federationRuleId?: string | null
           id?: string
           keyHash: string
           keyPreview?: string | null
@@ -2987,6 +2989,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           expiresAt?: string | null
+          federationRuleId?: string | null
           id?: string
           keyHash?: string
           keyPreview?: string | null
@@ -3060,6 +3063,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "apiKey_federationRuleId_fkey"
+            columns: ["federationRuleId"]
+            isOneToOne: false
+            referencedRelation: "federationRule"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "apiKey_updatedBy_fkey"
@@ -18210,6 +18220,165 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesOrderCustomers"
             referencedColumns: ["id", "companyId"]
+          }
+        ]
+      }
+      federationRule: {
+        Row: {
+          audience: string
+          claimConditions: Json
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          issuer: string
+          lastExchangeAt: string | null
+          lastFailureAt: string | null
+          lastFailureReason: string | null
+          name: string
+          provider: Database["public"]["Enums"]["federationProvider"]
+          scopes: Json
+          subject: string | null
+          tokenLifetimeMinutes: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          audience: string
+          claimConditions?: Json
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          issuer: string
+          lastExchangeAt?: string | null
+          lastFailureAt?: string | null
+          lastFailureReason?: string | null
+          name: string
+          provider: Database["public"]["Enums"]["federationProvider"]
+          scopes?: Json
+          subject?: string | null
+          tokenLifetimeMinutes?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          audience?: string
+          claimConditions?: Json
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          issuer?: string
+          lastExchangeAt?: string | null
+          lastFailureAt?: string | null
+          lastFailureReason?: string | null
+          name?: string
+          provider?: Database["public"]["Enums"]["federationProvider"]
+          scopes?: Json
+          subject?: string | null
+          tokenLifetimeMinutes?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "federationRule_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "federationRule_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "federationRule_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "federationRule_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "federationRule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "federationRule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "federationRule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "federationRule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "federationRule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "federationRule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "federationRule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "federationRule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "federationRule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "federationRule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           }
         ]
       }
@@ -95966,6 +96135,12 @@ export type Database = {
         | "Seconds/Piece"
         | "Total Hours"
         | "Total Minutes"
+      federationProvider:
+        | "GitHub Actions"
+        | "AWS"
+        | "Google Cloud"
+        | "Microsoft Entra ID"
+        | "Custom OIDC"
       fixedAssetStatus:
         | "Draft"
         | "Active"
@@ -97491,6 +97666,13 @@ export const Constants = {
         "Seconds/Piece",
         "Total Hours",
         "Total Minutes",
+      ],
+      federationProvider: [
+        "GitHub Actions",
+        "AWS",
+        "Google Cloud",
+        "Microsoft Entra ID",
+        "Custom OIDC",
       ],
       fixedAssetStatus: [
         "Draft",

@@ -45,6 +45,8 @@ export const BACKUP_VERSION = 1;
 export const SECRET_TABLES = [
   "apiKey",
   "apiKeyRateLimit",
+  // A trust rule restored into another company would let a CI job reach it.
+  "federationRule",
   "tableChange",
   "companyIntegration",
   "integrationConnection",
