@@ -6,17 +6,23 @@
 **Branch:** naveenkash/b2h29
 
 ## Progress
-- [ ] Task 1: Create the SCIM tables and their RLS rules
-- [ ] Task 2: Add the `SCIM` feature, the audit metadata fields and the token signer
-- [ ] Task 3: Write the pure SCIM protocol module and its tests
-- [ ] Task 4: Write the pure mapping module and its tests
-- [ ] Task 5: Write the SCIM engine (`scim.server.ts`)
-- [ ] Task 6: Write the admin functions (`scim-connections.server.ts`) and the package export
-- [ ] Task 7: Add the ERP routes, validators and path helpers
-- [ ] Task 8: Build the Provisioning section on Settings → Security
-- [ ] Task 9: Show the SCIM actor label in the audit log
-- [ ] Task 10: Write the docs, the rule file and the Task Router row
-- [ ] Task 11: Run the scoped gates
+- [x] Task 1: Create the SCIM tables and their RLS rules
+- [x] Task 2: Add the `SCIM` feature, the audit metadata fields and the token signer
+- [x] Task 3: Write the pure SCIM protocol module and its tests
+- [x] Task 4: Write the pure mapping module and its tests
+- [x] Task 5: Write the SCIM engine (`scim.server.ts`)
+- [x] Task 6: Write the admin functions (`scim-connections.server.ts`) and the package export
+- [x] Task 7: Add the ERP routes, validators and path helpers
+- [x] Task 8: Build the Provisioning section on Settings → Security
+- [x] Task 9: Show the SCIM actor label in the audit log
+- [x] Task 10: Write the docs, the rule file and the Task Router row
+- [x] Task 11: Run the scoped gates
+
+## Deviations (recorded during execute)
+- Task 5: no `scim.server.test.ts`. `.claude/rules/testing.md` forbids mocking first-party modules, so the request edge became two pure helpers (`matchScimRoute`, `readBearerToken`) tested in `scim-protocol.test.ts`. The live flows ran in the test phase against the local stack.
+- Task 5: result types use `{ ok, value }` instead of `{ ok, state }` / `{ ok, clauses }`.
+- Task 8: the "Not mapped" choice posts `SCIM_NOT_MAPPED` (`"none"`), not `""`, because a Select item cannot hold an empty value. The validator maps it to null.
+- Order: Task 10 (docs) ran after the test phase, so the docs describe verified behavior.
 
 ## Dependencies
 - Task 2 needs nothing. Task 1 needs nothing. Tasks 1 and 2 are independent.

@@ -86,6 +86,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Server & Services** | |
 | Writing service functions | `.claude/rules/conventions-services.md` + `.claude/rules/module-files.md` |
 | Authentication, RBAC, permissions | `.claude/rules/authentication-system.md` + `packages/auth/AGENTS.md` |
+| SCIM provisioning (IdP user sync, offboarding) | `.claude/rules/scim-provisioning.md` + `.claude/rules/authentication-system.md` |
 | Account settings modal (ERP, MES, starter) | `packages/account/AGENTS.md` |
 | Background jobs and events (Inngest) | `.claude/rules/event-system.md` + `packages/jobs/AGENTS.md` |
 | Service functions, building blocks, module files, postings for jobs and ee | `.claude/rules/module-files.md` + `.claude/rules/conventions-services.md` |

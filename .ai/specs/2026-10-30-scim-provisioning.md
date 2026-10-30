@@ -1,6 +1,6 @@
 # SCIM 2.0 Provisioning
 
-> Status: draft
+> Status: implemented
 > Author: naveen + Claude
 > Date: 2026-10-30
 > Research: [.ai/research/scim-provisioning.md](../research/scim-provisioning.md)
@@ -471,6 +471,12 @@ Audit log: the table, the drawer and the CSV export show
 - Revoking API keys on a manual deactivation in Carbon. The same hole exists
   there, and the fix belongs to the users module.
 
+## Known gaps (found in the test phase)
+
+- **Two audit rows per change.** The event-system audit trigger also records each `employee` write, with no actor ("System"). So the audit log shows the SCIM row (actor "SCIM (Okta)") and a "System" row for the same change. A fix needs the trigger path to carry the label, or the explicit entry to be dropped in favor of it.
+- **Not run live:** the `403` for a company without the plan (this stack is Enterprise edition), the `CONTROLLED_ENVIRONMENT` refusal, the rate limit, and the global logout against hosted Supabase (it ran against local GoTrue). Okta's Spec Test and Microsoft's SCIM Validator need a public URL.
+
 ## Changelog
 
 - 2026-10-30: Created in fully autonomous `/feature` mode. Open questions Q1–Q9 resolved autonomously (see Open Questions). Research at `.ai/research/scim-provisioning.md`.
+- 2026-10-30 (implemented): Built as planned in `.ai/plans/2026-10-30-scim-provisioning.md`. Deviations: the "Not mapped" choice posts `"none"` (`SCIM_NOT_MAPPED`), and group PATCH answers `204`. Tested live against a local stack: Okta AIW and Entra request shapes, adopt, deactivate (membership, API keys, refresh token revoked), a second company kept, reactivate, group mapping, DELETE, audit label, token regenerate and turn off. Known gaps listed above.
