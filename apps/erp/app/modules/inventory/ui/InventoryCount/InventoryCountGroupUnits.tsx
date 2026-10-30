@@ -3,15 +3,25 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useAction, useLoaderQuery } from "@carbon/query";
-import { Badge, cn, NumberField, NumberInput, Skeleton } from "@carbon/react";
+import {
+  Badge,
+  Button,
+  cn,
+  IconButton,
+  NumberField,
+  NumberInput,
+  Skeleton
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
+import { LuPlus, LuTrash } from "react-icons/lu";
 import { inventoryCountLineState } from "~/modules/inventory/inventory.utils";
 import type {
   InventoryCountGroup,
   InventoryCountLine
 } from "~/modules/inventory/types";
 import { path } from "~/utils/path";
+import InventoryCountUnitForm from "./InventoryCountUnitForm";
 
 type GroupLinesLoader = { lines: InventoryCountLine[] };
 
@@ -49,6 +59,33 @@ const InventoryCountGroupUnits = ({
   );
   const lines = data?.lines ?? [];
   const isSerial = group.itemTrackingType === "Serial";
+  const [isAdding, setIsAdding] = useState(false);
+  const remove = useAction();
+
+  const addUnit = isReadOnly ? null : (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        leftIcon={<LuPlus />}
+        className="my-1"
+        onClick={() => setIsAdding(true)}
+      >
+        {t`Add unit`}
+      </Button>
+      {isAdding && (
+        <InventoryCountUnitForm
+          inventoryCountId={inventoryCountId}
+          prompt={{
+            storageUnitId: group.storageUnitId ?? null,
+            itemId: group.itemId ?? undefined
+          }}
+          onClose={() => setIsAdding(false)}
+          onRecorded={() => setIsAdding(false)}
+        />
+      )}
+    </>
+  );
 
   if (isLoading) {
     return (
@@ -65,6 +102,7 @@ const InventoryCountGroupUnits = ({
         {hideSystemQuantity
           ? t`No units counted yet`
           : t`No units in this storage unit`}
+        <div>{addUnit}</div>
       </div>
     );
   }
@@ -116,9 +154,30 @@ const InventoryCountGroupUnits = ({
             <Badge variant={STATE_BADGE[state]} className="w-24 justify-center">
               {stateLabel(state, t)}
             </Badge>
+            <div className="w-8">
+              {!isReadOnly && line.foundDuringCount && (
+                <IconButton
+                  aria-label={t`Remove unit`}
+                  icon={<LuTrash />}
+                  variant="ghost"
+                  size="sm"
+                  isDisabled={remove.state !== "idle"}
+                  onClick={() =>
+                    remove.submit(null, {
+                      method: "post",
+                      action: path.to.inventoryCountUnitDelete(
+                        inventoryCountId,
+                        line.id!
+                      )
+                    })
+                  }
+                />
+              )}
+            </div>
           </div>
         );
       })}
+      {addUnit}
     </div>
   );
 };

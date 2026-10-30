@@ -2487,6 +2487,9 @@ msgstr "भविष्य के उपयोग के लिए स्टॉ�
 msgid "Add tools"
 msgstr "उपकरण जोड़ें"
 
+msgid "Add unit"
+msgstr ""
+
 msgid "Add Unit"
 msgstr "इकाई जोड़ें"
 
@@ -2737,6 +2740,9 @@ msgstr "आवंटित"
 
 msgid "Allows acknowledge & continue"
 msgstr "स्वीकार करने और जारी रखने की अनुमति देता है"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "अपनी मूल इकाई {sourceName} के कारण पहले से MRP से बाहर"
@@ -9653,11 +9659,17 @@ msgstr "अपने निजी OAuth एप्लिकेशन का Onsha
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "कटओवर से पहले के दिन की तरह पूर्व प्रणाली के परीक्षण शेष को हर खाते के लिए दर्ज करें।"
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "प्रत्येक पंक्ति पर जो मात्रा आई है दर्ज करें। शून्य पर छोड़ी गई कोई भी पंक्ति प्राप्ति पोस्ट होने पर प्राप्त नहीं होती है।"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "वह मात्रा दर्ज करें जो यह आंदोलन होना चाहिए था। अंतर के लिए एक विपरीत आंदोलन मूल के बगल में, मूल की समय अवधि में पोस्ट किया जाता है।"
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "इसे बनाने में जो लागत आई उसे दर्ज करें। यह मान परिसंपत्ति को उस खाते से बुक किया जाता है जहाँ से खर्च किया गया था: एक पिछले वर्ष के लिए प्रतिधारित आय, या इस वर्ष का श्रम या सामग्री व्यय।"
@@ -10953,6 +10965,9 @@ msgstr "पलटें"
 
 msgid "For <0/>"
 msgstr "के लिए <0/>"
+
+msgid "For a batch. A serial counts as 1."
+msgstr ""
 
 msgid "for anything. They'll pull in the right person."
 msgstr "किसी भी चीज़ के लिए। वे सही व्यक्ति को शामिल करेंगे।"
@@ -19718,6 +19733,9 @@ msgstr "टूल निकालें"
 msgid "Remove two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण निकालें"
 
+msgid "Remove unit"
+msgstr ""
+
 msgid "Remove Unit"
 msgstr "इकाई निकालें"
 
@@ -21027,6 +21045,12 @@ msgstr "स्कैन करें या खोजें..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "इस लॉट से एक ट्रैक की गई इकाई को स्कैन या चुनें और इसे एक नमूना स्तंभ के रूप में जोड़ें, फिर ग्रिड में इसका परिणाम रिकॉर्ड करें।"
+
+msgid "Scan serial, batch or item"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "अपने ऑथेंटिकेटर ऐप (जैसे Google Authenticator या 1Password) के साथ इस QR कोड को स्कैन करें, फिर यह जो 6-अंकीय कोड दिखाता है उसे दर्ज करें।"
@@ -23757,6 +23781,9 @@ msgstr "वह सूची खाली थी।"
 msgid "That name is already used by another step."
 msgstr "वह नाम पहले से ही एक अन्य चरण द्वारा उपयोग किया जा रहा है।"
 
+msgid "That storage unit is not at this count's location"
+msgstr ""
+
 msgid "That workspace is connected to another company"
 msgstr "वह वर्कस्पेस किसी दूसरी कंपनी से कनेक्ट है"
 
@@ -24248,6 +24275,9 @@ msgstr "MACRS के तहत इस संपत्ति के लिए IRS
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "प्रत्येक जॉब द्वारा उत्पादित आइटम — आउटपुट लॉट्स को मर्ज करने के लिए इसे मेल खाना आवश्यक है"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "आइटम की किराये की दर"

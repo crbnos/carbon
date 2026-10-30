@@ -64,8 +64,10 @@ type InventoryCountGroupsProps = {
   // quantity) — highlighted red until fixed, with the groups that hold them.
   invalidLineIds?: string[];
   invalidGroupIds?: string[];
-  // A group to open: the search, or the group of the last scan.
+  // Opens every group while a search is on, so the matching units show.
   expandGroupsFor?: string | null;
+  // Opens one group: the one the last scan landed in.
+  expandGroup?: { id: string } | null;
   // Option lists for the column filters (same set the quantities screen uses).
   forms: ListItem[];
   substances: ListItem[];
@@ -91,6 +93,7 @@ const InventoryCountGroups = ({
   invalidLineIds,
   invalidGroupIds,
   expandGroupsFor,
+  expandGroup,
   forms,
   substances,
   tags,
@@ -740,6 +743,7 @@ const InventoryCountGroups = ({
         renderExpandedRow={renderExpandedRow}
         canExpandRow={isTrackedGroup}
         expandRowsFor={expandGroupsFor ?? null}
+        expandRow={expandGroup ?? null}
         // One count's groups: no list registry entry, so no `listKey`.
         infinite={{ dataKey: "groups", nextCursor }}
         count={count}

@@ -6,6 +6,7 @@ import InventoryCountDetails from "./InventoryCount";
 import InventoryCountConfirmModal from "./InventoryCountConfirmModal";
 import InventoryCountForm from "./InventoryCountForm";
 import InventoryCountGroups from "./InventoryCountGroups";
+import InventoryCountScanBar from "./InventoryCountScanBar";
 import InventoryCountStatus from "./InventoryCountStatus";
 import InventoryCountsTable from "./InventoryCountsTable";
 
@@ -14,6 +15,7 @@ export {
   InventoryCountDetails,
   InventoryCountForm,
   InventoryCountGroups,
+  InventoryCountScanBar,
   InventoryCountStatus,
   InventoryCountsTable
 };

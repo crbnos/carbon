@@ -2487,6 +2487,9 @@ msgstr "将来の使用のためにストックに追加"
 msgid "Add tools"
 msgstr "ツールを追加"
 
+msgid "Add unit"
+msgstr ""
+
 msgid "Add Unit"
 msgstr "ユニットを追加"
 
@@ -2737,6 +2740,9 @@ msgstr "配置済み"
 
 msgid "Allows acknowledge & continue"
 msgstr "確認して続行できます"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "親ユニット {sourceName} により、すでにMRP対象外です"
@@ -9653,11 +9659,17 @@ msgstr "プライベートOAuthアプリケーションのOnshape URL、クラ�
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "各アカウントについて、カットオーバーの前日現在の前システムの試算表を入力してください。"
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "到着した各明細の数量を入力してください。ゼロのままの明細は、入荷が転記済になったときに受け取られません。"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "製造にかかった原価を入力してください。その価値は、支出元の勘定から資産に計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
@@ -10953,6 +10965,9 @@ msgstr "裏返す"
 
 msgid "For <0/>"
 msgstr "用<0/>"
+
+msgid "For a batch. A serial counts as 1."
+msgstr ""
 
 msgid "for anything. They'll pull in the right person."
 msgstr "何でも構いません。彼らが適切な人を連れてきます。"
@@ -19718,6 +19733,9 @@ msgstr "工具を除去"
 msgid "Remove two-factor authentication"
 msgstr "二要素認証を除去"
 
+msgid "Remove unit"
+msgstr ""
+
 msgid "Remove Unit"
 msgstr "個を除去"
 
@@ -21027,6 +21045,12 @@ msgstr "スキャンまたは検索..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "このロットから追跡対象エンティティをスキャンまたは選択してサンプル列として追加し、グリッドにその結果を記録します。"
+
+msgid "Scan serial, batch or item"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "認証器アプリ（Google AuthenticatorまたはOne Passwordなど）でこのQRコードをスキャンしてから、表示される6桁のコードを入力します。"
@@ -23757,6 +23781,9 @@ msgstr "そのリストは空でした。"
 msgid "That name is already used by another step."
 msgstr "その名前は別のステップで既に使用されています。"
 
+msgid "That storage unit is not at this count's location"
+msgstr ""
+
 msgid "That workspace is connected to another company"
 msgstr "そのワークスペースは別の会社に接続されています"
 
@@ -24248,6 +24275,9 @@ msgstr "MACRS（3、5、7、10、15、20、27.5、39年）に基づくこのア�
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "各製造指図が生産する品目 — 出力ロットをマージするには一致する必要があります"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "品目のレンタル料金"

@@ -2487,6 +2487,9 @@ msgstr "Dodaj do zapasów do przyszłego użytku"
 msgid "Add tools"
 msgstr "Dodaj narzędzia"
 
+msgid "Add unit"
+msgstr ""
+
 msgid "Add Unit"
 msgstr "Dodaj Sztukę"
 
@@ -2737,6 +2740,9 @@ msgstr "Przydzielone"
 
 msgid "Allows acknowledge & continue"
 msgstr "Umożliwia potwierdzenie i kontynuację"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "Już nieuwzględniany w MRP przez jednostkę nadrzędną {sourceName}"
@@ -9653,11 +9659,17 @@ msgstr "Podaj URL Onshape, identyfikator klienta i klucz tajny prywatnej aplikac
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "Wprowadź saldo próbne systemu poprzedniego z dnia przed przełączeniem dla każdego konta."
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "Wpisz Ilość na każdej Pozycji, która przybyła. Pozycja pozostawiona na zero nie będzie przyjęta, gdy Przyjęcie zostanie zaksięgowane."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Wprowadź ilość, która powinna być dla tego ruchu. Przeciwny ruch dla różnicy jest publikowany obok oryginału w okresie czasowym oryginału."
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Wpisz, ile kosztowało to wytworzenie. Wartość jest księgowana na składnik majątku z konta, z którego została wydatkowana: Zyski zatrzymane za wcześniejszy rok, lub wydatek na robocizę lub materiały za ten rok."
@@ -10953,6 +10965,9 @@ msgstr "Przewróć"
 
 msgid "For <0/>"
 msgstr "Dla <0/>"
+
+msgid "For a batch. A serial counts as 1."
+msgstr ""
 
 msgid "for anything. They'll pull in the right person."
 msgstr "w sprawie czegokolwiek. Zaangażują odpowiednią osobę."
@@ -19718,6 +19733,9 @@ msgstr "Usuń z listy narzędzie"
 msgid "Remove two-factor authentication"
 msgstr "Usuń z listy uwierzytelnianie dwuskładnikowe"
 
+msgid "Remove unit"
+msgstr ""
+
 msgid "Remove Unit"
 msgstr "Usuń Sztukę"
 
@@ -21027,6 +21045,12 @@ msgstr "Skanuj lub wyszukaj..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Skanuj lub wybierz śledzoną jednostkę z tej partii, aby dodać ją jako kolumnę próbną, a następnie zanotuj jej wynik w siatce."
+
+msgid "Scan serial, batch or item"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Zeskanuj ten kod QR za pomocą aplikacji Authenticator (np. Google Authenticator lub 1Password), a następnie wpisz wyświetlany 6-cyfrowy kod."
@@ -23757,6 +23781,9 @@ msgstr "Ta lista była pusta."
 msgid "That name is already used by another step."
 msgstr "Ta nazwa jest już używana przez inny krok."
 
+msgid "That storage unit is not at this count's location"
+msgstr ""
+
 msgid "That workspace is connected to another company"
 msgstr "Ta przestrzeń robocza jest połączona z inną firmą"
 
@@ -24248,6 +24275,9 @@ msgstr "Klasa okresu odzyskania IRS dla tego zasobu w ramach MACRS (3, 5, 7, 10,
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "Artykuł, który każde zlecenie produkcyjne wytwarza — wymagaj jego dopasowania, aby połączyć partie wyjściowe"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "Stawka wynajmu artykułu"

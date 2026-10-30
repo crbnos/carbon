@@ -2487,6 +2487,9 @@ msgstr "향후 사용을 위해 재고에 추가"
 msgid "Add tools"
 msgstr "도구 추가"
 
+msgid "Add unit"
+msgstr ""
+
 msgid "Add Unit"
 msgstr "개 추가"
 
@@ -2737,6 +2740,9 @@ msgstr "할당됨"
 
 msgid "Allows acknowledge & continue"
 msgstr "확인 후 계속 진행 허용"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "상위 단위 {sourceName}(으)로 인해 이미 MRP 제외"
@@ -9653,11 +9659,17 @@ msgstr "개인 OAuth 애플리케이션의 Onshape URL, 클라이언트 ID 및 �
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "기준일 전날의 이전 시스템의 시산표를 모든 계정에 대해 입력하세요."
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "도착한 각 라인의 수량을 입력하세요. 0으로 남겨진 라인은 입고가 전기될 때 입고되지 않습니다."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "이 이동이 있었어야 할 수량을 입력하십시오. 차이에 대한 반대 이동은 원본 옆의 원본의 시간 기간에 게시됩니다."
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "사내 생산 원가를 입력하십시오. 이 금액은 지출된 계정에서 자산으로 기입됩니다: 이전 연도의 이익잉여금 또는 올해의 노무 또는 자재 비용입니다."
@@ -10953,6 +10965,9 @@ msgstr "뒤집기"
 
 msgid "For <0/>"
 msgstr "대상 <0/>"
+
+msgid "For a batch. A serial counts as 1."
+msgstr ""
 
 msgid "for anything. They'll pull in the right person."
 msgstr "무엇이든지요. 적임자를 연결해 드립니다."
@@ -19718,6 +19733,9 @@ msgstr "도구 제거"
 msgid "Remove two-factor authentication"
 msgstr "2단계 인증 제거"
 
+msgid "Remove unit"
+msgstr ""
+
 msgid "Remove Unit"
 msgstr "단위 제거"
 
@@ -21027,6 +21045,12 @@ msgstr "스캔 또는 검색..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "이 로트에서 추적 대상을 스캔하거나 선택하여 표본 열로 추가한 후, 그리드에 그 결과를 기록하세요."
+
+msgid "Scan serial, batch or item"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "인증 앱(예: Google Authenticator 또는 1Password)으로 이 QR 코드를 스캔한 후 표시된 6자리 코드를 입력하세요."
@@ -23757,6 +23781,9 @@ msgstr "목록이 비어 있었습니다."
 msgid "That name is already used by another step."
 msgstr "해당 이름은 이미 다른 단계에서 사용 중입니다."
 
+msgid "That storage unit is not at this count's location"
+msgstr ""
+
 msgid "That workspace is connected to another company"
 msgstr "해당 작업 공간은 다른 회사에 연결되어 있습니다"
 
@@ -24248,6 +24275,9 @@ msgstr "MACRS(수정가속상각법)에 따른 이 자산의 IRS 내용연수 �
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "각 작업 지시가 생산하는 품목 — 출력 로트를 병합하기 위해 일치 필수"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "품목의 임차료"

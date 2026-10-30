@@ -16,6 +16,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import {
   LuCheck,
   LuHistory,
@@ -38,6 +39,7 @@ import type {
 import {
   InventoryCountConfirmModal,
   InventoryCountGroups,
+  InventoryCountScanBar,
   InventoryCountStatus
 } from "~/modules/inventory/ui";
 import type { action as postAction } from "~/routes/x+/inventory-count+/$id.post";
@@ -102,6 +104,8 @@ const InventoryCountDetails = ({
   // A search opens the groups it matches, so a serial number shows in place.
   const [params] = useUrlParams();
   const search = params.get("search");
+  // The group the last scan landed in: the sheet opens it.
+  const [scannedGroup, setScannedGroup] = useState<{ id: string } | null>(null);
 
   const status = inventoryCount.status;
   // Counted quantities are entered while Draft; every later state is read-only.
@@ -197,6 +201,13 @@ const InventoryCountDetails = ({
     <>
       <RecordHero status={statusBadge} />
       <RecordPhoneChrome />
+      {!isReadOnly && canUpdate && (
+        <InventoryCountScanBar
+          inventoryCountId={inventoryCount.id!}
+          locationId={inventoryCount.locationId}
+          onRecorded={(id) => setScannedGroup({ id })}
+        />
+      )}
       <div className="flex-1 min-h-0 w-full">
         <InventoryCountGroups
           inventoryCountId={inventoryCount.id!}
@@ -212,6 +223,7 @@ const InventoryCountDetails = ({
           invalidLineIds={invalidLineIds}
           invalidGroupIds={invalidGroupIds}
           expandGroupsFor={search || null}
+          expandGroup={scannedGroup}
           forms={forms}
           substances={substances}
           tags={tags}

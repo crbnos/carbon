@@ -2487,6 +2487,9 @@ msgstr "Gelecekteki kullanım için stoğa ekle"
 msgid "Add tools"
 msgstr "Araç ekle"
 
+msgid "Add unit"
+msgstr ""
+
 msgid "Add Unit"
 msgstr "Birim Ekle"
 
@@ -2737,6 +2740,9 @@ msgstr "Tahsis edildi"
 
 msgid "Allows acknowledge & continue"
 msgstr "Onaylayıp devam etmeye izin verir"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "Üst birim {sourceName} nedeniyle zaten MRP dışı"
@@ -9653,11 +9659,17 @@ msgstr "Özel OAuth uygulamanızın Onshape URL'sini, istemci ID'sini ve istemci
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "Her hesap için devir tarihinden önceki günü itibarıyla önceki sistemin mizan sütununu girin."
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "Gelen her satırdaki miktarı girin. Sıfırda bırakılan bir satır, mal kabul muhasebeleştirildiğinde alınmış sayılmaz."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Bu hareketin olması gereken miktarı girin. Farktaki ters hareket, orijinalin zaman döneminde orijinalin yanında deftere kaydedilir."
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Üretim maliyetini girin. Değer, harcanan hesaptan varlığa kaydedilir: önceki yıl için Dağıtılmamış kârlar veya bu yıl'ın İşçilik veya malzeme gideri."
@@ -10953,6 +10965,9 @@ msgstr "Ters çevir"
 
 msgid "For <0/>"
 msgstr "İçin <0/>"
+
+msgid "For a batch. A serial counts as 1."
+msgstr ""
 
 msgid "for anything. They'll pull in the right person."
 msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
@@ -19718,6 +19733,9 @@ msgstr "Aracı kaldır"
 msgid "Remove two-factor authentication"
 msgstr "İki Faktörlü Kimlik Doğrulamayı Kaldır"
 
+msgid "Remove unit"
+msgstr ""
+
 msgid "Remove Unit"
 msgstr "Adet'i Kaldır"
 
@@ -21027,6 +21045,12 @@ msgstr "Tarama veya arayın..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Bu lottan izlenen bir varlığı taramak veya seçmek için bunu örnek sütun olarak ekleyin, ardından sonucunu ızgarada kaydedin."
+
+msgid "Scan serial, batch or item"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Bu QR kodunu kimlik doğrulayıcı uygulamanız (örn. Google Authenticator veya 1Password) ile tarayın, ardından gösterdiği 6 haneli kodu girin."
@@ -23757,6 +23781,9 @@ msgstr "Bu liste boştu."
 msgid "That name is already used by another step."
 msgstr "Bu ad başka bir adım tarafından zaten kullanılıyor."
 
+msgid "That storage unit is not at this count's location"
+msgstr ""
+
 msgid "That workspace is connected to another company"
 msgstr "Bu çalışma alanı başka bir şirkete bağlı"
 
@@ -24248,6 +24275,9 @@ msgstr "Bu varlık için MACRS kapsamında IRS kurtarma süresi sınıfı (3, 5,
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "Her iş emrinin ürettiği stok kartı — çıkış lotlarını birleştirmek için eşleşmesi gerekir"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "Stok kartı'nın kiralama oranı"

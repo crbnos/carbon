@@ -207,6 +207,9 @@ interface TableProps<T extends object> {
   // matches in the expanded rows show, or `true` for always. A row the user
   // toggles keeps their choice until the value changes.
   expandRowsFor?: string | true | null;
+  // Opens one row by its id each time a new object is passed: the row a scan
+  // landed in. A row the user collapses stays collapsed until the next one.
+  expandRow?: { id: string } | null;
   // Renders a full-width header row above each run of consecutive rows that
   // share a key (e.g. a report grouped by date). Grouping follows `data`'s
   // order, so the caller sorts by the key; `header` receives the run's rows.
@@ -377,6 +380,7 @@ const Table = <T extends object>({
   pinExpandedRows = false,
   canExpandRow,
   expandRowsFor,
+  expandRow,
   groupRowsBy,
   mobileLayout = "list",
   mobileMenuItems
@@ -411,6 +415,13 @@ const Table = <T extends object>({
   if (expandedRowsFor !== expandRowsFor) {
     setExpandedRowsFor(expandRowsFor);
     setExpandedRows({});
+  }
+  const [openedRow, setOpenedRow] = useState(expandRow);
+  if (openedRow !== expandRow) {
+    setOpenedRow(expandRow);
+    if (expandRow) {
+      setExpandedRows((prev) => ({ ...prev, [expandRow.id]: true }));
+    }
   }
 
   const isRowExpanded = useCallback(

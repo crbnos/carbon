@@ -2487,6 +2487,9 @@ msgstr "添加到库存以供将来使用"
 msgid "Add tools"
 msgstr "添加工具"
 
+msgid "Add unit"
+msgstr ""
+
 msgid "Add Unit"
 msgstr "添加 件"
 
@@ -2737,6 +2740,9 @@ msgstr "已分配"
 
 msgid "Allows acknowledge & continue"
 msgstr "允许确认并继续"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "已因上级单元 {sourceName} 而不计入MRP"
@@ -9653,11 +9659,17 @@ msgstr "输入您的私有 OAuth 应用程序的 Onshape URL、客户端 ID 和�
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "输入前系统在过账前一天的试算平衡余额，用于每个账户。"
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "输入每一行到货的数量。当收货单已过账时，数量为零的行将不被记为已收货。"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "输入此移动应该的数量。差异的相反移动在原始时期内的原始旁边过账。"
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "输入该资产的制造成本。该成本将从其原支出账户计入资产：上年度的未分配利润或本年度的人工、材料费用。"
@@ -10953,6 +10965,9 @@ msgstr "翻面"
 
 msgid "For <0/>"
 msgstr "对于 <0/>"
+
+msgid "For a batch. A serial counts as 1."
+msgstr ""
 
 msgid "for anything. They'll pull in the right person."
 msgstr "用于任何事项。他们会调配合适的人员。"
@@ -19718,6 +19733,9 @@ msgstr "移除工具"
 msgid "Remove two-factor authentication"
 msgstr "移除双因素认证"
 
+msgid "Remove unit"
+msgstr ""
+
 msgid "Remove Unit"
 msgstr "移除单位"
 
@@ -21027,6 +21045,12 @@ msgstr "扫码或搜索..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "扫码或从此批次中选择一个追踪实体，将其添加为采样列，然后在网格中记录其结果。"
+
+msgid "Scan serial, batch or item"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "用你的身份验证应用程序（如 Google Authenticator 或 1Password）扫描此 QR 代码，然后输入它显示的 6 位数代码。"
@@ -23757,6 +23781,9 @@ msgstr "该列表为空。"
 msgid "That name is already used by another step."
 msgstr "该名称已被另一个步骤使用。"
 
+msgid "That storage unit is not at this count's location"
+msgstr ""
+
 msgid "That workspace is connected to another company"
 msgstr "该工作区已连接到另一家公司"
 
@@ -24248,6 +24275,9 @@ msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "每个工单生产的物料 — 要求其匹配以合并输出批次"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "该物料的租赁费率"
