@@ -4313,3 +4313,23 @@ the error set against an untouched checkout of `main`.
 **Rule:** On a page an outsider can reach (sign-in, invite, verify, callback, MFA, SSO, a share link), log the real error with the module logger and pass `null` as the cause. Everywhere else, pass the real error object, never `params`, a result wrapper or a string that repeats the title.
 
 **Applies to:** every `error(` call in `apps/*/app/routes/_public+`, `_auth+`, `share+` and `api+/login*`, and any new app that registers `flashClientMiddleware`.
+
+## PostgREST `ilike` reads `*` as a wildcard
+
+**Context:** The SCIM endpoint matched `userName` with `.ilike("userName", escaped)` to compare without case (2026-10-30).
+
+**Problem:** Escaping `%` and `_` is not enough. PostgREST also reads `*` as an alias of `%`, and `*` is legal in an email local part. A filter for `a*@acme.com` matched `ab@acme.com`, so an identity provider could link the wrong person, and the duplicate check refused a new `userName` that only looked like an existing one.
+
+**Rule:** For an exact match without case on a value someone else sends, compare `lower(column) = lower(value)` over Kysely (`sql.ref`), or store a lowercased column. Never use `.ilike` or `.like` for equality.
+
+**Applies to:** every `.ilike(` / `.like(` in `apps/*/app` and `packages/*/src` whose value is not a search the user typed.
+
+## An external system must not see success before Carbon acts on it
+
+**Context:** SCIM deactivation stored `scimUser.active = false` first, then ran `deactivateUser` and the API-key delete, and answered 200 whatever they returned (2026-10-30).
+
+**Problem:** If a step failed, the identity provider saw success and never sent the change again. The person kept their membership or their API key, which is the exact access the feature exists to remove.
+
+**Rule:** When a caller retries only on failure (an IdP, a webhook sender), store the new state after the side effects that grant or remove access succeed. Answer 5xx when one of them fails, so the retry runs them again. Each step must be idempotent.
+
+**Applies to:** `packages/ee/src/sso/scim.server.ts` and any inbound sync or webhook handler that changes access.
