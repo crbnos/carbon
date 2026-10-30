@@ -101,6 +101,7 @@ import {
   EPSILON,
   equals,
   getErrorMessage,
+  groupBy,
   indexByMapped,
   isFullDraw,
   PickGuardError,
@@ -6850,10 +6851,21 @@ export type PlannableLine = {
   // Callers pass only counted lines; null is tolerated for the row type and
   // coerces to 0 (delta = −systemQuantity), never actually reached.
   countedQuantity: number | string | null;
+  trackedEntityId?: string | null;
+  storageUnitId?: string | null;
+  foundDuringCount?: boolean;
+};
+
+export type PlannedCountMove = {
+  trackedEntityId: string;
+  fromStorageUnitId: string | null;
+  toStorageUnitId: string | null;
+  quantity: number;
 };
 
 export type PlanResult<L extends PlannableLine> = {
   planned: { line: L; delta: number }[];
+  moves: PlannedCountMove[];
 };
 
 export function planInventoryCountPost<L extends PlannableLine>(
@@ -6861,9 +6873,42 @@ export function planInventoryCountPost<L extends PlannableLine>(
 ): PlanResult<L> {
   const planned = lines.map((line) => ({
     line,
-    delta: Number(line.countedQuantity) - Number(line.systemQuantity)
+    delta: round(Number(line.countedQuantity) - Number(line.systemQuantity))
   }));
-  return { planned };
+
+  // A tracked entity short in one bin and over in another moved between them.
+  // The matched quantity posts as a move (no write-off, no new unit); only
+  // what is left over posts as an adjustment.
+  const moves: PlannedCountMove[] = [];
+  const byEntity = groupBy(
+    planned.filter((p) => p.line.trackedEntityId && p.delta !== 0),
+    (p) => p.line.trackedEntityId as string
+  );
+  for (const [trackedEntityId, entries] of Object.entries(byEntity)) {
+    const shorts = entries
+      .filter((p) => p.delta < 0)
+      .sort((a, b) => a.delta - b.delta);
+    const overs = entries
+      .filter((p) => p.delta > 0)
+      .sort((a, b) => b.delta - a.delta);
+    for (const over of overs) {
+      for (const short of shorts) {
+        if (over.delta <= 0) break;
+        if (short.delta >= 0) continue;
+        const quantity = round(Math.min(over.delta, -short.delta));
+        moves.push({
+          trackedEntityId,
+          fromStorageUnitId: short.line.storageUnitId ?? null,
+          toStorageUnitId: over.line.storageUnitId ?? null,
+          quantity
+        });
+        over.delta = round(over.delta - quantity);
+        short.delta = round(short.delta + quantity);
+      }
+    }
+  }
+
+  return { planned, moves };
 }
 // Base for post-blocking validation errors. Carries the offending line ids so
 // the response can hand them to the UI to highlight the rows.
