@@ -23,15 +23,12 @@ export async function notifyGmailSendingLimit(
   recipientId: string | null | undefined
 ): Promise<void> {
   if (!recipientId || recipientId === "system") return;
+  const key = `integrations:${companyId}:${Email.id}:gmail-sending-limit`;
+  let claimed = false;
   try {
-    const first = await redis.set(
-      `integrations:${companyId}:${Email.id}:gmail-sending-limit`,
-      "1",
-      "EX",
-      NOTIFY_TTL_SECONDS,
-      "NX"
-    );
-    if (first !== "OK") return;
+    claimed =
+      (await redis.set(key, "1", "EX", NOTIFY_TTL_SECONDS, "NX")) === "OK";
+    if (!claimed) return;
     await trigger("notify", {
       event: NotificationEvent.IntegrationSync,
       companyId,
@@ -45,5 +42,14 @@ export async function notifyGmailSendingLimit(
       companyId,
       error
     });
+    // Nothing was queued: free the day's slot so the next failure tells someone.
+    if (claimed) {
+      await redis.del(key).catch((delError: unknown) =>
+        log.error("Failed to release the Gmail sending-limit notice key", {
+          companyId,
+          error: delError
+        })
+      );
+    }
   }
 }
