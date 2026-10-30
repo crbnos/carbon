@@ -4,7 +4,10 @@
 
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
-import { getLocationTimeZone } from "@carbon/database";
+import {
+  getLocationTimeZone,
+  getNonNettableTrackedEntityIds
+} from "@carbon/database";
 import type {
   DocumentTemplate,
   DocumentTemplateType
@@ -76,15 +79,43 @@ export async function getBatchNumbersForItem(
 
   // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
   // first (FIFO).
-  return client
-    .from("trackedEntity")
-    .select("*")
-    .eq("sourceDocument", "Item")
-    .in("sourceDocumentId", itemIds)
-    .eq("companyId", args.companyId)
-    .gt("quantity", 0)
-    .order("expirationDate", { ascending: true, nullsFirst: false })
-    .order("createdAt", { ascending: true });
+  return withoutNonNettableLots(
+    client,
+    args.companyId,
+    await client
+      .from("trackedEntity")
+      .select("*")
+      .eq("sourceDocument", "Item")
+      .in("sourceDocumentId", itemIds)
+      .eq("companyId", args.companyId)
+      .gt("quantity", 0)
+      .order("expirationDate", { ascending: true, nullsFirst: false })
+      .order("createdAt", { ascending: true })
+  );
+}
+
+/** Issue pickers never offer a lot held in a non-nettable (quarantine) unit. */
+async function withoutNonNettableLots<
+  T extends { id: string },
+  E extends { message: string } | null
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lots: { data: T[] | null; error: E }
+) {
+  if (lots.error || !lots.data) return lots;
+  const quarantined = await getNonNettableTrackedEntityIds(
+    client,
+    companyId,
+    lots.data.map((lot) => lot.id)
+  );
+  if (quarantined.error) {
+    return { ...lots, data: null, error: quarantined.error as unknown as E };
+  }
+  return {
+    ...lots,
+    data: lots.data.filter((lot) => !quarantined.data?.has(lot.id))
+  };
 }
 
 export async function getCompanySettings(
@@ -153,23 +184,28 @@ export async function getSerialNumbersForItem(
 
   // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
   // first (FIFO).
-  return client
-    .from("trackedEntity")
-    .select("*")
-    .eq("sourceDocument", "Item")
-    .in("sourceDocumentId", itemIds)
-    .eq("companyId", args.companyId)
-    .eq("status", "Available")
-    .gt("quantity", 0)
-    .order("expirationDate", { ascending: true, nullsFirst: false })
-    .order("createdAt", { ascending: true });
+  return withoutNonNettableLots(
+    client,
+    args.companyId,
+    await client
+      .from("trackedEntity")
+      .select("*")
+      .eq("sourceDocument", "Item")
+      .in("sourceDocumentId", itemIds)
+      .eq("companyId", args.companyId)
+      .eq("status", "Available")
+      .gt("quantity", 0)
+      .order("expirationDate", { ascending: true, nullsFirst: false })
+      .order("createdAt", { ascending: true })
+  );
 }
 
 /**
  * Available tracked entities for an item at a location, one row per entity, with
  * its bin, on-hand, and FEFO/FIFO order keys — for the shared TrackedEntityPicker.
- * `excludeLineside` drops lineside (work-center) bins; `excludeAllocated` nets out
- * quantities already allocated to other non-cancelled picking lines.
+ * `excludeLineside` drops lineside (work-center) bins; `excludeNonNettable` drops
+ * non-nettable bins (a quarantine area); `excludeAllocated` nets out quantities
+ * already allocated to other non-cancelled picking lines.
  */
 export async function getAvailableTrackedEntities(
   client: SupabaseClient<Database>,
@@ -178,6 +214,7 @@ export async function getAvailableTrackedEntities(
     companyId: string;
     locationId: string;
     excludeLineside?: boolean;
+    excludeNonNettable?: boolean;
     excludeAllocated?: boolean;
     excludeLineId?: string | null;
     sortMethod?: Database["public"]["Enums"]["pickMethodSortMethod"];
@@ -190,7 +227,8 @@ export async function getAvailableTrackedEntities(
     p_exclude_lineside: args.excludeLineside ?? false,
     p_exclude_allocated: args.excludeAllocated ?? false,
     p_exclude_line_id: args.excludeLineId ?? undefined,
-    p_sort_method: args.sortMethod ?? undefined
+    p_sort_method: args.sortMethod ?? undefined,
+    p_exclude_non_nettable: args.excludeNonNettable ?? false
   });
 }
 
@@ -322,6 +360,7 @@ export async function getSuggestedAllocationForMaterial(
     companyId: args.companyId,
     locationId: args.locationId,
     excludeLineside: true,
+    excludeNonNettable: true,
     excludeAllocated: true,
     sortMethod
   });

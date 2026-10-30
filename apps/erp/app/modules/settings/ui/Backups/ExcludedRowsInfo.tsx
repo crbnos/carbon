@@ -88,7 +88,7 @@ export function ExcludedRowsInfo({
             <summary className="cursor-pointer text-muted-foreground">
               <Trans>Technical details</Trans>
             </summary>
-            <pre className="mt-1 whitespace-pre-wrap break-words font-mono text-[11px] text-muted-foreground">
+            <pre className="mt-1 whitespace-pre-wrap break-words font-mono text-[0.6875rem] text-muted-foreground">
               {technical}
             </pre>
           </details>

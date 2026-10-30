@@ -106,7 +106,10 @@ endpoint (`/api/webhook/stripe`, billing) and the Connect endpoint
 default 587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (default
 `Carbon <no-reply@carbon.ms>`). All optional — unset disables email sending.
 Optional `RESEND_API_KEY` (marketing contacts; also a legacy SMTP fallback via
-smtp.resend.com when `SMTP_*` is unset) and `RESEND_AUDIENCE_ID`.
+smtp.resend.com when `SMTP_*` is unset) and `RESEND_AUDIENCE_ID`. A company
+whose Email integration picks Resend, SMTP or Gmail sends its own mail through
+that account instead (`sendCompanyEmail`, `packages/jobs/src/email/`); these
+variables then carry only Carbon's own mail and companies without one.
 
 **Push** — no env vars. `getVapidDetails()` (`@carbon/env/push.server`,
 server-only because it imports `node:crypto`) derives the VAPID pair from

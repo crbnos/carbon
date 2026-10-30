@@ -35,7 +35,7 @@ export function ContainmentList({ items }: Props) {
               </span>
               <span
                 className={cn(
-                  "text-[10px] uppercase tracking-wide font-medium shrink-0",
+                  "text-[0.625rem] uppercase tracking-wide font-medium shrink-0",
                   item.containmentStatus === "Uncontained"
                     ? "text-red-500"
                     : "text-amber-500"

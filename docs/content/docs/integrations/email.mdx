@@ -1,38 +1,60 @@
 ---
 title: Email
-description: Send outbound email through this server's mail settings, Resend, or your own SMTP server.
+description: Send outbound email through this server's mail settings, Resend, your own SMTP server, or a connected Gmail account.
 ---
 
 ## Email
 
-Carbon uses email for transactional messages such as order confirmations and notifications. Email is available on **every plan** and supports server mail, Resend, or SMTP delivery.
+Carbon uses email for transactional messages such as order confirmations and notifications. Email is available on **every plan** and supports server mail, Resend, SMTP or Gmail delivery.
 
-On a single-tenant deployment (`TENANT_TYPE=single`, a self-hosted Carbon) whose server has mail settings, every company can email quotes, orders, invoices and RFQs without installing this integration: they go out through the server's mail settings, from the server's address under the company's name. Install the integration to have replies go to your own address, or to use your own Resend or SMTP account. On Carbon Cloud, or a server without mail settings, install the integration with Resend or SMTP.
+On a single-tenant deployment (`TENANT_TYPE=single`, a self-hosted Carbon) whose server has mail settings, every company can email quotes, orders, invoices and RFQs without installing this integration: they go out through the server's mail settings, from the server's address under the company's name. Install the integration to have replies go to your own address, or to use your own Resend, SMTP or Gmail account. On Carbon Cloud, or a server without mail settings, install the integration with Resend, SMTP or Gmail.
 
-These settings apply to document emails only. Sign-in, security and notification emails always go out from the server's sender address.
+These settings apply to every email Carbon sends for your company: quotes, orders, invoices (including automated ones), purchase orders, RFQs, user invites, two-factor emails and notification emails. Sign-in codes and emails from Carbon itself, such as onboarding tips and the changelog, always go out from the server's sender address.
+
+If a send fails through the provider you chose, the email is not sent another way.
 
 <Steps>
   <Step>
   ### Choose a provider
 
-  Select **Server mail**, **Resend** or **SMTP**. Server mail is offered only on a single-tenant deployment (`TENANT_TYPE=single`, a self-hosted Carbon) whose server has mail settings (`SMTP_HOST`), and is the default there. Carbon Cloud does not offer it: pick Resend or SMTP. The configuration fields change for the selected provider.
+  Select **Server mail**, **Resend**, **SMTP** or **Gmail**. Server mail is offered only on a single-tenant deployment (`TENANT_TYPE=single`, a self-hosted Carbon) whose server has mail settings (`SMTP_HOST`), and is the default there. Carbon Cloud does not offer it: pick Resend, SMTP or Gmail. The configuration fields change for the selected provider.
   </Step>
   <Step>
   ### Fill in the provider fields
 
-  For **Resend**, enter the API key. For **SMTP**, enter the host, port, credentials, and TLS setting. Server mail needs no credentials. Configure the **from address** for any provider. With server mail, documents are sent from the server's address under your company's name, and replies go to the address you enter; leave it empty to have replies go only to the person who sent the document.
+  For **Resend**, enter the API key. For **SMTP**, enter the host, port, credentials, and TLS setting. For **Gmail**, pick the Google account to send as. Server mail needs no credentials. Configure the **from address** for every provider except Gmail, which always sends as the picked account. With server mail, documents are sent from the server's address under your company's name, and replies go to the address you enter; leave it empty to have replies go only to the person who sent the document.
   </Step>
 </Steps>
 
 <FieldTable>
-  <Field name="Provider">**Server mail** (this server's mail settings), **Resend** (Carbon-managed) or **SMTP** (your own server).</Field>
+  <Field name="Provider">**Server mail** (this server's mail settings), **Resend** (your Resend account), **SMTP** (your own server) or **Gmail** (a Google account connected on the Gmail integration).</Field>
   <Field name="From address">The address document emails are sent from. Optional with server mail, where documents are sent from the server's address under your company's name and replies go to this address.</Field>
   <Field name="API key">*(Resend)* Your Resend API key.</Field>
   <Field name="Host / Port">*(SMTP)* Your mail server and port (default `587`).</Field>
   <Field name="Username / Password">*(SMTP)* Credentials for the SMTP server.</Field>
   <Field name="Secure">*(SMTP)* Whether to connect over TLS.</Field>
+  <Field name="Gmail account">*(Gmail)* The connected Google account that sends your email. Only accounts that are connected and working are listed.</Field>
 </FieldTable>
 
 <Callout type="note">
 Carbon displays only the fields for the selected provider.
+</Callout>
+
+## Gmail
+
+<Steps>
+  <Step>
+  ### Connect a Google account
+
+  Open the **Gmail** integration and connect the account that should send your email. The Gmail integration is available on the Business plan on Carbon Cloud.
+  </Step>
+  <Step>
+  ### Pick it under Email
+
+  Open **Email**, select **Gmail**, choose the account under **Gmail account**, and save.
+  </Step>
+</Steps>
+
+<Callout type="note">
+Google limits how many emails an account can send each day, and the limit is lower for personal accounts than for Google Workspace accounts. If your company sends many notification emails, use a Workspace account or another provider.
 </Callout>

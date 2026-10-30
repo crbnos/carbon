@@ -1169,6 +1169,10 @@ export const terms = {
     term: msg`Work Center`,
     definition: msg`Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there.`
   },
+  "non-nettable": {
+    term: msg`Non-nettable`,
+    definition: msg`Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again.`
+  },
 
   // ── Receipts (ReceiptForm) ──────────────────────────────────────────────
   "receipt-source-document": {

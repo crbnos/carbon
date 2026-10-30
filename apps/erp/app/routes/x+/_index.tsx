@@ -507,7 +507,7 @@ const RecentDocumentRow = ({
             <Icon className="w-4 h-4 text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0 max-md:pr-8">
-            <div className="text-sm font-medium tracking-tight truncate max-md:text-[15px]">
+            <div className="text-sm font-medium tracking-tight truncate max-md:text-[0.9375rem]">
               {doc.title}
             </div>
             <div className="text-xs text-muted-foreground truncate max-md:hidden">

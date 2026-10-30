@@ -18,6 +18,12 @@ import { NonRetriableError } from "inngest";
  */
 
 /**
+ * Ours, not nodemailer's: the company sender stopped before any vendor call
+ * (a Gmail token refresh another caller holds).
+ */
+export const NOT_SENT = "ENOTSENT";
+
+/**
  * Nodemailer codes raised while connecting, greeting or authenticating, i.e.
  * before a single recipient or byte of DATA reaches the relay.
  *
@@ -25,7 +31,16 @@ import { NonRetriableError } from "inngest";
  * ANY phase, so either can mean the relay accepted the message and then dropped
  * the connection before the final ack.
  */
-const RETRYABLE_SMTP_CODES = new Set(["ECONNECTION", "EDNS", "EAUTH", "ETLS"]);
+const RETRYABLE_SMTP_CODES = new Set([
+  "ECONNECTION",
+  "EDNS",
+  "EAUTH",
+  "ETLS",
+  // An attachment URL that failed to download: the message never finished, and
+  // a relay accepts nothing until it does.
+  "EFETCH",
+  NOT_SENT
+]);
 
 /**
  * The only Slack failure that provably posted nothing. A platform error is
@@ -66,6 +81,39 @@ export const isRetryableEmailFailure = (error: unknown): boolean => {
 export const isRetryableSlackFailure = (error: unknown): boolean => {
   const code = codeOf(error);
   return code !== undefined && RETRYABLE_SLACK_CODES.has(code);
+};
+
+/** Gmail's 403 reasons for a request it refused over a rate limit; it asks to retry them. */
+const RATE_LIMIT_REASONS = new Set([
+  "rateLimitExceeded",
+  "userRateLimitExceeded"
+]);
+
+type VendorError = {
+  status?: unknown;
+  code?: unknown;
+  errors?: Array<{ reason?: unknown }>;
+  response?: {
+    status?: unknown;
+    data?: { error?: { errors?: Array<{ reason?: unknown }> } };
+  };
+};
+
+/**
+ * A vendor API refused the request over a rate limit (Gmail through
+ * googleapis), so nothing was sent and a replay cannot duplicate: an HTTP 429,
+ * or a 403 whose reason is a rate limit. A 403 `dailyLimitExceeded` stays
+ * terminal: Google says not to retry it.
+ */
+export const isRateLimitedResponse = (error: unknown): boolean => {
+  if (typeof error !== "object" || error === null) return false;
+  const { status, code, errors, response } = error as VendorError;
+  const statuses = [status, code, response?.status].map(String);
+  if (statuses.includes("429")) return true;
+  if (!statuses.includes("403")) return false;
+  return [...(errors ?? []), ...(response?.data?.error?.errors ?? [])].some(
+    (e) => typeof e?.reason === "string" && RATE_LIMIT_REASONS.has(e.reason)
+  );
 };
 
 /** The error to throw for a failed email send, classified. */

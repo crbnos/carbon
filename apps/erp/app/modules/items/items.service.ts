@@ -1240,6 +1240,26 @@ export async function getItemPlanning(
     .maybeSingle();
 }
 
+/**
+ * An item's on-hand at a location from the aggregate MRP reads, with the part
+ * that sits in non-nettable storage units: MRP and the planning screens count
+ * `quantityOnHand - quantityNonNettable` as supply.
+ */
+export async function getItemNettableQuantities(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("itemStockQuantities")
+    .select("quantityOnHand, quantityNonNettable")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .eq("locationId", locationId)
+    .maybeSingle();
+}
+
 export async function getItemQuantities(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -4618,16 +4638,23 @@ async function resolveMethodMaterialStorageUnitIds(
   client: SupabaseClient<Database>,
   args: {
     itemId?: string | null;
+    companyId: string;
     current?: Record<string, string>;
   }
 ): Promise<Record<string, string>> {
   const current = { ...(args.current ?? {}) };
   if (!args.itemId) return current;
 
+  // A non-nettable (quarantine) default is not seeded: the line would then
+  // name it, and jobs would consume quarantined stock as named.
   const pickMethods = await client
     .from("pickMethod")
-    .select("locationId, defaultStorageUnitId")
-    .eq("itemId", args.itemId);
+    .select(
+      "locationId, defaultStorageUnitId, storageUnit!inner(effectiveNettable)"
+    )
+    .eq("itemId", args.itemId)
+    .eq("companyId", args.companyId)
+    .eq("storageUnit.effectiveNettable", true);
 
   for (const row of pickMethods.data ?? []) {
     if (
@@ -4707,6 +4734,7 @@ export async function upsertMethodMaterial(
       client,
       {
         itemId: methodMaterial.itemId,
+        companyId: methodMaterial.companyId,
         current: normalizeStorageUnitIds(methodMaterial.storageUnitIds)
       }
     );

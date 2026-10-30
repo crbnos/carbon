@@ -329,6 +329,9 @@ msgstr "parti toplamı"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Hedeften {daysBehindTarget} gün geride"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Engelli edildi: {0}"
@@ -463,6 +466,12 @@ msgstr "Sütun: {0}"
 msgid "Columns"
 msgstr "Sütunlar"
 
+msgid "Comfortable"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
 msgid "Companies"
 msgstr "Şirketler"
 
@@ -576,6 +585,9 @@ msgstr "Adımı Sil"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Zaman Kartını Sil (<0/>)"
+
+msgid "Density"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "Sorunu açıklayın..."
@@ -1006,6 +1018,12 @@ msgstr "Set"
 
 msgid "Labor"
 msgstr "İşçilik"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Son olarak tamamlanan"
@@ -2020,6 +2038,12 @@ msgstr "Boyut"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Source"
 msgstr "Kaynak"
 
@@ -2115,6 +2139,9 @@ msgstr "Sistem"
 msgid "Tag"
 msgstr "Etiket"
 
+msgid "Text size"
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Carbon'da kullanılan vurgu rengi."
 
@@ -2188,6 +2215,9 @@ msgstr "Küçük Resim"
 
 msgid "Tick the jobs this was done for."
 msgstr "Bunun için yapılan iş emirlerini işaretleyin."
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "Saat"

@@ -819,6 +819,9 @@ msgstr "{previewCount, plural, one {Это установит +{hoursInput}ч п
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Окончательно удалить # строку?} other {Окончательно удалить # строк?}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} на хранении, не учитываемом в MRP, не планируется"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# этап остался} other {# этапов осталось}}"
 
@@ -2735,6 +2738,12 @@ msgstr "Распределено"
 msgid "Allows acknowledge & continue"
 msgstr "Позволяет подтвердить и продолжить"
 
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Уже не учитывается в MRP из-за родительской единицы {sourceName}"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Уже не учитывается в MRP из-за типа хранилища {sourceName}"
+
 msgid "also at {otherStationNames}"
 msgstr "также на {otherStationNames}"
 
@@ -3760,6 +3769,12 @@ msgstr "Вы уверены, что хотите убрать {lineName} из э
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Вы уверены, что хотите убрать {supplierName} в качестве поставщика для этой номенклатуры? Это невозможно отменить."
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Вы уверены, что хотите удалить этого сотрудника из {name}? История обучения сохраняется и сотрудник может быть добавлен позже."
 
@@ -4403,6 +4418,9 @@ msgstr "Оптимальное завершение"
 
 msgid "Beta"
 msgstr "Бета"
+
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
 
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Основные причины брака по типу, номенклатуре или рабочему центру"
@@ -5546,6 +5564,9 @@ msgstr "Объединить фильтры"
 
 msgid "Combine output into one lot"
 msgstr "Объединить выход в одну партию"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "Скоро"
@@ -8152,6 +8173,9 @@ msgstr "Демо-данные применены"
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "Демоданные применены к этой организации. Сохраните их или отмените, чтобы восстановить то, что было раньше."
 
+msgid "Density"
+msgstr ""
+
 msgid "department"
 msgstr "отдел"
 
@@ -9893,6 +9917,9 @@ msgstr "Каждая требуемая задача должна быть Го�
 
 msgid "Every row was imported successfully."
 msgstr "Каждая строка была успешно импортирована."
+
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "Каждая единица хранения этого типа не учитывается в MRP: MRP и отбор игнорируют её запас."
 
 msgid "Every unit has a rate."
 msgstr "Каждая единица имеет ставку."
@@ -12905,8 +12932,8 @@ msgstr "Канбан"
 msgid "Kanban for {kanbanName}"
 msgstr "Канбан для {kanbanName}"
 
-msgid "Kanban ID"
-msgstr "ID канбана"
+msgid "Kanban IDs"
+msgstr "ID канбанов"
 
 msgid "Kanban Output"
 msgstr "Выпуск Канбана"
@@ -12986,7 +13013,7 @@ msgstr "Размер этикетки"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Этикетка для завершения текущей операции для этого канбана"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Этикетка для создания {0} для этого канбана"
 
@@ -13040,6 +13067,12 @@ msgstr "Единица труда"
 
 msgid "Language"
 msgstr "Язык"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "Последние 6 месяцев"
@@ -14329,6 +14362,9 @@ msgstr "Очистка миграции (по умолчанию)"
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "Очистка миграции должна в сумме равняться нулю. <0>Перейти к пробному балансу</0>"
 
+msgid "Min"
+msgstr "Мин."
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "мин {minimumBatchQuantity} — достигнуто"
 
@@ -14614,6 +14650,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (планирование)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP и отбор игнорируют запас в этой единице и во вложенных единицах. Используйте для зон карантина и блокировки."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP запускается автоматически каждые 3 часа, но вы можете запустить его вручную здесь."
 
@@ -14751,6 +14790,9 @@ msgstr "Чистый актив ПИ"
 
 msgid "Net Unit Price"
 msgstr "Чистая цена за единицу"
+
+msgid "Nettable"
+msgstr "Учитывается в MRP"
 
 msgid "Network error"
 msgstr "Ошибка сети"
@@ -16022,6 +16064,9 @@ msgstr "Долгосрочная часть"
 
 msgid "Non-Inventory"
 msgstr "Нескладской"
+
+msgid "Non-nettable"
+msgstr "Не учитывается в MRP"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Счёт прочих расходов, дебетуемый при продаже или списании актива данного класса по цене ниже его остаточной стоимости."
@@ -18093,6 +18138,13 @@ msgstr "Печать этикетки"
 msgid "Print Label"
 msgstr "Печать этикетки"
 
+msgid "Print Labels"
+msgstr "Печать этикеток"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Печать этикеток ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Вывод печати ({0})"
@@ -18258,9 +18310,6 @@ msgstr "Начало проекта"
 
 msgid "Projected"
 msgstr "Спрогнозировано"
-
-msgid "Projected (To)"
-msgstr "Спроецировано (целевое)"
 
 msgid "Projected completion"
 msgstr "Прогнозное завершение"
@@ -18619,7 +18668,7 @@ msgstr "ТС остатка"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR-код для завершения текущей операции для этого канбана"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR-код для создания {0} для этого канбана"
 
@@ -19521,6 +19570,7 @@ msgstr "Операция переоценки (дата вступления в 
 msgid "Remove"
 msgstr "Убрать"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Убрать {0}"
@@ -22217,6 +22267,9 @@ msgstr "Вместо этого выйти"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Подтверждение рассмотрения перед переходом к следующему шагу"
 
@@ -22328,6 +22381,12 @@ msgstr "Слайд {0}"
 
 msgid "Slides"
 msgstr "Слайды"
+
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Минимальный размер партии для комплектования. Оставьте пусто без значения."
@@ -22709,6 +22768,9 @@ msgstr "Запас"
 
 msgid "Stock Availability"
 msgstr "Наличие запаса"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "Запас в этой единице хранения не является обеспечением. MRP и экраны планирования его не учитывают, и отбор из неё не берёт. Единица также не учитывается, если не учитывается её родительская единица или один из её типов хранилища. Используйте для зон карантина и блокировки. Перемещение запасов выводит запас обратно."
 
 msgid "Stock movement corrected"
 msgstr "Движение запаса исправлено"
@@ -24906,6 +24968,9 @@ msgstr "Нет активных предложений поставщиков д
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "В этой работе есть внешние операции, которым не назначены поставщики. Пожалуйста, назначьте поставщика для каждой внешней операции перед выпуском."
 
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
+
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "На этих операциях нет наладки, труда или машинного времени, поэтому нет ничего, на основе чего можно определить размер запуска. Полоса — это номинальный маркер и не определяет производительность — добавьте стандарты времени к операциям для планирования."
 
@@ -25448,6 +25513,9 @@ msgstr "плотно"
 
 msgid "Tightened"
 msgstr "Усиленный"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "Время"

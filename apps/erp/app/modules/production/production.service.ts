@@ -1695,13 +1695,36 @@ export async function getJobMaterialShortfallByItem(
       factor: Number(rule.conversionFactor ?? 1) || 1
     });
   }
-  const successorIds = Array.from(
+  let successorIds = Array.from(
     new Set(
       Array.from(successorByItem.values())
         .map((s) => s.itemId)
         .filter((id) => !onHandByItem.has(id))
     )
   );
+  // On-hand is the nettable figure, like the job's own lines
+  // (get_job_quantity_on_hand): stock in a non-nettable storage unit cannot
+  // cover the remainder.
+  const successorStock =
+    successorIds.length > 0
+      ? await client
+          .from("itemStockQuantities")
+          .select("itemId, quantityOnHand, quantityNonNettable")
+          .eq("companyId", companyId)
+          .eq("locationId", locationId)
+          .in("itemId", successorIds)
+      : { data: [], error: null };
+  if (successorStock.error) {
+    // Read as no stock, every successor would show a shortage it may not
+    // have: show the predecessor's own shortfall only.
+    logger.warn("Failed to read successor stock for the job materials", {
+      companyId,
+      jobId,
+      error: successorStock.error
+    });
+    successorByItem.clear();
+    successorIds = [];
+  }
   const successorQuantities = await async.map(
     successorIds,
     async (successorId) =>
@@ -1711,9 +1734,16 @@ export async function getJobMaterialShortfallByItem(
         item_id: successorId
       })
   );
+  // The RPC row above is physical on-hand, so only its incoming supply is used.
+  const successorOnHand = new Map(
+    (successorStock.data ?? []).map((row) => [
+      row.itemId,
+      Number(row.quantityOnHand ?? 0) - Number(row.quantityNonNettable ?? 0)
+    ])
+  );
   successorIds.forEach((successorId, index) => {
     const row = successorQuantities[index]?.data?.[0];
-    onHandByItem.set(successorId, Number(row?.quantityOnHand ?? 0));
+    onHandByItem.set(successorId, successorOnHand.get(successorId) ?? 0);
     incomingByItem.set(
       successorId,
       Number(row?.quantityOnPurchaseOrder ?? 0) +
@@ -3316,11 +3346,10 @@ async function getMaterialsWithoutStorageUnit(
     client
       .from("jobMaterial")
       .select(
-        "id, jobId, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision), job(locationId)"
+        "id, jobId, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision), job(locationId), storageUnit(name, effectiveNettable)"
       )
       .in("jobId", batch)
       .eq("companyId", companyId)
-      .is("storageUnitId", null)
       .order("id")
   );
   if (lines.error) return { data: {}, error: lines.error };
@@ -14599,7 +14628,8 @@ export async function getMethod(
         // Default storage units at the job's location — two set-based
         // queries instead of up to two per material (getStorageUnitId):
         // pickMethod default wins, else the bin with the highest on-hand
-        // quantity — never the fullest bin under strict backflush.
+        // quantity — never the fullest bin under strict backflush, and never
+        // a non-nettable unit.
         if (jobLocationId) {
           const ledgerTotals = !(await withFullestBin(reader))
             ? []
@@ -14609,6 +14639,13 @@ export async function getMethod(
                 .where("companyId", "=", companyId)
                 .where("itemId", "in", missing)
                 .where("storageUnitId", "is not", null)
+                .where("storageUnitId", "in", (eb) =>
+                  eb
+                    .selectFrom("storageUnit")
+                    .select("storageUnit.id")
+                    .where("storageUnit.companyId", "=", companyId)
+                    .where("storageUnit.effectiveNettable", "=", true)
+                )
                 .groupBy(["itemId", "storageUnitId"])
                 .select([
                   "itemId",
@@ -14636,7 +14673,13 @@ export async function getMethod(
             .where("locationId", "=", jobLocationId)
             .where("companyId", "=", companyId)
             .where("itemId", "in", missing)
-            .where("defaultStorageUnitId", "is not", null)
+            .where("defaultStorageUnitId", "in", (eb) =>
+              eb
+                .selectFrom("storageUnit")
+                .select("storageUnit.id")
+                .where("storageUnit.companyId", "=", companyId)
+                .where("storageUnit.effectiveNettable", "=", true)
+            )
             .execute();
 
           for (const pickMethod of pickMethods) {
@@ -21799,9 +21842,16 @@ async function loadSupersessionRedirect(
     .map((r) => r.itemId);
   const consumeFirstOnHand = new Map<string, number>();
   if (consumeFirstItemIds.length > 0 && job?.locationId) {
+    // Nettable on-hand: stock in a non-nettable storage unit cannot supply
+    // the job.
     const stock = await db
       .selectFrom("itemStockQuantities")
-      .select(["itemId", "quantityOnHand"])
+      .select((eb) => [
+        "itemId",
+        eb("quantityOnHand", "-", eb.ref("quantityNonNettable")).as(
+          "quantityNettable"
+        )
+      ])
       .where("companyId", "=", companyId)
       .where("locationId", "=", job.locationId)
       .where("itemId", "in", consumeFirstItemIds)
@@ -21816,7 +21866,7 @@ async function loadSupersessionRedirect(
     for (const r of stock) {
       onHandByItem.set(
         r.itemId,
-        (onHandByItem.get(r.itemId) ?? 0) + Number(r.quantityOnHand ?? 0)
+        (onHandByItem.get(r.itemId) ?? 0) + Number(r.quantityNettable ?? 0)
       );
     }
     const madeItemIds = new Set(
@@ -21900,7 +21950,14 @@ async function itemDerivedJobMaterialFields(opts: {
       .where("itemId", "=", itemId)
       .where("companyId", "=", companyId)
       .executeTakeFirst(),
-    getStorageUnitId(trx, itemId, locationId, lineStorageUnitId, !strict)
+    getStorageUnitId(
+      trx,
+      itemId,
+      locationId,
+      companyId,
+      lineStorageUnitId,
+      !strict
+    )
   ]);
 
   if (!item) return null;
@@ -22127,9 +22184,15 @@ async function settleConsumeFirstLines(opts: {
       predecessorIds.add(id);
     }
   }
+  // Nettable on-hand, the same figure loadSupersessionRedirect reads.
   const stock = await trx
     .selectFrom("itemStockQuantities")
-    .select(["itemId", "quantityOnHand"])
+    .select((eb) => [
+      "itemId",
+      eb("quantityOnHand", "-", eb.ref("quantityNonNettable")).as(
+        "quantityNettable"
+      )
+    ])
     .where("companyId", "=", companyId)
     .where("locationId", "=", locationId)
     .where("itemId", "in", [...predecessorIds])
@@ -22138,7 +22201,7 @@ async function settleConsumeFirstLines(opts: {
   for (const row of stock) {
     onHandByItem.set(
       row.itemId,
-      (onHandByItem.get(row.itemId) ?? 0) + Number(row.quantityOnHand ?? 0)
+      (onHandByItem.get(row.itemId) ?? 0) + Number(row.quantityNettable ?? 0)
     );
   }
 
@@ -22398,7 +22461,7 @@ function createItemDefaults(
     }
 
     // The pick method's default bin wins, else the bin holding the most (never
-    // under strict backflush).
+    // under strict backflush). A non-nettable unit is neither.
     if (locationId) {
       fullestBinAllowed ??= !(
         await getStrictBackflushSettings(reader, companyId, locationId)
@@ -22411,6 +22474,13 @@ function createItemDefaults(
             .where("companyId", "=", companyId)
             .where("itemId", "in", missing)
             .where("storageUnitId", "is not", null)
+            .where("storageUnitId", "in", (eb) =>
+              eb
+                .selectFrom("storageUnit")
+                .select("storageUnit.id")
+                .where("storageUnit.companyId", "=", companyId)
+                .where("storageUnit.effectiveNettable", "=", true)
+            )
             .groupBy(["itemId", "storageUnitId"])
             .select([
               "itemId",
@@ -22435,7 +22505,13 @@ function createItemDefaults(
         .where("locationId", "=", locationId)
         .where("companyId", "=", companyId)
         .where("itemId", "in", missing)
-        .where("defaultStorageUnitId", "is not", null)
+        .where("defaultStorageUnitId", "in", (eb) =>
+          eb
+            .selectFrom("storageUnit")
+            .select("storageUnit.id")
+            .where("storageUnit.companyId", "=", companyId)
+            .where("storageUnit.effectiveNettable", "=", true)
+        )
         .execute();
       for (const pickMethod of pickMethods) {
         if (pickMethod.defaultStorageUnitId) {

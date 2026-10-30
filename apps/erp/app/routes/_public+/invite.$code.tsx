@@ -17,8 +17,8 @@ import {
   updateCompanySession
 } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
+import { trigger } from "@carbon/jobs";
 import { Ratelimit, redis } from "@carbon/kv";
-import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
 import {
@@ -246,24 +246,32 @@ async function requestNewInvite(
     .eq("id", invite.data.createdBy)
     .single();
 
-  await sendEmail({
-    to: invite.data.email,
-    subject: `You have been invited to join ${invite.data.company?.name} on Carbon`,
-    headers: { "X-Entity-Ref-ID": nanoid() },
-    html: await render(
-      InviteEmail({
-        invitedByEmail: inviter.data?.email ?? invite.data.email,
-        invitedByName: inviter.data?.fullName ?? "",
-        email: invite.data.email,
-        name: "",
-        companyName: invite.data.company?.name ?? "Carbon",
-        inviteLink: `${getAppUrl()}/invite/${refreshed.data.code}`,
-        ip,
-        location,
-        controlledEnvironment: CONTROLLED_ENVIRONMENT
-      })
-    )
+  const email = InviteEmail({
+    invitedByEmail: inviter.data?.email ?? invite.data.email,
+    invitedByName: inviter.data?.fullName ?? "",
+    email: invite.data.email,
+    name: "",
+    companyName: invite.data.company?.name ?? "Carbon",
+    inviteLink: `${getAppUrl()}/invite/${refreshed.data.code}`,
+    ip,
+    location,
+    controlledEnvironment: CONTROLLED_ENVIRONMENT
   });
+  // Queued so it follows the company's Email settings; a failed dispatch only logs.
+  try {
+    await trigger("send-email", {
+      to: invite.data.email,
+      subject: `You have been invited to join ${invite.data.company?.name} on Carbon`,
+      html: await render(email),
+      text: await render(email, { plainText: true }),
+      companyId: invite.data.companyId
+    });
+  } catch (cause) {
+    logger.error("Failed to queue the refreshed invite email", {
+      companyId: invite.data.companyId,
+      error: cause
+    });
+  }
 
   throw redirect(
     path.to.root,

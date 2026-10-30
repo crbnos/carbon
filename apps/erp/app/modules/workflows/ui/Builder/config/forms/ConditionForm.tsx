@@ -247,7 +247,7 @@ export function ConditionForm({
             className="relative -mx-2.5 flex flex-col gap-1 px-2.5"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[0.6875rem] font-semibold text-foreground">
                 {kindLabel}
               </span>
               <div className="flex items-center gap-0.5">

@@ -251,7 +251,7 @@ export function MoreSheet({
         header={
           <div className="relative flex min-h-11 items-center justify-center px-12">
             {screen.id !== "root" && <BottomSheetBack onClick={toRoot} />}
-            <h2 className="truncate text-[17px] font-semibold text-foreground">
+            <h2 className="truncate text-[1.0625rem] font-semibold text-foreground">
               {title}
             </h2>
           </div>

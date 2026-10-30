@@ -329,6 +329,9 @@ msgstr "バッチ合計"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "目標より{daysBehindTarget}日遅れ"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0} によりブロック中"
@@ -463,6 +466,12 @@ msgstr "カラム: {0}"
 msgid "Columns"
 msgstr "列"
 
+msgid "Comfortable"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
 msgid "Companies"
 msgstr "会社"
 
@@ -576,6 +585,9 @@ msgstr "ステップを削除"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "タイムカードを削除 (<0/>)"
+
+msgid "Density"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "問題を説明してください..."
@@ -1006,6 +1018,12 @@ msgstr "キット"
 
 msgid "Labor"
 msgstr "労務"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last completed"
 msgstr "最後に完了"
@@ -2020,6 +2038,12 @@ msgstr "サイズ"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Source"
 msgstr "ソース"
 
@@ -2115,6 +2139,9 @@ msgstr "システム"
 msgid "Tag"
 msgstr "タグ"
 
+msgid "Text size"
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Carbon全体で使用されるアクセントカラー。"
 
@@ -2188,6 +2215,9 @@ msgstr "サムネイル"
 
 msgid "Tick the jobs this was done for."
 msgstr "これが完了した製造指図をチェック"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "時刻"

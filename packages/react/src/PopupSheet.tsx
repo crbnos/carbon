@@ -77,7 +77,9 @@ export const PopupSheetContent = forwardRef<
           </BottomSheetTitle>
         </BottomSheetHeader>
         <BottomSheetBody>
-          <div className={cn("text-[15px]", className, "w-full max-w-none")}>
+          <div
+            className={cn("text-[0.9375rem]", className, "w-full max-w-none")}
+          >
             {children}
           </div>
         </BottomSheetBody>

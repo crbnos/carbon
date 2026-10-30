@@ -81,5 +81,6 @@ export * from "./tax";
 export * from "./themes";
 export * from "./tiptap";
 export * from "./types";
+export * from "./ui-scale";
 export * from "./url";
 export * from "./viewport";

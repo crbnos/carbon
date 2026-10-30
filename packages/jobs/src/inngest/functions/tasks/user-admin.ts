@@ -8,11 +8,11 @@ import { deactivateUser } from "@carbon/auth/users.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { CarbonEdition, CONTROLLED_ENVIRONMENT } from "@carbon/env";
-import { sendEmail } from "@carbon/lib/email.server";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import { Edition } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { render } from "react-email";
+import { sendCompanyEmail } from "../../../email/company-email";
 import { inngest } from "../../client";
 
 export const userAdminFunction = inngest.createFunction(
@@ -104,7 +104,7 @@ export const userAdminFunction = inngest.createFunction(
             companyId
           );
 
-          await sendEmail({
+          await sendCompanyEmail(serviceRole, companyId, {
             to: user.data.email,
             subject: `You have been invited to join ${company.data?.name} on Carbon`,
             headers: {

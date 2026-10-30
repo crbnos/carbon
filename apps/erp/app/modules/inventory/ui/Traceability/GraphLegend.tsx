@@ -170,7 +170,7 @@ function LineRow({
           strokeDasharray={dashed ? "5 3" : undefined}
         />
       </svg>
-      <span className="text-[13px] text-foreground truncate">{label}</span>
+      <span className="text-[0.8125rem] text-foreground truncate">{label}</span>
     </HStack>
   );
 }
@@ -212,7 +212,7 @@ function Row({ entry }: { entry: Entry }) {
         />
         <Icon className="relative w-3.5 h-3.5 text-white" />
       </div>
-      <span className="text-[13px] text-foreground truncate">
+      <span className="text-[0.8125rem] text-foreground truncate">
         {entry.label}
       </span>
     </HStack>

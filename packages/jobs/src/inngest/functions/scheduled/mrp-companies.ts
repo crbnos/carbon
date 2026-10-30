@@ -177,7 +177,10 @@ export async function companiesWithPlanningWork(
       db
         .selectFrom("itemStockQuantities")
         .select("companyId")
-        .where("quantityOnHand", "<", 0)
+        // Nettable on-hand, the figure MRP plans against.
+        .where((eb) =>
+          eb(eb("quantityOnHand", "-", eb.ref("quantityNonNettable")), "<", 0)
+        )
     )
     .execute();
 

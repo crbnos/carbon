@@ -329,6 +329,9 @@ msgstr "razem partia produkcyjna"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Opóźnione o {daysBehindTarget} dni"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Zablokowane przez {0}"
@@ -463,6 +466,12 @@ msgstr "Kolumna: {0}"
 msgid "Columns"
 msgstr "Kolumny"
 
+msgid "Comfortable"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
 msgid "Companies"
 msgstr "Firmy"
 
@@ -576,6 +585,9 @@ msgstr "Usuń krok"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Usuń kartę czasu (<0/>)"
+
+msgid "Density"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "Opisz problem..."
@@ -1006,6 +1018,12 @@ msgstr "Zestaw"
 
 msgid "Labor"
 msgstr "Robocizna"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Ostatnio ukończono"
@@ -2020,6 +2038,12 @@ msgstr "Rozmiar"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Source"
 msgstr "Źródło"
 
@@ -2115,6 +2139,9 @@ msgstr "System"
 msgid "Tag"
 msgstr "Tag"
 
+msgid "Text size"
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Kolor akcentu używany w Carbon."
 
@@ -2188,6 +2215,9 @@ msgstr "Miniatura"
 
 msgid "Tick the jobs this was done for."
 msgstr "Zaznacz zlecenia produkcyjne, dla których to zostało wykonane."
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "Godzina"

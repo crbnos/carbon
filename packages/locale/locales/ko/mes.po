@@ -329,6 +329,9 @@ msgstr "배치 총계"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "목표에서 {daysBehindTarget}일 뒤짐"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0}에 의해 차단됨"
@@ -463,6 +466,12 @@ msgstr "열: {0}"
 msgid "Columns"
 msgstr "열"
 
+msgid "Comfortable"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
 msgid "Companies"
 msgstr "회사"
 
@@ -576,6 +585,9 @@ msgstr "단계 삭제"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "타임카드 삭제 (<0/>)"
+
+msgid "Density"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "문제를 설명하세요..."
@@ -1006,6 +1018,12 @@ msgstr "키트"
 
 msgid "Labor"
 msgstr "노무"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last completed"
 msgstr "마지막 완료"
@@ -2020,6 +2038,12 @@ msgstr "사이즈"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Source"
 msgstr "소스"
 
@@ -2115,6 +2139,9 @@ msgstr "시스템"
 msgid "Tag"
 msgstr "태그"
 
+msgid "Text size"
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Carbon 전체에서 사용되는 강조 색상입니다."
 
@@ -2188,6 +2215,9 @@ msgstr "썸네일"
 
 msgid "Tick the jobs this was done for."
 msgstr "이것이 수행된 작업 지시를 체크하세요."
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "시간"

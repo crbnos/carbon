@@ -151,7 +151,7 @@ export function SlidePinOverlay({ pins }: { pins: SlideAnnotation[] }) {
   return pins.map((pin, i) => (
     <span
       key={pin.id}
-      className="pointer-events-none absolute flex size-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white text-[8px] font-semibold text-white shadow"
+      className="pointer-events-none absolute flex size-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white text-[0.5rem] font-semibold text-white shadow"
       style={{
         left: `${pin.x * 100}%`,
         top: `${pin.y * 100}%`,
@@ -334,11 +334,11 @@ export function SlidesEditor({
                       ) : (
                         <LuBox className="size-8 text-muted-foreground" />
                       )}
-                      <span className="pointer-events-none absolute left-1 top-1 rounded bg-muted px-1 text-[9px] font-semibold text-muted-foreground">
+                      <span className="pointer-events-none absolute left-1 top-1 rounded bg-muted px-1 text-[0.5625rem] font-semibold text-muted-foreground">
                         3D
                       </span>
                       {converting && (
-                        <span className="pointer-events-none absolute bottom-1 left-1 rounded bg-muted px-1 text-[9px] text-muted-foreground">
+                        <span className="pointer-events-none absolute bottom-1 left-1 rounded bg-muted px-1 text-[0.5625rem] text-muted-foreground">
                           {t`Converting…`}
                         </span>
                       )}
@@ -382,7 +382,7 @@ export function SlidesEditor({
                 </div>
                 {slide.modelUploadId && model?.name && (
                   <p
-                    className="w-full truncate text-[10px] text-muted-foreground"
+                    className="w-full truncate text-[0.625rem] text-muted-foreground"
                     title={model.name}
                   >
                     {model.name}
@@ -393,7 +393,7 @@ export function SlidesEditor({
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="h-6 px-2 text-[10px]"
+                      className="h-6 px-2 text-[0.625rem]"
                       leftIcon={<LuMapPin className="size-3" />}
                       onClick={() => setAnnotatingIndex(index)}
                     >

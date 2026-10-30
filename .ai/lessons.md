@@ -4265,6 +4265,35 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** every `defineServiceFn` in `apps/erp/app/modules/*/*.server.ts`, and any validator reused as an operation's input.
 
+## A global pnpm virtual store breaks this repo's peer dependencies
+
+**Context:** A worktree installed while `enable-global-virtual-store=true` was set in the
+user's global pnpm config (`~/Library/Preferences/pnpm/rc`).
+
+**Problem:** Packages are linked from `~/Library/pnpm/store/v10/links/…`, where a package
+cannot resolve its peers. The ERP dev server failed every page with `Cannot find package
+'@tiptap/core'`, the database tests could not load, and the scoped typechecks reported about
+7,000 React type errors in files nobody had changed, identical on `main`. It reads as a
+broken branch, not a broken install.
+
+**Rule:** When `readlink apps/erp/node_modules/react-icons` points into
+`Library/pnpm/store/…/links`, reinstall the worktree with the global store off:
+`pnpm install --frozen-lockfile --config.enable-global-virtual-store=false
+--config.confirmModulesPurge=false`. Before blaming a change for mass type errors, compare
+the error set against an untouched checkout of `main`.
+
+**Applies to:** Any worktree; typecheck, vitest and `crbn up` runs.
+
+## A derived flag on a row that `ON DELETE SET NULL` points at must be released before the delete
+
+**Context:** `itemStockQuantities.quantityNonNettable` counts the stock in storage units whose `effectiveNettable` is false. `itemLedger.storageUnitId` references `storageUnit` with `ON DELETE SET NULL` (2026-10-28).
+
+**Problem:** Deleting a non-nettable unit sets its ledger rows' `storageUnitId` to NULL, and the ledger's statement handler then sees rows that point at no unit, which count as nettable. It cannot tell the stock was non-nettable, because the unit row is already gone, so `quantityNonNettable` keeps the stock forever. An AFTER interceptor on the unit is too late as well: the foreign key's own trigger has already nulled the rows.
+
+**Rule:** When an aggregate is keyed on a property of a row that an `ON DELETE SET NULL` foreign key points at, undo that row's contribution in a BEFORE DELETE interceptor (`storage_unit_release_non_nettable_stock`), while the referencing rows still point at it. Prefer recomputing an aggregate from its source over adjusting it by deltas wherever the input can change without a write to the aggregated table (`util.refresh_storage_unit_nettable`).
+
+**Applies to:** `packages/database/src/event-system/handlers/`, any derived total over `itemLedger` keyed on a `storageUnit` property.
+
 ## Code outside an Inngest step runs again after every step
 
 **Context:** Printing a Make kanban to a printer printed the Create card only, never Start or Complete (2026-10-28).

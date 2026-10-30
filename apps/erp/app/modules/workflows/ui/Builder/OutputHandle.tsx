@@ -30,7 +30,7 @@ function FieldList({ type }: { type: ValueType }) {
   const shownFields = fields.slice(0, MAX_FIELDS);
   const more = fields.length - shownFields.length;
   return (
-    <div className="truncate font-mono text-[10px] leading-snug text-muted-foreground/80">
+    <div className="truncate font-mono text-[0.625rem] leading-snug text-muted-foreground/80">
       {shownFields.join(", ")}
       {more > 0 ? `, +${more}` : ""}
     </div>
@@ -72,7 +72,7 @@ function OutputList({
             index > 0 ? "mt-1 border-t px-2 py-1.5 pt-2" : "px-2 py-1.5"
           }
         >
-          <div className="text-[10px] font-semibold text-muted-foreground">
+          <div className="text-[0.625rem] font-semibold text-muted-foreground">
             {nodeNameLabel(group.nodeName)}
           </div>
           {group.rows.map((row) => (
@@ -83,7 +83,7 @@ function OutputList({
               </div>
               {/* Wraps rather than truncates: "may be empty on this path" is the
                   half a customer most needs and would be the half cut off. */}
-              <div className="text-[10px] leading-snug text-muted-foreground">
+              <div className="text-[0.625rem] leading-snug text-muted-foreground">
                 {describeVariable(row.type, row.guaranteed, labelFor)}
               </div>
               <FieldList type={row.type} />
@@ -171,7 +171,7 @@ export function OutputHandle({
         className="w-72 p-0"
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
-        <div className="border-b px-3 py-2 text-[11px] font-semibold text-foreground">
+        <div className="border-b px-3 py-2 text-[0.6875rem] font-semibold text-foreground">
           {t`Available after ${port.label}`}
         </div>
         <OutputList

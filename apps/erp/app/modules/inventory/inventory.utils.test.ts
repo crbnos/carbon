@@ -5,6 +5,8 @@
 import { describe, expect, it } from "vitest";
 import {
   isShippableEntityStatus,
+  type NonNettableUnit,
+  nonNettableSource,
   receivingSearchMatches,
   receivingSearchTerms,
   shippableEntityStatuses,
@@ -109,5 +111,78 @@ describe("receivingSearchMatches", () => {
 
   it("marks nothing without a match", () => {
     expect(receivingSearchMatches("MTSV708", ["7000"])).toEqual([]);
+  });
+});
+
+describe("nonNettableSource", () => {
+  const unit = (
+    id: string,
+    overrides: Partial<NonNettableUnit> = {}
+  ): NonNettableUnit => ({
+    id,
+    name: id,
+    parentId: null,
+    nettable: true,
+    storageTypeIds: [],
+    ...overrides
+  });
+  const units = (...list: NonNettableUnit[]) =>
+    new Map(list.map((u) => [u.id, u]));
+  const quarantine = new Map([["t-q", "Quarantine"]]);
+
+  it("names the unit's own non-nettable storage type before any parent", () => {
+    expect(
+      nonNettableSource(
+        { parentId: "rack", storageTypeIds: ["t-q"] },
+        units(unit("rack", { nettable: false })),
+        quarantine
+      )
+    ).toEqual({ via: "storageType", name: "Quarantine" });
+  });
+
+  it("names the nearest non-nettable parent, not a higher one", () => {
+    expect(
+      nonNettableSource(
+        { parentId: "shelf", storageTypeIds: [] },
+        units(
+          unit("shelf", { parentId: "area", nettable: false }),
+          unit("area", { nettable: false })
+        ),
+        quarantine
+      )
+    ).toEqual({ via: "parent", name: "shelf" });
+  });
+
+  it("names a parent that is non-nettable through its storage type", () => {
+    expect(
+      nonNettableSource(
+        { parentId: "shelf", storageTypeIds: [] },
+        units(
+          unit("shelf", { parentId: "area" }),
+          unit("area", { storageTypeIds: ["t-q"] })
+        ),
+        quarantine
+      )
+    ).toEqual({ via: "parent", name: "area" });
+  });
+
+  it("finds nothing when every unit above is nettable", () => {
+    expect(
+      nonNettableSource(
+        { parentId: "shelf", storageTypeIds: ["t-other"] },
+        units(unit("shelf", { parentId: "area" }), unit("area")),
+        quarantine
+      )
+    ).toBeNull();
+  });
+
+  it("stops at a parent it was not given", () => {
+    expect(
+      nonNettableSource(
+        { parentId: "missing", storageTypeIds: [] },
+        units(),
+        quarantine
+      )
+    ).toBeNull();
   });
 });

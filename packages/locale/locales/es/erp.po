@@ -819,6 +819,9 @@ msgstr "{previewCount, plural, one {Esto establecerá +{hoursInput}h de tiempo e
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {¿Eliminar permanentemente # fila?} other {¿Eliminar permanentemente # filas?}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} en almacenamiento no neteable, no planificado"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase restante} other {# fases restantes}}"
 
@@ -2735,6 +2738,12 @@ msgstr "Asignado"
 msgid "Allows acknowledge & continue"
 msgstr "Permite reconocer y continuar"
 
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "Ya es no neteable por su unidad superior {sourceName}"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "Ya es no neteable por su tipo de almacenamiento {sourceName}"
+
 msgid "also at {otherStationNames}"
 msgstr "también en {otherStationNames}"
 
@@ -3760,6 +3769,12 @@ msgstr "¿Está seguro de que desea quitar {lineName} de este contrato?"
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "¿Está seguro de que desea quitar {supplierName} como proveedor para este artículo? Esto no se puede deshacer."
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "¿Estás seguro de que deseas eliminar este empleado de {name}? El historial de capacitación se mantiene y el empleado se puede volver a añadir más tarde."
 
@@ -4403,6 +4418,9 @@ msgstr "Mejor finalización"
 
 msgid "Beta"
 msgstr "Beta"
+
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
 
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Las principales causas de desperdicio por motivo, artículo o centro de trabajo"
@@ -5546,6 +5564,9 @@ msgstr "Combinar filtros"
 
 msgid "Combine output into one lot"
 msgstr "Combinar la salida en un lote"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "Próximamente"
@@ -8152,6 +8173,9 @@ msgstr "Datos de demostración aplicados"
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "Se aplicaron datos de demostración a esta empresa. Mantenlos, o revierte para restaurar exactamente lo que había aquí antes."
 
+msgid "Density"
+msgstr ""
+
 msgid "department"
 msgstr "departamento"
 
@@ -9893,6 +9917,9 @@ msgstr "Cada tarea requerida debe estar Hecha u Omitida antes de que el período
 
 msgid "Every row was imported successfully."
 msgstr "Cada fila se importó correctamente."
+
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "Cada unidad de almacenamiento de este tipo es no neteable: el MRP y el picking ignoran sus existencias."
 
 msgid "Every unit has a rate."
 msgstr "Cada unidad tiene una tarifa."
@@ -12905,8 +12932,8 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban para {kanbanName}"
 
-msgid "Kanban ID"
-msgstr "ID de Kanban"
+msgid "Kanban IDs"
+msgstr "IDs de Kanban"
 
 msgid "Kanban Output"
 msgstr "Salida Kanban"
@@ -12986,7 +13013,7 @@ msgstr "Tamaño de etiqueta"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Etiqueta para completar la operación actual de este kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Etiqueta para crear un {0} para este kanban"
 
@@ -13040,6 +13067,12 @@ msgstr "Unidad de mano de obra"
 
 msgid "Language"
 msgstr "Idioma"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "Últimos 6 Meses"
@@ -14329,6 +14362,9 @@ msgstr "Liquidación de Migración (predeterminado)"
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "Liquidación de Migración debe totalizar cero. <0>Ir a Saldo de Prueba</0>"
 
+msgid "Min"
+msgstr "Mín."
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "mín {minimumBatchQuantity} — cumplido"
 
@@ -14614,6 +14650,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (planificación)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "El MRP y el picking ignoran las existencias de esta unidad y de las unidades que contiene. Úsela para zonas de cuarentena y retención."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP se ejecuta automáticamente cada 3 horas, pero puedes ejecutarlo manualmente aquí."
 
@@ -14751,6 +14790,9 @@ msgstr "Activo ROU Neto"
 
 msgid "Net Unit Price"
 msgstr "Precio Unitario Neto"
+
+msgid "Nettable"
+msgstr "Neteable"
 
 msgid "Network error"
 msgstr "Error de red"
@@ -16022,6 +16064,9 @@ msgstr "Porción no corriente"
 
 msgid "Non-Inventory"
 msgstr "No Inventario"
+
+msgid "Non-nettable"
+msgstr "No neteable"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Cuenta de gasto no operativo debitada cuando un activo de esta clase se vende o se descarta por debajo de su valor neto en libros."
@@ -18093,6 +18138,13 @@ msgstr "Imprimir etiqueta"
 msgid "Print Label"
 msgstr "Imprimir Etiqueta"
 
+msgid "Print Labels"
+msgstr "Imprimir Etiquetas"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Imprimir Etiquetas ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Salida de Impresión ({0})"
@@ -18258,9 +18310,6 @@ msgstr "Inicio del proyecto"
 
 msgid "Projected"
 msgstr "Proyectado"
-
-msgid "Projected (To)"
-msgstr "Proyectado (A)"
 
 msgid "Projected completion"
 msgstr "Finalización proyectada"
@@ -18619,7 +18668,7 @@ msgstr "VP de Residual"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR Code para completar la operación actual para este kanban"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Código QR para crear un {0} para este kanban"
 
@@ -19521,6 +19570,7 @@ msgstr "Asiento de revaluación (la fecha efectiva y la clasificación se verifi
 msgid "Remove"
 msgstr "Quitar"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Quitar {0}"
@@ -22217,6 +22267,9 @@ msgstr "Cerrar sesión en su lugar"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Revisión de aprobación antes de pasar al siguiente paso"
 
@@ -22328,6 +22381,12 @@ msgstr "Diapositiva {0}"
 
 msgid "Slides"
 msgstr "Diapositivas"
+
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Pasada más pequeña que vale la pena agrupar. Deje en blanco para ninguna."
@@ -22709,6 +22768,9 @@ msgstr "Existencias"
 
 msgid "Stock Availability"
 msgstr "Disponibilidad de existencias"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "Las existencias de esta unidad de almacenamiento no son suministro. El MRP y las pantallas de planificación no las cuentan, y el picking no las toma. Una unidad también es no neteable cuando lo es su unidad superior o uno de sus tipos de almacenamiento. Úsela para zonas de cuarentena y retención. Una transferencia de existencias las vuelve a sacar."
 
 msgid "Stock movement corrected"
 msgstr "Movimiento de stock corregido"
@@ -24906,6 +24968,9 @@ msgstr "No hay Cotizaciones del Proveedor Activas para comparar para este RFQ."
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Hay operaciones externas asociadas con este trabajo que no tienen proveedores. Por favor, asigne un proveedor a cada operación externa antes de liberarlo."
 
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
+
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "No hay preparación, mano de obra ni tiempo de máquina en estas operaciones, por lo que no hay nada para calcular el tamaño de ejecución. La barra es un marcador nominal y no es una capacidad — agregue estándares de tiempo a las operaciones para programarlas."
 
@@ -25448,6 +25513,9 @@ msgstr "ajustado"
 
 msgid "Tightened"
 msgstr "Rigurosa"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "Hora"

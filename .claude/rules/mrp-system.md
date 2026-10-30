@@ -191,6 +191,8 @@ Phase-7 write) and throws on failure.
      `20260812002454`) — an indexed per-company read, replacing the old full
      `itemLedger` GROUP BY that grew with total history. Excludes `Rejected`
      tracked stock (matching `get_inventory_quantities`); the raw scan counted it.
+     MRP reads `quantityOnHand - quantityNonNettable`: stock in a non-nettable
+     storage unit is not supply (`inventory-system.md` → Non-nettable storage).
    - **Reads paginate**: every PostgREST read goes through `fetchAll`
      (`@carbon/database/fetch-all`, 1000-row pages + stable `.order()`) —
      production `max_rows = 1000`
@@ -843,6 +845,17 @@ never offered a Cancel, Defer or Expedite.
   re-creating its wrapper with the same column — it fails loudly (return type
   mismatch) until then. Generated types mark every RPC column non-null; the new
   ones are not (`PlanningGridColumns` in `production/types.ts`).
+- **The purchasing Supplier column is `defaultSupplierId`**, a grid RPC
+  column (`20261029080733`): the item's preferred supplier, else its earliest
+  active supplier part (`createdAt`, `id`). The column shows it, filters and
+  sorts on it, and seeds the row's ordering supplier. Before it, the cell fell
+  back to `suppliers[0]` (unordered `jsonb_agg`) while the filter matched
+  `preferredSupplierId` alone, so on a company with no preferred suppliers no
+  shown supplier matched any row. The filter's options are
+  `get_purchasing_planning_suppliers` (SECURITY INVOKER over the grid RPC):
+  each `defaultSupplierId` once, over the whole plan and before the grid's
+  filters, read on page 1 only (`getPurchasingPlanningSuppliers`); a failed
+  read falls back to every supplier.
 - **Create planned orders** — `planning.update.tsx` in each module:
   - production (`orderPlannedJobs`, `create: "production"`): inserts jobs +
     job methods, upserts `supplyForecast` (`'Production Order'`), then

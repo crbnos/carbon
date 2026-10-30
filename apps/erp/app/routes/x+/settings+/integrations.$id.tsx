@@ -10,9 +10,12 @@ import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import {
   integrations as availableIntegrations,
+  Email,
   emailSettingsForm,
+  Gmail,
   getIntegrationConfigById,
   type IntegrationID,
+  picksCredentialFreeEmail,
   picksServerMail,
   resolveIntegrationTopology
 } from "@carbon/ee";
@@ -528,10 +531,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     dynamicOptions.reimbursementBankAccountId = assetOptions;
   }
 
+  // A failed read still opens the page, with no Gmail accounts to pick.
+  const gmailAccounts =
+    integrationId === Email.id
+      ? await readConnections(client, companyId, Gmail.id).catch((error) => {
+          logger.error("Failed to read the company's Gmail accounts", {
+            companyId,
+            error
+          });
+          return [];
+        })
+      : [];
+
   // Server mail is offered only where the server has mail settings.
-  const emailForm = emailSettingsForm(integrationId, SERVER_MAIL_CONFIGURED);
+  const emailForm = emailSettingsForm(
+    integrationId,
+    SERVER_MAIL_CONFIGURED,
+    gmailAccounts
+  );
   if (emailForm?.providerOptions) {
     dynamicOptions.provider = emailForm.providerOptions;
+  }
+  if (emailForm) {
+    dynamicOptions.gmailConnectionId = emailForm.gmailConnectionOptions;
   }
 
   const integrationData = await getIntegration(
@@ -1335,15 +1357,14 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
   // integration active but non-functional, so require one here. Scoped to
   // form-entered secrets — OAuth providers get their credentials via the
   // callback, so they are never blocked here.
-  const usesServerMail = picksServerMail(integrationId, metadata);
-  if (usesServerMail && !SERVER_MAIL_CONFIGURED) {
+  if (picksServerMail(integrationId, metadata) && !SERVER_MAIL_CONFIGURED) {
     return data(
       {},
       await flash(
         request,
         error(
           null,
-          "This server has no mail settings. Ask your administrator to set them up, or pick Resend or Custom SMTP."
+          "This server has no mail settings. Ask your administrator to set them up, or pick Resend, Custom SMTP or Gmail."
         )
       )
     );
@@ -1358,7 +1379,9 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     "sense"
   ]);
   if (
-    (FORM_SECRET_INTEGRATIONS.has(integrationId) && !usesServerMail) ||
+    // Email's Server mail and Gmail have no credential to enter.
+    (FORM_SECRET_INTEGRATIONS.has(integrationId) &&
+      !picksCredentialFreeEmail(integrationId, metadata)) ||
     integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID
   ) {
     const alreadyVaulted = existing.data?.secretRef != null;

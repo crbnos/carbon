@@ -819,6 +819,9 @@ msgstr "{previewCount, plural, one {# 人・日に +{hoursInput}h の超勤を�
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 行を永久に削除しますか？} other {# 行を永久に削除しますか？}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} がMRP対象外の保管場所にあり、計画に含まれません"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
 
@@ -2735,6 +2738,12 @@ msgstr "配置済み"
 msgid "Allows acknowledge & continue"
 msgstr "確認して続行できます"
 
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "親ユニット {sourceName} により、すでにMRP対象外です"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "ストレージタイプ {sourceName} により、すでにMRP対象外です"
+
 msgid "also at {otherStationNames}"
 msgstr "{otherStationNames}でも実施中"
 
@@ -3760,6 +3769,12 @@ msgstr "{lineName} をこの契約から除去してもよろしいですか？"
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "{supplierName}をこの品目の仕入先として除去してもよろしいですか？これは取り消せません。"
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "この従業員を「{name}」から除去してもよろしいですか？教育訓練履歴は保持されており、従業員は後で再度追加できます。"
 
@@ -4403,6 +4418,9 @@ msgstr "ベストケース完了"
 
 msgid "Beta"
 msgstr "ベータ"
+
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
 
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "理由、品目、または作業区別の最大スクラップ原因"
@@ -5546,6 +5564,9 @@ msgstr "絞り込みを組み合わせ"
 
 msgid "Combine output into one lot"
 msgstr "出力を1つのロットに統合"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "近日公開予定"
@@ -8152,6 +8173,9 @@ msgstr "デモデータが適用されました"
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "デモデータがこの会社に適用されました。保持するか、適用前の状態に戻してください。"
 
+msgid "Density"
+msgstr ""
+
 msgid "department"
 msgstr "部門"
 
@@ -9893,6 +9917,9 @@ msgstr "すべての必須タスクは期間がクローズされる前に完了
 
 msgid "Every row was imported successfully."
 msgstr "すべての行が正常にインポートされました。"
+
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "このタイプのすべての保管ユニットはMRP対象外です。MRPとピッキングはその在庫を無視します。"
 
 msgid "Every unit has a rate."
 msgstr "すべての個にレートが設定されています。"
@@ -12905,7 +12932,7 @@ msgstr "かんばん"
 msgid "Kanban for {kanbanName}"
 msgstr "{kanbanName}のかんばん"
 
-msgid "Kanban ID"
+msgid "Kanban IDs"
 msgstr "かんばんID"
 
 msgid "Kanban Output"
@@ -12986,7 +13013,7 @@ msgstr "ラベルサイズ"
 msgid "Label to complete the current operation for this kanban"
 msgstr "このかんばんの現在の工程を完了するためのラベル"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "このかんばんの{0}を作成するためのラベル"
 
@@ -13040,6 +13067,12 @@ msgstr "労務単位"
 
 msgid "Language"
 msgstr "言語"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "過去6ヶ月"
@@ -14329,6 +14362,9 @@ msgstr "マイグレーション清算（デフォルト）"
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "マイグレーション清算は合計がゼロである必要があります。<0>試算表に移動</0>"
 
+msgid "Min"
+msgstr "最小"
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "最小 {minimumBatchQuantity} — 達成済み"
 
@@ -14614,6 +14650,9 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (計画)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRPとピッキングは、このユニットとその中のユニットの在庫を無視します。隔離・保留エリアに使用します。"
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRPは3時間ごとに自動的に実行されますが、ここで手動で実行することもできます。"
 
@@ -14751,6 +14790,9 @@ msgstr "純ROU資産"
 
 msgid "Net Unit Price"
 msgstr "純単価"
+
+msgid "Nettable"
+msgstr "MRP対象"
 
 msgid "Network error"
 msgstr "ネットワークエラー"
@@ -16022,6 +16064,9 @@ msgstr "非流動部分"
 
 msgid "Non-Inventory"
 msgstr "非在庫"
+
+msgid "Non-nettable"
+msgstr "MRP対象外"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "このクラスの資産が未償却残高以下で売却または廃棄されたとき、営業外費用勘定が借記されます。"
@@ -18093,6 +18138,13 @@ msgstr "ラベル印刷"
 msgid "Print Label"
 msgstr "ラベルを印刷"
 
+msgid "Print Labels"
+msgstr "ラベルを印刷"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "ラベルを印刷 ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "印刷出力 ({0})"
@@ -18258,9 +18310,6 @@ msgstr "プロジェクト開始"
 
 msgid "Projected"
 msgstr "予測"
-
-msgid "Projected (To)"
-msgstr "予定 (To)"
 
 msgid "Projected completion"
 msgstr "予測完了"
@@ -18619,7 +18668,7 @@ msgstr "残存価値のPV"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "このかんばんの現在の工程を完了するためのQRコード"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "このかんばんの{0}を作成するためのQR Code"
 
@@ -19521,6 +19570,7 @@ msgstr "再測定仕訳（有効日と分類は確認時にチェックされま
 msgid "Remove"
 msgstr "除去"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "{0}を除去"
@@ -22217,6 +22267,9 @@ msgstr "代わりにサインアウト"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "次のステップに進む前のサインオフレビュー"
 
@@ -22328,6 +22381,12 @@ msgstr "スライド {0}"
 
 msgid "Slides"
 msgstr "スライド"
+
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "バッチ処理に値する最小ラン。設定しない場合は空白のままにしてください。"
@@ -22709,6 +22768,9 @@ msgstr "在庫"
 
 msgid "Stock Availability"
 msgstr "在庫可用性"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "この保管ユニットの在庫は供給ではありません。MRPと計画画面はこれを数えず、ピッキングもここから取りません。親ユニットまたはそのストレージタイプのいずれかがMRP対象外の場合も、ユニットはMRP対象外になります。隔離・保留エリアに使用します。在庫転送で在庫を再び移動できます。"
 
 msgid "Stock movement corrected"
 msgstr "在庫移動が訂正されました"
@@ -24906,6 +24968,9 @@ msgstr "このRFQに対して比較する有効な仕入先見積がありませ
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "この製造指図に関連する外注工程があり、それらに仕入先が割り当てられていません。リリースする前に、各外注工程に仕入先を割り当ててください。"
 
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
+
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "これらの工程に段取り、労務、機械時間がないため、実行サイズの根拠となるものがありません。バーは名目的なマーカーであり、容量を保持していません — スケジュール設定するには、工程に時間基準を追加してください。"
 
@@ -25448,6 +25513,9 @@ msgstr "逼迫"
 
 msgid "Tightened"
 msgstr "きつい検査"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "時刻"

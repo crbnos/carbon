@@ -194,7 +194,10 @@ export async function action({ request }: ActionFunctionArgs) {
       // trigger-created profile rows — so a retry (or a later invite for
       // this email) starts clean.
       if (memberships.length === 0) {
-        await deleteJitSsoUser(serviceRole, getDatabaseClient(), userId);
+        await deleteJitSsoUser(serviceRole, getDatabaseClient(), {
+          userId,
+          accessToken: authSession.accessToken
+        });
       }
       return redirect(
         path.to.root,
@@ -325,7 +328,10 @@ export async function action({ request }: ActionFunctionArgs) {
         // The whole throwaway goes: auth user plus its trigger-created
         // profile rows, or the leftover profile makes the email un-invitable.
         if (memberships.length === 0 && authSession.userId === userId) {
-          await deleteJitSsoUser(serviceRole, getDatabaseClient(), userId);
+          await deleteJitSsoUser(serviceRole, getDatabaseClient(), {
+            userId,
+            accessToken: authSession.accessToken
+          });
         }
         if (invite.error) {
           logger.error("Failed to look up the SAML SSO invite on sign-in", {

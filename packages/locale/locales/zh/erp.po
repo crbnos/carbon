@@ -819,6 +819,9 @@ msgstr "{previewCount, plural, one {这将在 # 个人天设置 +{hoursInput} �
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 # 行？}}"
 
+msgid "{quantity} in non-nettable storage, not planned against"
+msgstr "{quantity} 位于不计入MRP的存储中，不参与计划"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
 
@@ -2735,6 +2738,12 @@ msgstr "已分配"
 msgid "Allows acknowledge & continue"
 msgstr "允许确认并继续"
 
+msgid "Already non-nettable through its parent {sourceName}"
+msgstr "已因上级单元 {sourceName} 而不计入MRP"
+
+msgid "Already non-nettable through its storage type {sourceName}"
+msgstr "已因存储类型 {sourceName} 而不计入MRP"
+
 msgid "also at {otherStationNames}"
 msgstr "也在 {otherStationNames}"
 
@@ -3760,6 +3769,12 @@ msgstr "确定要从此合约中移除 {lineName} 吗？"
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "您确定要将 {supplierName} 从此项目的供应商中移除吗？此操作无法撤销。"
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "您确定要从 {name} 中移除此员工？培训历史被保留，员工可以稍后重新添加。"
 
@@ -4403,6 +4418,9 @@ msgstr "最佳情况完成日期"
 
 msgid "Beta"
 msgstr "测试版"
+
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
 
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "按原因、物料或工作中心显示最大报废原因"
@@ -5546,6 +5564,9 @@ msgstr "合并筛选"
 
 msgid "Combine output into one lot"
 msgstr "将输出合并为一个批次"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "即将推出"
@@ -8152,6 +8173,9 @@ msgstr "演示数据已应用"
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "演示数据已应用到此公司。保留它，或还原以恢复之前的确切内容。"
 
+msgid "Density"
+msgstr ""
+
 msgid "department"
 msgstr "部门"
 
@@ -9893,6 +9917,9 @@ msgstr "每项必需任务必须在完成或已跳过后期间才能关闭。"
 
 msgid "Every row was imported successfully."
 msgstr "每一行都已成功导入。"
+
+msgid "Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it."
+msgstr "此类型的每个存储单元都不计入MRP：MRP 和拣货会忽略其中的库存。"
 
 msgid "Every unit has a rate."
 msgstr "每件都有费率。"
@@ -12905,7 +12932,7 @@ msgstr "看板"
 msgid "Kanban for {kanbanName}"
 msgstr "看板 {kanbanName}"
 
-msgid "Kanban ID"
+msgid "Kanban IDs"
 msgstr "看板ID"
 
 msgid "Kanban Output"
@@ -12986,7 +13013,7 @@ msgstr "标签尺寸"
 msgid "Label to complete the current operation for this kanban"
 msgstr "用于完成此看板当前操作的标签"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "用于为此看板创建 {0} 的标签"
 
@@ -13040,6 +13067,12 @@ msgstr "人工单位"
 
 msgid "Language"
 msgstr "语言"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "最近6个月"
@@ -14329,6 +14362,9 @@ msgstr "迁移清算（默认）"
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "迁移清算必须总计为零。<0>转到试算表</0>"
 
+msgid "Min"
+msgstr "最小值"
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "最小 {minimumBatchQuantity} — 已达到"
 
@@ -14614,6 +14650,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (计划)"
 
+msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+msgstr "MRP 和拣货会忽略此单元及其内部单元中的库存。用于隔离区和冻结区。"
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP 每 3 小时自动运行一次，但您也可以在此手动运行。"
 
@@ -14751,6 +14790,9 @@ msgstr "净ROU资产"
 
 msgid "Net Unit Price"
 msgstr "净单价"
+
+msgid "Nettable"
+msgstr "计入MRP"
 
 msgid "Network error"
 msgstr "网络错误"
@@ -16022,6 +16064,9 @@ msgstr "非流动部分"
 
 msgid "Non-Inventory"
 msgstr "非库存"
+
+msgid "Non-nettable"
+msgstr "不计入MRP"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "本类资产出售或报废价值低于账面净值时计入的非营业费用账户"
@@ -18093,6 +18138,13 @@ msgstr "打印标签"
 msgid "Print Label"
 msgstr "打印标签"
 
+msgid "Print Labels"
+msgstr "打印标签"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "打印标签 ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "打印输出 ({0})"
@@ -18258,9 +18310,6 @@ msgstr "项目开始"
 
 msgid "Projected"
 msgstr "预测"
-
-msgid "Projected (To)"
-msgstr "预计（目标）"
 
 msgid "Projected completion"
 msgstr "预计完成"
@@ -18619,7 +18668,7 @@ msgstr "残值现值"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "为此看板完成当前工序的QR代码"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "二维码以为此看板创建{0}"
 
@@ -19521,6 +19570,7 @@ msgstr "重新计量凭证（确认时检查生效日期和分类）："
 msgid "Remove"
 msgstr "移除"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "移除{0}"
@@ -22217,6 +22267,9 @@ msgstr "改为登出"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "在进入下一步骤前进行签署评审"
 
@@ -22328,6 +22381,12 @@ msgstr "幻灯片 {0}"
 
 msgid "Slides"
 msgstr "幻灯片"
+
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "最小分批数量。留空表示无。"
@@ -22709,6 +22768,9 @@ msgstr "库存"
 
 msgid "Stock Availability"
 msgstr "库存可用性"
+
+msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
+msgstr "此存储单元中的库存不属于供应。MRP 和计划页面不计算它，拣货也不从中取货。当上级单元或其任一存储类型不计入MRP时，该单元同样不计入MRP。用于隔离区和冻结区。库存调拨可将库存再移出。"
 
 msgid "Stock movement corrected"
 msgstr "库存移动已修正"
@@ -24906,6 +24968,9 @@ msgstr "此询价单没有可比较的启用供应商报价。"
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "有与此工单相关的外包工序但没有分配供应商。请在发放之前为每个外包工序分配一个供应商。"
 
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
+
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "这些工序上没有换型、人工或机器工时，因此没有任何东西来确定运行大小。该栏是一个名义标记，并不保持容量 — 向工序添加时间标准来排程它。"
 
@@ -25448,6 +25513,9 @@ msgstr "紧张"
 
 msgid "Tightened"
 msgstr "加严检验"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "时间"

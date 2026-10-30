@@ -30,6 +30,9 @@ const IndeterminateCheckbox = ({
   };
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    // Selecting a row must not also expand it (an expandable row toggles on
+    // click).
+    event.stopPropagation();
     shiftKeyRef.current = event.shiftKey;
   };
 
