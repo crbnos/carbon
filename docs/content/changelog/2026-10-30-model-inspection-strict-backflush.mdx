@@ -10,7 +10,7 @@ Drawings, bins, long lists and copy-paste between apps all held up work. This re
 
 ## Workflow steps in connected apps
 
-A [workflow](/docs/reference/workflows#steps-in-connected-apps) can now add an **Integration** step that acts in another app: send a Gmail email, post a Slack message to a channel, or create a Google Calendar event. Connect the accounts the steps act as in `Settings → Integrations` (see [workflow apps](/docs/integrations/workflow-apps)).
+A [workflow](/docs/reference/workflows#steps-in-connected-apps) can now add an **Integration** step that acts in another app: send a Gmail email, post a Slack message to a channel, or create a Google Calendar event. Connect the accounts the steps act as in `Settings → Integrations` (see [workflow apps](/docs/integrations/workflow-apps)). Available on the Business plan.
 
 ## Inspection plans from the model
 
@@ -18,7 +18,7 @@ The model viewer now shows a STEP AP242 model's PMI: dimensions, geometric toler
 
 ## Strict backflush
 
-Turn on [strict backflush](/docs/reference/strict-backflush) in `Settings → Items`, and backflush takes material only from the line's Pull From storage unit. A method version cannot be made Active, and a job cannot be released, while a pulled, stocked line has no Pull From. With Prevent negative stock on, a short bin refuses the completion instead of drawing from another bin. With it off, the bin goes below zero and the work completes.
+Turn on [strict backflush](/docs/reference/strict-backflush) in `Settings → Items`, and backflush takes material only from the line's Pull From storage unit, after any material already picked to the operation's lineside. It applies at locations with an active work center and an active storage unit. A method version cannot be made Active, and a job cannot be released, while a pulled, stocked line has no Pull From. With Prevent negative stock on, a short bin refuses the completion instead of drawing from another bin. With it off, the bin goes below zero and the work completes.
 
 ## Scheduling that keeps up with staffing
 
@@ -30,7 +30,7 @@ MRP no longer counts a BOM line with quantity 0 as one, so a [configured item](/
 
 ## Lists of any length
 
-Long lists load more rows as you scroll, so there are no pages to click through. On lists that support them, the row count is exact at any size, and CSV export and bulk actions run in the background for selections over 1,000 rows.
+Long lists load more rows as you scroll, so there are no pages to click through. On lists that support them, the row count is exact at any size. A CSV export of more than 1,000 matching rows, and a bulk action on more than 1,000 selected rows, runs in the background.
 
 ## Quarantine stock that planning ignores
 
