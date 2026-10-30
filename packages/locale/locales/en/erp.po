@@ -10759,6 +10759,9 @@ msgstr "Fax Number"
 msgid "Federation rule"
 msgstr "Federation rule"
 
+msgid "Federation Rule"
+msgstr "Federation Rule"
+
 msgid "Federation Rules"
 msgstr "Federation Rules"
 

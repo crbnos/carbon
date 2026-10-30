@@ -27,7 +27,7 @@ import {
   LuUser
 } from "react-icons/lu";
 import { Link, useNavigate } from "react-router";
-import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { FederationRuleRow } from "~/modules/settings/types";
@@ -215,11 +215,17 @@ const FederationRulesTable = memo(
               </a>
             </Button>
             {canEdit && !showArchived && (
-              <Button leftIcon={<LuPlug />} asChild>
-                <Link to={`${path.to.connectWorkload}?${params.toString()}`}>
-                  <Trans>Connect workload</Trans>
-                </Link>
-              </Button>
+              <>
+                <Button leftIcon={<LuPlug />} variant="secondary" asChild>
+                  <Link to={`${path.to.connectWorkload}?${params.toString()}`}>
+                    <Trans>Connect workload</Trans>
+                  </Link>
+                </Button>
+                <New
+                  label={t`Federation Rule`}
+                  to={`${path.to.newFederationRule}?${params.toString()}`}
+                />
+              </>
             )}
           </HStack>
         }

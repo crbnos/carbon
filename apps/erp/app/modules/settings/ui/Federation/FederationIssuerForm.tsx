@@ -10,13 +10,14 @@ import {
   AlertDescription,
   Button,
   HStack,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle
+  ModalDrawer,
+  ModalDrawerBody,
+  ModalDrawerContent,
+  ModalDrawerDescription,
+  ModalDrawerFooter,
+  ModalDrawerHeader,
+  ModalDrawerProvider,
+  ModalDrawerTitle
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { Hidden, Submit } from "~/components/Form";
@@ -42,74 +43,77 @@ const FederationIssuerForm = ({
   const isDisabled = archived || !permissions.can("update", "users");
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent size="large">
-        <ValidatedForm
-          validator={federationIssuerValidator}
-          method="post"
-          action={
-            isEditing
-              ? path.to.federationIssuer(initialValues.id!)
-              : path.to.newFederationIssuer
-          }
-          defaultValues={initialValues}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              {isEditing ? (
-                <Trans>Edit Issuer</Trans>
-              ) : (
-                <Trans>Register Issuer</Trans>
+    <ModalDrawerProvider type="drawer">
+      <ModalDrawer
+        open
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
+      >
+        <ModalDrawerContent>
+          <ValidatedForm
+            validator={federationIssuerValidator}
+            method="post"
+            action={
+              isEditing
+                ? path.to.federationIssuer(initialValues.id!)
+                : path.to.newFederationIssuer
+            }
+            defaultValues={initialValues}
+            fetcher={fetcher}
+            className="flex h-full flex-col"
+          >
+            <ModalDrawerHeader>
+              <ModalDrawerTitle>
+                {isEditing ? (
+                  <Trans>Edit Issuer</Trans>
+                ) : (
+                  <Trans>Register Issuer</Trans>
+                )}
+              </ModalDrawerTitle>
+              <ModalDrawerDescription>
+                <Trans>
+                  An OIDC identity provider whose tokens Carbon accepts. Rules
+                  name the workloads of an issuer.
+                </Trans>
+              </ModalDrawerDescription>
+            </ModalDrawerHeader>
+            <ModalDrawerBody>
+              <Hidden name="id" />
+              {archived && (
+                <Alert variant="warning" className="mb-4">
+                  <AlertDescription>
+                    <Trans>
+                      This issuer is archived. It and its rules accept no more
+                      tokens, and it can no longer change.
+                    </Trans>
+                  </AlertDescription>
+                </Alert>
               )}
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>
-                An OIDC identity provider whose tokens Carbon accepts. Rules
-                name the workloads of an issuer.
-              </Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="id" />
-            {archived && (
-              <Alert variant="warning" className="mb-4">
-                <AlertDescription>
-                  <Trans>
-                    This issuer is archived. It and its rules accept no more
-                    tokens, and it can no longer change.
-                  </Trans>
-                </AlertDescription>
-              </Alert>
-            )}
-            {/* A disabled fieldset disables every control inside it. */}
-            <fieldset disabled={archived} className="contents">
-              <IssuerFields
-                initialValues={initialValues}
-                isDisabled={isDisabled}
-              />
-            </fieldset>
-          </ModalBody>
-          <ModalFooter>
-            <HStack>
-              {!archived && (
-                <Submit isDisabled={isDisabled}>
-                  {isEditing ? <Trans>Save</Trans> : <Trans>Register</Trans>}
-                </Submit>
-              )}
-              <Button size="md" variant="solid" onClick={() => onClose()}>
-                <Trans>Cancel</Trans>
-              </Button>
-            </HStack>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+              {/* A disabled fieldset disables every control inside it. */}
+              <fieldset disabled={archived} className="contents">
+                <IssuerFields
+                  initialValues={initialValues}
+                  isDisabled={isDisabled}
+                />
+              </fieldset>
+            </ModalDrawerBody>
+            <ModalDrawerFooter>
+              <HStack>
+                {!archived && (
+                  <Submit isDisabled={isDisabled}>
+                    {isEditing ? <Trans>Save</Trans> : <Trans>Register</Trans>}
+                  </Submit>
+                )}
+                <Button size="md" variant="solid" onClick={() => onClose()}>
+                  <Trans>Cancel</Trans>
+                </Button>
+              </HStack>
+            </ModalDrawerFooter>
+          </ValidatedForm>
+        </ModalDrawerContent>
+      </ModalDrawer>
+    </ModalDrawerProvider>
   );
 };
 

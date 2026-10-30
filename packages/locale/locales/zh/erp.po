@@ -10759,6 +10759,9 @@ msgstr "传真号码"
 msgid "Federation rule"
 msgstr ""
 
+msgid "Federation Rule"
+msgstr ""
+
 msgid "Federation Rules"
 msgstr ""
 
