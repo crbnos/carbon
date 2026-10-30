@@ -849,6 +849,8 @@ export const path = {
       generatePath(`${x}/accounting/exchange-rates/delete/${id}`),
     deleteFailureMode: (id: string) =>
       generatePath(`${x}/resources/failure-modes/delete/${id}`),
+    deleteFederationRule: (id: string) =>
+      generatePath(`${x}/settings/federation/delete/${id}`),
     deleteFixedAsset: (id: string) =>
       generatePath(`${x}/fixed-asset/${id}/delete`),
     deleteGauge: (id: string) =>
@@ -1146,6 +1148,9 @@ export const path = {
     failureMode: (id: string) =>
       generatePath(`${x}/resources/failure-modes/${id}`),
     failureModes: `${x}/resources/failure-modes`,
+    federationRule: (id: string) =>
+      generatePath(`${x}/settings/federation/${id}`),
+    federationRules: `${x}/settings/federation`,
     file: {
       batchList: (id: string) => generatePath(`${file}/batch/${id}.pdf`),
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
@@ -1404,6 +1409,9 @@ export const path = {
     groups: `${x}/users/groups`,
     holiday: (id: string) => generatePath(`${x}/people/holidays/${id}`),
     holidays: `${x}/people/holidays`,
+    identityFederationDocs: withDocsHost(
+      "https://docs.carbon.ms/docs/building/identity-federation"
+    ),
     import: (tableId: string) => generatePath(`${x}/shared/import/${tableId}`),
     incomeStatement: `${x}/reports/income-statement`,
     incomeStatementLedger: (id: string) =>
@@ -1774,6 +1782,7 @@ export const path = {
     newEmployeeType: `${x}/users/employee-types/new`,
     newExchangeRate: `${x}/accounting/exchange-rates/new`,
     newFailureMode: `${x}/resources/failure-modes/new`,
+    newFederationRule: `${x}/settings/federation/new`,
     newFixedAsset: `${x}/accounting/fixed-assets/new`,
     newGauge: `${x}/quality/gauges/new`,
     newGaugeCalibrationRecord: `${x}/quality/calibrations/new`,

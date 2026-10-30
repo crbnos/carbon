@@ -377,8 +377,48 @@ export async function getApiKeys(
   companyId: string,
   args?: GenericQueryFilters & { search: string | null }
 ) {
+  // Keys a federation rule minted live minutes and are not managed here.
   let query = client
     .from("apiKey")
+    .select("*", { count: listCount(args) })
+    .eq("companyId", companyId)
+    .is("federationRuleId", null);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, API_KEYS_PAGING);
+  }
+
+  return query;
+}
+
+export async function getFederationRule(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("federationRule")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export const FEDERATION_RULES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: true }]
+};
+
+export async function getFederationRules(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("federationRule")
     .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
@@ -387,7 +427,7 @@ export async function getApiKeys(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, API_KEYS_PAGING);
+    query = setGenericQueryFilters(query, args, FEDERATION_RULES_PAGING);
   }
 
   return query;
@@ -3567,6 +3607,23 @@ export function generateTestLabel(
     `^FO20,90^A0N,16,16^FD${timestamp}^FS`,
     "^XZ"
   ].join("\n");
+}
+
+/** A refused federation rule write: a broken rule names its field, a duplicate name says so. */
+export function federationRuleError(
+  ctx: ServiceContext,
+  error: { message: string; code?: string }
+) {
+  if (error.code === "23505") {
+    return ctx.error(
+      "validation",
+      "A federation rule with this name already exists"
+    );
+  }
+  if (error.code) {
+    return ctx.error("internal", "Failed to save federation rule", error);
+  }
+  return ctx.error("validation", error.message);
 }
 
 /** An API key action on a company without the plan. */

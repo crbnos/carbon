@@ -5,8 +5,10 @@
 import {
   API_KEYS_PAGING,
   CUSTOM_FIELD_TABLES_PAGING,
+  FEDERATION_RULES_PAGING,
   getApiKeys,
   getCustomFieldsTables,
+  getFederationRules,
   getItemSerialSequences,
   getSequences,
   getWebhooks,
@@ -42,6 +44,13 @@ export const apiKeysList = {
   }
 } satisfies ListDefinition;
 
+export const federationRulesList = searchList({
+  key: "federation-rules",
+  permission: { update: "users" },
+  paging: FEDERATION_RULES_PAGING,
+  service: getFederationRules
+});
+
 export const sequencesList = searchList({
   key: "sequences",
   permission: { view: "settings", role: "employee" },
@@ -74,6 +83,7 @@ export const customFieldTablesList = searchList({
 export const settingsLists: Record<string, ListDefinition> = {
   [apiKeysList.key]: apiKeysList,
   [customFieldTablesList.key]: customFieldTablesList,
+  [federationRulesList.key]: federationRulesList,
   [sequencesList.key]: sequencesList,
   [itemSerialSequencesList.key]: itemSerialSequencesList,
   [webhooksList.key]: webhooksList

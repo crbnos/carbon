@@ -35,6 +35,11 @@ import {
 } from "@carbon/ee/audit.server";
 import { updateConsoleSetting } from "@carbon/ee/console.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { FEDERATION_LIMITS, federationProviders } from "@carbon/ee/federation";
+import {
+  deleteFederationRule as deleteFederationRuleRow,
+  upsertFederationRule
+} from "@carbon/ee/federation.server";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
 import {
   disconnectConnection,
@@ -1741,6 +1746,118 @@ export const revokeApiKey = defineServiceFn({
       return ctx.error("internal", "Failed to delete API key", deleted.error);
     }
     if (keyHash) await bustApiKeyCache(keyHash);
+    return { id };
+  }
+});
+
+const federationRuleFields = {
+  name: z.string().trim().min(1),
+  provider: z.enum(federationProviders),
+  issuer: z.string().trim().min(1),
+  audience: z.string().trim().min(1),
+  /** Exact, or a prefix when it ends in `*`. */
+  subject: z.string().trim().min(1).nullable(),
+  /** Top-level claim name to the exact value the token must carry. */
+  claimConditions: z.record(z.string(), z.string()),
+  /** Per module, the actions a minted key may run: `{ "sales": ["view"] }`. */
+  scopes: z.record(z.string(), z.array(z.string())),
+  tokenLifetimeMinutes: z
+    .number()
+    .int()
+    .min(FEDERATION_LIMITS.minTokenLifetimeMinutes)
+    .max(FEDERATION_LIMITS.maxTokenLifetimeMinutes)
+};
+
+/**
+ * Create a federation rule.
+ *
+ * @remarks
+ * The rule lets a CI job or cloud workload exchange its OIDC token for a
+ * short-lived API key with the rule's scopes, so it stores no key. A rule must
+ * name a workload by subject or claim. Identity federation is a Business plan
+ * feature.
+ */
+export const createFederationRule = defineServiceFn({
+  input: z.object(federationRuleFields),
+  permission: { update: "users" },
+  async run(ctx, input) {
+    let created: Awaited<ReturnType<typeof upsertFederationRule>>;
+    try {
+      created = await upsertFederationRule(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      });
+    } catch (err) {
+      return service.apiKeysEntitlement(ctx, err);
+    }
+    if (created.error || !created.data) {
+      return service.federationRuleError(
+        ctx,
+        created.error ?? { message: "Failed to save", code: "unknown" }
+      );
+    }
+    return { id: created.data.id };
+  }
+});
+
+/**
+ * Update a federation rule.
+ *
+ * @remarks
+ * A scope change also applies to the keys the rule already minted, at once.
+ */
+export const updateFederationRule = defineServiceFn({
+  input: z.object({ id: z.string().min(1), ...federationRuleFields }),
+  permission: { update: "users" },
+  async run(ctx, input) {
+    let updated: Awaited<ReturnType<typeof upsertFederationRule>>;
+    try {
+      updated = await upsertFederationRule(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      });
+    } catch (err) {
+      return service.apiKeysEntitlement(ctx, err);
+    }
+    if (updated.error || !updated.data) {
+      return service.federationRuleError(
+        ctx,
+        updated.error ?? { message: "Failed to save", code: "unknown" }
+      );
+    }
+    return { id: updated.data.id };
+  }
+});
+
+/**
+ * Delete a federation rule.
+ *
+ * @remarks
+ * Every key the rule minted stops authenticating at once.
+ */
+export const deleteFederationRule = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "users" },
+  async run(ctx, { id }) {
+    let deleted: Awaited<ReturnType<typeof deleteFederationRuleRow>>;
+    try {
+      deleted = await deleteFederationRuleRow(
+        ctx.asCaller.supabase,
+        id,
+        ctx.company.id
+      );
+    } catch (err) {
+      return service.apiKeysEntitlement(ctx, err);
+    }
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete federation rule",
+        deleted.error
+      );
+    }
     return { id };
   }
 });
