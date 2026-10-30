@@ -1778,6 +1778,9 @@ msgstr ""
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "एक परिवर्तनीय शुल्क — माइलेज अधिकता, क्षति, डिलीवरी, सफाई — समझौते के अगले चालान पर बिल किया जाता है।"
 
+msgid "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
+msgstr ""
+
 msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
 msgstr "एक वर्कस्पेस केवल एक Carbon कंपनी से कनेक्ट किया जा सकता है। पहले उसे वहाँ से डिस्कनेक्ट करें, या कोई दूसरा वर्कस्पेस कनेक्ट करें।"
 
@@ -3492,6 +3495,10 @@ msgstr "क्या आप कर्मचारी प्रकार {0} क�
 msgid "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
 msgstr "क्या आप विफलता मोड {name} को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।"
 
+#. placeholder {0}: rule.name
+msgid "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
+msgstr ""
+
 #. placeholder {0}: gaugeType.name
 msgid "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
 msgstr "क्या आप गेज प्रकार {0} को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।"
@@ -4067,6 +4074,9 @@ msgstr "विशेषताएं"
 
 msgid "Attributes are inherited from the procedure."
 msgstr "विशेषताएँ कार्यविधि से विरासत में मिली हैं।"
+
+msgid "Audience"
+msgstr ""
 
 msgid "Audit Log"
 msgstr "ऑडिट लॉग"
@@ -5358,6 +5368,12 @@ msgstr "जब आप कनेक्ट किए थे तब चुना �
 msgid "City"
 msgstr "शहर"
 
+msgid "Claim"
+msgstr ""
+
+msgid "Claim conditions"
+msgstr ""
+
 msgid "Class"
 msgstr "वर्ग"
 
@@ -6044,6 +6060,9 @@ msgstr "जारी रखें"
 
 msgid "Continue Setup"
 msgstr "सेटअप जारी रखें"
+
+msgid "Continue with an API key"
+msgstr ""
 
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "प्रयोग-अधिकार संपत्ति के परिशोधन के लिए विरुद्ध संपत्ति खाता"
@@ -7838,6 +7857,9 @@ msgstr "कर्मचारी प्रकार हटाएं"
 msgid "Delete Failure Mode"
 msgstr "विफलता मोड हटाएं"
 
+msgid "Delete Federation Rule"
+msgstr ""
+
 msgid "Delete file"
 msgstr "फ़ाइल हटाएं"
 
@@ -8867,6 +8889,9 @@ msgstr "प्रत्येक संपत्ति की भुगतान
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "प्रत्येक सेल उन लोगों को दर्शाता है जो दिन के काम के लिए आवश्यक लोगों के खिलाफ असाइन किए गए हैं।"
 
+msgid "Each condition must equal a claim of the token exactly. For GitHub, find repository_owner_id with gh api users/OWNER --jq .id"
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "प्रत्येक को परिवर्तन तिथि से एक आवर्ती पंक्ति के रूप में जोड़ा जाता है, जिसकी कीमत ग्रिड में तय की जाती है।"
 
@@ -9087,6 +9112,9 @@ msgstr "समाप्ति तिथि संपादित करें"
 
 msgid "Edit Failure Mode"
 msgstr "विफलता मोड संपादित करें"
+
+msgid "Edit Federation Rule"
+msgstr ""
 
 msgid "Edit Fixed Asset"
 msgstr "अचल संपत्ति संपादित करें"
@@ -9951,6 +9979,9 @@ msgstr "बाकी सब कुछ लोग, आयात, एकीकर�
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "इस रन में निर्माण होने वाली सभी चीजें एक लॉट में जाती हैं। शॉप फ्लोर इसे नहीं बदल सकता।"
 
+msgid "Exact match, or a prefix when it ends in *"
+msgstr ""
+
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB कुल से अधिक है — भेजने के लिए कुछ अनुलग्नक निकालें।"
 
@@ -10666,6 +10697,9 @@ msgstr "फैक्स"
 
 msgid "Fax Number"
 msgstr "फैक्स नंबर"
+
+msgid "Federation Rule"
+msgstr ""
 
 msgid "Fees"
 msgstr "शुल्क"
@@ -11858,6 +11892,9 @@ msgstr "समरूपता कुंजी"
 msgid "Identifiers"
 msgstr "पहचानकर्ता"
 
+msgid "Identity Federation"
+msgstr ""
+
 msgid "Identity Provider"
 msgstr "आइडेंटिटी प्रदाता"
 
@@ -12682,6 +12719,12 @@ msgstr "जारी किया गया"
 msgid "Issued Date"
 msgstr "जारी तारीख"
 
+msgid "Issuer"
+msgstr ""
+
+msgid "Issuer URL"
+msgstr ""
+
 msgid "Issues"
 msgstr "समस्याएं"
 
@@ -13095,6 +13138,9 @@ msgstr "अंतिम अंशांकन तारीख"
 msgid "Last day"
 msgstr "अंतिम दिन"
 
+msgid "Last Exchange"
+msgstr ""
+
 msgid "Last Fiscal Year"
 msgstr "पिछला वित्तीय वर्ष"
 
@@ -13122,6 +13168,12 @@ msgstr "अंतिम बार {lastPushed} को पुश किया ग
 
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
+
+msgid "Last Refusal"
+msgstr ""
+
+msgid "Last refused exchange:"
+msgstr ""
 
 msgid "Last Run"
 msgstr "अंतिम रन"
@@ -13586,6 +13638,9 @@ msgstr "लोड हो रहा है…"
 
 msgid "Local"
 msgstr "स्थानीय"
+
+msgid "Local scripts and third-party tools may still need an API key."
+msgstr ""
 
 msgid "location"
 msgstr "स्थान"
@@ -14686,6 +14741,9 @@ msgstr "{minValue} और {maxValue} {unitLabel} के बीच होना �
 msgid "Must be in the same location"
 msgstr "एक ही स्थान में होना चाहिए"
 
+msgid "Must equal the iss claim of the token exactly"
+msgstr ""
+
 msgid "My Documents"
 msgstr "मेरे दस्तावेज़"
 
@@ -14892,6 +14950,9 @@ msgstr "नई समाप्ति तिथि"
 
 msgid "New Failure Mode"
 msgstr "नई विफलता मोड"
+
+msgid "New Federation Rule"
+msgstr ""
 
 msgid "New Field"
 msgstr "नया फील्ड"
@@ -16227,6 +16288,9 @@ msgstr "इस अवधि के लिए कोई पोस्ट नही
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "अभी मान्यता देने के लिए कुछ नहीं। राजस्व उसके अनुसार है जो चालान बिल करते हैं।"
+
+msgid "Nothing to store in env vars, config files, or secret managers"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "अभी कुछ नहीं। एक चरण केवल तभी मान प्रदान करता है जब इसे कॉन्फ़िगर किया जाता है।"
@@ -19606,6 +19670,9 @@ msgstr "अचल संपत्ति निकालें"
 msgid "Remove authenticator app"
 msgstr "प्रमाणकर्ता ऐप्लिकेशन निकालें"
 
+msgid "Remove claim condition"
+msgstr ""
+
 msgid "Remove clause"
 msgstr "खंड निकालें"
 
@@ -21806,6 +21873,9 @@ msgstr "लेखांकन को रिपोर्ट, जर्नल प�
 
 msgid "Set up authenticator app"
 msgstr "प्रमाणकर्ता ऐप सेटअप करें"
+
+msgid "Set up identity federation"
+msgstr ""
 
 msgid "Set up the right way"
 msgstr "सही तरीके से सेटअप करें"
@@ -24932,6 +25002,9 @@ msgstr "वर्क सेंटर की अपनी बिन जहां 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "कार्य घंटे और कैलेंडर जो शेड्यूलिंग को संचालित करते हैं"
 
+msgid "The workload requests its token for this audience"
+msgstr ""
+
 msgid "Their dates and splits are planned again from the lines."
 msgstr "उनकी तारीखें और विभाजन पंक्तियों से फिर से योजनाबद्ध किए जाते हैं।"
 
@@ -25657,6 +25730,12 @@ msgstr "गुण टॉगल करें"
 
 msgid "Toggle views"
 msgstr "दृश्य टॉगल करें"
+
+msgid "Token lifetime (minutes)"
+msgstr ""
+
+msgid "Tokens expire in minutes"
+msgstr ""
 
 msgid "Tol-"
 msgstr "Tol-"
@@ -26608,6 +26687,9 @@ msgstr "चरण {orientationSource} से उल्टा"
 
 msgid "URL"
 msgstr "यूआरएल"
+
+msgid "Usage"
+msgstr ""
 
 msgid "Usage/Day (30d)"
 msgstr "उपयोग/दिन (30d)"
@@ -27804,6 +27886,9 @@ msgstr "विंडो:"
 msgid "WIP"
 msgstr "WIP"
 
+msgid "With identity federation, you don't need an API key"
+msgstr ""
+
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "पिकिंग सूची के बिना, ऑपरेटर Scan टैब से सामग्री पिकिंग करते हैं।"
 
@@ -27904,6 +27989,9 @@ msgstr ""
 
 msgid "Working sessions on configuration and data"
 msgstr "कॉन्फ़िगरेशन और डेटा पर कार्य सत्र"
+
+msgid "Works with GitHub Actions, AWS, Google Cloud, and Microsoft Entra ID"
+msgstr ""
 
 msgid "Worst Performing Machines"
 msgstr "सबसे खराब प्रदर्शन करने वाली मशीनें"
@@ -28073,6 +28161,9 @@ msgstr "आपकी किताबें और पैसा कैसे ब�
 
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "आपके परिवर्तन इस परिवर्तन सूचना के साथ जारी किए गए एक नए ड्राफ्ट संस्करण में जाते हैं।"
+
+msgid "Your CI or cloud provider issues short-lived tokens that authenticate your requests. There is no static key to manage."
+msgstr ""
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr ""

@@ -1778,6 +1778,9 @@ msgstr "A value is not valid."
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 
+msgid "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
+msgstr "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
+
 msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
 msgstr "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
 
@@ -3492,6 +3495,10 @@ msgstr "Are you sure you want to delete the employee type: {0}? This cannot be u
 msgid "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
 msgstr "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
 
+#. placeholder {0}: rule.name
+msgid "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
+msgstr "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
+
 #. placeholder {0}: gaugeType.name
 msgid "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
@@ -4067,6 +4074,9 @@ msgstr "Attributes"
 
 msgid "Attributes are inherited from the procedure."
 msgstr "Attributes are inherited from the procedure."
+
+msgid "Audience"
+msgstr "Audience"
 
 msgid "Audit Log"
 msgstr "Audit Log"
@@ -5358,6 +5368,12 @@ msgstr "Chosen when you connected and fixed for this install. To change it, unin
 msgid "City"
 msgstr "City"
 
+msgid "Claim"
+msgstr "Claim"
+
+msgid "Claim conditions"
+msgstr "Claim conditions"
+
 msgid "Class"
 msgstr "Class"
 
@@ -6044,6 +6060,9 @@ msgstr "Continue"
 
 msgid "Continue Setup"
 msgstr "Continue Setup"
+
+msgid "Continue with an API key"
+msgstr "Continue with an API key"
 
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Contra-asset account for the amortization of right-of-use assets"
@@ -7838,6 +7857,9 @@ msgstr "Delete Employee Type"
 msgid "Delete Failure Mode"
 msgstr "Delete Failure Mode"
 
+msgid "Delete Federation Rule"
+msgstr "Delete Federation Rule"
+
 msgid "Delete file"
 msgstr "Delete file"
 
@@ -8867,6 +8889,9 @@ msgstr "Each asset's payment rows below are cut from these terms at its own paym
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Each cell is the people assigned against the people the day's work needs."
 
+msgid "Each condition must equal a claim of the token exactly. For GitHub, find repository_owner_id with gh api users/OWNER --jq .id"
+msgstr "Each condition must equal a claim of the token exactly. For GitHub, find repository_owner_id with gh api users/OWNER --jq .id"
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "Each is added as a recurring line from the change date, to be priced in the grid."
 
@@ -9087,6 +9112,9 @@ msgstr "Edit Expiry"
 
 msgid "Edit Failure Mode"
 msgstr "Edit Failure Mode"
+
+msgid "Edit Federation Rule"
+msgstr "Edit Federation Rule"
 
 msgid "Edit Fixed Asset"
 msgstr "Edit Fixed Asset"
@@ -9951,6 +9979,9 @@ msgstr "Everything else covers people, imports, integrations and the API — any
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "Everything this run makes lands in one lot. The shop floor can't change it."
 
+msgid "Exact match, or a prefix when it ends in *"
+msgstr "Exact match, or a prefix when it ends in *"
+
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 
@@ -10666,6 +10697,9 @@ msgstr "Fax"
 
 msgid "Fax Number"
 msgstr "Fax Number"
+
+msgid "Federation Rule"
+msgstr "Federation Rule"
 
 msgid "Fees"
 msgstr "Fees"
@@ -11858,6 +11892,9 @@ msgstr "Idempotency key"
 msgid "Identifiers"
 msgstr "Identifiers"
 
+msgid "Identity Federation"
+msgstr "Identity Federation"
+
 msgid "Identity Provider"
 msgstr "Identity Provider"
 
@@ -12682,6 +12719,12 @@ msgstr "Issued"
 msgid "Issued Date"
 msgstr "Issued Date"
 
+msgid "Issuer"
+msgstr "Issuer"
+
+msgid "Issuer URL"
+msgstr "Issuer URL"
+
 msgid "Issues"
 msgstr "Issues"
 
@@ -13095,6 +13138,9 @@ msgstr "Last Calibration Date"
 msgid "Last day"
 msgstr "Last day"
 
+msgid "Last Exchange"
+msgstr "Last Exchange"
+
 msgid "Last Fiscal Year"
 msgstr "Last Fiscal Year"
 
@@ -13122,6 +13168,12 @@ msgstr "Last pushed {lastPushed}."
 
 msgid "Last Quarter"
 msgstr "Last Quarter"
+
+msgid "Last Refusal"
+msgstr "Last Refusal"
+
+msgid "Last refused exchange:"
+msgstr "Last refused exchange:"
 
 msgid "Last Run"
 msgstr "Last Run"
@@ -13586,6 +13638,9 @@ msgstr "Loading…"
 
 msgid "Local"
 msgstr "Local"
+
+msgid "Local scripts and third-party tools may still need an API key."
+msgstr "Local scripts and third-party tools may still need an API key."
 
 msgid "location"
 msgstr "location"
@@ -14686,6 +14741,9 @@ msgstr "Must be between {minValue} and {maxValue} {unitLabel}"
 msgid "Must be in the same location"
 msgstr "Must be in the same location"
 
+msgid "Must equal the iss claim of the token exactly"
+msgstr "Must equal the iss claim of the token exactly"
+
 msgid "My Documents"
 msgstr "My Documents"
 
@@ -14892,6 +14950,9 @@ msgstr "New expiration date"
 
 msgid "New Failure Mode"
 msgstr "New Failure Mode"
+
+msgid "New Federation Rule"
+msgstr "New Federation Rule"
 
 msgid "New Field"
 msgstr "New Field"
@@ -16227,6 +16288,9 @@ msgstr "Nothing to post for this period."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nothing to recognize yet. Revenue follows what the invoices bill."
+
+msgid "Nothing to store in env vars, config files, or secret managers"
+msgstr "Nothing to store in env vars, config files, or secret managers"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nothing yet. A step only offers values once it is configured."
@@ -19606,6 +19670,9 @@ msgstr "Remove Asset"
 msgid "Remove authenticator app"
 msgstr "Remove authenticator app"
 
+msgid "Remove claim condition"
+msgstr "Remove claim condition"
+
 msgid "Remove clause"
 msgstr "Remove clause"
 
@@ -21806,6 +21873,9 @@ msgstr "Set up accounting to use reports, journal entries, accounting periods, d
 
 msgid "Set up authenticator app"
 msgstr "Set up authenticator app"
+
+msgid "Set up identity federation"
+msgstr "Set up identity federation"
 
 msgid "Set up the right way"
 msgstr "Set up the right way"
@@ -24932,6 +25002,9 @@ msgstr "The work center's own bin where picked material is staged for production
 msgid "The working hours and calendars that drive scheduling"
 msgstr "The working hours and calendars that drive scheduling"
 
+msgid "The workload requests its token for this audience"
+msgstr "The workload requests its token for this audience"
+
 msgid "Their dates and splits are planned again from the lines."
 msgstr "Their dates and splits are planned again from the lines."
 
@@ -25657,6 +25730,12 @@ msgstr "Toggle Properties"
 
 msgid "Toggle views"
 msgstr "Toggle views"
+
+msgid "Token lifetime (minutes)"
+msgstr "Token lifetime (minutes)"
+
+msgid "Tokens expire in minutes"
+msgstr "Tokens expire in minutes"
 
 msgid "Tol-"
 msgstr "Tol-"
@@ -26608,6 +26687,9 @@ msgstr "Upside down, from step {orientationSource}"
 
 msgid "URL"
 msgstr "URL"
+
+msgid "Usage"
+msgstr "Usage"
 
 msgid "Usage/Day (30d)"
 msgstr "Usage/Day (30d)"
@@ -27804,6 +27886,9 @@ msgstr "Window:"
 msgid "WIP"
 msgstr "WIP"
 
+msgid "With identity federation, you don't need an API key"
+msgstr "With identity federation, you don't need an API key"
+
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Without a picking list, operators pick material from the Scan tab."
 
@@ -27904,6 +27989,9 @@ msgstr "working at {elsewhereStationNames}"
 
 msgid "Working sessions on configuration and data"
 msgstr "Working sessions on configuration and data"
+
+msgid "Works with GitHub Actions, AWS, Google Cloud, and Microsoft Entra ID"
+msgstr "Works with GitHub Actions, AWS, Google Cloud, and Microsoft Entra ID"
 
 msgid "Worst Performing Machines"
 msgstr "Worst Performing Machines"
@@ -28073,6 +28161,9 @@ msgstr "Your books and how money flows."
 
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Your changes go into a new draft version released with this change notice."
+
+msgid "Your CI or cloud provider issues short-lived tokens that authenticate your requests. There is no static key to manage."
+msgstr "Your CI or cloud provider issues short-lived tokens that authenticate your requests. There is no static key to manage."
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."

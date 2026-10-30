@@ -1778,6 +1778,9 @@ msgstr ""
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "可变费用（如里程超额、损害、交付、清洁）在协议的下一份发票上计费。"
 
+msgid "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
+msgstr ""
+
 msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
 msgstr "一个工作区只能连接到一家 Carbon 公司。请先在那里断开连接，或连接其他工作区。"
 
@@ -3492,6 +3495,10 @@ msgstr "您确定要删除员工类型：{0}？此操作无法撤销。"
 msgid "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
 msgstr "您确定要删除故障模式：{name}？此操作无法撤销。"
 
+#. placeholder {0}: rule.name
+msgid "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
+msgstr ""
+
 #. placeholder {0}: gaugeType.name
 msgid "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
 msgstr "您确定要删除量具类型：{0}？此操作无法撤销。"
@@ -4067,6 +4074,9 @@ msgstr "属性"
 
 msgid "Attributes are inherited from the procedure."
 msgstr "属性从程序文件继承。"
+
+msgid "Audience"
+msgstr ""
 
 msgid "Audit Log"
 msgstr "审计日志"
@@ -5358,6 +5368,12 @@ msgstr "在连接时选择并为此安装固定。要更改它，请卸载并以
 msgid "City"
 msgstr "城市"
 
+msgid "Claim"
+msgstr ""
+
+msgid "Claim conditions"
+msgstr ""
+
 msgid "Class"
 msgstr "类别"
 
@@ -6044,6 +6060,9 @@ msgstr "继续"
 
 msgid "Continue Setup"
 msgstr "继续配置"
+
+msgid "Continue with an API key"
+msgstr ""
 
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "使用权资产摊销的对资产账户"
@@ -7838,6 +7857,9 @@ msgstr "删除员工类型"
 msgid "Delete Failure Mode"
 msgstr "删除故障模式"
 
+msgid "Delete Federation Rule"
+msgstr ""
+
 msgid "Delete file"
 msgstr "删除文件"
 
@@ -8867,6 +8889,9 @@ msgstr "下方每项资产的付款行从这些条款在其付款处生成。更
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "每个单元格显示分配的人员与该天工作所需的人员对比。"
 
+msgid "Each condition must equal a claim of the token exactly. For GitHub, find repository_owner_id with gh api users/OWNER --jq .id"
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "每项都从变更日期起作为定期行添加，并在表格中定价。"
 
@@ -9087,6 +9112,9 @@ msgstr "编辑有效期"
 
 msgid "Edit Failure Mode"
 msgstr "编辑故障模式"
+
+msgid "Edit Federation Rule"
+msgstr ""
 
 msgid "Edit Fixed Asset"
 msgstr "编辑固定资产"
@@ -9951,6 +9979,9 @@ msgstr "其他所有内容涵盖人员、导入、集成和 API — 任何不属
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "这次运行生产的所有产品都进入一个批次。车间无法更改它。"
 
+msgid "Exact match, or a prefix when it ends in *"
+msgstr ""
+
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "超过 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 总限制 — 删除一些附件进行发送。"
 
@@ -10666,6 +10697,9 @@ msgstr "传真"
 
 msgid "Fax Number"
 msgstr "传真号码"
+
+msgid "Federation Rule"
+msgstr ""
 
 msgid "Fees"
 msgstr "费用"
@@ -11858,6 +11892,9 @@ msgstr "幂等键"
 msgid "Identifiers"
 msgstr "标识符"
 
+msgid "Identity Federation"
+msgstr ""
+
 msgid "Identity Provider"
 msgstr "身份提供商"
 
@@ -12682,6 +12719,12 @@ msgstr "已发放"
 msgid "Issued Date"
 msgstr "签发日期"
 
+msgid "Issuer"
+msgstr ""
+
+msgid "Issuer URL"
+msgstr ""
+
 msgid "Issues"
 msgstr "问题"
 
@@ -13095,6 +13138,9 @@ msgstr "上次校准日期"
 msgid "Last day"
 msgstr "最后一天"
 
+msgid "Last Exchange"
+msgstr ""
+
 msgid "Last Fiscal Year"
 msgstr "上一个会计年度"
 
@@ -13122,6 +13168,12 @@ msgstr "最后推送：{lastPushed}。"
 
 msgid "Last Quarter"
 msgstr "上一季度"
+
+msgid "Last Refusal"
+msgstr ""
+
+msgid "Last refused exchange:"
+msgstr ""
 
 msgid "Last Run"
 msgstr "最后运行"
@@ -13586,6 +13638,9 @@ msgstr "加载中…"
 
 msgid "Local"
 msgstr "本地"
+
+msgid "Local scripts and third-party tools may still need an API key."
+msgstr ""
 
 msgid "location"
 msgstr "位置"
@@ -14686,6 +14741,9 @@ msgstr "必须在 {minValue} 到 {maxValue} {unitLabel} 之间"
 msgid "Must be in the same location"
 msgstr "必须在同一位置"
 
+msgid "Must equal the iss claim of the token exactly"
+msgstr ""
+
 msgid "My Documents"
 msgstr "我的文档"
 
@@ -14892,6 +14950,9 @@ msgstr "新到期日期"
 
 msgid "New Failure Mode"
 msgstr "新故障模式"
+
+msgid "New Federation Rule"
+msgstr ""
 
 msgid "New Field"
 msgstr "新字段"
@@ -16227,6 +16288,9 @@ msgstr "此期间无内容待过账。"
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "暂无待确认。收入遵循发票开票的内容。"
+
+msgid "Nothing to store in env vars, config files, or secret managers"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "暂无内容。步骤配置后才会提供值。"
@@ -19606,6 +19670,9 @@ msgstr "移除资产"
 msgid "Remove authenticator app"
 msgstr "移除身份验证器应用"
 
+msgid "Remove claim condition"
+msgstr ""
+
 msgid "Remove clause"
 msgstr "移除条款"
 
@@ -21806,6 +21873,9 @@ msgstr "设置会计以使用报表、凭证、会计期间、折旧等。"
 
 msgid "Set up authenticator app"
 msgstr "设置身份验证器应用"
+
+msgid "Set up identity federation"
+msgstr ""
 
 msgid "Set up the right way"
 msgstr "以正确的方式设置"
@@ -24932,6 +25002,9 @@ msgstr "工作中心自身的料箱,拣货的原材料在此暂存供生产领�
 msgid "The working hours and calendars that drive scheduling"
 msgstr "驱动日程安排的工作时间和日历"
 
+msgid "The workload requests its token for this audience"
+msgstr ""
+
 msgid "Their dates and splits are planned again from the lines."
 msgstr "其日期和拆分从行中重新计划。"
 
@@ -25657,6 +25730,12 @@ msgstr "切换属性"
 
 msgid "Toggle views"
 msgstr "切换视图"
+
+msgid "Token lifetime (minutes)"
+msgstr ""
+
+msgid "Tokens expire in minutes"
+msgstr ""
 
 msgid "Tol-"
 msgstr "容差-"
@@ -26608,6 +26687,9 @@ msgstr "倒置，沿用步骤 {orientationSource}"
 
 msgid "URL"
 msgstr "网址"
+
+msgid "Usage"
+msgstr ""
 
 msgid "Usage/Day (30d)"
 msgstr "用量/天 (30天)"
@@ -27804,6 +27886,9 @@ msgstr "窗口："
 msgid "WIP"
 msgstr "在制品"
 
+msgid "With identity federation, you don't need an API key"
+msgstr ""
+
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "没有拣货单的情况下,操作员从扫码选项卡中拣选原材料。"
 
@@ -27904,6 +27989,9 @@ msgstr ""
 
 msgid "Working sessions on configuration and data"
 msgstr "配置和数据工作会议"
+
+msgid "Works with GitHub Actions, AWS, Google Cloud, and Microsoft Entra ID"
+msgstr ""
 
 msgid "Worst Performing Machines"
 msgstr "性能最差的机器"
@@ -28073,6 +28161,9 @@ msgstr "您的账簿和资金流向。"
 
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "您的更改进入与此变更通知一起发布的新草稿版本。"
+
+msgid "Your CI or cloud provider issues short-lived tokens that authenticate your requests. There is no static key to manage."
+msgstr ""
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr ""

@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import ApiKeyChooser from "./ApiKeyChooser";
 import ApiKeyForm from "./ApiKeysForm";
 import ApiKeysTable from "./ApiKeysTable";
 import ApiKeysUpgradeOverlay from "./ApiKeysUpgradeOverlay";
 
-export { ApiKeyForm, ApiKeysTable, ApiKeysUpgradeOverlay };
+export { ApiKeyChooser, ApiKeyForm, ApiKeysTable, ApiKeysUpgradeOverlay };

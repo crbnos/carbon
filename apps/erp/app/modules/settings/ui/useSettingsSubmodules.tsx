@@ -180,6 +180,12 @@ export default function useSettingsSubmodules() {
             icon: <LuKey />
           },
           {
+            name: t`Identity Federation`,
+            to: path.to.federationRules,
+            role: "employee",
+            icon: <LuShieldCheck />
+          },
+          {
             name: t`Approval Rules`,
             to: path.to.approvalRules,
             role: "employee",

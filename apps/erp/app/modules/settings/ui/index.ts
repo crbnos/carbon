@@ -12,6 +12,7 @@ export * from "./Companies";
 export * from "./Company";
 export * from "./CustomFields";
 export * from "./DemoData";
+export * from "./Federation";
 export * from "./Integrations";
 export * from "./ItarCertifications";
 export * from "./Printing";

@@ -1778,6 +1778,9 @@ msgstr ""
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Une charge variable — dépassement de kilométrage, dommages, livraison, nettoyage — est facturée sur la prochaine facture de l'accord."
 
+msgid "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
+msgstr ""
+
 msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
 msgstr "Un espace de travail ne peut être connecté qu'à une seule société Carbon. Déconnectez-le d'abord de celle-ci, ou connectez un autre espace de travail."
 
@@ -3492,6 +3495,10 @@ msgstr "Êtes-vous sûr de vouloir supprimer le type d'employé : {0} ? Cette ac
 msgid "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
 msgstr "Êtes-vous sûr de vouloir supprimer le mode de défaillance : {name} ? Cette action ne peut pas être annulée."
 
+#. placeholder {0}: rule.name
+msgid "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
+msgstr ""
+
 #. placeholder {0}: gaugeType.name
 msgid "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
 msgstr "Êtes-vous sûr de vouloir supprimer le type d'instrument : {0} ? Cette action ne peut pas être annulée."
@@ -4067,6 +4074,9 @@ msgstr "Attributs"
 
 msgid "Attributes are inherited from the procedure."
 msgstr "Les attributs sont hérités de la procédure."
+
+msgid "Audience"
+msgstr ""
 
 msgid "Audit Log"
 msgstr "Journal d'audit"
@@ -5358,6 +5368,12 @@ msgstr "Choisi lors de votre connexion et fixé pour cette installation. Pour le
 msgid "City"
 msgstr "Ville"
 
+msgid "Claim"
+msgstr ""
+
+msgid "Claim conditions"
+msgstr ""
+
 msgid "Class"
 msgstr "Classe"
 
@@ -6044,6 +6060,9 @@ msgstr "Continuer"
 
 msgid "Continue Setup"
 msgstr "Continuer la configuration"
+
+msgid "Continue with an API key"
+msgstr ""
 
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Compte de contre-actif pour l'amortissement des droits d'utilisation"
@@ -7838,6 +7857,9 @@ msgstr "Supprimer le type d'employé"
 msgid "Delete Failure Mode"
 msgstr "Supprimer le mode de défaillance"
 
+msgid "Delete Federation Rule"
+msgstr ""
+
 msgid "Delete file"
 msgstr "Supprimer le fichier"
 
@@ -8867,6 +8889,9 @@ msgstr "Les lignes de paiement de chaque actif ci-dessous sont générées à pa
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Chaque cellule affiche les personnes assignées par rapport aux personnes que le travail du jour nécessite."
 
+msgid "Each condition must equal a claim of the token exactly. For GitHub, find repository_owner_id with gh api users/OWNER --jq .id"
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "Chacun est ajouté comme ligne récurrente à partir de la date de modification, à tarifer dans la grille."
 
@@ -9087,6 +9112,9 @@ msgstr "Modifier la péremption"
 
 msgid "Edit Failure Mode"
 msgstr "Modifier le mode de défaillance"
+
+msgid "Edit Federation Rule"
+msgstr ""
 
 msgid "Edit Fixed Asset"
 msgstr "Modifier l'Immobilisation"
@@ -9951,6 +9979,9 @@ msgstr "Tout le reste couvre les personnes, les importations, les intégrations 
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "Tout ce que cette exécution fabrique se retrouve dans un lot. L'atelier ne peut pas le modifier."
 
+msgid "Exact match, or a prefix when it ends in *"
+msgstr ""
+
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Dépasse {PO_EMAIL_ATTACHMENT_LIMIT_MB} Mo au total — supprimez certaines pièces jointes pour envoyer."
 
@@ -10666,6 +10697,9 @@ msgstr "Télécopie"
 
 msgid "Fax Number"
 msgstr "Numéro de fax"
+
+msgid "Federation Rule"
+msgstr ""
 
 msgid "Fees"
 msgstr "Frais"
@@ -11858,6 +11892,9 @@ msgstr "Clé d'idempotence"
 msgid "Identifiers"
 msgstr "Identifiants"
 
+msgid "Identity Federation"
+msgstr ""
+
 msgid "Identity Provider"
 msgstr "Fournisseur d'identité"
 
@@ -12682,6 +12719,12 @@ msgstr "Émis"
 msgid "Issued Date"
 msgstr "Date d'émission"
 
+msgid "Issuer"
+msgstr ""
+
+msgid "Issuer URL"
+msgstr ""
+
 msgid "Issues"
 msgstr "Problèmes"
 
@@ -13095,6 +13138,9 @@ msgstr "Dernière date d'étalonnage"
 msgid "Last day"
 msgstr "Dernier jour"
 
+msgid "Last Exchange"
+msgstr ""
+
 msgid "Last Fiscal Year"
 msgstr "Dernier exercice comptable"
 
@@ -13122,6 +13168,12 @@ msgstr "Dernière mise à jour le {lastPushed}."
 
 msgid "Last Quarter"
 msgstr "Dernier trimestre"
+
+msgid "Last Refusal"
+msgstr ""
+
+msgid "Last refused exchange:"
+msgstr ""
 
 msgid "Last Run"
 msgstr "Dernière exécution"
@@ -13586,6 +13638,9 @@ msgstr "Chargement…"
 
 msgid "Local"
 msgstr "Local"
+
+msgid "Local scripts and third-party tools may still need an API key."
+msgstr ""
 
 msgid "location"
 msgstr "localisation"
@@ -14686,6 +14741,9 @@ msgstr "Doit être entre {minValue} et {maxValue} {unitLabel}"
 msgid "Must be in the same location"
 msgstr "Doit être au même endroit"
 
+msgid "Must equal the iss claim of the token exactly"
+msgstr ""
+
 msgid "My Documents"
 msgstr "Mes Documents"
 
@@ -14892,6 +14950,9 @@ msgstr "Nouvelle date d'expiration"
 
 msgid "New Failure Mode"
 msgstr "Nouveau Mode de Défaillance"
+
+msgid "New Federation Rule"
+msgstr ""
 
 msgid "New Field"
 msgstr "Nouveau champ"
@@ -16227,6 +16288,9 @@ msgstr "Rien à comptabiliser pour cette période."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Rien à reconnaître pour le moment. Les revenus suivent ce que les factures facturent."
+
+msgid "Nothing to store in env vars, config files, or secret managers"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Rien pour le moment. Une étape n'offre des valeurs qu'une fois configurée."
@@ -19606,6 +19670,9 @@ msgstr "Retirer l'immobilisation"
 msgid "Remove authenticator app"
 msgstr "Retirer l'application authenticateur"
 
+msgid "Remove claim condition"
+msgstr ""
+
 msgid "Remove clause"
 msgstr "Retirer la clause"
 
@@ -21806,6 +21873,9 @@ msgstr "Configurer la comptabilité pour utiliser les rapports, les écritures c
 
 msgid "Set up authenticator app"
 msgstr "Configurer l'application d'authentification"
+
+msgid "Set up identity federation"
+msgstr ""
 
 msgid "Set up the right way"
 msgstr "Configurer correctement"
@@ -24932,6 +25002,9 @@ msgstr "Le propre casier du poste de travail où le matériel prélevé est pré
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Les heures de travail et les calendriers qui pilotent la planification"
 
+msgid "The workload requests its token for this audience"
+msgstr ""
+
 msgid "Their dates and splits are planned again from the lines."
 msgstr "Leurs dates et fractions sont recalculées à partir des lignes."
 
@@ -25657,6 +25730,12 @@ msgstr "Basculer les propriétés"
 
 msgid "Toggle views"
 msgstr "Basculer les vues"
+
+msgid "Token lifetime (minutes)"
+msgstr ""
+
+msgid "Tokens expire in minutes"
+msgstr ""
 
 msgid "Tol-"
 msgstr "Tol-"
@@ -26608,6 +26687,9 @@ msgstr "À l'envers, depuis l'étape {orientationSource}"
 
 msgid "URL"
 msgstr "URL"
+
+msgid "Usage"
+msgstr ""
 
 msgid "Usage/Day (30d)"
 msgstr "Utilisation/Jour (30j)"
@@ -27804,6 +27886,9 @@ msgstr "Fenêtre :"
 msgid "WIP"
 msgstr "En-cours"
 
+msgid "With identity federation, you don't need an API key"
+msgstr ""
+
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Sans liste de prélèvement, les opérateurs prélèvent la matière à partir de l'onglet Scanner."
 
@@ -27904,6 +27989,9 @@ msgstr ""
 
 msgid "Working sessions on configuration and data"
 msgstr "Séances de travail sur la configuration et les données"
+
+msgid "Works with GitHub Actions, AWS, Google Cloud, and Microsoft Entra ID"
+msgstr ""
 
 msgid "Worst Performing Machines"
 msgstr "Machines les plus défaillantes"
@@ -28070,6 +28158,9 @@ msgstr "Vos livres et la circulation de l'argent."
 
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Vos modifications sont mises dans une nouvelle version brouillon publiée avec cet avis de modification."
+
+msgid "Your CI or cloud provider issues short-lived tokens that authenticate your requests. There is no static key to manage."
+msgstr ""
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr ""

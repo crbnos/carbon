@@ -1778,6 +1778,9 @@ msgstr ""
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Переменная плата — превышение пробега, повреждение, доставка, уборка — выставляется счетом по следующей счет-фактуре договора."
 
+msgid "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
+msgstr ""
+
 msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
 msgstr "Рабочее пространство можно подключить только к одной организации Carbon. Сначала отключите его там или подключите другое рабочее пространство."
 
@@ -3492,6 +3495,10 @@ msgstr "Вы уверены, что хотите удалить тип сотр�
 msgid "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить режим отказа: {name}? Это действие невозможно отменить."
 
+#. placeholder {0}: rule.name
+msgid "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
+msgstr ""
+
 #. placeholder {0}: gaugeType.name
 msgid "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить тип средства измерения: {0}? Это невозможно отменить."
@@ -4067,6 +4074,9 @@ msgstr "Атрибуты"
 
 msgid "Attributes are inherited from the procedure."
 msgstr "Атрибуты наследуются из процедуры."
+
+msgid "Audience"
+msgstr ""
 
 msgid "Audit Log"
 msgstr "Журнал аудита"
@@ -5358,6 +5368,12 @@ msgstr "Выбрано при подключении и зафиксирован
 msgid "City"
 msgstr "Город"
 
+msgid "Claim"
+msgstr ""
+
+msgid "Claim conditions"
+msgstr ""
+
 msgid "Class"
 msgstr "Класс"
 
@@ -6044,6 +6060,9 @@ msgstr "Продолжить"
 
 msgid "Continue Setup"
 msgstr "Продолжить настройку"
+
+msgid "Continue with an API key"
+msgstr ""
 
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Контрсчет для амортизации активов права использования"
@@ -7838,6 +7857,9 @@ msgstr "Удалить тип сотрудника"
 msgid "Delete Failure Mode"
 msgstr "Удалить режим отказа"
 
+msgid "Delete Federation Rule"
+msgstr ""
+
 msgid "Delete file"
 msgstr "Удалить файл"
 
@@ -8867,6 +8889,9 @@ msgstr "Строки платежей каждого актива ниже ра�
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Каждая ячейка — это назначенные сотрудники в сравнении с необходимыми для работы в день сотрудниками."
 
+msgid "Each condition must equal a claim of the token exactly. For GitHub, find repository_owner_id with gh api users/OWNER --jq .id"
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "Каждая добавляется как повторяющаяся строка с даты изменения, цена задаётся в таблице."
 
@@ -9087,6 +9112,9 @@ msgstr "Изменить срок годности"
 
 msgid "Edit Failure Mode"
 msgstr "Изменить вид отказа"
+
+msgid "Edit Federation Rule"
+msgstr ""
 
 msgid "Edit Fixed Asset"
 msgstr "Изменить основное средство"
@@ -9951,6 +9979,9 @@ msgstr "Все остальное включает сотрудников, им�
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "Всё, что производится в этом цикле, попадает в одну партию. Цех не может это менять."
 
+msgid "Exact match, or a prefix when it ends in *"
+msgstr ""
+
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Превышает {PO_EMAIL_ATTACHMENT_LIMIT_MB} МБ всего — удалите некоторые вложения для отправки."
 
@@ -10666,6 +10697,9 @@ msgstr "Факс"
 
 msgid "Fax Number"
 msgstr "Номер факса"
+
+msgid "Federation Rule"
+msgstr ""
 
 msgid "Fees"
 msgstr "Сборы"
@@ -11858,6 +11892,9 @@ msgstr "Ключ идемпотентности"
 msgid "Identifiers"
 msgstr "Идентификаторы"
 
+msgid "Identity Federation"
+msgstr ""
+
 msgid "Identity Provider"
 msgstr "Поставщик удостоверений"
 
@@ -12682,6 +12719,12 @@ msgstr "Выдано"
 msgid "Issued Date"
 msgstr "Дата выпуска"
 
+msgid "Issuer"
+msgstr ""
+
+msgid "Issuer URL"
+msgstr ""
+
 msgid "Issues"
 msgstr "Проблемы"
 
@@ -13095,6 +13138,9 @@ msgstr "Дата последней калибровки"
 msgid "Last day"
 msgstr "Последний день"
 
+msgid "Last Exchange"
+msgstr ""
+
 msgid "Last Fiscal Year"
 msgstr "Прошлый финансовый год"
 
@@ -13122,6 +13168,12 @@ msgstr "Последний раз передано {lastPushed}."
 
 msgid "Last Quarter"
 msgstr "Последний квартал"
+
+msgid "Last Refusal"
+msgstr ""
+
+msgid "Last refused exchange:"
+msgstr ""
 
 msgid "Last Run"
 msgstr "Последний запуск"
@@ -13586,6 +13638,9 @@ msgstr "Загрузка…"
 
 msgid "Local"
 msgstr "Местный"
+
+msgid "Local scripts and third-party tools may still need an API key."
+msgstr ""
 
 msgid "location"
 msgstr "расположение"
@@ -14686,6 +14741,9 @@ msgstr "Должно быть между {minValue} и {maxValue} {unitLabel}"
 msgid "Must be in the same location"
 msgstr "Должно быть в одном месте"
 
+msgid "Must equal the iss claim of the token exactly"
+msgstr ""
+
 msgid "My Documents"
 msgstr "Мои документы"
 
@@ -14892,6 +14950,9 @@ msgstr "Новая дата истечения срока"
 
 msgid "New Failure Mode"
 msgstr "Новый режим отказа"
+
+msgid "New Federation Rule"
+msgstr ""
 
 msgid "New Field"
 msgstr "Новое поле"
@@ -16227,6 +16288,9 @@ msgstr "Нечего проводить за этот период."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Нечего признавать. Выручка следует за тем, что выставляют счетом счета."
+
+msgid "Nothing to store in env vars, config files, or secret managers"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Пока ничего. Шаг предоставляет значения только после того, как он будет настроен."
@@ -19606,6 +19670,9 @@ msgstr "Убрать основное средство"
 msgid "Remove authenticator app"
 msgstr "Удалить приложение аутентификации"
 
+msgid "Remove claim condition"
+msgstr ""
+
 msgid "Remove clause"
 msgstr "Убрать условие"
 
@@ -21806,6 +21873,9 @@ msgstr "Настройте бухгалтерию для использован�
 
 msgid "Set up authenticator app"
 msgstr "Установить приложение аутентификации"
+
+msgid "Set up identity federation"
+msgstr ""
 
 msgid "Set up the right way"
 msgstr "Правильная настройка"
@@ -24932,6 +25002,9 @@ msgstr "Собственная ячейка рабочего центра, гд�
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Рабочие часы и календари, которые управляют планированием"
 
+msgid "The workload requests its token for this audience"
+msgstr ""
+
 msgid "Their dates and splits are planned again from the lines."
 msgstr "Их даты и разделения снова планируются на основе строк."
 
@@ -25657,6 +25730,12 @@ msgstr "Переключить свойства"
 
 msgid "Toggle views"
 msgstr "Переключить представления"
+
+msgid "Token lifetime (minutes)"
+msgstr ""
+
+msgid "Tokens expire in minutes"
+msgstr ""
 
 msgid "Tol-"
 msgstr "Тол-"
@@ -26608,6 +26687,9 @@ msgstr "Вверх ногами, как на шаге {orientationSource}"
 
 msgid "URL"
 msgstr "URL"
+
+msgid "Usage"
+msgstr ""
 
 msgid "Usage/Day (30d)"
 msgstr "Использование/День (30д)"
@@ -27804,6 +27886,9 @@ msgstr "Окно:"
 msgid "WIP"
 msgstr "Незавершенное производство"
 
+msgid "With identity federation, you don't need an API key"
+msgstr ""
+
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Без листа отбора операторы отбирают материал со вкладки Сканирование."
 
@@ -27904,6 +27989,9 @@ msgstr ""
 
 msgid "Working sessions on configuration and data"
 msgstr "Рабочие сессии по конфигурации и данным"
+
+msgid "Works with GitHub Actions, AWS, Google Cloud, and Microsoft Entra ID"
+msgstr ""
 
 msgid "Worst Performing Machines"
 msgstr "Худшие станки"
@@ -28070,6 +28158,9 @@ msgstr "Ваши книги и движение денежных средств.
 
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Ваши изменения переходят в новую версию черновика, которая будет выпущена с этим извещением об изменении."
+
+msgid "Your CI or cloud provider issues short-lived tokens that authenticate your requests. There is no static key to manage."
+msgstr ""
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr ""

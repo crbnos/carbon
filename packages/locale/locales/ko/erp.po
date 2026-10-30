@@ -1778,6 +1778,9 @@ msgstr ""
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "변동 요금(마일리지 초과, 손상, 배송, 청소)은 계약의 다음 송장에 청구됩니다."
 
+msgid "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
+msgstr ""
+
 msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
 msgstr "작업 공간은 하나의 Carbon 회사에만 연결할 수 있습니다. 먼저 해당 회사에서 연결을 해제하거나 다른 작업 공간을 연결하세요."
 
@@ -3492,6 +3495,10 @@ msgstr "직원 유형 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌
 msgid "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
 msgstr "고장 모드 {name}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+#. placeholder {0}: rule.name
+msgid "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
+msgstr ""
+
 #. placeholder {0}: gaugeType.name
 msgid "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
 msgstr "계측기 유형을 삭제하시겠습니까: {0}? 이 작업은 취소할 수 없습니다."
@@ -4067,6 +4074,9 @@ msgstr "속성"
 
 msgid "Attributes are inherited from the procedure."
 msgstr "속성은 절차서에서 상속됩니다."
+
+msgid "Audience"
+msgstr ""
 
 msgid "Audit Log"
 msgstr "감사 로그"
@@ -5358,6 +5368,12 @@ msgstr "연결할 때 선택되었으며 이 설치에 대해 고정되어 있�
 msgid "City"
 msgstr "도시"
 
+msgid "Claim"
+msgstr ""
+
+msgid "Claim conditions"
+msgstr ""
+
 msgid "Class"
 msgstr "클래스"
 
@@ -6044,6 +6060,9 @@ msgstr "계속"
 
 msgid "Continue Setup"
 msgstr "계속 설정"
+
+msgid "Continue with an API key"
+msgstr ""
 
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "사용권자산 상각 대체 계정"
@@ -7838,6 +7857,9 @@ msgstr "직원 유형 삭제"
 msgid "Delete Failure Mode"
 msgstr "고장 모드 삭제"
 
+msgid "Delete Federation Rule"
+msgstr ""
+
 msgid "Delete file"
 msgstr "파일 삭제"
 
@@ -8867,6 +8889,9 @@ msgstr "아래의 각 자산 지불 라인은 각 자산의 지불에서 이 약
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "각 셀은 그 날 일에 필요한 인원 대비 할당된 인원입니다."
 
+msgid "Each condition must equal a claim of the token exactly. For GitHub, find repository_owner_id with gh api users/OWNER --jq .id"
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "각 항목은 변경일부터 반복 라인으로 추가되며 그리드에서 가격을 설정합니다."
 
@@ -9087,6 +9112,9 @@ msgstr "유통기한 편집"
 
 msgid "Edit Failure Mode"
 msgstr "고장 모드 편집"
+
+msgid "Edit Federation Rule"
+msgstr ""
 
 msgid "Edit Fixed Asset"
 msgstr "고정자산 편집"
@@ -9951,6 +9979,9 @@ msgstr "그 외 모든 것은 인원, 가져오기, 연동 및 API를 다룹니�
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "이 작업이 생산하는 모든 것은 한 로트로 분류됩니다. 현장에서 이를 변경할 수 없습니다."
 
+msgid "Exact match, or a prefix when it ends in *"
+msgstr ""
+
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "총 {PO_EMAIL_ATTACHMENT_LIMIT_MB}MB를 초과합니다 — 발송하려면 일부 첨부 파일을 제거하세요."
 
@@ -10666,6 +10697,9 @@ msgstr "팩스"
 
 msgid "Fax Number"
 msgstr "팩스 번호"
+
+msgid "Federation Rule"
+msgstr ""
 
 msgid "Fees"
 msgstr "수수료"
@@ -11858,6 +11892,9 @@ msgstr "멱등성 키"
 msgid "Identifiers"
 msgstr "식별자"
 
+msgid "Identity Federation"
+msgstr ""
+
 msgid "Identity Provider"
 msgstr "자격 증명 공급자"
 
@@ -12682,6 +12719,12 @@ msgstr "출고됨"
 msgid "Issued Date"
 msgstr "출고일"
 
+msgid "Issuer"
+msgstr ""
+
+msgid "Issuer URL"
+msgstr ""
+
 msgid "Issues"
 msgstr "이슈"
 
@@ -13095,6 +13138,9 @@ msgstr "마지막 교정일"
 msgid "Last day"
 msgstr "마지막 날"
 
+msgid "Last Exchange"
+msgstr ""
+
 msgid "Last Fiscal Year"
 msgstr "지난 회계연도"
 
@@ -13122,6 +13168,12 @@ msgstr "마지막 푸시: {lastPushed}."
 
 msgid "Last Quarter"
 msgstr "지난 분기"
+
+msgid "Last Refusal"
+msgstr ""
+
+msgid "Last refused exchange:"
+msgstr ""
 
 msgid "Last Run"
 msgstr "마지막 실행"
@@ -13586,6 +13638,9 @@ msgstr "불러오는 중…"
 
 msgid "Local"
 msgstr "로컬"
+
+msgid "Local scripts and third-party tools may still need an API key."
+msgstr ""
 
 msgid "location"
 msgstr "위치"
@@ -14686,6 +14741,9 @@ msgstr "{minValue}에서 {maxValue} {unitLabel} 사이여야 합니다"
 msgid "Must be in the same location"
 msgstr "동일한 위치에 있어야 합니다"
 
+msgid "Must equal the iss claim of the token exactly"
+msgstr ""
+
 msgid "My Documents"
 msgstr "내 문서"
 
@@ -14892,6 +14950,9 @@ msgstr "신규 만료일"
 
 msgid "New Failure Mode"
 msgstr "신규 고장 모드"
+
+msgid "New Federation Rule"
+msgstr ""
 
 msgid "New Field"
 msgstr "신규 필드"
@@ -16227,6 +16288,9 @@ msgstr "이 기간에 전기할 것이 없습니다."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "아직 인식할 것이 없습니다. 매출은 송장이 청구하는 대로 따릅니다."
+
+msgid "Nothing to store in env vars, config files, or secret managers"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "아직 없습니다. 단계는 구성된 후에만 값을 제공합니다."
@@ -19606,6 +19670,9 @@ msgstr "자산 제거"
 msgid "Remove authenticator app"
 msgstr "인증 앱 제거"
 
+msgid "Remove claim condition"
+msgstr ""
+
 msgid "Remove clause"
 msgstr "절 제거"
 
@@ -21806,6 +21873,9 @@ msgstr "보고서, 전표, 회계 기간, 감가상각 실행 등을 사용하�
 
 msgid "Set up authenticator app"
 msgstr "인증자 앱 설정"
+
+msgid "Set up identity federation"
+msgstr ""
 
 msgid "Set up the right way"
 msgstr "올바른 방식으로 설정하기"
@@ -24932,6 +25002,9 @@ msgstr "작업장의 자체 빈으로, 피킹된 자재가 생산이 사용할 �
 msgid "The working hours and calendars that drive scheduling"
 msgstr "일정 수립의 기준이 되는 근무 시간 및 캘린더"
 
+msgid "The workload requests its token for this audience"
+msgstr ""
+
 msgid "Their dates and splits are planned again from the lines."
 msgstr "그들의 날짜와 분할이 라인에서 다시 계획됩니다."
 
@@ -25657,6 +25730,12 @@ msgstr "속성 전환"
 
 msgid "Toggle views"
 msgstr "보기 전환"
+
+msgid "Token lifetime (minutes)"
+msgstr ""
+
+msgid "Tokens expire in minutes"
+msgstr ""
 
 msgid "Tol-"
 msgstr "공차-"
@@ -26608,6 +26687,9 @@ msgstr "단계 {orientationSource}에서 거꾸로"
 
 msgid "URL"
 msgstr "URL"
+
+msgid "Usage"
+msgstr ""
 
 msgid "Usage/Day (30d)"
 msgstr "일 사용량(30일)"
@@ -27804,6 +27886,9 @@ msgstr "구간:"
 msgid "WIP"
 msgstr "재공품"
 
+msgid "With identity federation, you don't need an API key"
+msgstr ""
+
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "피킹 리스트가 없으면 작업자는 스캔 탭에서 자재를 피킹합니다."
 
@@ -27904,6 +27989,9 @@ msgstr ""
 
 msgid "Working sessions on configuration and data"
 msgstr "설정 및 데이터에 대한 작업 세션"
+
+msgid "Works with GitHub Actions, AWS, Google Cloud, and Microsoft Entra ID"
+msgstr ""
 
 msgid "Worst Performing Machines"
 msgstr "성능이 가장 낮은 기계"
@@ -28070,6 +28158,9 @@ msgstr "귀사의 장부와 자금 흐름."
 
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "변경사항이 이 변경 통지로 릴리스된 새로운 초안 버전으로 이동합니다."
+
+msgid "Your CI or cloud provider issues short-lived tokens that authenticate your requests. There is no static key to manage."
+msgstr ""
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr ""
