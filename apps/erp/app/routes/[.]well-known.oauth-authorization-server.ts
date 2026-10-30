@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { TOKEN_EXCHANGE_GRANT } from "@carbon/ee/federation";
 import { getAppUrl } from "@carbon/env";
 import { getRequestOrigin } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -16,7 +17,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     token_endpoint: `${issuer}/token`,
     registration_endpoint: `${issuer}/register`,
     token_endpoint_auth_methods_supported: ["client_secret_post", "none"],
-    grant_types_supported: ["authorization_code", "refresh_token"],
+    grant_types_supported: [
+      "authorization_code",
+      "refresh_token",
+      // Workload identity federation: an OIDC JWT for a short-lived API key.
+      TOKEN_EXCHANGE_GRANT
+    ],
     response_types_supported: ["code"],
     code_challenge_methods_supported: ["S256"],
     scopes_supported: ["mcp:tools"],

@@ -37,7 +37,8 @@ const mockApiKeys: ApiKey[] = [
     createdAt: "2026-01-15T10:00:00Z",
     createdBy: "mock-user-1",
     updatedBy: null,
-    companyId: "mock"
+    companyId: "mock",
+    federationRuleId: null
   },
   {
     id: "mock-2",
@@ -55,7 +56,8 @@ const mockApiKeys: ApiKey[] = [
     createdAt: "2026-02-01T09:30:00Z",
     createdBy: "mock-user-1",
     updatedBy: null,
-    companyId: "mock"
+    companyId: "mock",
+    federationRuleId: null
   },
   {
     id: "mock-3",
@@ -72,7 +74,8 @@ const mockApiKeys: ApiKey[] = [
     createdAt: "2026-02-10T11:45:00Z",
     createdBy: "mock-user-2",
     updatedBy: null,
-    companyId: "mock"
+    companyId: "mock",
+    federationRuleId: null
   },
   {
     id: "mock-4",
@@ -90,7 +93,8 @@ const mockApiKeys: ApiKey[] = [
     createdAt: "2026-03-20T14:00:00Z",
     createdBy: "mock-user-2",
     updatedBy: null,
-    companyId: "mock"
+    companyId: "mock",
+    federationRuleId: null
   }
 ];
 

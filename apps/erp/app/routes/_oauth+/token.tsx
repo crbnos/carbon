@@ -4,7 +4,14 @@
 
 import { hashOAuthSecret } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  ISSUED_TOKEN_TYPE,
+  SUBJECT_TOKEN_TYPES,
+  TOKEN_EXCHANGE_GRANT
+} from "@carbon/ee/federation";
+import { exchangeFederatedToken } from "@carbon/ee/federation.server";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { createHash } from "crypto";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -12,6 +19,8 @@ import {
   ACCESS_TOKEN_TTL_MS,
   isRefreshTokenIdle
 } from "~/services/oauth.server";
+
+const logger = getLogger("erp", "oauth-token");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,11 +74,68 @@ function jsonResponse(body: unknown, status: number = 200) {
   });
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const client = getCarbonServiceRole();
-  const validation = await validator(oauthTokenValidator).validate(
-    await request.formData()
+// RFC 8693 token exchange. `client_id` names the federation rule: GitHub and
+// Google sign tokens for every customer, so the JWT alone names no company.
+const tokenExchangeValidator = z.object({
+  grant_type: z.literal(TOKEN_EXCHANGE_GRANT),
+  client_id: z.string().min(1),
+  subject_token: z.string().min(1).max(16_384),
+  subject_token_type: z.enum(SUBJECT_TOKEN_TYPES)
+});
+
+async function tokenExchange(formData: FormData) {
+  const validation = await validator(tokenExchangeValidator).validate(formData);
+  if (validation.error) {
+    return jsonResponse(
+      {
+        error: "invalid_request",
+        error_description:
+          "Send client_id (the federation rule id), subject_token and subject_token_type"
+      },
+      400
+    );
+  }
+
+  const { client_id: ruleId, subject_token: subjectToken } = validation.data;
+  let result: Awaited<ReturnType<typeof exchangeFederatedToken>>;
+  try {
+    result = await exchangeFederatedToken({ ruleId, subjectToken });
+  } catch (error) {
+    logger.error("Federated token exchange failed", { ruleId, error });
+    return jsonResponse({ error: "server_error" }, 500);
+  }
+
+  if (!result.ok) {
+    if (result.reason === "rate_limited") {
+      return jsonResponse({ error: "slow_down" }, 429);
+    }
+    // The reason is on the rule for its admin; the caller learns nothing more.
+    logger.warn("Federated token exchange refused", {
+      ruleId,
+      reason: result.reason
+    });
+    return jsonResponse({ error: "invalid_grant" }, 400);
+  }
+
+  return new Response(
+    JSON.stringify({
+      access_token: result.key,
+      issued_token_type: ISSUED_TOKEN_TYPE,
+      token_type: "Bearer",
+      expires_in: result.expiresIn
+    }),
+    { status: 200, headers: { ...corsHeaders, "Cache-Control": "no-store" } }
   );
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  if (formData.get("grant_type") === TOKEN_EXCHANGE_GRANT) {
+    return tokenExchange(formData);
+  }
+
+  const client = getCarbonServiceRole();
+  const validation = await validator(oauthTokenValidator).validate(formData);
 
   if (validation.error) {
     return jsonResponse(
