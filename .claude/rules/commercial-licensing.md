@@ -141,6 +141,9 @@ Refactor one at a time; each PR should leave the tree green.
   client components reach via `useRuleViolations`) — the query getters stay there.
 - ✅ **API keys** — `upsertApiKey`/`deleteApiKey` in `packages/ee/src/api-keys.server.ts`,
   `requireEntitlement("API_KEYS")`; routes gate with `requireFeature`.
+- ✅ **Identity federation** — `packages/ee/src/federation/` (`@carbon/ee/federation`,
+  `@carbon/ee/federation.server`): rule writes embed `requireEntitlement("API_KEYS")`; the
+  `/token` exchange degrades via `companyHasFeature` (a refused token). Shares the API keys plan.
 - ✅ **Webhooks** — authoring in `packages/ee/src/webhooks.server.ts`
   (`requireEntitlement("WEBHOOKS")`, including `revealWebhookSigningSecret` /
   `rotateWebhookSigningSecret`); delivery degrades at runtime via `companyHasFeature` and

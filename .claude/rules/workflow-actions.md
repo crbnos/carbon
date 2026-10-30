@@ -302,7 +302,7 @@ the guard behind. Non-2xx reports the status. On success the action outputs
 
 ### The SSRF guard
 
-`actions/url-guard.ts`, `checkOutboundUrl(raw)`, called before the fetch:
+`actions/url-guard.ts` (a re-export of `@carbon/lib/url-guard.server`), `checkOutboundUrl(raw)`, called before the fetch:
 
 - `https:` only; anything else is `"Only https addresses are allowed."`
 - Resolves the hostname with `dns.promises.lookup(..., { all: true })` — a public
