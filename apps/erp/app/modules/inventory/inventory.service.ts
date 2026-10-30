@@ -21740,6 +21740,19 @@ async function issueJobOperationMaterials(
     plannedElsewhere?: ItemLedgerInsert[];
   }
 ) {
+  // Two copies of one completion (a double tap, a resent request) would both
+  // read the same quantityIssued and both issue. Lock the operation first, so
+  // the second waits for the first to commit and then reads what it issued.
+  if (!dryRun) {
+    await trx
+      .selectFrom("jobOperation")
+      .select("id")
+      .where("id", "=", jobOperationId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+  }
+
   const materialsToIssue = await trx
     .selectFrom("jobMaterial")
     .where("jobOperationId", "=", jobOperationId)
