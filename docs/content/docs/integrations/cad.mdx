@@ -331,9 +331,35 @@ company's custom properties) onto Carbon. A property can set an **item field** o
 open, but the mappings belong to the company and apply to every push. It lives in
 the panel because Onshape lists properties only from inside a document.
 
-The page starts with fixed rows: Part number and Revision always come from Onshape,
-and Name and Description each have a mode (below). Then come the item fields with
-their **push defaults**, the values a new item gets when no property sets them:
+The page starts with **Manual Mapping**, a closed group holding Part ID and Revision.
+Pushes link parts to Carbon items by these, so a wrong change here links parts to the
+wrong items for the whole company. It is meant to be changed only on instruction from
+Carbon: opening the group shows a warning first, where **I understand** shows the
+fields and **Back** closes the group. A save the group refuses keeps it open. **Reset
+to defaults** puts Part ID, Revision and the Item and Quantity column choices back to
+Onshape's own; **Save** applies it. The group ends
+with **What Onshape sends**: on an assembly, the column each of Item and Quantity is
+read from, then the BOM columns and properties of the open element, spelled as
+Onshape sends them, for checking why the panel can't find a field.
+
+Part number, Revision, Name and Description come from Onshape's own properties unless
+you pick another text or list property; Name and Description each have a mode (below). Pushes match parts to Carbon
+items by part number, so the page warns when you change the Part number or Revision
+source while items are linked. Release pushes always read Onshape's own Part number
+and Revision.
+
+On an assembly, the panel finds the BOM's Item and Quantity columns whatever your BOM
+template or language calls them. When it can't find one, the page shows a row for it:
+pick the column that holds it, or type the column's name and choose **Use a column
+named**. A typed name is looked for in every BOM, in any case, so one choice covers
+templates that name the column the same way. To read another column than the one the
+panel found, choose **Change** beside it under What Onshape sends. **None**, or the
+found column, clears the choice. The Item column must hold Onshape's item numbers
+(1, 1.1, 1.2): the panel builds the assembly's levels from them.
+
+Short Description and Long Description head the list below the group. The item fields
+follow, each with its **push default**, the value a new item gets when no property
+sets it:
 
 | Item field | Values | Push default |
 | --- | --- | --- |
@@ -411,6 +437,7 @@ a cell value.
 | *Onshape is not connected for this company* | Only **Onshape** (sync) is connected, or no Onshape integration is. | Connect **Onshape V2**. |
 | The review fails to open with a 503 | Carbon could not store the review in Redis. | Check `REDIS_URL`. |
 | *Review again* after **Push to Carbon** | The 15-minute review expired, or it was already applied. | Press **Review again**. |
+| *Onshape's BOM for this assembly has no "Item" … columns* | The panel recognises none of the BOM's columns as Item, Part number or Quantity. | Add the column back in Onshape, or press **Choose columns** and pick it on the Fields page. |
 | A part shows **Conflict** | Carbon already has an item with that part number, made by hand, by an import or by the sync integration. | Push it: the panel links and updates that item instead of creating a duplicate. |
 | The push result says *New Draft version, not yet live* | The assembly's make method was released, so the push wrote to a Draft version. | Release the Draft in Carbon when ready. |
 | `invalid_scope` on Connect | The OAuth application lacks `OAuth2Write`. | Grant it in the developer portal. |

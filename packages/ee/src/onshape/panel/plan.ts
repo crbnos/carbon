@@ -40,6 +40,11 @@ import { compareRevisions } from "./revision";
 import type { StandardFieldId } from "./standard-fields";
 import { standardField } from "./standard-fields";
 import {
+  identityValue,
+  releaseSources,
+  standardSources
+} from "./standard-sources";
+import {
   externalIdForAssembly,
   externalIdForBomLine,
   externalIdForPart,
@@ -1912,6 +1917,7 @@ export function buildReleasePlan({
 }): ReleasePlan {
   const descriptionModes =
     mapping?.descriptionModes ?? DEFAULT_DESCRIPTION_MODES;
+  const sources = releaseSources(standardSources(mapping?.map ?? []));
   const resolve = (
     properties: OnshapePropertyValue[] | null | undefined,
     matchByName: boolean
@@ -2000,9 +2006,12 @@ export function buildReleasePlan({
     const node = bomNodeByPartNumber.get(item.partNumber);
     const properties = propertiesByPartNumber?.get(item.partNumber);
     const onshapeText = {
-      name: propertyText(properties, "Name") ?? node?.name ?? null,
+      name:
+        identityValue(properties ?? [], "name", sources) ?? node?.name ?? null,
       description:
-        propertyText(properties, "Description") ?? node?.description ?? null
+        identityValue(properties ?? [], "description", sources) ??
+        node?.description ??
+        null
     };
     const existingLetter = letterRowFor(item.partNumber, item.revision);
     if (existingLetter) {
@@ -2146,16 +2155,6 @@ export function buildReleasePlan({
     alreadyPushed: !createsAnything,
     options
   };
-}
-
-function propertyText(
-  properties: OnshapePropertyValue[] | undefined,
-  name: string
-): string | null {
-  const value = properties?.find((property) => property.name === name)?.value;
-  if (typeof value !== "string") return null;
-  const text = value.trim();
-  return text === "" ? null : text;
 }
 
 function releaseIdentity(item: PanelReleaseItem) {
