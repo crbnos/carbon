@@ -1,12 +1,12 @@
 ---
 title: "Workflow steps in connected apps, inspection plans from the model, strict backflush, and kanban labels"
-description: "Workflow steps in Gmail, Slack and Google Calendar, inspection plans from a STEP model's PMI, and strict backflush. Plus kanban labels."
+description: "Workflow steps in Gmail, Slack and Google Calendar, inspection plans from STEP model PMI, and strict backflush. Plus kanban labels."
 date: "2026-10-30"
 tags: ["workflows", "quality", "production", "inventory"]
 image: "/changelog/2026-10-30-model-inspection-strict-backflush.svg"
 ---
 
-Drawings, bins, long lists and copy-paste between apps all held up work. This release lets workflows act in Gmail, Slack and Google Calendar, builds inspection plans straight from the 3D model, makes backflush take material only from the bin you named, and lets lists of any length scroll without paging. It also adds signed purchase orders, printed kanban cards, and company email through your own mail provider.
+Drawings, bins, long lists and copy-paste between apps all held up work. This release lets workflows act in Gmail, Slack and Google Calendar, builds inspection plans straight from the 3D model, makes backflush take material only from the bin you named, and lets long lists scroll without paging. It also adds signed purchase orders, printed kanban cards, and company email through your own mail provider.
 
 ## Workflow steps in connected apps
 
@@ -18,7 +18,7 @@ The model viewer now shows a STEP AP242 model's PMI: dimensions, geometric toler
 
 ## Strict backflush
 
-Turn on [strict backflush](/docs/reference/strict-backflush) in `Settings → Items`, and backflush takes material only from the line's Pull From storage unit. A method version cannot be made Active, and a job cannot be released, while a pulled, stocked line has no Pull From. A short bin refuses the completion instead of drawing from another bin.
+Turn on [strict backflush](/docs/reference/strict-backflush) in `Settings → Items`, and backflush takes material only from the line's Pull From storage unit. A method version cannot be made Active, and a job cannot be released, while a pulled, stocked line has no Pull From. With Prevent negative stock on, a short bin refuses the completion instead of drawing from another bin. With it off, the bin goes below zero and the work completes.
 
 ## Scheduling that keeps up with staffing
 
@@ -30,7 +30,7 @@ MRP no longer counts a BOM line with quantity 0 as one, so a [configured item](/
 
 ## Lists of any length
 
-Long lists load more rows as you scroll, so there are no pages to click through. The row count is exact at any size. CSV export and bulk actions run in the background for selections over 1,000 rows.
+Long lists load more rows as you scroll, so there are no pages to click through. On lists that support them, the row count is exact at any size, and CSV export and bulk actions run in the background for selections over 1,000 rows.
 
 ## Quarantine stock that planning ignores
 
@@ -38,7 +38,7 @@ Mark a storage unit or a storage type [non-nettable](/docs/reference/inventory#l
 
 ## Serial numbers when production starts
 
-`Settings → Production → Serial Numbers` can number serial units at job creation, at job release, or when production first touches each unit. Each item can override the company setting. Draft jobs that are resized or cancelled then spend no numbers.
+`Settings → Production → Serial Numbers` can number serial units at job creation, at job release, or when production first touches each unit. Each item can override the company setting. With release or first-touch timing, draft jobs that are resized or cancelled spend no numbers.
 
 ## Signed purchase orders and per-line dates
 
@@ -54,7 +54,7 @@ Send company email through Gmail, or through your own Resend or SMTP account. Do
 
 ## Find the PO on Receiving
 
-[Receiving](/docs/reference/receipts#find-the-purchase-order-for-a-delivery) lists every open purchase order line waiting to be received. Search by anything on the packing slip: order number, supplier, part number, supplier reference, tracking number or job. **Receive** creates the receipt in one click.
+[Receiving](/docs/reference/receipts#find-the-purchase-order-for-a-delivery) lists the open purchase order lines waiting to be received, up to 1,000 at a time; search or filter to find later orders. Search by anything on the packing slip: order number, supplier, part number, supplier reference, tracking number or job. **Receive** creates the receipt in one click.
 
 ## Warn or block on missing abilities
 
