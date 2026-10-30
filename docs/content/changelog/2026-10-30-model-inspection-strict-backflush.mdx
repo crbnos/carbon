@@ -1,11 +1,15 @@
 ---
-title: "Inspection plans from the model, strict backflush, kanban labels, and long lists"
-description: "Inspection plans built from a STEP model's PMI, strict backflush, signed purchase orders and printed kanban cards. Plus email providers."
+title: "Workflow steps in connected apps, inspection plans from the model, strict backflush, and kanban labels"
+description: "Workflow steps in Gmail, Slack and Google Calendar, inspection plans from a STEP model's PMI, and strict backflush. Plus kanban labels."
 date: "2026-10-30"
-tags: ["quality", "production", "inventory"]
+tags: ["workflows", "quality", "production", "inventory"]
 ---
 
-Drawings, bins and long lists all held up work on the floor. This release builds inspection plans straight from the 3D model, makes backflush take material only from the bin you named, and lets lists of any length scroll without paging. It also adds signed purchase orders, printed kanban cards, and company email through your own mail provider.
+Drawings, bins, long lists and copy-paste between apps all held up work. This release lets workflows act in Gmail, Slack and Google Calendar, builds inspection plans straight from the 3D model, makes backflush take material only from the bin you named, and lets lists of any length scroll without paging. It also adds signed purchase orders, printed kanban cards, and company email through your own mail provider.
+
+## Workflow steps in connected apps
+
+A [workflow](/docs/reference/workflows#steps-in-connected-apps) can now add an **Integration** step that acts in another app: send a Gmail email, post a Slack message to a channel, or create a Google Calendar event. Connect the accounts the steps act as in `Settings → Integrations` (see [workflow apps](/docs/integrations/workflow-apps)).
 
 ## Inspection plans from the model
 
@@ -14,6 +18,14 @@ The model viewer now shows a STEP AP242 model's PMI: dimensions, geometric toler
 ## Strict backflush
 
 Turn on [strict backflush](/docs/reference/strict-backflush) in `Settings → Items`, and backflush takes material only from the line's Pull From storage unit. A method version cannot be made Active, and a job cannot be released, while a pulled, stocked line has no Pull From. A short bin refuses the completion instead of drawing from another bin.
+
+## Scheduling that keeps up with staffing
+
+[Scheduling](/docs/reference/scheduling#when-the-schedule-recomputes) now re-plans when staffing or a timezone changes. When work can't be scheduled, it says who could run it. Only a job with a Hard or Soft Deadline can be late.
+
+## Configured BOMs in MRP, jobs and quotes
+
+MRP no longer counts a BOM line with quantity 0 as one, so a [configured item](/docs/reference/configurator) plans only its chosen configuration. When a configuration rule moves a Make to Order line onto another item, jobs and quotes now build that item's own method under it.
 
 ## Lists of any length
 
@@ -58,7 +70,14 @@ A process that requires an ability now says what MES does when an [operator lack
 - Method CSV imports add lines to an existing Draft make method.
 - `Settings → Inventory → Receiving` can start receipt quantities at zero.
 - [Training](/docs/reference/training#written-content-a-pdf-or-a-video) can be a YouTube video.
-- The inspection plans table groups by part.
+- The inspection plans table groups by part. Rows expand on click, with Item Group and Tags columns.
+- On a phone, navigation opens as a bottom sheet you can drag up.
+- Delete a work center or process that nothing uses.
+- Quote finalize shows a missing price, lead time or shipping cost as a yellow warning.
+- Step slide images open full size, with zoom.
+- The MES Measurement step shows the unit and limits.
+- Item thumbnails show on the job properties panel and on batch screens.
+- RFQ share pages show units of measure.
 - A defense UAS demo dataset, with the ISR-4 quadcopter assembly.
 - Error toasts say why a save or delete failed, and the error screen shows a request ID.
 - A seasonal Halloween theme, which anyone can turn off.
@@ -79,5 +98,14 @@ A process that requires an ability now says what MES does when an [operator lack
 - Emails read correctly in Outlook.
 - MES auto-prints the first-operation label on every completion path.
 - A barcode scan that ends without Enter is acted on.
+- A purchase order no longer goes Completed while quantity is still to be invoiced.
+- All-customers price overrides are visible and linkable.
+- Serial entry and voids work on serial- and batch-tracked receipts.
+- Supplier returns ship rejected units.
+- The customer portal no longer shows a server error.
+- The Material Planning Supplier filter lists only the plan's suppliers.
+- Webhooks refuse to deliver to private network addresses.
+- The workflow filter no longer crashes.
+- Training assignees picked directly show on the assignment.
 
 </Accordion>
