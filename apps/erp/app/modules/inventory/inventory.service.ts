@@ -33,6 +33,7 @@ import type {
   KyselyDatabase,
   KyselyTx
 } from "@carbon/database/client";
+import { withTransaction } from "@carbon/database/client";
 import {
   type AutomaticJournalStatus,
   assertPostingStatusUnchanged,
@@ -2812,6 +2813,360 @@ export async function generateInventoryCountLines(
 // read-then-update would leave open (a concurrent Confirm can't slip in between).
 // Returns the updated row id, or undefined when the line doesn't exist or the
 // count is no longer Draft. Kysely bypasses RLS — authorize at the route first.
+// What a scanned or typed code names on a count. A serial or batch number
+// names its tracked entities (a batch split keeps the number on every part),
+// an item readable id names an item, and anything else is a new number.
+export type InventoryCountCode =
+  | {
+      kind: "entity";
+      itemId: string;
+      itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
+      trackedEntityIds: string[];
+    }
+  | {
+      kind: "item";
+      itemId: string;
+      itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
+    }
+  | { kind: "ambiguous"; itemIds: string[] }
+  | { kind: "unknown" };
+
+export async function resolveInventoryCountCode(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; code: string; itemId?: string }
+): Promise<InventoryCountCode> {
+  const code = args.code.trim();
+
+  let entities = db
+    .selectFrom("trackedEntity")
+    .innerJoin("item", (join) =>
+      join
+        .onRef("item.id", "=", "trackedEntity.itemId")
+        .onRef("item.companyId", "=", "trackedEntity.companyId")
+    )
+    .select([
+      "trackedEntity.id",
+      "trackedEntity.itemId",
+      "trackedEntity.createdAt",
+      "item.itemTrackingType"
+    ])
+    .where("trackedEntity.companyId", "=", args.companyId)
+    .where("trackedEntity.readableId", "=", code);
+  if (args.itemId)
+    entities = entities.where("trackedEntity.itemId", "=", args.itemId);
+  const entityRows = await entities
+    .orderBy("trackedEntity.createdAt")
+    .execute();
+
+  if (entityRows.length > 0) {
+    const itemIds = pluckUnique(entityRows, (row) => row.itemId);
+    if (itemIds.length > 1) return { kind: "ambiguous", itemIds };
+    return {
+      kind: "entity",
+      itemId: itemIds[0],
+      itemTrackingType: entityRows[0].itemTrackingType,
+      trackedEntityIds: entityRows.map((row) => row.id)
+    };
+  }
+
+  let items = db
+    .selectFrom("item")
+    .select(["id", "itemTrackingType"])
+    .where("companyId", "=", args.companyId)
+    .where((eb) =>
+      eb.or([
+        eb("readableId", "=", code),
+        eb("readableIdWithRevision", "=", code)
+      ])
+    );
+  if (args.itemId) items = items.where("id", "=", args.itemId);
+  const itemRows = await items.execute();
+  if (itemRows.length > 1) {
+    return { kind: "ambiguous", itemIds: itemRows.map((row) => row.id) };
+  }
+  if (itemRows.length === 1) {
+    return {
+      kind: "item",
+      itemId: itemRows[0].id,
+      itemTrackingType: itemRows[0].itemTrackingType
+    };
+  }
+  return { kind: "unknown" };
+}
+
+export type InventoryCountUnitOutcome =
+  | { outcome: "counted" | "added"; lineId: string; groupId: string }
+  | { outcome: "alreadyCounted"; lineId: string; groupId: string }
+  | { outcome: "ambiguous"; itemIds: string[] }
+  | { outcome: "unknown" }
+  | { outcome: "needsQuantity"; itemId: string }
+  | { outcome: "needsUnitNumber"; itemId: string }
+  | { outcome: "wrongStorageUnit" };
+
+// Records one scanned or typed unit on a Draft count, in one storage unit.
+// A unit already on the count in this bin is counted; a unit on the count in
+// another bin, or on no line, gets a new line marked `foundDuringCount`. Its
+// state is Unexpected, and the post decides whether it moved or is new.
+// Returns null when the count is not Draft.
+export async function recordInventoryCountUnit(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    inventoryCountId: string;
+    companyId: string;
+    userId: string;
+    storageUnitId: string | null;
+    code: string;
+    itemId?: string;
+    quantity?: number;
+  }
+): Promise<InventoryCountUnitOutcome | null> {
+  const { inventoryCountId, companyId, userId, storageUnitId } = args;
+  return withTransaction(db, async (trx) => {
+    const count = await trx
+      .selectFrom("inventoryCount")
+      .select(["id", "status", "locationId"])
+      .where("id", "=", inventoryCountId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!count || count.status !== "Draft") return null;
+
+    if (storageUnitId) {
+      const unit = await trx
+        .selectFrom("storageUnit")
+        .select("id")
+        .where("id", "=", storageUnitId)
+        .where("companyId", "=", companyId)
+        .where("locationId", "=", count.locationId)
+        .executeTakeFirst();
+      if (!unit) return { outcome: "wrongStorageUnit" };
+    }
+
+    const resolved = await resolveInventoryCountCode(trx, {
+      companyId,
+      code: args.code,
+      itemId: args.itemId
+    });
+    if (resolved.kind === "ambiguous") {
+      return { outcome: "ambiguous", itemIds: resolved.itemIds };
+    }
+
+    const now = datetime.timestamp();
+    const counted = { countedBy: userId, countedAt: now };
+    const groupId = (itemId: string) =>
+      inventoryCountGroupId({ inventoryCountId, itemId, storageUnitId });
+    const inBin = (line: { storageUnitId: string | null }) =>
+      (line.storageUnitId ?? null) === storageUnitId;
+
+    const setCounted = async (lineId: string, countedQuantity: number) => {
+      await trx
+        .updateTable("inventoryCountLine")
+        .set({
+          countedQuantity,
+          ...counted,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", lineId)
+        .where("companyId", "=", companyId)
+        .execute();
+    };
+
+    const addLine = async (line: {
+      itemId: string;
+      trackedEntityId: string | null;
+      readableId: string | null;
+      countedQuantity: number;
+    }) => {
+      const row = await trx
+        .insertInto("inventoryCountLine")
+        .values({
+          inventoryCountId,
+          companyId,
+          itemId: line.itemId,
+          locationId: count.locationId,
+          storageUnitId,
+          trackedEntityId: line.trackedEntityId,
+          readableId: line.readableId,
+          systemQuantity: 0,
+          countedQuantity: line.countedQuantity,
+          foundDuringCount: true,
+          ...counted,
+          createdBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      return row.id;
+    };
+
+    if (resolved.kind === "entity") {
+      const isSerial = resolved.itemTrackingType === "Serial";
+      const quantity = isSerial ? 1 : args.quantity;
+      const lines = await trx
+        .selectFrom("inventoryCountLine")
+        .select(["id", "storageUnitId", "trackedEntityId", "countedQuantity"])
+        .where("inventoryCountId", "=", inventoryCountId)
+        .where("companyId", "=", companyId)
+        .where("trackedEntityId", "in", resolved.trackedEntityIds)
+        .execute();
+      const here = lines.find(inBin);
+      if (here && isSerial && Number(here.countedQuantity) === 1) {
+        return {
+          outcome: "alreadyCounted",
+          lineId: here.id,
+          groupId: groupId(resolved.itemId)
+        };
+      }
+      if (quantity === undefined) {
+        return { outcome: "needsQuantity", itemId: resolved.itemId };
+      }
+      if (here) {
+        await setCounted(here.id, round(quantity));
+        return {
+          outcome: "counted",
+          lineId: here.id,
+          groupId: groupId(resolved.itemId)
+        };
+      }
+      // Prefer the entity the count already holds elsewhere: that is the unit
+      // that moved, and the post pairs the two lines into a move.
+      const trackedEntityId =
+        lines[0]?.trackedEntityId ?? resolved.trackedEntityIds[0];
+      const lineId = await addLine({
+        itemId: resolved.itemId,
+        trackedEntityId,
+        readableId: args.code.trim(),
+        countedQuantity: round(quantity)
+      });
+      return { outcome: "added", lineId, groupId: groupId(resolved.itemId) };
+    }
+
+    if (resolved.kind === "item") {
+      if (
+        resolved.itemTrackingType === "Serial" ||
+        resolved.itemTrackingType === "Batch"
+      ) {
+        return { outcome: "needsUnitNumber", itemId: resolved.itemId };
+      }
+      if (args.quantity === undefined) {
+        return { outcome: "needsQuantity", itemId: resolved.itemId };
+      }
+      const line = await trx
+        .selectFrom("inventoryCountLine")
+        .select(["id", "storageUnitId"])
+        .where("inventoryCountId", "=", inventoryCountId)
+        .where("companyId", "=", companyId)
+        .where("itemId", "=", resolved.itemId)
+        .where("trackedEntityId", "is", null)
+        .execute();
+      const here = line.find(inBin);
+      if (here) {
+        await setCounted(here.id, round(args.quantity));
+        return {
+          outcome: "counted",
+          lineId: here.id,
+          groupId: groupId(resolved.itemId)
+        };
+      }
+      const lineId = await addLine({
+        itemId: resolved.itemId,
+        trackedEntityId: null,
+        readableId: null,
+        countedQuantity: round(args.quantity)
+      });
+      return { outcome: "added", lineId, groupId: groupId(resolved.itemId) };
+    }
+
+    // An unknown number: a new serial or batch of the item the counter picked.
+    if (!args.itemId) return { outcome: "unknown" };
+    const item = await trx
+      .selectFrom("item")
+      .select(["id", "itemTrackingType"])
+      .where("id", "=", args.itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (
+      !item ||
+      (item.itemTrackingType !== "Serial" && item.itemTrackingType !== "Batch")
+    ) {
+      return { outcome: "unknown" };
+    }
+    const quantity = item.itemTrackingType === "Serial" ? 1 : args.quantity;
+    if (quantity === undefined) {
+      return { outcome: "needsQuantity", itemId: item.id };
+    }
+    const existing = await trx
+      .selectFrom("inventoryCountLine")
+      .select(["id", "storageUnitId"])
+      .where("inventoryCountId", "=", inventoryCountId)
+      .where("companyId", "=", companyId)
+      .where("itemId", "=", item.id)
+      .where("trackedEntityId", "is", null)
+      .where("readableId", "=", args.code.trim())
+      .executeTakeFirst();
+    if (existing) {
+      if (item.itemTrackingType === "Serial") {
+        return {
+          outcome: "alreadyCounted",
+          lineId: existing.id,
+          groupId: inventoryCountGroupId({
+            inventoryCountId,
+            itemId: item.id,
+            storageUnitId: existing.storageUnitId
+          })
+        };
+      }
+      await setCounted(existing.id, round(quantity));
+      return {
+        outcome: "counted",
+        lineId: existing.id,
+        groupId: inventoryCountGroupId({
+          inventoryCountId,
+          itemId: item.id,
+          storageUnitId: existing.storageUnitId
+        })
+      };
+    }
+    const lineId = await addLine({
+      itemId: item.id,
+      trackedEntityId: null,
+      readableId: args.code.trim(),
+      countedQuantity: round(quantity)
+    });
+    return { outcome: "added", lineId, groupId: groupId(item.id) };
+  });
+}
+
+// Removes a line the counter added (an Unexpected unit) from a Draft count.
+// Snapshot lines stay: count them 0 instead. Returns null when nothing was
+// removed.
+export async function removeInventoryCountUnit(
+  db: Kysely<KyselyDatabase>,
+  args: { lineId: string; companyId: string }
+) {
+  return db
+    .deleteFrom("inventoryCountLine")
+    .where("id", "=", args.lineId)
+    .where("companyId", "=", args.companyId)
+    .where("foundDuringCount", "=", true)
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("inventoryCount")
+          .select("inventoryCount.id")
+          .whereRef(
+            "inventoryCount.id",
+            "=",
+            "inventoryCountLine.inventoryCountId"
+          )
+          .where("inventoryCount.companyId", "=", args.companyId)
+          .where("inventoryCount.status", "=", "Draft")
+      )
+    )
+    .returning("id")
+    .executeTakeFirst();
+}
+
 export async function updateInventoryCountLine(
   db: Kysely<KyselyDatabase>,
   args: z.infer<typeof inventoryCountLineValidator> & {

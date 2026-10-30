@@ -1,5 +1,5 @@
 {
-  "totalTools": 1623,
+  "totalTools": 1626,
   "modules": 14,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -153,6 +153,7 @@
     {"name":"documents_updateDocument","classification":"WRITE","schema":"de7ba932aaf3","response":"326f27117bf1","permission":"documents:update","paginates":false},
     {"name":"documents_updateDocumentFavorite","classification":"WRITE","schema":"ff73dc321969","response":"bcde375ebd4c","permission":"documents:update","paginates":false},
     {"name":"documents_updateDocumentLabels","classification":"DESTRUCTIVE","schema":"b97e2ad30e97","response":"bcde375ebd4c","permission":"documents:update","paginates":false},
+    {"name":"inventory_addInventoryCountUnit","classification":"WRITE","schema":"1c01fffa4e29","response":"512a14c5a380","permission":"inventory:update","paginates":false},
     {"name":"inventory_adjustInventory","classification":"WRITE","schema":"6bea071798b4","response":"637aa3a8adf9","permission":"inventory:create+update","paginates":false},
     {"name":"inventory_assignReceiptReturnEntity","classification":"WRITE","schema":"82c3b94b252f","response":"5d58d420052a","permission":"inventory:create","paginates":false},
     {"name":"inventory_assignShipmentLineEntity","classification":"WRITE","schema":"ef225f89d1f1","response":"5d58d420052a","permission":"inventory:create","paginates":false},
@@ -268,7 +269,9 @@
     {"name":"inventory_postInventoryCount","classification":"WRITE","schema":"e354150046fe","response":"e20c4161bb9c","permission":"inventory:update","paginates":false},
     {"name":"inventory_postReceipt","classification":"WRITE","schema":"748c476fdf2b","response":"727cf771e24b","permission":"inventory:update","paginates":false},
     {"name":"inventory_postShipment","classification":"WRITE","schema":"c5945bba6ca6","response":"d2fbdd9c8de9","permission":"inventory:update","paginates":false},
+    {"name":"inventory_recordInventoryCountScan","classification":"WRITE","schema":"cc5a5a921a52","response":"512a14c5a380","permission":"inventory:update","paginates":false},
     {"name":"inventory_recostSerialUnit","classification":"WRITE","schema":"c3f4c85c02d3","response":"1791201245a6","permission":"accounting:update","paginates":false},
+    {"name":"inventory_removeInventoryCountUnit","classification":"DESTRUCTIVE","schema":"063a6777d378","response":"063a6777d378","permission":"inventory:update","paginates":false},
     {"name":"inventory_removeReceiptReturnEntity","classification":"WRITE","schema":"727806547880","response":"5d58d420052a","permission":"inventory:create","paginates":false},
     {"name":"inventory_removeStorageUnit","classification":"DESTRUCTIVE","schema":"35393c22f425","response":"2483090811c4","permission":"inventory:delete","paginates":false},
     {"name":"inventory_removeWarehouseTransferLine","classification":"DESTRUCTIVE","schema":"e969960c72a3","response":"3797626bd17e","permission":"inventory:update","paginates":false},

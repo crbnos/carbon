@@ -5756,6 +5756,119 @@ export const updateInventoryCountLine = defineServiceFn({
 });
 
 /**
+ * Record a scanned code on an inventory count
+ *
+ * @remarks
+ * The code is a serial or batch number, an item readable id, or a new number.
+ * A unit already on the count in the storage unit is counted (1 for a serial,
+ * `quantity` for a batch or an untracked item). A unit on the count in another
+ * storage unit, or on no line, gets a new line that reads as Unexpected; the
+ * post moves a known unit from its bin and creates a new one. The result's
+ * `outcome` says what happened: `counted`, `added`, `alreadyCounted`, or what
+ * the caller must send again — `ambiguous` (pick one of `itemIds`), `unknown`
+ * (send `itemId` for a new number), `needsQuantity`, `needsUnitNumber` (scan
+ * the serial or batch, not the item), `wrongStorageUnit`. Draft counts only.
+ *
+ * @param storageUnitId - The storage unit counted; left out for stock in no storage unit.
+ * @param itemId - The item, when the code matches 2 or more items or is a new number.
+ * @param quantity - A batch's or an untracked item's counted quantity.
+ * @mcp
+ */
+export const recordInventoryCountScan = defineServiceFn({
+  input: z.object({
+    inventoryCountId: z.string().min(1),
+    storageUnitId: z.string().nullable().optional(),
+    code: z.string().trim().min(1),
+    itemId: z.string().optional(),
+    quantity: z.number().min(0).optional()
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.recordInventoryCountUnit(ctx.asSystem.pg, {
+      inventoryCountId: input.inventoryCountId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      storageUnitId: input.storageUnitId ?? null,
+      code: input.code,
+      itemId: input.itemId,
+      quantity: input.quantity
+    });
+    if (!result) {
+      return ctx.error(
+        "conflict",
+        "Counts can only be edited while the document is Draft"
+      );
+    }
+    return result;
+  }
+});
+
+/**
+ * Add a unit to an inventory count by hand
+ *
+ * @remarks
+ * The same as `recordInventoryCountScan`, with the item named: for a serial
+ * or batch the counter reads off the unit, found on the shelf.
+ *
+ * @mcp
+ */
+export const addInventoryCountUnit = defineServiceFn({
+  input: z.object({
+    inventoryCountId: z.string().min(1),
+    storageUnitId: z.string().nullable().optional(),
+    code: z.string().trim().min(1),
+    itemId: z.string().min(1),
+    quantity: z.number().min(0).optional()
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.recordInventoryCountUnit(ctx.asSystem.pg, {
+      inventoryCountId: input.inventoryCountId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      storageUnitId: input.storageUnitId ?? null,
+      code: input.code,
+      itemId: input.itemId,
+      quantity: input.quantity
+    });
+    if (!result) {
+      return ctx.error(
+        "conflict",
+        "Counts can only be edited while the document is Draft"
+      );
+    }
+    return result;
+  }
+});
+
+/**
+ * Remove a unit added to an inventory count
+ *
+ * @remarks
+ * Removes a line the counter added (an Unexpected unit). A line from the
+ * snapshot cannot be removed; count it 0. Draft counts only.
+ *
+ * @mcp destructive
+ */
+export const removeInventoryCountUnit = defineServiceFn({
+  input: z.object({ lineId: z.string().min(1) }),
+  permission: { update: "inventory" },
+  async run(ctx, { lineId }) {
+    const removed = await service.removeInventoryCountUnit(ctx.asSystem.pg, {
+      lineId,
+      companyId: ctx.company.id
+    });
+    if (!removed) {
+      return ctx.error(
+        "conflict",
+        "Only a unit added while counting can be removed, while the count is Draft"
+      );
+    }
+    return { lineId };
+  }
+});
+
+/**
  * Confirm or reopen an inventory count
  *
  * @remarks
