@@ -4313,3 +4313,13 @@ the error set against an untouched checkout of `main`.
 **Rule:** On a page an outsider can reach (sign-in, invite, verify, callback, MFA, SSO, a share link), log the real error with the module logger and pass `null` as the cause. Everywhere else, pass the real error object, never `params`, a result wrapper or a string that repeats the title.
 
 **Applies to:** every `error(` call in `apps/*/app/routes/_public+`, `_auth+`, `share+` and `api+/login*`, and any new app that registers `flashClientMiddleware`.
+
+## A check "shared by the form and the server" is no guard while RLS lets the client write the table
+
+**Context:** Identity federation rules (`federationRule`) let a CI job mint API keys. The rules that keep a rule safe (an immutable claim for GitHub, GitLab.com and Google; no bare `*`) lived in `ruleRequirementErrors`, which the form and the service operation both ran.
+
+**Problem:** The table got the standard `company("settings")` RLS rule, so anyone with `settings_create` could insert a row straight through PostgREST: a GitHub rule with subject `repo:*` and any user as `createdBy`. Every GitHub repository could then mint keys that act as that user. The "shared" check covered every path except the one an attacker would use.
+
+**Rule:** For a table whose rows grant access (credentials, trust rules, keys), deny API writes in the authz manifest (`create/update/delete: false`) and write only from the service operation as the system. Put the safety rules in the database as CHECK constraints too, so no future write path can skip them.
+
+**Applies to:** `federationRule`, and any new table that mints credentials or decides who may authenticate. `apiKey` still has open settings writes and a client-chosen `createdBy`; it predates this rule.
