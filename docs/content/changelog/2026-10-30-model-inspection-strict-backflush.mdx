@@ -1,0 +1,112 @@
+---
+title: "Workflow steps in connected apps, inspection plans from the model, strict backflush, and kanban labels"
+description: "Workflow steps in Gmail, Slack and Google Calendar, inspection plans from STEP model PMI, and strict backflush. Plus kanban labels."
+date: "2026-10-30"
+tags: ["workflows", "quality", "production", "inventory"]
+image: "/changelog/2026-10-30-model-inspection-strict-backflush.svg"
+---
+
+Drawings, bins, long lists and copy-paste between apps all held up work. This release lets workflows act in Gmail, Slack and Google Calendar, builds inspection plans straight from the 3D model, makes backflush take material only from the bin you named, and lets long lists scroll without paging. It also adds signed purchase orders, printed kanban cards, and company email through your own mail provider.
+
+## Workflow steps in connected apps
+
+A [workflow](/docs/reference/workflows#steps-in-connected-apps) can now add an **Integration** step that acts in another app: send a Gmail email, post a Slack message to a channel, or create a Google Calendar event. Connect the accounts the steps act as in `Settings → Integrations` (see [workflow apps](/docs/integrations/workflow-apps)). Available on the Business plan.
+
+## Inspection plans from the model
+
+The model viewer now shows a STEP AP242 model's PMI: dimensions, geometric tolerances, datums, notes and saved views. Carbon turns that PMI into an [inspection plan](/docs/reference/inspections#plans-from-a-models-pmi) on its own. Each dimension and tolerance becomes a characteristic. Datums and notes are left out.
+
+## Strict backflush
+
+Turn on [strict backflush](/docs/reference/strict-backflush) in `Settings → Items`, and backflush takes material only from the line's Pull From storage unit, after any material already picked to the operation's lineside. It applies at locations with an active work center and an active storage unit. A method version cannot be made Active, and a job cannot be released, while a pulled, stocked line has no Pull From. With Prevent negative stock on, a short bin refuses the completion instead of drawing from another bin. With it off, the bin goes below zero and the work completes.
+
+## Scheduling that keeps up with staffing
+
+[Scheduling](/docs/reference/scheduling#when-the-schedule-recomputes) now re-plans when staffing or a timezone changes. When work can't be scheduled, it says who could run it. Only a job with a Hard or Soft Deadline can be late.
+
+## Configured BOMs in MRP, jobs and quotes
+
+MRP no longer counts a BOM line with quantity 0 as one, so a [configured item](/docs/reference/configurator) plans only its chosen configuration. When a configuration rule moves a Make to Order line onto another item, jobs and quotes now build that item's own method under it.
+
+## Lists of any length
+
+Long lists load more rows as you scroll, so there are no pages to click through. On lists that support them, the row count is exact at any size. A CSV export of more than 1,000 matching rows, and a bulk action on more than 1,000 selected rows, runs in the background.
+
+## Quarantine stock that planning ignores
+
+Mark a storage unit or a storage type [non-nettable](/docs/reference/inventory#locations-and-storage-units) for a quarantine or hold area. Its stock stays on hand, but MRP and the planning screens do not count it, and picking never takes from it. A stock transfer moves it out again.
+
+## Serial numbers when production starts
+
+`Settings → Production → Serial Numbers` can number serial units at job creation, at job release, or when production first touches each unit. Each item can override the company setting. With release or first-touch timing, draft jobs that are resized or cancelled spend no numbers.
+
+## Signed purchase orders and per-line dates
+
+Draw or upload a signature in `Account → Profile`. Approving a [purchase order](/docs/reference/purchase-orders) records the approver's signature, and the PO PDF prints it with the name and approval date. `Settings → Purchasing` can require a signature to approve. Requested, promised and delivery [dates](/docs/reference/purchase-orders#dates) now live on each line.
+
+## Kanban IDs and printed cards
+
+Every [kanban](/docs/reference/kanban) gets an ID, such as KB000001, printed on its label. Labels print at 4" × 2" or 3" × 2", and on Zebra printers. `Settings → Printing` has a Kanbans printer per location, with auto-print when a kanban is created. The Kanbans list now shows one row per item.
+
+## Company email through your own provider
+
+Send company email through Gmail, or through your own Resend or SMTP account. Documents can also be emailed through server mail without setting up the Email integration.
+
+## Find the PO on Receiving
+
+[Receiving](/docs/reference/receipts#find-the-purchase-order-for-a-delivery) lists the open purchase order lines waiting to be received, up to 1,000 at a time; search or filter to find later orders. Search by anything on the packing slip: order number, supplier, part number, supplier reference, tracking number or job. **Receive** creates the receipt in one click.
+
+## Warn or block on missing abilities
+
+A process that requires an ability now says what MES does when an [operator lacks it](/docs/reference/mes#when-you-dont-have-the-required-ability). **Warn** shows a banner and lets them start. **Block** refuses all production work on the operation and names the training that grants the ability.
+
+<Accordion title="Improvements">
+
+- Sign in with the 6-digit code from the sign-in email, so a mail scanner cannot use up the link.
+- `Account → Appearance` has Text size and Density settings, separate from browser zoom.
+- The [General Ledger](/docs/reference/financial-reports#general-ledger) report lists every posted journal line, with the customer or supplier and invoice number of each.
+- ERP and MES install as apps, show an offline page, and badge the app icon with unread notifications.
+- The RFQ PDF reads as a letter to the supplier.
+- Edit a printer from `Settings → Printing` without deleting it.
+- Method CSV imports add lines to an existing Draft make method.
+- `Settings → Inventory → Receiving` can start receipt quantities at zero.
+- [Training](/docs/reference/training#written-content-a-pdf-or-a-video) can be a YouTube video.
+- The inspection plans table groups by part. Rows expand on click, with Item Group and Tags columns.
+- On a phone, navigation opens as a bottom sheet you can drag up.
+- Delete a work center or process that nothing uses.
+- Quote finalize shows a missing price, lead time or shipping cost as a yellow warning.
+- Step slide images open full size, with zoom.
+- The MES Measurement step shows the unit and limits.
+- Item thumbnails show on the job properties panel and on batch screens.
+- RFQ share pages show units of measure.
+- A defense UAS demo dataset, with the ISR-4 quadcopter assembly.
+- Error toasts say why a save or delete failed, and the error screen shows a request ID.
+- A seasonal Halloween theme, which anyone can turn off.
+
+</Accordion>
+
+<Accordion title="Fixes">
+
+- SAML single sign-on setup, removal and refusals work again.
+- Sign-in allows 10 attempts per 5 minutes instead of 5 per hour.
+- A sales order ships from the order's location.
+- Partial invoices bill flat charges once.
+- Sales invoice PDFs show the invoice contact and Latin Extended letters.
+- Saved external notes show on sales invoices and digital quotes.
+- An inspection lot can be rejected at any time in MES.
+- Contacts can share an email, and pending invites can be resent.
+- An invitee who signs in from the sign-in page joins their company.
+- Emails read correctly in Outlook.
+- MES auto-prints the first-operation label on every completion path.
+- A barcode scan that ends without Enter is acted on.
+- A purchase order no longer goes Completed while quantity is still to be invoiced.
+- All-customers price overrides are visible and linkable.
+- Serial entry and voids work on serial- and batch-tracked receipts.
+- Supplier returns ship rejected units.
+- The customer portal no longer shows a server error.
+- The Material Planning Supplier filter lists only the plan's suppliers.
+- Webhooks refuse to deliver to private network addresses.
+- The workflow filter no longer crashes.
+- Training assignees picked directly show on the assignment.
+
+</Accordion>
