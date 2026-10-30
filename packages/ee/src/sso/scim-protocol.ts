@@ -109,6 +109,56 @@ export function scimListResponse<T>(
 }
 
 // ---------------------------------------------------------------------------
+// Routing and authentication
+// ---------------------------------------------------------------------------
+
+export const SCIM_RESOURCES = [
+  "Users",
+  "Groups",
+  "ServiceProviderConfig",
+  "ResourceTypes",
+  "Schemas"
+] as const;
+
+export type ScimRoute = {
+  resource: (typeof SCIM_RESOURCES)[number];
+  id: string | null;
+};
+
+/**
+ * The resource and id a request path names, after `/scim/v2`. Resource names
+ * match without case (`/users` and `/Users` both reach Users); the id is kept
+ * exact, since SCIM ids are case-sensitive.
+ */
+export function matchScimRoute(pathname: string): ScimRoute | null {
+  const start = pathname.toLowerCase().indexOf("/scim/v2");
+  if (start === -1) return null;
+  const segments = pathname
+    .slice(start + "/scim/v2".length)
+    .split("/")
+    .filter(Boolean);
+  if (segments.length === 0 || segments.length > 2) return null;
+
+  const resource = SCIM_RESOURCES.find(
+    (name) => name.toLowerCase() === segments[0]?.toLowerCase()
+  );
+  if (!resource) return null;
+
+  if (!segments[1]) return { resource, id: null };
+  try {
+    return { resource, id: decodeURIComponent(segments[1]) };
+  } catch {
+    return null;
+  }
+}
+
+/** The token of an `Authorization: Bearer <token>` header, or null. */
+export function readBearerToken(header: string | null): string | null {
+  const match = header?.match(/^Bearer\s+(\S+)\s*$/i);
+  return match?.[1] ?? null;
+}
+
+// ---------------------------------------------------------------------------
 // Filters and paging
 // ---------------------------------------------------------------------------
 

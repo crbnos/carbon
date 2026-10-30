@@ -7,10 +7,12 @@ import {
   applyGroupPatch,
   applyUserPatch,
   ENTERPRISE_USER_SCHEMA,
+  matchScimRoute,
   PATCH_OP_SCHEMA,
   parsePaging,
   parseScimBoolean,
   parseScimFilter,
+  readBearerToken,
   readGroupResource,
   readUserResource,
   type ScimGroupState,
@@ -32,6 +34,48 @@ const jane: ScimUserState = {
 function patch(...Operations: unknown[]) {
   return { schemas: [PATCH_OP_SCHEMA], Operations };
 }
+
+describe("matchScimRoute", () => {
+  it("reads the resource and the exact id", () => {
+    expect(matchScimRoute("/scim/v2/Users/scimu_AbC")).toEqual({
+      resource: "Users",
+      id: "scimu_AbC"
+    });
+  });
+
+  it("matches resource names without case and ignores a trailing slash", () => {
+    expect(matchScimRoute("/scim/v2/groups/")).toEqual({
+      resource: "Groups",
+      id: null
+    });
+  });
+
+  it("reads discovery resources", () => {
+    expect(matchScimRoute("/scim/v2/ServiceProviderConfig")).toEqual({
+      resource: "ServiceProviderConfig",
+      id: null
+    });
+  });
+
+  it("answers null for an unknown resource or a deeper path", () => {
+    expect(matchScimRoute("/scim/v2/Bulk")).toBeNull();
+    expect(matchScimRoute("/scim/v2/Users/a/b")).toBeNull();
+    expect(matchScimRoute("/scim/v2")).toBeNull();
+  });
+});
+
+describe("readBearerToken", () => {
+  it("reads a bearer token in any scheme case", () => {
+    expect(readBearerToken("Bearer scim_abc")).toBe("scim_abc");
+    expect(readBearerToken("bearer scim_abc ")).toBe("scim_abc");
+  });
+
+  it("answers null for a missing or non-bearer header", () => {
+    expect(readBearerToken(null)).toBeNull();
+    expect(readBearerToken("Basic dXNlcjpwYXNz")).toBeNull();
+    expect(readBearerToken("Bearer")).toBeNull();
+  });
+});
 
 describe("parseScimFilter", () => {
   it("reads Okta's userName filter", () => {
