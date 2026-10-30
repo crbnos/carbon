@@ -6629,6 +6629,9 @@ msgstr ""
 msgid "Counted {total}."
 msgstr "Total compté : {total}."
 
+msgid "Counted with no serial number"
+msgstr ""
+
 msgid "Counterparties"
 msgstr "Contreparties"
 
@@ -21661,6 +21664,10 @@ msgstr "Série"
 
 msgid "Serial / Batch"
 msgstr "Numéro de série / Lot"
+
+#. placeholder {0}: index + 1
+msgid "Serial for unit {0}"
+msgstr ""
 
 msgid "Serial items require a sales order"
 msgstr "Les articles en série nécessitent une commande client"

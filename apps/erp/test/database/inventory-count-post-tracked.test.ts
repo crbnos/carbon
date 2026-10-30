@@ -10,9 +10,11 @@
 
 import { expect } from "vitest";
 import {
+  assignInventoryCountSerial,
   generateInventoryCountLines,
   postInventoryCount,
-  recordInventoryCountUnit
+  recordInventoryCountUnit,
+  setInventoryCountUnnumberedQuantity
 } from "../../app/modules/inventory/inventory.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
@@ -331,6 +333,134 @@ databaseTest(
       expect(await entity(f, units.entity("LOT-1"))).toMatchObject({
         quantity: 10
       });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+/** 5 serial units with no serial number in bin B2, oldest first. */
+async function unnumberedUnits(f: Fixture, units: CountUnits) {
+  const ids = [1, 2, 3, 4, 5].map((n) => `${f.prefix}-nonum-${n}`);
+  await seed(f, async (trx) => {
+    await trx
+      .insertInto("trackedEntity")
+      .values(
+        ids.map((id, index) => ({
+          id,
+          readableId: null,
+          itemId: units.serialItemId,
+          quantity: 1,
+          status: "Available" as const,
+          sourceDocument: "Item",
+          sourceDocumentId: units.serialItemId,
+          createdAt: `2026-01-0${index + 1}T00:00:00Z`,
+          companyId: f.companyId,
+          createdBy: USER
+        }))
+      )
+      .execute();
+    await trx
+      .insertInto("itemLedger")
+      .values(
+        ids.map((id) => ({
+          postingDate: f.today,
+          entryType: "Positive Adjmt." as const,
+          itemId: units.serialItemId,
+          locationId: f.locationId,
+          storageUnitId: units.binB,
+          trackedEntityId: id,
+          quantity: 1,
+          companyId: f.companyId,
+          createdBy: USER
+        }))
+      )
+      .execute();
+  });
+  return ids;
+}
+
+async function setupUnnumbered() {
+  const f = await alwaysPostFixture();
+  const units = await countUnits(f);
+  const ids = await unnumberedUnits(f, units);
+  const countId = await draftCount(f, "1", (args) =>
+    generateInventoryCountLines(f.db, args)
+  );
+  const setQuantity = (quantity: number) =>
+    setInventoryCountUnnumberedQuantity(f.db, {
+      inventoryCountId: countId,
+      companyId: f.companyId,
+      userId: USER,
+      itemId: units.serialItemId,
+      storageUnitId: units.binB,
+      quantity
+    });
+  return { f, units, ids, countId, setQuantity };
+}
+
+databaseTest(
+  "units with no serial number count oldest first, and the rest are written off",
+  async () => {
+    const { f, ids, countId, setQuantity } = await setupUnnumbered();
+    try {
+      expect(await setQuantity(3)).toEqual({ counted: 3 });
+      const result = await post(f, countId);
+      expect(result.error).toBeNull();
+      const statuses = await Promise.all(ids.map((id) => entity(f, id)));
+      expect(statuses.map((e) => e.status)).toEqual([
+        "Available",
+        "Available",
+        "Available",
+        "Consumed",
+        "Consumed"
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "counting more units with no serial number than expected is refused",
+  async () => {
+    const { f, setQuantity } = await setupUnnumbered();
+    try {
+      expect(await setQuantity(6)).toEqual({ tooMany: 5 });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a serial number given while counting lands on the unit at post",
+  async () => {
+    const { f, units, ids, countId, setQuantity } = await setupUnnumbered();
+    try {
+      await setQuantity(5);
+      const line = await f.db
+        .selectFrom("inventoryCountLine")
+        .select("id")
+        .where("inventoryCountId", "=", countId)
+        .where("trackedEntityId", "=", ids[0])
+        .executeTakeFirstOrThrow();
+      const assign = (readableId: string) =>
+        assignInventoryCountSerial(f.db, {
+          lineId: line.id,
+          companyId: f.companyId,
+          userId: USER,
+          readableId
+        });
+      // A number another unit of the item holds is refused.
+      expect(await assign(units.number("SN-1"))).toEqual({
+        refusal: "numberTaken"
+      });
+      const number = units.number("SN-100");
+      expect(await assign(number)).toEqual({ lineId: line.id });
+      const result = await post(f, countId);
+      expect(result.error).toBeNull();
+      expect((await entity(f, ids[0])).readableId).toBe(number);
     } finally {
       await f.cleanup();
     }

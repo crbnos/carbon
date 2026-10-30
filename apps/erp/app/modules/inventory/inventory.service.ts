@@ -3137,6 +3137,183 @@ export async function recordInventoryCountUnit(
   });
 }
 
+// Units with no serial number cannot be told apart, so a group counts them
+// as one quantity. The oldest units count first: `quantity` of them are Found,
+// the rest Missing. More than expected is refused: each extra unit needs a
+// serial number. Returns null when the count is not Draft.
+export async function setInventoryCountUnnumberedQuantity(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    inventoryCountId: string;
+    companyId: string;
+    userId: string;
+    itemId: string;
+    storageUnitId: string | null;
+    quantity: number;
+  }
+): Promise<{ counted: number } | { tooMany: number } | null> {
+  const { inventoryCountId, companyId, userId } = args;
+  return withTransaction(db, async (trx) => {
+    const count = await trx
+      .selectFrom("inventoryCount")
+      .select("status")
+      .where("id", "=", inventoryCountId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (count?.status !== "Draft") return null;
+
+    let query = trx
+      .selectFrom("inventoryCountLine")
+      .innerJoin("trackedEntity", (join) =>
+        join
+          .onRef("trackedEntity.id", "=", "inventoryCountLine.trackedEntityId")
+          .onRef("trackedEntity.companyId", "=", "inventoryCountLine.companyId")
+      )
+      .select("inventoryCountLine.id")
+      .where("inventoryCountLine.inventoryCountId", "=", inventoryCountId)
+      .where("inventoryCountLine.companyId", "=", companyId)
+      .where("inventoryCountLine.itemId", "=", args.itemId)
+      .where("inventoryCountLine.foundDuringCount", "=", false)
+      .where("trackedEntity.readableId", "is", null);
+    query = args.storageUnitId
+      ? query.where("inventoryCountLine.storageUnitId", "=", args.storageUnitId)
+      : query.where("inventoryCountLine.storageUnitId", "is", null);
+    const lines = await query
+      .orderBy("trackedEntity.createdAt")
+      .orderBy("inventoryCountLine.id")
+      .execute();
+
+    if (args.quantity > lines.length) return { tooMany: lines.length };
+
+    const now = datetime.timestamp();
+    const found = lines.slice(0, args.quantity).map((line) => line.id);
+    const missing = lines.slice(args.quantity).map((line) => line.id);
+    for (const [ids, countedQuantity] of [
+      [found, 1],
+      [missing, 0]
+    ] as const) {
+      if (ids.length === 0) continue;
+      await trx
+        .updateTable("inventoryCountLine")
+        .set({
+          countedQuantity,
+          countedBy: userId,
+          countedAt: now,
+          // A Missing unit keeps no serial number given to it.
+          ...(countedQuantity === 0 ? { assignedReadableId: null } : {}),
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "in", ids)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    return { counted: found.length };
+  });
+}
+
+export type AssignSerialRefusal =
+  | "notDraft"
+  | "notFoundUnnumbered"
+  | "numberTaken";
+
+// Gives a Found unit that has no serial number one. The post writes it to the
+// unit. Refuses a number another unit of the item holds, on the shelf or on
+// this count.
+export async function assignInventoryCountSerial(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    lineId: string;
+    companyId: string;
+    userId: string;
+    readableId: string;
+  }
+): Promise<{ lineId: string } | { refusal: AssignSerialRefusal }> {
+  const readableId = args.readableId.trim();
+  return withTransaction(db, async (trx) => {
+    const line = await trx
+      .selectFrom("inventoryCountLine")
+      .innerJoin("inventoryCount", (join) =>
+        join
+          .onRef(
+            "inventoryCount.id",
+            "=",
+            "inventoryCountLine.inventoryCountId"
+          )
+          .onRef(
+            "inventoryCount.companyId",
+            "=",
+            "inventoryCountLine.companyId"
+          )
+      )
+      .leftJoin("trackedEntity", (join) =>
+        join
+          .onRef("trackedEntity.id", "=", "inventoryCountLine.trackedEntityId")
+          .onRef("trackedEntity.companyId", "=", "inventoryCountLine.companyId")
+      )
+      .select([
+        "inventoryCountLine.id",
+        "inventoryCountLine.inventoryCountId",
+        "inventoryCountLine.itemId",
+        "inventoryCountLine.countedQuantity",
+        "inventoryCountLine.foundDuringCount",
+        "inventoryCountLine.trackedEntityId",
+        "inventoryCount.status",
+        "trackedEntity.readableId"
+      ])
+      .where("inventoryCountLine.id", "=", args.lineId)
+      .where("inventoryCountLine.companyId", "=", args.companyId)
+      .forUpdate("inventoryCount")
+      .executeTakeFirst();
+    if (!line || line.status !== "Draft") return { refusal: "notDraft" };
+    if (
+      !line.trackedEntityId ||
+      line.readableId !== null ||
+      line.foundDuringCount ||
+      Number(line.countedQuantity ?? 0) <= 0
+    ) {
+      return { refusal: "notFoundUnnumbered" };
+    }
+
+    const onShelf = await trx
+      .selectFrom("trackedEntity")
+      .select("id")
+      .where("companyId", "=", args.companyId)
+      .where("itemId", "=", line.itemId)
+      .where("readableId", "=", readableId)
+      .executeTakeFirst();
+    const onCount = await trx
+      .selectFrom("inventoryCountLine")
+      .select("id")
+      .where("inventoryCountId", "=", line.inventoryCountId)
+      .where("companyId", "=", args.companyId)
+      .where("itemId", "=", line.itemId)
+      .where("id", "!=", line.id)
+      .where((eb) =>
+        eb.or([
+          eb("readableId", "=", readableId),
+          eb("assignedReadableId", "=", readableId)
+        ])
+      )
+      .executeTakeFirst();
+    if (onShelf || onCount) return { refusal: "numberTaken" };
+
+    const now = datetime.timestamp();
+    await trx
+      .updateTable("inventoryCountLine")
+      .set({
+        assignedReadableId: readableId,
+        updatedBy: args.userId,
+        updatedAt: now
+      })
+      .where("id", "=", line.id)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    return { lineId: line.id };
+  });
+}
+
 // Removes a line the counter added (an Unexpected unit) from a Draft count.
 // Snapshot lines stay: count them 0 instead. Returns null when nothing was
 // removed.
@@ -7881,6 +8058,62 @@ export async function postInventoryCount(
         .where("id", "=", line.id)
         .where("companyId", "=", companyId)
         .execute();
+    }
+
+    // Serial numbers given while counting go onto their units. Check again
+    // under the lock that no other unit of the item took the number.
+    const numbered = countedLines.filter(
+      (line) =>
+        line.assignedReadableId &&
+        line.trackedEntityId &&
+        Number(line.countedQuantity) > 0
+    );
+    if (numbered.length > 0) {
+      const entityIds = numbered.map((line) => line.trackedEntityId as string);
+      await trx
+        .selectFrom("trackedEntity")
+        .select("id")
+        .where("id", "in", entityIds)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .execute();
+      const taken = await trx
+        .selectFrom("trackedEntity")
+        .select(["itemId", "readableId"])
+        .where("companyId", "=", companyId)
+        .where(
+          "readableId",
+          "in",
+          numbered.map((line) => line.assignedReadableId as string)
+        )
+        .where("id", "not in", entityIds)
+        .execute();
+      const takenKeys = new Set(
+        taken.map((entity) => `${entity.itemId}:${entity.readableId}`)
+      );
+      const takenLineIds = numbered
+        .filter((line) =>
+          takenKeys.has(`${line.itemId}:${line.assignedReadableId}`)
+        )
+        .map((line) => line.id);
+      if (takenLineIds.length > 0) {
+        throw new InvalidLinesError(
+          `${takenLineIds.length} serial number(s) given while counting are already on another unit. Give another number.`,
+          takenLineIds
+        );
+      }
+      await sql`
+        UPDATE "trackedEntity" AS te
+        SET "readableId" = v."readableId"
+        FROM (VALUES ${sql.join(
+          numbered.map(
+            (line) => sql`(${line.trackedEntityId}, ${line.assignedReadableId})`
+          )
+        )}) AS v("id", "readableId")
+        WHERE te."id" = v."id"
+          AND te."companyId" = ${companyId}
+          AND te."readableId" IS NULL
+      `.execute(trx);
     }
 
     // Guard the transition inside the transaction: only a still-Pending count

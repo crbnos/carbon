@@ -5842,6 +5842,100 @@ export const addInventoryCountUnit = defineServiceFn({
 });
 
 /**
+ * Count the units with no serial number in one group
+ *
+ * @remarks
+ * Units with no serial number cannot be told apart, so they are counted as a
+ * quantity: the oldest `quantity` units are Found and the rest Missing. A
+ * quantity above the number of such units is refused: scan or type a serial
+ * number for each extra unit. Draft counts only.
+ *
+ * @param storageUnitId - The storage unit; left out for stock in no storage unit.
+ * @mcp
+ */
+export const setInventoryCountUnnumberedQuantity = defineServiceFn({
+  input: z.object({
+    inventoryCountId: z.string().min(1),
+    itemId: z.string().min(1),
+    storageUnitId: z.string().nullable().optional(),
+    quantity: z.number().int().min(0)
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.setInventoryCountUnnumberedQuantity(
+      ctx.asSystem.pg,
+      {
+        inventoryCountId: input.inventoryCountId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        itemId: input.itemId,
+        storageUnitId: input.storageUnitId ?? null,
+        quantity: input.quantity
+      }
+    );
+    if (!result) {
+      return ctx.error(
+        "conflict",
+        "Counts can only be edited while the document is Draft"
+      );
+    }
+    if ("tooMany" in result) {
+      return ctx.error(
+        "rule",
+        `Only ${result.tooMany} unit(s) here have no serial number. Scan or type a serial number for each extra unit.`
+      );
+    }
+    return result;
+  }
+});
+
+/**
+ * Give a counted unit with no serial number a serial number
+ *
+ * @remarks
+ * The unit must be on the count, counted Found, and have no serial number.
+ * The number must not be on another unit of the item, on the shelf or on this
+ * count. The post writes it to the unit. Draft counts only.
+ *
+ * @mcp
+ */
+export const assignInventoryCountSerial = defineServiceFn({
+  input: z.object({
+    lineId: z.string().min(1),
+    readableId: z.string().trim().min(1)
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.assignInventoryCountSerial(ctx.asSystem.pg, {
+      lineId: input.lineId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      readableId: input.readableId
+    });
+    if ("refusal" in result) {
+      switch (result.refusal) {
+        case "notDraft":
+          return ctx.error(
+            "conflict",
+            "Counts can only be edited while the document is Draft"
+          );
+        case "notFoundUnnumbered":
+          return ctx.error(
+            "rule",
+            "Only a counted unit with no serial number can be given one"
+          );
+        case "numberTaken":
+          return ctx.error(
+            "rule",
+            `${input.readableId} is already on another unit of this item`
+          );
+      }
+    }
+    return result;
+  }
+});
+
+/**
  * Remove a unit added to an inventory count
  *
  * @remarks

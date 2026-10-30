@@ -6629,6 +6629,9 @@ msgstr ""
 msgid "Counted {total}."
 msgstr "{total} sayıldı."
 
+msgid "Counted with no serial number"
+msgstr ""
+
 msgid "Counterparties"
 msgstr "Muhasebeleştirilecek Taraflar"
 
@@ -21661,6 +21664,10 @@ msgstr "Seri"
 
 msgid "Serial / Batch"
 msgstr "Seri / Parti"
+
+#. placeholder {0}: index + 1
+msgid "Serial for unit {0}"
+msgstr ""
 
 msgid "Serial items require a sales order"
 msgstr "Seri ürünler satış siparişi gerektirir"

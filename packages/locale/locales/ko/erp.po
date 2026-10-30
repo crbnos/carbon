@@ -6629,6 +6629,9 @@ msgstr ""
 msgid "Counted {total}."
 msgstr "{total}개를 셌습니다."
 
+msgid "Counted with no serial number"
+msgstr ""
+
 msgid "Counterparties"
 msgstr "거래처"
 
@@ -21661,6 +21664,10 @@ msgstr "일련번호"
 
 msgid "Serial / Batch"
 msgstr "일련번호/배치"
+
+#. placeholder {0}: index + 1
+msgid "Serial for unit {0}"
+msgstr ""
 
 msgid "Serial items require a sales order"
 msgstr "일련번호 품목은 수주가 필요합니다."

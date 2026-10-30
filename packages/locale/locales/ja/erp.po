@@ -6629,6 +6629,9 @@ msgstr ""
 msgid "Counted {total}."
 msgstr "{total} 件をカウントしました。"
 
+msgid "Counted with no serial number"
+msgstr ""
+
 msgid "Counterparties"
 msgstr "取引先"
 
@@ -21661,6 +21664,10 @@ msgstr "シリアル"
 
 msgid "Serial / Batch"
 msgstr "シリアル / バッチ"
+
+#. placeholder {0}: index + 1
+msgid "Serial for unit {0}"
+msgstr ""
 
 msgid "Serial items require a sales order"
 msgstr "シリアル品目は受注が必要です"

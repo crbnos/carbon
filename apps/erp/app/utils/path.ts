@@ -1457,11 +1457,15 @@ export const path = {
       generatePath(`${x}/inventory-count/${id}/reopen`),
     inventoryCountScan: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/scan`),
+    inventoryCountSerial: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/serial`),
     inventoryCounts: `${x}/inventory/inventory-count`,
     inventoryCountUnitDelete: (id: string, lineId: string) =>
       generatePath(`${x}/inventory-count/${id}/units/${lineId}/delete`),
     inventoryCountUnitNew: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/units/new`),
+    inventoryCountUnnumbered: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/unnumbered`),
     inventoryItem: (id: string) =>
       generatePath(`${x}/inventory/quantities/${id}/details`),
     inventoryItemActivity: (id: string) =>
