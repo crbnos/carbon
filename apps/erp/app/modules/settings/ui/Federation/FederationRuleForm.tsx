@@ -36,6 +36,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuPlus, LuTrash } from "react-icons/lu";
+import { DateTime } from "~/components";
 import {
   Hidden,
   Input,
@@ -74,7 +75,7 @@ type FederationRuleFormProps = {
   companyId?: string;
   existingScopes?: Record<string, string[]> | null;
   existingClaims?: Record<string, string> | null;
-  /** The saved rule, on edit: its last exchange and its usage example. */
+  /** The saved rule, on edit: its usage example, last exchange and last refusal. */
   rule?: FederationRuleRow;
   onClose: () => void;
 };
@@ -143,8 +144,15 @@ const FederationRuleForm = ({
   const onProviderChange = (next: FederationProvider) => {
     const nextPreset = FEDERATION_PRESETS[next];
     setProvider(next);
-    setIssuer(nextPreset.issuer ?? "");
-    setAudience(nextPreset.audiencePlaceholder ? "" : ERP_URL);
+    // Back on the saved provider: restore the saved values, so switching away
+    // and back never changes the rule's trust (which revokes its keys).
+    if (next === initialValues.provider) {
+      setIssuer(initialValues.issuer);
+      setAudience(initialValues.audience);
+    } else {
+      setIssuer(nextPreset.issuer ?? "");
+      setAudience(nextPreset.audiencePlaceholder ? "" : ERP_URL);
+    }
     setClaims((rows) =>
       claimRowsFor(
         next,
@@ -380,6 +388,18 @@ function RuleStatus({
       <div className="w-full min-w-0 max-w-full overflow-x-auto text-xs">
         <CodeBlock className="bash">{example}</CodeBlock>
       </div>
+      <HStack>
+        <span className="text-sm text-muted-foreground">
+          <Trans>Last exchange:</Trans>
+        </span>
+        {rule.lastExchangeAt ? (
+          <DateTime value={rule.lastExchangeAt} />
+        ) : (
+          <span className="text-sm">
+            <Trans>Never</Trans>
+          </span>
+        )}
+      </HStack>
       {refusal && (
         <HStack>
           <span className="text-sm text-muted-foreground">

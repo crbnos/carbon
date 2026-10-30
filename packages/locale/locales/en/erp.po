@@ -13144,6 +13144,9 @@ msgstr "Last day"
 msgid "Last Exchange"
 msgstr "Last Exchange"
 
+msgid "Last exchange:"
+msgstr "Last exchange:"
+
 msgid "Last Fiscal Year"
 msgstr "Last Fiscal Year"
 

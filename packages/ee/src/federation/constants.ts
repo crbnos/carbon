@@ -125,5 +125,15 @@ export const SHARED_ISSUER_REQUIREMENTS: Record<
     requiredClaim: "repository_owner_id"
   },
   [GITLAB_ISSUER]: { label: "GitLab.com", requiredClaim: "namespace_id" },
+  "https://app.terraform.io": {
+    label: "HCP Terraform",
+    requiredClaim: "terraform_organization_id"
+  },
+  // organization_id is optional in a Buildkite token: request it with
+  // `buildkite-agent oidc request-token --claims organization_id`.
+  "https://agent.buildkite.com": {
+    label: "Buildkite",
+    requiredClaim: "organization_id"
+  },
   [GOOGLE_ISSUER]: { label: "Google Cloud", exactSubject: true }
 };

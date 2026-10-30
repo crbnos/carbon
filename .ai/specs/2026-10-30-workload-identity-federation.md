@@ -77,7 +77,7 @@ Claude Console: "Set up identity federation" or "Continue with an API key".
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Token issued by the exchange | An `apiKey` row with `federationRuleId` set and `expiresAt` = now + the rule's lifetime. The raw key is `crbn_` + `nanoid()`, as for any key. | **Human answer.** The SQL helpers resolve `carbon-key` through `apiKey.keyHash` and check `expiresAt`. Rate limits and `lastUsedAt` key on `apiKey.id`. RubyGems mints an ordinary key the same way. It keeps the "no new token format" decision in `2026-07-04-integration-surface.md:247`. |
+| Token issued by the exchange | An `apiKey` row with `federationRuleId` set and `expiresAt` = now + the rule's lifetime. The raw key is `crbn_` + 24 random bytes (base64url), the same `crbn_` prefix as any key. | **Human answer.** The SQL helpers resolve `carbon-key` through `apiKey.keyHash` and check `expiresAt`. Rate limits and `lastUsedAt` key on `apiKey.id`. RubyGems mints an ordinary key the same way. It keeps the "no new token format" decision in `2026-07-04-integration-surface.md:247`. |
 | Exchange endpoint | Add the RFC 8693 grant `urn:ietf:params:oauth:grant-type:token-exchange` to the existing `/token` route. `client_id` holds the rule id. | **Human answer.** OpenAI, Google Cloud, Databricks, Pulumi and SAP use RFC 8693. `/token` already dispatches on `grant_type` and is exempt from the CSRF check (`packages/auth/src/lib/security.ts:20`). |
 | What the minted key acts as | The rule's `createdBy` user, limited to the rule's scopes. | **Human answer.** API keys act as `createdBy` today. Service accounts are out of scope. |
 | Rule selection | The client names the rule in `client_id`. | **Autonomous.** GitHub and Google sign JWTs for every customer, so the JWT alone cannot name the company. Anthropic and Tailscale do the same. |
@@ -85,7 +85,7 @@ Claude Console: "Set up identity federation" or "Continue with an API key".
 | Subject match | `subject` is an exact match. A trailing `*` makes it a prefix match. The validator refuses a bare `*`. | **Autonomous.** Anthropic and OpenAI use this. A wildcard in the middle is easy to get wrong. |
 | Claim conditions | `claimConditions` is a map from a top-level claim name to an exact string. At most 10 entries. No CEL, no regex. | **Autonomous.** Exact matching is the consensus. RubyGems had a regex DoS (GHSA-p37h-pvp2-fh88). |
 | Minimum condition | A rule needs a `subject` or at least 1 claim condition. A CHECK constraint and the validator both enforce it. | **Autonomous.** Anthropic, OpenAI and AWS refuse an issuer-only rule. |
-| Shared issuers | The validator requires an immutable claim for 3 issuers. `https://token.actions.githubusercontent.com` needs `repository_owner_id`. `https://gitlab.com` needs `namespace_id`. `https://accounts.google.com` needs an exact `subject` with no `*`. | **Autonomous.** The PyPI resurrection risk and npm's SlugFest incident come from binding to a name. AWS refuses these trust policies without a tenancy claim. |
+| Shared issuers | The validator and a CHECK constraint require an immutable claim for 5 issuers: also `https://app.terraform.io` (`terraform_organization_id`) and `https://agent.buildkite.com` (`organization_id`). `https://token.actions.githubusercontent.com` needs `repository_owner_id`. `https://gitlab.com` needs `namespace_id`. `https://accounts.google.com` needs an exact `subject` with no `*`. | **Autonomous.** The PyPI resurrection risk and npm's SlugFest incident come from binding to a name. AWS refuses these trust policies without a tenancy claim. |
 | Allowed issuers | Any `https` issuer whose host resolves to public addresses. The validator refuses IP literals and ports other than 443. | **Autonomous.** AWS gives each account its own issuer and Entra gives each tenant its own, so a fixed list cannot work. Anthropic uses this guard. |
 | Self-hosted private issuers | The env flag `FEDERATION_ALLOW_PRIVATE_ISSUERS` (default off) turns off the private-address check. `https` stays required. | **Autonomous.** The run record decided Cloud first, with a small private-issuer setting for Enterprise self-host. |
 | Pasted key sets | Out of scope for v1. | **Autonomous.** Only air-gapped installs need them. The run record left them out. |
@@ -97,7 +97,7 @@ Claude Console: "Set up identity federation" or "Continue with an API key".
 | Token lifetime | `tokenLifetimeMinutes`, 5 to 60, default 15. | **Autonomous.** PyPI and RubyGems use 15 minutes. OpenAI caps at 1 hour. |
 | Error detail | Every verification failure returns `400 {"error":"invalid_grant"}`. The rule stores `lastFailureAt` and `lastFailureReason`. Success sets `lastExchangeAt`. | **Autonomous.** Anthropic returns an opaque error and shows the reason to the admin. Columns on the rule avoid a new history table. |
 | Exchange rate limit | Two Redis sliding windows. 60 attempts per minute per rule and caller IP, before verification. 30 verified exchanges per minute per rule. Excess returns `429`. | **Autonomous.** Each exchange inserts a row. The MCP route uses the same limiter for OAuth callers (`apps/erp/app/routes/api+/mcp+/_index.ts:64`). |
-| Rule edit | An edit of `scopes` updates the scopes of every live minted key of the rule and drops their cache entries. | **Autonomous.** A narrower scope applies at once, as `updateApiKey` does for keys. |
+| Rule edit | An edit of `scopes` updates the scopes of every live minted key. An edit of `issuer`, `audience`, `subject` or `claimConditions` deletes them. The rule update and the key change are one Kysely transaction; the cache entries drop after commit. An exchange re-reads the rule after it mints: a trust change refuses the token (`rule_changed`) and deletes the key, a scope change rescopes it. | **Autonomous.** A narrower scope applies at once, as `updateApiKey` does for keys. A key minted under old trust was minted for a workload the rule no longer names. |
 | Rule delete | `ON DELETE CASCADE` deletes the minted keys. The service drops their cache entries before and after the delete, as `revokeApiKey` does. | **Autonomous.** A deleted rule must stop every key it minted. |
 | Cleanup of minted keys | A pg_cron job, `federated-api-key-retention`, runs `util.purge_expired_federated_api_keys()` daily at 04:41 UTC. It deletes minted keys whose `expiresAt` is more than 1 day ago. | **Autonomous.** Precedent: `machine-state-change-retention` (`20261013191915_oee-tenancy-and-retention.sql`). |
 | API Keys list | The list and `getApiKeys` show only rows with `federationRuleId IS NULL`. | **Autonomous.** Minted keys are not something an admin manages. |
@@ -105,7 +105,7 @@ Claude Console: "Set up identity federation" or "Continue with an API key".
 | Plan gate | Authoring calls `requireEntitlement(client, companyId, "API_KEYS")`. The exchange calls `companyHasFeature(…, { feature: "API_KEYS" })` and fails with `invalid_grant` when it is false. No new `Feature` key. | **Autonomous.** Federation is a way to get an API key, so it shares the API keys plan (Business). Commercial licensing puts the lock inside `packages/ee`. |
 | Where the engine lives | `packages/ee/src/federation/` (`models.ts`, `match.ts`, `service.server.ts`, `index.ts`). | **Autonomous.** `.claude/rules/commercial-licensing.md`: the feature body and its lock live in `packages/ee`. |
 | SSRF guard location | Move `packages/jobs/src/workflows/actions/url-guard.ts` to `packages/lib/src/url-guard.server.ts`. Export it as `@carbon/lib/url-guard.server`. Jobs imports it from there. | **Autonomous.** `@carbon/ee` cannot depend on `@carbon/jobs`. `@carbon/jobs` and `@carbon/ee` both depend on `@carbon/lib`. One guard, not two copies. |
-| Who can manage rules | Routes and service functions require `users_update`, as the API keys routes do. RLS on `federationRule` copies `apiKey`: `company("settings", { read: "settings_view" })`. | **Autonomous.** Copies the sibling. No RBAC change. |
+| Who can manage rules | Routes and service functions require `users_update`, as the API keys routes do. RLS on `federationRule` allows SELECT with `settings_view` only. The operations write it as the system, with `createdBy` set to the caller. | **Autonomous.** The permission copies the sibling. Write-denied RLS came from the branch review: an open `settings_create` insert skipped every issuer check and let the writer pick `createdBy`. |
 | Backups | `federationRule` joins `SECRET_TABLES` in `packages/jobs/src/backups/schema.ts`. | **Autonomous.** A trust rule restored into another company would let a CI job reach that company. `apiKey` is already there for the same reason. |
 | Dataset wipe | `federationRule` joins the list next to `apiKey` in `packages/database/src/datasets/wipe.ts:50`. | **Autonomous.** Same handling as its sibling. |
 | Multi-tenancy (heuristic 1) | `federationRule` has `companyId`, composite PK `("id", "companyId")` and `id('fedr')`. | Convention. |
@@ -177,7 +177,8 @@ ALTER TABLE "apiKey"
 
 ALTER TABLE "apiKey"
   ADD CONSTRAINT "apiKey_federationRuleId_fkey"
-  FOREIGN KEY ("federationRuleId") REFERENCES "federationRule"("id")
+  FOREIGN KEY ("federationRuleId", "companyId")
+  REFERENCES "federationRule"("id", "companyId")
   ON DELETE CASCADE;
 
 CREATE INDEX IF NOT EXISTS "apiKey_federationRuleId_expiresAt_idx"
@@ -222,13 +223,13 @@ $$;
 7. Insert the `apiKey` row and return `{ key, expiresIn }`.
 8. Set `lastExchangeAt` on success, or `lastFailureAt` and `lastFailureReason` on failure.
 
-It returns `{ data, error }` and never throws for a refused token.
+It returns `{ ok: true, key, expiresIn }` or `{ ok: false, reason }` for a refused token. It throws only when a database write fails.
 
 `FederationFailure` reasons: `rule_not_found`, `not_entitled`, `malformed_jwt`,
 `missing_kid`, `algorithm_not_allowed`, `issuer_mismatch`, `discovery_failed`,
 `signature_invalid`, `audience_mismatch`, `expired`, `not_yet_valid`,
 `lifetime_too_long`, `subject_mismatch`, `claim_mismatch`, `jti_reused`,
-`replay_check_unavailable`. The admin sees these in the rule drawer. The caller
+`replay_check_unavailable`, `missing_claims`, `creator_not_employee`, `rule_changed`. The admin sees these in the rule drawer. The caller
 never sees them.
 
 ### `apps/erp/app/routes/_oauth+/token.tsx`
@@ -251,7 +252,7 @@ Add a branch before the `oauthClient` lookup. When `grant_type` is
 | File | Change |
 |---|---|
 | `settings.server.ts` | `createFederationRule`, `updateFederationRule`, `deleteFederationRule` (`defineServiceFn`, `permission: { update: "users" }`). Update and delete drop the minted keys' cache entries. |
-| `settings.service.ts` | `getFederationRule`, `getFederationRules`, `FEDERATION_RULES_PAGING`, `getLiveFederatedKeyHashes`. `getApiKeys` filters `federationRuleId IS NULL`. |
+| `settings.service.ts` | `getFederationRule`, `getFederationRules`, `FEDERATION_RULES_PAGING`. `getApiKeys` and `getApiKey` filters `federationRuleId IS NULL`. |
 | `settings.models.ts` | No change. Forms import `federationRuleValidator` from `@carbon/ee/federation`. |
 | `utils/list-registry/settings.server.ts` | `federationRulesList`, registered in `settingsLists`. |
 
@@ -427,3 +428,8 @@ it (`api-keys.tsx` + `RecordOutlet`).
   scope edit during an exchange cannot leave an old-scope key. The exchange
   refuses when the rule's creator is no longer an employee. The rate limit
   has a per-IP tier before verification. The form refuses a repeated claim.
+- 2026-10-30: Second review fixes. The rule update and its key revoke or
+  rescope are one transaction. The exchange re-reads the rule after it
+  mints (`rule_changed`). The per-IP limit runs before any read. HCP
+  Terraform and Buildkite join the shared issuers. A refused edit keeps the
+  modal open.

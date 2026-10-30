@@ -49,6 +49,8 @@ export async function action(args: ActionFunctionArgs) {
     ...federationRuleFields(input.data),
     id: input.params.id
   });
+  // Keep the modal and the user's input on a refusal; the fetcher toasts it.
+  if (result.error) return result;
   return respond(args.request, result).redirect(
     `${path.to.federationRules}?${getParams(args.request)}`,
     { message: "Updated federation rule" }

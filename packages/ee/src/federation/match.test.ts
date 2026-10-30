@@ -143,6 +143,22 @@ describe("ruleRequirementErrors", () => {
     ).toEqual({});
   });
 
+  it.each([
+    ["https://app.terraform.io", "terraform_organization_id"],
+    ["https://agent.buildkite.com", "organization_id"],
+    ["https://gitlab.com", "namespace_id"]
+  ])("requires the organization id claim for %s", (issuer, claim) => {
+    const rule = {
+      issuer,
+      subject: "organization:acme:*",
+      claimConditions: {}
+    };
+    expect(ruleRequirementErrors(rule).claimConditions).toContain(claim);
+    expect(
+      ruleRequirementErrors({ ...rule, claimConditions: { [claim]: "x" } })
+    ).toEqual({});
+  });
+
   it("applies the shared-issuer rule with a trailing slash too", () => {
     expect(
       ruleRequirementErrors({

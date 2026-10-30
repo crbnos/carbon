@@ -2,7 +2,6 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import type { Database } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { FEDERATION_LIMITS, federationProviders } from "./constants";
@@ -117,6 +116,3 @@ export function federationRuleFields({
 }
 
 export type FederationRuleInput = ReturnType<typeof federationRuleFields>;
-
-export type FederationRule =
-  Database["public"]["Tables"]["federationRule"]["Row"];

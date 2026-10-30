@@ -13144,6 +13144,9 @@ msgstr "마지막 날"
 msgid "Last Exchange"
 msgstr ""
 
+msgid "Last exchange:"
+msgstr ""
+
 msgid "Last Fiscal Year"
 msgstr "지난 회계연도"
 

@@ -30,10 +30,12 @@ Select **Add Federation Rule** (or **New API Key → Set up identity federation*
 | **Token lifetime** | Minutes a minted key lives, 5 to 60. |
 | **Permissions** | The scopes of the minted key, as for an API key. |
 
-A rule must name a workload: it needs a subject or at least one claim condition, and a subject of `*` alone is refused. GitHub, GitLab.com and Google sign tokens for every customer, so a rule on them needs a claim that never changes when a name does:
+A rule must name a workload: it needs a subject or at least one claim condition, and a subject of `*` alone is refused. GitHub, GitLab.com, HCP Terraform, Buildkite and Google sign tokens for every customer, so a rule on them needs a claim that never changes when a name does:
 
 - **GitHub Actions** needs `repository_owner_id`. A renamed or deleted GitHub account's name can be registered by someone else; its numeric id cannot. Find it with `gh api users/<owner> --jq .id`.
 - **GitLab.com** needs `namespace_id`.
+- **HCP Terraform** (`https://app.terraform.io`) needs `terraform_organization_id`.
+- **Buildkite** (`https://agent.buildkite.com`) needs `organization_id`. Buildkite adds it only when the job asks: `buildkite-agent oidc request-token --claims organization_id`.
 - **Google Cloud** needs the service account's numeric unique ID as an exact subject, never a prefix or an email.
 
 <Callout type="warn" title="Treat a rule like a key">
@@ -61,7 +63,7 @@ curl -s -X POST https://app.carbon.ms/token \
 }
 ```
 
-Every refused token answers `400 {"error":"invalid_grant"}`, whatever the reason; the rule shows the reason in its **Last Refusal** column. A rule takes 30 verified exchanges a minute, and 60 attempts a minute from one IP address; past either limit Carbon answers `429`.
+Every refused token answers `400 {"error":"invalid_grant"}`, whatever the reason; the rule shows the reason in its **Last Refusal** column. A rule takes 30 verified exchanges a minute, and 60 attempts a minute for one rule from one IP address; past either limit Carbon answers `429`.
 
 ### GitHub Actions
 
@@ -128,6 +130,7 @@ The rule is `federationRule`; the exchange is `exchangeFederatedToken` (`package
 - `algorithm_not_allowed`, `missing_kid`, `missing_claims`, `malformed_jwt` — the token is not a signed OIDC token.
 - `not_entitled` — the company's plan does not include API access.
 - `creator_not_employee` — the person who created the rule is no longer an employee of the company. Recreate the rule.
+- `rule_changed` — the rule's issuer, audience, subject or claims changed while the token was being exchanged. Exchange again.
 
 ### Self-hosted issuers
 An issuer on a private network (an internal GitLab, Keycloak or Kubernetes API server) is refused unless the install sets `FEDERATION_ALLOW_PRIVATE_ISSUERS=true`. The issuer must still use https.

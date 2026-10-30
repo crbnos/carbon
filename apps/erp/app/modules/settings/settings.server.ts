@@ -1783,11 +1783,15 @@ export const createFederationRule = defineServiceFn({
   async run(ctx, input) {
     let created: Awaited<ReturnType<typeof upsertFederationRule>>;
     try {
-      created = await upsertFederationRule(ctx.asCaller.supabase, {
-        ...input,
-        companyId: ctx.company.id,
-        createdBy: ctx.auditUserId
-      });
+      created = await upsertFederationRule(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        {
+          ...input,
+          companyId: ctx.company.id,
+          createdBy: ctx.auditUserId
+        }
+      );
     } catch (err) {
       return service.apiKeysEntitlement(ctx, err);
     }
@@ -1813,11 +1817,15 @@ export const updateFederationRule = defineServiceFn({
   async run(ctx, input) {
     let updated: Awaited<ReturnType<typeof upsertFederationRule>>;
     try {
-      updated = await upsertFederationRule(ctx.asCaller.supabase, {
-        ...input,
-        companyId: ctx.company.id,
-        updatedBy: ctx.auditUserId
-      });
+      updated = await upsertFederationRule(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        {
+          ...input,
+          companyId: ctx.company.id,
+          updatedBy: ctx.auditUserId
+        }
+      );
     } catch (err) {
       return service.apiKeysEntitlement(ctx, err);
     }
@@ -1852,11 +1860,7 @@ export const deleteFederationRule = defineServiceFn({
       return service.apiKeysEntitlement(ctx, err);
     }
     if (deleted.error) {
-      return ctx.error(
-        "internal",
-        "Failed to delete federation rule",
-        deleted.error
-      );
+      return service.federationRuleError(ctx, deleted.error);
     }
     return { id };
   }

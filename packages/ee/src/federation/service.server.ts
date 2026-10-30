@@ -6,6 +6,7 @@ import { randomBytes } from "node:crypto";
 import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { FEDERATION_ALLOW_PRIVATE_ISSUERS } from "@carbon/env";
 import { Ratelimit, redis } from "@carbon/kv";
 import { checkOutboundUrl } from "@carbon/lib/url-guard.server";
@@ -61,96 +62,20 @@ function getLimiters() {
   return limiters;
 }
 
-type ServiceError = { message: string };
+type ServiceError = { message: string; code?: string };
 
 /** The network half of the issuer check: the host must not resolve inward. */
-export async function checkFederationIssuer(
+async function issuerNetworkError(
   issuer: string
-): Promise<string | null> {
+): Promise<ServiceError | null> {
   if (FEDERATION_ALLOW_PRIVATE_ISSUERS) return null;
   const verdict = await checkOutboundUrl(issuer);
-  return verdict.ok ? null : verdict.reason;
+  return verdict.ok ? null : { message: `Issuer: ${verdict.reason}` };
 }
 
-async function validateRule(
-  rule: FederationRuleInput
-): Promise<ServiceError | null> {
-  const errors = ruleRequirementErrors(rule);
-  const first = Object.values(errors)[0];
-  if (first) return { message: first };
-  const issuerError = await checkFederationIssuer(rule.issuer);
-  return issuerError ? { message: `Issuer: ${issuerError}` } : null;
-}
-
-export async function upsertFederationRule(
-  client: SupabaseClient<Database>,
-  rule:
-    | (FederationRuleInput & { companyId: string; createdBy: string })
-    | (FederationRuleInput & {
-        id: string;
-        companyId: string;
-        updatedBy: string;
-      })
-): Promise<{ data: { id: string } | null; error: ServiceError | null }> {
-  await requireEntitlement(client, rule.companyId, "API_KEYS");
-
-  const invalid = await validateRule(rule);
-  if (invalid) return { data: null, error: invalid };
-
-  const columns = {
-    name: rule.name,
-    provider: rule.provider,
-    issuer: rule.issuer,
-    audience: rule.audience,
-    subject: rule.subject,
-    claimConditions: rule.claimConditions,
-    scopes: rule.scopes,
-    tokenLifetimeMinutes: rule.tokenLifetimeMinutes
-  };
-
-  // RLS denies API writes on federationRule; the caller's permission was
-  // checked by the operation, and every write is scoped to its company.
-  const system = getCarbonServiceRole();
-
-  if ("createdBy" in rule) {
-    const inserted = await system
-      .from("federationRule")
-      .insert({
-        ...columns,
-        companyId: rule.companyId,
-        createdBy: rule.createdBy
-      })
-      .select("id")
-      .single();
-    return { data: inserted.data, error: inserted.error };
-  }
-
-  const previous = await system
-    .from("federationRule")
-    .select("issuer, audience, subject, claimConditions")
-    .eq("id", rule.id)
-    .eq("companyId", rule.companyId)
-    .single();
-  if (previous.error) return { data: null, error: previous.error };
-
-  const updated = await system
-    .from("federationRule")
-    .update({
-      ...columns,
-      updatedBy: rule.updatedBy,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", rule.id)
-    .eq("companyId", rule.companyId)
-    .select("id")
-    .single();
-  if (updated.error) return { data: null, error: updated.error };
-
-  const synced = trustChanged(previous.data, rule)
-    ? await revokeMintedKeys(rule.id, rule.companyId)
-    : await rescopeMintedKeys(rule.id, rule.companyId, rule.scopes);
-  if (synced) return { data: null, error: synced };
-  return { data: updated.data, error: null };
+function requirementError(rule: FederationRuleInput): ServiceError | null {
+  const first = Object.values(ruleRequirementErrors(rule))[0];
+  return first ? { message: first } : null;
 }
 
 type TrustFields = {
@@ -185,52 +110,122 @@ function sameJson(a: unknown, b: unknown): boolean {
   return sorted(a) === sorted(b);
 }
 
-/** A narrower scope applies to the keys the rule already minted, at once. */
-async function rescopeMintedKeys(
-  ruleId: string,
-  companyId: string,
-  scopes: Record<string, string[]>
-): Promise<ServiceError | null> {
-  const rescoped = await getCarbonServiceRole()
-    .from("apiKey")
-    .update({ scopes })
-    .eq("federationRuleId", ruleId)
-    .eq("companyId", companyId)
-    .select("keyHash");
-  if (rescoped.error) {
-    log.error("Failed to rescope federated api keys", {
-      ruleId,
-      error: rescoped.error
-    });
-    return rescoped.error;
-  }
-  await Promise.all(
-    (rescoped.data ?? []).map(({ keyHash }) => bustApiKeyCache(keyHash))
-  );
-  return null;
-}
+/**
+ * Creates or updates a rule. RLS denies API writes on federationRule: the
+ * operation checked the caller's permission, sets `createdBy` to the caller,
+ * and every write here is scoped to the company. An update and what it does
+ * to the keys the rule already minted (revoke on a trust change, else
+ * rescope) commit together, so a refused key write never leaves the new
+ * trust saved beside the old keys.
+ */
+export async function upsertFederationRule(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  rule:
+    | (FederationRuleInput & { companyId: string; createdBy: string })
+    | (FederationRuleInput & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+): Promise<{ data: { id: string } | null; error: ServiceError | null }> {
+  await requireEntitlement(client, rule.companyId, "API_KEYS");
 
-/** Deletes the rule's minted keys, dropping their cache before and after. */
-async function revokeMintedKeys(
-  ruleId: string,
-  companyId: string
-): Promise<ServiceError | null> {
-  const hashes = await mintedKeyHashes(ruleId, companyId);
-  await Promise.all(hashes.map(bustApiKeyCache));
-  const deleted = await getCarbonServiceRole()
-    .from("apiKey")
-    .delete()
-    .eq("federationRuleId", ruleId)
-    .eq("companyId", companyId);
-  if (deleted.error) {
-    log.error("Failed to revoke federated api keys", {
-      ruleId,
-      error: deleted.error
-    });
-    return deleted.error;
+  const invalid = requirementError(rule);
+  if (invalid) return { data: null, error: invalid };
+
+  const columns = {
+    name: rule.name,
+    provider: rule.provider,
+    issuer: rule.issuer,
+    audience: rule.audience,
+    subject: rule.subject,
+    claimConditions: JSON.stringify(rule.claimConditions),
+    scopes: JSON.stringify(rule.scopes),
+    tokenLifetimeMinutes: rule.tokenLifetimeMinutes
+  };
+
+  if ("createdBy" in rule) {
+    const networkError = await issuerNetworkError(rule.issuer);
+    if (networkError) return { data: null, error: networkError };
+    const inserted = await getCarbonServiceRole()
+      .from("federationRule")
+      .insert({
+        ...columns,
+        claimConditions: rule.claimConditions,
+        scopes: rule.scopes,
+        companyId: rule.companyId,
+        createdBy: rule.createdBy
+      })
+      .select("id")
+      .single();
+    return { data: inserted.data, error: inserted.error };
   }
-  await Promise.all(hashes.map(bustApiKeyCache));
-  return null;
+
+  const previous = await db
+    .selectFrom("federationRule")
+    .select(["issuer", "audience", "subject", "claimConditions"])
+    .where("id", "=", rule.id)
+    .where("companyId", "=", rule.companyId)
+    .executeTakeFirst();
+  if (!previous) {
+    return {
+      data: null,
+      error: { message: "Federation rule not found", code: "PGRST116" }
+    };
+  }
+  // Only a changed issuer is resolved again: a DNS hiccup must not block an
+  // urgent scope narrowing.
+  if (previous.issuer !== rule.issuer) {
+    const networkError = await issuerNetworkError(rule.issuer);
+    if (networkError) return { data: null, error: networkError };
+  }
+  const revoke = trustChanged(previous, rule);
+
+  let keyHashes: string[];
+  try {
+    keyHashes = await db.transaction().execute(async (trx) => {
+      const updated = await trx
+        .updateTable("federationRule")
+        .set({
+          ...columns,
+          updatedBy: rule.updatedBy,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", rule.id)
+        .where("companyId", "=", rule.companyId)
+        .returning("id")
+        .executeTakeFirst();
+      if (!updated) throw new Error("Federation rule not found");
+
+      const keys = revoke
+        ? await trx
+            .deleteFrom("apiKey")
+            .where("federationRuleId", "=", rule.id)
+            .where("companyId", "=", rule.companyId)
+            .returning("keyHash")
+            .execute()
+        : await trx
+            .updateTable("apiKey")
+            .set({ scopes: JSON.stringify(rule.scopes) })
+            .where("federationRuleId", "=", rule.id)
+            .where("companyId", "=", rule.companyId)
+            .returning("keyHash")
+            .execute();
+      return keys.map(({ keyHash }) => keyHash);
+    });
+  } catch (error) {
+    log.error("Failed to update federation rule", { ruleId: rule.id, error });
+    const code = (error as { code?: string }).code;
+    return {
+      data: null,
+      error: { message: "Failed to save federation rule", code }
+    };
+  }
+
+  // After commit: a request re-reads the key, now revoked or rescoped.
+  await Promise.all(keyHashes.map(bustApiKeyCache));
+  return { data: { id: rule.id }, error: null };
 }
 
 /** The hashes of a rule's minted keys, to drop their cached authentication. */
@@ -277,6 +272,17 @@ export async function deleteFederationRule(
 
   await Promise.all(hashes.map(bustApiKeyCache));
   return { data: deleted.data, error: null };
+}
+
+/** Deletes one minted key; a failure is logged, as the key expires on its own. */
+async function revokeKey(keyHash: string, companyId: string) {
+  const { error } = await getCarbonServiceRole()
+    .from("apiKey")
+    .delete()
+    .eq("keyHash", keyHash)
+    .eq("companyId", companyId);
+  if (error) log.error("Failed to revoke a federated api key", { error });
+  await bustApiKeyCache(keyHash);
 }
 
 export type ExchangeResult =
@@ -337,6 +343,13 @@ export async function exchangeFederatedToken(
   input: { ruleId: string; subjectToken: string; clientIp?: string | null },
   getKeySet?: FederationKeyResolver
 ): Promise<ExchangeResult> {
+  // First, before any read: the rule id is public.
+  const { caller, rule: ruleLimit } = getLimiters();
+  const attempt = await caller.limit(
+    `${input.ruleId}:${input.clientIp ?? "unknown"}`
+  );
+  if (!attempt.success) return { ok: false, reason: "rate_limited" };
+
   const serviceRole = getCarbonServiceRole();
   const { data: rule, error } = await serviceRole
     .from("federationRule")
@@ -367,12 +380,6 @@ export async function exchangeFederatedToken(
   ) {
     return fail("not_entitled");
   }
-
-  const { caller, rule: ruleLimit } = getLimiters();
-  const attempt = await caller.limit(
-    `${rule.id}:${input.clientIp ?? "unknown"}`
-  );
-  if (!attempt.success) return { ok: false, reason: "rate_limited" };
 
   const verified = await verifySubjectToken(
     input.subjectToken,
@@ -431,20 +438,33 @@ export async function exchangeFederatedToken(
     throw new Error("Failed to mint a federated API key");
   }
 
-  // A scope edit that landed while this exchange ran rescoped every key that
-  // existed then; bring this one to the rule's current scopes too.
+  // A rule edit that committed while this exchange ran revoked or rescoped
+  // every key that existed then. Hold this one to the rule as it is now.
+  const keyHash = hashApiKey(rawKey);
   const current = await serviceRole
     .from("federationRule")
-    .select("scopes")
+    .select("issuer, audience, subject, claimConditions, scopes")
     .eq("id", rule.id)
     .eq("companyId", rule.companyId)
     .maybeSingle();
-  if (current.data && !sameJson(current.data.scopes, rule.scopes)) {
-    const keyHash = hashApiKey(rawKey);
-    await serviceRole
+  if (current.error) {
+    await revokeKey(keyHash, rule.companyId);
+    throw new Error("Failed to re-read the federation rule");
+  }
+  if (!current.data || trustChanged(rule, current.data)) {
+    await revokeKey(keyHash, rule.companyId);
+    return fail("rule_changed");
+  }
+  if (!sameJson(current.data.scopes, rule.scopes)) {
+    const rescoped = await serviceRole
       .from("apiKey")
       .update({ scopes: current.data.scopes })
-      .eq("keyHash", keyHash);
+      .eq("keyHash", keyHash)
+      .eq("companyId", rule.companyId);
+    if (rescoped.error) {
+      await revokeKey(keyHash, rule.companyId);
+      throw new Error("Failed to rescope a federated API key");
+    }
     await bustApiKeyCache(keyHash);
   }
 

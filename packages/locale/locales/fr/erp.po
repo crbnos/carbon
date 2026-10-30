@@ -13144,6 +13144,9 @@ msgstr "Dernier jour"
 msgid "Last Exchange"
 msgstr ""
 
+msgid "Last exchange:"
+msgstr ""
+
 msgid "Last Fiscal Year"
 msgstr "Dernier exercice comptable"
 
