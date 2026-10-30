@@ -10,7 +10,7 @@ import { FEDERATION_ALLOW_PRIVATE_ISSUERS } from "@carbon/env";
 import { Ratelimit, redis } from "@carbon/kv";
 import { checkOutboundUrl } from "@carbon/lib/url-guard.server";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { datetime, RoundingMode, round } from "@carbon/utils";
 import { now } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "../entitlements.server";
@@ -37,11 +37,19 @@ import {
 
 const log = getLogger("ee", "federation");
 
-const exchangeRatelimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(FEDERATION_LIMITS.exchangesPerMinute, "1 m"),
-  prefix: "federation-exchange"
-});
+// Built on first use, so importing this module touches no Redis client.
+let exchangeRatelimit: Ratelimit | undefined;
+function getExchangeRatelimit(): Ratelimit {
+  exchangeRatelimit ??= new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(
+      FEDERATION_LIMITS.exchangesPerMinute,
+      "1 m"
+    ),
+    prefix: "federation-exchange"
+  });
+  return exchangeRatelimit;
+}
 
 type ServiceError = { message: string };
 
@@ -192,11 +200,14 @@ async function claimJti(
   expiresAt: number
 ): Promise<FederationFailure | null> {
   const key = `federation-jti:${issuer}:${jti}`;
+  // Whole seconds for EX, rounded up so the record never expires before the token.
   const ttl = Math.max(
     1,
-    expiresAt +
-      FEDERATION_LIMITS.clockToleranceSeconds -
-      Math.floor(Date.now() / 1_000)
+    round(
+      expiresAt + FEDERATION_LIMITS.clockToleranceSeconds - Date.now() / 1_000,
+      0,
+      RoundingMode.Up
+    )
   );
   const claimed = await redis.set(key, "1", "EX", ttl, "NX");
   if (claimed === "OK") return null;
@@ -263,7 +274,7 @@ export async function exchangeFederatedToken(
     return fail("not_entitled");
   }
 
-  const { success } = await exchangeRatelimit.limit(rule.id);
+  const { success } = await getExchangeRatelimit().limit(rule.id);
   if (!success) return { ok: false, reason: "rate_limited" };
 
   const verified = await verifySubjectToken(

@@ -183,7 +183,7 @@ export async function verifySubjectToken(
   if (typeof iat !== "number" || typeof exp !== "number") {
     return { ok: false, reason: "missing_claims" };
   }
-  const nowSeconds = Math.floor(Date.now() / 1_000);
+  const nowSeconds = Date.now() / 1_000;
   if (iat > nowSeconds + FEDERATION_LIMITS.clockToleranceSeconds) {
     return { ok: false, reason: "not_yet_valid" };
   }
