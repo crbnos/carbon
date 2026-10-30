@@ -34,7 +34,10 @@ export const FEATURE_PLANS = {
   // Tiered document-approval rules (POs by amount, quality docs, suppliers).
   APPROVAL_RULES: [Plan.Business, Plan.Partner],
   // Company backup / restore (self-service export + restore of company data).
-  BACKUPS: [Plan.Business, Plan.Partner]
+  BACKUPS: [Plan.Business, Plan.Partner],
+  // SCIM 2.0 provisioning: an identity provider adds, updates and removes
+  // employees at /scim/v2 (`@carbon/ee/scim.server`).
+  SCIM: [Plan.Business, Plan.Partner]
 } as const satisfies Record<string, Plan[]>;
 
 export type Feature = keyof typeof FEATURE_PLANS;
