@@ -5,7 +5,7 @@
 import dns from "node:dns";
 import http from "node:http";
 import https from "node:https";
-import { Agent } from "undici";
+import { Agent, fetch as undiciFetch } from "undici";
 
 export type UrlVerdict = { ok: true; url: URL } | { ok: false; reason: string };
 
@@ -165,6 +165,17 @@ export function guardedLookup(
 export const outboundDispatcher = new Agent({
   connect: { lookup: guardedLookup }
 });
+
+/**
+ * `fetch` through `outboundDispatcher`: every connection, redirects included,
+ * refuses a private address. Run `checkOutboundUrl` first for an IP literal.
+ */
+export function outboundFetch(
+  url: string | URL,
+  init?: Parameters<typeof undiciFetch>[1]
+) {
+  return undiciFetch(url, { ...init, dispatcher: outboundDispatcher });
+}
 
 /**
  * The same guard for node's http client (axios), as `httpAgent` / `httpsAgent`.
