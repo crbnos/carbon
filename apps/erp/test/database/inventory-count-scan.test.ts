@@ -306,3 +306,37 @@ databaseTest("an import with an error writes nothing", async () => {
     await f.cleanup();
   }
 });
+
+databaseTest("the snapshot leaves out a unit with no stock left in a bin", async () => {
+  const f = await alwaysPostFixture();
+  try {
+    const units = await countUnits(f);
+    // SN-3 leaves B2.
+    await f.db
+      .insertInto("itemLedger")
+      .values({
+        postingDate: f.today,
+        entryType: "Negative Adjmt.",
+        itemId: units.serialItemId,
+        locationId: f.locationId,
+        storageUnitId: units.binB,
+        trackedEntityId: units.entity("SN-3"),
+        quantity: -1,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    const countId = await draftCount(f, "1", (args) =>
+      generateInventoryCountLines(f.db, args)
+    );
+    const lines = await f.db
+      .selectFrom("inventoryCountLine")
+      .select("trackedEntityId")
+      .where("inventoryCountId", "=", countId)
+      .where("trackedEntityId", "=", units.entity("SN-3"))
+      .execute();
+    expect(lines).toEqual([]);
+  } finally {
+    await f.cleanup();
+  }
+});

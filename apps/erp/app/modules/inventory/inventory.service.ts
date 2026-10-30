@@ -2773,7 +2773,15 @@ export async function generateInventoryCountLines(
         "itemLedger.itemId",
         "itemLedger.storageUnitId",
         "itemLedger.trackedEntityId"
-      ]);
+      ])
+      // A unit with no stock left in a bin (it moved, shipped or was used) is
+      // not expected there. An untracked item keeps its line at 0.
+      .having((eb) =>
+        eb.or([
+          eb("itemLedger.trackedEntityId", "is", null),
+          eb(eb.fn.sum("itemLedger.quantity"), "!=", 0)
+        ])
+      );
     // Drop blank entries — an unselected storage-unit field submits [""], which
     // would otherwise filter to `storageUnitId IN ('')` and match no stock.
     const scopedStorageUnitIds = storageUnitIds?.filter(Boolean) ?? [];
