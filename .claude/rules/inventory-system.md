@@ -110,6 +110,11 @@ Key service functions (verified):
   loader returns the authoritative effective quantity for the modal pre-fill). Corrections
   render as normal flat rows with an `isCorrection` badge — no nesting/expandable grouping.
   Inventory counts have NO count-level rectify; Posted is terminal.
+  A count of tracked units is grouped by (item, storage unit) (`inventoryCountGroups`
+  view) and counted by scan, Add unit or CSV import. A unit counted in another bin
+  posts as a move: 2 `Transfer` rows with `documentType` `Inventory Count`, no GL —
+  so `getInventoryCountMovements` (which reads that document type) lists it. See
+  `apps/erp/app/modules/inventory/AGENTS.md` → Inventory Count.
 - Storage units: `getStorageUnit(s)`, `getStorageUnitRoots`, `getStorageUnitChildren`,
   `getStorageUnitTree`, `getStorageUnitsTreeForLocation`,
   `getDefaultStorageUnitOrStorageUnitWithHighestQuantity`, and `getDefaultStorageUnitForJob`

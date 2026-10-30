@@ -7,20 +7,20 @@
 
 ## Progress
 
-- [ ] Task 0: Create the branch
-- [ ] Task 1: Write the migration
-- [ ] Task 2: Apply the migration and regenerate types
-- [ ] Task 3: Add the validators
-- [ ] Task 4: Add the unit state helper
-- [ ] Task 5: Plan moves in `planInventoryCountPost` (test first)
-- [ ] Task 6: Read groups and group lines
-- [ ] Task 7: Show the grouped, collapsible table
-- [ ] Task 8: Resolve a code and record a scan
-- [ ] Task 9: Post moves, Unexpected units and new units
-- [ ] Task 10: Add the scan bar and Add unit
-- [ ] Task 11: Count unnumbered units and assign serial numbers
-- [ ] Task 12: Export and import count results as CSV
-- [ ] Task 13: Update docs and regenerate the MCP manifest
+- [x] Task 0: Create the branch
+- [x] Task 1: Write the migration
+- [x] Task 2: Apply the migration and regenerate types
+- [x] Task 3: Add the validators
+- [x] Task 4: Add the unit state helper
+- [x] Task 5: Plan moves in `planInventoryCountPost` (test first)
+- [x] Task 6: Read groups and group lines
+- [x] Task 7: Show the grouped, collapsible table
+- [x] Task 8: Resolve a code and record a scan
+- [x] Task 9: Post moves, Unexpected units and new units
+- [x] Task 10: Add the scan bar and Add unit
+- [x] Task 11: Count unnumbered units and assign serial numbers
+- [x] Task 12: Export and import count results as CSV
+- [x] Task 13: Update docs and regenerate the MCP manifest
 - [ ] Task 14: Run the full gate
 - [ ] Task 15: Verify in the browser
 
