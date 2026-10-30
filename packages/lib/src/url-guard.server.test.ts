@@ -4,7 +4,11 @@
 
 import dns from "node:dns";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { checkOutboundUrl, checkWebhookUrl, guardedLookup } from "./url-guard";
+import {
+  checkOutboundUrl,
+  checkWebhookUrl,
+  guardedLookup
+} from "./url-guard.server";
 
 /** Stubbed so no test performs real DNS. */
 function resolvesTo(...addresses: { address: string; family: number }[]) {

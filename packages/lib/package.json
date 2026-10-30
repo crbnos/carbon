@@ -13,6 +13,7 @@
     "nanoid": "catalog:",
     "nodemailer": "10.1.4",
     "resend": "3.5.0",
+    "undici": "^8.12.3",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -48,6 +49,7 @@
     "./telemetry": "./src/telemetry/capture.ts",
     "./trigger": "./src/trigger.ts",
     "./twenty.server": "./src/twenty.server.ts",
+    "./url-guard.server": "./src/url-guard.server.ts",
     "./workflows": "./src/workflows/raise-moment.ts"
   },
   "private": true,
