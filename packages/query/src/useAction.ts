@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { toast } from "@carbon/react";
 import { useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
 import { actionOutcome, serviceErrorMessage } from "./action-outcome";
+import { toastServiceFailure } from "./toastServiceError";
 
 export { actionOutcome, serviceErrorMessage };
 
@@ -63,8 +63,7 @@ export function useAction<T = any>(
       if (callbacks.current.onError) {
         callbacks.current.onError(data as ActionResult<T>);
       } else {
-        const message = serviceErrorMessage(data);
-        if (message) toast.error(message);
+        toastServiceFailure(data);
       }
     }
   }, [state, data]);

@@ -103,10 +103,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.employeeAccounts,
       await flash(
         request,
-        error(
-          { rawClaims: rawClaims.error, employee: employee.error },
-          "Failed to load employee"
-        )
+        error(rawClaims.error ?? employee.error, "Failed to load employee")
       )
     );
   }

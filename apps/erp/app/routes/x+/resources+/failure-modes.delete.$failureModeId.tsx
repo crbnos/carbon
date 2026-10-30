@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!failureModeId) {
     throw redirect(
       `${path.to.failureModes}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get a failure mode id"))
+      await flash(request, error(null, "Failed to get a failure mode id"))
     );
   }
 

@@ -75,7 +75,7 @@ middleware wraps fetcher submissions too, so a modal's save is covered.
 
 | Hook | Use |
 |---|---|
-| `useLoaderQuery<T>(url \| null)` | Render with an `api+` URL's data. One request per URL however many components read it; refetches when invalidated. `T` is the data, or `typeof loader`. `null` waits |
+| `useLoaderQuery<T>(url \| null)` | Render with an `api+` URL's data. One request per URL however many components read it; refetches when invalidated. `T` is the data, or `typeof loader`. `null` waits. `{ invalidate: false, refetchInterval }` is for data no save or realtime change touches: it is keyed under `SELF_REFRESHED`, so neither marks it stale (leaving the company still drops it) |
 | `cachedApiQuery<T>(url)` | The same read from an event handler or an effect |
 | `useAction<T>({ onSuccess, onError, onSettled })` | A mutation fetcher whose result goes to a callback instead of an effect watching `fetcher.data`. Submit with `.submit()` or `<action.Form>` as with `useFetcher`. `onSettled` runs whenever a submission finishes; `onSuccess` / `onError` only when the action returned data (an action that redirects returns none) |
 

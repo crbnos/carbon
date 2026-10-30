@@ -68,10 +68,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {
         id: null
       },
-      await flash(
-        request,
-        error(insertMethodOperation, "Failed to insert method operation")
-      )
+      await flash(request, error(null, "Failed to insert method operation"))
     );
   }
 

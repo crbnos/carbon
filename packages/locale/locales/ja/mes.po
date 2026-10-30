@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "(Inactive)"
 msgstr "(無効)"
 
@@ -84,6 +87,12 @@ msgstr "{0}がバッチ{1}内で実行"
 msgid "{0} Scrapped"
 msgstr "{0} スクラップ"
 
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} / {quantity}"
 
@@ -109,6 +118,21 @@ msgstr "🚨 お知らせ：{0}にアカウントが erp.try.carbon.ms に移行
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "前回の完了は終了しませんでした。再試行により残りのステップが再開されます。数量は二重計算されません。"
+
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
+msgid "A required field was missing."
+msgstr ""
+
+msgid "A value is not valid."
+msgstr ""
 
 msgid "About"
 msgstr "バージョン情報"
@@ -305,6 +329,9 @@ msgstr "バッチ合計"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "目標より{daysBehindTarget}日遅れ"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0} によりブロック中"
@@ -439,6 +466,12 @@ msgstr "カラム: {0}"
 msgid "Columns"
 msgstr "列"
 
+msgid "Comfortable"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
 msgid "Companies"
 msgstr "会社"
 
@@ -552,6 +585,9 @@ msgstr "ステップを削除"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "タイムカードを削除 (<0/>)"
+
+msgid "Density"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "問題を説明してください..."
@@ -944,6 +980,9 @@ msgstr "{lotLabel} から {issuedQuantity} を発行しました"
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "{lotLabel} から {issuedQuantity} を発行しました — {remainingQuantity} が残っています"
 
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
+
 msgid "Item"
 msgstr "品目"
 
@@ -979,6 +1018,12 @@ msgstr "キット"
 
 msgid "Labor"
 msgstr "労務"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last completed"
 msgstr "最後に完了"
@@ -1236,6 +1281,9 @@ msgstr "本日の保全予定はありません。"
 
 msgid "No matches. Type to create one."
 msgstr "一致するものがありません。入力して新しく作成してください。"
+
+msgid "No matching record was found."
+msgstr ""
 
 msgid "No matching time"
 msgstr "一致する時刻がありません"
@@ -1990,6 +2038,12 @@ msgstr "サイズ"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Source"
 msgstr "ソース"
 
@@ -2085,6 +2139,9 @@ msgstr "システム"
 msgid "Tag"
 msgstr "タグ"
 
+msgid "Text size"
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Carbon全体で使用されるアクセントカラー。"
 
@@ -2110,6 +2167,12 @@ msgstr "ロットは引き続き処分されますが、少なくとも1つの�
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "タイマーと完了はすべての{0}製造指図で共有されます。ステップ、材料、ファイルはこの製造指図専用です。"
+
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
 
 msgid "Theme color"
 msgstr "テーマカラー"
@@ -2152,6 +2215,9 @@ msgstr "サムネイル"
 
 msgid "Tick the jobs this was done for."
 msgstr "これが完了した製造指図をチェック"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "時刻"
@@ -2375,6 +2441,12 @@ msgid "You can still start this operation."
 msgstr ""
 
 msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You do not have permission to do this"
+msgstr ""
+
+msgid "You don't have permission to change this record, or it no longer exists."
 msgstr ""
 
 msgid "You don't have the {processName} ability"

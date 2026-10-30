@@ -10,7 +10,7 @@ import { trigger } from "@carbon/jobs";
 import { postSuggestionToCarbonSlack } from "@carbon/lib/slack.server";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { datetime, unchecked } from "@carbon/utils";
+import { datetime, requireAffected, unchecked } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -202,12 +202,15 @@ export const removeEmployeeAbility = defineServiceFn({
   permission: { update: "resources" },
 
   async run(ctx, { abilityId, employeeAbilityId }) {
-    const removed = await ctx.asCaller.supabase
-      .from("employeeAbility")
-      .delete()
-      .eq("id", employeeAbilityId)
-      .eq("abilityId", abilityId)
-      .eq("companyId", ctx.company.id);
+    const removed = await requireAffected(
+      ctx.asCaller.supabase
+        .from("employeeAbility")
+        .delete()
+        .eq("id", employeeAbilityId)
+        .eq("abilityId", abilityId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (removed.error) {
       return ctx.error(
         "internal",
@@ -1173,12 +1176,15 @@ export const deleteMaintenanceEvent = defineServiceFn({
     const dispatch = await service.editableDispatch(ctx, dispatchId);
     if (dispatch instanceof CarbonError) return dispatch;
 
-    const removed = await ctx.asCaller.supabase
-      .from("maintenanceDispatchEvent")
-      .delete()
-      .eq("id", eventId)
-      .eq("maintenanceDispatchId", dispatchId)
-      .eq("companyId", ctx.company.id);
+    const removed = await requireAffected(
+      ctx.asCaller.supabase
+        .from("maintenanceDispatchEvent")
+        .delete()
+        .eq("id", eventId)
+        .eq("maintenanceDispatchId", dispatchId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (removed.error) {
       return ctx.error("internal", "Failed to delete timecard", removed.error);
     }

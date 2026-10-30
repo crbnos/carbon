@@ -43,10 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (deleteLine.error) {
     throw redirect(
       path.to.quoteLine(rfqId, lineId),
-      await flash(
-        request,
-        error(deleteLine.error, "Failed to update quote line")
-      )
+      await flash(request, error(deleteLine.error, "Failed to delete RFQ line"))
     );
   }
 

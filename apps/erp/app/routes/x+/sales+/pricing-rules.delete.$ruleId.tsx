@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!ruleId) {
     throw redirect(
       path.to.salesPricingRules,
-      await flash(request, error(params, "Failed to get pricing rule id"))
+      await flash(request, error(null, "Failed to get pricing rule id"))
     );
   }
 

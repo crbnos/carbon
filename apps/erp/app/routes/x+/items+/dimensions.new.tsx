@@ -69,10 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!materialDimensionId) {
     return data(
       {},
-      await flash(
-        request,
-        error(insertMaterialDimension, "Failed to insert material dimension")
-      )
+      await flash(request, error(null, "Failed to insert material dimension"))
     );
   }
 

@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "(Inactive)"
 msgstr "(Inactif)"
 
@@ -84,6 +87,12 @@ msgstr "{0} s'exécute dans le lot de production {1}"
 msgid "{0} Scrapped"
 msgstr "{0} Rebuté(s)"
 
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} sur {quantity}"
 
@@ -109,6 +118,21 @@ msgstr "🚨 Attention : le {0}, votre compte sera transféré vers erp.try.carb
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Un traitement précédent ne s'est pas terminé. Recommencer reprend les étapes restantes — les quantités ne sont pas comptabilisées en double."
+
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
+msgid "A required field was missing."
+msgstr ""
+
+msgid "A value is not valid."
+msgstr ""
 
 msgid "About"
 msgstr "À propos"
@@ -305,6 +329,9 @@ msgstr "total du lot de production"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "En retard de {daysBehindTarget} jour(s)"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Bloqué par {0}"
@@ -439,6 +466,12 @@ msgstr "Colonne : {0}"
 msgid "Columns"
 msgstr "Colonnes"
 
+msgid "Comfortable"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
 msgid "Companies"
 msgstr "Sociétés"
 
@@ -552,6 +585,9 @@ msgstr "Supprimer l'étape"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Supprimer la feuille de temps (<0/>)"
+
+msgid "Density"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "Décrivez le problème..."
@@ -944,6 +980,9 @@ msgstr "Émis {issuedQuantity} sur {lotLabel}"
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "Émis {issuedQuantity} sur {lotLabel} — {remainingQuantity} reste"
 
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
+
 msgid "Item"
 msgstr "Article"
 
@@ -979,6 +1018,12 @@ msgstr "Kit"
 
 msgid "Labor"
 msgstr "Main-d'œuvre"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Dernier complété"
@@ -1236,6 +1281,9 @@ msgstr "Aucune maintenance planifiée pour aujourd'hui"
 
 msgid "No matches. Type to create one."
 msgstr "Aucune correspondance. Tapez pour en créer une."
+
+msgid "No matching record was found."
+msgstr ""
 
 msgid "No matching time"
 msgstr "Aucune heure correspondante"
@@ -1990,6 +2038,12 @@ msgstr "Taille"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
+
 msgid "Source"
 msgstr "Source"
 
@@ -2085,6 +2139,9 @@ msgstr "Système"
 msgid "Tag"
 msgstr "Étiquette"
 
+msgid "Text size"
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Couleur d'accent utilisée dans Carbon."
 
@@ -2110,6 +2167,12 @@ msgstr "Le lot sera toujours dispositionné, mais un NCR ne peut pas être cré�
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Le chronomètre et l'achèvement sont partagés par tous les {0} ordres de fabrication. Les étapes, matières et fichiers ici sont propres à cet ordre de fabrication."
+
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
 
 msgid "Theme color"
 msgstr "Couleur du thème"
@@ -2152,6 +2215,9 @@ msgstr "Miniature"
 
 msgid "Tick the jobs this was done for."
 msgstr "Cochez les ordres de fabrication pour lesquels c'est effectué."
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "Heure"
@@ -2375,6 +2441,12 @@ msgid "You can still start this operation."
 msgstr ""
 
 msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You do not have permission to do this"
+msgstr ""
+
+msgid "You don't have permission to change this record, or it no longer exists."
 msgstr ""
 
 msgid "You don't have the {processName} ability"

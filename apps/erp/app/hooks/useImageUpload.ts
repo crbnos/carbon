@@ -5,7 +5,7 @@
 import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { isHeic, MediaUploader } from "@carbon/files/media";
-import { toast } from "@carbon/react";
+import { toastError } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useCallback, useMemo } from "react";
@@ -43,7 +43,7 @@ export function useImageUpload(directory: string) {
         try {
           upload = await uploader.convertHeic(file);
         } catch (error) {
-          toast.error(t`Failed to convert image`);
+          toastError(t`Failed to convert image`, error);
           throw error;
         }
       }
@@ -56,7 +56,7 @@ export function useImageUpload(directory: string) {
         .upload(fileName, upload);
 
       if (result.error) {
-        toast.error(t`Failed to upload image`);
+        toastError(t`Failed to upload image`, result.error);
         throw new Error(result.error.message);
       }
 

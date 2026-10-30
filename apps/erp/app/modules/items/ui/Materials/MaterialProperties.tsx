@@ -4,7 +4,7 @@
 
 import type { Json } from "@carbon/database";
 import { InputControlled, Select, ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Alert,
   AlertTitle,
@@ -22,7 +22,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -162,9 +161,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   const confirmDisclosure = useDisclosure();

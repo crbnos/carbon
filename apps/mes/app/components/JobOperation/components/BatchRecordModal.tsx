@@ -17,7 +17,7 @@ import {
   ModalHeader,
   ModalTitle,
   Switch,
-  toast
+  toastError
 } from "@carbon/react";
 import { datetime, stripSpecialCharacters } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -149,7 +149,10 @@ export function BatchRecordModal({
       );
       setUploading(false);
       if (uploads.some((u) => u.error || !u.data?.path)) {
-        toast.error(t`Failed to upload ${file.name}`);
+        toastError(
+          t`Failed to upload ${file.name}`,
+          uploads.find((u) => u.error)?.error
+        );
         return;
       }
       paths = uploads.map((u) => u.data?.path ?? "");

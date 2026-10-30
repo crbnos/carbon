@@ -76,7 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!accountId) {
     return data(
       {},
-      await flash(request, error(insertAccount, "Failed to insert account"))
+      await flash(request, error(null, "Failed to insert account"))
     );
   }
 

@@ -131,7 +131,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.purchaseOrders,
       await flash(
         request,
-        error("You are not authorized to view this purchase order")
+        error(null, "You are not authorized to view this purchase order")
       )
     );
   }

@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!supplierTypeId) {
     throw redirect(
       `${path.to.supplierTypes}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get an supplier type id"))
+      await flash(request, error(null, "Failed to get an supplier type id"))
     );
   }
 

@@ -151,7 +151,7 @@ function EntityNodeImpl({
       </div>
       <div
         className={cn(
-          "absolute -top-1 -right-1 rounded-full bg-card border border-border text-[9px] tabular-nums px-1 leading-tight pointer-events-none",
+          "absolute -top-1 -right-1 rounded-full bg-card border border-border text-[0.5625rem] tabular-nums px-1 leading-tight pointer-events-none",
           isHistorical && "opacity-70"
         )}
         title={
@@ -196,7 +196,7 @@ function EntityNodeImpl({
           {showHeadline && (
             <span
               className={cn(
-                "text-[11px] tracking-tight px-1.5 py-px rounded bg-background",
+                "text-[0.6875rem] tracking-tight px-1.5 py-px rounded bg-background",
                 (data.isRoot || selected) && "font-medium"
               )}
             >

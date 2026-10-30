@@ -123,7 +123,7 @@ export const integrationConnectionActionValidator = z.discriminatedUnion(
   ]
 );
 
-const ssoDomainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
+const ssoDomainRegex = /^[a-z0-9.-]+\.([a-z]{2,}|xn--[a-z0-9-]+)$/;
 
 /**
  * Consumer email providers no company can own. The DNS TXT challenge is the

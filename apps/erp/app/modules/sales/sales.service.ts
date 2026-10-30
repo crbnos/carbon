@@ -116,6 +116,7 @@ import {
   type PeriodSpec,
   planRentalInvoices,
   type RentalBillingCycle,
+  requireAffected,
   round,
   salesTypeRequirementError,
   searchFilter,
@@ -472,14 +473,18 @@ export async function deleteCustomer(
   client: SupabaseClient<Database>,
   customerId: string
 ) {
-  return client.from("customer").delete().eq("id", customerId);
+  return requireAffected(
+    client.from("customer").delete().eq("id", customerId).select("id")
+  );
 }
 
 export async function deleteCustomerBankAccount(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("customerBankAccount").delete().eq("id", id);
+  return requireAffected(
+    client.from("customerBankAccount").delete().eq("id", id).select("id")
+  );
 }
 
 /**
@@ -573,10 +578,13 @@ export async function deleteCustomerContact(
     .eq("id", customerContactId)
     .single();
   if (customerContact.data) {
-    const contactDelete = await client
-      .from("contact")
-      .delete()
-      .eq("id", customerContact.data.contactId);
+    const contactDelete = await requireAffected(
+      client
+        .from("contact")
+        .delete()
+        .eq("id", customerContact.data.contactId)
+        .select("id")
+    );
 
     if (contactDelete.error) {
       return contactDelete;
@@ -599,14 +607,23 @@ export async function deleteCustomerLocation(
     .single();
 
   if (customerLocation?.addressId) {
-    return client.from("address").delete().eq("id", customerLocation.addressId);
+    return requireAffected(
+      client
+        .from("address")
+        .delete()
+        .eq("id", customerLocation.addressId)
+        .select("id")
+    );
   } else {
     // The customerLocation should always have an addressId, but just in case
-    return client
-      .from("customerLocation")
-      .delete()
-      .eq("customerId", customerId)
-      .eq("id", customerLocationId);
+    return requireAffected(
+      client
+        .from("customerLocation")
+        .delete()
+        .eq("customerId", customerId)
+        .eq("id", customerLocationId)
+        .select("id")
+    );
   }
 }
 
@@ -614,49 +631,67 @@ export async function deleteCustomerStatus(
   client: SupabaseClient<Database>,
   customerStatusId: string
 ) {
-  return client.from("customerStatus").delete().eq("id", customerStatusId);
+  return requireAffected(
+    client
+      .from("customerStatus")
+      .delete()
+      .eq("id", customerStatusId)
+      .select("id")
+  );
 }
 
 export async function deleteCustomerType(
   client: SupabaseClient<Database>,
   customerTypeId: string
 ) {
-  return client.from("customerType").delete().eq("id", customerTypeId);
+  return requireAffected(
+    client.from("customerType").delete().eq("id", customerTypeId).select("id")
+  );
 }
 
 export async function deleteNoQuoteReason(
   client: SupabaseClient<Database>,
   noQuoteReasonId: string
 ) {
-  return client.from("noQuoteReason").delete().eq("id", noQuoteReasonId);
+  return requireAffected(
+    client.from("noQuoteReason").delete().eq("id", noQuoteReasonId).select("id")
+  );
 }
 
 export async function deletePricingRule(
   client: SupabaseClient<Database>,
   pricingRuleId: string
 ) {
-  return client.from("pricingRule").delete().eq("id", pricingRuleId);
+  return requireAffected(
+    client.from("pricingRule").delete().eq("id", pricingRuleId).select("id")
+  );
 }
 
 export async function deleteQuote(
   client: SupabaseClient<Database>,
   quoteId: string
 ) {
-  return client.from("quote").delete().eq("id", quoteId);
+  return requireAffected(
+    client.from("quote").delete().eq("id", quoteId).select("id")
+  );
 }
 
 export async function deleteQuoteLine(
   client: SupabaseClient<Database>,
   quoteLineId: string
 ) {
-  return client.from("quoteLine").delete().eq("id", quoteLineId);
+  return requireAffected(
+    client.from("quoteLine").delete().eq("id", quoteLineId).select("id")
+  );
 }
 
 export async function deleteQuoteMaterial(
   client: SupabaseClient<Database>,
   quoteMaterialId: string
 ) {
-  return client.from("quoteMaterial").delete().eq("id", quoteMaterialId);
+  return requireAffected(
+    client.from("quoteMaterial").delete().eq("id", quoteMaterialId).select("id")
+  );
 }
 
 /** Sets the unit cost of each of a quote line's materials in one statement. */
@@ -684,49 +719,67 @@ export async function deleteQuoteOperationStep(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("quoteOperationStep").delete().eq("id", id);
+  return requireAffected(
+    client.from("quoteOperationStep").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteQuoteOperationParameter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("quoteOperationParameter").delete().eq("id", id);
+  return requireAffected(
+    client.from("quoteOperationParameter").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteQuoteOperationTool(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("quoteOperationTool").delete().eq("id", id);
+  return requireAffected(
+    client.from("quoteOperationTool").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string
 ) {
-  return client.from("salesOrder").delete().eq("id", salesOrderId);
+  return requireAffected(
+    client.from("salesOrder").delete().eq("id", salesOrderId).select("id")
+  );
 }
 
 export async function deleteSalesOrderLine(
   client: SupabaseClient<Database>,
   salesOrderLineId: string
 ) {
-  return client.from("salesOrderLine").delete().eq("id", salesOrderLineId);
+  return requireAffected(
+    client
+      .from("salesOrderLine")
+      .delete()
+      .eq("id", salesOrderLineId)
+      .select("id")
+  );
 }
 
 export async function deleteSalesRFQ(
   client: SupabaseClient<Database>,
   salesRfqId: string
 ) {
-  return client.from("salesRfq").delete().eq("id", salesRfqId);
+  return requireAffected(
+    client.from("salesRfq").delete().eq("id", salesRfqId).select("id")
+  );
 }
 
 export async function deleteSalesRFQLine(
   client: SupabaseClient<Database>,
   salesRFQLineId: string
 ) {
-  return client.from("salesRfqLine").delete().eq("id", salesRFQLineId);
+  return requireAffected(
+    client.from("salesRfqLine").delete().eq("id", salesRFQLineId).select("id")
+  );
 }
 
 export async function duplicatePricingRule(
@@ -2265,14 +2318,17 @@ export async function finalizeQuote(
   userId: string,
   companyId: string
 ) {
-  const quoteUpdate = await client
-    .from("quote")
-    .update({
-      status: "Sent",
-      updatedAt: datetime.timestamp(),
-      updatedBy: userId
-    })
-    .eq("id", quoteId);
+  const quoteUpdate = await requireAffected(
+    client
+      .from("quote")
+      .update({
+        status: "Sent",
+        updatedAt: datetime.timestamp(),
+        updatedBy: userId
+      })
+      .eq("id", quoteId)
+      .select("id")
+  );
 
   if (quoteUpdate.error) {
     return quoteUpdate;
@@ -3215,11 +3271,14 @@ export async function deleteCustomerItemPriceOverride(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("customerItemPriceOverride")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("customerItemPriceOverride")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 type CustomerItemPriceOverrideWithRelations =
@@ -3451,10 +3510,13 @@ export async function upsertCustomerStatus(
   if ("createdBy" in customerStatus) {
     return client.from("customerStatus").insert([customerStatus]).select("id");
   } else {
-    return client
-      .from("customerStatus")
-      .update(sanitize(customerStatus))
-      .eq("id", customerStatus.id);
+    return requireAffected(
+      client
+        .from("customerStatus")
+        .update(sanitize(customerStatus))
+        .eq("id", customerStatus.id)
+        .select("id")
+    );
   }
 }
 
@@ -3475,10 +3537,13 @@ export async function upsertCustomerType(
   if ("createdBy" in customerType) {
     return client.from("customerType").insert([customerType]).select("id");
   } else {
-    return client
-      .from("customerType")
-      .update(sanitize(customerType))
-      .eq("id", customerType.id);
+    return requireAffected(
+      client
+        .from("customerType")
+        .update(sanitize(customerType))
+        .eq("id", customerType.id)
+        .select("id")
+    );
   }
 }
 
@@ -3499,10 +3564,13 @@ export async function upsertNoQuoteReason(
   if ("createdBy" in noQuoteReason) {
     return client.from("noQuoteReason").insert([noQuoteReason]).select("id");
   } else {
-    return client
-      .from("noQuoteReason")
-      .update(sanitize(noQuoteReason))
-      .eq("id", noQuoteReason.id);
+    return requireAffected(
+      client
+        .from("noQuoteReason")
+        .update(sanitize(noQuoteReason))
+        .eq("id", noQuoteReason.id)
+        .select("id")
+    );
   }
 }
 
@@ -3541,7 +3609,9 @@ export async function updateQuoteExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("quote").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("quote").update(update).eq("id", update.id).select("id")
+  );
 }
 
 export async function updateQuoteLinePrecision(
@@ -3583,7 +3653,9 @@ export async function updateSalesOrderExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("salesOrder").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("salesOrder").update(update).eq("id", update.id).select("id")
+  );
 }
 
 export async function updateQuoteFavorite(
@@ -3630,7 +3702,9 @@ export async function updateSalesRFQStatus(
       : {})
   };
 
-  return client.from("salesRfq").update(updateData).eq("id", update.id);
+  return requireAffected(
+    client.from("salesRfq").update(updateData).eq("id", update.id).select("id")
+  );
 }
 
 export async function updateQuoteMaterialOrder(
@@ -3678,7 +3752,9 @@ export async function updateQuoteStatus(
     ...rest,
     ...(status === "Sent" ? { completedDate: datetime.timestamp() } : {})
   };
-  return client.from("quote").update(updateData).eq("id", update.id);
+  return requireAffected(
+    client.from("quote").update(updateData).eq("id", update.id).select("id")
+  );
 }
 
 export async function upsertMakeMethodFromQuoteLine(
@@ -4079,7 +4155,9 @@ export async function upsertQuoteLineAdditionalCharges(
     updatedBy: string;
   }
 ) {
-  return client.from("quoteLine").update(update).eq("id", lineId);
+  return requireAffected(
+    client.from("quoteLine").update(update).eq("id", lineId).select("id")
+  );
 }
 
 type QuoteLinePriceInput = {
@@ -5801,7 +5879,13 @@ export async function updateSalesOrderStatus(
       : {})
   };
 
-  return client.from("salesOrder").update(updateData).eq("id", update.id);
+  return requireAffected(
+    client
+      .from("salesOrder")
+      .update(updateData)
+      .eq("id", update.id)
+      .select("id")
+  );
 }
 
 export async function insertSalesOrder(
@@ -6598,13 +6682,16 @@ export async function upsertSalesRFQ(
       }
     }
 
-    return client
-      .from("salesRfq")
-      .update({
-        ...sanitize(rfq),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", rfq.id);
+    return requireAffected(
+      client
+        .from("salesRfq")
+        .update({
+          ...sanitize(rfq),
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", rfq.id)
+        .select("id")
+    );
   }
 }
 
@@ -6775,7 +6862,9 @@ export async function deleteReturnReason(
   client: SupabaseClient<Database>,
   returnReasonId: string
 ) {
-  return client.from("returnReason").delete().eq("id", returnReasonId);
+  return requireAffected(
+    client.from("returnReason").delete().eq("id", returnReasonId).select("id")
+  );
 }
 
 export const SALES_RETURN_ORDERS_PAGING: Paging = {
@@ -7020,14 +7109,22 @@ export async function deleteSalesReturnOrder(
   client: SupabaseClient<Database>,
   salesReturnOrderId: string
 ) {
-  return client.from("salesReturnOrder").delete().eq("id", salesReturnOrderId);
+  return requireAffected(
+    client
+      .from("salesReturnOrder")
+      .delete()
+      .eq("id", salesReturnOrderId)
+      .select("id")
+  );
 }
 
 export async function deleteSalesReturnOrderLine(
   client: SupabaseClient<Database>,
   lineId: string
 ) {
-  return client.from("salesReturnOrderLine").delete().eq("id", lineId);
+  return requireAffected(
+    client.from("salesReturnOrderLine").delete().eq("id", lineId).select("id")
+  );
 }
 
 export async function getSalesReturnOrderReceipts(
@@ -7941,15 +8038,18 @@ export async function createReplacementSalesOrder(
     }
   }
 
-  const link = await client
-    .from("salesReturnOrder")
-    .update({
-      replacementSalesOrderId: salesOrderId,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", salesReturnOrderId)
-    .eq("companyId", companyId);
+  const link = await requireAffected(
+    client
+      .from("salesReturnOrder")
+      .update({
+        replacementSalesOrderId: salesOrderId,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", salesReturnOrderId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
   if (link.error) return { data: null, error: link.error };
 
   return { data: { id: salesOrderId }, error: null };
@@ -8734,11 +8834,14 @@ export async function deleteRentalAgreementLine(
     );
   }
 
-  return client
-    .from("rentalAgreementLine")
-    .delete()
-    .eq("id", rentalAgreementLineId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("rentalAgreementLine")
+      .delete()
+      .eq("id", rentalAgreementLineId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 /**
@@ -8984,11 +9087,14 @@ export async function deleteItemRentalRate(
   itemRentalRateId: string,
   companyId: string
 ) {
-  return client
-    .from("itemRentalRate")
-    .delete()
-    .eq("id", itemRentalRateId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("itemRentalRate")
+      .delete()
+      .eq("id", itemRentalRateId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function getCustomerItemRentalRates(
@@ -9064,11 +9170,14 @@ export async function deleteCustomerItemRentalRate(
   customerItemRentalRateId: string,
   companyId: string
 ) {
-  return client
-    .from("customerItemRentalRate")
-    .delete()
-    .eq("id", customerItemRentalRateId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("customerItemRentalRate")
+      .delete()
+      .eq("id", customerItemRentalRateId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 /** The live rental line a fleet unit is on rent under, if any — a unit on

@@ -42,6 +42,7 @@ export const setClientCompanyId = (
     cache?.clear();
   } else if (clientCompanyId && companyId !== clientCompanyId) {
     cache?.removeQueries({ queryKey: [LOADER_QUERY_KEY, clientCompanyId] });
+    cache?.removeQueries({ queryKey: [SELF_REFRESHED, clientCompanyId] });
   }
   clientCompanyId = companyId;
   clientUserId = userId;
@@ -60,6 +61,13 @@ export const getClientCache = (): QueryClient | undefined => {
 
 /** First segment of every cached loader entry; the root middleware invalidates by it. */
 export const LOADER = LOADER_QUERY_KEY;
+
+/**
+ * First segment of a read made with `invalidate: false`: data no save or
+ * realtime change touches (the deployment's status), so nothing marks it stale
+ * and it refreshes on its own `refetchInterval`.
+ */
+export const SELF_REFRESHED = "self-refreshed";
 
 // URL keys make one entry per distinct search string, so they cannot live forever.
 const LOADER_GC_TIME = 1000 * 60 * 30;
@@ -147,9 +155,12 @@ const fetchJson = async <T>(url: string): Promise<T> => {
  */
 export const loaderQuery = <T>(
   url: string,
-  options?: { staleTime?: number }
+  options?: { staleTime?: number; invalidate?: boolean }
 ) => ({
-  queryKey: loaderQueryKey(url),
+  queryKey:
+    options?.invalidate === false
+      ? [SELF_REFRESHED, ...loaderQueryKey(url).slice(1)]
+      : loaderQueryKey(url),
   queryFn: () => fetchJson<T>(url),
   staleTime: options?.staleTime ?? RefreshRate.Low,
   gcTime: LOADER_GC_TIME

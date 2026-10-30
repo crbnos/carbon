@@ -26,10 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
   )
     return data(
       { data: null },
-      await flash(
-        request,
-        error(request, "Bad request for rolling back sequence")
-      )
+      await flash(request, error(null, "Bad request for rolling back sequence"))
     );
 
   const verifyCurrent = await getCurrentSequence(client, table, companyId);

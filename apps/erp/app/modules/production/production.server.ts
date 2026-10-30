@@ -17,6 +17,7 @@ import {
   datetime,
   getErrorMessage,
   groupBy,
+  requireAffected,
   scrapAllowance,
   unchecked
 } from "@carbon/utils";
@@ -381,11 +382,14 @@ export const releaseCheckedJobs = defineServiceFn({
 
       // The date feeds the completion-time KPI and nothing else writes it, so a
       // silent failure would be permanent.
-      const stamped = await ctx.asCaller.supabase
-        .from("job")
-        .update({ releasedDate: datetime.timestamp() })
-        .eq("id", id)
-        .eq("companyId", companyId);
+      const stamped = await requireAffected(
+        ctx.asCaller.supabase
+          .from("job")
+          .update({ releasedDate: datetime.timestamp() })
+          .eq("id", id)
+          .eq("companyId", companyId)
+          .select("id")
+      );
       if (stamped.error) {
         logger.error("Failed to stamp the release date", {
           companyId,
@@ -2070,15 +2074,18 @@ export const configureJob = defineServiceFn({
     const unlocked = await service.requireJob(ctx, jobId);
     if (unlocked instanceof CarbonError) return unlocked;
     const [result, job] = await Promise.all([
-      client
-        .from("job")
-        .update({
-          configuration: configuration as Json,
-          updatedAt: datetime.timestamp(),
-          updatedBy: userId
-        })
-        .eq("id", jobId)
-        .eq("companyId", companyId),
+      requireAffected(
+        client
+          .from("job")
+          .update({
+            configuration: configuration as Json,
+            updatedAt: datetime.timestamp(),
+            updatedBy: userId
+          })
+          .eq("id", jobId)
+          .eq("companyId", companyId)
+          .select("id")
+      ),
       client
         .from("job")
         .select("itemId")
@@ -2570,12 +2577,15 @@ export const deleteJobMaterial = defineServiceFn({
   async run(ctx, { jobId, id }) {
     const job = await service.requireJob(ctx, jobId);
     if (job instanceof CarbonError) return job;
-    const deleted = await ctx.asCaller.supabase
-      .from("jobMaterial")
-      .delete()
-      .eq("id", id)
-      .eq("jobId", jobId)
-      .eq("companyId", ctx.company.id);
+    const deleted = await requireAffected(
+      ctx.asCaller.supabase
+        .from("jobMaterial")
+        .delete()
+        .eq("id", id)
+        .eq("jobId", jobId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (deleted.error) {
       return ctx.error(
         "internal",
@@ -2796,12 +2806,15 @@ export const deleteJobOperation = defineServiceFn({
       );
     }
 
-    const deleted = await client
-      .from("jobOperation")
-      .delete()
-      .eq("id", id)
-      .eq("jobId", jobId)
-      .eq("companyId", ctx.company.id);
+    const deleted = await requireAffected(
+      client
+        .from("jobOperation")
+        .delete()
+        .eq("id", id)
+        .eq("jobId", jobId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (deleted.error) {
       return ctx.error("internal", deleted.error.message, deleted.error);
     }
@@ -3060,15 +3073,18 @@ export const completeOperation = defineServiceFn({
     );
     if (accounted < target) return { operationId, done: false, warning: null };
 
-    const finished = await ctx.asCaller.supabase
-      .from("jobOperation")
-      .update({
-        status: "Done",
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", operationId)
-      .eq("companyId", companyId);
+    const finished = await requireAffected(
+      ctx.asCaller.supabase
+        .from("jobOperation")
+        .update({
+          status: "Done",
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", operationId)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (finished.error) {
       return ctx.error(
         "internal",

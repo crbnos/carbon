@@ -35,6 +35,9 @@ msgstr ", {years}год"
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "\"{0}\" недоступно на выбранной поверхности (поверхностях). Выберите другое поле."
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "\"{storageUnitName}\" содержит {childCount} прямо вложенных единиц хранения. При удалении также будут удалены они и всё находящееся под ними. Это невозможно отменить."
 
@@ -561,6 +564,12 @@ msgstr "{behindDays, plural, one {Отставание от плана на # д
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
+
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines} из {lines} строк завершено"
@@ -1532,11 +1541,23 @@ msgstr "Статус квитанции меняется"
 msgid "A receipt's supplier changes"
 msgstr "Поставщик квитанции меняется"
 
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Договор аренды должен быть в базовой валюте организации для активации. Сначала измените валюту договора."
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Аренда, которая удовлетворяет любому из пяти тестов аренды ASC 842, учтена как продажа при активации её договора: единица покидает парк, выручка от аренды и себестоимость продаж проводятся, и чистые инвестиции в аренду занимают её место."
+
+msgid "A required field was missing."
+msgstr ""
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "Разрешение на возврат товара (RMA) разрешает покупателю возвращать товар в целях получения кредита, замены или ремонта."
@@ -1750,6 +1771,9 @@ msgstr "Единица рассматривается как продажа, е�
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Пользователь записывает срок годности для каждой серии при получении товара. Используется, когда поставщики отправляют партии с разными датами окончания срока годности."
+
+msgid "A value is not valid."
+msgstr ""
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Переменная плата — превышение пробега, повреждение, доставка, уборка — выставляется счетом по следующей счет-фактуре договора."
@@ -3745,6 +3769,12 @@ msgstr "Вы уверены, что хотите убрать {lineName} из э
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Вы уверены, что хотите убрать {supplierName} в качестве поставщика для этой номенклатуры? Это невозможно отменить."
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Вы уверены, что хотите удалить этого сотрудника из {name}? История обучения сохраняется и сотрудник может быть добавлен позже."
 
@@ -4388,6 +4418,9 @@ msgstr "Оптимальное завершение"
 
 msgid "Beta"
 msgstr "Бета"
+
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
 
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Основные причины брака по типу, номенклатуре или рабочему центру"
@@ -5531,6 +5564,9 @@ msgstr "Объединить фильтры"
 
 msgid "Combine output into one lot"
 msgstr "Объединить выход в одну партию"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "Скоро"
@@ -8137,6 +8173,9 @@ msgstr "Демо-данные применены"
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "Демоданные применены к этой организации. Сохраните их или отмените, чтобы восстановить то, что было раньше."
 
+msgid "Density"
+msgstr ""
+
 msgid "department"
 msgstr "отдел"
 
@@ -10265,9 +10304,8 @@ msgstr "Ошибка при создании типа средства изме�
 msgid "Failed to create item group: {0}"
 msgstr "Не удалось создать группу товаров: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create location: {0}"
-msgstr "Не удалось создать местоположение: {0}"
+msgid "Failed to create location"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create material dimension: {0}"
@@ -10301,17 +10339,15 @@ msgstr "Ошибка при создании материала: {0}"
 msgid "Failed to create no quote reason: {0}"
 msgstr "Ошибка при создании причины отказа от предложения: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create part: {0}"
-msgstr "Не удалось создать деталь: {0}"
+msgid "Failed to create part"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create payment term: {0}"
 msgstr "Ошибка при создании условий оплаты: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create process: {0}"
-msgstr "Ошибка при создании процесса: {0}"
+msgid "Failed to create process"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
@@ -10337,9 +10373,8 @@ msgstr "Не удалось создать инструмент: {0}"
 msgid "Failed to create webhook: {0}"
 msgstr "Ошибка при создании вебхука: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create work center: {0}"
-msgstr "Ошибка при создании рабочего центра: {0}"
+msgid "Failed to create work center"
+msgstr ""
 
 msgid "Failed to delete file from old location"
 msgstr "Не удалось удалить файл из старого местоположения"
@@ -12656,6 +12691,9 @@ msgstr ""
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "Скоро она станет доступна. Свяжитесь с Carbon, чтобы её настроили для вашей компании."
 
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
+
 msgid "It was removed after this page loaded. Reload the page and try again."
 msgstr "Его удалили после загрузки этой страницы. Перезагрузите страницу и попробуйте снова."
 
@@ -13029,6 +13067,12 @@ msgstr "Единица труда"
 
 msgid "Language"
 msgstr "Язык"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "Последние 6 месяцев"
@@ -15592,6 +15636,9 @@ msgstr "Нет подходящих ячеек"
 
 msgid "No matching operations"
 msgstr "Нет совпадающих операций"
+
+msgid "No matching record was found."
+msgstr ""
 
 msgid "No matching time"
 msgstr "Нет подходящего времени"
@@ -19526,6 +19573,7 @@ msgstr "Операция переоценки (дата вступления в 
 msgid "Remove"
 msgstr "Убрать"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Убрать {0}"
@@ -22222,6 +22270,9 @@ msgstr "Вместо этого выйти"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Подтверждение рассмотрения перед переходом к следующему шагу"
 
@@ -22333,6 +22384,12 @@ msgstr "Слайд {0}"
 
 msgid "Slides"
 msgstr "Слайды"
+
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Минимальный размер партии для комплектования. Оставьте пусто без значения."
@@ -24842,6 +24899,12 @@ msgstr "Пользователи в этой группе; права досту
 msgid "The value of the cost layers dated before the cutover."
 msgstr "Стоимость слоев себестоимости, датированных до переходной даты."
 
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
+
 msgid "The version of the new document"
 msgstr "Версия нового документа"
 
@@ -24907,6 +24970,9 @@ msgstr "Нет активных предложений поставщиков д
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "В этой работе есть внешние операции, которым не назначены поставщики. Пожалуйста, назначьте поставщика для каждой внешней операции перед выпуском."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "На этих операциях нет наладки, труда или машинного времени, поэтому нет ничего, на основе чего можно определить размер запуска. Полоса — это номинальный маркер и не определяет производительность — добавьте стандарты времени к операциям для планирования."
@@ -25450,6 +25516,9 @@ msgstr "плотно"
 
 msgid "Tightened"
 msgstr "Усиленный"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "Время"
@@ -27926,11 +27995,17 @@ msgid "You completed {leftoverQuantity} more \n"
 "                        to do with the extra parts?"
 msgstr "Вы завершили {leftoverQuantity} больше {0}, чем заказанное количество {1}. Что вы хотите сделать с дополнительными деталями?"
 
+msgid "You do not have permission to do this"
+msgstr ""
+
 msgid "You do not have permission to do this on every matching row."
 msgstr ""
 
 msgid "You do not have permission to edit workflows"
 msgstr "У вас нет права доступа для изменения рабочих процессов"
+
+msgid "You don't have permission to change this record, or it no longer exists."
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "У вас нет права доступа для изменения этой спецификации материалов."

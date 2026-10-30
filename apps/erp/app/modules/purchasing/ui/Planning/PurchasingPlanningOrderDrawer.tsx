@@ -25,6 +25,7 @@ import {
   Thead,
   Tr,
   toast,
+  toastError,
   useDisclosure
 } from "@carbon/react";
 import {
@@ -387,8 +388,9 @@ export const PurchasingPlanningOrderDrawer = memo(
             void revalidate();
             return true;
           }
-          toast.error(
-            result?.message ?? t`Failed to update purchase order line`
+          toastError(
+            result?.message ?? t`Failed to update purchase order line`,
+            result
           );
           return false;
         } catch {
@@ -553,7 +555,7 @@ export const PurchasingPlanningOrderDrawer = memo(
       }
 
       if (fetcher.data?.success === false && fetcher?.data?.message) {
-        toast.error(fetcher.data.message);
+        toastError(fetcher.data.message, fetcher.data);
       }
 
       if (fetcher.data?.success === true) {

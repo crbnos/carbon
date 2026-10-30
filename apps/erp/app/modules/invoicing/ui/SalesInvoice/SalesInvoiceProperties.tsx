@@ -4,7 +4,7 @@
 
 import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Button,
   Copy,
@@ -14,7 +14,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -56,9 +55,7 @@ const SalesInvoiceProperties = () => {
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   const { company } = useUser();

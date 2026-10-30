@@ -67,10 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!materialSubstanceId) {
     return data(
       {},
-      await flash(
-        request,
-        error(insertMaterialSubstance, "Failed to insert material substance")
-      )
+      await flash(request, error(null, "Failed to insert material substance"))
     );
   }
 

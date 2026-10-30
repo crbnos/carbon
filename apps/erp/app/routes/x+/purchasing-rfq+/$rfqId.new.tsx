@@ -71,7 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) {
     throw redirect(
       path.to.purchasingRfqDetails(rfqId),
-      await flash(request, error(insertLine, "Failed to insert RFQ line"))
+      await flash(request, error(null, "Failed to insert RFQ line"))
     );
   }
 

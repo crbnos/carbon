@@ -147,12 +147,12 @@ export function RecordHero({
       )}
     >
       {title ? (
-        <h1 className="min-w-0 truncate text-[22px] font-semibold leading-tight text-foreground">
+        <h1 className="min-w-0 truncate text-[1.375rem] font-semibold leading-tight text-foreground">
           {title}
         </h1>
       ) : null}
       {subtitle ? (
-        <p className="min-w-0 truncate text-[13px] text-muted-foreground">
+        <p className="min-w-0 truncate text-[0.8125rem] text-muted-foreground">
           {subtitle}
         </p>
       ) : null}

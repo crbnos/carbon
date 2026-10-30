@@ -19,7 +19,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   if (!categoryId) {
     throw redirect(
       path.to.attributes,
-      await flash(request, error(params, "Failed to get a category id"))
+      await flash(request, error(null, "Failed to get a category id"))
     );
   }
 

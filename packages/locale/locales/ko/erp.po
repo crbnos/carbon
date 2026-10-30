@@ -35,6 +35,9 @@ msgstr ", {years}년"
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "\"{0}\"는(은) 선택한 표면에서 가용하지 않습니다. 다른 필드를 선택하세요."
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "\"{storageUnitName}\"에는 {childCount}개의 직접 중첩 보관 단위가 있습니다. 이를 삭제하면 해당 단위 및 그 아래의 모든 항목도 삭제됩니다. 이 작업은 실행 취소할 수 없습니다."
 
@@ -561,6 +564,12 @@ msgstr "{behindDays, plural, one {목표보다 # 일 뒤짐} other {목표보다
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
+
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines}/{lines} 라인 완료"
@@ -1532,11 +1541,23 @@ msgstr "입고의 상태가 변경되었습니다"
 msgid "A receipt's supplier changes"
 msgstr "입고의 공급업체가 변경됩니다."
 
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "임차 계약을 활성화하려면 회사의 기본 통화여야 합니다. 먼저 계약 통화를 변경하세요."
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "5개의 ASC 842 리스 테스트 중 하나라도 충족하는 임차로, 계약이 발효될 때 판매로 기록됩니다. 장비가 함대를 떠나고, 임차 매출과 매출원가가 전기되며, 리스에 대한 순투자가 그 자리를 차지합니다."
+
+msgid "A required field was missing."
+msgstr ""
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "반품 수권(RMA)은 고객이 교환, 교체 또는 수리를 위해 상품을 반품할 수 있도록 허가합니다."
@@ -1750,6 +1771,9 @@ msgstr "개가 다음 중 하나라도 참인 경우 판매로 취급되고, 그
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "사용자는 상품을 수령할 때 각 배치 또는 시리얼의 유통기한을 기록합니다. 공급업체가 다른 유통기한을 가진 로트로 배송할 때 사용합니다."
+
+msgid "A value is not valid."
+msgstr ""
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "변동 요금(마일리지 초과, 손상, 배송, 청소)은 계약의 다음 송장에 청구됩니다."
@@ -3745,6 +3769,12 @@ msgstr "{lineName}을 이 계약에서 제거하시겠습니까?"
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "정말로 이 항목의 공급업체로 {supplierName}을(를) 제거하시겠습니까? 이 작업은 취소할 수 없습니다."
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "{name}에서 이 직원을 제거하시겠습니까? 교육 이력은 유지되며 직원을 나중에 다시 추가할 수 있습니다."
 
@@ -4388,6 +4418,9 @@ msgstr "최단 완료"
 
 msgid "Beta"
 msgstr "베타"
+
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
 
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "이유, 품목 또는 작업장별 스크랩의 가장 큰 원인"
@@ -5531,6 +5564,9 @@ msgstr "필터 결합"
 
 msgid "Combine output into one lot"
 msgstr "산출물을 한 로트로 병합"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "출시 예정"
@@ -8137,6 +8173,9 @@ msgstr "데모 데이터 적용됨"
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "데모 데이터가 이 회사에 적용되었습니다. 유지하거나 이전 상태로 복원할 수 있습니다."
 
+msgid "Density"
+msgstr ""
+
 msgid "department"
 msgstr "부서"
 
@@ -10265,9 +10304,8 @@ msgstr "계측기 유형 생성 실패: {0}"
 msgid "Failed to create item group: {0}"
 msgstr "품목 그룹 생성 실패: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create location: {0}"
-msgstr "위치 생성 실패: {0}"
+msgid "Failed to create location"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create material dimension: {0}"
@@ -10301,17 +10339,15 @@ msgstr "자재 생성 실패: {0}"
 msgid "Failed to create no quote reason: {0}"
 msgstr "견적 거절 사유 생성 실패: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create part: {0}"
-msgstr "품목 생성 실패: {0}"
+msgid "Failed to create part"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create payment term: {0}"
 msgstr "지불 조건 생성 실패: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create process: {0}"
-msgstr "공정 생성 실패: {0}"
+msgid "Failed to create process"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
@@ -10337,9 +10373,8 @@ msgstr "공구 생성 실패: {0}"
 msgid "Failed to create webhook: {0}"
 msgstr "웹훅 생성 실패: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create work center: {0}"
-msgstr "작업장 생성 실패: {0}"
+msgid "Failed to create work center"
+msgstr ""
 
 msgid "Failed to delete file from old location"
 msgstr "이전 위치에서 파일 삭제 실패"
@@ -12656,6 +12691,9 @@ msgstr ""
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "곧 제공될 예정입니다. 회사에 설정하려면 Carbon에 문의하세요."
 
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
+
 msgid "It was removed after this page loaded. Reload the page and try again."
 msgstr "이 페이지를 불러온 후 삭제되었습니다. 페이지를 새로고침하고 다시 시도하세요."
 
@@ -13029,6 +13067,12 @@ msgstr "노무 단위"
 
 msgid "Language"
 msgstr "언어"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "지난 6개월"
@@ -15592,6 +15636,9 @@ msgstr "일치하는 빈이 없습니다"
 
 msgid "No matching operations"
 msgstr "일치하는 공정이 없습니다"
+
+msgid "No matching record was found."
+msgstr ""
 
 msgid "No matching time"
 msgstr "일치하는 시간 없음"
@@ -19526,6 +19573,7 @@ msgstr "재측정 전표 (유효 날짜 및 분류는 확인 시 검증됩니다
 msgid "Remove"
 msgstr "제거"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "{0} 제거"
@@ -22222,6 +22270,9 @@ msgstr "대신 로그아웃"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "다음 단계로 넘어가기 전 서명 검토"
 
@@ -22333,6 +22384,12 @@ msgstr "슬라이드 {0}"
 
 msgid "Slides"
 msgstr "슬라이드"
+
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "배치할 가치가 있는 가장 작은 실행. 없으면 비워두세요."
@@ -24842,6 +24899,12 @@ msgstr "이 그룹에 속한 사용자입니다. 그룹 범위의 권한과 알�
 msgid "The value of the cost layers dated before the cutover."
 msgstr "전환 기준일 이전의 원가 계층 가치"
 
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
+
 msgid "The version of the new document"
 msgstr "새 문서의 버전"
 
@@ -24907,6 +24970,9 @@ msgstr "이 RFQ와 비교할 활성 공급업체 견적이 없습니다."
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "이 작업 지시와 관련된 외주 공정이 있지만 공급업체가 없습니다. 릴리스하기 전에 각 외주 공정에 공급업체를 할당하십시오."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "이 공정에는 셋업, 노무 또는 기계 시간이 없어서 실행 크기를 정할 근거가 없습니다. 막대는 명목상의 표시일 뿐이며 용량을 보유하지 않습니다 — 공정에 시간 기준을 추가하여 일정을 짜세요."
@@ -25450,6 +25516,9 @@ msgstr "빠듯함"
 
 msgid "Tightened"
 msgstr "까다로운 검사"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "시간"
@@ -27926,11 +27995,17 @@ msgid "You completed {leftoverQuantity} more \n"
 "                        to do with the extra parts?"
 msgstr "발주 수량 {1}보다 {0} {leftoverQuantity}개를 더 완료했습니다. 초과 부품을 어떻게 하시겠습니까?"
 
+msgid "You do not have permission to do this"
+msgstr ""
+
 msgid "You do not have permission to do this on every matching row."
 msgstr ""
 
 msgid "You do not have permission to edit workflows"
 msgstr "워크플로우를 편집할 권한이 없습니다."
+
+msgid "You don't have permission to change this record, or it no longer exists."
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "이 자재 명세서를 편집할 권한이 없습니다."

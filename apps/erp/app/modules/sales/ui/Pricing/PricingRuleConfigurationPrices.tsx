@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { NumberField, NumberInput, Subheading, toast } from "@carbon/react";
+import {
+  NumberField,
+  NumberInput,
+  Subheading,
+  toastError
+} from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
@@ -99,7 +104,7 @@ const PricingRuleConfigurationPrices = ({
 
       if (cancelled) return;
       if (result.error) {
-        toast.error(t`Failed to load configuration parameters`);
+        toastError(t`Failed to load configuration parameters`, result.error);
         setParameters([]);
         return;
       }

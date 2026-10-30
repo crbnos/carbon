@@ -149,17 +149,17 @@ function WeekCard({
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {item.workCenterId && (
-            <span className="inline-flex items-center rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[11px] font-medium text-blue-700 dark:text-blue-400 tabular-nums">
+            <span className="inline-flex items-center rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[0.6875rem] font-medium text-blue-700 dark:text-blue-400 tabular-nums">
               <Trans>{item.days}d</Trans>
             </span>
           )}
           {item.daysOff > 0 && (
-            <span className="inline-flex items-center rounded-md bg-red-500/15 px-1.5 py-0.5 text-[11px] font-medium text-red-700 dark:text-red-400 tabular-nums">
+            <span className="inline-flex items-center rounded-md bg-red-500/15 px-1.5 py-0.5 text-[0.6875rem] font-medium text-red-700 dark:text-red-400 tabular-nums">
               <Trans>{item.daysOff}d off</Trans>
             </span>
           )}
           {item.daysElsewhere > 0 && (
-            <span className="inline-flex items-center rounded-md border border-dashed border-border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
+            <span className="inline-flex items-center rounded-md border border-dashed border-border px-1.5 py-0.5 text-[0.6875rem] font-medium text-muted-foreground tabular-nums">
               <Trans>{item.daysElsewhere}d elsewhere</Trans>
             </span>
           )}
@@ -189,7 +189,7 @@ function WeekCard({
           {item.abilities.map((ability) => (
             <span
               key={ability}
-              className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+              className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[0.6875rem] font-medium text-muted-foreground"
             >
               {ability}
             </span>

@@ -29,7 +29,7 @@ import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
 import { RouteRealtime, useLoaderQuery } from "@carbon/query";
-import { setClientCompanyId } from "@carbon/query/cache";
+import { RefreshRate, setClientCompanyId } from "@carbon/query/cache";
 import {
   AnnouncementBar,
   Button,
@@ -405,8 +405,10 @@ export default function AuthenticatedRoute() {
     onUnrecognized: () => toast.error(t`Nothing on this page uses that barcode`)
   });
   const scanPending = useScanPending();
+  // Not data a save or a realtime change touches, so it refreshes on its own.
   const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
-    path.to.api.systemStatus
+    path.to.api.systemStatus,
+    { invalidate: false, refetchInterval: RefreshRate.Low }
   );
   const { locale } = useLocale();
   const moveDate = systemStatus.data?.accountMoveDate;

@@ -330,7 +330,7 @@ const GeneratedAvatarPicker = ({
                     aria-checked={isSelected}
                     onClick={() => changeStyle(option)}
                     className={cn(
-                      "flex min-w-0 flex-col items-center gap-1.5 rounded-lg px-1 pt-2 pb-1.5 text-[11px] leading-tight transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      "flex min-w-0 flex-col items-center gap-1.5 rounded-lg px-1 pt-2 pb-1.5 text-[0.6875rem] leading-tight transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       isSelected
                         ? "bg-muted text-foreground shadow-[inset_0_0_0_1px_var(--color-border)]"
                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"

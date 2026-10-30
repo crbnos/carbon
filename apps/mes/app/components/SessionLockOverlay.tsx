@@ -18,7 +18,7 @@ import {
   Card,
   CardContent,
   Heading,
-  toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -119,7 +119,7 @@ export default function SessionLockOverlay({
       });
     } catch (e: any) {
       if (e?.name !== "NotAllowedError" && e?.name !== "AbortError") {
-        toast.error(t`Passkey unlock failed`);
+        toastError(t`Passkey unlock failed`, e);
       }
     } finally {
       setPasskeyLoading(false);

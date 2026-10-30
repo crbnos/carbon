@@ -43,17 +43,10 @@ export async function action({ request }: ActionFunctionArgs) {
   let contentJSON;
   try {
     contentJSON = content ? JSON.parse(content) : {};
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   } catch (e) {
     return data(
       {},
-      await flash(
-        request,
-        error(
-          "Invalid quality document content format",
-          "Failed to parse quality document content"
-        )
-      )
+      await flash(request, error(e, "Failed to parse quality document content"))
     );
   }
 

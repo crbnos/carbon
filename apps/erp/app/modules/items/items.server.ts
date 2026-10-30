@@ -24,7 +24,8 @@ import {
   chunkArray,
   datetime,
   isUniqueViolation,
-  pluckUnique
+  pluckUnique,
+  requireAffected
 } from "@carbon/utils";
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
@@ -1195,11 +1196,14 @@ export const deleteMethodOperation = defineServiceFn({
     });
     if (!lock.ok) return ctx.error("rule", lock.message);
 
-    const deleted = await client
-      .from("methodOperation")
-      .delete()
-      .eq("id", id)
-      .eq("companyId", companyId);
+    const deleted = await requireAffected(
+      client
+        .from("methodOperation")
+        .delete()
+        .eq("id", id)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (deleted.error) {
       return ctx.error("internal", deleted.error.message, deleted.error);
     }

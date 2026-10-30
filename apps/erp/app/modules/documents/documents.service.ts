@@ -12,7 +12,7 @@ import {
 } from "@carbon/files";
 import { isHeic } from "@carbon/files/media";
 import { trigger } from "@carbon/jobs";
-import { datetime, searchFilter } from "@carbon/utils";
+import { datetime, requireAffected, searchFilter } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
@@ -33,7 +33,9 @@ export async function deleteDocument(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("document").delete().eq("id", id);
+  return requireAffected(
+    client.from("document").delete().eq("id", id).select("id")
+  );
 }
 
 export async function getDocument(
@@ -111,14 +113,17 @@ export async function moveDocumentToTrash(
   id: string,
   userId: string
 ) {
-  return client
-    .from("document")
-    .update({
-      active: false,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", id);
+  return requireAffected(
+    client
+      .from("document")
+      .update({
+        active: false,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .select("id")
+  );
 }
 
 export async function restoreDocument(
@@ -126,14 +131,17 @@ export async function restoreDocument(
   id: string,
   userId: string
 ) {
-  return client
-    .from("document")
-    .update({
-      active: true,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", id);
+  return requireAffected(
+    client
+      .from("document")
+      .update({
+        active: true,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .select("id")
+  );
 }
 
 type SourceDocumentData = {
@@ -169,16 +177,19 @@ export async function upsertDocument(
 
   // Labels live in documentLabel, not on the document row.
   const { extension: _extension, labels: _labels, ...data } = document;
-  return client
-    .from("document")
-    .update(
-      sanitize({
-        ...data,
-        type,
-        updatedAt: datetime.timestamp()
-      })
-    )
-    .eq("id", document.id);
+  return requireAffected(
+    client
+      .from("document")
+      .update(
+        sanitize({
+          ...data,
+          type,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .eq("id", document.id)
+      .select("id")
+  );
 }
 
 /**

@@ -2,13 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { toast } from "@carbon/react";
+import { toastServiceError } from "@carbon/query";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
 import { useFetcher } from "react-router";
 import { SetupSteps } from "~/components/Setup";
 import { path } from "~/utils/path";
-
 export const rentalAgreementSetupSteps = [
   "details",
   "units",
@@ -72,7 +71,7 @@ export type RentalTerm =
 export function useRentalTermSave(rentalAgreementId: string) {
   const fetcher = useFetcher<{ error: { message: string } | null }>();
   useEffect(() => {
-    if (fetcher.data?.error) toast.error(fetcher.data.error.message);
+    if (fetcher.data?.error) toastServiceError(fetcher.data);
   }, [fetcher.data]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable

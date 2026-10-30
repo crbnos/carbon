@@ -280,7 +280,7 @@ export default function SalesRuleAssignmentsList({
                   {isBroadcast && (
                     <Badge
                       variant="outline"
-                      className="text-[10px] uppercase tracking-wide"
+                      className="text-[0.625rem] uppercase tracking-wide"
                     >
                       {a.inheritedFromName ?? <Trans>All items</Trans>}
                     </Badge>

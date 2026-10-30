@@ -21,11 +21,16 @@ import {
   ModalTitle,
   Spinner,
   toast,
+  toastError,
   useDisclosure,
   useMode,
   useViewport
 } from "@carbon/react";
-import { getFileSizeLimit, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import {
+  getFileSizeLimit,
+  MODEL_RAW_KEEP_MAX_BYTES,
+  requireAffected
+} from "@carbon/utils";
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { modelPreviewUrls } from "@carbon/viewer/model-upload-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
@@ -155,36 +160,51 @@ const CadModel = ({
 
     let result;
     if (metadata?.itemId) {
-      result = await carbon
-        .from("item")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.itemId);
+      result = await requireAffected(
+        carbon
+          .from("item")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.itemId)
+          .select("id")
+      );
     } else if (metadata?.salesRfqLineId) {
-      result = await carbon
-        .from("salesRfqLine")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.salesRfqLineId);
+      result = await requireAffected(
+        carbon
+          .from("salesRfqLine")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.salesRfqLineId)
+          .select("id")
+      );
     } else if (metadata?.quoteLineId) {
-      result = await carbon
-        .from("quoteLine")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.quoteLineId);
+      result = await requireAffected(
+        carbon
+          .from("quoteLine")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.quoteLineId)
+          .select("id")
+      );
     } else if (metadata?.salesOrderLineId) {
-      result = await carbon
-        .from("salesOrderLine")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.salesOrderLineId);
+      result = await requireAffected(
+        carbon
+          .from("salesOrderLine")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.salesOrderLineId)
+          .select("id")
+      );
     } else if (metadata?.jobId) {
-      result = await carbon
-        .from("job")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.jobId);
+      result = await requireAffected(
+        carbon
+          .from("job")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.jobId)
+          .select("id")
+      );
     }
 
     setIsDeleting(false);
 
     if (result?.error) {
-      toast.error("Failed to delete model");
+      toastError("Failed to delete model", result.error);
       return;
     }
 

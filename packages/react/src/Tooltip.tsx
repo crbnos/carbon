@@ -246,7 +246,7 @@ const TooltipContent = forwardRef<HTMLDivElement, ContentProps>(
               "origin-[var(--transform-origin)] transition-[transform,opacity] duration-150",
               "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
               "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
-              "max-md:max-w-[calc(100vw-32px)] max-md:text-[15px]",
+              "max-md:max-w-[calc(100vw-32px)] max-md:text-[0.9375rem]",
               className
             )}
             {...props}

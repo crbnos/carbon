@@ -65,8 +65,8 @@ const grant = (...modules: string[]): Permissions =>
     ])
   );
 
-// Every read answers `rows[table]` (none by default) and every write resolves;
-// the acknowledgment rows are kept.
+// Every read answers `rows[table]` (none by default) and every update changes
+// one row; the acknowledgment rows are kept.
 function serviceRole(rows: Record<string, unknown> = {}) {
   const from = (table: string) => {
     const chain: Record<string, any> = {};
@@ -77,11 +77,15 @@ function serviceRole(rows: Record<string, unknown> = {}) {
       "in",
       "limit",
       "order",
-      "not",
-      "update"
+      "not"
     ]) {
       chain[method] = () => chain;
     }
+    let updated = false;
+    chain.update = () => {
+      updated = true;
+      return chain;
+    };
     chain.insert = (rows: { outcome: string }[]) => {
       if (table === "enforcementRuleAcknowledgment") {
         recorded.push({ outcome: rows[0]!.outcome, violations: rows });
@@ -90,7 +94,10 @@ function serviceRole(rows: Record<string, unknown> = {}) {
     };
     chain.single = chain.maybeSingle = () => chain;
     chain.then = (resolve: (value: unknown) => unknown) =>
-      Promise.resolve({ data: rows[table] ?? [], error: null }).then(resolve);
+      Promise.resolve({
+        data: updated ? [{ id: "updated" }] : (rows[table] ?? []),
+        error: null
+      }).then(resolve);
     return chain;
   };
   return { from } as any;

@@ -33,7 +33,8 @@ import {
   Th,
   Thead,
   Tr,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
 import { useDndContext, useDraggable } from "@dnd-kit/core";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -343,7 +344,7 @@ export const useOpportunityDocuments = ({
         .remove([getPath(attachment)]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 
@@ -359,7 +360,7 @@ export const useOpportunityDocuments = ({
       try {
         await downloadUrl(url, attachment.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Error", { error: error });
       }
     },

@@ -46,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!costCenterId) {
     throw redirect(
       path.to.costCenters,
-      await flash(request, error(params, "Failed to get cost center id"))
+      await flash(request, error(null, "Failed to get cost center id"))
     );
   }
 

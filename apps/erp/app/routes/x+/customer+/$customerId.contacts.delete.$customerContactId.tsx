@@ -19,7 +19,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!customerId || !customerContactId) {
     throw redirect(
       path.to.customers,
-      await flash(request, error(params, "Failed to get a customer contact id"))
+      await flash(request, error(null, "Failed to get a customer contact id"))
     );
   }
 

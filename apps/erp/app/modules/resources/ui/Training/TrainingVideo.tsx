@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useAction } from "@carbon/query";
-import { Button, HStack, Input, toast } from "@carbon/react";
+import { toastServiceError, useAction } from "@carbon/query";
+import { Button, HStack, Input } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FormEvent } from "react";
 import { useState } from "react";
@@ -54,7 +54,7 @@ const TrainingVideo = ({
       setLink("");
     },
     onError: (data) => {
-      if (data?.error) toast.error(data.error.message);
+      toastServiceError(data);
     }
   });
   const isBusy = fetcher.state !== "idle";

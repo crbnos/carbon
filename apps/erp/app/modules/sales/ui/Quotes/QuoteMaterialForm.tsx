@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
   Copy,
-  toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
@@ -127,7 +127,7 @@ const QuoteMaterialForm = ({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 

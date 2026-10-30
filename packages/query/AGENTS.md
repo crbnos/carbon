@@ -35,9 +35,10 @@ pnpm --filter @carbon/query test
 | Export | Use |
 |---|---|
 | `cachedClientLoader`, `loaderQueryKey`, `LOADER`, `RefreshRate` | Cache an `api+` loader; build the same key for a component read |
-| `useLoaderQuery(url)` | Read an `api+` URL in a component: one shared request per URL, refetched when invalidated. Replaces `useFetcher` + `fetcher.load` in a mount effect |
+| `useLoaderQuery(url)` | Read an `api+` URL in a component: one shared request per URL, refetched when invalidated. Replaces `useFetcher` + `fetcher.load` in a mount effect. `{ invalidate: false, refetchInterval }` keys it under `SELF_REFRESHED` instead, for data no save or realtime change touches (the shells' system status): every invalidation refetches a mounted read at once, which cost thousands of requests a day |
 | `cachedApiQuery(url)` | The same read from an event handler or an effect |
-| `useAction({ onSuccess, onError, onSettled })` | A mutation fetcher with callbacks. `onSettled` runs whenever a submission finishes, also when the action redirects and returns no data; `onSuccess` / `onError` need data |
+| `useAction({ onSuccess, onError, onSettled })` | A mutation fetcher with callbacks. `onSettled` runs whenever a submission finishes, also when the action redirects and returns no data; `onSuccess` / `onError` need data. Without `onError`, a service function's error goes to `toastServiceError` |
+| `toastServiceError(data)` | The error toast for an action result: a service function error's `title` (else its `message`) with its `reason` as the second line, or the `message` of any other `{ error }`. Call `toastServiceError` from a custom `onError`, not `toast.error(data.error.message)` |
 | `setClientCompanyId(companyId, userId)` / `getCompanyId` | The shell layout sets both during render; the `companyId` cookie is httpOnly and unreadable in the browser. A different user empties the cache; leaving a company drops its loader entries |
 | `useRevalidator()` | Defined in `@carbon/react` (the error boundaries need it) and re-exported here. React Router's `useRevalidator`, held while a fetcher is submitting or a navigation is in flight. The only one app code may import (`no-raw-revalidator` check): a revalidation during an action drops the fetcher's redirect, and one during the navigation after a save restarts that navigation |
 | `createInvalidationMiddleware({ getCache, skipPaths })` | Root `clientMiddleware`; skip POSTs that change no data (`/refresh-session`) |
