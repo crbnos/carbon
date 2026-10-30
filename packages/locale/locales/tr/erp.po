@@ -5562,6 +5562,10 @@ msgstr "Sütun görünürlüğü ve sırası"
 msgid "Columns"
 msgstr "Sütunlar"
 
+#. placeholder {0}: INVENTORY_COUNT_CSV_COLUMNS.join(", ")
+msgid "Columns: {0}. Each item and storage unit in the file is a full count: units it leaves out are Missing."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "Filtreleri birleştir"
 
@@ -8613,6 +8617,9 @@ msgstr "PDF'i İndir"
 msgid "Download template"
 msgstr "Şablon indir"
 
+msgid "Download the count as a file to fill in"
+msgstr ""
+
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Şablonu indir. Her satır, Carbon'un muhasebeleştirdiği varsayılan bir hesaptır. Hesap Numarası'nda, bunu alan hesap planınızdaki hesabın numarasını girin. Carbon varsayılan hesabı eşleştirecek şekilde günceller."
 
@@ -10191,6 +10198,9 @@ msgstr "CSV'yi dışa aktar"
 
 msgid "Export Lines to CSV"
 msgstr "Satırları CSV'ye Dışa Aktar"
+
+msgid "Export Units"
+msgstr ""
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Hesap planınızı mevcut sisteminizden CSV olarak dışa aktarın; her hesap için numarası, adı, sınıfı, türü ve grubuyla bir satır olsun ya da mevcut hesap planının şablonuyla başlayın. Carbon yalnızca bu dosyadaki hesapları tutar."
@@ -11973,6 +11983,9 @@ msgstr "Hesap planını içe aktar"
 msgid "Import Chart of Accounts"
 msgstr "Hesap Planını İçe Aktar"
 
+msgid "Import Count Results"
+msgstr ""
+
 msgid "Import CSV"
 msgstr "CSV'yi İçe Aktar"
 
@@ -11987,6 +12000,9 @@ msgstr "Hesap planınızı içe aktarın"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "Hesap planınızı bir elektronik tablodan içe aktarın"
+
+msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -13407,6 +13423,7 @@ msgstr "Olasılık"
 msgid "Line"
 msgstr "Satır"
 
+#. placeholder {0}: error.line
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Satır {0}"
@@ -16266,6 +16283,9 @@ msgstr "Bu dönem için muhasebeleştirecek bir şey yok."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Henüz tanınması gereken bir şey yok. Hasılat, faturaların faturalandırdığını takip eder."
+
+msgid "Nothing was imported. Fix these lines:"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Henüz hiçbir şey yok. Bir adım yalnızca yapılandırıldıktan sonra değerleri sunar."

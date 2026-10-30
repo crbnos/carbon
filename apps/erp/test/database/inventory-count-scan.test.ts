@@ -9,6 +9,7 @@
 import { expect } from "vitest";
 import {
   generateInventoryCountLines,
+  importInventoryCountRows,
   recordInventoryCountUnit,
   removeInventoryCountUnit
 } from "../../app/modules/inventory/inventory.service";
@@ -225,3 +226,83 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "an import counts the units it lists and marks the rest of the bin Missing",
+  async () => {
+    const { f, units, countId } = await setup();
+    try {
+      const result = await importInventoryCountRows(f.db, {
+        inventoryCountId: countId,
+        companyId: f.companyId,
+        userId: USER,
+        rows: [
+          {
+            line: 2,
+            item: `${f.prefix}-SER`,
+            storageUnit: "A1",
+            code: units.number("SN-1"),
+            quantity: 1
+          }
+        ]
+      });
+      expect(result).toEqual({ counted: 2, added: 0, removed: 0 });
+      const counted = await f.db
+        .selectFrom("inventoryCountLine")
+        .select(["trackedEntityId", "countedQuantity"])
+        .where("inventoryCountId", "=", countId)
+        .where("itemId", "=", units.serialItemId)
+        .orderBy("trackedEntityId")
+        .execute();
+      expect(counted).toEqual([
+        { trackedEntityId: units.entity("SN-1"), countedQuantity: 1 },
+        { trackedEntityId: units.entity("SN-2"), countedQuantity: 0 },
+        // SN-3 is in B2, which the file does not name.
+        { trackedEntityId: units.entity("SN-3"), countedQuantity: null }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest("an import with an error writes nothing", async () => {
+  const { f, units, countId } = await setup();
+  try {
+    const result = await importInventoryCountRows(f.db, {
+      inventoryCountId: countId,
+      companyId: f.companyId,
+      userId: USER,
+      rows: [
+        {
+          line: 2,
+          item: `${f.prefix}-SER`,
+          storageUnit: "A1",
+          code: units.number("SN-1"),
+          quantity: 1
+        },
+        {
+          line: 3,
+          item: `${f.prefix}-SER`,
+          storageUnit: "Nowhere",
+          code: units.number("SN-2"),
+          quantity: 1
+        }
+      ]
+    });
+    expect(result).toEqual({
+      errors: [
+        { line: 3, message: 'Unknown storage unit "Nowhere" at this location' }
+      ]
+    });
+    const anyCounted = await f.db
+      .selectFrom("inventoryCountLine")
+      .select("id")
+      .where("inventoryCountId", "=", countId)
+      .where("countedQuantity", "is not", null)
+      .execute();
+    expect(anyCounted).toEqual([]);
+  } finally {
+    await f.cleanup();
+  }
+});

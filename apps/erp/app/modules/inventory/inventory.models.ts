@@ -210,6 +210,11 @@ export const inventoryCountUnnumberedValidator = z.object({
   )
 });
 
+// A count results file: Item, Storage Unit, Serial / Batch, Counted Quantity.
+export const inventoryCountImportValidator = z.object({
+  file: zfd.file()
+});
+
 // A serial number for a Found unit that has none.
 export const inventoryCountSerialValidator = z.object({
   lineId: z.string().min(1),

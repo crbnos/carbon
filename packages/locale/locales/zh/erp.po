@@ -5562,6 +5562,10 @@ msgstr "列的可见性和顺序"
 msgid "Columns"
 msgstr "列"
 
+#. placeholder {0}: INVENTORY_COUNT_CSV_COLUMNS.join(", ")
+msgid "Columns: {0}. Each item and storage unit in the file is a full count: units it leaves out are Missing."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "合并筛选"
 
@@ -8613,6 +8617,9 @@ msgstr "下载 PDF"
 msgid "Download template"
 msgstr "下载模板"
 
+msgid "Download the count as a file to fill in"
+msgstr ""
+
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "下载模板。每一行是一个 Carbon 过账的默认账户。在账户编号中，输入您的科目表中对应账户的编号。Carbon 会更新默认账户以匹配。"
 
@@ -10191,6 +10198,9 @@ msgstr "导出 CSV"
 
 msgid "Export Lines to CSV"
 msgstr "导出行到 CSV"
+
+msgid "Export Units"
+msgstr ""
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "从您的现有系统导出科目表为 CSV，每行一个账户，包括编号、名称、类别、类型和组，或从当前科目表的模板开始。Carbon 仅保留此文件中的账户。"
@@ -11973,6 +11983,9 @@ msgstr "导入会计科目表"
 msgid "Import Chart of Accounts"
 msgstr "导入会计科目表"
 
+msgid "Import Count Results"
+msgstr ""
+
 msgid "Import CSV"
 msgstr "导入CSV"
 
@@ -11987,6 +12000,9 @@ msgstr "导入您的会计科目表"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "从电子表格导入您的会计科目表"
+
+msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -13407,6 +13423,7 @@ msgstr "可能性"
 msgid "Line"
 msgstr "行"
 
+#. placeholder {0}: error.line
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "行 {0}"
@@ -16266,6 +16283,9 @@ msgstr "此期间无内容待过账。"
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "暂无待确认。收入遵循发票开票的内容。"
+
+msgid "Nothing was imported. Fix these lines:"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "暂无内容。步骤配置后才会提供值。"

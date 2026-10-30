@@ -231,6 +231,8 @@ import {
 } from "./inventory.models";
 import {
   clampDepth,
+  type InventoryCountCsvError,
+  type InventoryCountCsvRow,
   inventoryCountGroupId,
   receivingSearchTerms,
   writeOffRestoreQuantity
@@ -3311,6 +3313,426 @@ export async function assignInventoryCountSerial(
       .where("companyId", "=", args.companyId)
       .execute();
     return { lineId: line.id };
+  });
+}
+
+export type CountImportItem = {
+  id: string;
+  readableId: string;
+  readableIdWithRevision: string | null;
+  itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
+};
+export type CountImportLine = {
+  id: string;
+  itemId: string;
+  storageUnitId: string | null;
+  trackedEntityId: string | null;
+  readableId: string | null;
+  foundDuringCount: boolean;
+  // Set only for a snapshot unit with no serial number: its age, oldest first.
+  unnumberedSince: string | null;
+};
+export type CountImportPlan =
+  | { errors: InventoryCountCsvError[] }
+  | {
+      updates: { lineId: string; countedQuantity: number }[];
+      inserts: {
+        itemId: string;
+        storageUnitId: string | null;
+        trackedEntityId: string | null;
+        readableId: string | null;
+        countedQuantity: number;
+      }[];
+      deletes: string[];
+    };
+
+// Plans a count results file against the count, with no database access. A
+// file is a full count of each (item, storage unit) group it names: units of
+// the group it does not list become Missing, and units added while counting
+// that it does not list are removed. Every error is collected; a file with
+// any error plans no write.
+export function planInventoryCountImport(input: {
+  rows: InventoryCountCsvRow[];
+  items: CountImportItem[];
+  storageUnits: { id: string; name: string }[];
+  entities: { id: string; itemId: string; readableId: string }[];
+  lines: CountImportLine[];
+}): CountImportPlan {
+  const errors: InventoryCountCsvError[] = [];
+  const unitByName = new Map(
+    input.storageUnits.map((unit) => [unit.name.trim().toLowerCase(), unit.id])
+  );
+  const resolveItem = (code: string) => {
+    const exact = input.items.filter(
+      (item) => item.readableIdWithRevision === code
+    );
+    if (exact.length === 1) return exact;
+    return input.items.filter((item) => item.readableId === code);
+  };
+  const key = (itemId: string, storageUnitId: string | null) =>
+    `${itemId}:${storageUnitId ?? ""}`;
+
+  type Resolved = Omit<InventoryCountCsvRow, "item"> & {
+    item: CountImportItem;
+    storageUnitId: string | null;
+  };
+  const resolved: Resolved[] = [];
+  const seen = new Set<string>();
+  for (const row of input.rows) {
+    const items = resolveItem(row.item);
+    if (items.length === 0) {
+      errors.push({ line: row.line, message: `Unknown item "${row.item}"` });
+      continue;
+    }
+    if (items.length > 1) {
+      errors.push({
+        line: row.line,
+        message: `"${row.item}" matches ${items.length} revisions. Use the item ID with its revision.`
+      });
+      continue;
+    }
+    const item = items[0];
+    const storageUnitId = row.storageUnit
+      ? (unitByName.get(row.storageUnit.toLowerCase()) ?? undefined)
+      : null;
+    if (storageUnitId === undefined) {
+      errors.push({
+        line: row.line,
+        message: `Unknown storage unit "${row.storageUnit}" at this location`
+      });
+      continue;
+    }
+    const tracked =
+      item.itemTrackingType === "Serial" || item.itemTrackingType === "Batch";
+    if (!tracked && row.code) {
+      errors.push({
+        line: row.line,
+        message: `${row.item} has no serial or batch tracking. Leave Serial / Batch empty.`
+      });
+      continue;
+    }
+    if (item.itemTrackingType === "Batch" && !row.code) {
+      errors.push({ line: row.line, message: "Batch number is required" });
+      continue;
+    }
+    if (
+      item.itemTrackingType === "Serial" &&
+      row.code &&
+      row.quantity !== 0 &&
+      row.quantity !== 1
+    ) {
+      errors.push({
+        line: row.line,
+        message: "A serial number is counted as 0 or 1"
+      });
+      continue;
+    }
+    const unitKey = `${key(item.id, storageUnitId)}:${row.code}`;
+    if (row.code && seen.has(unitKey)) {
+      errors.push({
+        line: row.line,
+        message: `${row.code} is listed twice in this storage unit`
+      });
+      continue;
+    }
+    seen.add(unitKey);
+    resolved.push({ ...row, item, storageUnitId });
+  }
+
+  const linesByGroup = groupBy(input.lines, (line) =>
+    key(line.itemId, line.storageUnitId)
+  );
+  const updates = new Map<string, number>();
+  const inserts: Extract<CountImportPlan, { inserts: unknown }>["inserts"] = [];
+  const unnumberedByGroup = new Map<string, number>();
+  const unnumberedLine = new Map<string, number>();
+
+  for (const row of resolved) {
+    const groupKey = key(row.item.id, row.storageUnitId);
+    const groupLines = linesByGroup[groupKey] ?? [];
+    const isTracked =
+      row.item.itemTrackingType === "Serial" ||
+      row.item.itemTrackingType === "Batch";
+
+    if (!isTracked) {
+      const line = groupLines.find((l) => !l.trackedEntityId);
+      if (line) updates.set(line.id, row.quantity);
+      else
+        inserts.push({
+          itemId: row.item.id,
+          storageUnitId: row.storageUnitId,
+          trackedEntityId: null,
+          readableId: null,
+          countedQuantity: row.quantity
+        });
+      continue;
+    }
+
+    // A serial row with no number counts toward the group's unnumbered units.
+    if (!row.code) {
+      unnumberedByGroup.set(
+        groupKey,
+        (unnumberedByGroup.get(groupKey) ?? 0) + row.quantity
+      );
+      unnumberedLine.set(groupKey, row.line);
+      continue;
+    }
+
+    const entityIds = input.entities
+      .filter((e) => e.itemId === row.item.id && e.readableId === row.code)
+      .map((e) => e.id);
+    const here =
+      groupLines.find(
+        (l) => l.trackedEntityId && entityIds.includes(l.trackedEntityId)
+      ) ??
+      groupLines.find((l) => !l.trackedEntityId && l.readableId === row.code);
+    if (here) {
+      updates.set(here.id, row.quantity);
+      continue;
+    }
+    if (row.quantity === 0) continue;
+    const elsewhere = input.lines.find(
+      (l) => l.trackedEntityId && entityIds.includes(l.trackedEntityId)
+    );
+    inserts.push({
+      itemId: row.item.id,
+      storageUnitId: row.storageUnitId,
+      trackedEntityId: elsewhere?.trackedEntityId ?? entityIds[0] ?? null,
+      readableId: row.code,
+      countedQuantity: row.quantity
+    });
+  }
+
+  for (const [groupKey, quantity] of unnumberedByGroup) {
+    const unnumbered = (linesByGroup[groupKey] ?? [])
+      .filter((l) => l.unnumberedSince !== null && !l.foundDuringCount)
+      .sort(
+        (a, b) =>
+          (a.unnumberedSince as string).localeCompare(
+            b.unnumberedSince as string
+          ) || a.id.localeCompare(b.id)
+      );
+    if (quantity > unnumbered.length) {
+      errors.push({
+        line: unnumberedLine.get(groupKey) as number,
+        message: `Only ${unnumbered.length} unit(s) here have no serial number. Give each extra unit its serial number.`
+      });
+      continue;
+    }
+    unnumbered.forEach((line, index) => {
+      updates.set(line.id, index < quantity ? 1 : 0);
+    });
+  }
+
+  if (errors.length > 0) {
+    return { errors: errors.sort((a, b) => a.line - b.line) };
+  }
+
+  // Full count: in each named group, a snapshot unit the file did not list is
+  // Missing, and a unit added while counting that it did not list is removed.
+  const named = new Set(
+    resolved.map((row) => key(row.item.id, row.storageUnitId))
+  );
+  const deletes: string[] = [];
+  for (const groupKey of named) {
+    for (const line of linesByGroup[groupKey] ?? []) {
+      if (updates.has(line.id)) continue;
+      if (line.foundDuringCount) deletes.push(line.id);
+      else updates.set(line.id, 0);
+    }
+  }
+
+  return {
+    updates: [...updates].map(([lineId, countedQuantity]) => ({
+      lineId,
+      countedQuantity: round(countedQuantity)
+    })),
+    inserts: inserts.map((insert) => ({
+      ...insert,
+      countedQuantity: round(insert.countedQuantity)
+    })),
+    deletes
+  };
+}
+
+// Imports a count results file onto a Draft count, all or nothing. Reads the
+// count, the items, the storage units and the units the file names, plans the
+// file with `planInventoryCountImport`, and writes it in 3 statements. Returns
+// null when the count is not Draft.
+export async function importInventoryCountRows(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    inventoryCountId: string;
+    companyId: string;
+    userId: string;
+    rows: InventoryCountCsvRow[];
+  }
+): Promise<
+  | { errors: InventoryCountCsvError[] }
+  | { counted: number; added: number; removed: number }
+  | null
+> {
+  const { inventoryCountId, companyId, userId, rows } = args;
+  return withTransaction(db, async (trx) => {
+    const count = await trx
+      .selectFrom("inventoryCount")
+      .select(["status", "locationId"])
+      .where("id", "=", inventoryCountId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (count?.status !== "Draft") return null;
+    if (rows.length === 0) return { counted: 0, added: 0, removed: 0 };
+
+    const itemCodes = pluckUnique(rows, (row) => row.item);
+    const unitCodes = pluckUnique(
+      rows.filter((row) => row.code),
+      (row) => row.code
+    );
+    const [items, storageUnits, lines] = await Promise.all([
+      trx
+        .selectFrom("item")
+        .select([
+          "id",
+          "readableId",
+          "readableIdWithRevision",
+          "itemTrackingType"
+        ])
+        .where("companyId", "=", companyId)
+        .where((eb) =>
+          eb.or([
+            eb("readableId", "in", itemCodes),
+            eb("readableIdWithRevision", "in", itemCodes)
+          ])
+        )
+        .execute(),
+      trx
+        .selectFrom("storageUnit")
+        .select(["id", "name"])
+        .where("companyId", "=", companyId)
+        .where("locationId", "=", count.locationId)
+        .execute(),
+      trx
+        .selectFrom("inventoryCountLine")
+        .leftJoin("trackedEntity", (join) =>
+          join
+            .onRef(
+              "trackedEntity.id",
+              "=",
+              "inventoryCountLine.trackedEntityId"
+            )
+            .onRef(
+              "trackedEntity.companyId",
+              "=",
+              "inventoryCountLine.companyId"
+            )
+        )
+        .select([
+          "inventoryCountLine.id",
+          "inventoryCountLine.itemId",
+          "inventoryCountLine.storageUnitId",
+          "inventoryCountLine.trackedEntityId",
+          "inventoryCountLine.readableId",
+          "inventoryCountLine.foundDuringCount",
+          "trackedEntity.readableId as entityReadableId",
+          "trackedEntity.createdAt as entityCreatedAt"
+        ])
+        .where("inventoryCountLine.inventoryCountId", "=", inventoryCountId)
+        .where("inventoryCountLine.companyId", "=", companyId)
+        .execute()
+    ]);
+    const entities =
+      unitCodes.length > 0 && items.length > 0
+        ? await trx
+            .selectFrom("trackedEntity")
+            .select(["id", "itemId", "readableId"])
+            .where("companyId", "=", companyId)
+            .where("readableId", "in", unitCodes)
+            .where(
+              "itemId",
+              "in",
+              items.map((item) => item.id)
+            )
+            .orderBy("createdAt")
+            .execute()
+        : [];
+
+    const plan = planInventoryCountImport({
+      rows,
+      items,
+      storageUnits,
+      entities: entities.map((entity) => ({
+        id: entity.id,
+        itemId: entity.itemId as string,
+        readableId: entity.readableId as string
+      })),
+      lines: lines.map((line) => ({
+        id: line.id,
+        itemId: line.itemId,
+        storageUnitId: line.storageUnitId,
+        trackedEntityId: line.trackedEntityId,
+        readableId: line.readableId,
+        foundDuringCount: line.foundDuringCount,
+        unnumberedSince:
+          line.trackedEntityId && line.entityReadableId === null
+            ? String(line.entityCreatedAt)
+            : null
+      }))
+    });
+    if ("errors" in plan) return plan;
+
+    const now = datetime.timestamp();
+    if (plan.updates.length > 0) {
+      await sql`
+        UPDATE "inventoryCountLine" AS icl
+        SET "countedQuantity" = v."countedQuantity",
+            "countedBy" = ${userId},
+            "countedAt" = ${now},
+            "updatedBy" = ${userId},
+            "updatedAt" = ${now}
+        FROM (VALUES ${sql.join(
+          plan.updates.map(
+            (update) =>
+              sql`(${update.lineId}, ${update.countedQuantity}::numeric)`
+          )
+        )}) AS v("id", "countedQuantity")
+        WHERE icl."id" = v."id"
+          AND icl."companyId" = ${companyId}
+          AND icl."inventoryCountId" = ${inventoryCountId}
+      `.execute(trx);
+    }
+    if (plan.inserts.length > 0) {
+      await trx
+        .insertInto("inventoryCountLine")
+        .values(
+          plan.inserts.map((insert) => ({
+            ...insert,
+            inventoryCountId,
+            companyId,
+            locationId: count.locationId,
+            systemQuantity: 0,
+            foundDuringCount: true,
+            countedBy: userId,
+            countedAt: now,
+            createdBy: userId
+          }))
+        )
+        .execute();
+    }
+    if (plan.deletes.length > 0) {
+      await trx
+        .deleteFrom("inventoryCountLine")
+        .where("id", "in", plan.deletes)
+        .where("companyId", "=", companyId)
+        .where("inventoryCountId", "=", inventoryCountId)
+        .where("foundDuringCount", "=", true)
+        .execute();
+    }
+    return {
+      counted: plan.updates.length,
+      added: plan.inserts.length,
+      removed: plan.deletes.length
+    };
   });
 }
 

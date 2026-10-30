@@ -5562,6 +5562,10 @@ msgstr "Spaltensichtbarkeit und -reihenfolge"
 msgid "Columns"
 msgstr "Spalten"
 
+#. placeholder {0}: INVENTORY_COUNT_CSV_COLUMNS.join(", ")
+msgid "Columns: {0}. Each item and storage unit in the file is a full count: units it leaves out are Missing."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "Filter kombinieren"
 
@@ -8613,6 +8617,9 @@ msgstr "PDF herunterladen"
 msgid "Download template"
 msgstr "Vorlage herunterladen"
 
+msgid "Download the count as a file to fill in"
+msgstr ""
+
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Laden Sie die Vorlage herunter. Jede Zeile ist ein Standardkonto, auf das Carbon bucht. Geben Sie in Kontonummer die Nummer des Kontos in Ihrem Kontenplan ein, das es übernimmt. Carbon aktualisiert das Standardkonto, um es anzupassen."
 
@@ -10191,6 +10198,9 @@ msgstr "CSV exportieren"
 
 msgid "Export Lines to CSV"
 msgstr "Zeilen als CSV exportieren"
+
+msgid "Export Units"
+msgstr ""
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Exportieren Sie Ihren Kontenplan aus Ihrem aktuellen System als CSV, eine Zeile pro Konto mit Nummer, Name, Klasse, Typ und Gruppe, oder beginnen Sie mit der Vorlage des aktuellen Kontenplans. Carbon behält nur die Konten in dieser Datei."
@@ -11973,6 +11983,9 @@ msgstr "Kontenplan importieren"
 msgid "Import Chart of Accounts"
 msgstr "Kontenplan importieren"
 
+msgid "Import Count Results"
+msgstr ""
+
 msgid "Import CSV"
 msgstr "CSV importieren"
 
@@ -11987,6 +12000,9 @@ msgstr "Ihren Kontenplan importieren"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "Ihren Kontenplan aus einer Tabellenkalkulation importieren"
+
+msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -13407,6 +13423,7 @@ msgstr "Wahrscheinlichkeit"
 msgid "Line"
 msgstr "Zeile"
 
+#. placeholder {0}: error.line
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Zeile {0}"
@@ -16266,6 +16283,9 @@ msgstr "Nichts zum Buchen in diesem Zeitraum."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Noch nichts zum Erfassen. Die Umsatzerlöse folgen dem, was die Rechnungen abrechnen."
+
+msgid "Nothing was imported. Fix these lines:"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Noch nichts. Ein Schritt bietet Werte erst nach der Konfiguration an."

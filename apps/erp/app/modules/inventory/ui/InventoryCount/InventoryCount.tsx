@@ -19,10 +19,12 @@ import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
   LuCheck,
+  LuDownload,
   LuHistory,
   LuInfo,
   LuRotateCcw,
-  LuSend
+  LuSend,
+  LuUpload
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
@@ -46,6 +48,7 @@ import type { action as postAction } from "~/routes/x+/inventory-count+/$id.post
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import InventoryCountHistory from "./InventoryCountHistory";
+import InventoryCountImport from "./InventoryCountImport";
 
 type InventoryCountDetailsProps = {
   inventoryCount: InventoryCountType;
@@ -84,6 +87,7 @@ const InventoryCountDetails = ({
   const confirmModal = useDisclosure();
   const notesModal = useDisclosure();
   const historyModal = useDisclosure();
+  const importModal = useDisclosure();
   const revalidator = useRevalidator();
   const reopenFetcher = useFetcher();
   // Post submits via a fetcher: a refusal is toasted (by default for an
@@ -130,6 +134,24 @@ const InventoryCountDetails = ({
             icon={<LuInfo />}
             onClick={notesModal.onOpen}
           />
+        </RecordAction>
+      )}
+      <RecordAction slot="overflow">
+        <Button variant="secondary" leftIcon={<LuDownload />} asChild>
+          <a href={path.to.api.inventoryCountCsv(inventoryCount.id!)}>
+            {t`Export Units`}
+          </a>
+        </Button>
+      </RecordAction>
+      {status === "Draft" && canUpdate && (
+        <RecordAction slot="overflow">
+          <Button
+            variant="secondary"
+            leftIcon={<LuUpload />}
+            onClick={importModal.onOpen}
+          >
+            {t`Import`}
+          </Button>
         </RecordAction>
       )}
       {movements.length > 0 && (
@@ -232,6 +254,12 @@ const InventoryCountDetails = ({
         />
       </div>
 
+      {importModal.isOpen && (
+        <InventoryCountImport
+          inventoryCountId={inventoryCount.id!}
+          onClose={importModal.onClose}
+        />
+      )}
       {confirmModal.isOpen && (
         <InventoryCountConfirmModal
           inventoryCountId={inventoryCount.id!}

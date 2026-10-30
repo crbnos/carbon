@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { parseCsvLines } from "@carbon/files/csv";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getItemStorageUnitQuantities } from "../items/items.utils";
 
@@ -348,4 +349,85 @@ export function isBlindCountEntry(count: {
   status: string | null;
 }): boolean {
   return Boolean(count.isBlind) && count.status !== "Posted";
+}
+
+// The columns of a count results file. The per-unit export writes them, so a
+// counter can export, fill in Counted Quantity and import the same file.
+export const INVENTORY_COUNT_CSV_COLUMNS = [
+  "Item",
+  "Storage Unit",
+  "Serial / Batch",
+  "Counted Quantity"
+] as const;
+
+export type InventoryCountCsvRow = {
+  line: number;
+  item: string;
+  storageUnit: string;
+  code: string;
+  quantity: number;
+};
+
+export type InventoryCountCsvError = { line: number; message: string };
+
+// Reads a count results file. Columns are found by name, in any order; other
+// columns (State, Item Name) are ignored. A row with no Counted Quantity is
+// not counted and is left out.
+export function parseInventoryCountCsv(text: string): {
+  rows: InventoryCountCsvRow[];
+  errors: InventoryCountCsvError[];
+} {
+  const { lines } = parseCsvLines(text);
+  const [header, ...body] = lines;
+  if (!header) {
+    return { rows: [], errors: [{ line: 1, message: "The file is empty" }] };
+  }
+  const column = (name: string) =>
+    header.cells.findIndex(
+      (cell) => cell.trim().toLowerCase() === name.toLowerCase()
+    );
+  const [itemAt, unitAt, codeAt, quantityAt] =
+    INVENTORY_COUNT_CSV_COLUMNS.map(column);
+  const missing = INVENTORY_COUNT_CSV_COLUMNS.filter(
+    (_, index) => [itemAt, unitAt, codeAt, quantityAt][index] < 0
+  );
+  if (missing.length > 0) {
+    return {
+      rows: [],
+      errors: [
+        {
+          line: header.line,
+          message: `Missing column: ${missing.join(", ")}`
+        }
+      ]
+    };
+  }
+
+  const rows: InventoryCountCsvRow[] = [];
+  const errors: InventoryCountCsvError[] = [];
+  for (const { line, cells } of body) {
+    const item = cells[itemAt]?.trim() ?? "";
+    const quantityText = cells[quantityAt]?.trim() ?? "";
+    if (!item) {
+      errors.push({ line, message: "Item is required" });
+      continue;
+    }
+    if (quantityText === "") continue;
+    const quantity = Number(quantityText);
+    if (!Number.isFinite(quantity) || quantity < 0) {
+      errors.push({
+        line,
+        message: `Counted Quantity "${quantityText}" is not a number of 0 or more`
+      });
+      continue;
+    }
+    rows.push({
+      line,
+      item,
+      storageUnit: cells[unitAt]?.trim() ?? "",
+      code: cells[codeAt]?.trim() ?? "",
+      quantity
+    });
+  }
+  return { rows, errors };
 }

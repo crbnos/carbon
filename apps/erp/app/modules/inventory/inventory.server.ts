@@ -5936,6 +5936,53 @@ export const assignInventoryCountSerial = defineServiceFn({
 });
 
 /**
+ * Import the results of an inventory count
+ *
+ * @remarks
+ * Each row names an item, a storage unit (empty for stock in no storage
+ * unit), a serial or batch number (empty for an untracked item, or for a
+ * serial with no number) and the counted quantity. Each (item, storage unit)
+ * the rows name is a full count: its units the rows leave out become Missing,
+ * and units added while counting that the rows leave out are removed. Rows
+ * resolve as a scan does. Nothing is written when any row has an error; the
+ * result then lists `errors` with their line numbers. Draft counts only.
+ *
+ * @mcp
+ */
+export const importInventoryCountResults = defineServiceFn({
+  input: z.object({
+    inventoryCountId: z.string().min(1),
+    rows: z
+      .array(
+        z.object({
+          line: z.number().int(),
+          item: z.string().min(1),
+          storageUnit: z.string(),
+          code: z.string(),
+          quantity: z.number().min(0)
+        })
+      )
+      .max(20000)
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.importInventoryCountRows(ctx.asSystem.pg, {
+      inventoryCountId: input.inventoryCountId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      rows: input.rows
+    });
+    if (!result) {
+      return ctx.error(
+        "conflict",
+        "Counts can only be edited while the document is Draft"
+      );
+    }
+    return result;
+  }
+});
+
+/**
  * Remove a unit added to an inventory count
  *
  * @remarks

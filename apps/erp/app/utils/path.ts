@@ -174,6 +174,8 @@ export const path = {
         `${generatePath(`${api}/integrations/${id}/sync-activity.csv`)}${
           status ? `?${new URLSearchParams({ status })}` : ""
         }`,
+      inventoryCountCsv: (inventoryCountId: string) =>
+        generatePath(`${api}/inventory-count/${inventoryCountId}.csv`),
       inventoryCountGroup: (
         inventoryCountId: string,
         itemId: string,
@@ -1450,6 +1452,8 @@ export const path = {
       generatePath(`${x}/inventory-count/${id}/confirm`),
     inventoryCountDelete: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/delete`),
+    inventoryCountImport: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/import`),
     inventoryCountLineUpdate: `${x}/inventory-count/lines/update`,
     inventoryCountPost: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/post`),

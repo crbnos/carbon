@@ -5562,6 +5562,10 @@ msgstr "열 표시 여부 및 순서"
 msgid "Columns"
 msgstr "열"
 
+#. placeholder {0}: INVENTORY_COUNT_CSV_COLUMNS.join(", ")
+msgid "Columns: {0}. Each item and storage unit in the file is a full count: units it leaves out are Missing."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "필터 결합"
 
@@ -8613,6 +8617,9 @@ msgstr "PDF 다운로드"
 msgid "Download template"
 msgstr "템플릿 다운로드"
 
+msgid "Download the count as a file to fill in"
+msgstr ""
+
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "템플릿을 다운로드합니다. 각 행은 Carbon이 전기하는 기본 계정과목입니다. 계정 번호에 자신의 계정과목표에서 이를 담당할 계정의 번호를 입력합니다. Carbon은 기본 계정과목을 이에 맞게 업데이트합니다."
 
@@ -10191,6 +10198,9 @@ msgstr "CSV 내보내기"
 
 msgid "Export Lines to CSV"
 msgstr "라인을 CSV로 내보내기"
+
+msgid "Export Units"
+msgstr ""
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "현재 시스템에서 계정과목표를 CSV로 내보내세요. 계정마다 한 행에 번호, 이름, 분류, 유형, 그룹을 담거나, 현재 계정과목표의 템플릿에서 시작하세요. Carbon은 이 파일에 있는 계정만 유지합니다."
@@ -11973,6 +11983,9 @@ msgstr "계정과목표 가져오기"
 msgid "Import Chart of Accounts"
 msgstr "계정과목표 가져오기"
 
+msgid "Import Count Results"
+msgstr ""
+
 msgid "Import CSV"
 msgstr "CSV 가져오기"
 
@@ -11987,6 +12000,9 @@ msgstr "계정과목표 가져오기"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "스프레드시트에서 계정과목표 가져오기"
+
+msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -13407,6 +13423,7 @@ msgstr "발생 가능성"
 msgid "Line"
 msgstr "라인"
 
+#. placeholder {0}: error.line
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "라인 {0}"
@@ -16266,6 +16283,9 @@ msgstr "이 기간에 전기할 것이 없습니다."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "아직 인식할 것이 없습니다. 매출은 송장이 청구하는 대로 따릅니다."
+
+msgid "Nothing was imported. Fix these lines:"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "아직 없습니다. 단계는 구성된 후에만 값을 제공합니다."
