@@ -35,7 +35,21 @@ export type AuditLogCsvLabels = {
 type AuditLogCsvEntry = Pick<
   AuditLogEntry,
   "createdAt" | "actorId" | "operation" | "tableName" | "recordId" | "diff"
->;
+> &
+  Partial<Pick<AuditLogEntry, "metadata">>;
+
+/**
+ * The non-user actor an entry names (`SCIM (Okta)`), or null when a person
+ * made the change or the entry carries no label (then it reads "System").
+ */
+export function nonUserActorLabel(
+  entry: Pick<AuditLogEntry, "actorId"> &
+    Partial<Pick<AuditLogEntry, "metadata">>
+): string | null {
+  if (entry.actorId && entry.actorId !== "system") return null;
+  const label = entry.metadata?.actorLabel;
+  return typeof label === "string" && label.trim() !== "" ? label : null;
+}
 
 function toCsvCell(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -69,7 +83,7 @@ export function buildAuditLogCsvRows(
       [columns.date]: entry.createdAt,
       [columns.changedBy]:
         !entry.actorId || entry.actorId === "system"
-          ? system
+          ? (nonUserActorLabel(entry) ?? system)
           : (nameById.get(entry.actorId) ?? entry.actorId),
       [columns.action]: actions[entry.operation] ?? entry.operation,
       [columns.record]: getRecordLabel(entry.tableName),

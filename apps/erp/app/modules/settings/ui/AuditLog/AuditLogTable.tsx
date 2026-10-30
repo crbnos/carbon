@@ -16,7 +16,7 @@ import { memo, useCallback, useMemo } from "react";
 import { LuFilePen, LuFilePlus, LuFileX } from "react-icons/lu";
 import { Link } from "react-router";
 import { DateTime, EmployeeAvatar, Table } from "~/components";
-import { ChangeRow } from "~/components/AuditLog";
+import { ChangeRow, nonUserActorLabel } from "~/components/AuditLog";
 import { getEntityPath } from "~/utils/entity";
 import { path } from "~/utils/path";
 
@@ -210,7 +210,9 @@ const AuditLogTable = memo((props: AuditLogTableProps) => {
               <EmployeeAvatar employeeId={entry.actorId} />
             </Link>
           ) : (
-            <span className="text-muted-foreground text-sm">System</span>
+            <span className="text-muted-foreground text-sm">
+              {nonUserActorLabel(entry) ?? "System"}
+            </span>
           );
         }
       },
