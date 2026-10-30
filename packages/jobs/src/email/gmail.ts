@@ -11,6 +11,7 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   isRateLimitedResponse,
+  isSendingLimitResponse,
   NOT_SENT
 } from "../inngest/functions/notifications/delivery-failure";
 import { buildPieceContext } from "../workflows/integrations/context";
@@ -28,6 +29,11 @@ const SEND_ACTION = "gmail_send_email";
 // Every auth failure stops before Google; only these can clear on their own
 // (another caller's refresh, a brief outage at Google's token endpoint).
 const RETRYABLE_AUTH_REASONS = new Set(["refreshing", "failed"]);
+
+/** Gmail refused the send: the account reached its sending limit, for up to a day. */
+export class GmailSendingLimitError extends Error {
+  override name = "GmailSendingLimitError";
+}
 
 const notSent = (message: string, retryable = false) =>
   Object.assign(
@@ -134,14 +140,20 @@ export async function sendViaGmail(
       subject: payload.subject,
       error
     });
+    const message = (error as Error).message;
+    if (isSendingLimitResponse(error)) {
+      return {
+        data: null,
+        error: new GmailSendingLimitError(
+          `Gmail's sending limit is reached: ${message}`
+        )
+      };
+    }
     // Any other vendor error may have sent the message: never replay it.
     return {
       data: null,
       error: isRateLimitedResponse(error)
-        ? notSent(
-            `Gmail rate limited the send: ${(error as Error).message}`,
-            true
-          )
+        ? notSent(`Gmail rate limited the send: ${message}`, true)
         : (error as Error)
     };
   }

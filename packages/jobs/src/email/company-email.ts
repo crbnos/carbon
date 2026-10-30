@@ -6,10 +6,10 @@ import type { Database } from "@carbon/database";
 // Deep subpaths, not the `@carbon/ee` barrel: it validates the server env at
 // import, which every job test importing this module would then need.
 import {
+  companyMailRoute,
   companyTransport,
   Email,
   picksCredentialFreeEmail,
-  resolveEmailDelivery,
   sharedMailHeaders
 } from "@carbon/ee/email/delivery";
 import { resolveIntegrationSecrets } from "@carbon/ee/integrations/secrets";
@@ -24,7 +24,7 @@ import {
 } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { sendViaGmail } from "./gmail";
+import { GmailSendingLimitError, sendViaGmail } from "./gmail";
 
 const log = getLogger("jobs", "company-email");
 
@@ -43,8 +43,9 @@ export type CompanyEmailPayload = Omit<SendEmailPayload, "from"> & {
  * the Gmail connection's token.
  *
  * Returns `sendEmail`'s result shape: `data: null` with no error means no
- * transport is configured. Throws only when the company's settings cannot be
- * read, which the caller's retry handles.
+ * transport is configured. An installed method that cannot send returns an
+ * error; it never falls back to another address. Throws only when the
+ * company's settings cannot be read, which the caller's retry handles.
  */
 export async function sendCompanyEmail(
   serviceClient: SupabaseClient<Database>,
@@ -56,7 +57,7 @@ export async function sendCompanyEmail(
   const [integration, company] = await Promise.all([
     serviceClient
       .from("companyIntegration")
-      .select("active, metadata, secretRef")
+      .select("active, metadata, secretRef, updatedBy")
       .eq("id", Email.id)
       .eq("companyId", companyId)
       .maybeSingle(),
@@ -81,14 +82,20 @@ export async function sendCompanyEmail(
     throw company.error;
   }
 
-  const delivery = resolveEmailDelivery(
-    integration.data,
-    SERVER_MAIL_CONFIGURED
-  );
+  const route = companyMailRoute(integration.data, SERVER_MAIL_CONFIGURED);
   const companyName = company.data?.name?.trim() || null;
 
-  // No delivery, or server mail: this server's own transport.
-  if (!integration.data || !delivery || delivery.provider === "server") {
+  if (route.route === "unusable") {
+    log.error("The company's Email settings cannot send", { companyId });
+    return {
+      data: null,
+      error: new Error(
+        "The company's Email settings cannot send: pick a delivery method that is set up"
+      )
+    };
+  }
+
+  if (route.route === "shared") {
     return sendEmail({
       ...message,
       ...sharedMailHeaders(
@@ -96,14 +103,14 @@ export async function sendCompanyEmail(
           document,
           companyName,
           replyTo: message.replyTo,
-          companyAddress: delivery?.fromEmail
+          companyAddress: route.delivery?.fromEmail
         },
         DEFAULT_FROM
       )
     });
   }
 
-  const { metadata, secretRef } = integration.data;
+  const { metadata, secretRef, updatedBy } = route.integration;
   const transport = companyTransport(
     picksCredentialFreeEmail(Email.id, metadata)
       ? metadata
@@ -118,13 +125,20 @@ export async function sendCompanyEmail(
   const senderName = companyName ?? "Carbon";
 
   if (transport.kind === "gmail") {
-    return sendViaGmail(
+    const sent = await sendViaGmail(
       serviceClient,
       companyId,
       transport.connectionId,
       senderName,
       message
     );
+    if (sent.error instanceof GmailSendingLimitError) {
+      // Loaded here, not at the top: @carbon/kv boots the server env on import,
+      // which every job test that imports this module would then need.
+      const { notifyGmailSendingLimit } = await import("./sending-limit");
+      await notifyGmailSendingLimit(companyId, updatedBy);
+    }
+    return sent;
   }
   return deliverEmail(createSmtpTransport(transport), {
     ...message,

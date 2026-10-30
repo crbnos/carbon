@@ -9,6 +9,7 @@ import {
   isRateLimitedResponse,
   isRetryableEmailFailure,
   isRetryableSlackFailure,
+  isSendingLimitResponse,
   slackDeliveryFailure
 } from "./delivery-failure";
 
@@ -138,5 +139,40 @@ describe("vendor rate limit", () => {
     null
   ])("does not treat %o as a refused send", (error) => {
     expect(isRateLimitedResponse(error)).toBe(false);
+  });
+});
+
+describe("Gmail sending limit", () => {
+  const mailSending = {
+    status: 429,
+    message: "Too many requests: User-rate limit exceeded (Mail sending)"
+  };
+  const daily = {
+    status: 403,
+    response: {
+      status: 403,
+      data: { error: { errors: [{ reason: "dailyLimitExceeded" }] } }
+    }
+  };
+
+  it.each([mailSending, daily])(
+    "recognises %o as the sending limit",
+    (error) => {
+      expect(isSendingLimitResponse(error)).toBe(true);
+    }
+  );
+
+  // The limit lasts up to a day, so it is not a retryable rate limit.
+  it.each([mailSending, daily])("does not retry %o", (error) => {
+    expect(isRateLimitedResponse(error)).toBe(false);
+  });
+
+  it.each([
+    { status: 429, message: "Too many concurrent requests for user" },
+    { status: 403, errors: [{ reason: "userRateLimitExceeded" }] },
+    { status: 500 },
+    null
+  ])("does not treat %o as the sending limit", (error) => {
+    expect(isSendingLimitResponse(error)).toBe(false);
   });
 });

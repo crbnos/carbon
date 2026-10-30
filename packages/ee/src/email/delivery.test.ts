@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  companyMailRoute,
   companyTransport,
   emailSettingsForm,
   parseEmailSettings,
@@ -317,5 +318,55 @@ describe("sharedMailHeaders", () => {
         SERVER
       )
     ).toEqual({ from: undefined, replyTo: "rep@acme.co" });
+  });
+});
+
+describe("companyMailRoute", () => {
+  const row = (metadata: Record<string, unknown>, active = true) => ({
+    active,
+    metadata
+  });
+
+  it("uses this server's mail without an active integration", () => {
+    expect(companyMailRoute(null, false)).toEqual({
+      route: "shared",
+      delivery: null
+    });
+    expect(companyMailRoute(row({ provider: "gmail" }, false), true)).toEqual({
+      route: "shared",
+      delivery: { provider: "server" }
+    });
+  });
+
+  it("uses this server's mail for server mail it has", () => {
+    expect(
+      companyMailRoute(row({ provider: "server", fromEmail: "a@b.co" }), true)
+    ).toEqual({
+      route: "shared",
+      delivery: { provider: "server", fromEmail: "a@b.co" }
+    });
+  });
+
+  it("sends through the company's own account for Gmail, Resend or SMTP", () => {
+    const gmail = row({ provider: "gmail", gmailConnectionId: "conn_1" });
+    expect(companyMailRoute(gmail, false)).toEqual({
+      route: "own",
+      integration: gmail
+    });
+    const smtp = row({ provider: "smtp", fromEmail: "a@b.co" });
+    expect(companyMailRoute(smtp, true)).toEqual({
+      route: "own",
+      integration: smtp
+    });
+  });
+
+  // An installed method that cannot send must fail, never fall back.
+  it("refuses Gmail with no account and server mail the server lacks", () => {
+    expect(
+      companyMailRoute(row({ provider: "gmail", gmailConnectionId: "" }), true)
+    ).toEqual({ route: "unusable" });
+    expect(companyMailRoute(row({ provider: "server" }), false)).toEqual({
+      route: "unusable"
+    });
   });
 });
