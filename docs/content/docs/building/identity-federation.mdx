@@ -1,0 +1,130 @@
+---
+title: Identity federation
+description: Let a CI job or cloud workload call the Carbon API with a short-lived token from its own identity provider, with no API key to store.
+---
+
+An [API key](/docs/building/api-keys) is a long-lived secret: anyone who copies it from a CI log, an `.env` file or a laptop can use it until it is deleted. With **identity federation**, a workload that already has an identity — a GitHub Actions job, an AWS role, a Google Cloud service account, an Azure managed identity — proves who it is with a token its provider signs, and Carbon gives it an API key that expires in minutes. Nothing long-lived is stored anywhere.
+
+Manage it under **Settings → Identity Federation**. Identity federation is part of API access, available on the Business plan.
+
+## How it works
+
+1. You create a **federation rule**. It names the token issuer, the audience, the workload (its subject and claims), the scopes, and how long a key lives.
+2. The workload asks its provider for an OIDC token for the rule's audience.
+3. The workload exchanges that token at Carbon's `/token` endpoint, naming the rule.
+4. Carbon checks the token's signature, issuer, audience, expiry, subject and claims, and returns a `crbn_` API key with the rule's scopes. It expires after the rule's token lifetime: 15 minutes by default, 5 to 60.
+5. The workload calls the [Carbon API](/api) with `Authorization: Bearer crbn_…`, exactly as with any API key.
+
+A token can be exchanged once. Exchange a fresh one when the key expires.
+
+## Creating a rule
+
+Select **Add Federation Rule** (or **New API Key → Set up identity federation**) and pick a provider. The provider fills in the issuer and suggests the conditions to add.
+
+| Field | What to enter |
+|---|---|
+| **Issuer URL** | The token's `iss` claim, exactly. GitHub Actions and Google Cloud fill it in. |
+| **Audience** | The `aud` the workload requests. Defaults to your Carbon URL; Microsoft Entra ID uses your app registration, `api://<application-id>`. |
+| **Subject** | The token's `sub`, exactly — or a prefix ending in `*`, such as `repo:acme/plm-sync:*`. |
+| **Claim conditions** | Other claims the token must carry, each an exact value. |
+| **Token lifetime** | Minutes a minted key lives, 5 to 60. |
+| **Permissions** | The scopes of the minted key, as for an API key. |
+
+A rule must name a workload: it needs a subject or at least one claim condition, and a subject of `*` alone is refused. GitHub, GitLab.com and Google sign tokens for every customer, so a rule on them needs a claim that never changes when a name does:
+
+- **GitHub Actions** needs `repository_owner_id`. A renamed or deleted GitHub account's name can be registered by someone else; its numeric id cannot. Find it with `gh api users/<owner> --jq .id`.
+- **GitLab.com** needs `namespace_id`.
+- **Google Cloud** needs the service account's numeric unique ID as an exact subject, never a prefix or an email.
+
+<Callout type="warn" title="Treat a rule like a key">
+Anyone who can run a workload that matches the rule gets its scopes. Keep the subject as narrow as the job: one repository and branch, or a protected GitHub environment, rather than a whole organization.
+</Callout>
+
+## Exchanging a token
+
+The exchange is a standard OAuth 2.0 token exchange ([RFC 8693](https://datatracker.ietf.org/doc/html/rfc8693)):
+
+```bash
+curl -s -X POST https://app.carbon.ms/token \
+  -d grant_type=urn:ietf:params:oauth:grant-type:token-exchange \
+  -d client_id=<rule id> \
+  -d subject_token_type=urn:ietf:params:oauth:token-type:jwt \
+  -d subject_token="$OIDC_TOKEN"
+```
+
+```json
+{
+  "access_token": "crbn_…",
+  "issued_token_type": "urn:ietf:params:oauth:token-type:access_token",
+  "token_type": "Bearer",
+  "expires_in": 900
+}
+```
+
+Every refused token answers `400 {"error":"invalid_grant"}`, whatever the reason; the rule shows the reason in its **Last Refusal** column. More than 30 exchanges a minute for one rule answer `429`.
+
+### GitHub Actions
+
+The rule's edit view shows this snippet with its id and audience filled in.
+
+```yaml
+permissions:
+  id-token: write
+steps:
+  - name: Get a Carbon API key
+    run: |
+      OIDC_TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+        "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https%3A%2F%2Fapp.carbon.ms" | jq -r .value)
+      KEY=$(curl -s -X POST https://app.carbon.ms/token \
+        -d grant_type=urn:ietf:params:oauth:grant-type:token-exchange \
+        -d client_id=<rule id> \
+        -d subject_token_type=urn:ietf:params:oauth:token-type:jwt \
+        -d subject_token="$OIDC_TOKEN" | jq -r .access_token)
+      echo "::add-mask::$KEY"
+      echo "CARBON_API_KEY=$KEY" >> "$GITHUB_ENV"
+```
+
+The subject looks like `repo:acme/plm-sync:ref:refs/heads/main`, or `repo:acme/plm-sync:environment:production` for a job with an environment.
+
+### AWS
+
+Turn on outbound identity federation once (IAM → Account settings) and allow the role `sts:GetWebIdentityToken`. The workload calls the STS `GetWebIdentityToken` API on a regional endpoint, with `Audience` set to the rule's audience and `SigningAlgorithm` set to `RS256`. The issuer is your account's own `https://<id>.tokens.sts.global.api.aws` URL, and the subject is the role ARN.
+
+### Google Cloud
+
+```bash
+OIDC_TOKEN=$(curl -s -H "Metadata-Flavor: Google" \
+  "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience=https://app.carbon.ms&format=full")
+```
+
+### Microsoft Entra ID
+
+Create an app registration for Carbon in your tenant and use its Application ID URI as the rule's audience. A managed identity gets its token from the instance metadata service:
+
+```bash
+OIDC_TOKEN=$(curl -s -H "Metadata: true" \
+  "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=api://<application-id>" | jq -r .access_token)
+```
+
+## Editing and deleting a rule
+
+A change to a rule's permissions applies at once to the keys it already issued. Deleting a rule stops every key it issued. Issued keys never appear in the API Keys list; Carbon deletes them a day after they expire.
+
+<AgentContext>
+## Internals and troubleshooting
+
+The rule is `federationRule`; the exchange is `exchangeFederatedToken` (`packages/ee/src/federation/service.server.ts`), served by the token-exchange branch of `apps/erp/app/routes/_oauth+/token.tsx`. A minted key is an `apiKey` row with `federationRuleId` set, so the ordinary `carbon-key` path authenticates it. Spec: `.ai/specs/2026-10-30-workload-identity-federation.md`.
+
+### Last Refusal reasons
+- `issuer_mismatch` — the token's `iss` differs from the rule's issuer (compare trailing slashes).
+- `audience_mismatch` — the workload requested another audience.
+- `subject_mismatch` / `claim_mismatch` — the token is from another workload; compare its claims with the rule.
+- `discovery_failed` — Carbon could not read `{issuer}/.well-known/openid-configuration` or its keys, or the issuer resolves to a private address.
+- `expired`, `not_yet_valid`, `lifetime_too_long` — the token's times: tokens may live at most 24 hours, with 30 s of clock tolerance.
+- `jti_reused` — the same token was exchanged twice. Request a new one.
+- `algorithm_not_allowed`, `missing_kid`, `missing_claims`, `malformed_jwt` — the token is not a signed OIDC token.
+- `not_entitled` — the company's plan does not include API access.
+
+### Self-hosted issuers
+An issuer on a private network (an internal GitLab, Keycloak or Kubernetes API server) is refused unless the install sets `FEDERATION_ALLOW_PRIVATE_ISSUERS=true`. The issuer must still use https.
+</AgentContext>

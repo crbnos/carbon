@@ -19,6 +19,10 @@ Select **New API Key**, enter a company-unique **Name**, optionally set **Expire
 Anyone holding the key can act as it, within its scopes. Store it in a secret manager, never commit it, and rotate (delete and recreate) if it leaks.
 </Callout>
 
+<Callout type="tip" title="CI jobs and cloud workloads need no key">
+A GitHub Actions job, an AWS role, a Google Cloud service account or an Azure managed identity can use [identity federation](/docs/building/identity-federation) instead: it exchanges its provider's token for a key that expires in minutes, so there is no secret to store.
+</Callout>
+
 ## Authenticating a request
 
 Send the key as a bearer token; the hosted Data API lives at `rest.carbon.ms`:
