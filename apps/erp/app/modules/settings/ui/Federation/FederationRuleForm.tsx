@@ -376,7 +376,10 @@ function RuleStatus({
         </span>
         <Copy text={example} />
       </HStack>
-      <CodeBlock className="bash">{example}</CodeBlock>
+      {/* min-w-0: a long command line scrolls inside the block, not past the modal. */}
+      <div className="w-full min-w-0 max-w-full overflow-x-auto text-xs">
+        <CodeBlock className="bash">{example}</CodeBlock>
+      </div>
       {rule.lastFailureReason && (
         <HStack>
           <span className="text-sm text-muted-foreground">
