@@ -4574,6 +4574,9 @@ msgstr "BoM explorer setting updated"
 msgid "BOM synced successfully"
 msgstr "BOM synced successfully"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM synced. Not written: {notWritten}"
+
 msgid "BOMs"
 msgstr "BOMs"
 

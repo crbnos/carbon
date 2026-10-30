@@ -4574,6 +4574,9 @@ msgstr ""
 msgid "BOM synced successfully"
 msgstr "BOM başarıyla senkronize edildi"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM senkronize edildi. Yazılmayanlar: {notWritten}"
+
 msgid "BOMs"
 msgstr "BOM'lar"
 

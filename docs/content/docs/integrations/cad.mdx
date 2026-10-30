@@ -190,6 +190,28 @@ leave it off if your allowance is tight.
 
 A company can connect to only one Onshape environment. Disconnect the current integration before connecting the other.
 
+## Import a bill of materials from Onshape
+
+With **Onshape** or **Onshape Government** connected, the bill of materials explorer
+of a part's make method shows an Onshape card. It works on a Draft make method only.
+Choose the document, version and assembly, press **Fetch**, then **Sync** to read the
+assembly's BOM, and **Save** to write it. Save replaces the method's bill of
+materials, and each sub-assembly's, with Onshape's. Parts Carbon does not have yet
+are created.
+
+Save never writes where the BOM editor would refuse the change:
+
+- A Draft a change notice holds belongs to that notice, whatever its stage. Change
+  its BOM on the change notice.
+- A released (Production) revision is not changed while **Settings → Items →
+  Release Control** is set to **Enforce**.
+- A sub-assembly whose make method is Active is never edited. Its BOM goes to its
+  newest Draft that no change notice holds, else to a new Draft version.
+
+If the make method you sync is one of these, Save writes nothing and says why. A
+sub-assembly that is one of these keeps its BOM: Save writes the rest and names
+each sub-assembly it did not write.
+
 ## The Carbon panel in Onshape
 
 Open a Part Studio, an assembly or a drawing and click the Carbon icon in the right
