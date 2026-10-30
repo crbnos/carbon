@@ -16,6 +16,7 @@
     "./email/delivery": "./src/email/delivery.ts",
     "./email-notifications.server": "./src/email-notifications/deliver.server.ts",
     "./entitlements.server": "./src/entitlements.server.ts",
+    "./federation": "./src/federation/index.ts",
     "./forecast.server": "./src/forecast.server.ts",
     "./mcp": "./src/mcp/index.ts",
     "./mcp.server": "./src/mcp/server.ts",
