@@ -21,8 +21,8 @@
 - [x] Task 11: Count unnumbered units and assign serial numbers
 - [x] Task 12: Export and import count results as CSV
 - [x] Task 13: Update docs and regenerate the MCP manifest
-- [ ] Task 14: Run the full gate
-- [ ] Task 15: Verify in the browser
+- [x] Task 14: Run the full gate
+- [x] Task 15: Verify in the browser
 
 ## Dependencies
 
