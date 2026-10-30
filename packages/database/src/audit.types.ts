@@ -15,8 +15,10 @@ export type AuditOperation = "INSERT" | "UPDATE" | "DELETE";
 export interface AuditMetadata {
   ipAddress?: string;
   userAgent?: string;
-  origin?: "web" | "api" | "import" | "system";
+  origin?: "web" | "api" | "import" | "system" | "scim";
   requestId?: string;
+  /** The non-user actor to show when `actorId` is null, e.g. `SCIM (Okta)`. */
+  actorLabel?: string;
 }
 
 /**

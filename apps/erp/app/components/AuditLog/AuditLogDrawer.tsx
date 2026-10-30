@@ -45,7 +45,7 @@ import { usePermissions, useRouteData } from "~/hooks";
 import { useResolved } from "~/hooks/useResolved";
 import { path } from "~/utils/path";
 import { useAuditLogDownload } from "./useAuditLogDownload";
-import { isEmptyDiffValue } from "./utils";
+import { isEmptyDiffValue, nonUserActorLabel } from "./utils";
 
 type AuditLogDrawerProps = {
   isOpen: boolean;
@@ -397,7 +397,7 @@ const AuditLogEntryCard = memo(({ entry }: AuditLogEntryCardProps) => {
             <EmployeeAvatar employeeId={entry.actorId} />
           ) : (
             <span className="font-medium">
-              <Trans>System</Trans>
+              {nonUserActorLabel(entry) ?? <Trans>System</Trans>}
             </span>
           )}
           <span

@@ -47,6 +47,7 @@
     "./slack.server": "./src/slack.server.ts",
     "./slack/messages": "./src/slack/lib/messages.ts",
     "./sso.server": "./src/sso/index.server.ts",
+    "./scim.server": "./src/sso/scim-index.server.ts",
     "./hooks.server": "./src/hooks.server.ts",
     "./quickbooks/hooks.server": "./src/quickbooks/hooks.server.ts",
     "./ramp.server": "./src/ramp/lib/index.ts",

@@ -82,27 +82,42 @@ export const getCarbonServiceRole = (): SupabaseClient<Database> => {
   return getCarbonClient(SUPABASE_SERVICE_ROLE_KEY!, undefined, requestFetch());
 };
 
-export async function getUserScopedClient(
+/**
+ * A 5-minute access token for `userId`, signed with the project's JWT secret.
+ * It carries no `session_id`: GoTrue's `/logout?scope=global` reads that as
+ * "every session of this user" and revokes all their refresh tokens.
+ */
+export async function signUserAccessToken(
   userId: string,
-  options?: { workflowRunId?: string }
-): Promise<SupabaseClient<Database>> {
+  claims?: Record<string, string>
+): Promise<string> {
   if (!SUPABASE_JWT_SECRET) {
-    throw new Error("SUPABASE_JWT_SECRET is required for user-scoped clients");
+    throw new Error("SUPABASE_JWT_SECRET is required for user-scoped tokens");
   }
 
   const secret = new TextEncoder().encode(SUPABASE_JWT_SECRET);
-  const jwt = await new SignJWT({
+  return new SignJWT({
     sub: userId,
     aud: "authenticated",
     role: "authenticated",
-    ...(options?.workflowRunId
-      ? { workflow_run_id: options.workflowRunId }
-      : {})
+    ...claims
   })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setIssuedAt()
     .setExpirationTime("5m")
     .sign(secret);
+}
+
+export async function getUserScopedClient(
+  userId: string,
+  options?: { workflowRunId?: string }
+): Promise<SupabaseClient<Database>> {
+  const jwt = await signUserAccessToken(
+    userId,
+    options?.workflowRunId
+      ? { workflow_run_id: options.workflowRunId }
+      : undefined
+  );
 
   return getCarbonClient(SUPABASE_ANON_KEY!, jwt, requestFetch());
 }

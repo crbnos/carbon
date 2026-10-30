@@ -183,6 +183,11 @@ Refactor one at a time; each PR should leave the tree green.
   `@carbon/workflows-core` so `@carbon/lib` need not depend on the commercial engine — that
   edge would be a `lib → ee → lib` cycle. (The job-side executors in
   `packages/jobs/src/workflows/` stay in jobs — Inngest-coupled, like backups.)
+- ✅ **SCIM provisioning** — engine in `packages/ee/src/sso/scim*.ts`
+  (`@carbon/ee/scim.server`). `handleScimRequest` embeds `requireEntitlement("SCIM")`
+  on every request (an un-entitled company's IdP gets 403); the settings writes embed it
+  too, except `deleteScimConnection`, so a downgraded company can still turn SCIM off.
+  UI is `ScimProvisioning.ee.tsx` behind `usePlanGate({ feature: "SCIM" })`.
 - ✅ **MCP** — protocol engine moved to `packages/ee/src/mcp/` (`@carbon/ee/mcp`
   pure logic; `@carbon/ee/mcp.server` = `server.ts`). `serveMcpRequest` embeds
   `requireEntitlement("MCP")` (route catches `EntitlementError` → 402), replacing

@@ -1,0 +1,75 @@
+---
+title: SCIM provisioning
+description: Let your identity provider add, update and remove Carbon members automatically with SCIM 2.0.
+---
+
+SCIM provisioning lets your <Term>identity provider</Term> (Okta, Microsoft Entra ID, or any SCIM 2.0 client) manage your company's members in Carbon. When IT assigns a person to Carbon, the person joins your company. When IT disables or unassigns them, they lose access to your company and their sessions end.
+
+It works with or without [single sign-on](/docs/reference/single-sign-on). Without SSO, provisioned people sign in with a magic link, Google or a passkey.
+
+## Requirements
+
+- SCIM provisioning is available on the Business plan, and on a self-hosted Enterprise deployment.
+- Setting it up needs `settings` update.
+- Your identity provider must provision to a custom app: Okta needs Lifecycle Management, and Entra ID provisions directly assigned users on every tier (group assignment needs P1 or P2).
+
+## Set it up
+
+Everything lives on **Settings → Security**, under **"Provisioning"**.
+
+<Steps>
+<Step>
+**Pick the defaults.** In **"Set up SCIM"**, choose your **"Identity provider"**, the **"Default employee type"** and the **"Default location"**. Each new member gets that type and location.
+</Step>
+<Step>
+**Generate the token.** Click **"Generate token"**. Carbon shows the **"SCIM base URL"** and the token once. Copy both.
+</Step>
+<Step>
+**Enter them in your identity provider.** In Okta, create a SAML app, turn on SCIM provisioning, and use the base URL with **HTTP Header** authentication. Set the unique identifier to `userName`. In Entra ID, open the enterprise app's **Provisioning** page, set the mode to **Automatic**, and enter the base URL as **Tenant URL** and the token as **Secret Token**.
+</Step>
+<Step>
+**Assign people and push groups.** Assign people or groups to the app in your identity provider. To map groups, turn on **Push Groups** (Okta) or assign groups (Entra ID).
+</Step>
+</Steps>
+
+**"Regenerate token"** replaces the token. The old token stops working at once, so enter the new one in your identity provider. **"Turn off"** stops provisioning. The members it added stay in your company as they are.
+
+## What your identity provider controls
+
+| Change in the identity provider | What happens in Carbon |
+|---|---|
+| A person is assigned | They join your company with the default employee type and location. If they already have a Carbon account with that email, Carbon uses it. If they are already an active employee here, nothing about them changes. |
+| A person is disabled, unassigned or deleted | They leave your company, their API keys in your company are deleted, and if they belong to no other Carbon company, every session they have ends. |
+| A person is enabled again | They rejoin your company with the employee type their groups give. |
+| A name changes | Carbon updates the name, unless the person also belongs to another Carbon company. |
+| An email or user name changes | Carbon stores it for the identity provider, but the person's Carbon sign-in email does not change. |
+| Group membership changes | The person's employee type follows the group mappings (below). |
+
+A deactivation removes the person from your company only. Their Carbon account, and everything they created, stays.
+
+<Callout type="note" title="Changes made in Carbon can be overwritten">
+Your identity provider owns each provisioned member's name, active state and, once you map groups, employee type. A change you make in Carbon lasts until the identity provider's next update. A member you deactivate by hand in Carbon stays deactivated until the identity provider itself deactivates and reactivates them.
+</Callout>
+
+SCIM never touches a member your identity provider did not provision, such as a shop-floor operator on a shared terminal.
+
+## Map groups to employee types
+
+Groups your identity provider pushes appear in **"Group Mappings"**. For each group, choose an **"Employee type"** and a **"Priority"**, then **"Save"**.
+
+- A member of a mapped group gets its employee type, with that type's permissions in your company.
+- A member of several mapped groups gets the type of the group with the lowest priority.
+- A member of no mapped group gets the default employee type.
+- Until you map one group, SCIM never changes an employee type after it adds the person.
+
+A type change replaces the person's permissions in your company with the type's permissions.
+
+## Audit
+
+When the audit log is on, each SCIM change (a member added, deactivated, reactivated, or given a new type) is recorded on the employee, with **"SCIM (Okta)"** or the name of your identity provider as the actor.
+
+## Limits
+
+- In a controlled environment, SCIM can update and deactivate members, but it cannot add or re-add anyone: add them in Carbon so an administrator can attest to them.
+- SCIM provisions employees only, not customer or supplier portal accounts.
+- Carbon accepts `eq` filters joined by `and`, and does not support bulk requests.

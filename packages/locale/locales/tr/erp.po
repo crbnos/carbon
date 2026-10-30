@@ -338,6 +338,10 @@ msgstr "{0} satır"
 msgid "{0} lines to map"
 msgstr "{0} satır eşlenecek"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr ""
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -994,6 +998,9 @@ msgstr "1 iş oluşturuldu"
 
 msgid "1 line"
 msgstr "1 satır"
+
+msgid "1 member"
+msgstr ""
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 parça atlandı — zaten açık bir işi var"
@@ -2101,6 +2108,9 @@ msgstr "Aktif"
 msgid "Active Jobs"
 msgstr "Aktif İş emirleri"
 
+msgid "Active members"
+msgstr ""
+
 msgid "Active Methods Missing a Pull From"
 msgstr "Çekme Kaynağı Olmayan Aktif Yöntemler"
 
@@ -2211,6 +2221,9 @@ msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan kod isteyerek güv
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "Her rota operasyonunun beklenen zamanlarını ve tarama barkodlarını listeleyen bir operasyonlar bölümü ekleyin."
+
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr ""
 
 msgid "Add any notes about your decision..."
 msgstr "Kararınızla ilgili herhangi bir not ekleyin..."
@@ -7601,6 +7614,9 @@ msgstr "Varsayılan cc"
 msgid "Default CC Recipients"
 msgstr "Varsayılan Bilgi Ekleyicileri"
 
+msgid "Default employee type"
+msgstr ""
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "Sabit bir varlığın elden çıkarılması sonucunda kar elde edildiğinde alacak kaydedilen varsayılan GL hesabı."
 
@@ -7618,6 +7634,9 @@ msgstr "Periyodik amortisman çalışmaları için varsayılan muhasebe gideri h
 
 msgid "Default horizon (days)"
 msgstr "Varsayılan ufuk (gün)"
+
+msgid "Default location"
+msgstr ""
 
 msgid "Default Method"
 msgstr "Varsayılan Yöntem"
@@ -9382,6 +9401,9 @@ msgstr "Çalışan Hesapları"
 msgid "Employee Reimbursements Payable"
 msgstr "Çalışan Geri Ödeme Borçları"
 
+msgid "Employee type"
+msgstr ""
+
 msgid "Employee Type"
 msgstr "Çalışan Türü"
 
@@ -9649,6 +9671,9 @@ msgstr "Doğrulayıcı uygulamanızdaki 6 haneli kodu girin"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Devam etmek için kimlik doğrulayıcı uygulamanızdan 6 haneli kodu girin."
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr ""
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Özel OAuth uygulamanızın Onshape URL'sini, istemci ID'sini ve istemci gizli anahtarını girin, ardından kaydedin."
@@ -11173,6 +11198,9 @@ msgstr "Malzemenin özelliklerine göre malzeme kimlikleri ve açıklamaları ol
 msgid "Generate Picking List"
 msgstr "Toplama listesi oluştur"
 
+msgid "Generate token"
+msgstr ""
+
 msgid "Generated {created} steps from the motion plan"
 msgstr ""
 
@@ -11461,6 +11489,9 @@ msgstr "Grupla"
 
 msgid "Group by material"
 msgstr "Malzemeye göre grupla"
+
+msgid "Group Mappings"
+msgstr ""
 
 msgid "Group Members"
 msgstr "Üye Grupları"
@@ -11857,6 +11888,9 @@ msgstr "İdempotentlik Anahtarı"
 
 msgid "Identifiers"
 msgstr "Tanımlayıcılar"
+
+msgid "Identity provider"
+msgstr ""
 
 msgid "Identity Provider"
 msgstr "Kimlik Sağlayıcı"
@@ -13123,6 +13157,9 @@ msgstr "Son gönderim: {lastPushed}."
 msgid "Last Quarter"
 msgstr "Son Çeyrek"
 
+msgid "Last request"
+msgstr ""
+
 msgid "Last Run"
 msgstr "Son Çalıştırma"
 
@@ -13312,6 +13349,9 @@ msgstr "Kiraya Veren İskonto Oranı (%)"
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "Üyelerin SAML ile kimlik sağlayıcınız üzerinden oturum açmasını sağlayın."
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr ""
 
 msgid "Let's Build"
 msgstr "Üretelim"
@@ -13940,6 +13980,9 @@ msgstr "üretim engellendi"
 msgid "Map accounts"
 msgstr "Hesapları Eşle"
 
+msgid "Map each group your identity provider pushes to an employee type. A member of several mapped groups gets the type of the lowest priority."
+msgstr ""
+
 msgid "Map Extracted Invoice Lines"
 msgstr "Çıkarılan Fatura Satırlarını Eşle"
 
@@ -14270,6 +14313,9 @@ msgstr "Üye"
 
 msgid "Members"
 msgstr "Üyeler"
+
+msgid "Members in no mapped group get this type"
+msgstr ""
 
 msgid "Memo"
 msgstr "Not"
@@ -15549,6 +15595,9 @@ msgstr "Gruplanmış bildirim yok"
 
 msgid "No groups assigned"
 msgstr "Atanmış grup yok"
+
+msgid "No groups yet. Push groups from your identity provider to map them to employee types."
+msgstr ""
 
 msgid "No image"
 msgstr "Resim yok"
@@ -18415,6 +18464,9 @@ msgstr "Geçici"
 msgid "Provisional journal"
 msgstr "Geçici muhasebe fişi"
 
+msgid "Provisioning"
+msgstr ""
+
 msgid "Public"
 msgstr "Herkese açık"
 
@@ -19410,11 +19462,17 @@ msgstr "Koşullardan Yeniden Oluştur"
 msgid "Regenerate payments from the terms?"
 msgstr "Ödemeler koşullardan yeniden oluşturulsun mu?"
 
+msgid "Regenerate SCIM token"
+msgstr ""
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Bu lokasyon için çizelgeyi şimdi yeniden oluşturun. Son çizelgeleme değişikliğinden yaklaşık 30 saniye sonra da otomatik olarak çalışır (düzenlemeler toplu halde yapılır, bu nedenle birkaç hızlı değişiklik tek bir yeniden oluşturmayı tetikler)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D modelinden Küçük resim yeniden oluştur"
+
+msgid "Regenerate token"
+msgstr ""
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr ""
@@ -21058,6 +21116,15 @@ msgstr "Planlama"
 msgid "Scheduling conflict"
 msgstr "Zamanlama Çakışması"
 
+msgid "SCIM base URL"
+msgstr ""
+
+msgid "SCIM Connection"
+msgstr ""
+
+msgid "SCIM Provisioning"
+msgstr ""
+
 msgid "Scope"
 msgstr "Kapsam"
 
@@ -21806,6 +21873,9 @@ msgstr "Raporlar, muhasebe fişleri, muhasebe dönemleri, amortisman çalıştı
 
 msgid "Set up authenticator app"
 msgstr "Doğrulayıcı uygulamayı ayarla"
+
+msgid "Set up SCIM"
+msgstr ""
 
 msgid "Set up the right way"
 msgstr "Doğru şekilde ayarla"
@@ -23954,6 +24024,9 @@ msgstr "CSV içe aktarılmadı"
 msgid "The currencies you trade in and their rates"
 msgstr "Ticaret yaptığınız para birimleri ve bunların oranları"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr ""
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "Müşteri birim'i etkili bir şekilde satın alır. Başlangıçta sabit kıymetlerinizden çıkar, satış muhasebeleştirilir ve dönem boyunca alacak üzerinden faiz kazanılır."
 
@@ -25658,6 +25731,9 @@ msgstr "Özellikleri Aç/Kapat"
 msgid "Toggle views"
 msgstr "Görünümleri değiştir"
 
+msgid "Token"
+msgstr ""
+
 msgid "Tol-"
 msgstr "Tol-"
 
@@ -26018,6 +26094,12 @@ msgstr "Tekrar deneyin"
 
 msgid "Tuesday"
 msgstr "Salı"
+
+msgid "Turn off"
+msgstr ""
+
+msgid "Turn off SCIM provisioning"
+msgstr ""
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Açın <0>Ayarlar → Muhasebe'de Kısa Vadeli Kiralama Muafiyeti</0> veya"
@@ -28107,6 +28189,15 @@ msgstr "Dışa aktarımınız hazırlanıyor. Hazır olduğunda size haber verec
 msgid "Your GL accounts"
 msgstr "Muhasebe hesaplarınız"
 
+msgid "Your identity provider can no longer add or remove members, and the group mappings are deleted. Members it provisioned stay in this company as they are."
+msgstr ""
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr ""
+
+msgid "Your identity provider owns each provisioned member's name, active state and, for mapped groups, employee type. Changes made here are overwritten on its next update. Deactivating a member removes them from this company, deletes their API keys here, and ends their sessions when they have no other company."
+msgstr ""
+
 msgid "your Implementation Lead"
 msgstr "sizin Uygulama Müdürünüz"
 
@@ -28151,6 +28242,9 @@ msgstr "Sizin kurunuz"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Gerçek verileriniz yüklendi ve bir örneği kontrol ederek onayladınız."
+
+msgid "Your SCIM token"
+msgstr ""
 
 msgid "Your session was locked after inactivity."
 msgstr "Oturumunuz hareketsizlikten sonra kilitlendi."

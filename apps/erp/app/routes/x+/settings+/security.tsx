@@ -6,6 +6,7 @@ import { carbon } from "@carbon/api/carbon.server";
 import { CONTROLLED_ENVIRONMENT, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getScimConnection } from "@carbon/ee/scim.server";
 import {
   getSamlSpUrls,
   getSsoConnection,
@@ -13,6 +14,7 @@ import {
   getTxtRecord,
   isSsoEnabled
 } from "@carbon/ee/sso.server";
+import { getAppUrl } from "@carbon/env";
 import { ValidatedForm, validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -23,8 +25,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Copy,
-  cn,
   Heading,
   HStack,
   Modal,
@@ -42,7 +42,7 @@ import {
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { LuShieldCheck } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, useFetcher, useLoaderData } from "react-router";
@@ -57,6 +57,13 @@ import {
   ssoConnectionValidator,
   ssoDomainValidator
 } from "~/modules/settings/settings.models";
+import ScimProvisioning, {
+  type ScimProvisioningData
+} from "~/modules/settings/ui/Security/ScimProvisioning.ee";
+import {
+  CopyableField,
+  StatusDot
+} from "~/modules/settings/ui/Security/SecurityFields";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -77,6 +84,33 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // (kong.yml auth-v1-sso).
   const { acsUrl, metadataUrl } = getSamlSpUrls();
 
+  // SCIM provisioning does not depend on SAML SSO: it runs on Cloud too.
+  const [scimConnection, employeeTypes] = await Promise.all([
+    getScimConnection(client, companyId),
+    client
+      .from("employeeType")
+      .select("id, name")
+      .eq("companyId", companyId)
+      .order("name")
+  ]);
+  if (scimConnection.error || employeeTypes.error) {
+    throw redirect(
+      path.to.settings,
+      await flash(
+        request,
+        error(
+          scimConnection.error ?? employeeTypes.error,
+          "Failed to load SCIM provisioning"
+        )
+      )
+    );
+  }
+  const scim = {
+    data: scimConnection.data as ScimProvisioningData | null,
+    baseUrl: `${getAppUrl()}/scim/v2`,
+    employeeTypes: employeeTypes.data ?? []
+  };
+
   // The whole SSO surface keys off isSsoEnabled() (Enterprise edition + `sso`
   // in AUTH_PROVIDERS) — the component gates the section on this flag rather
   // than on edition alone, so a deployment without the provider enabled never
@@ -88,7 +122,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       connection: null,
       domains: [],
       acsUrl,
-      metadataUrl
+      metadataUrl,
+      scim
     };
   }
 
@@ -143,7 +178,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     connection: connection.data,
     domains,
     acsUrl,
-    metadataUrl
+    metadataUrl,
+    scim
   };
 }
 
@@ -159,46 +195,11 @@ export async function action(args: ActionFunctionArgs) {
   return api.settings.updateSecuritySettings(input.data);
 }
 
-function StatusDot({
-  tone,
-  children
-}: {
-  tone: "green" | "amber" | "gray";
-  children: ReactNode;
-}) {
-  const toneClass = {
-    green: "bg-emerald-500 shadow-[0_0_0_3px_rgb(16_185_129_/_0.15)]",
-    amber: "bg-amber-500 shadow-[0_0_0_3px_rgb(245_158_11_/_0.15)]",
-    gray: "bg-muted-foreground/40"
-  }[tone];
-
-  return (
-    <span className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
-      <span className={cn("size-2 rounded-full", toneClass)} />
-      {children}
-    </span>
-  );
-}
-
 function ConnectionStatus({ active }: { active: boolean }) {
   return (
     <StatusDot tone={active ? "green" : "gray"}>
       {active ? <Trans>Active</Trans> : <Trans>Not configured</Trans>}
     </StatusDot>
-  );
-}
-
-function CopyableField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-1.5 w-full">
-      <span className="text-sm font-medium text-foreground">{label}</span>
-      <div className="flex items-center gap-1 h-10 w-full rounded-md border border-input bg-muted/40 pl-3 pr-1">
-        <span className="flex-1 truncate font-mono text-sm text-muted-foreground">
-          {value}
-        </span>
-        <Copy text={value} />
-      </div>
-    </div>
   );
 }
 
@@ -333,7 +334,7 @@ function SsoDomainRow({
 }
 
 export default function Security() {
-  const { ssoEnabled, connection, domains, acsUrl, metadataUrl } =
+  const { ssoEnabled, connection, domains, acsUrl, metadataUrl, scim } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -714,6 +715,13 @@ export default function Security() {
             )}
           </>
         )}
+
+        <ScimProvisioning
+          scim={scim.data}
+          baseUrl={scim.baseUrl}
+          employeeTypes={scim.employeeTypes}
+          canEdit={canEdit}
+        />
       </SettingsPage>
     </ScrollArea>
   );

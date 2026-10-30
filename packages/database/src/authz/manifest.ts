@@ -1443,6 +1443,12 @@ export const manifest = {
     delete: owner("userId")
   }),
   salesRfqLine: company("sales", { read: "sales_view" }),
+  // SCIM provisioning: written by the ee engine with the service role; the
+  // settings screen reads them.
+  scimConnection: company("settings", { read: "settings_view" }),
+  scimGroup: company("settings", { read: "settings_view" }),
+  scimGroupMember: company("settings", { read: "settings_view" }),
+  scimUser: company("settings", { read: "settings_view" }),
   scrapReason: company("production"),
   scriptRun: policies({ select: authenticated }),
   searchIndexRegistry: serviceOnly(),

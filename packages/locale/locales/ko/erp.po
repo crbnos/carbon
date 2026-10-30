@@ -338,6 +338,10 @@ msgstr "{0} 라인"
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr ""
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -994,6 +998,9 @@ msgstr "1개 작업이 생성됨"
 
 msgid "1 line"
 msgstr "1 라인"
+
+msgid "1 member"
+msgstr ""
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1개 부품이 건너뜀 — 이미 활성 작업이 있음"
@@ -2101,6 +2108,9 @@ msgstr "활성"
 msgid "Active Jobs"
 msgstr "진행 중인 작업 지시"
 
+msgid "Active members"
+msgstr ""
+
 msgid "Active Methods Missing a Pull From"
 msgstr "출처가 없는 활성 방법"
 
@@ -2211,6 +2221,9 @@ msgstr "로그인할 때 인증 앱의 코드를 입력하도록 요구하여 �
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "각 라우팅 공정의 예상 시간과 스캔 바코드를 나열하는 공정 섹션을 추가합니다."
+
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr ""
 
 msgid "Add any notes about your decision..."
 msgstr "결정에 대한 메모를 추가하세요..."
@@ -7601,6 +7614,9 @@ msgstr "기본 참조자"
 msgid "Default CC Recipients"
 msgstr "기본 참조(CC) 수신자"
 
+msgid "Default employee type"
+msgstr ""
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "고정자산 처분으로 이익이 발생할 때 입금되는 기본 GL 계정입니다."
 
@@ -7618,6 +7634,9 @@ msgstr "정기 감가상각 처리에 대한 기본 총계정원장 비용 계�
 
 msgid "Default horizon (days)"
 msgstr "기본 호라이즌(일)"
+
+msgid "Default location"
+msgstr ""
 
 msgid "Default Method"
 msgstr "기본 방법"
@@ -9382,6 +9401,9 @@ msgstr "직원 계정"
 msgid "Employee Reimbursements Payable"
 msgstr "직원 환급금 매입채무"
 
+msgid "Employee type"
+msgstr ""
+
 msgid "Employee Type"
 msgstr "직원 유형"
 
@@ -9649,6 +9671,9 @@ msgstr "인증자 앱에서 6자리 코드를 입력하세요"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "계속하려면 인증 앱의 6자리 코드를 입력하세요."
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr ""
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "개인 OAuth 애플리케이션의 Onshape URL, 클라이언트 ID 및 클라이언트 암호를 입력한 후 저장하세요."
@@ -11173,6 +11198,9 @@ msgstr "자재 속성을 기반으로 자재 ID와 설명을 생성합니다."
 msgid "Generate Picking List"
 msgstr "피킹 리스트 생성"
 
+msgid "Generate token"
+msgstr ""
+
 msgid "Generated {created} steps from the motion plan"
 msgstr ""
 
@@ -11461,6 +11489,9 @@ msgstr "그룹화 기준"
 
 msgid "Group by material"
 msgstr "재료별로 그룹화"
+
+msgid "Group Mappings"
+msgstr ""
 
 msgid "Group Members"
 msgstr "그룹 구성원"
@@ -11857,6 +11888,9 @@ msgstr "멱등성 키"
 
 msgid "Identifiers"
 msgstr "식별자"
+
+msgid "Identity provider"
+msgstr ""
 
 msgid "Identity Provider"
 msgstr "자격 증명 공급자"
@@ -13123,6 +13157,9 @@ msgstr "마지막 푸시: {lastPushed}."
 msgid "Last Quarter"
 msgstr "지난 분기"
 
+msgid "Last request"
+msgstr ""
+
 msgid "Last Run"
 msgstr "마지막 실행"
 
@@ -13312,6 +13349,9 @@ msgstr "리스 제공인 할인율(%)"
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "멤버가 SAML을 통한 ID 제공자로 로그인하도록 허용합니다."
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr ""
 
 msgid "Let's Build"
 msgstr "제조해 봅시다"
@@ -13940,6 +13980,9 @@ msgstr "제조가 차단되었습니다"
 msgid "Map accounts"
 msgstr "계정 매핑"
 
+msgid "Map each group your identity provider pushes to an employee type. A member of several mapped groups gets the type of the lowest priority."
+msgstr ""
+
 msgid "Map Extracted Invoice Lines"
 msgstr "추출한 송장 라인 매핑"
 
@@ -14270,6 +14313,9 @@ msgstr "구성원"
 
 msgid "Members"
 msgstr "구성원"
+
+msgid "Members in no mapped group get this type"
+msgstr ""
 
 msgid "Memo"
 msgstr "메모"
@@ -15549,6 +15595,9 @@ msgstr "그룹화된 알림이 없습니다"
 
 msgid "No groups assigned"
 msgstr "배정된 그룹이 없습니다"
+
+msgid "No groups yet. Push groups from your identity provider to map them to employee types."
+msgstr ""
 
 msgid "No image"
 msgstr "이미지 없음"
@@ -18415,6 +18464,9 @@ msgstr "임시"
 msgid "Provisional journal"
 msgstr "임시 전표"
 
+msgid "Provisioning"
+msgstr ""
+
 msgid "Public"
 msgstr "공개"
 
@@ -19410,11 +19462,17 @@ msgstr "조건에서 재생성"
 msgid "Regenerate payments from the terms?"
 msgstr "조건에서 지불을 재생성하시겠습니까?"
 
+msgid "Regenerate SCIM token"
+msgstr ""
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "이 사업장의 일정을 지금 다시 생성하세요. 마지막 일정 변경 후 약 30초에 자동으로 실행됩니다(편집이 일괄 처리되므로 여러 빠른 변경으로 인해 단일 재생성이 트리거됩니다)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D 모델에서 썸네일 재생성"
+
+msgid "Regenerate token"
+msgstr ""
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr ""
@@ -21058,6 +21116,15 @@ msgstr "일정"
 msgid "Scheduling conflict"
 msgstr "스케줄링 충돌"
 
+msgid "SCIM base URL"
+msgstr ""
+
+msgid "SCIM Connection"
+msgstr ""
+
+msgid "SCIM Provisioning"
+msgstr ""
+
 msgid "Scope"
 msgstr "범위"
 
@@ -21806,6 +21873,9 @@ msgstr "보고서, 전표, 회계 기간, 감가상각 실행 등을 사용하�
 
 msgid "Set up authenticator app"
 msgstr "인증자 앱 설정"
+
+msgid "Set up SCIM"
+msgstr ""
 
 msgid "Set up the right way"
 msgstr "올바른 방식으로 설정하기"
@@ -23954,6 +24024,9 @@ msgstr "CSV를 가져오지 못했습니다."
 msgid "The currencies you trade in and their rates"
 msgstr "거래에 사용하는 통화와 환율"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr ""
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "고객이 실질적으로 개를 구매합니다. 개시일에 귀사의 고정자산에서 제거되고, 판매가 전기되며, 약관 기간 동안 미수금에 대한 이자가 발생합니다."
 
@@ -25658,6 +25731,9 @@ msgstr "속성 전환"
 msgid "Toggle views"
 msgstr "보기 전환"
 
+msgid "Token"
+msgstr ""
+
 msgid "Tol-"
 msgstr "공차-"
 
@@ -26018,6 +26094,12 @@ msgstr "다시 시도"
 
 msgid "Tuesday"
 msgstr "화요일"
+
+msgid "Turn off"
+msgstr ""
+
+msgid "Turn off SCIM provisioning"
+msgstr ""
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "<0>설정 → 회계에서 단기 리스 간편법</0>을 켜세요, 또는"
@@ -28107,6 +28189,15 @@ msgstr "내보내기를 준비하고 있습니다. 준비가 끝나면 알려 �
 msgid "Your GL accounts"
 msgstr "총계정원장 계정"
 
+msgid "Your identity provider can no longer add or remove members, and the group mappings are deleted. Members it provisioned stay in this company as they are."
+msgstr ""
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr ""
+
+msgid "Your identity provider owns each provisioned member's name, active state and, for mapped groups, employee type. Changes made here are overwritten on its next update. Deactivating a member removes them from this company, deletes their API keys here, and ends their sessions when they have no other company."
+msgstr ""
+
 msgid "your Implementation Lead"
 msgstr "귀사의 실행 리드"
 
@@ -28151,6 +28242,9 @@ msgstr "사용자 환율"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "실제 데이터가 로드되었고 샘플을 확인하여 승인했습니다."
+
+msgid "Your SCIM token"
+msgstr ""
 
 msgid "Your session was locked after inactivity."
 msgstr "세션이 비활성으로 인해 잠겼습니다."

@@ -15264,6 +15264,222 @@ export default {
         tags: ["materialGrades"]
       }
     },
+    "/scimUser": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scimUser.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.connectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.userName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.email"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.givenName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.familyName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/scimUser"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["scimUser"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.scimUser"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["scimUser"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scimUser.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.connectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.userName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.email"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.givenName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.familyName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scimUser"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scimUser.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.connectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.userName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.email"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.givenName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.familyName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimUser.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.scimUser"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scimUser"]
+      }
+    },
     "/salesReturnOrderCreditLine": {
       get: {
         parameters: [
@@ -31554,6 +31770,123 @@ export default {
         tags: ["timeCardEntries"]
       }
     },
+    "/scimGroupMember": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scimGroupMember.groupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroupMember.scimUserId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroupMember.companyId"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/scimGroupMember"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["scimGroupMember"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.scimGroupMember"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["scimGroupMember"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scimGroupMember.groupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroupMember.scimUserId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroupMember.companyId"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scimGroupMember"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scimGroupMember.groupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroupMember.scimUserId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroupMember.companyId"
+          },
+          {
+            $ref: "#/parameters/body.scimGroupMember"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scimGroupMember"]
+      }
+    },
     "/supplierTax": {
       get: {
         parameters: [
@@ -43477,6 +43810,204 @@ export default {
           }
         },
         tags: ["salesOrderFavorite"]
+      }
+    },
+    "/scimConnection": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.identityProvider"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.tokenHash"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.tokenPreview"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.defaultEmployeeTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.defaultLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.lastRequestAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/scimConnection"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["scimConnection"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.scimConnection"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["scimConnection"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.identityProvider"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.tokenHash"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.tokenPreview"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.defaultEmployeeTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.defaultLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.lastRequestAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scimConnection"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.identityProvider"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.tokenHash"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.tokenPreview"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.defaultEmployeeTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.defaultLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.lastRequestAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimConnection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.scimConnection"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scimConnection"]
       }
     },
     "/materialFinishes": {
@@ -73474,6 +74005,195 @@ export default {
           }
         },
         tags: ["nonConformanceSalesReturnOrderLine"]
+      }
+    },
+    "/scimGroup": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.connectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.displayName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.employeeTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.priority"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/scimGroup"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["scimGroup"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.scimGroup"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["scimGroup"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.connectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.displayName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.employeeTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.priority"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scimGroup"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.connectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.displayName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.employeeTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.priority"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scimGroup.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.scimGroup"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scimGroup"]
       }
     },
     "/changeOrderRequiredAction": {
@@ -126466,6 +127186,90 @@ export default {
       },
       type: "object"
     },
+    scimUser: {
+      required: [
+        "id",
+        "companyId",
+        "connectionId",
+        "userId",
+        "userName",
+        "email",
+        "active",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('scimu'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        connectionId: {
+          format: "text",
+          type: "string"
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        userName: {
+          format: "text",
+          type: "string"
+        },
+        externalId: {
+          format: "text",
+          type: "string"
+        },
+        email: {
+          format: "text",
+          type: "string"
+        },
+        givenName: {
+          format: "text",
+          type: "string"
+        },
+        familyName: {
+          format: "text",
+          type: "string"
+        },
+        active: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     salesReturnOrderCreditLine: {
       required: [
         "id",
@@ -134562,6 +135366,28 @@ export default {
       },
       type: "object"
     },
+    scimGroupMember: {
+      required: ["groupId", "scimUserId", "companyId"],
+      properties: {
+        groupId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        scimUserId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     supplierTax: {
       required: ["supplierId", "taxExempt", "companyId"],
       properties: {
@@ -140034,6 +140860,91 @@ export default {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    scimConnection: {
+      required: [
+        "id",
+        "companyId",
+        "identityProvider",
+        "tokenHash",
+        "tokenPreview",
+        "defaultEmployeeTypeId",
+        "defaultLocationId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('scim'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        identityProvider: {
+          enum: [
+            "Okta",
+            "Microsoft Entra ID",
+            "Google Workspace",
+            "JumpCloud",
+            "OneLogin",
+            "Other"
+          ],
+          format: 'public."scimIdentityProvider"',
+          type: "string"
+        },
+        tokenHash: {
+          format: "text",
+          type: "string"
+        },
+        tokenPreview: {
+          format: "text",
+          type: "string"
+        },
+        defaultEmployeeTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `employeeType.id`.<fk table='employeeType' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        defaultLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        lastRequestAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -154457,6 +155368,76 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    scimGroup: {
+      required: [
+        "id",
+        "companyId",
+        "connectionId",
+        "displayName",
+        "priority",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('scimg'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        connectionId: {
+          format: "text",
+          type: "string"
+        },
+        displayName: {
+          format: "text",
+          type: "string"
+        },
+        externalId: {
+          format: "text",
+          type: "string"
+        },
+        employeeTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `employeeType.id`.<fk table='employeeType' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        priority: {
+          default: 100,
+          format: "integer",
+          type: "integer"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -177556,6 +178537,99 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.scimUser": {
+      name: "scimUser",
+      description: "scimUser",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/scimUser"
+      }
+    },
+    "rowFilter.scimUser.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimUser.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimUser.connectionId": {
+      name: "connectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimUser.userId": {
+      name: "userId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimUser.userName": {
+      name: "userName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimUser.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimUser.email": {
+      name: "email",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimUser.givenName": {
+      name: "givenName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimUser.familyName": {
+      name: "familyName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimUser.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimUser.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimUser.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimUser.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimUser.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.salesReturnOrderCreditLine": {
       name: "salesReturnOrderCreditLine",
       description: "salesReturnOrderCreditLine",
@@ -186806,6 +187880,33 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.scimGroupMember": {
+      name: "scimGroupMember",
+      description: "scimGroupMember",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/scimGroupMember"
+      }
+    },
+    "rowFilter.scimGroupMember.groupId": {
+      name: "groupId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimGroupMember.scimUserId": {
+      name: "scimUserId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimGroupMember.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.supplierTax": {
       name: "supplierTax",
       description: "supplierTax",
@@ -192894,6 +193995,87 @@ export default {
     },
     "rowFilter.salesOrderFavorite.userId": {
       name: "userId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.scimConnection": {
+      name: "scimConnection",
+      description: "scimConnection",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/scimConnection"
+      }
+    },
+    "rowFilter.scimConnection.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimConnection.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimConnection.identityProvider": {
+      name: "identityProvider",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimConnection.tokenHash": {
+      name: "tokenHash",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimConnection.tokenPreview": {
+      name: "tokenPreview",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimConnection.defaultEmployeeTypeId": {
+      name: "defaultEmployeeTypeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimConnection.defaultLocationId": {
+      name: "defaultLocationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimConnection.lastRequestAt": {
+      name: "lastRequestAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimConnection.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimConnection.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimConnection.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimConnection.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -208948,6 +210130,81 @@ export default {
     },
     "rowFilter.nonConformanceSalesReturnOrderLine.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.scimGroup": {
+      name: "scimGroup",
+      description: "scimGroup",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/scimGroup"
+      }
+    },
+    "rowFilter.scimGroup.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimGroup.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimGroup.connectionId": {
+      name: "connectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimGroup.displayName": {
+      name: "displayName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimGroup.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimGroup.employeeTypeId": {
+      name: "employeeTypeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimGroup.priority": {
+      name: "priority",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimGroup.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimGroup.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimGroup.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scimGroup.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
