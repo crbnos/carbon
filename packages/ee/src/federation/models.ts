@@ -8,8 +8,8 @@ import { zfd } from "zod-form-data";
 import { FEDERATION_LIMITS, federationProviders } from "./constants";
 import { ruleRequirementErrors } from "./match";
 
-function parseJsonObject(value: string | undefined): unknown {
-  if (!value) return {};
+function parseJson(value: string | undefined, empty: unknown): unknown {
+  if (!value) return empty;
   try {
     return JSON.parse(value);
   } catch {
@@ -17,12 +17,22 @@ function parseJsonObject(value: string | undefined): unknown {
   }
 }
 
-const claimConditionsSchema = z.record(
-  z.string().trim().min(1).max(FEDERATION_LIMITS.maxValueLength),
-  z.string().trim().min(1).max(FEDERATION_LIMITS.maxValueLength)
+const claimValue = z
+  .string()
+  .trim()
+  .min(1)
+  .max(FEDERATION_LIMITS.maxValueLength);
+
+/** The form posts its condition rows as a list, so a repeated claim is caught rather than collapsed. */
+const claimRowsSchema = z.array(
+  z.object({ claim: claimValue, value: claimValue })
 );
 
-/** The federation rule form: claim conditions and scopes post as JSON strings. */
+function parseClaimRows(value: string | undefined) {
+  return claimRowsSchema.safeParse(parseJson(value, []));
+}
+
+/** The federation rule form: claim condition rows and scopes post as JSON strings. */
 export const federationRuleValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -54,10 +64,8 @@ export const federationRuleValidator = z
     )
   })
   .superRefine((form, ctx) => {
-    const conditions = claimConditionsSchema.safeParse(
-      parseJsonObject(form.claimConditions)
-    );
-    if (!conditions.success) {
+    const rows = parseClaimRows(form.claimConditions);
+    if (!rows.success) {
       ctx.addIssue({
         code: "custom",
         path: ["claimConditions"],
@@ -65,10 +73,21 @@ export const federationRuleValidator = z
       });
       return;
     }
+    const names = rows.data.map((row) => row.claim);
+    if (new Set(names).size !== names.length) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["claimConditions"],
+        message: "Each claim may appear in one condition only"
+      });
+      return;
+    }
     const errors = ruleRequirementErrors({
       issuer: form.issuer,
       subject: form.subject ?? null,
-      claimConditions: conditions.data
+      claimConditions: Object.fromEntries(
+        rows.data.map((row) => [row.claim, row.value])
+      )
     });
     for (const [field, message] of Object.entries(errors)) {
       ctx.addIssue({ code: "custom", path: [field], message });
@@ -87,11 +106,13 @@ export function federationRuleFields({
   return {
     ...form,
     subject: subject || null,
-    claimConditions: (parseJsonObject(claimConditions) ?? {}) as Record<
-      string,
-      string
-    >,
-    scopes: (parseJsonObject(scopes) ?? {}) as Record<string, string[]>
+    claimConditions: Object.fromEntries(
+      (parseClaimRows(claimConditions).data ?? []).map((row) => [
+        row.claim,
+        row.value
+      ])
+    ),
+    scopes: (parseJson(scopes, {}) ?? {}) as Record<string, string[]>
   };
 }
 

@@ -831,6 +831,9 @@ msgstr "{removed}개 계획됨 송장이 제거됨"
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel}이(가) 다음 리비전으로 계획을 위해 다시 열기됩니다. 이미 공급업체로 보낸 문서는 주문서를 최종화하고 다시 보낼 때까지 변경되지 않습니다."
 
+msgid "{scopeCount, plural, one {# permission} other {# permissions}}"
+msgstr ""
+
 msgid "{scopeCount} permissions"
 msgstr "권한 {scopeCount}개"
 

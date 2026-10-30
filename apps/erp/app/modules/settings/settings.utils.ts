@@ -13,3 +13,22 @@ export type RowsByTable = { table: string; rows: number };
 export function totalScopeRows(rowsByTable: RowsByTable[]): number {
   return rowsByTable.reduce((sum, t) => sum + t.rows, 0);
 }
+
+/**
+ * The last refusal, unless an exchange succeeded after it. The rule id is
+ * public, so a refusal alone may be someone else's noise.
+ */
+export function currentRefusal(rule: {
+  lastFailureReason: string | null;
+  lastFailureAt: string | null;
+  lastExchangeAt: string | null;
+}): string | null {
+  if (!rule.lastFailureReason || !rule.lastFailureAt) return null;
+  if (
+    rule.lastExchangeAt &&
+    Date.parse(rule.lastExchangeAt) > Date.parse(rule.lastFailureAt)
+  ) {
+    return null;
+  }
+  return rule.lastFailureReason;
+}

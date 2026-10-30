@@ -831,6 +831,9 @@ msgstr "{removed} 件の計画済み請求書が削除されました。"
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel}は次のリビジョンとして計画のために再オープンされます。仕入先に送付済みの文書は、確定して発注書を再度送信するまで変更されません。"
 
+msgid "{scopeCount, plural, one {# permission} other {# permissions}}"
+msgstr ""
+
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} 個の権限"
 

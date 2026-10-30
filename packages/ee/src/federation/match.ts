@@ -26,7 +26,8 @@ export type FederationFailure =
   | "subject_mismatch"
   | "claim_mismatch"
   | "jti_reused"
-  | "replay_check_unavailable";
+  | "replay_check_unavailable"
+  | "creator_not_employee";
 
 /** Asymmetric algorithms only: an `HS*` token would be signed with a secret Carbon never holds. */
 export const ALLOWED_JWT_ALGORITHMS = [

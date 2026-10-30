@@ -831,6 +831,9 @@ msgstr "{removed} planned invoices are removed."
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 
+msgid "{scopeCount, plural, one {# permission} other {# permissions}}"
+msgstr "{scopeCount, plural, one {# permission} other {# permissions}}"
+
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} permissions"
 

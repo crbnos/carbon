@@ -10,7 +10,7 @@ import {
   MenuIcon,
   MenuItem
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
@@ -30,6 +30,7 @@ import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
+import { currentRefusal } from "~/modules/settings/settings.utils";
 import type { FederationRuleRow } from "~/modules/settings/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -109,7 +110,15 @@ const FederationRulesTable = memo(
             const scopeCount = getScopeCount(row.original);
             return (
               <Badge variant="secondary">
-                {scopeCount === 0 ? t`No Access` : t`${scopeCount} permissions`}
+                {scopeCount === 0 ? (
+                  t`No Access`
+                ) : (
+                  <Plural
+                    value={scopeCount}
+                    one="# permission"
+                    other="# permissions"
+                  />
+                )}
               </Badge>
             );
           },
@@ -142,12 +151,12 @@ const FederationRulesTable = memo(
         {
           accessorKey: "lastFailureReason",
           header: t`Last Refusal`,
-          cell: ({ row }) =>
-            row.original.lastFailureReason ? (
-              <Badge variant="destructive">
-                {row.original.lastFailureReason}
-              </Badge>
-            ) : null,
+          cell: ({ row }) => {
+            const refusal = currentRefusal(row.original);
+            return refusal ? (
+              <Badge variant="destructive">{refusal}</Badge>
+            ) : null;
+          },
           meta: {
             icon: <LuCircleAlert />
           }

@@ -831,6 +831,9 @@ msgstr "{removed} facturas planificadas se eliminan."
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} se reabrirá para Planificación como su próxima Revisión. El Documento ya enviado al Proveedor permanece sin cambios hasta que finalice y reenvíe la orden."
 
+msgid "{scopeCount, plural, one {# permission} other {# permissions}}"
+msgstr ""
+
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} permisos"
 

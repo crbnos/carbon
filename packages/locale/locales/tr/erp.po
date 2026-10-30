@@ -831,6 +831,9 @@ msgstr "{removed} planlanan fatura kaldırıldı."
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} planlama için sonraki revizyonu olarak yeniden açılacak. Tedarikçiye gönderilen belge, siparişi sonuçlandırana ve yeniden gönderene kadar değişmeden kalır."
 
+msgid "{scopeCount, plural, one {# permission} other {# permissions}}"
+msgstr ""
+
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} izinleri"
 

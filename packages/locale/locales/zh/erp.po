@@ -831,6 +831,9 @@ msgstr "{removed} 个已计划发票已移除。"
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} 将作为其下一个修订版重新打开以进行计划。已发送给供应商的文件在您最终确定并重新发送订单之前保持不变。"
 
+msgid "{scopeCount, plural, one {# permission} other {# permissions}}"
+msgstr ""
+
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} 个权限"
 

@@ -831,6 +831,9 @@ msgstr "{removed} запланированные счет-фактуры уда�
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} будет открыта заново для планирования в качестве следующей ревизии. Документ, уже отправленный поставщику, остаётся без изменений до окончательного утверждения и повторной отправки заказа."
 
+msgid "{scopeCount, plural, one {# permission} other {# permissions}}"
+msgstr ""
+
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} прав доступа"
 

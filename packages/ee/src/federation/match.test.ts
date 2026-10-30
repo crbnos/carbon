@@ -10,7 +10,7 @@ import {
   matchSubject,
   ruleRequirementErrors
 } from "./match";
-import { federationRuleValidator } from "./models";
+import { federationRuleFields, federationRuleValidator } from "./models";
 
 describe("matchSubject", () => {
   it("matches exactly", () => {
@@ -182,7 +182,9 @@ describe("federationRuleValidator", () => {
     issuer: GITHUB_ACTIONS_ISSUER,
     audience: "https://app.carbon.ms",
     subject: "repo:acme/plm:ref:refs/heads/main",
-    claimConditions: JSON.stringify({ repository_owner_id: "123" }),
+    claimConditions: JSON.stringify([
+      { claim: "repository_owner_id", value: "123" }
+    ]),
     scopes: "{}",
     tokenLifetimeMinutes: "15"
   };
@@ -194,7 +196,7 @@ describe("federationRuleValidator", () => {
   it("reports the missing owner id on the claim conditions field", () => {
     const result = federationRuleValidator.safeParse({
       ...form,
-      claimConditions: "{}"
+      claimConditions: "[]"
     });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.path).toEqual(["claimConditions"]);
@@ -203,9 +205,30 @@ describe("federationRuleValidator", () => {
   it("refuses a claim condition with an empty value", () => {
     const result = federationRuleValidator.safeParse({
       ...form,
-      claimConditions: JSON.stringify({ repository_owner_id: "" })
+      claimConditions: JSON.stringify([
+        { claim: "repository_owner_id", value: "" }
+      ])
     });
     expect(result.success).toBe(false);
+  });
+
+  it("refuses a claim named in two conditions", () => {
+    const result = federationRuleValidator.safeParse({
+      ...form,
+      claimConditions: JSON.stringify([
+        { claim: "repository_owner_id", value: "123" },
+        { claim: "repository_owner_id", value: "456" }
+      ])
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["claimConditions"]);
+  });
+
+  it("turns the condition rows into a claim map when saved", () => {
+    const parsed = federationRuleValidator.parse(form);
+    expect(federationRuleFields(parsed).claimConditions).toEqual({
+      repository_owner_id: "123"
+    });
   });
 
   it("refuses a lifetime outside 5 to 60 minutes", () => {

@@ -61,7 +61,7 @@ curl -s -X POST https://app.carbon.ms/token \
 }
 ```
 
-Every refused token answers `400 {"error":"invalid_grant"}`, whatever the reason; the rule shows the reason in its **Last Refusal** column. More than 30 exchanges a minute for one rule answer `429`.
+Every refused token answers `400 {"error":"invalid_grant"}`, whatever the reason; the rule shows the reason in its **Last Refusal** column. A rule takes 30 verified exchanges a minute, and 60 attempts a minute from one IP address; past either limit Carbon answers `429`.
 
 ### GitHub Actions
 
@@ -108,7 +108,9 @@ OIDC_TOKEN=$(curl -s -H "Metadata: true" \
 
 ## Editing and deleting a rule
 
-A change to a rule's permissions applies at once to the keys it already issued. Deleting a rule stops every key it issued. Issued keys never appear in the API Keys list; Carbon deletes them a day after they expire.
+A change to a rule's permissions applies at once to the keys it already issued. A change to its issuer, audience, subject or claim conditions stops the keys it already issued, since they were issued to a workload the rule no longer names. Deleting a rule stops every key it issued.
+
+Issued keys act as the person who created the rule, like an API key. When that person leaves the company, the rule stops issuing keys; recreate it under someone who stays. Issued keys never appear in the API Keys list; Carbon deletes them a day after they expire.
 
 <AgentContext>
 ## Internals and troubleshooting
@@ -125,6 +127,7 @@ The rule is `federationRule`; the exchange is `exchangeFederatedToken` (`package
 - `replay_check_unavailable` — Carbon could not record the token's `jti`, so it refused rather than risk a replay. Retry.
 - `algorithm_not_allowed`, `missing_kid`, `missing_claims`, `malformed_jwt` — the token is not a signed OIDC token.
 - `not_entitled` — the company's plan does not include API access.
+- `creator_not_employee` — the person who created the rule is no longer an employee of the company. Recreate the rule.
 
 ### Self-hosted issuers
 An issuer on a private network (an internal GitLab, Keycloak or Kubernetes API server) is refused unless the install sets `FEDERATION_ALLOW_PRIVATE_ISSUERS=true`. The issuer must still use https.

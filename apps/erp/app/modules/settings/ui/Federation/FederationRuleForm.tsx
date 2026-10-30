@@ -55,6 +55,7 @@ import {
   apiKeyOptInPermissionKeys,
   apiKeyPermissionModules
 } from "~/modules/settings/settings.models";
+import { currentRefusal } from "~/modules/settings/settings.utils";
 import type { FederationRuleRow } from "~/modules/settings/types";
 import { path } from "~/utils/path";
 
@@ -134,11 +135,9 @@ const FederationRuleForm = ({
     : "{}";
   // Empty rows are left out: an unfinished row is not a condition.
   const claimsJson = JSON.stringify(
-    Object.fromEntries(
-      claims
-        .filter((row) => row.claim.trim() || row.value.trim())
-        .map((row) => [row.claim.trim(), row.value.trim()])
-    )
+    claims
+      .filter((row) => row.claim.trim() || row.value.trim())
+      .map((row) => ({ claim: row.claim.trim(), value: row.value.trim() }))
   );
 
   const onProviderChange = (next: FederationProvider) => {
@@ -368,6 +367,7 @@ function RuleStatus({
   erpUrl: string;
 }) {
   const example = usageExample(rule, erpUrl);
+  const refusal = currentRefusal(rule);
   return (
     <VStack spacing={2} className="w-full">
       <HStack className="w-full justify-between">
@@ -380,12 +380,12 @@ function RuleStatus({
       <div className="w-full min-w-0 max-w-full overflow-x-auto text-xs">
         <CodeBlock className="bash">{example}</CodeBlock>
       </div>
-      {rule.lastFailureReason && (
+      {refusal && (
         <HStack>
           <span className="text-sm text-muted-foreground">
             <Trans>Last refused exchange:</Trans>
           </span>
-          <Badge variant="destructive">{rule.lastFailureReason}</Badge>
+          <Badge variant="destructive">{refusal}</Badge>
         </HStack>
       )}
     </VStack>

@@ -831,6 +831,9 @@ msgstr "{removed} योजनाबद्ध चालान निकाल �
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} को योजना के लिए फिर से खोला जाएगा क्योंकि यह इसका अगला रिवीजन है। आपूर्तिकर्ता को भेजा गया दस्तावेज़ तब तक अपरिवर्तित रहता है जब तक आप अंतिम रूप नहीं देते और ऑर्डर फिर से भेजते हैं।"
 
+msgid "{scopeCount, plural, one {# permission} other {# permissions}}"
+msgstr ""
+
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} अनुमतियाँ"
 

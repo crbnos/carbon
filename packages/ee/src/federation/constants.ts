@@ -43,7 +43,14 @@ export const FEDERATION_LIMITS = {
   /** The longest `exp − iat` an incoming JWT may claim: Azure managed identity tokens live 24 h. */
   maxJwtLifetimeSeconds: 24 * 60 * 60,
   clockToleranceSeconds: 30,
-  exchangesPerMinute: 30
+  /** Exchanges per rule that passed verification: the workload's own budget. */
+  exchangesPerMinute: 30,
+  /**
+   * Attempts per rule and caller IP, before any verification. The rule id is
+   * public (it sits in workflow files), so unverified attempts must not spend
+   * the workload's budget.
+   */
+  attemptsPerCallerPerMinute: 60
 } as const;
 
 export type FederationPreset = {

@@ -12,6 +12,7 @@ import {
 import { exchangeFederatedToken } from "@carbon/ee/federation.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { getClientIp } from "@carbon/utils";
 import { createHash } from "crypto";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -83,7 +84,7 @@ const tokenExchangeValidator = z.object({
   subject_token_type: z.enum(SUBJECT_TOKEN_TYPES)
 });
 
-async function tokenExchange(formData: FormData) {
+async function tokenExchange(request: Request, formData: FormData) {
   const validation = await validator(tokenExchangeValidator).validate(formData);
   if (validation.error) {
     return jsonResponse(
@@ -99,7 +100,11 @@ async function tokenExchange(formData: FormData) {
   const { client_id: ruleId, subject_token: subjectToken } = validation.data;
   let result: Awaited<ReturnType<typeof exchangeFederatedToken>>;
   try {
-    result = await exchangeFederatedToken({ ruleId, subjectToken });
+    result = await exchangeFederatedToken({
+      ruleId,
+      subjectToken,
+      clientIp: getClientIp(request)
+    });
   } catch (error) {
     logger.error("Federated token exchange failed", { ruleId, error });
     return jsonResponse({ error: "server_error" }, 500);
@@ -131,7 +136,7 @@ async function tokenExchange(formData: FormData) {
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   if (formData.get("grant_type") === TOKEN_EXCHANGE_GRANT) {
-    return tokenExchange(formData);
+    return tokenExchange(request, formData);
   }
 
   const client = getCarbonServiceRole();

@@ -96,7 +96,7 @@ Claude Console: "Set up identity federation" or "Continue with an API key".
 | Audience | A rule field. The default is the install's `ERP_URL`. An Entra rule uses the customer's `api://<APP_ID>`. | **Autonomous.** A dedicated audience is the consensus. Entra needs a value in the customer's own tenant. |
 | Token lifetime | `tokenLifetimeMinutes`, 5 to 60, default 15. | **Autonomous.** PyPI and RubyGems use 15 minutes. OpenAI caps at 1 hour. |
 | Error detail | Every verification failure returns `400 {"error":"invalid_grant"}`. The rule stores `lastFailureAt` and `lastFailureReason`. Success sets `lastExchangeAt`. | **Autonomous.** Anthropic returns an opaque error and shows the reason to the admin. Columns on the rule avoid a new history table. |
-| Exchange rate limit | 30 exchanges per minute per rule, Redis sliding window. Excess returns `429`. | **Autonomous.** Each exchange inserts a row. The MCP route uses the same limiter for OAuth callers (`apps/erp/app/routes/api+/mcp+/_index.ts:64`). |
+| Exchange rate limit | Two Redis sliding windows. 60 attempts per minute per rule and caller IP, before verification. 30 verified exchanges per minute per rule. Excess returns `429`. | **Autonomous.** Each exchange inserts a row. The MCP route uses the same limiter for OAuth callers (`apps/erp/app/routes/api+/mcp+/_index.ts:64`). |
 | Rule edit | An edit of `scopes` updates the scopes of every live minted key of the rule and drops their cache entries. | **Autonomous.** A narrower scope applies at once, as `updateApiKey` does for keys. |
 | Rule delete | `ON DELETE CASCADE` deletes the minted keys. The service drops their cache entries before and after the delete, as `revokeApiKey` does. | **Autonomous.** A deleted rule must stop every key it minted. |
 | Cleanup of minted keys | A pg_cron job, `federated-api-key-retention`, runs `util.purge_expired_federated_api_keys()` daily at 04:41 UTC. It deletes minted keys whose `expiresAt` is more than 1 day ago. | **Autonomous.** Precedent: `machine-state-change-retention` (`20261013191915_oee-tenancy-and-retention.sql`). |
@@ -379,7 +379,7 @@ it (`api-keys.tsx` + `RecordOutlet`).
 | Many exchanges fill `apiKey` with rows. | Medium | 30 exchanges per minute per rule, and the nightly purge. |
 | A workload exchanges repeatedly to get past the per-key rate limit. | Low | The per-company cap in `check_api_key_rate_limit` sums every key of the company, minted keys included. |
 | Redis is down, so the `jti` check cannot run. | Medium | The exchange fails closed with `replay_check_unavailable`. |
-| The token belongs to a person (`createdBy`), so it stops when that person is removed. | Medium | Same as API keys today. Service accounts are a later spec. |
+| The token belongs to a person (`createdBy`). | Medium | The exchange refuses with `creator_not_employee` once that person is no longer an employee of the company, as `oauthContext` does for OAuth connectors. Service accounts are a later spec. |
 | Moving `url-guard.ts` breaks a jobs import. | Low | The plan runs the jobs typecheck and its webhook tests after the move. |
 
 ## Open Questions
@@ -421,3 +421,9 @@ it (`api-keys.tsx` + `RecordOutlet`).
      `RecordOutlet`, so every API key modal mounted twice, and the chooser
      stayed on screen after **Continue with an API key**.
   `ApiKeysUpgradeOverlay` is reused for the gated Identity Federation page.
+- 2026-10-30: Review fixes. `federationRule` is read-only to API roles. The
+  database checks the shared-issuer claims and the prefix rule. A trust edit
+  (issuer, audience, subject, claim conditions) revokes the minted keys. A
+  scope edit during an exchange cannot leave an old-scope key. The exchange
+  refuses when the rule's creator is no longer an employee. The rate limit
+  has a per-IP tier before verification. The form refuses a repeated claim.
