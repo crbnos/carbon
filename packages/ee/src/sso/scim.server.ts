@@ -84,6 +84,8 @@ const TOKEN_PREFIX = "scim_";
 const REQUESTS_PER_MINUTE = 600;
 const RETRY_AFTER_SECONDS = "60";
 const WRITE_BATCH = 500;
+const CONTROLLED_REFUSAL =
+  "This is a controlled environment. Add members in Carbon so an administrator can attest to them; SCIM can then update and deactivate them.";
 
 const ratelimit = new Ratelimit({
   redis,
@@ -129,9 +131,28 @@ function isUniqueViolation(err: unknown): boolean {
   );
 }
 
-/** Escape LIKE metacharacters so `ilike` compares the value exactly. */
-function exactPattern(value: string): string {
-  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+/**
+ * The ids of this company's rows whose column equals `value` without case
+ * (RFC 7643: `userName` and `displayName` compare that way). Not PostgREST's
+ * `ilike`: it reads `*` as a wildcard, so `a*@x.com` would match `ab@x.com`
+ * and an IdP would link the wrong person.
+ */
+async function idsMatchingWithoutCase(
+  ctx: Ctx,
+  table: "scimUser" | "scimGroup",
+  column: "userName" | "displayName",
+  value: string
+): Promise<string[]> {
+  const result = await sql<{ id: string }>`
+    SELECT "id" FROM ${sql.table(table)}
+    WHERE "companyId" = ${ctx.companyId}
+      AND lower(${sql.ref(column)}) = lower(${value})
+  `.execute(ctx.db);
+  return result.rows.map((row) => row.id);
+}
+
+function emptyList(startIndex: number): Response {
+  return scimJson(scimListResponse([], { totalResults: 0, startIndex }));
 }
 
 function scimBaseUrl(): string {
@@ -350,9 +371,17 @@ async function listUsers(ctx: Ctx, url: URL): Promise<Response> {
 
   for (const { attribute, value } of filter.value) {
     switch (attribute.toLowerCase()) {
-      case "username":
-        query = query.ilike("userName", exactPattern(value));
+      case "username": {
+        const ids = await idsMatchingWithoutCase(
+          ctx,
+          "scimUser",
+          "userName",
+          value
+        );
+        if (ids.length === 0) return emptyList(startIndex);
+        query = query.in("id", ids);
         break;
+      }
       case "externalid":
         query = query.eq("externalId", value);
         break;
@@ -605,14 +634,13 @@ async function createUser(ctx: Ctx, body: unknown): Promise<Response> {
   if (!parsed.ok) return scimError(400, parsed.detail, parsed.scimType);
   const state = parsed.value;
 
-  const duplicate = await ctx.serviceRole
-    .from("scimUser")
-    .select("id")
-    .eq("companyId", ctx.companyId)
-    .ilike("userName", exactPattern(state.userName))
-    .maybeSingle();
-  if (duplicate.error) throw duplicate.error;
-  if (duplicate.data) {
+  const duplicates = await idsMatchingWithoutCase(
+    ctx,
+    "scimUser",
+    "userName",
+    state.userName
+  );
+  if (duplicates.length > 0) {
     return scimError(409, "A user with this userName exists.", "uniqueness");
   }
 
@@ -658,10 +686,7 @@ async function createUser(ctx: Ctx, body: unknown): Promise<Response> {
 
   if (!userId) {
     if (CONTROLLED_ENVIRONMENT) {
-      return scimError(
-        403,
-        "This is a controlled environment. Invite new members in Carbon so an administrator can attest to them; SCIM can then manage them."
-      );
+      return scimError(403, CONTROLLED_REFUSAL);
     }
 
     const name = [state.givenName, state.familyName].filter(Boolean).join(" ");
@@ -734,6 +759,11 @@ async function createUser(ctx: Ctx, body: unknown): Promise<Response> {
       // An active employee is adopted as is: same type, same grants.
       const adopt =
         membership?.role === "employee" && employee?.active === true;
+
+      // An invite records the U.S.-person attestation; SCIM cannot give it.
+      if (CONTROLLED_ENVIRONMENT && !adopt) {
+        throw new ScimRefusal(403, CONTROLLED_REFUSAL);
+      }
       const employeeTypeId = adopt
         ? (employee?.employeeTypeId ?? ctx.connection.defaultEmployeeTypeId)
         : ctx.connection.defaultEmployeeTypeId;
@@ -923,7 +953,6 @@ async function applyUserState(
         email: next.email,
         givenName: next.givenName,
         familyName: next.familyName,
-        active: next.active,
         updatedBy: SYSTEM_USER_ID,
         updatedAt: sql`now()`
       })
@@ -937,11 +966,21 @@ async function applyUserState(
     throw err;
   }
 
+  // `active` is stored only after Carbon has acted on it. If offboarding fails,
+  // the row stays active and the 500 makes the IdP send the change again.
   if (row.active && !next.active) {
-    await deactivateScimUser(ctx, row);
+    if (!(await deactivateScimUser(ctx, row))) return offboardingFailed();
   } else if (!row.active && next.active) {
     const refusal = await reactivateScimUser(ctx, row);
     if (refusal) return refusal;
+  }
+  if (row.active !== next.active) {
+    await ctx.db
+      .updateTable("scimUser")
+      .set({ active: next.active })
+      .where("id", "=", row.id)
+      .where("companyId", "=", ctx.companyId)
+      .execute();
   }
 
   const nameChanged =
@@ -968,15 +1007,24 @@ async function applyUserState(
     : scimError(404, "User not found.");
 }
 
+function offboardingFailed(): Response {
+  return scimError(
+    500,
+    "Carbon could not finish removing this person from the company. Retry the request."
+  );
+}
+
 /**
  * Offboard the person from this company: membership, grants, API keys and —
- * when no company is left — every session. Each step is idempotent and
- * logged, so the IdP's retry finishes whatever a failure left undone.
+ * when no company is left — every session. Each step is idempotent. Answers
+ * false when the membership or the API keys could still give access, so the
+ * caller refuses and the IdP's retry finishes the job; a failed sign-out is
+ * only logged, since the membership is already gone.
  */
 async function deactivateScimUser(
   ctx: Ctx,
   row: ScimUserRecord
-): Promise<void> {
+): Promise<boolean> {
   const { userId } = row;
 
   const deactivated = await deactivateUser(
@@ -990,6 +1038,7 @@ async function deactivateScimUser(
       companyId: ctx.companyId,
       message: deactivated.message
     });
+    return false;
   }
 
   // A key authenticates as its creator and nothing re-checks membership, so a
@@ -1004,7 +1053,9 @@ async function deactivateScimUser(
       userId,
       error: keys.error
     });
-  } else if (keys.data.length > 0) {
+    return false;
+  }
+  if (keys.data.length > 0) {
     const removed = await ctx.serviceRole
       .from("apiKey")
       .delete()
@@ -1018,6 +1069,7 @@ async function deactivateScimUser(
         userId,
         error: removed.error
       });
+      return false;
     }
     await Promise.all(
       keys.data
@@ -1058,6 +1110,7 @@ async function deactivateScimUser(
   await auditEmployees(ctx.serviceRole, ctx.connection, [
     { userId, operation: "UPDATE", diff: { active: { old: true, new: false } } }
   ]);
+  return true;
 }
 
 /** The employee type a person's mapped groups give, or null with no mapping. */
@@ -1085,6 +1138,7 @@ async function reactivateScimUser(
   ctx: Ctx,
   row: ScimUserRecord
 ): Promise<Response | null> {
+  if (CONTROLLED_ENVIRONMENT) return scimError(403, CONTROLLED_REFUSAL);
   const { userId } = row;
   let employeeTypeId: string;
   try {
@@ -1156,13 +1210,7 @@ async function reactivateScimUser(
     });
   } catch (err) {
     if (err instanceof ScimRefusal) {
-      // Keep the IdP's view honest: the person is still inactive here.
-      await ctx.db
-        .updateTable("scimUser")
-        .set({ active: false })
-        .where("id", "=", row.id)
-        .where("companyId", "=", ctx.companyId)
-        .execute();
+      // The row stays inactive: applyUserState stores `active` only on success.
       return scimError(err.status, err.message, err.scimType);
     }
     throw err;
@@ -1186,7 +1234,9 @@ async function reactivateScimUser(
 async function deleteUser(ctx: Ctx, id: string): Promise<Response> {
   const row = await readScimUser(ctx, id);
   if (!row) return scimError(404, "User not found.");
-  if (row.active) await deactivateScimUser(ctx, row);
+  if (row.active && !(await deactivateScimUser(ctx, row))) {
+    return offboardingFailed();
+  }
   await ctx.db
     .deleteFrom("scimUser")
     .where("id", "=", row.id)
@@ -1248,9 +1298,17 @@ async function listGroups(ctx: Ctx, url: URL): Promise<Response> {
 
   for (const { attribute, value } of filter.value) {
     switch (attribute.toLowerCase()) {
-      case "displayname":
-        query = query.ilike("displayName", exactPattern(value));
+      case "displayname": {
+        const ids = await idsMatchingWithoutCase(
+          ctx,
+          "scimGroup",
+          "displayName",
+          value
+        );
+        if (ids.length === 0) return emptyList(startIndex);
+        query = query.in("id", ids);
         break;
+      }
       case "externalid":
         query = query.eq("externalId", value);
         break;

@@ -75,7 +75,14 @@ writes with the service role and stamps `createdBy` / `updatedBy` with
   non-member with the default type and location, refuses a customer or
   supplier contact, keeps the SSO invite rule (`uncoveredSsoDomainError`) and
   seeds the SSO identity when SAML is on. In `CONTROLLED_ENVIRONMENT` it
-  refuses to create a new person (403): an invite records the attestation.
+  refuses every join that is not an adopt, and every reactivation (403): an
+  invite records the attestation.
+- **`active` is stored after Carbon acts on it.** If `deactivateUser` or the
+  API-key delete fails, the row stays active and the request answers 500, so
+  the IdP sends the change again. A failed sign-out is only logged.
+- **Match `userName` / `displayName` with `lower() = lower()` over Kysely**
+  (`idsMatchingWithoutCase`), never PostgREST `ilike`: it reads `*` as a
+  wildcard.
 - **Audit.** Each create, deactivate, reactivate and type change writes an
   `employee` entry with `actorId: null` and `metadata.actorLabel`
   (`SCIM (<IdP>)`), shown by the audit renderers through `nonUserActorLabel`.
