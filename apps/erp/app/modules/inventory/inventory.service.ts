@@ -2522,6 +2522,74 @@ export async function getInventoryCountLines(
   return query;
 }
 
+export const INVENTORY_COUNT_GROUPS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "itemReadableIdWithRevision", ascending: true },
+    { column: "storageUnitId", ascending: true },
+    { column: "id", ascending: true }
+  ]
+};
+
+// One row per (item, storage unit) of a count: the rows of the count sheet.
+// `unitNumbers` holds every serial and batch number of the group, so a search
+// for a unit's number finds the group that holds it.
+export async function getInventoryCountGroups(
+  client: SupabaseClient<Database>,
+  inventoryCountId: string,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("inventoryCountGroups")
+    .select("*", { count: listCount(args) })
+    .eq("inventoryCountId", inventoryCountId)
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      searchFilter(
+        ["itemName", "itemReadableIdWithRevision", "unitNumbers"],
+        args.search
+      )
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, INVENTORY_COUNT_GROUPS_PAGING);
+  return query;
+}
+
+// The lines of one group, read when its row expands. A blind count shows only
+// the lines already counted: the others would reveal the expected units.
+export async function getInventoryCountGroupLines(
+  client: SupabaseClient<Database>,
+  args: {
+    inventoryCountId: string;
+    companyId: string;
+    itemId: string;
+    storageUnitId: string | null;
+    blind: boolean;
+  }
+) {
+  let query = client
+    .from("inventoryCountLines")
+    .select("*")
+    .eq("inventoryCountId", args.inventoryCountId)
+    .eq("companyId", args.companyId)
+    .eq("itemId", args.itemId);
+
+  query = args.storageUnitId
+    ? query.eq("storageUnitId", args.storageUnitId)
+    : query.is("storageUnitId", null);
+
+  if (args.blind) query = query.not("countedQuantity", "is", null);
+
+  return query
+    .order("isUnnumbered", { ascending: true })
+    .order("readableId", { ascending: true, nullsFirst: false })
+    .order("trackedEntityCreatedAt", { ascending: true })
+    .order("id", { ascending: true });
+}
+
 // Aggregate counts for the confirm dialog. Computed server-side so the warnings
 // stay accurate regardless of which page of lines is currently loaded.
 export async function getInventoryCountLineSummary(

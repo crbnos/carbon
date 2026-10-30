@@ -5548,6 +5548,106 @@ export const getInventoryCountLines = defineServiceFn({
 });
 
 /**
+ * Get the groups of an inventory count
+ *
+ * @remarks
+ * One row per item and storage unit: expected, counted and variance, and how
+ * many units are Found, Missing, Unexpected, Not counted and without a serial
+ * number. While the count is blind and not posted, `expectedQuantity` and
+ * `variance` are left out.
+ *
+ * @mcp read
+ */
+export const getInventoryCountGroups = defineServiceFn({
+  input: z.looseObject({
+    inventoryCountId: z.string(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "inventory" },
+  async run(ctx, input) {
+    const header = await service.getInventoryCount(
+      ctx.asCaller.supabase,
+      input.inventoryCountId,
+      ctx.company.id
+    );
+    if (header.error || !header.data) {
+      return ctx.error("notFound", "Inventory count not found", header.error);
+    }
+    const groups = await service.getInventoryCountGroups(
+      ctx.asCaller.supabase,
+      input.inventoryCountId as never,
+      ctx.company.id,
+      payload(ctx, input).build() as never
+    );
+    if (utils.isBlindCountEntry(header.data) && groups.data) {
+      groups.data = groups.data.map((group) => ({
+        ...group,
+        expectedQuantity: null,
+        variance: null,
+        missingCount: null
+      }));
+    }
+    return paged(ctx, groups);
+  }
+});
+
+/**
+ * Get the units of one inventory count group
+ *
+ * @remarks
+ * The lines of one item in one storage unit. While the count is blind and not
+ * posted, only the lines already counted are returned.
+ *
+ * @param storageUnitId - The storage unit; left out for stock in no storage unit.
+ * @mcp read
+ */
+export const getInventoryCountGroupLines = defineServiceFn({
+  input: z.object({
+    inventoryCountId: z.string(),
+    itemId: z.string(),
+    storageUnitId: z.string().nullable().optional()
+  }),
+  permission: { view: "inventory" },
+  async run(ctx, input) {
+    const header = await service.getInventoryCount(
+      ctx.asCaller.supabase,
+      input.inventoryCountId,
+      ctx.company.id
+    );
+    if (header.error || !header.data) {
+      return ctx.error("notFound", "Inventory count not found", header.error);
+    }
+    const lines = await service.getInventoryCountGroupLines(
+      ctx.asCaller.supabase,
+      {
+        inventoryCountId: input.inventoryCountId,
+        companyId: ctx.company.id,
+        itemId: input.itemId,
+        storageUnitId: input.storageUnitId ?? null,
+        blind: utils.isBlindCountEntry(header.data)
+      }
+    );
+    if (lines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the units of the count",
+        lines.error
+      );
+    }
+    const blind = utils.isBlindCountEntry(header.data);
+    return (lines.data ?? []).map((line) =>
+      blind ? { ...line, systemQuantity: null, variance: null } : line
+    );
+  }
+});
+
+/**
  * Get inventory count line summary
  *
  * @mcp read

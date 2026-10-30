@@ -332,3 +332,11 @@ export function inventoryCountLineState(line: {
   if (Number(line.countedQuantity) === 0) return "Missing";
   return "Found";
 }
+
+// A blind count withholds what the system expects until it is posted.
+export function isBlindCountEntry(count: {
+  isBlind: boolean | null;
+  status: string | null;
+}): boolean {
+  return Boolean(count.isBlind) && count.status !== "Posted";
+}
