@@ -145,7 +145,7 @@ export const Email = defineIntegration({
       name: "gmailConnectionId",
       label: "Gmail account",
       description:
-        "The connected Google account that sends your email. Connect one on the Gmail integration first.",
+        "Emails are sent through Gmail, from the account you pick. Don't see yours? Connect it on the Gmail integration first.",
       type: "options",
       required: true,
       value: "",

@@ -111,17 +111,26 @@ export async function sendCompanyEmail(
   }
 
   const { metadata, secretRef, updatedBy } = route.integration;
-  const transport = companyTransport(
-    picksCredentialFreeEmail(Email.id, metadata)
-      ? metadata
-      : await resolveIntegrationSecrets(
-          serviceClient,
-          companyId,
-          Email.id,
-          metadata,
-          secretRef
-        )
-  );
+  const resolved = picksCredentialFreeEmail(Email.id, metadata)
+    ? metadata
+    : await resolveIntegrationSecrets(
+        serviceClient,
+        companyId,
+        Email.id,
+        metadata,
+        secretRef
+      );
+  let transport: ReturnType<typeof companyTransport>;
+  try {
+    transport = companyTransport(resolved);
+  } catch (error) {
+    // Incomplete saved settings (a missing key): a retry fails the same way.
+    log.error("The company's Email settings are incomplete", {
+      companyId,
+      error
+    });
+    return { data: null, error: error as Error };
+  }
   const senderName = companyName ?? "Carbon";
 
   if (transport.kind === "gmail") {

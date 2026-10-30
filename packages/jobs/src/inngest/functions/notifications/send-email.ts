@@ -52,6 +52,7 @@ export const sendEmailFunction = inngest.createFunction(
           attachments: payload.attachments,
           cc: ccRecipients,
           document: payload.document === true,
+          headers: payload.headers,
           html: payload.html,
           replyTo: payload.from || undefined,
           subject: payload.subject,
