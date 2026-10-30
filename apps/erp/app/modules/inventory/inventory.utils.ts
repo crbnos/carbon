@@ -315,3 +315,20 @@ export function nonNettableSource(
   }
   return null;
 }
+
+export type InventoryCountLineState =
+  | "Not counted"
+  | "Found"
+  | "Missing"
+  | "Unexpected";
+
+// A count line's state comes from its quantities; no column stores it.
+export function inventoryCountLineState(line: {
+  countedQuantity: number | null;
+  foundDuringCount: boolean;
+}): InventoryCountLineState {
+  if (line.foundDuringCount) return "Unexpected";
+  if (line.countedQuantity === null) return "Not counted";
+  if (Number(line.countedQuantity) === 0) return "Missing";
+  return "Found";
+}
