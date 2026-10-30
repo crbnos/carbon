@@ -1391,6 +1391,9 @@ msgstr "품목(Part)은 구매하거나 제조할 수 있는 특정 아이템에
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "이 단계에서 부품이 배치되면 넘어질 수 있습니다. 지그나 추가 작업자를 고려하세요."
 
+msgid "A PEM CA to trust when fetching the discovery document and keys, for an issuer with a private CA."
+msgstr ""
+
 msgid "A photo or PDF the operator sees on this step"
 msgstr "작업자가 이 단계에서 보는 사진 또는 PDF"
 
@@ -1781,7 +1784,7 @@ msgstr ""
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "변동 요금(마일리지 초과, 손상, 배송, 청소)은 계약의 다음 송장에 청구됩니다."
 
-msgid "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
+msgid "A workload that presents a matching token from the issuer gets a short-lived API key with these scopes."
 msgstr ""
 
 msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
@@ -2950,6 +2953,9 @@ msgstr "항목의 추적 유형이 변경됩니다"
 msgid "An item's unit of measure changes"
 msgstr "항목의 측정 단위가 변경됩니다"
 
+msgid "An OIDC identity provider whose tokens Carbon accepts. Rules name the workloads of an issuer."
+msgstr ""
+
 msgid "An open-ended agreement is always a rental. Set an end date to use these."
 msgstr "개방형 계약은 항상 임차입니다. 이를 사용하려면 종료 날짜를 설정하세요."
 
@@ -3107,6 +3113,9 @@ msgstr "API 키"
 
 msgid "API Key"
 msgstr "API 키"
+
+msgid "API key lifetime (minutes)"
+msgstr ""
 
 msgid "API Keys"
 msgstr "API 키"
@@ -3293,8 +3302,19 @@ msgstr "매출채권/매입채무"
 msgid "Archive"
 msgstr "보관"
 
+#. placeholder {0}: issuer.name
+#. placeholder {0}: rule.name
+msgid "Archive {0}"
+msgstr ""
+
 msgid "Archive all"
 msgstr "전체 보관"
+
+msgid "Archive Federation Rule"
+msgstr ""
+
+msgid "Archive Issuer"
+msgstr ""
 
 msgid "Archive Training"
 msgstr "교육 보관"
@@ -3302,8 +3322,14 @@ msgstr "교육 보관"
 msgid "Archived"
 msgstr "보관됨"
 
+msgid "Archived Issuers"
+msgstr ""
+
 msgid "Archived Logs"
 msgstr "보관됨 로그"
+
+msgid "Archived Rules"
+msgstr ""
 
 #. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
@@ -3497,10 +3523,6 @@ msgstr "직원 유형 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌
 
 msgid "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
 msgstr "고장 모드 {name}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
-
-#. placeholder {0}: rule.name
-msgid "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
-msgstr ""
 
 #. placeholder {0}: gaugeType.name
 msgid "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
@@ -4104,6 +4126,12 @@ msgstr "감사 로그"
 
 msgid "Authentication Error"
 msgstr "인증 오류"
+
+msgid "Authentication events"
+msgstr ""
+
+msgid "Authentication Events"
+msgstr ""
 
 msgid "Authenticator app"
 msgstr "인증 앱"
@@ -4741,6 +4769,9 @@ msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침
 
 msgid "By you · edited <0/>"
 msgstr "당신이 편집함 · <0/>"
+
+msgid "CA certificate"
+msgstr ""
 
 msgid "CAD Model"
 msgstr "CAD 모델"
@@ -5443,6 +5474,9 @@ msgstr "클릭하여 이름 바꾸기"
 msgid "Click to upload a PDF drawing"
 msgstr "클릭하여 PDF 도면을 업로드하세요"
 
+msgid "Client IP"
+msgstr ""
+
 msgid "Clock In"
 msgstr "작업 시작"
 
@@ -5952,8 +5986,14 @@ msgstr "조건이 일치하지 않을 때 실행할 노드에 Otherwise 핸들�
 msgid "Connect the outside tools your company already runs on"
 msgstr "회사에서 이미 사용 중인 외부 도구 연결"
 
+msgid "Connect workload"
+msgstr ""
+
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "메타데이터 URL 또는 원본 메타데이터 XML 중 정확히 하나를 붙여넣어 자격 증명 공급자를 연결합니다."
+
+msgid "Connected"
+msgstr ""
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 msgstr "워크플로가 필요하기 전에 연결되었으므로 추가 권한이 필요합니다. 다시 연결하여 부여하세요 — 그 사이에 다른 모든 것은 계속 작동합니다."
@@ -6790,6 +6830,9 @@ msgstr "교체 생성"
 
 msgid "Create Revision"
 msgstr "리비전 생성"
+
+msgid "Create rule"
+msgstr ""
 
 msgid "Create Rule"
 msgstr "규칙 생성"
@@ -7860,9 +7903,6 @@ msgstr "직원 유형 삭제"
 msgid "Delete Failure Mode"
 msgstr "고장 모드 삭제"
 
-msgid "Delete Federation Rule"
-msgstr ""
-
 msgid "Delete file"
 msgstr "파일 삭제"
 
@@ -8453,6 +8493,9 @@ msgstr "고객에게 조기 지불로 제공된 할인"
 msgid "Discovery"
 msgstr "발견"
 
+msgid "Discovery base URL"
+msgstr ""
+
 msgid "Dismiss"
 msgstr "닫기"
 
@@ -8962,6 +9005,9 @@ msgstr "각 임차료 계약 또는 계약의 영업 담당자(또는 작성자)
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "각 공급업체의 외주 공정은 모든 작업 지시에서 새로운 발주서 하나에 배치되거나 선택한 기존 초안에 배치됩니다."
 
+msgid "Each token's jti can be exchanged once. Turn off only for an issuer that does not set jti, such as Google Cloud and Microsoft Entra ID."
+msgstr ""
+
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "각 단위의 공정가액과 경제수명이 약관이 대부분을 포함하는지 결정합니다. 셀을 클릭하여 변경하세요."
 
@@ -9136,6 +9182,9 @@ msgstr "휴일 편집"
 
 msgid "Edit Inspection Plan"
 msgstr "검사 계획 편집"
+
+msgid "Edit Issuer"
+msgstr ""
 
 msgid "Edit Item Group"
 msgstr "품목 그룹 편집"
@@ -9614,6 +9663,9 @@ msgstr "견적, 판매 주문 및 판매 송장에 항목이 추가될 때 고�
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "입고, 출하, 이동, 조정 전반에 걸쳐 품목별 검증 및 지침을 적용합니다."
 
+msgid "Enforce single-use tokens (jti replay protection)"
+msgstr ""
+
 msgid "Engagement tier"
 msgstr "참여 등급"
 
@@ -9901,6 +9953,9 @@ msgstr "모든 계정 기본값이 설정되었습니다"
 msgid "Every account is mapped"
 msgstr "모든 계정이 매핑되었습니다"
 
+msgid "Every API key this rule issued stops working at once, and the rule takes no more exchanges. Its authentication events stay."
+msgstr ""
+
 msgid "Every asset needs a payment row before activating."
 msgstr "활성화하기 전에 모든 자산이 지불 라인을 필요로 합니다."
 
@@ -9982,7 +10037,7 @@ msgstr "그 외 모든 것은 인원, 가져오기, 연동 및 API를 다룹니�
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "이 작업이 생산하는 모든 것은 한 로트로 분류됩니다. 현장에서 이를 변경할 수 없습니다."
 
-msgid "Exact match, or a prefix when it ends in *"
+msgid "Exact match, or a prefix when it ends in :* or /*"
 msgstr ""
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
@@ -10701,7 +10756,10 @@ msgstr "팩스"
 msgid "Fax Number"
 msgstr "팩스 번호"
 
-msgid "Federation Rule"
+msgid "Federation rule"
+msgstr ""
+
+msgid "Federation Rules"
 msgstr ""
 
 msgid "Fees"
@@ -11708,6 +11766,9 @@ msgstr "품목의 단위 원가를 평가하는 방법입니다: 표준, 이동�
 
 msgid "How are these hours calculated?"
 msgstr "이 시간들은 어떻게 계산되나요?"
+
+msgid "How Carbon gets the issuer's signing keys"
+msgstr ""
 
 msgid "How Carbon looks in this browser."
 msgstr "이 브라우저에서 Carbon이 표시되는 방식"
@@ -12728,6 +12789,12 @@ msgstr ""
 msgid "Issuer URL"
 msgstr ""
 
+msgid "Issuer URL (iss claim)"
+msgstr ""
+
+msgid "Issuers"
+msgstr ""
+
 msgid "Issues"
 msgstr "이슈"
 
@@ -12857,6 +12924,9 @@ msgstr "변경 통지가 발행되기 전에 설계가 변경될 수 있습니�
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "그 매출은 각 라인이 인식해야 할 남은 부분으로 돌아갑니다."
 
+msgid "Its rules are archived too, and every API key they issued stops working at once."
+msgstr ""
+
 msgid "Job"
 msgstr "작업"
 
@@ -12972,6 +13042,15 @@ msgstr "이 날짜 또는 이전 날짜의 전표는 잠김으로 처리됩니�
 msgid "Just one"
 msgstr "정확히 하나"
 
+msgid "JWKS source"
+msgstr ""
+
+msgid "JWKS Source"
+msgstr ""
+
+msgid "JWKS URL"
+msgstr ""
+
 msgid "Kanban"
 msgstr "칸반"
 
@@ -13029,6 +13108,9 @@ msgstr "열린 상태 유지"
 msgid "Keep picking"
 msgstr "피킹 유지"
 
+msgid "Keep waiting"
+msgstr ""
+
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "주문, 견적 및 설정을 이중 확인으로 보호합니다"
 
@@ -13040,6 +13122,9 @@ msgstr "{total}개 중 {kept}개를 유지했습니다."
 
 msgid "Key"
 msgstr "키"
+
+msgid "Key set (JWKS)"
+msgstr ""
 
 msgid "Keyboard shortcuts"
 msgstr "키보드 단축키"
@@ -13141,12 +13226,6 @@ msgstr "마지막 교정일"
 msgid "Last day"
 msgstr "마지막 날"
 
-msgid "Last Exchange"
-msgstr ""
-
-msgid "Last exchange:"
-msgstr ""
-
 msgid "Last Fiscal Year"
 msgstr "지난 회계연도"
 
@@ -13174,12 +13253,6 @@ msgstr "마지막 푸시: {lastPushed}."
 
 msgid "Last Quarter"
 msgstr "지난 분기"
-
-msgid "Last Refusal"
-msgstr ""
-
-msgid "Last refused exchange:"
-msgstr ""
 
 msgid "Last Run"
 msgstr "마지막 실행"
@@ -13367,6 +13440,9 @@ msgstr "리스 제공인"
 
 msgid "Lessor Discount Rate (%)"
 msgstr "리스 제공인 할인율(%)"
+
+msgid "Let a CI job or cloud workload exchange its own token for a short-lived Carbon API key, with no key to store."
+msgstr ""
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "멤버가 SAML을 통한 ID 제공자로 로그인하도록 허용합니다."
@@ -13774,6 +13850,12 @@ msgstr "낮음"
 
 msgid "Lowercase item IDs are allowed"
 msgstr "소문자 항목 ID는 허용됩니다"
+
+msgid "Lowercase letters, numbers and hyphens"
+msgstr ""
+
+msgid "Lowercase letters, numbers and hyphens. Shown in rules and the audit log."
+msgstr ""
 
 msgid "Machine"
 msgstr "기계"
@@ -14305,6 +14387,9 @@ msgstr "최대 주문 수량"
 msgid "Maximum Order:"
 msgstr "최대 주문:"
 
+msgid "Maximum token lifetime (hours)"
+msgstr ""
+
 msgid "MCP Command"
 msgstr "MCP 명령"
 
@@ -14747,7 +14832,7 @@ msgstr "{minValue}에서 {maxValue} {unitLabel} 사이여야 합니다"
 msgid "Must be in the same location"
 msgstr "동일한 위치에 있어야 합니다"
 
-msgid "Must equal the iss claim of the token exactly"
+msgid "Must equal the iss claim of the tokens exactly"
 msgstr ""
 
 msgid "My Documents"
@@ -14863,6 +14948,9 @@ msgstr "네트워크 오류"
 
 msgid "Never"
 msgstr "안 함"
+
+msgid "Never longer than the workload's own token has left"
+msgstr ""
 
 msgid "New"
 msgstr "신규"
@@ -15559,6 +15647,12 @@ msgstr "종료 없음"
 
 msgid "No events found."
 msgstr "이벤트를 찾을 수 없습니다."
+
+msgid "No exchange yet."
+msgstr ""
+
+msgid "No exchanges yet."
+msgstr ""
 
 msgid "No external notes"
 msgstr "외부 메모 없음"
@@ -16587,6 +16681,9 @@ msgstr "자격이 있는 직원만 이 프로세스를 예약하고 실행할 �
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "시리얼 번호가 있고 고정자산으로 계정처리된 개만 임차할 수 있습니다. 하나를 추가하려면 부품의 재고 관리 탭을 열고 보관 단위 아래에서 시리얼 번호를 찾은 다음 고정자산으로 계정처리를 선택하세요."
 
+msgid "Only when the discovery document is not under the issuer URL"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 msgstr "Onshape는 연동을 승인했지만 저장에 실패했습니다. 연동 설정을 저장하여 다시 시도하세요."
 
@@ -17087,6 +17184,9 @@ msgstr "<0/> 이후 서비스 중단"
 
 msgid "Outbound"
 msgstr "출고"
+
+msgid "Outcome"
+msgstr ""
 
 msgid "Outgoing"
 msgstr "발신"
@@ -18488,6 +18588,9 @@ msgstr "임시 전표"
 msgid "Public"
 msgstr "공개"
 
+msgid "Public keys only. Carbon never fetches them, so update the set when the issuer rotates its keys."
+msgstr ""
+
 msgid "Publish"
 msgstr "게시"
 
@@ -19292,6 +19395,9 @@ msgstr "입고 사업장"
 msgid "Recent"
 msgstr "최근"
 
+msgid "Recent exchanges"
+msgstr ""
+
 msgid "Recent payments"
 msgstr "최근 지불"
 
@@ -19471,6 +19577,9 @@ msgstr "환불 메모"
 msgid "Refund to Customer"
 msgstr "고객 환불"
 
+msgid "Refused"
+msgstr ""
+
 msgid "Regenerate"
 msgstr "재생성"
 
@@ -19495,8 +19604,17 @@ msgstr "썸네일 재생성 중…"
 msgid "Register"
 msgstr "등록"
 
+msgid "Register a new issuer"
+msgstr ""
+
 msgid "Register Existing Asset"
 msgstr "기존 자산 등록"
+
+msgid "Register issuer"
+msgstr ""
+
+msgid "Register Issuer"
+msgstr ""
 
 msgid "Registered"
 msgstr "등록됨"
@@ -20722,6 +20840,9 @@ msgstr "인수 체크리스트를 통과할 때까지 진행하세요"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "태블릿에서 작업장을 실행합니다: 노무를 기록하고, 진행 상황을 보고하고, 지침을 확인합니다."
 
+msgid "Run this in the workload. Carbon shows each exchange attempt here, with the reason when it is refused."
+msgstr ""
+
 msgid "Run this workflow now?"
 msgstr "이 워크플로우를 지금 실행하시겠습니까?"
 
@@ -20939,6 +21060,9 @@ msgstr "영업사원"
 
 msgid "Same as Book"
 msgstr "장부와 동일"
+
+msgid "Same as the issuer URL"
+msgstr ""
 
 msgid "Sample"
 msgstr "샘플"
@@ -22206,11 +22330,17 @@ msgstr "공급업체 목록, 공급업체 양식, 드롭다운에 읽기 쉬운 
 msgid "Show a warning on the shop floor, but let them work."
 msgstr ""
 
+msgid "Show active"
+msgstr ""
+
 msgid "Show All"
 msgstr "모두 표시"
 
 msgid "Show all hidden on this step"
 msgstr "이 단계에서 모두 숨김 표시"
+
+msgid "Show archived"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "가용 배치 번호 표시"
@@ -24304,6 +24434,9 @@ msgstr "이 지불에 대한 송장이 이 날짜에 초안으로 작성됩니�
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS(수정가속상각법)에 따른 이 자산의 IRS 내용연수 등급(3, 5, 7, 10, 15, 20, 27.5, 39년)입니다."
 
+msgid "The issuer and its key source decide which tokens Carbon accepts. Changing either stops the keys its rules already issued. Changes are recorded in the audit log."
+msgstr ""
+
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "각 작업 지시가 생산하는 품목 — 출력 로트를 병합하기 위해 일치 필수"
 
@@ -24330,6 +24463,9 @@ msgstr "작업 지시가 해당 사업장의 일정 대기열에서의 위치로
 
 msgid "The job's work-in-progress balance moves to this asset now, and completing the job sweeps the rest. Only open jobs that are not linked to a sales order or another asset are listed."
 msgstr "작업 지시의 재공 잔액은 현재 이 자산으로 이동하고, 작업 지시를 완료하면 나머지가 이관됩니다. 수주 또는 다른 자산과 연결되지 않은 미결 작업 지시만 표시됩니다."
+
+msgid "The keys this rule issues act as you, limited to these scopes."
+msgstr ""
 
 msgid "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
 msgstr "이 규칙이 적용하는 조정 유형입니다 — 할인, 추가요금, 또는 고정 재정의 — 금액 유형과 결합되어 각 라인의 실제 증감액을 계산합니다."
@@ -25008,6 +25144,9 @@ msgstr "작업장의 자체 빈으로, 피킹된 자재가 생산이 사용할 �
 msgid "The working hours and calendars that drive scheduling"
 msgstr "일정 수립의 기준이 되는 근무 시간 및 캘린더"
 
+msgid "The workload exchanged its token for an API key."
+msgstr ""
+
 msgid "The workload requests its token for this audience"
 msgstr ""
 
@@ -25261,6 +25400,9 @@ msgstr "회계연도가 시작되는 월입니다."
 msgid "This is the month your tax year starts."
 msgstr "세금 연도가 시작되는 월입니다."
 
+msgid "This issuer is archived. It and its rules accept no more tokens, and it can no longer change."
+msgstr ""
+
 msgid "this item"
 msgstr "이 항목"
 
@@ -25387,6 +25529,9 @@ msgstr "이 리비전은 릴리스되었습니다 (생산). 변경 사항은 정
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "이 리비전은 릴리스되었습니다 (생산). 수정하려면 변경 통지를 열으세요."
+
+msgid "This rule is archived. It accepts no more tokens, and it can no longer change."
+msgstr ""
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "이 실행은 여기에 표시된 것보다 더 많은 단계가 있습니다. 처음 {MAX_RUN_STEPS}개만 나열됩니다."
@@ -25737,10 +25882,13 @@ msgstr "속성 전환"
 msgid "Toggle views"
 msgstr "보기 전환"
 
-msgid "Token lifetime (minutes)"
+msgid "Token validation"
 msgstr ""
 
 msgid "Tokens expire in minutes"
+msgstr ""
+
+msgid "Tokens whose exp − iat is longer are refused. Microsoft Entra ID needs 24."
 msgstr ""
 
 msgid "Tol-"
@@ -26724,6 +26872,9 @@ msgstr "다른 이메일 사용"
 msgid "Use a finished sub-assembly in this step"
 msgstr "완성된 하위 어셈블리를 이 단계에서 사용"
 
+msgid "Use an issuer you registered"
+msgstr ""
+
 msgid "Use Current View"
 msgstr "현재 보기 사용"
 
@@ -27016,6 +27167,9 @@ msgstr "고객 보기"
 msgid "View Employees"
 msgstr "직원 보기"
 
+msgid "View Federation Rule"
+msgstr ""
+
 msgid "View full size"
 msgstr "전체 크기로 보기"
 
@@ -27033,6 +27187,9 @@ msgstr "프로젝트 계획에서 보기"
 
 msgid "View Issue"
 msgstr "이슈 보기"
+
+msgid "View Issuer"
+msgstr ""
 
 msgid "View Item"
 msgstr "품목 보기"
@@ -27230,6 +27387,9 @@ msgstr "대기함"
 
 msgid "Waiting"
 msgstr "대기 중"
+
+msgid "Waiting for the first exchange…"
+msgstr ""
 
 msgid "Waiting for the first sync"
 msgstr "첫 동기화를 기다리는 중"

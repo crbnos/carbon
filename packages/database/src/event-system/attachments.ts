@@ -102,6 +102,8 @@ export const attachments = {
     after: ["sync_create_employee_type_group"],
     events: true
   },
+  federationIssuer: { events: true },
+  federationRule: { events: true },
   fixedAsset: { after: ["sync_advance_document_sequence"], events: true },
   gauge: { after: ["sync_advance_document_sequence"], events: true },
   gaugeCalibrationRecord: { events: true },

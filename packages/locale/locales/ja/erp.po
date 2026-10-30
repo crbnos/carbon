@@ -1391,6 +1391,9 @@ msgstr "パーツには、購入または製造できる特定の品目に関す
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "このステップの部品は配置後に転倒する可能性があります。治具または第2作業者の使用を検討してください。"
 
+msgid "A PEM CA to trust when fetching the discovery document and keys, for an issuer with a private CA."
+msgstr ""
+
 msgid "A photo or PDF the operator sees on this step"
 msgstr "このステップで作業者が見る写真またはPDF"
 
@@ -1781,7 +1784,7 @@ msgstr ""
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "変動料金（走行距離超過、損傷、配送、清掃など）は契約の次の請求書に計上されます。"
 
-msgid "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
+msgid "A workload that presents a matching token from the issuer gets a short-lived API key with these scopes."
 msgstr ""
 
 msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
@@ -2950,6 +2953,9 @@ msgstr "アイテムの追跡タイプが変更されます"
 msgid "An item's unit of measure changes"
 msgstr "アイテムの計量単位が変更されます"
 
+msgid "An OIDC identity provider whose tokens Carbon accepts. Rules name the workloads of an issuer."
+msgstr ""
+
 msgid "An open-ended agreement is always a rental. Set an end date to use these."
 msgstr "期間制限のない契約は常にレンタルです。これらを使用するには終了日を設定してください。"
 
@@ -3107,6 +3113,9 @@ msgstr "APIキー"
 
 msgid "API Key"
 msgstr "APIキー"
+
+msgid "API key lifetime (minutes)"
+msgstr ""
 
 msgid "API Keys"
 msgstr "APIキー"
@@ -3293,8 +3302,19 @@ msgstr "売掛金/買掛金"
 msgid "Archive"
 msgstr "アーカイブ"
 
+#. placeholder {0}: issuer.name
+#. placeholder {0}: rule.name
+msgid "Archive {0}"
+msgstr ""
+
 msgid "Archive all"
 msgstr "すべてアーカイブ"
+
+msgid "Archive Federation Rule"
+msgstr ""
+
+msgid "Archive Issuer"
+msgstr ""
 
 msgid "Archive Training"
 msgstr "教育訓練をアーカイブ"
@@ -3302,8 +3322,14 @@ msgstr "教育訓練をアーカイブ"
 msgid "Archived"
 msgstr "アーカイブ済み"
 
+msgid "Archived Issuers"
+msgstr ""
+
 msgid "Archived Logs"
 msgstr "アーカイブ済ログ"
+
+msgid "Archived Rules"
+msgstr ""
 
 #. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
@@ -3497,10 +3523,6 @@ msgstr "従業員タイプ「{0}」を削除してもよろしいですか？こ
 
 msgid "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
 msgstr "失敗モード「{name}」を削除してもよろしいですか？この操作は取り消せません。"
-
-#. placeholder {0}: rule.name
-msgid "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
-msgstr ""
 
 #. placeholder {0}: gaugeType.name
 msgid "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
@@ -4104,6 +4126,12 @@ msgstr "監査ログ"
 
 msgid "Authentication Error"
 msgstr "認証エラー"
+
+msgid "Authentication events"
+msgstr ""
+
+msgid "Authentication Events"
+msgstr ""
 
 msgid "Authenticator app"
 msgstr "認証器アプリ"
@@ -4741,6 +4769,9 @@ msgstr "サインインすることで、<0>利用規約</0>および<1>プラ�
 
 msgid "By you · edited <0/>"
 msgstr "あなた · 編集済 <0/>"
+
+msgid "CA certificate"
+msgstr ""
 
 msgid "CAD Model"
 msgstr "CADモデル"
@@ -5443,6 +5474,9 @@ msgstr "クリックして名前を変更"
 msgid "Click to upload a PDF drawing"
 msgstr "PDFドローイングをアップロードするにはクリック"
 
+msgid "Client IP"
+msgstr ""
+
 msgid "Clock In"
 msgstr "作業開始"
 
@@ -5952,8 +5986,14 @@ msgstr "条件に一致しないときに実行するノードにOtherwiseハン
 msgid "Connect the outside tools your company already runs on"
 msgstr "会社がすでに実行している外部ツールに接続"
 
+msgid "Connect workload"
+msgstr ""
+
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "IDプロバイダーのメタデータURLまたは生のメタデータXMLを貼り付けて接続します。どちらか一つだけを入力してください。"
+
+msgid "Connected"
+msgstr ""
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 msgstr "ワークフローが追加の権限を必要とする前に接続されました。これらを付与するために再接続してください。その間、他のすべては動作し続けます。"
@@ -6790,6 +6830,9 @@ msgstr "交換を作成"
 
 msgid "Create Revision"
 msgstr "リビジョンを作成"
+
+msgid "Create rule"
+msgstr ""
 
 msgid "Create Rule"
 msgstr "ルールを作成"
@@ -7860,9 +7903,6 @@ msgstr "従業員タイプを削除"
 msgid "Delete Failure Mode"
 msgstr "失敗モードを削除"
 
-msgid "Delete Federation Rule"
-msgstr ""
-
 msgid "Delete file"
 msgstr "ファイルを削除"
 
@@ -8453,6 +8493,9 @@ msgstr "早期支払に対して得意先に与えられた値引"
 msgid "Discovery"
 msgstr "発見"
 
+msgid "Discovery base URL"
+msgstr ""
+
 msgid "Dismiss"
 msgstr "閉じる"
 
@@ -8962,6 +9005,9 @@ msgstr "各レンタル契約または契約の営業担当者（またはその
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "各仕入先の全製造指図からの外注工程は、1つの新規発注書、または選択した既存の下書きに計上されます。"
 
+msgid "Each token's jti can be exchanged once. Turn off only for an issuer that does not set jti, such as Google Cloud and Microsoft Entra ID."
+msgstr ""
+
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "各個の公正価値と経済的耐用年数により、条件がほとんどをカバーするかどうかが決まります。セルをクリックして変更してください。"
 
@@ -9136,6 +9182,9 @@ msgstr "休日を編集"
 
 msgid "Edit Inspection Plan"
 msgstr "検査計画を編集"
+
+msgid "Edit Issuer"
+msgstr ""
 
 msgid "Edit Item Group"
 msgstr "アイテムグループを編集"
@@ -9614,6 +9663,9 @@ msgstr "見積書、受注、売上請求書に品目を追加する際に、顧
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "領収書、出荷、転送、および調整全体にわたって、品目ごとの検証とガイドラインを実施します。"
 
+msgid "Enforce single-use tokens (jti replay protection)"
+msgstr ""
+
 msgid "Engagement tier"
 msgstr "エンゲージメント層"
 
@@ -9901,6 +9953,9 @@ msgstr "すべてのアカウントのデフォルトが設定されています
 msgid "Every account is mapped"
 msgstr "すべての勘定がマッピング済みです"
 
+msgid "Every API key this rule issued stops working at once, and the rule takes no more exchanges. Its authentication events stay."
+msgstr ""
+
 msgid "Every asset needs a payment row before activating."
 msgstr "有効化する前に、すべての資産が支払明細を必要とします。"
 
@@ -9982,7 +10037,7 @@ msgstr "その他はすべて、人員、インポート、連携、およびAPI
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "このランで製造されるすべてが1つのロットに入ります。製造現場は変更できません。"
 
-msgid "Exact match, or a prefix when it ends in *"
+msgid "Exact match, or a prefix when it ends in :* or /*"
 msgstr ""
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
@@ -10701,7 +10756,10 @@ msgstr "ファックス"
 msgid "Fax Number"
 msgstr "ファックス番号"
 
-msgid "Federation Rule"
+msgid "Federation rule"
+msgstr ""
+
+msgid "Federation Rules"
 msgstr ""
 
 msgid "Fees"
@@ -11708,6 +11766,9 @@ msgstr "品目の単位原価がどのように評価されるかについて：
 
 msgid "How are these hours calculated?"
 msgstr "これらの時間はどのように計算されますか？"
+
+msgid "How Carbon gets the issuer's signing keys"
+msgstr ""
 
 msgid "How Carbon looks in this browser."
 msgstr "このブラウザにおけるCarbonの表示方法。"
@@ -12728,6 +12789,12 @@ msgstr ""
 msgid "Issuer URL"
 msgstr ""
 
+msgid "Issuer URL (iss claim)"
+msgstr ""
+
+msgid "Issuers"
+msgstr ""
+
 msgid "Issues"
 msgstr "問題"
 
@@ -12857,6 +12924,9 @@ msgstr "変更通知のリリース前に、そのデザインが変わる可能
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "その売上高は各明細が計上待ちしている金額に戻ります。"
 
+msgid "Its rules are archived too, and every API key they issued stops working at once."
+msgstr ""
+
 msgid "Job"
 msgstr "ジョブ"
 
@@ -12972,6 +13042,15 @@ msgstr "この日付以前の仕訳はロック中として扱われます。両
 msgid "Just one"
 msgstr "1つだけ"
 
+msgid "JWKS source"
+msgstr ""
+
+msgid "JWKS Source"
+msgstr ""
+
+msgid "JWKS URL"
+msgstr ""
+
 msgid "Kanban"
 msgstr "かんばん"
 
@@ -13029,6 +13108,9 @@ msgstr "開いたままにする"
 msgid "Keep picking"
 msgstr "ピッキングを続ける"
 
+msgid "Keep waiting"
+msgstr ""
+
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "注文、見積、設定を2段階認証で保護します"
 
@@ -13040,6 +13122,9 @@ msgstr "{total} 件中 {kept} 件を保持しました。"
 
 msgid "Key"
 msgstr "キー"
+
+msgid "Key set (JWKS)"
+msgstr ""
 
 msgid "Keyboard shortcuts"
 msgstr "キーボードショートカット"
@@ -13141,12 +13226,6 @@ msgstr "最終校正日"
 msgid "Last day"
 msgstr "最終日"
 
-msgid "Last Exchange"
-msgstr ""
-
-msgid "Last exchange:"
-msgstr ""
-
 msgid "Last Fiscal Year"
 msgstr "前会計年度"
 
@@ -13174,12 +13253,6 @@ msgstr "最終プッシュ: {lastPushed}"
 
 msgid "Last Quarter"
 msgstr "前四半期"
-
-msgid "Last Refusal"
-msgstr ""
-
-msgid "Last refused exchange:"
-msgstr ""
 
 msgid "Last Run"
 msgstr "最終実行"
@@ -13367,6 +13440,9 @@ msgstr "貸手"
 
 msgid "Lessor Discount Rate (%)"
 msgstr "貸手割引率(%)"
+
+msgid "Let a CI job or cloud workload exchange its own token for a short-lived Carbon API key, with no key to store."
+msgstr ""
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "SAMLを使用してIDプロバイダーを通じてメンバーがサインインできるようにします。"
@@ -13774,6 +13850,12 @@ msgstr "低"
 
 msgid "Lowercase item IDs are allowed"
 msgstr "小文字のアイテムIDが許可されます"
+
+msgid "Lowercase letters, numbers and hyphens"
+msgstr ""
+
+msgid "Lowercase letters, numbers and hyphens. Shown in rules and the audit log."
+msgstr ""
 
 msgid "Machine"
 msgstr "機械"
@@ -14305,6 +14387,9 @@ msgstr "最大発注数量"
 msgid "Maximum Order:"
 msgstr "最大注文数:"
 
+msgid "Maximum token lifetime (hours)"
+msgstr ""
+
 msgid "MCP Command"
 msgstr "MCPコマンド"
 
@@ -14747,7 +14832,7 @@ msgstr "{minValue} から {maxValue} {unitLabel} の間である必要があり�
 msgid "Must be in the same location"
 msgstr "同じ場所にある必要があります"
 
-msgid "Must equal the iss claim of the token exactly"
+msgid "Must equal the iss claim of the tokens exactly"
 msgstr ""
 
 msgid "My Documents"
@@ -14863,6 +14948,9 @@ msgstr "ネットワークエラー"
 
 msgid "Never"
 msgstr "なし"
+
+msgid "Never longer than the workload's own token has left"
+msgstr ""
 
 msgid "New"
 msgstr "新規"
@@ -15559,6 +15647,12 @@ msgstr "終了日なし"
 
 msgid "No events found."
 msgstr "イベントが見つかりません。"
+
+msgid "No exchange yet."
+msgstr ""
+
+msgid "No exchanges yet."
+msgstr ""
 
 msgid "No external notes"
 msgstr "社外メモなし"
@@ -16587,6 +16681,9 @@ msgstr "資格のある従業員のみがこのプロセスをスケジュール
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "シリアル化された個のうち、固定資産として資本化されたもののみレンタルできます。追加するには、部品の在庫管理タブを開き、保管ユニット内でシリアル番号を見つけて、「固定資産として資本化」を選択してください。"
 
+msgid "Only when the discovery document is not under the issuer URL"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 msgstr "Onshapeが接続を認可しましたが、保存に失敗しました。連携設定を保存して再度試してください。"
 
@@ -17087,6 +17184,9 @@ msgstr "使用不可（<0/>以降）"
 
 msgid "Outbound"
 msgstr "出荷"
+
+msgid "Outcome"
+msgstr ""
 
 msgid "Outgoing"
 msgstr "発送"
@@ -18488,6 +18588,9 @@ msgstr "仮仕訳"
 msgid "Public"
 msgstr "公開"
 
+msgid "Public keys only. Carbon never fetches them, so update the set when the issuer rotates its keys."
+msgstr ""
+
 msgid "Publish"
 msgstr "公開"
 
@@ -19292,6 +19395,9 @@ msgstr "入荷拠点"
 msgid "Recent"
 msgstr "最近"
 
+msgid "Recent exchanges"
+msgstr ""
+
 msgid "Recent payments"
 msgstr "最近の支払い"
 
@@ -19471,6 +19577,9 @@ msgstr "返金メモ"
 msgid "Refund to Customer"
 msgstr "得意先への返金"
 
+msgid "Refused"
+msgstr ""
+
 msgid "Regenerate"
 msgstr "再生成"
 
@@ -19495,8 +19604,17 @@ msgstr "サムネイルを再生成中…"
 msgid "Register"
 msgstr "既存資産を登録"
 
+msgid "Register a new issuer"
+msgstr ""
+
 msgid "Register Existing Asset"
 msgstr "登録済み"
+
+msgid "Register issuer"
+msgstr ""
+
+msgid "Register Issuer"
+msgstr ""
 
 msgid "Registered"
 msgstr "登録済"
@@ -20722,6 +20840,9 @@ msgstr "受け入れチェックリストを実行してパスする"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "タブレットでショップフロアを実行：労務を記録、進捗を報告、指示を確認"
 
+msgid "Run this in the workload. Carbon shows each exchange attempt here, with the reason when it is refused."
+msgstr ""
+
 msgid "Run this workflow now?"
 msgstr "このワークフローを今すぐ実行しますか？"
 
@@ -20939,6 +21060,9 @@ msgstr "営業担当者"
 
 msgid "Same as Book"
 msgstr "簿価と同じ"
+
+msgid "Same as the issuer URL"
+msgstr ""
 
 msgid "Sample"
 msgstr "サンプル"
@@ -22206,11 +22330,17 @@ msgstr "仕入先リスト、仕入先フォーム、ドロップダウンで読
 msgid "Show a warning on the shop floor, but let them work."
 msgstr ""
 
+msgid "Show active"
+msgstr ""
+
 msgid "Show All"
 msgstr "すべて表示"
 
 msgid "Show all hidden on this step"
 msgstr "このステップで非表示になっているすべてを表示"
+
+msgid "Show archived"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "利用可能なバッチ番号を表示"
@@ -24304,6 +24434,9 @@ msgstr "この支払いの請求書は、この日付で下書きされます。
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS（3、5、7、10、15、20、27.5、39年）に基づくこのアセットのIRS回収期間クラス。"
 
+msgid "The issuer and its key source decide which tokens Carbon accepts. Changing either stops the keys its rules already issued. Changes are recorded in the audit log."
+msgstr ""
+
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "各製造指図が生産する品目 — 出力ロットをマージするには一致する必要があります"
 
@@ -24330,6 +24463,9 @@ msgstr "このジョブのロケーション内のスケジュール順序での
 
 msgid "The job's work-in-progress balance moves to this asset now, and completing the job sweeps the rest. Only open jobs that are not linked to a sales order or another asset are listed."
 msgstr "製造指図の仕掛品残高がこの資産に移動され、製造指図の完了により残りが振替されます。受注またはその他の資産にリンクされていないオープンな製造指図のみがリストされます。"
+
+msgid "The keys this rule issues act as you, limited to these scopes."
+msgstr ""
 
 msgid "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
 msgstr "このルールが適用する調整の種類—値引、割増、または固定上書き。Amount Typeと組み合わせて、各明細の実際の差分を計算します。"
@@ -25008,6 +25144,9 @@ msgstr "作業区が持つ自身のビンで、ピッキング済の材料が生
 msgid "The working hours and calendars that drive scheduling"
 msgstr "スケジューリングを駆動する勤務時間とカレンダー"
 
+msgid "The workload exchanged its token for an API key."
+msgstr ""
+
 msgid "The workload requests its token for this audience"
 msgstr ""
 
@@ -25261,6 +25400,9 @@ msgstr "これはあなたの会計年度が始まる月です。"
 msgid "This is the month your tax year starts."
 msgstr "これはあなたの税務年度が始まる月です。"
 
+msgid "This issuer is archived. It and its rules accept no more tokens, and it can no longer change."
+msgstr ""
+
 msgid "this item"
 msgstr "このアイテム"
 
@@ -25387,6 +25529,9 @@ msgstr "このリビジョンはリリース済（生産）です。変更は通
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "このリビジョンはリリース済（生産）です。それを修正するために変更通知を開いてください。"
+
+msgid "This rule is archived. It accepts no more tokens, and it can no longer change."
+msgstr ""
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "この実行には、ここに表示するよりも多くのステップがあります。最初の {MAX_RUN_STEPS} のみが表示されます。"
@@ -25737,10 +25882,13 @@ msgstr "プロパティを切り替え"
 msgid "Toggle views"
 msgstr "ビューを切り替える"
 
-msgid "Token lifetime (minutes)"
+msgid "Token validation"
 msgstr ""
 
 msgid "Tokens expire in minutes"
+msgstr ""
+
+msgid "Tokens whose exp − iat is longer are refused. Microsoft Entra ID needs 24."
 msgstr ""
 
 msgid "Tol-"
@@ -26724,6 +26872,9 @@ msgstr "別のメールアドレスを使用"
 msgid "Use a finished sub-assembly in this step"
 msgstr "このステップで完成したサブアセンブリを使用"
 
+msgid "Use an issuer you registered"
+msgstr ""
+
 msgid "Use Current View"
 msgstr "現在のビューを使用"
 
@@ -27016,6 +27167,9 @@ msgstr "得意先を表示"
 msgid "View Employees"
 msgstr "従業員を表示"
 
+msgid "View Federation Rule"
+msgstr ""
+
 msgid "View full size"
 msgstr "フルサイズで表示"
 
@@ -27033,6 +27187,9 @@ msgstr "プロジェクトプランで表示"
 
 msgid "View Issue"
 msgstr "問題を表示"
+
+msgid "View Issuer"
+msgstr ""
 
 msgid "View Item"
 msgstr "品目を表示"
@@ -27230,6 +27387,9 @@ msgstr "待機"
 
 msgid "Waiting"
 msgstr "待機中"
+
+msgid "Waiting for the first exchange…"
+msgstr ""
 
 msgid "Waiting for the first sync"
 msgstr "最初の同期を待っています"

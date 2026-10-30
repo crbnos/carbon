@@ -5,9 +5,13 @@
 import {
   API_KEYS_PAGING,
   CUSTOM_FIELD_TABLES_PAGING,
+  FEDERATION_EXCHANGES_PAGING,
+  FEDERATION_ISSUERS_PAGING,
   FEDERATION_RULES_PAGING,
   getApiKeys,
   getCustomFieldsTables,
+  getFederationExchanges,
+  getFederationIssuers,
   getFederationRules,
   getItemSerialSequences,
   getSequences,
@@ -44,11 +48,32 @@ export const apiKeysList = {
   }
 } satisfies ListDefinition;
 
+// `?archived=true` lists the archived rows instead of the active ones.
+const archivedParam = {
+  archived: (params: URLSearchParams) => params.get("archived") === "true"
+};
+
 export const federationRulesList = searchList({
   key: "federation-rules",
   permission: { update: "users" },
   paging: FEDERATION_RULES_PAGING,
-  service: getFederationRules
+  service: getFederationRules,
+  params: { ...archivedParam, issuerId: "issuerId" }
+});
+
+export const federationIssuersList = searchList({
+  key: "federation-issuers",
+  permission: { update: "users" },
+  paging: FEDERATION_ISSUERS_PAGING,
+  service: getFederationIssuers,
+  params: archivedParam
+});
+
+export const federationExchangesList = searchList({
+  key: "federation-exchanges",
+  permission: { update: "users" },
+  paging: FEDERATION_EXCHANGES_PAGING,
+  service: getFederationExchanges
 });
 
 export const sequencesList = searchList({
@@ -83,6 +108,8 @@ export const customFieldTablesList = searchList({
 export const settingsLists: Record<string, ListDefinition> = {
   [apiKeysList.key]: apiKeysList,
   [customFieldTablesList.key]: customFieldTablesList,
+  [federationExchangesList.key]: federationExchangesList,
+  [federationIssuersList.key]: federationIssuersList,
   [federationRulesList.key]: federationRulesList,
   [sequencesList.key]: sequencesList,
   [itemSerialSequencesList.key]: itemSerialSequencesList,

@@ -47,6 +47,9 @@ export const SECRET_TABLES = [
   "apiKeyRateLimit",
   // A trust rule restored into another company would let a CI job reach it.
   "federationRule",
+  "federationIssuer",
+  // The attempt log of those rules; it means nothing without them.
+  "federationExchange",
   "tableChange",
   "companyIntegration",
   "integrationConnection",

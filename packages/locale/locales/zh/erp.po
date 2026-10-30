@@ -1391,6 +1391,9 @@ msgstr "零件包含可以购买或制造的特定项目的信息。"
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "此步骤中的零件放置后可能会翻倒 — 考虑使用工装夹具或另一个人员。"
 
+msgid "A PEM CA to trust when fetching the discovery document and keys, for an issuer with a private CA."
+msgstr ""
+
 msgid "A photo or PDF the operator sees on this step"
 msgstr "操作员在此步骤中看到的照片或 PDF"
 
@@ -1781,7 +1784,7 @@ msgstr ""
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "可变费用（如里程超额、损害、交付、清洁）在协议的下一份发票上计费。"
 
-msgid "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
+msgid "A workload that presents a matching token from the issuer gets a short-lived API key with these scopes."
 msgstr ""
 
 msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
@@ -2950,6 +2953,9 @@ msgstr "物料的追踪类型更改"
 msgid "An item's unit of measure changes"
 msgstr "物料的计量单位更改"
 
+msgid "An OIDC identity provider whose tokens Carbon accepts. Rules name the workloads of an issuer."
+msgstr ""
+
 msgid "An open-ended agreement is always a rental. Set an end date to use these."
 msgstr "无固定期限的协议始终是租赁。设置结束日期以使用这些。"
 
@@ -3107,6 +3113,9 @@ msgstr "API密钥"
 
 msgid "API Key"
 msgstr "API密钥"
+
+msgid "API key lifetime (minutes)"
+msgstr ""
 
 msgid "API Keys"
 msgstr "API密钥"
@@ -3293,8 +3302,19 @@ msgstr "应收账款/应付账款"
 msgid "Archive"
 msgstr "存档"
 
+#. placeholder {0}: issuer.name
+#. placeholder {0}: rule.name
+msgid "Archive {0}"
+msgstr ""
+
 msgid "Archive all"
 msgstr "全部存档"
+
+msgid "Archive Federation Rule"
+msgstr ""
+
+msgid "Archive Issuer"
+msgstr ""
 
 msgid "Archive Training"
 msgstr "存档培训"
@@ -3302,8 +3322,14 @@ msgstr "存档培训"
 msgid "Archived"
 msgstr "已归档"
 
+msgid "Archived Issuers"
+msgstr ""
+
 msgid "Archived Logs"
 msgstr "已归档日志"
+
+msgid "Archived Rules"
+msgstr ""
 
 #. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
@@ -3497,10 +3523,6 @@ msgstr "您确定要删除员工类型：{0}？此操作无法撤销。"
 
 msgid "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
 msgstr "您确定要删除故障模式：{name}？此操作无法撤销。"
-
-#. placeholder {0}: rule.name
-msgid "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
-msgstr ""
 
 #. placeholder {0}: gaugeType.name
 msgid "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
@@ -4104,6 +4126,12 @@ msgstr "审计日志"
 
 msgid "Authentication Error"
 msgstr "身份验证错误"
+
+msgid "Authentication events"
+msgstr ""
+
+msgid "Authentication Events"
+msgstr ""
 
 msgid "Authenticator app"
 msgstr "身份验证器应用"
@@ -4741,6 +4769,9 @@ msgstr "通过登录，您同意<0>服务条款</0>和<1>隐私政策。</1>"
 
 msgid "By you · edited <0/>"
 msgstr "由你·编辑于<0/>"
+
+msgid "CA certificate"
+msgstr ""
 
 msgid "CAD Model"
 msgstr "CAD 模型"
@@ -5443,6 +5474,9 @@ msgstr "单击以重命名"
 msgid "Click to upload a PDF drawing"
 msgstr "点击上传 PDF 图纸"
 
+msgid "Client IP"
+msgstr ""
+
 msgid "Clock In"
 msgstr "开工"
 
@@ -5952,8 +5986,14 @@ msgstr "将 Otherwise 句柄连接到节点，以便在没有条件匹配时运�
 msgid "Connect the outside tools your company already runs on"
 msgstr "连接您的公司已在使用的外部工具"
 
+msgid "Connect workload"
+msgstr ""
+
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "通过粘贴身份提供商的元数据 URL 或原始元数据 XML(两者中恰好一个)来连接您的身份提供商。"
+
+msgid "Connected"
+msgstr ""
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 msgstr "工作流连接之前需要额外权限。重新连接以授予权限——同时其他一切保持正常。"
@@ -6790,6 +6830,9 @@ msgstr "创建替代品"
 
 msgid "Create Revision"
 msgstr "创建修订版"
+
+msgid "Create rule"
+msgstr ""
 
 msgid "Create Rule"
 msgstr "创建规则"
@@ -7860,9 +7903,6 @@ msgstr "删除员工类型"
 msgid "Delete Failure Mode"
 msgstr "删除故障模式"
 
-msgid "Delete Federation Rule"
-msgstr ""
-
 msgid "Delete file"
 msgstr "删除文件"
 
@@ -8453,6 +8493,9 @@ msgstr "客户提前付款所获得的折扣"
 msgid "Discovery"
 msgstr "发现"
 
+msgid "Discovery base URL"
+msgstr ""
+
 msgid "Dismiss"
 msgstr "关闭"
 
@@ -8962,6 +9005,9 @@ msgstr "每个租赁协议或合约的销售人员（或其创建者）每日获
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "每个供应商的外协工序从每个工单转至一份新采购订单，或转至您选择的现有草稿。"
 
+msgid "Each token's jti can be exchanged once. Turn off only for an issuer that does not set jti, such as Google Cloud and Microsoft Entra ID."
+msgstr ""
+
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "每件的公允价值和经济生命周期决定该条款是否涵盖大部分。点击单元格进行更改。"
 
@@ -9136,6 +9182,9 @@ msgstr "编辑假期"
 
 msgid "Edit Inspection Plan"
 msgstr "编辑检验计划"
+
+msgid "Edit Issuer"
+msgstr ""
 
 msgid "Edit Item Group"
 msgstr "编辑项目组"
@@ -9614,6 +9663,9 @@ msgstr "当项目添加到报价、销售订单和销售发票时，强制执行
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "在收据、发货、转移和调整中强制执行按项目验证和指南。"
 
+msgid "Enforce single-use tokens (jti replay protection)"
+msgstr ""
+
 msgid "Engagement tier"
 msgstr "参与层级"
 
@@ -9901,6 +9953,9 @@ msgstr "已设置每个账户默认值"
 msgid "Every account is mapped"
 msgstr "所有科目均已映射"
 
+msgid "Every API key this rule issued stops working at once, and the rule takes no more exchanges. Its authentication events stay."
+msgstr ""
+
 msgid "Every asset needs a payment row before activating."
 msgstr "激活前每项资产需要一行付款。"
 
@@ -9982,7 +10037,7 @@ msgstr "其他所有内容涵盖人员、导入、集成和 API — 任何不属
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "这次运行生产的所有产品都进入一个批次。车间无法更改它。"
 
-msgid "Exact match, or a prefix when it ends in *"
+msgid "Exact match, or a prefix when it ends in :* or /*"
 msgstr ""
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
@@ -10701,7 +10756,10 @@ msgstr "传真"
 msgid "Fax Number"
 msgstr "传真号码"
 
-msgid "Federation Rule"
+msgid "Federation rule"
+msgstr ""
+
+msgid "Federation Rules"
 msgstr ""
 
 msgid "Fees"
@@ -11708,6 +11766,9 @@ msgstr "物料的单位成本估价方法：标准成本、平均成本、先进
 
 msgid "How are these hours calculated?"
 msgstr "这些小时数是如何计算的？"
+
+msgid "How Carbon gets the issuer's signing keys"
+msgstr ""
 
 msgid "How Carbon looks in this browser."
 msgstr "Carbon 在此浏览器中的外观"
@@ -12728,6 +12789,12 @@ msgstr ""
 msgid "Issuer URL"
 msgstr ""
 
+msgid "Issuer URL (iss claim)"
+msgstr ""
+
+msgid "Issuers"
+msgstr ""
+
 msgid "Issues"
 msgstr "问题"
 
@@ -12857,6 +12924,9 @@ msgstr "在变更通知下达前，其设计可能会改变。"
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "其收入返还到每一行剩余待确认的部分。"
 
+msgid "Its rules are archived too, and every API key they issued stops working at once."
+msgstr ""
+
 msgid "Job"
 msgstr "工作"
 
@@ -12972,6 +13042,15 @@ msgstr "在此日期或之前日期的凭证被视为已锁定。当两者都存
 msgid "Just one"
 msgstr "仅一个"
 
+msgid "JWKS source"
+msgstr ""
+
+msgid "JWKS Source"
+msgstr ""
+
+msgid "JWKS URL"
+msgstr ""
+
 msgid "Kanban"
 msgstr "看板"
 
@@ -13029,6 +13108,9 @@ msgstr "保持未结"
 msgid "Keep picking"
 msgstr "继续拣货"
 
+msgid "Keep waiting"
+msgstr ""
+
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "让订单、报价单和设置受到第二道检查的保护"
 
@@ -13040,6 +13122,9 @@ msgstr "保留了 {total} 个中的 {kept} 个。"
 
 msgid "Key"
 msgstr "钥匙"
+
+msgid "Key set (JWKS)"
+msgstr ""
 
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
@@ -13141,12 +13226,6 @@ msgstr "上次校准日期"
 msgid "Last day"
 msgstr "最后一天"
 
-msgid "Last Exchange"
-msgstr ""
-
-msgid "Last exchange:"
-msgstr ""
-
 msgid "Last Fiscal Year"
 msgstr "上一个会计年度"
 
@@ -13174,12 +13253,6 @@ msgstr "最后推送：{lastPushed}。"
 
 msgid "Last Quarter"
 msgstr "上一季度"
-
-msgid "Last Refusal"
-msgstr ""
-
-msgid "Last refused exchange:"
-msgstr ""
 
 msgid "Last Run"
 msgstr "最后运行"
@@ -13367,6 +13440,9 @@ msgstr "出租人"
 
 msgid "Lessor Discount Rate (%)"
 msgstr "出租人折现率(%)"
+
+msgid "Let a CI job or cloud workload exchange its own token for a short-lived Carbon API key, with no key to store."
+msgstr ""
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "允许成员通过您的身份提供商使用 SAML 登录。"
@@ -13774,6 +13850,12 @@ msgstr "低"
 
 msgid "Lowercase item IDs are allowed"
 msgstr "允许使用小写物料编号"
+
+msgid "Lowercase letters, numbers and hyphens"
+msgstr ""
+
+msgid "Lowercase letters, numbers and hyphens. Shown in rules and the audit log."
+msgstr ""
 
 msgid "Machine"
 msgstr "机器"
@@ -14305,6 +14387,9 @@ msgstr "最大订单数量"
 msgid "Maximum Order:"
 msgstr "最大订单："
 
+msgid "Maximum token lifetime (hours)"
+msgstr ""
+
 msgid "MCP Command"
 msgstr "MCP 命令"
 
@@ -14747,7 +14832,7 @@ msgstr "必须在 {minValue} 到 {maxValue} {unitLabel} 之间"
 msgid "Must be in the same location"
 msgstr "必须在同一位置"
 
-msgid "Must equal the iss claim of the token exactly"
+msgid "Must equal the iss claim of the tokens exactly"
 msgstr ""
 
 msgid "My Documents"
@@ -14863,6 +14948,9 @@ msgstr "网络错误"
 
 msgid "Never"
 msgstr "永不"
+
+msgid "Never longer than the workload's own token has left"
+msgstr ""
 
 msgid "New"
 msgstr "新建"
@@ -15559,6 +15647,12 @@ msgstr "无结束"
 
 msgid "No events found."
 msgstr "未找到事件。"
+
+msgid "No exchange yet."
+msgstr ""
+
+msgid "No exchanges yet."
+msgstr ""
 
 msgid "No external notes"
 msgstr "暂无外部备注"
@@ -16587,6 +16681,9 @@ msgstr "只有合格的员工才能被安排和运行此流程"
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "仅具有序列号且已作为固定资产资本化的件才能出租。要添加一个，请打开该零件的库存管理选项卡，在存储单元下查找序列号，然后选择作为固定资产资本化。"
 
+msgid "Only when the discovery document is not under the issuer URL"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 msgstr "Onshape 授权了连接但保存失败。保存集成设置以重试。"
 
@@ -17087,6 +17184,9 @@ msgstr "自 <0/> 起已停止使用"
 
 msgid "Outbound"
 msgstr "出库"
+
+msgid "Outcome"
+msgstr ""
 
 msgid "Outgoing"
 msgstr "出库"
@@ -18488,6 +18588,9 @@ msgstr "临时凭证"
 msgid "Public"
 msgstr "公开"
 
+msgid "Public keys only. Carbon never fetches them, so update the set when the issuer rotates its keys."
+msgstr ""
+
 msgid "Publish"
 msgstr "发布"
 
@@ -19292,6 +19395,9 @@ msgstr "收货地点"
 msgid "Recent"
 msgstr "最近"
 
+msgid "Recent exchanges"
+msgstr ""
+
 msgid "Recent payments"
 msgstr "最近的付款"
 
@@ -19471,6 +19577,9 @@ msgstr "退款单据"
 msgid "Refund to Customer"
 msgstr "向客户退款"
 
+msgid "Refused"
+msgstr ""
+
 msgid "Regenerate"
 msgstr "重新生成"
 
@@ -19495,8 +19604,17 @@ msgstr "正在重新生成缩略图…"
 msgid "Register"
 msgstr "注册现有资产"
 
+msgid "Register a new issuer"
+msgstr ""
+
 msgid "Register Existing Asset"
 msgstr "已注册"
+
+msgid "Register issuer"
+msgstr ""
+
+msgid "Register Issuer"
+msgstr ""
 
 msgid "Registered"
 msgstr "已登记"
@@ -20722,6 +20840,9 @@ msgstr "运行验收清单至合格"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "在平板电脑上运行车间：计时人工、报告进度、查看说明"
 
+msgid "Run this in the workload. Carbon shows each exchange attempt here, with the reason when it is refused."
+msgstr ""
+
 msgid "Run this workflow now?"
 msgstr "立即运行此工作流？"
 
@@ -20939,6 +21060,9 @@ msgstr "销售人员"
 
 msgid "Same as Book"
 msgstr "与账面相同"
+
+msgid "Same as the issuer URL"
+msgstr ""
 
 msgid "Sample"
 msgstr "样本"
@@ -22206,11 +22330,17 @@ msgstr "在供应商列表、供应商表单和下拉菜单上显示可读的供
 msgid "Show a warning on the shop floor, but let them work."
 msgstr ""
 
+msgid "Show active"
+msgstr ""
+
 msgid "Show All"
 msgstr "显示全部"
 
 msgid "Show all hidden on this step"
 msgstr "显示此步骤上隐藏的全部内容"
+
+msgid "Show archived"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "显示可用批次号"
@@ -24304,6 +24434,9 @@ msgstr "此付款的发票在此日期草稿完成"
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15、20、27.5、39年）。"
 
+msgid "The issuer and its key source decide which tokens Carbon accepts. Changing either stops the keys its rules already issued. Changes are recorded in the audit log."
+msgstr ""
+
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "每个工单生产的物料 — 要求其匹配以合并输出批次"
 
@@ -24330,6 +24463,9 @@ msgstr "工单在其地点排程队列中的位置——一个 Carbon 根据到�
 
 msgid "The job's work-in-progress balance moves to this asset now, and completing the job sweeps the rest. Only open jobs that are not linked to a sales order or another asset are listed."
 msgstr "工单的在制品余额现已转移至此资产，完成工单将扫入其余部分。只显示未关联销售订单或其他资产的未结工单。"
+
+msgid "The keys this rule issues act as you, limited to these scopes."
+msgstr ""
 
 msgid "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
 msgstr "该规则应用的调整类型 - 折扣、附加费或固定覆盖；与金额类型结合以计算每行的实际增量。"
@@ -25008,6 +25144,9 @@ msgstr "工作中心自身的料箱,拣货的原材料在此暂存供生产领�
 msgid "The working hours and calendars that drive scheduling"
 msgstr "驱动日程安排的工作时间和日历"
 
+msgid "The workload exchanged its token for an API key."
+msgstr ""
+
 msgid "The workload requests its token for this audience"
 msgstr ""
 
@@ -25261,6 +25400,9 @@ msgstr "这是你会计年度开始的月份。"
 msgid "This is the month your tax year starts."
 msgstr "这是您的税务年度开始的月份。"
 
+msgid "This issuer is archived. It and its rules accept no more tokens, and it can no longer change."
+msgstr ""
+
 msgid "this item"
 msgstr "此物料"
 
@@ -25387,6 +25529,9 @@ msgstr "这个修订版已下达（生产）。更改应该通常通过变更通
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "此修订版已下达（生产）。打开变更通知以修改它。"
+
+msgid "This rule is archived. It accepts no more tokens, and it can no longer change."
+msgstr ""
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "此运行的步骤比我们此处显示的要多。仅列出前 {MAX_RUN_STEPS} 个。"
@@ -25737,10 +25882,13 @@ msgstr "切换属性"
 msgid "Toggle views"
 msgstr "切换视图"
 
-msgid "Token lifetime (minutes)"
+msgid "Token validation"
 msgstr ""
 
 msgid "Tokens expire in minutes"
+msgstr ""
+
+msgid "Tokens whose exp − iat is longer are refused. Microsoft Entra ID needs 24."
 msgstr ""
 
 msgid "Tol-"
@@ -26724,6 +26872,9 @@ msgstr "使用不同的电子邮件"
 msgid "Use a finished sub-assembly in this step"
 msgstr "在此步骤中使用完成的子装配体"
 
+msgid "Use an issuer you registered"
+msgstr ""
+
 msgid "Use Current View"
 msgstr "使用当前视图"
 
@@ -27016,6 +27167,9 @@ msgstr "查看客户"
 msgid "View Employees"
 msgstr "查看员工"
 
+msgid "View Federation Rule"
+msgstr ""
+
 msgid "View full size"
 msgstr "查看原图"
 
@@ -27033,6 +27187,9 @@ msgstr "在项目计划中查看"
 
 msgid "View Issue"
 msgstr "查看问题"
+
+msgid "View Issuer"
+msgstr ""
 
 msgid "View Item"
 msgstr "查看物料"
@@ -27230,6 +27387,9 @@ msgstr "已等待"
 
 msgid "Waiting"
 msgstr "等待中"
+
+msgid "Waiting for the first exchange…"
+msgstr ""
 
 msgid "Waiting for the first sync"
 msgstr "正在等待首次同步"

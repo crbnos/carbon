@@ -3,27 +3,42 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon, respond } from "@carbon/api/carbon.server";
-import { getBrowserEnv } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import {
-  FEDERATION_LIMITS,
-  FEDERATION_PRESETS,
   federationRuleFields,
   federationRuleValidator
 } from "@carbon/ee/federation";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
+import { getActiveFederationIssuers } from "~/modules/settings/settings.service";
 import { FederationRuleForm } from "~/modules/settings/ui";
+import { ruleValuesFor } from "~/modules/settings/ui/Federation/RuleFields";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "users"
   });
 
-  return null;
+  const issuers = await getActiveFederationIssuers(client, companyId);
+  if (issuers.error) {
+    throw redirect(
+      `${path.to.federationRules}?${getParams(request)}`,
+      await flash(request, error(issuers.error, "Failed to load issuers"))
+    );
+  }
+  // A rule needs an issuer: without one, the wizard registers it first.
+  if (issuers.data.length === 0) {
+    throw redirect(`${path.to.connectWorkload}?${getParams(request)}`);
+  }
+
+  return { issuers: issuers.data };
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -33,7 +48,10 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.settings.createFederationRule(
     federationRuleFields(input.data)
   );
-  if (result.error) return result;
+  // The wizard reads the new rule's id and stays open for its Test step.
+  if (result.error || new URL(args.request.url).searchParams.has("wizard")) {
+    return result;
+  }
   // The edit view shows the rule id and a usage example to copy.
   return respond(args.request, result).redirect(
     `${path.to.federationRule(result.data.id)}?${getParams(args.request)}`,
@@ -43,24 +61,16 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function NewFederationRuleRoute() {
   const closeRoute = useCloseRoute();
+  const { issuers } = useLoaderData<typeof loader>();
   const routeData = useRouteData<{ companyId: string }>(
     path.to.federationRules
   );
-  const { ERP_URL } = getBrowserEnv();
-
-  const initialValues = {
-    name: "",
-    provider: "GitHub Actions" as const,
-    issuer: FEDERATION_PRESETS["GitHub Actions"].issuer ?? "",
-    audience: ERP_URL,
-    subject: "",
-    tokenLifetimeMinutes: FEDERATION_LIMITS.defaultTokenLifetimeMinutes
-  };
 
   return (
     <FederationRuleForm
       onClose={() => closeRoute()}
-      initialValues={initialValues}
+      initialValues={ruleValuesFor(issuers[0])}
+      issuers={issuers}
       companyId={routeData?.companyId}
     />
   );

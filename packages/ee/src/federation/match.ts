@@ -2,7 +2,12 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { FEDERATION_LIMITS, SHARED_ISSUER_REQUIREMENTS } from "./constants";
+import {
+  FEDERATION_LIMITS,
+  FEDERATION_NAME_PATTERN,
+  type FederationJwksSource,
+  SHARED_ISSUER_REQUIREMENTS
+} from "./constants";
 
 /**
  * Why an exchange was refused. The caller only ever sees `invalid_grant`; the
@@ -28,7 +33,9 @@ export type FederationFailure =
   | "jti_reused"
   | "replay_check_unavailable"
   | "creator_not_employee"
-  | "rule_changed";
+  | "rule_changed"
+  | "rule_archived"
+  | "missing_jti";
 
 /** Asymmetric algorithms only: an `HS*` token would be signed with a secret Carbon never holds. */
 export const ALLOWED_JWT_ALGORITHMS = [
@@ -160,4 +167,115 @@ export function ruleRequirementErrors(
   }
 
   return errors;
+}
+
+/** A name is a slug, so it reads the same in a URL, a log line and the audit log. */
+export function nameError(name: string): string | null {
+  if (name.length > FEDERATION_LIMITS.maxNameLength) {
+    return `Use at most ${FEDERATION_LIMITS.maxNameLength} characters`;
+  }
+  return FEDERATION_NAME_PATTERN.test(name)
+    ? null
+    : "Use lowercase letters, numbers and single hyphens, for example github-actions";
+}
+
+/** JWK members that only a private key carries. A key set that has one leaks the signing key. */
+const PRIVATE_JWK_MEMBERS = ["d", "p", "q", "dp", "dq", "qi", "k", "oth"];
+
+/** Why a pasted key set cannot verify tokens, or null when it can. */
+export function inlineJwksError(jwks: unknown): string | null {
+  const keys =
+    jwks && typeof jwks === "object" && !Array.isArray(jwks)
+      ? (jwks as { keys?: unknown }).keys
+      : undefined;
+  if (!Array.isArray(keys) || keys.length === 0) {
+    return 'Paste a key set: {"keys": [ … ]}';
+  }
+  if (keys.length > FEDERATION_LIMITS.maxInlineKeys) {
+    return `Paste at most ${FEDERATION_LIMITS.maxInlineKeys} keys`;
+  }
+  for (const key of keys) {
+    if (!key || typeof key !== "object" || typeof key.kty !== "string") {
+      return "Each key needs a kty";
+    }
+    if (typeof key.kid !== "string" || key.kid.length === 0) {
+      return "Each key needs a kid";
+    }
+    if (PRIVATE_JWK_MEMBERS.some((member) => member in key)) {
+      return "The key set holds a private key. Paste only public keys, and treat that key as compromised.";
+    }
+  }
+  return null;
+}
+
+const PEM_CERTIFICATE =
+  /^-----BEGIN CERTIFICATE-----[\s\S]+-----END CERTIFICATE-----\s*$/;
+
+export type IssuerConfig = {
+  name: string;
+  issuer: string;
+  jwksSource: FederationJwksSource;
+  discoveryUrl: string | null;
+  jwksUrl: string | null;
+  jwks: unknown;
+  caCertificate: string | null;
+  maxTokenLifetimeHours: number;
+};
+
+/** Field errors for an issuer record. Shared by the form validator and the server write. */
+export function issuerConfigErrors(
+  config: IssuerConfig
+): Partial<Record<keyof IssuerConfig, string>> {
+  const errors: Partial<Record<keyof IssuerConfig, string>> = {};
+  const name = nameError(config.name);
+  if (name) errors.name = name;
+  const issuer = issuerUrlError(config.issuer);
+  if (issuer) errors.issuer = issuer;
+
+  if (config.discoveryUrl) {
+    const discovery = issuerUrlError(config.discoveryUrl);
+    if (discovery) errors.discoveryUrl = discovery.replace("issuer", "URL");
+  }
+  if (config.jwksSource === "JWKS URL") {
+    const jwks = config.jwksUrl
+      ? issuerUrlError(config.jwksUrl)
+      : "Enter the URL of the key set";
+    if (jwks) errors.jwksUrl = jwks.replace("issuer", "URL");
+  }
+  if (config.jwksSource === "Inline JWKS") {
+    const jwks = inlineJwksError(config.jwks);
+    if (jwks) errors.jwks = jwks;
+  }
+  if (
+    config.caCertificate &&
+    !PEM_CERTIFICATE.test(config.caCertificate.trim())
+  ) {
+    errors.caCertificate =
+      "Paste a PEM certificate, from -----BEGIN CERTIFICATE----- to -----END CERTIFICATE-----";
+  }
+  if (
+    !Number.isInteger(config.maxTokenLifetimeHours) ||
+    config.maxTokenLifetimeHours < FEDERATION_LIMITS.minTokenAgeHours ||
+    config.maxTokenLifetimeHours > FEDERATION_LIMITS.maxTokenAgeHours
+  ) {
+    errors.maxTokenLifetimeHours = `Use ${FEDERATION_LIMITS.minTokenAgeHours} to ${FEDERATION_LIMITS.maxTokenAgeHours} hours`;
+  }
+  return errors;
+}
+
+/**
+ * The lifetime of a minted key: the rule's lifetime, capped at twice what is
+ * left of the token, never under a minute (Anthropic's formula). A token
+ * about to expire buys a short key.
+ */
+export function mintedKeyLifetimeSeconds(
+  ruleLifetimeMinutes: number,
+  tokenExpiresAt: number,
+  nowSeconds: number
+): number {
+  const remaining = Math.max(0, tokenExpiresAt - nowSeconds);
+  return Math.max(
+    FEDERATION_LIMITS.minKeyLifetimeSeconds,
+    Math.min(ruleLifetimeMinutes * 60, 2 * remaining)
+  );
 }

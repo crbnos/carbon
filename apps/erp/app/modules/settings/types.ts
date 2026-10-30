@@ -8,6 +8,8 @@ import type {
   getCompanies,
   getCustomField,
   getCustomFieldsTables,
+  getFederationExchanges,
+  getFederationIssuers,
   getFederationRules,
   getIntegrations,
   getItemSerialSequences,
@@ -22,6 +24,14 @@ export type ApiKey = NonNullable<
 
 export type FederationRuleRow = NonNullable<
   Awaited<ReturnType<typeof getFederationRules>>["data"]
+>[number];
+
+export type FederationIssuerRow = NonNullable<
+  Awaited<ReturnType<typeof getFederationIssuers>>["data"]
+>[number];
+
+export type FederationExchangeRow = NonNullable<
+  Awaited<ReturnType<typeof getFederationExchanges>>["data"]
 >[number];
 
 export type Company = NonNullable<

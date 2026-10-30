@@ -53,6 +53,7 @@ const PRESERVED_TABLES = new Set([
   "companyUsage",
   "customField",
   "eventSystemSubscription",
+  "federationIssuer",
   "federationRule",
   // Integration mappings, and the job markers that ride on them — including the
   // marker of the very job that runs this wipe, whose snapshot path it holds.

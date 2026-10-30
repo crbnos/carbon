@@ -5,9 +5,10 @@
 import type { Database } from "@carbon/database";
 
 /**
- * Workload identity federation: a federation rule trusts the OIDC JWTs one
- * issuer signs for one workload, and `/token` exchanges such a JWT for a
- * short-lived Carbon API key. Spec: .ai/specs/2026-10-30-workload-identity-federation.md
+ * Workload identity federation: an issuer record says which OIDC issuer
+ * Carbon trusts and how it gets its keys; a federation rule names one workload
+ * of that issuer; `/token` exchanges such a workload's JWT for a short-lived
+ * Carbon API key. Spec: .ai/specs/2026-10-30-workload-identity-federation.md
  */
 
 export const federationProviders = [
@@ -15,15 +16,26 @@ export const federationProviders = [
   "AWS",
   "Google Cloud",
   "Microsoft Entra ID",
+  "Kubernetes",
   "Custom OIDC"
 ] as const satisfies readonly Database["public"]["Enums"]["federationProvider"][];
 
 export type FederationProvider = (typeof federationProviders)[number];
 
+export const federationJwksSources = [
+  "OIDC Discovery",
+  "JWKS URL",
+  "Inline JWKS"
+] as const satisfies readonly Database["public"]["Enums"]["federationJwksSource"][];
+
+export type FederationJwksSource = (typeof federationJwksSources)[number];
+
 export const GITHUB_ACTIONS_ISSUER =
   "https://token.actions.githubusercontent.com";
 export const GITLAB_ISSUER = "https://gitlab.com";
 export const GOOGLE_ISSUER = "https://accounts.google.com";
+export const TERRAFORM_ISSUER = "https://app.terraform.io";
+export const BUILDKITE_ISSUER = "https://agent.buildkite.com";
 
 export const TOKEN_EXCHANGE_GRANT =
   "urn:ietf:params:oauth:grant-type:token-exchange";
@@ -35,13 +47,20 @@ export const ISSUED_TOKEN_TYPE =
   "urn:ietf:params:oauth:token-type:access_token";
 
 export const FEDERATION_LIMITS = {
+  maxNameLength: 64,
   maxClaimConditions: 10,
   maxValueLength: 512,
+  maxDescriptionLength: 500,
   minTokenLifetimeMinutes: 5,
   maxTokenLifetimeMinutes: 60,
   defaultTokenLifetimeMinutes: 15,
-  /** The longest `exp − iat` an incoming JWT may claim: Azure managed identity tokens live 24 h. */
-  maxJwtLifetimeSeconds: 24 * 60 * 60,
+  /** A minted key never lives less than this, however close the token is to expiring. */
+  minKeyLifetimeSeconds: 60,
+  /** An issuer's `maxTokenLifetimeHours`: Azure managed identity tokens live 24 h. */
+  minTokenAgeHours: 1,
+  maxTokenAgeHours: 24,
+  /** A pasted key set holds at most this many keys. */
+  maxInlineKeys: 10,
   clockToleranceSeconds: 30,
   /** Exchanges per rule that passed verification: the workload's own budget. */
   exchangesPerMinute: 30,
@@ -50,8 +69,13 @@ export const FEDERATION_LIMITS = {
    * public (it sits in workflow files), so unverified attempts must not spend
    * the workload's budget.
    */
-  attemptsPerCallerPerMinute: 60
+  attemptsPerCallerPerMinute: 60,
+  /** The Test step waits this long for the first exchange (Anthropic: 15 min). */
+  testWaitMinutes: 15
 } as const;
+
+/** A name is a slug: lowercase letters, digits and single hyphens. */
+export const FEDERATION_NAME_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 export type FederationPreset = {
   /** Filled into the form; null when each customer has their own issuer. */
@@ -64,6 +88,14 @@ export type FederationPreset = {
   suggestedClaims: string[];
   /** The audience is a value the customer owns (Entra), not Carbon's URL. */
   audiencePlaceholder: string | null;
+  /** Google and Azure tokens carry no `jti`. */
+  requireUniqueJti: boolean;
+  /** Azure managed identity tokens live up to 24 h. */
+  maxTokenLifetimeHours: number;
+  /** A suggested issuer name. */
+  name: string;
+  /** Where the workload runs, for the provider tile. */
+  hint: string;
 };
 
 export const FEDERATION_PRESETS: Record<FederationProvider, FederationPreset> =
@@ -74,7 +106,11 @@ export const FEDERATION_PRESETS: Record<FederationProvider, FederationPreset> =
       issuerPlaceholder: GITHUB_ACTIONS_ISSUER,
       subjectPlaceholder: "repo:acme/plm-sync:ref:refs/heads/main",
       suggestedClaims: ["repository_owner_id"],
-      audiencePlaceholder: null
+      audiencePlaceholder: null,
+      requireUniqueJti: true,
+      maxTokenLifetimeHours: 1,
+      name: "github-actions",
+      hint: "CI/CD workflows"
     },
     AWS: {
       issuer: null,
@@ -82,7 +118,11 @@ export const FEDERATION_PRESETS: Record<FederationProvider, FederationPreset> =
       issuerPlaceholder: "https://<id>.tokens.sts.global.api.aws",
       subjectPlaceholder: "arn:aws:iam::123456789012:role/carbon-sync",
       suggestedClaims: [],
-      audiencePlaceholder: null
+      audiencePlaceholder: null,
+      requireUniqueJti: true,
+      maxTokenLifetimeHours: 1,
+      name: "aws",
+      hint: "EC2, Lambda, EKS via STS"
     },
     "Google Cloud": {
       issuer: GOOGLE_ISSUER,
@@ -90,7 +130,11 @@ export const FEDERATION_PRESETS: Record<FederationProvider, FederationPreset> =
       issuerPlaceholder: GOOGLE_ISSUER,
       subjectPlaceholder: "112233445566778899000",
       suggestedClaims: ["email"],
-      audiencePlaceholder: null
+      audiencePlaceholder: null,
+      requireUniqueJti: false,
+      maxTokenLifetimeHours: 1,
+      name: "google-cloud",
+      hint: "GKE, Cloud Run, GCE"
     },
     "Microsoft Entra ID": {
       issuer: null,
@@ -98,15 +142,35 @@ export const FEDERATION_PRESETS: Record<FederationProvider, FederationPreset> =
       issuerPlaceholder: "https://sts.windows.net/<tenant-id>/",
       subjectPlaceholder: "<managed identity object id>",
       suggestedClaims: [],
-      audiencePlaceholder: "api://<application-id>"
+      audiencePlaceholder: "api://<application-id>",
+      requireUniqueJti: false,
+      maxTokenLifetimeHours: 24,
+      name: "microsoft-entra",
+      hint: "Azure, Entra ID"
+    },
+    Kubernetes: {
+      issuer: null,
+      issuerLocked: false,
+      issuerPlaceholder: "https://kubernetes.default.svc.cluster.local",
+      subjectPlaceholder: "system:serviceaccount:carbon:sync",
+      suggestedClaims: [],
+      audiencePlaceholder: null,
+      requireUniqueJti: true,
+      maxTokenLifetimeHours: 1,
+      name: "kubernetes",
+      hint: "Self-managed clusters"
     },
     "Custom OIDC": {
       issuer: null,
       issuerLocked: false,
       issuerPlaceholder: "https://issuer.example.com",
-      subjectPlaceholder: "system:serviceaccount:carbon:sync",
+      subjectPlaceholder: "workload:sync",
       suggestedClaims: [],
-      audiencePlaceholder: null
+      audiencePlaceholder: null,
+      requireUniqueJti: true,
+      maxTokenLifetimeHours: 1,
+      name: "custom-oidc",
+      hint: "Bring your own issuer"
     }
   };
 
@@ -125,13 +189,13 @@ export const SHARED_ISSUER_REQUIREMENTS: Record<
     requiredClaim: "repository_owner_id"
   },
   [GITLAB_ISSUER]: { label: "GitLab.com", requiredClaim: "namespace_id" },
-  "https://app.terraform.io": {
+  [TERRAFORM_ISSUER]: {
     label: "HCP Terraform",
     requiredClaim: "terraform_organization_id"
   },
   // organization_id is optional in a Buildkite token: request it with
   // `buildkite-agent oidc request-token --claims organization_id`.
-  "https://agent.buildkite.com": {
+  [BUILDKITE_ISSUER]: {
     label: "Buildkite",
     requiredClaim: "organization_id"
   },

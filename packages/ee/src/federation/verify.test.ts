@@ -10,11 +10,25 @@ import {
   SignJWT
 } from "jose";
 import { beforeAll, describe, expect, it } from "vitest";
-import { verifySubjectToken } from "./verify.server";
+import {
+  type IssuerKeySource,
+  resolveKeySet,
+  verifySubjectToken
+} from "./verify.server";
 
 const ISSUER = "https://issuer.example.com";
 const AUDIENCE = "https://app.carbon.ms";
-const rule = { issuer: ISSUER, audience: AUDIENCE };
+const issuer: IssuerKeySource = {
+  id: "fedi_test",
+  issuer: ISSUER,
+  jwksSource: "OIDC Discovery",
+  discoveryUrl: null,
+  jwksUrl: null,
+  jwks: null,
+  caCertificate: null,
+  maxTokenLifetimeHours: 1,
+  updatedAt: null
+};
 
 let privateKey: CryptoKey;
 let getKeySet: () => Promise<ReturnType<typeof createLocalJWKSet>>;
@@ -49,7 +63,12 @@ function sign(
 
 describe("verifySubjectToken", () => {
   it("returns the subject, claims and jti of a valid token", async () => {
-    const result = await verifySubjectToken(await sign(), rule, getKeySet);
+    const result = await verifySubjectToken(
+      await sign(),
+      issuer,
+      AUDIENCE,
+      getKeySet
+    );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.token.subject).toBe("repo:acme/plm:ref:refs/heads/main");
@@ -63,14 +82,15 @@ describe("verifySubjectToken", () => {
     [{ exp: nowSeconds() - 120, iat: nowSeconds() - 600 }, "expired"],
     [{ iat: nowSeconds() + 600, exp: nowSeconds() + 900 }, "not_yet_valid"],
     [
-      { iat: nowSeconds(), exp: nowSeconds() + 25 * 60 * 60 },
+      { iat: nowSeconds(), exp: nowSeconds() + 2 * 60 * 60 },
       "lifetime_too_long"
     ],
     [{ sub: undefined }, "missing_claims"]
   ])("refuses a token with %o as %s", async (overrides, reason) => {
     const result = await verifySubjectToken(
       await sign(overrides as JWTPayload),
-      rule,
+      issuer,
+      AUDIENCE,
       getKeySet
     );
     expect(result).toEqual({ ok: false, reason });
@@ -79,7 +99,8 @@ describe("verifySubjectToken", () => {
   it("refuses a token with no kid", async () => {
     const result = await verifySubjectToken(
       await sign({}, {}),
-      rule,
+      issuer,
+      AUDIENCE,
       getKeySet
     );
     expect(result).toEqual({ ok: false, reason: "missing_kid" });
@@ -92,7 +113,12 @@ describe("verifySubjectToken", () => {
       .setIssuedAt()
       .setExpirationTime("5m")
       .sign(other.privateKey);
-    const result = await verifySubjectToken(forged, rule, getKeySet);
+    const result = await verifySubjectToken(
+      forged,
+      issuer,
+      AUDIENCE,
+      getKeySet
+    );
     expect(result).toEqual({ ok: false, reason: "signature_invalid" });
   });
 
@@ -102,7 +128,7 @@ describe("verifySubjectToken", () => {
       .setIssuedAt()
       .setExpirationTime("5m")
       .sign(new TextEncoder().encode("a-shared-secret-of-enough-length!"));
-    const result = await verifySubjectToken(hs, rule, async () => {
+    const result = await verifySubjectToken(hs, issuer, AUDIENCE, async () => {
       throw new Error("must not fetch keys");
     });
     expect(result).toEqual({ ok: false, reason: "algorithm_not_allowed" });
@@ -112,7 +138,8 @@ describe("verifySubjectToken", () => {
     let fetched = false;
     const result = await verifySubjectToken(
       await sign({ iss: "https://attacker.example.com" }),
-      rule,
+      issuer,
+      AUDIENCE,
       async () => {
         fetched = true;
         return (await getKeySet()) as never;
@@ -123,14 +150,61 @@ describe("verifySubjectToken", () => {
   });
 
   it("reports a failed discovery", async () => {
-    const result = await verifySubjectToken(await sign(), rule, async () => {
-      throw new Error("timeout");
-    });
+    const result = await verifySubjectToken(
+      await sign(),
+      issuer,
+      AUDIENCE,
+      async () => {
+        throw new Error("timeout");
+      }
+    );
     expect(result).toEqual({ ok: false, reason: "discovery_failed" });
   });
 
   it("refuses text that is not a JWT", async () => {
-    const result = await verifySubjectToken("not-a-jwt", rule, getKeySet);
+    const result = await verifySubjectToken(
+      "not-a-jwt",
+      issuer,
+      AUDIENCE,
+      getKeySet
+    );
     expect(result).toEqual({ ok: false, reason: "malformed_jwt" });
+  });
+
+  it("verifies against a pasted key set, with no fetch", async () => {
+    const pair = await generateKeyPair("RS256");
+    const jwk = {
+      ...(await exportJWK(pair.publicKey)),
+      kid: "k2",
+      alg: "RS256"
+    };
+    const inline: IssuerKeySource = {
+      ...issuer,
+      id: "fedi_inline",
+      jwksSource: "Inline JWKS",
+      jwks: { keys: [jwk] }
+    };
+    const jwt = await new SignJWT({ iss: ISSUER, aud: AUDIENCE, sub: "svc" })
+      .setProtectedHeader({ alg: "RS256", kid: "k2" })
+      .setIssuedAt()
+      .setExpirationTime("5m")
+      .sign(pair.privateKey);
+    const result = await verifySubjectToken(
+      jwt,
+      inline,
+      AUDIENCE,
+      resolveKeySet
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it("allows the token age the issuer allows", async () => {
+    const result = await verifySubjectToken(
+      await sign({ iat: nowSeconds(), exp: nowSeconds() + 20 * 60 * 60 }),
+      { ...issuer, maxTokenLifetimeHours: 24 },
+      AUDIENCE,
+      getKeySet
+    );
+    expect(result.ok).toBe(true);
   });
 });

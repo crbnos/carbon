@@ -6,20 +6,17 @@ import { carbon, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  federationRuleFields,
-  federationRuleValidator
-} from "@carbon/ee/federation";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
+import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useParams } from "react-router";
+import { Confirm } from "~/components/Modals";
 import { getFederationRule } from "~/modules/settings/settings.service";
-import { FederationRuleForm } from "~/modules/settings/ui";
 import { getParams, path } from "~/utils/path";
 
-// The list holds only the rows scrolled so far, so the drawer reads its own rule.
+// The list holds only the rows scrolled so far, so the modal reads its own rule.
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     update: "users"
@@ -36,50 +33,37 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return { rule: rule.data, companyId };
+  return { rule: { name: rule.data.name } };
 }
 
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(federationRuleValidator).request(args, {
-    params: ["id"]
-  });
+  const input = await validator().request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.settings.updateFederationRule({
-    ...federationRuleFields(input.data),
+  const result = await api.settings.archiveFederationRule({
     id: input.params.id
   });
-  // Keep the modal and the user's input on a refusal; the fetcher toasts it.
-  if (result.error) return result;
   return respond(args.request, result).redirect(
     `${path.to.federationRules}?${getParams(args.request)}`,
-    { message: "Updated federation rule" }
+    { message: "Archived federation rule" }
   );
 }
 
-export default function EditFederationRuleRoute() {
+export default function ArchiveFederationRuleRoute() {
+  const { id } = useParams();
+  if (!id) throw new Error("Could not find id");
+  const { rule } = useLoaderData<typeof loader>();
   const closeRoute = useCloseRoute();
-  const { rule, companyId } = useLoaderData<typeof loader>();
-
-  const initialValues = {
-    id: rule.id,
-    name: rule.name,
-    provider: rule.provider,
-    issuer: rule.issuer,
-    audience: rule.audience,
-    subject: rule.subject ?? "",
-    tokenLifetimeMinutes: rule.tokenLifetimeMinutes
-  };
+  const { t } = useLingui();
 
   return (
-    <FederationRuleForm
-      key={rule.id}
-      initialValues={initialValues}
-      companyId={companyId}
-      existingScopes={rule.scopes as Record<string, string[]> | null}
-      existingClaims={rule.claimConditions as Record<string, string> | null}
-      rule={rule}
-      onClose={() => closeRoute()}
+    <Confirm
+      action={path.to.archiveFederationRule(id)}
+      title={t`Archive ${rule.name}`}
+      text={t`Every API key this rule issued stops working at once, and the rule takes no more exchanges. Its authentication events stay.`}
+      confirmText={t`Archive`}
+      confirmVariant="destructive"
+      onCancel={() => closeRoute()}
     />
   );
 }

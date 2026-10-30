@@ -5,25 +5,41 @@
 import { FEDERATION_ALLOW_PRIVATE_ISSUERS } from "@carbon/env";
 import { checkOutboundUrl, outboundFetch } from "@carbon/lib/url-guard.server";
 import {
+  createLocalJWKSet,
   createRemoteJWKSet,
   customFetch,
   decodeJwt,
   decodeProtectedHeader,
   errors,
+  type JSONWebKeySet,
   type JWTPayload,
   type JWTVerifyGetKey,
   jwtVerify
 } from "jose";
-import { FEDERATION_LIMITS } from "./constants";
+import { FEDERATION_LIMITS, type FederationJwksSource } from "./constants";
 import {
   ALLOWED_JWT_ALGORITHMS,
   type FederationFailure,
   issuerUrlError
 } from "./match";
 
+/** What verification needs from an issuer record. */
+export type IssuerKeySource = {
+  id: string;
+  issuer: string;
+  jwksSource: FederationJwksSource;
+  discoveryUrl: string | null;
+  jwksUrl: string | null;
+  jwks: unknown;
+  caCertificate: string | null;
+  maxTokenLifetimeHours: number;
+  /** Changes when the issuer is edited, so a cached key set is not reused. */
+  updatedAt: string | null;
+};
+
 /** Resolves the signing keys of an issuer. Injected in tests. */
 export type FederationKeyResolver = (
-  issuer: string
+  issuer: IssuerKeySource
 ) => Promise<JWTVerifyGetKey>;
 
 export type VerifiedSubjectToken = {
@@ -42,58 +58,85 @@ const FETCH_TIMEOUT_MS = 5_000;
 const DISCOVERY_TTL_MS = 10 * 60 * 1_000;
 const JWKS_COOLDOWN_MS = 30_000;
 
-/** Every issuer fetch goes through the private-network guard unless a self-hosted install opts out. */
-async function fetchIssuerUrl(url: string, signal?: AbortSignal) {
+/**
+ * Every issuer fetch goes through the private-network guard unless a
+ * self-hosted install opts out; an issuer's CA is trusted beside the roots.
+ */
+async function fetchIssuerUrl(
+  url: string,
+  ca: string | null,
+  signal?: AbortSignal
+) {
   const shapeError = issuerUrlError(url);
   if (shapeError) throw new Error(shapeError);
-  if (FEDERATION_ALLOW_PRIVATE_ISSUERS) {
-    return fetch(url, { signal, redirect: "error" });
+  if (!FEDERATION_ALLOW_PRIVATE_ISSUERS) {
+    const verdict = await checkOutboundUrl(url);
+    if (!verdict.ok) throw new Error(verdict.reason);
   }
-  const verdict = await checkOutboundUrl(url);
-  if (!verdict.ok) throw new Error(verdict.reason);
-  return outboundFetch(url, {
-    signal,
-    redirect: "error"
-  }) as unknown as Promise<Response>;
+  return outboundFetch(
+    url,
+    { signal, redirect: "error" },
+    { ca: ca ?? undefined, allowPrivate: FEDERATION_ALLOW_PRIVATE_ISSUERS }
+  ) as unknown as Promise<Response>;
 }
 
 type KeySetEntry = { getKey: JWTVerifyGetKey; expiresAt: number };
 const keySets = new Map<string, KeySetEntry>();
 
-/**
- * Discovery, then a cached remote key set. The discovery document must name
- * the same issuer the rule names: a mismatch means the URL is not the issuer.
- */
-export async function discoverKeySet(issuer: string): Promise<JWTVerifyGetKey> {
-  const cached = keySets.get(issuer);
-  if (cached && cached.expiresAt > Date.now()) return cached.getKey;
-
-  const discoveryUrl = `${issuer.replace(/\/+$/, "")}/.well-known/openid-configuration`;
-  const response = await fetchIssuerUrl(
-    discoveryUrl,
-    AbortSignal.timeout(FETCH_TIMEOUT_MS)
-  );
-  if (!response.ok) {
-    throw new Error(`Discovery answered ${response.status}`);
-  }
-  const document = (await response.json()) as {
-    issuer?: unknown;
-    jwks_uri?: unknown;
-  };
-  if (document.issuer !== issuer) {
-    throw new Error("The discovery document names a different issuer");
-  }
-  if (typeof document.jwks_uri !== "string") {
-    throw new Error("The discovery document has no jwks_uri");
-  }
-
-  const getKey = createRemoteJWKSet(new URL(document.jwks_uri), {
+function remoteKeySet(jwksUrl: string, ca: string | null): JWTVerifyGetKey {
+  return createRemoteJWKSet(new URL(jwksUrl), {
     timeoutDuration: FETCH_TIMEOUT_MS,
     cooldownDuration: JWKS_COOLDOWN_MS,
     cacheMaxAge: DISCOVERY_TTL_MS,
-    [customFetch]: (url, options) => fetchIssuerUrl(url, options.signal)
+    [customFetch]: (url, options) => fetchIssuerUrl(url, ca, options.signal)
   });
-  keySets.set(issuer, { getKey, expiresAt: Date.now() + DISCOVERY_TTL_MS });
+}
+
+/**
+ * The issuer's key set, by its key source: OIDC discovery (the document must
+ * name the same issuer), a JWKS URL, or a pasted key set that is never
+ * fetched. Cached per issuer and edit.
+ */
+export async function resolveKeySet(
+  source: IssuerKeySource
+): Promise<JWTVerifyGetKey> {
+  const cacheKey = `${source.id}:${source.updatedAt ?? ""}`;
+  const cached = keySets.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.getKey;
+
+  let getKey: JWTVerifyGetKey;
+  if (source.jwksSource === "Inline JWKS") {
+    getKey = createLocalJWKSet(source.jwks as JSONWebKeySet);
+  } else if (source.jwksSource === "JWKS URL") {
+    if (!source.jwksUrl) throw new Error("The issuer has no JWKS URL");
+    getKey = remoteKeySet(source.jwksUrl, source.caCertificate);
+  } else {
+    const base = (source.discoveryUrl || source.issuer).replace(/\/+$/, "");
+    const discoveryUrl = base.endsWith("/.well-known/openid-configuration")
+      ? base
+      : `${base}/.well-known/openid-configuration`;
+    const response = await fetchIssuerUrl(
+      discoveryUrl,
+      source.caCertificate,
+      AbortSignal.timeout(FETCH_TIMEOUT_MS)
+    );
+    if (!response.ok) {
+      throw new Error(`Discovery answered ${response.status}`);
+    }
+    const document = (await response.json()) as {
+      issuer?: unknown;
+      jwks_uri?: unknown;
+    };
+    if (document.issuer !== source.issuer) {
+      throw new Error("The discovery document names a different issuer");
+    }
+    if (typeof document.jwks_uri !== "string") {
+      throw new Error("The discovery document has no jwks_uri");
+    }
+    getKey = remoteKeySet(document.jwks_uri, source.caCertificate);
+  }
+
+  keySets.set(cacheKey, { getKey, expiresAt: Date.now() + DISCOVERY_TTL_MS });
   return getKey;
 }
 
@@ -128,13 +171,14 @@ function failureFromJoseError(error: unknown): FederationFailure {
 }
 
 /**
- * Checks an incoming OIDC JWT against a rule's issuer and audience. The
- * subject and claim conditions are matched by the caller.
+ * Checks an incoming OIDC JWT against an issuer record and a rule's audience.
+ * The subject and claim conditions are matched by the caller.
  */
 export async function verifySubjectToken(
   jwt: string,
-  rule: { issuer: string; audience: string },
-  getKeySet: FederationKeyResolver = discoverKeySet
+  issuer: IssuerKeySource,
+  audience: string,
+  getKeySet: FederationKeyResolver = resolveKeySet
 ): Promise<VerifyResult> {
   let algorithm: string | undefined;
   let kid: string | undefined;
@@ -154,13 +198,13 @@ export async function verifySubjectToken(
   }
   if (!kid) return { ok: false, reason: "missing_kid" };
   // Checked before any fetch: the token never chooses which issuer Carbon calls.
-  if (unverifiedIssuer !== rule.issuer) {
+  if (unverifiedIssuer !== issuer.issuer) {
     return { ok: false, reason: "issuer_mismatch" };
   }
 
   let getKey: JWTVerifyGetKey;
   try {
-    getKey = await getKeySet(rule.issuer);
+    getKey = await getKeySet(issuer);
   } catch {
     return { ok: false, reason: "discovery_failed" };
   }
@@ -168,8 +212,8 @@ export async function verifySubjectToken(
   let payload: JWTPayload;
   try {
     ({ payload } = await jwtVerify(jwt, getKey, {
-      issuer: rule.issuer,
-      audience: rule.audience,
+      issuer: issuer.issuer,
+      audience,
       algorithms: [...ALLOWED_JWT_ALGORITHMS],
       clockTolerance: FEDERATION_LIMITS.clockToleranceSeconds,
       requiredClaims: ["sub", "iat", "exp"]
@@ -189,7 +233,7 @@ export async function verifySubjectToken(
   if (iat > nowSeconds + FEDERATION_LIMITS.clockToleranceSeconds) {
     return { ok: false, reason: "not_yet_valid" };
   }
-  if (exp - iat > FEDERATION_LIMITS.maxJwtLifetimeSeconds) {
+  if (exp - iat > issuer.maxTokenLifetimeHours * 60 * 60) {
     return { ok: false, reason: "lifetime_too_long" };
   }
 

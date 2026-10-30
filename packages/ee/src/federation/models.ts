@@ -4,8 +4,12 @@
 
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { FEDERATION_LIMITS, federationProviders } from "./constants";
-import { ruleRequirementErrors } from "./match";
+import {
+  FEDERATION_LIMITS,
+  federationJwksSources,
+  federationProviders
+} from "./constants";
+import { issuerConfigErrors, nameError, ruleRequirementErrors } from "./match";
 
 function parseJson(value: string | undefined, empty: unknown): unknown {
   if (!value) return empty;
@@ -31,8 +35,12 @@ function parseClaimRows(value: string | undefined) {
   return claimRowsSchema.safeParse(parseJson(value, []));
 }
 
-/** The federation rule form: claim condition rows and scopes post as JSON strings. */
-export const federationRuleValidator = z
+const urlField = zfd.text(
+  z.string().trim().max(FEDERATION_LIMITS.maxValueLength).optional()
+);
+
+/** The issuer form. The pasted key set posts as JSON text. */
+export const federationIssuerValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     name: z.string().trim().min(1, { message: "Name is required" }),
@@ -44,6 +52,66 @@ export const federationRuleValidator = z
       .trim()
       .min(1, { message: "Issuer is required" })
       .max(FEDERATION_LIMITS.maxValueLength),
+    jwksSource: z.enum(federationJwksSources),
+    discoveryUrl: urlField,
+    jwksUrl: urlField,
+    jwks: zfd.text(z.string().max(64_000).optional()),
+    caCertificate: zfd.text(z.string().max(16_000).optional()),
+    requireUniqueJti: zfd.checkbox(),
+    maxTokenLifetimeHours: zfd.numeric(z.number().int())
+  })
+  .superRefine((form, ctx) => {
+    // Check what is saved: a field the chosen key source ignores is dropped.
+    const fields = federationIssuerFields(form);
+    const errors = issuerConfigErrors({
+      ...fields,
+      // An unparseable pasted key set reads as missing, not as an empty one.
+      jwks: fields.jwks
+    });
+    for (const [field, message] of Object.entries(errors)) {
+      ctx.addIssue({ code: "custom", path: [field], message });
+    }
+  });
+
+export type FederationIssuerForm = z.output<typeof federationIssuerValidator>;
+
+/** An issuer form's fields as saved: only the fields of the chosen key source are kept. */
+export function federationIssuerFields({
+  discoveryUrl,
+  jwksUrl,
+  jwks,
+  caCertificate,
+  ...form
+}: FederationIssuerForm) {
+  const inline = form.jwksSource === "Inline JWKS";
+  return {
+    ...form,
+    discoveryUrl:
+      form.jwksSource === "OIDC Discovery" ? discoveryUrl || null : null,
+    jwksUrl: form.jwksSource === "JWKS URL" ? jwksUrl || null : null,
+    jwks: inline
+      ? ((parseJson(jwks, null) ?? null) as Record<string, unknown> | null)
+      : null,
+    caCertificate: inline ? null : caCertificate?.trim() || null
+  };
+}
+
+export type FederationIssuerInput = ReturnType<typeof federationIssuerFields>;
+
+/**
+ * The rule form: condition rows and scopes post as JSON strings. `issuerUrl`
+ * is the chosen issuer's URL, sent only so the form can run the shared-issuer
+ * checks before it posts; the server reads the issuer itself.
+ */
+export const federationRuleValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    description: zfd.text(
+      z.string().trim().max(FEDERATION_LIMITS.maxDescriptionLength).optional()
+    ),
+    issuerId: z.string().min(1, { message: "Issuer is required" }),
+    issuerUrl: zfd.text(z.string().optional()),
     audience: z
       .string()
       .trim()
@@ -63,6 +131,9 @@ export const federationRuleValidator = z
     )
   })
   .superRefine((form, ctx) => {
+    const name = nameError(form.name);
+    if (name) ctx.addIssue({ code: "custom", path: ["name"], message: name });
+
     const rows = parseClaimRows(form.claimConditions);
     if (!rows.success) {
       ctx.addIssue({
@@ -82,13 +153,15 @@ export const federationRuleValidator = z
       return;
     }
     const errors = ruleRequirementErrors({
-      issuer: form.issuer,
+      // Without the issuer's URL the shared-issuer checks wait for the server.
+      issuer: form.issuerUrl || "https://issuer.invalid",
       subject: form.subject ?? null,
       claimConditions: Object.fromEntries(
         rows.data.map((row) => [row.claim, row.value])
       )
     });
     for (const [field, message] of Object.entries(errors)) {
+      if (field === "issuer") continue;
       ctx.addIssue({ code: "custom", path: [field], message });
     }
   });
@@ -100,10 +173,13 @@ export function federationRuleFields({
   claimConditions,
   scopes,
   subject,
+  description,
+  issuerUrl: _issuerUrl,
   ...form
 }: FederationRuleForm) {
   return {
     ...form,
+    description: description || null,
     subject: subject || null,
     claimConditions: Object.fromEntries(
       (parseClaimRows(claimConditions).data ?? []).map((row) => [

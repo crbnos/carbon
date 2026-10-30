@@ -5,6 +5,7 @@
 import dns from "node:dns";
 import http from "node:http";
 import https from "node:https";
+import tls from "node:tls";
 import { Agent, fetch as undiciFetch } from "undici";
 
 export type UrlVerdict = { ok: true; url: URL } | { ok: false; reason: string };
@@ -166,15 +167,41 @@ export const outboundDispatcher = new Agent({
   connect: { lookup: guardedLookup }
 });
 
+export type OutboundFetchOptions = {
+  /** A PEM CA to trust for this fetch, beside the system roots. */
+  ca?: string;
+  /** Skip the private-address check: a self-hosted install that opted in. */
+  allowPrivate?: boolean;
+};
+
+// One agent per CA and mode, so connections are reused across fetches.
+const agents = new Map<string, Agent>();
+function dispatcherFor({ ca, allowPrivate }: OutboundFetchOptions): Agent {
+  if (!ca && !allowPrivate) return outboundDispatcher;
+  const key = `${allowPrivate ? "open" : "guarded"}:${ca ?? ""}`;
+  let agent = agents.get(key);
+  if (!agent) {
+    agent = new Agent({
+      connect: {
+        ...(allowPrivate ? {} : { lookup: guardedLookup }),
+        ...(ca ? { ca: [...tls.rootCertificates, ca] } : {})
+      }
+    });
+    agents.set(key, agent);
+  }
+  return agent;
+}
+
 /**
  * `fetch` through `outboundDispatcher`: every connection, redirects included,
  * refuses a private address. Run `checkOutboundUrl` first for an IP literal.
  */
 export function outboundFetch(
   url: string | URL,
-  init?: Parameters<typeof undiciFetch>[1]
+  init?: Parameters<typeof undiciFetch>[1],
+  options: OutboundFetchOptions = {}
 ) {
-  return undiciFetch(url, { ...init, dispatcher: outboundDispatcher });
+  return undiciFetch(url, { ...init, dispatcher: dispatcherFor(options) });
 }
 
 /**

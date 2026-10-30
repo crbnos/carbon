@@ -12,11 +12,10 @@ import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
-import { ConfirmDelete } from "~/components/Modals";
-import { getFederationRule } from "~/modules/settings/settings.service";
+import { Confirm } from "~/components/Modals";
+import { getFederationIssuer } from "~/modules/settings/settings.service";
 import { getParams, path } from "~/utils/path";
 
-// The list holds only the rows scrolled so far, so the modal reads its own rule.
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     update: "users"
@@ -25,42 +24,44 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const rule = await getFederationRule(client, id, companyId);
-  if (rule.error) {
+  const issuer = await getFederationIssuer(client, id, companyId);
+  if (issuer.error) {
     throw redirect(
-      `${path.to.federationRules}?${getParams(request)}`,
-      await flash(request, error(rule.error, "Failed to load federation rule"))
+      `${path.to.federationIssuers}?${getParams(request)}`,
+      await flash(request, error(issuer.error, "Failed to load issuer"))
     );
   }
 
-  return { rule: { name: rule.data.name } };
+  return { issuer: { name: issuer.data.name } };
 }
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.settings.deleteFederationRule({
+  const result = await api.settings.archiveFederationIssuer({
     id: input.params.id
   });
   return respond(args.request, result).redirect(
-    `${path.to.federationRules}?${getParams(args.request)}`,
-    { message: "Deleted federation rule" }
+    `${path.to.federationIssuers}?${getParams(args.request)}`,
+    { message: "Archived issuer" }
   );
 }
 
-export default function DeleteFederationRuleRoute() {
+export default function ArchiveFederationIssuerRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
-  const { rule } = useLoaderData<typeof loader>();
+  const { issuer } = useLoaderData<typeof loader>();
   const closeRoute = useCloseRoute();
   const { t } = useLingui();
 
   return (
-    <ConfirmDelete
-      action={path.to.deleteFederationRule(id)}
-      name={rule.name}
-      text={t`Are you sure you want to delete the federation rule: ${rule.name}? Every API key it issued stops working at once.`}
+    <Confirm
+      action={path.to.archiveFederationIssuer(id)}
+      title={t`Archive ${issuer.name}`}
+      text={t`Its rules are archived too, and every API key they issued stops working at once.`}
+      confirmText={t`Archive`}
+      confirmVariant="destructive"
       onCancel={() => closeRoute()}
     />
   );

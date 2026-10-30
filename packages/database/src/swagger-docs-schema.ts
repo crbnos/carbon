@@ -43266,6 +43266,249 @@ export default {
         tags: ["qualityDocument"]
       }
     },
+    "/federationIssuer": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.provider"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.issuer"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.jwksSource"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.discoveryUrl"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.jwksUrl"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.jwks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.caCertificate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.requireUniqueJti"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.maxTokenLifetimeHours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.archivedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/federationIssuer"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["federationIssuer"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.federationIssuer"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["federationIssuer"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.provider"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.issuer"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.jwksSource"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.discoveryUrl"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.jwksUrl"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.jwks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.caCertificate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.requireUniqueJti"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.maxTokenLifetimeHours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.archivedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["federationIssuer"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.provider"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.issuer"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.jwksSource"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.discoveryUrl"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.jwksUrl"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.jwks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.caCertificate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.requireUniqueJti"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.maxTokenLifetimeHours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.archivedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationIssuer.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.federationIssuer"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["federationIssuer"]
+      }
+    },
     "/purchasingRfqs": {
       get: {
         parameters: [
@@ -76711,12 +76954,6 @@ export default {
             $ref: "#/parameters/rowFilter.federationRule.name"
           },
           {
-            $ref: "#/parameters/rowFilter.federationRule.provider"
-          },
-          {
-            $ref: "#/parameters/rowFilter.federationRule.issuer"
-          },
-          {
             $ref: "#/parameters/rowFilter.federationRule.audience"
           },
           {
@@ -76732,15 +76969,6 @@ export default {
             $ref: "#/parameters/rowFilter.federationRule.tokenLifetimeMinutes"
           },
           {
-            $ref: "#/parameters/rowFilter.federationRule.lastExchangeAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.federationRule.lastFailureAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.federationRule.lastFailureReason"
-          },
-          {
             $ref: "#/parameters/rowFilter.federationRule.createdBy"
           },
           {
@@ -76751,6 +76979,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.federationRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.issuerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.archivedAt"
           },
           {
             $ref: "#/parameters/select"
@@ -76821,12 +77058,6 @@ export default {
             $ref: "#/parameters/rowFilter.federationRule.name"
           },
           {
-            $ref: "#/parameters/rowFilter.federationRule.provider"
-          },
-          {
-            $ref: "#/parameters/rowFilter.federationRule.issuer"
-          },
-          {
             $ref: "#/parameters/rowFilter.federationRule.audience"
           },
           {
@@ -76842,15 +77073,6 @@ export default {
             $ref: "#/parameters/rowFilter.federationRule.tokenLifetimeMinutes"
           },
           {
-            $ref: "#/parameters/rowFilter.federationRule.lastExchangeAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.federationRule.lastFailureAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.federationRule.lastFailureReason"
-          },
-          {
             $ref: "#/parameters/rowFilter.federationRule.createdBy"
           },
           {
@@ -76861,6 +77083,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.federationRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.issuerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.archivedAt"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -76885,12 +77116,6 @@ export default {
             $ref: "#/parameters/rowFilter.federationRule.name"
           },
           {
-            $ref: "#/parameters/rowFilter.federationRule.provider"
-          },
-          {
-            $ref: "#/parameters/rowFilter.federationRule.issuer"
-          },
-          {
             $ref: "#/parameters/rowFilter.federationRule.audience"
           },
           {
@@ -76906,15 +77131,6 @@ export default {
             $ref: "#/parameters/rowFilter.federationRule.tokenLifetimeMinutes"
           },
           {
-            $ref: "#/parameters/rowFilter.federationRule.lastExchangeAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.federationRule.lastFailureAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.federationRule.lastFailureReason"
-          },
-          {
             $ref: "#/parameters/rowFilter.federationRule.createdBy"
           },
           {
@@ -76925,6 +77141,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.federationRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.issuerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationRule.archivedAt"
           },
           {
             $ref: "#/parameters/body.federationRule"
@@ -88150,6 +88375,186 @@ export default {
           }
         },
         tags: ["purchaseOrderLines"]
+      }
+    },
+    "/federationExchange": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.issuerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.outcome"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.subject"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.clientIp"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.apiKeyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/federationExchange"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["federationExchange"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.federationExchange"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["federationExchange"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.issuerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.outcome"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.subject"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.clientIp"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.apiKeyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["federationExchange"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.issuerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.outcome"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.subject"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.clientIp"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.apiKeyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.federationExchange.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.federationExchange"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["federationExchange"]
       }
     },
     "/nonConformanceJobOperation": {
@@ -140170,6 +140575,111 @@ export default {
       },
       type: "object"
     },
+    federationIssuer: {
+      required: [
+        "id",
+        "companyId",
+        "name",
+        "provider",
+        "issuer",
+        "jwksSource",
+        "requireUniqueJti",
+        "maxTokenLifetimeHours",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('fedi'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        provider: {
+          enum: [
+            "GitHub Actions",
+            "AWS",
+            "Google Cloud",
+            "Microsoft Entra ID",
+            "Kubernetes",
+            "Custom OIDC"
+          ],
+          format: 'public."federationProvider"',
+          type: "string"
+        },
+        issuer: {
+          format: "text",
+          type: "string"
+        },
+        jwksSource: {
+          default: "OIDC Discovery",
+          enum: ["OIDC Discovery", "JWKS URL", "Inline JWKS"],
+          format: 'public."federationJwksSource"',
+          type: "string"
+        },
+        discoveryUrl: {
+          format: "text",
+          type: "string"
+        },
+        jwksUrl: {
+          format: "text",
+          type: "string"
+        },
+        jwks: {
+          format: "jsonb"
+        },
+        caCertificate: {
+          format: "text",
+          type: "string"
+        },
+        requireUniqueJti: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        maxTokenLifetimeHours: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
+        archivedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     purchasingRfqs: {
       properties: {
         id: {
@@ -156385,14 +156895,13 @@ export default {
         "id",
         "companyId",
         "name",
-        "provider",
-        "issuer",
         "audience",
         "claimConditions",
         "scopes",
         "tokenLifetimeMinutes",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "issuerId"
       ],
       properties: {
         id: {
@@ -156408,21 +156917,6 @@ export default {
           type: "string"
         },
         name: {
-          format: "text",
-          type: "string"
-        },
-        provider: {
-          enum: [
-            "GitHub Actions",
-            "AWS",
-            "Google Cloud",
-            "Microsoft Entra ID",
-            "Custom OIDC"
-          ],
-          format: 'public."federationProvider"',
-          type: "string"
-        },
-        issuer: {
           format: "text",
           type: "string"
         },
@@ -156445,18 +156939,6 @@ export default {
           format: "integer",
           type: "integer"
         },
-        lastExchangeAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        lastFailureAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        lastFailureReason: {
-          format: "text",
-          type: "string"
-        },
         createdBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
@@ -156475,6 +156957,18 @@ export default {
           type: "string"
         },
         updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        issuerId: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        archivedAt: {
           format: "timestamp with time zone",
           type: "string"
         }
@@ -161802,6 +162296,65 @@ export default {
         },
         assetName: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    federationExchange: {
+      required: [
+        "id",
+        "companyId",
+        "ruleId",
+        "issuerId",
+        "outcome",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('fedx'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        ruleId: {
+          format: "text",
+          type: "string"
+        },
+        issuerId: {
+          format: "text",
+          type: "string"
+        },
+        outcome: {
+          enum: ["Succeeded", "Refused"],
+          format: 'public."federationExchangeOutcome"',
+          type: "string"
+        },
+        reason: {
+          format: "text",
+          type: "string"
+        },
+        subject: {
+          format: "text",
+          type: "string"
+        },
+        clientIp: {
+          format: "text",
+          type: "string"
+        },
+        apiKeyId: {
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -193099,6 +193652,117 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.federationIssuer": {
+      name: "federationIssuer",
+      description: "federationIssuer",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/federationIssuer"
+      }
+    },
+    "rowFilter.federationIssuer.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.provider": {
+      name: "provider",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.issuer": {
+      name: "issuer",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.jwksSource": {
+      name: "jwksSource",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.discoveryUrl": {
+      name: "discoveryUrl",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.jwksUrl": {
+      name: "jwksUrl",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.jwks": {
+      name: "jwks",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.caCertificate": {
+      name: "caCertificate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.requireUniqueJti": {
+      name: "requireUniqueJti",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.maxTokenLifetimeHours": {
+      name: "maxTokenLifetimeHours",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.archivedAt": {
+      name: "archivedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationIssuer.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.purchasingRfqs": {
       name: "purchasingRfqs",
       description: "purchasingRfqs",
@@ -211192,18 +211856,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.federationRule.provider": {
-      name: "provider",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.federationRule.issuer": {
-      name: "issuer",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.federationRule.audience": {
       name: "audience",
       required: false,
@@ -211234,24 +211886,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.federationRule.lastExchangeAt": {
-      name: "lastExchangeAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.federationRule.lastFailureAt": {
-      name: "lastFailureAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.federationRule.lastFailureReason": {
-      name: "lastFailureReason",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.federationRule.createdBy": {
       name: "createdBy",
       required: false,
@@ -211272,6 +211906,24 @@ export default {
     },
     "rowFilter.federationRule.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.issuerId": {
+      name: "issuerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationRule.archivedAt": {
+      name: "archivedAt",
       required: false,
       in: "query",
       type: "string"
@@ -217300,6 +217952,75 @@ export default {
     },
     "rowFilter.purchaseOrderLines.assetName": {
       name: "assetName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.federationExchange": {
+      name: "federationExchange",
+      description: "federationExchange",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/federationExchange"
+      }
+    },
+    "rowFilter.federationExchange.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationExchange.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationExchange.ruleId": {
+      name: "ruleId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationExchange.issuerId": {
+      name: "issuerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationExchange.outcome": {
+      name: "outcome",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationExchange.reason": {
+      name: "reason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationExchange.subject": {
+      name: "subject",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationExchange.clientIp": {
+      name: "clientIp",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationExchange.apiKeyId": {
+      name: "apiKeyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.federationExchange.createdAt": {
+      name: "createdAt",
       required: false,
       in: "query",
       type: "string"

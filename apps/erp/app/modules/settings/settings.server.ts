@@ -35,9 +35,15 @@ import {
 } from "@carbon/ee/audit.server";
 import { updateConsoleSetting } from "@carbon/ee/console.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
-import { FEDERATION_LIMITS, federationProviders } from "@carbon/ee/federation";
 import {
-  deleteFederationRule as deleteFederationRuleRow,
+  FEDERATION_LIMITS,
+  federationJwksSources,
+  federationProviders
+} from "@carbon/ee/federation";
+import {
+  archiveFederationIssuer as archiveFederationIssuerRow,
+  archiveFederationRule as archiveFederationRuleRow,
+  upsertFederationIssuer,
   upsertFederationRule
 } from "@carbon/ee/federation.server";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
@@ -1750,12 +1756,32 @@ export const revokeApiKey = defineServiceFn({
   }
 });
 
-const federationRuleFields = {
+const federationIssuerFields = {
   name: z.string().trim().min(1),
   provider: z.enum(federationProviders),
+  /** The `iss` claim, compared exactly. */
   issuer: z.string().trim().min(1),
+  jwksSource: z.enum(federationJwksSources),
+  discoveryUrl: z.string().trim().min(1).nullable(),
+  jwksUrl: z.string().trim().min(1).nullable(),
+  /** A pasted key set, `{ "keys": [...] }`; public keys only. */
+  jwks: z.record(z.string(), z.unknown()).nullable(),
+  /** A PEM CA for the TLS of the discovery and key-set fetches. */
+  caCertificate: z.string().trim().min(1).nullable(),
+  requireUniqueJti: z.boolean(),
+  maxTokenLifetimeHours: z
+    .number()
+    .int()
+    .min(FEDERATION_LIMITS.minTokenAgeHours)
+    .max(FEDERATION_LIMITS.maxTokenAgeHours)
+};
+
+const federationRuleFields = {
+  name: z.string().trim().min(1),
+  description: z.string().trim().nullable(),
+  issuerId: z.string().min(1),
   audience: z.string().trim().min(1),
-  /** Exact, or a prefix when it ends in `*`. */
+  /** Exact, or a prefix when it ends in `*` after a `:` or `/`. */
   subject: z.string().trim().min(1).nullable(),
   /** Top-level claim name to the exact value the token must carry. */
   claimConditions: z.record(z.string(), z.string()),
@@ -1767,6 +1793,98 @@ const federationRuleFields = {
     .min(FEDERATION_LIMITS.minTokenLifetimeMinutes)
     .max(FEDERATION_LIMITS.maxTokenLifetimeMinutes)
 };
+
+/**
+ * Register a federation issuer.
+ *
+ * @remarks
+ * An issuer is an OIDC identity provider Carbon trusts, and how Carbon gets
+ * its signing keys. Rules name the workloads of an issuer. Identity
+ * federation is a Business plan feature.
+ */
+export const createFederationIssuer = defineServiceFn({
+  input: z.object(federationIssuerFields),
+  permission: { update: "users" },
+  async run(ctx, input) {
+    let created: Awaited<ReturnType<typeof upsertFederationIssuer>>;
+    try {
+      created = await upsertFederationIssuer(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        { ...input, companyId: ctx.company.id, createdBy: ctx.auditUserId }
+      );
+    } catch (err) {
+      return service.apiKeysEntitlement(ctx, err);
+    }
+    if (created.error || !created.data) {
+      return service.federationError(
+        ctx,
+        "issuer",
+        created.error ?? { message: "Failed to save", code: "unknown" }
+      );
+    }
+    return { id: created.data.id };
+  }
+});
+
+/**
+ * Update a federation issuer.
+ *
+ * @remarks
+ * A change to how Carbon checks the issuer's tokens (its URL or key source)
+ * revokes every key its rules minted.
+ */
+export const updateFederationIssuer = defineServiceFn({
+  input: z.object({ id: z.string().min(1), ...federationIssuerFields }),
+  permission: { update: "users" },
+  async run(ctx, input) {
+    let updated: Awaited<ReturnType<typeof upsertFederationIssuer>>;
+    try {
+      updated = await upsertFederationIssuer(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        { ...input, companyId: ctx.company.id, updatedBy: ctx.auditUserId }
+      );
+    } catch (err) {
+      return service.apiKeysEntitlement(ctx, err);
+    }
+    if (updated.error || !updated.data) {
+      return service.federationError(
+        ctx,
+        "issuer",
+        updated.error ?? { message: "Failed to save", code: "unknown" }
+      );
+    }
+    return { id: updated.data.id };
+  }
+});
+
+/**
+ * Archive a federation issuer.
+ *
+ * @remarks
+ * Archives its rules too. Every key they minted stops working at once.
+ */
+export const archiveFederationIssuer = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "users" },
+  async run(ctx, { id }) {
+    let archived: Awaited<ReturnType<typeof archiveFederationIssuerRow>>;
+    try {
+      archived = await archiveFederationIssuerRow(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        { id, companyId: ctx.company.id, updatedBy: ctx.auditUserId }
+      );
+    } catch (err) {
+      return service.apiKeysEntitlement(ctx, err);
+    }
+    if (archived.error) {
+      return service.federationError(ctx, "issuer", archived.error);
+    }
+    return { id };
+  }
+});
 
 /**
  * Create a federation rule.
@@ -1786,18 +1904,15 @@ export const createFederationRule = defineServiceFn({
       created = await upsertFederationRule(
         ctx.asCaller.supabase,
         ctx.asSystem.pg,
-        {
-          ...input,
-          companyId: ctx.company.id,
-          createdBy: ctx.auditUserId
-        }
+        { ...input, companyId: ctx.company.id, createdBy: ctx.auditUserId }
       );
     } catch (err) {
       return service.apiKeysEntitlement(ctx, err);
     }
     if (created.error || !created.data) {
-      return service.federationRuleError(
+      return service.federationError(
         ctx,
+        "rule",
         created.error ?? { message: "Failed to save", code: "unknown" }
       );
     }
@@ -1809,7 +1924,9 @@ export const createFederationRule = defineServiceFn({
  * Update a federation rule.
  *
  * @remarks
- * A scope change also applies to the keys the rule already minted, at once.
+ * A scope change applies to the keys the rule already minted, at once. A
+ * change to the workload it names (issuer, audience, subject, claims)
+ * revokes them.
  */
 export const updateFederationRule = defineServiceFn({
   input: z.object({ id: z.string().min(1), ...federationRuleFields }),
@@ -1820,18 +1937,15 @@ export const updateFederationRule = defineServiceFn({
       updated = await upsertFederationRule(
         ctx.asCaller.supabase,
         ctx.asSystem.pg,
-        {
-          ...input,
-          companyId: ctx.company.id,
-          updatedBy: ctx.auditUserId
-        }
+        { ...input, companyId: ctx.company.id, updatedBy: ctx.auditUserId }
       );
     } catch (err) {
       return service.apiKeysEntitlement(ctx, err);
     }
     if (updated.error || !updated.data) {
-      return service.federationRuleError(
+      return service.federationError(
         ctx,
+        "rule",
         updated.error ?? { message: "Failed to save", code: "unknown" }
       );
     }
@@ -1840,27 +1954,28 @@ export const updateFederationRule = defineServiceFn({
 });
 
 /**
- * Delete a federation rule.
+ * Archive a federation rule.
  *
  * @remarks
- * Every key the rule minted stops authenticating at once.
+ * Every key the rule minted stops working at once. The rule and its
+ * authentication events stay.
  */
-export const deleteFederationRule = defineServiceFn({
+export const archiveFederationRule = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
   permission: { update: "users" },
   async run(ctx, { id }) {
-    let deleted: Awaited<ReturnType<typeof deleteFederationRuleRow>>;
+    let archived: Awaited<ReturnType<typeof archiveFederationRuleRow>>;
     try {
-      deleted = await deleteFederationRuleRow(
+      archived = await archiveFederationRuleRow(
         ctx.asCaller.supabase,
-        id,
-        ctx.company.id
+        ctx.asSystem.pg,
+        { id, companyId: ctx.company.id, updatedBy: ctx.auditUserId }
       );
     } catch (err) {
       return service.apiKeysEntitlement(ctx, err);
     }
-    if (deleted.error) {
-      return service.federationRuleError(ctx, deleted.error);
+    if (archived.error) {
+      return service.federationError(ctx, "rule", archived.error);
     }
     return { id };
   }

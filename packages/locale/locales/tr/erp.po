@@ -1391,6 +1391,9 @@ msgstr "Bir parça, satın alınabilir veya üretilebilir belirli bir öğe hakk
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "Bu adımda yerleştirildikten sonra bir parça devrilebilir — bir bağlama aparatı veya ikinci bir kişi göz önünde bulundurun."
 
+msgid "A PEM CA to trust when fetching the discovery document and keys, for an issuer with a private CA."
+msgstr ""
+
 msgid "A photo or PDF the operator sees on this step"
 msgstr "Operatörün bu adımda gördüğü bir fotoğraf veya PDF"
 
@@ -1781,7 +1784,7 @@ msgstr ""
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Değişken bir ücret — kilometre fazlası, hasar, teslimat, temizlik — sözleşmenin bir sonraki faturasında faturalandırılır."
 
-msgid "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
+msgid "A workload that presents a matching token from the issuer gets a short-lived API key with these scopes."
 msgstr ""
 
 msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
@@ -2950,6 +2953,9 @@ msgstr "Bir stok kartının izleme türü değişir"
 msgid "An item's unit of measure changes"
 msgstr "Bir öğenin ölçü birimi değişir"
 
+msgid "An OIDC identity provider whose tokens Carbon accepts. Rules name the workloads of an issuer."
+msgstr ""
+
 msgid "An open-ended agreement is always a rental. Set an end date to use these."
 msgstr "Açık uçlu bir anlaşma her zaman bir kiralama işlemidir. Bunu kullanmak için bir bitiş tarihi ayarlayın."
 
@@ -3107,6 +3113,9 @@ msgstr "API Anahtarı"
 
 msgid "API Key"
 msgstr "API Anahtarı"
+
+msgid "API key lifetime (minutes)"
+msgstr ""
 
 msgid "API Keys"
 msgstr "API Anahtarları"
@@ -3293,8 +3302,19 @@ msgstr "Alacak hesapları/Borç hesapları"
 msgid "Archive"
 msgstr "Arşiv"
 
+#. placeholder {0}: issuer.name
+#. placeholder {0}: rule.name
+msgid "Archive {0}"
+msgstr ""
+
 msgid "Archive all"
 msgstr "Tümünü arşivle"
+
+msgid "Archive Federation Rule"
+msgstr ""
+
+msgid "Archive Issuer"
+msgstr ""
 
 msgid "Archive Training"
 msgstr "Eğitimi Arşivle"
@@ -3302,8 +3322,14 @@ msgstr "Eğitimi Arşivle"
 msgid "Archived"
 msgstr "Arşivlenmiş"
 
+msgid "Archived Issuers"
+msgstr ""
+
 msgid "Archived Logs"
 msgstr "Arşivlenmiş Kayıtlar"
+
+msgid "Archived Rules"
+msgstr ""
 
 #. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
@@ -3497,10 +3523,6 @@ msgstr "Çalışan tipi: {0}'ı silmek istediğinizden emin misiniz? Bu geri al�
 
 msgid "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
 msgstr "Hata modu '{name}' silmek istediğinizden emin misiniz? Bu geri alınamaz."
-
-#. placeholder {0}: rule.name
-msgid "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
-msgstr ""
 
 #. placeholder {0}: gaugeType.name
 msgid "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
@@ -4104,6 +4126,12 @@ msgstr "Denetim günlükleri"
 
 msgid "Authentication Error"
 msgstr "Kimlik Doğrulama Hatası"
+
+msgid "Authentication events"
+msgstr ""
+
+msgid "Authentication Events"
+msgstr ""
 
 msgid "Authenticator app"
 msgstr "Kimlik Doğrulayıcı Uygulaması"
@@ -4741,6 +4769,9 @@ msgstr "Oturum açarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'n
 
 msgid "By you · edited <0/>"
 msgstr "Sizin tarafından · düzenlenmiş <0/>"
+
+msgid "CA certificate"
+msgstr ""
 
 msgid "CAD Model"
 msgstr "CAD Modeli"
@@ -5443,6 +5474,9 @@ msgstr "Yeniden adlandırmak için tıklayın"
 msgid "Click to upload a PDF drawing"
 msgstr "PDF çizimi yüklemek için tıklayın"
 
+msgid "Client IP"
+msgstr ""
+
 msgid "Clock In"
 msgstr "İş başlangıcı"
 
@@ -5952,8 +5986,14 @@ msgstr "Hiçbir koşul eşleşmediğinde çalıştırılacak bir düğüme Aksi 
 msgid "Connect the outside tools your company already runs on"
 msgstr "Şirketinizin zaten kullandığı dış araçları bağlayın"
 
+msgid "Connect workload"
+msgstr ""
+
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "Kimlik sağlayıcınızı, meta veri URL'sini veya ham meta veri XML'sini yapıştırarak bağlayın — ikisinden tam olarak birini yapıştırın."
+
+msgid "Connected"
+msgstr ""
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 msgstr "İş akışlarından önce bağlanan ek izinler gerekiyordu. Bunları vermek için yeniden bağlanın — diğer her şey arada çalışmaya devam eder."
@@ -6790,6 +6830,9 @@ msgstr "Yedek Oluştur"
 
 msgid "Create Revision"
 msgstr "Revizyon Oluştur"
+
+msgid "Create rule"
+msgstr ""
 
 msgid "Create Rule"
 msgstr "Kural Oluştur"
@@ -7860,9 +7903,6 @@ msgstr "Çalışan Türünü Sil"
 msgid "Delete Failure Mode"
 msgstr "Hata Modunu Sil"
 
-msgid "Delete Federation Rule"
-msgstr ""
-
 msgid "Delete file"
 msgstr "Dosyayı sil"
 
@@ -8453,6 +8493,9 @@ msgstr "Müşterilere erken ödeme için verilen iskontolar"
 msgid "Discovery"
 msgstr "Keşif"
 
+msgid "Discovery base URL"
+msgstr ""
+
 msgid "Dismiss"
 msgstr "Kapat"
 
@@ -8962,6 +9005,9 @@ msgstr "Her kiralama anlaşmasının veya sözleşmenin satış temsilcisi (veya
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Her tedarikçinin her iş emrinden dış operasyonları yeni bir satın alma siparişine veya seçtiğiniz mevcut bir taslağa yazılır."
 
+msgid "Each token's jti can be exchanged once. Turn off only for an issuer that does not set jti, such as Google Cloud and Microsoft Entra ID."
+msgstr ""
+
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "Her adetin adil değeri ve ekonomik ömrü, terimin çoğunluğunu kapsayıp kapsamadığını belirler. Değiştirmek için hücreyi tıklayın."
 
@@ -9136,6 +9182,9 @@ msgstr "Tatil Düzenle"
 
 msgid "Edit Inspection Plan"
 msgstr "Kontrol Planı Düzenle"
+
+msgid "Edit Issuer"
+msgstr ""
 
 msgid "Edit Item Group"
 msgstr "Ürün Grubunu Düzenle"
@@ -9614,6 +9663,9 @@ msgstr "Öğeler tekliflere, satış siparişlerine ve satış faturalarına ekl
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Mal kabul, sevkiyat, transfer ve düzeltmelerde madde başına doğrulama ve yönergeleri zorunlu kıl."
 
+msgid "Enforce single-use tokens (jti replay protection)"
+msgstr ""
+
 msgid "Engagement tier"
 msgstr "Katılım seviyesi"
 
@@ -9901,6 +9953,9 @@ msgstr "Her hesap varsayılanı ayarlandı"
 msgid "Every account is mapped"
 msgstr "Tüm hesaplar eşlendi"
 
+msgid "Every API key this rule issued stops working at once, and the rule takes no more exchanges. Its authentication events stay."
+msgstr ""
+
 msgid "Every asset needs a payment row before activating."
 msgstr "Etkinleştirmeden önce her varlığın bir ödeme satırı olmalıdır."
 
@@ -9982,7 +10037,7 @@ msgstr "Geri kalan her şey personel, içe aktarmalar, entegrasyonlar ve API'yi 
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "Bu çalışmanın ürettiği her şey bir Lota iniş yapar. Atölye bunu değiştiremez."
 
-msgid "Exact match, or a prefix when it ends in *"
+msgid "Exact match, or a prefix when it ends in :* or /*"
 msgstr ""
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
@@ -10701,7 +10756,10 @@ msgstr "Faks"
 msgid "Fax Number"
 msgstr "Faks Numarası"
 
-msgid "Federation Rule"
+msgid "Federation rule"
+msgstr ""
+
+msgid "Federation Rules"
 msgstr ""
 
 msgid "Fees"
@@ -11708,6 +11766,9 @@ msgstr "Bir öğenin birim maliyeti nasıl değerlendirilir: Standart, Ortalama,
 
 msgid "How are these hours calculated?"
 msgstr "Bu saatler nasıl hesaplanır?"
+
+msgid "How Carbon gets the issuer's signing keys"
+msgstr ""
 
 msgid "How Carbon looks in this browser."
 msgstr "Carbon'un bu tarayıcıda nasıl göründüğü."
@@ -12728,6 +12789,12 @@ msgstr ""
 msgid "Issuer URL"
 msgstr ""
 
+msgid "Issuer URL (iss claim)"
+msgstr ""
+
+msgid "Issuers"
+msgstr ""
+
 msgid "Issues"
 msgstr "Sorunlar"
 
@@ -12857,6 +12924,9 @@ msgstr "Tasarımı, değişiklik bildirisi yayınlanmadan önce değişebilir."
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "Hasılat, her satırın tanıması gereken kalanına geri döner."
 
+msgid "Its rules are archived too, and every API key they issued stops working at once."
+msgstr ""
+
 msgid "Job"
 msgstr "İş"
 
@@ -12972,6 +13042,15 @@ msgstr "Bu tarihte veya daha önce tarihli Muhasebe fişleri kilitli olarak kabu
 msgid "Just one"
 msgstr "Sadece bir"
 
+msgid "JWKS source"
+msgstr ""
+
+msgid "JWKS Source"
+msgstr ""
+
+msgid "JWKS URL"
+msgstr ""
+
 msgid "Kanban"
 msgstr "Kanban"
 
@@ -13029,6 +13108,9 @@ msgstr "Açık Tut"
 msgid "Keep picking"
 msgstr "Toplamaya devam et"
 
+msgid "Keep waiting"
+msgstr ""
+
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Siparişleri, teklifleri ve ayarları ikinci bir kontrolün arkasında tutar"
 
@@ -13040,6 +13122,9 @@ msgstr "{total} içinden {kept} tutuldu."
 
 msgid "Key"
 msgstr "Anahtar"
+
+msgid "Key set (JWKS)"
+msgstr ""
 
 msgid "Keyboard shortcuts"
 msgstr "Klavye kısayolları"
@@ -13141,12 +13226,6 @@ msgstr "Son Kalibrasyon Tarihi"
 msgid "Last day"
 msgstr "Son gün"
 
-msgid "Last Exchange"
-msgstr ""
-
-msgid "Last exchange:"
-msgstr ""
-
 msgid "Last Fiscal Year"
 msgstr "Son Mali Yıl"
 
@@ -13174,12 +13253,6 @@ msgstr "Son gönderim: {lastPushed}."
 
 msgid "Last Quarter"
 msgstr "Son Çeyrek"
-
-msgid "Last Refusal"
-msgstr ""
-
-msgid "Last refused exchange:"
-msgstr ""
 
 msgid "Last Run"
 msgstr "Son Çalıştırma"
@@ -13367,6 +13440,9 @@ msgstr "Kiraya Veren"
 
 msgid "Lessor Discount Rate (%)"
 msgstr "Kiraya Veren İskonto Oranı (%)"
+
+msgid "Let a CI job or cloud workload exchange its own token for a short-lived Carbon API key, with no key to store."
+msgstr ""
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "Üyelerin SAML ile kimlik sağlayıcınız üzerinden oturum açmasını sağlayın."
@@ -13774,6 +13850,12 @@ msgstr "Düşük"
 
 msgid "Lowercase item IDs are allowed"
 msgstr "Küçük harf Ürün Kimlikleri izin verilir"
+
+msgid "Lowercase letters, numbers and hyphens"
+msgstr ""
+
+msgid "Lowercase letters, numbers and hyphens. Shown in rules and the audit log."
+msgstr ""
 
 msgid "Machine"
 msgstr "Makine"
@@ -14305,6 +14387,9 @@ msgstr "Maksimum Sipariş Miktarı"
 msgid "Maximum Order:"
 msgstr "Maksimum Sipariş:"
 
+msgid "Maximum token lifetime (hours)"
+msgstr ""
+
 msgid "MCP Command"
 msgstr "MCP Komutu"
 
@@ -14747,7 +14832,7 @@ msgstr "{minValue} ile {maxValue} {unitLabel} arasında olmalıdır"
 msgid "Must be in the same location"
 msgstr "Aynı konumda olmalıdır"
 
-msgid "Must equal the iss claim of the token exactly"
+msgid "Must equal the iss claim of the tokens exactly"
 msgstr ""
 
 msgid "My Documents"
@@ -14863,6 +14948,9 @@ msgstr "Ağ hatası"
 
 msgid "Never"
 msgstr "Asla"
+
+msgid "Never longer than the workload's own token has left"
+msgstr ""
 
 msgid "New"
 msgstr "Yeni"
@@ -15559,6 +15647,12 @@ msgstr "Bitiş tarihi yok"
 
 msgid "No events found."
 msgstr "Olay bulunamadı."
+
+msgid "No exchange yet."
+msgstr ""
+
+msgid "No exchanges yet."
+msgstr ""
 
 msgid "No external notes"
 msgstr "Harici not yok"
@@ -16587,6 +16681,9 @@ msgstr "Yalnızca nitelikli çalışanlar bu işlem için planlanabilir ve çal�
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "Yalnızca seri numaralı ve sabit kıymet olarak aktifleştirilen adetler kiralanabilir. Bir adet eklemek için, parçanın Envanter sekmesini açın, Depolama birimleri altında seri numarasını bulun ve Sabit Kıymet Olarak Aktifleştir'i seçin."
 
+msgid "Only when the discovery document is not under the issuer URL"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 msgstr "Onshape bağlantıyı yetkilendirdi ancak kaydedilemedi. Tekrar denemek için entegrasyon ayarlarını kaydedin."
 
@@ -17087,6 +17184,9 @@ msgstr "Hizmetten çıkış: <0/>"
 
 msgid "Outbound"
 msgstr "Giden"
+
+msgid "Outcome"
+msgstr ""
 
 msgid "Outgoing"
 msgstr "Çıkış"
@@ -18488,6 +18588,9 @@ msgstr "Geçici muhasebe fişi"
 msgid "Public"
 msgstr "Herkese açık"
 
+msgid "Public keys only. Carbon never fetches them, so update the set when the issuer rotates its keys."
+msgstr ""
+
 msgid "Publish"
 msgstr "Yayınla"
 
@@ -19292,6 +19395,9 @@ msgstr "Mal kabul lokasyonu"
 msgid "Recent"
 msgstr "Son Aramalar"
 
+msgid "Recent exchanges"
+msgstr ""
+
 msgid "Recent payments"
 msgstr "Son ödemeler"
 
@@ -19471,6 +19577,9 @@ msgstr "İade Muhasebe Notları"
 msgid "Refund to Customer"
 msgstr "Müşteriye İade"
 
+msgid "Refused"
+msgstr ""
+
 msgid "Regenerate"
 msgstr "Yeniden oluştur"
 
@@ -19495,8 +19604,17 @@ msgstr "Küçük resim yenileniyor…"
 msgid "Register"
 msgstr "Mevcut Varlığı Kayıt Yap"
 
+msgid "Register a new issuer"
+msgstr ""
+
 msgid "Register Existing Asset"
 msgstr "Kayıtlı"
+
+msgid "Register issuer"
+msgstr ""
+
+msgid "Register Issuer"
+msgstr ""
 
 msgid "Registered"
 msgstr "Kaydedildi"
@@ -20722,6 +20840,9 @@ msgstr "Kabul kontrol listesini başarıyla tamamlayın"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Kat'ı tabletlerde çalıştır: İşçiliği kaydet, ilerleme bildir, talimatları gör"
 
+msgid "Run this in the workload. Carbon shows each exchange attempt here, with the reason when it is refused."
+msgstr ""
+
 msgid "Run this workflow now?"
 msgstr "Bu iş akışı şimdi çalıştırılsın mı?"
 
@@ -20939,6 +21060,9 @@ msgstr "Satış danışmanı"
 
 msgid "Same as Book"
 msgstr "Kitapta aynı"
+
+msgid "Same as the issuer URL"
+msgstr ""
 
 msgid "Sample"
 msgstr "Örnek"
@@ -22206,11 +22330,17 @@ msgstr "Tedarikçi listesinde, tedarikçi formlarında ve açılır menülerde o
 msgid "Show a warning on the shop floor, but let them work."
 msgstr ""
 
+msgid "Show active"
+msgstr ""
+
 msgid "Show All"
 msgstr "Tümünü göster"
 
 msgid "Show all hidden on this step"
 msgstr "Bu adımda gizli olanların tümünü göster"
+
+msgid "Show archived"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "Kullanılabilir parti numaralarını göster"
@@ -24304,6 +24434,9 @@ msgstr "Bu ödemenin faturası bu tarihte taslak olarak oluşturulur."
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "Bu varlık için MACRS kapsamında IRS kurtarma süresi sınıfı (3, 5, 7, 10, 15, 20, 27.5, 39 yıl)."
 
+msgid "The issuer and its key source decide which tokens Carbon accepts. Changing either stops the keys its rules already issued. Changes are recorded in the audit log."
+msgstr ""
+
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "Her iş emrinin ürettiği stok kartı — çıkış lotlarını birleştirmek için eşleşmesi gerekir"
 
@@ -24330,6 +24463,9 @@ msgstr "İşin konumunun planlama kuyruğundaki konumu — Carbon'un son tarih v
 
 msgid "The job's work-in-progress balance moves to this asset now, and completing the job sweeps the rest. Only open jobs that are not linked to a sales order or another asset are listed."
 msgstr "İş emrinin devam eden işlerin bakiyesi şimdi bu varlığa aktarılır ve işi tamamlamak geri kalanını taşır. Yalnızca satış siparişi veya başka bir varlıkla bağlantılı olmayan açık işler listelenir."
+
+msgid "The keys this rule issues act as you, limited to these scopes."
+msgstr ""
 
 msgid "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
 msgstr "Bu Kuralın uygulandığı Düzeltmenin türü — İskonto, ek ücret veya sabit Geçersiz kılma; her Satırda gerçek değişimi hesaplamak için Miktar Türüyle birleştirilir."
@@ -25008,6 +25144,9 @@ msgstr "Depo kaynak Rafının aksine, Toplandı malzemelerin üretime çekilmek 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Çalışma saatleri ve planlama yöneten takvimler"
 
+msgid "The workload exchanged its token for an API key."
+msgstr ""
+
 msgid "The workload requests its token for this audience"
 msgstr ""
 
@@ -25261,6 +25400,9 @@ msgstr "Bu, mali yılınızın başladığı aydır."
 msgid "This is the month your tax year starts."
 msgstr "Bu, vergi yılınızın başladığı aydır."
 
+msgid "This issuer is archived. It and its rules accept no more tokens, and it can no longer change."
+msgstr ""
+
 msgid "this item"
 msgstr "bu öğe"
 
@@ -25387,6 +25529,9 @@ msgstr "Bu revizyon yayınlanmıştır (Üretim). Değişiklikler normalde bir d
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Bu revizyon yayınlanmıştır (Üretim). Bunu değiştirmek için bir değişiklik bildirisi açın."
+
+msgid "This rule is archived. It accepts no more tokens, and it can no longer change."
+msgstr ""
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "Bu çalıştırmada burada gösterdiklerimizden daha fazla adım var. Yalnızca ilk {MAX_RUN_STEPS} listelenir."
@@ -25737,10 +25882,13 @@ msgstr "Özellikleri Aç/Kapat"
 msgid "Toggle views"
 msgstr "Görünümleri değiştir"
 
-msgid "Token lifetime (minutes)"
+msgid "Token validation"
 msgstr ""
 
 msgid "Tokens expire in minutes"
+msgstr ""
+
+msgid "Tokens whose exp − iat is longer are refused. Microsoft Entra ID needs 24."
 msgstr ""
 
 msgid "Tol-"
@@ -26724,6 +26872,9 @@ msgstr "Farklı bir e-posta kullan"
 msgid "Use a finished sub-assembly in this step"
 msgstr "Bu Adımda Bitmiş Alt Montajı Kullan"
 
+msgid "Use an issuer you registered"
+msgstr ""
+
 msgid "Use Current View"
 msgstr "Mevcut Görünümü Kullan"
 
@@ -27016,6 +27167,9 @@ msgstr "Müşterileri Görüntüle"
 msgid "View Employees"
 msgstr "Çalışanları Görüntüle"
 
+msgid "View Federation Rule"
+msgstr ""
+
 msgid "View full size"
 msgstr "Tam boyutta görüntüle"
 
@@ -27033,6 +27187,9 @@ msgstr "Proje planında görüntüle"
 
 msgid "View Issue"
 msgstr "Sorunu Görüntüle"
+
+msgid "View Issuer"
+msgstr ""
 
 msgid "View Item"
 msgstr "Stok Kartını Görüntüle"
@@ -27230,6 +27387,9 @@ msgstr "Beklemede"
 
 msgid "Waiting"
 msgstr "Beklemede"
+
+msgid "Waiting for the first exchange…"
+msgstr ""
 
 msgid "Waiting for the first sync"
 msgstr "İlk eşitleme bekleniyor"

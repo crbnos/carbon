@@ -86,7 +86,7 @@ export default function ApiKeyChooser({
         <ModalFooter>
           <VStack spacing={2} className="w-full">
             <Button size="lg" className="w-full" asChild>
-              <Link to={`${path.to.newFederationRule}${suffix}`}>
+              <Link to={`${path.to.connectWorkload}${suffix}`}>
                 <Trans>Set up identity federation</Trans>
               </Link>
             </Button>

@@ -153,6 +153,8 @@ export const path = {
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
       failureModes: `${api}/resources/failure-modes`,
+      federationRuleExchanges: (ruleId: string) =>
+        generatePath(`${api}/settings/federation-rule/${ruleId}/exchanges`),
       gauges: `${api}/quality/gauges`,
       generateCsvColumns: (table: string) =>
         generatePath(`${api}/ai/csv/${table}/columns`),
@@ -438,6 +440,10 @@ export const path = {
       generatePath(`${x}/settings/approval-rules/${id}`),
     approvalRules: `${x}/settings/approval-rules`,
     arAging: `${x}/reports/ar-aging`,
+    archiveFederationIssuer: (id: string) =>
+      generatePath(`${x}/settings/federation/issuers/archive/${id}`),
+    archiveFederationRule: (id: string) =>
+      generatePath(`${x}/settings/federation/rules/archive/${id}`),
     assemblyInstruction: (id: string) => generatePath(`${x}/assembly/${id}`),
     assemblyInstructionActivate: (id: string) =>
       generatePath(`${x}/assembly/${id}/activate`),
@@ -620,6 +626,7 @@ export const path = {
       generatePath(`${x}/part/${itemId}/parameter/order`),
     configurationRule: (itemId: string) =>
       generatePath(`${x}/part/${itemId}/rule`),
+    connectWorkload: `${x}/settings/federation/rules/connect`,
     consumable: (id: string) => generatePath(`${x}/consumable/${id}`),
     consumableCosting: (id: string) =>
       generatePath(`${x}/consumable/${id}/costing`),
@@ -849,8 +856,6 @@ export const path = {
       generatePath(`${x}/accounting/exchange-rates/delete/${id}`),
     deleteFailureMode: (id: string) =>
       generatePath(`${x}/resources/failure-modes/delete/${id}`),
-    deleteFederationRule: (id: string) =>
-      generatePath(`${x}/settings/federation/delete/${id}`),
     deleteFixedAsset: (id: string) =>
       generatePath(`${x}/fixed-asset/${id}/delete`),
     deleteGauge: (id: string) =>
@@ -1148,9 +1153,14 @@ export const path = {
     failureMode: (id: string) =>
       generatePath(`${x}/resources/failure-modes/${id}`),
     failureModes: `${x}/resources/failure-modes`,
+    federation: `${x}/settings/federation`,
+    federationEvents: `${x}/settings/federation/events`,
+    federationIssuer: (id: string) =>
+      generatePath(`${x}/settings/federation/issuers/${id}`),
+    federationIssuers: `${x}/settings/federation/issuers`,
     federationRule: (id: string) =>
-      generatePath(`${x}/settings/federation/${id}`),
-    federationRules: `${x}/settings/federation`,
+      generatePath(`${x}/settings/federation/rules/${id}`),
+    federationRules: `${x}/settings/federation/rules`,
     file: {
       batchList: (id: string) => generatePath(`${file}/batch/${id}.pdf`),
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
@@ -1782,7 +1792,8 @@ export const path = {
     newEmployeeType: `${x}/users/employee-types/new`,
     newExchangeRate: `${x}/accounting/exchange-rates/new`,
     newFailureMode: `${x}/resources/failure-modes/new`,
-    newFederationRule: `${x}/settings/federation/new`,
+    newFederationIssuer: `${x}/settings/federation/issuers/new`,
+    newFederationRule: `${x}/settings/federation/rules/new`,
     newFixedAsset: `${x}/accounting/fixed-assets/new`,
     newGauge: `${x}/quality/gauges/new`,
     newGaugeCalibrationRecord: `${x}/quality/calibrations/new`,

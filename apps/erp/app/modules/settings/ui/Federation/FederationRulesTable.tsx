@@ -14,26 +14,26 @@ import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
+  LuArchive,
   LuBookOpen,
   LuCalendar,
-  LuCircleAlert,
-  LuCloud,
+  LuEye,
   LuFingerprint,
   LuGlobe,
   LuPencil,
+  LuPlug,
   LuShield,
   LuTag,
-  LuTrash,
   LuUser
 } from "react-icons/lu";
-import { useNavigate } from "react-router";
-import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { Link, useNavigate } from "react-router";
+import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { currentRefusal } from "~/modules/settings/settings.utils";
 import type { FederationRuleRow } from "~/modules/settings/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
+import ArchivedToggle, { useShowArchived } from "./ArchivedToggle";
 
 type FederationRulesTableProps = {
   data: FederationRuleRow[];
@@ -55,6 +55,8 @@ const FederationRulesTable = memo(
     const [params] = useUrlParams();
     const permissions = usePermissions();
     const [people] = usePeople();
+    const showArchived = useShowArchived();
+    const canEdit = permissions.can("update", "users");
 
     const columns = useMemo<ColumnDef<FederationRuleRow>[]>(() => {
       return [
@@ -62,7 +64,9 @@ const FederationRulesTable = memo(
           accessorKey: "name",
           header: t`Name`,
           cell: ({ row }) => (
-            <Hyperlink to={row.original.id}>{row.original.name}</Hyperlink>
+            <Hyperlink to={`${row.original.id}?${params.toString()}`}>
+              {row.original.name}
+            </Hyperlink>
           ),
           meta: {
             mobile: "P1",
@@ -70,25 +74,16 @@ const FederationRulesTable = memo(
           }
         },
         {
-          accessorKey: "provider",
-          header: t`Provider`,
-          cell: ({ row }) => (
-            <Badge variant="secondary">{row.original.provider}</Badge>
-          ),
-          meta: {
-            icon: <LuCloud />
-          }
-        },
-        {
-          accessorKey: "issuer",
+          id: "issuer",
           header: t`Issuer`,
           cell: ({ row }) => (
             <span className="font-mono text-sm text-muted-foreground">
-              {row.original.issuer}
+              {row.original.federationIssuer?.name ?? "—"}
             </span>
           ),
           meta: {
-            icon: <LuGlobe />
+            icon: <LuGlobe />,
+            exportValue: (row) => row.federationIssuer?.name ?? null
           }
         },
         {
@@ -133,35 +128,6 @@ const FederationRulesTable = memo(
           }
         },
         {
-          accessorKey: "lastExchangeAt",
-          header: t`Last Exchange`,
-          cell: ({ row }) =>
-            row.original.lastExchangeAt ? (
-              <DateTime value={row.original.lastExchangeAt} />
-            ) : (
-              <span className="text-muted-foreground">
-                <Trans>Never</Trans>
-              </span>
-            ),
-          meta: {
-            mobile: "P2",
-            icon: <LuCalendar />
-          }
-        },
-        {
-          accessorKey: "lastFailureReason",
-          header: t`Last Refusal`,
-          cell: ({ row }) => {
-            const refusal = currentRefusal(row.original);
-            return refusal ? (
-              <Badge variant="destructive">{refusal}</Badge>
-            ) : null;
-          },
-          meta: {
-            icon: <LuCircleAlert />
-          }
-        },
-        {
           id: "createdBy",
           header: t`Created By`,
           cell: ({ row }) => (
@@ -186,11 +152,12 @@ const FederationRulesTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCalendar />
           }
         }
       ];
-    }, [people, t]);
+    }, [params, people, t]);
 
     const renderContextMenu = useCallback(
       (row: FederationRuleRow) => (
@@ -203,24 +170,30 @@ const FederationRulesTable = memo(
               );
             }}
           >
-            <MenuIcon icon={<LuPencil />} />
-            <Trans>Edit Federation Rule</Trans>
+            <MenuIcon icon={row.archivedAt ? <LuEye /> : <LuPencil />} />
+            {row.archivedAt ? (
+              <Trans>View Federation Rule</Trans>
+            ) : (
+              <Trans>Edit Federation Rule</Trans>
+            )}
           </MenuItem>
-          <MenuItem
-            shortcut={MENU_ITEM_SHORTCUTS.delete}
-            destructive
-            onClick={() => {
-              navigate(
-                `${path.to.deleteFederationRule(row.id)}?${params?.toString()}`
-              );
-            }}
-          >
-            <MenuIcon icon={<LuTrash />} />
-            <Trans>Delete Federation Rule</Trans>
-          </MenuItem>
+          {!row.archivedAt && (
+            <MenuItem
+              destructive
+              disabled={!canEdit}
+              onClick={() => {
+                navigate(
+                  `${path.to.archiveFederationRule(row.id)}?${params?.toString()}`
+                );
+              }}
+            >
+              <MenuIcon icon={<LuArchive />} />
+              <Trans>Archive Federation Rule</Trans>
+            </MenuItem>
+          )}
         </>
       ),
-      [navigate, params]
+      [canEdit, navigate, params]
     );
 
     return (
@@ -231,12 +204,7 @@ const FederationRulesTable = memo(
         count={count ?? 0}
         primaryAction={
           <HStack>
-            {permissions.can("update", "users") && (
-              <New
-                label={t`Federation Rule`}
-                to={`${path.to.newFederationRule}?${params.toString()}`}
-              />
-            )}
+            <ArchivedToggle />
             <Button leftIcon={<LuBookOpen />} variant="secondary" asChild>
               <a
                 href={path.to.identityFederationDocs}
@@ -246,10 +214,17 @@ const FederationRulesTable = memo(
                 <Trans>Docs</Trans>
               </a>
             </Button>
+            {canEdit && !showArchived && (
+              <Button leftIcon={<LuPlug />} asChild>
+                <Link to={`${path.to.connectWorkload}?${params.toString()}`}>
+                  <Trans>Connect workload</Trans>
+                </Link>
+              </Button>
+            )}
           </HStack>
         }
         renderContextMenu={renderContextMenu}
-        title={t`Identity Federation`}
+        title={showArchived ? t`Archived Rules` : t`Federation Rules`}
       />
     );
   }

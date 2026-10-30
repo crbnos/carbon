@@ -1391,6 +1391,9 @@ msgstr "A part contains the information about a specific item that can be purcha
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "A part in this step may tip once placed — consider a fixture or a second person."
 
+msgid "A PEM CA to trust when fetching the discovery document and keys, for an issuer with a private CA."
+msgstr "A PEM CA to trust when fetching the discovery document and keys, for an issuer with a private CA."
+
 msgid "A photo or PDF the operator sees on this step"
 msgstr "A photo or PDF the operator sees on this step"
 
@@ -1781,8 +1784,8 @@ msgstr "A value is not valid."
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 
-msgid "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
-msgstr "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
+msgid "A workload that presents a matching token from the issuer gets a short-lived API key with these scopes."
+msgstr "A workload that presents a matching token from the issuer gets a short-lived API key with these scopes."
 
 msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
 msgstr "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
@@ -2950,6 +2953,9 @@ msgstr "An item's tracking type changes"
 msgid "An item's unit of measure changes"
 msgstr "An item's unit of measure changes"
 
+msgid "An OIDC identity provider whose tokens Carbon accepts. Rules name the workloads of an issuer."
+msgstr "An OIDC identity provider whose tokens Carbon accepts. Rules name the workloads of an issuer."
+
 msgid "An open-ended agreement is always a rental. Set an end date to use these."
 msgstr "An open-ended agreement is always a rental. Set an end date to use these."
 
@@ -3107,6 +3113,9 @@ msgstr "API key"
 
 msgid "API Key"
 msgstr "API Key"
+
+msgid "API key lifetime (minutes)"
+msgstr "API key lifetime (minutes)"
 
 msgid "API Keys"
 msgstr "API Keys"
@@ -3293,8 +3302,19 @@ msgstr "AR/AP"
 msgid "Archive"
 msgstr "Archive"
 
+#. placeholder {0}: issuer.name
+#. placeholder {0}: rule.name
+msgid "Archive {0}"
+msgstr "Archive {0}"
+
 msgid "Archive all"
 msgstr "Archive all"
+
+msgid "Archive Federation Rule"
+msgstr "Archive Federation Rule"
+
+msgid "Archive Issuer"
+msgstr "Archive Issuer"
 
 msgid "Archive Training"
 msgstr "Archive Training"
@@ -3302,8 +3322,14 @@ msgstr "Archive Training"
 msgid "Archived"
 msgstr "Archived"
 
+msgid "Archived Issuers"
+msgstr "Archived Issuers"
+
 msgid "Archived Logs"
 msgstr "Archived Logs"
+
+msgid "Archived Rules"
+msgstr "Archived Rules"
 
 #. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
@@ -3497,10 +3523,6 @@ msgstr "Are you sure you want to delete the employee type: {0}? This cannot be u
 
 msgid "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
 msgstr "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
-
-#. placeholder {0}: rule.name
-msgid "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
-msgstr "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
 
 #. placeholder {0}: gaugeType.name
 msgid "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
@@ -4104,6 +4126,12 @@ msgstr "Audit Logs"
 
 msgid "Authentication Error"
 msgstr "Authentication Error"
+
+msgid "Authentication events"
+msgstr "Authentication events"
+
+msgid "Authentication Events"
+msgstr "Authentication Events"
 
 msgid "Authenticator app"
 msgstr "Authenticator app"
@@ -4741,6 +4769,9 @@ msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy P
 
 msgid "By you · edited <0/>"
 msgstr "By you · edited <0/>"
+
+msgid "CA certificate"
+msgstr "CA certificate"
 
 msgid "CAD Model"
 msgstr "CAD Model"
@@ -5443,6 +5474,9 @@ msgstr "Click to rename"
 msgid "Click to upload a PDF drawing"
 msgstr "Click to upload a PDF drawing"
 
+msgid "Client IP"
+msgstr "Client IP"
+
 msgid "Clock In"
 msgstr "Clock In"
 
@@ -5952,8 +5986,14 @@ msgstr "Connect the Otherwise handle to a node to run when no condition matches.
 msgid "Connect the outside tools your company already runs on"
 msgstr "Connect the outside tools your company already runs on"
 
+msgid "Connect workload"
+msgstr "Connect workload"
+
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
+
+msgid "Connected"
+msgstr "Connected"
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 msgstr "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
@@ -6790,6 +6830,9 @@ msgstr "Create Replacement"
 
 msgid "Create Revision"
 msgstr "Create Revision"
+
+msgid "Create rule"
+msgstr "Create rule"
 
 msgid "Create Rule"
 msgstr "Create Rule"
@@ -7860,9 +7903,6 @@ msgstr "Delete Employee Type"
 msgid "Delete Failure Mode"
 msgstr "Delete Failure Mode"
 
-msgid "Delete Federation Rule"
-msgstr "Delete Federation Rule"
-
 msgid "Delete file"
 msgstr "Delete file"
 
@@ -8453,6 +8493,9 @@ msgstr "Discounts given to customers for early payment"
 msgid "Discovery"
 msgstr "Discovery"
 
+msgid "Discovery base URL"
+msgstr "Discovery base URL"
+
 msgid "Dismiss"
 msgstr "Dismiss"
 
@@ -8962,6 +9005,9 @@ msgstr "Each rental agreement's or contract's salesperson (or its creator) gets 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 
+msgid "Each token's jti can be exchanged once. Turn off only for an issuer that does not set jti, such as Google Cloud and Microsoft Entra ID."
+msgstr "Each token's jti can be exchanged once. Turn off only for an issuer that does not set jti, such as Google Cloud and Microsoft Entra ID."
+
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 
@@ -9136,6 +9182,9 @@ msgstr "Edit Holiday"
 
 msgid "Edit Inspection Plan"
 msgstr "Edit Inspection Plan"
+
+msgid "Edit Issuer"
+msgstr "Edit Issuer"
 
 msgid "Edit Item Group"
 msgstr "Edit Item Group"
@@ -9614,6 +9663,9 @@ msgstr "Enforce customer and item checks when items are added to quotes, sales o
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 
+msgid "Enforce single-use tokens (jti replay protection)"
+msgstr "Enforce single-use tokens (jti replay protection)"
+
 msgid "Engagement tier"
 msgstr "Engagement tier"
 
@@ -9901,6 +9953,9 @@ msgstr "Every account default is set"
 msgid "Every account is mapped"
 msgstr "Every account is mapped"
 
+msgid "Every API key this rule issued stops working at once, and the rule takes no more exchanges. Its authentication events stay."
+msgstr "Every API key this rule issued stops working at once, and the rule takes no more exchanges. Its authentication events stay."
+
 msgid "Every asset needs a payment row before activating."
 msgstr "Every asset needs a payment row before activating."
 
@@ -9982,8 +10037,8 @@ msgstr "Everything else covers people, imports, integrations and the API — any
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "Everything this run makes lands in one lot. The shop floor can't change it."
 
-msgid "Exact match, or a prefix when it ends in *"
-msgstr "Exact match, or a prefix when it ends in *"
+msgid "Exact match, or a prefix when it ends in :* or /*"
+msgstr "Exact match, or a prefix when it ends in :* or /*"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
@@ -10701,8 +10756,11 @@ msgstr "Fax"
 msgid "Fax Number"
 msgstr "Fax Number"
 
-msgid "Federation Rule"
-msgstr "Federation Rule"
+msgid "Federation rule"
+msgstr "Federation rule"
+
+msgid "Federation Rules"
+msgstr "Federation Rules"
 
 msgid "Fees"
 msgstr "Fees"
@@ -11708,6 +11766,9 @@ msgstr "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set
 
 msgid "How are these hours calculated?"
 msgstr "How are these hours calculated?"
+
+msgid "How Carbon gets the issuer's signing keys"
+msgstr "How Carbon gets the issuer's signing keys"
 
 msgid "How Carbon looks in this browser."
 msgstr "How Carbon looks in this browser."
@@ -12728,6 +12789,12 @@ msgstr "Issuer"
 msgid "Issuer URL"
 msgstr "Issuer URL"
 
+msgid "Issuer URL (iss claim)"
+msgstr "Issuer URL (iss claim)"
+
+msgid "Issuers"
+msgstr "Issuers"
+
 msgid "Issues"
 msgstr "Issues"
 
@@ -12857,6 +12924,9 @@ msgstr "Its design may change before the change notice is released."
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "Its revenue goes back to what each line has left to recognize."
 
+msgid "Its rules are archived too, and every API key they issued stops working at once."
+msgstr "Its rules are archived too, and every API key they issued stops working at once."
+
 msgid "Job"
 msgstr "Job"
 
@@ -12972,6 +13042,15 @@ msgstr "Journals dated on or before this date are treated as locked. Merged with
 msgid "Just one"
 msgstr "Just one"
 
+msgid "JWKS source"
+msgstr "JWKS source"
+
+msgid "JWKS Source"
+msgstr "JWKS Source"
+
+msgid "JWKS URL"
+msgstr "JWKS URL"
+
 msgid "Kanban"
 msgstr "Kanban"
 
@@ -13029,6 +13108,9 @@ msgstr "Keep Open"
 msgid "Keep picking"
 msgstr "Keep picking"
 
+msgid "Keep waiting"
+msgstr "Keep waiting"
+
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Keeps orders, quotes, and settings behind a second check"
 
@@ -13040,6 +13122,9 @@ msgstr "Kept {kept} of {total}."
 
 msgid "Key"
 msgstr "Key"
+
+msgid "Key set (JWKS)"
+msgstr "Key set (JWKS)"
 
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
@@ -13141,12 +13226,6 @@ msgstr "Last Calibration Date"
 msgid "Last day"
 msgstr "Last day"
 
-msgid "Last Exchange"
-msgstr "Last Exchange"
-
-msgid "Last exchange:"
-msgstr "Last exchange:"
-
 msgid "Last Fiscal Year"
 msgstr "Last Fiscal Year"
 
@@ -13174,12 +13253,6 @@ msgstr "Last pushed {lastPushed}."
 
 msgid "Last Quarter"
 msgstr "Last Quarter"
-
-msgid "Last Refusal"
-msgstr "Last Refusal"
-
-msgid "Last refused exchange:"
-msgstr "Last refused exchange:"
 
 msgid "Last Run"
 msgstr "Last Run"
@@ -13367,6 +13440,9 @@ msgstr "Lessor"
 
 msgid "Lessor Discount Rate (%)"
 msgstr "Lessor Discount Rate (%)"
+
+msgid "Let a CI job or cloud workload exchange its own token for a short-lived Carbon API key, with no key to store."
+msgstr "Let a CI job or cloud workload exchange its own token for a short-lived Carbon API key, with no key to store."
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "Let members sign in through your identity provider with SAML."
@@ -13774,6 +13850,12 @@ msgstr "Low"
 
 msgid "Lowercase item IDs are allowed"
 msgstr "Lowercase item IDs are allowed"
+
+msgid "Lowercase letters, numbers and hyphens"
+msgstr "Lowercase letters, numbers and hyphens"
+
+msgid "Lowercase letters, numbers and hyphens. Shown in rules and the audit log."
+msgstr "Lowercase letters, numbers and hyphens. Shown in rules and the audit log."
 
 msgid "Machine"
 msgstr "Machine"
@@ -14305,6 +14387,9 @@ msgstr "Maximum Order Quantity"
 msgid "Maximum Order:"
 msgstr "Maximum Order:"
 
+msgid "Maximum token lifetime (hours)"
+msgstr "Maximum token lifetime (hours)"
+
 msgid "MCP Command"
 msgstr "MCP Command"
 
@@ -14747,8 +14832,8 @@ msgstr "Must be between {minValue} and {maxValue} {unitLabel}"
 msgid "Must be in the same location"
 msgstr "Must be in the same location"
 
-msgid "Must equal the iss claim of the token exactly"
-msgstr "Must equal the iss claim of the token exactly"
+msgid "Must equal the iss claim of the tokens exactly"
+msgstr "Must equal the iss claim of the tokens exactly"
 
 msgid "My Documents"
 msgstr "My Documents"
@@ -14863,6 +14948,9 @@ msgstr "Network error"
 
 msgid "Never"
 msgstr "Never"
+
+msgid "Never longer than the workload's own token has left"
+msgstr "Never longer than the workload's own token has left"
 
 msgid "New"
 msgstr "New"
@@ -15559,6 +15647,12 @@ msgstr "No end"
 
 msgid "No events found."
 msgstr "No events found."
+
+msgid "No exchange yet."
+msgstr "No exchange yet."
+
+msgid "No exchanges yet."
+msgstr "No exchanges yet."
 
 msgid "No external notes"
 msgstr "No external notes"
@@ -16587,6 +16681,9 @@ msgstr "Only qualified employees can be scheduled for and run this process"
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 
+msgid "Only when the discovery document is not under the issuer URL"
+msgstr "Only when the discovery document is not under the issuer URL"
+
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 msgstr "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 
@@ -17087,6 +17184,9 @@ msgstr "Out of service since <0/>"
 
 msgid "Outbound"
 msgstr "Outbound"
+
+msgid "Outcome"
+msgstr "Outcome"
 
 msgid "Outgoing"
 msgstr "Outgoing"
@@ -18488,6 +18588,9 @@ msgstr "Provisional journal"
 msgid "Public"
 msgstr "Public"
 
+msgid "Public keys only. Carbon never fetches them, so update the set when the issuer rotates its keys."
+msgstr "Public keys only. Carbon never fetches them, so update the set when the issuer rotates its keys."
+
 msgid "Publish"
 msgstr "Publish"
 
@@ -19292,6 +19395,9 @@ msgstr "Receiving Location"
 msgid "Recent"
 msgstr "Recent"
 
+msgid "Recent exchanges"
+msgstr "Recent exchanges"
+
 msgid "Recent payments"
 msgstr "Recent payments"
 
@@ -19471,6 +19577,9 @@ msgstr "Refund memos"
 msgid "Refund to Customer"
 msgstr "Refund to Customer"
 
+msgid "Refused"
+msgstr "Refused"
+
 msgid "Regenerate"
 msgstr "Regenerate"
 
@@ -19495,8 +19604,17 @@ msgstr "Regenerating thumbnail…"
 msgid "Register"
 msgstr "Register"
 
+msgid "Register a new issuer"
+msgstr "Register a new issuer"
+
 msgid "Register Existing Asset"
 msgstr "Register Existing Asset"
+
+msgid "Register issuer"
+msgstr "Register issuer"
+
+msgid "Register Issuer"
+msgstr "Register Issuer"
 
 msgid "Registered"
 msgstr "Registered"
@@ -20722,6 +20840,9 @@ msgstr "Run the acceptance checklist to a pass"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Run the floor on tablets: clock labor, report progress, see instructions"
 
+msgid "Run this in the workload. Carbon shows each exchange attempt here, with the reason when it is refused."
+msgstr "Run this in the workload. Carbon shows each exchange attempt here, with the reason when it is refused."
+
 msgid "Run this workflow now?"
 msgstr "Run this workflow now?"
 
@@ -20939,6 +21060,9 @@ msgstr "Salesperson"
 
 msgid "Same as Book"
 msgstr "Same as Book"
+
+msgid "Same as the issuer URL"
+msgstr "Same as the issuer URL"
 
 msgid "Sample"
 msgstr "Sample"
@@ -22206,11 +22330,17 @@ msgstr "Show a readable Supplier ID column on the supplier list, supplier forms,
 msgid "Show a warning on the shop floor, but let them work."
 msgstr "Show a warning on the shop floor, but let them work."
 
+msgid "Show active"
+msgstr "Show active"
+
 msgid "Show All"
 msgstr "Show All"
 
 msgid "Show all hidden on this step"
 msgstr "Show all hidden on this step"
+
+msgid "Show archived"
+msgstr "Show archived"
 
 msgid "Show available batch numbers"
 msgstr "Show available batch numbers"
@@ -24304,6 +24434,9 @@ msgstr "The invoice for this payment is drafted on this date"
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 
+msgid "The issuer and its key source decide which tokens Carbon accepts. Changing either stops the keys its rules already issued. Changes are recorded in the audit log."
+msgstr "The issuer and its key source decide which tokens Carbon accepts. Changing either stops the keys its rules already issued. Changes are recorded in the audit log."
+
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "The item each job produces — require it to match to merge output lots"
 
@@ -24330,6 +24463,9 @@ msgstr "The job's position in its location's schedule queue — a fractional num
 
 msgid "The job's work-in-progress balance moves to this asset now, and completing the job sweeps the rest. Only open jobs that are not linked to a sales order or another asset are listed."
 msgstr "The job's work-in-progress balance moves to this asset now, and completing the job sweeps the rest. Only open jobs that are not linked to a sales order or another asset are listed."
+
+msgid "The keys this rule issues act as you, limited to these scopes."
+msgstr "The keys this rule issues act as you, limited to these scopes."
 
 msgid "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
 msgstr "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
@@ -25008,6 +25144,9 @@ msgstr "The work center's own bin where picked material is staged for production
 msgid "The working hours and calendars that drive scheduling"
 msgstr "The working hours and calendars that drive scheduling"
 
+msgid "The workload exchanged its token for an API key."
+msgstr "The workload exchanged its token for an API key."
+
 msgid "The workload requests its token for this audience"
 msgstr "The workload requests its token for this audience"
 
@@ -25261,6 +25400,9 @@ msgstr "This is the month your fiscal year starts."
 msgid "This is the month your tax year starts."
 msgstr "This is the month your tax year starts."
 
+msgid "This issuer is archived. It and its rules accept no more tokens, and it can no longer change."
+msgstr "This issuer is archived. It and its rules accept no more tokens, and it can no longer change."
+
 msgid "this item"
 msgstr "this item"
 
@@ -25387,6 +25529,9 @@ msgstr "This revision is released (Production). Changes should normally flow thr
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "This revision is released (Production). Open a change notice to modify it."
+
+msgid "This rule is archived. It accepts no more tokens, and it can no longer change."
+msgstr "This rule is archived. It accepts no more tokens, and it can no longer change."
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
@@ -25737,11 +25882,14 @@ msgstr "Toggle Properties"
 msgid "Toggle views"
 msgstr "Toggle views"
 
-msgid "Token lifetime (minutes)"
-msgstr "Token lifetime (minutes)"
+msgid "Token validation"
+msgstr "Token validation"
 
 msgid "Tokens expire in minutes"
 msgstr "Tokens expire in minutes"
+
+msgid "Tokens whose exp − iat is longer are refused. Microsoft Entra ID needs 24."
+msgstr "Tokens whose exp − iat is longer are refused. Microsoft Entra ID needs 24."
 
 msgid "Tol-"
 msgstr "Tol-"
@@ -26724,6 +26872,9 @@ msgstr "Use a different email"
 msgid "Use a finished sub-assembly in this step"
 msgstr "Use a finished sub-assembly in this step"
 
+msgid "Use an issuer you registered"
+msgstr "Use an issuer you registered"
+
 msgid "Use Current View"
 msgstr "Use Current View"
 
@@ -27016,6 +27167,9 @@ msgstr "View Customers"
 msgid "View Employees"
 msgstr "View Employees"
 
+msgid "View Federation Rule"
+msgstr "View Federation Rule"
+
 msgid "View full size"
 msgstr "View full size"
 
@@ -27033,6 +27187,9 @@ msgstr "View in project plan"
 
 msgid "View Issue"
 msgstr "View Issue"
+
+msgid "View Issuer"
+msgstr "View Issuer"
 
 msgid "View Item"
 msgstr "View Item"
@@ -27230,6 +27387,9 @@ msgstr "Waited"
 
 msgid "Waiting"
 msgstr "Waiting"
+
+msgid "Waiting for the first exchange…"
+msgstr "Waiting for the first exchange…"
 
 msgid "Waiting for the first sync"
 msgstr "Waiting for the first sync"

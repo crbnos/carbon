@@ -433,3 +433,44 @@ it (`api-keys.tsx` + `RecordOutlet`).
   mints (`rule_changed`). The per-IP limit runs before any read. HCP
   Terraform and Buildkite join the shared issuers. A refused edit keeps the
   modal open.
+- 2026-10-31: Parity build (see the addendum). Issuers are their own
+  records with a key source, CA certificate, single-use toggle and token-age
+  limit. Rules and issuers are archived, not deleted. Every exchange attempt
+  is an authentication event, kept 30 days. Settings has Rules, Issuers and
+  Authentication events tabs, and Connect workload is a four-step wizard.
+  The Last Exchange and Last Refusal columns are gone: the events replace
+  them.
+
+## Addendum (2026-10-31): parity with the Claude Console screens
+
+The user compared the build with the Claude Console screens and scoped the
+rest into v1. Service accounts and CEL conditions stay out: a rule's keys
+still act as its creator, and conditions stay exact. Source: the user's 10
+screenshots of `platform.claude.com/settings/workload-identity-federation`.
+
+### Changes
+
+| Area | Before | After |
+|---|---|---|
+| Issuer | A field on each rule | A `federationIssuer` record. Many rules reference one issuer. |
+| Key source | OIDC discovery only | `jwksSource`: `OIDC Discovery` (optional `discoveryUrl`), `JWKS URL` (`jwksUrl`), `Inline JWKS` (`jwks`). Optional `caCertificate` (PEM) for the TLS of the discovery and key fetches. |
+| Replay | Single use when the token has a `jti` | Per issuer: `requireUniqueJti` (default on). On: a token with no `jti` is refused (`missing_jti`). Off: no replay check. |
+| Token age | Fixed 24 h | Per issuer: `maxTokenLifetimeHours`, 1 to 24, default 1. |
+| Key lifetime | The rule's lifetime | The rule's lifetime, capped at 2 × the token's remaining life, never under 60 s (Anthropic's formula). |
+| Names | Free text | Lowercase letters, digits and hyphens, for issuers and rules. Rules get an optional `description`. |
+| Delete | Hard delete | Archive. Archiving an issuer archives its rules. An archive revokes the minted keys. The list has Active and Archived. |
+| History | `lastExchangeAt` and `lastFailure*` on the rule | `federationExchange`: one row per attempt (outcome, reason, subject, client IP, the minted key id). Kept 30 days. |
+| Presets | 5 providers | Adds Kubernetes. |
+| Audit | None | `federationIssuer` and `federationRule` go to the audit log. |
+| UI | One modal per rule | Settings → Identity Federation has 3 tabs: Rules, Issuers, Authentication events. **Connect workload** opens a 4-step wizard: Issuer, Federation rule, Permissions, Test. The Test step waits for the rule's first exchange. |
+
+### Decisions
+
+| Decision | Choice | Rationale |
+|---|---|---|
+| Shared-issuer checks | The operations check them on every rule write and on every issuer write (each active rule of the issuer). The CHECK constraint goes, because the issuer URL is now in another table. | API roles cannot write either table, so the operations are the only write path. |
+| Network check of the issuer URL | Only for `OIDC Discovery`. The `JWKS URL` mode checks `jwksUrl`. The `Inline JWKS` mode makes no fetch. | Anthropic compares the issuer as a string in the explicit and inline modes, so the issuer may be internal. |
+| Issuer edit | A change to `issuer`, `jwksSource`, `discoveryUrl`, `jwksUrl`, `jwks` or `caCertificate` revokes the keys of every rule of the issuer, in the same transaction. | The keys rest on the old key source. |
+| Wizard writes | Step 1 saves a new issuer through the issuer action. Step 3 saves the rule through the rule action. | One write path per record. An abandoned wizard leaves an issuer with no rules, which the Issuers tab shows. |
+| Event writes | Service role, scoped to the rule's company. A token that fails before its signature check records no subject. | An unverified subject is attacker text. |
+| Event retention | 30 days, pg_cron daily. | Matches the audit log's 30-day retention. |

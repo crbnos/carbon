@@ -6,11 +6,20 @@ import { describe, expect, it } from "vitest";
 import { GITHUB_ACTIONS_ISSUER, GOOGLE_ISSUER } from "./constants";
 import {
   firstClaimMismatch,
+  inlineJwksError,
+  issuerConfigErrors,
   issuerUrlError,
   matchSubject,
+  mintedKeyLifetimeSeconds,
+  nameError,
   ruleRequirementErrors
 } from "./match";
-import { federationRuleFields, federationRuleValidator } from "./models";
+import {
+  federationIssuerFields,
+  federationIssuerValidator,
+  federationRuleFields,
+  federationRuleValidator
+} from "./models";
 
 describe("matchSubject", () => {
   it("matches exactly", () => {
@@ -193,9 +202,9 @@ describe("ruleRequirementErrors", () => {
 
 describe("federationRuleValidator", () => {
   const form = {
-    name: "PLM sync",
-    provider: "GitHub Actions",
-    issuer: GITHUB_ACTIONS_ISSUER,
+    name: "plm-sync",
+    issuerId: "fedi_1",
+    issuerUrl: GITHUB_ACTIONS_ISSUER,
     audience: "https://app.carbon.ms",
     subject: "repo:acme/plm:ref:refs/heads/main",
     claimConditions: JSON.stringify([
@@ -252,5 +261,141 @@ describe("federationRuleValidator", () => {
       federationRuleValidator.safeParse({ ...form, tokenLifetimeMinutes: "90" })
         .success
     ).toBe(false);
+  });
+});
+
+describe("nameError", () => {
+  it.each(["github-actions", "plm-sync-2", "a"])("accepts %s", (name) => {
+    expect(nameError(name)).toBeNull();
+  });
+
+  it.each(["PLM sync", "plm--sync", "-plm", "plm_sync", "x".repeat(65)])(
+    "refuses %s",
+    (name) => {
+      expect(nameError(name)).not.toBeNull();
+    }
+  );
+});
+
+describe("inlineJwksError", () => {
+  const publicKey = { kty: "RSA", kid: "k1", n: "abc", e: "AQAB" };
+
+  it("accepts a set of public keys", () => {
+    expect(inlineJwksError({ keys: [publicKey] })).toBeNull();
+  });
+
+  it("refuses a set that holds a private key", () => {
+    expect(
+      inlineJwksError({ keys: [{ ...publicKey, d: "secret" }] })
+    ).not.toBeNull();
+  });
+
+  it.each([
+    [null],
+    [{}],
+    [{ keys: [] }],
+    [{ keys: [{ kty: "RSA" }] }],
+    [
+      {
+        keys: Array.from({ length: 11 }, (_, i) => ({
+          ...publicKey,
+          kid: `k${i}`
+        }))
+      }
+    ]
+  ])("refuses %j", (jwks) => {
+    expect(inlineJwksError(jwks)).not.toBeNull();
+  });
+});
+
+describe("issuerConfigErrors", () => {
+  const base = {
+    name: "github-actions",
+    issuer: GITHUB_ACTIONS_ISSUER,
+    jwksSource: "OIDC Discovery" as const,
+    discoveryUrl: null,
+    jwksUrl: null,
+    jwks: null,
+    caCertificate: null,
+    maxTokenLifetimeHours: 1
+  };
+
+  it("accepts a discovery issuer", () => {
+    expect(issuerConfigErrors(base)).toEqual({});
+  });
+
+  it("needs a JWKS URL in the JWKS URL mode", () => {
+    expect(
+      Object.keys(issuerConfigErrors({ ...base, jwksSource: "JWKS URL" }))
+    ).toEqual(["jwksUrl"]);
+  });
+
+  it("needs a key set in the inline mode", () => {
+    expect(
+      Object.keys(issuerConfigErrors({ ...base, jwksSource: "Inline JWKS" }))
+    ).toEqual(["jwks"]);
+  });
+
+  it("refuses text that is not a PEM certificate", () => {
+    expect(
+      Object.keys(issuerConfigErrors({ ...base, caCertificate: "not a cert" }))
+    ).toEqual(["caCertificate"]);
+  });
+
+  it.each([0, 25, 1.5])("refuses a token age of %s hours", (hours) => {
+    expect(
+      Object.keys(issuerConfigErrors({ ...base, maxTokenLifetimeHours: hours }))
+    ).toEqual(["maxTokenLifetimeHours"]);
+  });
+});
+
+describe("mintedKeyLifetimeSeconds", () => {
+  // Rule lifetime 15 min = 900 s; the key never outlives twice the token's rest.
+  it("uses the rule's lifetime when the token has long to live", () => {
+    expect(mintedKeyLifetimeSeconds(15, 1_000 + 3_600, 1_000)).toBe(900);
+  });
+
+  it("caps at twice the token's remaining life", () => {
+    expect(mintedKeyLifetimeSeconds(15, 1_000 + 300, 1_000)).toBe(600);
+  });
+
+  it("never goes under a minute", () => {
+    expect(mintedKeyLifetimeSeconds(15, 1_000 + 10, 1_000)).toBe(60);
+  });
+});
+
+describe("federationIssuerValidator", () => {
+  const form = {
+    name: "custom-oidc",
+    provider: "Custom OIDC",
+    issuer: "https://issuer.example.com",
+    jwksSource: "Inline JWKS",
+    jwks: JSON.stringify({
+      keys: [{ kty: "EC", kid: "k1", x: "a", y: "b", crv: "P-256" }]
+    }),
+    discoveryUrl: "https://ignored.example.com",
+    caCertificate: "ignored",
+    requireUniqueJti: "on",
+    maxTokenLifetimeHours: "1"
+  };
+
+  it("keeps only the fields of the chosen key source", () => {
+    const parsed = federationIssuerValidator.parse(form);
+    expect(federationIssuerFields(parsed)).toMatchObject({
+      jwksSource: "Inline JWKS",
+      discoveryUrl: null,
+      jwksUrl: null,
+      caCertificate: null,
+      jwks: { keys: [{ kty: "EC", kid: "k1", x: "a", y: "b", crv: "P-256" }] },
+      requireUniqueJti: true
+    });
+  });
+
+  it("reports a pasted private key on the key set field", () => {
+    const result = federationIssuerValidator.safeParse({
+      ...form,
+      jwks: JSON.stringify({ keys: [{ kty: "EC", kid: "k1", d: "secret" }] })
+    });
+    expect(result.error?.issues.map((issue) => issue.path)).toEqual([["jwks"]]);
   });
 });

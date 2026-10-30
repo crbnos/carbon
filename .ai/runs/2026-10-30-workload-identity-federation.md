@@ -25,3 +25,9 @@
 
 ## Outcome
 - Built and committed locally on `naveenkash/identity-federation-like-claude` (Conductor renamed the branch from `naveenkash/rinw9` during the run). Not pushed, no PR, as the user asked.
+
+## 2026-10-31: Claude Console parity
+- Scope (user): everything on the Console screens except service accounts and CEL conditions.
+- Built: `federationIssuer` (key source, CA certificate, single-use toggle, token-age limit), `federationExchange` (authentication events, 30 days), archive in place of delete, Rules / Issuers / Authentication events tabs, the Connect workload wizard with a Test step, the Kubernetes preset, rule descriptions and slug names, and a key lifetime capped at twice what the token has left.
+- Checks: ee tests (74) and typecheck, erp / database / jobs / lib typecheck, `@carbon/checks` (406), authz tests and `authz check` (no drift), `@carbon/content` links, Biome, `db:check:backups`, `db:check:datasets` (5 of 5).
+- End-to-end proof (scratch script, not committed): an Inline JWKS issuer and a rule inserted for the dev company; a signed token exchanged at `/token` returned a key with `expires_in` 599 (token had 300 s left), and the key called `POST /api/v1/sales/getCustomers` (200). A replayed token, another subject, a token with no `jti` and a token after the rule was archived each answered 400; the events read `jti_reused`, `subject_mismatch`, `missing_jti` and `rule_archived`. Scratch rows deleted.

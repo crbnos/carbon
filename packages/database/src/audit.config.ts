@@ -707,6 +707,27 @@ export const auditConfig = {
         revenueRecognitionRun: { role: "root" },
         revenueRecognitionRunLine: { entityIdColumn: "runId" }
       }
+    },
+
+    // Identity federation: who trusts which workload, and with what access.
+    federationIssuer: {
+      label: "Federation Issuer",
+      tables: {
+        federationIssuer: {
+          role: "root",
+          createFields: ["name", "provider", "issuer", "jwksSource"]
+        }
+      }
+    },
+
+    federationRule: {
+      label: "Federation Rule",
+      tables: {
+        federationRule: {
+          role: "root",
+          createFields: ["name", "issuerId", "audience", "subject", "scopes"]
+        }
+      }
     }
   } satisfies Record<string, EntityConfig>,
 
@@ -851,6 +872,7 @@ export const fkDisplayRegistry: {
   customerType: ["name"],
   department: ["name"],
   employeeType: ["name"],
+  federationIssuer: ["name"],
   fixedAsset: ["name"],
   fixedAssetClass: ["name"],
   gauge: ["gaugeId"],

@@ -617,6 +617,20 @@ export const manifest = {
   // Read like apiKey. No API writes: a rule mints keys that act as its
   // createdBy, so only the federation operations (users_update, the issuer
   // checks, createdBy = the caller) write it, as the system.
+  // An attempt log; the federation exchange writes it as the system.
+  federationExchange: company("settings", {
+    read: "settings_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
+  // As federationRule: only the federation operations write it.
+  federationIssuer: company("settings", {
+    read: "settings_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   federationRule: company("settings", {
     read: "settings_view",
     create: false,

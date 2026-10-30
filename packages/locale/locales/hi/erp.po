@@ -1391,6 +1391,9 @@ msgstr "एक पार्ट में एक विशिष्ट आइट�
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "इस चरण में एक पार्ट रखे जाने के बाद गिर सकता है — एक फिक्स्चर या किसी अन्य की सहायता पर विचार करें।"
 
+msgid "A PEM CA to trust when fetching the discovery document and keys, for an issuer with a private CA."
+msgstr ""
+
 msgid "A photo or PDF the operator sees on this step"
 msgstr "एक फ़ोटो या PDF जो ऑपरेटर इस चरण में देखता है"
 
@@ -1781,7 +1784,7 @@ msgstr ""
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "एक परिवर्तनीय शुल्क — माइलेज अधिकता, क्षति, डिलीवरी, सफाई — समझौते के अगले चालान पर बिल किया जाता है।"
 
-msgid "A workload that presents a matching token from its identity provider gets a short-lived API key with these scopes."
+msgid "A workload that presents a matching token from the issuer gets a short-lived API key with these scopes."
 msgstr ""
 
 msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
@@ -2950,6 +2953,9 @@ msgstr "किसी आइटम का ट्रैकिंग प्रक�
 msgid "An item's unit of measure changes"
 msgstr "किसी आइटम की माप की इकाई बदलती है"
 
+msgid "An OIDC identity provider whose tokens Carbon accepts. Rules name the workloads of an issuer."
+msgstr ""
+
 msgid "An open-ended agreement is always a rental. Set an end date to use these."
 msgstr "एक खुली अवधि का समझौता हमेशा किराया होता है। इन्हें उपयोग करने के लिए एक समाप्ति तारीख सेट करें।"
 
@@ -3107,6 +3113,9 @@ msgstr "API कुंजी"
 
 msgid "API Key"
 msgstr "API कुंजी"
+
+msgid "API key lifetime (minutes)"
+msgstr ""
 
 msgid "API Keys"
 msgstr "API कुंजियाँ"
@@ -3293,8 +3302,19 @@ msgstr "प्राप्य खाते / देय खाते"
 msgid "Archive"
 msgstr "संग्रह"
 
+#. placeholder {0}: issuer.name
+#. placeholder {0}: rule.name
+msgid "Archive {0}"
+msgstr ""
+
 msgid "Archive all"
 msgstr "सभी को संग्रहित करें"
+
+msgid "Archive Federation Rule"
+msgstr ""
+
+msgid "Archive Issuer"
+msgstr ""
 
 msgid "Archive Training"
 msgstr "प्रशिक्षण को आर्काइव करें"
@@ -3302,8 +3322,14 @@ msgstr "प्रशिक्षण को आर्काइव करें"
 msgid "Archived"
 msgstr "संग्रहीत"
 
+msgid "Archived Issuers"
+msgstr ""
+
 msgid "Archived Logs"
 msgstr "संग्रहीत लॉग"
+
+msgid "Archived Rules"
+msgstr ""
 
 #. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
@@ -3497,10 +3523,6 @@ msgstr "क्या आप कर्मचारी प्रकार {0} क�
 
 msgid "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
 msgstr "क्या आप विफलता मोड {name} को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।"
-
-#. placeholder {0}: rule.name
-msgid "Are you sure you want to delete the federation rule: {0}? Every API key it issued stops working at once."
-msgstr ""
 
 #. placeholder {0}: gaugeType.name
 msgid "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
@@ -4104,6 +4126,12 @@ msgstr "ऑडिट लॉग्स"
 
 msgid "Authentication Error"
 msgstr "प्रमाणीकरण त्रुटि"
+
+msgid "Authentication events"
+msgstr ""
+
+msgid "Authentication Events"
+msgstr ""
 
 msgid "Authenticator app"
 msgstr "ऑथेंटिकेटर ऐप"
@@ -4741,6 +4769,9 @@ msgstr "साइन इन करके, आप <0>सेवा की शर�
 
 msgid "By you · edited <0/>"
 msgstr "आपके द्वारा · संपादित <0/>"
+
+msgid "CA certificate"
+msgstr ""
 
 msgid "CAD Model"
 msgstr "CAD मॉडल"
@@ -5443,6 +5474,9 @@ msgstr "नाम बदलने के लिए क्लिक करें"
 msgid "Click to upload a PDF drawing"
 msgstr "PDF ड्राइंग अपलोड करने के लिए क्लिक करें"
 
+msgid "Client IP"
+msgstr ""
+
 msgid "Clock In"
 msgstr "कार्य प्रारंभ"
 
@@ -5952,8 +5986,14 @@ msgstr "कोई शर्त मेल नहीं खाने पर चल
 msgid "Connect the outside tools your company already runs on"
 msgstr "उन बाहरी उपकरणों को कनेक्ट करें जो आपकी कंपनी पहले से चला रही है"
 
+msgid "Connect workload"
+msgstr ""
+
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "अपने आइडेंटिटी प्रदाता को जोड़ें इसके मेटाडेटा URL या इसके कच्चे मेटाडेटा XML को पेस्ट करके — इन दोनों में से केवल एक।"
+
+msgid "Connected"
+msgstr ""
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 msgstr "वर्कफ़्लो से पहले जुड़ने के लिए अतिरिक्त अनुमतियों की आवश्यकता थी। उन्हें प्रदान करने के लिए फिर से जोड़ें — इस बीच सब कुछ काम करता रहेगा।"
@@ -6790,6 +6830,9 @@ msgstr "प्रतिस्थापन बनाएं"
 
 msgid "Create Revision"
 msgstr "रिवीजन बनाएँ"
+
+msgid "Create rule"
+msgstr ""
 
 msgid "Create Rule"
 msgstr "नियम बनाएं"
@@ -7860,9 +7903,6 @@ msgstr "कर्मचारी प्रकार हटाएं"
 msgid "Delete Failure Mode"
 msgstr "विफलता मोड हटाएं"
 
-msgid "Delete Federation Rule"
-msgstr ""
-
 msgid "Delete file"
 msgstr "फ़ाइल हटाएं"
 
@@ -8453,6 +8493,9 @@ msgstr "ग्राहकों को जल्दी भुगतान क�
 msgid "Discovery"
 msgstr "खोज"
 
+msgid "Discovery base URL"
+msgstr ""
+
 msgid "Dismiss"
 msgstr "खारिज करें"
 
@@ -8962,6 +9005,9 @@ msgstr "प्रत्येक किराये की समझौते �
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "प्रत्येक आपूर्तिकर्ता की बाहरी ऑपरेशन हर जॉब से एक नया क्रय आदेश पर जाती है, या आप जो मौजूदा ड्राफ्ट चुनते हैं उस पर।"
 
+msgid "Each token's jti can be exchanged once. Turn off only for an issuer that does not set jti, such as Google Cloud and Microsoft Entra ID."
+msgstr ""
+
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "प्रत्येक इकाई का उचित मूल्य और आर्थिक जीवन तय करता है कि क्या अवधि इसके अधिकांश को कवर करती है। इसे बदलने के लिए एक सेल पर क्लिक करें।"
 
@@ -9136,6 +9182,9 @@ msgstr "छुट्टी संपादित करें"
 
 msgid "Edit Inspection Plan"
 msgstr "निरीक्षण योजना संपादित करें"
+
+msgid "Edit Issuer"
+msgstr ""
 
 msgid "Edit Item Group"
 msgstr "आइटम ग्रुप संपादित करें"
@@ -9614,6 +9663,9 @@ msgstr "जब आइटम उद्धरण, बिक्रय आदेश 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "रसीदों, शिपमेंट, ट्रांसफर और समायोजन में प्रति-आइटम सत्यापन और दिशानिर्देश लागू करें।"
 
+msgid "Enforce single-use tokens (jti replay protection)"
+msgstr ""
+
 msgid "Engagement tier"
 msgstr "एनगेजमेंट टियर"
 
@@ -9901,6 +9953,9 @@ msgstr "हर खाता डिफ़ॉल्ट सेट है"
 msgid "Every account is mapped"
 msgstr "सभी खाते मैप किए गए हैं"
 
+msgid "Every API key this rule issued stops working at once, and the rule takes no more exchanges. Its authentication events stay."
+msgstr ""
+
 msgid "Every asset needs a payment row before activating."
 msgstr "सक्रियण से पहले प्रत्येक संपत्ति को एक भुगतान पंक्ति की आवश्यकता है।"
 
@@ -9982,7 +10037,7 @@ msgstr "बाकी सब कुछ लोग, आयात, एकीकर�
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "इस रन में निर्माण होने वाली सभी चीजें एक लॉट में जाती हैं। शॉप फ्लोर इसे नहीं बदल सकता।"
 
-msgid "Exact match, or a prefix when it ends in *"
+msgid "Exact match, or a prefix when it ends in :* or /*"
 msgstr ""
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
@@ -10701,7 +10756,10 @@ msgstr "फैक्स"
 msgid "Fax Number"
 msgstr "फैक्स नंबर"
 
-msgid "Federation Rule"
+msgid "Federation rule"
+msgstr ""
+
+msgid "Federation Rules"
 msgstr ""
 
 msgid "Fees"
@@ -11708,6 +11766,9 @@ msgstr "किसी वस्तु की इकाई लागत का म
 
 msgid "How are these hours calculated?"
 msgstr "इन घंटों की गणना कैसे की जाती है?"
+
+msgid "How Carbon gets the issuer's signing keys"
+msgstr ""
 
 msgid "How Carbon looks in this browser."
 msgstr "यह Carbon इस ब्राउज़र में कैसा दिखता है।"
@@ -12728,6 +12789,12 @@ msgstr ""
 msgid "Issuer URL"
 msgstr ""
 
+msgid "Issuer URL (iss claim)"
+msgstr ""
+
+msgid "Issuers"
+msgstr ""
+
 msgid "Issues"
 msgstr "समस्याएं"
 
@@ -12857,6 +12924,9 @@ msgstr "इसकी डिजाइन परिवर्तन सूचना
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "इसका राजस्व उस पर वापस जाता है जो प्रत्येक पंक्ति को मान्यता देने के लिए बाकी है।"
 
+msgid "Its rules are archived too, and every API key they issued stops working at once."
+msgstr ""
+
 msgid "Job"
 msgstr "Job"
 
@@ -12972,6 +13042,15 @@ msgstr "इस तारीख को या इससे पहले दिन
 msgid "Just one"
 msgstr "बस एक"
 
+msgid "JWKS source"
+msgstr ""
+
+msgid "JWKS Source"
+msgstr ""
+
+msgid "JWKS URL"
+msgstr ""
+
 msgid "Kanban"
 msgstr "कानबान"
 
@@ -13029,6 +13108,9 @@ msgstr "खुला रखें"
 msgid "Keep picking"
 msgstr "पिकिंग जारी रखें"
 
+msgid "Keep waiting"
+msgstr ""
+
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "ऑर्डर, कोट्स और सेटिंग्स को एक दूसरी जांच के पीछे रखता है"
 
@@ -13040,6 +13122,9 @@ msgstr "{total} में से {kept} रखे गए।"
 
 msgid "Key"
 msgstr "कुंजी"
+
+msgid "Key set (JWKS)"
+msgstr ""
 
 msgid "Keyboard shortcuts"
 msgstr "कीबोर्ड शॉर्टकट"
@@ -13141,12 +13226,6 @@ msgstr "अंतिम अंशांकन तारीख"
 msgid "Last day"
 msgstr "अंतिम दिन"
 
-msgid "Last Exchange"
-msgstr ""
-
-msgid "Last exchange:"
-msgstr ""
-
 msgid "Last Fiscal Year"
 msgstr "पिछला वित्तीय वर्ष"
 
@@ -13174,12 +13253,6 @@ msgstr "अंतिम बार {lastPushed} को पुश किया ग
 
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
-
-msgid "Last Refusal"
-msgstr ""
-
-msgid "Last refused exchange:"
-msgstr ""
 
 msgid "Last Run"
 msgstr "अंतिम रन"
@@ -13367,6 +13440,9 @@ msgstr "पट्टाकार"
 
 msgid "Lessor Discount Rate (%)"
 msgstr "पट्टाकार छूट दर (%)"
+
+msgid "Let a CI job or cloud workload exchange its own token for a short-lived Carbon API key, with no key to store."
+msgstr ""
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "अपने सदस्यों को SAML के साथ अपने पहचान प्रदाता के माध्यम से साइन इन करने दें।"
@@ -13774,6 +13850,12 @@ msgstr "निम्न"
 
 msgid "Lowercase item IDs are allowed"
 msgstr "लोअरकेस आइटम आईडी की अनुमति है"
+
+msgid "Lowercase letters, numbers and hyphens"
+msgstr ""
+
+msgid "Lowercase letters, numbers and hyphens. Shown in rules and the audit log."
+msgstr ""
 
 msgid "Machine"
 msgstr "मशीन"
@@ -14305,6 +14387,9 @@ msgstr "अधिकतम ऑर्डर मात्रा"
 msgid "Maximum Order:"
 msgstr "अधिकतम ऑर्डर:"
 
+msgid "Maximum token lifetime (hours)"
+msgstr ""
+
 msgid "MCP Command"
 msgstr "MCP कमांड"
 
@@ -14747,7 +14832,7 @@ msgstr "{minValue} और {maxValue} {unitLabel} के बीच होना �
 msgid "Must be in the same location"
 msgstr "एक ही स्थान में होना चाहिए"
 
-msgid "Must equal the iss claim of the token exactly"
+msgid "Must equal the iss claim of the tokens exactly"
 msgstr ""
 
 msgid "My Documents"
@@ -14863,6 +14948,9 @@ msgstr "नेटवर्क त्रुटि"
 
 msgid "Never"
 msgstr "कभी नहीं"
+
+msgid "Never longer than the workload's own token has left"
+msgstr ""
 
 msgid "New"
 msgstr "नया"
@@ -15559,6 +15647,12 @@ msgstr "कोई अंत नहीं"
 
 msgid "No events found."
 msgstr "कोई ईवेंट नहीं मिला।"
+
+msgid "No exchange yet."
+msgstr ""
+
+msgid "No exchanges yet."
+msgstr ""
 
 msgid "No external notes"
 msgstr "कोई बाहरी नोट नहीं है"
@@ -16587,6 +16681,9 @@ msgstr "केवल योग्य कर्मचारी ही इस प�
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "केवल सीरियल नंबर वाली इकाइयों को अचल संपत्ति के रूप में पूंजीकृत करके ही किराए पर दिया जा सकता है। एक जोड़ने के लिए, पार्ट के इन्वेंटरी टैब को खोलें, भंडारण इकाई के तहत सीरियल नंबर खोजें, और अचल संपत्ति के रूप में पूंजीकृत करें विकल्प चुनें।"
 
+msgid "Only when the discovery document is not under the issuer URL"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 msgstr "Onshape ने कनेक्शन को अधिकृत किया लेकिन इसे सहेजना विफल रहा। एकीकरण सेटिंग्स को सहेजने का प्रयास करें।"
 
@@ -17087,6 +17184,9 @@ msgstr "<0/> से सेवा से बाहर"
 
 msgid "Outbound"
 msgstr "निर्गामी"
+
+msgid "Outcome"
+msgstr ""
 
 msgid "Outgoing"
 msgstr "बाहर जाने वाला"
@@ -18488,6 +18588,9 @@ msgstr "अनंतिम जर्नल"
 msgid "Public"
 msgstr "सार्वजनिक"
 
+msgid "Public keys only. Carbon never fetches them, so update the set when the issuer rotates its keys."
+msgstr ""
+
 msgid "Publish"
 msgstr "प्रकाशित करें"
 
@@ -19292,6 +19395,9 @@ msgstr "प्राप्ति स्थान"
 msgid "Recent"
 msgstr "हाल ही में"
 
+msgid "Recent exchanges"
+msgstr ""
+
 msgid "Recent payments"
 msgstr "हाल के भुगतान"
 
@@ -19471,6 +19577,9 @@ msgstr "धनवापसी ज्ञापन"
 msgid "Refund to Customer"
 msgstr "ग्राहक को धनवापसी"
 
+msgid "Refused"
+msgstr ""
+
 msgid "Regenerate"
 msgstr "पुनर्जीवित करें"
 
@@ -19495,8 +19604,17 @@ msgstr "थंबनेल को पुनः उत्पन्न किय�
 msgid "Register"
 msgstr "मौजूदा संपत्ति पंजीकृत करें"
 
+msgid "Register a new issuer"
+msgstr ""
+
 msgid "Register Existing Asset"
 msgstr "पंजीकृत"
+
+msgid "Register issuer"
+msgstr ""
+
+msgid "Register Issuer"
+msgstr ""
 
 msgid "Registered"
 msgstr "पंजीकृत"
@@ -20722,6 +20840,9 @@ msgstr "स्वीकृति चेकलिस्ट को पास क�
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "टैबलेट पर फ़्लोर चलाएं: श्रम घड़ी, प्रगति रिपोर्ट करें, निर्देश देखें"
 
+msgid "Run this in the workload. Carbon shows each exchange attempt here, with the reason when it is refused."
+msgstr ""
+
 msgid "Run this workflow now?"
 msgstr "अभी यह वर्कफ़्लो चलाएं?"
 
@@ -20939,6 +21060,9 @@ msgstr "विक्रयकर्ता"
 
 msgid "Same as Book"
 msgstr "किताब के समान"
+
+msgid "Same as the issuer URL"
+msgstr ""
 
 msgid "Sample"
 msgstr "नमूना"
@@ -22206,11 +22330,17 @@ msgstr "आपूर्तिकर्ता सूची, आपूर्ति
 msgid "Show a warning on the shop floor, but let them work."
 msgstr ""
 
+msgid "Show active"
+msgstr ""
+
 msgid "Show All"
 msgstr "सभी दिखाएँ"
 
 msgid "Show all hidden on this step"
 msgstr "इस चरण पर सभी छिपे हुए दिखाएँ"
+
+msgid "Show archived"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "उपलब्ध बैच नंबर दिखाएं"
@@ -24304,6 +24434,9 @@ msgstr "इस भुगतान के लिए चालान इस ता
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS के तहत इस संपत्ति के लिए IRS पुनर्प्राप्ति-अवधि वर्ग (3, 5, 7, 10, 15, 20, 27.5, 39-वर्ष)।"
 
+msgid "The issuer and its key source decide which tokens Carbon accepts. Changing either stops the keys its rules already issued. Changes are recorded in the audit log."
+msgstr ""
+
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "प्रत्येक जॉब द्वारा उत्पादित आइटम — आउटपुट लॉट्स को मर्ज करने के लिए इसे मेल खाना आवश्यक है"
 
@@ -24330,6 +24463,9 @@ msgstr "जॉब की अपने स्थान की शेड्यू�
 
 msgid "The job's work-in-progress balance moves to this asset now, and completing the job sweeps the rest. Only open jobs that are not linked to a sales order or another asset are listed."
 msgstr "जॉब का चल रहा संतुलन अब इस संपत्ति में चली जाती है, और जॉब को पूरा करना बाकी को स्वीप करता है। केवल खुली जॉब जो बिक्रय आदेश या दूसरी संपत्ति से जुड़ी नहीं हैं वे सूचीबद्ध हैं।"
+
+msgid "The keys this rule issues act as you, limited to these scopes."
+msgstr ""
 
 msgid "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
 msgstr "प्रकार का समायोजन जो यह नियम लागू करता है - छूट, अधिभार, या निश्चित ओवरराइड; प्रत्येक पंक्ति पर वास्तविक डेल्टा की गणना करने के लिए राशि प्रकार के साथ संयुक्त।"
@@ -25008,6 +25144,9 @@ msgstr "वर्क सेंटर की अपनी बिन जहां 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "कार्य घंटे और कैलेंडर जो शेड्यूलिंग को संचालित करते हैं"
 
+msgid "The workload exchanged its token for an API key."
+msgstr ""
+
 msgid "The workload requests its token for this audience"
 msgstr ""
 
@@ -25261,6 +25400,9 @@ msgstr "यह वह महीना है जब आपका वित्त
 msgid "This is the month your tax year starts."
 msgstr "यह वह महीना है जब आपका कर वर्ष शुरू होता है।"
 
+msgid "This issuer is archived. It and its rules accept no more tokens, and it can no longer change."
+msgstr ""
+
 msgid "this item"
 msgstr "यह आइटम"
 
@@ -25387,6 +25529,9 @@ msgstr "यह रिवीजन जारी है (उत्पादन)।
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "यह रिवीजन जारी है (उत्पादन)। इसे संशोधित करने के लिए एक परिवर्तन सूचना खोलें।"
+
+msgid "This rule is archived. It accepts no more tokens, and it can no longer change."
+msgstr ""
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "यह रन हमारे यहां दिखाए गए की तुलना में अधिक चरण हैं। केवल पहले {MAX_RUN_STEPS} सूचीबद्ध हैं।"
@@ -25737,10 +25882,13 @@ msgstr "गुण टॉगल करें"
 msgid "Toggle views"
 msgstr "दृश्य टॉगल करें"
 
-msgid "Token lifetime (minutes)"
+msgid "Token validation"
 msgstr ""
 
 msgid "Tokens expire in minutes"
+msgstr ""
+
+msgid "Tokens whose exp − iat is longer are refused. Microsoft Entra ID needs 24."
 msgstr ""
 
 msgid "Tol-"
@@ -26724,6 +26872,9 @@ msgstr "एक अलग ईमेल का उपयोग करें"
 msgid "Use a finished sub-assembly in this step"
 msgstr "इस चरण में एक तैयार उप-विधानसभा का उपयोग करें"
 
+msgid "Use an issuer you registered"
+msgstr ""
+
 msgid "Use Current View"
 msgstr "वर्तमान दृश्य का उपयोग करें"
 
@@ -27016,6 +27167,9 @@ msgstr "ग्राहकों को देखें"
 msgid "View Employees"
 msgstr "कर्मचारियों को देखें"
 
+msgid "View Federation Rule"
+msgstr ""
+
 msgid "View full size"
 msgstr "पूरे आकार में देखें"
 
@@ -27033,6 +27187,9 @@ msgstr "प्रोजेक्ट प्लान में देखें"
 
 msgid "View Issue"
 msgstr "समस्या देखें"
+
+msgid "View Issuer"
+msgstr ""
 
 msgid "View Item"
 msgstr "आइटम देखें"
@@ -27230,6 +27387,9 @@ msgstr "प्रतीक्षा की"
 
 msgid "Waiting"
 msgstr "प्रतीक्षा में"
+
+msgid "Waiting for the first exchange…"
+msgstr ""
 
 msgid "Waiting for the first sync"
 msgstr "पहले सिंक की प्रतीक्षा है"

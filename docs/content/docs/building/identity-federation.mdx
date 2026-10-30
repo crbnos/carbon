@@ -5,29 +5,50 @@ description: Let a CI job or cloud workload call the Carbon API with a short-liv
 
 An [API key](/docs/building/api-keys) is a long-lived secret: anyone who copies it from a CI log, an `.env` file or a laptop can use it until it is deleted. With **identity federation**, a workload that already has an identity — a GitHub Actions job, an AWS role, a Google Cloud service account, an Azure managed identity — proves who it is with a token its provider signs, and Carbon gives it an API key that expires in minutes. Nothing long-lived is stored anywhere.
 
-Manage it under **Settings → Identity Federation**. Identity federation is part of API access, available on the Business plan.
+Manage it under **Settings → Identity Federation**, which has three tabs: **Rules**, **Issuers** and **Authentication events**. Identity federation is part of API access, available on the Business plan.
 
 ## How it works
 
-1. You create a **federation rule**. It names the token issuer, the audience, the workload (its subject and claims), the scopes, and how long a key lives.
-2. The workload asks its provider for an OIDC token for the rule's audience.
-3. The workload exchanges that token at Carbon's `/token` endpoint, naming the rule.
-4. Carbon checks the token's signature, issuer, audience, expiry, subject and claims, and returns a `crbn_` API key with the rule's scopes. It expires after the rule's token lifetime: 15 minutes by default, 5 to 60.
+1. You register an **issuer**: the identity provider whose tokens Carbon accepts, and how Carbon gets its signing keys.
+2. You create a **federation rule** on that issuer. It names the audience, the workload (its subject and claims), the scopes, and how long a key lives.
+3. The workload asks its provider for an OIDC token for the rule's audience, and exchanges it at Carbon's `/token` endpoint, naming the rule.
+4. Carbon checks the token's signature, issuer, audience, times, subject and claims, and returns a `crbn_` API key with the rule's scopes.
 5. The workload calls the [Carbon API](/api) with `Authorization: Bearer crbn_…`, exactly as with any API key.
 
-A token that carries a `jti` (GitHub Actions, AWS, most OIDC issuers) can be exchanged once. Google Cloud and Azure tokens have no `jti`, so they can be exchanged again until they expire; keep them as private as the key they buy. Exchange a fresh token when the key expires.
+A key lives for the rule's key lifetime (15 minutes by default, 5 to 60), but never more than twice the time the workload's token has left, and never less than a minute. Exchange a fresh token when the key expires.
 
-## Creating a rule
+## Connecting a workload
 
-Select **Add Federation Rule** (or **New API Key → Set up identity federation**) and pick a provider. The provider fills in the issuer and suggests the conditions to add.
+Select **Connect workload** on the Rules tab (or **New API Key → Set up identity federation**). The wizard has four steps:
+
+1. **Issuer** — pick an issuer you registered, or register one for GitHub Actions, AWS, Google Cloud, Microsoft Entra ID, Kubernetes or another OIDC provider.
+2. **Federation rule** — name the workload.
+3. **Target** — the permissions of the keys the rule issues.
+4. **Test** — run the usage example in the workload. Carbon shows each exchange attempt as it arrives, with the reason when one is refused, for 15 minutes.
+
+## Issuers
 
 | Field | What to enter |
 |---|---|
+| **Name** | A short slug, such as `github-actions`: lowercase letters, numbers and hyphens. |
 | **Issuer URL** | The token's `iss` claim, exactly. GitHub Actions and Google Cloud fill it in. |
+| **JWKS source** | How Carbon gets the issuer's public keys: **OIDC Discovery** (reads `{issuer}/.well-known/openid-configuration`, or a **Discovery base URL** you give), **JWKS URL** (the key set itself), or **Inline JWKS** (a key set you paste; Carbon never fetches it, so update it when the issuer rotates its keys). A pasted set may hold public keys only. |
+| **CA certificate** | Optional. A PEM certificate to trust when fetching the discovery document and keys, for an issuer behind a private CA. |
+| **Enforce single-use tokens** | On by default: every token must carry a `jti`, and each one can be exchanged once. Google Cloud and Azure tokens carry no `jti`, so their presets turn it off; such a token can be exchanged again until it expires, so keep it as private as the key it buys. |
+| **Maximum token lifetime** | The longest a token may live (its `exp` minus `iat`), 1 to 24 hours. Microsoft Entra ID needs 24. |
+
+A Kubernetes cluster is an issuer like any other: its service account tokens use the cluster's issuer URL, and a cluster whose API server is not reachable from Carbon can paste its key set (`kubectl get --raw /openid/v1/jwks`) as Inline JWKS.
+
+## Rules
+
+| Field | What to enter |
+|---|---|
+| **Issuer** | One of your issuers. |
+| **Name** and **Description** | A slug, such as `plm-sync`, and an optional note. |
 | **Audience** | The `aud` the workload requests. Defaults to your Carbon URL; Microsoft Entra ID uses your app registration, `api://<application-id>`. |
 | **Subject** | The token's `sub`, exactly — or a prefix that ends at a `:` or `/` followed by `*`, such as `repo:acme/plm-sync:*`. |
 | **Claim conditions** | Other claims the token must carry, each an exact value. |
-| **Token lifetime** | Minutes a minted key lives, 5 to 60. |
+| **API key lifetime** | Minutes a minted key lives, 5 to 60. |
 | **Permissions** | The scopes of the minted key, as for an API key. |
 
 A rule must name a workload: it needs a subject or at least one claim condition, and a subject of `*` alone is refused. GitHub, GitLab.com, HCP Terraform, Buildkite and Google sign tokens for every customer, so a rule on them needs a claim that never changes when a name does:
@@ -63,7 +84,7 @@ curl -s -X POST https://app.carbon.ms/token \
 }
 ```
 
-Every refused token answers `400 {"error":"invalid_grant"}`, whatever the reason; the rule shows the reason in its **Last Refusal** column. A rule takes 30 verified exchanges a minute, and 60 attempts a minute for one rule from one IP address; past either limit Carbon answers `429`.
+Every refused token answers `400 {"error":"invalid_grant"}`, whatever the reason. The reason is on the **Authentication events** tab and in the rule's **Recent exchanges**. A rule takes 30 verified exchanges a minute, and 60 attempts a minute for one rule from one IP address; past either limit Carbon answers `429`.
 
 ### GitHub Actions
 
@@ -108,30 +129,39 @@ OIDC_TOKEN=$(curl -s -H "Metadata: true" \
   "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=api://<application-id>" | jq -r .access_token)
 ```
 
-## Editing and deleting a rule
+## Authentication events
 
-A change to a rule's permissions applies at once to the keys it already issued. A change to its issuer, audience, subject or claim conditions stops the keys it already issued, since they were issued to a workload the rule no longer names. Deleting a rule stops every key it issued.
+The **Authentication events** tab lists every exchange attempt for one of your rules from the last 30 days: when it happened, whether it succeeded, the refusal reason, the rule and issuer, the token's subject, the caller's IP address and the API key it bought. The subject is shown only for a token whose signature checked out. Changes to issuers and rules are in the audit log.
+
+## Editing and archiving
+
+A change to a rule's permissions applies at once to the keys it already issued. A change to its issuer, audience, subject or claim conditions stops the keys it already issued, since they were issued to a workload the rule no longer names. A change to an issuer's URL or key source stops every key its rules issued.
+
+Rules and issuers are archived, not deleted, so their authentication events stay. Archiving a rule stops every key it issued; archiving an issuer archives its rules too. **Show archived** lists them. An archived name can be used again.
 
 Issued keys act as the person who created the rule, like an API key. When that person leaves the company, the rule stops issuing keys; recreate it under someone who stays. Issued keys never appear in the API Keys list; Carbon deletes them a day after they expire.
 
 <AgentContext>
 ## Internals and troubleshooting
 
-The rule is `federationRule`; the exchange is `exchangeFederatedToken` (`packages/ee/src/federation/service.server.ts`), served by the token-exchange branch of `apps/erp/app/routes/_oauth+/token.tsx`. A minted key is an `apiKey` row with `federationRuleId` set, so the ordinary `carbon-key` path authenticates it. Spec: `.ai/specs/2026-10-30-workload-identity-federation.md`.
+The issuer is `federationIssuer`, the rule `federationRule` and each attempt a `federationExchange` row (purged after 30 days by the `federation-exchange-retention` cron); the exchange is `exchangeFederatedToken` (`packages/ee/src/federation/service.server.ts`), served by the token-exchange branch of `apps/erp/app/routes/_oauth+/token.tsx`. A minted key is an `apiKey` row with `federationRuleId` set, so the ordinary `carbon-key` path authenticates it. Spec: `.ai/specs/2026-10-30-workload-identity-federation.md`.
 
-### Last Refusal reasons
+### Refusal reasons
 - `issuer_mismatch` — the token's `iss` differs from the rule's issuer (compare trailing slashes).
 - `audience_mismatch` — the workload requested another audience.
 - `subject_mismatch` / `claim_mismatch` — the token is from another workload; compare its claims with the rule.
-- `discovery_failed` — Carbon could not read `{issuer}/.well-known/openid-configuration` or its keys, or the issuer resolves to a private address.
-- `expired`, `not_yet_valid`, `lifetime_too_long` — the token's times: tokens may live at most 24 hours, with 30 s of clock tolerance.
+- `discovery_failed` — Carbon could not read the discovery document or the key set, or they resolve to a private address.
+- `signature_invalid` — no key in the issuer's key set signed the token, for example a pasted key set from before the issuer rotated its keys.
+- `expired`, `not_yet_valid`, `lifetime_too_long` — the token's times: a token may live at most the issuer's maximum token lifetime, with 30 s of clock tolerance.
 - `jti_reused` — the same token was exchanged twice. Request a new one.
+- `missing_jti` — the issuer enforces single-use tokens and the token has no `jti`. Turn the setting off for an issuer that never sets one.
 - `replay_check_unavailable` — Carbon could not record the token's `jti`, so it refused rather than risk a replay. Retry.
 - `algorithm_not_allowed`, `missing_kid`, `missing_claims`, `malformed_jwt` — the token is not a signed OIDC token.
 - `not_entitled` — the company's plan does not include API access.
 - `creator_not_employee` — the person who created the rule is no longer an employee of the company. Recreate the rule.
 - `rule_changed` — the rule's issuer, audience, subject or claims changed while the token was being exchanged. Exchange again.
+- `rule_archived` — the rule or its issuer is archived.
 
 ### Self-hosted issuers
-An issuer on a private network (an internal GitLab, Keycloak or Kubernetes API server) is refused unless the install sets `FEDERATION_ALLOW_PRIVATE_ISSUERS=true`. The issuer must still use https.
+An issuer whose discovery document or key set is on a private network (an internal GitLab, Keycloak or Kubernetes API server) is refused unless the install sets `FEDERATION_ALLOW_PRIVATE_ISSUERS=true`, or the issuer uses Inline JWKS, which fetches nothing. The issuer URL must still use https.
 </AgentContext>

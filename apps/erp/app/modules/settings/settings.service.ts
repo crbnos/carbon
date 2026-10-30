@@ -399,6 +399,63 @@ export async function getApiKeys(
   return query;
 }
 
+export async function getFederationIssuer(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("federationIssuer")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export const FEDERATION_ISSUERS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: true }]
+};
+
+export async function getFederationIssuers(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null; archived?: boolean }
+) {
+  let query = client
+    .from("federationIssuer")
+    .select("*, federationRule(id)", { count: listCount(args) })
+    .eq("companyId", companyId)
+    // Counts the issuer's active rules; filters the embedded rows, not the issuers.
+    .is("federationRule.archivedAt", null);
+  // Active rows, or with `archived` the archived ones.
+  query = args?.archived
+    ? query.not("archivedAt", "is", null)
+    : query.is("archivedAt", null);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, FEDERATION_ISSUERS_PAGING);
+  }
+
+  return query;
+}
+
+/** The active issuers, for the rule form's issuer picker. */
+export async function getActiveFederationIssuers(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("federationIssuer")
+    .select("id, name, provider, issuer")
+    .eq("companyId", companyId)
+    .is("archivedAt", null)
+    .order("name");
+}
+
 export async function getFederationRule(
   client: SupabaseClient<Database>,
   id: string,
@@ -406,7 +463,7 @@ export async function getFederationRule(
 ) {
   return client
     .from("federationRule")
-    .select("*")
+    .select("*, federationIssuer(id, name, provider, issuer)")
     .eq("id", id)
     .eq("companyId", companyId)
     .single();
@@ -419,13 +476,26 @@ export const FEDERATION_RULES_PAGING: Paging = {
 export async function getFederationRules(
   client: SupabaseClient<Database>,
   companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
+  args?: GenericQueryFilters & {
+    search: string | null;
+    archived?: boolean;
+    issuerId?: string | null;
+  }
 ) {
   let query = client
     .from("federationRule")
-    .select("*", { count: listCount(args) })
+    .select("*, federationIssuer(id, name, provider, issuer)", {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
+  // Active rows, or with `archived` the archived ones.
+  query = args?.archived
+    ? query.not("archivedAt", "is", null)
+    : query.is("archivedAt", null);
 
+  if (args?.issuerId) {
+    query = query.eq("issuerId", args.issuerId);
+  }
   if (args?.search) {
     query = query.ilike("name", `%${args.search}%`);
   }
@@ -435,6 +505,48 @@ export async function getFederationRules(
   }
 
   return query;
+}
+
+export const FEDERATION_EXCHANGES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
+export async function getFederationExchanges(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("federationExchange")
+    .select("*, federationRule(id, name), federationIssuer(id, name)", {
+      count: listCount(args)
+    })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("subject", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, FEDERATION_EXCHANGES_PAGING);
+  }
+
+  return query;
+}
+
+/** A rule's latest attempts: the rule drawer and the Connect workload Test step. */
+export async function getRecentFederationExchanges(
+  client: SupabaseClient<Database>,
+  ruleId: string,
+  companyId: string
+) {
+  return client
+    .from("federationExchange")
+    .select("id, outcome, reason, subject, createdAt")
+    .eq("ruleId", ruleId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false })
+    .limit(5);
 }
 
 type CompaniesRow = Database["public"]["Views"]["companies"]["Row"];
@@ -3613,23 +3725,17 @@ export function generateTestLabel(
   ].join("\n");
 }
 
-/** A refused federation rule write: a broken rule names its field, a duplicate name says so. */
-export function federationRuleError(
+/** A refused federation write: a broken record says why, a missing one is not found. */
+export function federationError(
   ctx: ServiceContext,
+  what: "issuer" | "rule",
   error: { message: string; code?: string }
 ) {
-  // `.single()` found no rule of this company.
   if (error.code === "PGRST116") {
-    return ctx.error("notFound", "Federation rule not found");
-  }
-  if (error.code === "23505") {
-    return ctx.error(
-      "validation",
-      "A federation rule with this name already exists"
-    );
+    return ctx.error("notFound", `Federation ${what} not found`);
   }
   if (error.code) {
-    return ctx.error("internal", "Failed to save federation rule", error);
+    return ctx.error("internal", `Failed to save federation ${what}`, error);
   }
   return ctx.error("validation", error.message);
 }
