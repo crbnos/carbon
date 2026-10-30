@@ -35,6 +35,23 @@ const CATEGORIES: Partial<Record<FailureReasonCode, ErrorCategory>> = {
   notFound: "notFound"
 };
 
+// A trigger's own text (a `raw` reason) under the constraint code it raised.
+const AUTHORED_CATEGORIES: Record<string, ErrorCategory> = {
+  "23503": "conflict",
+  "23514": "validation",
+  "42501": "forbidden"
+};
+
+function authoredCategory(error: unknown): ErrorCategory | undefined {
+  for (const candidate of [error, (error as { cause?: unknown })?.cause]) {
+    const code = (candidate as { code?: unknown } | null | undefined)?.code;
+    if (typeof code === "string" && code in AUTHORED_CATEGORIES) {
+      return AUTHORED_CATEGORIES[code];
+    }
+  }
+  return undefined;
+}
+
 /**
  * The refusal a database error stands for, or null when it is not one the
  * caller can fix (a connection failure, a bug in our SQL). Looks one `cause`
@@ -42,7 +59,9 @@ const CATEGORIES: Partial<Record<FailureReasonCode, ErrorCategory>> = {
  */
 export function databaseRefusal(error: unknown): DatabaseRefusal | null {
   const reason = databaseReason(error);
-  const category = reason && CATEGORIES[reason.code];
+  const category =
+    reason &&
+    (reason.code === "raw" ? authoredCategory(error) : CATEGORIES[reason.code]);
   return reason && category
     ? { category, message: reasonText(reason), reason }
     : null;

@@ -51,6 +51,16 @@ describe("databaseRefusal", () => {
     ).toBe('It is still used by a "jobMaterial" record; remove that first.');
   });
 
+  it("passes a trigger's own text through under its constraint code's category", () => {
+    const message =
+      'Cannot delete unit of measure "KG" because it is in use: jobMaterial (2)';
+    expect(databaseRefusal({ code: "23503", message, details: null })).toEqual({
+      category: "conflict",
+      message,
+      reason: { code: "raw", values: { text: message } }
+    });
+  });
+
   it("names a missing required column, from PostgREST or node-postgres", () => {
     const message =
       'null value in column "processId" of relation "jobOperation" violates not-null constraint';

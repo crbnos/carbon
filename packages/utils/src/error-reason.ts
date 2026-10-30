@@ -159,7 +159,17 @@ function candidates(error: unknown): unknown[] {
 export function databaseReason(error: unknown): FailureReason | null {
   for (const candidate of candidates(error)) {
     const fields = databaseFields(candidate);
-    const mapped = fields && REASONS[fields.code];
+    if (!fields) continue;
+    // A trigger that raised a constraint code wrote its text for the person,
+    // and says more than the stock sentence for that code.
+    if (
+      AUTHORABLE_CODES.has(fields.code) &&
+      fields.message &&
+      !POSTGRES_WORDING.test(fields.message)
+    ) {
+      return raw(fields.message);
+    }
+    const mapped = REASONS[fields.code];
     if (mapped) return mapped(fields);
   }
   return null;
@@ -250,11 +260,7 @@ export function summarizeZodIssues({ issues }: ZodLikeError): string {
 function authoredReason(error: unknown): FailureReason | null {
   for (const candidate of candidates(error)) {
     const f = databaseFields(candidate);
-    if (!f || !f.message) continue;
-    if (RAISE_CODES.has(f.code)) return raw(f.message);
-    if (AUTHORABLE_CODES.has(f.code) && !POSTGRES_WORDING.test(f.message)) {
-      return raw(f.message);
-    }
+    if (f?.message && RAISE_CODES.has(f.code)) return raw(f.message);
   }
   return null;
 }
@@ -285,10 +291,13 @@ export function describeCause(cause: unknown): FailureReason | null {
   if (known) return known;
 
   if (isZodError(cause)) return raw(summarizeZodIssues(cause));
+  // A plain `{ message }` is the error a building block wrote by hand.
   if (
     typeof e.message === "string" &&
     e.message !== "" &&
-    (cause instanceof Error || typeof e.code === "string")
+    (cause instanceof Error ||
+      typeof e.code === "string" ||
+      Object.getPrototypeOf(cause) === Object.prototype)
   ) {
     return raw(e.message);
   }

@@ -55,6 +55,20 @@ describe("reasonText of a database refusal", () => {
     ).toBe('It is still used by a "jobMaterial" record; remove that first.');
   });
 
+  it("keeps a trigger's own text when it raised a constraint code", () => {
+    // Row-level security hides the detail, so the stock sentence would be a guess.
+    const inUse = {
+      code: "23503",
+      message:
+        'Cannot delete unit of measure "KG" because it is in use: jobMaterial (2)',
+      details: null
+    };
+    expect(databaseReason(inUse)).toEqual({
+      code: "raw",
+      values: { text: inUse.message }
+    });
+  });
+
   it("names a missing required column, from PostgREST or node-postgres", () => {
     const message =
       'null value in column "processId" of relation "jobOperation" violates not-null constraint';
@@ -210,5 +224,17 @@ describe("describeCause", () => {
       describeCause({ code: "08006", message: "connection refused" })
     ).toEqual({ code: "raw", values: { text: "connection refused" } });
     expect(describeCause(new Error(""))).toBe(null);
+  });
+
+  it("shows the message of an error a building block wrote by hand", () => {
+    expect(describeCause({ message: "Inspection plan not found" })).toEqual({
+      code: "raw",
+      values: { text: "Inspection plan not found" }
+    });
+    // A class instance with a message is a value, not an error.
+    class Note {
+      message = "remember to reorder";
+    }
+    expect(describeCause(new Note())).toBe(null);
   });
 });
