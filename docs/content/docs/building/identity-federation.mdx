@@ -15,7 +15,7 @@ Manage it under **Settings → Identity Federation**. Identity federation is par
 4. Carbon checks the token's signature, issuer, audience, expiry, subject and claims, and returns a `crbn_` API key with the rule's scopes. It expires after the rule's token lifetime: 15 minutes by default, 5 to 60.
 5. The workload calls the [Carbon API](/api) with `Authorization: Bearer crbn_…`, exactly as with any API key.
 
-A token can be exchanged once. Exchange a fresh one when the key expires.
+A token that carries a `jti` (GitHub Actions, AWS, most OIDC issuers) can be exchanged once. Google Cloud and Azure tokens have no `jti`, so they can be exchanged again until they expire; keep them as private as the key they buy. Exchange a fresh token when the key expires.
 
 ## Creating a rule
 
@@ -25,7 +25,7 @@ Select **Add Federation Rule** (or **New API Key → Set up identity federation*
 |---|---|
 | **Issuer URL** | The token's `iss` claim, exactly. GitHub Actions and Google Cloud fill it in. |
 | **Audience** | The `aud` the workload requests. Defaults to your Carbon URL; Microsoft Entra ID uses your app registration, `api://<application-id>`. |
-| **Subject** | The token's `sub`, exactly — or a prefix ending in `*`, such as `repo:acme/plm-sync:*`. |
+| **Subject** | The token's `sub`, exactly — or a prefix that ends at a `:` or `/` followed by `*`, such as `repo:acme/plm-sync:*`. |
 | **Claim conditions** | Other claims the token must carry, each an exact value. |
 | **Token lifetime** | Minutes a minted key lives, 5 to 60. |
 | **Permissions** | The scopes of the minted key, as for an API key. |
@@ -99,7 +99,7 @@ OIDC_TOKEN=$(curl -s -H "Metadata-Flavor: Google" \
 
 ### Microsoft Entra ID
 
-Create an app registration for Carbon in your tenant and use its Application ID URI as the rule's audience. A managed identity gets its token from the instance metadata service:
+Create an app registration for Carbon in your tenant and use its Application ID URI as the rule's audience. A managed identity token's issuer is `https://sts.windows.net/<tenant-id>/` (with the trailing slash) unless the app registration asks for v2 tokens, then `https://login.microsoftonline.com/<tenant-id>/v2.0`; decode one token and copy its `iss`. A managed identity gets its token from the instance metadata service:
 
 ```bash
 OIDC_TOKEN=$(curl -s -H "Metadata: true" \
@@ -122,6 +122,7 @@ The rule is `federationRule`; the exchange is `exchangeFederatedToken` (`package
 - `discovery_failed` — Carbon could not read `{issuer}/.well-known/openid-configuration` or its keys, or the issuer resolves to a private address.
 - `expired`, `not_yet_valid`, `lifetime_too_long` — the token's times: tokens may live at most 24 hours, with 30 s of clock tolerance.
 - `jti_reused` — the same token was exchanged twice. Request a new one.
+- `replay_check_unavailable` — Carbon could not record the token's `jti`, so it refused rather than risk a replay. Retry.
 - `algorithm_not_allowed`, `missing_kid`, `missing_claims`, `malformed_jwt` — the token is not a signed OIDC token.
 - `not_entitled` — the company's plan does not include API access.
 

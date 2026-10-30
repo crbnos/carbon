@@ -111,6 +111,15 @@ describe("ruleRequirementErrors", () => {
     ).toBeDefined();
   });
 
+  it("refuses a prefix that does not end at a separator", () => {
+    expect(
+      ruleRequirementErrors({ ...base, subject: "org:acme*" }).subject
+    ).toBeDefined();
+    expect(
+      ruleRequirementErrors({ ...base, subject: "repo:acme/plm:*" })
+    ).toEqual({});
+  });
+
   it("accepts a rule with only a claim condition", () => {
     expect(
       ruleRequirementErrors({ ...base, claimConditions: { aud_tenant: "x" } })

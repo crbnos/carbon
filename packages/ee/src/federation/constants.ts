@@ -88,7 +88,7 @@ export const FEDERATION_PRESETS: Record<FederationProvider, FederationPreset> =
     "Microsoft Entra ID": {
       issuer: null,
       issuerLocked: false,
-      issuerPlaceholder: "https://login.microsoftonline.com/<tenant-id>/v2.0",
+      issuerPlaceholder: "https://sts.windows.net/<tenant-id>/",
       subjectPlaceholder: "<managed identity object id>",
       suggestedClaims: [],
       audiencePlaceholder: "api://<application-id>"

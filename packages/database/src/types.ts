@@ -3066,10 +3066,10 @@ export type Database = {
           },
           {
             foreignKeyName: "apiKey_federationRuleId_fkey"
-            columns: ["federationRuleId"]
+            columns: ["federationRuleId", "companyId"]
             isOneToOne: false
             referencedRelation: "federationRule"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "apiKey_updatedBy_fkey"

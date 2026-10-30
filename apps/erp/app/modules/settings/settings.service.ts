@@ -358,14 +358,18 @@ export async function getApiKey(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("apiKey")
-    .select(
-      "id, name, expiresAt, scopes, keyPreview, lastUsedAt, rateLimit, rateLimitWindow, createdAt, createdBy, updatedBy, companyId"
-    )
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .single();
+  return (
+    client
+      .from("apiKey")
+      .select(
+        "id, name, expiresAt, scopes, keyPreview, lastUsedAt, rateLimit, rateLimitWindow, createdAt, createdBy, updatedBy, companyId"
+      )
+      .eq("id", id)
+      .eq("companyId", companyId)
+      // A key a federation rule minted is managed through its rule.
+      .is("federationRuleId", null)
+      .single()
+  );
 }
 
 export const API_KEYS_PAGING: Paging = {
@@ -3614,6 +3618,10 @@ export function federationRuleError(
   ctx: ServiceContext,
   error: { message: string; code?: string }
 ) {
+  // `.single()` found no rule of this company.
+  if (error.code === "PGRST116") {
+    return ctx.error("notFound", "Federation rule not found");
+  }
   if (error.code === "23505") {
     return ctx.error(
       "validation",

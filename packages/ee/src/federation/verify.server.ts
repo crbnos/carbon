@@ -114,11 +114,13 @@ function failureFromJoseError(error: unknown): FederationFailure {
   ) {
     return "signature_invalid";
   }
-  // A key-set fetch that failed inside jwtVerify throws a plain error.
+  // A key-set fetch that failed inside jwtVerify throws a plain error, or a
+  // bare JOSEError for a non-200 answer.
   if (
     error instanceof errors.JWKSTimeout ||
     error instanceof errors.JWKSInvalid ||
-    !(error instanceof errors.JOSEError)
+    !(error instanceof errors.JOSEError) ||
+    error.constructor === errors.JOSEError
   ) {
     return "discovery_failed";
   }

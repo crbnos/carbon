@@ -614,8 +614,15 @@ export const manifest = {
     )
   }),
   feedback: serviceOnly(),
-  // Same access as apiKey: the rules mint API keys.
-  federationRule: company("settings", { read: "settings_view" }),
+  // Read like apiKey. No API writes: a rule mints keys that act as its
+  // createdBy, so only the federation operations (users_update, the issuer
+  // checks, createdBy = the caller) write it, as the system.
+  federationRule: company("settings", {
+    read: "settings_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   fiscalYearSettings: company("settings", { read: "settings_view" }),
   fixedAsset: company("accounting", { read: "accounting_view" }),
   fixedAssetCipCost: company("accounting", { read: "accounting_view" }),

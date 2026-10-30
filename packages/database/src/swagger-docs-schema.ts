@@ -162467,8 +162467,6 @@ export default {
           type: "string"
         },
         federationRuleId: {
-          description:
-            "Note:\nThis is a Foreign Key to `federationRule.id`.<fk table='federationRule' column='id'/>",
           format: "text",
           type: "string"
         }

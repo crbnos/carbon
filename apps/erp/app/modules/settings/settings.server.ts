@@ -1759,7 +1759,7 @@ const federationRuleFields = {
   subject: z.string().trim().min(1).nullable(),
   /** Top-level claim name to the exact value the token must carry. */
   claimConditions: z.record(z.string(), z.string()),
-  /** Per module, the actions a minted key may run: `{ "sales": ["view"] }`. */
+  /** `{module}_{action}` to the company ids it applies to: `{ "sales_view": [companyId] }`. */
   scopes: z.record(z.string(), z.array(z.string())),
   tokenLifetimeMinutes: z
     .number()

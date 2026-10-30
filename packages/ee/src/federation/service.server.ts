@@ -98,8 +98,12 @@ export async function upsertFederationRule(
     tokenLifetimeMinutes: rule.tokenLifetimeMinutes
   };
 
+  // RLS denies API writes on federationRule; the caller's permission was
+  // checked by the operation, and every write is scoped to its company.
+  const system = getCarbonServiceRole();
+
   if ("createdBy" in rule) {
-    const inserted = await client
+    const inserted = await system
       .from("federationRule")
       .insert({
         ...columns,
@@ -111,7 +115,7 @@ export async function upsertFederationRule(
     return { data: inserted.data, error: inserted.error };
   }
 
-  const updated = await client
+  const updated = await system
     .from("federationRule")
     .update({
       ...columns,
@@ -125,7 +129,7 @@ export async function upsertFederationRule(
   if (updated.error) return { data: null, error: updated.error };
 
   // A narrower scope applies to the keys the rule already minted, at once.
-  const rescoped = await getCarbonServiceRole()
+  const rescoped = await system
     .from("apiKey")
     .update({ scopes: rule.scopes })
     .eq("federationRuleId", rule.id)
@@ -176,7 +180,8 @@ export async function deleteFederationRule(
   const hashes = await mintedKeyHashes(ruleId, companyId);
   await Promise.all(hashes.map(bustApiKeyCache));
 
-  const deleted = await client
+  // RLS denies API writes on federationRule (see upsertFederationRule).
+  const deleted = await getCarbonServiceRole()
     .from("federationRule")
     .delete()
     .eq("id", ruleId)
@@ -217,7 +222,7 @@ async function claimJti(
 }
 
 async function recordOutcome(
-  ruleId: string,
+  rule: { id: string; companyId: string },
   outcome: { ok: true } | { ok: false; reason: string }
 ) {
   const at = datetime.timestamp();
@@ -228,9 +233,13 @@ async function recordOutcome(
         ? { lastExchangeAt: at }
         : { lastFailureAt: at, lastFailureReason: outcome.reason }
     )
-    .eq("id", ruleId);
+    .eq("id", rule.id)
+    .eq("companyId", rule.companyId);
   if (error) {
-    log.error("Failed to record federation outcome", { ruleId, error });
+    log.error("Failed to record federation outcome", {
+      ruleId: rule.id,
+      error
+    });
   }
 }
 
@@ -262,7 +271,7 @@ export async function exchangeFederatedToken(
   const fail = async (
     reason: FederationFailure | "rate_limited"
   ): Promise<ExchangeResult> => {
-    await recordOutcome(rule.id, { ok: false, reason });
+    await recordOutcome(rule, { ok: false, reason });
     return { ok: false, reason };
   };
 
@@ -318,6 +327,6 @@ export async function exchangeFederatedToken(
     throw new Error("Failed to mint a federated API key");
   }
 
-  await recordOutcome(rule.id, { ok: true });
+  await recordOutcome(rule, { ok: true });
   return { ok: true, key: rawKey, expiresIn: lifetimeMinutes * 60 };
 }

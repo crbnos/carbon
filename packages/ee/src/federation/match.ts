@@ -16,7 +16,6 @@ export type FederationFailure =
   | "missing_kid"
   | "algorithm_not_allowed"
   | "issuer_mismatch"
-  | "issuer_not_allowed"
   | "discovery_failed"
   | "signature_invalid"
   | "audience_mismatch"
@@ -132,6 +131,16 @@ export function ruleRequirementErrors(
   if (subject === "*") {
     errors.subject =
       "A subject of * trusts every workload the issuer signs for. Name the workload.";
+  }
+  // A prefix ends at a separator: `org:acme*` would also match `org:acme-evil`.
+  if (
+    subject &&
+    subject !== "*" &&
+    subject.endsWith("*") &&
+    !/[:/]\*$/.test(subject)
+  ) {
+    errors.subject =
+      "End a prefix at a : or / before the *, for example repo:acme/plm:*";
   }
   if (!subject && claims.length === 0) {
     errors.subject = "Add a subject or at least one claim condition";
