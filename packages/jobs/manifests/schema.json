@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261029130430",
+  "schemaVersion": "20261030124240",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-30T07:24:36.222Z",
+  "exportedAt": "2026-10-30T12:45:23.979Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -2128,6 +2128,66 @@
         "updatedAt",
         "type"
       ]
+    },
+    {
+      "name": "scimConnection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "identityProvider",
+        "tokenHash",
+        "tokenPreview",
+        "defaultEmployeeTypeId",
+        "defaultLocationId",
+        "lastRequestAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "scimGroup",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "connectionId",
+        "displayName",
+        "externalId",
+        "employeeTypeId",
+        "priority",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "scimUser",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "connectionId",
+        "userId",
+        "userName",
+        "externalId",
+        "email",
+        "givenName",
+        "familyName",
+        "active",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "scimGroupMember",
+      "rows": 0,
+      "columns": ["groupId", "scimUserId", "companyId"]
     },
     {
       "name": "scrapReason",
