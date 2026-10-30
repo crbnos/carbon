@@ -5,6 +5,10 @@
 import { describe, expect, it } from "vitest";
 import {
   finishPickingList,
+  inventoryCountScanValidator,
+  inventoryCountSerialValidator,
+  inventoryCountUnitValidator,
+  inventoryCountUnnumberedValidator,
   kanbanValidator,
   planSerialBoxWrite,
   receiptFixedAssetLineUpdateValidator,
@@ -385,5 +389,65 @@ describe("finishPickingList", () => {
       outcome: "finish",
       status: "Partial"
     });
+  });
+});
+
+describe("inventory count validators", () => {
+  it("accepts a scan with a code", () => {
+    expect(
+      inventoryCountScanValidator.safeParse({ code: "SN-1" }).success
+    ).toBe(true);
+  });
+  it("refuses a scan with an empty code", () => {
+    expect(inventoryCountScanValidator.safeParse({ code: " " }).success).toBe(
+      false
+    );
+  });
+  it("refuses a negative scan quantity", () => {
+    expect(
+      inventoryCountScanValidator.safeParse({ code: "L-1", quantity: "-1" })
+        .success
+    ).toBe(false);
+  });
+  it("requires an item on a unit added by hand", () => {
+    expect(
+      inventoryCountUnitValidator.safeParse({ code: "SN-1" }).success
+    ).toBe(false);
+    expect(
+      inventoryCountUnitValidator.safeParse({ code: "SN-1", itemId: "i_1" })
+        .success
+    ).toBe(true);
+  });
+  it("takes a whole, non-negative unnumbered quantity", () => {
+    expect(
+      inventoryCountUnnumberedValidator.safeParse({
+        itemId: "i_1",
+        quantity: "3"
+      }).success
+    ).toBe(true);
+    expect(
+      inventoryCountUnnumberedValidator.safeParse({
+        itemId: "i_1",
+        quantity: "-1"
+      }).success
+    ).toBe(false);
+    expect(
+      inventoryCountUnnumberedValidator.safeParse({
+        itemId: "i_1",
+        quantity: "1.5"
+      }).success
+    ).toBe(false);
+  });
+  it("requires a serial number to assign", () => {
+    expect(
+      inventoryCountSerialValidator.safeParse({ lineId: "l", readableId: "" })
+        .success
+    ).toBe(false);
+    expect(
+      inventoryCountSerialValidator.safeParse({
+        lineId: "l",
+        readableId: "SN-9"
+      }).success
+    ).toBe(true);
   });
 });
