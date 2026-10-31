@@ -23,7 +23,6 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -80,7 +79,8 @@ import {
   pageProgress,
   type RequirementChoice,
   requirementChoices,
-  resolveMemberPage
+  resolveMemberPage,
+  takesDueDate
 } from "../logic/page";
 import {
   type CardPatch,
@@ -109,7 +109,7 @@ import {
   memberPageCustomCardValidator
 } from "../models";
 import type { CustomizationStatus, ImplementationRowData } from "../types";
-import { CardStatus } from "./PageCardParts";
+import { CardStatus, EmptySection } from "./PageCardParts";
 import { ProgressPill } from "./ProgressPill";
 import { EditableInput } from "./primitives";
 import { useCheckMap, useHub, useHubActions } from "./state";
@@ -252,6 +252,7 @@ export function MemberPageEditor({
               />
             </div>
           </div>
+          {section.cards.length ? null : <EmptySection />}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {section.cards.map((card, c) => {
               const pageCard = page.sections[s]?.cards[c];
@@ -266,8 +267,7 @@ export function MemberPageEditor({
                   requirements={requirements}
                   position={{
                     first: c === 0,
-                    last: c === section.cards.length - 1,
-                    onlyCard: removeCard(page, s, c) === null
+                    last: c === section.cards.length - 1
                   }}
                   otherSections={sectionTitles.flatMap((title, index) =>
                     index === s ? [] : [{ index, title }]
@@ -346,7 +346,7 @@ function EditCard({
   entry: PageCatalogueEntry | undefined;
   row: ImplementationRowData | undefined;
   requirements: RequirementChoice[];
-  position: { first: boolean; last: boolean; onlyCard: boolean };
+  position: { first: boolean; last: boolean };
   otherSections: { index: number; title: string }[];
   onEdit: (patch: CardPatch) => void;
   onMove: (offset: -1 | 1) => void;
@@ -408,6 +408,7 @@ function EditCard({
   };
 
   const on = cardState(card, states, rowsById).on;
+  const hasDue = takesDueDate(card, states, rowsById);
 
   const group = card.kind === "objective" ? undefined : text(card.group);
   const titleValue = pageCard.custom
@@ -639,34 +640,37 @@ function EditCard({
           onCommit={(note) => onEdit({ note })}
         />
         {/* Not a <label>: a click inside one goes to the picker's calendar
-            button, so a typed date is lost. The picker names itself. */}
-        <Labelled as="div" label={t`Due`}>
-          <div className="flex items-center gap-1">
-            <DatePicker
-              aria-label={t`Due`}
-              size="sm"
-              value={typedDue ?? toCalendarDate(pageCard.due)}
-              onChange={(date) => {
-                if (date && date.year < 1000) {
-                  setTypedDue(date);
-                  return;
-                }
-                setTypedDue(null);
-                onEdit({ due: date ? date.toString() : "" });
-              }}
-              onBlur={() => setTypedDue(null)}
-            />
-            {pageCard.due ? (
-              <IconButton
-                aria-label={t`Clear the due date`}
-                icon={<LuX />}
-                variant="ghost"
+            button, so a typed date is lost. The picker names itself. A card
+            that cannot be done takes no due date. */}
+        {hasDue ? (
+          <Labelled as="div" label={t`Due`}>
+            <div className="flex items-center gap-1">
+              <DatePicker
+                aria-label={t`Due`}
                 size="sm"
-                onClick={() => onEdit({ due: "" })}
+                value={typedDue ?? toCalendarDate(pageCard.due)}
+                onChange={(date) => {
+                  if (date && date.year < 1000) {
+                    setTypedDue(date);
+                    return;
+                  }
+                  setTypedDue(null);
+                  onEdit({ due: date ? date.toString() : "" });
+                }}
+                onBlur={() => setTypedDue(null)}
               />
-            ) : null}
-          </div>
-        </Labelled>
+              {pageCard.due ? (
+                <IconButton
+                  aria-label={t`Clear the due date`}
+                  icon={<LuX />}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEdit({ due: "" })}
+                />
+              ) : null}
+            </div>
+          </Labelled>
+        ) : null}
       </CardContent>
       {deleting && row ? (
         <ConfirmModal
@@ -696,7 +700,7 @@ function CardMenu({
   onRemove,
   onDelete
 }: {
-  position: { first: boolean; last: boolean; onlyCard: boolean };
+  position: { first: boolean; last: boolean };
   otherSections: { index: number; title: string }[];
   canDelete: boolean;
   onMove: (offset: -1 | 1) => void;
@@ -743,27 +747,15 @@ function CardMenu({
           </DropdownMenuSub>
         ) : null}
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled={position.onlyCard} onClick={onRemove}>
+        <DropdownMenuItem onClick={onRemove}>
           <DropdownMenuIcon icon={<LuX />} />
           <Trans>Remove from page</Trans>
         </DropdownMenuItem>
         {canDelete ? (
-          <DropdownMenuItem
-            disabled={position.onlyCard}
-            className="text-destructive"
-            onClick={onDelete}
-          >
+          <DropdownMenuItem className="text-destructive" onClick={onDelete}>
             <DropdownMenuIcon icon={<LuTrash2 />} />
             <Trans>Delete item…</Trans>
           </DropdownMenuItem>
-        ) : null}
-        {position.onlyCard ? (
-          <DropdownMenuLabel className="max-w-56 text-xs font-normal text-muted-foreground text-pretty">
-            <Trans>
-              A page needs one card. Remove page in the staff bar removes the
-              whole page.
-            </Trans>
-          </DropdownMenuLabel>
         ) : null}
       </DropdownMenuContent>
     </DropdownMenu>

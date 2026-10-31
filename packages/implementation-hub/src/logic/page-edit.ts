@@ -5,8 +5,9 @@
 // Editing a person's page in the app: every change Carbon staff make to a
 // page is one of these, applied to the page as the editor has it, and the
 // whole page is saved. Pure, so the page and the server place cards the same
-// way. A page needs a card in every section and a section on the page, so a
-// change that would break either returns null and nothing is saved.
+// way. A page needs a section; a section may be left with no cards, and the
+// page shows that it has none. A change that would remove the last section
+// returns null and nothing is saved.
 
 import type { MemberPage, MemberPageCard } from "../models";
 
@@ -203,27 +204,25 @@ export function placeCard(
   };
 }
 
-// The card leaves the page; a section left without cards goes with it. Null
-// for the page's only card: a page needs one, and the staff bar removes the
-// whole page.
+// The card leaves the page. Its section stays, even with no cards left, until
+// staff remove the section. Null for a card that does not exist.
 export function removeCard(
   page: MemberPage,
   sectionIndex: number,
   cardIndex: number
 ): MemberPage | null {
-  const section = page.sections[sectionIndex];
-  if (!section?.cards[cardIndex]) return null;
-  if (section.cards.length > 1) {
-    return {
-      ...page,
-      sections: page.sections.map((s, i) =>
-        i === sectionIndex
-          ? { ...s, cards: s.cards.filter((_, c) => c !== cardIndex) }
-          : s
-      )
-    };
-  }
-  return removeSection(page, sectionIndex);
+  if (!page.sections[sectionIndex]?.cards[cardIndex]) return null;
+  return {
+    ...page,
+    sections: page.sections.map((section, s) =>
+      s === sectionIndex
+        ? {
+            ...section,
+            cards: section.cards.filter((_, c) => c !== cardIndex)
+          }
+        : section
+    )
+  };
 }
 
 // The section and its cards leave the page. Null for the page's only section.
@@ -276,8 +275,8 @@ export function moveSection(
   };
 }
 
-// The card goes to the end of another section; the section it leaves goes
-// too when it is left empty. Null for a section that does not exist.
+// The card goes to the end of another section; the section it leaves stays,
+// even when it is left empty. Null for a section that does not exist.
 export function moveCardToSection(
   page: MemberPage,
   sectionIndex: number,
@@ -298,10 +297,7 @@ export function moveCardToSection(
     if (s === toSection) return { ...section, cards: [...section.cards, card] };
     return section;
   });
-  return {
-    ...page,
-    sections: sections.filter((section) => section.cards.length > 0)
-  };
+  return { ...page, sections };
 }
 
 // A custom card's key, from its title: a person's tick on the card is stored

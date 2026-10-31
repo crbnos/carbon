@@ -83,15 +83,24 @@ describe("removeCard", () => {
     });
   });
 
-  it("removes a section with its last card", () => {
-    expect(removeCard(base(), 1, 0)?.sections).toEqual([base().sections[0]]);
+  it("keeps a section its last card leaves", () => {
+    expect(removeCard(base(), 1, 0)?.sections).toEqual([
+      base().sections[0],
+      { ...base().sections[1], cards: [] }
+    ]);
   });
 
-  it("refuses the page's only card", () => {
+  it("removes the page's only card and keeps its section", () => {
     const one = base({
       sections: [{ title: "Only", cards: [{ item: "setup:locations" }] }]
     });
-    expect(removeCard(one, 0, 0)).toBeNull();
+    expect(removeCard(one, 0, 0)?.sections).toEqual([
+      { title: "Only", cards: [] }
+    ]);
+  });
+
+  it("refuses a card that is not there", () => {
+    expect(removeCard(base(), 1, 5)).toBeNull();
   });
 });
 
@@ -139,12 +148,12 @@ describe("moving", () => {
     ]);
   });
 
-  it("drops the section a moved card leaves empty", () => {
+  it("keeps the section a moved card leaves empty", () => {
     expect(
       moveCardToSection(base(), 1, 0, 0)?.sections.map(
         (section) => section.cards.length
       )
-    ).toEqual([3]);
+    ).toEqual([3, 0]);
   });
 
   it("moves nothing to the same or a missing section", () => {

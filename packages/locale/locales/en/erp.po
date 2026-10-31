@@ -2032,9 +2032,6 @@ msgstr "A part"
 msgid "A note for this person (optional)"
 msgstr "A note for this person (optional)"
 
-msgid "A page needs one card. Remove page in the staff bar removes the whole page."
-msgstr "A page needs one card. Remove page in the staff bar removes the whole page."
-
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "A part contains the information about a specific item that can be purchased or manufactured."
 
@@ -21498,6 +21495,8 @@ msgstr "Nothing is deleted yet. The request goes to the other Admins' approvals,
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
+msgid "Nothing in this section yet."
+msgstr "Nothing in this section yet."
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Nothing is due. Invoices are created automatically when a period comes due."

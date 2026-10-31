@@ -37,7 +37,7 @@ import {
 import type { MemberPage } from "../models";
 import type { ImplementationRowData } from "../types";
 import { MemberPageEditor, type PageEditor } from "./MemberPageEditor";
-import { CardStatus, PriorityProgress } from "./PageCardParts";
+import { CardStatus, EmptySection, PriorityProgress } from "./PageCardParts";
 import { PageQuestions } from "./PageQuestions";
 import { ProgressPill } from "./ProgressPill";
 import {
@@ -148,16 +148,20 @@ function MemberPageRead({
               </p>
             ) : null}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {section.cards.map((card) => (
-              <PageCardView
-                key={card.id}
-                card={card}
-                rowsById={rowsById}
-                todayIso={todayIso}
-              />
-            ))}
-          </div>
+          {section.cards.length ? (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {section.cards.map((card) => (
+                <PageCardView
+                  key={card.id}
+                  card={card}
+                  rowsById={rowsById}
+                  todayIso={todayIso}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptySection />
+          )}
         </section>
       ))}
     </div>
@@ -202,8 +206,9 @@ function PageCardView({
 
   const state = cardState(card, states, rowsById);
   const row = card.rowId ? rowsById.get(card.rowId) : undefined;
-  const overdue =
-    state.done !== null && isOverdue(card.due, state.done, todayIso);
+  // A card that cannot be done shows no due date (`takesDueDate`).
+  const due = state.done !== null ? card.due : undefined;
+  const overdue = state.done !== null && isOverdue(due, state.done, todayIso);
   const screenUrl = card.screenKey
     ? resolveScreenUrl(card.screenKey)
     : undefined;
@@ -230,7 +235,7 @@ function PageCardView({
     waitingFor.length > 0 ||
     card.kind === "priority";
   const hasFooter =
-    Boolean(card.due) ||
+    Boolean(due) ||
     card.estimateDays !== undefined ||
     (showsStaffDetail && card.evidence.length > 0) ||
     Boolean(checkRow?.verifiedAt) ||
@@ -290,13 +295,13 @@ function PageCardView({
           {card.kind === "priority" ? <PriorityProgress /> : null}
           {hasFooter ? (
             <div className="mt-auto flex flex-wrap items-center gap-2 text-xs">
-              {card.due ? (
+              {due ? (
                 <Badge
                   variant={overdue ? "red" : "outline"}
                   className="font-normal"
                 >
                   {overdue ? t`Overdue` : t`Due`}{" "}
-                  {formatDate(card.due, undefined, i18n.locale)}
+                  {formatDate(due, undefined, i18n.locale)}
                 </Badge>
               ) : null}
               {card.estimateDays !== undefined ? (
