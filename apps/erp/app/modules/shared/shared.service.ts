@@ -156,6 +156,7 @@ import {
   SESSION_SECRET,
   SUPABASE_SERVICE_ROLE_KEY
 } from "@carbon/env";
+import { flags } from "@carbon/env/flags.server";
 import {
   getContentType,
   getFileExtension,
@@ -281,6 +282,7 @@ import {
   type NoteField,
   type NoteTable,
   operationTypes,
+  PERSONAL_PAGES_FLAG,
   type standardFactorType,
   toTiptapDoc
 } from "./shared.models";
@@ -2102,6 +2104,15 @@ export function assignmentEvent(table: string): NotificationEvent | null {
 
 export const normalizeLookupName = (value: string) =>
   value.toLowerCase().trim();
+
+/**
+ * Whether the Personal Pages hub is turned on for the company (the
+ * `implementation-hub-personal-pages` flag). Read with the company alone, so
+ * everyone in a company gets the same hub.
+ */
+export function personalPagesEnabled(companyId: string): Promise<boolean> {
+  return flags.bool(PERSONAL_PAGES_FLAG, { companyId });
+}
 
 /**
  * Set the company's Implementation Hub layout. Null data when the company is

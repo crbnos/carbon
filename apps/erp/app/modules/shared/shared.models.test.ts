@@ -17,7 +17,8 @@ import {
   optionalPlainTextDoc,
   optionalTiptapDoc,
   requiredTiptapDoc,
-  toTiptapDoc
+  toTiptapDoc,
+  usesPersonalPages
 } from "./shared.models";
 
 // Rich-text columns are `json` and must hold a tiptap document OBJECT. A JSON
@@ -405,5 +406,24 @@ describe("force delete", () => {
     expect(forceDeleteNotificationId("receipt", "r1", "fdr1")).toBe(
       "receipt:r1:fdr1"
     );
+  });
+});
+
+// Which Implementation Hub a company gets. Taking a company out of the flag
+// must put it back on the Company Plan hub, whatever layout was chosen.
+describe("usesPersonalPages", () => {
+  const personal = { layout: "Personal Pages" };
+  const companyPlan = { layout: "Company Plan" };
+
+  it("gives Personal Pages only with the flag on and that layout chosen", () => {
+    expect(usesPersonalPages(personal, true)).toBe(true);
+  });
+
+  it.each([
+    ["flag off, Personal Pages chosen", personal, false],
+    ["flag on, Company Plan chosen", companyPlan, true],
+    ["flag on, not enrolled", null, true]
+  ])("gives the Company Plan hub when %s", (_case, hub, enabled) => {
+    expect(usesPersonalPages(hub, enabled)).toBe(false);
   });
 });

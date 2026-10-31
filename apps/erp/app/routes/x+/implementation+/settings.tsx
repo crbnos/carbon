@@ -34,10 +34,8 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { usePermissions } from "~/hooks";
-import {
-  type ImplementationLayout,
-  usesPersonalPages
-} from "~/modules/shared/shared.models";
+import type { ImplementationLayout } from "~/modules/shared/shared.models";
+import { personalPagesEnabled } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import type { action as layoutAction } from "./layout";
@@ -49,8 +47,8 @@ export const handle: Handle = {
   to: path.to.implementationSettings
 };
 
-// Carbon staff only: whether the company is enrolled, and which hub layout
-// its people use.
+// Carbon staff only: whether the company is enrolled, the hub layout staff
+// chose for it, and whether the new hub is on for it (the flag).
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, email } = await requirePermissions(request, {});
   if (!isInternalEmail(email)) {
@@ -63,13 +61,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     role: "employee",
     bypassRls: true
   });
-  const [hub, members, employees] = await Promise.all([
+  const [hub, members, employees, flagOn] = await Promise.all([
     getImplementationHub(client, companyId),
     getImplementationMembers(client, companyId),
     peopleClient
       .from("employees")
       .select("id, email, status")
-      .eq("companyId", companyId)
+      .eq("companyId", companyId),
+    personalPagesEnabled(companyId)
   ]);
   if (employees.error) {
     logger.error("Failed to load the people for the hub settings", {
@@ -87,8 +86,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       !withPage.has(person.id)
   ).length;
 
+  // The layout staff chose. Its people get Personal Pages only while the
+  // flag is on for the company as well (`usesPersonalPages`).
   const layout: ImplementationLayout | null = hub.data
-    ? usesPersonalPages(hub.data)
+    ? hub.data.layout === "Personal Pages"
       ? "Personal Pages"
       : "Company Plan"
     : null;
@@ -96,12 +97,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     enrolled: Boolean(hub.data),
     layout,
+    flagOn,
     withoutPage
   };
 }
 
 export default function ImplementationSettingsRoute() {
-  const { enrolled, layout, withoutPage } = useLoaderData<typeof loader>();
+  const { enrolled, layout, flagOn, withoutPage } =
+    useLoaderData<typeof loader>();
 
   return (
     <ScrollArea className="h-full w-full">
@@ -109,9 +112,10 @@ export default function ImplementationSettingsRoute() {
         <SettingsPageHeading>
           <Trans>Hub Settings</Trans>
         </SettingsPageHeading>
-        <EnrolmentCard enrolled={enrolled} />
+        <EnrolmentCard enrolled={enrolled} flagOn={flagOn} />
         <LayoutCard
           layout={enrolled ? layout : null}
+          flagOn={flagOn}
           withoutPage={withoutPage}
         />
       </SettingsPage>
@@ -119,8 +123,15 @@ export default function ImplementationSettingsRoute() {
   );
 }
 
-// Enrolment is when the hub becomes visible to the company's own people.
-function EnrolmentCard({ enrolled }: { enrolled: boolean }) {
+// Enrolment is when the hub becomes visible to the company's own people. It
+// starts on Personal Pages only while the new hub is on for the company.
+function EnrolmentCard({
+  enrolled,
+  flagOn
+}: {
+  enrolled: boolean;
+  flagOn: boolean;
+}) {
   const fetcher = useFetcher();
   return (
     <Card>
@@ -142,10 +153,16 @@ function EnrolmentCard({ enrolled }: { enrolled: boolean }) {
         <CardDescription className="text-pretty">
           {enrolled ? (
             <Trans>The company's people see the Implementation Hub.</Trans>
-          ) : (
+          ) : flagOn ? (
             <Trans>
               The company's people do not see the hub yet. Enrolling shows it to
               them, on Personal Pages, and emails the company's admins.
+            </Trans>
+          ) : (
+            <Trans>
+              The company's people do not see the hub yet. Enrolling shows them
+              the Company Plan hub, because the new hub is off for this company,
+              and emails the company's admins.
             </Trans>
           )}
         </CardDescription>
@@ -170,12 +187,15 @@ function EnrolmentCard({ enrolled }: { enrolled: boolean }) {
 
 // Which layout the company uses, and the switch to the other one. Switching
 // needs permission to update settings in the company; both layouts read the
-// same hub records, so nothing moves.
+// same hub records, so nothing moves. Personal Pages also needs the new hub
+// on for the company (the flag), which is set outside the app.
 function LayoutCard({
   layout,
+  flagOn,
   withoutPage
 }: {
   layout: ImplementationLayout | null;
+  flagOn: boolean;
   withoutPage: number;
 }) {
   const { t } = useLingui();
@@ -191,6 +211,9 @@ function LayoutCard({
     next === "Personal Pages"
       ? t`Switch to Personal Pages`
       : t`Switch to Company Plan`;
+  // Off for the company: Personal Pages cannot be chosen, and one already
+  // chosen waits, its people on the Company Plan hub.
+  const blocked = next === "Personal Pages" && !flagOn;
 
   return (
     <Card>
@@ -204,6 +227,11 @@ function LayoutCard({
         <CardDescription className="text-pretty">
           {layout === null ? (
             <Trans>The company chooses a layout when it is enrolled.</Trans>
+          ) : layout === "Personal Pages" && !flagOn ? (
+            <Trans>
+              Its people see the Company Plan hub while the new hub is off for
+              this company. Their pages stay.
+            </Trans>
           ) : layout === "Personal Pages" ? (
             <Trans>Its people see the page loaded for them in this hub.</Trans>
           ) : (
@@ -219,11 +247,20 @@ function LayoutCard({
           <Button
             variant="secondary"
             leftIcon={<LuArrowLeftRight />}
-            isDisabled={!canSwitch}
+            isDisabled={!canSwitch || blocked}
             onClick={confirm.onOpen}
           >
             {title}
           </Button>
+          {blocked ? (
+            <p className="text-xs text-muted-foreground text-pretty">
+              <Trans>
+                The new hub is off for this company. Add it to the
+                implementation-hub-personal-pages flag in the CSA dashboard
+                first.
+              </Trans>
+            </p>
+          ) : null}
           {canSwitch ? null : (
             <p className="text-xs text-muted-foreground">
               <Trans>

@@ -19,6 +19,7 @@ import { isInternalEmail } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { usesPersonalPages } from "~/modules/shared/shared.models";
+import { personalPagesEnabled } from "~/modules/shared/shared.service";
 
 // Single action endpoint for every hub state mutation. The access rules live in
 // `applyHubMutation`, shared with the MCP hub tools: toggles, finishing and a
@@ -42,16 +43,22 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (changesCompanyPlanHub(validation.data.intent)) {
-    const hub = await getImplementationHub(client, companyId);
+    const [hub, flagOn] = await Promise.all([
+      getImplementationHub(client, companyId),
+      personalPagesEnabled(companyId)
+    ]);
     if (hub.error) {
       return data(
         { success: false, message: "Failed to read the hub" },
         await flash(request, error(hub.error, "Failed to read the hub"))
       );
     }
-    if (!usesPersonalPages(hub.data)) {
-      const message =
-        "This company uses the Company Plan hub. Switch it to Personal Pages in the hub's Settings first.";
+    if (!usesPersonalPages(hub.data, flagOn)) {
+      const message = !flagOn
+        ? "The new Implementation hub is off for this company. Add the company to the implementation-hub-personal-pages flag first."
+        : hub.data
+          ? "This company uses the Company Plan hub. Switch it to Personal Pages in the hub's Settings first."
+          : "This company is not enrolled. Enroll it in the hub's Settings first.";
       return data(
         { success: false, message },
         await flash(request, error(new Error("forbidden"), message))

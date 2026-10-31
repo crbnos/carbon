@@ -156,9 +156,11 @@ export default function GetStartedRoute() {
   const { members, people, isInternal, userId } =
     useLoaderData<typeof loader>();
   const [livePeople] = usePeople();
-  const hubLayout = useRouteData<{ personalPages: boolean }>(
-    path.to.implementation
-  );
+  const hubLayout = useRouteData<{
+    personalPages: boolean;
+    enrolled: boolean;
+    flagOn: boolean;
+  }>(path.to.implementation);
   const [params, setParams] = useSearchParams();
   // The page file being loaded; null while the load modal is closed.
   const [loadText, setLoadText] = useState<string | null>(null);
@@ -300,7 +302,15 @@ export default function GetStartedRoute() {
           />
         ) : null}
         {isInternal && hubLayout?.personalPages === false ? (
-          <CompanyPlanNotice />
+          <NotOnPersonalPagesNotice
+            reason={
+              !hubLayout.flagOn
+                ? "flag"
+                : !hubLayout.enrolled
+                  ? "enrolment"
+                  : "layout"
+            }
+          />
         ) : null}
         {shownPage && selectedId ? (
           <MemberPageView
@@ -362,20 +372,45 @@ export default function GetStartedRoute() {
   );
 }
 
-// Carbon staff only, on a Company Plan company: the page edits in full, but
-// the server refuses every write the Company Plan hub also reads.
-function CompanyPlanNotice() {
+// Carbon staff only, on a company not on Personal Pages: the page edits in
+// full, but the server refuses every write the Company Plan hub also reads.
+// It names the step still missing: the flag, enrolment or the layout.
+function NotOnPersonalPagesNotice({
+  reason
+}: {
+  reason: "flag" | "enrolment" | "layout";
+}) {
   return (
     <Alert variant="warning">
       <LuTriangleAlert />
       <AlertTitle>
-        <Trans>This company uses the Company Plan hub</Trans>
+        {reason === "flag" ? (
+          <Trans>The new hub is off for this company</Trans>
+        ) : reason === "enrolment" ? (
+          <Trans>This company is not enrolled</Trans>
+        ) : (
+          <Trans>This company uses the Company Plan hub</Trans>
+        )}
       </AlertTitle>
       <AlertDescription>
-        <Trans>
-          Pages and the priority set save here. Ticks, answers and company items
-          save once the company is switched to Personal Pages.
-        </Trans>
+        {reason === "flag" ? (
+          <Trans>
+            Pages and the priority set save here. Ticks, answers and company
+            items save once the company is in the
+            implementation-hub-personal-pages flag and on Personal Pages.
+          </Trans>
+        ) : reason === "enrolment" ? (
+          <Trans>
+            Its people do not see the hub yet. Pages and the priority set save
+            here. Enroll it in Settings to save ticks, answers and company
+            items.
+          </Trans>
+        ) : (
+          <Trans>
+            Pages and the priority set save here. Ticks, answers and company
+            items save once the company is switched to Personal Pages.
+          </Trans>
+        )}
         <div className="mt-2">
           <Button asChild size="sm" variant="secondary">
             <Link to={path.to.implementationSettings}>
