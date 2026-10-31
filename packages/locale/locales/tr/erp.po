@@ -565,6 +565,15 @@ msgstr "{behindDays, plural, one {Hedeften # gün geride} other {Hedeften # gün
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Bu parçayı doğrudan nihai ardıla yönlendirmeyi düşünün."
 
+msgid "{code} counted"
+msgstr ""
+
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
+msgid "{code} is already counted"
+msgstr ""
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr ""
 
@@ -631,6 +640,9 @@ msgstr "{count}/{total} adet"
 msgid "{count} units"
 msgstr "{count} adet"
 
+msgid "{counted} counted"
+msgstr ""
+
 msgid "{created} created, {updated} updated."
 msgstr "{created} oluşturuldu, {updated} güncellendi."
 
@@ -673,6 +685,9 @@ msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç 
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} yazdırma işinden {failed} tanesi başarısız oldu"
+
+msgid "{foundHere} found here"
+msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {Ve # daha fazla kayıt.} other {Ve # daha fazla kayıt.}}"
@@ -738,6 +753,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# aktif yöntemin çekme kaynağı
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} ay tutarları uyuşmazlığı"
+
+msgid "{missing} missing"
+msgstr ""
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "{missingCount} muhasebe fişi sağlayıcıda eksik"
@@ -890,6 +908,9 @@ msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış 
 
 msgid "{unitCount} units"
 msgstr "{unitCount} adet"
+
+msgid "{units} units"
+msgstr ""
 
 msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
 msgstr ""
@@ -1372,6 +1393,9 @@ msgstr "Bir faturayı bir sebep hesabına karşı ödeyen nakitsiz bir belge: al
 
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "Bir tedarikçi ile login olmadan erişilebilir bir /share/scar bağlantısı üzerinden paylaşılan bir uygunsuzluk; tedarikçi soruna yanıt verebilir ve görevleri Carbon dışından güncelleyebilir."
+
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "Vergilendirilmeyen bir ek ücret (örneğin izin ücretleri gibi geri alınabilir giderler) satıra eklenir ve vergi matrahından hariç tutulur."
@@ -2737,6 +2761,9 @@ msgstr "Tahsis edildi"
 
 msgid "Allows acknowledge & continue"
 msgstr "Onaylayıp devam etmeye izin verir"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "Üst birim {sourceName} nedeniyle zaten MRP dışı"
@@ -4326,7 +4353,7 @@ msgid "Batch"
 msgstr "Parti"
 
 msgid "Batch / Serial"
-msgstr "Parti / Seri"
+msgstr ""
 
 msgid "Batch Capacity"
 msgstr "Parti Kapasitesi"
@@ -5559,6 +5586,10 @@ msgstr "Sütun görünürlüğü ve sırası"
 msgid "Columns"
 msgstr "Sütunlar"
 
+#. placeholder {0}: INVENTORY_COUNT_CSV_COLUMNS.join(", ")
+msgid "Columns: {0}. Each item and storage unit in the file is a full count: units it leaves out are Missing."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "Filtreleri birleştir"
 
@@ -6624,7 +6655,7 @@ msgid "Counted {total}."
 msgstr "{total} sayıldı."
 
 msgid "Counted Qty"
-msgstr "Sayılan Mik."
+msgstr ""
 
 msgid "Counterparties"
 msgstr "Muhasebeleştirilecek Taraflar"
@@ -8607,6 +8638,9 @@ msgstr "PDF'i İndir"
 msgid "Download template"
 msgstr "Şablon indir"
 
+msgid "Download the count as a file to fill in"
+msgstr ""
+
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Şablonu indir. Her satır, Carbon'un muhasebeleştirdiği varsayılan bir hesaptır. Hesap Numarası'nda, bunu alan hesap planınızdaki hesabın numarasını girin. Carbon varsayılan hesabı eşleştirecek şekilde günceller."
 
@@ -9656,11 +9690,17 @@ msgstr "Özel OAuth uygulamanızın Onshape URL'sini, istemci ID'sini ve istemci
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "Her hesap için devir tarihinden önceki günü itibarıyla önceki sistemin mizan sütununu girin."
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "Gelen her satırdaki miktarı girin. Sıfırda bırakılan bir satır, mal kabul muhasebeleştirildiğinde alınmış sayılmaz."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Bu hareketin olması gereken miktarı girin. Farktaki ters hareket, orijinalin zaman döneminde orijinalin yanında deftere kaydedilir."
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Üretim maliyetini girin. Değer, harcanan hesaptan varlığa kaydedilir: önceki yıl için Dağıtılmamış kârlar veya bu yıl'ın İşçilik veya malzeme gideri."
@@ -10176,6 +10216,9 @@ msgstr "CSV'yi dışa aktar"
 
 msgid "Export Lines to CSV"
 msgstr "Satırları CSV'ye Dışa Aktar"
+
+msgid "Export units (CSV)"
+msgstr ""
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Hesap planınızı mevcut sisteminizden CSV olarak dışa aktarın; her hesap için numarası, adı, sınıfı, türü ve grubuyla bir satır olsun ya da mevcut hesap planının şablonuyla başlayın. Carbon yalnızca bu dosyadaki hesapları tutar."
@@ -10954,6 +10997,9 @@ msgstr "Ters çevir"
 msgid "For <0/>"
 msgstr "İçin <0/>"
 
+msgid "For a batch. A serial counts as 1."
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
 
@@ -10987,6 +11033,9 @@ msgstr "Biçim"
 
 msgid "Forward deployed engineer"
 msgstr "Sahadaki mühendis"
+
+msgid "found here"
+msgstr ""
 
 msgid "Foundation"
 msgstr "Temel"
@@ -11951,6 +12000,12 @@ msgstr "Hesap planını içe aktar"
 msgid "Import Chart of Accounts"
 msgstr "Hesap Planını İçe Aktar"
 
+msgid "Import count results"
+msgstr ""
+
+msgid "Import Count Results"
+msgstr ""
+
 msgid "Import CSV"
 msgstr "CSV'yi İçe Aktar"
 
@@ -11965,6 +12020,9 @@ msgstr "Hesap planınızı içe aktarın"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "Hesap planınızı bir elektronik tablodan içe aktarın"
+
+msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -13385,6 +13443,7 @@ msgstr "Olasılık"
 msgid "Line"
 msgstr "Satır"
 
+#. placeholder {0}: error.line
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Satır {0}"
@@ -14542,6 +14601,9 @@ msgstr "Daha fazla"
 msgid "More actions"
 msgstr "Daha fazla işlem"
 
+msgid "More count actions"
+msgstr ""
+
 msgid "more credits"
 msgstr "daha fazla alacak"
 
@@ -14636,6 +14698,14 @@ msgstr "{employeeName} öğesinin haftası {targetName} adresine taşındı"
 
 msgid "Moved account"
 msgstr "Taşınan hesap"
+
+#. placeholder {0}: line.otherBinName
+msgid "moved from {0}"
+msgstr ""
+
+#. placeholder {0}: line.otherBinName
+msgid "moved to {0}"
+msgstr ""
 
 msgid "Movements"
 msgstr "Hareketler"
@@ -15326,6 +15396,9 @@ msgstr "Kullanılabilir izlenen varlık bulunamadı"
 msgid "No bank accounts have been added yet."
 msgstr "Henüz hiçbir banka hesabı eklenmemiştir."
 
+msgid "No batch number"
+msgstr ""
+
 msgid "No batches"
 msgstr "Parti yok"
 
@@ -15887,6 +15960,9 @@ msgstr "Çizelge satırı yok."
 msgid "No scheduled work in this window"
 msgstr "Bu zaman penceresinde planlanmış iş yok"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "Henüz hiçbir seri numarası seçilmemiştir."
 
@@ -15967,6 +16043,9 @@ msgstr "Atanan eğitim yok"
 
 msgid "No transactions in this period"
 msgstr "Bu dönemde işlem yok"
+
+msgid "No unit record"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Henüz adet yok. Anlaşmayı etkinleştirmeden önce Adet listesinden bir filo adetini ekleyin."
@@ -16227,6 +16306,9 @@ msgstr "Bu dönem için muhasebeleştirecek bir şey yok."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Henüz tanınması gereken bir şey yok. Hasılat, faturaların faturalandırdığını takip eder."
+
+msgid "Nothing was imported. Fix these lines:"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Henüz hiçbir şey yok. Bir adım yalnızca yapılandırıldıktan sonra değerleri sunar."
@@ -19306,6 +19388,9 @@ msgstr "Kayıt ID"
 msgid "Record inspections tied to a part and a job"
 msgstr "Bir parça ve bir işe bağlı muayeneleri kaydedin"
 
+msgid "Record scan"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Çalışana {displayId} ödeyişini kayıt edin. Kısmen kapatmak için toplam borçtan daha az ödeme yapabilirsiniz."
 
@@ -20989,6 +21074,9 @@ msgstr "Tara"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Bir etiketi tarayın veya ürün kimliği veya takip kimliği ile arama yapın."
 
+msgid "Scan a serial, batch or item number"
+msgstr ""
+
 msgid "Scan or choose a batch number"
 msgstr "Toplu iş numarasını tarayın veya seçin"
 
@@ -21006,6 +21094,12 @@ msgstr "Tarama veya arayın..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Bu lottan izlenen bir varlığı taramak veya seçmek için bunu örnek sütun olarak ekleyin, ardından sonucunu ızgarada kaydedin."
+
+msgid "Scan serial or batch…"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Bu QR kodunu kimlik doğrulayıcı uygulamanız (örn. Google Authenticator veya 1Password) ile tarayın, ardından gösterdiği 6 haneli kodu girin."
@@ -23423,7 +23517,7 @@ msgid "System configured"
 msgstr "Sistem yapılandırıldı"
 
 msgid "System Qty"
-msgstr "Sistem Mik."
+msgstr ""
 
 msgid "Table"
 msgstr "Tablo"
@@ -23738,6 +23832,9 @@ msgstr "Bu liste boştu."
 
 msgid "That name is already used by another step."
 msgstr "Bu ad başka bir adım tarafından zaten kullanılıyor."
+
+msgid "That storage unit is not at this count's location"
+msgstr ""
 
 msgid "That workspace is connected to another company"
 msgstr "Bu çalışma alanı başka bir şirkete bağlı"
@@ -24230,6 +24327,9 @@ msgstr "Bu varlık için MACRS kapsamında IRS kurtarma süresi sınıfı (3, 5,
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "Her iş emrinin ürettiği stok kartı — çıkış lotlarını birleştirmek için eşleşmesi gerekir"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "Stok kartı'nın kiralama oranı"

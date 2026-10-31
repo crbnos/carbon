@@ -565,6 +565,15 @@ msgstr "{behindDays, plural, one {लक्ष्य से # दिन पी�
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
 
+msgid "{code} counted"
+msgstr ""
+
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
+msgid "{code} is already counted"
+msgstr ""
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr ""
 
@@ -631,6 +640,9 @@ msgstr "{count} का {total} इकाइयों में से"
 msgid "{count} units"
 msgstr "{count} इकाइयाँ"
 
+msgid "{counted} counted"
+msgstr ""
+
 msgid "{created} created, {updated} updated."
 msgstr "{created} बनाया गया, {updated} अपडेट किया गया।"
 
@@ -673,6 +685,9 @@ msgstr "{excluded, plural, one {# पंक्ति बाहर रखी ग�
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} में से {failed} प्रिंट जॉब विफल रहे"
+
+msgid "{foundHere} found here"
+msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {और # अधिक रिकॉर्ड।} other {और # अधिक रिकॉर्ड।}}"
@@ -738,6 +753,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# सक्रिय विधि 
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} महीने बेमेल कुल के साथ"
+
+msgid "{missing} missing"
+msgstr ""
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "प्रदाता में {missingCount} जर्नल गायब हैं"
@@ -890,6 +908,9 @@ msgstr "{uncounted, plural, one {# अनगिनती लाइन} other {# 
 
 msgid "{unitCount} units"
 msgstr "{unitCount} इकाई"
+
+msgid "{units} units"
+msgstr ""
 
 msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
 msgstr ""
@@ -1372,6 +1393,9 @@ msgstr "एक गैर-नकद दस्तावेज़ जो एक क
 
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "एक गैर-अनुरूपता जो आपूर्तिकर्ता के साथ एक लॉगिन-मुक्त /share/scar लिंक पर साझा की गई है, ताकि वे Carbon के बाहर से समस्या का जवाब दे सकें और इसके कार्य अपडेट कर सकें।"
+
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "एक कर-रहित अतिरिक्त शुल्क (जैसे, वसूली योग्य व्यय जैसे परमिट शुल्क) पंक्ति में जोड़ा गया; कर आधार से बाहर।"
@@ -2737,6 +2761,9 @@ msgstr "आवंटित"
 
 msgid "Allows acknowledge & continue"
 msgstr "स्वीकार करने और जारी रखने की अनुमति देता है"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "अपनी मूल इकाई {sourceName} के कारण पहले से MRP से बाहर"
@@ -4326,7 +4353,7 @@ msgid "Batch"
 msgstr "बैच"
 
 msgid "Batch / Serial"
-msgstr "बैच / सीरीज़"
+msgstr ""
 
 msgid "Batch Capacity"
 msgstr "बैच क्षमता"
@@ -5559,6 +5586,10 @@ msgstr "कॉलम दृश्यता और क्रम"
 msgid "Columns"
 msgstr "कॉलम"
 
+#. placeholder {0}: INVENTORY_COUNT_CSV_COLUMNS.join(", ")
+msgid "Columns: {0}. Each item and storage unit in the file is a full count: units it leaves out are Missing."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "फ़िल्टर को संयोजित करें"
 
@@ -6624,7 +6655,7 @@ msgid "Counted {total}."
 msgstr "{total} गिने गए।"
 
 msgid "Counted Qty"
-msgstr "गिनी गई मात्रा"
+msgstr ""
 
 msgid "Counterparties"
 msgstr "प्रतिपक्ष"
@@ -8607,6 +8638,9 @@ msgstr "PDF डाउनलोड करें"
 msgid "Download template"
 msgstr "टेम्पलेट डाउनलोड करें"
 
+msgid "Download the count as a file to fill in"
+msgstr ""
+
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "टेम्पलेट डाउनलोड करें। प्रत्येक पंक्ति एक डिफ़ॉल्ट खाता है जो Carbon पोस्ट करता है। खाता संख्या में, अपने चार्ट में उस खाते की संख्या दर्ज करें जो इसे लेता है। Carbon डिफ़ॉल्ट खाते को मेल खाने के लिए अपडेट करता है।"
 
@@ -9656,11 +9690,17 @@ msgstr "अपने निजी OAuth एप्लिकेशन का Onsha
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "कटओवर से पहले के दिन की तरह पूर्व प्रणाली के परीक्षण शेष को हर खाते के लिए दर्ज करें।"
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "प्रत्येक पंक्ति पर जो मात्रा आई है दर्ज करें। शून्य पर छोड़ी गई कोई भी पंक्ति प्राप्ति पोस्ट होने पर प्राप्त नहीं होती है।"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "वह मात्रा दर्ज करें जो यह आंदोलन होना चाहिए था। अंतर के लिए एक विपरीत आंदोलन मूल के बगल में, मूल की समय अवधि में पोस्ट किया जाता है।"
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "इसे बनाने में जो लागत आई उसे दर्ज करें। यह मान परिसंपत्ति को उस खाते से बुक किया जाता है जहाँ से खर्च किया गया था: एक पिछले वर्ष के लिए प्रतिधारित आय, या इस वर्ष का श्रम या सामग्री व्यय।"
@@ -10176,6 +10216,9 @@ msgstr "CSV निर्यात करें"
 
 msgid "Export Lines to CSV"
 msgstr "CSV में लाइनें निर्यात करें"
+
+msgid "Export units (CSV)"
+msgstr ""
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "अपने मौजूदा सिस्टम से अपना खाता चार्ट CSV के रूप में निर्यात करें, प्रति खाता एक पंक्ति, उसकी संख्या, नाम, वर्ग, प्रकार और समूह के साथ, या मौजूदा चार्ट के टेम्पलेट से शुरू करें। Carbon केवल इस फ़ाइल के खाते रखता है।"
@@ -10954,6 +10997,9 @@ msgstr "पलटें"
 msgid "For <0/>"
 msgstr "के लिए <0/>"
 
+msgid "For a batch. A serial counts as 1."
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "किसी भी चीज़ के लिए। वे सही व्यक्ति को शामिल करेंगे।"
 
@@ -10987,6 +11033,9 @@ msgstr "प्रारूप"
 
 msgid "Forward deployed engineer"
 msgstr "अग्रपंक्ति में तैनात इंजीनियर"
+
+msgid "found here"
+msgstr ""
 
 msgid "Foundation"
 msgstr "आधार"
@@ -11951,6 +12000,12 @@ msgstr "खातों का चार्ट आयात करें"
 msgid "Import Chart of Accounts"
 msgstr "खातों का चार्ट आयात करें"
 
+msgid "Import count results"
+msgstr ""
+
+msgid "Import Count Results"
+msgstr ""
+
 msgid "Import CSV"
 msgstr "CSV आयात करें"
 
@@ -11965,6 +12020,9 @@ msgstr "अपना चार्ट आयात करें"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "स्प्रेडशीट से अपना खातों का चार्ट आयात करें"
+
+msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -13385,6 +13443,7 @@ msgstr "संभावना"
 msgid "Line"
 msgstr "लाइन"
 
+#. placeholder {0}: error.line
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "लाइन {0}"
@@ -14542,6 +14601,9 @@ msgstr "अधिक"
 msgid "More actions"
 msgstr "अधिक क्रियाएं"
 
+msgid "More count actions"
+msgstr ""
+
 msgid "more credits"
 msgstr "अधिक जमा"
 
@@ -14636,6 +14698,14 @@ msgstr "{employeeName} के सप्ताह को {targetName} में �
 
 msgid "Moved account"
 msgstr "खाता स्थानांतरित किया गया"
+
+#. placeholder {0}: line.otherBinName
+msgid "moved from {0}"
+msgstr ""
+
+#. placeholder {0}: line.otherBinName
+msgid "moved to {0}"
+msgstr ""
 
 msgid "Movements"
 msgstr "मूवमेंट्स"
@@ -15326,6 +15396,9 @@ msgstr "कोई उपलब्ध ट्रैक किए गए इका�
 msgid "No bank accounts have been added yet."
 msgstr "अभी तक कोई बैंक खाता जोड़ा नहीं गया है।"
 
+msgid "No batch number"
+msgstr ""
+
 msgid "No batches"
 msgstr "कोई बैच नहीं"
 
@@ -15887,6 +15960,9 @@ msgstr "कोई शेड्यूल पंक्तियां नहीं
 msgid "No scheduled work in this window"
 msgstr "इस विंडो में कोई शेड्यूल किया हुआ काम नहीं"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "अभी तक कोई सीरियल नंबर चयनित नहीं।"
 
@@ -15967,6 +16043,9 @@ msgstr "कोई प्रशिक्षण निर्धारित नह
 
 msgid "No transactions in this period"
 msgstr "इस अवधि में कोई लेनदेन नहीं"
+
+msgid "No unit record"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "अभी कोई इकाई नहीं। समझौते को सक्रिय करने से पहले यूनिट सूची से एक फ्लीट इकाई जोड़ें।"
@@ -16227,6 +16306,9 @@ msgstr "इस अवधि के लिए कोई पोस्ट नही
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "अभी मान्यता देने के लिए कुछ नहीं। राजस्व उसके अनुसार है जो चालान बिल करते हैं।"
+
+msgid "Nothing was imported. Fix these lines:"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "अभी कुछ नहीं। एक चरण केवल तभी मान प्रदान करता है जब इसे कॉन्फ़िगर किया जाता है।"
@@ -19306,6 +19388,9 @@ msgstr "रिकॉर्ड ID"
 msgid "Record inspections tied to a part and a job"
 msgstr "एक भाग और एक कार्य से जुड़े निरीक्षण रिकॉर्ड करें"
 
+msgid "Record scan"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "कर्मचारी को {displayId} का भुगतान रिकॉर्ड करें। इसे आंशिक रूप से निपटाने के लिए कुल देय राशि से कम का भुगतान करें।"
 
@@ -20989,6 +21074,9 @@ msgstr "स्कैन करें"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "एक लेबल स्कैन करें या आइटम ID या ट्रैकिंग ID से खोजें।"
 
+msgid "Scan a serial, batch or item number"
+msgstr ""
+
 msgid "Scan or choose a batch number"
 msgstr "बैच नंबर स्कैन करें या चुनें"
 
@@ -21006,6 +21094,12 @@ msgstr "स्कैन करें या खोजें..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "इस लॉट से एक ट्रैक की गई इकाई को स्कैन या चुनें और इसे एक नमूना स्तंभ के रूप में जोड़ें, फिर ग्रिड में इसका परिणाम रिकॉर्ड करें।"
+
+msgid "Scan serial or batch…"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "अपने ऑथेंटिकेटर ऐप (जैसे Google Authenticator या 1Password) के साथ इस QR कोड को स्कैन करें, फिर यह जो 6-अंकीय कोड दिखाता है उसे दर्ज करें।"
@@ -23423,7 +23517,7 @@ msgid "System configured"
 msgstr "सिस्टम कॉन्फ़िगर किया गया"
 
 msgid "System Qty"
-msgstr "सिस्टम मात्रा"
+msgstr ""
 
 msgid "Table"
 msgstr "तालिका"
@@ -23738,6 +23832,9 @@ msgstr "वह सूची खाली थी।"
 
 msgid "That name is already used by another step."
 msgstr "वह नाम पहले से ही एक अन्य चरण द्वारा उपयोग किया जा रहा है।"
+
+msgid "That storage unit is not at this count's location"
+msgstr ""
 
 msgid "That workspace is connected to another company"
 msgstr "वह वर्कस्पेस किसी दूसरी कंपनी से कनेक्ट है"
@@ -24230,6 +24327,9 @@ msgstr "MACRS के तहत इस संपत्ति के लिए IRS
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "प्रत्येक जॉब द्वारा उत्पादित आइटम — आउटपुट लॉट्स को मर्ज करने के लिए इसे मेल खाना आवश्यक है"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "आइटम की किराये की दर"

@@ -565,6 +565,15 @@ msgstr "{behindDays, plural, one {目标延后 # 天} other {目标延后 # 天}
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
 
+msgid "{code} counted"
+msgstr ""
+
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
+msgid "{code} is already counted"
+msgstr ""
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr ""
 
@@ -631,6 +640,9 @@ msgstr "{count} / {total} 件"
 msgid "{count} units"
 msgstr "{count} 件"
 
+msgid "{counted} counted"
+msgstr ""
+
 msgid "{created} created, {updated} updated."
 msgstr "已创建 {created} 条，已更新 {updated} 条。"
 
@@ -673,6 +685,9 @@ msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} 个打印任务中有 {failed} 个失败"
+
+msgid "{foundHere} found here"
+msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {还有 # 条记录。} other {还有 # 条记录。}}"
@@ -738,6 +753,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# 个启用的方法有物料没�
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount}个月的总计不匹配"
+
+msgid "{missing} missing"
+msgstr ""
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "提供商中缺少{missingCount}个凭证"
@@ -890,6 +908,9 @@ msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
 
 msgid "{unitCount} units"
 msgstr "{unitCount}件"
+
+msgid "{units} units"
+msgstr ""
 
 msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
 msgstr ""
@@ -1372,6 +1393,9 @@ msgstr "一份非现金文件，根据原因账户结算发票：贷方降低欠
 
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "通过无登录 /share/scar 链接与供应商共享的不合格记录，以便他们可以从 Carbon 外部响应问题并更新其任务。"
+
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "不可征税的附加费（如可收回的费用，如许可证费用），添加到行中并从税基中排除。"
@@ -2737,6 +2761,9 @@ msgstr "已分配"
 
 msgid "Allows acknowledge & continue"
 msgstr "允许确认并继续"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "已因上级单元 {sourceName} 而不计入MRP"
@@ -4326,7 +4353,7 @@ msgid "Batch"
 msgstr "批次"
 
 msgid "Batch / Serial"
-msgstr "批次 / 序列号"
+msgstr ""
 
 msgid "Batch Capacity"
 msgstr "生产批次容量"
@@ -5559,6 +5586,10 @@ msgstr "列的可见性和顺序"
 msgid "Columns"
 msgstr "列"
 
+#. placeholder {0}: INVENTORY_COUNT_CSV_COLUMNS.join(", ")
+msgid "Columns: {0}. Each item and storage unit in the file is a full count: units it leaves out are Missing."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "合并筛选"
 
@@ -6624,7 +6655,7 @@ msgid "Counted {total}."
 msgstr "已计数 {total} 个。"
 
 msgid "Counted Qty"
-msgstr "已计数数量"
+msgstr ""
 
 msgid "Counterparties"
 msgstr "交易对手"
@@ -8607,6 +8638,9 @@ msgstr "下载 PDF"
 msgid "Download template"
 msgstr "下载模板"
 
+msgid "Download the count as a file to fill in"
+msgstr ""
+
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "下载模板。每一行是一个 Carbon 过账的默认账户。在账户编号中，输入您的科目表中对应账户的编号。Carbon 会更新默认账户以匹配。"
 
@@ -9656,11 +9690,17 @@ msgstr "输入您的私有 OAuth 应用程序的 Onshape URL、客户端 ID 和�
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "输入前系统在过账前一天的试算平衡余额，用于每个账户。"
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "输入每一行到货的数量。当收货单已过账时，数量为零的行将不被记为已收货。"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "输入此移动应该的数量。差异的相反移动在原始时期内的原始旁边过账。"
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "输入该资产的制造成本。该成本将从其原支出账户计入资产：上年度的未分配利润或本年度的人工、材料费用。"
@@ -10176,6 +10216,9 @@ msgstr "导出 CSV"
 
 msgid "Export Lines to CSV"
 msgstr "导出行到 CSV"
+
+msgid "Export units (CSV)"
+msgstr ""
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "从您的现有系统导出科目表为 CSV，每行一个账户，包括编号、名称、类别、类型和组，或从当前科目表的模板开始。Carbon 仅保留此文件中的账户。"
@@ -10954,6 +10997,9 @@ msgstr "翻面"
 msgid "For <0/>"
 msgstr "对于 <0/>"
 
+msgid "For a batch. A serial counts as 1."
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "用于任何事项。他们会调配合适的人员。"
 
@@ -10987,6 +11033,9 @@ msgstr "格式"
 
 msgid "Forward deployed engineer"
 msgstr "驻场工程师"
+
+msgid "found here"
+msgstr ""
 
 msgid "Foundation"
 msgstr "基础"
@@ -11951,6 +12000,12 @@ msgstr "导入会计科目表"
 msgid "Import Chart of Accounts"
 msgstr "导入会计科目表"
 
+msgid "Import count results"
+msgstr ""
+
+msgid "Import Count Results"
+msgstr ""
+
 msgid "Import CSV"
 msgstr "导入CSV"
 
@@ -11965,6 +12020,9 @@ msgstr "导入您的会计科目表"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "从电子表格导入您的会计科目表"
+
+msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -13385,6 +13443,7 @@ msgstr "可能性"
 msgid "Line"
 msgstr "行"
 
+#. placeholder {0}: error.line
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "行 {0}"
@@ -14542,6 +14601,9 @@ msgstr "更多"
 msgid "More actions"
 msgstr "更多操作"
 
+msgid "More count actions"
+msgstr ""
+
 msgid "more credits"
 msgstr "更多贷方项"
 
@@ -14636,6 +14698,14 @@ msgstr "将 {employeeName} 的周移至 {targetName}"
 
 msgid "Moved account"
 msgstr "已移动账户"
+
+#. placeholder {0}: line.otherBinName
+msgid "moved from {0}"
+msgstr ""
+
+#. placeholder {0}: line.otherBinName
+msgid "moved to {0}"
+msgstr ""
 
 msgid "Movements"
 msgstr "移动"
@@ -15326,6 +15396,9 @@ msgstr "未找到可用的追踪实体"
 msgid "No bank accounts have been added yet."
 msgstr "尚未添加银行账户。"
 
+msgid "No batch number"
+msgstr ""
+
 msgid "No batches"
 msgstr "无生产批次"
 
@@ -15887,6 +15960,9 @@ msgstr "无日程行。"
 msgid "No scheduled work in this window"
 msgstr "此时间窗内无排程工作"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "尚未选择序列号。"
 
@@ -15967,6 +16043,9 @@ msgstr "未分配培训"
 
 msgid "No transactions in this period"
 msgstr "此期间无交易"
+
+msgid "No unit record"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "还没有单位。在启用协议前，从单位列表中添加一个车队单位。"
@@ -16227,6 +16306,9 @@ msgstr "此期间无内容待过账。"
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "暂无待确认。收入遵循发票开票的内容。"
+
+msgid "Nothing was imported. Fix these lines:"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "暂无内容。步骤配置后才会提供值。"
@@ -19306,6 +19388,9 @@ msgstr "记录 ID"
 msgid "Record inspections tied to a part and a job"
 msgstr "记录与零件和工作相关的检验"
 
+msgid "Record scan"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "记录向员工支付 {displayId} 的款项。支付少于应付总额以部分结算。"
 
@@ -20989,6 +21074,9 @@ msgstr "扫码"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "扫码或按物料ID或追踪ID搜索。"
 
+msgid "Scan a serial, batch or item number"
+msgstr ""
+
 msgid "Scan or choose a batch number"
 msgstr "扫码或选择一个生产批次号"
 
@@ -21006,6 +21094,12 @@ msgstr "扫码或搜索..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "扫码或从此批次中选择一个追踪实体，将其添加为采样列，然后在网格中记录其结果。"
+
+msgid "Scan serial or batch…"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "用你的身份验证应用程序（如 Google Authenticator 或 1Password）扫描此 QR 代码，然后输入它显示的 6 位数代码。"
@@ -23423,7 +23517,7 @@ msgid "System configured"
 msgstr "系统已配置"
 
 msgid "System Qty"
-msgstr "系统数量"
+msgstr ""
 
 msgid "Table"
 msgstr "表"
@@ -23738,6 +23832,9 @@ msgstr "该列表为空。"
 
 msgid "That name is already used by another step."
 msgstr "该名称已被另一个步骤使用。"
+
+msgid "That storage unit is not at this count's location"
+msgstr ""
 
 msgid "That workspace is connected to another company"
 msgstr "该工作区已连接到另一家公司"
@@ -24230,6 +24327,9 @@ msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "每个工单生产的物料 — 要求其匹配以合并输出批次"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "该物料的租赁费率"

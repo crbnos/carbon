@@ -174,6 +174,16 @@ export const path = {
         `${generatePath(`${api}/integrations/${id}/sync-activity.csv`)}${
           status ? `?${new URLSearchParams({ status })}` : ""
         }`,
+      inventoryCountCsv: (inventoryCountId: string) =>
+        generatePath(`${api}/inventory-count/${inventoryCountId}.csv`),
+      inventoryCountGroup: (
+        inventoryCountId: string,
+        itemId: string,
+        storageUnitId: string | null
+      ) =>
+        `${generatePath(`${api}/inventory-count/${inventoryCountId}/group`)}?${new URLSearchParams(
+          { itemId, storageUnitId: storageUnitId ?? "" }
+        )}`,
       issueTypes: `${api}/quality/issue-types`,
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemConfigurable: `${api}/items/configurable`,
@@ -1442,12 +1452,18 @@ export const path = {
       generatePath(`${x}/inventory-count/${id}/confirm`),
     inventoryCountDelete: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/delete`),
+    inventoryCountImport: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/import`),
     inventoryCountLineUpdate: `${x}/inventory-count/lines/update`,
     inventoryCountPost: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/post`),
     inventoryCountReopen: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/reopen`),
+    inventoryCountScan: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/scan`),
     inventoryCounts: `${x}/inventory/inventory-count`,
+    inventoryCountUnitNew: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/units/new`),
     inventoryItem: (id: string) =>
       generatePath(`${x}/inventory/quantities/${id}/details`),
     inventoryItemActivity: (id: string) =>
