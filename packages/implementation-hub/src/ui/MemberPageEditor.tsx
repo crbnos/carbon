@@ -111,8 +111,14 @@ import {
 import type { CustomizationStatus, ImplementationRowData } from "../types";
 import { CardStatus, EmptySection } from "./PageCardParts";
 import { ProgressPill } from "./ProgressPill";
-import { EditableInput } from "./primitives";
-import { useCheckMap, useHub, useHubActions } from "./state";
+import { EditableInput, EvidenceCount } from "./primitives";
+import {
+  useCheckMap,
+  useCounts,
+  useHub,
+  useHubActions,
+  useResolveScreenUrl
+} from "./state";
 
 // How the editor saves. The app supplies it: each call is one request, and a
 // later save carries every earlier change, so a save the app cancels for a
@@ -356,6 +362,11 @@ function EditCard({
   const { t, i18n } = useLingui();
   const actions = useHubActions();
   const states = useCheckMap();
+  const counts = useCounts();
+  const resolveScreenUrl = useResolveScreenUrl();
+  const screenUrl = card.screenKey
+    ? resolveScreenUrl(card.screenKey)
+    : undefined;
   const rowsById = useMemo(() => new Map(row ? [[row.id, row]] : []), [row]);
   const [deleting, setDeleting] = useState(false);
   // A due date still being typed. Its first year digit already makes a whole
@@ -513,6 +524,20 @@ function EditCard({
               the page to save other changes.
             </Trans>
           </p>
+        ) : null}
+        {card.evidence.length ? (
+          // How many records the company has made, e.g. "4 work centers",
+          // linked to their list. Staff only: a person's page shows none.
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            {card.evidence.map((evidence) => (
+              <EvidenceCount
+                key={evidence.count}
+                count={counts[evidence.count]}
+                label={i18n._(evidence.label)}
+                href={screenUrl}
+              />
+            ))}
+          </div>
         ) : null}
         {hasLink ? (
           <EditableInput
