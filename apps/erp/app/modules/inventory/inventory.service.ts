@@ -3441,6 +3441,8 @@ export type CountImportLine = {
   systemQuantity: number;
   // Set only for a snapshot unit with no serial number: its age, oldest first.
   unnumberedSince: string | null;
+  // A serial number the counter gave that unit. The export lists it.
+  assignedReadableId: string | null;
 };
 export type CountImportPlan =
   | { errors: InventoryCountCsvError[] }
@@ -3644,12 +3646,12 @@ export function planInventoryCountImport(input: {
     const parts = groupLines
       .filter((l) => l.trackedEntityId && entityIds.includes(l.trackedEntityId))
       .sort((a, b) => a.id.localeCompare(b.id));
+    // A new number added while counting, or one given to a unit with none.
+    const byNumber = (l: CountImportLine) =>
+      (!l.trackedEntityId && l.readableId === row.code) ||
+      l.assignedReadableId === row.code;
     if (row.quantity === null) {
-      const here = parts.length
-        ? parts
-        : groupLines.filter(
-            (l) => !l.trackedEntityId && l.readableId === row.code
-          );
+      const here = parts.length ? parts : groupLines.filter(byNumber);
       for (const line of here) notCounted.add(line.id);
       continue;
     }
@@ -3659,9 +3661,7 @@ export function planInventoryCountImport(input: {
       }
       continue;
     }
-    const here =
-      parts[0] ??
-      groupLines.find((l) => !l.trackedEntityId && l.readableId === row.code);
+    const here = parts[0] ?? groupLines.find(byNumber);
     if (here) {
       updates.set(here.id, row.quantity);
       continue;
@@ -3679,9 +3679,22 @@ export function planInventoryCountImport(input: {
     });
   }
 
+  // Full count: each group with a counted row. A group the file lists only
+  // with blank rows is left as it is.
+  const named = new Set(
+    resolved
+      .filter((row) => row.quantity !== null)
+      .map((row) => key(row.item.id, row.storageUnitId))
+  );
+
   for (const [groupKey, { counted, notCounted: blank }] of unnumberedByGroup) {
     const unnumbered = (linesByGroup[groupKey] ?? [])
-      .filter((l) => l.unnumberedSince !== null && !l.foundDuringCount)
+      .filter(
+        (l) =>
+          l.unnumberedSince !== null &&
+          !l.foundDuringCount &&
+          !l.assignedReadableId
+      )
       .sort(
         (a, b) =>
           (a.unnumberedSince as string).localeCompare(
@@ -3697,8 +3710,9 @@ export function planInventoryCountImport(input: {
     }
     unnumbered.forEach((line, index) => {
       if (index < counted) updates.set(line.id, 1);
-      else if (index < counted + blank) notCounted.add(line.id);
-      else updates.set(line.id, 0);
+      else if (index < counted + blank || !named.has(groupKey)) {
+        notCounted.add(line.id);
+      } else updates.set(line.id, 0);
     });
   }
 
@@ -3706,13 +3720,8 @@ export function planInventoryCountImport(input: {
     return { errors: errors.sort((a, b) => a.line - b.line) };
   }
 
-  // Full count: in each named group, a snapshot unit the file did not list is
-  // Missing, and a unit added while counting that it did not list is removed.
-  const named = new Set(
-    resolved
-      .filter((row) => row.quantity !== null)
-      .map((row) => key(row.item.id, row.storageUnitId))
-  );
+  // In each named group, a snapshot unit the file did not list is Missing,
+  // and a unit added while counting that it did not list is removed.
   const deletes: string[] = [];
   for (const groupKey of named) {
     for (const line of linesByGroup[groupKey] ?? []) {
@@ -3813,6 +3822,7 @@ export async function importInventoryCountRows(
           "inventoryCountLine.storageUnitId",
           "inventoryCountLine.trackedEntityId",
           "inventoryCountLine.readableId",
+          "inventoryCountLine.assignedReadableId",
           "inventoryCountLine.foundDuringCount",
           "inventoryCountLine.systemQuantity",
           "trackedEntity.readableId as entityReadableId",
@@ -3855,6 +3865,7 @@ export async function importInventoryCountRows(
         readableId: line.readableId,
         foundDuringCount: line.foundDuringCount,
         systemQuantity: Number(line.systemQuantity),
+        assignedReadableId: line.assignedReadableId,
         // Kysely reads a timestamp as a Date: sort on its ISO text.
         unnumberedSince:
           line.trackedEntityId && line.entityReadableId === null

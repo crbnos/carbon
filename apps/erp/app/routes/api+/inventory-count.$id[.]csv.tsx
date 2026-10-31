@@ -5,6 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { CSV_CONTENT_TYPE, encodeCsv } from "@carbon/files/csv";
 import { getLogger } from "@carbon/logger";
+import { round } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   INVENTORY_COUNT_CSV_COLUMNS,
@@ -53,6 +54,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       "inventoryCountLines.assignedReadableId",
       "inventoryCountLines.countedQuantity",
       "inventoryCountLines.foundDuringCount",
+      "inventoryCountLines.itemTrackingType",
       "storageUnit.name as storageUnitName"
     ])
     .where("inventoryCountLines.inventoryCountId", "=", id)
@@ -62,9 +64,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .orderBy("inventoryCountLines.readableId")
     .execute();
 
-  const rows = lines.map((line) => {
+  // A split batch keeps its number on every part, and one bin can hold 2 or
+  // more parts. The import reads one row per number per bin and spreads it
+  // over the parts, so the export sums them into one row.
+  const units = new Map<
+    string,
+    { line: (typeof lines)[number]; counted: number | null }
+  >();
+  lines.forEach((line, index) => {
+    const code = line.assignedReadableId ?? line.readableId;
+    const key =
+      line.itemTrackingType === "Batch" && code
+        ? `${line.itemReadableIdWithRevision}:${line.storageUnitName}:${code}`
+        : String(index);
     const counted =
       line.countedQuantity === null ? null : Number(line.countedQuantity);
+    const unit = units.get(key);
+    if (!unit) units.set(key, { line, counted });
+    else if (counted !== null)
+      unit.counted = round((unit.counted ?? 0) + counted);
+  });
+
+  const rows = [...units.values()].map(({ line, counted }) => {
     const state = inventoryCountLineState({
       countedQuantity: counted,
       foundDuringCount: Boolean(line.foundDuringCount)

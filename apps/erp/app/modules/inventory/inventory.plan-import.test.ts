@@ -60,6 +60,7 @@ const line = (overrides: Partial<CountImportLine>): CountImportLine => ({
   foundDuringCount: false,
   systemQuantity: 1,
   unnumberedSince: null,
+  assignedReadableId: null,
   ...overrides
 });
 const lines: CountImportLine[] = [
@@ -336,6 +337,9 @@ describe("review fixes", () => {
     expect(protectCsvIdentifier("1001")).toBe("1001");
     expect(protectCsvIdentifier("123456789012345")).toBe("123456789012345");
     expect(protectCsvIdentifier("1234567890123456")).toBe("'1234567890123456");
+    expect(protectCsvIdentifier("12-16")).toBe("'12-16");
+    expect(protectCsvIdentifier("Jan-16")).toBe("'Jan-16");
+    expect(protectCsvIdentifier("LOT-16")).toBe("LOT-16");
     const csv =
       "Item,Storage Unit,Serial / Batch,Counted Quantity\nBAT,A1,'-LOT,4";
     expect(parseInventoryCountCsv(csv).rows[0].code).toBe("-LOT");
@@ -390,6 +394,45 @@ describe("review fixes", () => {
           message: "NON is a Non-Inventory item and has no stock to count"
         }
       ]
+    });
+  });
+
+  it("leaves unnumbered units as they are in a group with no counted row", () => {
+    expect(plan([row(2, "SER", "B2", "", null)])).toEqual({
+      updates: [],
+      inserts: [],
+      deletes: []
+    });
+  });
+
+  it("counts a serial number given while counting on its own unit", () => {
+    expect(
+      planInventoryCountImport({
+        rows: [row(2, "SER", "B2", "SN-NEW", 1), row(3, "SER", "B2", "", 1)],
+        items,
+        storageUnits,
+        entities,
+        lines: lines.map((l) =>
+          l.id === "u1" ? { ...l, assignedReadableId: "SN-NEW" } : l
+        )
+      })
+    ).toEqual({
+      updates: [
+        { lineId: "u1", countedQuantity: 1 },
+        { lineId: "u2", countedQuantity: 1 },
+        { lineId: "ln3", countedQuantity: 0 }
+      ],
+      inserts: [],
+      deletes: []
+    });
+  });
+
+  it("refuses a row with fewer cells than the header", () => {
+    const csv =
+      "Item,Storage Unit,Serial / Batch,Counted Quantity\nBAT,A1,LOT-1\nBAT,B2,LOT-1,";
+    expect(parseInventoryCountCsv(csv)).toEqual({
+      rows: [row(3, "BAT", "B2", "LOT-1", null)],
+      errors: [{ line: 2, message: "The row has fewer cells than the header" }]
     });
   });
 });

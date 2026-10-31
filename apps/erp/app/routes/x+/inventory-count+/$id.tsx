@@ -22,10 +22,7 @@ import {
   getStorageUnitsListForLocation,
   INVENTORY_COUNT_LINES_PAGING
 } from "~/modules/inventory/inventory.service";
-import {
-  inventoryCountGroupId,
-  isBlindCountEntry
-} from "~/modules/inventory/inventory.utils";
+import { inventoryCountGroupId } from "~/modules/inventory/inventory.utils";
 import { InventoryCountDetails } from "~/modules/inventory/ui";
 import {
   getMaterialFormsList,
@@ -189,19 +186,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }))
     })
   ]);
-  const blind = isBlindCountEntry(inventoryCount.data);
-
   return {
     inventoryCount: inventoryCount.data,
     lines: lineData.map((line) => ({
       ...line,
       otherBinName: otherBins.get(line.id!) ?? null
     })),
+    // Counted, missing and not-counted units come from what the counter
+    // entered, which the sheet shows anyway (blind or not); the system
+    // quantity is not in a summary.
     groupSummaries: Object.fromEntries(
-      groupSummaries.map((group) => [
-        group.id,
-        blind ? { ...group, missingCount: null, notCountedCount: null } : group
-      ])
+      groupSummaries.map((group) => [group.id, group])
     ),
     count: lines.count ?? 0,
     nextCursor: page.nextCursor,

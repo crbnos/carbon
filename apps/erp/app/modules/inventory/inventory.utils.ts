@@ -424,7 +424,13 @@ export function parseInventoryCountCsv(text: string): {
 
   const rows: InventoryCountCsvRow[] = [];
   const errors: InventoryCountCsvError[] = [];
+  const lastColumn = Math.max(itemAt, unitAt, codeAt, quantityAt);
   for (const { line, cells } of body) {
+    // A short row lost its cells; an empty Counted Quantity cell is kept.
+    if (cells.length <= lastColumn) {
+      errors.push({ line, message: "The row has fewer cells than the header" });
+      continue;
+    }
     const item = readCsvIdentifier(cells[itemAt]?.trim() ?? "");
     const quantityText = cells[quantityAt]?.trim() ?? "";
     if (!item) {
@@ -471,17 +477,21 @@ export function spreadBatchCount(
 
 // A spreadsheet runs a cell that starts with =, +, - or @, so the CSV encoder
 // strips those characters, and a spreadsheet turns a number-like text such as
-// 00123 into 123 and keeps only 15 significant digits of a longer number.
+// 00123 into 123, keeps only 15 significant digits of a longer number, and
+// reads a text such as 12-16 or Jan-16 as a date.
 // The export puts an apostrophe in front of any identifier either would
 // change, and of any that already starts with one; the import takes exactly
 // one apostrophe off. So every identifier round-trips.
 const CSV_FORMULA_START = /^[=+\-@]/;
 const SPREADSHEET_DIGITS = 15;
+const DATE_LIKE =
+  /^(\d{1,4}[-/.]\d{1,2}([-/.]\d{1,4})?|(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*[-/ ]\d{1,4}|\d{1,2}[-/ ](jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*([-/ ]\d{1,4})?)$/i;
 export function protectCsvIdentifier(value: string): string {
   const isNumberLike = value.trim() !== "" && !Number.isNaN(Number(value));
   const significantDigits = value.replace(/\D/g, "").replace(/^0+/, "").length;
   const needsEscape =
     value.startsWith("'") ||
+    DATE_LIKE.test(value.trim()) ||
     (CSV_FORMULA_START.test(value) && !isNumberLike) ||
     (isNumberLike &&
       (String(Number(value)) !== value ||
