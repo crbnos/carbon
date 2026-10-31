@@ -48,6 +48,9 @@ export type ImplementationHubData = {
   } | null;
   implementationCheckStates: CheckStateRow[];
   implementationSignals: Signals | null;
+  // The company gets the Personal Pages hub (`usesPersonalPages`): the flag is
+  // on for it and its hub's layout is Personal Pages.
+  personalPages: boolean;
   // False until the streamed progress lands. Until then the counts are not
   // known: show the item and the card, leave the numbers out.
   ready: boolean;
@@ -58,14 +61,15 @@ const isFinished = (status: HubStatus) =>
 
 // A Personal Pages company has its own hub; every other company keeps the
 // Company Plan hub at its usual address.
-const hubPath = (hub: { layout?: ImplementationLayout }) =>
-  usesPersonalPages(hub) ? path.to.implementation : path.to.getStarted;
+const hubPath = (personalPages: boolean) =>
+  personalPages ? path.to.implementation : path.to.getStarted;
 
 // Shared reader. The hub row (null until the company enrols) is awaited by the
 // layout loader; progress is streamed and fills in after.
 function useImplementation(): ImplementationHubData | undefined {
   const data = useRouteData<{
     implementationHub?: ImplementationHubData["implementationHub"];
+    implementationPersonalPages?: boolean;
     implementationProgress?: Promise<ImplementationProgress>;
   }>(path.to.authenticatedRoot);
   const progress = useResolved(data?.implementationProgress, null);
@@ -74,8 +78,18 @@ function useImplementation(): ImplementationHubData | undefined {
     implementationHub: data.implementationHub ?? null,
     implementationCheckStates: progress?.checkStates ?? [],
     implementationSignals: progress?.signals ?? null,
+    personalPages: usesPersonalPages(
+      data.implementationHub,
+      data.implementationPersonalPages ?? false
+    ),
     ready: progress !== null
   };
+}
+
+// Whether the company gets the Personal Pages hub, for a component outside
+// the nav and the home card (the Company Plan hub's notice).
+export function useUsesPersonalPages(): boolean {
+  return useImplementation()?.personalPages ?? false;
 }
 
 // Whether the item and the card exist is known at first paint, so neither
@@ -89,10 +103,6 @@ export function ImplementationData({
   return data ? <>{children(data)}</> : null;
 }
 
-function useHub() {
-  return useImplementation()?.implementationHub;
-}
-
 // The pinned "Get Started" primary-nav entry with a remaining-gates badge. Shown
 // while a hub is still in progress; gone once it's finished (see reopen entry).
 export function getImplementationNavItem(
@@ -103,7 +113,7 @@ export function getImplementationNavItem(
   if (!hub || isFinished(hub.status)) return null;
 
   // The Personal Pages hub has no gates to count: one name, no badge.
-  if (usesPersonalPages(hub)) {
+  if (data.personalPages) {
     return {
       name: i18n._(personalPagesHubName),
       to: path.to.implementation,
@@ -132,12 +142,13 @@ export function getImplementationNavItem(
 // Null for unenrolled or still-in-progress hubs.
 export function useImplementationReopenItem(): Authenticated<NavItem> | null {
   const { i18n } = useLingui();
-  const hub = useHub();
-  if (!hub || !isFinished(hub.status)) return null;
+  const data = useImplementation();
+  const hub = data?.implementationHub;
+  if (!data || !hub || !isFinished(hub.status)) return null;
 
   return {
     name: i18n._(labelForTier(hub.tier)),
-    to: hubPath(hub),
+    to: hubPath(data.personalPages),
     icon: LuRocket
   };
 }

@@ -468,8 +468,13 @@ export const enrollImplementationHubAsStaff = defineServiceFn({
       return ctx.error("internal", "Failed to enroll company", enrolled.error);
     }
 
-    // Staff enroll from the Personal Pages hub, so the company starts on it,
-    // and the admins' email links there rather than to the Company Plan hub.
+    // A company the Personal Pages flag is on for starts on that hub, and the
+    // admins' email links there. Any other company starts on the Company Plan
+    // hub, as self-serve enrolment does.
+    if (!(await service.personalPagesEnabled(companyId))) {
+      await service.notifyImplementationHubAdmins(ctx);
+      return { enrolled: true };
+    }
     const layout = await service.setImplementationLayout(serviceRole, {
       companyId,
       layout: "Personal Pages",
@@ -506,6 +511,15 @@ export const setImplementationLayout = defineServiceFn({
       return ctx.error(
         "forbidden",
         "Only Carbon staff can change the Implementation Hub layout"
+      );
+    }
+    if (
+      input.layout === "Personal Pages" &&
+      !(await service.personalPagesEnabled(ctx.company.id))
+    ) {
+      return ctx.error(
+        "forbidden",
+        "The new Implementation hub is off for this company. Add the company to the implementation-hub-personal-pages flag first."
       );
     }
     const result = await service.setImplementationLayout(

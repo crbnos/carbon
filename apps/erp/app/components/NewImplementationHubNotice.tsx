@@ -6,17 +6,17 @@ import { Alert, AlertDescription, AlertTitle, Button } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { LuRocket } from "react-icons/lu";
 import { Link } from "react-router";
-import { usesPersonalPages } from "~/modules/shared/shared.models";
+import { useUsesPersonalPages } from "~/hooks/useImplementationNavItem";
 import { path } from "~/utils/path";
 
 // The Company Plan hub stays open to a company on Personal Pages (an old link,
-// a bookmark); this points its people to the hub they now use.
-export function NewImplementationHubNotice({
-  hub
-}: {
+// a bookmark); this points its people to the hub they now use. Which hub the
+// company gets comes from the app shell, which reads the flag with the hub
+// row; the `hub` the Company Plan layout passes is the same row.
+export function NewImplementationHubNotice(_props: {
   hub: { layout?: string | null } | null | undefined;
 }) {
-  if (!usesPersonalPages(hub)) return null;
+  if (!useUsesPersonalPages()) return null;
   return (
     <Alert variant="info" className="mb-6">
       <LuRocket />

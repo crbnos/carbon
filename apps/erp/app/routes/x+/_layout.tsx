@@ -100,7 +100,8 @@ import { usesPersonalPages } from "~/modules/shared/shared.models";
 import {
   getAppShell,
   getCustomFieldsSchemas,
-  getImplementationSignals
+  getImplementationSignals,
+  personalPagesEnabled
 } from "~/modules/shared/shared.service";
 import AccountSettings from "~/modules/users/ui/AccountSettings";
 import {
@@ -174,17 +175,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // The user's and the company's rows, in one round trip. Started here so the
   // hub's signal probes can chain off it and overlap the fan-out below.
   const shellPromise = getAppShell(client, companyId, userId);
+  // Whether the Personal Pages hub is on for the company: with the hub row,
+  // it decides which hub the nav item and the home card point to.
+  const personalPagesPromise = personalPagesEnabled(companyId);
 
   // Only probe product signals when the company is actually enrolled, so the
   // home card + nav badge count gates the same way the hub page does.
-  const implementationSignalsPromise = shellPromise.then(({ data }) => {
+  const implementationSignalsPromise = Promise.all([
+    shellPromise,
+    personalPagesPromise
+  ]).then(([{ data }, personalPages]) => {
     const hub = data?.implementationHub;
     // A finished hub shows no badge and no card, so it needs no signals; nor
     // does a Personal Pages hub, which shows neither.
     return hub &&
       hub.status !== "complete" &&
       hub.status !== "archived" &&
-      !usesPersonalPages(hub)
+      !usesPersonalPages(hub, personalPages)
       ? getImplementationSignals(client, companyId)
       : null;
   });
@@ -224,15 +231,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const changelog = getCachedChangelogPanelEntry().catch(() => null);
 
   // Parallelize all requests
-  const [shell, stripeCustomer, plan, customFields, claims, itarCertification] =
-    await Promise.all([
-      shellPromise,
-      getStripeCustomerByCompanyId(companyId, userId),
-      getPlan(client, companyId),
-      getCustomFieldsSchemas(client, { companyId }),
-      getUserClaims(userId, companyId),
-      itarCertificationPromise
-    ]);
+  const [
+    shell,
+    stripeCustomer,
+    plan,
+    customFields,
+    claims,
+    itarCertification,
+    implementationPersonalPages
+  ] = await Promise.all([
+    shellPromise,
+    getStripeCustomerByCompanyId(companyId, userId),
+    getPlan(client, companyId),
+    getCustomFieldsSchemas(client, { companyId }),
+    getUserClaims(userId, companyId),
+    itarCertificationPromise,
+    personalPagesPromise
+  ]);
 
   // The same shapes the nine separate reads returned, so what follows reads as
   // it did. A failed shell read fails each of them, as each could before.
@@ -386,6 +401,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     savedViews: savedViews.data ?? [],
     printerRoutes: printerRoutes.data ?? [],
     implementationHub: shell.data?.implementationHub ?? null,
+    // The `implementation-hub-personal-pages` flag for the company, read with
+    // the hub row by `useImplementationNavItem` (`usesPersonalPages`).
+    implementationPersonalPages,
     implementationProgress,
     changelog,
     itarCertification: {

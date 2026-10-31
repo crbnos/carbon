@@ -9,6 +9,7 @@ import type {
   SupplierPriceBreak,
   SupplierPriceMap
 } from "@carbon/database/supplier-part-price";
+import type { FlagKey } from "@carbon/env/flags";
 import { TiptapText } from "@carbon/files/markdown";
 import { msg } from "@lingui/core/macro";
 import { z } from "zod";
@@ -559,16 +560,24 @@ export const implementationLayoutValidator = z.object({
 });
 
 /**
- * Whether a company gets the Personal Pages hub. Every check that sends a
- * company to one hub or the other goes through here, so a per-company rollout
- * rule can replace the stored layout in one place. Anything other than an
- * enrolled hub on Personal Pages gets the Company Plan hub, exactly as before
- * the layouts existed.
+ * The flag that turns the Personal Pages hub on for a company. Read on the
+ * server with the company alone (`personalPagesEnabled`, shared.service).
+ */
+export const PERSONAL_PAGES_FLAG =
+  "implementation-hub-personal-pages" satisfies FlagKey;
+
+/**
+ * Whether a company gets the Personal Pages hub: the flag is on for it and its
+ * hub's layout is Personal Pages. Every check that sends a company to one hub
+ * or the other goes through here. Anything else gets the Company Plan hub,
+ * exactly as before the layouts existed, so taking a company out of the flag
+ * puts it back on that hub with its pages kept.
  */
 export function usesPersonalPages(
-  hub: { layout?: string | null } | null | undefined
+  hub: { layout?: string | null } | null | undefined,
+  enabled: boolean
 ): boolean {
-  return hub?.layout === "Personal Pages";
+  return enabled && hub?.layout === "Personal Pages";
 }
 
 // The Personal Pages hub's one name: nav, breadcrumb and title.

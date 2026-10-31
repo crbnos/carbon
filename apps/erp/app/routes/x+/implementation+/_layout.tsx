@@ -45,7 +45,8 @@ import { useImplementationRealtime } from "~/hooks/useImplementationRealtime";
 import { usesPersonalPages } from "~/modules/shared/shared.models";
 import {
   getImplementationCounts,
-  getImplementationSignals
+  getImplementationSignals,
+  personalPagesEnabled
 } from "~/modules/shared/shared.service";
 import { usePeople } from "~/stores";
 import type { RouteGroup } from "~/types";
@@ -200,7 +201,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     {}
   );
 
-  const hub = await getImplementationHub(client, companyId);
+  const [hub, flagOn] = await Promise.all([
+    getImplementationHub(client, companyId),
+    personalPagesEnabled(companyId)
+  ]);
+  const personalPages = usesPersonalPages(hub.data, flagOn);
   // Carbon staff reach the hub in every company, enrolled or not, and opening
   // it creates nothing. The company's own people reach it only once the
   // company is enrolled: enrolment is when the hub becomes visible to them.
@@ -212,7 +217,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const isStaff = isInternalEmail(email);
   // The company's own people use the layout their company chose. Carbon staff
   // reach this one in any company, to load pages before a switch.
-  if (!isStaff && !usesPersonalPages(hub.data)) {
+  if (!isStaff && !personalPages) {
     throw redirect(path.to.getStarted);
   }
   const [checkStates, fieldValues, rows, signals, counts, assignments] =
@@ -245,9 +250,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Staff previewing the customer's view (useImplementationPreview).
     previewAsCustomer:
       isStaff && isImplementationPreview(request.headers.get("cookie")),
-    // False while staff open the hub of a Company Plan company: only pages and
-    // the priority set save until the switch.
-    personalPages: usesPersonalPages(hub.data)
+    // False while staff open the hub of a company not on Personal Pages: only
+    // pages and the priority set save until it is. `enrolled` and `flagOn`
+    // say why, for the staff notice.
+    personalPages,
+    enrolled: Boolean(hub.data),
+    flagOn
   };
 }
 

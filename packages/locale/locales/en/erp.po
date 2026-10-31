@@ -16946,6 +16946,12 @@ msgstr "Its amounts go back to what each line has left to invoice."
 msgid "Its design may change before the change notice is released."
 msgstr "Its design may change before the change notice is released."
 
+msgid "Its people do not see the hub yet. Pages and the priority set save here. Enroll it in Settings to save ticks, answers and company items."
+msgstr "Its people do not see the hub yet. Pages and the priority set save here. Enroll it in Settings to save ticks, answers and company items."
+
+msgid "Its people see the Company Plan hub while the new hub is off for this company. Their pages stay."
+msgstr "Its people see the Company Plan hub while the new hub is off for this company. Their pages stay."
+
 msgid "Its people see the Company Plan hub, not these pages, until you switch."
 msgstr "Its people see the Company Plan hub, not these pages, until you switch."
 
@@ -22774,6 +22780,9 @@ msgstr "Page title"
 
 msgid "Pages"
 msgstr "Pages"
+
+msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is in the implementation-hub-personal-pages flag and on Personal Pages."
+msgstr "Pages and the priority set save here. Ticks, answers and company items save once the company is in the implementation-hub-personal-pages flag and on Personal Pages."
 
 msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is switched to Personal Pages."
 msgstr "Pages and the priority set save here. Ticks, answers and company items save once the company is switched to Personal Pages."
@@ -31517,6 +31526,9 @@ msgstr "The connection was refused"
 msgid "The company's people do not see the hub yet. Enrolling shows it to them, on Personal Pages, and emails the company's admins."
 msgstr "The company's people do not see the hub yet. Enrolling shows it to them, on Personal Pages, and emails the company's admins."
 
+msgid "The company's people do not see the hub yet. Enrolling shows them the Company Plan hub, because the new hub is off for this company, and emails the company's admins."
+msgstr "The company's people do not see the hub yet. Enrolling shows them the Company Plan hub, because the new hub is off for this company, and emails the company's admins."
+
 msgid "The company's people see the Implementation Hub."
 msgstr "The company's people see the Implementation Hub."
 
@@ -32138,6 +32150,12 @@ msgstr "The negotiated price per unit on this line; the inline trace icon shows 
 
 msgid "The net investment is more than the fair value"
 msgstr "The net investment is more than the fair value"
+
+msgid "The new hub is off for this company"
+msgstr "The new hub is off for this company"
+
+msgid "The new hub is off for this company. Add it to the implementation-hub-personal-pages flag in the CSA dashboard first."
+msgstr "The new hub is off for this company. Add it to the implementation-hub-personal-pages flag in the CSA dashboard first."
 
 msgid "The new version number of the document"
 msgstr "The new version number of the document"
@@ -32956,6 +32974,9 @@ msgstr "This change notice is closed, so its changes are read-only."
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
+
+msgid "This company is not enrolled"
+msgstr "This company is not enrolled"
 
 msgid "This company uses the Company Plan hub"
 msgstr "This company uses the Company Plan hub"

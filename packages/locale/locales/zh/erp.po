@@ -16955,6 +16955,12 @@ msgstr "其金额返回到每行剩余的待开票部分"
 msgid "Its design may change before the change notice is released."
 msgstr "在变更通知下达前，其设计可能会改变。"
 
+msgid "Its people do not see the hub yet. Pages and the priority set save here. Enroll it in Settings to save ticks, answers and company items."
+msgstr ""
+
+msgid "Its people see the Company Plan hub while the new hub is off for this company. Their pages stay."
+msgstr ""
+
 msgid "Its people see the Company Plan hub, not these pages, until you switch."
 msgstr ""
 
@@ -22775,6 +22781,9 @@ msgid "Page title"
 msgstr ""
 
 msgid "Pages"
+msgstr ""
+
+msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is in the implementation-hub-personal-pages flag and on Personal Pages."
 msgstr ""
 
 msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is switched to Personal Pages."
@@ -31517,6 +31526,9 @@ msgstr "连接被拒绝"
 msgid "The company's people do not see the hub yet. Enrolling shows it to them, on Personal Pages, and emails the company's admins."
 msgstr ""
 
+msgid "The company's people do not see the hub yet. Enrolling shows them the Company Plan hub, because the new hub is off for this company, and emails the company's admins."
+msgstr ""
+
 msgid "The company's people see the Implementation Hub."
 msgstr ""
 
@@ -32139,6 +32151,12 @@ msgstr "此行协商的单价；内联跟踪图标显示哪个定价规则或覆
 
 msgid "The net investment is more than the fair value"
 msgstr "净投资超过公允价值"
+
+msgid "The new hub is off for this company"
+msgstr ""
+
+msgid "The new hub is off for this company. Add it to the implementation-hub-personal-pages flag in the CSA dashboard first."
+msgstr ""
 
 msgid "The new version number of the document"
 msgstr "文件的新版本号"
@@ -32957,6 +32975,9 @@ msgstr "此变更通知已关闭，因此其更改为只读。"
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "此变更通知待审批。其变更已锁定，直到被审批或拒绝。"
+
+msgid "This company is not enrolled"
+msgstr ""
 
 msgid "This company uses the Company Plan hub"
 msgstr ""

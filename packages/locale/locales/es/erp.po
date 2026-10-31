@@ -16955,6 +16955,12 @@ msgstr "Sus montos vuelven a lo que cada línea tiene pendiente de facturación.
 msgid "Its design may change before the change notice is released."
 msgstr "Su diseño puede cambiar antes de que se libere el aviso de cambio."
 
+msgid "Its people do not see the hub yet. Pages and the priority set save here. Enroll it in Settings to save ticks, answers and company items."
+msgstr ""
+
+msgid "Its people see the Company Plan hub while the new hub is off for this company. Their pages stay."
+msgstr ""
+
 msgid "Its people see the Company Plan hub, not these pages, until you switch."
 msgstr ""
 
@@ -22775,6 +22781,9 @@ msgid "Page title"
 msgstr ""
 
 msgid "Pages"
+msgstr ""
+
+msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is in the implementation-hub-personal-pages flag and on Personal Pages."
 msgstr ""
 
 msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is switched to Personal Pages."
@@ -31517,6 +31526,9 @@ msgstr "La conexión fue rechazada"
 msgid "The company's people do not see the hub yet. Enrolling shows it to them, on Personal Pages, and emails the company's admins."
 msgstr ""
 
+msgid "The company's people do not see the hub yet. Enrolling shows them the Company Plan hub, because the new hub is off for this company, and emails the company's admins."
+msgstr ""
+
 msgid "The company's people see the Implementation Hub."
 msgstr ""
 
@@ -32139,6 +32151,12 @@ msgstr "El precio negociado por unidad en esta línea; el icono de rastreo en l�
 
 msgid "The net investment is more than the fair value"
 msgstr "La inversión neta es superior al valor razonable"
+
+msgid "The new hub is off for this company"
+msgstr ""
+
+msgid "The new hub is off for this company. Add it to the implementation-hub-personal-pages flag in the CSA dashboard first."
+msgstr ""
 
 msgid "The new version number of the document"
 msgstr "El nuevo número de versión del documento"
@@ -32957,6 +32975,9 @@ msgstr "Este aviso de cambio está cerrado, por lo que sus cambios son de solo l
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "Este aviso de cambio está esperando aprobación. Sus cambios están bloqueados hasta que sea aprobado o rechazado."
+
+msgid "This company is not enrolled"
+msgstr ""
 
 msgid "This company uses the Company Plan hub"
 msgstr ""
