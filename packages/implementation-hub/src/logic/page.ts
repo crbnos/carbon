@@ -747,6 +747,8 @@ export type HubPersonStatus = "Active" | "Invited" | "Inactive";
 export type HubPagePerson = {
   id: string;
   name: string;
+  // Names the person on the staff bar's preview button.
+  firstName?: string | null;
   email: string | null;
   status: HubPersonStatus;
 };

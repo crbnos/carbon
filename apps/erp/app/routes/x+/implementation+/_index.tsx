@@ -114,7 +114,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     peopleClient
       ? peopleClient
           .from("employees")
-          .select("id, name, email, status")
+          .select("id, name, firstName, email, status")
           .eq("companyId", companyId)
       : null
   ]);
@@ -134,6 +134,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           {
             id: person.id,
             name: person.name ?? "",
+            firstName: person.firstName ?? null,
             email: person.email ?? null,
             status:
               person.status === "Active" || person.status === "Invited"
@@ -674,10 +675,13 @@ function StaffBar({
   }, [selectedId, closeRemove]);
   const rows = useHub((s) => s.rows);
   const previewing = useImplementationPreview();
-  const selectedName =
-    [...groups.carbon, ...groups.configured, ...groups.unconfigured].find(
-      (person) => person.id === selectedId
-    )?.name ?? t`this person`;
+  const selected = [
+    ...groups.carbon,
+    ...groups.configured,
+    ...groups.unconfigured
+  ].find((person) => person.id === selectedId);
+  const selectedName = selected?.name ?? t`this person`;
+  const firstName = selected?.firstName?.trim();
 
   const label = (value: unknown) =>
     value === undefined
@@ -729,8 +733,10 @@ function StaffBar({
         >
           {previewing ? (
             <Trans>Exit preview</Trans>
+          ) : firstName ? (
+            <Trans>Preview as {firstName}</Trans>
           ) : (
-            <Trans>Preview as customer</Trans>
+            <Trans>Preview as user</Trans>
           )}
         </Button>
         <Button
