@@ -19099,9 +19099,6 @@ msgstr "재활성화"
 msgid "Reactivation"
 msgstr "재활성화"
 
-msgid "Read a serial number off a unit to record it. Optional."
-msgstr ""
-
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Carbon이 귀사의 설정에서 무엇을 하고 무엇을 하지 않을지 내용을 확인하세요. 내용이 맞다면 아래에서 동의로 표시하세요."
 
@@ -21717,14 +21714,15 @@ msgstr "일련번호/배치"
 msgid "Serial items require a sales order"
 msgstr "일련번호 품목은 수주가 필요합니다."
 
-msgid "Serial number"
-msgstr ""
-
 msgid "Serial Number"
 msgstr "시리얼 번호"
 
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Serial number of unit {0} (optional)"
 msgstr ""
 
 msgid "Serial Number:"
@@ -26313,10 +26311,6 @@ msgstr "고유하고 대문자이며 공백 없이(최대 10자)"
 
 msgid "Unit"
 msgstr "단위"
-
-#. placeholder {0}: index + 1
-msgid "Unit {0}"
-msgstr ""
 
 msgid "Unit actions"
 msgstr "항목 작업"

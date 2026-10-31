@@ -19099,9 +19099,6 @@ msgstr "पुनः सक्रिय करें"
 msgid "Reactivation"
 msgstr "पुनः सक्रियण"
 
-msgid "Read a serial number off a unit to record it. Optional."
-msgstr ""
-
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "इसे पूरी तरह पढ़ें — Carbon आपके सेटअप के लिए क्या करेगा और क्या नहीं करेगा। जब यह सही लगे, तो नीचे सहमत के रूप में चिह्नित करें।"
 
@@ -21717,14 +21714,15 @@ msgstr "सीरियल / बैच"
 msgid "Serial items require a sales order"
 msgstr "सीरियल आइटम को विक्रय आदेश की आवश्यकता है"
 
-msgid "Serial number"
-msgstr ""
-
 msgid "Serial Number"
 msgstr "सीरियल नंबर"
 
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Serial number of unit {0} (optional)"
 msgstr ""
 
 msgid "Serial Number:"
@@ -26313,10 +26311,6 @@ msgstr "अद्वितीय, बड़े अक्षरों में, 
 
 msgid "Unit"
 msgstr "इकाई"
-
-#. placeholder {0}: index + 1
-msgid "Unit {0}"
-msgstr ""
 
 msgid "Unit actions"
 msgstr "इकाई क्रियाएं"

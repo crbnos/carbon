@@ -12,12 +12,14 @@ import {
   NumberField,
   NumberInput,
   Skeleton,
+  Td,
   ToggleGroup,
-  ToggleGroupItem
+  ToggleGroupItem,
+  Tr
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { type ReactNode, useState } from "react";
-import { LuPlus, LuTrash } from "react-icons/lu";
+import { type CSSProperties, type ReactNode, useState } from "react";
+import { LuCornerDownRight, LuPlus, LuTrash } from "react-icons/lu";
 import {
   type InventoryCountLineState,
   inventoryCountLineState
@@ -29,9 +31,9 @@ import type {
 import { path } from "~/utils/path";
 import InventoryCountUnitForm from "./InventoryCountUnitForm";
 
-type GroupLinesLoader = {
-  lines: (InventoryCountLine & { otherBinName?: string | null })[];
-};
+type GroupLine = InventoryCountLine & { otherBinName?: string | null };
+type GroupLinesLoader = { lines: GroupLine[] };
+type Column = { id: string; style: CSSProperties };
 
 const STATE_BADGE = {
   Found: "green",
@@ -40,24 +42,24 @@ const STATE_BADGE = {
   "Not counted": "gray"
 } as const;
 
-// The columns of a unit row: number, expected, counted, state, action.
-const ROW =
-  "grid grid-cols-[minmax(0,1fr)_6rem_11rem_12rem_2.5rem] items-center gap-3";
-
 type InventoryCountGroupUnitsProps = {
   inventoryCountId: string;
   group: InventoryCountGroup;
+  // The table's visible columns, so each unit lines up under them.
+  columns: Column[];
   hideSystemQuantity: boolean;
   isReadOnly: boolean;
   invalidLineIds?: string[];
 };
 
-// The units of one count group, shown when its row expands. A serial is
-// marked Found or Missing; a batch takes a quantity. Units with no serial
-// number are counted together as one quantity.
+// The units of one count group, as rows of the count table under their
+// group: the number under Item, the state under Units, then Expected,
+// Counted and Variance. A serial is marked Found or Missing; a batch takes a
+// quantity. Units with no serial number are counted together.
 const InventoryCountGroupUnits = ({
   inventoryCountId,
   group,
+  columns,
   hideSystemQuantity,
   isReadOnly,
   invalidLineIds
@@ -82,10 +84,9 @@ const InventoryCountGroupUnits = ({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-2 py-2 pl-[52px] pr-4">
-        <Skeleton className="h-6 w-full" />
-        <Skeleton className="h-6 w-full" />
-      </div>
+      <WideRow columns={columns}>
+        <Skeleton className="h-5 w-64" />
+      </WideRow>
     );
   }
 
@@ -97,34 +98,23 @@ const InventoryCountGroupUnits = ({
   const listed = lines.filter((line) => !unnumbered.includes(line));
 
   return (
-    <div className="pb-2 pl-[52px] pr-4 text-sm">
-      <div
-        className={cn(
-          ROW,
-          "border-b border-border py-1.5 text-xs text-muted-foreground"
-        )}
-      >
-        <span>{isSerial ? t`Serial number` : t`Batch number`}</span>
-        <span className="text-right">
-          {hideSystemQuantity ? "" : t`Expected`}
-        </span>
-        <span>{t`Counted`}</span>
-        <span>{t`State`}</span>
-        <span />
-      </div>
-
+    <>
       {listed.length === 0 && unnumbered.length === 0 && (
-        <p className="py-2 text-muted-foreground">
-          {hideSystemQuantity
-            ? t`No units counted yet. Scan a unit to count it.`
-            : t`No units in this storage unit.`}
-        </p>
+        <WideRow columns={columns}>
+          <span className="text-muted-foreground">
+            {hideSystemQuantity
+              ? t`No units counted yet. Scan a unit to count it.`
+              : t`No units in this storage unit.`}
+          </span>
+        </WideRow>
       )}
 
       {listed.map((line) => {
+        const counted =
+          line.countedQuantity === null ? null : Number(line.countedQuantity);
+        const expected = Number(line.systemQuantity ?? 0);
         const state = inventoryCountLineState({
-          countedQuantity:
-            line.countedQuantity === null ? null : Number(line.countedQuantity),
+          countedQuantity: counted,
           foundDuringCount: Boolean(line.foundDuringCount)
         });
         // Stock of a tracked item booked with no unit record: only a quantity
@@ -138,63 +128,61 @@ const InventoryCountGroupUnits = ({
               ? t`Moved from ${line.otherBinName}`
               : null
           : null;
+
         return (
           <UnitRow
             key={line.id}
+            columns={columns}
+            isReadOnly={isReadOnly}
             isInvalid={invalidLineIds?.includes(line.id ?? "")}
-            number={
-              line.readableId ??
-              line.assignedReadableId ?? (
-                <span className="font-sans text-muted-foreground">
-                  {noUnitRecord
-                    ? t`Stock with no unit record`
-                    : isSerial
-                      ? t`No serial number`
-                      : t`No batch number`}
-                </span>
-              )
-            }
-            expected={
-              hideSystemQuantity ? null : Number(line.systemQuantity ?? 0)
-            }
-            counted={
-              isSerial && !noUnitRecord ? (
-                <FoundOrMissing
-                  lineId={line.id!}
-                  value={
-                    line.countedQuantity === null
-                      ? null
-                      : Number(line.countedQuantity)
+            cells={{
+              item: (
+                <UnitName
+                  name={
+                    line.readableId ??
+                    line.assignedReadableId ??
+                    (noUnitRecord
+                      ? t`Stock with no unit record`
+                      : isSerial
+                        ? t`No serial number`
+                        : t`No batch number`)
                   }
-                  isReadOnly={isReadOnly}
-                />
-              ) : (
-                <CountedQuantity
-                  lineId={line.id!}
-                  value={
-                    line.countedQuantity === null
-                      ? null
-                      : Number(line.countedQuantity)
+                  isNumber={Boolean(line.readableId ?? line.assignedReadableId)}
+                  action={
+                    !isReadOnly && line.foundDuringCount ? (
+                      <RemoveUnit
+                        inventoryCountId={inventoryCountId}
+                        lineId={line.id!}
+                      />
+                    ) : null
                   }
-                  isReadOnly={isReadOnly}
                 />
-              )
-            }
-            state={
-              moved ? (
+              ),
+              units: moved ? (
                 <Badge variant="purple">{moved}</Badge>
               ) : (
                 <Badge variant={STATE_BADGE[state]}>{stateLabels[state]}</Badge>
-              )
-            }
-            action={
-              !isReadOnly && line.foundDuringCount ? (
-                <RemoveUnit
-                  inventoryCountId={inventoryCountId}
-                  lineId={line.id!}
-                />
-              ) : null
-            }
+              ),
+              expectedQuantity: hideSystemQuantity ? null : expected,
+              countedQuantity:
+                isSerial && !noUnitRecord ? (
+                  <FoundOrMissing
+                    lineId={line.id!}
+                    value={counted}
+                    isReadOnly={isReadOnly}
+                  />
+                ) : (
+                  <CountedQuantity
+                    lineId={line.id!}
+                    value={counted}
+                    isReadOnly={isReadOnly}
+                  />
+                ),
+              variance:
+                hideSystemQuantity || counted === null ? null : (
+                  <Variance value={counted - expected} />
+                )
+            }}
           />
         );
       })}
@@ -203,6 +191,7 @@ const InventoryCountGroupUnits = ({
         <UnnumberedUnits
           inventoryCountId={inventoryCountId}
           group={group}
+          columns={columns}
           lines={unnumbered}
           hideSystemQuantity={hideSystemQuantity}
           isReadOnly={isReadOnly}
@@ -210,77 +199,140 @@ const InventoryCountGroupUnits = ({
       )}
 
       {!isReadOnly && (
-        <Button
-          variant="ghost"
-          size="sm"
-          leftIcon={<LuPlus />}
-          className="mt-1"
-          onClick={() => setIsAdding(true)}
-        >
-          {isSerial ? t`Add a unit found here` : t`Add a batch found here`}
-        </Button>
+        <WideRow columns={columns}>
+          <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={<LuPlus />}
+            onClick={() => setIsAdding(true)}
+          >
+            {isSerial ? t`Add a unit found here` : t`Add a batch found here`}
+          </Button>
+          {isAdding && (
+            <InventoryCountUnitForm
+              inventoryCountId={inventoryCountId}
+              prompt={{
+                storageUnitId: group.storageUnitId ?? null,
+                itemId: group.itemId ?? undefined
+              }}
+              onClose={() => setIsAdding(false)}
+              onRecorded={() => setIsAdding(false)}
+            />
+          )}
+        </WideRow>
       )}
-      {isAdding && (
-        <InventoryCountUnitForm
-          inventoryCountId={inventoryCountId}
-          prompt={{
-            storageUnitId: group.storageUnitId ?? null,
-            itemId: group.itemId ?? undefined
-          }}
-          onClose={() => setIsAdding(false)}
-          onRecorded={() => setIsAdding(false)}
-        />
-      )}
-    </div>
+    </>
   );
 };
 
+// A unit row: one cell per visible column, styled as the table's own cells.
+// Columns with nothing for a unit stay empty.
 function UnitRow({
-  number,
-  expected,
-  counted,
-  state,
-  action,
+  columns,
+  cells,
+  isReadOnly,
   isInvalid
 }: {
-  number: ReactNode;
-  expected: number | null;
-  counted: ReactNode;
-  state: ReactNode;
-  action: ReactNode;
+  columns: Column[];
+  cells: Partial<Record<string, ReactNode>>;
+  isReadOnly: boolean;
   isInvalid?: boolean;
 }) {
   return (
-    <div
+    <Tr
       className={cn(
-        ROW,
-        "border-b border-border/50 py-1.5",
+        "border-b border-border bg-muted/30 transition-colors",
         isInvalid && "bg-destructive/20"
       )}
     >
-      <span className="truncate font-mono text-xs">{number}</span>
-      <span className="text-right tabular-nums text-muted-foreground">
-        {expected ?? ""}
+      {columns.map((column) => (
+        <Td
+          key={column.id}
+          style={column.style}
+          className={cn(
+            "h-11 whitespace-nowrap px-4 py-2 text-sm",
+            !isReadOnly && "border-r border-border",
+            column.style.position === "sticky" && "bg-card"
+          )}
+        >
+          {cells[column.id] ?? null}
+        </Td>
+      ))}
+    </Tr>
+  );
+}
+
+// A row with one cell across the table, for messages and actions. Its content
+// starts where the Item column's content does.
+function WideRow({
+  columns,
+  children
+}: {
+  columns: Column[];
+  children: ReactNode;
+}) {
+  const lead = columns.findIndex((column) => column.id === "item");
+  return (
+    <Tr className="border-b border-border bg-muted/30">
+      {lead > 0 && <Td colSpan={lead} className="h-11 px-4 py-2" />}
+      <Td
+        colSpan={columns.length - Math.max(lead, 0)}
+        className="h-11 px-4 py-2 text-sm"
+      >
+        <div className="pl-6">{children}</div>
+      </Td>
+    </Tr>
+  );
+}
+
+function UnitName({
+  name,
+  isNumber,
+  action
+}: {
+  name: string;
+  isNumber: boolean;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2 pl-6">
+      <LuCornerDownRight className="size-3.5 shrink-0 text-muted-foreground" />
+      <span
+        className={cn(
+          "truncate",
+          isNumber ? "font-mono text-xs" : "text-muted-foreground"
+        )}
+      >
+        {name}
       </span>
-      <div>{counted}</div>
-      <div>{state}</div>
-      <div>{action}</div>
+      {action}
     </div>
   );
 }
 
+function Variance({ value }: { value: number }) {
+  if (value === 0) return <span className="tabular-nums">0</span>;
+  return (
+    <Badge variant={value < 0 ? "destructive" : "green"}>
+      {value > 0 ? `+${value}` : value}
+    </Badge>
+  );
+}
+
 // Units with no serial number: one row with how many are on the shelf, then
-// a serial number input for each one found.
+// one row per unit found, where its serial number can be recorded.
 function UnnumberedUnits({
   inventoryCountId,
   group,
+  columns,
   lines,
   hideSystemQuantity,
   isReadOnly
 }: {
   inventoryCountId: string;
   group: InventoryCountGroup;
-  lines: InventoryCountLine[];
+  columns: Column[];
+  lines: GroupLine[];
   hideSystemQuantity: boolean;
   isReadOnly: boolean;
 }) {
@@ -307,14 +359,22 @@ function UnnumberedUnits({
   return (
     <>
       <UnitRow
-        number={
-          <span className="font-sans text-muted-foreground">
-            {t`Units with no serial number`}
-          </span>
-        }
-        expected={hideSystemQuantity ? null : lines.length}
-        counted={
-          isReadOnly ? (
+        columns={columns}
+        isReadOnly={isReadOnly}
+        cells={{
+          item: (
+            <UnitName name={t`Units with no serial number`} isNumber={false} />
+          ),
+          units:
+            counted === null ? (
+              <Badge variant="gray">{t`Not counted`}</Badge>
+            ) : missing > 0 ? (
+              <Badge variant="red">{t`${missing} missing`}</Badge>
+            ) : (
+              <Badge variant="green">{t`Found`}</Badge>
+            ),
+          expectedQuantity: hideSystemQuantity ? null : lines.length,
+          countedQuantity: isReadOnly ? (
             <span className="tabular-nums">{counted ?? "—"}</span>
           ) : (
             <QuantityInput
@@ -324,38 +384,34 @@ function UnnumberedUnits({
               isPending={fetcher.state !== "idle"}
               onCommit={save}
             />
-          )
-        }
-        state={
-          counted === null ? (
-            <Badge variant="gray">{t`Not counted`}</Badge>
-          ) : missing > 0 ? (
-            <Badge variant="red">{t`${missing} missing`}</Badge>
-          ) : (
-            <Badge variant="green">{t`Found`}</Badge>
-          )
-        }
-        action={null}
+          ),
+          variance:
+            hideSystemQuantity || counted === null ? null : (
+              <Variance value={counted - lines.length} />
+            )
+        }}
       />
-      {found.length > 0 && (
-        <div className="flex flex-col gap-1 py-2 pl-4">
-          <p className="text-xs text-muted-foreground">
-            {t`Read a serial number off a unit to record it. Optional.`}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {found.map((line, index) => (
-              <AssignSerial
-                key={line.id}
-                inventoryCountId={inventoryCountId}
-                lineId={line.id!}
-                value={line.assignedReadableId ?? ""}
-                label={t`Unit ${index + 1}`}
-                isReadOnly={isReadOnly}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {found.map((line, index) => (
+        <UnitRow
+          key={line.id}
+          columns={columns}
+          isReadOnly={isReadOnly}
+          cells={{
+            item: (
+              <div className="flex items-center gap-2 pl-12">
+                <AssignSerial
+                  inventoryCountId={inventoryCountId}
+                  lineId={line.id!}
+                  value={line.assignedReadableId ?? ""}
+                  label={t`Serial number of unit ${index + 1} (optional)`}
+                  isReadOnly={isReadOnly}
+                />
+              </div>
+            ),
+            units: <Badge variant="green">{t`Found`}</Badge>
+          }}
+        />
+      ))}
     </>
   );
 }
@@ -372,14 +428,18 @@ function FoundOrMissing({
 }) {
   const { t } = useLingui();
   const fetcher = useAction();
-  const pending = fetcher.formData?.get("countedQuantity");
   if (isReadOnly) {
     return <span className="tabular-nums">{value ?? "—"}</span>;
   }
+  const pending = fetcher.formData?.get("countedQuantity");
   const current =
     pending !== undefined && pending !== null ? String(pending) : value;
   const selected =
-    current === null ? "" : Number(current) > 0 ? "found" : "missing";
+    current === null || current === ""
+      ? ""
+      : Number(current) > 0
+        ? "found"
+        : "missing";
 
   const save = (next: string) => {
     const formData = new FormData();
@@ -400,7 +460,7 @@ function FoundOrMissing({
       size="sm"
       variant="outline"
       value={selected}
-      disabled={isReadOnly || fetcher.state !== "idle"}
+      disabled={fetcher.state !== "idle"}
       onValueChange={save}
       className="justify-start gap-1"
     >
@@ -475,7 +535,7 @@ function QuantityInput({
       }}
       isDisabled={isPending}
     >
-      <NumberInput size="sm" className="text-right" />
+      <NumberInput size="sm" className="h-7 text-right" />
     </NumberField>
   );
 }
@@ -530,7 +590,7 @@ function AssignSerial({
   return (
     <Input
       size="sm"
-      className="w-40 font-mono text-xs"
+      className="h-7 w-56 font-mono text-xs"
       value={draft}
       placeholder={label}
       aria-label={label}

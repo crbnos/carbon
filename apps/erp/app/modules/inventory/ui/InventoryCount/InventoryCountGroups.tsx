@@ -6,7 +6,14 @@ import { Badge, HStack, Skeleton, Switch, toast, VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import type { ColumnDef } from "@tanstack/react-table";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  type CSSProperties,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef
+} from "react";
 import {
   LuBox,
   LuCalculator,
@@ -75,6 +82,8 @@ type InventoryCountGroupsProps = {
   storageTypes: { id: string; name: string }[];
   storageUnits: { id: string; name: string }[];
 };
+
+const noExpandedContent = () => null;
 
 const isTrackedGroup = (group: InventoryCountGroup) =>
   group.itemTrackingType === "Serial" || group.itemTrackingType === "Batch";
@@ -581,11 +590,16 @@ const InventoryCountGroups = ({
     tags: false
   };
 
-  const renderExpandedRow = useCallback(
-    (group: InventoryCountGroup) => (
+  // A tracked group's units render as rows of this table, under its columns.
+  const renderSubRows = useCallback(
+    (
+      group: InventoryCountGroup,
+      columns: { id: string; style: CSSProperties }[]
+    ) => (
       <InventoryCountGroupUnits
         inventoryCountId={inventoryCountId}
         group={group}
+        columns={columns}
         hideSystemQuantity={hideSystem}
         isReadOnly={isReadOnly}
         invalidLineIds={invalidLineIds}
@@ -752,7 +766,10 @@ const InventoryCountGroups = ({
         mobileLayout="table"
         columns={columns}
         data={groups}
-        renderExpandedRow={renderExpandedRow}
+        // The expand column needs `renderExpandedRow`; the units render as
+        // sub-rows instead.
+        renderExpandedRow={noExpandedContent}
+        renderSubRows={renderSubRows}
         canExpandRow={isTrackedGroup}
         expandRowsFor={expandGroupsFor ?? null}
         expandRow={expandGroup ?? null}

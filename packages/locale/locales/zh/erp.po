@@ -19099,9 +19099,6 @@ msgstr "重新激活"
 msgid "Reactivation"
 msgstr "重新激活"
 
-msgid "Read a serial number off a unit to record it. Optional."
-msgstr ""
-
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "仔细阅读此内容——Carbon将为您的设置做什么和不做什么。当看起来正确时，在下面标记同意。"
 
@@ -21717,14 +21714,15 @@ msgstr "序列号 / 批次"
 msgid "Serial items require a sales order"
 msgstr "序列号物料需要销售订单"
 
-msgid "Serial number"
-msgstr ""
-
 msgid "Serial Number"
 msgstr "序列号"
 
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Serial number of unit {0} (optional)"
 msgstr ""
 
 msgid "Serial Number:"
@@ -26313,10 +26311,6 @@ msgstr "唯一、大写、无空格（最多 10 个字符）"
 
 msgid "Unit"
 msgstr "单位"
-
-#. placeholder {0}: index + 1
-msgid "Unit {0}"
-msgstr ""
 
 msgid "Unit actions"
 msgstr "件操作"

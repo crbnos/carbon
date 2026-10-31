@@ -19099,9 +19099,6 @@ msgstr "再度有効化"
 msgid "Reactivation"
 msgstr "再開"
 
-msgid "Read a serial number off a unit to record it. Optional."
-msgstr ""
-
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "これを読んでください — Carbonがあなたのセットアップで何ができて何ができないかを確認してください。問題なければ、下記で同意済みとしてマークしてください。"
 
@@ -21717,14 +21714,15 @@ msgstr "シリアル / バッチ"
 msgid "Serial items require a sales order"
 msgstr "シリアル品目は受注が必要です"
 
-msgid "Serial number"
-msgstr ""
-
 msgid "Serial Number"
 msgstr "シリアル番号"
 
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Serial number of unit {0} (optional)"
 msgstr ""
 
 msgid "Serial Number:"
@@ -26313,10 +26311,6 @@ msgstr "一意、大文字、スペースなし（最大10文字）"
 
 msgid "Unit"
 msgstr "単位"
-
-#. placeholder {0}: index + 1
-msgid "Unit {0}"
-msgstr ""
 
 msgid "Unit actions"
 msgstr "ユニット操作"

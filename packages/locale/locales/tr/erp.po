@@ -19099,9 +19099,6 @@ msgstr "Yeniden etkinleştir"
 msgid "Reactivation"
 msgstr "Yeniden Etkinleştirme"
 
-msgid "Read a serial number off a unit to record it. Optional."
-msgstr ""
-
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Bunu okuyun — Carbon'un kurulumunuz için neler yapacağını ve yapmayacağını öğrenin. Doğru görünüyorsa, aşağıda kabul ettiğinizi işaretleyin."
 
@@ -21717,14 +21714,15 @@ msgstr "Seri / Parti"
 msgid "Serial items require a sales order"
 msgstr "Seri ürünler satış siparişi gerektirir"
 
-msgid "Serial number"
-msgstr ""
-
 msgid "Serial Number"
 msgstr "Seri Numarası"
 
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Serial number of unit {0} (optional)"
 msgstr ""
 
 msgid "Serial Number:"
@@ -26313,10 +26311,6 @@ msgstr "Benzersiz, büyük harf, boşluksuz (en fazla 10 karakter)"
 
 msgid "Unit"
 msgstr "Birim"
-
-#. placeholder {0}: index + 1
-msgid "Unit {0}"
-msgstr ""
 
 msgid "Unit actions"
 msgstr "Adet İşlemleri"

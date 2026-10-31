@@ -193,6 +193,15 @@ interface TableProps<T extends object> {
   renderActions?: (selectedRows: T[], scope?: BulkActionScope) => ReactNode;
   renderContextMenu?: (row: T) => JSX.Element | null;
   renderExpandedRow?: (row: T) => ReactNode;
+  // Renders an expanded row's content as rows of this table instead of one
+  // full-width cell, so child rows line up under the parent's columns. Gets
+  // the visible columns in order, each with its pinned-column style, and
+  // returns <Tr> rows. Needs `renderExpandedRow`, which still gates the
+  // expand column and renders the phone list.
+  renderSubRows?: (
+    row: T,
+    columns: { id: string; style: CSSProperties }[]
+  ) => ReactNode;
   // Pin an expanded row's content (`sticky left-0`) to the scroll container's
   // visible width, so on a table several viewports wide (the 48-week planning
   // grids) it stays in view instead of sitting at the far left of the row and
@@ -377,6 +386,7 @@ const Table = <T extends object>({
   renderActions,
   renderContextMenu,
   renderExpandedRow,
+  renderSubRows,
   pinExpandedRows = false,
   canExpandRow,
   expandRowsFor,
@@ -1724,7 +1734,15 @@ const Table = <T extends object>({
                       </Tr>
                     )}
                     {rowContent}
-                    {rowIsExpanded && (
+                    {rowIsExpanded &&
+                      renderSubRows?.(
+                        row.original,
+                        visibleColumns.map((column) => ({
+                          id: column.id,
+                          style: getPinnedStyles(column)
+                        }))
+                      )}
+                    {rowIsExpanded && !renderSubRows && (
                       <Tr>
                         <Td
                           colSpan={visibleColumns.length}

@@ -19099,9 +19099,6 @@ msgstr "Ponownie aktywuj"
 msgid "Reactivation"
 msgstr "Ponowna aktywacja"
 
-msgid "Read a serial number off a unit to record it. Optional."
-msgstr ""
-
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Przeczytaj to uważnie — co Carbon będzie i nie będzie robić dla Twojej konfiguracji. Gdy będzie wyglądać dobrze, oznacz to jako zaakceptowane poniżej."
 
@@ -21717,14 +21714,15 @@ msgstr "Numer seryjny / Partia"
 msgid "Serial items require a sales order"
 msgstr "Artykuły seryjne wymagają zamówienia sprzedaży"
 
-msgid "Serial number"
-msgstr ""
-
 msgid "Serial Number"
 msgstr "Numer seryjny"
 
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Serial number of unit {0} (optional)"
 msgstr ""
 
 msgid "Serial Number:"
@@ -26313,10 +26311,6 @@ msgstr "Unikalny, wielkie litery, bez spacji (maks. 10 znaków)"
 
 msgid "Unit"
 msgstr "Jednostka"
-
-#. placeholder {0}: index + 1
-msgid "Unit {0}"
-msgstr ""
 
 msgid "Unit actions"
 msgstr "Akcje jednostki"
