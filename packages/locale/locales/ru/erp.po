@@ -168,6 +168,9 @@ msgstr "{0, plural, one {# связь} few {# связи} other {# связей}
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# требует внимания} few {# требуют внимания} many {# требуют внимания} other {# требуют внимания}}"
+#. placeholder {0}: counts.jobs
+msgid "{0, plural, one {# job} other {# jobs}}"
+msgstr "{0, plural, one {# производственный заказ} other {# производственные заказы}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -824,6 +827,7 @@ msgstr "{appName} подключен, но требует переподключ
 
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName} еще не подключена. Подключите учетную запись перед тем, как этот шаг сможет что-то сделать."
+
 msgid "{area}: keeping {current} next to Carbon is an adoption risk."
 msgstr ""
 
@@ -2250,6 +2254,8 @@ msgstr "Повторяющаяся строка выставляет счет к
 
 msgid "A referenced record does not exist."
 msgstr "Ссылочная запись не существует."
+msgstr ""
+
 msgid "a released job"
 msgstr ""
 
@@ -2528,13 +2534,13 @@ msgstr "Значение недействительно."
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Переменная плата — превышение пробега, повреждение, доставка, уборка — выставляется счетом по следующей счет-фактуре договора."
 
-msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
-msgstr "Рабочее пространство можно подключить только к одной организации Carbon. Сначала отключите его там или подключите другое рабочее пространство."
 msgid "a work center"
 msgstr ""
 
 msgid "A written off item is never billed."
 msgstr "На списанную номенклатуру никогда не выставляется счёт."
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "Рабочее пространство можно подключить только к одной организации Carbon. Сначала отключите его там или подключите другое рабочее пространство."
 
 msgid "ABA"
 msgstr "ABA"
@@ -7048,7 +7054,6 @@ msgid "Channel"
 msgstr "Канал"
 
 msgid "Channel Name"
-msgstr "Имя канала"
 msgstr ""
 
 msgid "Characteristic"
@@ -7201,6 +7206,9 @@ msgid "Choose {named} first."
 msgstr "Сначала выберите {named}."
 msgid "Choose"
 msgstr ""
+
+msgid "Choose {named} first."
+msgstr "Сначала выберите {named}."
 
 msgid "Choose a backup"
 msgstr "Выберите резервную копию"
@@ -13503,6 +13511,9 @@ msgstr "Экспортировать единицы (CSV)"
 msgid "Export page"
 msgstr ""
 
+msgid "Export units (CSV)"
+msgstr ""
+
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Экспортируйте план счетов из текущей системы в CSV, по одной строке на счёт, с номером, названием, классом, типом и группой, или начните с шаблона текущего плана счетов. Carbon сохранит только счета из этого файла."
 
@@ -14527,6 +14538,9 @@ msgstr "Инженер на месте"
 msgid "found here"
 msgstr "найдено здесь"
 msgid "Forward-deployed engineer included"
+msgstr ""
+
+msgid "found here"
 msgstr ""
 
 msgid "Foundation"
@@ -15829,6 +15843,8 @@ msgstr "Импортировано"
 
 msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
 msgstr "Импортировано: {counted} строк подсчитано, {added} добавлено, {removed} удалено"
+msgstr ""
+
 msgid "Importing data"
 msgstr ""
 
@@ -17176,6 +17192,7 @@ msgstr "Оставлено {kept} из {total}; не удалось провер
 
 msgid "Kept {kept} of {total}."
 msgstr "Оставлено {kept} из {total}."
+
 msgid "Kept with the set"
 msgstr ""
 
@@ -19340,6 +19357,7 @@ msgstr "MRP (планирование)"
 
 msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
 msgstr "MRP и отбор игнорируют запас в этой единице и во вложенных единицах. Используйте для зон карантина и блокировки."
+
 msgid "MRP planning"
 msgstr ""
 
@@ -19461,8 +19479,8 @@ msgstr "Требуемое количество — это часы наладк
 msgid "needed by {feature}"
 msgstr ""
 
-msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
-msgstr "Необходимо - это рабочие часы, приходящиеся на день, делённые на {personDayHours}ч, округленные в большую сторону — смена, по которой вы фильтруете, или наиболее распространённая длина смены в этом месте."
+msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. With a shift selected, only the hours booked inside that shift count. Machine time needs nobody, and neither does a lights-out station unless its process needs a qualified operator."
+msgstr "Требуемое количество — это часы наладки и ручного труда, запланированные на эту станцию в этот день, разделённые на {personDayHours}ч и округлённые в большую сторону — смена, по которой вы фильтруете, или наиболее частая длина смены на этой площадке. При выборе смены учитываются только часы внутри этой смены. Машинное время никого не требует, как и станция без присмотра, если её процесс не требует квалифицированного оператора."
 
 msgid "Needed when the date is before the entry window"
 msgstr "Требуется, когда дата находится перед окном ввода"
@@ -21206,13 +21224,6 @@ msgstr "Бесплатная замена"
 msgid "No-charge Replacement"
 msgstr "Бесплатная замена"
 
-#. placeholder {0}: ability.name
-msgid "Nobody is qualified for {0}"
-msgstr "Никто не имеет навыка {0}"
-
-msgid "Nobody is qualified. Add someone to the process's ability."
-msgstr "Никто не имеет требуемого навыка. Добавьте сотрудника к этому навыку процесса."
-msgid "No, customers supply the material."
 msgid "No, customers supply the material"
 msgstr ""
 
@@ -21224,6 +21235,13 @@ msgstr ""
 
 msgid "No, we buy and resell"
 msgstr ""
+
+#. placeholder {0}: ability.name
+msgid "Nobody is qualified for {0}"
+msgstr "Никто не имеет навыка {0}"
+
+msgid "Nobody is qualified. Add someone to the process's ability."
+msgstr "Никто не имеет требуемого навыка. Добавьте сотрудника к этому навыку процесса."
 
 msgid "Nom"
 msgstr "Номин"
@@ -21264,13 +21282,13 @@ msgstr "Не для внутреннего использования"
 msgid "Non-Inventory"
 msgstr "Нескладской"
 
-msgid "Non-nettable"
-msgstr "Не учитывается в MRP"
 msgid "non-inventory service items, bought or made, used on sales, purchase and contract lines"
 msgstr ""
 
 msgid "Non-nettable: {name}"
 msgstr "Не учитывается в MRP: {name}"
+msgid "Non-nettable"
+msgstr "Не учитывается в MRP"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Счёт прочих расходов, дебетуемый при продаже или списании актива данного класса по цене ниже его остаточной стоимости."
@@ -28416,11 +28434,6 @@ msgstr "Отправить в Carbon"
 msgid "Send Via"
 msgstr "Отправить через"
 
-msgid "Sender Email"
-msgstr "Email отправителя"
-
-msgid "Sender Name"
-msgstr "Имя отправителя"
 msgid "Send your first purchase order"
 msgstr ""
 
@@ -28429,6 +28442,11 @@ msgstr ""
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
 msgstr "При отправке запроса цен или предложения поставщика в каждой строке указываются модель и файлы со вкладки «Файлы», например чертежи. В письмо прикрепляются, а на странице предложения поставщика показываются только файлы, отмеченные на этой вкладке."
+msgid "Sender Email"
+msgstr "Email отправителя"
+
+msgid "Sender Name"
+msgstr "Имя отправителя"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Отправка дефектных единиц на более раннюю операцию для исправления вместо их утилизации."
@@ -31515,6 +31533,11 @@ msgstr "Не удалось загрузить контактные лица."
 
 msgid "The Contract Assets default account is empty."
 msgstr "Счет контрактных активов по умолчанию пуст."
+msgid "The connection could not be verified"
+msgstr "Соединение не удалось проверить"
+
+msgid "The connection was refused"
+msgstr "Соединение было отклонено"
 
 msgid "The contract cannot be cancelled then"
 msgstr "Контракт не может быть отменен тогда"
@@ -31899,6 +31922,8 @@ msgstr "Номенклатура не имеет изготовленных ко
 
 msgid "The item has no serial or batch tracking"
 msgstr "Номенклатура не имеет отслеживания по серийному номеру или серии"
+msgstr ""
+
 msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
 msgstr ""
 
@@ -32291,6 +32316,7 @@ msgstr "Процессы, которые может выполнять этот 
 
 msgid "The profile picture of the bot"
 msgstr "Изображение профиля бота"
+
 msgid "The proposal, the order form, call recordings. One link per line."
 msgstr ""
 
@@ -36121,6 +36147,7 @@ msgstr "Добавить выбранные права доступа повер
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
 msgstr "Разворачивать ли повторяющиеся события в отдельные экземпляры и возвращать только разовые события и экземпляры повторяющихся событий, без самих исходных повторяющихся событий."
+
 msgid "Which Carbon features your company needs before go-live, and which can wait."
 msgstr ""
 
@@ -36438,6 +36465,9 @@ msgstr "Рабочие процессы"
 msgid "working at {elsewhereStationNames}"
 msgstr "работающих в {elsewhereStationNames}"
 msgid "Workflows and automations"
+msgstr ""
+
+msgid "working at {elsewhereStationNames}"
 msgstr ""
 
 msgid "Working sessions on configuration and data"

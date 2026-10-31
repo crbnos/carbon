@@ -168,6 +168,9 @@ msgstr "{0, plural, one {# bağlantı} other {# bağlantılar}}"
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# satır dikkat gerektiriyor} other {# satır dikkat gerektiriyor}}"
+#. placeholder {0}: counts.jobs
+msgid "{0, plural, one {# job} other {# jobs}}"
+msgstr "{0, plural, one {# iş emri} other {# iş emri}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -824,6 +827,7 @@ msgstr "{appName} bağlı, ancak iş akışı adımları bunu kullanmadan önce 
 
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName} henüz bağlanmadı. Bu adımın bir şey yapabilmesi için önce bir hesabı bağlayın."
+
 msgid "{area}: keeping {current} next to Carbon is an adoption risk."
 msgstr ""
 
@@ -2250,6 +2254,8 @@ msgstr "Yinelenen satır her dönemde kendi oranında faturalanır; tek seferlik
 
 msgid "A referenced record does not exist."
 msgstr "Başvurulan bir kayıt mevcut değildir."
+msgstr ""
+
 msgid "a released job"
 msgstr ""
 
@@ -2528,13 +2534,13 @@ msgstr "Bir değer geçerli değildir."
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Değişken bir ücret — kilometre fazlası, hasar, teslimat, temizlik — sözleşmenin bir sonraki faturasında faturalandırılır."
 
-msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
-msgstr "Bir çalışma alanı yalnızca bir Carbon şirketine bağlanabilir. Önce oradaki bağlantıyı kesin veya farklı bir çalışma alanı bağlayın."
 msgid "a work center"
 msgstr ""
 
 msgid "A written off item is never billed."
 msgstr "Silinen bir stok kartı asla faturalanmaz."
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "Bir çalışma alanı yalnızca bir Carbon şirketine bağlanabilir. Önce oradaki bağlantıyı kesin veya farklı bir çalışma alanı bağlayın."
 
 msgid "ABA"
 msgstr "ABA"
@@ -7048,7 +7054,6 @@ msgid "Channel"
 msgstr "Kanal"
 
 msgid "Channel Name"
-msgstr "Kanal Adı"
 msgstr ""
 
 msgid "Characteristic"
@@ -7201,6 +7206,9 @@ msgid "Choose {named} first."
 msgstr "Önce {named} seçin."
 msgid "Choose"
 msgstr ""
+
+msgid "Choose {named} first."
+msgstr "Önce {named} seçin."
 
 msgid "Choose a backup"
 msgstr "Yedek seçin"
@@ -13503,6 +13511,9 @@ msgstr "Adetleri Dışa Aktar (CSV)"
 msgid "Export page"
 msgstr ""
 
+msgid "Export units (CSV)"
+msgstr ""
+
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Hesap planınızı mevcut sisteminizden CSV olarak dışa aktarın; her hesap için numarası, adı, sınıfı, türü ve grubuyla bir satır olsun ya da mevcut hesap planının şablonuyla başlayın. Carbon yalnızca bu dosyadaki hesapları tutar."
 
@@ -14527,6 +14538,9 @@ msgstr "Sahadaki mühendis"
 msgid "found here"
 msgstr "Buradan bulundu"
 msgid "Forward-deployed engineer included"
+msgstr ""
+
+msgid "found here"
 msgstr ""
 
 msgid "Foundation"
@@ -15829,6 +15843,8 @@ msgstr "İçeri aktarıldı"
 
 msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
 msgstr "İçe aktarıldı: {counted} satır sayıldı, {added} eklendi, {removed} kaldırıldı"
+msgstr ""
+
 msgid "Importing data"
 msgstr ""
 
@@ -17176,6 +17192,7 @@ msgstr "{total} içinden {kept} tutuldu; {unresolved} kontrol edilemedi."
 
 msgid "Kept {kept} of {total}."
 msgstr "{total} içinden {kept} tutuldu."
+
 msgid "Kept with the set"
 msgstr ""
 
@@ -19340,6 +19357,7 @@ msgstr "MRP (planlama)"
 
 msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
 msgstr "MRP ve toplama bu birimdeki ve içindeki birimlerdeki stoku yok sayar. Karantina ve bekletme alanları için kullanın."
+
 msgid "MRP planning"
 msgstr ""
 
@@ -19461,8 +19479,8 @@ msgstr "Gerekli olan, o gün istasyonda program tarafından ayrılan hazırlık 
 msgid "needed by {feature}"
 msgstr ""
 
-msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
-msgstr "Gerekli olan, o gün vadesi gelen iş saatleri {personDayHours}s'ye bölünmüş, yuvarlanmıştır — filtrelediğiniz vardiya veya bu konumdaki en yaygın vardiya uzunluğu."
+msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. With a shift selected, only the hours booked inside that shift count. Machine time needs nobody, and neither does a lights-out station unless its process needs a qualified operator."
+msgstr "Gerekli olan, o gün istasyonda program tarafından ayrılan hazırlık ve işçilik saatleridir, {personDayHours}s'ye bölünür ve yukarı yuvarlanır — filtrelediğiniz vardiya veya bu lokasyondaki en yaygın vardiya uzunluğu. Bir vardiya seçildiğinde, sadece o vardiya içinde ayrılan saatler sayılır. Makine süresi kimseyi gerektirmez ve ışıksız istasyonlar da gerektirmez; ancak prosesi yeterli nitelikli bir operatör gerektirirse gerekir."
 
 msgid "Needed when the date is before the entry window"
 msgstr "Giriş penceresinden önceki tarihler için gereklidir"
@@ -21206,13 +21224,6 @@ msgstr "Ücretsiz değiştirme"
 msgid "No-charge Replacement"
 msgstr "Ücretsiz Değiştirme"
 
-#. placeholder {0}: ability.name
-msgid "Nobody is qualified for {0}"
-msgstr "{0} için yeterli nitelikli kimse yok"
-
-msgid "Nobody is qualified. Add someone to the process's ability."
-msgstr "Yeterli nitelikli kimse yok. Bu prosesin yetkinliğine birisi ekleyin."
-msgid "No, customers supply the material."
 msgid "No, customers supply the material"
 msgstr ""
 
@@ -21224,6 +21235,13 @@ msgstr ""
 
 msgid "No, we buy and resell"
 msgstr ""
+
+#. placeholder {0}: ability.name
+msgid "Nobody is qualified for {0}"
+msgstr "{0} için yeterli nitelikli kimse yok"
+
+msgid "Nobody is qualified. Add someone to the process's ability."
+msgstr "Yeterli nitelikli kimse yok. Bu prosesin yetkinliğine birisi ekleyin."
 
 msgid "Nom"
 msgstr "Nom"
@@ -21264,13 +21282,13 @@ msgstr "İçsel Olmayan Kullanım"
 msgid "Non-Inventory"
 msgstr "Stok dışı"
 
-msgid "Non-nettable"
-msgstr "MRP dışı"
 msgid "non-inventory service items, bought or made, used on sales, purchase and contract lines"
 msgstr ""
 
 msgid "Non-nettable: {name}"
 msgstr "MRP dışı: {name}"
+msgid "Non-nettable"
+msgstr "MRP dışı"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Bu sınıftaki bir varlık net defter değerinin altında satıldığında veya hurda haline getirildiğinde borç kaydedilen işletme dışı gider hesabı."
@@ -28416,11 +28434,6 @@ msgstr "Carbon'a Gönder"
 msgid "Send Via"
 msgstr "Gönderim Yolu"
 
-msgid "Sender Email"
-msgstr "Gönderici E-postası"
-
-msgid "Sender Name"
-msgstr "Gönderici Adı"
 msgid "Send your first purchase order"
 msgstr ""
 
@@ -28429,6 +28442,11 @@ msgstr ""
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
 msgstr "Teklif talebi ya da tedarikçi teklifi gönderildiğinde, her satırın modeli ile Dosyalar sekmesindeki dosyalar (ör. teknik resimler) listelenir. Yalnızca burada işaretlenen dosyalar e-postaya eklenir ve tedarikçinin teklif sayfasında gösterilir."
+msgid "Sender Email"
+msgstr "Gönderici E-postası"
+
+msgid "Sender Name"
+msgstr "Gönderici Adı"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Hatalı ürünleri hurdalanması yerine, daha önceki bir operasyona düzeltilmesi için geri göndermek."
@@ -31515,6 +31533,11 @@ msgstr "İlgili kişiler yüklenemedi."
 
 msgid "The Contract Assets default account is empty."
 msgstr "Sözleşme Varlıkları varsayılan hesabı boş."
+msgid "The connection could not be verified"
+msgstr "Bağlantı doğrulanamadı"
+
+msgid "The connection was refused"
+msgstr "Bağlantı reddedildi"
 
 msgid "The contract cannot be cancelled then"
 msgstr "Sözleşme o zaman iptal edilemez"
@@ -31899,6 +31922,8 @@ msgstr "Stok kartının bu derinlikte üretilmiş bileşeni yoktur. Satın alın
 
 msgid "The item has no serial or batch tracking"
 msgstr "Stok kartının seri veya parti takibi yok"
+msgstr ""
+
 msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
 msgstr ""
 
@@ -32291,6 +32316,7 @@ msgstr "Bu iş merkezinin çalıştırabileceği prosesler; operasyonları zaman
 
 msgid "The profile picture of the bot"
 msgstr "Botun profil resmi"
+
 msgid "The proposal, the order form, call recordings. One link per line."
 msgstr ""
 
@@ -36121,6 +36147,7 @@ msgstr "Seçilen izinlerin her kullanıcının zaten sahip olduğu şeylerin üs
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
 msgstr "Tekrarlanan olayların tek tek örneklere genişletilip genişletilmeyeceği; yalnızca tek seferlik olaylar ve tekrarlanan olayların örnekleri döndürülür, temel tekrarlanan olayların kendisi döndürülmez."
+
 msgid "Which Carbon features your company needs before go-live, and which can wait."
 msgstr ""
 
@@ -36438,6 +36465,9 @@ msgstr "İş akışları"
 msgid "working at {elsewhereStationNames}"
 msgstr "{elsewhereStationNames}'de çalışıyor"
 msgid "Workflows and automations"
+msgstr ""
+
+msgid "working at {elsewhereStationNames}"
 msgstr ""
 
 msgid "Working sessions on configuration and data"

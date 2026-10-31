@@ -168,6 +168,9 @@ msgstr "{0, plural, one {# odnośnik} other {# odnośniki}}"
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# wymaga uwagi} few {# wymagają uwagi} many {# wymaga uwagi} other {# wymaga uwagi}}"
+#. placeholder {0}: counts.jobs
+msgid "{0, plural, one {# job} other {# jobs}}"
+msgstr "{0, plural, one {# zlecenie produkcyjne} other {# zlecenia produkcyjne}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -824,6 +827,7 @@ msgstr "{appName} jest połączony, ale musi zostać ponownie połączony zanim 
 
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName} nie jest jeszcze połączony. Przed wykonaniem tego kroku połącz konto."
+
 msgid "{area}: keeping {current} next to Carbon is an adoption risk."
 msgstr ""
 
@@ -2250,6 +2254,8 @@ msgstr "Pozycja cykliczna jest rozliczana co okres w swojej stawce; pozycja jedn
 
 msgid "A referenced record does not exist."
 msgstr "Rekord, do którego się odwołujesz, nie istnieje."
+msgstr ""
+
 msgid "a released job"
 msgstr ""
 
@@ -2528,13 +2534,13 @@ msgstr "Wartość jest nieprawidłowa."
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Zmienna opłata — przejazd nadmiarowy, uszkodzenie, dostawa, czyszczenie — jest rozliczana na następnej fakturze umowy."
 
-msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
-msgstr "Przestrzeń roboczą można połączyć tylko z jedną firmą w Carbon. Najpierw ją tam rozłącz albo połącz inną przestrzeń roboczą."
 msgid "a work center"
 msgstr ""
 
 msgid "A written off item is never billed."
 msgstr "Umorzony artykuł nigdy nie jest rozliczany."
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "Przestrzeń roboczą można połączyć tylko z jedną firmą w Carbon. Najpierw ją tam rozłącz albo połącz inną przestrzeń roboczą."
 
 msgid "ABA"
 msgstr "ABA"
@@ -7048,7 +7054,6 @@ msgid "Channel"
 msgstr "Kanał"
 
 msgid "Channel Name"
-msgstr "Nazwa kanału"
 msgstr ""
 
 msgid "Characteristic"
@@ -7201,6 +7206,9 @@ msgid "Choose {named} first."
 msgstr "Najpierw wybierz {named}."
 msgid "Choose"
 msgstr ""
+
+msgid "Choose {named} first."
+msgstr "Najpierw wybierz {named}."
 
 msgid "Choose a backup"
 msgstr "Wybierz kopię zapasową"
@@ -13503,6 +13511,9 @@ msgstr "Eksportuj sztuki (CSV)"
 msgid "Export page"
 msgstr ""
 
+msgid "Export units (CSV)"
+msgstr ""
+
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Wyeksportuj plan kont z obecnego systemu jako CSV, jeden wiersz na konto, z numerem, nazwą, klasą, typem i grupą, albo zacznij od szablonu obecnego planu kont. Carbon zachowa tylko konta z tego pliku."
 
@@ -14527,6 +14538,9 @@ msgstr "Inżynier wdrażający"
 msgid "found here"
 msgstr "znaleźć tutaj"
 msgid "Forward-deployed engineer included"
+msgstr ""
+
+msgid "found here"
 msgstr ""
 
 msgid "Foundation"
@@ -15829,6 +15843,8 @@ msgstr "Zaimportowany"
 
 msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
 msgstr "Importowane: {counted} pozycji zliczonych, {added} dodanych, {removed} usuniętych"
+msgstr ""
+
 msgid "Importing data"
 msgstr ""
 
@@ -17176,6 +17192,7 @@ msgstr "Zachowano {kept} z {total}; nie można było sprawdzić: {unresolved}."
 
 msgid "Kept {kept} of {total}."
 msgstr "Zachowano {kept} z {total}."
+
 msgid "Kept with the set"
 msgstr ""
 
@@ -19340,6 +19357,7 @@ msgstr "MRP (planowanie)"
 
 msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
 msgstr "MRP i kompletacja pomijają zapas w tej jednostce i w jednostkach wewnątrz niej. Używaj dla stref kwarantanny i wstrzymania."
+
 msgid "MRP planning"
 msgstr ""
 
@@ -19461,8 +19479,8 @@ msgstr "Wymagane są godziny przezbrojenia i roboczej, które harmonogram rezerw
 msgid "needed by {feature}"
 msgstr ""
 
-msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
-msgstr "Potrzebne = godziny pracy przypadające tego dnia podzielone przez {personDayHours}h, zaokrąglone w górę — zmiana, którą filtrujesz, lub najczęstsza długość zmiany w tej lokalizacji."
+msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. With a shift selected, only the hours booked inside that shift count. Machine time needs nobody, and neither does a lights-out station unless its process needs a qualified operator."
+msgstr "Wymagane są godziny przezbrojenia i roboczej, które harmonogram rezerwuje na tym stanowisku tego dnia, podzielone przez {personDayHours}h i zaokrąglone w górę — zmianę, którą filtrujesz, lub najczęstszą długość zmiany na tej lokalizacji. Jeśli zmiana jest wybrana, tylko godziny zarezerwowane w tej zmianie liczą się. Czas maszynowy nikogo nie wymaga, podobnie jak stanowisko bez oświetlenia, chyba że jego proces wymaga wykwalifikowanego operatora."
 
 msgid "Needed when the date is before the entry window"
 msgstr "Potrzebne, gdy data jest przed oknem wpisu"
@@ -21206,13 +21224,6 @@ msgstr "Bezpłatna wymiana"
 msgid "No-charge Replacement"
 msgstr "Bezpłatna Wymiana"
 
-#. placeholder {0}: ability.name
-msgid "Nobody is qualified for {0}"
-msgstr "Nikt nie jest wykwalifikowany do {0}"
-
-msgid "Nobody is qualified. Add someone to the process's ability."
-msgstr "Nikt nie jest wykwalifikowany. Dodaj kogoś do umiejętności procesu."
-msgid "No, customers supply the material."
 msgid "No, customers supply the material"
 msgstr ""
 
@@ -21224,6 +21235,13 @@ msgstr ""
 
 msgid "No, we buy and resell"
 msgstr ""
+
+#. placeholder {0}: ability.name
+msgid "Nobody is qualified for {0}"
+msgstr "Nikt nie jest wykwalifikowany do {0}"
+
+msgid "Nobody is qualified. Add someone to the process's ability."
+msgstr "Nikt nie jest wykwalifikowany. Dodaj kogoś do umiejętności procesu."
 
 msgid "Nom"
 msgstr "Nom"
@@ -21264,13 +21282,13 @@ msgstr "Użycie zewnętrzne"
 msgid "Non-Inventory"
 msgstr "Niemagazynowy"
 
-msgid "Non-nettable"
-msgstr "Nieuwzględniany w MRP"
 msgid "non-inventory service items, bought or made, used on sales, purchase and contract lines"
 msgstr ""
 
 msgid "Non-nettable: {name}"
 msgstr "Nieuwzględniany w MRP: {name}"
+msgid "Non-nettable"
+msgstr "Nieuwzględniany w MRP"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Konto wydatków niezwiązanych z działalnością obciążane, gdy składnik aktywów z tej klasy jest sprzedany lub złomowany poniżej jego wartości netto w księgach."
@@ -28416,11 +28434,6 @@ msgstr "Wyślij do Carbon"
 msgid "Send Via"
 msgstr "Wyślij przez"
 
-msgid "Sender Email"
-msgstr "Email nadawcy"
-
-msgid "Sender Name"
-msgstr "Nazwa nadawcy"
 msgid "Send your first purchase order"
 msgstr ""
 
@@ -28429,6 +28442,11 @@ msgstr ""
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
 msgstr "Wysyłając RFQ lub ofertę dostawcy, lista zawiera model każdej pozycji oraz pliki z jej zakładki Pliki, takie jak rysunki. Tylko pliki zaznaczone na tej zakładce są załączane do wiadomości e-mail i wyświetlane na stronie oferty dostawcy."
+msgid "Sender Email"
+msgstr "Email nadawcy"
+
+msgid "Sender Name"
+msgstr "Nazwa nadawcy"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Odesłanie uszkodzonych jednostek do wcześniejszej operacji do poprawy zamiast ich złomowania."
@@ -31515,6 +31533,11 @@ msgstr "Nie udało się załadować kontaktów."
 
 msgid "The Contract Assets default account is empty."
 msgstr "Domyślne konto Aktywów Umowy jest puste."
+msgid "The connection could not be verified"
+msgstr "Nie można było zweryfikować połączenia"
+
+msgid "The connection was refused"
+msgstr "Połączenie zostało odrzucone"
 
 msgid "The contract cannot be cancelled then"
 msgstr "Umowa nie może być wówczas anulowana"
@@ -31899,6 +31922,8 @@ msgstr "Artykuł nie ma wykonanych komponentów na tej głębokości. Dołącz k
 
 msgid "The item has no serial or batch tracking"
 msgstr "Artykuł nie ma śledzenia numeru seryjnego lub partii produkcyjnej"
+msgstr ""
+
 msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
 msgstr ""
 
@@ -32291,6 +32316,7 @@ msgstr "Procesy, które może wykonać to stanowisko robocze; pojawia się w sel
 
 msgid "The profile picture of the bot"
 msgstr "Zdjęcie profilowe bota"
+
 msgid "The proposal, the order form, call recordings. One link per line."
 msgstr ""
 
@@ -36121,6 +36147,7 @@ msgstr "Czy wybrane uprawnienia są Dodawane do tego, co każdy użytkownik już
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
 msgstr "Określa, czy rozwijać zdarzenia cykliczne na pojedyncze wystąpienia i zwracać tylko zdarzenia jednorazowe oraz wystąpienia zdarzeń cyklicznych, bez samych bazowych zdarzeń cyklicznych."
+
 msgid "Which Carbon features your company needs before go-live, and which can wait."
 msgstr ""
 
@@ -36438,6 +36465,9 @@ msgstr "Przepływy pracy"
 msgid "working at {elsewhereStationNames}"
 msgstr "pracujący w {elsewhereStationNames}"
 msgid "Workflows and automations"
+msgstr ""
+
+msgid "working at {elsewhereStationNames}"
 msgstr ""
 
 msgid "Working sessions on configuration and data"

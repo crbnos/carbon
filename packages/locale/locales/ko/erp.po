@@ -168,6 +168,9 @@ msgstr "{0, plural, one {# 링크} other {# 링크}}"
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {#개 확인 필요} other {#개 확인 필요}}"
+#. placeholder {0}: counts.jobs
+msgid "{0, plural, one {# job} other {# jobs}}"
+msgstr "{0, plural, one {# 개의 작업 지시} other {# 개의 작업 지시}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -824,6 +827,7 @@ msgstr "{appName}은(는) 연결되어 있지만 워크플로 단계에서 사�
 
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName}이(가) 아직 연결되지 않았습니다. 이 단계를 진행하기 전에 계정을 연결하세요."
+
 msgid "{area}: keeping {current} next to Carbon is an adoption risk."
 msgstr ""
 
@@ -2250,6 +2254,8 @@ msgstr "반복 라인은 매 기간마다 요금으로 청구되고, 일회성 �
 
 msgid "A referenced record does not exist."
 msgstr "참조된 레코드가 존재하지 않습니다."
+msgstr ""
+
 msgid "a released job"
 msgstr ""
 
@@ -2528,13 +2534,13 @@ msgstr "값이 유효하지 않습니다."
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "변동 요금(마일리지 초과, 손상, 배송, 청소)은 계약의 다음 송장에 청구됩니다."
 
-msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
-msgstr "작업 공간은 하나의 Carbon 회사에만 연결할 수 있습니다. 먼저 해당 회사에서 연결을 해제하거나 다른 작업 공간을 연결하세요."
 msgid "a work center"
 msgstr ""
 
 msgid "A written off item is never billed."
 msgstr "상각된 품목은 청구되지 않습니다."
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "작업 공간은 하나의 Carbon 회사에만 연결할 수 있습니다. 먼저 해당 회사에서 연결을 해제하거나 다른 작업 공간을 연결하세요."
 
 msgid "ABA"
 msgstr "ABA"
@@ -7048,7 +7054,6 @@ msgid "Channel"
 msgstr "채널"
 
 msgid "Channel Name"
-msgstr "채널 이름"
 msgstr ""
 
 msgid "Characteristic"
@@ -7201,6 +7206,9 @@ msgid "Choose {named} first."
 msgstr "먼저 {named}을(를) 선택하세요."
 msgid "Choose"
 msgstr ""
+
+msgid "Choose {named} first."
+msgstr "먼저 {named}을(를) 선택하세요."
 
 msgid "Choose a backup"
 msgstr "백업 선택"
@@ -13503,6 +13511,9 @@ msgstr "개 내보내기 (CSV)"
 msgid "Export page"
 msgstr ""
 
+msgid "Export units (CSV)"
+msgstr ""
+
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "현재 시스템에서 계정과목표를 CSV로 내보내세요. 계정마다 한 행에 번호, 이름, 분류, 유형, 그룹을 담거나, 현재 계정과목표의 템플릿에서 시작하세요. Carbon은 이 파일에 있는 계정만 유지합니다."
 
@@ -14527,6 +14538,9 @@ msgstr "현장 배치 엔지니어"
 msgid "found here"
 msgstr "여기에서 찾음"
 msgid "Forward-deployed engineer included"
+msgstr ""
+
+msgid "found here"
 msgstr ""
 
 msgid "Foundation"
@@ -15829,6 +15843,8 @@ msgstr "가져온"
 
 msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
 msgstr "가져옴: {counted}개 라인 계산됨, {added}개 추가됨, {removed}개 제거됨"
+msgstr ""
+
 msgid "Importing data"
 msgstr ""
 
@@ -17176,6 +17192,7 @@ msgstr "{total}개 중 {kept}개를 유지했습니다. {unresolved}개는 확�
 
 msgid "Kept {kept} of {total}."
 msgstr "{total}개 중 {kept}개를 유지했습니다."
+
 msgid "Kept with the set"
 msgstr ""
 
@@ -19340,6 +19357,7 @@ msgstr "MRP(계획)"
 
 msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
 msgstr "MRP와 피킹은 이 단위와 그 안의 단위에 있는 재고를 무시합니다. 격리 및 보류 구역에 사용하세요."
+
 msgid "MRP planning"
 msgstr ""
 
@@ -19461,8 +19479,8 @@ msgstr "필요한 것은 그 날 그 작업장에서 일정이 책정한 셋업 
 msgid "needed by {feature}"
 msgstr ""
 
-msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
-msgstr "필요한 것은 그 날의 작업 지시 시간을 {personDayHours}h로 나눈 값(올림)입니다 — 필터링하는 교대조 또는 이 사업장의 가장 일반적인 교대조 길이입니다."
+msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. With a shift selected, only the hours booked inside that shift count. Machine time needs nobody, and neither does a lights-out station unless its process needs a qualified operator."
+msgstr "필요한 것은 그 날 그 작업장에서 일정이 책정한 셋업 및 노무 시간을 {personDayHours}시간으로 나누고 올림한 값입니다 — 필터링 중인 교대조 또는 이 사업장에서 가장 일반적인 교대조 길이. 교대조가 선택되면 해당 교대조 내에 책정된 시간만 계산됩니다. 기계 시간은 누구도 필요하지 않으며, 공법이 숙련된 작업자를 필요로 하지 않으면 무인 작업장도 필요하지 않습니다."
 
 msgid "Needed when the date is before the entry window"
 msgstr "날짜가 입력 윈도우보다 빠를 때 필요합니다"
@@ -21206,13 +21224,6 @@ msgstr "무상 교체"
 msgid "No-charge Replacement"
 msgstr "무상 교체"
 
-#. placeholder {0}: ability.name
-msgid "Nobody is qualified for {0}"
-msgstr "{0}에 대해 숙련된 사람이 없습니다"
-
-msgid "Nobody is qualified. Add someone to the process's ability."
-msgstr "숙련된 사람이 없습니다. 공법의 역량에 누군가를 추가하세요."
-msgid "No, customers supply the material."
 msgid "No, customers supply the material"
 msgstr ""
 
@@ -21224,6 +21235,13 @@ msgstr ""
 
 msgid "No, we buy and resell"
 msgstr ""
+
+#. placeholder {0}: ability.name
+msgid "Nobody is qualified for {0}"
+msgstr "{0}에 대해 숙련된 사람이 없습니다"
+
+msgid "Nobody is qualified. Add someone to the process's ability."
+msgstr "숙련된 사람이 없습니다. 공법의 역량에 누군가를 추가하세요."
 
 msgid "Nom"
 msgstr "명목"
@@ -21264,13 +21282,13 @@ msgstr "비내부 사용"
 msgid "Non-Inventory"
 msgstr "비재고"
 
-msgid "Non-nettable"
-msgstr "MRP 제외"
 msgid "non-inventory service items, bought or made, used on sales, purchase and contract lines"
 msgstr ""
 
 msgid "Non-nettable: {name}"
 msgstr "MRP 제외: {name}"
+msgid "Non-nettable"
+msgstr "MRP 제외"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "이 자산군에 속한 자산이 순장부가액보다 낮은 가격으로 판매되거나 폐기될 때 차감되는 영업외비용 계정입니다."
@@ -28416,11 +28434,6 @@ msgstr "Carbon에 보내기"
 msgid "Send Via"
 msgstr "전송 방법"
 
-msgid "Sender Email"
-msgstr "보낸이 이메일"
-
-msgid "Sender Name"
-msgstr "보낸이 이름"
 msgid "Send your first purchase order"
 msgstr ""
 
@@ -28429,6 +28442,11 @@ msgstr ""
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
 msgstr "견적 요청이나 공급업체 견적을 보내면 각 라인 품목의 모델과 파일 탭에 있는 파일(예: 도면)이 목록으로 표시됩니다. 여기에서 체크된 파일만 이메일에 첨부되고 공급업체의 견적 페이지에 표시됩니다."
+msgid "Sender Email"
+msgstr "보낸이 이메일"
+
+msgid "Sender Name"
+msgstr "보낸이 이름"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "불량 유닛을 폐기하는 대신 이전 공정작업으로 되돌려 수정하는 것입니다."
@@ -31515,6 +31533,11 @@ msgstr "담당자를 불러올 수 없습니다."
 
 msgid "The Contract Assets default account is empty."
 msgstr "계약 자산 기본 계정이 비어 있습니다."
+msgid "The connection could not be verified"
+msgstr "연결을 확인할 수 없습니다"
+
+msgid "The connection was refused"
+msgstr "연결이 거부되었습니다"
 
 msgid "The contract cannot be cancelled then"
 msgstr "그때는 계약을 취소할 수 없습니다."
@@ -31899,6 +31922,8 @@ msgstr "품목에 이 깊이의 제조 부품이 없습니다. 구매한 부품�
 
 msgid "The item has no serial or batch tracking"
 msgstr "품목에 시리얼 또는 배치 추적이 없습니다"
+msgstr ""
+
 msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
 msgstr ""
 
@@ -32291,6 +32316,7 @@ msgstr "이 작업장이 실행할 수 있는 공법으로, 공정 일정 시 �
 
 msgid "The profile picture of the bot"
 msgstr "봇의 프로필 사진"
+
 msgid "The proposal, the order form, call recordings. One link per line."
 msgstr ""
 
@@ -36121,6 +36147,7 @@ msgstr "선택한 권한을 각 사용자가 이미 가진 권한에 추가할�
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
 msgstr "반복 이벤트를 개별 인스턴스로 펼쳐, 기본 반복 이벤트 자체는 제외하고 일회성 이벤트와 반복 이벤트의 인스턴스만 반환할지 여부입니다."
+
 msgid "Which Carbon features your company needs before go-live, and which can wait."
 msgstr ""
 
@@ -36438,6 +36465,9 @@ msgstr "워크플로우"
 msgid "working at {elsewhereStationNames}"
 msgstr "{elsewhereStationNames}에서 작업 중"
 msgid "Workflows and automations"
+msgstr ""
+
+msgid "working at {elsewhereStationNames}"
 msgstr ""
 
 msgid "Working sessions on configuration and data"

@@ -168,6 +168,9 @@ msgstr "{0, plural, one {# link} other {# links}}"
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# needs attention} other {# need attention}}"
+#. placeholder {0}: counts.jobs
+msgid "{0, plural, one {# job} other {# jobs}}"
+msgstr "{0, plural, one {# job} other {# jobs}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -824,6 +827,7 @@ msgstr "{appName} is connected, but needs to be reconnected before workflow step
 
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName} isn't connected yet. Connect an account before this step can do anything."
+
 msgid "{area}: keeping {current} next to Carbon is an adoption risk."
 msgstr "{area}: keeping {current} next to Carbon is an adoption risk."
 
@@ -2249,6 +2253,7 @@ msgstr "A recurring line bills every period at its rate; a one-time line bills o
 
 msgid "A referenced record does not exist."
 msgstr "A referenced record does not exist."
+
 msgid "a released job"
 msgstr "a released job"
 
@@ -2527,13 +2532,13 @@ msgstr "A value is not valid."
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 
-msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
-msgstr "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
 msgid "a work center"
 msgstr "a work center"
 
 msgid "A written off item is never billed."
 msgstr "A written off item is never billed."
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
 
 msgid "ABA"
 msgstr "ABA"
@@ -7199,6 +7204,9 @@ msgid "Choose {named} first."
 msgstr "Choose {named} first."
 msgid "Choose"
 msgstr "Choose"
+
+msgid "Choose {named} first."
+msgstr "Choose {named} first."
 
 msgid "Choose a backup"
 msgstr "Choose a backup"
@@ -13497,6 +13505,9 @@ msgstr "Export units (CSV)"
 msgid "Export page"
 msgstr "Export page"
 
+msgid "Export units (CSV)"
+msgstr "Export units (CSV)"
+
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 
@@ -14519,10 +14530,11 @@ msgstr "Formula"
 msgid "Forward deployed engineer"
 msgstr "Forward deployed engineer"
 
-msgid "found here"
-msgstr "found here"
 msgid "Forward-deployed engineer included"
 msgstr "Forward-deployed engineer included"
+
+msgid "found here"
+msgstr "found here"
 
 msgid "Foundation"
 msgstr "Foundation"
@@ -15822,6 +15834,7 @@ msgstr "Imported"
 
 msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
 msgstr "Imported: {counted} line(s) counted, {added} added, {removed} removed"
+
 msgid "Importing data"
 msgstr "Importing data"
 
@@ -17170,6 +17183,7 @@ msgstr "Kept {kept} of {total}; {unresolved} could not be checked."
 
 msgid "Kept {kept} of {total}."
 msgstr "Kept {kept} of {total}."
+
 msgid "Kept with the set"
 msgstr "Kept with the set"
 
@@ -19333,6 +19347,7 @@ msgstr "MRP (planning)"
 
 msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
 msgstr "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
+
 msgid "MRP planning"
 msgstr "MRP planning"
 
@@ -19454,8 +19469,8 @@ msgstr "Needed is the setup and labor hours the schedule books at the station th
 msgid "needed by {feature}"
 msgstr "needed by {feature}"
 
-msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
-msgstr "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
+msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. With a shift selected, only the hours booked inside that shift count. Machine time needs nobody, and neither does a lights-out station unless its process needs a qualified operator."
+msgstr "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. With a shift selected, only the hours booked inside that shift count. Machine time needs nobody, and neither does a lights-out station unless its process needs a qualified operator."
 
 msgid "Needed when the date is before the entry window"
 msgstr "Needed when the date is before the entry window"
@@ -21217,6 +21232,13 @@ msgstr "No, the books stay in another system"
 msgid "No, we buy and resell"
 msgstr "No, we buy and resell"
 
+#. placeholder {0}: ability.name
+msgid "Nobody is qualified for {0}"
+msgstr "Nobody is qualified for {0}"
+
+msgid "Nobody is qualified. Add someone to the process's ability."
+msgstr "Nobody is qualified. Add someone to the process's ability."
+
 msgid "Nom"
 msgstr "Nom"
 
@@ -21256,13 +21278,13 @@ msgstr "Non-Internal Use"
 msgid "Non-Inventory"
 msgstr "Non-Inventory"
 
-msgid "Non-nettable"
-msgstr "Non-nettable"
 msgid "non-inventory service items, bought or made, used on sales, purchase and contract lines"
 msgstr "non-inventory service items, bought or made, used on sales, purchase and contract lines"
 
 msgid "Non-nettable: {name}"
 msgstr "Non-nettable: {name}"
+msgid "Non-nettable"
+msgstr "Non-nettable"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
@@ -28411,11 +28433,6 @@ msgstr "Send to Carbon"
 msgid "Send Via"
 msgstr "Send Via"
 
-msgid "Sender Email"
-msgstr "Sender Email"
-
-msgid "Sender Name"
-msgstr "Sender Name"
 msgid "Send your first purchase order"
 msgstr "Send your first purchase order"
 
@@ -28424,6 +28441,11 @@ msgstr "Send your first quote"
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
 msgstr "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgid "Sender Email"
+msgstr "Sender Email"
+
+msgid "Sender Name"
+msgstr "Sender Name"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
@@ -31510,6 +31532,11 @@ msgstr "The contacts could not be loaded."
 
 msgid "The Contract Assets default account is empty."
 msgstr "The Contract Assets default account is empty."
+msgid "The connection could not be verified"
+msgstr "The connection could not be verified"
+
+msgid "The connection was refused"
+msgstr "The connection was refused"
 
 msgid "The contract cannot be cancelled then"
 msgstr "The contract cannot be cancelled then"
@@ -31894,6 +31921,7 @@ msgstr "The item has no made components at this depth. Include bought components
 
 msgid "The item has no serial or batch tracking"
 msgstr "The item has no serial or batch tracking"
+
 msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
 msgstr "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
 
@@ -32286,6 +32314,7 @@ msgstr "The processes this work center can run; appears in process-pickers when 
 
 msgid "The profile picture of the bot"
 msgstr "The profile picture of the bot"
+
 msgid "The proposal, the order form, call recordings. One link per line."
 msgstr "The proposal, the order form, call recordings. One link per line."
 
@@ -33452,6 +33481,7 @@ msgstr "Tighter or roomier layout. The text stays put."
 
 msgid "Time"
 msgstr "Time"
+
 msgid "Time and attendance"
 msgstr "Time and attendance"
 
@@ -36118,6 +36148,7 @@ msgstr "Whether to Add the selected permissions on top of what each user already
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
 msgstr "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
+
 msgid "Which Carbon features your company needs before go-live, and which can wait."
 msgstr "Which Carbon features your company needs before go-live, and which can wait."
 
@@ -36432,10 +36463,11 @@ msgstr "Workflow run"
 msgid "Workflows"
 msgstr "Workflows"
 
-msgid "working at {elsewhereStationNames}"
-msgstr "working at {elsewhereStationNames}"
 msgid "Workflows and automations"
 msgstr "Workflows and automations"
+
+msgid "working at {elsewhereStationNames}"
+msgstr "working at {elsewhereStationNames}"
 
 msgid "Working sessions on configuration and data"
 msgstr "Working sessions on configuration and data"

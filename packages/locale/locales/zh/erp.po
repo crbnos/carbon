@@ -168,6 +168,9 @@ msgstr "{0, plural, one {# 链接} other {# 链接}}"
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# 项需要处理} other {# 项需要处理}}"
+#. placeholder {0}: counts.jobs
+msgid "{0, plural, one {# job} other {# jobs}}"
+msgstr "{0, plural, one {# 个工单} other {# 个工单}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -824,6 +827,7 @@ msgstr "{appName}已连接，但在工作流步骤使用之前需要重新连接
 
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName}还未连接。在此步骤执行任何操作前，请先连接账户。"
+
 msgid "{area}: keeping {current} next to Carbon is an adoption risk."
 msgstr ""
 
@@ -2250,6 +2254,8 @@ msgstr "循环行每个期间按其费率计费；一次性行仅计费一次。
 
 msgid "A referenced record does not exist."
 msgstr "引用的记录不存在。"
+msgstr ""
+
 msgid "a released job"
 msgstr ""
 
@@ -2528,13 +2534,13 @@ msgstr "该值无效。"
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "可变费用（如里程超额、损害、交付、清洁）在协议的下一份发票上计费。"
 
-msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
-msgstr "一个工作区只能连接到一家 Carbon 公司。请先在那里断开连接，或连接其他工作区。"
 msgid "a work center"
 msgstr ""
 
 msgid "A written off item is never billed."
 msgstr "核销的物料从不计费。"
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "一个工作区只能连接到一家 Carbon 公司。请先在那里断开连接，或连接其他工作区。"
 
 msgid "ABA"
 msgstr "ABA"
@@ -7048,7 +7054,6 @@ msgid "Channel"
 msgstr "频道"
 
 msgid "Channel Name"
-msgstr "频道名称"
 msgstr ""
 
 msgid "Characteristic"
@@ -7201,6 +7206,9 @@ msgid "Choose {named} first."
 msgstr "请先选择 {named}。"
 msgid "Choose"
 msgstr ""
+
+msgid "Choose {named} first."
+msgstr "请先选择 {named}。"
 
 msgid "Choose a backup"
 msgstr "选择备份"
@@ -13503,6 +13511,9 @@ msgstr "导出件(CSV)"
 msgid "Export page"
 msgstr ""
 
+msgid "Export units (CSV)"
+msgstr ""
+
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "从您的现有系统导出科目表为 CSV，每行一个账户，包括编号、名称、类别、类型和组，或从当前科目表的模板开始。Carbon 仅保留此文件中的账户。"
 
@@ -14527,6 +14538,9 @@ msgstr "驻场工程师"
 msgid "found here"
 msgstr "在此处找到"
 msgid "Forward-deployed engineer included"
+msgstr ""
+
+msgid "found here"
 msgstr ""
 
 msgid "Foundation"
@@ -15829,6 +15843,8 @@ msgstr "已导入"
 
 msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
 msgstr "已导入：{counted}行已计数，{added}个已添加，{removed}个已移除"
+msgstr ""
+
 msgid "Importing data"
 msgstr ""
 
@@ -17176,6 +17192,7 @@ msgstr "保留了 {total} 个中的 {kept} 个；{unresolved} 个无法检查。
 
 msgid "Kept {kept} of {total}."
 msgstr "保留了 {total} 个中的 {kept} 个。"
+
 msgid "Kept with the set"
 msgstr ""
 
@@ -19340,6 +19357,7 @@ msgstr "MRP (计划)"
 
 msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
 msgstr "MRP 和拣货会忽略此单元及其内部单元中的库存。用于隔离区和冻结区。"
+
 msgid "MRP planning"
 msgstr ""
 
@@ -19461,8 +19479,8 @@ msgstr "需要的是排程在该工作站该天安排的换型和人工小时数
 msgid "needed by {feature}"
 msgstr ""
 
-msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
-msgstr "需要的是该天的工作小时数除以 {personDayHours} 小时，向上舍入——您筛选的班次或此位置最常见的班次时长。"
+msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. With a shift selected, only the hours booked inside that shift count. Machine time needs nobody, and neither does a lights-out station unless its process needs a qualified operator."
+msgstr "需要的是排程在该工作站该天安排的换型和人工小时数，除以 {personDayHours} 小时并向上舍入 — 您过滤的班次，或该地点最常见的班次长度。选择班次后，仅计算在该班次内安排的小时数。机器工时不需要人员，没有照明的工作站也不需要，除非其工艺需要有资质的操作员。"
 
 msgid "Needed when the date is before the entry window"
 msgstr "当日期在输入窗口之前时需要"
@@ -21206,13 +21224,6 @@ msgstr "无偿更换"
 msgid "No-charge Replacement"
 msgstr "无偿更换"
 
-#. placeholder {0}: ability.name
-msgid "Nobody is qualified for {0}"
-msgstr "没有人有资质执行 {0}"
-
-msgid "Nobody is qualified. Add someone to the process's ability."
-msgstr "没有人有资质。向工艺的技能添加人员。"
-msgid "No, customers supply the material."
 msgid "No, customers supply the material"
 msgstr ""
 
@@ -21224,6 +21235,13 @@ msgstr ""
 
 msgid "No, we buy and resell"
 msgstr ""
+
+#. placeholder {0}: ability.name
+msgid "Nobody is qualified for {0}"
+msgstr "没有人有资质执行 {0}"
+
+msgid "Nobody is qualified. Add someone to the process's ability."
+msgstr "没有人有资质。向工艺的技能添加人员。"
 
 msgid "Nom"
 msgstr "标称值"
@@ -21264,13 +21282,13 @@ msgstr "非内部用途"
 msgid "Non-Inventory"
 msgstr "非库存"
 
-msgid "Non-nettable"
-msgstr "不计入MRP"
 msgid "non-inventory service items, bought or made, used on sales, purchase and contract lines"
 msgstr ""
 
 msgid "Non-nettable: {name}"
 msgstr "不计入MRP：{name}"
+msgid "Non-nettable"
+msgstr "不计入MRP"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "本类资产出售或报废价值低于账面净值时计入的非营业费用账户"
@@ -28416,11 +28434,6 @@ msgstr "发送至 Carbon"
 msgid "Send Via"
 msgstr "通过以下方式发送"
 
-msgid "Sender Email"
-msgstr "发件人电子邮件"
-
-msgid "Sender Name"
-msgstr "发件人名称"
 msgid "Send your first purchase order"
 msgstr ""
 
@@ -28429,6 +28442,11 @@ msgstr ""
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
 msgstr "发送询价单或供应商报价时，会列出每个行项目的型号以及其“文件”选项卡中的文件（如图纸）。只有在该选项卡中勾选的文件才会附加到邮件中，并显示在供应商报价页面上。"
+msgid "Sender Email"
+msgstr "发件人电子邮件"
+
+msgid "Sender Name"
+msgstr "发件人名称"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "将有缺陷的单位送回较早的操作进行更正，而不是报废。"
@@ -31515,6 +31533,11 @@ msgstr "无法加载联系人。"
 
 msgid "The Contract Assets default account is empty."
 msgstr "合同资产默认账户为空。"
+msgid "The connection could not be verified"
+msgstr "无法验证连接"
+
+msgid "The connection was refused"
+msgstr "连接被拒绝"
 
 msgid "The contract cannot be cancelled then"
 msgstr "该合同不能被取消。"
@@ -31899,6 +31922,8 @@ msgstr "该物料在此深度无制造零件。包括购买零件以添加其采
 
 msgid "The item has no serial or batch tracking"
 msgstr "该物料没有序列号或生产批次跟踪"
+msgstr ""
+
 msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
 msgstr ""
 
@@ -32291,6 +32316,7 @@ msgstr "此工作中心可以运行的工艺；在排程工序时显示在工艺
 
 msgid "The profile picture of the bot"
 msgstr "机器人的个人资料图片"
+
 msgid "The proposal, the order form, call recordings. One link per line."
 msgstr ""
 
@@ -36121,6 +36147,7 @@ msgstr "是否将选定的权限添加到每个用户已有的权限之上,或�
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
 msgstr "是否将循环事件展开为单个实例，并只返回一次性事件和循环事件的实例，而不返回底层循环事件本身。"
+
 msgid "Which Carbon features your company needs before go-live, and which can wait."
 msgstr ""
 
@@ -36438,6 +36465,9 @@ msgstr "工作流"
 msgid "working at {elsewhereStationNames}"
 msgstr "在 {elsewhereStationNames} 工作"
 msgid "Workflows and automations"
+msgstr ""
+
+msgid "working at {elsewhereStationNames}"
 msgstr ""
 
 msgid "Working sessions on configuration and data"

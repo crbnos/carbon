@@ -168,6 +168,9 @@ msgstr "{0, plural, one {# リンク} other {# リンク}}"
 #. placeholder {0}: issueLines.length
 msgid "{0, plural, one {# needs attention} other {# need attention}}"
 msgstr "{0, plural, one {# 件の確認が必要} other {# 件の確認が必要}}"
+#. placeholder {0}: counts.jobs
+msgid "{0, plural, one {# job} other {# jobs}}"
+msgstr "{0, plural, one {# 件の製造指図} other {# 件の製造指図}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -824,6 +827,7 @@ msgstr "{appName}は接続されていますが、ワークフロー ステッ�
 
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName}はまだ接続されていません。このステップが機能する前にアカウントを接続してください。"
+
 msgid "{area}: keeping {current} next to Carbon is an adoption risk."
 msgstr ""
 
@@ -2250,6 +2254,8 @@ msgstr "定期的な明細は毎期その料率で請求され、一度限りの
 
 msgid "A referenced record does not exist."
 msgstr "参照されたレコードは存在しません。"
+msgstr ""
+
 msgid "a released job"
 msgstr ""
 
@@ -2528,13 +2534,13 @@ msgstr "値が有効ではありません。"
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "変動料金（走行距離超過、損傷、配送、清掃など）は契約の次の請求書に計上されます。"
 
-msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
-msgstr "ワークスペースは1つのCarbon会社にのみ接続できます。先にそちらで切断するか、別のワークスペースを接続してください。"
 msgid "a work center"
 msgstr ""
 
 msgid "A written off item is never billed."
 msgstr "減額された品目は請求されません。"
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "ワークスペースは1つのCarbon会社にのみ接続できます。先にそちらで切断するか、別のワークスペースを接続してください。"
 
 msgid "ABA"
 msgstr "ABA"
@@ -7048,7 +7054,6 @@ msgid "Channel"
 msgstr "チャネル"
 
 msgid "Channel Name"
-msgstr "チャネル名"
 msgstr ""
 
 msgid "Characteristic"
@@ -7201,6 +7206,9 @@ msgid "Choose {named} first."
 msgstr "まず {named} を選択してください。"
 msgid "Choose"
 msgstr ""
+
+msgid "Choose {named} first."
+msgstr "まず {named} を選択してください。"
 
 msgid "Choose a backup"
 msgstr "バックアップを選択"
@@ -13503,6 +13511,9 @@ msgstr "個をエクスポート (CSV)"
 msgid "Export page"
 msgstr ""
 
+msgid "Export units (CSV)"
+msgstr ""
+
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "現在のシステムから勘定科目表を CSV でエクスポートしてください。1 行につき 1 つの勘定で、その番号、名前、クラス、タイプ、グループを含みます。または現在の勘定科目表のテンプレートから始めることもできます。Carbon はこのファイルにある勘定のみを保持します。"
 
@@ -14527,6 +14538,9 @@ msgstr "現地配置エンジニア"
 msgid "found here"
 msgstr "ここで見つかりました"
 msgid "Forward-deployed engineer included"
+msgstr ""
+
+msgid "found here"
 msgstr ""
 
 msgid "Foundation"
@@ -15829,6 +15843,8 @@ msgstr "インポート済"
 
 msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
 msgstr "インポート: {counted} 明細がカウント済、{added} 追加、{removed} 削除"
+msgstr ""
+
 msgid "Importing data"
 msgstr ""
 
@@ -17176,6 +17192,7 @@ msgstr "{total} 件中 {kept} 件を保持しました。{unresolved} 件は確�
 
 msgid "Kept {kept} of {total}."
 msgstr "{total} 件中 {kept} 件を保持しました。"
+
 msgid "Kept with the set"
 msgstr ""
 
@@ -19340,6 +19357,7 @@ msgstr "MRP (計画)"
 
 msgid "MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas."
 msgstr "MRPとピッキングは、このユニットとその中のユニットの在庫を無視します。隔離・保留エリアに使用します。"
+
 msgid "MRP planning"
 msgstr ""
 
@@ -19461,8 +19479,8 @@ msgstr "必要なのは、その日にステーションでスケジュールに
 msgid "needed by {feature}"
 msgstr ""
 
-msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
-msgstr "必要人数は、その日の予定作業時間を{personDayHours}hで除した値を四捨五入したものです。フィルタリングしているシフト、またはこの場所で最も一般的なシフト長です。"
+msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. With a shift selected, only the hours booked inside that shift count. Machine time needs nobody, and neither does a lights-out station unless its process needs a qualified operator."
+msgstr "必要なのは、その日にステーションでスケジュールに記録された段取り時間と労務時間を {personDayHours} 時間で除算して切り上げたもの。フィルタしているシフト、またはこの拠点で最も一般的なシフト長を使用します。シフトを選択した場合、そのシフト内にブックされた時間のみがカウントされます。機械時間は作業者が不要であり、照明なしステーション（そのプロセスが適格な作業者を必要とする場合を除き）も同様です。"
 
 msgid "Needed when the date is before the entry window"
 msgstr "日付が入力ウィンドウより前の場合に必要"
@@ -21206,13 +21224,6 @@ msgstr "無償交換"
 msgid "No-charge Replacement"
 msgstr "無償交換"
 
-#. placeholder {0}: ability.name
-msgid "Nobody is qualified for {0}"
-msgstr "{0} 向けの適格者がいません"
-
-msgid "Nobody is qualified. Add someone to the process's ability."
-msgstr "適格者がいません。プロセスのスキルに誰かを追加してください。"
-msgid "No, customers supply the material."
 msgid "No, customers supply the material"
 msgstr ""
 
@@ -21224,6 +21235,13 @@ msgstr ""
 
 msgid "No, we buy and resell"
 msgstr ""
+
+#. placeholder {0}: ability.name
+msgid "Nobody is qualified for {0}"
+msgstr "{0} 向けの適格者がいません"
+
+msgid "Nobody is qualified. Add someone to the process's ability."
+msgstr "適格者がいません。プロセスのスキルに誰かを追加してください。"
 
 msgid "Nom"
 msgstr "公称値"
@@ -21264,13 +21282,13 @@ msgstr "非内部使用"
 msgid "Non-Inventory"
 msgstr "非在庫"
 
-msgid "Non-nettable"
-msgstr "MRP対象外"
 msgid "non-inventory service items, bought or made, used on sales, purchase and contract lines"
 msgstr ""
 
 msgid "Non-nettable: {name}"
 msgstr "MRP対象外: {name}"
+msgid "Non-nettable"
+msgstr "MRP対象外"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "このクラスの資産が未償却残高以下で売却または廃棄されたとき、営業外費用勘定が借記されます。"
@@ -28416,11 +28434,6 @@ msgstr "Carbon に送信"
 msgid "Send Via"
 msgstr "経由で送信"
 
-msgid "Sender Email"
-msgstr "送信者メールアドレス"
-
-msgid "Sender Name"
-msgstr "送信者名"
 msgid "Send your first purchase order"
 msgstr ""
 
@@ -28429,6 +28442,11 @@ msgstr ""
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
 msgstr "見積依頼または仕入先見積を送信すると、各明細の機種と、その「ファイル」タブにある図面などのファイルが一覧に含まれます。そこでチェックしたファイルのみがメールに添付され、仕入先の見積ページに表示されます。"
+msgid "Sender Email"
+msgstr "送信者メールアドレス"
+
+msgid "Sender Name"
+msgstr "送信者名"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "不良ユニットをスクラップするのではなく、以前の操作に戻して修正する。"
@@ -31515,6 +31533,11 @@ msgstr "担当者を読み込めませんでした。"
 
 msgid "The Contract Assets default account is empty."
 msgstr "契約資産のデフォルトアカウントが空です。"
+msgid "The connection could not be verified"
+msgstr "接続を検証できませんでした"
+
+msgid "The connection was refused"
+msgstr "接続が拒否されました"
 
 msgid "The contract cannot be cancelled then"
 msgstr "その場合、契約をキャンセルすることはできません。"
@@ -31899,6 +31922,8 @@ msgstr "この品目はこの深さに製造部品がありません。購入部
 
 msgid "The item has no serial or batch tracking"
 msgstr "品目にはシリアル番号またはバッチ追跡がありません"
+msgstr ""
+
 msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
 msgstr ""
 
@@ -32291,6 +32316,7 @@ msgstr "この作業区が実行できる工法。工程のスケジュール時
 
 msgid "The profile picture of the bot"
 msgstr "ボットのプロフィール画像"
+
 msgid "The proposal, the order form, call recordings. One link per line."
 msgstr ""
 
@@ -36121,6 +36147,7 @@ msgstr "選択した権限を各ユーザーが既に持っているものに追
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
 msgstr "繰返しイベントを個々のインスタンスに展開するかどうか。展開すると、単発のイベントと繰返しイベントのインスタンスのみを返し、元の繰返しイベント自体は返しません。"
+
 msgid "Which Carbon features your company needs before go-live, and which can wait."
 msgstr ""
 
@@ -36438,6 +36465,9 @@ msgstr "ワークフロー"
 msgid "working at {elsewhereStationNames}"
 msgstr "{elsewhereStationNames}で作業中"
 msgid "Workflows and automations"
+msgstr ""
+
+msgid "working at {elsewhereStationNames}"
 msgstr ""
 
 msgid "Working sessions on configuration and data"
