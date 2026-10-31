@@ -8,12 +8,7 @@ import {
   type CountImportLine,
   planInventoryCountImport
 } from "./inventory.service";
-import {
-  parseInventoryCountCsv,
-  protectCsvIdentifier,
-  readCsvIdentifier,
-  spreadBatchCount
-} from "./inventory.utils";
+import { parseInventoryCountCsv, spreadBatchCount } from "./inventory.utils";
 
 const items: CountImportItem[] = [
   {
@@ -316,34 +311,6 @@ describe("review fixes", () => {
     expect(
       "inserts" in result && result.inserts.map((i) => i.storageUnitId)
     ).toEqual(["A1", "B2"]);
-  });
-
-  it("round-trips an identifier that starts with a formula character", () => {
-    for (const id of [
-      "-LOT",
-      "'-LOT",
-      "'quoted",
-      "00123",
-      "1e5",
-      "SN-1",
-      "1001",
-      "-42"
-    ]) {
-      expect(readCsvIdentifier(protectCsvIdentifier(id))).toBe(id);
-    }
-    expect(protectCsvIdentifier("-LOT")).toBe("'-LOT");
-    expect(protectCsvIdentifier("00123")).toBe("'00123");
-    expect(protectCsvIdentifier("SN-1")).toBe("SN-1");
-    expect(protectCsvIdentifier("1001")).toBe("1001");
-    expect(protectCsvIdentifier("123456789012345")).toBe("123456789012345");
-    expect(protectCsvIdentifier("1234567890123456")).toBe("'1234567890123456");
-    expect(protectCsvIdentifier("12-16")).toBe("'12-16");
-    expect(protectCsvIdentifier("Jan-16")).toBe("'Jan-16");
-    expect(protectCsvIdentifier("JAN1")).toBe("'JAN1");
-    expect(protectCsvIdentifier("LOT-16")).toBe("LOT-16");
-    const csv =
-      "Item,Storage Unit,Serial / Batch,Counted Quantity\nBAT,A1,'-LOT,4";
-    expect(parseInventoryCountCsv(csv).rows[0].code).toBe("-LOT");
   });
 
   it("refuses a file that does not parse", () => {

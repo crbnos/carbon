@@ -10,8 +10,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import {
   INVENTORY_COUNT_CSV_COLUMNS,
   inventoryCountLineState,
-  isBlindCountEntry,
-  protectCsvIdentifier
+  isBlindCountEntry
 } from "~/modules/inventory/inventory.utils";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -94,11 +93,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // file imports as a full count. The state stays hidden: it shows which
     // units are not counted yet.
     return {
-      Item: protectCsvIdentifier(line.itemReadableIdWithRevision ?? ""),
-      "Storage Unit": protectCsvIdentifier(line.storageUnitName ?? ""),
-      "Serial / Batch": protectCsvIdentifier(
-        line.assignedReadableId ?? line.readableId ?? ""
-      ),
+      Item: line.itemReadableIdWithRevision ?? "",
+      "Storage Unit": line.storageUnitName ?? "",
+      "Serial / Batch": line.assignedReadableId ?? line.readableId ?? "",
       "Counted Quantity": counted ?? "",
       State: blind ? "" : state,
       "Item Name": line.itemName
