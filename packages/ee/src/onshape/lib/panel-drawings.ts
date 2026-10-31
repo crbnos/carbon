@@ -169,16 +169,16 @@ export async function readAssemblyDrawings({
   });
   const read: OnshapeDrawing[] = [];
   // Cached drawings first: they cost no Onshape call, so the deadline only
-  // cuts new or changed ones.
+  // cuts new or changed ones. One parallel read: a failed lookup is a miss.
   const pending: OnshapeDrawing[] = [];
-  for (const drawing of drawings) {
-    const cached = await getCachedReferences(cacheKey(drawing));
-    if (cached) {
-      read.push({ ...drawing, references: cached.references });
-    } else {
-      pending.push(drawing);
-    }
-  }
+  const cachedAll = await Promise.all(
+    drawings.map((drawing) => getCachedReferences(cacheKey(drawing)))
+  );
+  drawings.forEach((drawing, index) => {
+    const cached = cachedAll[index];
+    if (cached) read.push({ ...drawing, references: cached.references });
+    else pending.push(drawing);
+  });
   // A read that finishes after the deadline still fills the cache, so the
   // next review has it.
   const resolved = await eachUntil(
