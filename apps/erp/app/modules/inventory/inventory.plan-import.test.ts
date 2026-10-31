@@ -334,6 +334,8 @@ describe("review fixes", () => {
     expect(protectCsvIdentifier("00123")).toBe("'00123");
     expect(protectCsvIdentifier("SN-1")).toBe("SN-1");
     expect(protectCsvIdentifier("1001")).toBe("1001");
+    expect(protectCsvIdentifier("123456789012345")).toBe("123456789012345");
+    expect(protectCsvIdentifier("1234567890123456")).toBe("'1234567890123456");
     const csv =
       "Item,Storage Unit,Serial / Batch,Counted Quantity\nBAT,A1,'-LOT,4";
     expect(parseInventoryCountCsv(csv).rows[0].code).toBe("-LOT");
