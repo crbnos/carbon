@@ -39,6 +39,7 @@ import {
   useHub
 } from "@carbon/implementation-hub/ui";
 import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -80,6 +81,7 @@ import {
   LuEye,
   LuEyeOff,
   LuFileUp,
+  LuRocket,
   LuTrash2,
   LuTriangleAlert
 } from "react-icons/lu";
@@ -396,12 +398,14 @@ export default function GetStartedRoute() {
 // Carbon staff only, on a company not on Implementation Hub 2.0: the page
 // edits in full, but the server refuses every write Implementation Hub 1.0
 // also reads. It names the step still missing: the flag, enrolment or the
-// version switch.
+// version switch. An unenrolled company is enrolled from here in one click.
 function NotOnImplementationHub2Notice({
   reason
 }: {
   reason: "flag" | "enrolment" | "version";
 }) {
+  // A failed enrolment is toasted by `useAction`; success reloads the page.
+  const enrollFetcher = useAction();
   return (
     <Alert variant="warning">
       <LuTriangleAlert />
@@ -424,8 +428,8 @@ function NotOnImplementationHub2Notice({
         ) : reason === "enrolment" ? (
           <Trans>
             Its people do not see the Implementation Hub yet. Pages and the
-            priority set save here. Enroll it in Settings to save ticks, answers
-            and company items.
+            priority set save here. Enroll it to save ticks, answers and company
+            items, and to show its people their pages.
           </Trans>
         ) : (
           <Trans>
@@ -434,11 +438,33 @@ function NotOnImplementationHub2Notice({
           </Trans>
         )}
         <div className="mt-2">
-          <Button asChild size="sm" variant="secondary">
-            <Link to={path.to.implementationSettings}>
-              <Trans>Open Settings</Trans>
-            </Link>
-          </Button>
+          {reason === "enrolment" ? (
+            <enrollFetcher.Form
+              method="post"
+              action={path.to.implementationEnroll}
+            >
+              <input
+                type="hidden"
+                name="redirectTo"
+                value={path.to.implementation}
+              />
+              <Button
+                type="submit"
+                size="sm"
+                rightIcon={<LuRocket />}
+                isLoading={enrollFetcher.state !== "idle"}
+                isDisabled={enrollFetcher.state !== "idle"}
+              >
+                <Trans>Enroll on Implementation Hub 2.0</Trans>
+              </Button>
+            </enrollFetcher.Form>
+          ) : (
+            <Button asChild size="sm" variant="secondary">
+              <Link to={path.to.implementationSettings}>
+                <Trans>Open Settings</Trans>
+              </Link>
+            </Button>
+          )}
         </div>
       </AlertDescription>
     </Alert>

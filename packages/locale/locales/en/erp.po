@@ -12804,6 +12804,9 @@ msgstr "Enroll"
 msgid "Enroll company"
 msgstr "Enroll company"
 
+msgid "Enroll on Implementation Hub 2.0"
+msgstr "Enroll on Implementation Hub 2.0"
+
 msgid "Enrolled"
 msgstr "Enrolled"
 
@@ -15822,6 +15825,9 @@ msgstr "Implementation Hub 2.0 is off for this company"
 msgid "Implementation Hub 2.0 is off for this company. Add it to the implementation-hub-2 flag in the CSA dashboard first."
 msgstr "Implementation Hub 2.0 is off for this company. Add it to the implementation-hub-2 flag in the CSA dashboard first."
 
+msgid "Implementation Hub 2.0 is on for this company. Enrolling shows it to the company's people and emails its admins. Then give each person a page."
+msgstr "Implementation Hub 2.0 is on for this company. Enrolling shows it to the company's people and emails its admins. Then give each person a page."
+
 msgid "Implementation Hub Settings"
 msgstr "Implementation Hub Settings"
 
@@ -16990,8 +16996,8 @@ msgstr "Its amounts go back to what each line has left to invoice."
 msgid "Its design may change before the change notice is released."
 msgstr "Its design may change before the change notice is released."
 
-msgid "Its people do not see the Implementation Hub yet. Pages and the priority set save here. Enroll it in Settings to save ticks, answers and company items."
-msgstr "Its people do not see the Implementation Hub yet. Pages and the priority set save here. Enroll it in Settings to save ticks, answers and company items."
+msgid "Its people do not see the Implementation Hub yet. Pages and the priority set save here. Enroll it to save ticks, answers and company items, and to show its people their pages."
+msgstr "Its people do not see the Implementation Hub yet. Pages and the priority set save here. Enroll it to save ticks, answers and company items, and to show its people their pages."
 
 msgid "Its people see Implementation Hub 1.0 while Implementation Hub 2.0 is off for this company. Their pages stay."
 msgstr "Its people see Implementation Hub 1.0 while Implementation Hub 2.0 is off for this company. Their pages stay."

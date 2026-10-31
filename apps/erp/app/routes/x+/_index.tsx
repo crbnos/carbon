@@ -30,7 +30,7 @@ import {
   toast,
   useOperatingSystem
 } from "@carbon/react";
-import { datetime, formatRelativeTime } from "@carbon/utils";
+import { datetime, formatRelativeTime, isInternalEmail } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import * as cookie from "cookie";
@@ -165,6 +165,10 @@ export default function AppIndexRoute() {
   // Self-serve: anyone who can update company settings can enroll their
   // company — no Carbon staff required.
   const canEnroll = permissions.can("update", "settings");
+  // Carbon staff enroll a company the implementation-hub-2 flag is on for
+  // straight onto Implementation Hub 2.0, settings permission or not, and land
+  // on its people's pages.
+  const isStaff = isInternalEmail(useUser().email);
 
   return (
     <div className="relative w-full h-full overflow-hidden">
@@ -213,26 +217,49 @@ export default function AppIndexRoute() {
           {/* Phones space the sections themselves: Recent may be hidden. */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 max-md:gap-0">
             <div className="lg:col-span-1 order-last lg:order-first max-md:order-first">
-              {canEnroll ? (
+              {canEnroll || isStaff ? (
                 <ImplementationData>
-                  {(data) =>
-                    data.implementationHub ? null : (
+                  {(data) => {
+                    if (data.implementationHub) return null;
+                    const hub2 = isStaff && data.implementationHub2Enabled;
+                    if (!hub2 && !canEnroll) return null;
+                    return (
                       <enrollFetcher.Form
                         method="post"
-                        action={path.to.getStartedEnroll}
+                        action={
+                          hub2
+                            ? path.to.implementationEnroll
+                            : path.to.getStartedEnroll
+                        }
                         className="mb-6 max-md:hidden"
                       >
+                        {hub2 ? (
+                          <input
+                            type="hidden"
+                            name="redirectTo"
+                            value={path.to.implementation}
+                          />
+                        ) : null}
                         <SectionLabel>
                           <Trans>Implementation Hub</Trans>
                         </SectionLabel>
                         <Card className="shadow-none">
                           <CardContent>
                             <p className="text-sm text-muted-foreground text-pretty">
-                              <Trans>
-                                Set up your company with a step-by-step
-                                implementation plan covering setup, data,
-                                training, and go-live.
-                              </Trans>
+                              {hub2 ? (
+                                <Trans>
+                                  Implementation Hub 2.0 is on for this company.
+                                  Enrolling shows it to the company's people and
+                                  emails its admins. Then give each person a
+                                  page.
+                                </Trans>
+                              ) : (
+                                <Trans>
+                                  Set up your company with a step-by-step
+                                  implementation plan covering setup, data,
+                                  training, and go-live.
+                                </Trans>
+                              )}
                             </p>
                             <div>
                               <Button
@@ -242,14 +269,20 @@ export default function AppIndexRoute() {
                                 isLoading={enrollFetcher.state !== "idle"}
                                 isDisabled={enrollFetcher.state !== "idle"}
                               >
-                                <Trans>Enroll</Trans>
+                                {hub2 ? (
+                                  <Trans>
+                                    Enroll on Implementation Hub 2.0
+                                  </Trans>
+                                ) : (
+                                  <Trans>Enroll</Trans>
+                                )}
                               </Button>
                             </div>
                           </CardContent>
                         </Card>
                       </enrollFetcher.Form>
-                    )
-                  }
+                    );
+                  }}
                 </ImplementationData>
               ) : null}
               <RecentlyViewed />

@@ -51,6 +51,9 @@ export type ImplementationHubData = {
   // The company gets Implementation Hub 2.0 (`usesImplementationHub2`): the
   // flag is on for it and its hub's version is 2.0.
   implementationHub2: boolean;
+  // The `implementation-hub-2` flag is on for the company, enrolled or not:
+  // the home card enrols Carbon staff straight onto Implementation Hub 2.0.
+  implementationHub2Enabled: boolean;
   // False until the streamed progress lands. Until then the counts are not
   // known: show the item and the card, leave the numbers out.
   ready: boolean;
@@ -82,6 +85,7 @@ function useImplementation(): ImplementationHubData | undefined {
       data.implementationHub,
       data.implementationHub2Enabled ?? false
     ),
+    implementationHub2Enabled: data.implementationHub2Enabled ?? false,
     ready: progress !== null
   };
 }
