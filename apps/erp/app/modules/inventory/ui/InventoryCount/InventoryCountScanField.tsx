@@ -34,6 +34,9 @@ const InventoryCountScanField = ({
   const [code, setCode] = useState("");
   const [prompt, setPrompt] = useState<InventoryCountUnitPrompt | null>(null);
   const codeRef = useRef<HTMLInputElement>(null);
+  // The scan in flight. The field clears on submit so the next scan can be
+  // typed while this one saves; the result reads the code that was sent.
+  const sent = useRef({ code: "", storageUnitId: null as string | null });
 
   const focusCode = () => {
     requestAnimationFrame(() => codeRef.current?.focus());
@@ -43,22 +46,26 @@ const InventoryCountScanField = ({
     onSuccess: (result) => {
       if (!("data" in result) || !result.data) return;
       const outcome = result.data as InventoryCountUnitOutcome;
+      const { code, storageUnitId } = sent.current;
       switch (outcome.outcome) {
         case "counted":
         case "added":
           toast.success(t`${code} counted`);
-          setCode("");
           break;
         case "alreadyCounted":
           toast.info(t`${code} is already counted`);
-          setCode("");
           break;
         case "wrongStorageUnit":
           toast.error(t`That storage unit is not at this count's location`);
+          setCode((current) => current || code);
           break;
         case "needsUnitNumber":
           toast.error(t`Scan the serial or batch number, not the item`);
-          setCode("");
+          break;
+        case "notInventory":
+          toast.error(
+            t`${code} is a Non-Inventory item and has no stock to count`
+          );
           break;
         case "ambiguous":
           setPrompt({ code, storageUnitId, itemIds: outcome.itemIds });
@@ -86,6 +93,13 @@ const InventoryCountScanField = ({
         method="post"
         action={path.to.inventoryCountScan(inventoryCountId)}
         fetcher={fetcher}
+        onSubmit={(data) => {
+          sent.current = {
+            code: data.code,
+            storageUnitId: data.storageUnitId ?? null
+          };
+          setCode("");
+        }}
       >
         {/* Held in state: the form resets after each scan, and the counter
             keeps scanning into the same bin. */}
@@ -130,12 +144,12 @@ const InventoryCountScanField = ({
           inventoryCountId={inventoryCountId}
           prompt={prompt}
           onClose={() => {
+            setCode((current) => current || (prompt.code ?? ""));
             setPrompt(null);
             focusCode();
           }}
           onRecorded={() => {
             setPrompt(null);
-            setCode("");
             focusCode();
           }}
         />

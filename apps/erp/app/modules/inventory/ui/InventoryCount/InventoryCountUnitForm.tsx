@@ -67,6 +67,9 @@ const InventoryCountUnitForm = ({
         case "needsUnitNumber":
           toast.error(t`Enter the serial or batch number, not the item`);
           break;
+        case "notInventory":
+          toast.error(t`A Non-Inventory item has no stock to count`);
+          break;
         case "wrongStorageUnit":
           toast.error(t`That storage unit is not at this count's location`);
           break;

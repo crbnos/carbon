@@ -198,27 +198,9 @@ export const inventoryCountUnitValidator = z.object({
   )
 });
 
-// How many units with no serial number are on the shelf, for one group.
-export const inventoryCountUnnumberedValidator = z.object({
-  itemId: z.string().min(1, { message: "Item is required" }),
-  storageUnitId: zfd.text(z.string().optional()),
-  quantity: zfd.numeric(
-    z
-      .number()
-      .int({ message: "Quantity must be a whole number" })
-      .min(0, { message: "Quantity cannot be negative" })
-  )
-});
-
 // A count results file: Item, Storage Unit, Serial / Batch, Counted Quantity.
 export const inventoryCountImportValidator = z.object({
   file: zfd.file()
-});
-
-// A serial number for a Found unit that has none.
-export const inventoryCountSerialValidator = z.object({
-  lineId: z.string().min(1),
-  readableId: z.string().trim().min(1, { message: "Serial number is required" })
 });
 
 // Put a cost of the user's own on one serial unit in stock (FIFO / LIFO).

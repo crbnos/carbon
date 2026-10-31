@@ -568,6 +568,9 @@ msgstr "{chainLabel}. इस भाग को सीधे अंतिम उ�
 msgid "{code} counted"
 msgstr ""
 
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
 msgid "{code} is already counted"
 msgstr ""
 
@@ -1390,6 +1393,9 @@ msgstr "एक गैर-नकद दस्तावेज़ जो एक क
 
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "एक गैर-अनुरूपता जो आपूर्तिकर्ता के साथ एक लॉगिन-मुक्त /share/scar लिंक पर साझा की गई है, ताकि वे Carbon के बाहर से समस्या का जवाब दे सकें और इसके कार्य अपडेट कर सकें।"
+
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "एक कर-रहित अतिरिक्त शुल्क (जैसे, वसूली योग्य व्यय जैसे परमिट शुल्क) पंक्ति में जोड़ा गया; कर आधार से बाहर।"

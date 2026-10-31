@@ -157,8 +157,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : line
   );
 
-  // Headers for the tracked groups on this page, and the other bin of a unit
-  // counted in 2 bins (it moved).
+  // Headers for the tracked groups on the first page (a later page appends
+  // lines only, and its headers sum the loaded lines), and the bin a unit
+  // moved to or from.
   const trackedLines = lineData.filter(
     (line) =>
       line.itemTrackingType === "Serial" || line.itemTrackingType === "Batch"
@@ -167,13 +168,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getInventoryCountGroupSummaries(client, {
       inventoryCountId: id,
       companyId,
-      groupIds: pluckUnique(trackedLines, (line) =>
-        inventoryCountGroupId({
-          inventoryCountId: id,
-          itemId: line.itemId!,
-          storageUnitId: line.storageUnitId ?? null
-        })
-      )
+      groupIds: isFirstPage
+        ? pluckUnique(trackedLines, (line) =>
+            inventoryCountGroupId({
+              inventoryCountId: id,
+              itemId: line.itemId!,
+              storageUnitId: line.storageUnitId ?? null
+            })
+          )
+        : []
     }),
     getInventoryCountOtherBins(client, {
       inventoryCountId: id,
@@ -181,7 +184,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       lines: trackedLines.map((line) => ({
         id: line.id!,
         trackedEntityId: line.trackedEntityId ?? null,
-        storageUnitId: line.storageUnitId ?? null
+        storageUnitId: line.storageUnitId ?? null,
+        foundDuringCount: Boolean(line.foundDuringCount)
       }))
     })
   ]);

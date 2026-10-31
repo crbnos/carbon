@@ -568,6 +568,9 @@ msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイン
 msgid "{code} counted"
 msgstr ""
 
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
 msgid "{code} is already counted"
 msgstr ""
 
@@ -1390,6 +1393,9 @@ msgstr "請求書を理由勘定に対して決済する非現金文書。貸方
 
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "ログイン不要の/share/scarリンク経由で仕入先と共有された不適合。仕入先はCarbonの外から問題に対応してタスクを更新できます。"
+
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "明細に追加された非課税手数料（例：許可手数料などの回収可能な費用）。税ベースから除外。"

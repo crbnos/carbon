@@ -62,26 +62,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .orderBy("inventoryCountLines.readableId")
     .execute();
 
-  const rows = lines.flatMap((line) => {
+  const rows = lines.map((line) => {
     const counted =
       line.countedQuantity === null ? null : Number(line.countedQuantity);
     const state = inventoryCountLineState({
       countedQuantity: counted,
       foundDuringCount: Boolean(line.foundDuringCount)
     });
-    if (blind && (state === "Not counted" || state === "Missing")) return [];
-    return [
-      {
-        Item: protectCsvIdentifier(line.itemReadableIdWithRevision ?? ""),
-        "Storage Unit": protectCsvIdentifier(line.storageUnitName ?? ""),
-        "Serial / Batch": protectCsvIdentifier(
-          line.assignedReadableId ?? line.readableId ?? ""
-        ),
-        "Counted Quantity": counted ?? "",
-        State: state,
-        "Item Name": line.itemName
-      }
-    ];
+    // A blind count lists every unit, as its count sheet does, so a filled-in
+    // file imports as a full count. The state stays hidden: it shows which
+    // units are not counted yet.
+    return {
+      Item: protectCsvIdentifier(line.itemReadableIdWithRevision ?? ""),
+      "Storage Unit": protectCsvIdentifier(line.storageUnitName ?? ""),
+      "Serial / Batch": protectCsvIdentifier(
+        line.assignedReadableId ?? line.readableId ?? ""
+      ),
+      "Counted Quantity": counted ?? "",
+      State: blind ? "" : state,
+      "Item Name": line.itemName
+    };
   });
 
   const csv = encodeCsv(rows, {

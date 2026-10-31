@@ -33,6 +33,12 @@ const items: CountImportItem[] = [
     readableId: "INV",
     readableIdWithRevision: "INV",
     itemTrackingType: "Inventory"
+  },
+  {
+    id: "non",
+    readableId: "NON",
+    readableIdWithRevision: "NON",
+    itemTrackingType: "Non-Inventory"
   }
 ];
 const storageUnits = [
@@ -90,7 +96,7 @@ const row = (
   item: string,
   storageUnit: string,
   code: string,
-  quantity: number
+  quantity: number | null
 ) => ({
   line: n,
   item,
@@ -102,7 +108,7 @@ const plan = (rows: ReturnType<typeof row>[]) =>
   planInventoryCountImport({ rows, items, storageUnits, entities, lines });
 
 describe("parseInventoryCountCsv", () => {
-  it("reads the 4 columns in any order and skips rows with no count", () => {
+  it("reads the 4 columns in any order; a row with no count is null", () => {
     const csv = [
       "Counted Quantity,Item,State,Serial / Batch,Storage Unit",
       "1,SER,Found,SN-1,A1",
@@ -110,7 +116,11 @@ describe("parseInventoryCountCsv", () => {
       "4,BAT,,LOT-1,A1"
     ].join("\n");
     expect(parseInventoryCountCsv(csv)).toEqual({
-      rows: [row(2, "SER", "A1", "SN-1", 1), row(4, "BAT", "A1", "LOT-1", 4)],
+      rows: [
+        row(2, "SER", "A1", "SN-1", 1),
+        row(3, "SER", "A1", "SN-2", null),
+        row(4, "BAT", "A1", "LOT-1", 4)
+      ],
       errors: []
     });
   });
@@ -333,5 +343,51 @@ describe("review fixes", () => {
     const csv =
       'Item,Storage Unit,Serial / Batch,Counted Quantity\nSER,A1,"SN-1,1';
     expect(parseInventoryCountCsv(csv).errors.length).toBeGreaterThan(0);
+  });
+
+  it("leaves a unit listed with no count as it is", () => {
+    expect(
+      plan([row(2, "SER", "A1", "SN-1", 1), row(3, "SER", "A1", "SN-2", null)])
+    ).toEqual({
+      updates: [{ lineId: "ln1", countedQuantity: 1 }],
+      inserts: [],
+      deletes: []
+    });
+  });
+
+  it("changes nothing for a group with no counted row", () => {
+    expect(
+      plan([
+        row(2, "SER", "A1", "SN-1", null),
+        row(3, "SER", "A1", "SN-2", null)
+      ])
+    ).toEqual({ updates: [], inserts: [], deletes: [] });
+  });
+
+  it("leaves unnumbered units listed with no count as they are", () => {
+    const result = plan([
+      row(2, "SER", "B2", "", 1),
+      row(3, "SER", "B2", "", null)
+    ]);
+    expect("updates" in result && result.updates).toEqual(
+      expect.arrayContaining([
+        { lineId: "u1", countedQuantity: 1 },
+        { lineId: "ln3", countedQuantity: 0 }
+      ])
+    );
+    expect(
+      "updates" in result && result.updates.some((u) => u.lineId === "u2")
+    ).toBe(false);
+  });
+
+  it("refuses a Non-Inventory item", () => {
+    expect(plan([row(2, "NON", "A1", "", 3)])).toEqual({
+      errors: [
+        {
+          line: 2,
+          message: "NON is a Non-Inventory item and has no stock to count"
+        }
+      ]
+    });
   });
 });

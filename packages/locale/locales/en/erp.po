@@ -568,6 +568,9 @@ msgstr "{chainLabel}. Consider pointing this part directly at the final successo
 msgid "{code} counted"
 msgstr "{code} counted"
 
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr "{code} is a Non-Inventory item and has no stock to count"
+
 msgid "{code} is already counted"
 msgstr "{code} is already counted"
 
@@ -1390,6 +1393,9 @@ msgstr "A non-cash document that settles an invoice against a reason account: a 
 
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
+
+msgid "A Non-Inventory item has no stock to count"
+msgstr "A Non-Inventory item has no stock to count"
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."

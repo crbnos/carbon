@@ -77740,7 +77740,6 @@ export type Database = {
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
           lineCount: number | null
-          lineId: string | null
           materialFormId: string | null
           materialSubstanceId: string | null
           materialType: string | null
@@ -77926,7 +77925,6 @@ export type Database = {
           gradeId: string | null
           id: string | null
           inventoryCountId: string | null
-          isUnnumbered: boolean | null
           itemId: string | null
           itemName: string | null
           itemReadableIdWithRevision: string | null
@@ -77945,7 +77943,6 @@ export type Database = {
           storageUnitId: string | null
           systemQuantity: number | null
           tags: string[] | null
-          trackedEntityCreatedAt: string | null
           trackedEntityId: string | null
           type: Database["public"]["Enums"]["itemType"] | null
           unitOfMeasureCode: string | null

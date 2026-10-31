@@ -5733,7 +5733,8 @@ export const updateInventoryCountLine = defineServiceFn({
  * `outcome` says what happened: `counted`, `added`, `alreadyCounted`, or what
  * the caller must send again — `ambiguous` (pick one of `itemIds`), `unknown`
  * (send `itemId` for a new number), `needsQuantity`, `needsUnitNumber` (scan
- * the serial or batch, not the item), `wrongStorageUnit`. Draft counts only.
+ * the serial or batch, not the item), `notInventory` (a Non-Inventory item has no
+ * stock to count), `wrongStorageUnit`. Draft counts only.
  *
  * @param storageUnitId - The storage unit counted; left out for stock in no storage unit.
  * @param itemId - The item, when the code matches 2 or more items or is a new number.
@@ -5908,9 +5909,10 @@ export const assignInventoryCountSerial = defineServiceFn({
  * Each row names an item, a storage unit (empty for stock in no storage
  * unit), a serial or batch number (empty for an untracked item, or for a
  * serial with no number) and the counted quantity. Each (item, storage unit)
- * the rows name is a full count: its units the rows leave out become Missing,
- * and units added while counting that the rows leave out are removed. Rows
- * resolve as a scan does. Nothing is written when any row has an error; the
+ * with a counted row is a full count: its units the rows leave out become
+ * Missing, and units added while counting that the rows leave out are
+ * removed. A row with a null quantity is not counted yet and leaves its unit
+ * as it is. Non-Inventory items are refused. Rows resolve as a scan does. Nothing is written when any row has an error; the
  * result then lists `errors` with their line numbers. Draft counts only.
  *
  * @mcp
@@ -5925,7 +5927,7 @@ export const importInventoryCountResults = defineServiceFn({
           item: z.string().min(1),
           storageUnit: z.string(),
           code: z.string(),
-          quantity: z.number().min(0)
+          quantity: z.number().min(0).nullable()
         })
       )
       .max(20000)

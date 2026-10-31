@@ -2567,9 +2567,10 @@ export async function getInventoryCountGroups(
   return query;
 }
 
-// For each tracked line, the name of another storage unit of the count that
-// holds a line of the same unit: the bin it moved to or from. A unit on one
-// line only is absent.
+// For each tracked line, the bin a unit moved to or from: a unit the system
+// expects in one bin and found in another has a snapshot line and a line
+// added while counting. Only that pair is a move. A batch the system expects
+// in 2 bins is not, and its lines are absent.
 export async function getInventoryCountOtherBins(
   client: SupabaseClient<Database>,
   args: {
@@ -2579,6 +2580,7 @@ export async function getInventoryCountOtherBins(
       id: string;
       trackedEntityId: string | null;
       storageUnitId: string | null;
+      foundDuringCount: boolean;
     }[];
   }
 ): Promise<Map<string, string>> {
@@ -2589,7 +2591,7 @@ export async function getInventoryCountOtherBins(
   if (entityIds.length === 0) return new Map();
   const all = await client
     .from("inventoryCountLine")
-    .select("trackedEntityId, storageUnitId")
+    .select("trackedEntityId, storageUnitId, foundDuringCount")
     .eq("inventoryCountId", args.inventoryCountId)
     .eq("companyId", args.companyId)
     .in("trackedEntityId", entityIds);
@@ -2611,6 +2613,7 @@ export async function getInventoryCountOtherBins(
     const other = (all.data ?? []).find(
       (row) =>
         row.trackedEntityId === line.trackedEntityId &&
+        row.foundDuringCount !== line.foundDuringCount &&
         (row.storageUnitId ?? null) !== (line.storageUnitId ?? null)
     );
     if (!other) continue;
@@ -2959,6 +2962,7 @@ export type InventoryCountUnitOutcome =
   | { outcome: "unknown" }
   | { outcome: "needsQuantity"; itemId: string }
   | { outcome: "needsUnitNumber"; itemId: string }
+  | { outcome: "notInventory"; itemId: string }
   | { outcome: "wrongStorageUnit" };
 
 // Records one scanned or typed unit on a Draft count, in one storage unit.
@@ -3143,6 +3147,10 @@ export async function recordInventoryCountUnit(
         resolved.itemTrackingType === "Batch"
       ) {
         return { outcome: "needsUnitNumber", itemId: resolved.itemId };
+      }
+      // A Non-Inventory item has no stock to count, and the post skips it.
+      if (resolved.itemTrackingType === "Non-Inventory") {
+        return { outcome: "notInventory", itemId: resolved.itemId };
       }
       if (args.quantity === undefined) {
         return { outcome: "needsQuantity", itemId: resolved.itemId };
@@ -3449,10 +3457,11 @@ export type CountImportPlan =
     };
 
 // Plans a count results file against the count, with no database access. A
-// file is a full count of each (item, storage unit) group it names: units of
-// the group it does not list become Missing, and units added while counting
-// that it does not list are removed. Every error is collected; a file with
-// any error plans no write.
+// file is a full count of each (item, storage unit) group it counts a row of:
+// units of the group it does not list become Missing, and units added while
+// counting that it does not list are removed. A row with no quantity is not
+// counted yet and leaves its unit as it is. Every error is collected; a file
+// with any error plans no write.
 export function planInventoryCountImport(input: {
   rows: InventoryCountCsvRow[];
   items: CountImportItem[];
@@ -3495,6 +3504,13 @@ export function planInventoryCountImport(input: {
       continue;
     }
     const item = items[0];
+    if (item.itemTrackingType === "Non-Inventory") {
+      errors.push({
+        line: row.line,
+        message: `${row.item} is a Non-Inventory item and has no stock to count`
+      });
+      continue;
+    }
     const storageUnitId = row.storageUnit
       ? (unitByName.get(row.storageUnit.toLowerCase()) ?? undefined)
       : null;
@@ -3514,13 +3530,18 @@ export function planInventoryCountImport(input: {
       });
       continue;
     }
-    if (item.itemTrackingType === "Batch" && !row.code) {
+    if (
+      item.itemTrackingType === "Batch" &&
+      !row.code &&
+      row.quantity !== null
+    ) {
       errors.push({ line: row.line, message: "Batch number is required" });
       continue;
     }
     if (
       item.itemTrackingType === "Serial" &&
       row.code &&
+      row.quantity !== null &&
       row.quantity !== 0 &&
       row.quantity !== 1
     ) {
@@ -3569,7 +3590,12 @@ export function planInventoryCountImport(input: {
   );
   const updates = new Map<string, number>();
   const inserts: Extract<CountImportPlan, { inserts: unknown }>["inserts"] = [];
-  const unnumberedByGroup = new Map<string, number>();
+  // Lines the file lists with no quantity: the full count leaves them as is.
+  const notCounted = new Set<string>();
+  const unnumberedByGroup = new Map<
+    string,
+    { counted: number; notCounted: number }
+  >();
   const unnumberedLine = new Map<string, number>();
 
   for (const row of resolved) {
@@ -3581,7 +3607,9 @@ export function planInventoryCountImport(input: {
 
     if (!isTracked) {
       const line = groupLines.find((l) => !l.trackedEntityId);
-      if (line) updates.set(line.id, row.quantity);
+      if (row.quantity === null) {
+        if (line) notCounted.add(line.id);
+      } else if (line) updates.set(line.id, row.quantity);
       else
         inserts.push({
           itemId: row.item.id,
@@ -3595,11 +3623,16 @@ export function planInventoryCountImport(input: {
 
     // A serial row with no number counts toward the group's unnumbered units.
     if (!row.code) {
-      unnumberedByGroup.set(
-        groupKey,
-        (unnumberedByGroup.get(groupKey) ?? 0) + row.quantity
-      );
-      unnumberedLine.set(groupKey, row.line);
+      const unnumbered = unnumberedByGroup.get(groupKey) ?? {
+        counted: 0,
+        notCounted: 0
+      };
+      if (row.quantity === null) unnumbered.notCounted += 1;
+      else {
+        unnumbered.counted += row.quantity;
+        unnumberedLine.set(groupKey, row.line);
+      }
+      unnumberedByGroup.set(groupKey, unnumbered);
       continue;
     }
 
@@ -3611,6 +3644,15 @@ export function planInventoryCountImport(input: {
     const parts = groupLines
       .filter((l) => l.trackedEntityId && entityIds.includes(l.trackedEntityId))
       .sort((a, b) => a.id.localeCompare(b.id));
+    if (row.quantity === null) {
+      const here = parts.length
+        ? parts
+        : groupLines.filter(
+            (l) => !l.trackedEntityId && l.readableId === row.code
+          );
+      for (const line of here) notCounted.add(line.id);
+      continue;
+    }
     if (parts.length > 1) {
       for (const part of spreadBatchCount(parts, row.quantity)) {
         updates.set(part.lineId, part.countedQuantity);
@@ -3637,7 +3679,7 @@ export function planInventoryCountImport(input: {
     });
   }
 
-  for (const [groupKey, quantity] of unnumberedByGroup) {
+  for (const [groupKey, { counted, notCounted: blank }] of unnumberedByGroup) {
     const unnumbered = (linesByGroup[groupKey] ?? [])
       .filter((l) => l.unnumberedSince !== null && !l.foundDuringCount)
       .sort(
@@ -3646,7 +3688,7 @@ export function planInventoryCountImport(input: {
             b.unnumberedSince as string
           ) || a.id.localeCompare(b.id)
       );
-    if (quantity > unnumbered.length) {
+    if (counted > unnumbered.length) {
       errors.push({
         line: unnumberedLine.get(groupKey) as number,
         message: `Only ${unnumbered.length} unit(s) here have no serial number. Give each extra unit its serial number.`
@@ -3654,7 +3696,9 @@ export function planInventoryCountImport(input: {
       continue;
     }
     unnumbered.forEach((line, index) => {
-      updates.set(line.id, index < quantity ? 1 : 0);
+      if (index < counted) updates.set(line.id, 1);
+      else if (index < counted + blank) notCounted.add(line.id);
+      else updates.set(line.id, 0);
     });
   }
 
@@ -3665,12 +3709,14 @@ export function planInventoryCountImport(input: {
   // Full count: in each named group, a snapshot unit the file did not list is
   // Missing, and a unit added while counting that it did not list is removed.
   const named = new Set(
-    resolved.map((row) => key(row.item.id, row.storageUnitId))
+    resolved
+      .filter((row) => row.quantity !== null)
+      .map((row) => key(row.item.id, row.storageUnitId))
   );
   const deletes: string[] = [];
   for (const groupKey of named) {
     for (const line of linesByGroup[groupKey] ?? []) {
-      if (updates.has(line.id)) continue;
+      if (updates.has(line.id) || notCounted.has(line.id)) continue;
       if (line.foundDuringCount) deletes.push(line.id);
       else updates.set(line.id, 0);
     }
@@ -8442,45 +8488,143 @@ export async function postInventoryCount(
     // A tracked unit counted in another bin moves there: 2 Transfer rows
     // under the count, with no journal and no cost layer. Its quantity does
     // not change.
-    for (const move of moves) {
+    if (moves.length > 0) {
       await trx
         .selectFrom("trackedEntity")
         .select("id")
-        .where("id", "=", move.trackedEntityId)
+        .where(
+          "id",
+          "in",
+          moves.map((move) => move.trackedEntityId)
+        )
         .where("companyId", "=", companyId)
+        .orderBy("id")
         .forUpdate()
-        .executeTakeFirst();
-      const moveRow = {
-        postingDate: today,
-        itemId: itemIdByEntity.get(move.trackedEntityId) as string,
-        locationId: inventoryCount.data.locationId,
-        trackedEntityId: move.trackedEntityId,
-        entryType: "Transfer" as const,
-        documentType: "Inventory Count" as const,
-        documentId: inventoryCountId,
-        comment,
-        companyId,
-        createdBy: userId
-      };
+        .execute();
       await trx
         .insertInto("itemLedger")
-        .values([
-          {
-            ...moveRow,
-            storageUnitId: move.fromStorageUnitId,
-            quantity: round(-move.quantity)
-          },
-          {
-            ...moveRow,
-            storageUnitId: move.toStorageUnitId,
-            quantity: round(move.quantity)
-          }
-        ])
+        .values(
+          moves.flatMap((move) => {
+            const moveRow = {
+              postingDate: today,
+              itemId: itemIdByEntity.get(move.trackedEntityId) as string,
+              locationId: inventoryCount.data.locationId,
+              trackedEntityId: move.trackedEntityId,
+              entryType: "Transfer" as const,
+              documentType: "Inventory Count" as const,
+              documentId: inventoryCountId,
+              comment,
+              companyId,
+              createdBy: userId
+            };
+            return [
+              {
+                ...moveRow,
+                storageUnitId: move.fromStorageUnitId,
+                quantity: round(-move.quantity)
+              },
+              {
+                ...moveRow,
+                storageUnitId: move.toStorageUnitId,
+                quantity: round(move.quantity)
+              }
+            ];
+          })
+        )
         .execute();
     }
 
-    // New batches this post created, by item and number.
-    const createdBatches = new Map<string, string>();
+    // A serial or batch number Carbon did not know: create the unit, with no
+    // quantity yet; the adjustment below gives it its stock. A new batch
+    // counted in 2 bins is one batch: its lines share one unit.
+    const newUnitLines = planned
+      .filter(({ line, delta }) => {
+        const trackingType = trackingTypeByItem.get(line.itemId);
+        return (
+          !line.trackedEntityId &&
+          Boolean(line.readableId) &&
+          delta > 0 &&
+          (trackingType === "Serial" || trackingType === "Batch")
+        );
+      })
+      .map(({ line }) => line);
+    const newUnitIdByLine = new Map<string, string>();
+    if (newUnitLines.length > 0) {
+      const taken = await trx
+        .selectFrom("trackedEntity")
+        .select(["itemId", "readableId"])
+        .where("companyId", "=", companyId)
+        .where(
+          "itemId",
+          "in",
+          pluckUnique(newUnitLines, (line) => line.itemId)
+        )
+        .where(
+          "readableId",
+          "in",
+          pluckUnique(newUnitLines, (line) => line.readableId as string)
+        )
+        .execute();
+      const takenKeys = new Set(
+        taken.map((unit) => `${unit.itemId}:${unit.readableId}`)
+      );
+      const takenLines = newUnitLines.filter((line) =>
+        takenKeys.has(`${line.itemId}:${line.readableId}`)
+      );
+      if (takenLines.length > 0) {
+        throw new InvalidLinesError(
+          `${takenLines[0].readableId} already exists. Scan it again to count the existing unit.`,
+          takenLines.map((line) => line.id)
+        );
+      }
+      const unitIdByKey = new Map<string, string>();
+      for (const line of newUnitLines) {
+        const key =
+          trackingTypeByItem.get(line.itemId) === "Batch"
+            ? `${line.itemId}:${line.readableId}`
+            : line.id;
+        if (!unitIdByKey.has(key)) unitIdByKey.set(key, nanoid());
+        newUnitIdByLine.set(line.id, unitIdByKey.get(key) as string);
+      }
+      const unitLines = [
+        ...new Map(
+          newUnitLines.map((line) => [newUnitIdByLine.get(line.id), line])
+        )
+      ];
+      await trx
+        .insertInto("trackedEntity")
+        .values(
+          unitLines.map(([id, line]) => ({
+            id: id as string,
+            sourceDocument: "Item",
+            sourceDocumentId: line.itemId,
+            itemId: line.itemId,
+            readableId: line.readableId,
+            quantity: 0,
+            status: "Available" as const,
+            attributes: {
+              "Inventory Count": {
+                inventoryCountId,
+                userId,
+                at: nowIso
+              }
+            } as unknown as Json,
+            companyId,
+            createdBy: userId
+          }))
+        )
+        .execute();
+      await sql`
+        UPDATE "inventoryCountLine" AS icl
+        SET "trackedEntityId" = v."trackedEntityId"
+        FROM (VALUES ${sql.join(
+          [...newUnitIdByLine].map(
+            ([lineId, unitId]) => sql`(${lineId}, ${unitId})`
+          )
+        )}) AS v("id", "trackedEntityId")
+        WHERE icl."id" = v."id" AND icl."companyId" = ${companyId}
+      `.execute(trx);
+    }
 
     // Post the reviewed variance for each line as an inventory adjustment,
     // booked through the shared core (ledger + cost layers + journal).
@@ -8492,73 +8636,8 @@ export async function postInventoryCount(
         throw new Error(`Missing item cost for item ${line.itemId}`);
       }
 
-      // A serial or batch number Carbon did not know: create the unit, with
-      // no quantity yet; the adjustment below gives it its stock. A new batch
-      // counted in 2 bins is one batch: the second line uses the first's.
-      let trackedEntityId = line.trackedEntityId;
-      const newBatchKey = `${line.itemId}:${line.readableId}`;
-      const trackingType = trackingTypeByItem.get(line.itemId);
-      const isNewUnit =
-        !trackedEntityId &&
-        Boolean(line.readableId) &&
-        delta > 0 &&
-        (trackingType === "Serial" || trackingType === "Batch");
-      const createdBatchId =
-        trackingType === "Batch" ? createdBatches.get(newBatchKey) : undefined;
-      if (isNewUnit && createdBatchId) {
-        trackedEntityId = createdBatchId;
-        await trx
-          .updateTable("inventoryCountLine")
-          .set({ trackedEntityId })
-          .where("id", "=", line.id)
-          .where("companyId", "=", companyId)
-          .execute();
-      } else if (isNewUnit && line.readableId) {
-        const taken = await trx
-          .selectFrom("trackedEntity")
-          .select("id")
-          .where("companyId", "=", companyId)
-          .where("itemId", "=", line.itemId)
-          .where("readableId", "=", line.readableId)
-          .executeTakeFirst();
-        if (taken) {
-          throw new InvalidLinesError(
-            `${line.readableId} already exists. Scan it again to count the existing unit.`,
-            [line.id]
-          );
-        }
-        trackedEntityId = nanoid();
-        if (trackingType === "Batch") {
-          createdBatches.set(newBatchKey, trackedEntityId);
-        }
-        await trx
-          .insertInto("trackedEntity")
-          .values({
-            id: trackedEntityId,
-            sourceDocument: "Item",
-            sourceDocumentId: line.itemId,
-            itemId: line.itemId,
-            readableId: line.readableId,
-            quantity: 0,
-            status: "Available",
-            attributes: {
-              "Inventory Count": {
-                inventoryCountId,
-                userId,
-                at: nowIso
-              }
-            } as unknown as Json,
-            companyId,
-            createdBy: userId
-          })
-          .execute();
-        await trx
-          .updateTable("inventoryCountLine")
-          .set({ trackedEntityId })
-          .where("id", "=", line.id)
-          .where("companyId", "=", companyId)
-          .execute();
-      }
+      const trackedEntityId =
+        newUnitIdByLine.get(line.id) ?? line.trackedEntityId;
 
       const booked = await bookAdjustment(trx, {
         ledger: {

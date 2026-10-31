@@ -568,6 +568,9 @@ msgstr "{chainLabel}. Рассмотрите возможность указан
 msgid "{code} counted"
 msgstr ""
 
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
 msgid "{code} is already counted"
 msgstr ""
 
@@ -1390,6 +1393,9 @@ msgstr "Неденежный документ, погашающий счёт-ф�
 
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "Несоответствие, поделённое с поставщиком через ссылку /share/scar без входа, чтобы они могли ответить на проблему и обновить её задачи вне Carbon."
+
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "Неналоговый сбор (например, возмещаемые расходы в виде сборов за разрешения), добавляемый к строке и исключенный из налоговой базы."

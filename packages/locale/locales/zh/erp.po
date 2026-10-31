@@ -568,6 +568,9 @@ msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
 msgid "{code} counted"
 msgstr ""
 
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
 msgid "{code} is already counted"
 msgstr ""
 
@@ -1390,6 +1393,9 @@ msgstr "一份非现金文件，根据原因账户结算发票：贷方降低欠
 
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "通过无登录 /share/scar 链接与供应商共享的不合格记录，以便他们可以从 Carbon 外部响应问题并更新其任务。"
+
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "不可征税的附加费（如可收回的费用，如许可证费用），添加到行中并从税基中排除。"

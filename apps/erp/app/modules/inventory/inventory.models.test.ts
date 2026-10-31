@@ -6,9 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   finishPickingList,
   inventoryCountScanValidator,
-  inventoryCountSerialValidator,
   inventoryCountUnitValidator,
-  inventoryCountUnnumberedValidator,
   kanbanValidator,
   planSerialBoxWrite,
   receiptFixedAssetLineUpdateValidator,
@@ -416,38 +414,6 @@ describe("inventory count validators", () => {
     expect(
       inventoryCountUnitValidator.safeParse({ code: "SN-1", itemId: "i_1" })
         .success
-    ).toBe(true);
-  });
-  it("takes a whole, non-negative unnumbered quantity", () => {
-    expect(
-      inventoryCountUnnumberedValidator.safeParse({
-        itemId: "i_1",
-        quantity: "3"
-      }).success
-    ).toBe(true);
-    expect(
-      inventoryCountUnnumberedValidator.safeParse({
-        itemId: "i_1",
-        quantity: "-1"
-      }).success
-    ).toBe(false);
-    expect(
-      inventoryCountUnnumberedValidator.safeParse({
-        itemId: "i_1",
-        quantity: "1.5"
-      }).success
-    ).toBe(false);
-  });
-  it("requires a serial number to assign", () => {
-    expect(
-      inventoryCountSerialValidator.safeParse({ lineId: "l", readableId: "" })
-        .success
-    ).toBe(false);
-    expect(
-      inventoryCountSerialValidator.safeParse({
-        lineId: "l",
-        readableId: "SN-9"
-      }).success
     ).toBe(true);
   });
 });

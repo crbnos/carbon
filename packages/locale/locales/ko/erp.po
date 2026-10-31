@@ -568,6 +568,9 @@ msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하�
 msgid "{code} counted"
 msgstr ""
 
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
 msgid "{code} is already counted"
 msgstr ""
 
@@ -1390,6 +1393,9 @@ msgstr "비현금 문서로 송장을 이유 계정에 대해 결제합니다: �
 
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "공급업체와 공유되는 부적합 사항으로서 로그인이 필요 없는 /share/scar 링크를 통해 공유되므로 Carbon 외부에서 문제에 응답하고 작업을 업데이트할 수 있습니다."
+
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "세금이 아닌 할증료(예: 허가비 같은 회수 가능한 비용)로 라인에 추가되며 세금 기반에서 제외됩니다."

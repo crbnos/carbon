@@ -374,14 +374,15 @@ export type InventoryCountCsvRow = {
   item: string;
   storageUnit: string;
   code: string;
-  quantity: number;
+  // null: the row is listed but not counted yet.
+  quantity: number | null;
 };
 
 export type InventoryCountCsvError = { line: number; message: string };
 
 // Reads a count results file. Columns are found by name, in any order; other
 // columns (State, Item Name) are ignored. A row with no Counted Quantity is
-// not counted and is left out.
+// not counted yet: its quantity is null.
 export function parseInventoryCountCsv(text: string): {
   rows: InventoryCountCsvRow[];
   errors: InventoryCountCsvError[];
@@ -430,9 +431,8 @@ export function parseInventoryCountCsv(text: string): {
       errors.push({ line, message: "Item is required" });
       continue;
     }
-    if (quantityText === "") continue;
-    const quantity = Number(quantityText);
-    if (!Number.isFinite(quantity) || quantity < 0) {
+    const quantity = quantityText === "" ? null : Number(quantityText);
+    if (quantity !== null && (!Number.isFinite(quantity) || quantity < 0)) {
       errors.push({
         line,
         message: `Counted Quantity "${quantityText}" is not a number of 0 or more`

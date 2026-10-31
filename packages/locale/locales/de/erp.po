@@ -568,6 +568,9 @@ msgstr "{chainLabel}. Erwägen Sie, diesen Teil direkt auf den endgültigen Nach
 msgid "{code} counted"
 msgstr ""
 
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
 msgid "{code} is already counted"
 msgstr ""
 
@@ -1390,6 +1393,9 @@ msgstr "Ein bargeldloses Dokument, das eine Rechnung gegen ein Verrechnungskonto
 
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "Eine Nichtkonformität, die mit einem Lieferanten über einen passwortfreien Link /share/scar geteilt wird, damit dieser auf das Problem reagieren und seine Aufgaben von außerhalb von Carbon aktualisieren kann."
+
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "Ein nicht steuerpflichtiger Zuschlag (z. B. rückforderbare Aufwendungen wie Genehmigungsgebühren), der zur Position hinzugefügt wird; von der Steuerbasis ausgeschlossen."

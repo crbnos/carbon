@@ -593,87 +593,99 @@ const InventoryCountLines = ({
 
   // The lines of one tracked item in one storage unit sit together (the
   // loader sorts them so) under a one-line header that collapses them.
-  // Untracked items have one line per storage unit and no header.
+  // Untracked items have one line per storage unit and no header. A sort the
+  // user picks splits the groups apart, so the lines show without headers.
+  const isUserSorted = params.getAll("sort").length > 0;
   const groupRowsBy = useMemo(
-    () => ({
-      key: (line: CountLine) =>
-        isTrackedLine(line)
-          ? `${line.itemId}:${line.storageUnitId ?? ""}`
-          : (line.id ?? ""),
-      header: (
-        groupLines: CountLine[],
-        group?: { collapsed: boolean; toggle: () => void }
-      ) => {
-        const first = groupLines[0];
-        if (!first || !isTrackedLine(first)) return null;
-        const summary =
-          groupSummaries[
-            inventoryCountGroupId({
-              inventoryCountId,
-              itemId: first.itemId!,
-              storageUnitId: first.storageUnitId ?? null
-            })
-          ];
-        // The loader sends summaries with the first page only. A group first
-        // loaded on a later page is summed from its loaded lines.
-        const local = { Found: 0, Missing: 0, Unexpected: 0, "Not counted": 0 };
-        for (const line of groupLines) {
-          local[
-            inventoryCountLineState({
-              countedQuantity:
-                line.countedQuantity === null
-                  ? null
-                  : Number(line.countedQuantity),
-              foundDuringCount: Boolean(line.foundDuringCount)
-            })
-          ] += 1;
-        }
-        const units = summary ? Number(summary.lineCount) : groupLines.length;
-        const missing = summary
-          ? Number(summary.missingCount ?? 0)
-          : local.Missing;
-        const foundHere = summary
-          ? Number(summary.unexpectedCount ?? 0)
-          : local.Unexpected;
-        const counted =
-          (summary ? Number(summary.foundCount ?? 0) : local.Found) +
-          foundHere +
-          missing;
-        const parts = [
-          units === 1 ? t`1 unit` : t`${units} units`,
-          t`${counted} counted`,
-          missing > 0 ? t`${missing} missing` : null,
-          foundHere > 0 ? t`${foundHere} found here` : null
-        ].filter(Boolean);
-        return (
-          <button
-            type="button"
-            onClick={group?.toggle}
-            aria-expanded={!group?.collapsed}
-            className="flex w-full items-center gap-2 px-4 py-1.5 text-left text-xs text-muted-foreground hover:text-foreground"
-          >
-            <LuChevronRight
-              className={cn(
-                "size-3.5 shrink-0 transition-transform",
-                !group?.collapsed && "rotate-90"
-              )}
-            />
-            <span className="font-medium text-foreground">
-              {first.itemReadableIdWithRevision ?? first.itemId}
-            </span>
-            <span>·</span>
-            <span>
-              {first.storageUnitId
-                ? storageUnitLabel(first.storageUnitId)
-                : t`No storage unit`}
-            </span>
-            <span>—</span>
-            <span>{parts.join(" · ")}</span>
-          </button>
-        );
-      }
-    }),
-    [groupSummaries, inventoryCountId, storageUnitLabel, t]
+    () =>
+      isUserSorted
+        ? undefined
+        : {
+            key: (line: CountLine) =>
+              isTrackedLine(line)
+                ? `${line.itemId}:${line.storageUnitId ?? ""}`
+                : (line.id ?? ""),
+            header: (
+              groupLines: CountLine[],
+              group?: { collapsed: boolean; toggle: () => void }
+            ) => {
+              const first = groupLines[0];
+              if (!first || !isTrackedLine(first)) return null;
+              const summary =
+                groupSummaries[
+                  inventoryCountGroupId({
+                    inventoryCountId,
+                    itemId: first.itemId!,
+                    storageUnitId: first.storageUnitId ?? null
+                  })
+                ];
+              // The loader sends summaries with the first page only. A group first
+              // loaded on a later page is summed from its loaded lines.
+              const local = {
+                Found: 0,
+                Missing: 0,
+                Unexpected: 0,
+                "Not counted": 0
+              };
+              for (const line of groupLines) {
+                local[
+                  inventoryCountLineState({
+                    countedQuantity:
+                      line.countedQuantity === null
+                        ? null
+                        : Number(line.countedQuantity),
+                    foundDuringCount: Boolean(line.foundDuringCount)
+                  })
+                ] += 1;
+              }
+              const units = summary
+                ? Number(summary.lineCount)
+                : groupLines.length;
+              const missing = summary
+                ? Number(summary.missingCount ?? 0)
+                : local.Missing;
+              const foundHere = summary
+                ? Number(summary.unexpectedCount ?? 0)
+                : local.Unexpected;
+              const counted =
+                (summary ? Number(summary.foundCount ?? 0) : local.Found) +
+                foundHere +
+                missing;
+              const parts = [
+                units === 1 ? t`1 unit` : t`${units} units`,
+                t`${counted} counted`,
+                missing > 0 ? t`${missing} missing` : null,
+                foundHere > 0 ? t`${foundHere} found here` : null
+              ].filter(Boolean);
+              return (
+                <button
+                  type="button"
+                  onClick={group?.toggle}
+                  aria-expanded={!group?.collapsed}
+                  className="flex w-full items-center gap-2 px-4 py-1.5 text-left text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <LuChevronRight
+                    className={cn(
+                      "size-3.5 shrink-0 transition-transform",
+                      !group?.collapsed && "rotate-90"
+                    )}
+                  />
+                  <span className="font-medium text-foreground">
+                    {first.itemReadableIdWithRevision ?? first.itemId}
+                  </span>
+                  <span>·</span>
+                  <span>
+                    {first.storageUnitId
+                      ? storageUnitLabel(first.storageUnitId)
+                      : t`No storage unit`}
+                  </span>
+                  <span>—</span>
+                  <span>{parts.join(" · ")}</span>
+                </button>
+              );
+            }
+          },
+    [groupSummaries, inventoryCountId, isUserSorted, storageUnitLabel, t]
   );
 
   const gridRef = useRef<HTMLDivElement>(null);
@@ -770,10 +782,22 @@ const InventoryCountLines = ({
         return;
       }
 
+      // The next line shown: a collapsed group's lines are not rendered.
       const step = event.key === "Tab" && event.shiftKey ? -1 : 1;
-      const adjacent = gridRef.current?.querySelector<HTMLElement>(
-        `[data-row="${row + step}"][data-column="${countedColumn}"]`
-      );
+      const shown = [
+        ...(gridRef.current?.querySelectorAll<HTMLElement>(
+          `[data-row][data-column="${countedColumn}"]`
+        ) ?? [])
+      ];
+      const rowOf = (el: HTMLElement) => Number(el.getAttribute("data-row"));
+      const adjacent =
+        step > 0
+          ? shown
+              .filter((el) => rowOf(el) > row)
+              .sort((a, b) => rowOf(a) - rowOf(b))[0]
+          : shown
+              .filter((el) => rowOf(el) < row)
+              .sort((a, b) => rowOf(b) - rowOf(a))[0];
 
       // Let Tab exit the grid at the first/last line rather than trapping focus;
       // only suppress the Table's own row-wrapping.

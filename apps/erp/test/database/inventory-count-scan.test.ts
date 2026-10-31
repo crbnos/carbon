@@ -15,7 +15,12 @@ import {
   removeInventoryCountUnit
 } from "../../app/modules/inventory/inventory.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
-import { alwaysPostFixture, type Fixture, USER } from "./fixtures/always-post";
+import {
+  alwaysPostFixture,
+  type Fixture,
+  seed,
+  USER
+} from "./fixtures/always-post";
 import { countUnits, draftCount } from "./fixtures/count-units";
 import { databaseTest } from "./fixtures/local-database";
 
@@ -455,3 +460,35 @@ databaseTest(
     }
   }
 );
+
+databaseTest("a Non-Inventory item is refused", async () => {
+  const { f, scan } = await setup();
+  try {
+    await seed(f, (trx) =>
+      trx
+        .insertInto("item")
+        .values({
+          id: `${f.prefix}-non`,
+          readableId: `${f.prefix}-NON`,
+          name: "Service fee",
+          type: "Part",
+          itemTrackingType: "Non-Inventory",
+          replenishmentSystem: "Buy",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute()
+    );
+    const result = await scan({
+      storageUnitId: null,
+      code: `${f.prefix}-NON`,
+      quantity: 2
+    });
+    expect(result).toEqual({
+      outcome: "notInventory",
+      itemId: `${f.prefix}-non`
+    });
+  } finally {
+    await f.cleanup();
+  }
+});

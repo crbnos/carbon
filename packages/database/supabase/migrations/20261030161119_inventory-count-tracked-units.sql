@@ -50,14 +50,10 @@ SELECT
   m."materialTypeId",
   mt."name" AS "materialType",
   COALESCE(m."tags", p."tags", t."tags", c."tags") AS "tags",
-  COALESCE(su."storageTypeIds", ARRAY[]::TEXT[]) AS "storageTypeIds",
-  (icl."trackedEntityId" IS NOT NULL AND te."readableId" IS NULL) AS "isUnnumbered",
-  te."createdAt" AS "trackedEntityCreatedAt"
+  COALESCE(su."storageTypeIds", ARRAY[]::TEXT[]) AS "storageTypeIds"
 FROM "inventoryCountLine" icl
   INNER JOIN "item" i
     ON i."id" = icl."itemId" AND i."companyId" = icl."companyId"
-  LEFT JOIN "trackedEntity" te
-    ON te."id" = icl."trackedEntityId" AND te."companyId" = icl."companyId"
   LEFT JOIN "material" m
     ON m."id" = i."readableId" AND m."companyId" = icl."companyId"
   LEFT JOIN "part" p
@@ -98,10 +94,7 @@ WITH g AS (
     COUNT(*) FILTER (WHERE icl."countedQuantity" IS NULL) AS "notCountedCount",
     COUNT(*) FILTER (WHERE icl."trackedEntityId" IS NOT NULL AND te."readableId" IS NULL) AS "unnumberedCount",
     -- every unit number in the group, so a search for a serial finds its group
-    string_agg(COALESCE(icl."assignedReadableId", icl."readableId"), ' ') AS "unitNumbers",
-    -- the line of a group that has only one (an untracked item), so its count
-    -- can be typed on the group row
-    CASE WHEN COUNT(*) = 1 THEN MIN(icl."id") END AS "lineId"
+    string_agg(COALESCE(icl."assignedReadableId", icl."readableId"), ' ') AS "unitNumbers"
   FROM "inventoryCountLine" icl
     LEFT JOIN "trackedEntity" te
       ON te."id" = icl."trackedEntityId" AND te."companyId" = icl."companyId"
