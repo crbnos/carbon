@@ -280,10 +280,6 @@ msgstr "{0} entries to post · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} entries to recognize · {amount}"
 
-#. placeholder {0}: summary?.unexpectedCount
-msgid "{0} found here"
-msgstr "{0} found here"
-
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
 msgstr "{0} has <0/> left to invoice."
@@ -341,10 +337,6 @@ msgstr "{0} lines"
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} lines to map"
-
-#. placeholder {0}: summary?.missingCount
-msgid "{0} missing"
-msgstr "{0} missing"
 
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
@@ -691,6 +683,9 @@ msgstr "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgid "{failed} of {0} print jobs failed"
 msgstr "{failed} of {0} print jobs failed"
 
+msgid "{foundHere} found here"
+msgstr "{foundHere} found here"
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {And # more record.} other {And # more records.}}"
 
@@ -755,6 +750,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# active method has materials with
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} months with mismatched totals"
+
+msgid "{missing} missing"
+msgstr "{missing} missing"
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "{missingCount} journals missing in the provider"

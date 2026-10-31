@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { parseCsvLines } from "@carbon/files/csv";
+import { round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getItemStorageUnitQuantities } from "../items/items.utils";
 
@@ -343,6 +344,14 @@ export function inventoryCountGroupId(line: {
   return `${line.inventoryCountId}:${line.itemId}:${line.storageUnitId ?? ""}`;
 }
 
+// The count group columns a blind count withholds until it is posted.
+export const BLIND_COUNT_GROUP_COLUMNS: string[] = [
+  "expectedQuantity",
+  "variance",
+  "missingCount",
+  "notCountedCount"
+];
+
 // A blind count withholds what the system expects until it is posted.
 export function isBlindCountEntry(count: {
   isBlind: boolean | null;
@@ -377,7 +386,16 @@ export function parseInventoryCountCsv(text: string): {
   rows: InventoryCountCsvRow[];
   errors: InventoryCountCsvError[];
 } {
-  const { lines } = parseCsvLines(text);
+  const { lines, errors: syntaxErrors } = parseCsvLines(text);
+  if (syntaxErrors.length > 0) {
+    return {
+      rows: [],
+      errors: syntaxErrors.map((error) => ({
+        line: (error.row ?? 0) + 1,
+        message: `The file cannot be read: ${error.message}`
+      }))
+    };
+  }
   const [header, ...body] = lines;
   if (!header) {
     return { rows: [], errors: [{ line: 1, message: "The file is empty" }] };
@@ -406,7 +424,7 @@ export function parseInventoryCountCsv(text: string): {
   const rows: InventoryCountCsvRow[] = [];
   const errors: InventoryCountCsvError[] = [];
   for (const { line, cells } of body) {
-    const item = cells[itemAt]?.trim() ?? "";
+    const item = readCsvIdentifier(cells[itemAt]?.trim() ?? "");
     const quantityText = cells[quantityAt]?.trim() ?? "";
     if (!item) {
       errors.push({ line, message: "Item is required" });
@@ -424,10 +442,44 @@ export function parseInventoryCountCsv(text: string): {
     rows.push({
       line,
       item,
-      storageUnit: cells[unitAt]?.trim() ?? "",
-      code: cells[codeAt]?.trim() ?? "",
+      storageUnit: readCsvIdentifier(cells[unitAt]?.trim() ?? ""),
+      code: readCsvIdentifier(cells[codeAt]?.trim() ?? ""),
       quantity
     });
   }
   return { rows, errors };
+}
+
+// A batch split keeps its number on every part, so one bin can hold 2 or more
+// parts of one batch. A count of that number covers all of them: fill each
+// part up to its expected quantity in the given order, put any surplus on the
+// last part, and count the parts left over as 0.
+export function spreadBatchCount(
+  parts: { id: string; systemQuantity: number }[],
+  counted: number
+): { lineId: string; countedQuantity: number }[] {
+  let left = counted;
+  return parts.map((part, index) => {
+    const isLast = index === parts.length - 1;
+    const take = round(
+      isLast ? left : Math.min(left, Math.max(Number(part.systemQuantity), 0))
+    );
+    left = round(left - take);
+    return { lineId: part.id, countedQuantity: take };
+  });
+}
+
+// A spreadsheet runs a cell that starts with =, +, - or @, so the CSV encoder
+// strips those characters. A serial or batch number can start with one, so the
+// export puts an apostrophe in front, and the import takes it off again.
+const CSV_FORMULA_START = /^[=+\-@]/;
+export function protectCsvIdentifier(value: string): string {
+  return CSV_FORMULA_START.test(value) && Number.isNaN(Number(value))
+    ? `'${value}`
+    : value;
+}
+export function readCsvIdentifier(value: string): string {
+  return value.startsWith("'") && CSV_FORMULA_START.test(value.slice(1))
+    ? value.slice(1)
+    : value;
 }

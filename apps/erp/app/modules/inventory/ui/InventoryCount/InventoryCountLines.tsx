@@ -43,7 +43,10 @@ import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
 import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
-import { inventoryCountGroupId } from "~/modules/inventory/inventory.utils";
+import {
+  inventoryCountGroupId,
+  inventoryCountLineState
+} from "~/modules/inventory/inventory.utils";
 import type {
   InventoryCountGroupSummary,
   InventoryCountLine
@@ -611,20 +614,36 @@ const InventoryCountLines = ({
               storageUnitId: first.storageUnitId ?? null
             })
           ];
-        const units = Number(summary?.lineCount ?? groupLines.length);
+        // The loader sends summaries with the first page only. A group first
+        // loaded on a later page is summed from its loaded lines.
+        const local = { Found: 0, Missing: 0, Unexpected: 0, "Not counted": 0 };
+        for (const line of groupLines) {
+          local[
+            inventoryCountLineState({
+              countedQuantity:
+                line.countedQuantity === null
+                  ? null
+                  : Number(line.countedQuantity),
+              foundDuringCount: Boolean(line.foundDuringCount)
+            })
+          ] += 1;
+        }
+        const units = summary ? Number(summary.lineCount) : groupLines.length;
+        const missing = summary
+          ? Number(summary.missingCount ?? 0)
+          : local.Missing;
+        const foundHere = summary
+          ? Number(summary.unexpectedCount ?? 0)
+          : local.Unexpected;
         const counted =
-          Number(summary?.foundCount ?? 0) +
-          Number(summary?.unexpectedCount ?? 0) +
-          Number(summary?.missingCount ?? 0);
+          (summary ? Number(summary.foundCount ?? 0) : local.Found) +
+          foundHere +
+          missing;
         const parts = [
           units === 1 ? t`1 unit` : t`${units} units`,
           t`${counted} counted`,
-          Number(summary?.missingCount ?? 0) > 0
-            ? t`${summary?.missingCount} missing`
-            : null,
-          Number(summary?.unexpectedCount ?? 0) > 0
-            ? t`${summary?.unexpectedCount} found here`
-            : null
+          missing > 0 ? t`${missing} missing` : null,
+          foundHere > 0 ? t`${foundHere} found here` : null
         ].filter(Boolean);
         return (
           <button

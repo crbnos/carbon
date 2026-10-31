@@ -10,9 +10,11 @@ import { expect } from "vitest";
 import {
   generateInventoryCountLines,
   importInventoryCountRows,
+  postInventoryCount,
   recordInventoryCountUnit,
   removeInventoryCountUnit
 } from "../../app/modules/inventory/inventory.service";
+import { invokePosting } from "../../app/modules/shared/shared.service";
 import { alwaysPostFixture, type Fixture, USER } from "./fixtures/always-post";
 import { countUnits, draftCount } from "./fixtures/count-units";
 import { databaseTest } from "./fixtures/local-database";
@@ -340,3 +342,116 @@ databaseTest("the snapshot leaves out a unit with no stock left in a bin", async
     await f.cleanup();
   }
 });
+
+databaseTest(
+  "a batch scan spreads its count over the batch's parts in the bin",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const units = await countUnits(f);
+      // A second part of LOT-1 (a split keeps the number) holds 4 in A1.
+      await f.db
+        .insertInto("trackedEntity")
+        .values({
+          id: `${f.prefix}-te-LOT-1b`,
+          readableId: units.number("LOT-1"),
+          itemId: units.batchItemId,
+          quantity: 4,
+          status: "Available",
+          sourceDocument: "Item",
+          sourceDocumentId: units.batchItemId,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      await f.db
+        .insertInto("itemLedger")
+        .values({
+          postingDate: f.today,
+          entryType: "Positive Adjmt.",
+          itemId: units.batchItemId,
+          locationId: f.locationId,
+          storageUnitId: units.binA,
+          trackedEntityId: `${f.prefix}-te-LOT-1b`,
+          quantity: 4,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      const countId = await draftCount(f, "1", (args) =>
+        generateInventoryCountLines(f.db, args)
+      );
+      const result = await recordInventoryCountUnit(f.db, {
+        inventoryCountId: countId,
+        companyId: f.companyId,
+        userId: USER,
+        storageUnitId: units.binA,
+        code: units.number("LOT-1"),
+        quantity: 14
+      });
+      expect(result?.outcome).toBe("counted");
+      const parts = await f.db
+        .selectFrom("inventoryCountLine")
+        .select(["systemQuantity", "countedQuantity"])
+        .where("inventoryCountId", "=", countId)
+        .where("itemId", "=", units.batchItemId)
+        .execute();
+      expect(parts).toHaveLength(2);
+      for (const part of parts) {
+        expect(part.countedQuantity).toBe(part.systemQuantity);
+      }
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a new batch number counted in 2 bins posts as one batch",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const units = await countUnits(f);
+      const countId = await draftCount(f, "1", (args) =>
+        generateInventoryCountLines(f.db, args)
+      );
+      const code = units.number("LOT-NEW");
+      for (const [storageUnitId, quantity] of [
+        [units.binA, 3],
+        [units.binB, 2]
+      ] as const) {
+        const result = await recordInventoryCountUnit(f.db, {
+          inventoryCountId: countId,
+          companyId: f.companyId,
+          userId: USER,
+          storageUnitId,
+          code,
+          itemId: units.batchItemId,
+          quantity
+        });
+        expect(result?.outcome).toBe("added");
+      }
+      await f.db
+        .updateTable("inventoryCount")
+        .set({ status: "Pending" })
+        .where("id", "=", countId)
+        .execute();
+      const posted = await invokePosting(
+        f.service,
+        "post-inventory-count",
+        { inventoryCountId: countId },
+        postInventoryCount
+      );
+      expect(posted.error).toBeNull();
+      const batches = await f.db
+        .selectFrom("trackedEntity")
+        .select(["id", "quantity"])
+        .where("companyId", "=", f.companyId)
+        .where("readableId", "=", code)
+        .execute();
+      expect(batches).toEqual([{ id: batches[0].id, quantity: 5 }]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

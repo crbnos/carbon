@@ -280,10 +280,6 @@ msgstr "{0} voci da registrare · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} scritture da riconoscere · {amount}"
 
-#. placeholder {0}: summary?.unexpectedCount
-msgid "{0} found here"
-msgstr ""
-
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
 msgstr "{0} ha <0/> rimasto da fatturare."
@@ -341,10 +337,6 @@ msgstr "{0} righe"
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} righe da mappare"
-
-#. placeholder {0}: summary?.missingCount
-msgid "{0} missing"
-msgstr ""
 
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
@@ -691,6 +683,9 @@ msgstr "{excluded, plural, one {# riga esclusa} other {# righe escluse}}"
 msgid "{failed} of {0} print jobs failed"
 msgstr "{failed} di {0} stampe non riuscite"
 
+msgid "{foundHere} found here"
+msgstr ""
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {E # altro record.} other {E # altri record.}}"
 
@@ -755,6 +750,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# metodo attivo ha materiali senza
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} mesi con totali non corrispondenti"
+
+msgid "{missing} missing"
+msgstr ""
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "{missingCount} prima nota mancanti nel provider"

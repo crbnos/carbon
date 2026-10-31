@@ -2988,7 +2988,7 @@ export const postInventoryCount = defineServiceFn({
       service.postInventoryCount
     );
     if (posted.error) {
-      return await service.inventoryCountPostingFailure(ctx, posted.error);
+      return service.inventoryCountPostingFailure(ctx, posted.error);
     }
     return { inventoryCountId };
   }
@@ -5579,18 +5579,34 @@ export const getInventoryCountGroups = defineServiceFn({
     if (header.error || !header.data) {
       return ctx.error("notFound", "Inventory count not found", header.error);
     }
+    const blind = utils.isBlindCountEntry(header.data);
+    // A blind count withholds what the system expects: the values, and any
+    // filter or sort on them, which would reveal them through the rows.
+    const args = payload(ctx, input).build() as {
+      filters?: { column: string }[];
+      sorts?: { sortBy: string }[];
+    };
+    if (blind) {
+      args.filters = args.filters?.filter(
+        (filter) => !utils.BLIND_COUNT_GROUP_COLUMNS.includes(filter.column)
+      );
+      args.sorts = args.sorts?.filter(
+        (sort) => !utils.BLIND_COUNT_GROUP_COLUMNS.includes(sort.sortBy)
+      );
+    }
     const groups = await service.getInventoryCountGroups(
       ctx.asCaller.supabase,
       input.inventoryCountId as never,
       ctx.company.id,
-      payload(ctx, input).build() as never
+      args as never
     );
-    if (utils.isBlindCountEntry(header.data) && groups.data) {
+    if (blind && groups.data) {
       groups.data = groups.data.map((group) => ({
         ...group,
         expectedQuantity: null,
         variance: null,
-        missingCount: null
+        missingCount: null,
+        notCountedCount: null
       }));
     }
     return paged(ctx, groups);

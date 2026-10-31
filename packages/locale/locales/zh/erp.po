@@ -280,10 +280,6 @@ msgstr "{0} 张凭证待过账 · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} 项待确认分录 · {amount}"
 
-#. placeholder {0}: summary?.unexpectedCount
-msgid "{0} found here"
-msgstr ""
-
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
 msgstr "{0} 还有 <0/> 待开票"
@@ -341,10 +337,6 @@ msgstr "{0} 行"
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} 行待映射"
-
-#. placeholder {0}: summary?.missingCount
-msgid "{0} missing"
-msgstr ""
 
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
@@ -691,6 +683,9 @@ msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} 个打印任务中有 {failed} 个失败"
 
+msgid "{foundHere} found here"
+msgstr ""
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {还有 # 条记录。} other {还有 # 条记录。}}"
 
@@ -755,6 +750,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# 个启用的方法有物料没�
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount}个月的总计不匹配"
+
+msgid "{missing} missing"
+msgstr ""
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "提供商中缺少{missingCount}个凭证"

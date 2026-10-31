@@ -235,6 +235,7 @@ import {
   type InventoryCountCsvRow,
   inventoryCountGroupId,
   receivingSearchTerms,
+  spreadBatchCount,
   writeOffRestoreQuantity
 } from "./inventory.utils";
 import { renderPackingSlip } from "./packing-slip.pdf";
@@ -3061,12 +3062,20 @@ export async function recordInventoryCountUnit(
       const quantity = isSerial ? 1 : args.quantity;
       const lines = await trx
         .selectFrom("inventoryCountLine")
-        .select(["id", "storageUnitId", "trackedEntityId", "countedQuantity"])
+        .select([
+          "id",
+          "storageUnitId",
+          "trackedEntityId",
+          "countedQuantity",
+          "systemQuantity"
+        ])
         .where("inventoryCountId", "=", inventoryCountId)
         .where("companyId", "=", companyId)
         .where("trackedEntityId", "in", resolved.trackedEntityIds)
+        .orderBy("id")
         .execute();
-      const here = lines.find(inBin);
+      const hereLines = lines.filter(inBin);
+      const here = hereLines[0];
       if (here && isSerial && Number(here.countedQuantity) === 1) {
         return {
           outcome: "alreadyCounted",
@@ -3076,6 +3085,36 @@ export async function recordInventoryCountUnit(
       }
       if (quantity === undefined) {
         return { outcome: "needsQuantity", itemId: resolved.itemId };
+      }
+      // 2 or more parts of one split batch in this bin: the count covers them
+      // all, so spread it over them.
+      if (hereLines.length > 1) {
+        const spread = spreadBatchCount(
+          hereLines.map((line) => ({
+            id: line.id,
+            systemQuantity: Number(line.systemQuantity)
+          })),
+          round(quantity)
+        );
+        await sql`
+          UPDATE "inventoryCountLine" AS icl
+          SET "countedQuantity" = v."countedQuantity",
+              "countedBy" = ${userId},
+              "countedAt" = ${now},
+              "updatedBy" = ${userId},
+              "updatedAt" = ${now}
+          FROM (VALUES ${sql.join(
+            spread.map(
+              (part) => sql`(${part.lineId}, ${part.countedQuantity}::numeric)`
+            )
+          )}) AS v("id", "countedQuantity")
+          WHERE icl."id" = v."id" AND icl."companyId" = ${companyId}
+        `.execute(trx);
+        return {
+          outcome: "counted",
+          lineId: hereLines[0].id,
+          groupId: groupId(resolved.itemId)
+        };
       }
       if (here) {
         await setCounted(here.id, round(quantity));
@@ -3152,15 +3191,22 @@ export async function recordInventoryCountUnit(
     if (quantity === undefined) {
       return { outcome: "needsQuantity", itemId: item.id };
     }
-    const existing = await trx
+    // A new serial is one unit: once on the count, anywhere. A new batch
+    // number can sit in several bins: one line per bin.
+    let existingQuery = trx
       .selectFrom("inventoryCountLine")
       .select(["id", "storageUnitId"])
       .where("inventoryCountId", "=", inventoryCountId)
       .where("companyId", "=", companyId)
       .where("itemId", "=", item.id)
       .where("trackedEntityId", "is", null)
-      .where("readableId", "=", args.code.trim())
-      .executeTakeFirst();
+      .where("readableId", "=", args.code.trim());
+    if (item.itemTrackingType === "Batch") {
+      existingQuery = storageUnitId
+        ? existingQuery.where("storageUnitId", "=", storageUnitId)
+        : existingQuery.where("storageUnitId", "is", null);
+    }
+    const existing = await existingQuery.executeTakeFirst();
     if (existing) {
       if (item.itemTrackingType === "Serial") {
         return {
@@ -3384,6 +3430,7 @@ export type CountImportLine = {
   trackedEntityId: string | null;
   readableId: string | null;
   foundDuringCount: boolean;
+  systemQuantity: number;
   // Set only for a snapshot unit with no serial number: its age, oldest first.
   unnumberedSince: string | null;
 };
@@ -3433,6 +3480,7 @@ export function planInventoryCountImport(input: {
   };
   const resolved: Resolved[] = [];
   const seen = new Set<string>();
+  const newSerials = new Set<string>();
   for (const row of input.rows) {
     const items = resolveItem(row.item);
     if (items.length === 0) {
@@ -3482,15 +3530,37 @@ export function planInventoryCountImport(input: {
       });
       continue;
     }
+    // A unit, or an untracked item, is listed once per storage unit. Serial
+    // rows with no number are units with no serial number and add up.
     const unitKey = `${key(item.id, storageUnitId)}:${row.code}`;
-    if (row.code && seen.has(unitKey)) {
+    if ((row.code || !tracked) && seen.has(unitKey)) {
       errors.push({
         line: row.line,
-        message: `${row.code} is listed twice in this storage unit`
+        message: row.code
+          ? `${row.code} is listed twice in this storage unit`
+          : `${row.item} is listed twice in this storage unit`
       });
       continue;
     }
     seen.add(unitKey);
+    // A serial number Carbon does not know is one new unit: one row only.
+    if (
+      item.itemTrackingType === "Serial" &&
+      row.code &&
+      !input.entities.some(
+        (entity) => entity.itemId === item.id && entity.readableId === row.code
+      )
+    ) {
+      const newSerialKey = `${item.id}:${row.code}`;
+      if (newSerials.has(newSerialKey)) {
+        errors.push({
+          line: row.line,
+          message: `${row.code} is listed in 2 storage units. A serial number is one unit.`
+        });
+        continue;
+      }
+      newSerials.add(newSerialKey);
+    }
     resolved.push({ ...row, item, storageUnitId });
   }
 
@@ -3536,10 +3606,19 @@ export function planInventoryCountImport(input: {
     const entityIds = input.entities
       .filter((e) => e.itemId === row.item.id && e.readableId === row.code)
       .map((e) => e.id);
+    // A split batch keeps its number on every part: 2 or more parts can sit
+    // in one bin, and the row counts them all.
+    const parts = groupLines
+      .filter((l) => l.trackedEntityId && entityIds.includes(l.trackedEntityId))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    if (parts.length > 1) {
+      for (const part of spreadBatchCount(parts, row.quantity)) {
+        updates.set(part.lineId, part.countedQuantity);
+      }
+      continue;
+    }
     const here =
-      groupLines.find(
-        (l) => l.trackedEntityId && entityIds.includes(l.trackedEntityId)
-      ) ??
+      parts[0] ??
       groupLines.find((l) => !l.trackedEntityId && l.readableId === row.code);
     if (here) {
       updates.set(here.id, row.quantity);
@@ -3689,6 +3768,7 @@ export async function importInventoryCountRows(
           "inventoryCountLine.trackedEntityId",
           "inventoryCountLine.readableId",
           "inventoryCountLine.foundDuringCount",
+          "inventoryCountLine.systemQuantity",
           "trackedEntity.readableId as entityReadableId",
           "trackedEntity.createdAt as entityCreatedAt"
         ])
@@ -3728,9 +3808,13 @@ export async function importInventoryCountRows(
         trackedEntityId: line.trackedEntityId,
         readableId: line.readableId,
         foundDuringCount: line.foundDuringCount,
+        systemQuantity: Number(line.systemQuantity),
+        // Kysely reads a timestamp as a Date: sort on its ISO text.
         unnumberedSince:
           line.trackedEntityId && line.entityReadableId === null
-            ? String(line.entityCreatedAt)
+            ? (line.entityCreatedAt as unknown) instanceof Date
+              ? (line.entityCreatedAt as unknown as Date).toISOString()
+              : String(line.entityCreatedAt)
             : null
       }))
     });
@@ -6372,31 +6456,14 @@ export function postingFailure(
  * A count that cannot post names the lines to fix, so the page can mark them;
  * the count stays Pending. Any other failure is an error.
  */
-export async function inventoryCountPostingFailure(
+export function inventoryCountPostingFailure(
   ctx: ServiceContext,
   error: ServerFnError
-): Promise<
-  | { invalidLineIds: string[]; invalidGroupIds: string[]; message: string }
-  | CarbonError
-> {
+): { invalidLineIds: string[]; message: string } | CarbonError {
   const message = getErrorMessage(error, "Failed to post inventory count");
   const invalidLineIds = error.body.invalidLineIds;
   if (Array.isArray(invalidLineIds)) {
-    // The count sheet shows groups, so name the groups that hold the lines.
-    const lines =
-      invalidLineIds.length > 0
-        ? await ctx.asSystem.pg
-            .selectFrom("inventoryCountLine")
-            .select(["inventoryCountId", "itemId", "storageUnitId"])
-            .where("id", "in", invalidLineIds as string[])
-            .where("companyId", "=", ctx.company.id)
-            .execute()
-        : [];
-    return {
-      invalidLineIds: invalidLineIds as string[],
-      invalidGroupIds: [...new Set(lines.map(inventoryCountGroupId))],
-      message
-    };
+    return { invalidLineIds: invalidLineIds as string[], message };
   }
   return serverFnFailure(ctx, error, message);
 }
@@ -8412,6 +8479,9 @@ export async function postInventoryCount(
         .execute();
     }
 
+    // New batches this post created, by item and number.
+    const createdBatches = new Map<string, string>();
+
     // Post the reviewed variance for each line as an inventory adjustment,
     // booked through the shared core (ledger + cost layers + journal).
     for (const { line, delta } of planned) {
@@ -8423,15 +8493,27 @@ export async function postInventoryCount(
       }
 
       // A serial or batch number Carbon did not know: create the unit, with
-      // no quantity yet; the adjustment below gives it its stock.
+      // no quantity yet; the adjustment below gives it its stock. A new batch
+      // counted in 2 bins is one batch: the second line uses the first's.
       let trackedEntityId = line.trackedEntityId;
+      const newBatchKey = `${line.itemId}:${line.readableId}`;
       const trackingType = trackingTypeByItem.get(line.itemId);
-      if (
+      const isNewUnit =
         !trackedEntityId &&
-        line.readableId &&
+        Boolean(line.readableId) &&
         delta > 0 &&
-        (trackingType === "Serial" || trackingType === "Batch")
-      ) {
+        (trackingType === "Serial" || trackingType === "Batch");
+      const createdBatchId =
+        trackingType === "Batch" ? createdBatches.get(newBatchKey) : undefined;
+      if (isNewUnit && createdBatchId) {
+        trackedEntityId = createdBatchId;
+        await trx
+          .updateTable("inventoryCountLine")
+          .set({ trackedEntityId })
+          .where("id", "=", line.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      } else if (isNewUnit && line.readableId) {
         const taken = await trx
           .selectFrom("trackedEntity")
           .select("id")
@@ -8446,6 +8528,9 @@ export async function postInventoryCount(
           );
         }
         trackedEntityId = nanoid();
+        if (trackingType === "Batch") {
+          createdBatches.set(newBatchKey, trackedEntityId);
+        }
         await trx
           .insertInto("trackedEntity")
           .values({

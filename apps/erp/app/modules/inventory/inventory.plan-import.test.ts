@@ -8,7 +8,12 @@ import {
   type CountImportLine,
   planInventoryCountImport
 } from "./inventory.service";
-import { parseInventoryCountCsv } from "./inventory.utils";
+import {
+  parseInventoryCountCsv,
+  protectCsvIdentifier,
+  readCsvIdentifier,
+  spreadBatchCount
+} from "./inventory.utils";
 
 const items: CountImportItem[] = [
   {
@@ -47,6 +52,7 @@ const line = (overrides: Partial<CountImportLine>): CountImportLine => ({
   trackedEntityId: null,
   readableId: null,
   foundDuringCount: false,
+  systemQuantity: 1,
   unnumberedSince: null,
   ...overrides
 });
@@ -210,5 +216,110 @@ describe("planInventoryCountImport", () => {
         { line: 3, message: "SN-1 is listed twice in this storage unit" }
       ]
     });
+  });
+});
+
+describe("review fixes", () => {
+  it("spreads a batch count over the parts in a bin, surplus on the last", () => {
+    const parts = [
+      { id: "a", systemQuantity: 6 },
+      { id: "b", systemQuantity: 4 }
+    ];
+    expect(spreadBatchCount(parts, 10)).toEqual([
+      { lineId: "a", countedQuantity: 6 },
+      { lineId: "b", countedQuantity: 4 }
+    ]);
+    expect(spreadBatchCount(parts, 8)).toEqual([
+      { lineId: "a", countedQuantity: 6 },
+      { lineId: "b", countedQuantity: 2 }
+    ]);
+    expect(spreadBatchCount(parts, 3)).toEqual([
+      { lineId: "a", countedQuantity: 3 },
+      { lineId: "b", countedQuantity: 0 }
+    ]);
+    expect(spreadBatchCount(parts, 12)).toEqual([
+      { lineId: "a", countedQuantity: 6 },
+      { lineId: "b", countedQuantity: 6 }
+    ]);
+  });
+
+  it("spreads an imported batch row over the batch's parts in the bin", () => {
+    const result = planInventoryCountImport({
+      rows: [row(2, "BAT", "A1", "LOT-1", 10)],
+      items,
+      storageUnits,
+      entities: [
+        { id: "l1", itemId: "bat", readableId: "LOT-1" },
+        { id: "l2", itemId: "bat", readableId: "LOT-1" }
+      ],
+      lines: [
+        line({
+          id: "p1",
+          itemId: "bat",
+          trackedEntityId: "l1",
+          readableId: "LOT-1",
+          systemQuantity: 6
+        }),
+        line({
+          id: "p2",
+          itemId: "bat",
+          trackedEntityId: "l2",
+          readableId: "LOT-1",
+          systemQuantity: 4
+        })
+      ]
+    });
+    expect("updates" in result && result.updates).toEqual([
+      { lineId: "p1", countedQuantity: 6 },
+      { lineId: "p2", countedQuantity: 4 }
+    ]);
+  });
+
+  it("refuses an untracked item listed twice in one storage unit", () => {
+    expect(
+      plan([row(2, "INV", "A1", "", 3), row(3, "INV", "A1", "", 4)])
+    ).toEqual({
+      errors: [{ line: 3, message: "INV is listed twice in this storage unit" }]
+    });
+  });
+
+  it("refuses a new serial number listed in 2 storage units", () => {
+    expect(
+      plan([row(2, "SER", "A1", "SN-NEW", 1), row(3, "SER", "B2", "SN-NEW", 1)])
+    ).toEqual({
+      errors: [
+        {
+          line: 3,
+          message:
+            "SN-NEW is listed in 2 storage units. A serial number is one unit."
+        }
+      ]
+    });
+  });
+
+  it("allows a new batch number in 2 storage units", () => {
+    const result = plan([
+      row(2, "BAT", "A1", "LOT-NEW", 3),
+      row(3, "BAT", "B2", "LOT-NEW", 2)
+    ]);
+    expect(
+      "inserts" in result && result.inserts.map((i) => i.storageUnitId)
+    ).toEqual(["A1", "B2"]);
+  });
+
+  it("round-trips an identifier that starts with a formula character", () => {
+    expect(protectCsvIdentifier("-LOT")).toBe("'-LOT");
+    expect(readCsvIdentifier("'-LOT")).toBe("-LOT");
+    expect(protectCsvIdentifier("SN-1")).toBe("SN-1");
+    expect(readCsvIdentifier("'quoted")).toBe("'quoted");
+    const csv =
+      "Item,Storage Unit,Serial / Batch,Counted Quantity\nBAT,A1,'-LOT,4";
+    expect(parseInventoryCountCsv(csv).rows[0].code).toBe("-LOT");
+  });
+
+  it("refuses a file that does not parse", () => {
+    const csv =
+      'Item,Storage Unit,Serial / Batch,Counted Quantity\nSER,A1,"SN-1,1';
+    expect(parseInventoryCountCsv(csv).errors.length).toBeGreaterThan(0);
   });
 });

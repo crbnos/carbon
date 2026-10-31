@@ -16,9 +16,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS "inventoryCountLine_unit_key"
   NULLS NOT DISTINCT
   WHERE "trackedEntityId" IS NOT NULL;
 
--- One line per new serial or batch number per item in a count.
+-- One line per new serial or batch number per item and bin in a count. A new
+-- batch number can be found in 2 bins; the app keeps a new serial to one.
 CREATE UNIQUE INDEX IF NOT EXISTS "inventoryCountLine_newUnit_key"
-  ON "inventoryCountLine" ("inventoryCountId", "itemId", "readableId")
+  ON "inventoryCountLine" ("inventoryCountId", "itemId", "storageUnitId", "readableId")
+  NULLS NOT DISTINCT
   WHERE "trackedEntityId" IS NULL AND "readableId" IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS "inventoryCountLine_group_idx"

@@ -280,10 +280,6 @@ msgstr "{0} записей к проведению · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} записей к признанию · {amount}"
 
-#. placeholder {0}: summary?.unexpectedCount
-msgid "{0} found here"
-msgstr ""
-
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
 msgstr "{0} остаток счета-фактуры: <0/>."
@@ -341,10 +337,6 @@ msgstr "{0} строк"
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} строк для сопоставления"
-
-#. placeholder {0}: summary?.missingCount
-msgid "{0} missing"
-msgstr ""
 
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
@@ -691,6 +683,9 @@ msgstr "{excluded, plural, one {# строка исключена} other {# ст
 msgid "{failed} of {0} print jobs failed"
 msgstr "Не удалось выполнить {failed} из {0} заданий печати"
 
+msgid "{foundHere} found here"
+msgstr ""
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {Еще # запись.} other {Еще # записей.}}"
 
@@ -755,6 +750,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# активный метод им
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} месяцев с несовпадающими итогами"
+
+msgid "{missing} missing"
+msgstr ""
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "{missingCount} операций не найдено в поставщике"
