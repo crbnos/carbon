@@ -25,7 +25,6 @@ import {
   getErrorMessage,
   getOverReceiptViolations,
   isUniqueViolation,
-  pluckUnique,
   requireAffected,
   round,
   type Violation
@@ -5595,74 +5594,6 @@ export const getInventoryCountGroups = defineServiceFn({
       }));
     }
     return paged(ctx, groups);
-  }
-});
-
-/**
- * Get the units of one inventory count group
- *
- * @remarks
- * The lines of one item in one storage unit. While the count is blind and not
- * posted, only the lines already counted are returned.
- *
- * @param storageUnitId - The storage unit; left out for stock in no storage unit.
- * @mcp read
- */
-export const getInventoryCountGroupLines = defineServiceFn({
-  input: z.object({
-    inventoryCountId: z.string(),
-    itemId: z.string(),
-    storageUnitId: z.string().nullable().optional()
-  }),
-  permission: { view: "inventory" },
-  async run(ctx, input) {
-    const header = await service.getInventoryCount(
-      ctx.asCaller.supabase,
-      input.inventoryCountId,
-      ctx.company.id
-    );
-    if (header.error || !header.data) {
-      return ctx.error("notFound", "Inventory count not found", header.error);
-    }
-    const lines = await service.getInventoryCountGroupLines(
-      ctx.asCaller.supabase,
-      {
-        inventoryCountId: input.inventoryCountId,
-        companyId: ctx.company.id,
-        itemId: input.itemId,
-        storageUnitId: input.storageUnitId ?? null,
-        blind: utils.isBlindCountEntry(header.data)
-      }
-    );
-    if (lines.error) {
-      return ctx.error(
-        "internal",
-        "Failed to load the units of the count",
-        lines.error
-      );
-    }
-    const blind = utils.isBlindCountEntry(header.data);
-    // A unit counted in 2 bins of this count moved between them: name the
-    // other bin, so the sheet reads "Moved to" / "Moved from".
-    const otherBins = await service.getInventoryCountOtherBins(
-      ctx.asCaller.supabase,
-      {
-        inventoryCountId: input.inventoryCountId,
-        companyId: ctx.company.id,
-        storageUnitId: input.storageUnitId ?? null,
-        trackedEntityIds: pluckUnique(
-          (lines.data ?? []).filter((line) => line.trackedEntityId),
-          (line) => line.trackedEntityId as string
-        )
-      }
-    );
-    return (lines.data ?? []).map((line) => ({
-      ...line,
-      ...(blind ? { systemQuantity: null, variance: null } : {}),
-      otherBinName: line.trackedEntityId
-        ? (otherBins.get(line.trackedEntityId) ?? null)
-        : null
-    }));
   }
 });
 

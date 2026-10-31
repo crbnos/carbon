@@ -4,15 +4,11 @@
 
 import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
-import { HStack, toast } from "@carbon/react";
+import { HStack, IconButton, Input, toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
-import {
-  Hidden,
-  InputControlled,
-  StorageUnit,
-  Submit
-} from "~/components/Form";
+import { LuScanBarcode } from "react-icons/lu";
+import { StorageUnit } from "~/components/Form";
 import { inventoryCountScanValidator } from "~/modules/inventory/inventory.models";
 import type { InventoryCountUnitOutcome } from "~/modules/inventory/inventory.service";
 import type { action as scanAction } from "~/routes/x+/inventory-count+/$id.scan";
@@ -21,20 +17,18 @@ import InventoryCountUnitForm, {
   type InventoryCountUnitPrompt
 } from "./InventoryCountUnitForm";
 
-type InventoryCountScanBarProps = {
+type InventoryCountScanFieldProps = {
   inventoryCountId: string;
   locationId: string;
-  // The group a unit landed in, so the count sheet can open it.
-  onRecorded: (groupId: string) => void;
 };
 
-// Pick a storage unit, then scan serial or batch numbers into it. A
-// keyboard-wedge scanner types the code and presses Enter.
-const InventoryCountScanBar = ({
+// A storage unit and a code field in the count table's toolbar. Pick the bin,
+// then scan serial or batch numbers into it; a keyboard-wedge scanner types
+// the code and presses Enter. The bin stays picked between scans.
+const InventoryCountScanField = ({
   inventoryCountId,
-  locationId,
-  onRecorded
-}: InventoryCountScanBarProps) => {
+  locationId
+}: InventoryCountScanFieldProps) => {
   const { t } = useLingui();
   const [storageUnitId, setStorageUnitId] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -52,12 +46,11 @@ const InventoryCountScanBar = ({
       switch (outcome.outcome) {
         case "counted":
         case "added":
-          onRecorded(outcome.groupId);
+          toast.success(t`${code} counted`);
           setCode("");
           break;
         case "alreadyCounted":
-          toast.info(t`Already counted`);
-          onRecorded(outcome.groupId);
+          toast.info(t`${code} is already counted`);
           setCode("");
           break;
         case "wrongStorageUnit":
@@ -93,17 +86,12 @@ const InventoryCountScanBar = ({
         method="post"
         action={path.to.inventoryCountScan(inventoryCountId)}
         fetcher={fetcher}
-        className="w-full"
       >
-        {/* Held in state, not in the form: the form resets after each scan,
-            and the counter keeps scanning into the same bin. Outside the row,
-            so its wrapper takes no space in it. */}
-        <div className="hidden">
-          <Hidden name="storageUnitId" value={storageUnitId ?? ""} />
-        </div>
-        <HStack spacing={2} className="w-full items-end px-4 py-2">
-          <div className="flex w-64 shrink-0 flex-col gap-2">
-            <span className="text-sm font-medium">{t`Counting in`}</span>
+        {/* Held in state: the form resets after each scan, and the counter
+            keeps scanning into the same bin. */}
+        <input type="hidden" name="storageUnitId" value={storageUnitId ?? ""} />
+        <HStack spacing={1}>
+          <div className="w-40">
             <StorageUnit
               placeholder={t`No storage unit`}
               locationId={locationId}
@@ -115,19 +103,26 @@ const InventoryCountScanBar = ({
               }}
             />
           </div>
-          <div className="min-w-0 flex-1">
-            <InputControlled
-              ref={codeRef}
-              name="code"
-              label={t`Scan or type a serial, batch or item number`}
-              placeholder={t`Scan here, then press Enter`}
-              value={code}
-              onChange={setCode}
-              autoComplete="off"
-              autoFocus
-            />
-          </div>
-          <Submit isDisabled={!code.trim()}>{t`Record`}</Submit>
+          <Input
+            ref={codeRef}
+            name="code"
+            size="sm"
+            className="w-52"
+            aria-label={t`Scan a serial, batch or item number`}
+            placeholder={t`Scan serial or batch…`}
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            autoComplete="off"
+          />
+          <IconButton
+            type="submit"
+            size="sm"
+            variant="secondary"
+            aria-label={t`Record scan`}
+            icon={<LuScanBarcode />}
+            isDisabled={!code.trim()}
+            isLoading={fetcher.state !== "idle"}
+          />
         </HStack>
       </ValidatedForm>
       {prompt && (
@@ -138,10 +133,9 @@ const InventoryCountScanBar = ({
             setPrompt(null);
             focusCode();
           }}
-          onRecorded={(groupId) => {
+          onRecorded={() => {
             setPrompt(null);
             setCode("");
-            onRecorded(groupId);
             focusCode();
           }}
         />
@@ -150,4 +144,4 @@ const InventoryCountScanBar = ({
   );
 };
 
-export default InventoryCountScanBar;
+export default InventoryCountScanField;

@@ -2489,9 +2489,13 @@ export async function getInventoryCount(
     .single();
 }
 
+// Item, then storage unit, then serial or batch number: the lines of one
+// item in one bin sit together, which the count sheet groups under a header.
 export const INVENTORY_COUNT_LINES_PAGING: Paging = {
   defaultSorts: [
     { column: "itemReadableIdWithRevision", ascending: true },
+    { column: "storageUnitId", ascending: true },
+    { column: "readableId", ascending: true },
     { column: "id", ascending: true }
   ]
 };
@@ -2562,61 +2566,34 @@ export async function getInventoryCountGroups(
   return query;
 }
 
-// The lines of one group, read when its row expands. A blind count shows only
-// the lines already counted: the others would reveal the expected units.
-export async function getInventoryCountGroupLines(
-  client: SupabaseClient<Database>,
-  args: {
-    inventoryCountId: string;
-    companyId: string;
-    itemId: string;
-    storageUnitId: string | null;
-    blind: boolean;
-  }
-) {
-  let query = client
-    .from("inventoryCountLines")
-    .select("*")
-    .eq("inventoryCountId", args.inventoryCountId)
-    .eq("companyId", args.companyId)
-    .eq("itemId", args.itemId);
-
-  query = args.storageUnitId
-    ? query.eq("storageUnitId", args.storageUnitId)
-    : query.is("storageUnitId", null);
-
-  if (args.blind) query = query.not("countedQuantity", "is", null);
-
-  return query
-    .order("isUnnumbered", { ascending: true })
-    .order("readableId", { ascending: true, nullsFirst: false })
-    .order("trackedEntityCreatedAt", { ascending: true })
-    .order("id", { ascending: true });
-}
-
-// For each unit, the other storage unit of the count where it is counted
-// above 0: the bin it moved to or from. Units counted in one bin are absent.
+// For each tracked line, the name of another storage unit of the count that
+// holds a line of the same unit: the bin it moved to or from. A unit on one
+// line only is absent.
 export async function getInventoryCountOtherBins(
   client: SupabaseClient<Database>,
   args: {
     inventoryCountId: string;
     companyId: string;
-    storageUnitId: string | null;
-    trackedEntityIds: string[];
+    lines: {
+      id: string;
+      trackedEntityId: string | null;
+      storageUnitId: string | null;
+    }[];
   }
 ): Promise<Map<string, string>> {
-  if (args.trackedEntityIds.length === 0) return new Map();
-  const others = await client
+  const entityIds = pluckUnique(
+    args.lines.filter((line) => line.trackedEntityId),
+    (line) => line.trackedEntityId as string
+  );
+  if (entityIds.length === 0) return new Map();
+  const all = await client
     .from("inventoryCountLine")
-    .select("trackedEntityId, storageUnitId, countedQuantity, foundDuringCount")
+    .select("trackedEntityId, storageUnitId")
     .eq("inventoryCountId", args.inventoryCountId)
     .eq("companyId", args.companyId)
-    .in("trackedEntityId", args.trackedEntityIds);
-  const elsewhere = (others.data ?? []).filter(
-    (line) => (line.storageUnitId ?? null) !== args.storageUnitId
-  );
+    .in("trackedEntityId", entityIds);
   const unitIds = pluckUnique(
-    elsewhere.filter((line) => line.storageUnitId),
+    (all.data ?? []).filter((line) => line.storageUnitId),
     (line) => line.storageUnitId as string
   );
   const units = unitIds.length
@@ -2627,14 +2604,41 @@ export async function getInventoryCountOtherBins(
         .eq("companyId", args.companyId)
     : { data: [] };
   const nameById = new Map((units.data ?? []).map((u) => [u.id, u.name]));
-  return new Map(
-    elsewhere.map((line) => [
-      line.trackedEntityId as string,
-      line.storageUnitId
-        ? (nameById.get(line.storageUnitId) ?? "")
+  const result = new Map<string, string>();
+  for (const line of args.lines) {
+    if (!line.trackedEntityId) continue;
+    const other = (all.data ?? []).find(
+      (row) =>
+        row.trackedEntityId === line.trackedEntityId &&
+        (row.storageUnitId ?? null) !== (line.storageUnitId ?? null)
+    );
+    if (!other) continue;
+    result.set(
+      line.id,
+      other.storageUnitId
+        ? (nameById.get(other.storageUnitId) ?? "")
         : "No storage unit"
-    ])
-  );
+    );
+  }
+  return result;
+}
+
+// The groups (item and storage unit) of the lines on a page, for their
+// headers on the count sheet.
+export async function getInventoryCountGroupSummaries(
+  client: SupabaseClient<Database>,
+  args: { inventoryCountId: string; companyId: string; groupIds: string[] }
+) {
+  if (args.groupIds.length === 0) return [];
+  const groups = await client
+    .from("inventoryCountGroups")
+    .select(
+      "id, lineCount, foundCount, missingCount, unexpectedCount, notCountedCount"
+    )
+    .eq("inventoryCountId", args.inventoryCountId)
+    .eq("companyId", args.companyId)
+    .in("id", args.groupIds);
+  return groups.data ?? [];
 }
 
 // Aggregate counts for the confirm dialog. Computed server-side so the warnings

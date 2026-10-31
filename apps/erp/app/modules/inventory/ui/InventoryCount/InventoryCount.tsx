@@ -5,6 +5,11 @@
 import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   IconButton,
   Modal,
@@ -16,10 +21,10 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useState } from "react";
 import {
   LuCheck,
   LuDownload,
+  LuEllipsisVertical,
   LuHistory,
   LuInfo,
   LuRotateCcw,
@@ -32,16 +37,16 @@ import {
   RecordHero,
   RecordPhoneChrome
 } from "~/components/Layout/RecordHeader";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import type {
-  InventoryCountGroup,
+  InventoryCountGroupSummary,
+  InventoryCountLine,
   InventoryCount as InventoryCountType,
   StockMovement
 } from "~/modules/inventory/types";
 import {
   InventoryCountConfirmModal,
-  InventoryCountGroups,
-  InventoryCountScanBar,
+  InventoryCountLines,
   InventoryCountStatus
 } from "~/modules/inventory/ui";
 import type { action as postAction } from "~/routes/x+/inventory-count+/$id.post";
@@ -49,12 +54,15 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import InventoryCountHistory from "./InventoryCountHistory";
 import InventoryCountImport from "./InventoryCountImport";
+import InventoryCountScanField from "./InventoryCountScanField";
 
 type InventoryCountDetailsProps = {
   inventoryCount: InventoryCountType;
-  groups: InventoryCountGroup[];
+  lines: (InventoryCountLine & { otherBinName?: string | null })[];
+  // The tracked groups on the loaded page, by group id, for their headers.
+  groupSummaries: Record<string, InventoryCountGroupSummary>;
   count: number;
-  // The loader's cursor for the next page of groups (infinite scroll).
+  // The loader's cursor for the next page of lines (infinite scroll).
   nextCursor: string | null;
   summary: { uncounted: number; variances: number };
   // Ledger adjustments this count has posted (empty for a never-posted Draft).
@@ -69,7 +77,8 @@ type InventoryCountDetailsProps = {
 
 const InventoryCountDetails = ({
   inventoryCount,
-  groups,
+  lines,
+  groupSummaries,
   count,
   nextCursor,
   summary,
@@ -103,13 +112,6 @@ const InventoryCountDetails = ({
   const posted = postFetcher.data;
   const invalidLineIds =
     posted && "invalidLineIds" in posted ? posted.invalidLineIds : undefined;
-  const invalidGroupIds =
-    posted && "invalidGroupIds" in posted ? posted.invalidGroupIds : undefined;
-  // A search opens the groups it matches, so a serial number shows in place.
-  const [params] = useUrlParams();
-  const search = params.get("search");
-  // The group the last scan landed in: the sheet opens it.
-  const [scannedGroup, setScannedGroup] = useState<{ id: string } | null>(null);
 
   const status = inventoryCount.status;
   // Counted quantities are entered while Draft; every later state is read-only.
@@ -136,24 +138,6 @@ const InventoryCountDetails = ({
           />
         </RecordAction>
       )}
-      <RecordAction slot="overflow">
-        <Button variant="secondary" leftIcon={<LuDownload />} asChild>
-          <a href={path.to.api.inventoryCountCsv(inventoryCount.id!)}>
-            {t`Export Units`}
-          </a>
-        </Button>
-      </RecordAction>
-      {status === "Draft" && canUpdate && (
-        <RecordAction slot="overflow">
-          <Button
-            variant="secondary"
-            leftIcon={<LuUpload />}
-            onClick={importModal.onOpen}
-          >
-            {t`Import`}
-          </Button>
-        </RecordAction>
-      )}
       {movements.length > 0 && (
         <RecordAction slot="overflow">
           <Button
@@ -165,6 +149,32 @@ const InventoryCountDetails = ({
           </Button>
         </RecordAction>
       )}
+      <RecordAction slot="overflow">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              aria-label={t`More count actions`}
+              variant="ghost"
+              icon={<LuEllipsisVertical />}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <a href={path.to.api.inventoryCountCsv(inventoryCount.id!)}>
+                <DropdownMenuIcon icon={<LuDownload />} />
+                {t`Export units (CSV)`}
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={status !== "Draft" || !canUpdate}
+              onClick={importModal.onOpen}
+            >
+              <DropdownMenuIcon icon={<LuUpload />} />
+              {t`Import count results`}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </RecordAction>
       {status === "Draft" && (
         <RecordAction slot="primary">
           <Button
@@ -223,17 +233,19 @@ const InventoryCountDetails = ({
     <>
       <RecordHero status={statusBadge} />
       <RecordPhoneChrome />
-      {!isReadOnly && canUpdate && (
-        <InventoryCountScanBar
-          inventoryCountId={inventoryCount.id!}
-          locationId={inventoryCount.locationId}
-          onRecorded={(id) => setScannedGroup({ id })}
-        />
-      )}
       <div className="flex-1 min-h-0 w-full">
-        <InventoryCountGroups
+        <InventoryCountLines
           inventoryCountId={inventoryCount.id!}
-          groups={groups}
+          lines={lines}
+          groupSummaries={groupSummaries}
+          scanField={
+            status === "Draft" && canUpdate ? (
+              <InventoryCountScanField
+                inventoryCountId={inventoryCount.id!}
+                locationId={inventoryCount.locationId}
+              />
+            ) : null
+          }
           count={count}
           nextCursor={nextCursor}
           hideSystemQuantity={hideSystemQuantity}
@@ -243,9 +255,6 @@ const InventoryCountDetails = ({
           titleBadge={statusBadge}
           primaryAction={actions}
           invalidLineIds={invalidLineIds}
-          invalidGroupIds={invalidGroupIds}
-          expandGroupsFor={search || null}
-          expandGroup={scannedGroup}
           forms={forms}
           substances={substances}
           tags={tags}

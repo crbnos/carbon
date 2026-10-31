@@ -280,6 +280,10 @@ msgstr "{0} entries to post · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} entries to recognize · {amount}"
 
+#. placeholder {0}: summary?.unexpectedCount
+msgid "{0} found here"
+msgstr "{0} found here"
+
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
 msgstr "{0} has <0/> left to invoice."
@@ -337,6 +341,10 @@ msgstr "{0} lines"
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} lines to map"
+
+#. placeholder {0}: summary?.missingCount
+msgid "{0} missing"
+msgstr "{0} missing"
 
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
@@ -565,6 +573,12 @@ msgstr "{behindDays, plural, one {Behind target by # day} other {Behind target b
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Consider pointing this part directly at the final successor."
 
+msgid "{code} counted"
+msgstr "{code} counted"
+
+msgid "{code} is already counted"
+msgstr "{code} is already counted"
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns} does not match an existing \"{target}\"."
 
@@ -630,6 +644,9 @@ msgstr "{count} of {total} units"
 
 msgid "{count} units"
 msgstr "{count} units"
+
+msgid "{counted} counted"
+msgstr "{counted} counted"
 
 msgid "{created} created, {updated} updated."
 msgstr "{created} created, {updated} updated."
@@ -738,9 +755,6 @@ msgstr "{methodsMissingPullFrom, plural, one {# active method has materials with
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} months with mismatched totals"
-
-msgid "{missing} missing"
-msgstr "{missing} missing"
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "{missingCount} journals missing in the provider"
@@ -893,6 +907,9 @@ msgstr "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 
 msgid "{unitCount} units"
 msgstr "{unitCount} units"
+
+msgid "{units} units"
+msgstr "{units} units"
 
 msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
 msgstr "{unmapped} components have no BOM match — use Match BOM to link their materials."
@@ -2152,9 +2169,6 @@ msgstr "Add {0} selected"
 msgid "Add & Issue"
 msgstr "Add & Issue"
 
-msgid "Add a batch found here"
-msgstr "Add a batch found here"
-
 msgid "Add a column below to sort the view"
 msgstr "Add a column below to sort the view"
 
@@ -2193,9 +2207,6 @@ msgstr "Add a step"
 
 msgid "Add a step or question"
 msgstr "Add a step or question"
-
-msgid "Add a unit found here"
-msgstr "Add a unit found here"
 
 msgid "Add Ability"
 msgstr "Add Ability"
@@ -4336,6 +4347,9 @@ msgstr "Basic Information"
 
 msgid "Batch"
 msgstr "Batch"
+
+msgid "Batch / Serial"
+msgstr "Batch / Serial"
 
 msgid "Batch Capacity"
 msgstr "Batch Capacity"
@@ -6633,20 +6647,17 @@ msgstr "Count ID"
 msgid "Count items"
 msgstr "Count items"
 
-msgid "Counted"
-msgstr "Counted"
-
 msgid "Counted {total}."
 msgstr "Counted {total}."
+
+msgid "Counted Qty"
+msgstr "Counted Qty"
 
 msgid "Counterparties"
 msgstr "Counterparties"
 
 msgid "Counterparty"
 msgstr "Counterparty"
-
-msgid "Counting in"
-msgstr "Counting in"
 
 msgid "Counting…"
 msgstr "Counting…"
@@ -10079,9 +10090,6 @@ msgstr "Expand subtree"
 msgid "Expansion"
 msgstr "Expansion"
 
-msgid "Expected"
-msgstr "Expected"
-
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 
@@ -10205,8 +10213,8 @@ msgstr "Export CSV"
 msgid "Export Lines to CSV"
 msgstr "Export Lines to CSV"
 
-msgid "Export Units"
-msgstr "Export Units"
+msgid "Export units (CSV)"
+msgstr "Export units (CSV)"
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
@@ -11022,12 +11030,8 @@ msgstr "Format"
 msgid "Forward deployed engineer"
 msgstr "Forward deployed engineer"
 
-msgid "Found"
-msgstr "Found"
-
-#. placeholder {0}: group.foundCount
-msgid "Found {0}"
-msgstr "Found {0}"
+msgid "found here"
+msgstr "found here"
 
 msgid "Foundation"
 msgstr "Foundation"
@@ -11991,6 +11995,9 @@ msgstr "Import chart of accounts"
 
 msgid "Import Chart of Accounts"
 msgstr "Import Chart of Accounts"
+
+msgid "Import count results"
+msgstr "Import count results"
 
 msgid "Import Count Results"
 msgstr "Import Count Results"
@@ -14458,10 +14465,6 @@ msgstr "Mismatch"
 msgid "Missing"
 msgstr "Missing"
 
-#. placeholder {0}: group.missingCount
-msgid "Missing {0}"
-msgstr "Missing {0}"
-
 msgid "Missing Information"
 msgstr "Missing Information"
 
@@ -14594,6 +14597,9 @@ msgstr "More"
 msgid "More actions"
 msgstr "More actions"
 
+msgid "More count actions"
+msgstr "More count actions"
+
 msgid "more credits"
 msgstr "more credits"
 
@@ -14690,12 +14696,12 @@ msgid "Moved account"
 msgstr "Moved account"
 
 #. placeholder {0}: line.otherBinName
-msgid "Moved from {0}"
-msgstr "Moved from {0}"
+msgid "moved from {0}"
+msgstr "moved from {0}"
 
 #. placeholder {0}: line.otherBinName
-msgid "Moved to {0}"
-msgstr "Moved to {0}"
+msgid "moved to {0}"
+msgstr "moved to {0}"
 
 msgid "Movements"
 msgstr "Movements"
@@ -16034,11 +16040,8 @@ msgstr "No trainings assigned"
 msgid "No transactions in this period"
 msgstr "No transactions in this period"
 
-msgid "No units counted yet. Scan a unit to count it."
-msgstr "No units counted yet. Scan a unit to count it."
-
-msgid "No units in this storage unit."
-msgstr "No units in this storage unit."
+msgid "No unit record"
+msgstr "No unit record"
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "No units yet. Add a fleet unit from the Units list before activating the agreement."
@@ -16172,13 +16175,6 @@ msgstr "Not configured"
 
 msgid "Not Configured"
 msgstr "Not Configured"
-
-msgid "Not counted"
-msgstr "Not counted"
-
-#. placeholder {0}: group.notCountedCount
-msgid "Not counted {0}"
-msgstr "Not counted {0}"
 
 msgid "Not delivered"
 msgstr "Not delivered"
@@ -19388,6 +19384,9 @@ msgstr "Record ID"
 msgid "Record inspections tied to a part and a job"
 msgstr "Record inspections tied to a part and a job"
 
+msgid "Record scan"
+msgstr "Record scan"
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 
@@ -19778,9 +19777,6 @@ msgstr "Remove tool"
 
 msgid "Remove two-factor authentication"
 msgstr "Remove two-factor authentication"
-
-msgid "Remove unit"
-msgstr "Remove unit"
 
 msgid "Remove Unit"
 msgstr "Remove Unit"
@@ -21074,8 +21070,8 @@ msgstr "Scan"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Scan a label or search by item ID or tracking ID."
 
-msgid "Scan here, then press Enter"
-msgstr "Scan here, then press Enter"
+msgid "Scan a serial, batch or item number"
+msgstr "Scan a serial, batch or item number"
 
 msgid "Scan or choose a batch number"
 msgstr "Scan or choose a batch number"
@@ -21095,8 +21091,8 @@ msgstr "Scan or search..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 
-msgid "Scan or type a serial, batch or item number"
-msgstr "Scan or type a serial, batch or item number"
+msgid "Scan serial or batch…"
+msgstr "Scan serial or batch…"
 
 msgid "Scan the serial or batch number, not the item"
 msgstr "Scan the serial or batch number, not the item"
@@ -21720,10 +21716,6 @@ msgstr "Serial Number"
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
 msgstr "Serial Number {0}"
-
-#. placeholder {0}: index + 1
-msgid "Serial number of unit {0} (optional)"
-msgstr "Serial number of unit {0} (optional)"
 
 msgid "Serial Number:"
 msgstr "Serial Number:"
@@ -22894,9 +22886,6 @@ msgstr "Stock Transfer Wizard"
 msgid "Stock Transfers"
 msgstr "Stock Transfers"
 
-msgid "Stock with no unit record"
-msgstr "Stock with no unit record"
-
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
 msgstr "Stocked for spares only — successor: <0>{0}</0>"
@@ -23522,6 +23511,9 @@ msgstr "System"
 
 msgid "System configured"
 msgstr "System configured"
+
+msgid "System Qty"
+msgstr "System Qty"
 
 msgid "Table"
 msgstr "Table"
@@ -26274,13 +26266,6 @@ msgstr "Undiscounted payments still to come, by fiscal year, less the interest t
 msgid "Undo"
 msgstr "Undo"
 
-msgid "Unexpected"
-msgstr "Unexpected"
-
-#. placeholder {0}: group.unexpectedCount
-msgid "Unexpected {0}"
-msgstr "Unexpected {0}"
-
 msgid "Unfurl Links"
 msgstr "Unfurl Links"
 
@@ -26366,12 +26351,6 @@ msgstr "Units of measure"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
-
-msgid "Units with no serial number"
-msgstr "Units with no serial number"
-
-msgid "Units with no serial number on the shelf"
-msgstr "Units with no serial number on the shelf"
 
 msgid "Unknown"
 msgstr "Unknown"

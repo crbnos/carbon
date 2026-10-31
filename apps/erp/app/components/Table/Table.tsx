@@ -193,15 +193,6 @@ interface TableProps<T extends object> {
   renderActions?: (selectedRows: T[], scope?: BulkActionScope) => ReactNode;
   renderContextMenu?: (row: T) => JSX.Element | null;
   renderExpandedRow?: (row: T) => ReactNode;
-  // Renders an expanded row's content as rows of this table instead of one
-  // full-width cell, so child rows line up under the parent's columns. Gets
-  // the visible columns in order, each with its pinned-column style, and
-  // returns <Tr> rows. Needs `renderExpandedRow`, which still gates the
-  // expand column and renders the phone list.
-  renderSubRows?: (
-    row: T,
-    columns: { id: string; style: CSSProperties }[]
-  ) => ReactNode;
   // Pin an expanded row's content (`sticky left-0`) to the scroll container's
   // visible width, so on a table several viewports wide (the 48-week planning
   // grids) it stays in view instead of sitting at the far left of the row and
@@ -216,9 +207,6 @@ interface TableProps<T extends object> {
   // matches in the expanded rows show, or `true` for always. A row the user
   // toggles keeps their choice until the value changes.
   expandRowsFor?: string | true | null;
-  // Opens one row by its id each time a new object is passed: the row a scan
-  // landed in. A row the user collapses stays collapsed until the next one.
-  expandRow?: { id: string } | null;
   // Renders a full-width header row above each run of consecutive rows that
   // share a key (e.g. a report grouped by date). Grouping follows `data`'s
   // order, so the caller sorts by the key; `header` receives the run's rows.
@@ -226,7 +214,12 @@ interface TableProps<T extends object> {
   // scrolls sideways, so it can put actions at its right edge.
   groupRowsBy?: {
     key: (row: T) => string;
-    header: (rows: T[]) => ReactNode;
+    // A header that returns null is not drawn (a run that needs none). `group`
+    // collapses the run: its rows hide behind the header until toggled back.
+    header: (
+      rows: T[],
+      group?: { collapsed: boolean; toggle: () => void }
+    ) => ReactNode;
   };
   // Phones: "list" (default) renders 3-line rows from the columns'
   // `meta.mobile` priorities; "table" keeps the grid, scrolling sideways with
@@ -386,11 +379,9 @@ const Table = <T extends object>({
   renderActions,
   renderContextMenu,
   renderExpandedRow,
-  renderSubRows,
   pinExpandedRows = false,
   canExpandRow,
   expandRowsFor,
-  expandRow,
   groupRowsBy,
   mobileLayout = "list",
   mobileMenuItems
@@ -425,13 +416,6 @@ const Table = <T extends object>({
   if (expandedRowsFor !== expandRowsFor) {
     setExpandedRowsFor(expandRowsFor);
     setExpandedRows({});
-  }
-  const [openedRow, setOpenedRow] = useState(expandRow);
-  if (openedRow !== expandRow) {
-    setOpenedRow(expandRow);
-    if (expandRow) {
-      setExpandedRows((prev) => ({ ...prev, [expandRow.id]: true }));
-    }
   }
 
   const isRowExpanded = useCallback(
@@ -990,10 +974,12 @@ const Table = <T extends object>({
   const rows = table.getRowModel().rows;
   const visibleColumns = table.getVisibleLeafColumns();
 
-  // Row id → the rows of the group that row starts (only group starts appear).
-  const groupStarts = useMemo(() => {
+  // Row id → the rows of the group that row starts (only group starts appear),
+  // and row id → its group's key, for collapsing.
+  const { groupStarts, groupKeyByRowId } = useMemo(() => {
     const starts = new Map<string, T[]>();
-    if (!groupRowsBy) return starts;
+    const keys = new Map<string, string>();
+    if (!groupRowsBy) return { groupStarts: starts, groupKeyByRowId: keys };
     let current: T[] = [];
     let previousKey: string | undefined;
     for (const row of rows) {
@@ -1004,9 +990,13 @@ const Table = <T extends object>({
         previousKey = key;
       }
       current.push(row.original);
+      keys.set(row.id, key);
     }
-    return starts;
+    return { groupStarts: starts, groupKeyByRowId: keys };
   }, [rows, groupRowsBy]);
+  const [collapsedGroups, setCollapsedGroups] = useState<
+    Record<string, boolean>
+  >({});
 
   /* Row virtualization: only the rows in view (plus overscan) are in the DOM.
      One virtual item is one data row, with its group header and expanded row
@@ -1702,6 +1692,21 @@ const Table = <T extends object>({
                 );
 
                 const groupRows = groupStarts.get(row.id);
+                const groupKey = groupKeyByRowId.get(row.id);
+                const groupCollapsed = groupKey
+                  ? !!collapsedGroups[groupKey]
+                  : false;
+                const groupHeader =
+                  groupRows && groupRowsBy && groupKey
+                    ? groupRowsBy.header(groupRows, {
+                        collapsed: groupCollapsed,
+                        toggle: () =>
+                          setCollapsedGroups((current) => ({
+                            ...current,
+                            [groupKey]: !current[groupKey]
+                          }))
+                      })
+                    : null;
 
                 return (
                   <Tbody
@@ -1709,7 +1714,7 @@ const Table = <T extends object>({
                     ref={rowVirtualizer.measureElement}
                     data-index={virtualIndex}
                   >
-                    {groupRows && groupRowsBy && (
+                    {groupHeader !== null && groupHeader !== undefined && (
                       <Tr>
                         <Td
                           colSpan={visibleColumns.length}
@@ -1728,21 +1733,13 @@ const Table = <T extends object>({
                                 : undefined
                             }
                           >
-                            {groupRowsBy.header(groupRows)}
+                            {groupHeader}
                           </div>
                         </Td>
                       </Tr>
                     )}
-                    {rowContent}
-                    {rowIsExpanded &&
-                      renderSubRows?.(
-                        row.original,
-                        visibleColumns.map((column) => ({
-                          id: column.id,
-                          style: getPinnedStyles(column)
-                        }))
-                      )}
-                    {rowIsExpanded && !renderSubRows && (
+                    {!groupCollapsed && rowContent}
+                    {!groupCollapsed && rowIsExpanded && (
                       <Tr>
                         <Td
                           colSpan={visibleColumns.length}

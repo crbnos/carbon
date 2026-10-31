@@ -280,6 +280,10 @@ msgstr "{0} zu buchende Einträge · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} Einträge zur Erfassung · {amount}"
 
+#. placeholder {0}: summary?.unexpectedCount
+msgid "{0} found here"
+msgstr ""
+
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
 msgstr "{0} hat <0/> übrig zu fakturieren."
@@ -337,6 +341,10 @@ msgstr "{0} Positionen"
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} Zeilen zum Zuordnen"
+
+#. placeholder {0}: summary?.missingCount
+msgid "{0} missing"
+msgstr ""
 
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
@@ -565,6 +573,12 @@ msgstr "{behindDays, plural, one {Hinter dem Ziel um # Tag} other {Hinter dem Zi
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Erwägen Sie, diesen Teil direkt auf den endgültigen Nachfolger zu verweisen."
 
+msgid "{code} counted"
+msgstr ""
+
+msgid "{code} is already counted"
+msgstr ""
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr ""
 
@@ -630,6 +644,9 @@ msgstr "{count} von {total} Einheiten"
 
 msgid "{count} units"
 msgstr "{count} Einheiten"
+
+msgid "{counted} counted"
+msgstr ""
 
 msgid "{created} created, {updated} updated."
 msgstr "{created} erstellt, {updated} aktualisiert."
@@ -738,9 +755,6 @@ msgstr "{methodsMissingPullFrom, plural, one {# aktive Methode hat Materialien o
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} Monate mit abweichenden Summen"
-
-msgid "{missing} missing"
-msgstr ""
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "{missingCount} fehlende Buchungssätze beim Anbieter"
@@ -893,6 +907,9 @@ msgstr "{uncounted, plural, one {# nicht gezählte Zeile} other {# nicht gezähl
 
 msgid "{unitCount} units"
 msgstr "{unitCount} Einheiten"
+
+msgid "{units} units"
+msgstr ""
 
 msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
 msgstr ""
@@ -2152,9 +2169,6 @@ msgstr "Hinzufügen {0} ausgewählte"
 msgid "Add & Issue"
 msgstr "Hinzufügen & Ausgeben"
 
-msgid "Add a batch found here"
-msgstr ""
-
 msgid "Add a column below to sort the view"
 msgstr "Spalte unten hinzufügen, um die Anzeige zu sortieren"
 
@@ -2193,9 +2207,6 @@ msgstr "Einen Schritt hinzufügen"
 
 msgid "Add a step or question"
 msgstr "Einen Schritt oder eine Frage hinzufügen"
-
-msgid "Add a unit found here"
-msgstr ""
 
 msgid "Add Ability"
 msgstr "Qualifikation hinzufügen"
@@ -4336,6 +4347,9 @@ msgstr "Grundinformationen"
 
 msgid "Batch"
 msgstr "Charge"
+
+msgid "Batch / Serial"
+msgstr ""
 
 msgid "Batch Capacity"
 msgstr "Los-Kapazität"
@@ -6633,20 +6647,17 @@ msgstr "Zählung-ID"
 msgid "Count items"
 msgstr "Artikel zählen"
 
-msgid "Counted"
-msgstr ""
-
 msgid "Counted {total}."
 msgstr "{total} gezählt."
+
+msgid "Counted Qty"
+msgstr ""
 
 msgid "Counterparties"
 msgstr "Gegenparteien"
 
 msgid "Counterparty"
 msgstr "Gegenpartei"
-
-msgid "Counting in"
-msgstr ""
 
 msgid "Counting…"
 msgstr "Zählen…"
@@ -10079,9 +10090,6 @@ msgstr "Unterstruktur erweitern"
 msgid "Expansion"
 msgstr "Erweiterung"
 
-msgid "Expected"
-msgstr ""
-
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "Erwarteter zukünftiger Bedarf für ein Eigenfertigungsteil, das Woche für Woche eingegeben wird, bevor ein Kundenauftrag vorhanden ist; die Planung setzt ihn gegen die Deckung ab und explodiert die Methode, um Komponenten im Voraus zu bestellen."
 
@@ -10205,7 +10213,7 @@ msgstr "CSV exportieren"
 msgid "Export Lines to CSV"
 msgstr "Zeilen als CSV exportieren"
 
-msgid "Export Units"
+msgid "Export units (CSV)"
 msgstr ""
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
@@ -11022,11 +11030,7 @@ msgstr "Format"
 msgid "Forward deployed engineer"
 msgstr "Techniker vor Ort"
 
-msgid "Found"
-msgstr ""
-
-#. placeholder {0}: group.foundCount
-msgid "Found {0}"
+msgid "found here"
 msgstr ""
 
 msgid "Foundation"
@@ -11991,6 +11995,9 @@ msgstr "Kontenplan importieren"
 
 msgid "Import Chart of Accounts"
 msgstr "Kontenplan importieren"
+
+msgid "Import count results"
+msgstr ""
 
 msgid "Import Count Results"
 msgstr ""
@@ -14458,10 +14465,6 @@ msgstr "Abweichung"
 msgid "Missing"
 msgstr "Fehlend"
 
-#. placeholder {0}: group.missingCount
-msgid "Missing {0}"
-msgstr ""
-
 msgid "Missing Information"
 msgstr "Fehlende Informationen"
 
@@ -14594,6 +14597,9 @@ msgstr "Mehr"
 msgid "More actions"
 msgstr "Weitere Aktionen"
 
+msgid "More count actions"
+msgstr ""
+
 msgid "more credits"
 msgstr "mehr Haben"
 
@@ -14690,11 +14696,11 @@ msgid "Moved account"
 msgstr "Konto verschoben"
 
 #. placeholder {0}: line.otherBinName
-msgid "Moved from {0}"
+msgid "moved from {0}"
 msgstr ""
 
 #. placeholder {0}: line.otherBinName
-msgid "Moved to {0}"
+msgid "moved to {0}"
 msgstr ""
 
 msgid "Movements"
@@ -16034,10 +16040,7 @@ msgstr "Keine Schulungen zugewiesen"
 msgid "No transactions in this period"
 msgstr "Keine Transaktionen in diesem Zeitraum"
 
-msgid "No units counted yet. Scan a unit to count it."
-msgstr ""
-
-msgid "No units in this storage unit."
+msgid "No unit record"
 msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
@@ -16172,13 +16175,6 @@ msgstr "Nicht konfiguriert"
 
 msgid "Not Configured"
 msgstr "Nicht konfiguriert"
-
-msgid "Not counted"
-msgstr ""
-
-#. placeholder {0}: group.notCountedCount
-msgid "Not counted {0}"
-msgstr ""
 
 msgid "Not delivered"
 msgstr "Nicht geliefert"
@@ -19388,6 +19384,9 @@ msgstr "Datensatz-ID"
 msgid "Record inspections tied to a part and a job"
 msgstr "Erfassen Sie Prüfungen, die an einen Teil und einen Fertigungsauftrag gebunden sind"
 
+msgid "Record scan"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Erfassen Sie die Auszahlung von {displayId} an den Mitarbeiter. Zahlen Sie weniger als den fälligen Gesamtbetrag, um ihn teilweise auszugleichen."
 
@@ -19778,9 +19777,6 @@ msgstr "Werkzeug entfernen"
 
 msgid "Remove two-factor authentication"
 msgstr "Zwei-Faktor-Authentifizierung entfernen"
-
-msgid "Remove unit"
-msgstr ""
 
 msgid "Remove Unit"
 msgstr "Einheit entfernen"
@@ -21074,7 +21070,7 @@ msgstr "Scannen"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Scannen Sie ein Etikett oder suchen Sie nach Artikel-ID oder Tracking-ID."
 
-msgid "Scan here, then press Enter"
+msgid "Scan a serial, batch or item number"
 msgstr ""
 
 msgid "Scan or choose a batch number"
@@ -21095,7 +21091,7 @@ msgstr "Scannen oder suchen..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scannen Sie eine verfolgte Einheit aus dieser Charge oder wählen Sie eine aus, um sie als Beispielspalte hinzuzufügen, und zeichnen Sie dann das Ergebnis im Gitter auf."
 
-msgid "Scan or type a serial, batch or item number"
+msgid "Scan serial or batch…"
 msgstr ""
 
 msgid "Scan the serial or batch number, not the item"
@@ -21719,10 +21715,6 @@ msgstr "Seriennummer"
 
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
-msgstr ""
-
-#. placeholder {0}: index + 1
-msgid "Serial number of unit {0} (optional)"
 msgstr ""
 
 msgid "Serial Number:"
@@ -22894,9 +22886,6 @@ msgstr "Bestandsübertragungs-Assistent"
 msgid "Stock Transfers"
 msgstr "Bestandsübertragungen"
 
-msgid "Stock with no unit record"
-msgstr ""
-
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
 msgstr "Nur für Ersatzteile gelagert — Nachfolger: <0>{0}</0>"
@@ -23522,6 +23511,9 @@ msgstr "System"
 
 msgid "System configured"
 msgstr "System konfiguriert"
+
+msgid "System Qty"
+msgstr ""
 
 msgid "Table"
 msgstr "Tabelle"
@@ -26274,13 +26266,6 @@ msgstr "Noch ausstehende Zahlungen ohne Diskontierung, nach Geschäftsjahr, abz�
 msgid "Undo"
 msgstr "Rückgängig machen"
 
-msgid "Unexpected"
-msgstr ""
-
-#. placeholder {0}: group.unexpectedCount
-msgid "Unexpected {0}"
-msgstr ""
-
 msgid "Unfurl Links"
 msgstr "Links erweitern"
 
@@ -26366,12 +26351,6 @@ msgstr "Maßeinheiten"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Einheiten, die bei einer Operation mit einem Grund als nicht behebbar gemeldet werden — die Alternative zu Nacharbeiten."
-
-msgid "Units with no serial number"
-msgstr ""
-
-msgid "Units with no serial number on the shelf"
-msgstr ""
 
 msgid "Unknown"
 msgstr "Unbekannt"

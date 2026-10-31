@@ -280,6 +280,10 @@ msgstr "{0} 张凭证待过账 · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} 项待确认分录 · {amount}"
 
+#. placeholder {0}: summary?.unexpectedCount
+msgid "{0} found here"
+msgstr ""
+
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
 msgstr "{0} 还有 <0/> 待开票"
@@ -337,6 +341,10 @@ msgstr "{0} 行"
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} 行待映射"
+
+#. placeholder {0}: summary?.missingCount
+msgid "{0} missing"
+msgstr ""
 
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
@@ -565,6 +573,12 @@ msgstr "{behindDays, plural, one {目标延后 # 天} other {目标延后 # 天}
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
 
+msgid "{code} counted"
+msgstr ""
+
+msgid "{code} is already counted"
+msgstr ""
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr ""
 
@@ -630,6 +644,9 @@ msgstr "{count} / {total} 件"
 
 msgid "{count} units"
 msgstr "{count} 件"
+
+msgid "{counted} counted"
+msgstr ""
 
 msgid "{created} created, {updated} updated."
 msgstr "已创建 {created} 条，已更新 {updated} 条。"
@@ -738,9 +755,6 @@ msgstr "{methodsMissingPullFrom, plural, one {# 个启用的方法有物料没�
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount}个月的总计不匹配"
-
-msgid "{missing} missing"
-msgstr ""
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "提供商中缺少{missingCount}个凭证"
@@ -893,6 +907,9 @@ msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
 
 msgid "{unitCount} units"
 msgstr "{unitCount}件"
+
+msgid "{units} units"
+msgstr ""
 
 msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
 msgstr ""
@@ -2152,9 +2169,6 @@ msgstr "添加 {0} 个已选择的"
 msgid "Add & Issue"
 msgstr "添加并发放"
 
-msgid "Add a batch found here"
-msgstr ""
-
 msgid "Add a column below to sort the view"
 msgstr "在下方添加一列以对视图进行排序"
 
@@ -2193,9 +2207,6 @@ msgstr "添加步骤"
 
 msgid "Add a step or question"
 msgstr "添加步骤或问题"
-
-msgid "Add a unit found here"
-msgstr ""
 
 msgid "Add Ability"
 msgstr "添加能力"
@@ -4336,6 +4347,9 @@ msgstr "基本信息"
 
 msgid "Batch"
 msgstr "批次"
+
+msgid "Batch / Serial"
+msgstr ""
 
 msgid "Batch Capacity"
 msgstr "生产批次容量"
@@ -6633,20 +6647,17 @@ msgstr "盘点ID"
 msgid "Count items"
 msgstr "计数物料"
 
-msgid "Counted"
-msgstr ""
-
 msgid "Counted {total}."
 msgstr "已计数 {total} 个。"
+
+msgid "Counted Qty"
+msgstr ""
 
 msgid "Counterparties"
 msgstr "交易对手"
 
 msgid "Counterparty"
 msgstr "交易对手"
-
-msgid "Counting in"
-msgstr ""
 
 msgid "Counting…"
 msgstr "统计中…"
@@ -10079,9 +10090,6 @@ msgstr "展开子树"
 msgid "Expansion"
 msgstr "扩展"
 
-msgid "Expected"
-msgstr ""
-
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "预期的制造零件未来需求，在任何销售订单存在之前逐周输入；计划根据供应进行净额计算并爆炸方法以提前订购组件。"
 
@@ -10205,7 +10213,7 @@ msgstr "导出 CSV"
 msgid "Export Lines to CSV"
 msgstr "导出行到 CSV"
 
-msgid "Export Units"
+msgid "Export units (CSV)"
 msgstr ""
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
@@ -11022,11 +11030,7 @@ msgstr "格式"
 msgid "Forward deployed engineer"
 msgstr "驻场工程师"
 
-msgid "Found"
-msgstr ""
-
-#. placeholder {0}: group.foundCount
-msgid "Found {0}"
+msgid "found here"
 msgstr ""
 
 msgid "Foundation"
@@ -11991,6 +11995,9 @@ msgstr "导入会计科目表"
 
 msgid "Import Chart of Accounts"
 msgstr "导入会计科目表"
+
+msgid "Import count results"
+msgstr ""
 
 msgid "Import Count Results"
 msgstr ""
@@ -14458,10 +14465,6 @@ msgstr "不匹配"
 msgid "Missing"
 msgstr "缺失"
 
-#. placeholder {0}: group.missingCount
-msgid "Missing {0}"
-msgstr ""
-
 msgid "Missing Information"
 msgstr "缺少信息"
 
@@ -14594,6 +14597,9 @@ msgstr "更多"
 msgid "More actions"
 msgstr "更多操作"
 
+msgid "More count actions"
+msgstr ""
+
 msgid "more credits"
 msgstr "更多贷方项"
 
@@ -14690,11 +14696,11 @@ msgid "Moved account"
 msgstr "已移动账户"
 
 #. placeholder {0}: line.otherBinName
-msgid "Moved from {0}"
+msgid "moved from {0}"
 msgstr ""
 
 #. placeholder {0}: line.otherBinName
-msgid "Moved to {0}"
+msgid "moved to {0}"
 msgstr ""
 
 msgid "Movements"
@@ -16034,10 +16040,7 @@ msgstr "未分配培训"
 msgid "No transactions in this period"
 msgstr "此期间无交易"
 
-msgid "No units counted yet. Scan a unit to count it."
-msgstr ""
-
-msgid "No units in this storage unit."
+msgid "No unit record"
 msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
@@ -16172,13 +16175,6 @@ msgstr "未配置"
 
 msgid "Not Configured"
 msgstr "未配置"
-
-msgid "Not counted"
-msgstr ""
-
-#. placeholder {0}: group.notCountedCount
-msgid "Not counted {0}"
-msgstr ""
 
 msgid "Not delivered"
 msgstr "未交付"
@@ -19388,6 +19384,9 @@ msgstr "记录 ID"
 msgid "Record inspections tied to a part and a job"
 msgstr "记录与零件和工作相关的检验"
 
+msgid "Record scan"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "记录向员工支付 {displayId} 的款项。支付少于应付总额以部分结算。"
 
@@ -19778,9 +19777,6 @@ msgstr "移除工具"
 
 msgid "Remove two-factor authentication"
 msgstr "移除双因素认证"
-
-msgid "Remove unit"
-msgstr ""
 
 msgid "Remove Unit"
 msgstr "移除单位"
@@ -21074,7 +21070,7 @@ msgstr "扫码"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "扫码或按物料ID或追踪ID搜索。"
 
-msgid "Scan here, then press Enter"
+msgid "Scan a serial, batch or item number"
 msgstr ""
 
 msgid "Scan or choose a batch number"
@@ -21095,7 +21091,7 @@ msgstr "扫码或搜索..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "扫码或从此批次中选择一个追踪实体，将其添加为采样列，然后在网格中记录其结果。"
 
-msgid "Scan or type a serial, batch or item number"
+msgid "Scan serial or batch…"
 msgstr ""
 
 msgid "Scan the serial or batch number, not the item"
@@ -21719,10 +21715,6 @@ msgstr "序列号"
 
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
-msgstr ""
-
-#. placeholder {0}: index + 1
-msgid "Serial number of unit {0} (optional)"
 msgstr ""
 
 msgid "Serial Number:"
@@ -22894,9 +22886,6 @@ msgstr "库存转移向导"
 msgid "Stock Transfers"
 msgstr "库存转移"
 
-msgid "Stock with no unit record"
-msgstr ""
-
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
 msgstr "仅为备件存储 — 后继物料：<0>{0}</0>"
@@ -23522,6 +23511,9 @@ msgstr "系统"
 
 msgid "System configured"
 msgstr "系统已配置"
+
+msgid "System Qty"
+msgstr ""
 
 msgid "Table"
 msgstr "表"
@@ -26274,13 +26266,6 @@ msgstr "仍待支付的未折现支付额，按会计年度列示，扣除剩余
 msgid "Undo"
 msgstr "撤销"
 
-msgid "Unexpected"
-msgstr ""
-
-#. placeholder {0}: group.unexpectedCount
-msgid "Unexpected {0}"
-msgstr ""
-
 msgid "Unfurl Links"
 msgstr "展开链接"
 
@@ -26366,12 +26351,6 @@ msgstr "计量单位"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "在操作中报告为无法恢复的单位,带有原因 — 返工的替代方案。"
-
-msgid "Units with no serial number"
-msgstr ""
-
-msgid "Units with no serial number on the shelf"
-msgstr ""
 
 msgid "Unknown"
 msgstr "未知"

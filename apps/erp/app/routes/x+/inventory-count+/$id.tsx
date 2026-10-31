@@ -13,13 +13,19 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   getInventoryCount,
-  getInventoryCountGroups,
+  getInventoryCountGroupSummaries,
   getInventoryCountLineSummary,
+  getInventoryCountLines,
   getInventoryCountMovements,
+  getInventoryCountOtherBins,
   getStorageTypesList,
   getStorageUnitsListForLocation,
-  INVENTORY_COUNT_GROUPS_PAGING
+  INVENTORY_COUNT_LINES_PAGING
 } from "~/modules/inventory/inventory.service";
+import {
+  inventoryCountGroupId,
+  isBlindCountEntry
+} from "~/modules/inventory/inventory.utils";
 import { InventoryCountDetails } from "~/modules/inventory/ui";
 import {
   getMaterialFormsList,
@@ -82,12 +88,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const isBlindEntry =
     inventoryCount.data.isBlind && inventoryCount.data.status !== "Posted";
   const isWithheld = (column: string) =>
-    [
-      "expectedQuantity",
-      "variance",
-      "missingCount",
-      "notCountedCount"
-    ].includes(column);
+    ["systemQuantity", "variance"].includes(column);
   const allowedFilters = isBlindEntry
     ? filters?.filter((f) => !isWithheld(f.column))
     : filters;
@@ -96,7 +97,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     : sorts;
 
   const [
-    groups,
+    lines,
     summary,
     movements,
     forms,
@@ -105,7 +106,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     storageTypes,
     storageUnits
   ] = await Promise.all([
-    getInventoryCountGroups(client, id, companyId, {
+    getInventoryCountLines(client, id, companyId, {
       search,
       limit,
       cursor,
@@ -130,41 +131,75 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null
   ]);
 
-  if (groups.error && cursor) {
-    logger.error("Failed to load a later page of inventory count groups", {
+  if (lines.error && cursor) {
+    logger.error("Failed to load a later page of inventory count lines", {
       companyId,
-      error: groups.error
+      error: lines.error
     });
-    return listErrorPage("groups");
+    return listErrorPage("lines");
   }
 
   const page = toPage(
-    groups.data ?? [],
+    lines.data ?? [],
     { limit, sorts: allowedSorts },
-    INVENTORY_COUNT_GROUPS_PAGING
+    INVENTORY_COUNT_LINES_PAGING
   );
 
   // Hiding the columns client-side isn't enough — the values would ship in the
   // loader payload and CSV export. Strip them server-side through Draft AND
   // Pending; they are revealed only once Posted.
-  const groupData = page.rows.map((group) =>
+  const lineData = page.rows.map((line) =>
     isBlindEntry
-      ? // Withhold what the system expects (and what can be derived from it).
-        // Use null, not 0, so it reads as "not available" rather than a value.
-        {
-          ...group,
-          expectedQuantity: null,
-          variance: null,
-          missingCount: null,
-          notCountedCount: null
-        }
-      : group
+      ? // Withhold System Qty (and the variance it can be derived from). Use null,
+        // not 0, so it reads as "not available" (blank / "—" in the UI and CSV)
+        // rather than a misleading real value.
+        { ...line, systemQuantity: null as unknown as number, variance: null }
+      : line
   );
+
+  // Headers for the tracked groups on this page, and the other bin of a unit
+  // counted in 2 bins (it moved).
+  const trackedLines = lineData.filter(
+    (line) =>
+      line.itemTrackingType === "Serial" || line.itemTrackingType === "Batch"
+  );
+  const [groupSummaries, otherBins] = await Promise.all([
+    getInventoryCountGroupSummaries(client, {
+      inventoryCountId: id,
+      companyId,
+      groupIds: pluckUnique(trackedLines, (line) =>
+        inventoryCountGroupId({
+          inventoryCountId: id,
+          itemId: line.itemId!,
+          storageUnitId: line.storageUnitId ?? null
+        })
+      )
+    }),
+    getInventoryCountOtherBins(client, {
+      inventoryCountId: id,
+      companyId,
+      lines: trackedLines.map((line) => ({
+        id: line.id!,
+        trackedEntityId: line.trackedEntityId ?? null,
+        storageUnitId: line.storageUnitId ?? null
+      }))
+    })
+  ]);
+  const blind = isBlindCountEntry(inventoryCount.data);
 
   return {
     inventoryCount: inventoryCount.data,
-    groups: groupData,
-    count: groups.count ?? 0,
+    lines: lineData.map((line) => ({
+      ...line,
+      otherBinName: otherBins.get(line.id!) ?? null
+    })),
+    groupSummaries: Object.fromEntries(
+      groupSummaries.map((group) => [
+        group.id,
+        blind ? { ...group, missingCount: null, notCountedCount: null } : group
+      ])
+    ),
+    count: lines.count ?? 0,
     nextCursor: page.nextCursor,
     summary: summary ?? { uncounted: 0, variances: 0 },
     movements: movements?.data ?? [],
@@ -179,7 +214,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function InventoryCountDetailRoute() {
   const {
     inventoryCount,
-    groups,
+    lines,
+    groupSummaries,
     count,
     nextCursor,
     summary,
@@ -196,7 +232,8 @@ export default function InventoryCountDetailRoute() {
       <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] w-full overflow-hidden">
         <InventoryCountDetails
           inventoryCount={inventoryCount}
-          groups={groups}
+          lines={lines}
+          groupSummaries={groupSummaries}
           count={count}
           nextCursor={nextCursor}
           summary={summary}
