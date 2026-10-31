@@ -13,7 +13,7 @@ import {
   ModalDrawerHeader,
   ModalDrawerProvider,
   ModalDrawerTitle,
-  toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -70,7 +70,7 @@ const RevisionForm = ({
       navigate(fetcher.data.link);
     }
     if (fetcher.data?.success === false) {
-      toast.error(fetcher.data.message);
+      toastError(fetcher.data.message, fetcher.data);
     }
   }, [fetcher.data]);
 

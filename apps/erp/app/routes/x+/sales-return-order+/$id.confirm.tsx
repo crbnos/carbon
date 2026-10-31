@@ -19,12 +19,14 @@ export async function action(args: ActionFunctionArgs) {
     locale: getPreferenceHeaders(args.request).locale
   });
   // The shared confirm dialog shows the flash.
-  const problem = result.error?.message ?? result.data?.warning;
+  const problem = result.error
+    ? (result.error.title ?? result.error.message)
+    : result.data?.warning;
   return data(
     result,
     await flash(
       args.request,
-      problem ? error(null, problem) : success("Return order confirmed")
+      problem ? error(result.error, problem) : success("Return order confirmed")
     )
   );
 }

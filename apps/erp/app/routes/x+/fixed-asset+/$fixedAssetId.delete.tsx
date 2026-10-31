@@ -44,7 +44,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!fixedAssetId) {
     throw redirect(
       path.to.fixedAssets,
-      await flash(request, error(params, "Failed to get fixed asset id"))
+      await flash(request, error(null, "Failed to get fixed asset id"))
     );
   }
 

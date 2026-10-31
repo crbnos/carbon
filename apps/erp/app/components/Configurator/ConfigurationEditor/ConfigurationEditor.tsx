@@ -15,7 +15,7 @@ import {
   Modal,
   ModalContent,
   ModalTitle,
-  toast,
+  toastError,
   useDisclosure,
   useMode
 } from "@carbon/react";
@@ -211,7 +211,7 @@ export default function Configurator({
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success === false) {
-      toast.error(t`Failed to save configuration rule`);
+      toastError(t`Failed to save configuration rule`, fetcher.data);
     }
 
     if (fetcher.data?.success === true) {

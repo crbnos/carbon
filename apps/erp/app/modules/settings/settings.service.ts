@@ -225,6 +225,7 @@ import {
   datetime,
   isInternalEmail,
   labelSizes,
+  requireAffected,
   searchFilter
 } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
@@ -346,7 +347,9 @@ export async function deleteSubsidiary(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client.from("company").delete().eq("id", companyId);
+  return requireAffected(
+    client.from("company").delete().eq("id", companyId).select("id")
+  );
 }
 
 // The key hash never leaves the server.
@@ -872,11 +875,14 @@ export async function deleteItemSerialSequence(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("itemSerialSequence")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("itemSerialSequence")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function getSubsidiaries(
@@ -1098,17 +1104,19 @@ export async function upsertDocumentSection(
       .select("id");
   }
   const { id, companyId, ...update } = documentSection;
-  return client
-    .from("documentSection")
-    .update({
-      ...update,
-      content: update.content as Json,
-      config: (update.config ?? {}) as Json,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id ?? "")
-    .eq("companyId", companyId)
-    .select("id");
+  return requireAffected(
+    client
+      .from("documentSection")
+      .update({
+        ...update,
+        content: update.content as Json,
+        config: (update.config ?? {}) as Json,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", id ?? "")
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 /** The section row: `settings.documentSection.delete` is the operation. */
@@ -1117,11 +1125,14 @@ export async function deleteDocumentSection(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("documentSection")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("documentSection")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 /**
@@ -1225,7 +1236,9 @@ export async function updateSubsidiary(
   }
 ) {
   const { id: _, ...data } = subsidiary;
-  return client.from("company").update(data).eq("id", id);
+  return requireAffected(
+    client.from("company").update(data).eq("id", id).select("id")
+  );
 }
 
 export async function updateCompanyPlan(
@@ -1241,7 +1254,13 @@ export async function updateCompanyPlan(
   // Extract companyId and build the update data without it
   const { companyId, ...updateData } = data;
 
-  return client.from("companyPlan").update(updateData).eq("id", companyId);
+  return requireAffected(
+    client
+      .from("companyPlan")
+      .update(updateData)
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 /** Only the company row: `settings.company.update` also handles a base-currency change and the cached time zone. */
@@ -1252,7 +1271,13 @@ export async function updateCompany(
     updatedBy: string;
   }
 ) {
-  return client.from("company").update(sanitize(company)).eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize(company))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 /**
@@ -1303,14 +1328,17 @@ export async function updateLogoDark(
   companyId: string,
   logoDark: string | null
 ) {
-  return client
-    .from("company")
-    .update(
-      sanitize({
-        logoDark
-      })
-    )
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(
+        sanitize({
+          logoDark
+        })
+      )
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoDarkIcon(
@@ -1318,10 +1346,13 @@ export async function updateLogoDarkIcon(
   companyId: string,
   logoDarkIcon: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoDarkIcon }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoDarkIcon }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoLight(
@@ -1329,10 +1360,13 @@ export async function updateLogoLight(
   companyId: string,
   logoLight: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoLight }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoLight }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoLightIcon(
@@ -1340,10 +1374,13 @@ export async function updateLogoLightIcon(
   companyId: string,
   logoLightIcon: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoLightIcon }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoLightIcon }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoWatermark(
@@ -1351,10 +1388,13 @@ export async function updateLogoWatermark(
   companyId: string,
   logoWatermark: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoWatermark }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoWatermark }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateProductLabelSize(
@@ -1362,10 +1402,13 @@ export async function updateProductLabelSize(
   companyId: string,
   productLabelSize: string
 ) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ productLabelSize }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("companySettings")
+      .update(sanitize({ productLabelSize }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateSequence(
@@ -2383,15 +2426,18 @@ export async function deactivateIntegration(
 ) {
   const { id, companyId, updatedBy } = args;
 
-  const result = await client
-    .from("companyIntegration")
-    .update({
-      active: false,
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id)
-    .eq("companyId", companyId);
+  const result = await requireAffected(
+    client
+      .from("companyIntegration")
+      .update({
+        active: false,
+        updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 
   if (result.error) {
     return result;
@@ -2410,7 +2456,9 @@ export async function deleteCustomField(
   try {
     clearCustomFieldsCache(companyId);
   } finally {
-    return client.from("customField").delete().eq("id", id);
+    return requireAffected(
+      client.from("customField").delete().eq("id", id).select("id")
+    );
   }
 }
 
@@ -2723,15 +2771,18 @@ export async function upsertCustomField(
         .from("customField")
         .insert([{ ...customField, sortOrder: maxSortOrder + 1 }]);
     }
-    return client
-      .from("customField")
-      .update(
-        sanitize({
-          ...customField,
-          updatedBy: customField.updatedBy
-        })
-      )
-      .eq("id", customField.id);
+    return requireAffected(
+      client
+        .from("customField")
+        .update(
+          sanitize({
+            ...customField,
+            updatedBy: customField.updatedBy
+          })
+        )
+        .eq("id", customField.id)
+        .select("id")
+    );
   }
 }
 
@@ -3005,17 +3056,20 @@ export async function updateIntegrationMetadata(
     }
   }
 
-  return client
-    .from("companyIntegration")
-    .update(
-      sanitize({
-        metadata: config as Json,
-        updatedAt: new Date().toISOString(),
-        updatedBy
-      })
-    )
-    .eq("companyId", companyId)
-    .eq("id", integrationId);
+  return requireAffected(
+    client
+      .from("companyIntegration")
+      .update(
+        sanitize({
+          metadata: config as Json,
+          updatedAt: new Date().toISOString(),
+          updatedBy
+        })
+      )
+      .eq("companyId", companyId)
+      .eq("id", integrationId)
+      .select("id")
+  );
 }
 
 /**
@@ -3402,10 +3456,13 @@ export async function saveCompanySettings(
 ): Promise<CarbonError | null> {
   const changes = sentFields(fields);
   if (Object.keys(changes).length === 0) return null;
-  const { error } = await ctx.asCaller.supabase
-    .from("companySettings")
-    .update(changes)
-    .eq("id", ctx.company.id);
+  const { error } = await requireAffected(
+    ctx.asCaller.supabase
+      .from("companySettings")
+      .update(changes)
+      .eq("id", ctx.company.id)
+      .select("id")
+  );
   return error ? ctx.error("internal", failure, error) : null;
 }
 

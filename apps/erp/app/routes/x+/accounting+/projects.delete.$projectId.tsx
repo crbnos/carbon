@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!projectId) {
     throw redirect(
       `${path.to.projects}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get a project id"))
+      await flash(request, error(null, "Failed to get a project id"))
     );
   }
 

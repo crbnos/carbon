@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { parseCsvLines } from "@carbon/files/csv";
+import { round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getItemStorageUnitQuantities } from "../items/items.utils";
 
@@ -380,4 +382,161 @@ export function nonNettableSource(
     parentId = parent.parentId;
   }
   return null;
+}
+
+export type InventoryCountLineState =
+  | "Not counted"
+  | "Found"
+  | "Missing"
+  | "Unexpected";
+
+// A count line's state comes from its quantities; no column stores it.
+export function inventoryCountLineState(line: {
+  countedQuantity: number | null;
+  foundDuringCount: boolean;
+}): InventoryCountLineState {
+  if (line.foundDuringCount) return "Unexpected";
+  if (line.countedQuantity === null) return "Not counted";
+  if (Number(line.countedQuantity) === 0) return "Missing";
+  return "Found";
+}
+
+// The id of a count group, as the `inventoryCountGroups` view builds it.
+export function inventoryCountGroupId(line: {
+  inventoryCountId: string;
+  itemId: string;
+  storageUnitId: string | null;
+}): string {
+  return `${line.inventoryCountId}:${line.itemId}:${line.storageUnitId ?? ""}`;
+}
+
+// The count group columns a blind count withholds until it is posted.
+export const BLIND_COUNT_GROUP_COLUMNS: string[] = [
+  "expectedQuantity",
+  "variance",
+  "missingCount",
+  "notCountedCount"
+];
+
+// A blind count withholds what the system expects until it is posted.
+export function isBlindCountEntry(count: {
+  isBlind: boolean | null;
+  status: string | null;
+}): boolean {
+  return Boolean(count.isBlind) && count.status !== "Posted";
+}
+
+// The columns of a count results file. The per-unit export writes them, so a
+// counter can export, fill in Counted Quantity and import the same file.
+export const INVENTORY_COUNT_CSV_COLUMNS = [
+  "Item",
+  "Storage Unit",
+  "Serial / Batch",
+  "Counted Quantity"
+] as const;
+
+export type InventoryCountCsvRow = {
+  line: number;
+  item: string;
+  storageUnit: string;
+  code: string;
+  // null: the row is listed but not counted yet.
+  quantity: number | null;
+};
+
+export type InventoryCountCsvError = { line: number; message: string };
+
+// Reads a count results file. Columns are found by name, in any order; other
+// columns (State, Item Name) are ignored. A row with no Counted Quantity is
+// not counted yet: its quantity is null.
+export function parseInventoryCountCsv(text: string): {
+  rows: InventoryCountCsvRow[];
+  errors: InventoryCountCsvError[];
+} {
+  const { lines, errors: syntaxErrors } = parseCsvLines(text);
+  if (syntaxErrors.length > 0) {
+    return {
+      rows: [],
+      errors: syntaxErrors.map((error) => ({
+        line: (error.row ?? 0) + 1,
+        message: `The file cannot be read: ${error.message}`
+      }))
+    };
+  }
+  const [header, ...body] = lines;
+  if (!header) {
+    return { rows: [], errors: [{ line: 1, message: "The file is empty" }] };
+  }
+  const column = (name: string) =>
+    header.cells.findIndex(
+      (cell) => cell.trim().toLowerCase() === name.toLowerCase()
+    );
+  const [itemAt, unitAt, codeAt, quantityAt] =
+    INVENTORY_COUNT_CSV_COLUMNS.map(column);
+  const missing = INVENTORY_COUNT_CSV_COLUMNS.filter(
+    (_, index) => [itemAt, unitAt, codeAt, quantityAt][index] < 0
+  );
+  if (missing.length > 0) {
+    return {
+      rows: [],
+      errors: [
+        {
+          line: header.line,
+          message: `Missing column: ${missing.join(", ")}`
+        }
+      ]
+    };
+  }
+
+  const rows: InventoryCountCsvRow[] = [];
+  const errors: InventoryCountCsvError[] = [];
+  const lastColumn = Math.max(itemAt, unitAt, codeAt, quantityAt);
+  for (const { line, cells } of body) {
+    // A short row lost its cells; an empty Counted Quantity cell is kept.
+    if (cells.length <= lastColumn) {
+      errors.push({ line, message: "The row has fewer cells than the header" });
+      continue;
+    }
+    const item = cells[itemAt] ?? "";
+    const quantityText = cells[quantityAt] ?? "";
+    if (!item) {
+      errors.push({ line, message: "Item is required" });
+      continue;
+    }
+    const quantity = quantityText === "" ? null : Number(quantityText);
+    if (quantity !== null && (!Number.isFinite(quantity) || quantity < 0)) {
+      errors.push({
+        line,
+        message: `Counted Quantity "${quantityText}" is not a number of 0 or more`
+      });
+      continue;
+    }
+    rows.push({
+      line,
+      item,
+      storageUnit: cells[unitAt] ?? "",
+      code: cells[codeAt] ?? "",
+      quantity
+    });
+  }
+  return { rows, errors };
+}
+
+// A batch split keeps its number on every part, so one bin can hold 2 or more
+// parts of one batch. A count of that number covers all of them: fill each
+// part up to its expected quantity in the given order, put any surplus on the
+// last part, and count the parts left over as 0.
+export function spreadBatchCount(
+  parts: { id: string; systemQuantity: number }[],
+  counted: number
+): { lineId: string; countedQuantity: number }[] {
+  let left = counted;
+  return parts.map((part, index) => {
+    const isLast = index === parts.length - 1;
+    const take = round(
+      isLast ? left : Math.min(left, Math.max(Number(part.systemQuantity), 0))
+    );
+    left = round(left - take);
+    return { lineId: part.id, countedQuantity: take };
+  });
 }

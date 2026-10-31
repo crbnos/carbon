@@ -31,6 +31,7 @@ vi.mock("@carbon/utils", () => ({
 const {
   buildArchivedEmail,
   deleteJitSsoUser,
+  isThrowawaySsoAccount,
   mergeInvitePermissions,
   uncoveredSsoDomainError
 } = await import("./provisioning.server");
@@ -100,12 +101,19 @@ describe("mergeInvitePermissions", () => {
 // In-memory model of the state the on_auth_user_created trigger leaves behind
 // for a JIT SSO user: an auth user plus its auto-created public."user" and
 // userPermission rows (no FK cascade between the schemas — that gap is the bug).
-function makeJitUserState(userId: string, options?: { memberOf?: string[] }) {
+function makeJitUserState(
+  userId: string,
+  options?: { memberOf?: string[]; providers?: string[]; createdAt?: string }
+) {
   return {
     authUsers: new Set([userId]),
     publicUsers: new Set([userId]),
     userPermissions: new Set([userId]),
-    memberships: new Set(options?.memberOf ?? [])
+    memberships: new Set(options?.memberOf ?? []),
+    // What GoTrue returns for the account: a JIT SSO user has only its sso:
+    // identity and was created by the sign-in that is being refused.
+    providers: options?.providers ?? ["sso:p1"],
+    createdAt: options?.createdAt ?? new Date().toISOString()
   };
 }
 
@@ -150,6 +158,18 @@ function makeFakeServiceRole(state: ReturnType<typeof makeJitUserState>) {
   return {
     auth: {
       admin: {
+        getUserById: async (id: string) => ({
+          data: {
+            user: state.authUsers.has(id)
+              ? {
+                  id,
+                  created_at: state.createdAt,
+                  identities: state.providers.map((provider) => ({ provider }))
+                }
+              : null
+          },
+          error: null
+        }),
         deleteUser: vi.fn(async (id: string) => {
           state.authUsers.delete(id);
           return { data: {}, error: null };
@@ -157,6 +177,21 @@ function makeFakeServiceRole(state: ReturnType<typeof makeJitUserState>) {
       }
     }
   } as never;
+}
+
+// An access token as GoTrue mints it for a SAML session: `amr` records when the
+// session authenticated, in Unix seconds. Unsigned — only its claims are read.
+function samlToken(userId: string, signedInAtMs: number, method = "sso/saml") {
+  const encode = (value: object) =>
+    Buffer.from(JSON.stringify(value)).toString("base64url");
+  return [
+    encode({ alg: "HS256", typ: "JWT" }),
+    encode({
+      sub: userId,
+      amr: [{ method, timestamp: Math.floor(signedInAtMs / 1000) }]
+    }),
+    "signature"
+  ].join(".");
 }
 
 describe("deleteJitSsoUser", () => {
@@ -172,7 +207,7 @@ describe("deleteJitSsoUser", () => {
     const result = await deleteJitSsoUser(
       makeFakeServiceRole(state),
       makeFakeDb(state),
-      "jit_user"
+      { userId: "jit_user", accessToken: samlToken("jit_user", Date.now()) }
     );
 
     expect(result.error).toBeNull();
@@ -188,11 +223,10 @@ describe("deleteJitSsoUser", () => {
   it("refuses to delete a user with a company membership (never a linked/real account)", async () => {
     const state = makeJitUserState("real_user", { memberOf: ["real_user"] });
     const serviceRole = makeFakeServiceRole(state);
-    const result = await deleteJitSsoUser(
-      serviceRole,
-      makeFakeDb(state),
-      "real_user"
-    );
+    const result = await deleteJitSsoUser(serviceRole, makeFakeDb(state), {
+      userId: "real_user",
+      accessToken: samlToken("real_user", Date.now())
+    });
 
     expect(result.data).toEqual({ deleted: false });
     expect(result.error).toBeNull();
@@ -205,11 +239,64 @@ describe("deleteJitSsoUser", () => {
     ).not.toHaveBeenCalled();
   });
 
+  // With sign-ups disabled GoTrue cannot create a user, so an account with no
+  // membership reaching a refusal is usually a real one: invited then revoked,
+  // removed from every company, or a fresh instance's seed admin. And a
+  // refusal that cannot show its own sign-in created the account keeps it.
+  it.each([
+    [
+      "has an email identity (invited, seeded or admin)",
+      { providers: ["email", "sso:p1"] },
+      () => samlToken("real_user", Date.now())
+    ],
+    [
+      "is SSO-only but older than this sign-in",
+      { createdAt: "2026-01-01T00:00:00Z" },
+      () => samlToken("real_user", Date.now())
+    ],
+    [
+      "is reached by a session that did not sign in through SAML",
+      {},
+      () => samlToken("real_user", Date.now(), "otp")
+    ],
+    [
+      "is reached with another user's token",
+      {},
+      () => samlToken("other_user", Date.now())
+    ],
+    ["is reached with an unreadable token", {}, () => "not-a-jwt"]
+  ])(
+    "keeps an account with no membership that %s",
+    async (_case, options, accessToken) => {
+      const state = makeJitUserState("real_user", options);
+      const serviceRole = makeFakeServiceRole(state);
+      const result = await deleteJitSsoUser(serviceRole, makeFakeDb(state), {
+        userId: "real_user",
+        accessToken: accessToken()
+      });
+
+      expect(result).toEqual({ data: { deleted: false }, error: null });
+      expect(state.authUsers.has("real_user")).toBe(true);
+      expect(state.publicUsers.has("real_user")).toBe(true);
+      expect(state.userPermissions.has("real_user")).toBe(true);
+    }
+  );
+
   it("returns the auth deletion failure without recreating the orphan state", async () => {
     const state = makeJitUserState("jit_user");
     const serviceRole = {
       auth: {
         admin: {
+          getUserById: async (id: string) => ({
+            data: {
+              user: {
+                id,
+                created_at: state.createdAt,
+                identities: [{ provider: "sso:p1" }]
+              }
+            },
+            error: null
+          }),
           deleteUser: vi
             .fn()
             .mockResolvedValue({ data: {}, error: { message: "gotrue down" } })
@@ -217,11 +304,10 @@ describe("deleteJitSsoUser", () => {
       }
     } as never;
 
-    const result = await deleteJitSsoUser(
-      serviceRole,
-      makeFakeDb(state),
-      "jit_user"
-    );
+    const result = await deleteJitSsoUser(serviceRole, makeFakeDb(state), {
+      userId: "jit_user",
+      accessToken: samlToken("jit_user", Date.now())
+    });
 
     expect(result.data).toBeNull();
     expect(result.error).toContain("gotrue down");
@@ -230,6 +316,67 @@ describe("deleteJitSsoUser", () => {
     expect(state.publicUsers.has("jit_user")).toBe(false);
     expect(state.userPermissions.has("jit_user")).toBe(false);
     expect(isUninvitableOrphan(state, "jit_user")).toBe(false);
+  });
+});
+
+describe("isThrowawaySsoAccount", () => {
+  const signedInAtMs = Date.parse("2026-10-29T12:00:00Z");
+  const nowMs = Date.parse("2026-10-29T12:00:05Z");
+  const account = (providers: string[], createdAt: string) => ({
+    created_at: createdAt,
+    identities: providers.map((provider) => ({ provider }))
+  });
+
+  it.each([
+    ["moments before this sign-in", "2026-10-29T11:59:50Z"],
+    // amr times are whole seconds, so the session can read as up to a second
+    // older than the account created in the same request.
+    ["in the same second as this sign-in", "2026-10-29T12:00:00.400Z"]
+  ])(
+    "is true for an SSO-only account GoTrue created %s",
+    (_case, createdAt) => {
+      expect(
+        isThrowawaySsoAccount(account(["sso:p1"], createdAt), {
+          signedInAtMs,
+          nowMs
+        })
+      ).toBe(true);
+    }
+  );
+
+  it.each([
+    ["it has an email identity", ["email", "sso:p1"], "2026-10-29T11:59:50Z"],
+    ["it existed well before this sign-in", ["sso:p1"], "2026-10-29T11:50:00Z"],
+    ["it was created after this sign-in", ["sso:p1"], "2026-10-29T12:00:03Z"],
+    ["its creation time cannot be read", ["sso:p1"], "not a date"],
+    ["it has no identity at all", [], "2026-10-29T11:59:50Z"]
+  ])("is false when %s", (_case, providers, createdAt) => {
+    expect(
+      isThrowawaySsoAccount(account(providers, createdAt), {
+        signedInAtMs,
+        nowMs
+      })
+    ).toBe(false);
+  });
+
+  it("is false when the sign-in time is unknown", () => {
+    expect(
+      isThrowawaySsoAccount(account(["sso:p1"], "2026-10-29T11:59:50Z"), {
+        signedInAtMs: null,
+        nowMs
+      })
+    ).toBe(false);
+  });
+
+  // An old session that happened to create the account, replayed now, is not
+  // the sign-in being refused.
+  it("is false when the session signed in long before now", () => {
+    expect(
+      isThrowawaySsoAccount(account(["sso:p1"], "2026-10-29T11:59:50Z"), {
+        signedInAtMs,
+        nowMs: Date.parse("2026-10-29T13:00:00Z")
+      })
+    ).toBe(false);
   });
 });
 
@@ -263,5 +410,11 @@ describe("uncoveredSsoDomainError", () => {
   it("refuses a malformed email with no domain part", () => {
     expect(uncoveredSsoDomainError(domains, "jane")).not.toBeNull();
     expect(uncoveredSsoDomainError(domains, "jane@")).not.toBeNull();
+  });
+
+  // A connection whose domains are all still pending routes no sign-in to SSO,
+  // so a magic-link invite bypasses nothing.
+  it("allows any email while the connection has no verified domain", () => {
+    expect(uncoveredSsoDomainError([], "jane@acme.com")).toBeNull();
   });
 });

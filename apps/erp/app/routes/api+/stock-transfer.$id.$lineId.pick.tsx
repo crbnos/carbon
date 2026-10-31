@@ -49,10 +49,7 @@ export async function loader({ request, params }: ActionFunctionArgs) {
       path.to.stockTransfer(id),
       await flash(
         request,
-        error(
-          "Stock transfer is not in progress or released",
-          "Stock transfer is not in progress or released"
-        )
+        error(null, "Stock transfer is not in progress or released")
       )
     );
   }
@@ -60,7 +57,7 @@ export async function loader({ request, params }: ActionFunctionArgs) {
   if (Number(stockTransferLine.pickedQuantity ?? 0) > 0) {
     throw redirect(
       path.to.stockTransfer(id),
-      await flash(request, error("Line already picked", "Line already picked"))
+      await flash(request, error(null, "Line already picked"))
     );
   }
 

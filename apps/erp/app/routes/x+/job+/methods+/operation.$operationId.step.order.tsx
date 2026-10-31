@@ -47,7 +47,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(updateSortOrders, "Failed to update sort order")
+        error(
+          updateSortOrders.find((update) => update.error)?.error,
+          "Failed to update sort order"
+        )
       )
     );
 

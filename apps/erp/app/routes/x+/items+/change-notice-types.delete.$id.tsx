@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       `${path.to.changeNoticeTypes}?${getParams(request)}`,
       await flash(
         request,
-        error(params, "Failed to get a change notice category id")
+        error(null, "Failed to get a change notice category id")
       )
     );
   }

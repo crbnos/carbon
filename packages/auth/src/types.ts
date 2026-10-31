@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { FailureReason } from "@carbon/utils";
 import type { getCompanies } from "./services/users";
 
 export interface AuthSession {
@@ -66,5 +67,7 @@ export type Result = {
   message?: string;
   // Optional secondary line for the toast (e.g. the underlying error detail).
   description?: string;
+  // Why it failed, rendered (translated) as the toast's second line.
+  reason?: FailureReason;
   flash?: "success" | "error";
 };

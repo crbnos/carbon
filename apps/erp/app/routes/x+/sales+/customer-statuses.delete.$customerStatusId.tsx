@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!customerStatusId) {
     throw redirect(
       `${path.to.customerStatuses}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get an customer status id"))
+      await flash(request, error(null, "Failed to get an customer status id"))
     );
   }
 

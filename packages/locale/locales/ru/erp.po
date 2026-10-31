@@ -35,6 +35,9 @@ msgstr ", {years}год"
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "\"{0}\" недоступно на выбранной поверхности (поверхностях). Выберите другое поле."
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "\"{storageUnitName}\" содержит {childCount} прямо вложенных единиц хранения. При удалении также будут удалены они и всё находящееся под ними. Это невозможно отменить."
 
@@ -562,6 +565,21 @@ msgstr "{behindDays, plural, one {Отставание от плана на # д
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
 
+msgid "{code} counted"
+msgstr ""
+
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
+msgid "{code} is already counted"
+msgstr ""
+
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
+
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines} из {lines} строк завершено"
 
@@ -622,6 +640,9 @@ msgstr "{count} из {total} единиц"
 msgid "{count} units"
 msgstr "{count} единиц"
 
+msgid "{counted} counted"
+msgstr ""
+
 msgid "{created} created, {updated} updated."
 msgstr "{created} создано, {updated} обновлено."
 
@@ -664,6 +685,9 @@ msgstr "{excluded, plural, one {# строка исключена} other {# ст
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "Не удалось выполнить {failed} из {0} заданий печати"
+
+msgid "{foundHere} found here"
+msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {Еще # запись.} other {Еще # записей.}}"
@@ -729,6 +753,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# активный метод им
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} месяцев с несовпадающими итогами"
+
+msgid "{missing} missing"
+msgstr ""
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "{missingCount} операций не найдено в поставщике"
@@ -881,6 +908,9 @@ msgstr "{uncounted, plural, one {# непосчитанная строка} othe
 
 msgid "{unitCount} units"
 msgstr "{unitCount} единиц"
+
+msgid "{units} units"
+msgstr ""
 
 msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
 msgstr ""
@@ -1364,6 +1394,9 @@ msgstr "Неденежный документ, погашающий счёт-ф�
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "Несоответствие, поделённое с поставщиком через ссылку /share/scar без входа, чтобы они могли ответить на проблему и обновить её задачи вне Carbon."
 
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
+
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "Неналоговый сбор (например, возмещаемые расходы в виде сборов за разрешения), добавляемый к строке и исключенный из налоговой базы."
 
@@ -1532,11 +1565,23 @@ msgstr "Статус квитанции меняется"
 msgid "A receipt's supplier changes"
 msgstr "Поставщик квитанции меняется"
 
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Договор аренды должен быть в базовой валюте организации для активации. Сначала измените валюту договора."
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Аренда, которая удовлетворяет любому из пяти тестов аренды ASC 842, учтена как продажа при активации её договора: единица покидает парк, выручка от аренды и себестоимость продаж проводятся, и чистые инвестиции в аренду занимают её место."
+
+msgid "A required field was missing."
+msgstr ""
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "Разрешение на возврат товара (RMA) разрешает покупателю возвращать товар в целях получения кредита, замены или ремонта."
@@ -1750,6 +1795,9 @@ msgstr "Единица рассматривается как продажа, е�
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Пользователь записывает срок годности для каждой серии при получении товара. Используется, когда поставщики отправляют партии с разными датами окончания срока годности."
+
+msgid "A value is not valid."
+msgstr ""
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Переменная плата — превышение пробега, повреждение, доставка, уборка — выставляется счетом по следующей счет-фактуре договора."
@@ -2713,6 +2761,9 @@ msgstr "Распределено"
 
 msgid "Allows acknowledge & continue"
 msgstr "Позволяет подтвердить и продолжить"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "Уже не учитывается в MRP из-за родительской единицы {sourceName}"
@@ -3745,6 +3796,12 @@ msgstr "Вы уверены, что хотите убрать {lineName} из э
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Вы уверены, что хотите убрать {supplierName} в качестве поставщика для этой номенклатуры? Это невозможно отменить."
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Вы уверены, что хотите удалить этого сотрудника из {name}? История обучения сохраняется и сотрудник может быть добавлен позже."
 
@@ -4296,7 +4353,7 @@ msgid "Batch"
 msgstr "Партия"
 
 msgid "Batch / Serial"
-msgstr "Партия / Серийный номер"
+msgstr ""
 
 msgid "Batch Capacity"
 msgstr "Вместимость серии"
@@ -4391,6 +4448,9 @@ msgstr "Оптимальное завершение"
 
 msgid "Beta"
 msgstr "Бета"
+
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
 
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Основные причины брака по типу, номенклатуре или рабочему центру"
@@ -5529,11 +5589,18 @@ msgstr "Видимость и порядок столбцов"
 msgid "Columns"
 msgstr "Столбцы"
 
+#. placeholder {0}: INVENTORY_COUNT_CSV_COLUMNS.join(", ")
+msgid "Columns: {0}. Each item and storage unit in the file is a full count: units it leaves out are Missing."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "Объединить фильтры"
 
 msgid "Combine output into one lot"
 msgstr "Объединить выход в одну партию"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "Скоро"
@@ -6591,7 +6658,7 @@ msgid "Counted {total}."
 msgstr "Подсчитано: {total}."
 
 msgid "Counted Qty"
-msgstr "Подсчитанное кол-во"
+msgstr ""
 
 msgid "Counterparties"
 msgstr "Контрагенты"
@@ -8140,6 +8207,9 @@ msgstr "Демо-данные применены"
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "Демоданные применены к этой организации. Сохраните их или отмените, чтобы восстановить то, что было раньше."
 
+msgid "Density"
+msgstr ""
+
 msgid "department"
 msgstr "отдел"
 
@@ -8570,6 +8640,9 @@ msgstr "Скачать PDF"
 
 msgid "Download template"
 msgstr "Скачать шаблон"
+
+msgid "Download the count as a file to fill in"
+msgstr ""
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Скачайте шаблон. Каждая строка — это стандартный счет, на который Carbon проводит операции. В поле «Номер счета» введите номер счета из вашего плана счетов, который его заменяет. Carbon обновит стандартный счет, чтобы он соответствовал."
@@ -9620,11 +9693,17 @@ msgstr "Введите URL Onshape, ID клиента и клиентский с
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "Введите пробный баланс предыдущей системы на день перед переключением для каждого счета."
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "Введите количество на каждой строке, которое прибыло. Строка, оставленная с нулем, не будет приемлена при проведении поступления."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Введите количество, которое должно было быть в этом движении. Противоположное движение для разницы размещается рядом с оригинальным в его временном периоде."
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Введите себестоимость производства. Стоимость проводится на актив со счета, с которого она была потрачена: Нераспределенная прибыль за предыдущий год или расходы труда и материалов текущего года."
@@ -10141,6 +10220,9 @@ msgstr "Экспортировать CSV"
 msgid "Export Lines to CSV"
 msgstr "Экспортировать строки в CSV"
 
+msgid "Export units (CSV)"
+msgstr ""
+
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Экспортируйте план счетов из текущей системы в CSV, по одной строке на счёт, с номером, названием, классом, типом и группой, или начните с шаблона текущего плана счетов. Carbon сохранит только счета из этого файла."
 
@@ -10268,9 +10350,8 @@ msgstr "Ошибка при создании типа средства изме�
 msgid "Failed to create item group: {0}"
 msgstr "Не удалось создать группу товаров: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create location: {0}"
-msgstr "Не удалось создать местоположение: {0}"
+msgid "Failed to create location"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create material dimension: {0}"
@@ -10304,17 +10385,15 @@ msgstr "Ошибка при создании материала: {0}"
 msgid "Failed to create no quote reason: {0}"
 msgstr "Ошибка при создании причины отказа от предложения: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create part: {0}"
-msgstr "Не удалось создать деталь: {0}"
+msgid "Failed to create part"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create payment term: {0}"
 msgstr "Ошибка при создании условий оплаты: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create process: {0}"
-msgstr "Ошибка при создании процесса: {0}"
+msgid "Failed to create process"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
@@ -10340,9 +10419,8 @@ msgstr "Не удалось создать инструмент: {0}"
 msgid "Failed to create webhook: {0}"
 msgstr "Ошибка при создании вебхука: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create work center: {0}"
-msgstr "Ошибка при создании рабочего центра: {0}"
+msgid "Failed to create work center"
+msgstr ""
 
 msgid "Failed to delete file from old location"
 msgstr "Не удалось удалить файл из старого местоположения"
@@ -10922,6 +11000,9 @@ msgstr "Перевернуть"
 msgid "For <0/>"
 msgstr "На <0/>"
 
+msgid "For a batch. A serial counts as 1."
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "для чего угодно. Они привлекут нужного человека."
 
@@ -10955,6 +11036,9 @@ msgstr "Формат"
 
 msgid "Forward deployed engineer"
 msgstr "Инженер на месте"
+
+msgid "found here"
+msgstr ""
 
 msgid "Foundation"
 msgstr "Основа"
@@ -11919,6 +12003,12 @@ msgstr "Импортировать план счетов"
 msgid "Import Chart of Accounts"
 msgstr "Импортировать план счетов"
 
+msgid "Import count results"
+msgstr ""
+
+msgid "Import Count Results"
+msgstr ""
+
 msgid "Import CSV"
 msgstr "Импортировать CSV"
 
@@ -11933,6 +12023,9 @@ msgstr "Импортируйте свой план счетов"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "Импортируйте свой план счетов из электронной таблицы"
+
+msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -12659,6 +12752,9 @@ msgstr ""
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "Скоро она станет доступна. Свяжитесь с Carbon, чтобы её настроили для вашей компании."
 
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
+
 msgid "It was removed after this page loaded. Reload the page and try again."
 msgstr "Его удалили после загрузки этой страницы. Перезагрузите страницу и попробуйте снова."
 
@@ -12897,8 +12993,8 @@ msgstr "Канбан"
 msgid "Kanban for {kanbanName}"
 msgstr "Канбан для {kanbanName}"
 
-msgid "Kanban ID"
-msgstr "ID канбана"
+msgid "Kanban IDs"
+msgstr "ID канбанов"
 
 msgid "Kanban Output"
 msgstr "Выпуск Канбана"
@@ -12978,7 +13074,7 @@ msgstr "Размер этикетки"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Этикетка для завершения текущей операции для этого канбана"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Этикетка для создания {0} для этого канбана"
 
@@ -13032,6 +13128,12 @@ msgstr "Единица труда"
 
 msgid "Language"
 msgstr "Язык"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "Последние 6 месяцев"
@@ -13344,6 +13446,7 @@ msgstr "Вероятность"
 msgid "Line"
 msgstr "Строка"
 
+#. placeholder {0}: error.line
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Строка {0}"
@@ -14321,6 +14424,9 @@ msgstr "Очистка миграции (по умолчанию)"
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "Очистка миграции должна в сумме равняться нулю. <0>Перейти к пробному балансу</0>"
 
+msgid "Min"
+msgstr "Мин."
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "мин {minimumBatchQuantity} — достигнуто"
 
@@ -14498,6 +14604,9 @@ msgstr "Ещё"
 msgid "More actions"
 msgstr "Ещё действия"
 
+msgid "More count actions"
+msgstr ""
+
 msgid "more credits"
 msgstr "больше кредитов"
 
@@ -14592,6 +14701,14 @@ msgstr "Неделя {employeeName} перемещена на {targetName}"
 
 msgid "Moved account"
 msgstr "Перемещённый счёт"
+
+#. placeholder {0}: line.otherBinName
+msgid "moved from {0}"
+msgstr ""
+
+#. placeholder {0}: line.otherBinName
+msgid "moved to {0}"
+msgstr ""
 
 msgid "Movements"
 msgstr "Движения"
@@ -15282,6 +15399,9 @@ msgstr "Не найдено доступных отслеживаемых объ
 msgid "No bank accounts have been added yet."
 msgstr "Банковские счета ещё не добавлены."
 
+msgid "No batch number"
+msgstr ""
+
 msgid "No batches"
 msgstr "Нет серий"
 
@@ -15593,6 +15713,9 @@ msgstr "Нет подходящих ячеек"
 msgid "No matching operations"
 msgstr "Нет совпадающих операций"
 
+msgid "No matching record was found."
+msgstr ""
+
 msgid "No matching time"
 msgstr "Нет подходящего времени"
 
@@ -15840,6 +15963,9 @@ msgstr "Нет строк графика."
 msgid "No scheduled work in this window"
 msgstr "Нет запланированной работы в этом окне"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "Серийные номера ещё не выбраны."
 
@@ -15920,6 +16046,9 @@ msgstr "Обучение не назначено"
 
 msgid "No transactions in this period"
 msgstr "Нет транзакций в этом периоде"
+
+msgid "No unit record"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Нет единиц. Добавьте единицу парка из списка Единицы перед активацией соглашения."
@@ -16180,6 +16309,9 @@ msgstr "Нечего проводить за этот период."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Нечего признавать. Выручка следует за тем, что выставляют счетом счета."
+
+msgid "Nothing was imported. Fix these lines:"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Пока ничего. Шаг предоставляет значения только после того, как он будет настроен."
@@ -18091,6 +18223,13 @@ msgstr "Печать этикетки"
 msgid "Print Label"
 msgstr "Печать этикетки"
 
+msgid "Print Labels"
+msgstr "Печать этикеток"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Печать этикеток ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Вывод печати ({0})"
@@ -18256,9 +18395,6 @@ msgstr "Начало проекта"
 
 msgid "Projected"
 msgstr "Спрогнозировано"
-
-msgid "Projected (To)"
-msgstr "Спроецировано (целевое)"
 
 msgid "Projected completion"
 msgstr "Прогнозное завершение"
@@ -18617,7 +18753,7 @@ msgstr "ТС остатка"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR-код для завершения текущей операции для этого канбана"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR-код для создания {0} для этого канбана"
 
@@ -19255,6 +19391,9 @@ msgstr "ID записи"
 msgid "Record inspections tied to a part and a job"
 msgstr "Зарегистрировать контроль, связанный с деталью и производственным заказом"
 
+msgid "Record scan"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Запишите выплату {displayId} сотруднику. Оплатите меньше итого к оплате, чтобы рассчитаться частично."
 
@@ -19519,6 +19658,7 @@ msgstr "Операция переоценки (дата вступления в 
 msgid "Remove"
 msgstr "Убрать"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Убрать {0}"
@@ -20937,6 +21077,9 @@ msgstr "Сканировать"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Отсканируйте этикетку или выполните поиск по ID номенклатуры или ID отслеживания."
 
+msgid "Scan a serial, batch or item number"
+msgstr ""
+
 msgid "Scan or choose a batch number"
 msgstr "Сканировать или выбрать номер серии"
 
@@ -20954,6 +21097,12 @@ msgstr "Отсканировать или выполнить поиск..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Сканировать или выбрать отслеживаемый объект из этой партии, чтобы добавить его в качестве столбца образца, затем записать его результат в таблицу."
+
+msgid "Scan serial or batch…"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Отсканируйте этот QR код с помощью приложения аутентификатора (например, Google Authenticator или 1Password), затем введите 6-значный код, который оно покажет."
@@ -22215,6 +22364,9 @@ msgstr "Вместо этого выйти"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Подтверждение рассмотрения перед переходом к следующему шагу"
 
@@ -22326,6 +22478,12 @@ msgstr "Слайд {0}"
 
 msgid "Slides"
 msgstr "Слайды"
+
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Минимальный размер партии для комплектования. Оставьте пусто без значения."
@@ -23362,7 +23520,7 @@ msgid "System configured"
 msgstr "Система настроена"
 
 msgid "System Qty"
-msgstr "Системное кол-во"
+msgstr ""
 
 msgid "Table"
 msgstr "Таблица"
@@ -23677,6 +23835,9 @@ msgstr "Этот список был пуст."
 
 msgid "That name is already used by another step."
 msgstr "Это имя уже используется другим шагом."
+
+msgid "That storage unit is not at this count's location"
+msgstr ""
 
 msgid "That workspace is connected to another company"
 msgstr "Это рабочее пространство подключено к другой организации"
@@ -24169,6 +24330,9 @@ msgstr "Класс периода восстановления IRS для это
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "Номенклатура, которую производит каждый производственный заказ — требуется совпадение для объединения выходных партий"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "Ставка аренды номенклатуры"
@@ -24835,6 +24999,12 @@ msgstr "Пользователи в этой группе; права досту
 msgid "The value of the cost layers dated before the cutover."
 msgstr "Стоимость слоев себестоимости, датированных до переходной даты."
 
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
+
 msgid "The version of the new document"
 msgstr "Версия нового документа"
 
@@ -24900,6 +25070,9 @@ msgstr "Нет активных предложений поставщиков д
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "В этой работе есть внешние операции, которым не назначены поставщики. Пожалуйста, назначьте поставщика для каждой внешней операции перед выпуском."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "На этих операциях нет наладки, труда или машинного времени, поэтому нет ничего, на основе чего можно определить размер запуска. Полоса — это номинальный маркер и не определяет производительность — добавьте стандарты времени к операциям для планирования."
@@ -25443,6 +25616,9 @@ msgstr "плотно"
 
 msgid "Tightened"
 msgstr "Усиленный"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "Время"
@@ -27919,11 +28095,17 @@ msgid "You completed {leftoverQuantity} more \n"
 "                        to do with the extra parts?"
 msgstr "Вы завершили {leftoverQuantity} больше {0}, чем заказанное количество {1}. Что вы хотите сделать с дополнительными деталями?"
 
+msgid "You do not have permission to do this"
+msgstr ""
+
 msgid "You do not have permission to do this on every matching row."
 msgstr ""
 
 msgid "You do not have permission to edit workflows"
 msgstr "У вас нет права доступа для изменения рабочих процессов"
+
+msgid "You don't have permission to change this record, or it no longer exists."
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "У вас нет права доступа для изменения этой спецификации материалов."

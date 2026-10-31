@@ -25,6 +25,7 @@ import {
   getErrorMessage,
   getOverReceiptViolations,
   isUniqueViolation,
+  requireAffected,
   round,
   type Violation
 } from "@carbon/utils";
@@ -801,14 +802,17 @@ export const updateReceiptFixedAssetLine = defineServiceFn({
       return ctx.error("rule", "A posted receipt can no longer be changed");
     }
 
-    const update = await serviceRole
-      .from("receiptFixedAssetLine")
-      .update({
-        ...service.receiptFixedAssetLineChange(change),
-        updatedBy: ctx.auditUserId
-      })
-      .eq("id", id)
-      .eq("companyId", ctx.company.id);
+    const update = await requireAffected(
+      serviceRole
+        .from("receiptFixedAssetLine")
+        .update({
+          ...service.receiptFixedAssetLineChange(change),
+          updatedBy: ctx.auditUserId
+        })
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (update.error) {
       return ctx.error("internal", "Failed to update the line", update.error);
     }
@@ -1159,18 +1163,21 @@ export const assignReceiptReturnEntity = defineServiceFn({
         .eq("companyId", companyId);
     }
 
-    const assigned = await serviceRole
-      .from("trackedEntity")
-      .update({
-        attributes: {
-          ...service.withoutReceiptTracking(attributes),
-          Receipt: receiptId,
-          "Receipt Line": receiptLineId,
-          ...(index != null ? { "Receipt Line Index": index } : {})
-        } as Json
-      })
-      .eq("id", trackedEntityId)
-      .eq("companyId", companyId);
+    const assigned = await requireAffected(
+      serviceRole
+        .from("trackedEntity")
+        .update({
+          attributes: {
+            ...service.withoutReceiptTracking(attributes),
+            Receipt: receiptId,
+            "Receipt Line": receiptLineId,
+            ...(index != null ? { "Receipt Line Index": index } : {})
+          } as Json
+        })
+        .eq("id", trackedEntityId)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (assigned.error) {
       return ctx.error("internal", "Failed to update tracking", assigned.error);
     }
@@ -1227,13 +1234,16 @@ export const removeReceiptReturnEntity = defineServiceFn({
       return ctx.error("rule", "Entity is not assigned to this receipt line");
     }
 
-    const cleared = await ctx.asSystem.supabase
-      .from("trackedEntity")
-      .update({
-        attributes: service.withoutReceiptTracking(attributes) as Json
-      })
-      .eq("id", trackedEntityId)
-      .eq("companyId", ctx.company.id);
+    const cleared = await requireAffected(
+      ctx.asSystem.supabase
+        .from("trackedEntity")
+        .update({
+          attributes: service.withoutReceiptTracking(attributes) as Json
+        })
+        .eq("id", trackedEntityId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (cleared.error) {
       return ctx.error("internal", "Failed to update tracking", cleared.error);
     }
@@ -1992,18 +2002,21 @@ export const updateShipmentFixedAssetLine = defineServiceFn({
       return ctx.error("rule", "A posted shipment can no longer be changed");
     }
 
-    const update = await serviceRole
-      .from("shipmentFixedAssetLine")
-      .update({
-        ...(change.field === "shipped"
-          ? { shipped: change.value }
-          : change.field === "serialNumber"
-            ? { serialNumber: change.value || null }
-            : { meter: change.value === "" ? null : Number(change.value) }),
-        updatedBy: ctx.auditUserId
-      })
-      .eq("id", id)
-      .eq("companyId", ctx.company.id);
+    const update = await requireAffected(
+      serviceRole
+        .from("shipmentFixedAssetLine")
+        .update({
+          ...(change.field === "shipped"
+            ? { shipped: change.value }
+            : change.field === "serialNumber"
+              ? { serialNumber: change.value || null }
+              : { meter: change.value === "" ? null : Number(change.value) }),
+          updatedBy: ctx.auditUserId
+        })
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (update.error) {
       return ctx.error("internal", "Failed to update the line", update.error);
     }
@@ -5544,6 +5557,72 @@ export const getInventoryCountLines = defineServiceFn({
 });
 
 /**
+ * Get the groups of an inventory count
+ *
+ * @remarks
+ * One row per item and storage unit: expected, counted and variance, and how
+ * many units are Found, Missing, Unexpected, Not counted and without a serial
+ * number. While the count is blind and not posted, `expectedQuantity` and
+ * `variance` are left out.
+ *
+ * @mcp read
+ */
+export const getInventoryCountGroups = defineServiceFn({
+  input: z.looseObject({
+    inventoryCountId: z.string(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "inventory" },
+  async run(ctx, input) {
+    const header = await service.getInventoryCount(
+      ctx.asCaller.supabase,
+      input.inventoryCountId,
+      ctx.company.id
+    );
+    if (header.error || !header.data) {
+      return ctx.error("notFound", "Inventory count not found", header.error);
+    }
+    const blind = utils.isBlindCountEntry(header.data);
+    // A blind count withholds what the system expects: the values, and any
+    // filter or sort on them, which would reveal them through the rows.
+    const args = payload(ctx, input).build() as {
+      filters?: { column: string }[];
+      sorts?: { sortBy: string }[];
+    };
+    if (blind) {
+      args.filters = args.filters?.filter(
+        (filter) => !utils.BLIND_COUNT_GROUP_COLUMNS.includes(filter.column)
+      );
+      args.sorts = args.sorts?.filter(
+        (sort) => !utils.BLIND_COUNT_GROUP_COLUMNS.includes(sort.sortBy)
+      );
+    }
+    const groups = await service.getInventoryCountGroups(
+      ctx.asCaller.supabase,
+      input.inventoryCountId as never,
+      ctx.company.id,
+      args as never
+    );
+    if (blind && groups.data) {
+      groups.data = groups.data.map((group) => ({
+        ...group,
+        expectedQuantity: null,
+        variance: null,
+        missingCount: null,
+        notCountedCount: null
+      }));
+    }
+    return paged(ctx, groups);
+  }
+});
+
+/**
  * Get inventory count line summary
  *
  * @mcp read
@@ -5648,6 +5727,262 @@ export const updateInventoryCountLine = defineServiceFn({
       );
     }
     return updated;
+  }
+});
+
+/**
+ * Record a scanned code on an inventory count
+ *
+ * @remarks
+ * The code is a serial or batch number, an item readable id, or a new number.
+ * A unit already on the count in the storage unit is counted (1 for a serial,
+ * `quantity` for a batch or an untracked item). A unit on the count in another
+ * storage unit, or on no line, gets a new line that reads as Unexpected; the
+ * post moves a known unit from its bin and creates a new one. The result's
+ * `outcome` says what happened: `counted`, `added`, `alreadyCounted`, or what
+ * the caller must send again — `ambiguous` (pick one of `itemIds`), `unknown`
+ * (send `itemId` for a new number), `needsQuantity`, `needsUnitNumber` (scan
+ * the serial or batch, not the item), `notInventory` (a Non-Inventory item has no
+ * stock to count), `wrongStorageUnit`. Draft counts only.
+ *
+ * @param storageUnitId - The storage unit counted; left out for stock in no storage unit.
+ * @param itemId - The item, when the code matches 2 or more items or is a new number.
+ * @param quantity - A batch's or an untracked item's counted quantity.
+ * @mcp
+ */
+export const recordInventoryCountScan = defineServiceFn({
+  input: z.object({
+    inventoryCountId: z.string().min(1),
+    storageUnitId: z.string().nullable().optional(),
+    code: z.string().trim().min(1),
+    itemId: z.string().optional(),
+    quantity: z.number().min(0).optional()
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.recordInventoryCountUnit(ctx.asSystem.pg, {
+      inventoryCountId: input.inventoryCountId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      storageUnitId: input.storageUnitId ?? null,
+      code: input.code,
+      itemId: input.itemId,
+      quantity: input.quantity
+    });
+    if (!result) {
+      return ctx.error(
+        "conflict",
+        "Counts can only be edited while the document is Draft"
+      );
+    }
+    return result;
+  }
+});
+
+/**
+ * Add a unit to an inventory count by hand
+ *
+ * @remarks
+ * The same as `recordInventoryCountScan`, with the item named: for a serial
+ * or batch the counter reads off the unit, found on the shelf.
+ *
+ * @mcp
+ */
+export const addInventoryCountUnit = defineServiceFn({
+  input: z.object({
+    inventoryCountId: z.string().min(1),
+    storageUnitId: z.string().nullable().optional(),
+    code: z.string().trim().min(1),
+    itemId: z.string().min(1),
+    quantity: z.number().min(0).optional()
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.recordInventoryCountUnit(ctx.asSystem.pg, {
+      inventoryCountId: input.inventoryCountId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      storageUnitId: input.storageUnitId ?? null,
+      code: input.code,
+      itemId: input.itemId,
+      quantity: input.quantity
+    });
+    if (!result) {
+      return ctx.error(
+        "conflict",
+        "Counts can only be edited while the document is Draft"
+      );
+    }
+    return result;
+  }
+});
+
+/**
+ * Count the units with no serial number in one group
+ *
+ * @remarks
+ * Units with no serial number cannot be told apart, so they are counted as a
+ * quantity: the oldest `quantity` units are Found and the rest Missing. A
+ * quantity above the number of such units is refused: scan or type a serial
+ * number for each extra unit. Draft counts only.
+ *
+ * @param storageUnitId - The storage unit; left out for stock in no storage unit.
+ * @mcp
+ */
+export const setInventoryCountUnnumberedQuantity = defineServiceFn({
+  input: z.object({
+    inventoryCountId: z.string().min(1),
+    itemId: z.string().min(1),
+    storageUnitId: z.string().nullable().optional(),
+    quantity: z.number().int().min(0)
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.setInventoryCountUnnumberedQuantity(
+      ctx.asSystem.pg,
+      {
+        inventoryCountId: input.inventoryCountId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        itemId: input.itemId,
+        storageUnitId: input.storageUnitId ?? null,
+        quantity: input.quantity
+      }
+    );
+    if (!result) {
+      return ctx.error(
+        "conflict",
+        "Counts can only be edited while the document is Draft"
+      );
+    }
+    if ("tooMany" in result) {
+      return ctx.error(
+        "rule",
+        `Only ${result.tooMany} unit(s) here have no serial number. Scan or type a serial number for each extra unit.`
+      );
+    }
+    return result;
+  }
+});
+
+/**
+ * Give a counted unit with no serial number a serial number
+ *
+ * @remarks
+ * The unit must be on the count, counted Found, and have no serial number.
+ * The number must not be on another unit of the item, on the shelf or on this
+ * count. The post writes it to the unit. Draft counts only.
+ *
+ * @mcp
+ */
+export const assignInventoryCountSerial = defineServiceFn({
+  input: z.object({
+    lineId: z.string().min(1),
+    readableId: z.string().trim().min(1)
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.assignInventoryCountSerial(ctx.asSystem.pg, {
+      lineId: input.lineId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      readableId: input.readableId
+    });
+    if ("refusal" in result) {
+      switch (result.refusal) {
+        case "notDraft":
+          return ctx.error(
+            "conflict",
+            "Counts can only be edited while the document is Draft"
+          );
+        case "notFoundUnnumbered":
+          return ctx.error(
+            "rule",
+            "Only a counted unit with no serial number can be given one"
+          );
+        case "numberTaken":
+          return ctx.error(
+            "rule",
+            `${input.readableId} is already on another unit of this item`
+          );
+      }
+    }
+    return result;
+  }
+});
+
+/**
+ * Import the results of an inventory count
+ *
+ * @remarks
+ * Each row names an item, a storage unit (empty for stock in no storage
+ * unit), a serial or batch number (empty for an untracked item, or for a
+ * serial with no number) and the counted quantity. Each (item, storage unit)
+ * with a counted row is a full count: its units the rows leave out become
+ * Missing, and units added while counting that the rows leave out are
+ * removed. A row with a null quantity is not counted yet and leaves its unit
+ * as it is. Non-Inventory items are refused. Rows resolve as a scan does. Nothing is written when any row has an error; the
+ * result then lists `errors` with their line numbers. Draft counts only.
+ *
+ * @mcp
+ */
+export const importInventoryCountResults = defineServiceFn({
+  input: z.object({
+    inventoryCountId: z.string().min(1),
+    rows: z
+      .array(
+        z.object({
+          line: z.number().int(),
+          item: z.string().min(1),
+          storageUnit: z.string(),
+          code: z.string(),
+          quantity: z.number().min(0).nullable()
+        })
+      )
+      .max(20000)
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const result = await service.importInventoryCountRows(ctx.asSystem.pg, {
+      inventoryCountId: input.inventoryCountId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      rows: input.rows
+    });
+    if (!result) {
+      return ctx.error(
+        "conflict",
+        "Counts can only be edited while the document is Draft"
+      );
+    }
+    return result;
+  }
+});
+
+/**
+ * Remove a unit added to an inventory count
+ *
+ * @remarks
+ * Removes a line the counter added (an Unexpected unit). A line from the
+ * snapshot cannot be removed; count it 0. Draft counts only.
+ *
+ * @mcp destructive
+ */
+export const removeInventoryCountUnit = defineServiceFn({
+  input: z.object({ lineId: z.string().min(1) }),
+  permission: { update: "inventory" },
+  async run(ctx, { lineId }) {
+    const removed = await service.removeInventoryCountUnit(ctx.asSystem.pg, {
+      lineId,
+      companyId: ctx.company.id
+    });
+    if (!removed) {
+      return ctx.error(
+        "conflict",
+        "Only a unit added while counting can be removed, while the count is Draft"
+      );
+    }
+    return { lineId };
   }
 });
 

@@ -29,6 +29,7 @@ import {
   ScrollArea,
   Skeleton,
   toast,
+  toastError,
   useDisclosure,
   useMount,
   VStack
@@ -410,7 +411,7 @@ function NewJobOperationAssociation({ items }: { items?: string[] }) {
     }
     const { data, error } = await carbon.from("job").select("id, jobId");
     if (error) {
-      toast.error(t`Failed to load jobs`);
+      toastError(t`Failed to load jobs`, error);
     }
     setJobs(data?.map((job) => ({ label: job.jobId, value: job.id })) ?? []);
     setJobsAreLoading(false);
@@ -427,7 +428,7 @@ function NewJobOperationAssociation({ items }: { items?: string[] }) {
       .eq("jobId", jobId);
 
     if (error) {
-      toast.error(t`Failed to load job operations`);
+      toastError(t`Failed to load job operations`, error);
     }
 
     setJobOperations(
@@ -493,7 +494,7 @@ function NewPurchaseOrderLineAssociation({ items }: { items?: string[] }) {
       .select("id, purchaseOrderId");
 
     if (error) {
-      toast.error(t`Failed to load purchase orders`);
+      toastError(t`Failed to load purchase orders`, error);
       return;
     }
 
@@ -530,7 +531,7 @@ function NewPurchaseOrderLineAssociation({ items }: { items?: string[] }) {
     const { data, error } = await query;
 
     if (error) {
-      toast.error(t`Failed to load purchase order lines`);
+      toastError(t`Failed to load purchase order lines`, error);
     }
 
     setPurchaseOrderLines(
@@ -597,7 +598,7 @@ function NewSalesOrderLineAssociation({ items }: { items?: string[] }) {
       .select("id, salesOrderId");
 
     if (error) {
-      toast.error(t`Failed to load sales orders`);
+      toastError(t`Failed to load sales orders`, error);
     }
 
     setSalesOrders(
@@ -633,7 +634,7 @@ function NewSalesOrderLineAssociation({ items }: { items?: string[] }) {
     const { data, error } = await query;
 
     if (error) {
-      toast.error(t`Failed to load sales order lines`);
+      toastError(t`Failed to load sales order lines`, error);
     }
 
     setSalesOrderLines(
@@ -700,7 +701,7 @@ function NewShipmentLineAssociation({ items }: { items?: string[] }) {
       .select("id, shipmentId");
 
     if (error) {
-      toast.error(t`Failed to load shipments`);
+      toastError(t`Failed to load shipments`, error);
     }
 
     setShipments(
@@ -730,7 +731,7 @@ function NewShipmentLineAssociation({ items }: { items?: string[] }) {
     const { data, error } = await query;
 
     if (error) {
-      toast.error(t`Failed to load shipment lines`);
+      toastError(t`Failed to load shipment lines`, error);
     }
 
     setShipmentLines(
@@ -797,7 +798,7 @@ function NewReceiptLineAssociation({ items }: { items?: string[] }) {
       .select("id, receiptId");
 
     if (error) {
-      toast.error(t`Failed to load receipts`);
+      toastError(t`Failed to load receipts`, error);
     }
 
     setReceipts(
@@ -827,7 +828,7 @@ function NewReceiptLineAssociation({ items }: { items?: string[] }) {
     const { data, error } = await query;
 
     if (error) {
-      toast.error(t`Failed to load receipt lines`);
+      toastError(t`Failed to load receipt lines`, error);
     }
 
     setReceiptLines(
@@ -895,7 +896,7 @@ function NewSalesReturnOrderLineAssociation({ items }: { items?: string[] }) {
       .select("id, salesReturnOrderId");
 
     if (error) {
-      toast.error(t`Failed to load RMAs`);
+      toastError(t`Failed to load RMAs`, error);
     }
 
     setSalesReturnOrders(
@@ -931,7 +932,7 @@ function NewSalesReturnOrderLineAssociation({ items }: { items?: string[] }) {
     const { data, error } = await query;
 
     if (error) {
-      toast.error(t`Failed to load RMA lines`);
+      toastError(t`Failed to load RMA lines`, error);
     }
 
     setSalesReturnOrderLines(
@@ -1005,7 +1006,7 @@ function NewPurchaseReturnOrderLineAssociation({
       .select("id, purchaseReturnOrderId");
 
     if (error) {
-      toast.error(t`Failed to load supplier returns`);
+      toastError(t`Failed to load supplier returns`, error);
     }
 
     setPurchaseReturnOrders(
@@ -1041,7 +1042,7 @@ function NewPurchaseReturnOrderLineAssociation({
     const { data, error } = await query;
 
     if (error) {
-      toast.error(t`Failed to load supplier return lines`);
+      toastError(t`Failed to load supplier return lines`, error);
     }
 
     setPurchaseReturnOrderLines(
@@ -1111,7 +1112,7 @@ function NewTrackedEntityAssociation({ items }: { items?: string[] }) {
       .in("sourceDocumentId", items!);
 
     if (error) {
-      toast.error(t`Failed to load tracked entities`);
+      toastError(t`Failed to load tracked entities`, error);
     }
 
     setTrackedEntities(
@@ -1154,7 +1155,7 @@ function NewInspectionAssociation() {
       .select("id, inspectionId, itemId, status");
 
     if (error) {
-      toast.error(t`Failed to load inbound inspections`);
+      toastError(t`Failed to load inbound inspections`, error);
     }
 
     setInspections(

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -242,7 +242,7 @@ const BatchesTable = memo(({ data, count, infinite }: BatchesTableProps) => {
     },
     onError: (result) => {
       if (showBulkStart(result)) return;
-      if (result.error?.message) toast.error(result.error.message);
+      toastServiceError(result);
     }
   });
 

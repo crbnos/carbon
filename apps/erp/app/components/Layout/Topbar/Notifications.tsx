@@ -730,7 +730,7 @@ const Notifications = () => {
           {unreadNotifications.length > 0 && (
             <span
               aria-hidden
-              className="absolute top-0 right-0 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium leading-4 text-center tabular-nums"
+              className="absolute top-0 right-0 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[0.625rem] font-medium leading-4 text-center tabular-nums"
             >
               {unreadNotifications.length}
             </span>

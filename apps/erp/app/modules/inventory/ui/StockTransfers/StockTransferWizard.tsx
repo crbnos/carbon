@@ -88,7 +88,7 @@ function StepBadge({ step, active }: { step: number; active: boolean }) {
   return (
     <span
       className={cn(
-        "flex items-center justify-center size-5 rounded-full text-[11px] font-semibold flex-shrink-0",
+        "flex items-center justify-center size-5 rounded-full text-[0.6875rem] font-semibold flex-shrink-0",
         active
           ? "bg-primary text-primary-foreground"
           : "bg-muted text-muted-foreground"

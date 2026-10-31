@@ -32,9 +32,10 @@ import {
   Th,
   Thead,
   Tr,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
-import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import { MODEL_RAW_KEEP_MAX_BYTES, requireAffected } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
@@ -129,7 +130,7 @@ const Documents = ({
         .remove([getReadPath(file)]);
 
       if (error) {
-        toast.error(error.message || t`Error deleting file`);
+        toastError(t`Error deleting file`, error);
         return;
       }
 
@@ -156,13 +157,19 @@ const Documents = ({
     if (!carbon || !sourceDocumentId) return;
 
     if (sourceDocument === "Job") {
-      const result = await carbon
-        .from("job")
-        .update({ modelUploadId: null })
-        .eq("id", sourceDocumentId);
+      const result = await requireAffected(
+        carbon
+          .from("job")
+          .update({ modelUploadId: null })
+          .eq("id", sourceDocumentId)
+          .select("id")
+      );
 
       if (result.error) {
-        toast.error(t`Error removing model from ${sourceDocument}`);
+        toastError(
+          t`Error removing model from ${sourceDocument}`,
+          result.error
+        );
         return;
       }
     } else if (sourceDocument === "Issue") {
@@ -182,7 +189,7 @@ const Documents = ({
       try {
         await downloadUrl(url, file.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Error", { error: error });
       }
     },

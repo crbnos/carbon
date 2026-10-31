@@ -176,6 +176,33 @@ export const inventoryCountLineValidator = z.object({
   )
 });
 
+// A scanned or typed code on a count, in one storage unit. `itemId` picks the
+// item when the code matches 2 or more items, or names the item of a new
+// serial or batch number. `quantity` is a batch's or an untracked item's count.
+export const inventoryCountScanValidator = z.object({
+  storageUnitId: zfd.text(z.string().optional()),
+  code: z.string().trim().min(1, { message: "Code is required" }),
+  itemId: zfd.text(z.string().optional()),
+  quantity: zfd.numeric(
+    z.number().min(0, { message: "Quantity cannot be negative" }).optional()
+  )
+});
+
+// A unit the counter adds by hand from a group's expanded row.
+export const inventoryCountUnitValidator = z.object({
+  storageUnitId: zfd.text(z.string().optional()),
+  code: z.string().trim().min(1, { message: "Serial / Batch is required" }),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  quantity: zfd.numeric(
+    z.number().min(0, { message: "Quantity cannot be negative" }).optional()
+  )
+});
+
+// A count results file: Item, Storage Unit, Serial / Batch, Counted Quantity.
+export const inventoryCountImportValidator = z.object({
+  file: zfd.file()
+});
+
 // Put a cost of the user's own on one serial unit in stock (FIFO / LIFO).
 export const serialUnitRecostValidator = z.object({
   trackedEntityId: z.string().min(1, { message: "Unit is required" }),

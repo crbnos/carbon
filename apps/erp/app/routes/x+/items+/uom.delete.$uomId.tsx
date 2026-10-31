@@ -74,7 +74,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!uomId) {
     throw redirect(
       path.to.uoms,
-      await flash(request, error(params, "Failed to get an unit of measure id"))
+      await flash(request, error(null, "Failed to get an unit of measure id"))
     );
   }
 
@@ -97,7 +97,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         error(
-          inUse,
+          null,
           `Cannot delete a unit of measure that is in use: ${describeUsage(inUse)}`
         )
       )

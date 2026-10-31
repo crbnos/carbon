@@ -35,6 +35,9 @@ msgstr ", {years}yr"
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "\"{0}\" seçili yüzey(ler)de kullanılabilir değildir. Başka bir alan seçin."
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "\"{storageUnitName}\" {childCount} adet doğrudan iç içe geçmiş depolama birimine sahip. Bunu silmek, onları ve altlarındaki her şeyi de silecektir. Bu geri alınamaz."
 
@@ -562,6 +565,21 @@ msgstr "{behindDays, plural, one {Hedeften # gün geride} other {Hedeften # gün
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Bu parçayı doğrudan nihai ardıla yönlendirmeyi düşünün."
 
+msgid "{code} counted"
+msgstr ""
+
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
+msgid "{code} is already counted"
+msgstr ""
+
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
+
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines}/{lines} satır tamamlandı"
 
@@ -622,6 +640,9 @@ msgstr "{count}/{total} adet"
 msgid "{count} units"
 msgstr "{count} adet"
 
+msgid "{counted} counted"
+msgstr ""
+
 msgid "{created} created, {updated} updated."
 msgstr "{created} oluşturuldu, {updated} güncellendi."
 
@@ -664,6 +685,9 @@ msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç 
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} yazdırma işinden {failed} tanesi başarısız oldu"
+
+msgid "{foundHere} found here"
+msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {Ve # daha fazla kayıt.} other {Ve # daha fazla kayıt.}}"
@@ -729,6 +753,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# aktif yöntemin çekme kaynağı
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} ay tutarları uyuşmazlığı"
+
+msgid "{missing} missing"
+msgstr ""
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "{missingCount} muhasebe fişi sağlayıcıda eksik"
@@ -881,6 +908,9 @@ msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış 
 
 msgid "{unitCount} units"
 msgstr "{unitCount} adet"
+
+msgid "{units} units"
+msgstr ""
 
 msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
 msgstr ""
@@ -1364,6 +1394,9 @@ msgstr "Bir faturayı bir sebep hesabına karşı ödeyen nakitsiz bir belge: al
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "Bir tedarikçi ile login olmadan erişilebilir bir /share/scar bağlantısı üzerinden paylaşılan bir uygunsuzluk; tedarikçi soruna yanıt verebilir ve görevleri Carbon dışından güncelleyebilir."
 
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
+
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "Vergilendirilmeyen bir ek ücret (örneğin izin ücretleri gibi geri alınabilir giderler) satıra eklenir ve vergi matrahından hariç tutulur."
 
@@ -1532,11 +1565,23 @@ msgstr "Makbuzun durumu değişti"
 msgid "A receipt's supplier changes"
 msgstr "Makbuzun tedarikçisi değişti"
 
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Bir kira sözleşmesi, etkinleştirilmek için şirketin temel para biriminde olmalıdır. Önce sözleşmenin para birimini değiştirin."
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Beş ASC 842 kira testinden herhangi birini karşılayan bir kiralama, sözleşmesi etkinleştirildiğinde satış olarak muhasebeleştirilen: birim filo ayrılır, kira hasılatı ve satılan malın maliyeti muhasebeleştirilir ve kiralamada net yatırım yerini alır."
+
+msgid "A required field was missing."
+msgstr ""
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "İade malı yetkilendirmesi (RMA), bir müşterinin kredi, yedek veya onarım için malları iade etmesine yetki verir."
@@ -1750,6 +1795,9 @@ msgstr "Bunlardan biri doğru olduğunda bir adet satış olarak muhasebeleştir
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Kullanıcı, mallar alındığında her parti veya seri için son kullanma tarihini kaydeder. Tedarikçiler farklı son kullanma tarihlerine sahip partiler gönderdiğinde kullanılır."
+
+msgid "A value is not valid."
+msgstr ""
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Değişken bir ücret — kilometre fazlası, hasar, teslimat, temizlik — sözleşmenin bir sonraki faturasında faturalandırılır."
@@ -2713,6 +2761,9 @@ msgstr "Tahsis edildi"
 
 msgid "Allows acknowledge & continue"
 msgstr "Onaylayıp devam etmeye izin verir"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "Üst birim {sourceName} nedeniyle zaten MRP dışı"
@@ -3745,6 +3796,12 @@ msgstr "{lineName} öğesini bu sözleşmeden kaldırmak istediğinizden emin mi
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Bu öğe için {supplierName} tedarikçisini kaldırmak istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
+msgid "Are you sure you want to remove this domain? Its verification record will no longer be checked."
+msgstr ""
+
+msgid "Are you sure you want to remove this domain? Users on it will no longer sign in through your identity provider, and adding it again needs a new DNS verification."
+msgstr ""
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Bu çalışanı {name}'den kaldırmak istediğinizden emin misiniz? Eğitim geçmişi saklanır ve çalışan daha sonra yeniden eklenebilir."
 
@@ -4296,7 +4353,7 @@ msgid "Batch"
 msgstr "Parti"
 
 msgid "Batch / Serial"
-msgstr "Parti / Seri"
+msgstr ""
 
 msgid "Batch Capacity"
 msgstr "Parti Kapasitesi"
@@ -4391,6 +4448,9 @@ msgstr "En iyi ihtimalde bitiş"
 
 msgid "Beta"
 msgstr "Beta"
+
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
 
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Fire'in nedene, stok kartına veya iş merkezine göre en büyük nedenleri"
@@ -5529,11 +5589,18 @@ msgstr "Sütun görünürlüğü ve sırası"
 msgid "Columns"
 msgstr "Sütunlar"
 
+#. placeholder {0}: INVENTORY_COUNT_CSV_COLUMNS.join(", ")
+msgid "Columns: {0}. Each item and storage unit in the file is a full count: units it leaves out are Missing."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "Filtreleri birleştir"
 
 msgid "Combine output into one lot"
 msgstr "Çıktıyı bir Lota birleştir"
+
+msgid "Comfortable"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "Yakında"
@@ -6591,7 +6658,7 @@ msgid "Counted {total}."
 msgstr "{total} sayıldı."
 
 msgid "Counted Qty"
-msgstr "Sayılan Mik."
+msgstr ""
 
 msgid "Counterparties"
 msgstr "Muhasebeleştirilecek Taraflar"
@@ -8140,6 +8207,9 @@ msgstr "Demo verisi uygulandı"
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
 msgstr "Demo verisi bu şirkete uygulandı. Tutun veya önceki duruma geri döndürmek için geri al."
 
+msgid "Density"
+msgstr ""
+
 msgid "department"
 msgstr "departman"
 
@@ -8570,6 +8640,9 @@ msgstr "PDF'i İndir"
 
 msgid "Download template"
 msgstr "Şablon indir"
+
+msgid "Download the count as a file to fill in"
+msgstr ""
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Şablonu indir. Her satır, Carbon'un muhasebeleştirdiği varsayılan bir hesaptır. Hesap Numarası'nda, bunu alan hesap planınızdaki hesabın numarasını girin. Carbon varsayılan hesabı eşleştirecek şekilde günceller."
@@ -9620,11 +9693,17 @@ msgstr "Özel OAuth uygulamanızın Onshape URL'sini, istemci ID'sini ve istemci
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "Her hesap için devir tarihinden önceki günü itibarıyla önceki sistemin mizan sütununu girin."
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "Gelen her satırdaki miktarı girin. Sıfırda bırakılan bir satır, mal kabul muhasebeleştirildiğinde alınmış sayılmaz."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Bu hareketin olması gereken miktarı girin. Farktaki ters hareket, orijinalin zaman döneminde orijinalin yanında deftere kaydedilir."
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Üretim maliyetini girin. Değer, harcanan hesaptan varlığa kaydedilir: önceki yıl için Dağıtılmamış kârlar veya bu yıl'ın İşçilik veya malzeme gideri."
@@ -10141,6 +10220,9 @@ msgstr "CSV'yi dışa aktar"
 msgid "Export Lines to CSV"
 msgstr "Satırları CSV'ye Dışa Aktar"
 
+msgid "Export units (CSV)"
+msgstr ""
+
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Hesap planınızı mevcut sisteminizden CSV olarak dışa aktarın; her hesap için numarası, adı, sınıfı, türü ve grubuyla bir satır olsun ya da mevcut hesap planının şablonuyla başlayın. Carbon yalnızca bu dosyadaki hesapları tutar."
 
@@ -10268,9 +10350,8 @@ msgstr "Ölçüm aleti türü oluşturulamadı: {0}"
 msgid "Failed to create item group: {0}"
 msgstr "Ürün grubu oluşturulamadı: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create location: {0}"
-msgstr "Konum oluşturulamadı: {0}"
+msgid "Failed to create location"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create material dimension: {0}"
@@ -10304,17 +10385,15 @@ msgstr "Malzeme oluşturulamadı: {0}"
 msgid "Failed to create no quote reason: {0}"
 msgstr "Teklif yok nedeni oluşturulamadı: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create part: {0}"
-msgstr "Parça oluşturulamadı: {0}"
+msgid "Failed to create part"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create payment term: {0}"
 msgstr "Ödeme koşulu oluşturulamadı: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create process: {0}"
-msgstr "İşlemi oluşturulamadı: {0}"
+msgid "Failed to create process"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
@@ -10340,9 +10419,8 @@ msgstr "Araç oluşturulamadı: {0}"
 msgid "Failed to create webhook: {0}"
 msgstr "Webhook oluşturulamadı: {0}"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create work center: {0}"
-msgstr "İş merkezi oluşturulamadı: {0}"
+msgid "Failed to create work center"
+msgstr ""
 
 msgid "Failed to delete file from old location"
 msgstr "Eski konumdan dosya silinemedi"
@@ -10922,6 +11000,9 @@ msgstr "Ters çevir"
 msgid "For <0/>"
 msgstr "İçin <0/>"
 
+msgid "For a batch. A serial counts as 1."
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
 
@@ -10955,6 +11036,9 @@ msgstr "Biçim"
 
 msgid "Forward deployed engineer"
 msgstr "Sahadaki mühendis"
+
+msgid "found here"
+msgstr ""
 
 msgid "Foundation"
 msgstr "Temel"
@@ -11919,6 +12003,12 @@ msgstr "Hesap planını içe aktar"
 msgid "Import Chart of Accounts"
 msgstr "Hesap Planını İçe Aktar"
 
+msgid "Import count results"
+msgstr ""
+
+msgid "Import Count Results"
+msgstr ""
+
 msgid "Import CSV"
 msgstr "CSV'yi İçe Aktar"
 
@@ -11933,6 +12023,9 @@ msgstr "Hesap planınızı içe aktarın"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "Hesap planınızı bir elektronik tablodan içe aktarın"
+
+msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -12659,6 +12752,9 @@ msgstr ""
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "Yakında kullanıma sunulacak. Şirketiniz için kurulması için Carbon ile iletişime geçin."
 
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
+
 msgid "It was removed after this page loaded. Reload the page and try again."
 msgstr "Bu sayfa yüklendikten sonra kaldırıldı. Sayfayı yeniden yükleyin ve tekrar deneyin."
 
@@ -12897,8 +12993,8 @@ msgstr "Kanban"
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban için {kanbanName}"
 
-msgid "Kanban ID"
-msgstr "Kanban Kimliği"
+msgid "Kanban IDs"
+msgstr "Kanban Kimlikleri"
 
 msgid "Kanban Output"
 msgstr "Kanban Çıktısı"
@@ -12978,7 +13074,7 @@ msgstr "Etiket Boyutu"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Bu kanban için mevcut işlemi tamamlamak üzere etiket"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Bu kanban için bir {0} oluşturmak için"
 
@@ -13032,6 +13128,12 @@ msgstr "İşçilik Birimi"
 
 msgid "Language"
 msgstr "Dil"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "Son 6 Ay"
@@ -13344,6 +13446,7 @@ msgstr "Olasılık"
 msgid "Line"
 msgstr "Satır"
 
+#. placeholder {0}: error.line
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Satır {0}"
@@ -14321,6 +14424,9 @@ msgstr "Geçiş Tasfiyesi (varsayılan)"
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "Geçiş Tasfiyesi sıfıra eşit olmalıdır. <0>Deneme Bakiyesine Git</0>"
 
+msgid "Min"
+msgstr "Min."
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "en az {minimumBatchQuantity} — karşılandı"
 
@@ -14498,6 +14604,9 @@ msgstr "Daha fazla"
 msgid "More actions"
 msgstr "Daha fazla işlem"
 
+msgid "More count actions"
+msgstr ""
+
 msgid "more credits"
 msgstr "daha fazla alacak"
 
@@ -14592,6 +14701,14 @@ msgstr "{employeeName} öğesinin haftası {targetName} adresine taşındı"
 
 msgid "Moved account"
 msgstr "Taşınan hesap"
+
+#. placeholder {0}: line.otherBinName
+msgid "moved from {0}"
+msgstr ""
+
+#. placeholder {0}: line.otherBinName
+msgid "moved to {0}"
+msgstr ""
 
 msgid "Movements"
 msgstr "Hareketler"
@@ -15282,6 +15399,9 @@ msgstr "Kullanılabilir izlenen varlık bulunamadı"
 msgid "No bank accounts have been added yet."
 msgstr "Henüz hiçbir banka hesabı eklenmemiştir."
 
+msgid "No batch number"
+msgstr ""
+
 msgid "No batches"
 msgstr "Parti yok"
 
@@ -15593,6 +15713,9 @@ msgstr "Eşleşen göz yok"
 msgid "No matching operations"
 msgstr "Eşleşen operasyon yok"
 
+msgid "No matching record was found."
+msgstr ""
+
 msgid "No matching time"
 msgstr "Eşleşen saat yok"
 
@@ -15840,6 +15963,9 @@ msgstr "Çizelge satırı yok."
 msgid "No scheduled work in this window"
 msgstr "Bu zaman penceresinde planlanmış iş yok"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "Henüz hiçbir seri numarası seçilmemiştir."
 
@@ -15920,6 +16046,9 @@ msgstr "Atanan eğitim yok"
 
 msgid "No transactions in this period"
 msgstr "Bu dönemde işlem yok"
+
+msgid "No unit record"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Henüz adet yok. Anlaşmayı etkinleştirmeden önce Adet listesinden bir filo adetini ekleyin."
@@ -16180,6 +16309,9 @@ msgstr "Bu dönem için muhasebeleştirecek bir şey yok."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Henüz tanınması gereken bir şey yok. Hasılat, faturaların faturalandırdığını takip eder."
+
+msgid "Nothing was imported. Fix these lines:"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Henüz hiçbir şey yok. Bir adım yalnızca yapılandırıldıktan sonra değerleri sunar."
@@ -18091,6 +18223,13 @@ msgstr "Etiketi yazdır"
 msgid "Print Label"
 msgstr "Etiket Yazdır"
 
+msgid "Print Labels"
+msgstr "Etiketleri Yazdır"
+
+#. placeholder {0}: kanbanIds.length
+msgid "Print Labels ({0})"
+msgstr "Etiketleri Yazdır ({0})"
+
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Yazdırma Çıktısı ({0})"
@@ -18256,9 +18395,6 @@ msgstr "Proje başlangıcı"
 
 msgid "Projected"
 msgstr "Öngörülen"
-
-msgid "Projected (To)"
-msgstr "Tahmini (To)"
 
 msgid "Projected completion"
 msgstr "Öngörülen tamamlanma"
@@ -18617,7 +18753,7 @@ msgstr "Kalıntıların BDH"
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "Bu kanban için geçerli operasyonu tamamlamak için QR Kodu"
 
-#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
+#. placeholder {0}: getKanbanCreateNoun(kanban.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Bu kanban için bir {0} oluşturmak için QR Kod"
 
@@ -19255,6 +19391,9 @@ msgstr "Kayıt ID"
 msgid "Record inspections tied to a part and a job"
 msgstr "Bir parça ve bir işe bağlı muayeneleri kaydedin"
 
+msgid "Record scan"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Çalışana {displayId} ödeyişini kayıt edin. Kısmen kapatmak için toplam borçtan daha az ödeme yapabilirsiniz."
 
@@ -19519,6 +19658,7 @@ msgstr "Yeniden ölçüm muhasebe fişi (etkinlik tarihi ve sınıflandırma ona
 msgid "Remove"
 msgstr "Kaldır"
 
+#. placeholder {0}: domain.domain
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Kaldır {0}"
@@ -20937,6 +21077,9 @@ msgstr "Tara"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Bir etiketi tarayın veya ürün kimliği veya takip kimliği ile arama yapın."
 
+msgid "Scan a serial, batch or item number"
+msgstr ""
+
 msgid "Scan or choose a batch number"
 msgstr "Toplu iş numarasını tarayın veya seçin"
 
@@ -20954,6 +21097,12 @@ msgstr "Tarama veya arayın..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Bu lottan izlenen bir varlığı taramak veya seçmek için bunu örnek sütun olarak ekleyin, ardından sonucunu ızgarada kaydedin."
+
+msgid "Scan serial or batch…"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Bu QR kodunu kimlik doğrulayıcı uygulamanız (örn. Google Authenticator veya 1Password) ile tarayın, ardından gösterdiği 6 haneli kodu girin."
@@ -22215,6 +22364,9 @@ msgstr "Bunun yerine Oturumu Kapat"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Sign-in failed. Try again."
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Bir sonraki adıma geçmeden önce onay incelemesi"
 
@@ -22326,6 +22478,12 @@ msgstr "Slayt {0}"
 
 msgid "Slides"
 msgstr "Slaytlar"
+
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Partilemeye değer en küçük çalışma. Hiçbiri için boş bırakın."
@@ -23362,7 +23520,7 @@ msgid "System configured"
 msgstr "Sistem yapılandırıldı"
 
 msgid "System Qty"
-msgstr "Sistem Mik."
+msgstr ""
 
 msgid "Table"
 msgstr "Tablo"
@@ -23677,6 +23835,9 @@ msgstr "Bu liste boştu."
 
 msgid "That name is already used by another step."
 msgstr "Bu ad başka bir adım tarafından zaten kullanılıyor."
+
+msgid "That storage unit is not at this count's location"
+msgstr ""
 
 msgid "That workspace is connected to another company"
 msgstr "Bu çalışma alanı başka bir şirkete bağlı"
@@ -24169,6 +24330,9 @@ msgstr "Bu varlık için MACRS kapsamında IRS kurtarma süresi sınıfı (3, 5,
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "Her iş emrinin ürettiği stok kartı — çıkış lotlarını birleştirmek için eşleşmesi gerekir"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "Stok kartı'nın kiralama oranı"
@@ -24835,6 +24999,12 @@ msgstr "Bu gruptaki kullanıcılar; grup kapsamlı izinler ve bildirimler her ü
 msgid "The value of the cost layers dated before the cutover."
 msgstr "Kesinti tarihinden öncesine ait maliyet katmanlarının değeri."
 
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
+
 msgid "The version of the new document"
 msgstr "Yeni belgenin versiyonu"
 
@@ -24900,6 +25070,9 @@ msgstr "Bu RFQ için karşılaştırılacak aktif tedarikçi teklifi bulunmamakt
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Bu işle ilgili tedarikçisi olmayan dış operasyonlar bulunmaktadır. İşlemden önce her dış operasyona bir tedarikçi atayınız."
+
+msgid "There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again."
+msgstr ""
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
 msgstr "Bu operasyonlarda kurulum, işçilik veya makine süresi yok, bu nedenle çalıştırmayı boyutlandırmak için hiçbir şey yok. Çubuk nominal bir işarettir ve kapasite tutmaz — operasyonlara zaman standartları ekleyin."
@@ -25443,6 +25616,9 @@ msgstr "dar"
 
 msgid "Tightened"
 msgstr "Sıkılaştırılmış"
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
 
 msgid "Time"
 msgstr "Saat"
@@ -27919,11 +28095,17 @@ msgid "You completed {leftoverQuantity} more \n"
 "                        to do with the extra parts?"
 msgstr "Sipariş edilen miktardan {leftoverQuantity} fazla {0} tamamladınız. Fazla parçalarla ne yapmak istersiniz?{1}"
 
+msgid "You do not have permission to do this"
+msgstr ""
+
 msgid "You do not have permission to do this on every matching row."
 msgstr ""
 
 msgid "You do not have permission to edit workflows"
 msgstr "İş akışlarını Düzenlemek için İzniniz yok"
+
+msgid "You don't have permission to change this record, or it no longer exists."
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "Bu Malzeme listesini Düzenlemek için İzniniz yok."

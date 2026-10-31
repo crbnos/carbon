@@ -51,6 +51,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
+  toastError,
   useDebounce,
   useDisclosure,
   useMount,
@@ -1324,7 +1325,7 @@ function StepsForm({
         .company(companyId)
         .upload(fileName, upload);
       if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+        toastError(t`Failed to upload image`, result.error);
         return;
       }
       setDraftSlides((prev) => [
@@ -1400,7 +1401,7 @@ function StepsForm({
         .insert(slideRows);
       if (cancelled) return;
       if (error) {
-        toast.error(t`Failed to save slides`);
+        toastError(t`Failed to save slides`, error);
         return;
       }
       const savedIds = new Set(batch.map((slide) => slide.id));
@@ -1433,7 +1434,7 @@ function StepsForm({
       );
       if (cancelled) return;
       if (error) {
-        toast.error(t`Failed to save parts`);
+        toastError(t`Failed to save parts`, error);
         return;
       }
       const savedIds = new Set(batch);
@@ -1967,7 +1968,7 @@ function JobStepSlides({
         .company(companyId)
         .upload(fileName, upload);
       if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+        toastError(t`Failed to upload image`, result.error);
         return;
       }
       const fd = new FormData();

@@ -122,10 +122,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (updateLine.error) {
     throw redirect(
       path.to.salesRfqLine(rfqId, lineId),
-      await flash(
-        request,
-        error(updateLine.error, "Failed to update quote line")
-      )
+      await flash(request, error(updateLine.error, "Failed to update RFQ line"))
     );
   }
 

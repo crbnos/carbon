@@ -16,7 +16,7 @@ import {
   Th,
   Thead,
   Tr,
-  toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import type { TaxPair } from "@carbon/utils";
@@ -150,7 +150,7 @@ const SupplierQuoteLinePricing = ({
 
         if (update?.error) {
           logger.error(update.error);
-          toast.error(t`Failed to update supplier quote line`);
+          toastError(t`Failed to update supplier quote line`, update.error);
           setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
         }
       } else {
@@ -162,7 +162,7 @@ const SupplierQuoteLinePricing = ({
 
         if (insert?.error) {
           logger.error(insert.error);
-          toast.error(t`Failed to insert supplier quote line`);
+          toastError(t`Failed to insert supplier quote line`, insert.error);
           setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
         }
       }

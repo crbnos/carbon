@@ -69,7 +69,7 @@ export function SearchLandingPage({
         <div className="mt-2 w-full">{children}</div>
 
         {footerTip && (
-          <p className="text-[11px] text-muted-foreground/70 tabular-nums">
+          <p className="text-[0.6875rem] text-muted-foreground/70 tabular-nums">
             {footerTip}
           </p>
         )}

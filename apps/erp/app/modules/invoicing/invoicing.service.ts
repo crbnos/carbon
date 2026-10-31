@@ -142,6 +142,7 @@ import {
   type ReceiptLayerLike,
   reduceInvoiceSettlements,
   remainingFundingSources,
+  requireAffected,
   round,
   roundSalesPostingAmounts,
   type SalesPostingMetadata,
@@ -488,17 +489,26 @@ export async function deletePurchaseInvoice(
     };
   }
 
-  return client.from("purchaseInvoice").delete().eq("id", purchaseInvoiceId);
+  return requireAffected(
+    client
+      .from("purchaseInvoice")
+      .delete()
+      .eq("id", purchaseInvoiceId)
+      .select("id")
+  );
 }
 
 export async function deletePurchaseInvoiceLine(
   client: SupabaseClient<Database>,
   purchaseInvoiceLineId: string
 ) {
-  return client
-    .from("purchaseInvoiceLine")
-    .delete()
-    .eq("id", purchaseInvoiceLineId);
+  return requireAffected(
+    client
+      .from("purchaseInvoiceLine")
+      .delete()
+      .eq("id", purchaseInvoiceLineId)
+      .select("id")
+  );
 }
 
 export async function deleteSalesInvoice(
@@ -526,14 +536,22 @@ export async function deleteSalesInvoice(
     };
   }
 
-  return client.from("salesInvoice").delete().eq("id", salesInvoiceId);
+  return requireAffected(
+    client.from("salesInvoice").delete().eq("id", salesInvoiceId).select("id")
+  );
 }
 
 export async function deleteSalesInvoiceLine(
   client: SupabaseClient<Database>,
   salesInvoiceLineId: string
 ) {
-  return client.from("salesInvoiceLine").delete().eq("id", salesInvoiceLineId);
+  return requireAffected(
+    client
+      .from("salesInvoiceLine")
+      .delete()
+      .eq("id", salesInvoiceLineId)
+      .select("id")
+  );
 }
 
 export async function getPurchaseInvoice(
@@ -716,7 +734,13 @@ export async function updatePurchaseInvoiceExchangeRate(
     updatedAt: new Date().toISOString()
   };
 
-  return client.from("purchaseInvoice").update(update).eq("id", update.id);
+  return requireAffected(
+    client
+      .from("purchaseInvoice")
+      .update(update)
+      .eq("id", update.id)
+      .select("id")
+  );
 }
 
 export async function updateSalesInvoiceExchangeRate(
@@ -735,7 +759,9 @@ export async function updateSalesInvoiceExchangeRate(
     updatedAt: new Date().toISOString()
   };
 
-  return client.from("salesInvoice").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("salesInvoice").update(update).eq("id", update.id).select("id")
+  );
 }
 
 /** Not published: `invoicing.purchaseInvoice.create` creates the invoice and its extracted lines. */
@@ -937,14 +963,16 @@ export async function upsertPurchaseInvoice(
   if ("id" in purchaseInvoice) {
     const { supplierShippingCost: _shipping, ...invoiceUpdate } =
       purchaseInvoice;
-    return client
-      .from("purchaseInvoice")
-      .update({
-        ...sanitize(invoiceUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", purchaseInvoice.id)
-      .select("id, invoiceId");
+    return requireAffected(
+      client
+        .from("purchaseInvoice")
+        .update({
+          ...sanitize(invoiceUpdate),
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", purchaseInvoice.id)
+        .select("id, invoiceId")
+    );
   }
 
   const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
@@ -1317,14 +1345,16 @@ export async function upsertSalesInvoice(
 ) {
   if ("id" in salesInvoice) {
     const { supplierShippingCost: _shipping, ...invoiceUpdate } = salesInvoice;
-    return client
-      .from("salesInvoice")
-      .update({
-        ...sanitize(invoiceUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", salesInvoice.id)
-      .select("id, invoiceId");
+    return requireAffected(
+      client
+        .from("salesInvoice")
+        .update({
+          ...sanitize(invoiceUpdate),
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", salesInvoice.id)
+        .select("id, invoiceId")
+    );
   }
 
   const [opportunity, customerPayment, customerShipping, salesPerson] =
@@ -3059,11 +3089,14 @@ export async function deletePayment(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("payment")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("payment")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function upsertInvoiceSettlement(
@@ -3097,7 +3130,9 @@ export async function deleteInvoiceSettlement(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("invoiceSettlement").delete().eq("id", id);
+  return requireAffected(
+    client.from("invoiceSettlement").delete().eq("id", id).select("id")
+  );
 }
 
 // Replace-all for the apply table. The delete + insert run in a single
@@ -4134,7 +4169,14 @@ export async function deleteMemo(
   id: string,
   companyId: string
 ) {
-  return client.from("memo").delete().eq("id", id).eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("memo")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 // The party's available credit to draw on when clearing invoices alongside cash:

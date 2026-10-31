@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { toast } from "@carbon/react";
+import { errorDescription, toast } from "@carbon/react";
 import type { MiddlewareFunction } from "react-router";
 import type { Result } from "../types";
 
@@ -23,7 +23,10 @@ export const flashClientMiddleware: MiddlewareFunction<
     if (result?.success === true) {
       toast.success(result.message, { description: result.description });
     } else if (result?.message) {
-      toast.error(result.message, { description: result.description });
+      toast.error(result.message, {
+        description:
+          result.description ?? errorDescription(result.message, result.reason)
+      });
     }
   }
 

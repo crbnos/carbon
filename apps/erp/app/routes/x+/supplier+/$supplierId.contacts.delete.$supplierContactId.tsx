@@ -19,7 +19,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!supplierId || !supplierContactId) {
     throw redirect(
       path.to.suppliers,
-      await flash(request, error(params, "Failed to get a supplier contact id"))
+      await flash(request, error(null, "Failed to get a supplier contact id"))
     );
   }
 

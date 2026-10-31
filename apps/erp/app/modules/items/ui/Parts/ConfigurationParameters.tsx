@@ -33,7 +33,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -120,7 +120,7 @@ export default function ConfigurationParametersForm({
   const fetcher = useAction<typeof configurationParameterAction>({
     onError: (data) => {
       if (data?.success === false) {
-        toast.error(t`Failed to update configuration parameter`);
+        toastError(t`Failed to update configuration parameter`, data.error);
       }
     }
   });

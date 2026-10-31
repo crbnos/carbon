@@ -41,6 +41,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
+  toastError,
   useDebounce,
   useDisclosure,
   useThrottle,
@@ -2067,7 +2068,7 @@ function AttributesForm({
         .company(companyId)
         .upload(fileName, upload);
       if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+        toastError(t`Failed to upload image`, result.error);
         return;
       }
       setDraftSlides((prev) => [
@@ -2141,7 +2142,7 @@ function AttributesForm({
         .insert(slideRows);
       if (cancelled) return;
       if (error) {
-        toast.error(t`Failed to save slides`);
+        toastError(t`Failed to save slides`, error);
         return;
       }
       setDraftSlides([]);
@@ -2172,7 +2173,7 @@ function AttributesForm({
       );
       if (cancelled) return;
       if (error) {
-        toast.error(t`Failed to save parts`);
+        toastError(t`Failed to save parts`, error);
         return;
       }
       setDraftParts([]);
@@ -3144,7 +3145,7 @@ function StepSlides({
         .company(companyId)
         .upload(fileName, upload);
       if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+        toastError(t`Failed to upload image`, result.error);
         return;
       }
       const fd = new FormData();
@@ -3706,7 +3707,7 @@ function OperationPreview({
             ) : (
               <LuBox className="size-10 text-muted-foreground" />
             )}
-            <span className="pointer-events-none absolute left-2 top-2 rounded bg-background/80 px-1 text-[10px] font-semibold text-muted-foreground">
+            <span className="pointer-events-none absolute left-2 top-2 rounded bg-background/80 px-1 text-[0.625rem] font-semibold text-muted-foreground">
               3D
             </span>
           </>
@@ -3756,7 +3757,7 @@ function OperationPreview({
           {pinLegend.map(({ pin, index, toolId, toolName }) => (
             <div key={pin.id} className="flex items-start gap-2">
               <span
-                className="mt-px flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+                className="mt-px flex size-4 shrink-0 items-center justify-center rounded-full text-[0.5625rem] font-semibold text-white"
                 style={{ backgroundColor: pin.color ?? "#ef4444" }}
               >
                 {index + 1}
@@ -3814,7 +3815,7 @@ function OperationPreview({
                   <LuBox className="size-5 text-muted-foreground" />
                 )}
                 {s.modelUploadId && (
-                  <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[8px] font-semibold text-muted-foreground">
+                  <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[0.5rem] font-semibold text-muted-foreground">
                     3D
                   </span>
                 )}
@@ -3859,7 +3860,7 @@ function OperationPreview({
                     {tool?.readableIdWithRevision ?? tl.toolId}
                   </span>
                   {tool?.name ? (
-                    <span className="truncate text-[11px] text-muted-foreground">
+                    <span className="truncate text-[0.6875rem] text-muted-foreground">
                       {tool.name}
                     </span>
                   ) : null}

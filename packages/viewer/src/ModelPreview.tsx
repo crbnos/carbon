@@ -620,7 +620,7 @@ function ModelMetricsPanel({
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+          className="flex items-center gap-1 text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
         >
           <LuChevronDown
             className={cn("size-3 transition-transform", !open && "-rotate-90")}
@@ -730,7 +730,7 @@ function PmiPanel({
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+          className="flex items-center gap-1 text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
         >
           <LuChevronDown
             className={cn("size-3 transition-transform", !open && "-rotate-90")}
@@ -762,7 +762,7 @@ function PmiPanel({
               aria-label="Saved view"
               value={viewId ?? ""}
               onChange={(event) => onViewChange(event.target.value || null)}
-              className="mt-2 w-full rounded-md border-none bg-muted/60 px-2 py-1 text-[11px] font-medium text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="mt-2 w-full rounded-md border-none bg-muted/60 px-2 py-1 text-[0.6875rem] font-medium text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="">All PMI</option>
               {doc.views.map((view) => (
@@ -776,7 +776,7 @@ function PmiPanel({
           <div className="mt-2 flex max-h-64 flex-col gap-2 overflow-y-auto">
             {groups.map((group) => (
               <div key={group.kind} className="flex flex-col gap-0.5">
-                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                <span className="text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">
                   {group.title}
                 </span>
                 {group.items.map((item) => (
@@ -887,7 +887,7 @@ function UnitToggle({
           type="button"
           onClick={() => onChange(value)}
           className={cn(
-            "min-w-[30px] rounded px-2 py-1 text-center text-[11px] font-medium leading-none transition-colors",
+            "min-w-[30px] rounded px-2 py-1 text-center text-[0.6875rem] font-medium leading-none transition-colors",
             unit === value
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"

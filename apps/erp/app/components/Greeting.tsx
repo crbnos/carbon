@@ -92,7 +92,7 @@ export function Greeting({ hour, pick, className, ...props }: GreetingProps) {
   return (
     <Heading
       size="display"
-      className={cn("text-2xl sm:text-3xl md:text-[44px]", className)}
+      className={cn("text-2xl sm:text-3xl md:text-[2.75rem]", className)}
       {...props}
     >
       {greeting}

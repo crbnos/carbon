@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "\"{column}\" is required."
+msgstr "\"{column}\" is required."
+
 msgid "(Inactive)"
 msgstr "(Inactive)"
 
@@ -84,6 +87,12 @@ msgstr "{0} runs in batch {1}"
 msgid "{0} Scrapped"
 msgstr "{0} Scrapped"
 
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr "{columns} does not match an existing \"{target}\"."
+
+msgid "{columns} does not match an existing record."
+msgstr "{columns} does not match an existing record."
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} of {quantity}"
 
@@ -109,6 +118,21 @@ msgstr "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+
+msgid "A record with these values already exists."
+msgstr "A record with these values already exists."
+
+msgid "A record with this {columns} already exists."
+msgstr "A record with this {columns} already exists."
+
+msgid "A referenced record does not exist."
+msgstr "A referenced record does not exist."
+
+msgid "A required field was missing."
+msgstr "A required field was missing."
+
+msgid "A value is not valid."
+msgstr "A value is not valid."
 
 msgid "About"
 msgstr "About"
@@ -305,6 +329,9 @@ msgstr "batch total"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Behind target by {daysBehindTarget} day(s)"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr "Bigger or smaller text. The layout stays put."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Blocked by {0}"
@@ -439,6 +466,12 @@ msgstr "Column: {0}"
 msgid "Columns"
 msgstr "Columns"
 
+msgid "Comfortable"
+msgstr "Comfortable"
+
+msgid "Compact"
+msgstr "Compact"
+
 msgid "Companies"
 msgstr "Companies"
 
@@ -552,6 +585,9 @@ msgstr "Delete Step"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Delete Timecard (<0/>)"
+
+msgid "Density"
+msgstr "Density"
 
 msgid "Describe the problem..."
 msgstr "Describe the problem..."
@@ -944,6 +980,9 @@ msgstr "Issued {issuedQuantity} of {lotLabel}"
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr "It is still used by a \"{table}\" record; remove that first."
+
 msgid "Item"
 msgstr "Item"
 
@@ -979,6 +1018,12 @@ msgstr "Kit"
 
 msgid "Labor"
 msgstr "Labor"
+
+msgid "Large"
+msgstr "Large"
+
+msgid "Larger"
+msgstr "Larger"
 
 msgid "Last completed"
 msgstr "Last completed"
@@ -1236,6 +1281,9 @@ msgstr "No maintenance scheduled for today"
 
 msgid "No matches. Type to create one."
 msgstr "No matches. Type to create one."
+
+msgid "No matching record was found."
+msgstr "No matching record was found."
 
 msgid "No matching time"
 msgstr "No matching time"
@@ -1990,6 +2038,12 @@ msgstr "Size"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Small"
+msgstr "Small"
+
+msgid "Smaller"
+msgstr "Smaller"
+
 msgid "Source"
 msgstr "Source"
 
@@ -2085,6 +2139,9 @@ msgstr "System"
 msgid "Tag"
 msgstr "Tag"
 
+msgid "Text size"
+msgstr "Text size"
+
 msgid "The accent color used across Carbon."
 msgstr "The accent color used across Carbon."
 
@@ -2110,6 +2167,12 @@ msgstr "The lot will still be dispositioned, but an NCR cannot be created until 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
+
+msgid "The values break a rule on this record."
+msgstr "The values break a rule on this record."
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr "The values break the rule \"{constraint}\"."
 
 msgid "Theme color"
 msgstr "Theme color"
@@ -2152,6 +2215,9 @@ msgstr "Thumbnail"
 
 msgid "Tick the jobs this was done for."
 msgstr "Tick the jobs this was done for."
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr "Tighter or roomier layout. The text stays put."
 
 msgid "Time"
 msgstr "Time"
@@ -2376,6 +2442,12 @@ msgstr "You can still start this operation."
 
 msgid "You can't work on this operation"
 msgstr "You can't work on this operation"
+
+msgid "You do not have permission to do this"
+msgstr "You do not have permission to do this"
+
+msgid "You don't have permission to change this record, or it no longer exists."
+msgstr "You don't have permission to change this record, or it no longer exists."
 
 msgid "You don't have the {processName} ability"
 msgstr "You don't have the {processName} ability"

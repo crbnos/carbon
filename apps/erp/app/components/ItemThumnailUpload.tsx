@@ -14,8 +14,10 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
+import { requireAffected } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
@@ -60,15 +62,18 @@ export function ItemThumbnailUpload({
 
     setThumbnailPath(null);
 
-    const itemResult = await carbon
-      .from("item")
-      .update({
-        thumbnailPath: null
-      })
-      .eq("id", itemId);
+    const itemResult = await requireAffected(
+      carbon
+        .from("item")
+        .update({
+          thumbnailPath: null
+        })
+        .eq("id", itemId)
+        .select("id")
+    );
 
     if (itemResult.error) {
-      toast.error(t`Failed to remove thumbnail`);
+      toastError(t`Failed to remove thumbnail`, itemResult.error);
       return;
     }
 
@@ -81,7 +86,7 @@ export function ItemThumbnailUpload({
         .eq("id", modelId);
 
       if (modelResult.error) {
-        toast.error(t`Failed to remove model thumbnail`);
+        toastError(t`Failed to remove model thumbnail`, modelResult.error);
         return;
       }
     }
@@ -165,19 +170,22 @@ export function ItemThumbnailUpload({
             );
 
           if (error) {
-            toast.error(t`Failed to upload thumbnail`);
+            toastError(t`Failed to upload thumbnail`, error);
             return;
           }
 
-          const result = await carbon
-            .from("item")
-            .update({
-              thumbnailPath: data?.path
-            })
-            .eq("id", itemId);
+          const result = await requireAffected(
+            carbon
+              .from("item")
+              .update({
+                thumbnailPath: data?.path
+              })
+              .eq("id", itemId)
+              .select("id")
+          );
 
           if (result.error) {
-            toast.error(t`Failed to update thumbnail path`);
+            toastError(t`Failed to update thumbnail path`, result.error);
             return;
           }
 
@@ -187,7 +195,7 @@ export function ItemThumbnailUpload({
           }
         } catch (error) {
           logger.error("Image processing error", { error: error });
-          toast.error(t`Failed to resize image`);
+          toastError(t`Failed to resize image`, error);
         }
       }
     },

@@ -271,7 +271,7 @@ function DagLegend() {
                 <div
                   className={cn("w-4 h-4 rounded border-2", entry.className)}
                 />
-                <span className="text-[13px] text-foreground">
+                <span className="text-[0.8125rem] text-foreground">
                   {entry.label}
                 </span>
               </HStack>

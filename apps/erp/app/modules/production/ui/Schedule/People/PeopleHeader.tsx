@@ -342,7 +342,7 @@ export function PeopleHeader({
                     >
                       <span className="tabular-nums">{week.label}</span>
                       {week.isCurrent && (
-                        <span className="text-[11px] font-medium text-primary">
+                        <span className="text-[0.6875rem] font-medium text-primary">
                           <Trans>This week</Trans>
                         </span>
                       )}

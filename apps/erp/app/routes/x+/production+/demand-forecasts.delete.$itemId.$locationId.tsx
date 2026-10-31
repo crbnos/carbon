@@ -65,7 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error("Failed to delete demand projections", "Delete failed")
+        error(result.error, "Failed to delete demand projections")
       )
     );
   }

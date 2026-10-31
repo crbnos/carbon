@@ -13,6 +13,7 @@ import {
   CardTitle,
   cn,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -122,7 +123,10 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
       ]);
 
       if (customerData.error || paymentTermData.error) {
-        toast.error(t`Error fetching customer data`);
+        toastError(
+          t`Error fetching customer data`,
+          customerData.error ?? paymentTermData.error
+        );
       } else {
         setInvoiceCustomer((prev) => ({
           ...prev,

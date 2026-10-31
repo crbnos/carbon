@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  inventoryCountLineState,
   isShippableEntityStatus,
   type NonNettableUnit,
   nonNettableSource,
@@ -302,4 +303,30 @@ describe("untrackedIssueRefusal", () => {
       ).toBeNull();
     }
   );
+});
+
+describe("inventoryCountLineState", () => {
+  it("reads a line added while counting as Unexpected", () => {
+    expect(
+      inventoryCountLineState({ countedQuantity: 1, foundDuringCount: true })
+    ).toBe("Unexpected");
+  });
+  it("reads an uncounted snapshot line as Not counted", () => {
+    expect(
+      inventoryCountLineState({
+        countedQuantity: null,
+        foundDuringCount: false
+      })
+    ).toBe("Not counted");
+  });
+  it("reads a snapshot line counted 0 as Missing", () => {
+    expect(
+      inventoryCountLineState({ countedQuantity: 0, foundDuringCount: false })
+    ).toBe("Missing");
+  });
+  it("reads a snapshot line counted above 0 as Found", () => {
+    expect(
+      inventoryCountLineState({ countedQuantity: 1, foundDuringCount: false })
+    ).toBe("Found");
+  });
 });

@@ -79,7 +79,7 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
         header: t`Item`,
         cell: ({ row }) => (
           <div className="flex flex-col gap-0">
-            <span className="text-sm font-medium max-md:text-[13px] max-md:font-normal">
+            <span className="text-sm font-medium max-md:text-[0.8125rem] max-md:font-normal">
               {getItemReadableId(items, (row.original as any).itemId) ??
                 (row.original as any).itemReadableId ??
                 ""}

@@ -34,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.materialFinishes,
       await flash(
         request,
-        error(new Error("Access denied"), "Cannot edit global material grade")
+        error(new Error("Access denied"), "Cannot edit global material finish")
       )
     );
   }
@@ -73,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(updateMaterialFinish.error, "Failed to update material grade")
+        error(updateMaterialFinish.error, "Failed to update material finish")
       )
     );
   }

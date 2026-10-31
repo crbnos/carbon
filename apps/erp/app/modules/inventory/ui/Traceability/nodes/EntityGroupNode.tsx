@@ -119,7 +119,7 @@ function EntityGroupNodeImpl({
         <Icon style={{ width: iconSize, height: iconSize }} />
       </div>
       <div
-        className="absolute -bottom-1 -right-1 rounded-full bg-card border border-border text-[9px] tabular-nums px-1 leading-tight pointer-events-none font-medium"
+        className="absolute -bottom-1 -right-1 rounded-full bg-card border border-border text-[0.5625rem] tabular-nums px-1 leading-tight pointer-events-none font-medium"
         title={`${count} identical ${cluster.status.toLowerCase()} serials`}
       >
         ×{count}
@@ -134,14 +134,14 @@ function EntityGroupNodeImpl({
         >
           <span
             className={cn(
-              "text-[11px] tracking-tight px-1.5 py-px rounded bg-background",
+              "text-[0.6875rem] tracking-tight px-1.5 py-px rounded bg-background",
               selected && "font-medium"
             )}
           >
             {cluster.headline}
           </span>
           {rangeLabel && (
-            <span className="text-[10px] tracking-tight px-1.5 rounded bg-background text-muted-foreground tabular-nums">
+            <span className="text-[0.625rem] tracking-tight px-1.5 rounded bg-background text-muted-foreground tabular-nums">
               {rangeLabel}
             </span>
           )}

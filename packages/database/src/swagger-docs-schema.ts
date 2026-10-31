@@ -17152,6 +17152,12 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.foundDuringCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.assignedReadableId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -17268,6 +17274,12 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.foundDuringCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.assignedReadableId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -17336,6 +17348,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLine.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.foundDuringCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.assignedReadableId"
           },
           {
             $ref: "#/parameters/body.inventoryCountLine"
@@ -21466,6 +21484,12 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLines.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.inventoryCountLines.foundDuringCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLines.assignedReadableId"
+          },
+          {
             $ref: "#/parameters/rowFilter.inventoryCountLines.itemName"
           },
           {
@@ -21518,6 +21542,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLines.storageTypeIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLines.isUnnumbered"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLines.trackedEntityCreatedAt"
           },
           {
             $ref: "#/parameters/select"
@@ -82962,6 +82992,147 @@ export default {
         tags: ["documents"]
       }
     },
+    "/inventoryCountGroups": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.inventoryCountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.storageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.expectedQuantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.countedQuantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.variance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.lineCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.foundCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.missingCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.unexpectedCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.notCountedCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.unnumberedCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.unitNumbers"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.itemName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.itemReadableIdWithRevision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.itemTrackingType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.itemThumbnailPath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.unitOfMeasureCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.materialSubstanceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.materialFormId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.dimensionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.dimension"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.finishId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.finish"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.gradeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.grade"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.materialTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.materialType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.tags"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountGroups.storageTypeIds"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/inventoryCountGroups"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["inventoryCountGroups"]
+      }
+    },
     "/methodOperationStep": {
       get: {
         parameters: [
@@ -100561,6 +100732,90 @@ export default {
           }
         },
         tags: ["suggestions"]
+      }
+    },
+    "/kanbanItems": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.readableIdWithRevision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.thumbnailPath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.kanbanCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.kanbanIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.replenishmentSystems"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.supplierIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.kanbans"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbanItems.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/kanbanItems"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["kanbanItems"]
       }
     },
     "/customField": {
@@ -127469,7 +127724,8 @@ export default {
         "itemId",
         "systemQuantity",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "foundDuringCount"
       ],
       properties: {
         id: {
@@ -127560,6 +127816,15 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        foundDuringCount: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        assignedReadableId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -129553,6 +129818,14 @@ export default {
         customFields: {
           format: "jsonb"
         },
+        foundDuringCount: {
+          format: "boolean",
+          type: "boolean"
+        },
+        assignedReadableId: {
+          format: "text",
+          type: "string"
+        },
         itemName: {
           format: "text",
           type: "string"
@@ -129651,6 +129924,14 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        isUnnumbered: {
+          format: "boolean",
+          type: "boolean"
+        },
+        trackedEntityCreatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -158940,6 +159221,174 @@ export default {
       },
       type: "object"
     },
+    inventoryCountGroups: {
+      properties: {
+        id: {
+          format: "text",
+          type: "string"
+        },
+        inventoryCountId: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        storageUnitId: {
+          format: "text",
+          type: "string"
+        },
+        expectedQuantity: {
+          format: "numeric",
+          type: "number"
+        },
+        countedQuantity: {
+          format: "numeric",
+          type: "number"
+        },
+        variance: {
+          format: "numeric",
+          type: "number"
+        },
+        lineCount: {
+          format: "bigint",
+          type: "integer"
+        },
+        foundCount: {
+          format: "bigint",
+          type: "integer"
+        },
+        missingCount: {
+          format: "bigint",
+          type: "integer"
+        },
+        unexpectedCount: {
+          format: "bigint",
+          type: "integer"
+        },
+        notCountedCount: {
+          format: "bigint",
+          type: "integer"
+        },
+        unnumberedCount: {
+          format: "bigint",
+          type: "integer"
+        },
+        unitNumbers: {
+          format: "text",
+          type: "string"
+        },
+        itemName: {
+          format: "text",
+          type: "string"
+        },
+        itemReadableIdWithRevision: {
+          format: "text",
+          type: "string"
+        },
+        type: {
+          enum: [
+            "Part",
+            "Material",
+            "Tool",
+            "Service",
+            "Consumable",
+            "Fixture"
+          ],
+          format: 'public."itemType"',
+          type: "string"
+        },
+        itemTrackingType: {
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
+          format: 'public."itemTrackingType"',
+          type: "string"
+        },
+        itemThumbnailPath: {
+          format: "text",
+          type: "string"
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string"
+        },
+        materialSubstanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        materialFormId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialForm.id`.<fk table='materialForm' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        dimensionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialDimension.id`.<fk table='materialDimension' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        dimension: {
+          format: "text",
+          type: "string"
+        },
+        finishId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialFinish.id`.<fk table='materialFinish' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        finish: {
+          format: "text",
+          type: "string"
+        },
+        gradeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialGrade.id`.<fk table='materialGrade' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        grade: {
+          format: "text",
+          type: "string"
+        },
+        materialTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialType.id`.<fk table='materialType' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        materialType: {
+          format: "text",
+          type: "string"
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        storageTypeIds: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        }
+      },
+      type: "object"
+    },
     methodOperationStep: {
       required: [
         "id",
@@ -167673,6 +168122,80 @@ export default {
         },
         employeeAvatarUrl: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    kanbanItems: {
+      properties: {
+        id: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        readableIdWithRevision: {
+          format: "text",
+          type: "string"
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string"
+        },
+        kanbanCount: {
+          format: "integer",
+          type: "integer"
+        },
+        kanbanIds: {
+          format: "text",
+          type: "string"
+        },
+        replenishmentSystems: {
+          format: 'public."kanbanReplenishmentSystem"[]',
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        supplierIds: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        kanbans: {
+          format: "jsonb"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -178805,6 +179328,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inventoryCountLine.foundDuringCount": {
+      name: "foundDuringCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountLine.assignedReadableId": {
+      name: "assignedReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.unattributedMachineTime": {
       name: "unattributedMachineTime",
       description: "unattributedMachineTime",
@@ -181105,6 +181640,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inventoryCountLines.foundDuringCount": {
+      name: "foundDuringCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountLines.assignedReadableId": {
+      name: "assignedReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.inventoryCountLines.itemName": {
       name: "itemName",
       required: false,
@@ -181209,6 +181756,18 @@ export default {
     },
     "rowFilter.inventoryCountLines.storageTypeIds": {
       name: "storageTypeIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountLines.isUnnumbered": {
+      name: "isUnnumbered",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountLines.trackedEntityCreatedAt": {
+      name: "trackedEntityCreatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -213930,6 +214489,213 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.inventoryCountGroups": {
+      name: "inventoryCountGroups",
+      description: "inventoryCountGroups",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/inventoryCountGroups"
+      }
+    },
+    "rowFilter.inventoryCountGroups.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.inventoryCountId": {
+      name: "inventoryCountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.storageUnitId": {
+      name: "storageUnitId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.expectedQuantity": {
+      name: "expectedQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.countedQuantity": {
+      name: "countedQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.variance": {
+      name: "variance",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.lineCount": {
+      name: "lineCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.foundCount": {
+      name: "foundCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.missingCount": {
+      name: "missingCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.unexpectedCount": {
+      name: "unexpectedCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.notCountedCount": {
+      name: "notCountedCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.unnumberedCount": {
+      name: "unnumberedCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.unitNumbers": {
+      name: "unitNumbers",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.itemName": {
+      name: "itemName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.itemReadableIdWithRevision": {
+      name: "itemReadableIdWithRevision",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.type": {
+      name: "type",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.itemTrackingType": {
+      name: "itemTrackingType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.itemThumbnailPath": {
+      name: "itemThumbnailPath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.materialSubstanceId": {
+      name: "materialSubstanceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.materialFormId": {
+      name: "materialFormId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.dimensionId": {
+      name: "dimensionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.dimension": {
+      name: "dimension",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.finishId": {
+      name: "finishId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.finish": {
+      name: "finish",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.gradeId": {
+      name: "gradeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.grade": {
+      name: "grade",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.materialTypeId": {
+      name: "materialTypeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.materialType": {
+      name: "materialType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.tags": {
+      name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountGroups.storageTypeIds": {
+      name: "storageTypeIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.methodOperationStep": {
       name: "methodOperationStep",
       description: "methodOperationStep",
@@ -223720,6 +224486,99 @@ export default {
     },
     "rowFilter.suggestions.employeeAvatarUrl": {
       name: "employeeAvatarUrl",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.kanbanItems": {
+      name: "kanbanItems",
+      description: "kanbanItems",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/kanbanItems"
+      }
+    },
+    "rowFilter.kanbanItems.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.readableIdWithRevision": {
+      name: "readableIdWithRevision",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.kanbanCount": {
+      name: "kanbanCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.kanbanIds": {
+      name: "kanbanIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.replenishmentSystems": {
+      name: "replenishmentSystems",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.supplierIds": {
+      name: "supplierIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.kanbans": {
+      name: "kanbans",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbanItems.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

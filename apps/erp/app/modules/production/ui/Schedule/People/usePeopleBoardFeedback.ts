@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { toastServiceError } from "@carbon/query";
 import { toast } from "@carbon/react";
 import { plural } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
@@ -45,7 +46,7 @@ export function usePeopleBoardFeedback() {
       answered.current.add(fetcher.key);
 
       if (result.error) {
-        toast.error(result.error.message);
+        toastServiceError(result);
         continue;
       }
       const intent = fetcher.formData?.get("intent");

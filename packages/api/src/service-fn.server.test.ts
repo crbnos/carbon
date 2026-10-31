@@ -272,6 +272,74 @@ describe("toResult", () => {
   });
 });
 
+describe("an internal failure's reason", () => {
+  const failing = (cause: unknown) =>
+    defineServiceFn({
+      input: z.object({}),
+      permission: {},
+      async run(ctx) {
+        return ctx.error(
+          "internal",
+          "Failed to update the purchase order",
+          cause
+        );
+      }
+    });
+
+  it("splits a database refusal into its title and reason, message unchanged", async () => {
+    const update = failing({
+      code: "23505",
+      details: 'Key ("readableId")=(PO-1) already exists.'
+    });
+    const { error } = await update(ctx, {});
+    expect(toResult({ data: null, error })).toEqual({
+      data: null,
+      error: {
+        category: "conflict",
+        status: 409,
+        message:
+          'Failed to update the purchase order: A record with this "readableId" already exists.',
+        title: "Failed to update the purchase order",
+        reason: { code: "duplicate", values: { columns: '"readableId"' } }
+      }
+    });
+  });
+
+  it("carries a trigger's RAISE text as the reason", async () => {
+    const update = failing({
+      code: "P0001",
+      message: "Accounting period is closed"
+    });
+    const { error } = await update(ctx, {});
+    expect(toResult({ data: null, error })).toEqual({
+      data: null,
+      error: {
+        category: "internal",
+        status: 500,
+        message: "Failed to update the purchase order",
+        title: "Failed to update the purchase order",
+        reason: { code: "raw", values: { text: "Accounting period is closed" } }
+      }
+    });
+  });
+
+  it("carries a thrown exception's message as the reason", async () => {
+    const crash = defineServiceFn({
+      input: z.object({}),
+      permission: {},
+      async run() {
+        throw new Error("boom");
+      }
+    });
+    const { error } = await crash(ctx, {});
+    expect(error).toMatchObject({
+      category: "internal",
+      message: "Something went wrong",
+      reason: { code: "raw", values: { text: "boom" } }
+    });
+  });
+});
+
 describe("ctx.transaction", () => {
   it("commits a value and hands the body the transaction", async () => {
     const { pg, trx, outcomes } = database();

@@ -5,13 +5,15 @@
 import type { Database } from "@carbon/database";
 import type {
   getBatchProperties,
+  getInventoryCountGroupSummaries,
+  getInventoryCountGroups,
   getInventoryCountLines,
   getInventoryCounts,
   getInventoryItems,
   getInventoryValuation,
   getInventoryValuationTieOut,
   getItemLedgerPage,
-  getKanbans,
+  getKanbanItems,
   getPurchaseOrderLinesToReceive,
   getReceiptLines,
   getReceipts,
@@ -54,9 +56,11 @@ export type ItemTracking = NonNullable<
   Awaited<ReturnType<typeof getReceiptTracking>>["data"]
 >[number];
 
-export type Kanban = NonNullable<
-  Awaited<ReturnType<typeof getKanbans>>["data"]
+export type KanbanItem = NonNullable<
+  Awaited<ReturnType<typeof getKanbanItems>>["data"]
 >[number];
+
+export type { KanbanSummary } from "./inventory.service";
 
 export type InventoryCount = NonNullable<
   Awaited<ReturnType<typeof getInventoryCounts>>["data"]
@@ -64,6 +68,14 @@ export type InventoryCount = NonNullable<
 
 export type InventoryCountLine = NonNullable<
   Awaited<ReturnType<typeof getInventoryCountLines>>["data"]
+>[number];
+
+export type InventoryCountGroup = NonNullable<
+  Awaited<ReturnType<typeof getInventoryCountGroups>>["data"]
+>[number];
+
+export type InventoryCountGroupSummary = Awaited<
+  ReturnType<typeof getInventoryCountGroupSummaries>
 >[number];
 
 export type Receipt = NonNullable<

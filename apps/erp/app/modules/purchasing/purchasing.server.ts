@@ -44,6 +44,7 @@ import {
   escapeHTMLChars,
   groupBy,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
+  requireAffected,
   SCALE,
   sanitize,
   taxableBase,
@@ -817,11 +818,14 @@ export const recordSupplierQuoteLinkVisit = defineServiceFn({
   permission: "system",
 
   async run(ctx, { externalLinkId }) {
-    const visited = await ctx.asSystem.supabase
-      .from("externalLink")
-      .update({ lastAccessedAt: datetime.timestamp() } as never)
-      .eq("id", externalLinkId)
-      .eq("companyId", ctx.company.id);
+    const visited = await requireAffected(
+      ctx.asSystem.supabase
+        .from("externalLink")
+        .update({ lastAccessedAt: datetime.timestamp() } as never)
+        .eq("id", externalLinkId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (visited.error) {
       return ctx.error("internal", "Failed to record the visit", visited.error);
     }
@@ -950,20 +954,23 @@ export const submitDigitalSupplierQuote = defineServiceFn({
       return ctx.error("internal", "Failed to save quote prices", failed.error);
     }
 
-    const submitted = await client
-      .from("supplierQuote")
-      .update({
-        status: "Active",
-        updatedAt: now,
-        externalNotes: {
-          ...((quote.externalNotes as Record<string, unknown>) || {}),
-          lastSubmittedBy: submittedBy,
-          lastSubmittedByEmail: submittedByEmail,
-          lastSubmittedAt: now
-        }
-      })
-      .eq("id", supplierQuoteId)
-      .eq("companyId", companyId);
+    const submitted = await requireAffected(
+      client
+        .from("supplierQuote")
+        .update({
+          status: "Active",
+          updatedAt: now,
+          externalNotes: {
+            ...((quote.externalNotes as Record<string, unknown>) || {}),
+            lastSubmittedBy: submittedBy,
+            lastSubmittedByEmail: submittedByEmail,
+            lastSubmittedAt: now
+          }
+        })
+        .eq("id", supplierQuoteId)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (submitted.error) {
       return ctx.error(
         "internal",
@@ -1025,21 +1032,24 @@ export const declineDigitalSupplierQuote = defineServiceFn({
     if (quote instanceof CarbonError) return quote;
 
     const now = datetime.timestamp();
-    const declined = await client
-      .from("supplierQuote")
-      .update({
-        status: "Declined",
-        updatedAt: now,
-        externalNotes: {
-          ...((quote.externalNotes as Record<string, unknown>) || {}),
-          declineNote: note ?? null,
-          declinedBy: submittedBy,
-          declinedByEmail: submittedByEmail,
-          declinedAt: now
-        }
-      })
-      .eq("id", supplierQuoteId)
-      .eq("companyId", ctx.company.id);
+    const declined = await requireAffected(
+      client
+        .from("supplierQuote")
+        .update({
+          status: "Declined",
+          updatedAt: now,
+          externalNotes: {
+            ...((quote.externalNotes as Record<string, unknown>) || {}),
+            declineNote: note ?? null,
+            declinedBy: submittedBy,
+            declinedByEmail: submittedByEmail,
+            declinedAt: now
+          }
+        })
+        .eq("id", supplierQuoteId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (declined.error) {
       return ctx.error(
         "internal",
@@ -1080,15 +1090,18 @@ export const updateDigitalSupplierQuoteLineNotes = defineServiceFn({
   permission: "system",
 
   async run(ctx, { supplierQuoteId, lineId, notes }) {
-    const updated = await ctx.asSystem.supabase
-      .from("supplierQuoteLine")
-      .update({
-        externalNotes: (notes ?? null) as Json,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", lineId)
-      .eq("supplierQuoteId", supplierQuoteId)
-      .eq("companyId", ctx.company.id);
+    const updated = await requireAffected(
+      ctx.asSystem.supabase
+        .from("supplierQuoteLine")
+        .update({
+          externalNotes: (notes ?? null) as Json,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", lineId)
+        .eq("supplierQuoteId", supplierQuoteId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (updated.error) {
       return ctx.error("internal", "Failed to update notes", updated.error);
     }
@@ -1137,15 +1150,18 @@ export const requestSupplierApproval = defineServiceFn({
       );
     }
 
-    const update = await ctx.asCaller.supabase
-      .from("supplier")
-      .update({
-        supplierStatus: "Pending",
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", supplierId)
-      .eq("companyId", companyId);
+    const update = await requireAffected(
+      ctx.asCaller.supabase
+        .from("supplier")
+        .update({
+          supplierStatus: "Pending",
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", supplierId)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (update.error) {
       return ctx.error(
         "internal",
@@ -1200,15 +1216,18 @@ export const deactivateSupplier = defineServiceFn({
       );
     }
 
-    const update = await ctx.asCaller.supabase
-      .from("supplier")
-      .update({
-        supplierStatus: "Inactive",
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", supplierId)
-      .eq("companyId", companyId);
+    const update = await requireAffected(
+      ctx.asCaller.supabase
+        .from("supplier")
+        .update({
+          supplierStatus: "Inactive",
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", supplierId)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (update.error) {
       return ctx.error(
         "internal",

@@ -4,8 +4,13 @@
 
 import { useCarbon } from "@carbon/auth";
 import { safeStorageFileName, storage } from "@carbon/files";
-import { useAction } from "@carbon/query";
-import { File as FileButton, HStack, Skeleton, toast } from "@carbon/react";
+import { toastServiceError, useAction } from "@carbon/query";
+import {
+  File as FileButton,
+  HStack,
+  Skeleton,
+  toastError
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
@@ -54,7 +59,7 @@ const TrainingGuide = ({
       uploadedPath.current = null;
     },
     onError: (data) => {
-      if (data?.error) toast.error(data.error.message);
+      toastServiceError(data);
       const path = uploadedPath.current;
       uploadedPath.current = null;
       if (path && carbon) {
@@ -76,7 +81,7 @@ const TrainingGuide = ({
     setIsUploading(false);
 
     if (result.error) {
-      toast.error(t`Failed to upload PDF`);
+      toastError(t`Failed to upload PDF`, result.error);
       return;
     }
 
