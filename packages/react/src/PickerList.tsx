@@ -71,6 +71,8 @@ export type PickerListProps = {
   creatable?: boolean;
   /** Names the thing created while the search is empty. */
   createLabel?: string;
+  /** The create row's text for a search, in place of "Create …". */
+  createText?: (search: string) => string;
   showCreateOptionOnEmpty?: boolean;
 };
 
@@ -100,6 +102,7 @@ function PickerList({
   emptyMessage,
   creatable = false,
   createLabel,
+  createText: createTextFor,
   showCreateOptionOnEmpty = false
 }: PickerListProps) {
   const { t } = useLingui();
@@ -166,7 +169,9 @@ function PickerList({
     position: "relative" as const
   };
 
-  const createText = t`Create ${search.trim() === "" ? createLabel : search}`;
+  const createText = createTextFor
+    ? createTextFor(search.trim())
+    : t`Create ${search.trim() === "" ? createLabel : search}`;
 
   const rows = items.map((virtualRow) => {
     const item = filteredOptions[virtualRow.index]!;

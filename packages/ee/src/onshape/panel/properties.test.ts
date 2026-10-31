@@ -11,6 +11,7 @@ import {
   customFieldWrites,
   MAPPABLE_VALUE_TYPES,
   mappedFieldValues,
+  mapsPartProperties,
   mergeCustomFieldValues,
   parseDescriptionModes,
   parseProperties,
@@ -825,5 +826,34 @@ describe("propertyMapEqual", () => {
         [entry("p1", "f1"), entry("p2", "f1")]
       )
     ).toBe(false);
+  });
+});
+
+describe("mapsPartProperties", () => {
+  const entry = (target: PropertyMapEntry["target"]): PropertyMapEntry => ({
+    onshapePropertyId: "p-1",
+    onshapeName: "Column",
+    valueType: "STRING",
+    target,
+    mode: "create"
+  });
+
+  it("is false for an empty map and for standard sources alone", () => {
+    expect(mapsPartProperties([])).toBe(false);
+    expect(
+      mapsPartProperties([
+        entry({ kind: "bomLine", field: "quantity" }),
+        entry({ kind: "identity", field: "partNumber" })
+      ])
+    ).toBe(false);
+  });
+
+  it("is true when a custom field or item field is mapped", () => {
+    expect(
+      mapsPartProperties([entry({ kind: "customField", fieldId: "cf_1" })])
+    ).toBe(true);
+    expect(mapsPartProperties([entry({ kind: "item", field: "mpn" })])).toBe(
+      true
+    );
   });
 });

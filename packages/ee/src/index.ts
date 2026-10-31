@@ -119,11 +119,25 @@ export type { BomDiagnostics, OnshapeBomNode } from "./onshape/panel/bom";
 export {
   describeBomPayload,
   flattenBomTree,
-  metadataProperty,
   missingBomColumnsMessage,
   parseBomTree,
   withoutProperties
 } from "./onshape/panel/bom";
+export type {
+  DrawingReference,
+  DrawingTarget,
+  DrawingTie,
+  ElementPartsRequest,
+  OnshapeDrawing,
+  SkippedDrawing,
+  SkippedDrawingReason
+} from "./onshape/panel/drawings";
+export {
+  elementPartsKey,
+  parseDrawingReferences,
+  skippedDrawingText,
+  tieDrawings
+} from "./onshape/panel/drawings";
 export type { OnshapePanelContext } from "./onshape/panel/messages";
 export {
   PANEL_SESSION_MESSAGE,
@@ -132,13 +146,20 @@ export {
 export { correlateCopiedLines } from "./onshape/panel/method-version";
 export type { OnshapePanelMe, OnshapePanelPaths } from "./onshape/panel/Panel";
 export { OnshapePanel } from "./onshape/panel/Panel";
+export type { ModelExport } from "./onshape/panel/part-models";
+export { modelExportFor } from "./onshape/panel/part-models";
 export type {
   AssemblyPlan,
   AssemblyPlanItem,
   AssemblyPlanMethod,
   AssemblyPlanMethodStatus,
   AssemblyPlanRoot,
+  AssemblyRowAssets,
+  AssemblyRowDrawing,
+  AssetSourceRef,
   ChangeNoticeEdit,
+  DrawingDocument,
+  DrawingExportRow,
   ItemEdit,
   ItemFieldChange,
   ItemFieldSnapshot,
@@ -150,6 +171,7 @@ export type {
   MappedItemValues,
   MappedRowPlan,
   MergeResult,
+  ModelExportRow,
   OwnedFieldChange,
   PartPlan,
   PartPlanAction,
@@ -169,6 +191,9 @@ export type {
   ReleasePlanItemAction
 } from "./onshape/panel/plan";
 export {
+  assemblyAssetRows,
+  assemblyDrawingDocuments,
+  assemblyDrawingTargets,
   BOM_LINE_ITEM_TYPES,
   bomLineItemType,
   buildAssemblyPlan,
@@ -206,7 +231,10 @@ export {
   proposeItem,
   proposeMappedItem,
   reconcileMethodForReplenishment,
-  VALID_METHOD_TYPES_BY_REPLENISHMENT
+  rowDrawingKey,
+  VALID_METHOD_TYPES_BY_REPLENISHMENT,
+  withAssemblyDrawings,
+  withCurrentFiles
 } from "./onshape/panel/plan";
 export type { OnshapePushDefaults } from "./onshape/panel/preferences";
 export {
@@ -237,6 +265,7 @@ export {
   MAPPABLE_VALUE_TYPES,
   MAPPING_MODES,
   mappedFieldValues,
+  mapsPartProperties,
   mergeCustomFieldValues,
   parseDescriptionModes,
   parseProperties,
@@ -283,6 +312,30 @@ export {
   translationErrors,
   untranslatedOptions
 } from "./onshape/panel/standard-fields";
+export type {
+  BomColumnField,
+  BomLineField,
+  IdentityField,
+  OnshapePropertyField,
+  StandardSources
+} from "./onshape/panel/standard-sources";
+export {
+  BOM_LINE_FIELDS,
+  bomColumnIds,
+  DEFAULT_STANDARD_SOURCES,
+  hasIdentityOverride,
+  IDENTITY_FIELDS,
+  IDENTITY_VALUE_TYPES,
+  identityValue,
+  isIdentityProperty,
+  ONSHAPE_PROPERTIES,
+  onshapePropertyField,
+  releaseSources,
+  sourceLabel,
+  standardSourceErrors,
+  standardSources,
+  withIdentitySources
+} from "./onshape/panel/standard-sources";
 export type {
   PanelAssemblyLineInput,
   PanelAssemblyLineStatus,

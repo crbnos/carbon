@@ -12,6 +12,10 @@ import {
 import { isUniqueViolation } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveModelSourceBucket } from "../tasks/assembler-client";
+import {
+  itemDocumentPath,
+  stripSpecialCharacters
+} from "./onshape-source-keys";
 
 // Carbon-side attachment of Onshape released assets to an item. Lives in
 // @carbon/jobs (not @carbon/ee): it needs the service-role client + document
@@ -67,12 +71,6 @@ export interface AttachOnshapeAssetsResult {
 function fileExtension(fileName: string): string {
   const lastDot = fileName.lastIndexOf(".");
   return lastDot >= 0 ? fileName.slice(lastDot + 1).toLowerCase() : "";
-}
-
-// Mirrors ~/utils/string stripSpecialCharacters (app-only, not importable here):
-// keep only characters valid for storage (S3) keys.
-function stripSpecialCharacters(inputString: string): string {
-  return inputString.replace(/[^a-zA-Z0-9/!_\-.*'() &$@=;:+,?]/g, "");
 }
 
 // document.type is a required `documentType` enum (NOT generated). Our synced
@@ -314,7 +312,7 @@ export async function attachOnshapeAssetsToItem(
     const priorResult = priorModelId
       ? await carbon
           .from("modelUpload")
-          .select("id, name, modelPath, size")
+          .select("id, name, modelPath, originalPath, size, originalSize")
           .eq("id", priorModelId)
           .eq("companyId", companyId)
           .maybeSingle()
@@ -356,9 +354,17 @@ export async function attachOnshapeAssetsToItem(
         (model !== undefined &&
           model.sourceId === undefined &&
           priorModel?.name === model.fileName);
-      if (priorModel?.modelPath && !priorIsOnshapeGeneration) {
+      // The file the user uploaded: compaction moves `modelPath` to a
+      // compacted copy and keeps the upload at `originalPath`. With no
+      // original left, the kept file is the zstd copy and is named so.
+      const priorSourcePath =
+        priorModel?.originalPath ?? priorModel?.modelPath ?? null;
+      const priorCompressed =
+        !priorModel?.originalPath &&
+        (priorModel?.modelPath ?? "").endsWith(".zst");
+      if (priorModel && priorSourcePath && !priorIsOnshapeGeneration) {
         const preservedName = stripSpecialCharacters(
-          priorModel.name ?? `prior-model-${priorModel.id}`
+          `${priorModel.name ?? `prior-model-${priorModel.id}`}${priorCompressed ? ".zst" : ""}`
         );
         const preservedPath = `${companyId}/parts/${itemId}/${preservedName}`;
         // The raw source is in the company bucket once durable, else in
@@ -366,12 +372,12 @@ export async function attachOnshapeAssetsToItem(
         // sits with the item's documents.
         const priorBucket = await resolveModelSourceBucket(
           companyId,
-          priorModel.modelPath
+          priorSourcePath
         );
         const copied = priorBucket
           ? await carbon.storage
               .from(priorBucket)
-              .copy(priorModel.modelPath, preservedPath, {
+              .copy(priorSourcePath, preservedPath, {
                 destinationBucket: getCompanyPrivateBucket(companyId)
               })
           : { error: { message: "the prior model file is not in storage" } };
@@ -384,8 +390,13 @@ export async function attachOnshapeAssetsToItem(
           try {
             const preservedId = await upsertSyncedDocument(carbon, {
               path: preservedPath,
-              name: priorModel.name ?? preservedName,
-              size: priorModel.size ?? 0,
+              name: priorCompressed
+                ? preservedName
+                : (priorModel.name ?? preservedName),
+              size:
+                (priorModel.originalPath ? priorModel.originalSize : null) ??
+                priorModel.size ??
+                0,
               sourceDocument,
               sourceDocumentId: itemId,
               companyId,
@@ -418,8 +429,7 @@ export async function attachOnshapeAssetsToItem(
 
   // --- Documents (drawing PDFs + overflow STEP) -> company-visible rows ------
   for (const document of input.documents ?? []) {
-    const safeName = stripSpecialCharacters(document.fileName);
-    const documentPath = `${companyId}/parts/${itemId}/${safeName}`;
+    const documentPath = itemDocumentPath(companyId, itemId, document.fileName);
 
     const documentUpload = await storage(carbon)
       .company(companyId)

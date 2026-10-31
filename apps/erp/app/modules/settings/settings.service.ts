@@ -93,7 +93,9 @@ import type {
   StandardFieldWriter
 } from "@carbon/ee";
 import {
+  assemblyAssetRows,
   integrations as availableIntegrations,
+  BOM_LINE_FIELDS,
   bomLineItemType,
   CUSTOM_FIELD_TYPE_LABELS,
   changeNoticeDescriptionJson,
@@ -105,6 +107,7 @@ import {
   flattenNodes,
   getIntegrationConfigById,
   getIntegrationIdsByRole,
+  IDENTITY_FIELDS,
   type IntegrationHealthcheckResult,
   type IntegrationID,
   ITEM_METHOD_TYPES,
@@ -131,6 +134,7 @@ import {
   STANDARD_FIELD_IDS,
   splitSecrets,
   standardField,
+  standardSourceErrors,
   targetKey,
   translationErrors
 } from "@carbon/ee";
@@ -170,6 +174,7 @@ import type {
   ManualLineRow,
   MappedLineRow,
   ReleaseExportSelection,
+  StoredAssemblyPlan,
   StoredReleasePlan
 } from "@carbon/ee/onshape";
 import {
@@ -209,6 +214,7 @@ import {
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
 import { flags } from "@carbon/env/flags.server";
+import type { Events } from "@carbon/jobs";
 import { trigger } from "@carbon/jobs";
 import {
   compatibilityStatus,
@@ -255,8 +261,8 @@ import {
   deleteChangeNotice,
   deleteItem,
   type getItem,
-  getLockVerdict,
   insertChangeNotice,
+  methodWriteRefusal,
   type ReleaseControl,
   requireChangeNoticeEditable,
   updateDefaultRevision,
@@ -4376,7 +4382,8 @@ type ItemRevisionStatus = Database["public"]["Enums"]["itemRevisionStatus"];
 const onshapeDraftMethodLogger = getLogger("erp", "onshape", "draft-method");
 
 /**
- * Why the assembly push must not write a parent's BOM, per item id. A Draft a
+ * Why the assembly push, or the sync connection's BOM sync (`syncMakeMethod`),
+ * must not write a parent's BOM, per item id: `methodWriteRefusal`. A Draft a
  * change notice holds is the notice's to change, whatever its stage. A
  * released (Production) revision follows `plmReleaseControl` through
  * `getLockVerdict`, as the BOM editor's `checkRevisionLock` does: `enforce`
@@ -4421,19 +4428,14 @@ export async function loadMethodWriteRefusals(
     "enforce") as ReleaseControl;
   for (const target of targets) {
     const changeOrderId = target.method.changeOrderId;
-    if (changeOrderId) {
-      const number = noticeNumber.get(changeOrderId);
-      reasons.set(
-        target.itemId,
-        `its make method is a Draft on ${number ? `change notice ${number}` : "a change notice"}. Change the BOM there.`
-      );
-      continue;
-    }
-    const verdict = getLockVerdict({
-      isLocked: target.revisionStatus === "Production",
-      releaseControl
-    });
-    if (!verdict.ok) reasons.set(target.itemId, verdict.message);
+    const reason = methodWriteRefusal(
+      { changeOrderId, revisionStatus: target.revisionStatus },
+      {
+        noticeNumber: changeOrderId ? noticeNumber.get(changeOrderId) : null,
+        releaseControl
+      }
+    );
+    if (reason) reasons.set(target.itemId, reason);
   }
   return reasons;
 }
@@ -5927,7 +5929,11 @@ function existingCustomFieldValues(row: PartPlanRow): {
 export const onshapeAssemblyPushInput = z.object({
   planId: z.string().min(1),
   edits: z.record(z.string(), itemEditSchema).default({}),
-  excluded: z.array(z.string().min(1)).default([])
+  excluded: z.array(z.string().min(1)).default([]),
+  /** Part numbers whose STEP model the reviewer picked. */
+  modelRows: z.array(z.string().min(1)).default([]),
+  /** Part numbers whose drawings the reviewer picked. */
+  drawingRows: z.array(z.string().min(1)).default([])
 });
 
 type AssemblyPushSummary = {
@@ -5944,6 +5950,16 @@ type AssemblyPushSummary = {
   methodsTouched: number;
   /** Parent part numbers whose BOM went into a new Draft. */
   draftVersionsCreated: string[];
+  /** STEP models and drawings queued for export from Onshape. */
+  modelsQueued: number;
+  drawingsQueued: number;
+  /** Picked rows whose item did not end up linked to the row's source. */
+  assetsSkipped: number;
+  /** Queued files the review saw the item already has: the export skips them while they still are. */
+  modelsCurrent: number;
+  drawingsCurrent: number;
+  /** The root assembly's own model export, when queued: current at review, or not. */
+  rootModel?: "exporting" | "current";
   skipped: string[];
   errors: string[];
 };
@@ -6037,6 +6053,11 @@ export async function pushOnshapeAssembly(
     fieldsUpdated: 0,
     methodsTouched: 0,
     draftVersionsCreated: [],
+    modelsQueued: 0,
+    drawingsQueued: 0,
+    assetsSkipped: 0,
+    modelsCurrent: 0,
+    drawingsCurrent: 0,
     skipped: [...plan.skipped],
     errors: []
   };
@@ -6805,13 +6826,27 @@ export async function pushOnshapeAssembly(
     summary.skipped.push(
       `${root.partNumber}: released in Carbon as Rev ${root.released.revision}; its fields, link and model stay as its release left them`
     );
-    const childLinkProblems = await linkChildParts(client, serviceRole, {
+    const childLinks = await linkChildParts(client, serviceRole, {
       companyId,
       userId,
       nodes: allNodes,
       itemByReadableId
     });
-    summary.errors.push(...childLinkProblems);
+    summary.errors.push(...childLinks.problems);
+    await queueAssemblyAssets({
+      companyId,
+      userId,
+      planId,
+      plan,
+      excluded,
+      modelRows: new Set(input.modelRows),
+      drawingRows: new Set(input.drawingRows),
+      itemByReadableId,
+      linkedSourceByItemId: childLinks.linkedSourceByItemId,
+      // Released: the root keeps its release's link and files.
+      rootItemId: null,
+      summary
+    });
     return panelReply(
       { summary },
       { headers: { "Cache-Control": "no-store" } }
@@ -6848,13 +6883,13 @@ export async function pushOnshapeAssembly(
     );
   }
 
-  const childLinkProblems = await linkChildParts(client, serviceRole, {
+  const childLinks = await linkChildParts(client, serviceRole, {
     companyId,
     userId,
     nodes: allNodes,
     itemByReadableId
   });
-  summary.errors.push(...childLinkProblems);
+  summary.errors.push(...childLinks.problems);
 
   try {
     await trigger(
@@ -6873,15 +6908,139 @@ export async function pushOnshapeAssembly(
       },
       { id: `${planId}:${rootItem.id}:${elementId}` }
     );
+    summary.rootModel = plan.root.modelCurrent ? "current" : "exporting";
   } catch {
     summary.errors.push(
       `${root.partNumber}: pushed, but the model export couldn't be queued. Push again to retry the export.`
     );
   }
 
+  await queueAssemblyAssets({
+    companyId,
+    userId,
+    planId,
+    plan,
+    excluded,
+    modelRows: new Set(input.modelRows),
+    drawingRows: new Set(input.drawingRows),
+    itemByReadableId,
+    linkedSourceByItemId: childLinks.linkedSourceByItemId,
+    rootItemId: assemblyMapping.error === null ? rootItem.id : null,
+    summary
+  });
+
   return panelReply({ summary }, { headers: { "Cache-Control": "no-store" } });
 }
 
+type AssetsEvent = Events["carbon/onshape-panel-assets"]["data"];
+
+// Rows per `onshape-panel-assets` event, well under Inngest's event size limit.
+const ASSET_ROWS_PER_EVENT = 100;
+
+/**
+ * Queues the STEP models and drawings the reviewer picked. A row is queued
+ * only when its item ended up linked to the row's Onshape source; any other
+ * pick counts in `assetsSkipped`. A part number the plan did not offer is
+ * ignored. `rootItemId` is the root when the push linked it to this assembly.
+ */
+async function queueAssemblyAssets(input: {
+  companyId: string;
+  userId: string;
+  planId: string;
+  plan: StoredAssemblyPlan;
+  excluded: Set<string>;
+  modelRows: Set<string>;
+  drawingRows: Set<string>;
+  itemByReadableId: Map<string, { id: string }>;
+  linkedSourceByItemId: Map<string, string>;
+  rootItemId: string | null;
+  summary: AssemblyPushSummary;
+}): Promise<void> {
+  const { plan, summary } = input;
+  if (input.modelRows.size === 0 && input.drawingRows.size === 0) return;
+
+  const picked = assemblyAssetRows({
+    plan,
+    ties: plan.drawingTies ?? [],
+    modelRows: input.modelRows,
+    drawingRows: input.drawingRows,
+    excluded: input.excluded,
+    itemIdFor: (partNumber, source) => {
+      if (partNumber === plan.root.partNumber) return input.rootItemId;
+      const item = input.itemByReadableId.get(partNumber);
+      const externalId = externalIdForBomLine({
+        documentId: source.documentId,
+        elementId: source.elementId,
+        partId: source.partId,
+        configuration: source.configuration ?? undefined
+      });
+      return item &&
+        externalId &&
+        input.linkedSourceByItemId.get(item.id) === externalId
+        ? item.id
+        : null;
+    }
+  });
+  summary.assetsSkipped += picked.unlinked;
+
+  const rows: Array<
+    | { type: "model"; row: AssetsEvent["models"][number] }
+    | { type: "drawing"; row: AssetsEvent["drawings"][number] }
+  > = [
+    ...picked.models.map((row) => ({ type: "model" as const, row })),
+    ...picked.drawings.map((row) => ({ type: "drawing" as const, row }))
+  ];
+  let failed = false;
+  for (let start = 0; start < rows.length; start += ASSET_ROWS_PER_EVENT) {
+    const chunk = rows.slice(start, start + ASSET_ROWS_PER_EVENT);
+    const eventModels = chunk.flatMap((entry) =>
+      entry.type === "model" ? [entry.row] : []
+    );
+    const eventDrawings = chunk.flatMap((entry) =>
+      entry.type === "drawing" ? [entry.row] : []
+    );
+    try {
+      await trigger(
+        "onshape-panel-assets",
+        {
+          companyId: input.companyId,
+          userId: input.userId,
+          planId: input.planId,
+          models: eventModels,
+          drawings: eventDrawings
+        },
+        // A retried apply sends the same events once.
+        { id: `${input.planId}:assets:${start / ASSET_ROWS_PER_EVENT}` }
+      );
+      summary.modelsQueued += eventModels.length;
+      summary.drawingsQueued += eventDrawings.length;
+    } catch (error) {
+      onshapePushLogger.error("Failed to queue the Onshape assembly assets", {
+        companyId: input.companyId,
+        planId: input.planId,
+        error
+      });
+      failed = true;
+    }
+  }
+  if (failed) {
+    // The apply took the plan, and the panel's next push starts a new review
+    // with nothing picked: the files must be picked again there.
+    summary.errors.push(
+      "STEP models or drawings couldn't be queued. Re-push the assembly and pick them again."
+    );
+    return;
+  }
+  // The files the review marked current: queued, but the export skips them.
+  summary.modelsCurrent += picked.current.models;
+  summary.drawingsCurrent += picked.current.drawings;
+}
+
+/**
+ * `linkedSourceByItemId`: each item now linked to its row's Onshape source, by
+ * the link it had or the one this call wrote. A row whose link failed is left
+ * out, so nothing is exported onto it.
+ */
 async function linkChildParts(
   client: SupabaseClient<Database>,
   serviceRole: SupabaseClient<Database>,
@@ -6891,7 +7050,11 @@ async function linkChildParts(
     nodes: OnshapeBomNode[];
     itemByReadableId: Map<string, { id: string; readableId: string }>;
   }
-) {
+): Promise<{
+  problems: string[];
+  linkedSourceByItemId: Map<string, string>;
+}> {
+  const linkedSourceByItemId = new Map<string, string>();
   // Links only where neither the item nor the source is linked: a part push owns that link.
   const candidates: Array<{
     itemId: string;
@@ -6915,7 +7078,7 @@ async function linkChildParts(
       source
     });
   }
-  if (candidates.length === 0) return [];
+  if (candidates.length === 0) return { problems: [], linkedSourceByItemId };
 
   // One Onshape source claimed by two items is reported, not guessed at.
   const itemsByExternalId = new Map<string, Set<string>>();
@@ -6941,15 +7104,13 @@ async function linkChildParts(
   const unambiguous = candidates.filter(
     (candidate) => !ambiguous.has(candidate.externalId)
   );
-  if (unambiguous.length === 0) return problems;
-
   const [byEntity, byExternal] = await Promise.all([
     selectInBatches(
-      unambiguous.map((candidate) => candidate.itemId),
+      candidates.map((candidate) => candidate.itemId),
       (batch) =>
         serviceRole
           .from("externalIntegrationMapping")
-          .select("entityId")
+          .select("entityId, externalId")
           .eq("companyId", input.companyId)
           .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
           .eq("entityType", "item")
@@ -6969,16 +7130,28 @@ async function linkChildParts(
   ]);
   // A failed read is not "no links": that would claim links a part push owns.
   if (byEntity.error || byExternal.error) {
-    return [
-      ...problems,
-      `child parts were not linked to Onshape: ${
-        (byEntity.error ?? byExternal.error)?.message ?? "lookup failed"
-      }`
-    ];
+    return {
+      problems: [
+        ...problems,
+        `child parts were not linked to Onshape: ${
+          (byEntity.error ?? byExternal.error)?.message ?? "lookup failed"
+        }`
+      ],
+      linkedSourceByItemId
+    };
   }
   const linkedItemIds = new Set(
     (byEntity.data ?? []).map((row) => row.entityId)
   );
+  const existingSourceByItemId = new Map(
+    (byEntity.data ?? []).map((row) => [row.entityId, row.externalId])
+  );
+  for (const candidate of candidates) {
+    if (existingSourceByItemId.get(candidate.itemId) === candidate.externalId) {
+      linkedSourceByItemId.set(candidate.itemId, candidate.externalId);
+    }
+  }
+  if (unambiguous.length === 0) return { problems, linkedSourceByItemId };
   const usedExternalIds = new Set(
     (byExternal.data ?? []).map((row) => row.externalId)
   );
@@ -7010,17 +7183,26 @@ async function linkChildParts(
       companyId: input.companyId,
       createdBy: input.userId
     }));
-  if (rows.length === 0) return problems;
+  if (rows.length === 0) return { problems, linkedSourceByItemId };
 
   // The bulk insert is all-or-nothing; on refusal retry row by row, so one
   // conflicting row (a concurrent push's link) does not block the rest.
   const linked = await client.from("externalIntegrationMapping").insert(rows);
-  if (!linked.error) return problems;
+  if (!linked.error) {
+    for (const row of rows) {
+      linkedSourceByItemId.set(row.entityId, row.externalId);
+    }
+    return { problems, linkedSourceByItemId };
+  }
 
   const failed: string[] = [];
   for (const row of rows) {
     const single = await client.from("externalIntegrationMapping").insert(row);
-    if (single.error) failed.push(row.metadata.partNumber);
+    if (single.error) {
+      failed.push(row.metadata.partNumber);
+    } else {
+      linkedSourceByItemId.set(row.entityId, row.externalId);
+    }
   }
   if (failed.length > 0) {
     problems.push(
@@ -7029,7 +7211,7 @@ async function linkChildParts(
         .join(", ")}${failed.length > 5 ? ", …" : ""}); push again to retry`
     );
   }
-  return problems;
+  return { problems, linkedSourceByItemId };
 }
 
 export const onshapeReleasePushInput = z.object({
@@ -8336,7 +8518,9 @@ const entrySchema = z.object({
   valueType: z.string().min(1),
   target: z.discriminatedUnion("kind", [
     z.object({ kind: z.literal("customField"), fieldId: z.string().min(1) }),
-    z.object({ kind: z.literal("item"), field: z.enum(STANDARD_FIELD_IDS) })
+    z.object({ kind: z.literal("item"), field: z.enum(STANDARD_FIELD_IDS) }),
+    z.object({ kind: z.literal("identity"), field: z.enum(IDENTITY_FIELDS) }),
+    z.object({ kind: z.literal("bomLine"), field: z.enum(BOM_LINE_FIELDS) })
   ]),
   mode: modeSchema,
   translations: z
@@ -8427,6 +8611,14 @@ export async function saveOnshapePropertyMap(
 
   // The editor hides unmappable rows; this guards a hand-made payload.
   for (const entry of entries) {
+    // A source for Part number, Item, … writes no field: its own rules.
+    if (entry.target.kind === "identity" || entry.target.kind === "bomLine") {
+      const errors = standardSourceErrors(entry);
+      if (errors.length > 0) {
+        fieldErrors.push({ key: entry.onshapePropertyId, errors });
+      }
+      continue;
+    }
     if (!Object.hasOwn(MAPPABLE_VALUE_TYPES, entry.valueType)) {
       fieldErrors.push({
         key: entry.onshapePropertyId,

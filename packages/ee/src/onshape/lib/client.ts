@@ -15,6 +15,7 @@ import {
   IntegrationSecretUnavailableError,
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
+import { identityValue } from "../panel/standard-sources";
 import { normalizeConfiguration } from "../panel/status";
 import { apiCallPathKey } from "./api-call-key";
 import {
@@ -22,10 +23,14 @@ import {
   isOnshapeIntegrationId,
   ONSHAPE_DEFAULT_BASE_URL
 } from "./connection";
-import type { OnshapeDocument } from "./document.type";
+import { type OnshapeDocument, OnshapeWVMType } from "./document.type";
 import type { OnshapeElementType } from "./element.type";
 import type { OnshapeOAuthIntegrationId } from "./integration-id";
 import { getOnshapeOAuthConfig, refreshOnshapeAccessToken } from "./oauth";
+import {
+  type WorkspaceSourceStates,
+  workspaceSourceStates
+} from "./source-state";
 import { patchOnshapeRefreshedTokens } from "./state";
 import {
   isFresh,
@@ -76,7 +81,11 @@ const DOCUMENT_REVISION_MAX_PAGES = 20;
 export interface OnshapeElementRow {
   id: string;
   name: string;
-  elementType: string; // "PARTSTUDIO" | "ASSEMBLY" | "DRAWING" | ...
+  elementType: string; // "PARTSTUDIO" | "ASSEMBLY" | "APPLICATION" | ...
+  /** An APPLICATION element's app, e.g. "onshape-app/drawing". */
+  dataType?: string;
+  /** Changes with the element's own content. */
+  microversionId?: string;
   [key: string]: unknown;
 }
 
@@ -85,9 +94,10 @@ export interface OnshapeElementRow {
 const DEV_CACHEABLE_PATHS = [
   /^\/api\/v\d+\/parts\//,
   /^\/api\/v\d+\/partstudios\/.*\/massproperties/,
-  // Not currentmicroversion: the element sync compares it to skip unchanged
-  // exports, and a cached value would skip a changed one.
-  /^\/api\/v\d+\/documents\/(?!.*\/currentmicroversion)/,
+  // Not currentmicroversion or the element lists: the export skips compare
+  // their microversions (`getWorkspaceSourceStates`), and a cached value would
+  // skip a changed export or hide a new drawing from the assembly review.
+  /^\/api\/v\d+\/documents\/(?!.*\/currentmicroversion)(?!.*\/elements)/,
   /^\/api\/v\d+\/assemblies\/.*\/bom/,
   /^\/api\/v\d+\/metadata\//,
   // A new release shows after the TTL; flush onshape-dev-cache:* for sooner.
@@ -446,6 +456,28 @@ export class OnshapeClient {
     return response.microversion;
   }
 
+  /**
+   * What the workspace's parts and assemblies are made from
+   * (`workspaceSourceStates`): one element list read. Unlike the current
+   * microversion, a drawing edit leaves both unchanged, and an assembly edit
+   * leaves `parts` unchanged.
+   */
+  async getWorkspaceSourceStates(
+    documentId: string,
+    workspaceId: string
+  ): Promise<WorkspaceSourceStates> {
+    const elements = await this.getElementsIn({
+      documentId,
+      wvm: OnshapeWVMType.WORKSPACE,
+      wvmId: workspaceId
+    });
+    const states = workspaceSourceStates(elements);
+    if (!states) {
+      throw new Error("Onshape returned no element microversions");
+    }
+    return states;
+  }
+
   // List the webhook subscriptions visible to the authenticated principal. Used
   // on disconnect to find (and delete) the ones Carbon registered.
   async getWebhooks(): Promise<{
@@ -592,19 +624,17 @@ export class OnshapeClient {
       parentId?: string | null;
       elementType?: number;
       elementId?: string | null;
-      properties?: Array<{ name?: string; value?: unknown }>;
+      properties?: Array<{
+        propertyId?: string;
+        name?: string;
+        value?: unknown;
+      }>;
       children?: RawItem[];
     };
     const pkg = await this.request<{ items?: RawItem[] }>(
       "GET",
       `/api/v10/releasepackages/${releaseId}?detailed=true`
     );
-    const text = (item: RawItem, name: string) => {
-      const value = item.properties?.find((p) => p.name === name)?.value;
-      return typeof value === "string" && value.trim() !== ""
-        ? value.trim()
-        : null;
-    };
     const out: OnshapeReleasePackageItem[] = [];
     const walk = (items: RawItem[], parentId: string | null) => {
       for (const item of items) {
@@ -615,8 +645,9 @@ export class OnshapeClient {
           elementType:
             typeof item.elementType === "number" ? item.elementType : -1,
           elementId: item.elementId ?? null,
-          partNumber: text(item, "Part number"),
-          revision: text(item, "Revision")
+          // Onshape's own properties: the release records name them.
+          partNumber: identityValue(item.properties ?? [], "partNumber"),
+          revision: identityValue(item.properties ?? [], "revision")
         });
         walk(item.children ?? [], item.id);
       }
@@ -679,14 +710,31 @@ export class OnshapeClient {
     );
   }
 
+  /**
+   * What an app element (a drawing) references, resolved in bulk:
+   * `{ resolvedReferences: [{ targetDocumentId, targetElementId, idTag, … }] }`,
+   * read by `parseDrawingReferences` (`panel/drawings.ts`).
+   */
+  async resolveAppElementReferences(
+    document: OnshapeDocument,
+    elementId: string
+  ): Promise<unknown> {
+    return this.request<unknown>(
+      "GET",
+      `/api/v10/appelements/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/resolvereferences`
+    );
+  }
+
+  /** `topLevelOnly`: the assembly's own lines, under the same headers. */
   async getBillOfMaterialsIn(
     document: OnshapeDocument,
     elementId: string,
-    configuration?: string | null
+    configuration?: string | null,
+    { topLevelOnly = false }: { topLevelOnly?: boolean } = {}
   ): Promise<Record<string, unknown>> {
     return this.request<Record<string, unknown>>(
       "GET",
-      `/api/v10/assemblies/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=true&includeTopLevelAssemblyRow=true&thumbnail=false${configurationQuery(configuration)}`
+      `/api/v10/assemblies/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/bom?indented=true&multiLevel=${!topLevelOnly}&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=true&includeTopLevelAssemblyRow=true&thumbnail=false${configurationQuery(configuration)}`
     );
   }
 
@@ -735,6 +783,20 @@ export class OnshapeClient {
     return this.request<Record<string, unknown>>(
       "GET",
       `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/p/${encodeURIComponent(partId)}?inferMetadataOwner=false${configurationQuery(configuration)}`
+    );
+  }
+
+  /**
+   * Every part of a document in its default configuration, each with its
+   * `elementId` and `microversionId`: one call where `getPartsInElement` takes
+   * one per Part Studio.
+   */
+  async getPartsInDocument(
+    document: OnshapeDocument
+  ): Promise<Array<OnshapeElementPart & { elementId?: string }>> {
+    return this.request<Array<OnshapeElementPart & { elementId?: string }>>(
+      "GET",
+      `/api/v10/parts/d/${document.documentId}/${document.wvm}/${document.wvmId}`
     );
   }
 

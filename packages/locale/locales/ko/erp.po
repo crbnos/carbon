@@ -4601,6 +4601,9 @@ msgstr ""
 msgid "BOM synced successfully"
 msgstr "BOM이 동기화되었습니다"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM이 동기화되었습니다. 기록되지 않음: {notWritten}"
+
 msgid "BOMs"
 msgstr "BOM"
 
