@@ -14,6 +14,7 @@ export * from "./copy";
 export * from "./customization";
 export * from "./dependencies";
 export * from "./evidence";
+export * from "./feature-cards";
 export * from "./golive";
 export * from "./handover";
 export * from "./objectives";
