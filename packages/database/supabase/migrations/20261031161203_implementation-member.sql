@@ -1,6 +1,6 @@
--- Implementation Hub per person: each person in the hub has their own page,
+-- Implementation Hub 2.0, one page per person: each person has their own page,
 -- defined card by card by Carbon staff as a JSON document. A person with no
--- row sees an empty hub.
+-- row sees an empty page.
 --
 -- Rules and event triggers for the new table live in the authz manifest and
 -- the event attachments, not here (see authz-manifest.md).

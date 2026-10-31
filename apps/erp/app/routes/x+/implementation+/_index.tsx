@@ -85,8 +85,9 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "implementation");
 
-// The Implementation Hub is one page per person, defined by Carbon staff in a
-// page file. A person sees their own page, or an empty hub until one is loaded.
+// Implementation Hub 2.0 is one page per person, defined by Carbon staff in a
+// page file. A person sees their own page, or an empty page until one is
+// loaded.
 // Carbon staff see anyone in the company, with or without a page, and load,
 // export and remove pages.
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -119,10 +120,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : null
   ]);
   if (employees?.error) {
-    logger.error("Failed to load the people for the hub staff bar", {
-      companyId,
-      error: employees.error
-    });
+    logger.error(
+      "Failed to load the people for the Implementation Hub staff bar",
+      {
+        companyId,
+        error: employees.error
+      }
+    );
   }
 
   const rows = (members.data ?? []).filter(
@@ -158,8 +162,8 @@ export default function GetStartedRoute() {
   const { members, people, isInternal, userId } =
     useLoaderData<typeof loader>();
   const [livePeople] = usePeople();
-  const hubLayout = useRouteData<{
-    personalPages: boolean;
+  const hubState = useRouteData<{
+    implementationHub2: boolean;
     enrolled: boolean;
     flagOn: boolean;
   }>(path.to.implementation);
@@ -232,7 +236,7 @@ export default function GetStartedRoute() {
   const page = parsed?.success ? parsed.data : null;
 
   // Staff edit the page in place. Each edit saves the whole page on a fetcher
-  // of its own, so a tick on the hub's shared fetcher never cancels it, and a
+  // of its own, so a tick on the shared state fetcher never cancels it, and a
   // newer save carries every earlier edit. Until a save settles the page shows
   // the edits; then it shows what the server kept.
   const pageFetcher = useFetcher<{ success: boolean; message?: string }>();
@@ -303,14 +307,14 @@ export default function GetStartedRoute() {
             onLoad={() => setLoadText("")}
           />
         ) : null}
-        {isInternal && hubLayout?.personalPages === false ? (
-          <NotOnPersonalPagesNotice
+        {isInternal && hubState?.implementationHub2 === false ? (
+          <NotOnImplementationHub2Notice
             reason={
-              !hubLayout.flagOn
+              !hubState.flagOn
                 ? "flag"
-                : !hubLayout.enrolled
+                : !hubState.enrolled
                   ? "enrolment"
-                  : "layout"
+                  : "version"
             }
           />
         ) : null}
@@ -352,9 +356,7 @@ export default function GetStartedRoute() {
           />
         ) : isInternal ? (
           <p className="w-full max-w-xl mx-auto py-24 text-center text-sm text-muted-foreground">
-            <Trans>
-              Choose a person to see their hub page, or to set one up.
-            </Trans>
+            <Trans>Choose a person to see their page, or to set one up.</Trans>
           </p>
         ) : (
           <MemberPageEmpty />
@@ -376,43 +378,44 @@ export default function GetStartedRoute() {
   );
 }
 
-// Carbon staff only, on a company not on Personal Pages: the page edits in
-// full, but the server refuses every write the Company Plan hub also reads.
-// It names the step still missing: the flag, enrolment or the layout.
-function NotOnPersonalPagesNotice({
+// Carbon staff only, on a company not on Implementation Hub 2.0: the page
+// edits in full, but the server refuses every write Implementation Hub 1.0
+// also reads. It names the step still missing: the flag, enrolment or the
+// version switch.
+function NotOnImplementationHub2Notice({
   reason
 }: {
-  reason: "flag" | "enrolment" | "layout";
+  reason: "flag" | "enrolment" | "version";
 }) {
   return (
     <Alert variant="warning">
       <LuTriangleAlert />
       <AlertTitle>
         {reason === "flag" ? (
-          <Trans>The new hub is off for this company</Trans>
+          <Trans>Implementation Hub 2.0 is off for this company</Trans>
         ) : reason === "enrolment" ? (
           <Trans>This company is not enrolled</Trans>
         ) : (
-          <Trans>This company uses the Company Plan hub</Trans>
+          <Trans>This company uses Implementation Hub 1.0</Trans>
         )}
       </AlertTitle>
       <AlertDescription>
         {reason === "flag" ? (
           <Trans>
             Pages and the priority set save here. Ticks, answers and company
-            items save once the company is in the
-            implementation-hub-personal-pages flag and on Personal Pages.
+            items save once the company is in the implementation-hub-2 flag and
+            on Implementation Hub 2.0.
           </Trans>
         ) : reason === "enrolment" ? (
           <Trans>
-            Its people do not see the hub yet. Pages and the priority set save
-            here. Enroll it in Settings to save ticks, answers and company
-            items.
+            Its people do not see the Implementation Hub yet. Pages and the
+            priority set save here. Enroll it in Settings to save ticks, answers
+            and company items.
           </Trans>
         ) : (
           <Trans>
             Pages and the priority set save here. Ticks, answers and company
-            items save once the company is switched to Personal Pages.
+            items save once the company is switched to Implementation Hub 2.0.
           </Trans>
         )}
         <div className="mt-2">
@@ -442,7 +445,7 @@ function NoPage({
   return (
     <div className="w-full max-w-xl mx-auto py-24 flex flex-col items-center gap-3 text-center">
       <h2 className="text-base font-semibold">
-        <Trans>{name} has no hub page yet</Trans>
+        <Trans>{name} has no page yet</Trans>
       </h2>
       <p className="text-sm text-muted-foreground text-pretty">
         {status === "Invited" ? (
@@ -457,8 +460,8 @@ function NoPage({
           </Trans>
         ) : (
           <Trans>
-            Until one is loaded, they see an empty hub that asks them to contact
-            their Carbon admin.
+            Until one is loaded, they see an empty page that asks them to
+            contact their Carbon admin.
           </Trans>
         )}
       </p>
@@ -475,7 +478,7 @@ function NoPage({
 // open ones past their due date.
 type PageStanding = { done: number; total: number; overdue: number };
 
-// Carbon staff only: whose hub to see, in three groups, with where each page
+// Carbon staff only: whose page to see, in three groups, with where each page
 // stands. Choosing someone without a page shows the way to set one up.
 function PersonPicker({
   groups,
@@ -696,14 +699,14 @@ function StaffBar({
       typeof page === "object" && page && "user" in page
         ? String((page as { user: unknown }).user)
         : "page";
-    download(`${user.split("@")[0]}-hub-page.json`, page);
+    download(`${user.split("@")[0]}-implementation-page.json`, page);
   };
 
-  // Every hub item a page can place, with its key. Template text is in the
+  // Every catalogue card a page can place, with its key. Template text is in the
   // viewer's language; the keys are what a page file uses.
   const exportCatalogue = () =>
     download(
-      "hub-page-catalogue.json",
+      "implementation-page-catalogue.json",
       buildPageCatalogue(rows).map((entry) => ({
         item: entry.item,
         kind: entry.kind,
@@ -779,7 +782,7 @@ function StaffBar({
           action={path.to.implementationState}
           name={selectedName}
           title={t`Remove ${selectedName}'s page`}
-          text={t`They will see an empty hub until a new page is loaded. Ticks on hub items stay; ticks on custom cards come back if the same page is loaded again.`}
+          text={t`They will see an empty page until a new page is loaded. Ticks on catalogue cards stay; ticks on custom cards come back if the same page is loaded again.`}
           deleteText={t`Remove`}
           fields={{ intent: "deleteMemberPage", userId: selectedId }}
           onCancel={removeDisclosure.onClose}

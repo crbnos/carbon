@@ -19,9 +19,9 @@ import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuRocket } from "react-icons/lu";
 import {
-  type ImplementationLayout,
-  personalPagesHubName,
-  usesPersonalPages
+  type ImplementationHubVersion,
+  implementationHub2Name,
+  usesImplementationHub2
 } from "~/modules/shared/shared.models";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
@@ -44,13 +44,13 @@ export type ImplementationHubData = {
   implementationHub: {
     tier: Tier;
     status: HubStatus;
-    layout?: ImplementationLayout;
+    hubVersion?: ImplementationHubVersion;
   } | null;
   implementationCheckStates: CheckStateRow[];
   implementationSignals: Signals | null;
-  // The company gets the Personal Pages hub (`usesPersonalPages`): the flag is
-  // on for it and its hub's layout is Personal Pages.
-  personalPages: boolean;
+  // The company gets Implementation Hub 2.0 (`usesImplementationHub2`): the
+  // flag is on for it and its hub's version is 2.0.
+  implementationHub2: boolean;
   // False until the streamed progress lands. Until then the counts are not
   // known: show the item and the card, leave the numbers out.
   ready: boolean;
@@ -59,17 +59,17 @@ export type ImplementationHubData = {
 const isFinished = (status: HubStatus) =>
   status === "complete" || status === "archived";
 
-// A Personal Pages company has its own hub; every other company keeps the
-// Company Plan hub at its usual address.
-const hubPath = (personalPages: boolean) =>
-  personalPages ? path.to.implementation : path.to.getStarted;
+// A company on Implementation Hub 2.0 has its own address; every other company
+// keeps Implementation Hub 1.0 at its usual address.
+const hubPath = (implementationHub2: boolean) =>
+  implementationHub2 ? path.to.implementation : path.to.getStarted;
 
 // Shared reader. The hub row (null until the company enrols) is awaited by the
 // layout loader; progress is streamed and fills in after.
 function useImplementation(): ImplementationHubData | undefined {
   const data = useRouteData<{
     implementationHub?: ImplementationHubData["implementationHub"];
-    implementationPersonalPages?: boolean;
+    implementationHub2Enabled?: boolean;
     implementationProgress?: Promise<ImplementationProgress>;
   }>(path.to.authenticatedRoot);
   const progress = useResolved(data?.implementationProgress, null);
@@ -78,18 +78,18 @@ function useImplementation(): ImplementationHubData | undefined {
     implementationHub: data.implementationHub ?? null,
     implementationCheckStates: progress?.checkStates ?? [],
     implementationSignals: progress?.signals ?? null,
-    personalPages: usesPersonalPages(
+    implementationHub2: usesImplementationHub2(
       data.implementationHub,
-      data.implementationPersonalPages ?? false
+      data.implementationHub2Enabled ?? false
     ),
     ready: progress !== null
   };
 }
 
-// Whether the company gets the Personal Pages hub, for a component outside
-// the nav and the home card (the Company Plan hub's notice).
-export function useUsesPersonalPages(): boolean {
-  return useImplementation()?.personalPages ?? false;
+// Whether the company gets Implementation Hub 2.0, for a component outside
+// the nav and the home card (Implementation Hub 1.0's notice).
+export function useUsesImplementationHub2(): boolean {
+  return useImplementation()?.implementationHub2 ?? false;
 }
 
 // Whether the item and the card exist is known at first paint, so neither
@@ -112,10 +112,10 @@ export function getImplementationNavItem(
   const hub = data.implementationHub;
   if (!hub || isFinished(hub.status)) return null;
 
-  // The Personal Pages hub has no gates to count: one name, no badge.
-  if (data.personalPages) {
+  // Implementation Hub 2.0 has no gates to count: one name, no badge.
+  if (data.implementationHub2) {
     return {
-      name: i18n._(personalPagesHubName),
+      name: i18n._(implementationHub2Name),
       to: path.to.implementation,
       icon: LuRocket
     };
@@ -148,7 +148,7 @@ export function useImplementationReopenItem(): Authenticated<NavItem> | null {
 
   return {
     name: i18n._(labelForTier(hub.tier)),
-    to: hubPath(data.personalPages),
+    to: hubPath(data.implementationHub2),
     icon: LuRocket
   };
 }

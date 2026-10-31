@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { changesCompanyPlanHub, hubAccess } from "./access";
+import { changesImplementationHub1, hubAccess } from "./access";
 
 describe("hubAccess", () => {
   it("lets everyone in once the company is enrolled", () => {
@@ -17,15 +17,15 @@ describe("hubAccess", () => {
   });
 });
 
-describe("changesCompanyPlanHub", () => {
+describe("changesImplementationHub1", () => {
   it("lets page files, assignments and the priority set through before a switch", () => {
-    expect(changesCompanyPlanHub("setMemberPage")).toBe(false);
-    expect(changesCompanyPlanHub("deleteMemberPage")).toBe(false);
-    expect(changesCompanyPlanHub("setAssignee")).toBe(false);
-    expect(changesCompanyPlanHub("setPriority")).toBe(false);
+    expect(changesImplementationHub1("setMemberPage")).toBe(false);
+    expect(changesImplementationHub1("deleteMemberPage")).toBe(false);
+    expect(changesImplementationHub1("setAssignee")).toBe(false);
+    expect(changesImplementationHub1("setPriority")).toBe(false);
   });
 
-  it("holds back every write the Company Plan hub reads", () => {
+  it("holds back every write Implementation Hub 1.0 reads", () => {
     for (const intent of [
       "setCheck",
       "setChecks",
@@ -43,7 +43,7 @@ describe("changesCompanyPlanHub", () => {
       "unverifyGate",
       "applyHandover"
     ] as const) {
-      expect(changesCompanyPlanHub(intent)).toBe(true);
+      expect(changesImplementationHub1(intent)).toBe(true);
     }
   });
 });

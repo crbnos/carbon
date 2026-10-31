@@ -49,7 +49,7 @@ export async function applyHandover(
   if (!hub.data) {
     return {
       applied: 0,
-      error: { message: "This company has no implementation hub" }
+      error: { message: "This company has no Implementation Hub" }
     };
   }
 

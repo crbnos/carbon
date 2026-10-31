@@ -6,15 +6,15 @@ import { useRouteData } from "@carbon/react";
 import { useSyncExternalStore } from "react";
 import { path } from "~/utils/path";
 
-// Customer preview on the Personal Pages hub: Carbon staff see a person's page
-// as that person does, without the editing controls and staff-only detail.
-// The same mechanism as the Company Plan hub's preview (`useCustomerPreview`):
-// a session cookie scoped to the hub, so the server renders the preview too
-// and nothing flashes on hydration.
+// Preview on Implementation Hub 2.0: Carbon staff see a person's page as that
+// person does, without the editing controls and staff-only detail. The same
+// mechanism as Implementation Hub 1.0's preview (`useCustomerPreview`): a
+// session cookie scoped to /x/implementation, so the server renders the
+// preview too and nothing flashes on hydration.
 const COOKIE = "implementationPreviewAsCustomer";
 const EVENT = "carbon:implementation:previewAsCustomer";
 
-/** Whether the request carries the preview cookie (for the hub's loader). */
+/** Whether the request carries the preview cookie (for the 2.0 layout's loader). */
 export function isImplementationPreview(cookieHeader: string | null): boolean {
   return (cookieHeader ?? "").split(/;\s*/).includes(`${COOKIE}=1`);
 }

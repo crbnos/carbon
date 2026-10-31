@@ -586,7 +586,7 @@ describe("addRow placed on a page", () => {
       { ...question, collection: "objective" } as StateAction
     );
     expect(result.error).toEqual({
-      message: "Only Carbon staff can set up a person's hub page",
+      message: "Only Carbon staff can set up a person's page",
       forbidden: true
     });
     expect(sent).toBe(0);

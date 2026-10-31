@@ -1,8 +1,8 @@
-# Extending the Implementation Hub
+# Extending Implementation Hub 2.0
 
-The hub is one page per person. Carbon staff define each person's page card by
-card in a JSON page file; a person without a page sees an empty hub. The hub
-grows on **three axes**:
+Implementation Hub 2.0 is one page per person. Carbon staff define each
+person's page card by card in a JSON page file; a person without a page sees an
+empty page. Implementation Hub 2.0 grows on **three axes**:
 
 1. **Template** (code, all customers): the hub items in `src/content/*` that a
    page can place (setup items, tasks, product steps, data sets, training,
@@ -18,7 +18,7 @@ content/*   → the template (pure data: steps, rows, copy, registries)
 logic/*     → pure functions over template + saved state; logic/page.ts is the
               page catalogue, the page checks and what each card shows
 models.ts   → zod validators, including memberPageValidator (the page file)
-server.ts   → Supabase reads/writes (the hub layout's loader calls these)
+server.ts   → Supabase reads/writes (the 2.0 layout's loader calls these)
 apply-mutation.ts → applyHubMutation: the single write path and its access
               rules (the pure refusalFor); the /state action calls it
 ui/state/*  → the zustand store: a SERVER-DRIVEN mirror of loader data + a
@@ -58,7 +58,7 @@ optimistically until the loader confirms them.
   company shares its progress. A custom card's tick is the person's own
   (`customCardKey(userId, key)`).
 - A page names cards by key, so a renamed template item keeps working; a
-  removed one shows as "removed from the hub".
+  removed one shows as "removed from the Implementation Hub".
 
 ## Recipe: make a template item placeable on a page
 

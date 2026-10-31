@@ -25,7 +25,7 @@ export const PAGE_COPY = {
   },
   objectives: {
     title: msg`Objectives`,
-    lead: msg`What you want Carbon to do for you. Tie an objective to a real event, like your first purchase order, and the hub shows when it happens.`
+    lead: msg`What you want Carbon to do for you. Tie an objective to a real event, like your first purchase order, and the Implementation Hub shows when it happens.`
   },
   customization: {
     title: msg`Customization Plan`,
@@ -37,7 +37,7 @@ export const PAGE_COPY = {
   },
   handover: {
     title: msg`Sales Handover`,
-    lead: msg`What sales learned before the deal closed. Apply it to fill the hub's pages; each answer is copied once.`
+    lead: msg`What sales learned before the deal closed. Apply it to fill the Implementation Hub's pages; each answer is copied once.`
   },
   scope: {
     title: msg`Scope Summary`,

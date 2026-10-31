@@ -124,9 +124,9 @@ function ImplementationSummary({ data }: { data: ImplementationHubData }) {
   if (!hub || hub.status === "complete" || hub.status === "archived") {
     return null;
   }
-  // The card counts the Company Plan hub's gates. A Personal Pages hub is
+  // The card counts Implementation Hub 1.0's gates. Implementation Hub 2.0 is
   // reached from its nav item.
-  if (data.personalPages) return null;
+  if (data.implementationHub2) return null;
   const map = stateMap(data.implementationCheckStates);
   const signals = data.implementationSignals ?? NO_SIGNALS;
   const spine = spineForTier(SPINE, hub.tier);

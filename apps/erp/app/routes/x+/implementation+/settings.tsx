@@ -34,11 +34,11 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { usePermissions } from "~/hooks";
-import type { ImplementationLayout } from "~/modules/shared/shared.models";
-import { personalPagesEnabled } from "~/modules/shared/shared.service";
+import type { ImplementationHubVersion } from "~/modules/shared/shared.models";
+import { implementationHub2Enabled } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import type { action as layoutAction } from "./layout";
+import type { action as versionAction } from "./version";
 
 const logger = getLogger("erp", "implementation-settings");
 
@@ -47,8 +47,9 @@ export const handle: Handle = {
   to: path.to.implementationSettings
 };
 
-// Carbon staff only: whether the company is enrolled, the hub layout staff
-// chose for it, and whether the new hub is on for it (the flag).
+// Carbon staff only: whether the company is enrolled, the Implementation Hub
+// version staff chose for it, and whether Implementation Hub 2.0 is on for it
+// (the flag).
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, email } = await requirePermissions(request, {});
   if (!isInternalEmail(email)) {
@@ -56,7 +57,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   // Invites have no read policy, so the people are read the way the Employees
-  // screen reads them, to count who would see an empty hub after a switch.
+  // screen reads them, to count who would see an empty page after a switch.
   const { client: peopleClient } = await requirePermissions(request, {
     role: "employee",
     bypassRls: true
@@ -68,13 +69,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .from("employees")
       .select("id, email, status")
       .eq("companyId", companyId),
-    personalPagesEnabled(companyId)
+    implementationHub2Enabled(companyId)
   ]);
   if (employees.error) {
-    logger.error("Failed to load the people for the hub settings", {
-      companyId,
-      error: employees.error
-    });
+    logger.error(
+      "Failed to load the people for the Implementation Hub settings",
+      {
+        companyId,
+        error: employees.error
+      }
+    );
   }
 
   const withPage = new Set((members.data ?? []).map((m) => m.userId));
@@ -86,35 +90,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
       !withPage.has(person.id)
   ).length;
 
-  // The layout staff chose. Its people get Personal Pages only while the
-  // flag is on for the company as well (`usesPersonalPages`).
-  const layout: ImplementationLayout | null = hub.data
-    ? hub.data.layout === "Personal Pages"
-      ? "Personal Pages"
-      : "Company Plan"
+  // The version staff chose. Its people get Implementation Hub 2.0 only while
+  // the flag is on for the company as well (`usesImplementationHub2`).
+  const hubVersion: ImplementationHubVersion | null = hub.data
+    ? hub.data.hubVersion === "2.0"
+      ? "2.0"
+      : "1.0"
     : null;
 
   return {
     enrolled: Boolean(hub.data),
-    layout,
+    hubVersion,
     flagOn,
     withoutPage
   };
 }
 
 export default function ImplementationSettingsRoute() {
-  const { enrolled, layout, flagOn, withoutPage } =
+  const { enrolled, hubVersion, flagOn, withoutPage } =
     useLoaderData<typeof loader>();
 
   return (
     <ScrollArea className="h-full w-full">
       <SettingsPage className="gap-4">
         <SettingsPageHeading>
-          <Trans>Hub Settings</Trans>
+          <Trans>Implementation Hub Settings</Trans>
         </SettingsPageHeading>
         <EnrolmentCard enrolled={enrolled} flagOn={flagOn} />
-        <LayoutCard
-          layout={enrolled ? layout : null}
+        <VersionCard
+          hubVersion={enrolled ? hubVersion : null}
           flagOn={flagOn}
           withoutPage={withoutPage}
         />
@@ -123,8 +127,9 @@ export default function ImplementationSettingsRoute() {
   );
 }
 
-// Enrolment is when the hub becomes visible to the company's own people. It
-// starts on Personal Pages only while the new hub is on for the company.
+// Enrolment is when the Implementation Hub becomes visible to the company's own
+// people. It starts on 2.0 only while Implementation Hub 2.0 is on for the
+// company.
 function EnrolmentCard({
   enrolled,
   flagOn
@@ -155,14 +160,16 @@ function EnrolmentCard({
             <Trans>The company's people see the Implementation Hub.</Trans>
           ) : flagOn ? (
             <Trans>
-              The company's people do not see the hub yet. Enrolling shows it to
-              them, on Personal Pages, and emails the company's admins.
+              The company's people do not see the Implementation Hub yet.
+              Enrolling shows them Implementation Hub 2.0 and emails the
+              company's admins.
             </Trans>
           ) : (
             <Trans>
-              The company's people do not see the hub yet. Enrolling shows them
-              the Company Plan hub, because the new hub is off for this company,
-              and emails the company's admins.
+              The company's people do not see the Implementation Hub yet.
+              Enrolling shows them Implementation Hub 1.0, because
+              Implementation Hub 2.0 is off for this company, and emails the
+              company's admins.
             </Trans>
           )}
         </CardDescription>
@@ -185,16 +192,16 @@ function EnrolmentCard({
   );
 }
 
-// Which layout the company uses, and the switch to the other one. Switching
-// needs permission to update settings in the company; both layouts read the
-// same hub records, so nothing moves. Personal Pages also needs the new hub
-// on for the company (the flag), which is set outside the app.
-function LayoutCard({
-  layout,
+// Which Implementation Hub version the company uses, and the switch to the
+// other one. Switching needs permission to update settings in the company;
+// both versions read the same hub records, so nothing moves. 2.0 also needs
+// the flag on for the company, which is set outside the app.
+function VersionCard({
+  hubVersion,
   flagOn,
   withoutPage
 }: {
-  layout: ImplementationLayout | null;
+  hubVersion: ImplementationHubVersion | null;
   flagOn: boolean;
   withoutPage: number;
 }) {
@@ -202,47 +209,56 @@ function LayoutCard({
   const permissions = usePermissions();
   const canSwitch = permissions.can("update", "settings");
   const confirm = useDisclosure();
-  const fetcher = useAction<typeof layoutAction>({
+  const fetcher = useAction<typeof versionAction>({
     onSuccess: confirm.onClose
   });
-  const next: ImplementationLayout =
-    layout === "Personal Pages" ? "Company Plan" : "Personal Pages";
+  const next: ImplementationHubVersion = hubVersion === "2.0" ? "1.0" : "2.0";
   const title =
-    next === "Personal Pages"
-      ? t`Switch to Personal Pages`
-      : t`Switch to Company Plan`;
-  // Off for the company: Personal Pages cannot be chosen, and one already
-  // chosen waits, its people on the Company Plan hub.
-  const blocked = next === "Personal Pages" && !flagOn;
+    next === "2.0"
+      ? t`Switch to Implementation Hub 2.0`
+      : t`Switch to Implementation Hub 1.0`;
+  // Off for the company: 2.0 cannot be chosen, and 2.0 already chosen waits,
+  // its people on Implementation Hub 1.0.
+  const blocked = next === "2.0" && !flagOn;
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <CardTitle>
-            <Trans>Layout</Trans>
+            <Trans>Version</Trans>
           </CardTitle>
-          {layout ? <Badge variant="outline">{layout}</Badge> : null}
+          {hubVersion ? (
+            <Badge variant="outline">
+              {hubVersion === "2.0" ? (
+                <Trans>Implementation Hub 2.0</Trans>
+              ) : (
+                <Trans>Implementation Hub 1.0</Trans>
+              )}
+            </Badge>
+          ) : null}
         </div>
         <CardDescription className="text-pretty">
-          {layout === null ? (
-            <Trans>The company chooses a layout when it is enrolled.</Trans>
-          ) : layout === "Personal Pages" && !flagOn ? (
+          {hubVersion === null ? (
+            <Trans>The company gets a version when it is enrolled.</Trans>
+          ) : hubVersion === "2.0" && !flagOn ? (
             <Trans>
-              Its people see the Company Plan hub while the new hub is off for
-              this company. Their pages stay.
+              Its people see Implementation Hub 1.0 while Implementation Hub 2.0
+              is off for this company. Their pages stay.
             </Trans>
-          ) : layout === "Personal Pages" ? (
-            <Trans>Its people see the page loaded for them in this hub.</Trans>
+          ) : hubVersion === "2.0" ? (
+            <Trans>
+              Its people see the page loaded for them in Implementation Hub 2.0.
+            </Trans>
           ) : (
             <Trans>
-              Its people see the Company Plan hub, not these pages, until you
+              Its people see Implementation Hub 1.0, not these pages, until you
               switch.
             </Trans>
           )}
         </CardDescription>
       </CardHeader>
-      {layout ? (
+      {hubVersion ? (
         <CardContent className="flex flex-col items-start gap-2">
           <Button
             variant="secondary"
@@ -255,9 +271,8 @@ function LayoutCard({
           {blocked ? (
             <p className="text-xs text-muted-foreground text-pretty">
               <Trans>
-                The new hub is off for this company. Add it to the
-                implementation-hub-personal-pages flag in the CSA dashboard
-                first.
+                Implementation Hub 2.0 is off for this company. Add it to the
+                implementation-hub-2 flag in the CSA dashboard first.
               </Trans>
             </p>
           ) : null}
@@ -283,28 +298,28 @@ function LayoutCard({
             </ModalHeader>
             <ModalBody>
               <div className="flex flex-col gap-2 text-sm text-muted-foreground text-pretty">
-                {next === "Personal Pages" ? (
+                {next === "2.0" ? (
                   <p>
                     <Trans>
-                      The company's people will see the page loaded for them
-                      here instead of the Company Plan hub. Ticks, answers and
-                      rows carry over.
+                      The company's people will see the page loaded for them in
+                      Implementation Hub 2.0 instead of Implementation Hub 1.0.
+                      Ticks, answers and rows carry over.
                     </Trans>
                   </p>
                 ) : (
                   <p>
                     <Trans>
-                      The company's people will see the Company Plan hub again.
-                      Their pages stay, so you can switch back.
+                      The company's people will see Implementation Hub 1.0
+                      again. Their pages stay, so you can switch back.
                     </Trans>
                   </p>
                 )}
-                {next === "Personal Pages" && withoutPage > 0 ? (
+                {next === "2.0" && withoutPage > 0 ? (
                   <p className="text-foreground">
                     <Plural
                       value={withoutPage}
-                      one="# active person has no page yet and will see an empty hub until you load one."
-                      other="# active people have no page yet and will see an empty hub until you load one."
+                      one="# active person has no page yet and will see an empty page until you load one."
+                      other="# active people have no page yet and will see an empty page until you load one."
                     />
                   </p>
                 ) : null}
@@ -314,8 +329,11 @@ function LayoutCard({
               <Button variant="secondary" onClick={confirm.onClose}>
                 <Trans>Cancel</Trans>
               </Button>
-              <fetcher.Form method="post" action={path.to.implementationLayout}>
-                <input type="hidden" name="layout" value={next} />
+              <fetcher.Form
+                method="post"
+                action={path.to.implementationVersion}
+              >
+                <input type="hidden" name="hubVersion" value={next} />
                 <Button
                   type="submit"
                   isLoading={fetcher.isPending}
