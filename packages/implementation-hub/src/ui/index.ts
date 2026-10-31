@@ -5,6 +5,7 @@
 export type { PageEditor } from "./MemberPageEditor";
 export { MemberPageEmpty, MemberPageView } from "./MemberPageView";
 export { OnboardingHubSummary } from "./OnboardingHubSummary";
+export { PageBoard } from "./PageBoard";
 export {
   PrioritySetPanel,
   PrioritySetProvider,
