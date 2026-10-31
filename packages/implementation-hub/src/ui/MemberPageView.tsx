@@ -22,7 +22,11 @@ import type { MessageDescriptor } from "@lingui/core";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { LuArrowRight, LuBookOpen, LuPlay } from "react-icons/lu";
-import { PAGE_CARD_KIND_LABEL, READINESS_LABEL } from "../content/page";
+import {
+  PAGE_CARD_TYPE,
+  PAGE_CARD_TYPE_LABEL,
+  READINESS_LABEL
+} from "../content/page";
 import { isOverdue } from "../logic/assignments";
 import {
   buildPageCatalogue,
@@ -224,10 +228,17 @@ function PageCardView({
         })
       : [];
   // An objective's group is its event, which the title already names; in the
-  // label it only ran off the card.
-  const group = card.kind === "objective" ? undefined : text(card.group);
+  // label it only ran off the card. A customization's group is its type of
+  // work, and its estimate and the requirement it serves are Carbon's own
+  // tracking: staff only.
+  const group =
+    card.kind === "objective" ||
+    (card.kind === "customization" && !showsStaffDetail)
+      ? undefined
+      : text(card.group);
+  const estimateDays = showsStaffDetail ? card.estimateDays : undefined;
   const checkRow = card.tick ? checkRows.get(card.tick.itemKey) : undefined;
-  const serves = text(card.serves);
+  const serves = showsStaffDetail ? text(card.serves) : undefined;
   const hasBody =
     Boolean(card.missing) ||
     Boolean(serves) ||
@@ -236,7 +247,7 @@ function PageCardView({
     card.kind === "priority";
   const hasFooter =
     Boolean(due) ||
-    card.estimateDays !== undefined ||
+    estimateDays !== undefined ||
     (showsStaffDetail && card.evidence.length > 0) ||
     Boolean(checkRow?.verifiedAt) ||
     (showsStaffDetail && isSourceShown(row?.source)) ||
@@ -249,7 +260,7 @@ function PageCardView({
       <CardHeader className="gap-2 pb-3">
         <div className="flex items-start justify-between gap-2">
           <span className="min-w-0 truncate text-xxs font-medium uppercase tracking-wide text-muted-foreground">
-            {i18n._(PAGE_CARD_KIND_LABEL[card.kind])}
+            {i18n._(PAGE_CARD_TYPE_LABEL[PAGE_CARD_TYPE[card.kind]])}
             {group ? ` · ${group}` : ""}
           </span>
           <CardStatus card={card} on={state.on} row={row} />
@@ -304,14 +315,10 @@ function PageCardView({
                   {formatDate(due, undefined, i18n.locale)}
                 </Badge>
               ) : null}
-              {card.estimateDays !== undefined ? (
+              {estimateDays !== undefined ? (
                 <Badge variant="outline" className="font-normal tabular-nums">
                   {t`Estimate`}{" "}
-                  <Plural
-                    value={card.estimateDays}
-                    one="# day"
-                    other="# days"
-                  />
+                  <Plural value={estimateDays} one="# day" other="# days" />
                 </Badge>
               ) : null}
               {card.evidence.map((evidence) => (
