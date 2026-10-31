@@ -17,6 +17,7 @@ import {
   type HubPersonStatus,
   pageOverdue,
   pageProgress,
+  prioritySetHolder,
   requirementChoices,
   resolveMemberPage,
   starterMemberPage,
@@ -444,5 +445,42 @@ describe("starterMemberPage", () => {
     expect(checked.page?.sections[0]?.cards).toEqual([
       { item: "priority:questionnaire" }
     ]);
+  });
+
+  it("leaves the questionnaire out when someone else is assigned it", () => {
+    expect(
+      starterMemberPage("new.person@example.com", "Start here", false).sections
+    ).toEqual([{ title: "Start here", cards: [] }]);
+  });
+});
+
+describe("prioritySetHolder", () => {
+  const member = (userId: string, cards: unknown[]) => ({
+    userId,
+    page: {
+      version: 1,
+      user: `${userId}@example.com`,
+      sections: [{ title: "Now", cards }]
+    }
+  });
+  const members = [
+    member("alex", [{ item: "setup:locations" }]),
+    member("sam", [{ item: "priority:questionnaire" }]),
+    { userId: "broken", page: { sections: "not a page" } }
+  ];
+
+  it("finds the one person whose page has the questionnaire", () => {
+    expect(prioritySetHolder(members)).toEqual({
+      userId: "sam",
+      email: "sam@example.com"
+    });
+  });
+
+  it("leaves out the person whose page is being saved", () => {
+    expect(prioritySetHolder(members, "sam")).toBeNull();
+  });
+
+  it("is null when no page has it", () => {
+    expect(prioritySetHolder(members.slice(0, 1))).toBeNull();
   });
 });

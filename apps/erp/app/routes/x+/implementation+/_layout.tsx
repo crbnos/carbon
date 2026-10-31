@@ -7,6 +7,7 @@ import {
   EMPTY_EXCLUSIONS,
   type HubContacts,
   type HubExclusions,
+  hasPriorityCard,
   hubAccess,
   type ImplementationRowData,
   UNENROLLED_HUB
@@ -16,6 +17,7 @@ import {
   getImplementationCheckStates,
   getImplementationFieldValues,
   getImplementationHub,
+  getImplementationMember,
   getImplementationRows
 } from "@carbon/implementation-hub/server";
 import {
@@ -26,7 +28,7 @@ import {
   toFormFields
 } from "@carbon/implementation-hub/ui";
 import { useRealtimeTable } from "@carbon/query";
-import { RecordOutlet } from "@carbon/react";
+import { RecordOutlet, useRouteData } from "@carbon/react";
 import { isInternalEmail, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
@@ -149,10 +151,14 @@ const resolveVideoUrl = (videoKey: string): string | undefined => {
 };
 
 // The hub's own navigation, beside every page under this layout: the pages a
-// person uses, and for Carbon staff the hub's settings.
+// person uses, and for Carbon staff the hub's settings. The priority set shows
+// to Carbon staff and the one person it is assigned to.
 function ImplementationSidebar() {
   const { t } = useLingui();
   const { isInternal } = useFlags();
+  const answersPrioritySet =
+    useRouteData<{ answersPrioritySet: boolean }>(path.to.implementation)
+      ?.answersPrioritySet ?? false;
   const groups: RouteGroup[] = [
     {
       name: t`Implementation`,
@@ -164,11 +170,15 @@ function ImplementationSidebar() {
           icon: <LuUser />,
           isActive: (pathname) => pathname === path.to.implementation
         },
-        {
-          name: t`Priority Set`,
-          to: path.to.implementationPrioritySet,
-          icon: <LuListChecks />
-        }
+        ...(isInternal || answersPrioritySet
+          ? [
+              {
+                name: t`Priority Set`,
+                to: path.to.implementationPrioritySet,
+                icon: <LuListChecks />
+              }
+            ]
+          : [])
       ]
     },
     ...(isInternal
@@ -220,14 +230,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!isStaff && !personalPages) {
     throw redirect(path.to.getStarted);
   }
-  const [checkStates, fieldValues, rows, signals, counts, assignments] =
+  const [checkStates, fieldValues, rows, signals, counts, assignments, own] =
     await Promise.all([
       getImplementationCheckStates(client, companyId),
       getImplementationFieldValues(client, companyId),
       getImplementationRows(client, companyId),
       getImplementationSignals(client, companyId),
       getImplementationCounts(client, companyId),
-      getImplementationAssignments(client, companyId)
+      getImplementationAssignments(client, companyId),
+      isStaff
+        ? null
+        : getImplementationMember(client, { companyId, memberId: userId })
     ]);
 
   return {
@@ -255,7 +268,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // say why, for the staff notice.
     personalPages,
     enrolled: Boolean(hub.data),
-    flagOn
+    flagOn,
+    // Carbon staff, or the person the priority set is assigned to (its card
+    // is on their page): the sidebar shows it to them only.
+    answersPrioritySet: isStaff || hasPriorityCard(own?.data?.page)
   };
 }
 

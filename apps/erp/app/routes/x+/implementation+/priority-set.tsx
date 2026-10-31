@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { getAppUrl } from "@carbon/env";
+import { hasPriorityCard } from "@carbon/implementation-hub";
+import { getImplementationMember } from "@carbon/implementation-hub/server";
 import {
   PrioritySetPanel,
   PrioritySetProvider,
@@ -18,9 +21,11 @@ import {
   CardTitle,
   toast
 } from "@carbon/react";
+import { isInternalEmail, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCopy, LuDownload } from "react-icons/lu";
+import type { LoaderFunctionArgs } from "react-router";
 import { DocumentPage, DocumentPageHeader } from "~/components/DocumentPage";
 import { useUser } from "~/hooks";
 import { buildAgentSetupMessage } from "~/utils/agent-setup";
@@ -36,6 +41,25 @@ export const handle: Handle = {
   breadcrumb: msg`Priority Set`,
   to: path.to.implementationPrioritySet
 };
+
+// Carbon staff, and the one person the priority set is assigned to (its card
+// is on their page). Anyone else goes to their own page; the /state action
+// refuses their answers too.
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, companyId, userId, email } = await requirePermissions(
+    request,
+    {}
+  );
+  if (isInternalEmail(email)) return null;
+  const own = await getImplementationMember(client, {
+    companyId,
+    memberId: userId
+  });
+  if (!hasPriorityCard(own.data?.page)) {
+    throw redirect(path.to.implementation);
+  }
+  return null;
+}
 
 export default function PrioritySetRoute() {
   const { company } = useUser();

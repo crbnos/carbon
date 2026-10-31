@@ -90,6 +90,19 @@ export function getImplementationMembers(client: Client, companyId: string) {
     .eq("companyId", companyId);
 }
 
+// One person's page; null data when they have none.
+export function getImplementationMember(
+  client: Client,
+  args: { companyId: string; memberId: string }
+) {
+  return client
+    .from("implementationMember")
+    .select("page")
+    .eq("companyId", args.companyId)
+    .eq("userId", args.memberId)
+    .maybeSingle();
+}
+
 export function upsertImplementationMember(
   client: Client,
   args: {

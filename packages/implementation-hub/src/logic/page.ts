@@ -792,14 +792,51 @@ export function groupHubPeople(
 }
 
 // Pure: the smallest page file for a person who has none, for staff to edit
-// before loading: the priority set questionnaire under one section.
+// before loading: one section, with the priority set questionnaire while
+// nobody else is assigned it.
 export function starterMemberPage(
   email: string,
-  sectionTitle: string
+  sectionTitle: string,
+  withPriorityCard = true
 ): MemberPage {
   return {
     version: 1,
     user: email,
-    sections: [{ title: sectionTitle, cards: [{ item: PRIORITY_CARD.item }] }]
+    sections: [
+      {
+        title: sectionTitle,
+        cards: withPriorityCard ? [{ item: PRIORITY_CARD.item }] : []
+      }
+    ]
   };
+}
+
+// Pure: whether a stored page assigns its person the priority set. The
+// questionnaire's card on a page is the assignment: one person answers it
+// for the company, and Carbon staff answer it with anyone else in a workshop.
+export function hasPriorityCard(page: unknown): boolean {
+  const parsed = memberPageValidator.safeParse(page);
+  return (
+    parsed.success &&
+    parsed.data.sections.some((section) =>
+      section.cards.some((card) => card.item === PRIORITY_CARD.item)
+    )
+  );
+}
+
+// Pure: who the priority set is assigned to, leaving out `except` (the person
+// whose page is being saved). Null when no other page has its card.
+export function prioritySetHolder(
+  members: { userId: string; page: unknown }[],
+  except?: string
+): { userId: string; email: string } | null {
+  for (const member of members) {
+    if (member.userId === except || !hasPriorityCard(member.page)) continue;
+    const parsed = memberPageValidator.safeParse(member.page);
+    return {
+      userId: member.userId,
+      email: parsed.success ? parsed.data.user : ""
+    };
+  }
+  return null;
 }
