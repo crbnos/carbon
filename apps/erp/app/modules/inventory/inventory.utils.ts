@@ -470,16 +470,19 @@ export function spreadBatchCount(
 }
 
 // A spreadsheet runs a cell that starts with =, +, - or @, so the CSV encoder
-// strips those characters. A serial or batch number can start with one, so the
-// export puts an apostrophe in front, and the import takes it off again.
+// strips those characters, and a spreadsheet turns a number-like text such as
+// 00123 into 123. The export puts an apostrophe in front of any identifier
+// either would change, and of any that already starts with one; the import
+// takes exactly one apostrophe off. So every identifier round-trips.
 const CSV_FORMULA_START = /^[=+\-@]/;
 export function protectCsvIdentifier(value: string): string {
-  return CSV_FORMULA_START.test(value) && Number.isNaN(Number(value))
-    ? `'${value}`
-    : value;
+  const isNumberLike = value.trim() !== "" && !Number.isNaN(Number(value));
+  const needsEscape =
+    value.startsWith("'") ||
+    (CSV_FORMULA_START.test(value) && !isNumberLike) ||
+    (isNumberLike && String(Number(value)) !== value);
+  return needsEscape ? `'${value}` : value;
 }
 export function readCsvIdentifier(value: string): string {
-  return value.startsWith("'") && CSV_FORMULA_START.test(value.slice(1))
-    ? value.slice(1)
-    : value;
+  return value.startsWith("'") ? value.slice(1) : value;
 }

@@ -308,10 +308,22 @@ describe("review fixes", () => {
   });
 
   it("round-trips an identifier that starts with a formula character", () => {
+    for (const id of [
+      "-LOT",
+      "'-LOT",
+      "'quoted",
+      "00123",
+      "1e5",
+      "SN-1",
+      "1001",
+      "-42"
+    ]) {
+      expect(readCsvIdentifier(protectCsvIdentifier(id))).toBe(id);
+    }
     expect(protectCsvIdentifier("-LOT")).toBe("'-LOT");
-    expect(readCsvIdentifier("'-LOT")).toBe("-LOT");
+    expect(protectCsvIdentifier("00123")).toBe("'00123");
     expect(protectCsvIdentifier("SN-1")).toBe("SN-1");
-    expect(readCsvIdentifier("'quoted")).toBe("'quoted");
+    expect(protectCsvIdentifier("1001")).toBe("1001");
     const csv =
       "Item,Storage Unit,Serial / Batch,Counted Quantity\nBAT,A1,'-LOT,4";
     expect(parseInventoryCountCsv(csv).rows[0].code).toBe("-LOT");
