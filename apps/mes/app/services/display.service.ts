@@ -92,13 +92,17 @@ export async function getDisplayLoadedOperation(
   };
 }
 
-/** A device state older than this is hidden: the sync may have stopped. */
-const DEVICE_STATE_MAX_AGE_MS = 10 * 60 * 1000;
+/**
+ * A device state older than this is hidden: the sync may have stopped. Two
+ * missed sweeps (every 10 minutes) plus slack, since a machine that does not
+ * change state gets no webhook.
+ */
+const DEVICE_STATE_MAX_AGE_MS = 25 * 60 * 1000;
 
 /**
  * The live state of the OEE device mapped to a work center, or null when there
  * is no device, its last sync failed, it has never synced, or it last synced
- * more than 10 minutes before `now`. A wall display must not show "Running"
+ * more than 25 minutes before `now`. A wall display must not show "Running"
  * from a sync that stopped hours ago.
  */
 export async function getDisplayDeviceState(

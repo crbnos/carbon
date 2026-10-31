@@ -27,6 +27,7 @@ const taskToEvent = {
   "invoice-automate": "carbon/invoice.automate",
   "model-thumbnail": "carbon/model-thumbnail",
   "model-optimize": "carbon/model-optimize",
+  "oee-device-sync": "carbon/oee-device-sync",
   notify: "carbon/notify",
   onboard: "carbon/onboard",
   "mount-publish": "carbon/mount-publish",

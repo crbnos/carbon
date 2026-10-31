@@ -10,7 +10,7 @@ Machine monitoring requires Enterprise Edition or the Carbon Cloud Business plan
 
 ## What an OEE provider does
 
-Each provider device maps to one work center. Sense calls a device a **station**. Sense has no webhooks, so Carbon polls it every 2 minutes and stores each state change it reads. Carbon maps the four Sense statuses to four machine states:
+Each provider device maps to one work center. Sense calls a device a **station**. When a station changes state, Sense sends Carbon a webhook, and Carbon reads that station's new state changes within seconds and stores them. Carbon also checks every station every 10 minutes, so a webhook that never arrives delays machine time but loses none. Carbon maps the four Sense statuses to four machine states:
 
 | Sense status | Carbon machine state |
 | --- | --- |
@@ -43,13 +43,13 @@ You need the `settings` update permission and a company API key from Sense.
   <Step>
   ### Install
 
-  Select **Install**. Then open **Sense** again. The drawer now has a **Devices** tab.
+  Select **Install**. Carbon points your Sense company's webhook at Carbon and enables it. Then open **Sense** again. The drawer now has a **Devices** tab.
   </Step>
 </Steps>
 
 <FieldTable>
-  <Field name="API key" required>A company API key from Sense. It gives Carbon read access to your sites and stations. Stored as a secret.</Field>
-  <Field name="Environment" required>**Production** (`bifrost.sensemfg.com`) or **Staging**, which is for testing only. Staging uses plain HTTP, so Carbon refuses it in production.</Field>
+  <Field name="API key" required>A company API key from Sense. Carbon uses it to read your sites and stations and to manage your company's Sense webhook. Stored as a secret.</Field>
+  <Field name="Environment" required>**Production** (`bifrost.sensemfg.com`) or **Staging** (`bifrost-staging.sensemfg.com`), which is for testing only.</Field>
   <Field name="Minimum state (seconds)" required>Carbon ignores a run or a stop shorter than this, so a brief blip does not split machine time. The default is 60.</Field>
 </FieldTable>
 
@@ -95,7 +95,7 @@ A station can report a start late. For example, the machine starts at 10:00, the
 
 A station can also report a stop late. If the stop falls inside unattributed time that a press already ended, Carbon shortens that unattributed time to the minutes the machine ran. Carbon never shortens machine time on an operation.
 
-The work center display shows the station's state. It hides the state when the station has a sync error or has not synced for 10 minutes.
+The work center display shows the station's state. It hides the state when the station has a sync error or has not synced for 25 minutes.
 
 ### Unattributed time
 
@@ -124,7 +124,7 @@ You cannot answer a row while the machine still runs. You cannot assign time to 
 <Screenshot label="Unattributed Time drawer with operation cards for the work center's day, the search card, and Not job time and Skip" />
 
 <AgentContext>
-Tables: `workCenterDevice` (one row per mapped device; `UNIQUE(workCenterId, companyId)` across every OEE integration; holds `currentState`, `currentStateAt`, `appliedThrough`, `lastEventAt`, `lastManualChangeAt`, `unplannedPressAt`, `lastSyncedAt`, `lastSyncError`), `machineStateChange` (every state change read, unique per device and provider event id), `unattributedMachineTime` (a review queue: a row is deleted when it is assigned or dismissed, and 30 days after its `endTime`). `workCenterLoad` holds the history of loads (one row per load, `loadedAt` and `unloadedAt`); the row with no `unloadedAt` is the loaded operation. `workCenterDevice.unplannedPressAt` holds the earliest Machine press since the last sync.
+Tables: `workCenterDevice` (one row per mapped device; `UNIQUE(workCenterId, companyId)` across every OEE integration; holds `currentState`, `currentStateAt`, `appliedThrough`, `lastEventAt`, `lastManualChangeAt`, `unplannedPressAt`, `lastSyncedAt`, `lastSyncError`), `machineStateChange` (every state change read, unique per device and provider event id), `unattributedMachineTime` (a review queue: a row is deleted when it is assigned or dismissed, and 30 days after its `endTime`). `workCenterLoad` holds the history of loads (one row per load, `loadedAt` and `unloadedAt`); the row with no `unloadedAt` is the loaded operation. `workCenterDevice.unplannedPressAt` holds the earliest Machine press since the last sync. Sense delivers `station.status_changed` to `/api/webhook/sense/{companyId}`, signed in `Sense-Signature` (`t=…,v1=…`, HMAC-SHA256 of `t.body`); a delivery only starts the sync of its station, which reads the events from the Sense API.
 
 Exact errors and causes:
 
@@ -132,6 +132,7 @@ Exact errors and causes:
 - "Failed to save device mapping" with `{work center} already has {device} from {integration}`: the work center already holds a device. Unmap that device first.
 - A device row shows `Unknown Sense status: {status}`: Sense sent a status outside Active, Idle, Alert and Offline. The device keeps its cursor and retries on the next sync.
 - A device row shows "Station has no site": the Sense station is not in a site, so Carbon cannot read its events.
+- The Sense card is unhealthy with "Sense has no webhook for Carbon", "The Sense webhook sends events somewhere else", "Sense disabled the webhook (CONSECUTIVE_FAILURES)" or "Carbon has no signing secret for the Sense webhook": machine time still syncs, but only every 10 minutes. Save the Sense settings: Carbon points the webhook back at Carbon, enables it and replaces its signing secret. Sense allows one webhook per company, so another system that uses it loses it.
 - "The machine is still running" (assign) or "Machine time not found, or the machine is still running" (dismiss): the unattributed row has no end time yet, or another user already answered it. Wait for the machine to stop.
 - "This event has already ended" in the MES: the timer was already ended, for example by another operator's Machine press on the same work center.
 - "You do not have permission to start machine time" / "You do not have permission to end machine time" in the MES: the user lacks the `production` create or update permission.

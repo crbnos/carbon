@@ -876,6 +876,13 @@ export type Events = {
       integrationId: string;
     };
   };
+  "carbon/oee-device-sync": {
+    data: {
+      companyId: string;
+      integrationId: string;
+      externalDeviceId: string;
+    };
+  };
 
   // Paperless parts integration (full webhook payload)
   "carbon/paperless-parts": {

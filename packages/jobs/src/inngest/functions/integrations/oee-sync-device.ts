@@ -140,6 +140,9 @@ export async function syncOeeDevice({
   // The Machine events this sync ended (closed, or inserted closed). The
   // caller posts them to the GL once the transaction commits.
   const endedEventIds: string[] = [];
+  // When the last change was too short to apply: it applies once it has
+  // lasted `minimumStateSeconds`, so the caller syncs the device again then.
+  let recheckAt: string | null = null;
 
   await db.transaction().execute(async (trx) => {
     const locked = await lockWorkCenterDevice(trx, {
@@ -373,6 +376,18 @@ export async function syncOeeDevice({
       }))
     });
 
+    const consumedThrough = plan.appliedThrough ?? appliedThrough;
+    const pendingAt = changeInstants.find(
+      (instant) =>
+        consumedThrough === null ||
+        compareInstants(instant, consumedThrough) > 0
+    );
+    if (pendingAt) {
+      recheckAt = parseAbsolute(pendingAt, "UTC")
+        .add({ seconds: minimumStateSeconds })
+        .toAbsoluteString();
+    }
+
     for (const write of plan.writes) {
       switch (write.kind) {
         case "insertMachineEvent": {
@@ -490,5 +505,5 @@ export async function syncOeeDevice({
       .execute();
   });
 
-  return { changes: changes.length, endedEventIds };
+  return { changes: changes.length, endedEventIds, recheckAt };
 }

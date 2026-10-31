@@ -12,13 +12,14 @@ import {
 
 /**
  * Sense Manufacturing — clip-on current sensors, one "station" per machine.
- * The public API is company-scoped by its key (`/v1/public/companies/...`)
- * and has no webhooks, so the OEE sync polls it.
+ * The public API is company-scoped by its key (`/v1/public/companies/...`).
+ * A company has at most one webhook; its deliveries wake the OEE sync of the
+ * station that changed (`./webhook.ts`), and the sweep polls as a fallback.
  */
 
 const SENSE_HOSTS = {
   production: "https://bifrost.sensemfg.com",
-  staging: "http://bifrost-staging.sensemfg.com"
+  staging: "https://bifrost-staging.sensemfg.com"
 } as const;
 
 export type SenseEnvironment = keyof typeof SENSE_HOSTS;
@@ -61,6 +62,27 @@ type SenseStation = {
 
 type SenseEvent = { id: string; status: string; created_at: string };
 
+/** A Sense webhook subscription. A company has 0 or 1. */
+export type SenseWebhook = {
+  id: string;
+  url: string;
+  enabled: boolean;
+  disabled_reason: string | null;
+};
+
+const WEBHOOKS_PATH = "/v1/public/companies/webhooks";
+
+/** Builds the provider from the integration's settings. */
+export function createSenseProvider(args: {
+  apiKey: string;
+  environment: string;
+}) {
+  return new SenseProvider({
+    apiKey: args.apiKey,
+    environment: args.environment === "staging" ? "staging" : "production"
+  });
+}
+
 export class SenseProvider implements OeeProvider {
   readonly id = "sense" as const;
   private readonly host: string;
@@ -71,9 +93,17 @@ export class SenseProvider implements OeeProvider {
     this.host = SENSE_HOSTS[args.environment];
   }
 
-  private async get<T>(
+  private get<T>(path: string, query: Record<string, string> = {}) {
+    return this.request<T>("GET", path, { query });
+  }
+
+  private async request<T>(
+    method: "GET" | "POST" | "PATCH",
     path: string,
-    query: Record<string, string> = {}
+    {
+      query = {},
+      body
+    }: { query?: Record<string, string>; body?: unknown } = {}
   ): Promise<T> {
     const url = new URL(path, this.host);
     for (const [key, value] of Object.entries(query)) {
@@ -82,10 +112,13 @@ export class SenseProvider implements OeeProvider {
     let response: Response;
     try {
       response = await fetch(url, {
+        method,
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
-          Accept: "application/json"
+          Accept: "application/json",
+          ...(body === undefined ? {} : { "Content-Type": "application/json" })
         },
+        body: body === undefined ? undefined : JSON.stringify(body),
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
       });
     } catch (error) {
@@ -194,4 +227,53 @@ export class SenseProvider implements OeeProvider {
 
     return changes;
   }
+
+  /** The company's webhook, or null when it has none. */
+  async getWebhook(): Promise<SenseWebhook | null> {
+    const { webhooks } = await this.get<{ webhooks: SenseWebhook[] }>(
+      WEBHOOKS_PATH
+    );
+    return webhooks[0] ?? null;
+  }
+
+  /** Subscribes `url` to every station and status. Returns the signing secret. */
+  async createWebhook(url: string): Promise<{ id: string; secret: string }> {
+    return this.request("POST", WEBHOOKS_PATH, {
+      body: { url, description: WEBHOOK_DESCRIPTION }
+    });
+  }
+
+  /**
+   * Points the webhook at `url` and clears its filters back to every station
+   * and status. Never re-enables it: that is `enableWebhook`.
+   */
+  async updateWebhook(id: string, url: string): Promise<SenseWebhook> {
+    return this.request("PATCH", `${WEBHOOKS_PATH}/${encodeURIComponent(id)}`, {
+      body: {
+        url,
+        description: WEBHOOK_DESCRIPTION,
+        site_ids: null,
+        station_ids: null,
+        statuses: null
+      }
+    });
+  }
+
+  /** Re-enables a webhook and resets its failure counter. */
+  async enableWebhook(id: string): Promise<SenseWebhook> {
+    return this.request(
+      "POST",
+      `${WEBHOOKS_PATH}/${encodeURIComponent(id)}/enable`
+    );
+  }
+
+  /** Replaces the signing secret; the old one stops verifying at once. */
+  async rotateWebhookSecret(id: string): Promise<{ secret: string }> {
+    return this.request(
+      "POST",
+      `${WEBHOOKS_PATH}/${encodeURIComponent(id)}/rotate-secret`
+    );
+  }
 }
+
+const WEBHOOK_DESCRIPTION = "Carbon machine time";

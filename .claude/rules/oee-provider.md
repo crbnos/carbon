@@ -3,6 +3,7 @@ paths:
   - packages/ee/src/oee/**
   - packages/ee/src/sense/**
   - packages/jobs/src/inngest/functions/integrations/oee-*.ts
+  - apps/erp/app/routes/api+/webhook.sense.$companyId.ts
   - packages/database/src/machine-time.ts
 ---
 
@@ -38,11 +39,14 @@ checks it first ("Work center not found"). `machineStateChange` and
 | `packages/ee/src/oee/assignable.ts` | `machineTimeRefusal(operationStatus, jobStatus)`: `"Done"`, `"Canceled"`, `"Locked"` or null. The one rule for "can this operation take machine time", used by the sync (a load's `assignable`), `assignUnattributedMachineTime` and the review's suggestion cards. Built on `isJobLocked` / `JOB_LOCKED_STATUSES` (`packages/utils/src/job-status.ts`, re-exported by the ERP's `production.models.ts`) |
 | `packages/ee/src/oee/registry.ts` | `OEE_PROVIDERS` (keyed by `OeeProviderId`): provider id → factory, the one place a provider is named. `isOeeProviderId`, and `createOeeProvider(integrationId, metadata)`: the one resolution (id check, "No API key", the `DEFAULT_MINIMUM_STATE_SECONDS` default, the factory) behind `getOeeProvider` and the Sense healthcheck |
 | `packages/ee/src/oee/service.server.ts` | `getOeeProvider` (runtime, degrades through `companyHasFeature("INTEGRATIONS")`), `postEndedMachineEvents` (runtime: posts ended Machine events through `post-production-event`, logs failures, never throws), and 4 authoring writes that embed `requireEntitlement("INTEGRATIONS")`: `upsertWorkCenterDevice`, `deleteWorkCenterDevice`, `assignUnattributedMachineTime`, `dismissUnattributedMachineTime` |
-| `packages/ee/src/sense/provider.ts` | `SenseProvider`, the Sense HTTP adapter. Pinned by `provider.test.ts` |
+| `packages/ee/src/sense/provider.ts` | `SenseProvider`, the Sense HTTP adapter (events, stations, sites, and the company webhook: `getWebhook`, `createWebhook`, `updateWebhook`, `enableWebhook`, `rotateWebhookSecret`), and `createSenseProvider`, the factory `OEE_PROVIDERS.sense` uses. Pinned by `provider.test.ts` |
+| `packages/ee/src/sense/webhook.ts` | `verifySenseWebhook`, `SenseWebhookEventSchema`, `senseWebhookUrl`. Pinned by `webhook.test.ts` |
+| `packages/ee/src/sense/webhook.server.ts` | `ensureSenseWebhook` (`requireEntitlement("INTEGRATIONS")`; `onlyIfMissing` for the sweep), `senseFromMetadata`, `webhookOrigin` |
 | `packages/ee/src/sense/config.tsx` | The descriptor: `apiKey` (secret), `environment`, `minimumStateSeconds` (default 60) |
-| `packages/ee/src/sense/hooks.server.ts` | `senseHealthcheck` (calls `provider.validate()`) and `senseOnUninstall` (registered in `packages/ee/src/hooks.server.ts`; see "Uninstalling Sense") |
-| `packages/jobs/src/inngest/functions/integrations/oee-sweep.ts` | Cron `*/2 * * * *`. Sends one `carbon/oee-sync` per (company, OEE integration) that is active and has at least 1 mapped device |
-| `packages/jobs/src/inngest/functions/integrations/oee-sync.ts` | `carbon/oee-sync`, concurrency 1 per company, `singleton` (skip) per company and integration. Syncs every device of the integration in ONE `step.run` |
+| `packages/ee/src/sense/hooks.server.ts` | `senseOnSave` (`onInstall` and `onUpdate`: `ensureSenseWebhook`), `senseHealthcheck` (`provider.validate()`, then the webhook) and `senseOnUninstall` (registered in `packages/ee/src/hooks.server.ts`; see "Uninstalling Sense" and "The Sense webhook") |
+| `apps/erp/app/routes/api+/webhook.sense.$companyId.ts` | Receives the Sense webhook and sends `carbon/oee-device-sync` for a mapped station |
+| `packages/jobs/src/inngest/functions/integrations/oee-sweep.ts` | Cron `*/10 * * * *`, the fallback. Sends one `carbon/oee-sync` per (company, OEE integration) that is active and has at least 1 mapped device, then registers the webhook of any of them that has none (`registerMissingOeeWebhook`) |
+| `packages/jobs/src/inngest/functions/integrations/oee-sync.ts` | Two functions on one device loop (`syncDevices`). `oee-sync` (`carbon/oee-sync`, from the sweep): every device of the integration in ONE `step.run`, `singleton` (skip) per company and integration. `oee-device-sync` (`carbon/oee-device-sync`, from the webhook and from rechecks): one device, `debounce` 5 s (timeout 30 s) per company, integration and device. Both share an env-scoped concurrency key (`"oee:" + companyId`, limit 1), so a webhook run and a sweep run never overlap for one company |
 | `packages/jobs/src/inngest/functions/integrations/oee-sync-device.ts` | `syncOeeDevice`: read, store, then plan and apply under the device lock. Pinned by `oee-sync-device.database.test.ts` (needs `SUPABASE_DB_URL`) |
 | `packages/database/src/machine-time.ts` | `lockWorkCenterDevice` (`FOR UPDATE` on the device row), `lockMachinePress` (the device lock, then a transaction advisory lock per work center), `recordManualMachinePress` and `endSensorMachineTime` (both return the ended event ids for the caller to post after commit). Shared by the sync, the MES, the device mapping writes and the Sense uninstall hook. Pinned by `machine-time.test.ts` (needs `SUPABASE_DB_URL`) |
 | `apps/mes/app/services/operations.service.ts` | `startMachineProductionEvent` (press, event and tracked activity in one Kysely transaction), `endMachineProductionEvent` (press locks, then the open event's row lock), `postEndedProductionEvents` (posts the events a press ended), `endProductionEvent` (ends an open event, scoped by `companyId`) |
@@ -79,7 +83,8 @@ UI:
   (`display.service.ts`) reads `loadedJobOperationId` from the view
   `workCentersWithBlockingStatus`, which takes it from the open
   `workCenterLoad` row. `getDisplayDeviceState` hides the state when the
-  device has a sync error or has not synced for 10 minutes. The operation
+  device has a sync error or has not synced for 25 minutes (two missed
+  sweeps: a machine that does not change state gets no webhook). The operation
   page shows no device badge: its Machine toggle's green dot already marks
   running time.
 
@@ -347,9 +352,14 @@ After a Pause on a running machine, the time until it stops goes to the queue
 
 ## The sync
 
-1. `oee-sweep` (every 2 minutes) sends `carbon/oee-sync` per (company,
-   integration). An installed integration with no mapped device costs nothing.
-2. `oee-sync` resolves the provider with `getOeeProvider`. If the company is
+1. A provider webhook (Sense: "The Sense webhook") sends
+   `carbon/oee-device-sync` for the one device that changed. `oee-sweep`
+   (every 10 minutes) sends `carbon/oee-sync` per (company, integration) for
+   every device: it catches a lost delivery and moves sensor time when a load
+   changes on a running machine (the engine is retroactive, so a late sync
+   records the same time). An installed integration with no mapped device
+   costs nothing.
+2. Both resolve the provider with `getOeeProvider`. If the company is
    not entitled, the integration is inactive, or the key is empty, the run
    returns `skipped`.
 3. For each device, `syncOeeDevice` reads changes from
@@ -388,6 +398,11 @@ After a Pause on a running machine, the time until it stops goes to the queue
     unless the error is `OeeProviderUnavailableError` (network failure,
     timeout, 5xx): then the run stops, since every device would fail the same
     way. `oee-sync` is a `singleton` (skip) per company and integration.
+11. **Rechecks.** A stored change still pending after the plan (the debounce:
+    it has not lasted `minimumStateSeconds`) makes `syncOeeDevice` return
+    `recheckAt` = its `changedAt` + `minimumStateSeconds`. Either function then
+    sends a delayed `carbon/oee-device-sync` for that device (`ts`), so the
+    change applies about a minute after it happened, not at the next sweep.
 
 Kysely returns `timestamptz` as a JS `Date`. `syncOeeDevice` normalizes every
 instant with `toInstant` before the engine compares it.
@@ -502,11 +517,9 @@ engine only reads rows after `appliedThrough`, so neither is ever read again.
 ## Sense adapter
 
 - Base URL: `https://bifrost.sensemfg.com` (production) or
-  `http://bifrost-staging.sensemfg.com` (staging). Auth is
-  `Authorization: Bearer <apiKey>`. The key is company-scoped.
-- Staging has no HTTPS endpoint, so the `sense` factory in `OEE_PROVIDERS`
-  refuses it when `APP_ENV` is `production` (`SENSE_STAGING_REFUSED`); the
-  sync skips with that error and the healthcheck reports it.
+  `https://bifrost-staging.sensemfg.com` (staging). Auth is
+  `Authorization: Bearer <apiKey>`. The key is company-scoped. API docs:
+  `/docs` (Swagger) on either host.
 - Status allowlist: `Active` → `Running`, `Idle` → `Idle`, `Alert` → `Down`,
   `Offline` → `Offline`. An unknown status throws, and the device records
   the error. Never guess a state.
@@ -516,6 +529,51 @@ engine only reads rows after `appliedThrough`, so neither is ever read again.
   `listStateChanges` pages by time. After a full page (500 events), it asks
   again from the last event's `created_at` and drops the event ids it has
   already seen. It stops on a short page or a page with no new event.
+
+## The Sense webhook
+
+A Sense company has 0 or 1 webhooks (`/v1/public/companies/webhooks`). The
+docs do not describe a delivery; this was read off real staging deliveries
+(2026-10-28):
+
+- `POST` with `Sense-Event: station.status_changed`, `Sense-Delivery: <uuid>`,
+  `Sense-Signature: t=<unix seconds>,v1=<hex>`. `v1` is HMAC-SHA256 of
+  `${t}.${rawBody}` keyed by the whole `whsec_…` secret (prefix included).
+- Body: `{ id, type, created_at, test?, data: { id, device_id, company_id,
+  site_id, status, message, created_at } }`. `data.id` is the event id the
+  events API returns; `test: true` marks Sense's "Send Test Webhook".
+- A webhook that keeps failing is disabled (`disabled_reason`
+  `CONSECUTIVE_FAILURES`, or `GONE` after a 410). PATCH never re-enables it;
+  `POST …/enable` does. The secret is returned only by create and
+  `rotate-secret`, and rotating stops the old one at once.
+
+`ensureSenseWebhook` (install and every settings save) PATCHes the webhook to
+`/api/webhook/sense/<companyId>` with every filter cleared, or creates it. It
+rotates the secret unless the webhook already pointed there, was enabled and
+Carbon holds a secret, then vaults it (`SECRET_KEYS.sense`,
+`webhookSigningSecret`, read with `getWebhookSigningSecret`) BEFORE it enables
+a disabled webhook. There is no webhook id to store: the list holds at most
+one, and the generic settings save rewrites the metadata column (the vault
+merges, so the secret survives a save). An origin that is not HTTPS (local
+dev) gets no webhook: the sweep alone syncs it. Installs made before the webhook
+existed are registered by `oee-sweep` (`registerMissingOeeWebhook`,
+`oee/service.server.ts`, keyed by provider like `OEE_PROVIDERS`): it calls
+`ensureSenseWebhook` with `onlyIfMissing`, which does nothing once Carbon holds
+a signing secret, so a webhook is taken over once and never again without a
+settings save. A non-entitled company is skipped; any other failure is logged
+and retried on the next sweep. `ensureSenseWebhook` embeds
+`requireEntitlement("INTEGRATIONS")`. (A one-off script was tried and dropped:
+the entitlement check loads the `@carbon/auth` barrel, whose Lingui macro throws
+under plain `tsx`.) The healthcheck reports a
+missing, redirected or disabled webhook, or a missing secret.
+
+The route verifies the signature (401 without a valid one or a stored
+secret), acknowledges a test and any other event type, and sends
+`carbon/oee-device-sync` only for a station mapped in `workCenterDevice`. It
+answers 410 while Sense is not installed, so Sense disables the webhook until
+the next install enables it. There is no timestamp window: a delivery only
+wakes a sync that reads the API, so a replay changes nothing, and refusing
+Sense's own retries would get the webhook disabled.
 
 ## Local tooling
 

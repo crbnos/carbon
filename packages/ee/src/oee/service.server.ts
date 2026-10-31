@@ -13,9 +13,10 @@ import { EntitlementError, requireEntitlement } from "../entitlements.server";
 import { integrations } from "../index";
 import { resolveIntegrationSecrets } from "../integrations/secrets";
 import { companyHasFeature } from "../plan.server";
+import { ensureSenseWebhook } from "../sense/webhook.server";
 import { machineTimeRefusal } from "./assignable";
 import { createOeeProvider, isOeeProviderId } from "./registry";
-import type { OeeProvider } from "./types";
+import type { OeeProvider, OeeProviderId } from "./types";
 
 /**
  * OEE provider server functions. The authoring writes embed
@@ -34,6 +35,37 @@ const fail = (error: unknown): { data: null; error: string } => {
     error: error instanceof Error ? error.message : String(error)
   };
 };
+
+/**
+ * Providers that push state changes through a webhook. Each registers the
+ * company's webhook only when Carbon has none yet, and says whether it did.
+ */
+const OEE_WEBHOOK_REGISTRARS: Partial<
+  Record<OeeProviderId, (companyId: string) => Promise<boolean>>
+> = {
+  sense: (companyId) => ensureSenseWebhook(companyId, { onlyIfMissing: true })
+};
+
+/**
+ * The sweep's repair for installs made before their provider's webhook
+ * existed: registers it once, through the same function an install runs.
+ * A company that is not entitled is skipped; any other failure throws, and
+ * the next sweep tries again.
+ */
+export async function registerMissingOeeWebhook(
+  integrationId: string,
+  companyId: string
+): Promise<boolean> {
+  if (!isOeeProviderId(integrationId)) return false;
+  const register = OEE_WEBHOOK_REGISTRARS[integrationId];
+  if (!register) return false;
+  try {
+    return await register(companyId);
+  } catch (error) {
+    if (error instanceof EntitlementError) return false;
+    throw error;
+  }
+}
 
 export async function getOeeProvider(
   serviceClient: SupabaseClient<Database>,
