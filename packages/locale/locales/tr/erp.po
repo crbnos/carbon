@@ -19274,6 +19274,9 @@ msgstr "Alındığı Tarih"
 msgid "Received By"
 msgstr "Kim Aldığı Kişi"
 
+msgid "Received Date"
+msgstr ""
+
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Bu tedarikçiden alınan ve iade edilmek üzere kalan miktar içeren satırlar"
 
@@ -27601,11 +27604,11 @@ msgstr "Bir iş akışına yanıt verirken, iletiyi kanalda herkese de görünü
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Tedarikçi yanıtlarının ne zaman beklenmesi gerektiği; tedarikçiler RFQ portalında bu tarihi görür ve Carbon bundan sonra geç yanıtları kabul etmeyi durdurur (yapılandırılabilir)."
 
-msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
-msgstr "Satın almacının malları istediği zaman; tedarikçi Taahhüt tarihinde başka bir şey taahhüt edebilir ve Teslim tarihinde yine başka bir şey muhasebeleştirebilir."
+msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
+msgstr ""
 
-msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "Satın almacının bu satırdaki malları rıhtımda istediği tarih. Yeni bir satır, siparişin Talep edilen tarihinde başlar; planlama bu tarihi stok uygunluğu ve dış işlem çizelgelemesi için kullanır."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr ""
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Sözleşme ne zaman çalıştırılır ve tamamlandığında ne olur."

@@ -19274,6 +19274,9 @@ msgstr "Получено в"
 msgid "Received By"
 msgstr "Получено от"
 
+msgid "Received Date"
+msgstr ""
+
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Полученные строки от этого поставщика с количеством, оставшимся для возврата"
 
@@ -27601,11 +27604,11 @@ msgstr "При ответе в теме сделайте сообщение ви
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."
 
-msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
-msgstr "Когда закупщик запросил товары; поставщик может обещать что-то другое по дате подтверждения и провести что-то другое в дату поставки."
+msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
+msgstr ""
 
-msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "Когда закупщику нужны товары по этой строке на складе приёмки. Новая строка начинается с запрошенной даты заказа; планирование использует эту дату для проверки наличия на складе и планирования внешней обработки."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr ""
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Когда контракт вступает в действие и что происходит при его завершении."

@@ -19274,6 +19274,9 @@ msgstr "Ricevuto il"
 msgid "Received By"
 msgstr "Ricevuto da"
 
+msgid "Received Date"
+msgstr ""
+
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Linee ricevute da questo fornitore con quantità rimanente da restituire"
 
@@ -27601,11 +27604,11 @@ msgstr "Quando rispondi a un thread, rendi il messaggio visibile a tutti nel can
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Quando si prevede che i fornitori rispondano; i fornitori vedono questa data sul portale RFQ e Carbon smette di accettare risposte tardive dopo di essa (configurabile)."
 
-msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
-msgstr "Quando il buyer ha richiesto la merce; il fornitore può promettere qualcosa di diverso sulla data promessa e consegnare qualcosa di diverso di nuovo sulla data di consegna."
+msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
+msgstr ""
 
-msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "Quando il Buyer richiede la merce di questa riga in banchina. Una nuova riga parte dalla Data richiesta dell'ordine; la Pianificazione usa questa data per la verifica della disponibilità di magazzino e per la programmazione delle lavorazioni esterne."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr ""
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Quando il contratto è in corso e cosa accade al completamento."

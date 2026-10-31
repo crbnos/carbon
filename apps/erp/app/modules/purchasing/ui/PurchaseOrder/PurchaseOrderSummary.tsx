@@ -52,7 +52,7 @@ import type {
   PurchaseOrderLine,
   Supplier
 } from "../../types";
-import { PurchaseOrderLinePromisedDate } from "./PurchaseOrderLineDates";
+import { PurchaseOrderLineSummaryDates } from "./PurchaseOrderLineDates";
 
 const LineItems = ({
   currencyCode,
@@ -249,19 +249,24 @@ const LineItems = ({
                       </Badge>
                     ) : null}
                   </div>
-                  {!isIndirect && (
-                    <PurchaseOrderLinePromisedDate
-                      line={{
-                        id: line.id,
-                        purchaseOrderId: orderId,
-                        receivedComplete: line.receivedComplete ?? false,
-                        promisedDate: line.promisedDate
-                      }}
-                      order={order}
-                    />
-                  )}
                 </VStack>
               </div>
+              {/* Below the header, not in the totals column: in that
+                      shrink-0 column the dates' width came out of the item
+                      name's. */}
+              {!isIndirect && (
+                <PurchaseOrderLineSummaryDates
+                  line={{
+                    id: line.id,
+                    purchaseOrderId: orderId,
+                    receivedComplete: line.receivedComplete ?? false,
+                    requiredDate: line.requiredDate,
+                    promisedDate: line.promisedDate,
+                    receivedDate: line.receivedDate
+                  }}
+                  order={order}
+                />
+              )}
             </div>
           </VStack>
         </HStack>
