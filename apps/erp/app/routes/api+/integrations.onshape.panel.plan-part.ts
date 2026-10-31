@@ -111,6 +111,26 @@ export async function action({ request }: ActionFunctionArgs) {
   // Hidden parts are not shown in the panel, so they cannot be pushed.
   parts = parts.filter((part) => !part.isHidden);
 
+  // On a workspace, what names each part's model and decides "unchanged":
+  // Onshape's part microversion is the whole document's, so a drawing or
+  // assembly edit would read as a change to every part. Unread, every part
+  // exports.
+  let sourceState: string | null | undefined;
+  if (wv === "w") {
+    try {
+      sourceState = (
+        await onshape.client.getWorkspaceSourceStates(documentId, wvId)
+      ).parts;
+    } catch (error) {
+      logger.warn("Onshape source state read failed; every part exports", {
+        companyId,
+        documentId,
+        error
+      });
+      sourceState = null;
+    }
+  }
+
   let sources: StandardSources;
   try {
     sources = await loadStandardSources(serviceRole, companyId);
@@ -273,7 +293,8 @@ export async function action({ request }: ActionFunctionArgs) {
     options,
     mapping,
     propertiesByPartId,
-    released
+    released,
+    sourceState
   });
   if (rows.length === 0) {
     return data(

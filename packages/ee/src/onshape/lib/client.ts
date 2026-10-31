@@ -23,10 +23,14 @@ import {
   isOnshapeIntegrationId,
   ONSHAPE_DEFAULT_BASE_URL
 } from "./connection";
-import type { OnshapeDocument } from "./document.type";
+import { type OnshapeDocument, OnshapeWVMType } from "./document.type";
 import type { OnshapeElementType } from "./element.type";
 import type { OnshapeOAuthIntegrationId } from "./integration-id";
 import { getOnshapeOAuthConfig, refreshOnshapeAccessToken } from "./oauth";
+import {
+  type WorkspaceSourceStates,
+  workspaceSourceStates
+} from "./source-state";
 import { patchOnshapeRefreshedTokens } from "./state";
 import {
   isFresh,
@@ -77,7 +81,11 @@ const DOCUMENT_REVISION_MAX_PAGES = 20;
 export interface OnshapeElementRow {
   id: string;
   name: string;
-  elementType: string; // "PARTSTUDIO" | "ASSEMBLY" | "DRAWING" | ...
+  elementType: string; // "PARTSTUDIO" | "ASSEMBLY" | "APPLICATION" | ...
+  /** An APPLICATION element's app, e.g. "onshape-app/drawing". */
+  dataType?: string;
+  /** Changes with the element's own content. */
+  microversionId?: string;
   [key: string]: unknown;
 }
 
@@ -86,9 +94,10 @@ export interface OnshapeElementRow {
 const DEV_CACHEABLE_PATHS = [
   /^\/api\/v\d+\/parts\//,
   /^\/api\/v\d+\/partstudios\/.*\/massproperties/,
-  // Not currentmicroversion: the element sync compares it to skip unchanged
-  // exports, and a cached value would skip a changed one.
-  /^\/api\/v\d+\/documents\/(?!.*\/currentmicroversion)/,
+  // Not currentmicroversion or the element lists: the export skips compare
+  // their microversions (`getWorkspaceSourceStates`), and a cached value would
+  // skip a changed export or hide a new drawing from the assembly review.
+  /^\/api\/v\d+\/documents\/(?!.*\/currentmicroversion)(?!.*\/elements)/,
   /^\/api\/v\d+\/assemblies\/.*\/bom/,
   /^\/api\/v\d+\/metadata\//,
   // A new release shows after the TTL; flush onshape-dev-cache:* for sooner.
@@ -447,6 +456,28 @@ export class OnshapeClient {
     return response.microversion;
   }
 
+  /**
+   * What the workspace's parts and assemblies are made from
+   * (`workspaceSourceStates`): one element list read. Unlike the current
+   * microversion, a drawing edit leaves both unchanged, and an assembly edit
+   * leaves `parts` unchanged.
+   */
+  async getWorkspaceSourceStates(
+    documentId: string,
+    workspaceId: string
+  ): Promise<WorkspaceSourceStates> {
+    const elements = await this.getElementsIn({
+      documentId,
+      wvm: OnshapeWVMType.WORKSPACE,
+      wvmId: workspaceId
+    });
+    const states = workspaceSourceStates(elements);
+    if (!states) {
+      throw new Error("Onshape returned no element microversions");
+    }
+    return states;
+  }
+
   // List the webhook subscriptions visible to the authenticated principal. Used
   // on disconnect to find (and delete) the ones Carbon registered.
   async getWebhooks(): Promise<{
@@ -679,6 +710,21 @@ export class OnshapeClient {
     );
   }
 
+  /**
+   * What an app element (a drawing) references, resolved in bulk:
+   * `{ resolvedReferences: [{ targetDocumentId, targetElementId, idTag, … }] }`,
+   * read by `parseDrawingReferences` (`panel/drawings.ts`).
+   */
+  async resolveAppElementReferences(
+    document: OnshapeDocument,
+    elementId: string
+  ): Promise<unknown> {
+    return this.request<unknown>(
+      "GET",
+      `/api/v10/appelements/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/resolvereferences`
+    );
+  }
+
   /** `topLevelOnly`: the assembly's own lines, under the same headers. */
   async getBillOfMaterialsIn(
     document: OnshapeDocument,
@@ -737,6 +783,20 @@ export class OnshapeClient {
     return this.request<Record<string, unknown>>(
       "GET",
       `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/p/${encodeURIComponent(partId)}?inferMetadataOwner=false${configurationQuery(configuration)}`
+    );
+  }
+
+  /**
+   * Every part of a document in its default configuration, each with its
+   * `elementId` and `microversionId`: one call where `getPartsInElement` takes
+   * one per Part Studio.
+   */
+  async getPartsInDocument(
+    document: OnshapeDocument
+  ): Promise<Array<OnshapeElementPart & { elementId?: string }>> {
+    return this.request<Array<OnshapeElementPart & { elementId?: string }>>(
+      "GET",
+      `/api/v10/parts/d/${document.documentId}/${document.wvm}/${document.wvmId}`
     );
   }
 

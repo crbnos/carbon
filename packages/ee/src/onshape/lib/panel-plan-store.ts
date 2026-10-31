@@ -7,6 +7,7 @@ import { redis } from "@carbon/kv";
 import { datetime } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { OnshapeBomNode } from "../panel/bom";
+import type { DrawingTie } from "../panel/drawings";
 import type { AssemblyPlan, PartPlan, ReleasePlan } from "../panel/plan";
 
 // Reviewed push plans in Redis. A plan holds every Onshape read the push needs,
@@ -21,6 +22,8 @@ const PLAN_PATTERN = /^cpp_[A-Za-z0-9_-]{32}$/;
 export type StoredAssemblyPlan = AssemblyPlan & {
   /** parseBomTree().lines at plan time. */
   nodes: OnshapeBomNode[];
+  /** The drawings the review offered, each on its row; the panel gets names only. */
+  drawingTies?: DrawingTie[];
 };
 
 export type StoredReleasePlan = ReleasePlan & {

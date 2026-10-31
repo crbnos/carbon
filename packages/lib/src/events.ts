@@ -17,6 +17,37 @@ type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
  * Event definitions for the Carbon inngest functions.
  * Each event has a name and a typed data payload.
  */
+type OnshapeElementSyncData = {
+  companyId: string;
+  userId: string;
+  integrationId?: string;
+  itemId: string;
+  sourceDocument: "Part";
+  documentId: string;
+  versionId: string;
+  sourceWvm?: "w" | "v";
+  sourceMicroversionId?: string;
+  modelElementId: string;
+  modelElementKind: "partstudio" | "assembly";
+  partId?: string | null;
+  configuration?: string | null;
+  drawingElementIds?: string[];
+  assetBaseName?: string;
+};
+
+type OnshapeDrawingSyncData = {
+  companyId: string;
+  userId: string;
+  integrationId?: string;
+  itemId: string;
+  sourceDocument: "Part";
+  documentId: string;
+  versionId: string;
+  drawingElementId: string;
+  assetBaseName?: string;
+  sourceWvm?: "w" | "v";
+};
+
 export type Events = {
   // Notification events
   "carbon/notify": {
@@ -757,41 +788,73 @@ export type Events = {
     };
   };
 
-  // One Onshape element's export onto an item (step.invoked by the backfill)
-  "carbon/onshape-element-sync": {
+  // Assembly push: the STEP models and drawing PDFs the reviewer picked, at
+  // most 100 rows per event, exported onto the items the push linked.
+  "carbon/onshape-panel-assets": {
     data: {
       companyId: string;
       userId: string;
-      integrationId?: string;
-      itemId: string;
-      sourceDocument: "Part";
-      documentId: string;
-      versionId: string;
-      sourceWvm?: "w" | "v";
-      sourceMicroversionId?: string;
-      modelElementId: string;
-      modelElementKind: "partstudio" | "assembly";
-      partId?: string | null;
-      configuration?: string | null;
-      drawingElementIds?: string[];
-      assetBaseName?: string;
+      planId: string;
+      models: Array<{
+        itemId: string;
+        partNumber: string;
+        kind: "partstudio" | "assembly";
+        documentId: string;
+        wvm: "w" | "v";
+        wvmId: string;
+        elementId: string;
+        partId?: string;
+        /** Normalized; absent or null = the default configuration. */
+        configuration?: string | null;
+      }>;
+      drawings: Array<{
+        itemId: string;
+        partNumber: string;
+        documentId: string;
+        wvm: "w" | "v";
+        wvmId: string;
+        drawingElementId: string;
+        drawingMicroversionId?: string | null;
+        /** The row the drawing shows; its state is part of the skip key. */
+        target: {
+          kind: "partstudio" | "assembly";
+          documentId: string;
+          wvm: "w" | "v";
+          wvmId: string;
+          elementId: string;
+          partId?: string;
+          configuration?: string | null;
+        };
+      }>;
     };
+  };
+
+  // One Onshape element's export onto an item (step.invoked by the backfill)
+  "carbon/onshape-element-sync": {
+    data: OnshapeElementSyncData;
   };
 
   // One released Onshape drawing's PDF onto an item (step.invoked by the backfill)
   "carbon/onshape-drawing-sync": {
-    data: {
-      companyId: string;
-      userId: string;
-      integrationId?: string;
-      itemId: string;
-      sourceDocument: "Part";
-      documentId: string;
-      versionId: string;
-      drawingElementId: string;
-      assetBaseName?: string;
-      sourceWvm?: "w" | "v";
-    };
+    data: OnshapeDrawingSyncData;
+  };
+
+  // One file of an assembly push (step.invoked by onshape-panel-assets): a
+  // run of its own so a per-company key bounds every push's exports together.
+  "carbon/onshape-panel-asset-export": {
+    data:
+      | {
+          kind: "model";
+          companyId: string;
+          itemId: string;
+          model: OnshapeElementSyncData;
+        }
+      | {
+          kind: "drawing";
+          companyId: string;
+          itemId: string;
+          drawing: OnshapeDrawingSyncData;
+        };
   };
 
   // The assembler copies one finished Onshape translation into staging

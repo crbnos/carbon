@@ -20,6 +20,10 @@ export {
   onshapeElementSyncFunction
 } from "./onshape-element-sync";
 export { onshapeFetchFunction } from "./onshape-fetch";
+export {
+  onshapePanelAssetExportFunction,
+  onshapePanelAssetsFunction
+} from "./onshape-panel-assets";
 export { onshapePanelSyncFunction } from "./onshape-panel-sync";
 export { onshapeRevisionSyncFunction } from "./onshape-revision-sync";
 export { paperlessPartsFunction } from "./paperless-parts";

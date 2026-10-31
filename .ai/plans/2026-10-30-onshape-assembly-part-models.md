@@ -1,6 +1,13 @@
 # STEP models and drawings on an assembly push — implementation plan
 
-Status 2026-10-30: drafted from main at ff57b9745c. No code written. The decisions below need a yes before Task 1. The branch already carries the Fields column overrides (`feat/onshape-standard-field-mapping`) and the sync change-notice fix (`fix/onshape-sync-change-notice-draft`), so line numbers quoted from main may have moved.
+Status 2026-10-31: built. Tasks 1 to 16 are done. Task 17 ran on two existing documents, not on the test assembly it describes (see its note). The plan was drafted from main at ff57b9745c. The branch also carries the Fields column overrides (`feat/onshape-standard-field-mapping`) and the sync change-notice fix (`fix/onshape-sync-change-notice-draft`).
+
+Changes after the review of the build:
+
+- A part or assembly export is current while the workspace fingerprint is unchanged (`workspaceSourceStates`, `lib/source-state.ts`). Onshape gives every part the document microversion, so the plan's part microversion read every edit as a change to every part.
+- The part fingerprint leaves out drawings, BOM tables and assemblies. The assembly fingerprint leaves out drawings and BOM tables.
+- The review labels files "current" or "out of date", and shows the root assembly's own model.
+- A read still running at the 45 s budget is dropped (`settleBefore`).
 
 **Branch:** `feat/onshape-v2-improvements`, off main.
 **Closest sibling:** the part push (`pushOnshapePart`) for what a part export sends and for per-row selection; the backfill (`onshape-backfill.ts`) for exporting many items from one run; the release push for drawing PDFs on model items.
@@ -39,23 +46,23 @@ Status 2026-10-30: drafted from main at ff57b9745c. No code written. The decisio
 
 ## Progress
 
-- [ ] Task 1: Confirm the Onshape behaviour the plan needs
-- [ ] Task 2: Pure builder for the model exports
-- [ ] Task 3: Pure builder for the drawing ties
-- [ ] Task 4: Onshape client reads for drawings
-- [ ] Task 5: Drawing references cache
-- [ ] Task 6: Plan lists each row's model and drawings
-- [ ] Task 7: Review toggles and apply body
-- [ ] Task 8: Apply input takes the choices
-- [ ] Task 9: `linkChildParts` returns the final links
-- [ ] Task 10: Event and trigger key
-- [ ] Task 11: Drawing source record
-- [ ] Task 12: Assets export job
-- [ ] Task 13: Apply queues the exports
-- [ ] Task 14: Push result text
-- [ ] Task 15: Docs, rule and AGENTS.md
-- [ ] Task 16: Typecheck, tests, lint
-- [ ] Task 17: Live check in the panel
+- [x] Task 1: Confirm the Onshape behaviour the plan needs
+- [x] Task 2: Pure builder for the model exports
+- [x] Task 3: Pure builder for the drawing ties
+- [x] Task 4: Onshape client reads for drawings
+- [x] Task 5: Drawing references cache
+- [x] Task 6: Plan lists each row's model and drawings
+- [x] Task 7: Review toggles and apply body
+- [x] Task 8: Apply input takes the choices
+- [x] Task 9: `linkChildParts` returns the final links
+- [x] Task 10: Event and trigger key
+- [x] Task 11: Drawing source record
+- [x] Task 12: Assets export job
+- [x] Task 13: Apply queues the exports
+- [x] Task 14: Push result text
+- [x] Task 15: Docs, rule and AGENTS.md
+- [x] Task 16: Typecheck, tests, lint
+- [x] Task 17: Live check in the panel (on two existing documents; see the note in Task 17)
 
 ## Dependencies
 
@@ -466,6 +473,18 @@ pnpm run lint
 - All results hold. Record call counts in `.ai/research/2026-10-30-onshape-assembly-part-models-spike.md`.
 
 **Out of scope:** clicking Onshape OAuth consent or releasing anything in Raul's Onshape accounts.
+
+**Note (2026-10-31):** The live check used two existing documents, not a new test assembly:
+
+1. A five-module document with a sub-assembly drawing and a part drawing.
+2. A two-part QA document: one assembly, one Part Studio, one drawing.
+
+Steps 1 and 2 were not done as written. The test documents have no linked-document part and no standard-content fastener. Results:
+
+- Steps 4, 5, 6, 8 and 9 passed on the QA document.
+- Step 3 passed for parts and drawings. No fastener row was available to check.
+- Step 7 passed: the job exported nothing. Nobody recorded the call counts.
+- Step 10 passed on the five-module document on 2026-10-30.
 
 ## Risks
 

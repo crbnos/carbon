@@ -64,10 +64,17 @@ describe("onshapeFailure", () => {
 
   it("never answers Onshape's 401 or 403 as a 401", () => {
     for (const status of [401, 403]) {
-      const failure = onshapeFailure(new OnshapeApiError("x", status));
-      expect(failure.status).toBe(422);
-      expect(failure.body.error).toMatch(/Reconnect Onshape/);
+      expect(onshapeFailure(new OnshapeApiError("x", status)).status).toBe(422);
     }
+  });
+
+  it("asks for a reconnect on a dead grant, and for access on a document the account can't open", () => {
+    expect(onshapeFailure(new OnshapeApiError("x", 401)).body.error).toMatch(
+      /Reconnect Onshape/
+    );
+    expect(onshapeFailure(new OnshapeApiError("x", 403)).body.error).toMatch(
+      /can't open this document/
+    );
   });
 
   it("names a missing document as missing", () => {

@@ -13,6 +13,7 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
+  Checkbox,
   Combobox,
   CreatableCombobox,
   cn,
@@ -60,12 +61,15 @@ import {
   LuX
 } from "react-icons/lu";
 import { bomParentIndexes, buildBomViewTree, visibleBomRows } from "./bom-view";
+import { skippedDrawingText } from "./drawings";
 import { ItemFieldSelects } from "./ItemFieldSelects";
 import type { OnshapePanelContext } from "./messages";
 import { isPanelSessionMessage, postApplicationInit } from "./messages";
 import type {
   AssemblyPlan,
   AssemblyPlanDepth,
+  AssemblyRowAssets,
+  AssemblyRowDrawing,
   ItemFieldSnapshot,
   MappedRowPlan,
   OwnedFieldChange,
@@ -102,6 +106,7 @@ import type { PanelRelease } from "./releases";
 import type {
   ApplyFieldError,
   AssemblyReview,
+  AssetKind,
   PartApplyResult,
   PartReview,
   ReleaseReview,
@@ -110,6 +115,8 @@ import type {
 import {
   applyCount,
   applyRequestBody,
+  assetCounts,
+  assetOffers,
   CARBON_ONLY_NOTE,
   clearFieldErrors,
   createReview,
@@ -122,7 +129,8 @@ import {
   normalizeWarnings,
   patchPartStatuses,
   releaseResultText,
-  replenishmentMismatches
+  replenishmentMismatches,
+  setAssetRows
 } from "./review";
 import {
   clearPanelSessionToken,
@@ -404,6 +412,16 @@ type AssemblyPushSummary = {
   methodsTouched: number;
   /** Draft versions the push made of released methods. */
   draftVersionsCreated?: string[];
+  /** STEP models and drawings queued for export from Onshape. */
+  modelsQueued?: number;
+  drawingsQueued?: number;
+  /** Picked rows whose item did not end up linked to its Onshape source. */
+  assetsSkipped?: number;
+  /** Queued files the review saw the item already has: skipped while they still are. */
+  modelsCurrent?: number;
+  drawingsCurrent?: number;
+  /** The assembly's own model export, when queued: current at review, or not. */
+  rootModel?: "exporting" | "current";
   skipped: string[];
   errors: string[];
 };
@@ -489,6 +507,17 @@ function plural(count: number, noun: string) {
   return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
 
+function capitalize(text: string) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** "a", "a and b", "a, b and c". */
+function listText(parts: string[]) {
+  return parts.length <= 1
+    ? (parts[0] ?? "")
+    : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+}
+
 function assemblyOutcomeText(s: AssemblyPushSummary): PushOutcome {
   const unchanged = s.linesUnchanged ?? 0;
   // "0 BOM lines" reads as a failure; say they are already up to date.
@@ -507,11 +536,51 @@ function assemblyOutcomeText(s: AssemblyPushSummary): PushOutcome {
   const drafts = s.draftVersionsCreated ?? [];
   const takenOver = s.linesTakenOver ?? 0;
   const described = s.descriptionsUpdated ?? 0;
+  const modelsCurrent = s.modelsCurrent ?? 0;
+  const drawingsCurrent = s.drawingsCurrent ?? 0;
+  const modelsExporting = Math.max((s.modelsQueued ?? 0) - modelsCurrent, 0);
+  const drawingsExporting = Math.max(
+    (s.drawingsQueued ?? 0) - drawingsCurrent,
+    0
+  );
+  const filesCurrent =
+    modelsCurrent + drawingsCurrent + (s.rootModel === "current" ? 1 : 0);
+  const assetsSkipped = s.assetsSkipped ?? 0;
+  const exporting = [
+    ...(modelsExporting > 0 ? [plural(modelsExporting, "STEP model")] : []),
+    ...(drawingsExporting > 0 ? [plural(drawingsExporting, "drawing")] : []),
+    ...(s.rootModel === "exporting" ? ["this assembly's STEP model"] : [])
+  ];
+  const exportingCount =
+    modelsExporting + drawingsExporting + (s.rootModel === "exporting" ? 1 : 0);
   return {
     text,
-    skipped: s.skipped,
+    skipped: [
+      ...s.skipped,
+      ...(assetsSkipped > 0
+        ? [
+            `${plural(assetsSkipped, "picked file")} not exported: ${assetsSkipped === 1 ? "its item isn't" : "their items aren't"} linked to that Onshape part`
+          ]
+        : [])
+    ],
     errors: s.errors,
     notes: [
+      ...(exporting.length > 0
+        ? [
+            exportingCount === 1
+              ? `${capitalize(exporting[0]!)} is exporting from Onshape. It appears on its item in a few minutes.`
+              : `${capitalize(listText(exporting))} are exporting from Onshape. They appear on their items in a few minutes.`
+          ]
+        : []),
+      // The review's view: the export checks again, so a file changed since
+      // the review still exports.
+      ...(filesCurrent > 0
+        ? [
+            filesCurrent === 1
+              ? "1 file was current when you reviewed, so it isn't exported again unless it changed since."
+              : `${filesCurrent} files were current when you reviewed, so they aren't exported again unless they changed since.`
+          ]
+        : []),
       ...(drafts.length > 0
         ? [`New Draft version, not yet live: ${drafts.join(", ")}`]
         : []),
@@ -1454,6 +1523,17 @@ export function OnshapePanel({
     []
   );
 
+  const setAssets = useCallback(
+    (kind: AssetKind, partNumbers: string[], on: boolean) => {
+      setReview((current) =>
+        current?.kind === "assembly"
+          ? setAssetRows(current, kind, partNumbers, on)
+          : current
+      );
+    },
+    []
+  );
+
   /** After a 410: the same plan request again, which replaces the review. */
   const replan = (token: string) => {
     if (!review) return;
@@ -1995,6 +2075,7 @@ export function OnshapePanel({
                     onApply={() => applyReview(session.token)}
                     onReplan={() => replan(session.token)}
                     onEditItem={editItem}
+                    onSetAssets={setAssets}
                     replanning={!!pushing}
                   />
                 ) : (
@@ -2628,6 +2709,9 @@ function ReleasesSection({
               (item) => item.elementType === 0 || item.elementType === 1
             );
             const drawings = release.items.length - models.length;
+            const obsolete = release.items.filter(
+              (item) => item.obsolete
+            ).length;
             const releaseOutcome = outcome[release.releaseId];
             return (
               <li key={release.releaseId} className="px-3 py-2">
@@ -2649,6 +2733,7 @@ function ReleasesSection({
                         )
                         .join(", ")}
                       {drawings > 0 ? ` · ${plural(drawings, "drawing")}` : ""}
+                      {obsolete > 0 ? ` · ${obsolete} obsolete in Onshape` : ""}
                     </p>
                   </div>
                   <HStack spacing={2} className="shrink-0">
@@ -5119,10 +5204,16 @@ function AssemblyReviewSection({
   onApply,
   onReplan,
   onEditItem,
+  onSetAssets,
   replanning
-}: ReviewSectionProps<AssemblyReview>) {
+}: ReviewSectionProps<AssemblyReview> & {
+  onSetAssets: (kind: AssetKind, partNumbers: string[], on: boolean) => void;
+}) {
   const { plan } = review;
   const busy = review.applying || replanning;
+  const offers = assetOffers(plan, review.excluded);
+  const skippedDrawings = (plan.skippedDrawings ?? []).map(skippedDrawingText);
+  const fileWarnings = plan.fileWarnings ?? [];
 
   const created =
     plan.items.filter((item) => item.action === "create").length +
@@ -5323,6 +5414,33 @@ function AssemblyReviewSection({
         </Alert>
       ) : null}
 
+      {fileWarnings.length > 0 ? (
+        <CappedWarningList
+          title={() => "Not every Onshape file was read"}
+          lines={fileWarnings}
+        />
+      ) : null}
+
+      {offers.model.length > 0 || offers.drawing.length > 0 ? (
+        <AssetPicker
+          offers={offers}
+          picked={assetCounts(review)}
+          disabled={busy}
+          onSetAssets={onSetAssets}
+        />
+      ) : null}
+
+      {skippedDrawings.length > 0 ? (
+        <MutedList
+          title={
+            skippedDrawings.length === 1
+              ? "1 drawing isn't offered"
+              : `${skippedDrawings.length} drawings aren't offered`
+          }
+          lines={skippedDrawings}
+        />
+      ) : null}
+
       <ul className="w-full divide-y divide-border rounded-md border border-border">
         <li className="bg-card px-3 py-2">
           <div className="flex items-start justify-between gap-2">
@@ -5350,6 +5468,19 @@ function AssemblyReviewSection({
               </div>
             ) : null}
           </div>
+          {plan.root.released ? null : (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {plan.root.modelCurrent
+                ? "STEP model · current"
+                : "STEP model · exports with this push"}
+            </p>
+          )}
+          <RowAssetToggles
+            row={plan.root}
+            review={review}
+            disabled={busy}
+            onSetAssets={onSetAssets}
+          />
           {plan.root.released ? (
             <ReleasedNote revision={plan.root.released.revision} />
           ) : null}
@@ -5398,6 +5529,12 @@ function AssemblyReviewSection({
                 </div>
               ) : null}
             </div>
+            <RowAssetToggles
+              row={item}
+              review={review}
+              disabled={busy}
+              onSetAssets={onSetAssets}
+            />
             {item.released ? (
               <ReleasedNote revision={item.released.revision} />
             ) : null}
@@ -5426,6 +5563,194 @@ function AssemblyReviewSection({
         onApply={onApply}
       />
     </VStack>
+  );
+}
+
+const ASSET_LABELS: Record<AssetKind, string> = {
+  model: "STEP models",
+  drawing: "Drawings"
+};
+
+/** All and None per kind, and what the push will export. Nothing starts picked. */
+function AssetPicker({
+  offers,
+  picked,
+  disabled,
+  onSetAssets
+}: {
+  offers: Record<AssetKind, string[]>;
+  picked: { models: number; drawings: number; current: number };
+  disabled: boolean;
+  onSetAssets: (kind: AssetKind, partNumbers: string[], on: boolean) => void;
+}) {
+  const kinds = (["model", "drawing"] as const).filter(
+    (kind) => offers[kind].length > 0
+  );
+  return (
+    <div className="w-full rounded-md border border-border bg-card px-3 py-2">
+      <p className="text-sm font-medium">Files from Onshape</p>
+      {kinds.map((kind) => (
+        <div
+          key={kind}
+          className="mt-1 flex items-center justify-between gap-2 text-xs"
+        >
+          <span className="text-muted-foreground">{ASSET_LABELS[kind]}</span>
+          <span className="flex items-center gap-1">
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0"
+              isDisabled={disabled}
+              onClick={() => onSetAssets(kind, offers[kind], true)}
+            >
+              All
+            </Button>
+            <span className="text-muted-foreground">·</span>
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0"
+              isDisabled={disabled}
+              onClick={() => onSetAssets(kind, offers[kind], false)}
+            >
+              None
+            </Button>
+          </span>
+        </div>
+      ))}
+      <p className="mt-1 text-xs text-muted-foreground">
+        {assetSummaryText(picked)}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Current: Carbon already has the file from the document as it is now. Out
+        of date: Carbon has it from before a change. Editing a Part Studio,
+        Variable Studio or Feature Studio makes every model in the document out
+        of date; editing an assembly, only assembly models; editing a drawing,
+        only that drawing.
+      </p>
+    </div>
+  );
+}
+
+/** A row's STEP model and Drawings checkboxes; nothing on a row that offers neither. */
+function RowAssetToggles({
+  row,
+  review,
+  disabled,
+  onSetAssets
+}: {
+  row: { partNumber: string; assets?: AssemblyRowAssets };
+  review: AssemblyReview;
+  disabled: boolean;
+  onSetAssets: (kind: AssetKind, partNumbers: string[], on: boolean) => void;
+}) {
+  const assets = row.assets;
+  if (!assets || (!assets.model && assets.drawings.length === 0)) return null;
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+      {assets.model ? (
+        <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+          <Checkbox
+            checked={review.modelRows.has(row.partNumber)}
+            disabled={disabled}
+            onCheckedChange={(next) =>
+              onSetAssets("model", [row.partNumber], next === true)
+            }
+          />
+          {assets.modelCurrent
+            ? "STEP model · current"
+            : assets.modelOutOfDate
+              ? "STEP model · out of date"
+              : "STEP model"}
+        </label>
+      ) : null}
+      {assets.drawings.length > 0 ? (
+        <label
+          className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
+          title={assets.drawings
+            .map((drawing) =>
+              drawing.current
+                ? `${drawing.name} (current)`
+                : drawing.outOfDate
+                  ? `${drawing.name} (out of date)`
+                  : drawing.name
+            )
+            .join(", ")}
+        >
+          <Checkbox
+            checked={review.drawingRows.has(row.partNumber)}
+            disabled={disabled}
+            onCheckedChange={(next) =>
+              onSetAssets("drawing", [row.partNumber], next === true)
+            }
+          />
+          {drawingToggleLabel(assets.drawings)}
+        </label>
+      ) : null}
+    </div>
+  );
+}
+
+/** What the picks export; files already current are named apart. */
+function assetSummaryText(picked: {
+  models: number;
+  drawings: number;
+  current: number;
+}): string {
+  const exporting = [
+    ...(picked.models > 0 ? [plural(picked.models, "STEP model")] : []),
+    ...(picked.drawings > 0 ? [plural(picked.drawings, "drawing")] : [])
+  ];
+  const current =
+    picked.current === 0
+      ? ""
+      : picked.current === 1
+        ? "1 picked file is already current, so it isn't exported again."
+        : `${picked.current} picked files are already current, so they aren't exported again.`;
+  if (exporting.length === 0) {
+    return current || "Nothing picked, so no files export from Onshape.";
+  }
+  const exportText = `${exporting.join(" and ")} will export from Onshape.`;
+  return current ? `${exportText} ${current}` : exportText;
+}
+
+function drawingToggleLabel(drawings: AssemblyRowDrawing[]): string {
+  const label = `Drawings (${drawings.length})`;
+  const current = drawings.filter((drawing) => drawing.current).length;
+  const outOfDate = drawings.filter((drawing) => drawing.outOfDate).length;
+  if (current === drawings.length) return `${label} · current`;
+  if (outOfDate === drawings.length) return `${label} · out of date`;
+  const parts = [
+    ...(current > 0 ? [`${current} current`] : []),
+    ...(outOfDate > 0 ? [`${outOfDate} out of date`] : [])
+  ];
+  return parts.length > 0 ? `${label} · ${parts.join(", ")}` : label;
+}
+
+function MutedList({ title, lines }: { title: string; lines: string[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? lines : lines.slice(0, CAPPED_WARNING_VISIBLE);
+  const hidden = lines.length - visible.length;
+  return (
+    <div className="w-full text-xs text-muted-foreground">
+      <p>{title}</p>
+      <ul className="list-disc space-y-0.5 pl-4">
+        {visible.map((line, index) => (
+          // Two drawings can share a name, so the text is not a key.
+          <li key={index}>{line}</li>
+        ))}
+      </ul>
+      {hidden > 0 || expanded ? (
+        <Button
+          variant="link"
+          size="sm"
+          className="mt-0.5 h-auto p-0 text-xs"
+          onClick={() => setExpanded((current) => !current)}
+        >
+          {expanded ? "Show fewer" : `Show ${hidden} more`}
+        </Button>
+      ) : null}
+    </div>
   );
 }
 
@@ -5595,6 +5920,7 @@ function ReleaseReviewSection({
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {releaseItemLabel(item)}
+                  {item.obsolete ? " · obsolete in Onshape" : ""}
                 </p>
               </div>
               <ReleasePlanBadge item={item} />

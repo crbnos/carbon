@@ -47,6 +47,10 @@ export type AssemblyReview = ReviewBase & {
   kind: "assembly";
   plan: AssemblyPlan;
   excluded: Set<string>;
+  /** Part numbers whose STEP model exports. Empty at first: exports spend quota. */
+  modelRows: Set<string>;
+  /** Part numbers whose drawings export. */
+  drawingRows: Set<string>;
 };
 
 export type ReleaseReview = ReviewBase & {
@@ -105,7 +109,14 @@ export function createReview(input: {
         selected: defaultSelectedPartIds(plan.rows)
       };
     case "assembly":
-      return { ...base, kind: "assembly", plan, excluded: new Set() };
+      return {
+        ...base,
+        kind: "assembly",
+        plan,
+        excluded: new Set(),
+        modelRows: new Set(),
+        drawingRows: new Set()
+      };
     case "release":
       return {
         ...base,
@@ -240,7 +251,84 @@ export type AssemblyApplyBody = {
   planId: string;
   edits: Record<string, ItemEdit>;
   excluded: string[];
+  modelRows: string[];
+  drawingRows: string[];
 };
+
+export type AssetKind = "model" | "drawing";
+
+/**
+ * The rows that offer each kind, as part numbers in review order: a STEP model
+ * on a part or sub-assembly, drawings on any row with at least one.
+ */
+export function assetOffers(
+  plan: AssemblyPlan,
+  excluded: ReadonlySet<string> = new Set()
+): Record<AssetKind, string[]> {
+  const rows = [plan.root, ...plan.items].filter(
+    (row) => !excluded.has(row.partNumber)
+  );
+  return {
+    model: rows
+      .filter((row) => !!row.assets?.model)
+      .map((row) => row.partNumber),
+    drawing: rows
+      .filter((row) => (row.assets?.drawings.length ?? 0) > 0)
+      .map((row) => row.partNumber)
+  };
+}
+
+/** Picks or clears `partNumbers` for one kind; a row that does not offer it is ignored. */
+export function setAssetRows(
+  review: AssemblyReview,
+  kind: AssetKind,
+  partNumbers: string[],
+  on: boolean
+): AssemblyReview {
+  const offered = new Set(assetOffers(review.plan)[kind]);
+  const key = kind === "model" ? "modelRows" : "drawingRows";
+  const next = new Set(review[key]);
+  for (const partNumber of partNumbers) {
+    if (!offered.has(partNumber)) continue;
+    if (on) next.add(partNumber);
+    else next.delete(partNumber);
+  }
+  return { ...review, [key]: next };
+}
+
+/**
+ * What the push exports: the picked STEP models and the drawings on picked
+ * rows, less the files the items already have (`current`), which it skips.
+ */
+export function assetCounts(review: AssemblyReview): {
+  models: number;
+  drawings: number;
+  current: number;
+} {
+  const offers = assetOffers(review.plan, review.excluded);
+  const rows = new Map(
+    [review.plan.root, ...review.plan.items].map((row) => [
+      row.partNumber,
+      row.assets
+    ])
+  );
+  let models = 0;
+  let drawings = 0;
+  let current = 0;
+  for (const partNumber of offers.model) {
+    if (!review.modelRows.has(partNumber)) continue;
+    if (rows.get(partNumber)?.modelCurrent) current++;
+    else models++;
+  }
+  for (const partNumber of offers.drawing) {
+    if (!review.drawingRows.has(partNumber)) continue;
+    for (const drawing of rows.get(partNumber)?.drawings ?? []) {
+      if (drawing.current) current++;
+      else drawings++;
+    }
+  }
+  return { models, drawings, current };
+}
 
 export type ReleaseApplyBody = {
   planId: string;
@@ -322,10 +410,13 @@ export function applyRequestBody(
             isCreate: item.action === "create"
           }))
       ];
+      const offers = assetOffers(review.plan, review.excluded);
       return {
         planId: review.planId,
         edits: collectEdits(review.edits, entries),
-        excluded: [...review.excluded]
+        excluded: [...review.excluded],
+        modelRows: offers.model.filter((pn) => review.modelRows.has(pn)),
+        drawingRows: offers.drawing.filter((pn) => review.drawingRows.has(pn))
       };
     }
     case "release": {
