@@ -339,6 +339,7 @@ describe("review fixes", () => {
     expect(protectCsvIdentifier("1234567890123456")).toBe("'1234567890123456");
     expect(protectCsvIdentifier("12-16")).toBe("'12-16");
     expect(protectCsvIdentifier("Jan-16")).toBe("'Jan-16");
+    expect(protectCsvIdentifier("JAN1")).toBe("'JAN1");
     expect(protectCsvIdentifier("LOT-16")).toBe("LOT-16");
     const csv =
       "Item,Storage Unit,Serial / Batch,Counted Quantity\nBAT,A1,'-LOT,4";
