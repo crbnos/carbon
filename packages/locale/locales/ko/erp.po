@@ -8485,6 +8485,9 @@ msgstr "셋업 프롬프트를 클립보드에 복사했습니다"
 msgid "Copied the priority set"
 msgstr ""
 
+msgid "Copied the prompt"
+msgstr ""
+
 msgid "Copied the prompt to your clipboard"
 msgstr ""
 
@@ -8670,6 +8673,9 @@ msgstr "절차서 고유 식별자 복사"
 
 msgid "Copy project"
 msgstr "프로젝트 복사"
+msgid "Copy prompt"
+msgstr ""
+
 msgid "Copy Prompt"
 msgstr ""
 
@@ -8729,6 +8735,10 @@ msgstr "공급업체 견적 고유 식별자 복사"
 
 msgid "Copy supplier unique identifier"
 msgstr "공급업체 고유 식별자 복사"
+
+#. placeholder {0}: person.name
+msgid "Copy the prompt. It holds {0}, the page format, the company's priority set and every card a page can use."
+msgstr ""
 
 msgid "Copy this item's pricing to another scope."
 msgstr "이 품목의 가격 책정을 다른 범위로 복사합니다."
@@ -8957,6 +8967,9 @@ msgstr "활성 방법 및 간격이 있는 미결 작업 지시를 확인할 수
 
 msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
 msgstr "이 작업 지시 자재의 보관 단위를 확인할 수 없습니다. 이 대화를 닫고 다시 열어서 다시 시도하십시오."
+
+msgid "Could not copy the prompt"
+msgstr ""
 
 msgid "Could not copy. Use Download."
 msgstr ""
@@ -11587,6 +11600,10 @@ msgstr "템플릿을 다운로드합니다. 각 행은 Carbon이 전기하는 �
 
 msgid "Draft"
 msgstr "초안"
+
+#. placeholder {0}: person.name
+msgid "Draft {0}'s page with Claude"
+msgstr ""
 
 msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
 msgstr "공급업체 반품으로 처리된 수량에 대한 공급업체 반품 초안을 작성합니다. 연결된 반품으로 이미 처리된 수량은 제외되며, 연결된 반품이 열려있는 동안 이 문제는 종료할 수 없습니다."
@@ -23004,6 +23021,13 @@ msgstr "종료 날짜 지남"
 
 msgid "Paste a YouTube video link"
 msgstr "YouTube 비디오 링크를 붙여넣으세요"
+
+msgid "Paste Claude's answer below and load it. Anything wrong is listed before it saves."
+msgstr ""
+
+#. placeholder {0}: person.name
+msgid "Paste it into Claude, add what you know about {0}'s role, and send it."
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "자격 증명 공급자가 메타데이터 URL을 게시하지 않는 경우 메타데이터 XML을 붙여넣으세요"

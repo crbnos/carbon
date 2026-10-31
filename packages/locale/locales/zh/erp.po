@@ -8485,6 +8485,9 @@ msgstr "已将换型提示复制到剪贴板"
 msgid "Copied the priority set"
 msgstr ""
 
+msgid "Copied the prompt"
+msgstr ""
+
 msgid "Copied the prompt to your clipboard"
 msgstr ""
 
@@ -8670,6 +8673,9 @@ msgstr "复制程序文件唯一标识符"
 
 msgid "Copy project"
 msgstr "复制项目"
+msgid "Copy prompt"
+msgstr ""
+
 msgid "Copy Prompt"
 msgstr ""
 
@@ -8729,6 +8735,10 @@ msgstr "复制供应商报价唯一标识符"
 
 msgid "Copy supplier unique identifier"
 msgstr "复制供应商唯一标识符"
+
+#. placeholder {0}: person.name
+msgid "Copy the prompt. It holds {0}, the page format, the company's priority set and every card a page can use."
+msgstr ""
 
 msgid "Copy this item's pricing to another scope."
 msgstr "将此项目的定价复制到另一个范围。"
@@ -8957,6 +8967,9 @@ msgstr "无法检查启用方法和未结工单中的缺口。请重新加载页
 
 msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
 msgstr "无法检查此工单物料的存储单元。关闭此对话框并重新打开重试。"
+
+msgid "Could not copy the prompt"
+msgstr ""
 
 msgid "Could not copy. Use Download."
 msgstr ""
@@ -11587,6 +11600,10 @@ msgstr "下载模板。每一行是一个 Carbon 过账的默认账户。在账�
 
 msgid "Draft"
 msgstr "草稿"
+
+#. placeholder {0}: person.name
+msgid "Draft {0}'s page with Claude"
+msgstr ""
 
 msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
 msgstr "为处置为\"退回供应商\"的数量起草供应商退货。已由关联退货覆盖的数量被排除，当关联退货开放时，此问题无法关闭。"
@@ -23004,6 +23021,13 @@ msgstr "已过截止日期"
 
 msgid "Paste a YouTube video link"
 msgstr "粘贴YouTube视频链接"
+
+msgid "Paste Claude's answer below and load it. Anything wrong is listed before it saves."
+msgstr ""
+
+#. placeholder {0}: person.name
+msgid "Paste it into Claude, add what you know about {0}'s role, and send it."
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "如果您的身份提供商未发布元数据 URL,请粘贴元数据 XML"

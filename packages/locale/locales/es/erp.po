@@ -8485,6 +8485,9 @@ msgstr "Indicación de preparación copiada al portapapeles"
 msgid "Copied the priority set"
 msgstr ""
 
+msgid "Copied the prompt"
+msgstr ""
+
 msgid "Copied the prompt to your clipboard"
 msgstr ""
 
@@ -8670,6 +8673,9 @@ msgstr "Copiar identificador único del procedimiento"
 
 msgid "Copy project"
 msgstr "Copiar proyecto"
+msgid "Copy prompt"
+msgstr ""
+
 msgid "Copy Prompt"
 msgstr ""
 
@@ -8729,6 +8735,10 @@ msgstr "Copiar identificador único de cotización del proveedor"
 
 msgid "Copy supplier unique identifier"
 msgstr "Copiar identificador único de proveedor"
+
+#. placeholder {0}: person.name
+msgid "Copy the prompt. It holds {0}, the page format, the company's priority set and every card a page can use."
+msgstr ""
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Copiar la fijación de precios de este artículo a otro alcance."
@@ -8957,6 +8967,9 @@ msgstr "No se pudo verificar métodos activos y órdenes de trabajo abiertas con
 
 msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
 msgstr "No se pudieron verificar las unidades de almacenamiento de los materiales de esta orden de trabajo. Cierra este diálogo y ábrelo de nuevo para volver a intentar."
+
+msgid "Could not copy the prompt"
+msgstr ""
 
 msgid "Could not copy. Use Download."
 msgstr ""
@@ -11587,6 +11600,10 @@ msgstr "Descargue la plantilla. Cada fila es una cuenta predeterminada a la que 
 
 msgid "Draft"
 msgstr "Borrador"
+
+#. placeholder {0}: person.name
+msgid "Draft {0}'s page with Claude"
+msgstr ""
 
 msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
 msgstr "Redacta un retorno de proveedor para las cantidades clasificadas como 'Devolución al Proveedor'. Las cantidades ya cubiertas por un retorno vinculado se excluyen, y este problema no puede cerrarse mientras un retorno vinculado esté abierto."
@@ -23004,6 +23021,13 @@ msgstr "Más allá de la fecha de finalización"
 
 msgid "Paste a YouTube video link"
 msgstr "Pegue un enlace de video de YouTube"
+
+msgid "Paste Claude's answer below and load it. Anything wrong is listed before it saves."
+msgstr ""
+
+#. placeholder {0}: person.name
+msgid "Paste it into Claude, add what you know about {0}'s role, and send it."
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Pegue el XML de metadatos si su proveedor de identidad no publica una URL de metadatos"

@@ -7,15 +7,23 @@ import {
   buildPageCatalogue,
   catalogueByItem,
   checkMemberPage,
+  computePrioritySet,
+  FEATURE_CARDS,
   groupHubPeople,
   type HubPagePerson,
   type HubPeopleGroups,
   type HubPersonStatus,
   type MemberPage,
   memberPageValidator,
+  PAGE_CARD_KIND_LABEL,
+  PRIORITY_CARD,
+  PRIORITY_FEATURES,
+  pageDraftPrompt,
   pageOverdue,
   pageProgress,
   prioritySetHolder,
+  prioritySetMarkdown,
+  priorityStateFromFields,
   resolveMemberPage,
   starterMemberPage
 } from "@carbon/implementation-hub";
@@ -27,6 +35,7 @@ import {
   ProgressPill,
   toFormFields,
   useCheckMap,
+  useFieldMap,
   useHub
 } from "@carbon/implementation-hub/ui";
 import { getLogger } from "@carbon/logger";
@@ -61,10 +70,12 @@ import {
 } from "@carbon/react";
 import { isInternalEmail } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
+import type { MessageDescriptor } from "@lingui/core";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
 import {
   LuCheck,
+  LuCopy,
   LuDownload,
   LuEye,
   LuEyeOff,
@@ -76,6 +87,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Link, useFetcher, useLoaderData, useSearchParams } from "react-router";
 import { FileDropzone } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import { useUser } from "~/hooks";
 import {
   setImplementationPreview,
   useImplementationPreview
@@ -366,6 +378,9 @@ export default function GetStartedRoute() {
             initialText={loadText}
             person={selected}
             people={everyone}
+            mayHoldPriorityCard={
+              prioritySetHolder(members, selected?.id) === null
+            }
             onClose={() => setLoadText(null)}
             onLoaded={(memberId) => {
               setLoadText(null);
@@ -800,6 +815,7 @@ function LoadPageModal({
   initialText,
   person,
   people,
+  mayHoldPriorityCard,
   onClose,
   onLoaded
 }: {
@@ -807,10 +823,14 @@ function LoadPageModal({
   // The person on screen, and everyone the file could name.
   person: HubPagePerson | undefined;
   people: HubPagePerson[];
+  // Nobody else's page has the priority set's questionnaire card.
+  mayHoldPriorityCard: boolean;
   onClose: () => void;
   onLoaded: (memberId: string) => void;
 }) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
+  const { company } = useUser();
+  const fieldMap = useFieldMap();
   const fetcher = useFetcher<{
     success: boolean;
     message?: string;
@@ -842,6 +862,51 @@ function LoadPageModal({
       ? people.find((p) => p.email?.toLowerCase() === fileUser)?.name ||
         fileUser
       : null;
+
+  // The prompt for an assistant to draft this person's page: the person, the
+  // page format, the company's priority set and every card the page can use.
+  const copyPrompt = () => {
+    if (!person?.email) return;
+    const label = (message: MessageDescriptor) => i18n._(message);
+    const read = (value: string | MessageDescriptor | undefined) =>
+      value === undefined || typeof value === "string" ? value : label(value);
+    const state = priorityStateFromFields(fieldMap);
+    const set = computePrioritySet(state);
+    const features = PRIORITY_FEATURES.flatMap((feature) => {
+      const category = set.category[feature.key];
+      return category === 0 || category === 1
+        ? [{ key: feature.key, name: label(feature.name), category }]
+        : [];
+    });
+    const todayIso = today(getLocalTimeZone()).toString();
+    const prompt = pageDraftPrompt({
+      person: { name: person.name, email: person.email },
+      today: todayIso,
+      catalogue: buildPageCatalogue(rows).map((entry) => ({
+        item: entry.item,
+        type: label(PAGE_CARD_KIND_LABEL[entry.kind]),
+        group: read(entry.group),
+        title: read(entry.title) ?? entry.item
+      })),
+      features,
+      prioritySet: features.length
+        ? prioritySetMarkdown(state, set, {
+            company: company.name,
+            date: todayIso,
+            answeredBy: t`questionnaire`,
+            label,
+            personName: (id) => people.find((p) => p.id === id)?.name
+          })
+        : null,
+      mayHoldPriorityCard,
+      priorityCard: PRIORITY_CARD.item,
+      featureCards: FEATURE_CARDS
+    });
+    navigator.clipboard
+      ?.writeText(prompt)
+      .then(() => toast.success(t`Copied the prompt`))
+      .catch(() => toast.error(t`Could not copy the prompt`));
+  };
 
   const submit = () => {
     const checked = checkMemberPage(text, items);
@@ -876,6 +941,43 @@ function LoadPageModal({
         </ModalHeader>
         <ModalBody>
           <div className="flex flex-col gap-3">
+            {person?.email ? (
+              <div className="flex flex-col gap-2 rounded-md border bg-muted/40 px-3 py-3">
+                <p className="text-sm font-medium">
+                  <Trans>Draft {person.name}'s page with Claude</Trans>
+                </p>
+                <ol className="flex list-decimal flex-col gap-1 pl-5 text-xs text-muted-foreground text-pretty">
+                  <li>
+                    <Trans>
+                      Copy the prompt. It holds {person.name}, the page format,
+                      the company's priority set and every card a page can use.
+                    </Trans>
+                  </li>
+                  <li>
+                    <Trans>
+                      Paste it into Claude, add what you know about{" "}
+                      {person.name}'s role, and send it.
+                    </Trans>
+                  </li>
+                  <li>
+                    <Trans>
+                      Paste Claude's answer below and load it. Anything wrong is
+                      listed before it saves.
+                    </Trans>
+                  </li>
+                </ol>
+                <div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    leftIcon={<LuCopy />}
+                    onClick={copyPrompt}
+                  >
+                    <Trans>Copy prompt</Trans>
+                  </Button>
+                </div>
+              </div>
+            ) : null}
             <FileDropzone
               accept={JSON_FILE}
               multiple={false}

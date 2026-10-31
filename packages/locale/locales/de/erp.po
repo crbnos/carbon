@@ -8485,6 +8485,9 @@ msgstr "Rüst-Ansage in die Zwischenablage kopiert"
 msgid "Copied the priority set"
 msgstr ""
 
+msgid "Copied the prompt"
+msgstr ""
+
 msgid "Copied the prompt to your clipboard"
 msgstr ""
 
@@ -8670,6 +8673,9 @@ msgstr "Eindeutige Kennung der Verfahrensanweisung kopieren"
 
 msgid "Copy project"
 msgstr "Projekt kopieren"
+msgid "Copy prompt"
+msgstr ""
+
 msgid "Copy Prompt"
 msgstr ""
 
@@ -8729,6 +8735,10 @@ msgstr "Eindeutige Kennung des Lieferantenangebots kopieren"
 
 msgid "Copy supplier unique identifier"
 msgstr "Lieferantennummer kopieren"
+
+#. placeholder {0}: person.name
+msgid "Copy the prompt. It holds {0}, the page format, the company's priority set and every card a page can use."
+msgstr ""
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Kopieren Sie die Preise dieses Artikels auf einen anderen Geltungsbereich."
@@ -8957,6 +8967,9 @@ msgstr "Aktive Methoden und offene Fertigungsaufträge mit Lücken konnten nicht
 
 msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
 msgstr "Die Lagereinheiten der Materialien dieses Fertigungsauftrags konnten nicht überprüft werden. Schließen Sie diesen Dialog und öffnen Sie ihn erneut, um es erneut zu versuchen."
+
+msgid "Could not copy the prompt"
+msgstr ""
 
 msgid "Could not copy. Use Download."
 msgstr ""
@@ -11587,6 +11600,10 @@ msgstr "Laden Sie die Vorlage herunter. Jede Zeile ist ein Standardkonto, auf da
 
 msgid "Draft"
 msgstr "Entwurf"
+
+#. placeholder {0}: person.name
+msgid "Draft {0}'s page with Claude"
+msgstr ""
 
 msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
 msgstr "Erstellen Sie eine Lieferantenrückkehr für die Mengen, die als Rückkehr zum Lieferanten gekennzeichnet sind. Mengen, die bereits durch eine verknüpfte Rückkehr abgedeckt sind, werden ausgeschlossen, und dieses Problem kann nicht abgeschlossen werden, während eine verknüpfte Rückkehr offen ist."
@@ -23004,6 +23021,13 @@ msgstr "Nach dem Enddatum"
 
 msgid "Paste a YouTube video link"
 msgstr "Fügen Sie einen YouTube-Videolink ein"
+
+msgid "Paste Claude's answer below and load it. Anything wrong is listed before it saves."
+msgstr ""
+
+#. placeholder {0}: person.name
+msgid "Paste it into Claude, add what you know about {0}'s role, and send it."
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Fügen Sie die Metadaten-XML ein, wenn Ihr Identitätsanbieter keine Metadaten-URL veröffentlicht"

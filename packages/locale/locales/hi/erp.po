@@ -8485,6 +8485,9 @@ msgstr "सेटअप प्रॉम्प्ट आपके क्लिप
 msgid "Copied the priority set"
 msgstr ""
 
+msgid "Copied the prompt"
+msgstr ""
+
 msgid "Copied the prompt to your clipboard"
 msgstr ""
 
@@ -8670,6 +8673,9 @@ msgstr "कार्यविधि की अद्वितीय पहचा
 
 msgid "Copy project"
 msgstr "परियोजना की प्रतिलिपि बनाएँ"
+msgid "Copy prompt"
+msgstr ""
+
 msgid "Copy Prompt"
 msgstr ""
 
@@ -8729,6 +8735,10 @@ msgstr "आपूर्तिकर्ता कोटेशन की विश
 
 msgid "Copy supplier unique identifier"
 msgstr "आपूर्तिकर्ता की विशिष्ट पहचान नकल करें"
+
+#. placeholder {0}: person.name
+msgid "Copy the prompt. It holds {0}, the page format, the company's priority set and every card a page can use."
+msgstr ""
 
 msgid "Copy this item's pricing to another scope."
 msgstr "इस आइटम की मूल्य निर्धारण को दूसरे स्कोप में कॉपी करें।"
@@ -8957,6 +8967,9 @@ msgstr "सक्रिय विधियों और अंतराल व�
 
 msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
 msgstr "इस जॉब की सामग्री की भंडारण इकाइयाँ जाँची नहीं जा सकीं। फिर से प्रयास करने के लिए इस संवाद को बंद करके दोबारा खोलें।"
+
+msgid "Could not copy the prompt"
+msgstr ""
 
 msgid "Could not copy. Use Download."
 msgstr ""
@@ -11587,6 +11600,10 @@ msgstr "टेम्पलेट डाउनलोड करें। प्र
 
 msgid "Draft"
 msgstr "ड्राफ्ट"
+
+#. placeholder {0}: person.name
+msgid "Draft {0}'s page with Claude"
+msgstr ""
 
 msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
 msgstr "आपूर्तिकर्ता को मात्राओं को वापस करने के लिए एक आपूर्तिकर्ता रिटर्न का ड्राफ्ट करें। जो मात्राएं पहले से लिंक किए गए रिटर्न द्वारा कवर की गई हैं वे बहिष्कृत हैं, और यह समस्या तब तक बंद नहीं हो सकती जब तक कि एक लिंक किया गया रिटर्न खुला है।"
@@ -23004,6 +23021,13 @@ msgstr "समाप्ति तारीख के बाद"
 
 msgid "Paste a YouTube video link"
 msgstr "एक YouTube वीडियो लिंक पेस्ट करें"
+
+msgid "Paste Claude's answer below and load it. Anything wrong is listed before it saves."
+msgstr ""
+
+#. placeholder {0}: person.name
+msgid "Paste it into Claude, add what you know about {0}'s role, and send it."
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "मेटाडेटा XML को पेस्ट करें यदि आपका आइडेंटिटी प्रदाता मेटाडेटा URL प्रकाशित नहीं करता है"

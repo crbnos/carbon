@@ -8485,6 +8485,9 @@ msgstr "Skopiowano monit przezbrojenia do schowka"
 msgid "Copied the priority set"
 msgstr ""
 
+msgid "Copied the prompt"
+msgstr ""
+
 msgid "Copied the prompt to your clipboard"
 msgstr ""
 
@@ -8670,6 +8673,9 @@ msgstr "Skopiuj unikatowy identyfikator procedury"
 
 msgid "Copy project"
 msgstr "Skopiuj projekt"
+msgid "Copy prompt"
+msgstr ""
+
 msgid "Copy Prompt"
 msgstr ""
 
@@ -8729,6 +8735,10 @@ msgstr "Skopiuj unikalny identyfikator oferty dostawcy"
 
 msgid "Copy supplier unique identifier"
 msgstr "Skopiuj unikalny identyfikator dostawcy"
+
+#. placeholder {0}: person.name
+msgid "Copy the prompt. It holds {0}, the page format, the company's priority set and every card a page can use."
+msgstr ""
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Skopiuj wycenę tego artykułu na inny zakres."
@@ -8957,6 +8967,9 @@ msgstr "Nie można sprawdzić aktywnych metod i otwartych zleceń produkcyjnych 
 
 msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
 msgstr "Nie można sprawdzić jednostek magazynowych materiałów tego zlecenia produkcyjnego. Zamknij to okno dialogowe i otwórz je ponownie, aby spróbować ponownie."
+
+msgid "Could not copy the prompt"
+msgstr ""
 
 msgid "Could not copy. Use Download."
 msgstr ""
@@ -11587,6 +11600,10 @@ msgstr "Pobierz szablon. Każdy wiersz to domyślne konto, na które Carbon doko
 
 msgid "Draft"
 msgstr "Wersja robocza"
+
+#. placeholder {0}: person.name
+msgid "Draft {0}'s page with Claude"
+msgstr ""
 
 msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
 msgstr "Utwórz wersję roboczą zwrotu dostawcy dla ilości oznaczonych jako Zwrot do dostawcy. Ilości już objęte połączonym zwrotem są wyłączone, a to wydanie nie może zostać zamknięte, dopóki powiązany zwrot jest otwarty."
@@ -23004,6 +23021,13 @@ msgstr "Po dacie końcowej"
 
 msgid "Paste a YouTube video link"
 msgstr "Wklej link do wideo z YouTube"
+
+msgid "Paste Claude's answer below and load it. Anything wrong is listed before it saves."
+msgstr ""
+
+#. placeholder {0}: person.name
+msgid "Paste it into Claude, add what you know about {0}'s role, and send it."
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Wklej kod XML metadanych, jeśli Twój dostawca tożsamości nie publikuje adresu URL metadanych"

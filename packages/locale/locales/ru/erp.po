@@ -8485,6 +8485,9 @@ msgstr "Приглашение наладки скопировано в буфе
 msgid "Copied the priority set"
 msgstr ""
 
+msgid "Copied the prompt"
+msgstr ""
+
 msgid "Copied the prompt to your clipboard"
 msgstr ""
 
@@ -8670,6 +8673,9 @@ msgstr "Скопировать уникальный идентификатор �
 
 msgid "Copy project"
 msgstr "Копировать проект"
+msgid "Copy prompt"
+msgstr ""
+
 msgid "Copy Prompt"
 msgstr ""
 
@@ -8729,6 +8735,10 @@ msgstr "Скопировать уникальный идентификатор �
 
 msgid "Copy supplier unique identifier"
 msgstr "Скопировать уникальный идентификатор поставщика"
+
+#. placeholder {0}: person.name
+msgid "Copy the prompt. It holds {0}, the page format, the company's priority set and every card a page can use."
+msgstr ""
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Скопировать ценообразование этой номенклатуры в другую область."
@@ -8957,6 +8967,9 @@ msgstr "Не удалось проверить действующие метод
 
 msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
 msgstr "Не удалось проверить единицы хранения материалов этого производственного заказа. Закройте это диалоговое окно и откройте его снова, чтобы повторить попытку."
+
+msgid "Could not copy the prompt"
+msgstr ""
 
 msgid "Could not copy. Use Download."
 msgstr ""
@@ -11587,6 +11600,10 @@ msgstr "Скачайте шаблон. Каждая строка — это ст
 
 msgid "Draft"
 msgstr "Черновик"
+
+#. placeholder {0}: person.name
+msgid "Draft {0}'s page with Claude"
+msgstr ""
 
 msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
 msgstr "Составить черновик возврата поставщику для количеств, расположенных 'Возврат поставщику'. Количества, уже покрытые связанным возвратом, исключены, и эта проблема не может быть закрыта, пока связанный возврат открыт."
@@ -23004,6 +23021,13 @@ msgstr "После даты завершения"
 
 msgid "Paste a YouTube video link"
 msgstr "Вставьте ссылку видео YouTube"
+
+msgid "Paste Claude's answer below and load it. Anything wrong is listed before it saves."
+msgstr ""
+
+#. placeholder {0}: person.name
+msgid "Paste it into Claude, add what you know about {0}'s role, and send it."
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Вставьте XML метаданных, если ваш поставщик удостоверений не публикует URL метаданных"

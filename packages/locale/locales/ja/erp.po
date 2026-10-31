@@ -8485,6 +8485,9 @@ msgstr "セットアップ プロンプトをクリップボードにコピー�
 msgid "Copied the priority set"
 msgstr ""
 
+msgid "Copied the prompt"
+msgstr ""
+
 msgid "Copied the prompt to your clipboard"
 msgstr ""
 
@@ -8670,6 +8673,9 @@ msgstr "手順書の識別子をコピー"
 
 msgid "Copy project"
 msgstr "プロジェクトをコピー"
+msgid "Copy prompt"
+msgstr ""
+
 msgid "Copy Prompt"
 msgstr ""
 
@@ -8729,6 +8735,10 @@ msgstr "仕入先見積の一意識別子をコピー"
 
 msgid "Copy supplier unique identifier"
 msgstr "仕入先の一意識別子をコピー"
+
+#. placeholder {0}: person.name
+msgid "Copy the prompt. It holds {0}, the page format, the company's priority set and every card a page can use."
+msgstr ""
 
 msgid "Copy this item's pricing to another scope."
 msgstr "このアイテムの価格設定を別のスコープにコピーします。"
@@ -8957,6 +8967,9 @@ msgstr "有効な製法およびギャップのあるオープンな製造指図
 
 msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
 msgstr "この製造指図の材料の保管ユニットを確認できませんでした。このダイアログをクローズして、もう一度開いて、再度お試しください。"
+
+msgid "Could not copy the prompt"
+msgstr ""
 
 msgid "Could not copy. Use Download."
 msgstr ""
@@ -11587,6 +11600,10 @@ msgstr "テンプレートをダウンロードしてください。各行は Ca
 
 msgid "Draft"
 msgstr "下書き"
+
+#. placeholder {0}: person.name
+msgid "Draft {0}'s page with Claude"
+msgstr ""
 
 msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
 msgstr "Return to Supplierで処置された数量に対する仕入先返品の下書きを作成します。すでにリンクされた返品でカバーされている数量は除外され、リンクされた返品がオープンの間はこの案件はクローズできません。"
@@ -23004,6 +23021,13 @@ msgstr "終了日を超過"
 
 msgid "Paste a YouTube video link"
 msgstr "YouTubeビデオリンクを貼り付けてください"
+
+msgid "Paste Claude's answer below and load it. Anything wrong is listed before it saves."
+msgstr ""
+
+#. placeholder {0}: person.name
+msgid "Paste it into Claude, add what you know about {0}'s role, and send it."
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "IDプロバイダーがメタデータURLを公開していない場合は、メタデータXMLを貼り付けてください"

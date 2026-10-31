@@ -8484,6 +8484,9 @@ msgstr "Copied setup prompt to your clipboard"
 msgid "Copied the priority set"
 msgstr "Copied the priority set"
 
+msgid "Copied the prompt"
+msgstr "Copied the prompt"
+
 msgid "Copied the prompt to your clipboard"
 msgstr "Copied the prompt to your clipboard"
 
@@ -8669,6 +8672,9 @@ msgstr "Copy procedure unique identifier"
 
 msgid "Copy project"
 msgstr "Copy project"
+msgid "Copy prompt"
+msgstr "Copy prompt"
+
 msgid "Copy Prompt"
 msgstr "Copy Prompt"
 
@@ -8728,6 +8734,10 @@ msgstr "Copy supplier quote unique identifier"
 
 msgid "Copy supplier unique identifier"
 msgstr "Copy supplier unique identifier"
+
+#. placeholder {0}: person.name
+msgid "Copy the prompt. It holds {0}, the page format, the company's priority set and every card a page can use."
+msgstr "Copy the prompt. It holds {0}, the page format, the company's priority set and every card a page can use."
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Copy this item's pricing to another scope."
@@ -8956,6 +8966,9 @@ msgstr "Could not check for active methods and open jobs with gaps. Reload the p
 
 msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
 msgstr "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
+
+msgid "Could not copy the prompt"
+msgstr "Could not copy the prompt"
 
 msgid "Could not copy. Use Download."
 msgstr "Could not copy. Use Download."
@@ -11585,6 +11598,10 @@ msgstr "Download the template. Each row is a default account Carbon posts to. In
 
 msgid "Draft"
 msgstr "Draft"
+
+#. placeholder {0}: person.name
+msgid "Draft {0}'s page with Claude"
+msgstr "Draft {0}'s page with Claude"
 
 msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
 msgstr "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
@@ -23003,6 +23020,13 @@ msgstr "Past end date"
 
 msgid "Paste a YouTube video link"
 msgstr "Paste a YouTube video link"
+
+msgid "Paste Claude's answer below and load it. Anything wrong is listed before it saves."
+msgstr "Paste Claude's answer below and load it. Anything wrong is listed before it saves."
+
+#. placeholder {0}: person.name
+msgid "Paste it into Claude, add what you know about {0}'s role, and send it."
+msgstr "Paste it into Claude, add what you know about {0}'s role, and send it."
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Paste the metadata XML if your identity provider does not publish a metadata URL"
