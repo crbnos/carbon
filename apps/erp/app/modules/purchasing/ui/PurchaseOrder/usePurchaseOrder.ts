@@ -6,6 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import { toastError } from "@carbon/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSubmit } from "react-router";
+import { useUser } from "~/hooks";
 import type { Receipt, Shipment } from "~/modules/inventory/types";
 import type { PurchaseInvoice } from "~/modules/invoicing/types";
 import type { PurchaseOrder } from "~/modules/purchasing/types";
@@ -83,6 +84,7 @@ export const usePurchaseOrderRelatedDocuments = (
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const { carbon } = useCarbon();
+  const { company } = useUser();
 
   const getRelatedDocuments = useCallback(
     async (supplierInteractionId: string, attempt = 0) => {
@@ -97,7 +99,8 @@ export const usePurchaseOrderRelatedDocuments = (
           carbon
             .from("purchaseInvoices")
             .select("id, invoiceId, status")
-            .eq("supplierInteractionId", supplierInteractionId),
+            .eq("supplierInteractionId", supplierInteractionId)
+            .eq("companyId", company.id),
           isOutsideProcessing
             ? carbon
                 .from("shipment")
@@ -168,7 +171,7 @@ export const usePurchaseOrderRelatedDocuments = (
 
       setHasError(failed);
     },
-    [carbon, isOutsideProcessing, purchaseOrderId]
+    [carbon, company.id, isOutsideProcessing, purchaseOrderId]
   );
 
   useEffect(() => {
