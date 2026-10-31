@@ -4367,6 +4367,9 @@ msgstr "Numéro de lot"
 msgid "Batch Number"
 msgstr "Numéro de lot"
 
+msgid "Batch or Serial Number"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Propriétés de lot"
 

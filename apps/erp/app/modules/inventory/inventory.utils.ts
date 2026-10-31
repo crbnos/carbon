@@ -60,6 +60,72 @@ export function isShippableEntityStatus(
   );
 }
 
+type ItemTrackingType = Database["public"]["Enums"]["itemTrackingType"];
+
+const UNIT_WORDING = {
+  Batch: { tracked: "Batch-tracked", unit: "batch", number: "Batch number" },
+  Serial: {
+    tracked: "Serial-tracked",
+    unit: "serial unit",
+    number: "Serial number"
+  }
+} as const;
+
+function unitWording(itemTrackingType: ItemTrackingType | null | undefined) {
+  return itemTrackingType === "Batch" || itemTrackingType === "Serial"
+    ? UNIT_WORDING[itemTrackingType]
+    : null;
+}
+
+/**
+ * Why an adjustment that adds stock cannot post, or null. Batch and serial
+ * stock belongs to a unit: the increase names one (`trackedEntityId`), and a
+ * unit it creates carries its batch or serial number (`readableId`). An
+ * existing unit keeps a number too: the one sent, or the one it has, and a
+ * number sent is never blank. The adjustment posting reads it, so the
+ * quantities page, the API, MCP and the MES refuse alike.
+ */
+export function stockIncreaseRefusal({
+  itemTrackingType,
+  trackedEntityId,
+  createsUnit,
+  readableId,
+  currentReadableId
+}: {
+  itemTrackingType: ItemTrackingType | null | undefined;
+  trackedEntityId: string | null | undefined;
+  /** The increase creates the unit `trackedEntityId` names. */
+  createsUnit: boolean;
+  readableId: string | null | undefined;
+  /** The number an existing unit already has. */
+  currentReadableId?: string | null;
+}): string | null {
+  const wording = unitWording(itemTrackingType);
+  if (!wording) return null;
+  if (!trackedEntityId) {
+    return `${wording.tracked} stock must go into a ${wording.unit}: send its trackedEntityId, or a new id with its ${wording.number.toLowerCase()} as readableId`;
+  }
+  const number = createsUnit ? readableId : (readableId ?? currentReadableId);
+  if (!number?.trim()) {
+    return `${wording.number} is required`;
+  }
+  return null;
+}
+
+/**
+ * Why a quantity-only material issue cannot post, or null. Batch and serial
+ * stock leaves by unit, so a quantity-only issue of such an item would count
+ * as issued and take nothing out of stock.
+ */
+export function untrackedIssueRefusal(item: {
+  itemTrackingType: ItemTrackingType | null | undefined;
+  readableIdWithRevision: string | null | undefined;
+}): string | null {
+  const wording = unitWording(item.itemTrackingType);
+  if (!wording) return null;
+  return `${item.readableIdWithRevision ?? "This item"} is ${wording.tracked.toLowerCase()}: issue it by ${wording.number.toLowerCase()}`;
+}
+
 const NOT_ALPHANUMERIC = /[^\p{L}\p{N}]+/gu;
 
 /**

@@ -97,6 +97,14 @@ const itemIdsInput = z.array(z.string()).min(1);
  * them (`cascadeItemTrackingType`). A failed carry-over leaves the items
  * changed and returns an error.
  *
+ * Making an item Batch or Serial is refused while it holds stock with no
+ * batch or serial number, at any location; nothing is changed. Adjust that
+ * stock to zero first, then add it back by batch or serial number. It is
+ * also refused while an open job has the item issued with no number, since
+ * that quantity could no longer be returned; return it, or complete or
+ * cancel the job, first. Making an item Serial is refused while it holds a
+ * batch of more than one unit, in stock, on hold, rejected or scrapped.
+ *
  * @mcp
  */
 export const setItemTrackingType = defineServiceFn({
@@ -108,18 +116,66 @@ export const setItemTrackingType = defineServiceFn({
 
   async run(ctx, { ids, itemTrackingType }) {
     const companyId = ctx.company.id;
-    const update = await ctx.asCaller.supabase
-      .from("item")
-      .update({
-        itemTrackingType,
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .in("id", ids)
-      .eq("companyId", companyId);
-    if (update.error) {
-      return ctx.error("internal", update.error.message, update.error);
-    }
+    // The stock check and the write share one transaction, with the items
+    // locked first: the adjustment posting reads the tracking type under a
+    // share lock, so stock posted meanwhile is seen or waits for the change.
+    const changed = await ctx.transaction(async (tx) => {
+      await tx.asSystem.pg
+        .selectFrom("item")
+        .select("id")
+        .where("id", "in", ids)
+        .where("companyId", "=", companyId)
+        .orderBy("id")
+        .forUpdate()
+        .execute();
+
+      if (itemTrackingType === "Batch" || itemTrackingType === "Serial") {
+        const withStock = await service.getItemsWithUntrackedStock(
+          tx.asSystem.pg,
+          { itemIds: ids, companyId, trackingType: itemTrackingType }
+        );
+        const refusal = utils.trackingTypeChangeRefusal(
+          itemTrackingType,
+          withStock
+        );
+        if (refusal) return ctx.error("rule", refusal);
+
+        const issued = await service.getItemsIssuedUntrackedToOpenJobs(
+          tx.asSystem.pg,
+          { itemIds: ids, companyId, trackingType: itemTrackingType }
+        );
+        const issueRefusal = utils.trackingTypeIssueRefusal(
+          itemTrackingType,
+          issued
+        );
+        if (issueRefusal) return ctx.error("rule", issueRefusal);
+
+        if (itemTrackingType === "Serial") {
+          const withLots = await service.getItemsWithMultiUnitLots(
+            tx.asSystem.pg,
+            { itemIds: ids, companyId }
+          );
+          const lotRefusal = utils.trackingTypeLotRefusal(
+            itemTrackingType,
+            withLots
+          );
+          if (lotRefusal) return ctx.error("rule", lotRefusal);
+        }
+      }
+
+      await tx.asSystem.pg
+        .updateTable("item")
+        .set({
+          itemTrackingType,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "in", ids)
+        .where("companyId", "=", companyId)
+        .execute();
+      return { ids };
+    });
+    if (changed.error) return changed.error;
 
     try {
       await service.cascadeItemTrackingType(ctx.asSystem.pg, {

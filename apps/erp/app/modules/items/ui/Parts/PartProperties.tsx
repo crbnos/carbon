@@ -19,7 +19,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback } from "react";
+import { Suspense, useCallback, useState } from "react";
 import {
   LuCopy,
   LuExternalLink,
@@ -180,9 +180,13 @@ const PartProperties = ({
   //     ? optimisticAssignment
   //     : routeData?.partSummary?.assignee;
 
+  // A refused write leaves the loader data unchanged, so remount the
+  // tracking type form to show the stored value again.
+  const [trackingTypeResets, setTrackingTypeResets] = useState(0);
   const fetcher = useAction<typeof action>({
     onError: (data) => {
       toastServiceError(data);
+      setTrackingTypeResets((count) => count + 1);
     }
   });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -548,6 +552,7 @@ const PartProperties = ({
       </ValidatedForm>
 
       <ValidatedForm
+        key={`itemTrackingType-${routeData?.partSummary?.itemTrackingType}-${trackingTypeResets}`}
         defaultValues={{
           itemTrackingType:
             routeData?.partSummary?.itemTrackingType ?? undefined

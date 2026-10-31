@@ -159,9 +159,13 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   //     ? optimisticAssignment
   //     : routeData?.materialSummary?.assignee;
 
+  // A refused write leaves the loader data unchanged, so remount the
+  // tracking type form to show the stored value again.
+  const [trackingTypeResets, setTrackingTypeResets] = useState(0);
   const fetcher = useAction<typeof action>({
     onError: (data) => {
       toastServiceError(data);
+      setTrackingTypeResets((count) => count + 1);
     }
   });
   const confirmDisclosure = useDisclosure();
@@ -468,6 +472,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         </ValidatedForm>
 
         <ValidatedForm
+          key={`itemTrackingType-${routeData?.materialSummary?.itemTrackingType}-${trackingTypeResets}`}
           defaultValues={{
             itemTrackingType:
               routeData?.materialSummary?.itemTrackingType ?? undefined

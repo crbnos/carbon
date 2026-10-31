@@ -4367,6 +4367,9 @@ msgstr "Номер партии"
 msgid "Batch Number"
 msgstr "Номер партии"
 
+msgid "Batch or Serial Number"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Свойства партии"
 
