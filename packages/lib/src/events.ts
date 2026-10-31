@@ -82,6 +82,8 @@ export type Events = {
         | { filename: string; content: string }
         | { filename: string; path: string }
       >;
+      // Extra mail headers (an invite's X-Entity-Ref-ID). Gmail cannot set them.
+      headers?: Record<string, string>;
       companyId: string;
       // A quote, order, invoice, purchase order or RFQ to a customer or
       // supplier. Every event follows the company's Email settings; on

@@ -59,6 +59,7 @@ import {
 } from "@carbon/utils";
 import { now, parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import { nanoid } from "nanoid";
 import { render } from "react-email";
 import type { z } from "zod";
 import { getAttribute } from "~/modules/people/people.service";
@@ -2360,6 +2361,8 @@ export async function sendInviteEmail(
     await trigger("send-email", {
       to: invite.email,
       subject: `You have been invited to join ${invite.companyName} on Carbon`,
+      // A unique id per invite, so mail clients never thread two invites together.
+      headers: { "X-Entity-Ref-ID": nanoid() },
       html: await render(email),
       text: await render(email, { plainText: true }),
       companyId: ctx.company.id
