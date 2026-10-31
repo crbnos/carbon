@@ -7024,8 +7024,10 @@ async function queueAssemblyAssets(input: {
     }
   }
   if (failed) {
+    // The apply took the plan, and the panel's next push starts a new review
+    // with nothing picked: the files must be picked again there.
     summary.errors.push(
-      "STEP models or drawings couldn't be queued. Push again to retry."
+      "STEP models or drawings couldn't be queued. Re-push the assembly and pick them again."
     );
     return;
   }
