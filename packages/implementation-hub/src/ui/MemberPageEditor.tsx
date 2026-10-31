@@ -63,7 +63,11 @@ import {
   CUSTOMIZATION_KINDS,
   CUSTOMIZATION_STATUSES
 } from "../content/customization";
-import { PAGE_CARD_KIND_LABEL } from "../content/page";
+import {
+  PAGE_CARD_KIND_LABEL,
+  PAGE_CARD_TYPE,
+  PAGE_CARD_TYPE_LABEL
+} from "../content/page";
 import {
   CUSTOMIZATION_KIND_KEYS,
   isCustomizationKind,
@@ -471,7 +475,7 @@ function EditCard({
       <CardHeader className="gap-2 pb-3">
         <div className="flex items-center justify-between gap-2">
           <span className="min-w-0 truncate text-xxs font-medium uppercase tracking-wide text-muted-foreground">
-            {i18n._(PAGE_CARD_KIND_LABEL[card.kind])}
+            {i18n._(PAGE_CARD_TYPE_LABEL[PAGE_CARD_TYPE[card.kind]])}
             {group ? ` · ${group}` : ""}
           </span>
           <div className="flex shrink-0 items-center gap-1">
@@ -787,7 +791,11 @@ function CardMenu({
   );
 }
 
-type AddKind = "item" | "custom" | PageRowCollection;
+// What staff can add: a card from the catalogue, a to-do of this page's own,
+// or a new company question, decision or customization. Objectives and new
+// setup, data and cutover items are not offered: a to-do covers them. Rows
+// of those kinds made before still show and edit.
+type AddKind = "item" | "custom" | "question" | "requirement" | "customization";
 
 // What a new card is, and the fields each kind asks for.
 function AddCardModal({
@@ -820,14 +828,10 @@ function AddCardModal({
 
   const kinds: { value: AddKind; label: string }[] = [
     { value: "item", label: t`Catalogue card` },
-    { value: "custom", label: t`Custom card` },
-    { value: "question", label: t`New open question` },
-    { value: "objective", label: t`New objective` },
-    { value: "customization", label: t`New customization` },
-    { value: "requirement", label: t`New requirement` },
-    { value: "setup", label: t`New setup item` },
-    { value: "data", label: t`New data item` },
-    { value: "golive", label: t`New cutover step` }
+    { value: "custom", label: t`To-do` },
+    { value: "question", label: t`Question` },
+    { value: "requirement", label: t`Decision` },
+    { value: "customization", label: t`Customization (Carbon builds it)` }
   ];
 
   // Hub items not on the page yet.
@@ -846,21 +850,14 @@ function AddCardModal({
   const titleLabel: Record<Exclude<AddKind, "item">, string> = {
     custom: t`Title`,
     question: t`Question`,
-    objective: t`Objective`,
-    customization: t`Customization`,
-    requirement: t`Requirement`,
-    setup: t`What to set up`,
-    data: t`What data`,
-    golive: t`Cutover step`
+    requirement: t`What to decide on`,
+    customization: t`Customization`
   };
   const detailLabel: Partial<Record<AddKind, string>> = {
-    custom: t`Text (optional)`,
-    objective: t`Details (optional)`,
-    customization: t`Details (optional)`,
-    setup: t`What it is`,
-    data: t`Where it lives today`
+    custom: t`Details (optional)`,
+    customization: t`Details (optional)`
   };
-  const takesLink = kind === "custom" || kind === "setup";
+  const takesLink = kind === "custom";
 
   const submit = () => {
     const where: PageTarget = newSection

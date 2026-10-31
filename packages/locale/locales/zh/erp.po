@@ -997,6 +997,9 @@ msgstr "{errors, plural, one {# 行需要修复} other {# 行需要修复}}"
 msgid "{errors} failed"
 msgstr "{errors} 失败"
 
+msgid "{estimateDays, plural, one {# day} other {# days}}"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 
@@ -9618,9 +9621,6 @@ msgstr "自定义附加项"
 msgid "Custom attributes you track against your people"
 msgstr "针对人员跟踪的自定义属性"
 
-msgid "Custom card"
-msgstr ""
-
 msgid "Custom color"
 msgstr "自定义颜色"
 
@@ -9911,6 +9911,9 @@ msgid "customers with contacts, locations, types, statuses, payment terms, curre
 msgstr ""
 
 msgid "Customization"
+msgstr ""
+
+msgid "Customization (Carbon builds it)"
 msgstr ""
 
 msgid "Customization Plan"
@@ -10204,6 +10207,9 @@ msgstr "决策备注"
 
 msgid "Declined"
 msgstr "已拒绝"
+msgid "Decision"
+msgstr ""
+
 msgid "Decision maker"
 msgstr ""
 
@@ -19693,15 +19699,6 @@ msgstr "新客户零件"
 msgid "New Customer Rental Rates"
 msgstr "新客户租赁费率"
 
-msgid "New customization"
-msgstr ""
-
-msgid "New cutover step"
-msgstr ""
-
-msgid "New data item"
-msgstr ""
-
 msgid "New Demand Forecast"
 msgstr "新需求预测"
 
@@ -19837,12 +19834,6 @@ msgstr "新里程碑"
 
 msgid "New Non Conformance Type"
 msgstr "新建不合格类型"
-
-msgid "New objective"
-msgstr ""
-
-msgid "New open question"
-msgstr ""
 
 msgid "New Owner"
 msgstr "新建负责人"
@@ -33688,6 +33679,8 @@ msgstr "要测试它是否是销售，<0>为协议设定固定期限</0>。"
 
 msgid "To the top level"
 msgstr "到顶层"
+msgid "To-do"
+msgstr ""
 
 msgid "To:"
 msgstr "至："
@@ -35888,6 +35881,9 @@ msgstr "此任务的含义"
 
 msgid "What this time entry counts as — Labor (operator time), Machine (run time), or Setup (changeover time); each rolls up under a different rate."
 msgstr "这个时间记录计为——人工(操作员时间)、机器(加工时间)或换型(换型时间)；每个都按不同费率累积。"
+
+msgid "What to decide on"
+msgstr ""
 
 msgid "What to set up"
 msgstr "要设置什么"

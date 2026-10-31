@@ -997,6 +997,9 @@ msgstr "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgid "{errors} failed"
 msgstr "{errors} failed"
 
+msgid "{estimateDays, plural, one {# day} other {# days}}"
+msgstr "{estimateDays, plural, one {# day} other {# days}}"
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 
@@ -9617,9 +9620,6 @@ msgstr "Custom add-ons"
 msgid "Custom attributes you track against your people"
 msgstr "Custom attributes you track against your people"
 
-msgid "Custom card"
-msgstr "Custom card"
-
 msgid "Custom color"
 msgstr "Custom color"
 
@@ -9912,6 +9912,9 @@ msgstr "customers with contacts, locations, types, statuses, payment terms, curr
 msgid "Customization"
 msgstr "Customization"
 
+msgid "Customization (Carbon builds it)"
+msgstr "Customization (Carbon builds it)"
+
 msgid "Customization Plan"
 msgstr "Customization Plan"
 
@@ -10203,6 +10206,9 @@ msgstr "Decision notes"
 
 msgid "Declined"
 msgstr "Declined"
+msgid "Decision"
+msgstr "Decision"
+
 msgid "Decision maker"
 msgstr "Decision maker"
 
@@ -19682,15 +19688,6 @@ msgstr "New Customer Part"
 msgid "New Customer Rental Rates"
 msgstr "New Customer Rental Rates"
 
-msgid "New customization"
-msgstr "New customization"
-
-msgid "New cutover step"
-msgstr "New cutover step"
-
-msgid "New data item"
-msgstr "New data item"
-
 msgid "New Demand Forecast"
 msgstr "New Demand Forecast"
 
@@ -19826,12 +19823,6 @@ msgstr "New Milestone"
 
 msgid "New Non Conformance Type"
 msgstr "New Non Conformance Type"
-
-msgid "New objective"
-msgstr "New objective"
-
-msgid "New open question"
-msgstr "New open question"
 
 msgid "New Owner"
 msgstr "New Owner"
@@ -33691,6 +33682,8 @@ msgstr "To test whether it is a sale, <0>give the agreement a fixed term</0>."
 
 msgid "To the top level"
 msgstr "To the top level"
+msgid "To-do"
+msgstr "To-do"
 
 msgid "To:"
 msgstr "To:"
@@ -35893,6 +35886,9 @@ msgstr "What this task means"
 
 msgid "What this time entry counts as — Labor (operator time), Machine (run time), or Setup (changeover time); each rolls up under a different rate."
 msgstr "What this time entry counts as — Labor (operator time), Machine (run time), or Setup (changeover time); each rolls up under a different rate."
+
+msgid "What to decide on"
+msgstr "What to decide on"
 
 msgid "What to set up"
 msgstr "What to set up"

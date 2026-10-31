@@ -997,6 +997,9 @@ msgstr "{errors, plural, one {# पंक्ति को ठीक करने
 msgid "{errors} failed"
 msgstr "{errors} विफल"
 
+msgid "{estimateDays, plural, one {# day} other {# days}}"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# पंक्ति बाहर रखी गई} other {# पंक्तियाँ बाहर रखी गईं}}"
 
@@ -9618,9 +9621,6 @@ msgstr "कस्टम ऐड-ऑन"
 msgid "Custom attributes you track against your people"
 msgstr "आपके लोगों के विरुद्ध आप जो कस्टम विशेषताएं ट्रैक करते हैं"
 
-msgid "Custom card"
-msgstr ""
-
 msgid "Custom color"
 msgstr "कस्टम रंग"
 
@@ -9911,6 +9911,9 @@ msgid "customers with contacts, locations, types, statuses, payment terms, curre
 msgstr ""
 
 msgid "Customization"
+msgstr ""
+
+msgid "Customization (Carbon builds it)"
 msgstr ""
 
 msgid "Customization Plan"
@@ -10204,6 +10207,9 @@ msgstr "निर्णय नोट्स"
 
 msgid "Declined"
 msgstr "अस्वीकृत"
+msgid "Decision"
+msgstr ""
+
 msgid "Decision maker"
 msgstr ""
 
@@ -19693,15 +19699,6 @@ msgstr "नया ग्राहक भाग"
 msgid "New Customer Rental Rates"
 msgstr "नई ग्राहक किराया दरें"
 
-msgid "New customization"
-msgstr ""
-
-msgid "New cutover step"
-msgstr ""
-
-msgid "New data item"
-msgstr ""
-
 msgid "New Demand Forecast"
 msgstr "नया मांग पूर्वानुमान"
 
@@ -19837,12 +19834,6 @@ msgstr "नया मील का पत्थर"
 
 msgid "New Non Conformance Type"
 msgstr "नई गैर-अनुरूपता प्रकार"
-
-msgid "New objective"
-msgstr ""
-
-msgid "New open question"
-msgstr ""
 
 msgid "New Owner"
 msgstr "नया स्वामी"
@@ -33688,6 +33679,8 @@ msgstr "यह परीक्षण करने के लिए कि क्
 
 msgid "To the top level"
 msgstr "शीर्ष स्तर तक"
+msgid "To-do"
+msgstr ""
 
 msgid "To:"
 msgstr "को:"
@@ -35888,6 +35881,9 @@ msgstr "इस कार्य का मतलब क्या है"
 
 msgid "What this time entry counts as — Labor (operator time), Machine (run time), or Setup (changeover time); each rolls up under a different rate."
 msgstr "यह समय प्रविष्टि कितनी गिनती करती है — श्रम (ऑपरेटर समय), मशीन (रन समय) या सेटअप (परिवर्तन समय); प्रत्येक एक अलग दर के तहत समेकित होता है।"
+
+msgid "What to decide on"
+msgstr ""
 
 msgid "What to set up"
 msgstr "सेटअप करने के लिए क्या"

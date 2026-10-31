@@ -997,6 +997,9 @@ msgstr "{errors, plural, one {# Zeile muss korrigiert werden} other {# Zeilen m�
 msgid "{errors} failed"
 msgstr "{errors} fehlgeschlagen"
 
+msgid "{estimateDays, plural, one {# day} other {# days}}"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# Zeile ausgeschlossen} other {# Zeilen ausgeschlossen}}"
 
@@ -9618,9 +9621,6 @@ msgstr "Benutzerdefinierte Zusatzoptionen"
 msgid "Custom attributes you track against your people"
 msgstr "Benutzerdefinierte Attribute für Ihr Personal"
 
-msgid "Custom card"
-msgstr ""
-
 msgid "Custom color"
 msgstr "Benutzerdefinierte Farbe"
 
@@ -9911,6 +9911,9 @@ msgid "customers with contacts, locations, types, statuses, payment terms, curre
 msgstr ""
 
 msgid "Customization"
+msgstr ""
+
+msgid "Customization (Carbon builds it)"
 msgstr ""
 
 msgid "Customization Plan"
@@ -10204,6 +10207,9 @@ msgstr "Entscheidungsnotizen"
 
 msgid "Declined"
 msgstr "Abgelehnt"
+msgid "Decision"
+msgstr ""
+
 msgid "Decision maker"
 msgstr ""
 
@@ -19693,15 +19699,6 @@ msgstr "Neuer Kundenteil"
 msgid "New Customer Rental Rates"
 msgstr "Neue Kundenmietsätze"
 
-msgid "New customization"
-msgstr ""
-
-msgid "New cutover step"
-msgstr ""
-
-msgid "New data item"
-msgstr ""
-
 msgid "New Demand Forecast"
 msgstr "Neue Bedarfsprognose"
 
@@ -19837,12 +19834,6 @@ msgstr "Neuer Meilenstein"
 
 msgid "New Non Conformance Type"
 msgstr "Neuer Nichtkonformitätstyp"
-
-msgid "New objective"
-msgstr ""
-
-msgid "New open question"
-msgstr ""
 
 msgid "New Owner"
 msgstr "Neuer Verantwortlicher"
@@ -33688,6 +33679,8 @@ msgstr "Um zu testen, ob es sich um einen Verkauf handelt, <0>geben Sie der Vere
 
 msgid "To the top level"
 msgstr "Zur obersten Ebene"
+msgid "To-do"
+msgstr ""
 
 msgid "To:"
 msgstr "An:"
@@ -35888,6 +35881,9 @@ msgstr "Was diese Aufgabe bedeutet"
 
 msgid "What this time entry counts as — Labor (operator time), Machine (run time), or Setup (changeover time); each rolls up under a different rate."
 msgstr "Wofür dieser Zeiteintrag zählt – Personal (Werkerzeit), Maschine (Bearbeitungszeit) oder Rüsten (Umrüstzeit); jede wird unter einer anderen Rate zusammengefasst."
+
+msgid "What to decide on"
+msgstr ""
 
 msgid "What to set up"
 msgstr "Was einzurichten ist"

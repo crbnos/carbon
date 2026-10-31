@@ -997,6 +997,9 @@ msgstr "{errors, plural, one {# wiersz wymaga naprawy} other {# wiersze wymagaj�
 msgid "{errors} failed"
 msgstr "{errors} nieudane"
 
+msgid "{estimateDays, plural, one {# day} other {# days}}"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# wiersz wyłączony} other {# wierszy wyłączonych}}"
 
@@ -9618,9 +9621,6 @@ msgstr "Dodatki niestandardowe"
 msgid "Custom attributes you track against your people"
 msgstr "Niestandardowe atrybuty, które śledzisz dla swoich pracowników"
 
-msgid "Custom card"
-msgstr ""
-
 msgid "Custom color"
 msgstr "Kolor niestandardowy"
 
@@ -9911,6 +9911,9 @@ msgid "customers with contacts, locations, types, statuses, payment terms, curre
 msgstr ""
 
 msgid "Customization"
+msgstr ""
+
+msgid "Customization (Carbon builds it)"
 msgstr ""
 
 msgid "Customization Plan"
@@ -10204,6 +10207,9 @@ msgstr "Notatki decyzji"
 
 msgid "Declined"
 msgstr "Odrzucono"
+msgid "Decision"
+msgstr ""
+
 msgid "Decision maker"
 msgstr ""
 
@@ -19693,15 +19699,6 @@ msgstr "Nowa część klienta"
 msgid "New Customer Rental Rates"
 msgstr "Nowe stawki wynajmu klienta"
 
-msgid "New customization"
-msgstr ""
-
-msgid "New cutover step"
-msgstr ""
-
-msgid "New data item"
-msgstr ""
-
 msgid "New Demand Forecast"
 msgstr "Nowa prognoza zapotrzebowania"
 
@@ -19837,12 +19834,6 @@ msgstr "Nowy kamień milowy"
 
 msgid "New Non Conformance Type"
 msgstr "Nowy typ niezgodności"
-
-msgid "New objective"
-msgstr ""
-
-msgid "New open question"
-msgstr ""
 
 msgid "New Owner"
 msgstr "Nowy Właściciel"
@@ -33688,6 +33679,8 @@ msgstr "Aby sprawdzić, czy jest to sprzedaż, <0>nadaj umowie ustalony okres</0
 
 msgid "To the top level"
 msgstr "Do najwyższego poziomu"
+msgid "To-do"
+msgstr ""
 
 msgid "To:"
 msgstr "Do:"
@@ -35888,6 +35881,9 @@ msgstr "Co to zadanie oznacza"
 
 msgid "What this time entry counts as — Labor (operator time), Machine (run time), or Setup (changeover time); each rolls up under a different rate."
 msgstr "Co ta wpis czasu reprezentuje — Robocizna (czas operatora), Maszyna (czas obróbki), czy Przezbrojenie (czas przezbrojenia); każda kumuluje się pod inną stawką."
+
+msgid "What to decide on"
+msgstr ""
 
 msgid "What to set up"
 msgstr "Co skonfigurować"

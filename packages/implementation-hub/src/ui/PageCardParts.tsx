@@ -46,14 +46,11 @@ export function CardStatus({
   const tick = card.tick;
   if (!tick || card.missing) return null;
 
+  // A decision is in or out of scope; everything else is to do or done.
   const labels =
     tick.meaning === "scope"
       ? { on: t`In scope`, off: t`Out of scope` }
-      : card.kind === "setup"
-        ? { on: t`Configured`, off: t`To do` }
-        : card.kind === "data"
-          ? { on: t`Validated`, off: t`To do` }
-          : { on: t`Done`, off: t`To do` };
+      : { on: t`Done`, off: t`To do` };
 
   return (
     <StatusToggle

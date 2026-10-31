@@ -997,6 +997,9 @@ msgstr "{errors, plural, one {# fila necesita corrección} other {# filas necesi
 msgid "{errors} failed"
 msgstr "{errors} falló"
 
+msgid "{estimateDays, plural, one {# day} other {# days}}"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# fila excluida} other {# filas excluidas}}"
 
@@ -9618,9 +9621,6 @@ msgstr "Complementos personalizados"
 msgid "Custom attributes you track against your people"
 msgstr "Atributos personalizados que realiza un seguimiento de su personal"
 
-msgid "Custom card"
-msgstr ""
-
 msgid "Custom color"
 msgstr "Color personalizado"
 
@@ -9911,6 +9911,9 @@ msgid "customers with contacts, locations, types, statuses, payment terms, curre
 msgstr ""
 
 msgid "Customization"
+msgstr ""
+
+msgid "Customization (Carbon builds it)"
 msgstr ""
 
 msgid "Customization Plan"
@@ -10204,6 +10207,9 @@ msgstr "Notas de decisión"
 
 msgid "Declined"
 msgstr "Rechazado"
+msgid "Decision"
+msgstr ""
+
 msgid "Decision maker"
 msgstr ""
 
@@ -19693,15 +19699,6 @@ msgstr "Nueva Parte de Cliente"
 msgid "New Customer Rental Rates"
 msgstr "Nuevas tasas de alquiler para clientes"
 
-msgid "New customization"
-msgstr ""
-
-msgid "New cutover step"
-msgstr ""
-
-msgid "New data item"
-msgstr ""
-
 msgid "New Demand Forecast"
 msgstr "Nuevo pronóstico de demanda"
 
@@ -19837,12 +19834,6 @@ msgstr "Nuevo hito"
 
 msgid "New Non Conformance Type"
 msgstr "Nuevo Tipo de No Conformidad"
-
-msgid "New objective"
-msgstr ""
-
-msgid "New open question"
-msgstr ""
 
 msgid "New Owner"
 msgstr "Nuevo Propietario"
@@ -33688,6 +33679,8 @@ msgstr "Para probar si es una venta, <0>dale al acuerdo un plazo fijo</0>."
 
 msgid "To the top level"
 msgstr "Al nivel superior"
+msgid "To-do"
+msgstr ""
 
 msgid "To:"
 msgstr "Para:"
@@ -35888,6 +35881,9 @@ msgstr "Qué significa esta tarea"
 
 msgid "What this time entry counts as — Labor (operator time), Machine (run time), or Setup (changeover time); each rolls up under a different rate."
 msgstr "Qué cuenta esta entrada de tiempo como — Mano de obra (tiempo del operario), Máquina (tiempo de ejecución) o Preparación (tiempo de cambio); cada una se acumula bajo una tasa diferente."
+
+msgid "What to decide on"
+msgstr ""
 
 msgid "What to set up"
 msgstr "Qué configurar"

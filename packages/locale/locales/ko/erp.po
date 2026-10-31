@@ -997,6 +997,9 @@ msgstr "{errors, plural, one {# 행이 수정 필요} other {# 행이 수정 필
 msgid "{errors} failed"
 msgstr "{errors} 실패"
 
+msgid "{estimateDays, plural, one {# day} other {# days}}"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 행 제외됨} other {# 행 제외됨}}"
 
@@ -9618,9 +9621,6 @@ msgstr "사용자 지정 추가 항목"
 msgid "Custom attributes you track against your people"
 msgstr "인원에 대해 추적하는 사용자 정의 속성"
 
-msgid "Custom card"
-msgstr ""
-
 msgid "Custom color"
 msgstr "사용자 정의 색상"
 
@@ -9911,6 +9911,9 @@ msgid "customers with contacts, locations, types, statuses, payment terms, curre
 msgstr ""
 
 msgid "Customization"
+msgstr ""
+
+msgid "Customization (Carbon builds it)"
 msgstr ""
 
 msgid "Customization Plan"
@@ -10204,6 +10207,9 @@ msgstr "의사결정 메모"
 
 msgid "Declined"
 msgstr "거절됨"
+msgid "Decision"
+msgstr ""
+
 msgid "Decision maker"
 msgstr ""
 
@@ -19693,15 +19699,6 @@ msgstr "신규 고객 부품"
 msgid "New Customer Rental Rates"
 msgstr "신규 고객 임차료"
 
-msgid "New customization"
-msgstr ""
-
-msgid "New cutover step"
-msgstr ""
-
-msgid "New data item"
-msgstr ""
-
 msgid "New Demand Forecast"
 msgstr "새 소요량 예측"
 
@@ -19837,12 +19834,6 @@ msgstr "새 마일스톤"
 
 msgid "New Non Conformance Type"
 msgstr "새 부적합 유형"
-
-msgid "New objective"
-msgstr ""
-
-msgid "New open question"
-msgstr ""
 
 msgid "New Owner"
 msgstr "신규 책임자"
@@ -33688,6 +33679,8 @@ msgstr "판매인지 테스트하려면 <0>계약에 고정 약관을 제공하�
 
 msgid "To the top level"
 msgstr "최상위 수준으로"
+msgid "To-do"
+msgstr ""
 
 msgid "To:"
 msgstr "대상:"
@@ -35888,6 +35881,9 @@ msgstr "이 작업의 의미"
 
 msgid "What this time entry counts as — Labor (operator time), Machine (run time), or Setup (changeover time); each rolls up under a different rate."
 msgstr "이 시간 항목이 다음 중 무엇으로 계산되는지 — 노무 (작업자 시간), 기계 (가공 시간), 또는 셋업 (교환 시간); 각각은 다른 요율로 누적됩니다."
+
+msgid "What to decide on"
+msgstr ""
 
 msgid "What to set up"
 msgstr "설정할 항목"

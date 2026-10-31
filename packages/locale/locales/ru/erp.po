@@ -997,6 +997,9 @@ msgstr "{errors, plural, one {# строка требует исправлени
 msgid "{errors} failed"
 msgstr "{errors} не удалось"
 
+msgid "{estimateDays, plural, one {# day} other {# days}}"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# строка исключена} other {# строк исключено}}"
 
@@ -9618,9 +9621,6 @@ msgstr "Пользовательские дополнения"
 msgid "Custom attributes you track against your people"
 msgstr "Пользовательские атрибуты, которые вы отслеживаете для своих сотрудников"
 
-msgid "Custom card"
-msgstr ""
-
 msgid "Custom color"
 msgstr "Пользовательский цвет"
 
@@ -9911,6 +9911,9 @@ msgid "customers with contacts, locations, types, statuses, payment terms, curre
 msgstr ""
 
 msgid "Customization"
+msgstr ""
+
+msgid "Customization (Carbon builds it)"
 msgstr ""
 
 msgid "Customization Plan"
@@ -10204,6 +10207,9 @@ msgstr "Примечания решения"
 
 msgid "Declined"
 msgstr "Отклонено"
+msgid "Decision"
+msgstr ""
+
 msgid "Decision maker"
 msgstr ""
 
@@ -19693,15 +19699,6 @@ msgstr "Новая деталь покупателя"
 msgid "New Customer Rental Rates"
 msgstr "Новые тарифы аренды для клиента"
 
-msgid "New customization"
-msgstr ""
-
-msgid "New cutover step"
-msgstr ""
-
-msgid "New data item"
-msgstr ""
-
 msgid "New Demand Forecast"
 msgstr "Новый прогноз потребности"
 
@@ -19837,12 +19834,6 @@ msgstr "Новая веха"
 
 msgid "New Non Conformance Type"
 msgstr "Новый тип несоответствия"
-
-msgid "New objective"
-msgstr ""
-
-msgid "New open question"
-msgstr ""
 
 msgid "New Owner"
 msgstr "Новый ответственный"
@@ -33688,6 +33679,8 @@ msgstr "Чтобы проверить, является ли это продаж
 
 msgid "To the top level"
 msgstr "На верхний уровень"
+msgid "To-do"
+msgstr ""
 
 msgid "To:"
 msgstr "По:"
@@ -35888,6 +35881,9 @@ msgstr "Что означает эта задача"
 
 msgid "What this time entry counts as — Labor (operator time), Machine (run time), or Setup (changeover time); each rolls up under a different rate."
 msgstr "Что считает эта запись времени — Труд (время оператора), Станок (время обработки) или Наладка (время переналадки); каждое значение накапливается с другой ставкой."
+
+msgid "What to decide on"
+msgstr ""
 
 msgid "What to set up"
 msgstr "Что настроить"

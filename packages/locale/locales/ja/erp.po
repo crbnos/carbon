@@ -997,6 +997,9 @@ msgstr "{errors, plural, one {修正が必要な行 # 件} other {修正が必�
 msgid "{errors} failed"
 msgstr "{errors} が失敗"
 
+msgid "{estimateDays, plural, one {# day} other {# days}}"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行除外} other {# 行除外}}"
 
@@ -9618,9 +9621,6 @@ msgstr "カスタム追加オプション"
 msgid "Custom attributes you track against your people"
 msgstr "貴社の人員に対して追跡するカスタム属性"
 
-msgid "Custom card"
-msgstr ""
-
 msgid "Custom color"
 msgstr "カスタムカラー"
 
@@ -9911,6 +9911,9 @@ msgid "customers with contacts, locations, types, statuses, payment terms, curre
 msgstr ""
 
 msgid "Customization"
+msgstr ""
+
+msgid "Customization (Carbon builds it)"
 msgstr ""
 
 msgid "Customization Plan"
@@ -10204,6 +10207,9 @@ msgstr "決定メモ"
 
 msgid "Declined"
 msgstr "却下済"
+msgid "Decision"
+msgstr ""
+
 msgid "Decision maker"
 msgstr ""
 
@@ -19693,15 +19699,6 @@ msgstr "新規得意先部品"
 msgid "New Customer Rental Rates"
 msgstr "新規顧客レンタル料金"
 
-msgid "New customization"
-msgstr ""
-
-msgid "New cutover step"
-msgstr ""
-
-msgid "New data item"
-msgstr ""
-
 msgid "New Demand Forecast"
 msgstr "新しい所要量予測"
 
@@ -19837,12 +19834,6 @@ msgstr "新しいマイルストーン"
 
 msgid "New Non Conformance Type"
 msgstr "新しい不適合タイプ"
-
-msgid "New objective"
-msgstr ""
-
-msgid "New open question"
-msgstr ""
 
 msgid "New Owner"
 msgstr "新規責任者"
@@ -33688,6 +33679,8 @@ msgstr "販売かどうかをテストするために、<0>アグリーメント
 
 msgid "To the top level"
 msgstr "トップレベルへ"
+msgid "To-do"
+msgstr ""
 
 msgid "To:"
 msgstr "宛:"
@@ -35888,6 +35881,9 @@ msgstr "このタスクの意味"
 
 msgid "What this time entry counts as — Labor (operator time), Machine (run time), or Setup (changeover time); each rolls up under a different rate."
 msgstr "このタイムエントリが計算される対象 — 労務（作業者時間）、機械（加工時間）、または段取り（段取り時間）。各々は異なるレート下にロールアップされます。"
+
+msgid "What to decide on"
+msgstr ""
 
 msgid "What to set up"
 msgstr "セットアップする内容"

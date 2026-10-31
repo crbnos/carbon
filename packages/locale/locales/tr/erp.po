@@ -997,6 +997,9 @@ msgstr "{errors, plural, one {# satır düzeltme gerekli} other {# satırlar dü
 msgid "{errors} failed"
 msgstr "{errors} başarısız"
 
+msgid "{estimateDays, plural, one {# day} other {# days}}"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç tutuldu}}"
 
@@ -9618,9 +9621,6 @@ msgstr "Özel ek hizmetler"
 msgid "Custom attributes you track against your people"
 msgstr "Personellerinize karşı izlediğiniz özel öznitelikler"
 
-msgid "Custom card"
-msgstr ""
-
 msgid "Custom color"
 msgstr "Özel renk"
 
@@ -9911,6 +9911,9 @@ msgid "customers with contacts, locations, types, statuses, payment terms, curre
 msgstr ""
 
 msgid "Customization"
+msgstr ""
+
+msgid "Customization (Carbon builds it)"
 msgstr ""
 
 msgid "Customization Plan"
@@ -10204,6 +10207,9 @@ msgstr "Karar notları"
 
 msgid "Declined"
 msgstr "Reddedildi"
+msgid "Decision"
+msgstr ""
+
 msgid "Decision maker"
 msgstr ""
 
@@ -19693,15 +19699,6 @@ msgstr "Yeni Müşteri Parçası"
 msgid "New Customer Rental Rates"
 msgstr "Yeni Müşteri Kira Oranları"
 
-msgid "New customization"
-msgstr ""
-
-msgid "New cutover step"
-msgstr ""
-
-msgid "New data item"
-msgstr ""
-
 msgid "New Demand Forecast"
 msgstr "Yeni Talep Tahmini"
 
@@ -19837,12 +19834,6 @@ msgstr "Yeni Kilometre Taşı"
 
 msgid "New Non Conformance Type"
 msgstr "Yeni Uygunsuzluk Türü"
-
-msgid "New objective"
-msgstr ""
-
-msgid "New open question"
-msgstr ""
 
 msgid "New Owner"
 msgstr "Yeni Sahip"
@@ -33688,6 +33679,8 @@ msgstr "Satış olup olmadığını test etmek için, <0>anlaşmaya sabit bir d�
 
 msgid "To the top level"
 msgstr "En üst seviyeye"
+msgid "To-do"
+msgstr ""
 
 msgid "To:"
 msgstr "Kime:"
@@ -35888,6 +35881,9 @@ msgstr "Bu görev ne anlama geliyor"
 
 msgid "What this time entry counts as — Labor (operator time), Machine (run time), or Setup (changeover time); each rolls up under a different rate."
 msgstr "Bu zaman girişinin neyi temsil ettiği — İşçilik (operatör zamanı), Makine (işleme süresi), veya Hazırlık (değişim zamanı); her biri farklı bir oran altında toplanır."
+
+msgid "What to decide on"
+msgstr ""
 
 msgid "What to set up"
 msgstr "Kurulacak şey"

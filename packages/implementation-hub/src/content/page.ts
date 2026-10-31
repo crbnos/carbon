@@ -39,6 +39,34 @@ export const PAGE_CARD_KIND_LABEL: Record<PageCardKind, MessageDescriptor> = {
   custom: msg`Task`
 };
 
+// What a card asks of its person, the only type a page shows: something to do,
+// a question to answer, a decision (in or out of scope), or something to
+// learn. The kinds above stay for staff, in the catalogue picker and its
+// export, where they tell apart cards with the same title.
+export type PageCardType = "todo" | "question" | "decision" | "learn";
+
+export const PAGE_CARD_TYPE: Record<PageCardKind, PageCardType> = {
+  setup: "todo",
+  task: "todo",
+  step: "todo",
+  data: "todo",
+  training: "learn",
+  cutover: "todo",
+  requirement: "decision",
+  objective: "todo",
+  question: "question",
+  customization: "todo",
+  priority: "question",
+  custom: "todo"
+};
+
+export const PAGE_CARD_TYPE_LABEL: Record<PageCardType, MessageDescriptor> = {
+  todo: msg`To-do`,
+  question: msg`Question`,
+  decision: msg`Decision`,
+  learn: msg`Learn`
+};
+
 // What an operational task waits for, named in the card's "Needs" line. The
 // counts are the ones in content/operational.ts readiness rules.
 export const READINESS_LABEL: Partial<
