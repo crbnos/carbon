@@ -2207,9 +2207,6 @@ msgstr "Część"
 msgid "A note for this person (optional)"
 msgstr ""
 
-msgid "A page needs one card. Remove page in the staff bar removes the whole page."
-msgstr ""
-
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "Część zawiera informacje o konkretnym artykule, który można kupić lub wyprodukować."
 
@@ -22415,6 +22412,8 @@ msgstr "Nic nie zostało jeszcze usunięte. Żądanie trafia do zatwierdzeń inn
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "Nic jeszcze nie zostało usunięte. Żądanie trafia do zatwierdzenia przez pozostałych administratorów, a zamówienie zostanie usunięte, gdy jeden z nich je zatwierdzi."
+msgid "Nothing in this section yet."
+msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Nic nie jest należne. Faktury są tworzone automatycznie, gdy okres staje się należny."

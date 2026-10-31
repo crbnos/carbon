@@ -50,9 +50,9 @@ export function CardStatus({
     tick.meaning === "scope"
       ? { on: t`In scope`, off: t`Out of scope` }
       : card.kind === "setup"
-        ? { on: t`Configured`, off: t`Not yet` }
+        ? { on: t`Configured`, off: t`To do` }
         : card.kind === "data"
-          ? { on: t`Validated`, off: t`Not yet` }
+          ? { on: t`Validated`, off: t`To do` }
           : { on: t`Done`, off: t`To do` };
 
   return (
@@ -81,5 +81,15 @@ export function PriorityProgress() {
         {answered} of {total} questions answered
       </Trans>
     </p>
+  );
+}
+
+// In place of the cards of a section that has none: the section stays on the
+// page until staff remove it.
+export function EmptySection() {
+  return (
+    <div className="rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+      <Trans>Nothing in this section yet.</Trans>
+    </div>
   );
 }

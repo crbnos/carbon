@@ -119,7 +119,8 @@ export const memberPageValidator = z.strictObject({
       z.strictObject({
         title: pageText.max(200),
         intro: pageText.max(2000).optional(),
-        cards: z.array(memberPageCardValidator).min(1)
+        // A section may have no cards: the page says it has none.
+        cards: z.array(memberPageCardValidator)
       })
     )
     .min(1)

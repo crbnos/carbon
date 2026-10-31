@@ -168,6 +168,13 @@ describe("splitPageQuestions", () => {
       "question:gone"
     ]);
   });
+
+  it("keeps a section the page left with no cards", () => {
+    const later: PageSection = { id: "section-2", title: "Later", cards: [] };
+    expect(
+      splitPageQuestions([...sections, later]).sections.map((s) => s.title)
+    ).toEqual(["Setup", "Later"]);
+  });
 });
 
 describe("answerQuestionPayload", () => {

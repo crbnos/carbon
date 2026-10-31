@@ -2207,9 +2207,6 @@ msgstr "Деталь"
 msgid "A note for this person (optional)"
 msgstr ""
 
-msgid "A page needs one card. Remove page in the staff bar removes the whole page."
-msgstr ""
-
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "Деталь содержит информацию о конкретном товаре, который можно приобрести или изготовить."
 
@@ -22415,6 +22412,8 @@ msgstr "Пока ничего не удалено. Запрос отправля
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "Пока ничего не удалено. Запрос отправляется на утверждение другим администраторам, и заказ будет удалён, когда один из них его утвердит."
+msgid "Nothing in this section yet."
+msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Ничего не требуется. Счета-фактуры создаются автоматически при наступлении периода."

@@ -2207,9 +2207,6 @@ msgstr "부품"
 msgid "A note for this person (optional)"
 msgstr ""
 
-msgid "A page needs one card. Remove page in the staff bar removes the whole page."
-msgstr ""
-
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "품목(Part)은 구매하거나 제조할 수 있는 특정 아이템에 대한 정보를 담고 있습니다."
 
@@ -22415,6 +22412,8 @@ msgstr "아직 아무것도 삭제되지 않습니다. 요청은 다른 관리�
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "아직 삭제되지 않았습니다. 요청은 다른 관리자의 승인 대기로 넘어가며, 관리자 중 한 명이 승인하면 주문이 삭제됩니다."
+msgid "Nothing in this section yet."
+msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "기한이 없습니다. 송장은 기간이 도래하면 자동으로 생성됩니다."

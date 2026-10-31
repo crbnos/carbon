@@ -246,6 +246,22 @@ describe("checkMemberPage", () => {
     ]);
   });
 
+  it("accepts a section with no cards", () => {
+    const result = checkMemberPage(
+      {
+        version: 1,
+        user: "alex@example.com",
+        sections: [
+          { title: "Now", cards: [{ item: "setup:locations" }] },
+          { title: "Later", cards: [] }
+        ]
+      },
+      items
+    );
+    expect(result.problems).toEqual([]);
+    expect(result.page?.sections[1]).toEqual({ title: "Later", cards: [] });
+  });
+
   it("refuses text that is not JSON", () => {
     const result = checkMemberPage("{ not json", items);
     expect(result.page).toBeNull();

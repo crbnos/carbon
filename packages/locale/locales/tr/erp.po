@@ -2207,9 +2207,6 @@ msgstr "Bir parça"
 msgid "A note for this person (optional)"
 msgstr ""
 
-msgid "A page needs one card. Remove page in the staff bar removes the whole page."
-msgstr ""
-
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "Bir parça, satın alınabilir veya üretilebilir belirli bir öğe hakkındaki bilgileri içerir."
 
@@ -22415,6 +22412,8 @@ msgstr "Henüz hiçbir şey silinmedi. İstek diğer Yöneticilerin onaylarına 
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "Henüz bir şey silinmedi. Talep diğer yöneticilerin onayına gider ve yöneticilerden biri onayladığında sipariş silinir."
+msgid "Nothing in this section yet."
+msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Ödenmesi gereken bir şey yok. Bir dönem ödeme süresine girdiğinde faturalar otomatik olarak oluşturulur."

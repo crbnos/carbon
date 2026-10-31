@@ -2207,9 +2207,6 @@ msgstr "一个零件"
 msgid "A note for this person (optional)"
 msgstr ""
 
-msgid "A page needs one card. Remove page in the staff bar removes the whole page."
-msgstr ""
-
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "零件包含可以购买或制造的特定项目的信息。"
 
@@ -22415,6 +22412,8 @@ msgstr "目前尚未删除任何内容。该请求将提交至其他管理员审
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "尚未删除。该请求将提交给其他管理员审批，待其中一位审批通过后即会删除该订单。"
+msgid "Nothing in this section yet."
+msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "当前没有应付款项。当到期期间来临时，发票会自动生成。"

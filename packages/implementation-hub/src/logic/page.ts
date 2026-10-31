@@ -633,8 +633,9 @@ export function resolveMemberPage(
 }
 
 // Pure: a page's questions come out of their sections into one list, in page
-// order, so they are answered in one place. A section left with no cards is
-// dropped. A question removed from the hub stays where the page put it.
+// order, so they are answered in one place. A section whose only cards were
+// questions is dropped; one the page left with no cards stays, and says so. A
+// question removed from the hub stays where the page put it.
 export function splitPageQuestions(sections: PageSection[]): {
   questions: PageCard[];
   sections: PageSection[];
@@ -648,7 +649,10 @@ export function splitPageQuestions(sections: PageSection[]): {
         ...section,
         cards: section.cards.filter((card) => !isQuestion(card))
       }))
-      .filter((section) => section.cards.length > 0)
+      .filter(
+        (section, s) =>
+          section.cards.length > 0 || sections[s]?.cards.length === 0
+      )
   };
 }
 
@@ -671,6 +675,17 @@ export function cardState(
   }
   const on = states.get(card.tick.itemKey) === card.tick.on;
   return { on, done: on };
+}
+
+// Pure: whether a due date means anything on the card. Only a card that can
+// be done can be late; training, a requirement and an item removed from the
+// hub take none, and a date a page file gives them is not shown.
+export function takesDueDate(
+  card: PageCard,
+  states: Map<string, string>,
+  rows: Map<string, ImplementationRowData>
+): boolean {
+  return cardState(card, states, rows).done !== null;
 }
 
 // Pure: how many of the page's cards are done, over the cards that can be.
