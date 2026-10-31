@@ -223,11 +223,9 @@ ALTER TABLE "inventoryCountLine"
   ADD COLUMN "foundDuringCount" BOOLEAN NOT NULL DEFAULT FALSE,
   ADD COLUMN "assignedReadableId" TEXT;
 
--- One line per unit per bin in a count.
-CREATE UNIQUE INDEX "inventoryCountLine_unit_key"
-  ON "inventoryCountLine" ("inventoryCountId", "storageUnitId", "trackedEntityId")
-  NULLS NOT DISTINCT
-  WHERE "trackedEntityId" IS NOT NULL;
+-- No unique index on (count, bin, unit): counts made before this can hold 2
+-- lines of one unit in one bin, and every writer locks the count first.
+-- (20261031050452 drops the index where an earlier deploy created it.)
 
 -- One line per new number per item in a count.
 CREATE UNIQUE INDEX "inventoryCountLine_newUnit_key"

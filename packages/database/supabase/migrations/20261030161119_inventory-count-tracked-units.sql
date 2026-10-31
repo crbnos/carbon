@@ -9,13 +9,6 @@ ALTER TABLE "inventoryCountLine"
   ADD COLUMN IF NOT EXISTS "foundDuringCount" BOOLEAN NOT NULL DEFAULT FALSE,
   ADD COLUMN IF NOT EXISTS "assignedReadableId" TEXT;
 
--- One line per unit per bin in a count. The snapshot already writes one line
--- per (item, bin, tracked entity), so existing counts satisfy it.
-CREATE UNIQUE INDEX IF NOT EXISTS "inventoryCountLine_unit_key"
-  ON "inventoryCountLine" ("inventoryCountId", "storageUnitId", "trackedEntityId")
-  NULLS NOT DISTINCT
-  WHERE "trackedEntityId" IS NOT NULL;
-
 -- One line per new serial or batch number per item and bin in a count. A new
 -- batch number can be found in 2 bins; the app keeps a new serial to one.
 CREATE UNIQUE INDEX IF NOT EXISTS "inventoryCountLine_newUnit_key"
