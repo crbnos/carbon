@@ -208,7 +208,7 @@ export const stateActionValidator = z.discriminatedUnion("intent", [
   z.object({ intent: z.literal("applyHandover") }),
   // Carbon staff load or replace a person's page (JSON-encoded MemberPage).
   z.object({ intent: z.literal("setMemberPage"), page: z.string().min(1) }),
-  // Carbon staff remove a person's page; that person then sees an empty hub.
+  // Carbon staff remove a person's page; that person then sees an empty page.
   z.object({
     intent: z.literal("deleteMemberPage"),
     userId: z.string().min(1)

@@ -30,7 +30,6 @@ import {
 import { useRealtimeTable } from "@carbon/query";
 import { RecordOutlet, useRouteData } from "@carbon/react";
 import { isInternalEmail, redirect } from "@carbon/utils";
-import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo } from "react";
 import { LuListChecks, LuSettings, LuUser } from "react-icons/lu";
@@ -44,11 +43,14 @@ import {
   useImplementationPreview
 } from "~/hooks/useImplementationPreview";
 import { useImplementationRealtime } from "~/hooks/useImplementationRealtime";
-import { usesPersonalPages } from "~/modules/shared/shared.models";
+import {
+  implementationHub2Name,
+  usesImplementationHub2
+} from "~/modules/shared/shared.models";
 import {
   getImplementationCounts,
   getImplementationSignals,
-  personalPagesEnabled
+  implementationHub2Enabled
 } from "~/modules/shared/shared.service";
 import { usePeople } from "~/stores";
 import type { RouteGroup } from "~/types";
@@ -150,18 +152,18 @@ const resolveVideoUrl = (videoKey: string): string | undefined => {
   return video?.academyUrl ?? video?.videoUrl;
 };
 
-// The hub's own navigation, beside every page under this layout: the pages a
-// person uses, and for Carbon staff the hub's settings. The priority set shows
-// to Carbon staff and the one person it is assigned to.
+// Implementation Hub 2.0's own navigation, beside every page under this
+// layout: the pages a person uses, and for Carbon staff its settings. The
+// priority set shows to Carbon staff and the one person it is assigned to.
 function ImplementationSidebar() {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const { isInternal } = useFlags();
   const answersPrioritySet =
     useRouteData<{ answersPrioritySet: boolean }>(path.to.implementation)
       ?.answersPrioritySet ?? false;
   const groups: RouteGroup[] = [
     {
-      name: t`Implementation`,
+      name: i18n._(implementationHub2Name),
       routes: [
         {
           // Staff view anyone's page here; everyone else sees their own.
@@ -200,7 +202,7 @@ function ImplementationSidebar() {
 }
 
 export const handle: Handle = {
-  breadcrumb: msg`Implementation`,
+  breadcrumb: implementationHub2Name,
   to: path.to.implementation,
   sidebar: ImplementationSidebar
 };
@@ -213,21 +215,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [hub, flagOn] = await Promise.all([
     getImplementationHub(client, companyId),
-    personalPagesEnabled(companyId)
+    implementationHub2Enabled(companyId)
   ]);
-  const personalPages = usesPersonalPages(hub.data, flagOn);
-  // Carbon staff reach the hub in every company, enrolled or not, and opening
-  // it creates nothing. The company's own people reach it only once the
-  // company is enrolled: enrolment is when the hub becomes visible to them.
+  const implementationHub2 = usesImplementationHub2(hub.data, flagOn);
+  // Carbon staff reach Implementation Hub 2.0 in every company, enrolled or
+  // not, and opening it creates nothing. The company's own people reach it
+  // only once the company is enrolled: enrolment is when the Implementation
+  // Hub becomes visible to them.
   const access = hubAccess(Boolean(hub.data), isInternalEmail(email));
   if (access === "none") {
     throw redirect(path.to.authenticatedRoot);
   }
 
   const isStaff = isInternalEmail(email);
-  // The company's own people use the layout their company chose. Carbon staff
-  // reach this one in any company, to load pages before a switch.
-  if (!isStaff && !personalPages) {
+  // The company's own people use the version their company is on. Carbon
+  // staff reach 2.0 in any company, to load pages before a switch.
+  if (!isStaff && !implementationHub2) {
     throw redirect(path.to.getStarted);
   }
   const [checkStates, fieldValues, rows, signals, counts, assignments, own] =
@@ -244,7 +247,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ]);
 
   return {
-    // An unenrolled hub shows the settings enrolment would create.
+    // An unenrolled company shows the settings enrolment would create.
     hub: hub.data
       ? {
           tier: hub.data.tier,
@@ -263,10 +266,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Staff previewing the customer's view (useImplementationPreview).
     previewAsCustomer:
       isStaff && isImplementationPreview(request.headers.get("cookie")),
-    // False while staff open the hub of a company not on Personal Pages: only
-    // pages and the priority set save until it is. `enrolled` and `flagOn`
-    // say why, for the staff notice.
-    personalPages,
+    // False while staff open Implementation Hub 2.0 for a company not on it:
+    // only pages and the priority set save until it is. `enrolled` and
+    // `flagOn` say why, for the staff notice.
+    implementationHub2,
     enrolled: Boolean(hub.data),
     flagOn,
     // Carbon staff, or the person the priority set is assigned to (its card

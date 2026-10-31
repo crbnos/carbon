@@ -5,13 +5,15 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { implementationLayoutValidator } from "~/modules/shared/shared.models";
+import { implementationHubVersionValidator } from "~/modules/shared/shared.models";
 
-// The hub Settings page's layout switch: Carbon staff who can update settings
-// choose which Implementation Hub layout the company uses.
+// The Implementation Hub Settings page's version switch: Carbon staff who can
+// update settings choose whether the company uses Implementation Hub 1.0 or 2.0.
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(implementationLayoutValidator).request(args);
+  const input = await validator(implementationHubVersionValidator).request(
+    args
+  );
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.shared.setImplementationLayout(input.data);
+  return api.shared.setImplementationHubVersion(input.data);
 }

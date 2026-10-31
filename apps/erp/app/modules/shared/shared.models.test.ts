@@ -18,7 +18,7 @@ import {
   optionalTiptapDoc,
   requiredTiptapDoc,
   toTiptapDoc,
-  usesPersonalPages
+  usesImplementationHub2
 } from "./shared.models";
 
 // Rich-text columns are `json` and must hold a tiptap document OBJECT. A JSON
@@ -410,20 +410,20 @@ describe("force delete", () => {
 });
 
 // Which Implementation Hub a company gets. Taking a company out of the flag
-// must put it back on the Company Plan hub, whatever layout was chosen.
-describe("usesPersonalPages", () => {
-  const personal = { layout: "Personal Pages" };
-  const companyPlan = { layout: "Company Plan" };
+// must put it back on Implementation Hub 1.0, whatever version was chosen.
+describe("usesImplementationHub2", () => {
+  const hub2 = { hubVersion: "2.0" };
+  const hub1 = { hubVersion: "1.0" };
 
-  it("gives Personal Pages only with the flag on and that layout chosen", () => {
-    expect(usesPersonalPages(personal, true)).toBe(true);
+  it("gives 2.0 only with the flag on and 2.0 chosen", () => {
+    expect(usesImplementationHub2(hub2, true)).toBe(true);
   });
 
   it.each([
-    ["flag off, Personal Pages chosen", personal, false],
-    ["flag on, Company Plan chosen", companyPlan, true],
+    ["flag off, 2.0 chosen", hub2, false],
+    ["flag on, 1.0 chosen", hub1, true],
     ["flag on, not enrolled", null, true]
-  ])("gives the Company Plan hub when %s", (_case, hub, enabled) => {
-    expect(usesPersonalPages(hub, enabled)).toBe(false);
+  ])("gives 1.0 when %s", (_case, hub, enabled) => {
+    expect(usesImplementationHub2(hub, enabled)).toBe(false);
   });
 });

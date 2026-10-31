@@ -291,7 +291,8 @@ export async function getSetupCounts(client: Client, companyId: string) {
 // with the item key the hub write tools take. `label` turns template messages
 // into text (the ERP passes its English catalog); `stepOrder` is the setup
 // order the onboarding playbook follows. `unavailable` lists every part that
-// could not be read, so a failed read is never mistaken for an empty hub.
+// could not be read, so a failed read is never mistaken for an empty
+// Implementation Hub.
 export async function getHubStatus(
   client: Client,
   companyId: string,
@@ -301,7 +302,9 @@ export async function getHubStatus(
     await Promise.all([
       client
         .from("implementationHub")
-        .select("tier, status, layout, templateVersion, exclusions, contacts")
+        .select(
+          "tier, status, hubVersion, templateVersion, exclusions, contacts"
+        )
         .eq("id", companyId)
         .maybeSingle(),
       getImplementationCheckStates(client, companyId),
@@ -349,7 +352,7 @@ export async function getHubStatus(
         enrolled: true,
         tier: hub.data.tier,
         status: hub.data.status,
-        layout: hub.data.layout,
+        hubVersion: hub.data.hubVersion,
         templateVersion: hub.data.templateVersion,
         contacts: hub.data.contacts,
         ...summarizeHubProgress(checkStates)

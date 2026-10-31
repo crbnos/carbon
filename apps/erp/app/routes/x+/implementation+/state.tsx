@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import {
-  changesCompanyPlanHub,
+  changesImplementationHub1,
   stateActionValidator
 } from "@carbon/implementation-hub";
 import {
@@ -18,16 +18,16 @@ import {
 import { isInternalEmail } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { usesPersonalPages } from "~/modules/shared/shared.models";
-import { personalPagesEnabled } from "~/modules/shared/shared.service";
+import { usesImplementationHub2 } from "~/modules/shared/shared.models";
+import { implementationHub2Enabled } from "~/modules/shared/shared.service";
 
-// Single action endpoint for every hub state mutation. The access rules live in
+// Single action endpoint for every Implementation Hub state mutation. The access rules live in
 // `applyHubMutation`, shared with the MCP hub tools: toggles, finishing and a
 // customer's own objectives are open to any company employee; tailoring
 // (fields, rows, tier, exclusions, contacts, verification) needs Carbon staff.
-// A company on the Company Plan hub shares these records with it, so until it
-// uses Personal Pages only its page files, assignments and priority set change
-// here.
+// A company on Implementation Hub 1.0 shares these records with it, so until
+// it uses Implementation Hub 2.0 only its page files, assignments and priority
+// set change here.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId, email } = await requirePermissions(
@@ -42,23 +42,26 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  if (changesCompanyPlanHub(validation.data.intent)) {
+  if (changesImplementationHub1(validation.data.intent)) {
     const [hub, flagOn] = await Promise.all([
       getImplementationHub(client, companyId),
-      personalPagesEnabled(companyId)
+      implementationHub2Enabled(companyId)
     ]);
     if (hub.error) {
       return data(
-        { success: false, message: "Failed to read the hub" },
-        await flash(request, error(hub.error, "Failed to read the hub"))
+        { success: false, message: "Failed to read the Implementation Hub" },
+        await flash(
+          request,
+          error(hub.error, "Failed to read the Implementation Hub")
+        )
       );
     }
-    if (!usesPersonalPages(hub.data, flagOn)) {
+    if (!usesImplementationHub2(hub.data, flagOn)) {
       const message = !flagOn
-        ? "The new Implementation hub is off for this company. Add the company to the implementation-hub-personal-pages flag first."
+        ? "Implementation Hub 2.0 is off for this company. Add the company to the implementation-hub-2 flag first."
         : hub.data
-          ? "This company uses the Company Plan hub. Switch it to Personal Pages in the hub's Settings first."
-          : "This company is not enrolled. Enroll it in the hub's Settings first.";
+          ? "This company uses Implementation Hub 1.0. Switch it to Implementation Hub 2.0 in the Implementation Hub Settings first."
+          : "This company is not enrolled. Enroll it in the Implementation Hub Settings first.";
       return data(
         { success: false, message },
         await flash(request, error(new Error("forbidden"), message))

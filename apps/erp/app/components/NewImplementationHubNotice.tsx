@@ -6,22 +6,22 @@ import { Alert, AlertDescription, AlertTitle, Button } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { LuRocket } from "react-icons/lu";
 import { Link } from "react-router";
-import { useUsesPersonalPages } from "~/hooks/useImplementationNavItem";
+import { useUsesImplementationHub2 } from "~/hooks/useImplementationNavItem";
 import { path } from "~/utils/path";
 
-// The Company Plan hub stays open to a company on Personal Pages (an old link,
-// a bookmark); this points its people to the hub they now use. Which hub the
-// company gets comes from the app shell, which reads the flag with the hub
-// row; the `hub` the Company Plan layout passes is the same row.
+// Implementation Hub 1.0 stays open to a company on Implementation Hub 2.0 (an
+// old link, a bookmark); this points its people to the version they now use.
+// Which version the company gets comes from the app shell, which reads the
+// flag with the hub row; the `hub` the 1.0 layout passes is the same row.
 export function NewImplementationHubNotice(_props: {
-  hub: { layout?: string | null } | null | undefined;
+  hub: { hubVersion?: string | null } | null | undefined;
 }) {
-  if (!useUsesPersonalPages()) return null;
+  if (!useUsesImplementationHub2()) return null;
   return (
     <Alert variant="info" className="mb-6">
       <LuRocket />
       <AlertTitle>
-        <Trans>Your company uses the new Implementation hub</Trans>
+        <Trans>Your company has a new Implementation Hub</Trans>
       </AlertTitle>
       <AlertDescription>
         <Trans>
@@ -31,7 +31,7 @@ export function NewImplementationHubNotice(_props: {
         <div className="mt-2">
           <Button asChild size="sm">
             <Link to={path.to.implementation}>
-              <Trans>Open Implementation</Trans>
+              <Trans>Open Implementation Hub</Trans>
             </Link>
           </Button>
         </div>

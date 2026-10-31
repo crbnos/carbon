@@ -1144,6 +1144,7 @@ msgstr "{name} kończy się {end} (było otwarte)"
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name} jest nieaktywna. Wybierz aktywną jednostkę magazynową."
 msgid "{name} has no hub page yet"
+msgid "{name} has no page yet"
 msgstr ""
 
 msgid "{name} needs {needed}, which is set by hand to a later category."
@@ -1383,7 +1384,7 @@ msgstr "{who} zarejestrował {quantity} na {element}"
 msgid "{who} reversed {amount} on {element}"
 msgstr "{warnings} wymaga następnych działań"
 
-msgid "{withoutPage, plural, one {# active person has no page yet and will see an empty hub until you load one.} other {# active people have no page yet and will see an empty hub until you load one.}}"
+msgid "{withoutPage, plural, one {# active person has no page yet and will see an empty page until you load one.} other {# active people have no page yet and will see an empty page until you load one.}}"
 msgstr ""
 
 msgid "{years}yr"
@@ -6857,6 +6858,9 @@ msgstr "Wypłacona gotówka: leasingi operacyjne"
 msgid "Catalogue"
 msgstr ""
 
+msgid "Catalogue card"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "Kategorie klasyfikujące sposób przechowywania zapasów"
 
@@ -7222,6 +7226,7 @@ msgstr "Wybierz klienta"
 msgid "Choose a labor category or an employee"
 msgstr "Wybierz kategorię pracy lub pracownika"
 msgid "Choose a hub item"
+msgid "Choose a catalogue card"
 msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
@@ -7232,7 +7237,7 @@ msgstr "Wybierz okres"
 msgid "Choose a person"
 msgstr ""
 
-msgid "Choose a person to see their hub page, or to set one up."
+msgid "Choose a person to see their page, or to set one up."
 msgstr ""
 
 msgid "Choose a PNG or JPG image"
@@ -13120,6 +13125,9 @@ msgstr "Każde aktywo potrzebuje wiersza płatności przed aktywacją."
 msgid "Every asset's payment rows are cut again from the payment terms. Rows you edited, added or deleted are replaced."
 msgstr "Wiersze płatności każdego aktywa są ponownie obliczane na podstawie warunków płatności. Wiersze, które edytowałeś, dodałeś lub usunąłeś, są zastępowane."
 
+msgid "Every catalogue card is on this page"
+msgstr ""
+
 msgid "Every change to an active lease, with the amounts before and after."
 msgstr "Każda zmiana w aktywnym leasingu z kwotami przed i po."
 
@@ -15643,12 +15651,6 @@ msgstr "Jak wyglądają Twoje oferty, zamówienia i faktury, gdy są wysyłane"
 msgid "How your team is organized into departments"
 msgstr "Jak twój zespół jest zorganizowany w działy"
 
-msgid "Hub item"
-msgstr ""
-
-msgid "Hub Settings"
-msgstr ""
-
 msgid "Humidity"
 msgstr "Wilgotność"
 
@@ -15789,6 +15791,21 @@ msgstr "Wdrożenie"
 
 msgid "Implementation Hub"
 msgstr "Centrum wdrożeniowe"
+
+msgid "Implementation Hub 1.0"
+msgstr ""
+
+msgid "Implementation Hub 2.0"
+msgstr ""
+
+msgid "Implementation Hub 2.0 is off for this company"
+msgstr ""
+
+msgid "Implementation Hub 2.0 is off for this company. Add it to the implementation-hub-2 flag in the CSA dashboard first."
+msgstr ""
+
+msgid "Implementation Hub Settings"
+msgstr ""
 
 msgid "Implementation Lead"
 msgstr "Lider Wdrożenia"
@@ -16955,16 +16972,16 @@ msgstr "Jego kwoty wracają do pozostałej do zafakturowania kwoty każdej Pozyc
 msgid "Its design may change before the change notice is released."
 msgstr "Jego projekt może się zmienić przed wydaniem zawiadomienia o zmianie."
 
-msgid "Its people do not see the hub yet. Pages and the priority set save here. Enroll it in Settings to save ticks, answers and company items."
+msgid "Its people do not see the Implementation Hub yet. Pages and the priority set save here. Enroll it in Settings to save ticks, answers and company items."
 msgstr ""
 
-msgid "Its people see the Company Plan hub while the new hub is off for this company. Their pages stay."
+msgid "Its people see Implementation Hub 1.0 while Implementation Hub 2.0 is off for this company. Their pages stay."
 msgstr ""
 
-msgid "Its people see the Company Plan hub, not these pages, until you switch."
+msgid "Its people see Implementation Hub 1.0, not these pages, until you switch."
 msgstr ""
 
-msgid "Its people see the page loaded for them in this hub."
+msgid "Its people see the page loaded for them in Implementation Hub 2.0."
 msgstr ""
 
 msgid "Its revenue goes back to what each line has left to recognize."
@@ -22083,7 +22100,7 @@ msgstr "Data otwarcia"
 msgid "Open Dispatches"
 msgstr "Otwarte zlecenia utrzymania ruchu"
 
-msgid "Open Implementation"
+msgid "Open Implementation Hub"
 msgstr ""
 
 msgid "Open in Carbon"
@@ -22783,10 +22800,10 @@ msgstr ""
 msgid "Pages"
 msgstr ""
 
-msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is in the implementation-hub-personal-pages flag and on Personal Pages."
+msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is in the implementation-hub-2 flag and on Implementation Hub 2.0."
 msgstr ""
 
-msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is switched to Personal Pages."
+msgid "Pages and the priority set save here. Ticks, answers and company items save once the company is switched to Implementation Hub 2.0."
 msgstr ""
 
 msgid "Paid Amount:"
@@ -30828,6 +30845,10 @@ msgstr "Zmień moduł"
 msgid "Switch project"
 msgstr "Zmień projekt"
 msgid "Switch to Company Plan"
+msgid "Switch to Implementation Hub 1.0"
+msgstr ""
+
+msgid "Switch to Implementation Hub 2.0"
 msgstr ""
 
 msgid "Switch to pan mode"
@@ -30835,9 +30856,6 @@ msgstr "Przełącz na tryb panoramy"
 
 msgid "Switch to PDF"
 msgstr "Przełącz na PDF"
-
-msgid "Switch to Personal Pages"
-msgstr ""
 
 msgid "Switch to select mode"
 msgstr "Przełącz na tryb wyboru"
@@ -31509,7 +31527,7 @@ msgstr ""
 msgid "The company already has a posted opening balance journal."
 msgstr "Firma ma już zaksięgowany dowód księgowy saldo otwarcia."
 
-msgid "The company chooses a layout when it is enrolled."
+msgid "The company gets a version when it is enrolled."
 msgstr ""
 
 msgid "The company has no account defaults."
@@ -31527,18 +31545,19 @@ msgstr "Nie można było zweryfikować połączenia"
 msgid "The connection was refused"
 msgstr "Połączenie zostało odrzucone"
 msgid "The company's people do not see the hub yet. Enrolling shows it to them, on Personal Pages, and emails the company's admins."
+msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 1.0, because Implementation Hub 2.0 is off for this company, and emails the company's admins."
 msgstr ""
 
-msgid "The company's people do not see the hub yet. Enrolling shows them the Company Plan hub, because the new hub is off for this company, and emails the company's admins."
+msgid "The company's people do not see the Implementation Hub yet. Enrolling shows them Implementation Hub 2.0 and emails the company's admins."
 msgstr ""
 
 msgid "The company's people see the Implementation Hub."
 msgstr ""
 
-msgid "The company's people will see the Company Plan hub again. Their pages stay, so you can switch back."
+msgid "The company's people will see Implementation Hub 1.0 again. Their pages stay, so you can switch back."
 msgstr ""
 
-msgid "The company's people will see the page loaded for them here instead of the Company Plan hub. Ticks, answers and rows carry over."
+msgid "The company's people will see the page loaded for them in Implementation Hub 2.0 instead of Implementation Hub 1.0. Ticks, answers and rows carry over."
 msgstr ""
 
 msgid "The contacts could not be loaded."
@@ -31937,7 +31956,7 @@ msgid "The item has no serial or batch tracking"
 msgstr "Artykuł nie ma śledzenia numeru seryjnego lub partii produkcyjnej"
 msgstr ""
 
-msgid "The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
+msgid "The item is deleted from the Implementation Hub and leaves this page. Other pages that show it will show it as removed until it is taken off them."
 msgstr ""
 
 msgid "The item's rental rate"
@@ -32154,12 +32173,6 @@ msgstr "Wynegocjowana cena za sztukę na tej pozycji; ikona śledzenia wbudowana
 
 msgid "The net investment is more than the fair value"
 msgstr "Inwestycja netto jest wyższa niż uczciwa wartość"
-
-msgid "The new hub is off for this company"
-msgstr ""
-
-msgid "The new hub is off for this company. Add it to the implementation-hub-personal-pages flag in the CSA dashboard first."
-msgstr ""
 
 msgid "The new version number of the document"
 msgstr "Nowy numer wersji dokumentu"
@@ -32506,7 +32519,7 @@ msgstr "Harmonogram używany do rozłożenia kosztu tego zasobu na jego okres u�
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "Harmonogram używa pierwszej poniższej reguły, która ma zastosowanie, a następnie odejmuje przestoje i obsadę."
 
-msgid "The section and its cards leave this page. Items on it stay in the hub and can be added again."
+msgid "The section and its cards leave this page. Items on it stay in the catalogue and can be added again."
 msgstr ""
 
 msgid "The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register."
@@ -32920,7 +32933,7 @@ msgstr "Nie znajdują się w Twoim planie kont, ale są używane w dokumentach l
 msgid "They have not accepted their invite yet. A page loaded now is waiting for them when they first sign in."
 msgstr ""
 
-msgid "They will see an empty hub until a new page is loaded. Ticks on hub items stay; ticks on custom cards come back if the same page is loaded again."
+msgid "They will see an empty page until a new page is loaded. Ticks on catalogue cards stay; ticks on custom cards come back if the same page is loaded again."
 msgstr ""
 
 msgid "this ability"
@@ -32982,7 +32995,7 @@ msgstr "To zawiadomienie o zmianie oczekuje na zatwierdzenie. Jego zmiany są za
 msgid "This company is not enrolled"
 msgstr ""
 
-msgid "This company uses the Company Plan hub"
+msgid "This company uses Implementation Hub 1.0"
 msgstr ""
 
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
@@ -33126,10 +33139,10 @@ msgstr "Ten artykuł nie ma tutaj jeszcze żadnych partii"
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Ten artykuł jest budowany za pośrednictwem konfiguratora i rozwiązuje jego komponenty na podstawie zamówienia; zlecenia produkcyjne dla niego dziedziczą BOM rozwiązywany przez konfigurator."
 
-msgid "This item was removed from the hub."
+msgid "This item was removed from the Implementation Hub."
 msgstr ""
 
-msgid "This item was removed from the hub. Remove it from the page to save other changes."
+msgid "This item was removed from the Implementation Hub. Remove it from the page to save other changes."
 msgstr ""
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
@@ -34612,7 +34625,7 @@ msgstr "Nieobsługiwany typ dokumentu źródłowego: {sourceDocument}"
 msgid "until {0}"
 msgstr "do {0}"
 
-msgid "Until one is loaded, they see an empty hub that asks them to contact their Carbon admin."
+msgid "Until one is loaded, they see an empty page that asks them to contact their Carbon admin."
 msgstr ""
 
 msgid "Untitled"
@@ -35822,6 +35835,7 @@ msgstr "Co ta operacja będzie księgować na kontach."
 msgid "What should the author change?"
 msgstr "Co powinien zmienić autor?"
 msgid "What sales learned before the deal closed. Apply it to fill the hub's pages; each answer is copied once."
+msgid "What sales learned before the deal closed. Apply it to fill the Implementation Hub's pages; each answer is copied once."
 msgstr ""
 
 msgid "What sales promised"
@@ -35891,7 +35905,7 @@ msgstr "Co zakładamy"
 msgid "What you need to do"
 msgstr "Co musisz zrobić"
 
-msgid "What you want Carbon to do for you. Tie an objective to a real event, like your first purchase order, and the hub shows when it happens."
+msgid "What you want Carbon to do for you. Tie an objective to a real event, like your first purchase order, and the Implementation Hub shows when it happens."
 msgstr ""
 
 msgid "What's in a backup"
@@ -36728,8 +36742,10 @@ msgstr "Twoja firma"
 
 msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr "Twoja firma wymaga podpisu do zatwierdzenia zamówień zakupu. Dodaj jeden do swojego profilu, a następnie zatwierdź zamówienie. Drukuje się na zamówieniu zakupu, które zatwierdzasz."
+msgid "Your company has a new Implementation Hub"
+msgstr ""
 
-msgid "Your company uses the new Implementation hub"
+msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
 msgstr ""
 
 msgid "Your Console PIN"

@@ -62,7 +62,7 @@ import {
 } from "./imports.models";
 import {
   assignableTables,
-  implementationLayoutValidator,
+  implementationHubVersionValidator,
   noteFields,
   noteTables
 } from "./shared.models";
@@ -439,7 +439,8 @@ export const enrollImplementationHub = defineServiceFn({
  * What `enrollImplementationHub` does, for Carbon staff (an internal email):
  * they may enroll any company they belong to, settings permission or not,
  * since they open an unenrolled hub to set it up. Anyone else is refused.
- * The company starts on Personal Pages, and the email links to that hub.
+ * The company starts on Implementation Hub 2.0 when the flag is on for it,
+ * and the email links there.
  */
 export const enrollImplementationHubAsStaff = defineServiceFn({
   input: z.object({}),
@@ -450,7 +451,7 @@ export const enrollImplementationHubAsStaff = defineServiceFn({
     if (!(await service.isInternalCaller(ctx))) {
       return ctx.error(
         "forbidden",
-        "Only Carbon staff can enroll a company from the hub"
+        "Only Carbon staff can enroll a company from Implementation Hub 2.0"
       );
     }
     const serviceRole = ctx.asSystem.supabase;
@@ -468,23 +469,23 @@ export const enrollImplementationHubAsStaff = defineServiceFn({
       return ctx.error("internal", "Failed to enroll company", enrolled.error);
     }
 
-    // A company the Personal Pages flag is on for starts on that hub, and the
-    // admins' email links there. Any other company starts on the Company Plan
-    // hub, as self-serve enrolment does.
-    if (!(await service.personalPagesEnabled(companyId))) {
+    // A company the implementation-hub-2 flag is on for starts on
+    // Implementation Hub 2.0, and the admins' email links there. Any other
+    // company starts on Implementation Hub 1.0, as self-serve enrolment does.
+    if (!(await service.implementationHub2Enabled(companyId))) {
       await service.notifyImplementationHubAdmins(ctx);
       return { enrolled: true };
     }
-    const layout = await service.setImplementationLayout(serviceRole, {
+    const version = await service.setImplementationHubVersion(serviceRole, {
       companyId,
-      layout: "Personal Pages",
+      hubVersion: "2.0",
       userId: ctx.auditUserId
     });
-    if (layout.error) {
+    if (version.error) {
       return ctx.error(
         "internal",
-        "Failed to set the hub layout",
-        layout.error
+        "Failed to set the Implementation Hub version",
+        version.error
       );
     }
 
@@ -494,56 +495,56 @@ export const enrollImplementationHubAsStaff = defineServiceFn({
 });
 
 /**
- * Choose the company's Implementation Hub layout.
+ * Choose the company's Implementation Hub version.
  *
  * @remarks
- * Company Plan is the hub's pages and sidebar; Personal Pages is one page per
- * person. Both layouts read the same hub records, so a switch moves and loses
- * nothing. Only Carbon staff (an internal email) who can update settings
- * choose it, and only for an enrolled company.
+ * Implementation Hub 1.0 is the hub's pages and sidebar; Implementation Hub
+ * 2.0 is one page per person. Both versions read the same hub records, so a
+ * switch moves and loses nothing. Only Carbon staff (an internal email) who
+ * can update settings choose it, and only for an enrolled company.
  */
-export const setImplementationLayout = defineServiceFn({
-  input: implementationLayoutValidator,
+export const setImplementationHubVersion = defineServiceFn({
+  input: implementationHubVersionValidator,
   permission: { update: "settings" },
 
   async run(ctx, input) {
     if (!(await service.isInternalCaller(ctx))) {
       return ctx.error(
         "forbidden",
-        "Only Carbon staff can change the Implementation Hub layout"
+        "Only Carbon staff can change the Implementation Hub version"
       );
     }
     if (
-      input.layout === "Personal Pages" &&
-      !(await service.personalPagesEnabled(ctx.company.id))
+      input.hubVersion === "2.0" &&
+      !(await service.implementationHub2Enabled(ctx.company.id))
     ) {
       return ctx.error(
         "forbidden",
-        "The new Implementation hub is off for this company. Add the company to the implementation-hub-personal-pages flag first."
+        "Implementation Hub 2.0 is off for this company. Add the company to the implementation-hub-2 flag first."
       );
     }
-    const result = await service.setImplementationLayout(
+    const result = await service.setImplementationHubVersion(
       ctx.asSystem.supabase,
       {
         companyId: ctx.company.id,
-        layout: input.layout,
+        hubVersion: input.hubVersion,
         userId: ctx.auditUserId
       }
     );
     if (result.error) {
       return ctx.error(
         "internal",
-        "Failed to change the hub layout",
+        "Failed to change the Implementation Hub version",
         result.error
       );
     }
     if (!result.data) {
       return ctx.error(
         "notFound",
-        "Enroll the company in the Implementation Hub before choosing its layout"
+        "Enroll the company in the Implementation Hub before choosing its version"
       );
     }
-    return { layout: result.data.layout };
+    return { hubVersion: result.data.hubVersion };
   }
 });
 /**

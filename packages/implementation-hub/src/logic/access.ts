@@ -38,15 +38,17 @@ export const UNENROLLED_HUB: {
   contacts: {}
 };
 
-// The hub writes that touch only Personal Pages records: page files, their
+// The writes that touch only Implementation Hub 2.0 records: page files, their
 // assignments and the priority set's own field values. Every other write
-// changes records the Company Plan hub also reads (ticks, fill-in fields, rows,
-// the hub row), so it is refused until the company uses Personal Pages, and a
-// company on Company Plan keeps exactly the hub it had.
-const PERSONAL_PAGES_ONLY_INTENTS: ReadonlySet<StateAction["intent"]> = new Set<
+// changes records Implementation Hub 1.0 also reads (ticks, fill-in fields,
+// rows, the hub row), so it is refused until the company uses 2.0, and a
+// company on 1.0 keeps exactly the Implementation Hub it had.
+const HUB_2_ONLY_INTENTS: ReadonlySet<StateAction["intent"]> = new Set<
   StateAction["intent"]
 >(["setMemberPage", "deleteMemberPage", "setAssignee", "setPriority"]);
 
-export function changesCompanyPlanHub(intent: StateAction["intent"]): boolean {
-  return !PERSONAL_PAGES_ONLY_INTENTS.has(intent);
+export function changesImplementationHub1(
+  intent: StateAction["intent"]
+): boolean {
+  return !HUB_2_ONLY_INTENTS.has(intent);
 }

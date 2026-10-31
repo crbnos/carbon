@@ -274,7 +274,7 @@ function PageCardView({
         <CardContent className="flex flex-1 flex-col gap-3 text-sm">
           {card.missing ? (
             <p className="text-xs text-muted-foreground">
-              <Trans>This item was removed from the hub.</Trans>
+              <Trans>This item was removed from the Implementation Hub.</Trans>
             </p>
           ) : null}
           {serves ? (

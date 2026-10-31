@@ -96,12 +96,12 @@ import {
   employeeCompaniesOf,
   getEmployeeCompanies
 } from "~/modules/settings/settings.service";
-import { usesPersonalPages } from "~/modules/shared/shared.models";
+import { usesImplementationHub2 } from "~/modules/shared/shared.models";
 import {
   getAppShell,
   getCustomFieldsSchemas,
   getImplementationSignals,
-  personalPagesEnabled
+  implementationHub2Enabled
 } from "~/modules/shared/shared.service";
 import AccountSettings from "~/modules/users/ui/AccountSettings";
 import {
@@ -175,23 +175,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // The user's and the company's rows, in one round trip. Started here so the
   // hub's signal probes can chain off it and overlap the fan-out below.
   const shellPromise = getAppShell(client, companyId, userId);
-  // Whether the Personal Pages hub is on for the company: with the hub row,
-  // it decides which hub the nav item and the home card point to.
-  const personalPagesPromise = personalPagesEnabled(companyId);
+  // Whether Implementation Hub 2.0 is on for the company: with the hub row, it
+  // decides which version the nav item and the home card point to.
+  const implementationHub2Promise = implementationHub2Enabled(companyId);
 
   // Only probe product signals when the company is actually enrolled, so the
   // home card + nav badge count gates the same way the hub page does.
   const implementationSignalsPromise = Promise.all([
     shellPromise,
-    personalPagesPromise
-  ]).then(([{ data }, personalPages]) => {
+    implementationHub2Promise
+  ]).then(([{ data }, hub2Enabled]) => {
     const hub = data?.implementationHub;
     // A finished hub shows no badge and no card, so it needs no signals; nor
-    // does a Personal Pages hub, which shows neither.
+    // does Implementation Hub 2.0, which shows neither.
     return hub &&
       hub.status !== "complete" &&
       hub.status !== "archived" &&
-      !usesPersonalPages(hub, personalPages)
+      !usesImplementationHub2(hub, hub2Enabled)
       ? getImplementationSignals(client, companyId)
       : null;
   });
@@ -238,7 +238,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     customFields,
     claims,
     itarCertification,
-    implementationPersonalPages
+    implementationHub2Flag
   ] = await Promise.all([
     shellPromise,
     getStripeCustomerByCompanyId(companyId, userId),
@@ -246,7 +246,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getCustomFieldsSchemas(client, { companyId }),
     getUserClaims(userId, companyId),
     itarCertificationPromise,
-    personalPagesPromise
+    implementationHub2Promise
   ]);
 
   // The same shapes the nine separate reads returned, so what follows reads as
@@ -401,9 +401,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     savedViews: savedViews.data ?? [],
     printerRoutes: printerRoutes.data ?? [],
     implementationHub: shell.data?.implementationHub ?? null,
-    // The `implementation-hub-personal-pages` flag for the company, read with
-    // the hub row by `useImplementationNavItem` (`usesPersonalPages`).
-    implementationPersonalPages,
+    // The `implementation-hub-2` flag for the company, read with the hub row
+    // by `useImplementationNavItem` (`usesImplementationHub2`).
+    implementationHub2Enabled: implementationHub2Flag,
     implementationProgress,
     changelog,
     itarCertification: {

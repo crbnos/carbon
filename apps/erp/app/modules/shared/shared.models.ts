@@ -545,43 +545,44 @@ export type SupplierPartPricing = {
 };
 
 /**
- * The Implementation Hub layouts a company can use: the hub's pages and sidebar
- * (Company Plan) or one page per person (Personal Pages).
+ * The Implementation Hub versions a company can use: 1.0 is the hub's pages
+ * and sidebar (/x/get-started), 2.0 is one page per person (/x/implementation).
  */
-export const implementationLayouts = [
-  "Company Plan",
-  "Personal Pages"
-] as const satisfies readonly Database["public"]["Enums"]["implementationLayout"][];
+export const implementationHubVersions = [
+  "1.0",
+  "2.0"
+] as const satisfies readonly Database["public"]["Enums"]["implementationHubVersion"][];
 
-export type ImplementationLayout = (typeof implementationLayouts)[number];
+export type ImplementationHubVersion =
+  (typeof implementationHubVersions)[number];
 
-export const implementationLayoutValidator = z.object({
-  layout: z.enum(implementationLayouts)
+export const implementationHubVersionValidator = z.object({
+  hubVersion: z.enum(implementationHubVersions)
 });
 
 /**
- * The flag that turns the Personal Pages hub on for a company. Read on the
- * server with the company alone (`personalPagesEnabled`, shared.service).
+ * The flag that turns Implementation Hub 2.0 on for a company. Read on the
+ * server with the company alone (`implementationHub2Enabled`, shared.service).
  */
-export const PERSONAL_PAGES_FLAG =
-  "implementation-hub-personal-pages" satisfies FlagKey;
+export const IMPLEMENTATION_HUB_2_FLAG =
+  "implementation-hub-2" satisfies FlagKey;
 
 /**
- * Whether a company gets the Personal Pages hub: the flag is on for it and its
- * hub's layout is Personal Pages. Every check that sends a company to one hub
- * or the other goes through here. Anything else gets the Company Plan hub,
- * exactly as before the layouts existed, so taking a company out of the flag
- * puts it back on that hub with its pages kept.
+ * Whether a company gets Implementation Hub 2.0: the flag is on for it and its
+ * hub's version is 2.0. Every check that sends a company to one version or the
+ * other goes through here. Anything else gets Implementation Hub 1.0, exactly
+ * as before 2.0 existed, so taking a company out of the flag puts it back on
+ * 1.0 with its pages kept.
  */
-export function usesPersonalPages(
-  hub: { layout?: string | null } | null | undefined,
+export function usesImplementationHub2(
+  hub: { hubVersion?: string | null } | null | undefined,
   enabled: boolean
 ): boolean {
-  return enabled && hub?.layout === "Personal Pages";
+  return enabled && hub?.hubVersion === "2.0";
 }
 
-// The Personal Pages hub's one name: nav, breadcrumb and title.
-export const personalPagesHubName = msg`Implementation`;
+// Implementation Hub 2.0's one name for its people: nav, breadcrumb and title.
+export const implementationHub2Name = msg`Implementation Hub`;
 
 export type NoteField = "internalNotes" | "externalNotes" | "notes";
 type PublicTables = Database["public"]["Tables"];

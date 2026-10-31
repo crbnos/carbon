@@ -4,7 +4,7 @@
 
 // A person's page as Carbon staff edit it: every section and card in place,
 // questions included, with each change saved as it is made. Text is saved when
-// its field loses focus, as on the Company Plan hub. A change to the page saves
+// its field loses focus, as on Implementation Hub 1.0. A change to the page saves
 // the whole page (`PageEditor.save`); a change to a company item (its title, a
 // question's options, a customization's status, type of work, estimate and the
 // requirement it serves) updates the item, which every page that shows it
@@ -315,7 +315,7 @@ export function MemberPageEditor({
       {removingSection !== null && page.sections[removingSection] ? (
         <ConfirmModal
           title={t`Remove ${page.sections[removingSection]?.title ?? ""}`}
-          text={t`The section and its cards leave this page. Items on it stay in the hub and can be added again.`}
+          text={t`The section and its cards leave this page. Items on it stay in the catalogue and can be added again.`}
           confirm={t`Remove`}
           onConfirm={() => {
             save(removeSection(page, removingSection));
@@ -509,8 +509,8 @@ function EditCard({
         {card.missing ? (
           <p className="text-xs text-muted-foreground">
             <Trans>
-              This item was removed from the hub. Remove it from the page to
-              save other changes.
+              This item was removed from the Implementation Hub. Remove it from
+              the page to save other changes.
             </Trans>
           </p>
         ) : null}
@@ -675,7 +675,7 @@ function EditCard({
       {deleting && row ? (
         <ConfirmModal
           title={t`Delete ${titleValue || text(card.title) || ""}`}
-          text={t`The item is deleted from the hub and leaves this page. Other pages that show it will show it as removed until it is taken off them.`}
+          text={t`The item is deleted from the Implementation Hub and leaves this page. Other pages that show it will show it as removed until it is taken off them.`}
           confirm={t`Delete`}
           onConfirm={() => {
             // Off the page and out of the hub together: the page saved
@@ -794,7 +794,7 @@ function AddCardModal({
     value === undefined || typeof value === "string" ? value : i18n._(value);
 
   const kinds: { value: AddKind; label: string }[] = [
-    { value: "item", label: t`Hub item` },
+    { value: "item", label: t`Catalogue card` },
     { value: "custom", label: t`Custom card` },
     { value: "question", label: t`New open question` },
     { value: "objective", label: t`New objective` },
@@ -848,7 +848,7 @@ function AddCardModal({
     if (kind === "item") {
       const next = item ? placeCard(page, { item }, where) : null;
       if (!next) {
-        setError(t`Choose a hub item`);
+        setError(t`Choose a catalogue card`);
         return;
       }
       editor.save(next);
@@ -955,12 +955,12 @@ function AddCardModal({
               </Select>
             </Labelled>
             {kind === "item" ? (
-              <Labelled label={t`Hub item`}>
+              <Labelled label={t`Catalogue card`}>
                 <Combobox
                   value={item}
                   options={itemOptions}
-                  placeholder={t`Choose a hub item`}
-                  emptyMessage={t`Every hub item is on this page`}
+                  placeholder={t`Choose a catalogue card`}
+                  emptyMessage={t`Every catalogue card is on this page`}
                   onChange={(value) => {
                     setItem(value);
                     setError(null);

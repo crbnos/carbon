@@ -220,12 +220,12 @@ import type { CustomFieldsTableType } from "../settings/types";
 import { importPayrollTotals } from "./payroll-total-import";
 import {
   type assignableTables,
-  type ImplementationLayout,
+  IMPLEMENTATION_HUB_2_FLAG,
+  type ImplementationHubVersion,
   methodItemType,
   type NoteField,
   type NoteTable,
   operationTypes,
-  PERSONAL_PAGES_FLAG,
   type standardFactorType,
   toTiptapDoc
 } from "./shared.models";
@@ -1764,7 +1764,7 @@ const implementationCountsKey = (companyId: string) =>
 /**
  * The hub's setup counts, cached for a few seconds per company.
  *
- * The hub layout loads these on every hub page and on every realtime
+ * Both Implementation Hub versions load these on every page and on every realtime
  * revalidation — two dozen head counts each time. Several revalidations
  * arrive together when someone ticks a batch of rows, so a short cache turns
  * that burst into one round of queries. A failed count stays null and is not
@@ -1986,37 +1986,41 @@ export const normalizeLookupName = (value: string) =>
   value.toLowerCase().trim();
 
 /**
- * Whether the Personal Pages hub is turned on for the company (the
- * `implementation-hub-personal-pages` flag). Read with the company alone, so
- * everyone in a company gets the same hub.
+ * Whether Implementation Hub 2.0 is turned on for the company (the
+ * `implementation-hub-2` flag). Read with the company alone, so everyone in a
+ * company gets the same Implementation Hub.
  */
-export function personalPagesEnabled(companyId: string): Promise<boolean> {
-  return flags.bool(PERSONAL_PAGES_FLAG, { companyId });
+export function implementationHub2Enabled(companyId: string): Promise<boolean> {
+  return flags.bool(IMPLEMENTATION_HUB_2_FLAG, { companyId });
 }
 
 /**
- * Set the company's Implementation Hub layout. Null data when the company is
- * not enrolled: a layout belongs to the hub row.
+ * Set the company's Implementation Hub version. Null data when the company is
+ * not enrolled: the version belongs to the hub row.
  */
-export async function setImplementationLayout(
+export async function setImplementationHubVersion(
   client: SupabaseClient<Database>,
-  args: { companyId: string; layout: ImplementationLayout; userId: string }
+  args: {
+    companyId: string;
+    hubVersion: ImplementationHubVersion;
+    userId: string;
+  }
 ) {
   return client
     .from("implementationHub")
     .update({
-      layout: args.layout,
+      hubVersion: args.hubVersion,
       updatedBy: args.userId,
       updatedAt: datetime.timestamp()
     })
     .eq("id", args.companyId)
-    .select("id, layout")
+    .select("id, hubVersion")
     .maybeSingle();
 }
 
 /**
  * Email the company's active admins that their hub is ready, linking to
- * `hubPath` (the Company Plan hub unless given). Never throws.
+ * `hubPath` (Implementation Hub 1.0 unless given). Never throws.
  */
 export async function notifyImplementationHubAdmins(
   ctx: ServiceContext,

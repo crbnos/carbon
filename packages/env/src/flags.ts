@@ -21,11 +21,11 @@ export const FLAGS = {
   // Install of an `internalOnly` integration on Carbon Cloud. Carbon staff
   // keep access without it. Rules name the users and their company.
   "integration-early-access": { default: false, browser: false },
-  // The Personal Pages Implementation Hub, for a company whose hub layout is
-  // Personal Pages. Read with the company alone, so everyone in a company
-  // gets the same hub: rules name companies. The ERP sends its value to the
-  // browser with the hub row, not through `browser`.
-  "implementation-hub-personal-pages": { default: false, browser: false }
+  // Implementation Hub 2.0, for a company whose hub version is 2.0. Read with
+  // the company alone, so everyone in a company gets the same Implementation
+  // Hub: rules name companies. The ERP sends its value to the browser with the
+  // hub row, not through `browser`.
+  "implementation-hub-2": { default: false, browser: false }
 } as const satisfies Record<string, FlagDefinition>;
 
 type Flags = typeof FLAGS;

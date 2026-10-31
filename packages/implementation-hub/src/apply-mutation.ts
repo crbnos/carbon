@@ -137,8 +137,7 @@ export function refusalFor(
       // added, gate per the field's ownership instead of isInternal.
       return "Only Carbon staff can edit this field";
     case "addRow":
-      if (action.place)
-        return "Only Carbon staff can set up a person's hub page";
+      if (action.place) return "Only Carbon staff can set up a person's page";
       return CUSTOMER_COLLECTIONS.has(action.collection)
         ? null
         : "Only Carbon staff can add rows";
@@ -167,7 +166,7 @@ export function refusalFor(
       return "Only Carbon staff can apply the sales handover";
     case "setMemberPage":
     case "deleteMemberPage":
-      return "Only Carbon staff can set up a person's hub page";
+      return "Only Carbon staff can set up a person's page";
     case "setPriority":
       // Anyone in the company answers the questionnaire; setting a feature by
       // hand is Carbon staff work, like a person's page.
