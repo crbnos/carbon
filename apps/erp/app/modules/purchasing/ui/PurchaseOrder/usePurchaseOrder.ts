@@ -93,9 +93,10 @@ export const usePurchaseOrderRelatedDocuments = (
             .from("receipt")
             .select("id, receiptId, status")
             .eq("supplierInteractionId", supplierInteractionId),
+          // The view derives Paid, Partially Paid and Overdue from settlements
           carbon
-            .from("purchaseInvoice")
-            .select("id, invoiceId, status, datePaid, dateDue")
+            .from("purchaseInvoices")
+            .select("id, invoiceId, status")
             .eq("supplierInteractionId", supplierInteractionId),
           isOutsideProcessing
             ? carbon
@@ -136,16 +137,7 @@ export const usePurchaseOrderRelatedDocuments = (
       if (invoices.error) {
         if (!willRetry) toastError("Failed to load invoices", invoices.error);
       } else {
-        setInvoices(
-          invoices.data?.map((invoice) => ({
-            ...invoice,
-            status: invoice.dateDue
-              ? !invoice.datePaid && new Date(invoice.dateDue) < new Date()
-                ? "Overdue"
-                : invoice.status
-              : invoice.status
-          })) ?? []
-        );
+        setInvoices(invoices.data ?? []);
       }
       if (shipments.error) {
         if (!willRetry) toastError("Failed to load shipments", shipments.error);
