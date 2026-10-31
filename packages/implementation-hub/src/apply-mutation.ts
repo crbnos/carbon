@@ -15,7 +15,9 @@ import { checkKey, rowItemKey } from "./logic/keys";
 import {
   buildPageCatalogue,
   catalogueByItem,
-  checkMemberPage
+  checkMemberPage,
+  hasPriorityCard,
+  prioritySetHolder
 } from "./logic/page";
 import { type PageTarget, placeCard, rowItem } from "./logic/page-edit";
 import {
@@ -38,6 +40,8 @@ import {
   deleteImplementationMember,
   deleteImplementationRow,
   getImplementationAssignment,
+  getImplementationMember,
+  getImplementationMembers,
   getImplementationRows,
   insertImplementationRow,
   setCheckStatesVerified,
@@ -649,6 +653,20 @@ export async function applyHubMutation(
     case "setPriority": {
       const writes = parsePriorityWrites(action.writes);
       if (!writes?.length) return failed({ message: "Invalid answers" });
+      // One person answers the priority set: the one whose page has its card.
+      // Carbon staff answer it too, with anyone else, in a workshop.
+      if (!isInternal) {
+        const own = await getImplementationMember(client, {
+          companyId,
+          memberId: userId
+        });
+        if (own.error) return failed(own.error);
+        if (!hasPriorityCard(own.data?.page)) {
+          return forbidden(
+            "The priority set is answered by the person it is assigned to"
+          );
+        }
+      }
       const checked = priorityFieldValues(writes, actor, datetime.timestamp());
       if ("error" in checked) return failed({ message: checked.error });
       const result = await upsertFieldValues(client, {
@@ -693,6 +711,19 @@ async function saveMemberPage(
     return failed({
       message: `user: ${page.user} is not an employee of this company`
     });
+  }
+
+  // The priority set is assigned to one person at a time: its card can be on
+  // this page only while no other page has it.
+  if (hasPriorityCard(page)) {
+    const members = await getImplementationMembers(client, companyId);
+    if (members.error) return failed(members.error);
+    const holder = prioritySetHolder(members.data ?? [], person.data.id);
+    if (holder) {
+      return failed({
+        message: `The priority set is already on ${holder.email || "another person"}'s page. Remove it there first.`
+      });
+    }
   }
 
   const result = await upsertImplementationMember(client, {

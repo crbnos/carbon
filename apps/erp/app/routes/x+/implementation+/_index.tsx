@@ -15,6 +15,7 @@ import {
   memberPageValidator,
   pageOverdue,
   pageProgress,
+  prioritySetHolder,
   resolveMemberPage,
   starterMemberPage
 } from "@carbon/implementation-hub";
@@ -337,7 +338,9 @@ export default function GetStartedRoute() {
                       JSON.stringify(
                         starterMemberPage(
                           selected.email ?? "",
-                          t`Before go-live`
+                          t`Before go-live`,
+                          // One person is assigned the priority set.
+                          prioritySetHolder(members) === null
                         ),
                         null,
                         2
