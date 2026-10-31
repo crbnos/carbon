@@ -2,7 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Badge, HStack, Skeleton, Switch, toast, VStack } from "@carbon/react";
+import {
+  Badge,
+  cn,
+  HStack,
+  Skeleton,
+  Switch,
+  toast,
+  VStack
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -10,6 +18,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   LuBox,
   LuCalculator,
+  LuChevronRight,
   LuExpand,
   LuGlassWater,
   LuHash,
@@ -34,7 +43,14 @@ import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
 import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
-import type { InventoryCountLine } from "~/modules/inventory/types";
+import {
+  inventoryCountGroupId,
+  inventoryCountLineState
+} from "~/modules/inventory/inventory.utils";
+import type {
+  InventoryCountGroupSummary,
+  InventoryCountLine
+} from "~/modules/inventory/types";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -45,8 +61,24 @@ import { path } from "~/utils/path";
 const IN_STOCK_FILTER = "systemQuantity:gt:0";
 const VARIANCE_FILTER = "variance:neq:0";
 
+type CountLine = InventoryCountLine & { otherBinName?: string | null };
+
+const isTrackedLine = (line: CountLine) =>
+  line.itemTrackingType === "Serial" || line.itemTrackingType === "Batch";
+
+// One unit of a serial item: counted 0 or 1. Stock of a serial item booked
+// with no unit record is a quantity.
+const isSerialUnit = (line: CountLine) =>
+  line.itemTrackingType === "Serial" &&
+  Boolean(line.trackedEntityId || line.readableId);
+
 type InventoryCountLinesProps = {
-  lines: InventoryCountLine[];
+  inventoryCountId: string;
+  lines: CountLine[];
+  // The tracked groups (item and storage unit) on the page, for their headers.
+  groupSummaries: Record<string, InventoryCountGroupSummary>;
+  // The scan field, shown in the toolbar while the count is Draft.
+  scanField?: ReactNode;
   count: number;
   // The loader's cursor for the next page of lines (infinite scroll).
   nextCursor: string | null;
@@ -70,7 +102,10 @@ type InventoryCountLinesProps = {
 };
 
 const InventoryCountLines = ({
+  inventoryCountId,
   lines,
+  groupSummaries,
+  scanField,
   count,
   nextCursor,
   hideSystemQuantity,
@@ -136,7 +171,7 @@ const InventoryCountLines = ({
 
   // Both quick filters derive from the withheld System Qty, so blind counts
   // (hideSystemQuantity) get no toggles at all.
-  const quickFilters = hideSystemQuantity ? undefined : (
+  const quickFilters = hideSystemQuantity ? null : (
     <HStack spacing={2} className="pl-2">
       <Switch
         variant="small"
@@ -161,7 +196,7 @@ const InventoryCountLines = ({
     async (
       _accessorKey: string,
       value: unknown,
-      row: InventoryCountLine
+      row: CountLine
     ): Promise<PostgrestSingleResponse<unknown>> => {
       const formData = new FormData();
       formData.set("id", row.id!);
@@ -185,8 +220,8 @@ const InventoryCountLines = ({
     [t]
   );
 
-  const columns = useMemo<ColumnDef<InventoryCountLine>[]>(() => {
-    const cols: ColumnDef<InventoryCountLine>[] = [
+  const columns = useMemo<ColumnDef<CountLine>[]>(() => {
+    const cols: ColumnDef<CountLine>[] = [
       {
         id: "item",
         header: t`Item`,
@@ -231,7 +266,7 @@ const InventoryCountLines = ({
             row.itemReadableIdWithRevision ?? row.itemId ?? null
         }
       },
-      exportOnlyColumn<InventoryCountLine>({
+      exportOnlyColumn<CountLine>({
         id: "itemName",
         header: t`Item Name`,
         value: (row) => row.itemName ?? null
@@ -239,8 +274,42 @@ const InventoryCountLines = ({
       {
         accessorKey: "readableId",
         header: t`Batch / Serial`,
-        cell: (item) => item.getValue<string>() ?? "—",
-        meta: { icon: <LuHash /> }
+        cell: ({ row }) => {
+          const line = row.original;
+          const number = line.readableId ?? line.assignedReadableId;
+          if (!isTrackedLine(line)) return number ?? "—";
+          // A unit counted in 2 bins moved; one added while counting was
+          // found here.
+          const note = line.otherBinName
+            ? line.foundDuringCount
+              ? t`moved from ${line.otherBinName}`
+              : t`moved to ${line.otherBinName}`
+            : line.foundDuringCount
+              ? t`found here`
+              : null;
+          return (
+            <span>
+              {number ?? (
+                <span className="text-muted-foreground">
+                  {!line.trackedEntityId
+                    ? t`No unit record`
+                    : line.itemTrackingType === "Serial"
+                      ? t`No serial number`
+                      : t`No batch number`}
+                </span>
+              )}
+              {note && (
+                <span className="pl-2 text-xs text-muted-foreground">
+                  {note}
+                </span>
+              )}
+            </span>
+          );
+        },
+        meta: {
+          icon: <LuHash />,
+          exportValue: (line) => line.readableId ?? line.assignedReadableId
+        }
       },
       {
         accessorKey: "type",
@@ -522,6 +591,103 @@ const InventoryCountLines = ({
     tags: false
   };
 
+  // The lines of one tracked item in one storage unit sit together (the
+  // loader sorts them so) under a one-line header that collapses them.
+  // Untracked items have one line per storage unit and no header. A sort the
+  // user picks splits the groups apart, so the lines show without headers.
+  const isUserSorted = params.getAll("sort").length > 0;
+  const groupRowsBy = useMemo(
+    () =>
+      isUserSorted
+        ? undefined
+        : {
+            key: (line: CountLine) =>
+              isTrackedLine(line)
+                ? `${line.itemId}:${line.storageUnitId ?? ""}`
+                : (line.id ?? ""),
+            header: (
+              groupLines: CountLine[],
+              group?: { collapsed: boolean; toggle: () => void }
+            ) => {
+              const first = groupLines[0];
+              if (!first || !isTrackedLine(first)) return null;
+              const summary =
+                groupSummaries[
+                  inventoryCountGroupId({
+                    inventoryCountId,
+                    itemId: first.itemId!,
+                    storageUnitId: first.storageUnitId ?? null
+                  })
+                ];
+              // The loader sends summaries with the first page only. A group first
+              // loaded on a later page is summed from its loaded lines.
+              const local = {
+                Found: 0,
+                Missing: 0,
+                Unexpected: 0,
+                "Not counted": 0
+              };
+              for (const line of groupLines) {
+                local[
+                  inventoryCountLineState({
+                    countedQuantity:
+                      line.countedQuantity === null
+                        ? null
+                        : Number(line.countedQuantity),
+                    foundDuringCount: Boolean(line.foundDuringCount)
+                  })
+                ] += 1;
+              }
+              const units = summary
+                ? Number(summary.lineCount)
+                : groupLines.length;
+              const missing = summary
+                ? Number(summary.missingCount ?? 0)
+                : local.Missing;
+              const foundHere = summary
+                ? Number(summary.unexpectedCount ?? 0)
+                : local.Unexpected;
+              const counted =
+                (summary ? Number(summary.foundCount ?? 0) : local.Found) +
+                foundHere +
+                missing;
+              const parts = [
+                units === 1 ? t`1 unit` : t`${units} units`,
+                t`${counted} counted`,
+                missing > 0 ? t`${missing} missing` : null,
+                foundHere > 0 ? t`${foundHere} found here` : null
+              ].filter(Boolean);
+              return (
+                <button
+                  type="button"
+                  onClick={group?.toggle}
+                  aria-expanded={!group?.collapsed}
+                  className="flex w-full items-center gap-2 px-4 py-1.5 text-left text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <LuChevronRight
+                    className={cn(
+                      "size-3.5 shrink-0 transition-transform",
+                      !group?.collapsed && "rotate-90"
+                    )}
+                  />
+                  <span className="font-medium text-foreground">
+                    {first.itemReadableIdWithRevision ?? first.itemId}
+                  </span>
+                  <span>·</span>
+                  <span>
+                    {first.storageUnitId
+                      ? storageUnitLabel(first.storageUnitId)
+                      : t`No storage unit`}
+                  </span>
+                  <span>—</span>
+                  <span>{parts.join(" · ")}</span>
+                </button>
+              );
+            }
+          },
+    [groupSummaries, inventoryCountId, isUserSorted, storageUnitLabel, t]
+  );
+
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Last-resolved Counted Qty column index, cached as a fallback. It's resolved
@@ -616,10 +782,22 @@ const InventoryCountLines = ({
         return;
       }
 
+      // The next line shown: a collapsed group's lines are not rendered.
       const step = event.key === "Tab" && event.shiftKey ? -1 : 1;
-      const adjacent = gridRef.current?.querySelector<HTMLElement>(
-        `[data-row="${row + step}"][data-column="${countedColumn}"]`
-      );
+      const shown = [
+        ...(gridRef.current?.querySelectorAll<HTMLElement>(
+          `[data-row][data-column="${countedColumn}"]`
+        ) ?? [])
+      ];
+      const rowOf = (el: HTMLElement) => Number(el.getAttribute("data-row"));
+      const adjacent =
+        step > 0
+          ? shown
+              .filter((el) => rowOf(el) > row)
+              .sort((a, b) => rowOf(a) - rowOf(b))[0]
+          : shown
+              .filter((el) => rowOf(el) < row)
+              .sort((a, b) => rowOf(b) - rowOf(a))[0];
 
       // Let Tab exit the grid at the first/last line rather than trapping focus;
       // only suppress the Table's own row-wrapping.
@@ -643,13 +821,13 @@ const InventoryCountLines = ({
 
   const editableComponents = useMemo(
     () => ({
-      countedQuantity: EditableNumber<InventoryCountLine>(
+      countedQuantity: EditableNumber<CountLine>(
         onCellEdit,
         // Serial-tracked lines are a single unique unit — cap the counted
         // quantity at 1 (per row, since tracking type varies by line).
         (row) => ({
           minValue: 0,
-          maxValue: row.itemTrackingType === "Serial" ? 1 : undefined
+          maxValue: isSerialUnit(row) ? 1 : undefined
         }),
         { clearable: true }
       )
@@ -675,7 +853,7 @@ const InventoryCountLines = ({
           {t`Start counting`}
         </button>
       )}
-      <Table<InventoryCountLine>
+      <Table<CountLine>
         compact
         mobileLayout="table"
         columns={columns}
@@ -691,7 +869,15 @@ const InventoryCountLines = ({
             : undefined
         }
         primaryAction={primaryAction}
-        headerActions={quickFilters}
+        headerActions={
+          scanField || quickFilters ? (
+            <HStack spacing={2}>
+              {scanField}
+              {quickFilters}
+            </HStack>
+          ) : undefined
+        }
+        groupRowsBy={groupRowsBy}
         title={title ?? t`Lines`}
         titleBadge={titleBadge}
         withInlineEditing={!isReadOnly}

@@ -565,6 +565,15 @@ msgstr "{behindDays, plural, one {Hinter dem Ziel um # Tag} other {Hinter dem Zi
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Erwägen Sie, diesen Teil direkt auf den endgültigen Nachfolger zu verweisen."
 
+msgid "{code} counted"
+msgstr ""
+
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
+msgid "{code} is already counted"
+msgstr ""
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr ""
 
@@ -631,6 +640,9 @@ msgstr "{count} von {total} Einheiten"
 msgid "{count} units"
 msgstr "{count} Einheiten"
 
+msgid "{counted} counted"
+msgstr ""
+
 msgid "{created} created, {updated} updated."
 msgstr "{created} erstellt, {updated} aktualisiert."
 
@@ -673,6 +685,9 @@ msgstr "{excluded, plural, one {# Zeile ausgeschlossen} other {# Zeilen ausgesch
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{failed} von {0} Druckaufträgen fehlgeschlagen"
+
+msgid "{foundHere} found here"
+msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {Und # weiterer Datensatz.} other {Und # weitere Datensätze.}}"
@@ -738,6 +753,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# aktive Methode hat Materialien o
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} Monate mit abweichenden Summen"
+
+msgid "{missing} missing"
+msgstr ""
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "{missingCount} fehlende Buchungssätze beim Anbieter"
@@ -890,6 +908,9 @@ msgstr "{uncounted, plural, one {# nicht gezählte Zeile} other {# nicht gezähl
 
 msgid "{unitCount} units"
 msgstr "{unitCount} Einheiten"
+
+msgid "{units} units"
+msgstr ""
 
 msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
 msgstr ""
@@ -1372,6 +1393,9 @@ msgstr "Ein bargeldloses Dokument, das eine Rechnung gegen ein Verrechnungskonto
 
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "Eine Nichtkonformität, die mit einem Lieferanten über einen passwortfreien Link /share/scar geteilt wird, damit dieser auf das Problem reagieren und seine Aufgaben von außerhalb von Carbon aktualisieren kann."
+
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "Ein nicht steuerpflichtiger Zuschlag (z. B. rückforderbare Aufwendungen wie Genehmigungsgebühren), der zur Position hinzugefügt wird; von der Steuerbasis ausgeschlossen."
@@ -2737,6 +2761,9 @@ msgstr "Zugewiesen"
 
 msgid "Allows acknowledge & continue"
 msgstr "Ermöglicht Bestätigung & Fortfahren"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "Bereits nicht disponierbar durch die übergeordnete Einheit {sourceName}"
@@ -4326,7 +4353,7 @@ msgid "Batch"
 msgstr "Charge"
 
 msgid "Batch / Serial"
-msgstr "Charge / Seriennummer"
+msgstr ""
 
 msgid "Batch Capacity"
 msgstr "Los-Kapazität"
@@ -5562,6 +5589,10 @@ msgstr "Spaltensichtbarkeit und -reihenfolge"
 msgid "Columns"
 msgstr "Spalten"
 
+#. placeholder {0}: INVENTORY_COUNT_CSV_COLUMNS.join(", ")
+msgid "Columns: {0}. Each item and storage unit in the file is a full count: units it leaves out are Missing."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "Filter kombinieren"
 
@@ -6627,7 +6658,7 @@ msgid "Counted {total}."
 msgstr "{total} gezählt."
 
 msgid "Counted Qty"
-msgstr "Gezählte Menge"
+msgstr ""
 
 msgid "Counterparties"
 msgstr "Gegenparteien"
@@ -8610,6 +8641,9 @@ msgstr "PDF herunterladen"
 msgid "Download template"
 msgstr "Vorlage herunterladen"
 
+msgid "Download the count as a file to fill in"
+msgstr ""
+
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Laden Sie die Vorlage herunter. Jede Zeile ist ein Standardkonto, auf das Carbon bucht. Geben Sie in Kontonummer die Nummer des Kontos in Ihrem Kontenplan ein, das es übernimmt. Carbon aktualisiert das Standardkonto, um es anzupassen."
 
@@ -9659,11 +9693,17 @@ msgstr "Geben Sie die Onshape URL, Client-ID und Client Secret Ihrer privaten OA
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "Geben Sie die Rohbilanz des vorherigen Systems vom Tag vor der Migration für jedes Konto ein."
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "Geben Sie auf jeder Position die empfangene Menge ein. Eine auf null gelassene Position wird nicht empfangen, wenn der Wareneingang gebucht wird."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Geben Sie die Menge ein, die diese Bewegung hätte sein sollen. Eine Gegenbewegung für die Differenz wird neben dem Original in dessen Zeitraum verbucht."
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Geben Sie ein, was die Herstellung gekostet hat. Der Wert wird der Anlage vom Konto verbucht, auf dem es ausgegeben wurde: Gewinnvortrag für ein früheres Jahr oder der Personal- oder Materialaufwand dieses Jahres."
@@ -10179,6 +10219,9 @@ msgstr "CSV exportieren"
 
 msgid "Export Lines to CSV"
 msgstr "Zeilen als CSV exportieren"
+
+msgid "Export units (CSV)"
+msgstr ""
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Exportieren Sie Ihren Kontenplan aus Ihrem aktuellen System als CSV, eine Zeile pro Konto mit Nummer, Name, Klasse, Typ und Gruppe, oder beginnen Sie mit der Vorlage des aktuellen Kontenplans. Carbon behält nur die Konten in dieser Datei."
@@ -10957,6 +11000,9 @@ msgstr "Umdrehen"
 msgid "For <0/>"
 msgstr "Für <0/>"
 
+msgid "For a batch. A serial counts as 1."
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "für alles. Sie werden die richtige Person hinzuziehen."
 
@@ -10990,6 +11036,9 @@ msgstr "Format"
 
 msgid "Forward deployed engineer"
 msgstr "Techniker vor Ort"
+
+msgid "found here"
+msgstr ""
 
 msgid "Foundation"
 msgstr "Grundlagen"
@@ -11954,6 +12003,12 @@ msgstr "Kontenplan importieren"
 msgid "Import Chart of Accounts"
 msgstr "Kontenplan importieren"
 
+msgid "Import count results"
+msgstr ""
+
+msgid "Import Count Results"
+msgstr ""
+
 msgid "Import CSV"
 msgstr "CSV importieren"
 
@@ -11968,6 +12023,9 @@ msgstr "Ihren Kontenplan importieren"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "Ihren Kontenplan aus einer Tabellenkalkulation importieren"
+
+msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -13388,6 +13446,7 @@ msgstr "Wahrscheinlichkeit"
 msgid "Line"
 msgstr "Zeile"
 
+#. placeholder {0}: error.line
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Zeile {0}"
@@ -14545,6 +14604,9 @@ msgstr "Mehr"
 msgid "More actions"
 msgstr "Weitere Aktionen"
 
+msgid "More count actions"
+msgstr ""
+
 msgid "more credits"
 msgstr "mehr Haben"
 
@@ -14639,6 +14701,14 @@ msgstr "Woche von {employeeName} zu {targetName} verschoben"
 
 msgid "Moved account"
 msgstr "Konto verschoben"
+
+#. placeholder {0}: line.otherBinName
+msgid "moved from {0}"
+msgstr ""
+
+#. placeholder {0}: line.otherBinName
+msgid "moved to {0}"
+msgstr ""
 
 msgid "Movements"
 msgstr "Bewegungen"
@@ -15329,6 +15399,9 @@ msgstr "Keine verfügbaren verfolgten Entitäten gefunden"
 msgid "No bank accounts have been added yet."
 msgstr "Bisher wurden keine Bankkonten hinzugefügt."
 
+msgid "No batch number"
+msgstr ""
+
 msgid "No batches"
 msgstr "Keine Lose"
 
@@ -15890,6 +15963,9 @@ msgstr "Keine Terminplan-Positionen."
 msgid "No scheduled work in this window"
 msgstr "Keine eingeplante Arbeit in diesem Zeitfenster"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "Noch keine Seriennummern ausgewählt."
 
@@ -15970,6 +16046,9 @@ msgstr "Keine Schulungen zugewiesen"
 
 msgid "No transactions in this period"
 msgstr "Keine Transaktionen in diesem Zeitraum"
+
+msgid "No unit record"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Noch keine Einheiten. Fügen Sie eine Flotten-Einheit aus der Einheitenliste hinzu, bevor Sie die Vereinbarung aktivieren."
@@ -16230,6 +16309,9 @@ msgstr "Nichts zum Buchen in diesem Zeitraum."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Noch nichts zum Erfassen. Die Umsatzerlöse folgen dem, was die Rechnungen abrechnen."
+
+msgid "Nothing was imported. Fix these lines:"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Noch nichts. Ein Schritt bietet Werte erst nach der Konfiguration an."
@@ -19309,6 +19391,9 @@ msgstr "Datensatz-ID"
 msgid "Record inspections tied to a part and a job"
 msgstr "Erfassen Sie Prüfungen, die an einen Teil und einen Fertigungsauftrag gebunden sind"
 
+msgid "Record scan"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Erfassen Sie die Auszahlung von {displayId} an den Mitarbeiter. Zahlen Sie weniger als den fälligen Gesamtbetrag, um ihn teilweise auszugleichen."
 
@@ -20992,6 +21077,9 @@ msgstr "Scannen"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Scannen Sie ein Etikett oder suchen Sie nach Artikel-ID oder Tracking-ID."
 
+msgid "Scan a serial, batch or item number"
+msgstr ""
+
 msgid "Scan or choose a batch number"
 msgstr "Scannieren oder wählen Sie eine Chargennummer"
 
@@ -21009,6 +21097,12 @@ msgstr "Scannen oder suchen..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scannen Sie eine verfolgte Einheit aus dieser Charge oder wählen Sie eine aus, um sie als Beispielspalte hinzuzufügen, und zeichnen Sie dann das Ergebnis im Gitter auf."
+
+msgid "Scan serial or batch…"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Scannen Sie diesen QR-Code mit Ihrer Authentifikator-App (z. B. Google Authenticator oder 1Password) und geben Sie dann den 6-stelligen Code ein, den sie anzeigt."
@@ -23426,7 +23520,7 @@ msgid "System configured"
 msgstr "System konfiguriert"
 
 msgid "System Qty"
-msgstr "Systembestand"
+msgstr ""
 
 msgid "Table"
 msgstr "Tabelle"
@@ -23741,6 +23835,9 @@ msgstr "Diese Liste war leer."
 
 msgid "That name is already used by another step."
 msgstr "Dieser Name wird bereits von einem anderen Schritt verwendet."
+
+msgid "That storage unit is not at this count's location"
+msgstr ""
 
 msgid "That workspace is connected to another company"
 msgstr "Dieser Arbeitsbereich ist mit einem anderen Unternehmen verbunden"
@@ -24233,6 +24330,9 @@ msgstr "Die IRS-Wiederherstellungsperiode-Klasse für diesen Gegenstand nach MAC
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "Der Artikel, den jeder Fertigungsauftrag produziert – erforderlich, um Ausgangschargen zusammenzuführen"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "Der Mietpreis des Artikels"

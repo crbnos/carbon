@@ -565,6 +565,15 @@ msgstr "{behindDays, plural, one {Ritardato rispetto al target di # giorno} othe
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Considera di indirizzare direttamente questa parte al successore finale."
 
+msgid "{code} counted"
+msgstr ""
+
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
+msgid "{code} is already counted"
+msgstr ""
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr ""
 
@@ -631,6 +640,9 @@ msgstr "{count} di {total} unità"
 msgid "{count} units"
 msgstr "{count} unità"
 
+msgid "{counted} counted"
+msgstr ""
+
 msgid "{created} created, {updated} updated."
 msgstr "{created} creati, {updated} aggiornati."
 
@@ -673,6 +685,9 @@ msgstr "{excluded, plural, one {# riga esclusa} other {# righe escluse}}"
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{failed} di {0} stampe non riuscite"
+
+msgid "{foundHere} found here"
+msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {E # altro record.} other {E # altri record.}}"
@@ -738,6 +753,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# metodo attivo ha materiali senza
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} mesi con totali non corrispondenti"
+
+msgid "{missing} missing"
+msgstr ""
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "{missingCount} prima nota mancanti nel provider"
@@ -890,6 +908,9 @@ msgstr "{uncounted, plural, one {# riga non conteggiata} other {# righe non cont
 
 msgid "{unitCount} units"
 msgstr "{unitCount} unità"
+
+msgid "{units} units"
+msgstr ""
 
 msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
 msgstr ""
@@ -1372,6 +1393,9 @@ msgstr "Un documento non in contanti che cancella una fattura rispetto a un cont
 
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "Una non conformità condivisa con un fornitore tramite un collegamento /share/scar senza login, in modo che possano rispondere al problema e aggiornare le relative attività dall'esterno di Carbon."
+
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "Un supplemento non tassabile (ad es. spese recuperabili come tasse di permesso) aggiunto alla riga; escluso dalla base imponibile."
@@ -2737,6 +2761,9 @@ msgstr "Allocato"
 
 msgid "Allows acknowledge & continue"
 msgstr "Consente di riconoscere e continuare"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "Già non nettabile tramite l'unità superiore {sourceName}"
@@ -4326,7 +4353,7 @@ msgid "Batch"
 msgstr "Lotto"
 
 msgid "Batch / Serial"
-msgstr "Lotto / Seriale"
+msgstr ""
 
 msgid "Batch Capacity"
 msgstr "Capacità del Lotto"
@@ -5562,6 +5589,10 @@ msgstr "Visibilità e ordine delle colonne"
 msgid "Columns"
 msgstr "Colonne"
 
+#. placeholder {0}: INVENTORY_COUNT_CSV_COLUMNS.join(", ")
+msgid "Columns: {0}. Each item and storage unit in the file is a full count: units it leaves out are Missing."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "Combina filtri"
 
@@ -6627,7 +6658,7 @@ msgid "Counted {total}."
 msgstr "Contati {total}."
 
 msgid "Counted Qty"
-msgstr "Qtà Conteggiata"
+msgstr ""
 
 msgid "Counterparties"
 msgstr "Controparte"
@@ -8610,6 +8641,9 @@ msgstr "Scarica PDF"
 msgid "Download template"
 msgstr "Scarica modello"
 
+msgid "Download the count as a file to fill in"
+msgstr ""
+
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Scarica il modello. Ogni riga è un conto predefinito su cui Carbon registra le transazioni. Nel campo Numero di conto, inserisci il numero del conto nel tuo piano dei conti che lo sostituisce. Carbon aggiorna il conto predefinito per farlo corrispondere."
 
@@ -9659,11 +9693,17 @@ msgstr "Immetti l'URL Onshape, l'ID client e il client secret della tua applicaz
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "Inserisci il bilancio di verifica del sistema precedente alla data precedente il cutover, per ogni account."
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "Inserire la quantità su ogni riga che è arrivata. Una riga rimasta a zero non viene ricevuta quando l'entrata merci è registrata."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Inserisci la quantità che questo movimento avrebbe dovuto essere. Un movimento opposto per la differenza è registrato accanto all'originale, nel periodo temporale dell'originale."
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Inserisci il costo di produzione. Il valore è registrato nell'asset dal conto da cui è stato speso: Utili non distribuiti per un anno precedente, o la spesa di manodopera o materiale di quest'anno."
@@ -10179,6 +10219,9 @@ msgstr "Esporta CSV"
 
 msgid "Export Lines to CSV"
 msgstr "Esporta Righe in CSV"
+
+msgid "Export units (CSV)"
+msgstr ""
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Esporta il piano dei conti dal sistema attuale come CSV, una riga per conto, con numero, nome, classe, tipo e gruppo, oppure parti dal modello del piano attuale. Carbon conserva solo i conti presenti in questo file."
@@ -10957,6 +11000,9 @@ msgstr "Capovolgi"
 msgid "For <0/>"
 msgstr "Per <0/>"
 
+msgid "For a batch. A serial counts as 1."
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "per qualsiasi cosa. Porteranno la persona giusta."
 
@@ -10990,6 +11036,9 @@ msgstr "Formato"
 
 msgid "Forward deployed engineer"
 msgstr "Ingegnere dispiegato in prima linea"
+
+msgid "found here"
+msgstr ""
 
 msgid "Foundation"
 msgstr "Fondamenti"
@@ -11954,6 +12003,12 @@ msgstr "Importa piano dei conti"
 msgid "Import Chart of Accounts"
 msgstr "Importa piano dei conti"
 
+msgid "Import count results"
+msgstr ""
+
+msgid "Import Count Results"
+msgstr ""
+
 msgid "Import CSV"
 msgstr "Importa CSV"
 
@@ -11968,6 +12023,9 @@ msgstr "Importa il tuo piano"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "Importa il tuo piano dei conti da un foglio di calcolo"
+
+msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -13388,6 +13446,7 @@ msgstr "Probabilità"
 msgid "Line"
 msgstr "Linea"
 
+#. placeholder {0}: error.line
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Linea {0}"
@@ -14545,6 +14604,9 @@ msgstr "Altro"
 msgid "More actions"
 msgstr "Altre azioni"
 
+msgid "More count actions"
+msgstr ""
+
 msgid "more credits"
 msgstr "altri averi"
 
@@ -14639,6 +14701,14 @@ msgstr "Spostata la settimana di {employeeName} a {targetName}"
 
 msgid "Moved account"
 msgstr "Account spostato"
+
+#. placeholder {0}: line.otherBinName
+msgid "moved from {0}"
+msgstr ""
+
+#. placeholder {0}: line.otherBinName
+msgid "moved to {0}"
+msgstr ""
 
 msgid "Movements"
 msgstr "Movimenti"
@@ -15329,6 +15399,9 @@ msgstr "Nessuna entità tracciata disponibile trovata"
 msgid "No bank accounts have been added yet."
 msgstr "Nessun conto bancario aggiunto ancora."
 
+msgid "No batch number"
+msgstr ""
+
 msgid "No batches"
 msgstr "Nessun lotto di produzione"
 
@@ -15890,6 +15963,9 @@ msgstr "Nessuna riga di scadenzario."
 msgid "No scheduled work in this window"
 msgstr "Nessun lavoro programmato in questo intervallo"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "Nessun numero di serie selezionato ancora."
 
@@ -15970,6 +16046,9 @@ msgstr "Nessuna formazione assegnata"
 
 msgid "No transactions in this period"
 msgstr "Nessuna transazione in questo periodo"
+
+msgid "No unit record"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Nessuna unità ancora. Aggiungi un'unità della flotta dall'elenco Unità prima di attivare l'accordo."
@@ -16230,6 +16309,9 @@ msgstr "Niente da registrare per questo periodo."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nulla da riconoscere ancora. I ricavi seguono ciò che le fatture fatturano."
+
+msgid "Nothing was imported. Fix these lines:"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Non c'è ancora nulla. Un passaggio offre valori solo dopo essere stato configurato."
@@ -19309,6 +19391,9 @@ msgstr "ID record"
 msgid "Record inspections tied to a part and a job"
 msgstr "Registra i controlli legati a un componente e a un ordine di produzione"
 
+msgid "Record scan"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Registra il pagamento di {displayId} al dipendente. Paga meno del totale dovuto per saldarlo parzialmente."
 
@@ -20992,6 +21077,9 @@ msgstr "Scansiona"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Scansiona un'etichetta o cerca per ID articolo o ID tracciamento."
 
+msgid "Scan a serial, batch or item number"
+msgstr ""
+
 msgid "Scan or choose a batch number"
 msgstr "Scansiona o scegli un numero di lotto"
 
@@ -21009,6 +21097,12 @@ msgstr "Scansiona o cerca..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scansiona o seleziona un'entità tracciata da questo lotto per aggiungerla come colonna di esempio, quindi registra il suo risultato nella griglia."
+
+msgid "Scan serial or batch…"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Scansiona questo codice QR con la tua app autenticatore (ad es. Google Authenticator o 1Password), quindi inserisci il codice a 6 cifre che mostra."
@@ -23426,7 +23520,7 @@ msgid "System configured"
 msgstr "Sistema configurato"
 
 msgid "System Qty"
-msgstr "Qty Sistema"
+msgstr ""
 
 msgid "Table"
 msgstr "Tabella"
@@ -23741,6 +23835,9 @@ msgstr "Quell'elenco era vuoto."
 
 msgid "That name is already used by another step."
 msgstr "Quel nome è già utilizzato da un altro passaggio."
+
+msgid "That storage unit is not at this count's location"
+msgstr ""
 
 msgid "That workspace is connected to another company"
 msgstr "Quello spazio di lavoro è connesso a un'altra azienda"
@@ -24233,6 +24330,9 @@ msgstr "La classe di periodo di recupero IRS per questo bene secondo MACRS (3, 5
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "L'articolo che ogni ordine di produzione produce — richiedi che corrisponda per unire i lotti"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "La tariffa di noleggio dell'articolo"

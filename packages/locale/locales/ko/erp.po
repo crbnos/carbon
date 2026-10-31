@@ -565,6 +565,15 @@ msgstr "{behindDays, plural, one {목표보다 # 일 뒤짐} other {목표보다
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
 
+msgid "{code} counted"
+msgstr ""
+
+msgid "{code} is a Non-Inventory item and has no stock to count"
+msgstr ""
+
+msgid "{code} is already counted"
+msgstr ""
+
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr ""
 
@@ -631,6 +640,9 @@ msgstr "{count}/{total} 개"
 msgid "{count} units"
 msgstr "{count}개"
 
+msgid "{counted} counted"
+msgstr ""
+
 msgid "{created} created, {updated} updated."
 msgstr "{created} 생성됨, {updated} 업데이트됨."
 
@@ -673,6 +685,9 @@ msgstr "{excluded, plural, one {# 행 제외됨} other {# 행 제외됨}}"
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "인쇄 작업 {0}개 중 {failed}개가 실패했습니다"
+
+msgid "{foundHere} found here"
+msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {그리고 # 개 이상의 기록.} other {그리고 # 개 이상의 기록.}}"
@@ -738,6 +753,9 @@ msgstr "{methodsMissingPullFrom, plural, one {# 개의 활성 방법이 출처�
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "총액이 일치하지 않는 {mismatchCount}개월"
+
+msgid "{missing} missing"
+msgstr ""
 
 msgid "{missingCount} journals missing in the provider"
 msgstr "{missingCount}개의 전표가 공급자에서 누락됨"
@@ -890,6 +908,9 @@ msgstr "미실사 라인 {uncounted}개"
 
 msgid "{unitCount} units"
 msgstr "{unitCount}개"
+
+msgid "{units} units"
+msgstr ""
 
 msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
 msgstr ""
@@ -1372,6 +1393,9 @@ msgstr "비현금 문서로 송장을 이유 계정에 대해 결제합니다: �
 
 msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
 msgstr "공급업체와 공유되는 부적합 사항으로서 로그인이 필요 없는 /share/scar 링크를 통해 공유되므로 Carbon 외부에서 문제에 응답하고 작업을 업데이트할 수 있습니다."
+
+msgid "A Non-Inventory item has no stock to count"
+msgstr ""
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "세금이 아닌 할증료(예: 허가비 같은 회수 가능한 비용)로 라인에 추가되며 세금 기반에서 제외됩니다."
@@ -2737,6 +2761,9 @@ msgstr "할당됨"
 
 msgid "Allows acknowledge & continue"
 msgstr "확인 후 계속 진행 허용"
+
+msgid "Already counted"
+msgstr ""
 
 msgid "Already non-nettable through its parent {sourceName}"
 msgstr "상위 단위 {sourceName}(으)로 인해 이미 MRP 제외"
@@ -4326,7 +4353,7 @@ msgid "Batch"
 msgstr "배치"
 
 msgid "Batch / Serial"
-msgstr "배치/일련번호"
+msgstr ""
 
 msgid "Batch Capacity"
 msgstr "배치 용량"
@@ -5562,6 +5589,10 @@ msgstr "열 표시 여부 및 순서"
 msgid "Columns"
 msgstr "열"
 
+#. placeholder {0}: INVENTORY_COUNT_CSV_COLUMNS.join(", ")
+msgid "Columns: {0}. Each item and storage unit in the file is a full count: units it leaves out are Missing."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "필터 결합"
 
@@ -6627,7 +6658,7 @@ msgid "Counted {total}."
 msgstr "{total}개를 셌습니다."
 
 msgid "Counted Qty"
-msgstr "실사 수량"
+msgstr ""
 
 msgid "Counterparties"
 msgstr "거래처"
@@ -8610,6 +8641,9 @@ msgstr "PDF 다운로드"
 msgid "Download template"
 msgstr "템플릿 다운로드"
 
+msgid "Download the count as a file to fill in"
+msgstr ""
+
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "템플릿을 다운로드합니다. 각 행은 Carbon이 전기하는 기본 계정과목입니다. 계정 번호에 자신의 계정과목표에서 이를 담당할 계정의 번호를 입력합니다. Carbon은 기본 계정과목을 이에 맞게 업데이트합니다."
 
@@ -9659,11 +9693,17 @@ msgstr "개인 OAuth 애플리케이션의 Onshape URL, 클라이언트 ID 및 �
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "기준일 전날의 이전 시스템의 시산표를 모든 계정에 대해 입력하세요."
 
+msgid "Enter the quantity counted"
+msgstr ""
+
 msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 msgstr "도착한 각 라인의 수량을 입력하세요. 0으로 남겨진 라인은 입고가 전기될 때 입고되지 않습니다."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "이 이동이 있었어야 할 수량을 입력하십시오. 차이에 대한 반대 이동은 원본 옆의 원본의 시간 기간에 게시됩니다."
+
+msgid "Enter the serial or batch number, not the item"
+msgstr ""
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "사내 생산 원가를 입력하십시오. 이 금액은 지출된 계정에서 자산으로 기입됩니다: 이전 연도의 이익잉여금 또는 올해의 노무 또는 자재 비용입니다."
@@ -10179,6 +10219,9 @@ msgstr "CSV 내보내기"
 
 msgid "Export Lines to CSV"
 msgstr "라인을 CSV로 내보내기"
+
+msgid "Export units (CSV)"
+msgstr ""
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "현재 시스템에서 계정과목표를 CSV로 내보내세요. 계정마다 한 행에 번호, 이름, 분류, 유형, 그룹을 담거나, 현재 계정과목표의 템플릿에서 시작하세요. Carbon은 이 파일에 있는 계정만 유지합니다."
@@ -10957,6 +11000,9 @@ msgstr "뒤집기"
 msgid "For <0/>"
 msgstr "대상 <0/>"
 
+msgid "For a batch. A serial counts as 1."
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "무엇이든지요. 적임자를 연결해 드립니다."
 
@@ -10990,6 +11036,9 @@ msgstr "형식"
 
 msgid "Forward deployed engineer"
 msgstr "현장 배치 엔지니어"
+
+msgid "found here"
+msgstr ""
 
 msgid "Foundation"
 msgstr "파운데이션"
@@ -11954,6 +12003,12 @@ msgstr "계정과목표 가져오기"
 msgid "Import Chart of Accounts"
 msgstr "계정과목표 가져오기"
 
+msgid "Import count results"
+msgstr ""
+
+msgid "Import Count Results"
+msgstr ""
+
 msgid "Import CSV"
 msgstr "CSV 가져오기"
 
@@ -11968,6 +12023,9 @@ msgstr "계정과목표 가져오기"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "스프레드시트에서 계정과목표 가져오기"
+
+msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -13388,6 +13446,7 @@ msgstr "발생 가능성"
 msgid "Line"
 msgstr "라인"
 
+#. placeholder {0}: error.line
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "라인 {0}"
@@ -14545,6 +14604,9 @@ msgstr "더 보기"
 msgid "More actions"
 msgstr "추가 작업"
 
+msgid "More count actions"
+msgstr ""
+
 msgid "more credits"
 msgstr "더 많은 대변"
 
@@ -14639,6 +14701,14 @@ msgstr "{employeeName}의 주간을 {targetName}으로 이동"
 
 msgid "Moved account"
 msgstr "이동된 계정"
+
+#. placeholder {0}: line.otherBinName
+msgid "moved from {0}"
+msgstr ""
+
+#. placeholder {0}: line.otherBinName
+msgid "moved to {0}"
+msgstr ""
 
 msgid "Movements"
 msgstr "이동"
@@ -15329,6 +15399,9 @@ msgstr "추적된 가용 객체를 찾을 수 없습니다"
 msgid "No bank accounts have been added yet."
 msgstr "아직 추가된 은행 계좌가 없습니다."
 
+msgid "No batch number"
+msgstr ""
+
 msgid "No batches"
 msgstr "배치 없음"
 
@@ -15890,6 +15963,9 @@ msgstr "일정 라인이 없습니다."
 msgid "No scheduled work in this window"
 msgstr "이 시간대에 스케줄된 작업이 없습니다"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "아직 선택된 시리얼 번호가 없습니다."
 
@@ -15970,6 +16046,9 @@ msgstr "할당된 교육 없음"
 
 msgid "No transactions in this period"
 msgstr "이 기간에 거래가 없습니다"
+
+msgid "No unit record"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "아직 개가 없습니다. 계약을 활성화하기 전에 개 목록에서 차량 개를 추가하세요."
@@ -16230,6 +16309,9 @@ msgstr "이 기간에 전기할 것이 없습니다."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "아직 인식할 것이 없습니다. 매출은 송장이 청구하는 대로 따릅니다."
+
+msgid "Nothing was imported. Fix these lines:"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "아직 없습니다. 단계는 구성된 후에만 값을 제공합니다."
@@ -19309,6 +19391,9 @@ msgstr "기록 ID"
 msgid "Record inspections tied to a part and a job"
 msgstr "품목과 작업에 연결된 검사를 기록"
 
+msgid "Record scan"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "{displayId}의 지불을 직원에게 기록하세요. 부분적으로 결제하려면 총 미결액보다 적게 지불하세요."
 
@@ -20992,6 +21077,9 @@ msgstr "스캔"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "라벨을 스캔하거나 품목 ID 또는 추적 ID로 검색하세요."
 
+msgid "Scan a serial, batch or item number"
+msgstr ""
+
 msgid "Scan or choose a batch number"
 msgstr "배치 번호를 스캔하거나 선택하세요"
 
@@ -21009,6 +21097,12 @@ msgstr "스캔 또는 검색..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "이 로트에서 추적 대상을 스캔하거나 선택하여 표본 열로 추가한 후, 그리드에 그 결과를 기록하세요."
+
+msgid "Scan serial or batch…"
+msgstr ""
+
+msgid "Scan the serial or batch number, not the item"
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "인증 앱(예: Google Authenticator 또는 1Password)으로 이 QR 코드를 스캔한 후 표시된 6자리 코드를 입력하세요."
@@ -23426,7 +23520,7 @@ msgid "System configured"
 msgstr "시스템이 설정되었습니다"
 
 msgid "System Qty"
-msgstr "시스템 수량"
+msgstr ""
 
 msgid "Table"
 msgstr "테이블"
@@ -23741,6 +23835,9 @@ msgstr "목록이 비어 있었습니다."
 
 msgid "That name is already used by another step."
 msgstr "해당 이름은 이미 다른 단계에서 사용 중입니다."
+
+msgid "That storage unit is not at this count's location"
+msgstr ""
 
 msgid "That workspace is connected to another company"
 msgstr "해당 작업 공간은 다른 회사에 연결되어 있습니다"
@@ -24233,6 +24330,9 @@ msgstr "MACRS(수정가속상각법)에 따른 이 자산의 IRS 내용연수 �
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "각 작업 지시가 생산하는 품목 — 출력 로트를 병합하기 위해 일치 필수"
+
+msgid "The item has no serial or batch tracking"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "품목의 임차료"
