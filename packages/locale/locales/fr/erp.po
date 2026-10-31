@@ -23922,7 +23922,10 @@ msgstr "Calendriers de maintenance préventive pour votre équipement"
 msgid "Preview"
 msgstr "Aperçu"
 
-msgid "Preview as customer"
+msgid "Preview as {firstName}"
+msgstr ""
+
+msgid "Preview as user"
 msgstr ""
 
 msgid "Preview failed: {error}"

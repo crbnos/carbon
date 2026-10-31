@@ -23922,7 +23922,10 @@ msgstr "설비 예방 유지보수 일정"
 msgid "Preview"
 msgstr "미리보기"
 
-msgid "Preview as customer"
+msgid "Preview as {firstName}"
+msgstr ""
+
+msgid "Preview as user"
 msgstr ""
 
 msgid "Preview failed: {error}"

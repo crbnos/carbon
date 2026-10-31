@@ -23922,7 +23922,10 @@ msgstr "Vorbeugende Instandhaltungspläne für Ihre Anlagen"
 msgid "Preview"
 msgstr "Vorschau"
 
-msgid "Preview as customer"
+msgid "Preview as {firstName}"
+msgstr ""
+
+msgid "Preview as user"
 msgstr ""
 
 msgid "Preview failed: {error}"

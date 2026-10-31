@@ -23922,7 +23922,10 @@ msgstr "आपकी उपकरण के लिए निवारक रख�
 msgid "Preview"
 msgstr "पूर्वावलोकन"
 
-msgid "Preview as customer"
+msgid "Preview as {firstName}"
+msgstr ""
+
+msgid "Preview as user"
 msgstr ""
 
 msgid "Preview failed: {error}"

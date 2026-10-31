@@ -23922,7 +23922,10 @@ msgstr "Графики предупреждающего техобслужива
 msgid "Preview"
 msgstr "Предпросмотр"
 
-msgid "Preview as customer"
+msgid "Preview as {firstName}"
+msgstr ""
+
+msgid "Preview as user"
 msgstr ""
 
 msgid "Preview failed: {error}"

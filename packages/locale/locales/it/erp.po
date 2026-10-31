@@ -23922,7 +23922,10 @@ msgstr "Programmi di manutenzione preventiva per il tuo impianto"
 msgid "Preview"
 msgstr "Anteprima"
 
-msgid "Preview as customer"
+msgid "Preview as {firstName}"
+msgstr ""
+
+msgid "Preview as user"
 msgstr ""
 
 msgid "Preview failed: {error}"

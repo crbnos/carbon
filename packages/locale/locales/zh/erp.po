@@ -23922,7 +23922,10 @@ msgstr "您的设备预防性维护排程"
 msgid "Preview"
 msgstr "预览"
 
-msgid "Preview as customer"
+msgid "Preview as {firstName}"
+msgstr ""
+
+msgid "Preview as user"
 msgstr ""
 
 msgid "Preview failed: {error}"

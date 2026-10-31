@@ -23922,7 +23922,10 @@ msgstr "Ekipmanınız için önleyici bakım programları"
 msgid "Preview"
 msgstr "Önizle"
 
-msgid "Preview as customer"
+msgid "Preview as {firstName}"
+msgstr ""
+
+msgid "Preview as user"
 msgstr ""
 
 msgid "Preview failed: {error}"

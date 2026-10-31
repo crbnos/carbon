@@ -23922,7 +23922,10 @@ msgstr "設備の予防保全スケジュール"
 msgid "Preview"
 msgstr "プレビュー"
 
-msgid "Preview as customer"
+msgid "Preview as {firstName}"
+msgstr ""
+
+msgid "Preview as user"
 msgstr ""
 
 msgid "Preview failed: {error}"

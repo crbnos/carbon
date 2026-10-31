@@ -23922,7 +23922,10 @@ msgstr "Harmonogramy zapobiegawczego utrzymania ruchu dla twojego urządzenia"
 msgid "Preview"
 msgstr "Podgląd"
 
-msgid "Preview as customer"
+msgid "Preview as {firstName}"
+msgstr ""
+
+msgid "Preview as user"
 msgstr ""
 
 msgid "Preview failed: {error}"
