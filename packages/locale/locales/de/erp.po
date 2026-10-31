@@ -11765,6 +11765,9 @@ msgstr "fällig in {days} Tagen"
 msgid "due in 1 day"
 msgstr "fällig in 1 Tag"
 
+msgid "Due in the next two weeks"
+msgstr ""
+
 msgid "due now"
 msgstr "fällig sofort"
 
@@ -17476,6 +17479,9 @@ msgstr "Verspätungsgrund"
 msgid "Later"
 msgstr ""
 
+msgid "Later or no date"
+msgstr ""
+
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "Spätere Wochen werden verbraucht, sobald frühere aufgebraucht sind."
 
@@ -20846,6 +20852,8 @@ msgstr "Keine Überstunden geplant"
 
 msgid "No owner"
 msgstr "Kein Verantwortlicher"
+msgid "No page has a card to tick yet."
+msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Noch keine übergeordneten Quellen aufgezeichnet. Klicken Sie auf der Planungsseite auf Neu berechnen, um die Zuordnung zu aktualisieren."
@@ -29342,6 +29350,9 @@ msgstr "Mehr anzeigen"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Zeige eine Bestandsnummer an, der Werkstatt und Büro beide vertrauen"
+
+msgid "Show page"
+msgstr ""
 
 msgid "Show parent items"
 msgstr "Übergeordnete Elemente anzeigen"

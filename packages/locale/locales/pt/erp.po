@@ -11765,6 +11765,9 @@ msgstr "vencimento em {days} dias"
 msgid "due in 1 day"
 msgstr "vencimento em 1 dia"
 
+msgid "Due in the next two weeks"
+msgstr ""
+
 msgid "due now"
 msgstr "vencimento agora"
 
@@ -17476,6 +17479,9 @@ msgstr "Motivo do Atraso"
 msgid "Later"
 msgstr ""
 
+msgid "Later or no date"
+msgstr ""
+
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "O estoque das semanas posteriores é usado assim que o das semanas anteriores for usado."
 
@@ -20846,6 +20852,8 @@ msgstr "Nenhuma hora extra agendada"
 
 msgid "No owner"
 msgstr "Sem responsável"
+msgid "No page has a card to tick yet."
+msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Nenhuma fonte pai registrada ainda. Clique em Recalcular na página de planejamento para atualizar a atribuição."
@@ -29342,6 +29350,9 @@ msgstr "Mostrar mais"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Mostrar um número de inventário que o chão de fábrica e o escritório confiam"
+
+msgid "Show page"
+msgstr ""
 
 msgid "Show parent items"
 msgstr "Mostrar itens pai"

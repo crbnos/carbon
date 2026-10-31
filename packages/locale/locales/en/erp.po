@@ -11763,6 +11763,9 @@ msgstr "due in {days} days"
 msgid "due in 1 day"
 msgstr "due in 1 day"
 
+msgid "Due in the next two weeks"
+msgstr "Due in the next two weeks"
+
 msgid "due now"
 msgstr "due now"
 
@@ -17471,6 +17474,9 @@ msgstr "Late Reason"
 msgid "Later"
 msgstr "Later"
 
+msgid "Later or no date"
+msgstr "Later or no date"
+
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "Later weeks are consumed once earlier ones are used up."
 
@@ -20835,6 +20841,8 @@ msgstr "No overtime scheduled"
 
 msgid "No owner"
 msgstr "No owner"
+msgid "No page has a card to tick yet."
+msgstr "No page has a card to tick yet."
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
@@ -29343,6 +29351,9 @@ msgstr "Show more"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Show one inventory number the floor and office both trust"
+
+msgid "Show page"
+msgstr "Show page"
 
 msgid "Show parent items"
 msgstr "Show parent items"

@@ -11765,6 +11765,9 @@ msgstr "{days} gün içinde teslim"
 msgid "due in 1 day"
 msgstr "1 gün içinde teslim"
 
+msgid "Due in the next two weeks"
+msgstr ""
+
 msgid "due now"
 msgstr "hemen teslim"
 
@@ -17476,6 +17479,9 @@ msgstr "Geç Nedeni"
 msgid "Later"
 msgstr ""
 
+msgid "Later or no date"
+msgstr ""
+
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "Daha sonraki haftalar, daha önceki olanlar bittiğinde tüketilir."
 
@@ -20846,6 +20852,8 @@ msgstr "Planlanmış fazla mesai yok"
 
 msgid "No owner"
 msgstr "Sahip yok"
+msgid "No page has a card to tick yet."
+msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Henüz üst kaynaklar kaydedilmedi. Atıfı yenilemek için planlama sayfasındaki Yeniden Hesapla düğmesine tıklayın."
@@ -29342,6 +29350,9 @@ msgstr "Daha fazla göster"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Tüm tarafların güvendiği tek bir envanter numarası göster"
+
+msgid "Show page"
+msgstr ""
 
 msgid "Show parent items"
 msgstr "Üst öğeleri göster"

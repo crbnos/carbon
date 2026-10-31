@@ -4,6 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
+  buildPageBoard,
   buildPageCatalogue,
   catalogueByItem,
   checkMemberPage,
@@ -31,6 +32,7 @@ import { getImplementationMembers } from "@carbon/implementation-hub/server";
 import {
   MemberPageEmpty,
   MemberPageView,
+  PageBoard,
   type PageEditor,
   ProgressPill,
   toFormFields,
@@ -80,7 +82,9 @@ import {
   LuDownload,
   LuEye,
   LuEyeOff,
+  LuFileText,
   LuFileUp,
+  LuKanban,
   LuRocket,
   LuTrash2,
   LuTriangleAlert
@@ -237,6 +241,34 @@ export default function GetStartedRoute() {
     return standing;
   }, [isInternal, members, rows, states, todayIso]);
 
+  // Staff can see every page's cards on one board instead of one page.
+  const previewing = useImplementationPreview();
+  const boardView = isInternal && !previewing && params.get("view") === "board";
+  const board = useMemo(() => {
+    if (!boardView) return null;
+    const items = catalogueByItem(buildPageCatalogue(rows));
+    const rowsById = new Map(rows.map((row) => [row.id, row]));
+    const pages = members.flatMap((member) => {
+      const parsed = memberPageValidator.safeParse(member.page);
+      return parsed.success
+        ? [
+            {
+              userId: member.userId,
+              sections: resolveMemberPage(parsed.data, items, member.userId)
+            }
+          ]
+        : [];
+    });
+    const now = today(getLocalTimeZone());
+    return buildPageBoard(
+      pages,
+      states,
+      rowsById,
+      now.toString(),
+      now.add({ days: 14 }).toString()
+    );
+  }, [boardView, members, rows, states]);
+
   const requested = params.get("as");
   const selectedId = isInternal
     ? (everyone.find((person) => person.id === requested)?.id ??
@@ -302,6 +334,17 @@ export default function GetStartedRoute() {
       (current) => {
         const next = new URLSearchParams(current);
         next.set("as", id);
+        next.delete("view");
+        return next;
+      },
+      { replace: true }
+    );
+  const toggleBoard = () =>
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        if (boardView) next.delete("view");
+        else next.set("view", "board");
         return next;
       },
       { replace: true }
@@ -319,6 +362,8 @@ export default function GetStartedRoute() {
             page={member?.page}
             onSelect={select}
             onLoad={() => setLoadText("")}
+            boardView={boardView}
+            onToggleBoard={toggleBoard}
           />
         ) : null}
         {isInternal && hubState?.implementationHub2 === false ? (
@@ -332,7 +377,13 @@ export default function GetStartedRoute() {
             }
           />
         ) : null}
-        {shownPage && selectedId ? (
+        {board ? (
+          <PageBoard
+            board={board}
+            nameOf={(id) => nameOf(id) ?? t`Unknown person`}
+            onOpen={select}
+          />
+        ) : shownPage && selectedId ? (
           <MemberPageView
             page={shownPage}
             memberId={selectedId}
@@ -695,7 +746,9 @@ function StaffBar({
   hasPage,
   page,
   onSelect,
-  onLoad
+  onLoad,
+  boardView,
+  onToggleBoard
 }: {
   groups: HubPeopleGroups;
   standings: Map<string, PageStanding>;
@@ -704,6 +757,8 @@ function StaffBar({
   page: unknown;
   onSelect: (userId: string) => void;
   onLoad: () => void;
+  boardView: boolean;
+  onToggleBoard: () => void;
 }) {
   const { t, i18n } = useLingui();
   const removeDisclosure = useDisclosure();
@@ -769,6 +824,14 @@ function StaffBar({
         onSelect={onSelect}
       />
       <div className="ml-auto flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          variant={boardView ? "primary" : "secondary"}
+          leftIcon={boardView ? <LuFileText /> : <LuKanban />}
+          onClick={onToggleBoard}
+        >
+          {boardView ? <Trans>Show page</Trans> : <Trans>Board</Trans>}
+        </Button>
         <Button
           size="sm"
           variant={previewing ? "primary" : "secondary"}

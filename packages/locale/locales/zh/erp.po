@@ -11765,6 +11765,9 @@ msgstr "在 {days} 天内到期"
 msgid "due in 1 day"
 msgstr "明天到期"
 
+msgid "Due in the next two weeks"
+msgstr ""
+
 msgid "due now"
 msgstr "立即到期"
 
@@ -17476,6 +17479,9 @@ msgstr "迟到原因"
 msgid "Later"
 msgstr ""
 
+msgid "Later or no date"
+msgstr ""
+
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "一旦较早的周次用完，较晚的周次将被消耗。"
 
@@ -20846,6 +20852,8 @@ msgstr "没有安排加班"
 
 msgid "No owner"
 msgstr "没有负责人"
+msgid "No page has a card to tick yet."
+msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "尚未记录任何父源。点击计划页面上的\"重新计算\"以刷新归因。"
@@ -29342,6 +29350,9 @@ msgstr "显示更多"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "显示一个楼层和办公室都信任的库存数字"
+
+msgid "Show page"
+msgstr ""
 
 msgid "Show parent items"
 msgstr "显示父物料"

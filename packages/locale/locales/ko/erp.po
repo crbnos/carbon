@@ -11765,6 +11765,9 @@ msgstr "{days}일 후 예정"
 msgid "due in 1 day"
 msgstr "1일 후 예정"
 
+msgid "Due in the next two weeks"
+msgstr ""
+
 msgid "due now"
 msgstr "즉시"
 
@@ -17476,6 +17479,9 @@ msgstr "지연 사유"
 msgid "Later"
 msgstr ""
 
+msgid "Later or no date"
+msgstr ""
+
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "이전 주가 모두 소진된 후 이후 주가 소진됩니다."
 
@@ -20846,6 +20852,8 @@ msgstr "예정된 초과근무가 없습니다"
 
 msgid "No owner"
 msgstr "책임자 없음"
+msgid "No page has a card to tick yet."
+msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "아직 기록된 상위 소스가 없습니다. 계획 페이지에서 재계산을 클릭하여 귀속 정보를 새로고침하세요."
@@ -29342,6 +29350,9 @@ msgstr "더보기"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "현장과 사무실이 모두 신뢰할 수 있는 하나의 재고 수치를 보여주세요"
+
+msgid "Show page"
+msgstr ""
 
 msgid "Show parent items"
 msgstr "상위 품목 표시"

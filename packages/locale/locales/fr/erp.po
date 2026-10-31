@@ -11765,6 +11765,9 @@ msgstr "dû dans {days} jours"
 msgid "due in 1 day"
 msgstr "dû dans 1 jour"
 
+msgid "Due in the next two weeks"
+msgstr ""
+
 msgid "due now"
 msgstr "dû maintenant"
 
@@ -17476,6 +17479,9 @@ msgstr "Raison du retard"
 msgid "Later"
 msgstr ""
 
+msgid "Later or no date"
+msgstr ""
+
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "Les semaines suivantes sont consommées une fois que les semaines antérieures sont épuisées."
 
@@ -20846,6 +20852,8 @@ msgstr "Aucune heure supplémentaire prévue"
 
 msgid "No owner"
 msgstr "Pas de propriétaire"
+msgid "No page has a card to tick yet."
+msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Aucune source parent enregistrée pour le moment. Cliquez sur Recalculer sur la page de planification pour actualiser l'attribution."
@@ -29342,6 +29350,9 @@ msgstr "Afficher plus"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Afficher un seul numéro d'inventaire en lequel l'atelier et le bureau ont confiance"
+
+msgid "Show page"
+msgstr ""
 
 msgid "Show parent items"
 msgstr "Afficher les éléments parents"

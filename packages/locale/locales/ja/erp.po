@@ -11765,6 +11765,9 @@ msgstr "{days} 日後が納期"
 msgid "due in 1 day"
 msgstr "1 日後が納期"
 
+msgid "Due in the next two weeks"
+msgstr ""
+
 msgid "due now"
 msgstr "本日が納期"
 
@@ -17476,6 +17479,9 @@ msgstr "遅刻理由"
 msgid "Later"
 msgstr ""
 
+msgid "Later or no date"
+msgstr ""
+
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "早い週が使い尽くされた後、後の週が消費されます。"
 
@@ -20846,6 +20852,8 @@ msgstr "残業予定なし"
 
 msgid "No owner"
 msgstr "責任者がいません"
+msgid "No page has a card to tick yet."
+msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "親ソースはまだ記録されていません。計画ページの「再計算」をクリックして属性を更新してください。"
@@ -29342,6 +29350,9 @@ msgstr "さらに表示"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "床と事務所の両方が信頼できる1つの在庫番号を表示する"
+
+msgid "Show page"
+msgstr ""
 
 msgid "Show parent items"
 msgstr "親アイテムを表示"

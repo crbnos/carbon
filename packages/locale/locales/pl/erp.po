@@ -11765,6 +11765,9 @@ msgstr "termin za {days} dni"
 msgid "due in 1 day"
 msgstr "termin za 1 dzień"
 
+msgid "Due in the next two weeks"
+msgstr ""
+
 msgid "due now"
 msgstr "termin teraz"
 
@@ -17476,6 +17479,9 @@ msgstr "Powód opóźnienia"
 msgid "Later"
 msgstr ""
 
+msgid "Later or no date"
+msgstr ""
+
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "Późniejsze tygodnie są zużywane, gdy wcześniejsze zostały wyczerpane."
 
@@ -20846,6 +20852,8 @@ msgstr "Brak zaplanowanych nadgodzin"
 
 msgid "No owner"
 msgstr "Brak właściciela"
+msgid "No page has a card to tick yet."
+msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Brak zarejestrowanych źródeł nadrzędnych. Kliknij Przelicz na stronie planowania, aby odświeżyć przypisanie."
@@ -29342,6 +29350,9 @@ msgstr "Pokaż więcej"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Wyświetl jeden numer inwentaryzacji, któremu ufają zarówno hala, jak i biuro"
+
+msgid "Show page"
+msgstr ""
 
 msgid "Show parent items"
 msgstr "Pokaż elementy nadrzędne"

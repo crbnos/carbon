@@ -11765,6 +11765,9 @@ msgstr "срок {days} дн."
 msgid "due in 1 day"
 msgstr "срок в 1 день"
 
+msgid "Due in the next two weeks"
+msgstr ""
+
 msgid "due now"
 msgstr "срочно"
 
@@ -17476,6 +17479,9 @@ msgstr "Причина задержки"
 msgid "Later"
 msgstr ""
 
+msgid "Later or no date"
+msgstr ""
+
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "Запас из поздних недель расходуется после того, как запас из ранних недель исчерпан."
 
@@ -20846,6 +20852,8 @@ msgstr "Нет запланированных переработок"
 
 msgid "No owner"
 msgstr "Нет ответственного"
+msgid "No page has a card to tick yet."
+msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Родительские источники еще не записаны. Нажмите \"Пересчитать\" на странице планирования, чтобы обновить атрибуцию."
@@ -29342,6 +29350,9 @@ msgstr "Показать ещё"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Показать один номер инвентаря, которому доверяют и цех, и офис"
+
+msgid "Show page"
+msgstr ""
 
 msgid "Show parent items"
 msgstr "Показать родительские элементы"

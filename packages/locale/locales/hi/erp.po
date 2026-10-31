@@ -11765,6 +11765,9 @@ msgstr "{days} दिन में देय"
 msgid "due in 1 day"
 msgstr "1 दिन में देय"
 
+msgid "Due in the next two weeks"
+msgstr ""
+
 msgid "due now"
 msgstr "अभी देय"
 
@@ -17476,6 +17479,9 @@ msgstr "देरी का कारण"
 msgid "Later"
 msgstr ""
 
+msgid "Later or no date"
+msgstr ""
+
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "बाद के सप्ताह तब उपयोग किए जाते हैं जब पहले वाले समाप्त हो जाते हैं।"
 
@@ -20846,6 +20852,8 @@ msgstr "कोई ओवरटाइम शेड्यूल नहीं ह�
 
 msgid "No owner"
 msgstr "कोई स्वामी नहीं"
+msgid "No page has a card to tick yet."
+msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "अभी तक कोई मूल स्रोत दर्ज नहीं किया गया है। एट्रिब्यूशन को रीफ्रेश करने के लिए योजना पृष्ठ पर पुनः गणना करें पर क्लिक करें।"
@@ -29342,6 +29350,9 @@ msgstr "और दिखाएँ"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "एक इन्वेंटरी नंबर दिखाएं जिस पर फ्लोर और ऑफिस दोनों को विश्वास है"
+
+msgid "Show page"
+msgstr ""
 
 msgid "Show parent items"
 msgstr "माता-पिता की वस्तुओं को दिखाएं"
