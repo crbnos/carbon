@@ -6,7 +6,6 @@ import type { CalendarDate } from "@internationalized/date";
 import { today } from "@internationalized/date";
 import * as cookie from "cookie";
 import template from "lodash.template";
-import { halloweenTheme } from "./halloween-theme";
 
 /** The everyday themes: what every theme picker offers all year. */
 export const themes = [
@@ -558,9 +557,7 @@ export type SeasonalTheme = {
   cssVars: { light: Record<string, string>; dark: Record<string, string> };
 };
 
-export const seasonalThemes = [
-  halloweenTheme
-] as const satisfies readonly SeasonalTheme[];
+export const seasonalThemes = [] as const satisfies readonly SeasonalTheme[];
 
 const allThemes = [...themes, ...seasonalThemes] as const;
 
@@ -584,7 +581,7 @@ const LATEST_TIME_ZONE = "Etc/GMT+12";
  *
  * Given a `date`, the window is checked against that day. Without one it is
  * on while it is in season anywhere on Earth: the server has no time zone
- * for the user, and checking one fixed zone (UTC) turned Halloween on five
+ * for the user, and checking one fixed zone (UTC) turned a theme on five
  * and a half hours late in India. So the server and the browser agree, and a
  * user sees it from at most a day before their own first day to at most a
  * day after their last.

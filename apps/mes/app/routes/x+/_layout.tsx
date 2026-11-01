@@ -45,7 +45,6 @@ import {
   useScanPending,
   VStack
 } from "@carbon/react";
-import { HalloweenLayer } from "@carbon/react/Halloween";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
@@ -575,9 +574,6 @@ export default function AuthenticatedRoute() {
                       defaultLinkLabel={t`Learn more`}
                     />
                     <Outlet key={companyId} />
-                    {/* Seasonal: shows only with the Halloween theme. Remove
-                        with packages/react/src/Halloween/. */}
-                    <HalloweenLayer />
                   </div>
                   <MesTabBar
                     activeEvents={activeEvents}

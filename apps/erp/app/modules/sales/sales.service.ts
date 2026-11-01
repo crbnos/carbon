@@ -79,6 +79,7 @@ import {
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
 import {
+  isStoredDocumentPdf,
   storage,
   storedDocumentPdfName,
   TEMP_STAGING_BUCKET
@@ -1669,6 +1670,21 @@ export async function getQuoteByExternalId(
     .select("*")
     .eq("externalLinkId", externalId)
     .single();
+}
+
+/**
+ * Whether a Sent quote's share link has expired: from the start (UTC) of its
+ * expiration date. The digital quote and its PDF download both refuse it.
+ */
+export function isExternalQuoteExpired(quote: {
+  expirationDate: string | null;
+  status: string;
+}) {
+  return (
+    quote.status === "Sent" &&
+    !!quote.expirationDate &&
+    parseDate(quote.expirationDate).compare(datetime.today("UTC")) <= 0
+  );
 }
 
 export async function getQuoteLinePrices(
@@ -12203,6 +12219,67 @@ export async function attachDocumentPdf(
     );
   }
   return { file, fileName, documentFilePath };
+}
+
+/**
+ * The PDF a quote was last finalized with (`finalizeAndSendQuote`), or null
+ * when it has none or the file was deleted from the opportunity's documents.
+ * The digital quote offers it for download.
+ */
+export async function getFinalizedQuotePdf(
+  client: SupabaseClient<Database>,
+  quote: {
+    id: string;
+    companyId: string;
+    quoteId: string | null;
+    opportunityId: string | null;
+  }
+) {
+  if (!quote.quoteId || !quote.opportunityId) return null;
+
+  const documents = await client
+    .from("document")
+    .select("name, path")
+    .eq("sourceDocument", "Quote")
+    .eq("sourceDocumentId", quote.id)
+    .eq("companyId", quote.companyId)
+    .eq("active", true)
+    .order("createdAt", { ascending: false });
+  if (documents.error) {
+    logger.error("Failed to read the quote's documents", {
+      companyId: quote.companyId,
+      quoteId: quote.id,
+      error: documents.error
+    });
+    return null;
+  }
+
+  // Anyone can file a document against the quote; only the PDF finalize
+  // stored, by its name and folder, is the customer's to download.
+  const folder = `${quote.companyId}/opportunity/${quote.opportunityId}/`;
+  const pdf = documents.data.find(
+    (document) =>
+      document.path === `${folder}${document.name}` &&
+      isStoredDocumentPdf(document.name, [quote.quoteId!])
+  );
+  if (!pdf) return null;
+
+  // Removing a file from the opportunity's documents leaves its row behind,
+  // which `exists` answers with false. It throws on any other storage fault;
+  // the download is optional, so that only hides it.
+  try {
+    const exists = await storage(client)
+      .company(quote.companyId)
+      .exists(pdf.path);
+    return exists.data ? pdf : null;
+  } catch (error) {
+    logger.error("Failed to check the finalized quote PDF in storage", {
+      companyId: quote.companyId,
+      quoteId: quote.id,
+      error
+    });
+    return null;
+  }
 }
 
 /** Render a sales order's PDF and attach it to its opportunity. */

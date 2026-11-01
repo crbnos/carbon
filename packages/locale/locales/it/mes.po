@@ -877,12 +877,6 @@ msgstr "Torna all'operazione"
 msgid "Go to onboarding"
 msgstr "Vai all'onboarding"
 
-msgid "Halloween surprise"
-msgstr "Sorpresa di Halloween"
-
-msgid "Happy Halloween"
-msgstr "Buon Halloween"
-
 msgid "Heading {level}"
 msgstr "Intestazione {level}"
 
@@ -1591,9 +1585,6 @@ msgstr "Pianificazione PM scaduta"
 
 msgid "PNG or JPG, dark ink on a plain background"
 msgstr ""
-
-msgid "Poke the spider… if you dare"
-msgstr "Tocca il ragno… se hai il coraggio"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Premi ? su qualsiasi pagina per aprire questo elenco. Le scorciatoie vengono ignorate mentre digiti in un campo."
