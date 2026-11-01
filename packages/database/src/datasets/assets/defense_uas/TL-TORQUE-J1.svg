@@ -1,0 +1,195 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- barrel rolls: horizontal cylinders, so the roll runs vertically -->
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="rubber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <linearGradient id="blackox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="endFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e9edef"/>
+      <stop offset="0.5" stop-color="#c0c7cc"/>
+      <stop offset="1" stop-color="#8f979d"/>
+    </linearGradient>
+    <linearGradient id="butt" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#4a5054"/>
+      <stop offset="0.55" stop-color="#2b2f33"/>
+      <stop offset="1" stop-color="#131618"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- contact shadow under the whole layout -->
+  <ellipse cx="512" cy="790" rx="400" ry="88" fill="url(#shadow)"/>
+
+  <!-- ==================== adjustable torque screwdriver ==================== -->
+  <g transform="translate(0 288)">
+    <!-- moulded grip, lobed -->
+    <path d="M 196 -74
+             C 176 -74 158 -60 150 -38 C 144 -20 144 20 150 38
+             C 158 60 176 74 196 74
+             L 408 74 C 420 74 428 66 428 56 L 428 -56 C 428 -66 420 -74 408 -74 Z"
+          fill="url(#rubber)"/>
+    <!-- grip lobes / texture flutes -->
+    <g stroke="#4c5257" stroke-width="4" opacity="0.75" fill="none">
+      <path d="M 214 -72 C 226 -30 226 30 214 72"/>
+      <path d="M 250 -73 C 262 -30 262 30 250 73"/>
+      <path d="M 286 -74 C 298 -30 298 30 286 74"/>
+      <path d="M 322 -74 C 334 -30 334 30 322 74"/>
+      <path d="M 358 -74 C 370 -30 370 30 358 74"/>
+    </g>
+    <g stroke="#666c72" stroke-width="2" opacity="0.6" fill="none">
+      <path d="M 232 -72 C 244 -30 244 30 232 72"/>
+      <path d="M 268 -74 C 280 -30 280 30 268 74"/>
+      <path d="M 304 -74 C 316 -30 316 30 304 74"/>
+      <path d="M 340 -74 C 352 -30 352 30 340 74"/>
+      <path d="M 376 -74 C 388 -30 388 30 376 74"/>
+    </g>
+    <!-- fine moulded grain -->
+    <g stroke="#5b6167" stroke-width="1.6" opacity="0.5" fill="none">
+      <path d="M 200 -44 L 420 -44"/><path d="M 196 -22 L 424 -22"/>
+      <path d="M 196 2 L 424 2"/><path d="M 198 26 L 424 26"/>
+      <path d="M 202 50 L 422 50"/>
+    </g>
+    <!-- rounded butt cap -->
+    <path d="M 196 -74 C 176 -74 158 -60 150 -38 C 144 -20 144 20 150 38
+             C 158 60 176 74 196 74 C 176 46 172 20 172 0 C 172 -20 176 -46 196 -74 Z"
+          fill="url(#butt)"/>
+    <path d="M 196 -74 C 176 -74 158 -60 150 -38 C 144 -20 144 20 150 38
+             C 158 60 176 74 196 74 L 408 74 C 420 74 428 66 428 56
+             L 428 -56 C 428 -66 420 -74 408 -74 Z"
+          fill="none" stroke="#0b0d0e" stroke-width="3"/>
+    <path d="M 176 -50 L 414 -50" stroke="#8d949a" stroke-width="6" opacity="0.35" stroke-linecap="round" fill="none"/>
+
+    <!-- graduated dial ring -->
+    <path d="M 428 -62 L 522 -62 L 522 62 L 428 62 Z" fill="url(#steel)"/>
+    <g stroke="#5f666c" stroke-width="3" opacity="0.9" fill="none">
+      <path d="M 438 -60 C 446 -22 446 22 438 60"/>
+      <path d="M 452 -61 C 460 -22 460 22 452 61"/>
+      <path d="M 466 -62 C 474 -22 474 22 466 62"/>
+      <path d="M 480 -62 C 488 -22 488 22 480 62"/>
+      <path d="M 494 -62 C 502 -22 502 22 494 62"/>
+      <path d="M 508 -62 C 516 -22 516 22 508 62"/>
+    </g>
+    <!-- engraved graduation ticks around the ring circumference -->
+    <g stroke="#3f454a" stroke-width="3" opacity="0.85" fill="none">
+      <path d="M 434 -56 L 516 -56"/><path d="M 432 -40 L 518 -40"/>
+      <path d="M 431 -24 L 519 -24"/><path d="M 430 -8 L 520 -8"/>
+      <path d="M 430 8 L 520 8"/><path d="M 431 24 L 519 24"/>
+      <path d="M 432 40 L 518 40"/><path d="M 434 56 L 516 56"/>
+    </g>
+    <g stroke="#ffffff" stroke-width="2" opacity="0.4" fill="none">
+      <path d="M 433 -48 L 517 -48"/><path d="M 431 -32 L 519 -32"/>
+      <path d="M 430 -16 L 520 -16"/><path d="M 430 0 L 520 0"/>
+      <path d="M 431 16 L 519 16"/><path d="M 432 32 L 518 32"/>
+      <path d="M 433 48 L 517 48"/>
+    </g>
+    <path d="M 428 -62 L 522 -62 L 522 62 L 428 62 Z" fill="none" stroke="#4b5156" stroke-width="3"/>
+
+    <!-- knurled brushed-steel barrel -->
+    <path d="M 522 -48 L 700 -48 L 700 48 L 522 48 Z" fill="url(#steel)"/>
+    <g stroke="#787f85" stroke-width="2.6" opacity="0.8" fill="none">
+      <path d="M 530 -47 L 556 47"/><path d="M 552 -47 L 578 47"/>
+      <path d="M 574 -47 L 600 47"/><path d="M 596 -47 L 622 47"/>
+      <path d="M 618 -47 L 644 47"/><path d="M 640 -47 L 666 47"/>
+      <path d="M 662 -47 L 688 47"/>
+    </g>
+    <g stroke="#eef1f3" stroke-width="2" opacity="0.55" fill="none">
+      <path d="M 556 -47 L 530 47"/><path d="M 578 -47 L 552 47"/>
+      <path d="M 600 -47 L 574 47"/><path d="M 622 -47 L 596 47"/>
+      <path d="M 644 -47 L 618 47"/><path d="M 666 -47 L 640 47"/>
+      <path d="M 688 -47 L 662 47"/>
+    </g>
+    <path d="M 522 -48 L 700 -48 L 700 48 L 522 48 Z" fill="none" stroke="#4b5156" stroke-width="3"/>
+
+    <!-- chuck collar -->
+    <path d="M 700 -42 L 742 -42 L 742 42 L 700 42 Z" fill="url(#chrome)" stroke="#454b50" stroke-width="3"/>
+    <path d="M 712 -41 C 720 -14 720 14 712 41" stroke="#5c6268" stroke-width="3" fill="none" opacity="0.8"/>
+    <path d="M 728 -41 C 736 -14 736 14 728 41" stroke="#5c6268" stroke-width="3" fill="none" opacity="0.8"/>
+    <!-- colour ring at the driver collar -->
+    <path d="M 742 -40 L 764 -40 L 764 40 L 742 40 Z" fill="#a33a30" stroke="#6d241d" stroke-width="2.5"/>
+    <path d="M 746 -34 L 760 -34" stroke="#e08b7f" stroke-width="4" opacity="0.55" fill="none"/>
+
+    <!-- chrome shank -->
+    <path d="M 764 -22 L 846 -22 L 846 22 L 764 22 Z" fill="url(#chrome)" stroke="#454b50" stroke-width="2.5"/>
+    <path d="M 770 -12 L 842 -12" stroke="#ffffff" stroke-width="5" opacity="0.7" stroke-linecap="round" fill="none"/>
+    <!-- black oxide hex tip -->
+    <path d="M 846 -20 L 864 -18 L 890 -12 L 890 12 L 864 18 L 846 20 Z"
+          fill="url(#blackox)" stroke="#0f1214" stroke-width="2.5"/>
+    <path d="M 850 -6 L 888 -2" stroke="#7b8288" stroke-width="3" opacity="0.55" fill="none"/>
+    <ellipse cx="890" cy="0" rx="5" ry="12" fill="#20242700"/>
+  </g>
+
+  <!-- ==================== four hex bit drivers, descending row ==================== -->
+  <!-- 1 -->
+  <g transform="translate(0 452)">
+    <path d="M 210 -14 L 508 -14 L 508 14 L 210 14 Z" fill="url(#chrome)" stroke="#454b50" stroke-width="2.5"/>
+    <ellipse cx="210" cy="0" rx="7" ry="14" fill="url(#endFace)" stroke="#5b6167" stroke-width="2"/>
+    <path d="M 218 -7 L 502 -7" stroke="#ffffff" stroke-width="4" opacity="0.7" stroke-linecap="round" fill="none"/>
+    <path d="M 240 -14 L 262 -14 L 262 14 L 240 14 Z" fill="#a33a30" stroke="#6d241d" stroke-width="2"/>
+    <path d="M 300 -14 C 306 -5 306 5 300 14" stroke="#6a7076" stroke-width="2.5" fill="none" opacity="0.8"/>
+    <path d="M 508 -13 L 522 -12 L 540 -9 L 540 9 L 522 12 L 508 13 Z"
+          fill="url(#blackox)" stroke="#0f1214" stroke-width="2.5"/>
+    <path d="M 512 -4 L 538 -2" stroke="#7b8288" stroke-width="2.5" opacity="0.5" fill="none"/>
+  </g>
+  <!-- 2 -->
+  <g transform="translate(0 545)">
+    <path d="M 210 -18 L 552 -18 L 552 18 L 210 18 Z" fill="url(#chrome)" stroke="#454b50" stroke-width="2.5"/>
+    <ellipse cx="210" cy="0" rx="9" ry="18" fill="url(#endFace)" stroke="#5b6167" stroke-width="2"/>
+    <path d="M 220 -9 L 546 -9" stroke="#ffffff" stroke-width="5" opacity="0.7" stroke-linecap="round" fill="none"/>
+    <path d="M 240 -18 L 266 -18 L 266 18 L 240 18 Z" fill="#2f5f9e" stroke="#1c3d68" stroke-width="2"/>
+    <path d="M 306 -18 C 313 -6 313 6 306 18" stroke="#6a7076" stroke-width="2.5" fill="none" opacity="0.8"/>
+    <path d="M 552 -17 L 568 -15 L 590 -11 L 590 11 L 568 15 L 552 17 Z"
+          fill="url(#blackox)" stroke="#0f1214" stroke-width="2.5"/>
+    <path d="M 556 -5 L 588 -3" stroke="#7b8288" stroke-width="2.5" opacity="0.5" fill="none"/>
+  </g>
+  <!-- 3 -->
+  <g transform="translate(0 640)">
+    <path d="M 210 -22 L 596 -22 L 596 22 L 210 22 Z" fill="url(#chrome)" stroke="#454b50" stroke-width="2.5"/>
+    <ellipse cx="210" cy="0" rx="11" ry="22" fill="url(#endFace)" stroke="#5b6167" stroke-width="2"/>
+    <path d="M 222 -11 L 590 -11" stroke="#ffffff" stroke-width="6" opacity="0.7" stroke-linecap="round" fill="none"/>
+    <path d="M 240 -22 L 270 -22 L 270 22 L 240 22 Z" fill="#2e7a56" stroke="#1c4d36" stroke-width="2"/>
+    <path d="M 312 -22 C 320 -7 320 7 312 22" stroke="#6a7076" stroke-width="2.5" fill="none" opacity="0.8"/>
+    <path d="M 596 -21 L 614 -18 L 640 -13 L 640 13 L 614 18 L 596 21 Z"
+          fill="url(#blackox)" stroke="#0f1214" stroke-width="2.5"/>
+    <path d="M 600 -6 L 638 -3" stroke="#7b8288" stroke-width="3" opacity="0.5" fill="none"/>
+  </g>
+  <!-- 4 -->
+  <g transform="translate(0 736)">
+    <path d="M 210 -26 L 640 -26 L 640 26 L 210 26 Z" fill="url(#chrome)" stroke="#454b50" stroke-width="2.5"/>
+    <ellipse cx="210" cy="0" rx="13" ry="26" fill="url(#endFace)" stroke="#5b6167" stroke-width="2"/>
+    <path d="M 224 -13 L 634 -13" stroke="#ffffff" stroke-width="7" opacity="0.7" stroke-linecap="round" fill="none"/>
+    <path d="M 240 -26 L 274 -26 L 274 26 L 240 26 Z" fill="#b8892c" stroke="#7a591b" stroke-width="2"/>
+    <path d="M 318 -26 C 327 -8 327 8 318 26" stroke="#6a7076" stroke-width="2.5" fill="none" opacity="0.8"/>
+    <path d="M 640 -25 L 660 -21 L 690 -15 L 690 15 L 660 21 L 640 25 Z"
+          fill="url(#blackox)" stroke="#0f1214" stroke-width="2.5"/>
+    <path d="M 644 -7 L 688 -4" stroke="#7b8288" stroke-width="3" opacity="0.5" fill="none"/>
+  </g>
+</svg>

@@ -36,6 +36,11 @@ import {
 import { updateConsoleSetting } from "@carbon/ee/console.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
+import {
+  disconnectConnection,
+  readConnection,
+  renameConnection
+} from "@carbon/ee/integrations/connections";
 import type { OeeDevice } from "@carbon/ee/oee";
 import {
   deleteWorkCenterDevice,
@@ -65,11 +70,12 @@ import { invalidatePrinterCache } from "@carbon/printing/printing.server";
 import type { JSONContent } from "@carbon/react";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import { getBillingPortalRedirectUrl } from "@carbon/stripe/stripe.server";
-import { datetime, unchecked } from "@carbon/utils";
+import { datetime, requireAffected, unchecked } from "@carbon/utils";
 import { parseTime } from "@internationalized/date";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { plmReleaseControl } from "~/modules/items/items.models";
+import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import {
   invalidateCompanyTimeZone,
   invokePosting,
@@ -88,9 +94,11 @@ import {
   expiredEntityPolicies,
   incompletePickingListPolicies,
   invoiceAutomations,
+  kanbanLabelSizes,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
   returnPickedMaterialTimings,
+  serialNumberTimings,
   subsidiaryValidator
 } from "./settings.models";
 import * as service from "./settings.service";
@@ -221,7 +229,8 @@ export const writeMissingJournals = defineServiceFn({
  *
  * @remarks
  * Writes the fields sent and leaves the rest: what a kanban card prints
- * (label, QR code or URL), the shelf-life and expiry policy (the near-expiry
+ * (label, QR code or URL) and the size its label prints at (a letter sheet of
+ * six, or a 4" x 2" or 3" x 2" thermal label), the shelf-life and expiry policy (the near-expiry
  * warning in days, null to turn the badges off; the default shelf life of a
  * new item; which inputs a calculated expiry reads; and what consuming an
  * expired entity does), whether finishing a picking list with unpicked
@@ -235,6 +244,7 @@ export const writeMissingJournals = defineServiceFn({
 export const updateInventorySettings = defineServiceFn({
   input: z.object({
     kanbanOutput: z.enum(kanbanOutputTypes).optional(),
+    kanbanLabelSize: z.enum(kanbanLabelSizes).optional(),
     inventoryShelfLife: z
       .object({
         nearExpiryWarningDays: z.number().int().min(0).max(365).nullable(),
@@ -369,11 +379,13 @@ export const updateItemsSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: who is notified when an
  * inventory or a sales job completes, whether opening an operation starts its
  * timer, whether the job traveler lists materials and operations, whether
- * tracked material is pre-selected without a picking list, and whether one
- * location requires an assigned operator before the scheduler places work
+ * tracked material is pre-selected without a picking list, when a produced
+ * unit draws its serial number (when the job is created, when it is released,
+ * or the first time the unit is worked on, scrapped or received), and whether
+ * one location requires an assigned operator before the scheduler places work
  * there. The staffing rule lives on the location row and is written for the
  * company's own location only, so a settings admin without the resources
- * permission can still set it.
+ * permission can still set it. Changing it re-plans the location.
  *
  * @mcp
  */
@@ -385,6 +397,7 @@ export const updateProductionSettings = defineServiceFn({
     includeMaterialsOnTraveler: z.boolean().optional(),
     includeOperationsOnTraveler: z.boolean().optional(),
     autoSelectMaterialWithoutPickingList: z.boolean().optional(),
+    serialNumberTiming: z.enum(serialNumberTimings).optional(),
     locationStaffing: z
       .object({
         locationId: z.string().min(1),
@@ -406,20 +419,50 @@ export const updateProductionSettings = defineServiceFn({
     if (saved) return saved;
 
     if (locationStaffing) {
-      const { data, error } = await ctx.asSystem.supabase
+      const { locationId, requiresStaffing } = locationStaffing;
+      const current = await ctx.asSystem.supabase
         .from("location")
-        .update({ requiresStaffing: locationStaffing.requiresStaffing })
-        .eq("id", locationStaffing.locationId)
+        .select("requiresStaffing")
+        .eq("id", locationId)
         .eq("companyId", ctx.company.id)
-        .select("id");
-      if (error) {
+        .maybeSingle();
+      if (current.error) {
         return ctx.error(
           "internal",
           "Failed to update the staffing requirement",
-          error
+          current.error
         );
       }
-      if (data.length === 0) return ctx.error("notFound", "Location not found");
+      if (current.data === null) {
+        return ctx.error("notFound", "Location not found");
+      }
+      if (current.data.requiresStaffing !== requiresStaffing) {
+        const { error } = await requireAffected(
+          ctx.asSystem.supabase
+            .from("location")
+            .update({ requiresStaffing })
+            .eq("id", locationId)
+            .eq("companyId", ctx.company.id)
+            .select("id")
+        );
+        if (error) {
+          return ctx.error(
+            "internal",
+            "Failed to update the staffing requirement",
+            error
+          );
+        }
+        // The scheduler places work only where an operator is manned while
+        // this is on, so the location's plan changes either way.
+        await notifyScheduleInputsChanged(
+          ctx.company.id,
+          "location",
+          requiresStaffing
+            ? "Staffing requirement enabled"
+            : "Staffing requirement disabled",
+          locationId
+        );
+      }
     }
     return input;
   }
@@ -432,7 +475,8 @@ export const updateProductionSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: whether documents print the
  * centralized payables billing address, that address itself (a null field
  * clears it), whether a supplier needs a contact with an email before its
- * documents issue, when a purchase updates the item's price (on invoice post
+ * documents issue, whether approving a purchase order needs the approver's
+ * signature on file, when a purchase updates the item's price (on invoice post
  * or on order finalize), whether a receipt updates the supplier lead time,
  * whether supplier readable ids show, who is notified about supplier quotes,
  * and the default CC on supplier emails.
@@ -444,6 +488,7 @@ export const updatePurchasingSettings = defineServiceFn({
     accountsPayableAddress: z.boolean().optional(),
     accountsPayableBillingAddress: billingAddressInput.optional(),
     requireSupplierContactAndLocation: z.boolean().optional(),
+    requirePurchaseOrderApprovalSignature: z.boolean().optional(),
     purchasePriceUpdateTiming: z
       .enum(purchasePriceUpdateTimingTypes)
       .optional(),
@@ -542,10 +587,13 @@ export const updateResourcesSettings = defineServiceFn({
 
     // The suggestion group lives on the company row, not its settings.
     if (suggestionNotificationGroup) {
-      const { error } = await ctx.asCaller.supabase
-        .from("company")
-        .update({ suggestionNotificationGroup })
-        .eq("id", ctx.company.id);
+      const { error } = await requireAffected(
+        ctx.asCaller.supabase
+          .from("company")
+          .update({ suggestionNotificationGroup })
+          .eq("id", ctx.company.id)
+          .select("id")
+      );
       if (error) {
         return ctx.error(
           "internal",
@@ -743,9 +791,11 @@ const employeeOrNone = z.string().min(1).nullable();
  * resources update permission it is refused. Then whether purchase orders
  * the planning pages raise skip approval, the reschedule tolerance in days,
  * the default planning horizon in days (null for no time fence), the forecast
- * consumption window in weekly periods back and forward, and the time of day
+ * consumption window in weekly periods back and forward, the time of day
  * scheduled MRP runs on the company's clock ("HH:MM" or "HH:MM:SS"; null runs
- * it every 3 hours).
+ * it every 3 hours), and whether the planning grids and demand forecasts head
+ * their weeks by calendar week (ISO 8601 week of the year) rather than
+ * counting from the present week.
  *
  * @mcp
  */
@@ -766,6 +816,7 @@ export const updatePlanningSettings = defineServiceFn({
       })
       .optional(),
     skipApprovalForPlanningPurchaseOrders: z.boolean().optional(),
+    useCalendarWeeks: z.boolean().optional(),
     rescheduleToleranceDays: z.number().int().min(0).max(365).optional(),
     defaultPlanningHorizonDays: z
       .number()
@@ -987,7 +1038,8 @@ export const createCompany = defineServiceFn({
  * Create a company in the caller's company group.
  *
  * @remarks
- * Open to internal users only, for now. The parent must be a company of the
+ * Open to Carbon staff, and to the companies the `multi-company-management`
+ * flag turns it on for. A parent is required, and it must be a company of the
  * caller's own group: seeding joins the new company to its parent's group,
  * so a parent from another group would place it inside another tenant. Then
  * as for a new company: insert, seed, the Headquarters location and the
@@ -997,22 +1049,25 @@ export const createSubsidiary = defineServiceFn({
   input: subsidiaryValidator,
   permission: { create: "settings" },
   async run(ctx, subsidiary) {
-    const refused = await service.refuseUnlessInternalUser(ctx);
+    const refused = await service.refuseUnlessCanManageCompanies(ctx);
     if (refused) return refused;
 
     const { id: _, parentCompanyId, ...company } = subsidiary;
     const client = ctx.asSystem.supabase;
 
-    if (parentCompanyId) {
-      const parent = await client
-        .from("company")
-        .select("id")
-        .eq("id", parentCompanyId)
-        .eq("companyGroupId", ctx.company.groupId)
-        .maybeSingle();
-      if (parent.error || !parent.data) {
-        return ctx.error("notFound", "Parent company not found", parent.error);
-      }
+    // Without a parent, seeding would start a new company group: that is
+    // creating a company, not a subsidiary, and has its own permissions.
+    if (!parentCompanyId) {
+      return ctx.error("validation", "A subsidiary needs a parent company");
+    }
+    const parent = await client
+      .from("company")
+      .select("id")
+      .eq("id", parentCompanyId)
+      .eq("companyGroupId", ctx.company.groupId)
+      .maybeSingle();
+    if (parent.error || !parent.data) {
+      return ctx.error("notFound", "Parent company not found", parent.error);
     }
 
     const inserted = await service.insertCompany(client, company);
@@ -1045,22 +1100,68 @@ export const createSubsidiary = defineServiceFn({
  * Update a company of the caller's company group.
  *
  * @remarks
- * Open to internal users only, for now. Writes the company's details and its
- * parent, then drops its cached time zone.
+ * Open to Carbon staff, and to the companies the `multi-company-management`
+ * flag turns it on for. The company and its new parent must both be in the
+ * caller's group. Writes the company's details and its parent, then drops its
+ * cached time zone. A base-currency change also clears the company's
+ * exchange-rate overrides in the same transaction, as `updateCompanyDetails`
+ * does: they are denominated in the old base.
  */
 export const updateSubsidiaryDetails = defineServiceFn({
   input: subsidiaryValidator.safeExtend({ id: z.string() }),
   permission: { update: "settings" },
   async run(ctx, { id, ...subsidiary }) {
-    const refused = await service.refuseUnlessInternalUser(ctx);
+    const refused = await service.refuseUnlessCanManageCompanies(ctx);
     if (refused) return refused;
 
-    const result = await service.updateSubsidiary(ctx.asCaller.supabase, id, {
-      ...subsidiary,
-      updatedBy: ctx.auditUserId
-    });
-    if (result.error) {
-      return ctx.error("internal", "Failed to update subsidiary", result.error);
+    const client = ctx.asSystem.supabase;
+    const current = await client
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", id)
+      .eq("companyGroupId", ctx.company.groupId)
+      .maybeSingle();
+    if (current.error || !current.data) {
+      return ctx.error("notFound", "Company not found", current.error);
+    }
+    if (subsidiary.parentCompanyId) {
+      const parent = await client
+        .from("company")
+        .select("id")
+        .eq("id", subsidiary.parentCompanyId)
+        .eq("companyGroupId", ctx.company.groupId)
+        .maybeSingle();
+      if (parent.error || !parent.data) {
+        return ctx.error("notFound", "Parent company not found", parent.error);
+      }
+    }
+
+    if (
+      subsidiary.baseCurrencyCode &&
+      subsidiary.baseCurrencyCode !== current.data.baseCurrencyCode
+    ) {
+      try {
+        await service.updateCompanyWithBaseCurrencyChange(
+          ctx.asSystem.pg,
+          id,
+          { ...subsidiary, updatedBy: ctx.auditUserId },
+          Object.keys(subsidiaryValidator.shape).filter((key) => key !== "id")
+        );
+      } catch (error) {
+        return ctx.error("internal", "Failed to update subsidiary", error);
+      }
+    } else {
+      const result = await service.updateSubsidiary(ctx.asCaller.supabase, id, {
+        ...subsidiary,
+        updatedBy: ctx.auditUserId
+      });
+      if (result.error) {
+        return ctx.error(
+          "internal",
+          "Failed to update subsidiary",
+          result.error
+        );
+      }
     }
     await invalidateCompanyTimeZone(id);
     return { id };
@@ -1204,13 +1305,17 @@ export const removePrinterRoute = defineServiceFn({
           next.defaultPrinterRouteId = null;
           dirty = true;
         }
-        if (next.shipping?.printerRouteId === id) {
-          next.shipping = { ...next.shipping, printerRouteId: null };
-          dirty = true;
-        }
-        if (next.receiving?.printerRouteId === id) {
-          next.receiving = { ...next.receiving, printerRouteId: null };
-          dirty = true;
+        for (const context of [
+          "shipping",
+          "receiving",
+          "inventory",
+          "kanban"
+        ] as const) {
+          const assigned = next[context];
+          if (assigned?.printerRouteId === id) {
+            next[context] = { ...assigned, printerRouteId: null };
+            dirty = true;
+          }
         }
         if (next.workCenters) {
           const workCenters = { ...next.workCenters };
@@ -1373,11 +1478,14 @@ export const deletePrintJob = defineServiceFn({
   input: z.object({ printJobId: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { printJobId }) {
-    const { error } = await ctx.asCaller.supabase
-      .from("printJob")
-      .delete()
-      .eq("id", printJobId)
-      .eq("companyId", ctx.company.id);
+    const { error } = await requireAffected(
+      ctx.asCaller.supabase
+        .from("printJob")
+        .delete()
+        .eq("id", printJobId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (error) return ctx.error("internal", "Failed to delete job", error);
     return { id: printJobId };
   }
@@ -1411,9 +1519,10 @@ export const viewPrintJobContent = defineServiceFn({
  * Writes the company's template for one document type: its blocks, theme,
  * settings and the header and footer sections it uses. The logo and header
  * layout (`headerConfig`) is edited with the template but lives on the
- * company-wide header section, so it is saved onto that section first, with
- * the section's name and content kept, and applies wherever the header is
- * used. A built-in header section is forked into the company's own copy.
+ * company-wide header section, so it is saved onto that section in the same
+ * transaction as the template, with the section's name and content kept, and
+ * applies wherever the header is used. A built-in header section is forked
+ * into the company's own copy.
  *
  * @mcp
  */
@@ -1429,49 +1538,45 @@ export const saveDocumentTemplate = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, template) {
-    const client = ctx.asCaller.supabase;
     const { headerConfig, headerSectionId } = template;
 
+    let header: Parameters<typeof service.upsertDocumentTemplate>[2];
     if (headerConfig && headerSectionId) {
-      const resolved = await service.resolveSections(client, ctx.company.id, [
-        headerSectionId
-      ]);
-      const header = resolved[headerSectionId];
-      const section = await service.upsertDocumentSection(client, {
+      const resolved = await service.resolveSections(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        [headerSectionId]
+      );
+      const section = resolved[headerSectionId];
+      header = {
         id: headerSectionId,
-        companyId: ctx.company.id,
-        name: header?.name ?? "Default Header",
-        placement: "header",
-        content: (header?.content ?? {
+        name: section?.name ?? "Default Header",
+        content: (section?.content ?? {
           type: "doc",
           content: []
         }) as JSONContent,
-        config: headerConfig as Record<string, unknown>,
-        createdBy: ctx.auditUserId,
-        updatedBy: ctx.auditUserId
-      });
-      if (section.error) {
-        return ctx.error("internal", "Failed to save header", section.error);
-      }
+        config: headerConfig as Record<string, unknown>
+      };
     }
 
-    const upsert = await service.upsertDocumentTemplate(client, {
-      companyId: ctx.company.id,
-      documentType: template.documentType,
-      blocks: template.blocks as DocumentBlock[],
-      theme: template.theme as DocumentTheme,
-      settings: template.settings as DocumentSettings,
-      headerSectionId: headerSectionId || null,
-      footerSectionId: template.footerSectionId || null,
-      createdBy: ctx.auditUserId,
-      updatedBy: ctx.auditUserId
-    });
-    if (upsert.error) {
-      return ctx.error(
-        "internal",
-        "Failed to save document layout",
-        upsert.error
+    // The header layout and the template land together or not at all.
+    try {
+      await service.upsertDocumentTemplate(
+        ctx.asSystem.pg,
+        {
+          companyId: ctx.company.id,
+          documentType: template.documentType,
+          blocks: template.blocks as DocumentBlock[],
+          theme: template.theme as DocumentTheme,
+          settings: template.settings as DocumentSettings,
+          headerSectionId: headerSectionId || null,
+          footerSectionId: template.footerSectionId || null,
+          userId: ctx.auditUserId
+        },
+        header
       );
+    } catch (err) {
+      return ctx.error("internal", "Failed to save document layout", err);
     }
     return { documentType: template.documentType };
   }
@@ -1689,6 +1794,92 @@ export const deactivateCompanyIntegration = defineServiceFn({
 });
 
 /**
+ * Rename an account connected to a workflow integration.
+ *
+ * @remarks
+ * The name a workflow step's account picker shows. Names are unique per app.
+ */
+export const renameIntegrationConnection = defineServiceFn({
+  input: z.object({ id: z.string().min(1), name: z.string().trim().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { id, name }) {
+    // The table is read-only to API roles, so every write goes through the
+    // service role, scoped by the caller's company.
+    const connection = await readConnection(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      id
+    );
+    if (connection === null) {
+      return ctx.error("notFound", "Connection not found");
+    }
+
+    const update = await renameConnection(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      id,
+      name,
+      ctx.auditUserId
+    );
+    // Names are unique per app: the unique index refuses a taken one.
+    if (update.error?.code === "23505") {
+      return ctx.error(
+        "conflict",
+        "An account is already called that — pick a different name."
+      );
+    }
+    if (update.error) {
+      return ctx.error("internal", "Failed to rename connection", update.error);
+    }
+    return { id };
+  }
+});
+
+/**
+ * Disconnect an account connected to a workflow integration.
+ *
+ * @remarks
+ * Drops the account's token and marks it Revoked. The account stays listed, so
+ * a workflow step that uses it says "reconnect" rather than naming an account
+ * that is gone.
+ */
+export const disconnectIntegrationConnection = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { id }) {
+    const connection = await readConnection(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      id
+    );
+    if (connection === null) {
+      return ctx.error("notFound", "Connection not found");
+    }
+
+    try {
+      await disconnectConnection(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        connection.pieceName,
+        id,
+        ctx.auditUserId
+      );
+    } catch (err) {
+      return ctx.error("internal", "Failed to disconnect", err);
+    }
+
+    // The card's badge is cached (five minutes while healthy) and its health is
+    // computed from these rows, so without this Settings keeps saying "Healthy"
+    // for an account the builder already treats as disconnected.
+    await service.invalidateIntegrationHealthCache(
+      connection.pieceName,
+      ctx.company.id
+    );
+    return { id };
+  }
+});
+
+/**
  * Turn audit logging on.
  *
  * @remarks
@@ -1794,10 +1985,13 @@ export const transferCompanyOwnership = defineServiceFn({
   input: z.object({ newOwnerId: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { newOwnerId }) {
-    const { error } = await ctx.asCaller.supabase
-      .from("companyGroup")
-      .update({ ownerId: newOwnerId })
-      .eq("id", ctx.company.groupId);
+    const { error } = await requireAffected(
+      ctx.asCaller.supabase
+        .from("companyGroup")
+        .update({ ownerId: newOwnerId })
+        .eq("id", ctx.company.groupId)
+        .select("id")
+    );
     if (error) {
       return ctx.error("internal", "Failed to transfer ownership", error);
     }
@@ -2794,6 +2988,13 @@ export const createItemSerialSequence = defineServiceFn({
     next: z.number().min(0),
     step: z.number().min(1),
     size: z.number().min(1).max(20),
+    serialNumberTiming: z
+      .enum(serialNumberTimings)
+      .nullable()
+      .optional()
+      .describe(
+        "When this item's units draw their serial numbers. Omit or null to follow the company setting."
+      ),
     id: z
       .string()
       .describe("Send to update that record; omit to create a new one.")
@@ -2828,6 +3029,13 @@ export const updateItemSerialSequence = defineServiceFn({
       next: z.number().min(0),
       step: z.number().min(1),
       size: z.number().min(1).max(20),
+      serialNumberTiming: z
+        .enum(serialNumberTimings)
+        .nullable()
+        .optional()
+        .describe(
+          "When this item's units draw their serial numbers. Null follows the company setting. Omitted, a new sequence follows the company setting and an update keeps the current value."
+        ),
       id: z
         .string()
         .describe("Send to update that record; omit to create a new one.")

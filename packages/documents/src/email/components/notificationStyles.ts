@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { emailTheme } from "./Theme";
+import { darkModeMedia, emailTheme } from "./Theme";
 
 const dark = emailTheme.dark;
 
@@ -11,7 +11,7 @@ const dark = emailTheme.dark;
  * margin, and less padding. A rounded border hugging the screen's edges
  * reads as a mistake.
  */
-export function flatCardOnPhones(card: string) {
+export function flatCardOnPhones(card: string, padding = "32px 20px") {
   return `
   @media only screen and (max-width: 600px) {
     .${card} {
@@ -21,7 +21,7 @@ export function flatCardOnPhones(card: string) {
       margin-bottom: 0 !important;
     }
     .${card} > tbody > tr > td {
-      padding: 32px 20px !important;
+      padding: ${padding} !important;
     }
   }
 `;
@@ -63,7 +63,7 @@ export const notificationStyles = `
     color: #6b7280 !important;
   }
 
-  @media (prefers-color-scheme: dark) {
+  ${darkModeMedia(`
     .nf-body,
     .nf-body > table > tbody > tr > td {
       background-color: ${dark.background} !important;
@@ -88,70 +88,5 @@ export const notificationStyles = `
     .nf-fallback {
       color: ${dark.muted} !important;
     }
-  }
-
-  /* Gmail desktop dark mode targeting */
-  .gmail_dark .nf-body,
-  .gmail_dark .nf-body > table > tbody > tr > td,
-  .gmail_dark_theme .nf-body,
-  .gmail_dark_theme .nf-body > table > tbody > tr > td,
-  [data-darkmode="true"] .nf-body,
-  [data-darkmode="true"] .nf-body > table > tbody > tr > td {
-    background-color: ${dark.background} !important;
-  }
-  .gmail_dark .nf-card,
-  .gmail_dark_theme .nf-card,
-  [data-darkmode="true"] .nf-card {
-    background-color: ${dark.background} !important;
-    border-color: ${dark.border} !important;
-  }
-  .gmail_dark .nf-divider,
-  .gmail_dark_theme .nf-divider,
-  [data-darkmode="true"] .nf-divider {
-    border-color: ${dark.border} !important;
-  }
-  .gmail_dark .nf-eyebrow,
-  .gmail_dark_theme .nf-eyebrow,
-  [data-darkmode="true"] .nf-eyebrow {
-    color: ${dark.muted} !important;
-  }
-  .gmail_dark .nf-callout,
-  .gmail_dark_theme .nf-callout,
-  [data-darkmode="true"] .nf-callout {
-    background-color: ${dark.panel} !important;
-    border-color: ${dark.border} !important;
-  }
-  .gmail_dark .nf-callout-accent,
-  .gmail_dark_theme .nf-callout-accent,
-  [data-darkmode="true"] .nf-callout-accent {
-    background-color: #fefefe !important;
-  }
-  .gmail_dark .nf-fallback,
-  .gmail_dark_theme .nf-fallback,
-  [data-darkmode="true"] .nf-fallback {
-    color: ${dark.muted} !important;
-  }
-
-  /* Outlook web/mobile dark mode targeting */
-  [data-ogsb] .nf-body,
-  [data-ogsb] .nf-body > table > tbody > tr > td {
-    background-color: ${dark.background} !important;
-  }
-  [data-ogsb] .nf-card {
-    background-color: ${dark.background} !important;
-    border-color: ${dark.border} !important;
-  }
-  [data-ogsb] .nf-callout {
-    background-color: ${dark.panel} !important;
-    border-color: ${dark.border} !important;
-  }
-  [data-ogsc] .nf-eyebrow {
-    color: ${dark.muted} !important;
-  }
-  [data-ogsc] .nf-callout-accent {
-    background-color: #fefefe !important;
-  }
-  [data-ogsc] .nf-fallback {
-    color: ${dark.muted} !important;
-  }
+  `)}
 ${flatCardOnPhones("nf-card")}`;

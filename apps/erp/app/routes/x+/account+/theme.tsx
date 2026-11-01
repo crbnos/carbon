@@ -18,10 +18,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const theme = getTheme(request);
-
   return {
-    theme: theme ?? "zinc"
+    theme: getTheme(request)
   };
 }
 
@@ -38,7 +36,7 @@ export async function action({ request }: ActionFunctionArgs) {
   return data(
     {},
     {
-      headers: { "Set-Cookie": setTheme(validation.data.theme) }
+      headers: setTheme(validation.data.theme, { inApp: true })
     }
   );
 }

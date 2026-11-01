@@ -39,7 +39,7 @@ export const avatarVariants = cva(
         md: "h-12 w-12 text-base",
         sm: "h-8 w-8 text-xs",
         xs: "h-6 w-6 text-xxs",
-        xxs: "h-4 w-4 text-[8px] tracking-tight"
+        xxs: "h-4 w-4 text-[0.5rem] tracking-tight"
       },
       isGroup: {
         true: "ring-2 ring-background hover:-translate-y-1 hover:scale-110"

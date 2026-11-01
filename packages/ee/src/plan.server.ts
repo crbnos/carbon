@@ -14,6 +14,7 @@ import {
 } from "@carbon/auth/company.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
+import { flags } from "@carbon/env/flags.server";
 import { Edition, normalizePlanId, Plan, redirect } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -33,12 +34,27 @@ function isBypassCompany(companyId: string): boolean {
 
 /**
  * Whether this user may install an `internalOnly` integration on Carbon Cloud
- * without a Carbon email (`isIntegrationComingSoon`): their id is listed in
- * `INTEGRATION_EARLY_ACCESS_USER_IDS`. The list is deployment configuration,
- * so no customer's id is in the code.
+ * without a Carbon email (`isIntegrationComingSoon`): the
+ * `integration-early-access` flag is on for their email in this company, or their id
+ * is listed in `INTEGRATION_EARLY_ACCESS_USER_IDS`. The flag's rules name the
+ * users and their company, because each user also needs access to the app on
+ * the provider's side (the Onshape app, in Onshape). The env list stays as a
+ * fallback until a flags source is live; remove it once the users it lists
+ * have flag rules.
  */
-export function hasIntegrationEarlyAccess(userId: string): boolean {
-  return isListedUserId(INTEGRATION_EARLY_ACCESS_USER_IDS, userId);
+export async function hasIntegrationEarlyAccess({
+  companyId,
+  userId,
+  email
+}: {
+  companyId: string;
+  userId: string;
+  email: string;
+}): Promise<boolean> {
+  return (
+    isListedUserId(INTEGRATION_EARLY_ACCESS_USER_IDS, userId) ||
+    flags.bool("integration-early-access", { companyId, email })
+  );
 }
 
 // The plan read is `getCompanyPlanId` (`@carbon/auth`): service role, cached, and

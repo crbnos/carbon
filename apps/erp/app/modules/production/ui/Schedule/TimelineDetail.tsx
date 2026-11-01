@@ -312,6 +312,39 @@ export function TimelineDetail({
             </p>
           ))}
 
+        {isUnschedulablePlaceholder && detail.qualifiedPeople && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">
+              <Trans>Qualified to run it</Trans>
+            </p>
+            {detail.qualifiedPeople.length === 0 ? (
+              <p className="text-sm text-pretty">
+                <Trans>
+                  Nobody is qualified. Add someone to the process's ability.
+                </Trans>
+              </p>
+            ) : (
+              <ul className="space-y-1 text-sm">
+                {detail.qualifiedPeople.map((person, index) => {
+                  const stations = person.stations.join(", ");
+                  return (
+                    <li key={`${index}:${person.name}`} className="text-pretty">
+                      <span className="font-medium">{person.name}</span>{" "}
+                      <span className="text-muted-foreground">
+                        {person.stations.length > 0 ? (
+                          <Trans>— on the manning board at {stations}</Trans>
+                        ) : (
+                          <Trans>— not on the manning board</Trans>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+
         {/* Why the row starts when it does — hidden when a conflict is shown,
             the conflict message already names the same cause */}
         {detail.scheduleNote && !detail.conflictReason && (

@@ -10,7 +10,8 @@ import {
   agentChatModel,
   agentProvider,
   agentTitleModel,
-  datetime
+  datetime,
+  requireAffected
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -89,12 +90,15 @@ export async function deleteThread(
   client: SupabaseClient<Database>,
   args: { threadId: string; companyId: string; userId: string }
 ) {
-  return client
-    .from("agentThread")
-    .delete()
-    .eq("id", args.threadId)
-    .eq("companyId", args.companyId)
-    .eq("userId", args.userId);
+  return requireAffected(
+    client
+      .from("agentThread")
+      .delete()
+      .eq("id", args.threadId)
+      .eq("companyId", args.companyId)
+      .eq("userId", args.userId)
+      .select("id")
+  );
 }
 
 export async function setThreadTitle(

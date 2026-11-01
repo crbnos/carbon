@@ -27,7 +27,7 @@ const SearchFilter = ({ param, size, ...props }: SearchFilterProps) => {
   const written = useRef(urlQuery);
   const debounceQuery = useDebounce((q: string) => {
     written.current = q.trim();
-    setParams({ [param]: q.trim(), offset: null, limit: null });
+    setParams({ [param]: q.trim() });
   }, 500);
 
   useEffect(() => {

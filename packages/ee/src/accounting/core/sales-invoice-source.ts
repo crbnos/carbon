@@ -136,6 +136,114 @@ export async function loadSalesInvoices(
     .where("journal.sourceType", "=", "Sales Invoice")
     .where("journal.status", "=", "Posted")
     .execute();
+  const replayed = resolveReplayedRevenueAccounts(postingRows);
+
+  // Group lines by invoice ID
+  const linesByInvoiceId = new Map<string, (typeof lineRows)[number][]>();
+  for (const line of lineRows) {
+    const existing = linesByInvoiceId.get(line.invoiceId) ?? [];
+    existing.push(line);
+    linesByInvoiceId.set(line.invoiceId, existing);
+  }
+
+  // Transform to Accounting.SalesInvoice
+  const result = new Map<string, Accounting.SalesInvoice>();
+  for (const row of invoiceRows) {
+    if (
+      !row.baseCurrencyCode ||
+      !row.currencyCode ||
+      row.baseCurrencyDecimalPlaces == null ||
+      row.currencyDecimalPlaces == null
+    ) {
+      throw new Error(
+        `Invoice ${row.id} is missing authoritative currency precision metadata`
+      );
+    }
+    if (
+      row.subtotal == null ||
+      row.totalTax == null ||
+      row.totalAmount == null ||
+      row.balance == null
+    ) {
+      throw new Error(
+        `Invoice ${row.id} is missing authoritative source view totals`
+      );
+    }
+    const lines = linesByInvoiceId.get(row.id) ?? [];
+
+    result.set(row.id, {
+      id: row.id,
+      invoiceId: row.invoiceId,
+      companyId: row.companyId,
+      customerId: row.customerId,
+      customerExternalId: null, // Will be resolved during mapToRemote
+      status: row.status,
+      currencyCode: row.currencyCode,
+      baseCurrencyCode: row.baseCurrencyCode,
+      baseCurrencyDecimalPlaces: Number(row.baseCurrencyDecimalPlaces),
+      currencyDecimalPlaces: Number(row.currencyDecimalPlaces),
+      shippingRevenueAccountId: replayed("ShippingRevenue", row.id),
+      salesRevenueAccountId: replayed("SalesRevenue", row.id),
+      headerShippingCost: Number(row.headerShippingCost ?? 0),
+      exchangeRate: Number(row.exchangeRate),
+      postingDate: row.postingDate,
+      dateIssued: row.dateIssued,
+      dateDue: row.dateDue,
+      datePaid: row.datePaid,
+      customerReference: row.customerReference,
+      subtotal: Number(row.subtotal),
+      totalTax: Number(row.totalTax),
+      totalDiscount: Number(row.totalDiscount) || 0,
+      totalAmount: Number(row.totalAmount),
+      balance: Number(row.balance),
+      lines: lines.map((line) => {
+        const quantity = Number(line.quantity) || 0;
+        const unitPrice = Number(line.unitPrice) || 0;
+        const taxPercent = Number(line.taxPercent) || 0;
+        const discountPercent = Number(line.discountPercent) || 0;
+        const convertedUnitPrice =
+          line.convertedUnitPrice === null ||
+          line.convertedUnitPrice === undefined
+            ? null
+            : Number(line.convertedUnitPrice);
+        return {
+          id: line.id,
+          invoiceLineType: line.invoiceLineType,
+          itemId: line.itemId,
+          itemCode: line.itemReadableIdWithRevision,
+          description: line.description,
+          quantity,
+          unitPrice,
+          shippingCost: Number(line.shippingCost ?? 0),
+          addOnCost: Number(line.addOnCost ?? 0),
+          nonTaxableAddOnCost: Number(line.nonTaxableAddOnCost ?? 0),
+          convertedUnitPrice,
+          discountPercent,
+          taxPercent,
+          lineAmount: quantity * unitPrice * (1 - discountPercent)
+        };
+      }),
+      updatedAt: row.updatedAt ?? datetime.timestamp(),
+      raw: row
+    });
+  }
+
+  return result;
+}
+
+/**
+ * The original revenue account each invoice's posted journal names, per role,
+ * from its "Sales Account" / "Shipping Revenue" journal lines.
+ */
+export function resolveReplayedRevenueAccounts(
+  postingRows: Array<{
+    documentId: string | null;
+    accountId: string | null;
+    description: string | null;
+    accountClass: string | null;
+    isGroup: boolean | null;
+  }>
+): (role: RevenueRole, invoiceId: string) => string | null {
   // Both revenue roles are extracted the same way, and for the same reason: a
   // provider document must replay the account its ORIGINAL journal posted to,
   // never today's default. Merchandise revenue joined shipping here when AR
@@ -194,106 +302,11 @@ export async function loadSalesInvoices(
    * assumes. A role with ANY unusable posting stays unresolved even when a
    * second line did name a valid leaf, for the same reason.
    */
-  const resolveReplayedAccountId = (role: RevenueRole, invoiceId: string) => {
+  return (role: RevenueRole, invoiceId: string): string | null => {
     if (unusableRoles[role].has(invoiceId)) return null;
     const ids = [...(revenueAccounts[role].get(invoiceId) ?? [])];
     return ids.length === 1 ? ids[0]! : null;
   };
-
-  // Group lines by invoice ID
-  const linesByInvoiceId = new Map<string, (typeof lineRows)[number][]>();
-  for (const line of lineRows) {
-    const existing = linesByInvoiceId.get(line.invoiceId) ?? [];
-    existing.push(line);
-    linesByInvoiceId.set(line.invoiceId, existing);
-  }
-
-  // Transform to Accounting.SalesInvoice
-  const result = new Map<string, Accounting.SalesInvoice>();
-  for (const row of invoiceRows) {
-    if (
-      !row.baseCurrencyCode ||
-      !row.currencyCode ||
-      row.baseCurrencyDecimalPlaces == null ||
-      row.currencyDecimalPlaces == null
-    ) {
-      throw new Error(
-        `Invoice ${row.id} is missing authoritative currency precision metadata`
-      );
-    }
-    if (
-      row.subtotal == null ||
-      row.totalTax == null ||
-      row.totalAmount == null ||
-      row.balance == null
-    ) {
-      throw new Error(
-        `Invoice ${row.id} is missing authoritative source view totals`
-      );
-    }
-    const lines = linesByInvoiceId.get(row.id) ?? [];
-
-    result.set(row.id, {
-      id: row.id,
-      invoiceId: row.invoiceId,
-      companyId: row.companyId,
-      customerId: row.customerId,
-      customerExternalId: null, // Will be resolved during mapToRemote
-      status: row.status,
-      currencyCode: row.currencyCode,
-      baseCurrencyCode: row.baseCurrencyCode,
-      baseCurrencyDecimalPlaces: Number(row.baseCurrencyDecimalPlaces),
-      currencyDecimalPlaces: Number(row.currencyDecimalPlaces),
-      shippingRevenueAccountId: resolveReplayedAccountId(
-        "ShippingRevenue",
-        row.id
-      ),
-      salesRevenueAccountId: resolveReplayedAccountId("SalesRevenue", row.id),
-      headerShippingCost: Number(row.headerShippingCost ?? 0),
-      exchangeRate: Number(row.exchangeRate),
-      postingDate: row.postingDate,
-      dateIssued: row.dateIssued,
-      dateDue: row.dateDue,
-      datePaid: row.datePaid,
-      customerReference: row.customerReference,
-      subtotal: Number(row.subtotal),
-      totalTax: Number(row.totalTax),
-      totalDiscount: Number(row.totalDiscount) || 0,
-      totalAmount: Number(row.totalAmount),
-      balance: Number(row.balance),
-      lines: lines.map((line) => {
-        const quantity = Number(line.quantity) || 0;
-        const unitPrice = Number(line.unitPrice) || 0;
-        const taxPercent = Number(line.taxPercent) || 0;
-        const discountPercent = Number(line.discountPercent) || 0;
-        const convertedUnitPrice =
-          line.convertedUnitPrice === null ||
-          line.convertedUnitPrice === undefined
-            ? null
-            : Number(line.convertedUnitPrice);
-        return {
-          id: line.id,
-          invoiceLineType: line.invoiceLineType,
-          itemId: line.itemId,
-          itemCode: line.itemReadableIdWithRevision,
-          description: line.description,
-          quantity,
-          unitPrice,
-          shippingCost: Number(line.shippingCost ?? 0),
-          addOnCost: Number(line.addOnCost ?? 0),
-          nonTaxableAddOnCost: Number(line.nonTaxableAddOnCost ?? 0),
-          convertedUnitPrice,
-          discountPercent,
-          taxPercent,
-          lineAmount: quantity * unitPrice * (1 - discountPercent)
-        };
-      }),
-      updatedAt: row.updatedAt ?? datetime.timestamp(),
-      raw: row
-    });
-  }
-
-  return result;
 }
 
 /**
@@ -301,7 +314,7 @@ export async function loadSalesInvoices(
  *
  * This is also where an UNRESOLVABLE original account is reported, not just an
  * absent one — the loader leaves every defect as `null` so the refusal lands on
- * the one invoice it belongs to (see the comment in `loadSalesInvoices`). The
+ * the one invoice it belongs to (see `resolveReplayedRevenueAccounts`). The
  * message therefore names all three causes; the invoice id is what a reader
  * needs to open the journal and see which.
  */

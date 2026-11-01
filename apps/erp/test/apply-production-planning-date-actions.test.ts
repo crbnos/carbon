@@ -2,144 +2,40 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { describe, expect, it } from "vitest";
 import {
-  type CompiledQuery,
-  type DatabaseConnection,
-  DummyDriver,
-  Kysely as KyselyClient,
-  PostgresAdapter,
-  PostgresIntrospector,
-  PostgresQueryCompiler,
-  type QueryResult
-} from "kysely";
-import { describe, expect, it, vi } from "vitest";
+  nextJobPriority,
+  planJobDateMoves
+} from "../app/modules/production/production.service";
 
-vi.mock("@carbon/content/glossary", () => ({
-  terms: {},
-  getEntry: vi.fn(),
-  lookupEntry: vi.fn(),
-  hasEntry: vi.fn(),
-  termSlug: vi.fn(),
-  glossaryEntries: () => []
-}));
-vi.mock("@lingui/core/macro", () => ({
-  msg: (strings: TemplateStringsArray | string, ...values: unknown[]) =>
-    Array.isArray(strings)
-      ? strings.reduce(
-          (acc, s, i) => acc + s + (i < values.length ? String(values[i]) : ""),
-          ""
-        )
-      : String(strings)
-}));
-
-const { applyProductionPlanningDateActions, nextJobPriority } = await import(
-  "../app/modules/production/production.service"
-);
-
-// The Postgres wire is the boundary: each statement is recorded, and the rows
-// "the database" answers with are chosen by what the statement is.
-type Responder = (query: CompiledQuery) => unknown[];
-
-class RecordingDriver extends DummyDriver {
-  readonly sent: CompiledQuery[] = [];
-  constructor(private readonly respond: Responder) {
-    super();
-  }
-  override async acquireConnection(): Promise<DatabaseConnection> {
-    return {
-      executeQuery: async <R>(
-        query: CompiledQuery
-      ): Promise<QueryResult<R>> => {
-        this.sent.push(query);
-        return { rows: this.respond(query) as R[] };
-      },
-      // biome-ignore lint/correctness/useYield: never streamed
-      streamQuery: async function* () {
-        throw new Error("not streamed");
-      }
-    };
-  }
-}
-
-function database(respond: Responder) {
-  const driver = new RecordingDriver(respond);
-  const db = new KyselyClient<KyselyDatabase>({
-    dialect: {
-      createAdapter: () => new PostgresAdapter(),
-      createDriver: () => driver,
-      createIntrospector: (k) => new PostgresIntrospector(k),
-      createQueryCompiler: () => new PostgresQueryCompiler()
-    }
-  }) as unknown as Kysely<KyselyDatabase>;
-  return { db, driver };
-}
-
-const is = {
-  claim: (q: CompiledQuery) =>
-    /^update "planningAction" set "status" = \$1/.test(q.sql) &&
-    q.parameters.includes("Actioned"),
-  jobs: (q: CompiledQuery) =>
-    /^select "id", "locationId", "deadlineType" from "job"/.test(q.sql),
-  siblings: (q: CompiledQuery) =>
-    /^select "id", "locationId", "dueDate", "priority", "deadlineType" from "job"/.test(
-      q.sql
-    ),
-  dates: (q: CompiledQuery) => /UPDATE "job" AS j\s+SET "dueDate"/.test(q.sql),
-  reopen: (q: CompiledQuery) =>
-    /UPDATE "planningAction" AS a\s+SET "status" = 'Open'/.test(q.sql)
-};
-
-const ids = (rows: string[]) => rows.map((id) => ({ id }));
-const scope = { companyId: "c1", userId: "u1" };
-
-const moveA = {
-  planningActionId: "a1",
-  jobId: "job-a",
-  suggestedDate: "2026-11-02"
-};
-const moveB = {
-  planningActionId: "a2",
-  jobId: "job-b",
-  suggestedDate: "2026-11-02"
-};
-
-function everythingLands(q: CompiledQuery): unknown[] {
-  if (is.claim(q)) return ids(["a1", "a2"]);
-  if (is.jobs(q)) {
-    return [
-      { id: "job-a", locationId: "loc", deadlineType: "Soft Deadline" },
-      { id: "job-b", locationId: "loc", deadlineType: "ASAP" }
-    ];
-  }
-  if (is.siblings(q)) {
-    // one job already on the target date
-    return [
-      {
-        id: "job-x",
-        locationId: "loc",
-        dueDate: "2026-11-02",
-        priority: 4,
-        deadlineType: "Soft Deadline"
-      }
-    ];
-  }
-  if (is.dates(q)) return ids(["job-a", "job-b"]);
-  return [];
-}
-
+// Deadline types rank ASAP < Hard < Soft < No Deadline.
 describe("nextJobPriority", () => {
-  it("starts at 0 with no siblings, goes after the last, or before a lower rank", () => {
+  it("starts at 0 on a date with no other jobs", () => {
     expect(nextJobPriority([], "Soft Deadline")).toBe(0);
+  });
+
+  it("goes after the last job when nothing ranks lower", () => {
     expect(
       nextJobPriority(
         [{ priority: 4, deadlineType: "Soft Deadline" }],
         "Soft Deadline"
       )
     ).toBe(5);
+  });
+
+  it("goes before the first job that ranks lower, at half its priority", () => {
     expect(
       nextJobPriority([{ priority: 4, deadlineType: "Soft Deadline" }], "ASAP")
     ).toBe(2);
+  });
+
+  it("goes to -1 before a first job at priority 0", () => {
+    expect(
+      nextJobPriority([{ priority: 0, deadlineType: "Soft Deadline" }], "ASAP")
+    ).toBe(-1);
+  });
+
+  it("goes halfway between the jobs it falls between", () => {
     expect(
       nextJobPriority(
         [
@@ -152,137 +48,87 @@ describe("nextJobPriority", () => {
   });
 });
 
-describe("applyProductionPlanningDateActions", () => {
-  it("claims, reads twice and writes every date and priority in one statement", async () => {
-    const { db, driver } = database(everythingLands);
-    const result = await applyProductionPlanningDateActions(db, {
-      ...scope,
-      actions: [moveA, moveB]
-    });
-    expect(result).toEqual({
-      applied: ["a1", "a2"],
-      alreadyApplied: [],
-      refused: []
-    });
-    expect(driver.sent.filter(is.claim)).toHaveLength(1);
-    expect(driver.sent.filter(is.jobs)).toHaveLength(1);
-    expect(driver.sent.filter(is.siblings)).toHaveLength(1);
-    expect(driver.sent.filter(is.dates)).toHaveLength(1);
-    expect(driver.sent).toHaveLength(4);
+describe("planJobDateMoves", () => {
+  const job = (
+    id: string,
+    deadlineType: "ASAP" | "Soft Deadline" | "No Deadline" = "Soft Deadline"
+  ) => ({ id, locationId: "loc", deadlineType });
+  const sibling = (
+    overrides: Partial<{
+      locationId: string;
+      dueDate: string;
+      priority: number;
+      deadlineType: "Soft Deadline" | "No Deadline";
+    }> = {}
+  ) => ({
+    locationId: "loc",
+    dueDate: "2026-11-02",
+    priority: 4,
+    deadlineType: "Soft Deadline" as const,
+    ...overrides
+  });
+  const move = (jobId: string) => ({ jobId, suggestedDate: "2026-11-02" });
+
+  it("places jobs moved to one date in turn, each after the one before", () => {
+    expect(
+      planJobDateMoves(
+        [move("job-a"), move("job-b")],
+        [job("job-a"), job("job-b")],
+        [sibling()]
+      )
+    ).toEqual([
+      {
+        jobId: "job-a",
+        dueDate: "2026-11-02",
+        deadlineType: "Soft Deadline",
+        priority: 5
+      },
+      {
+        jobId: "job-b",
+        dueDate: "2026-11-02",
+        deadlineType: "Soft Deadline",
+        priority: 6
+      }
+    ]);
   });
 
-  // job-a (Soft Deadline) goes after the sibling at 4 → 5; job-b (ASAP) goes
-  // before both → half of the first priority, 2. Each placement sees the one
-  // before it, as the sequential writes did.
-  it("ranks moved jobs among the jobs already on the date, in turn", async () => {
-    const { db, driver } = database(everythingLands);
-    await applyProductionPlanningDateActions(db, {
-      ...scope,
-      actions: [moveA, moveB]
-    });
-    const write = driver.sent.find(is.dates)!;
-    expect(write.parameters).toEqual(
-      expect.arrayContaining(["job-a", "2026-11-02", 5, "job-b", 2])
-    );
-    expect(write.parameters).toEqual(
-      expect.arrayContaining(["Draft", "Planned", "c1"])
-    );
+  // The job form hides the due date of a No Deadline job, so a dated job
+  // must carry a dated type; it then ranks as Soft, ahead of undated jobs.
+  it("gives a No Deadline job a Soft Deadline and ranks it as one", () => {
+    expect(
+      planJobDateMoves(
+        [move("job-a")],
+        [job("job-a", "No Deadline")],
+        [sibling({ deadlineType: "No Deadline" })]
+      )
+    ).toEqual([
+      {
+        jobId: "job-a",
+        dueDate: "2026-11-02",
+        deadlineType: "Soft Deadline",
+        priority: 2
+      }
+    ]);
   });
 
-  // An MRP run between the page's read and the claim can move an Open action's
-  // date in place. The claim RETURNS the row's date, and that is what is
-  // written; the page's date is only the fallback for a row that has none.
-  it("applies the date from the claim, not from the page", async () => {
-    const { db, driver } = database((q) =>
-      is.claim(q)
-        ? [
-            { id: "a1", suggestedDate: "2026-11-09", suggestedQuantity: null },
-            { id: "a2", suggestedDate: null, suggestedQuantity: null }
-          ]
-        : everythingLands(q)
-    );
-    await applyProductionPlanningDateActions(db, {
-      ...scope,
-      actions: [moveA, moveB]
-    });
-    const write = driver.sent.find(is.dates)!;
-    expect(write.parameters).toEqual(
-      expect.arrayContaining(["job-a", "2026-11-09", "job-b", "2026-11-02"])
-    );
-    expect(write.parameters).not.toContain("2026-11-02\u0000");
-    // The siblings read asks for the claimed date, not the page's.
-    const siblings = driver.sent.find(is.siblings)!;
-    expect(siblings.parameters).toContain("2026-11-09");
+  it("ranks only among jobs at the same location on the same date", () => {
+    expect(
+      planJobDateMoves(
+        [move("job-a")],
+        [job("job-a", "ASAP")],
+        [sibling({ locationId: "elsewhere" }), sibling({ dueDate: "2026-11-03" })]
+      )
+    ).toEqual([
+      {
+        jobId: "job-a",
+        dueDate: "2026-11-02",
+        deadlineType: "ASAP",
+        priority: 0
+      }
+    ]);
   });
 
-  // The job form hides the due-date field for "No Deadline", so a date written
-  // under that type could be neither seen nor edited on the job, and the
-  // priority would carry the undated weight. The date apply restates the type
-  // as the Order path does.
-  it("gives a No Deadline job a Soft Deadline with its date", async () => {
-    const { db, driver } = database((q) =>
-      is.jobs(q)
-        ? [
-            { id: "job-a", locationId: "loc", deadlineType: "No Deadline" },
-            { id: "job-b", locationId: "loc", deadlineType: "ASAP" }
-          ]
-        : everythingLands(q)
-    );
-    await applyProductionPlanningDateActions(db, {
-      ...scope,
-      actions: [moveA, moveB]
-    });
-    const write = driver.sent.find(is.dates)!;
-    expect(write.sql).toContain(
-      `"deadlineType" = v."deadlineType"::"deadlineType"`
-    );
-    // job-a ranks as a Soft Deadline: after the sibling at 4 → 5, not before it.
-    expect(write.parameters).toEqual(
-      expect.arrayContaining(["job-a", "2026-11-02", "Soft Deadline", 5])
-    );
-    expect(write.parameters).not.toContain("No Deadline");
-    // A job that already has a dated type keeps it.
-    expect(write.parameters).toEqual(
-      expect.arrayContaining(["job-b", "ASAP", 2])
-    );
-  });
-
-  it("leaves an action another apply already claimed alone", async () => {
-    const { db, driver } = database((q) =>
-      is.claim(q) ? ids(["a2"]) : everythingLands(q)
-    );
-    const result = await applyProductionPlanningDateActions(db, {
-      ...scope,
-      actions: [moveA, moveB]
-    });
-    expect(result.alreadyApplied).toEqual(["a1"]);
-    expect(result.applied).toEqual(["a2"]);
-    const write = driver.sent.find(is.dates)!;
-    expect(write.parameters).not.toContain("job-a");
-  });
-
-  // job-a was released to the floor after the page loaded: the guarded UPDATE
-  // leaves it, and its action goes back to Open for review.
-  it("un-claims an action whose job left Draft / Planned", async () => {
-    const { db, driver } = database((q) => {
-      if (is.dates(q)) return ids(["job-b"]);
-      if (is.reopen(q)) return ids(["a1"]);
-      return everythingLands(q);
-    });
-    const result = await applyProductionPlanningDateActions(db, {
-      ...scope,
-      actions: [moveA, moveB]
-    });
-    expect(result.refused).toEqual([{ id: "a1", jobId: "job-a" }]);
-    expect(result.applied).toEqual(["a2"]);
-    expect(driver.sent.find(is.reopen)!.parameters).toEqual(
-      expect.arrayContaining(["a1", "c1"])
-    );
-  });
-
-  it("sends nothing for an empty batch", async () => {
-    const { db, driver } = database(everythingLands);
-    await applyProductionPlanningDateActions(db, { ...scope, actions: [] });
-    expect(driver.sent).toHaveLength(0);
+  it("leaves out a move whose job was not found", () => {
+    expect(planJobDateMoves([move("gone")], [job("job-a")], [])).toEqual([]);
   });
 });

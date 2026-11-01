@@ -4,5 +4,6 @@
 
 import Gantt from "./Gantt";
 
+export type { GanttVisibility } from "./filter";
 export * from "./types";
 export { Gantt };

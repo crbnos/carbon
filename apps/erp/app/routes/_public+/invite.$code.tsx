@@ -17,8 +17,9 @@ import {
   updateCompanySession
 } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
+import { trigger } from "@carbon/jobs";
 import { Ratelimit, redis } from "@carbon/kv";
-import { sendEmail } from "@carbon/lib/email.server";
+import { getLogger } from "@carbon/logger";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
 import {
   datetime,
@@ -42,6 +43,9 @@ import {
 } from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+// A public page: errors are logged here and the toast stays generic.
+const logger = getLogger("erp", "invite");
 
 export const meta: MetaFunction = () => {
   return [{ title: "Accept Invite | Carbon" }];
@@ -98,11 +102,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     request
   );
   if (accept.error) {
+    logger.error("Failed to accept invite", { error: accept.error });
     throw redirect(
       path.to.root,
       await flash(
         request,
-        error(accept.error, accept.error.message ?? "Failed to accept invite")
+        error(null, accept.error.message ?? "Failed to accept invite")
       )
     );
   }
@@ -169,9 +174,12 @@ async function requestNewInvite(
     .maybeSingle();
 
   if (invite.error || !invite.data) {
+    if (invite.error) {
+      logger.error("Failed to read invite", { error: invite.error });
+    }
     throw redirect(
       path.to.root,
-      await flash(request, error(invite.error, "Invite not found"))
+      await flash(request, error(null, "Invite not found"))
     );
   }
 
@@ -223,12 +231,12 @@ async function requestNewInvite(
     .single();
 
   if (refreshed.error || !refreshed.data) {
+    if (refreshed.error) {
+      logger.error("Failed to create a new invite", { error: refreshed.error });
+    }
     throw redirect(
       path.to.root,
-      await flash(
-        request,
-        error(refreshed.error, "Failed to create a new invite")
-      )
+      await flash(request, error(null, "Failed to create a new invite"))
     );
   }
 
@@ -238,24 +246,32 @@ async function requestNewInvite(
     .eq("id", invite.data.createdBy)
     .single();
 
-  await sendEmail({
-    to: invite.data.email,
-    subject: `You have been invited to join ${invite.data.company?.name} on Carbon`,
-    headers: { "X-Entity-Ref-ID": nanoid() },
-    html: await render(
-      InviteEmail({
-        invitedByEmail: inviter.data?.email ?? invite.data.email,
-        invitedByName: inviter.data?.fullName ?? "",
-        email: invite.data.email,
-        name: "",
-        companyName: invite.data.company?.name ?? "Carbon",
-        inviteLink: `${getAppUrl()}/invite/${refreshed.data.code}`,
-        ip,
-        location,
-        controlledEnvironment: CONTROLLED_ENVIRONMENT
-      })
-    )
+  const email = InviteEmail({
+    invitedByEmail: inviter.data?.email ?? invite.data.email,
+    invitedByName: inviter.data?.fullName ?? "",
+    email: invite.data.email,
+    name: "",
+    companyName: invite.data.company?.name ?? "Carbon",
+    inviteLink: `${getAppUrl()}/invite/${refreshed.data.code}`,
+    ip,
+    location,
+    controlledEnvironment: CONTROLLED_ENVIRONMENT
   });
+  // Queued so it follows the company's Email settings; a failed dispatch only logs.
+  try {
+    await trigger("send-email", {
+      to: invite.data.email,
+      subject: `You have been invited to join ${invite.data.company?.name} on Carbon`,
+      html: await render(email),
+      text: await render(email, { plainText: true }),
+      companyId: invite.data.companyId
+    });
+  } catch (cause) {
+    logger.error("Failed to queue the refreshed invite email", {
+      companyId: invite.data.companyId,
+      error: cause
+    });
+  }
 
   throw redirect(
     path.to.root,

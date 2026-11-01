@@ -85,7 +85,7 @@ NEVER run DB migrate/seed/rebuild commands.)
 executor's environment. Skip the section otherwise.)
 
 - Carbon skills the executor should invoke if available, and for what:
-  "use the `test-driven-development` skill for the regression test in step 2";
+  "use the `test-driven-development` skill to prove step 2, and `.claude/rules/testing.md` to decide whether its test is committed";
   "use the `check-and-commit` skill to gate the final commit".
 - Workflow docs worth reading first by path:
   "`.claude/rules/workflow-database-migration.md` before writing the migration in step 4";

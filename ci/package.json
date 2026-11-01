@@ -4,6 +4,9 @@
   "version": "0.0.1",
   "description": "Deployment scripts for Carbon",
   "dependencies": {
+    "@carbon/env": "workspace:*",
+    "@openfeature/core": "catalog:",
+    "@openfeature/flagd-core": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "dotenv": "16.3.1",
     "execa": "8.0.1",

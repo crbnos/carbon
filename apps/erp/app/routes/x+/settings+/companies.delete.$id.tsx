@@ -6,6 +6,7 @@ import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { flags } from "@carbon/env/flags.server";
 import { getLogger } from "@carbon/logger";
 import { isInternalEmail, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -20,12 +21,16 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "settings-companies-delete");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, email } = await requirePermissions(request, {
+  const { client, companyId, email } = await requirePermissions(request, {
     view: "settings"
   });
 
-  // Multi-company management is gated to internal (Carbon) users for now.
-  if (!isInternalEmail(email)) {
+  // Multi-company management: Carbon staff, and the companies the
+  // `multi-company-management` flag turns it on for.
+  if (
+    !isInternalEmail(email) &&
+    !(await flags.bool("multi-company-management", { companyId, email }))
+  ) {
     throw redirect(path.to.settings);
   }
 
@@ -44,12 +49,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { companyGroupId, email } = await requirePermissions(request, {
-    delete: "settings"
-  });
+  const { companyGroupId, companyId, email } = await requirePermissions(
+    request,
+    {
+      delete: "settings"
+    }
+  );
 
-  // Multi-company management is gated to internal (Carbon) users for now.
-  if (!isInternalEmail(email)) {
+  // Multi-company management: Carbon staff, and the companies the
+  // `multi-company-management` flag turns it on for.
+  if (
+    !isInternalEmail(email) &&
+    !(await flags.bool("multi-company-management", { companyId, email }))
+  ) {
     throw redirect(path.to.settings);
   }
 
@@ -57,7 +69,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) {
     throw redirect(
       path.to.companies,
-      await flash(request, error(params, "Failed to get subsidiary id"))
+      await flash(request, error(null, "Failed to get subsidiary id"))
     );
   }
 

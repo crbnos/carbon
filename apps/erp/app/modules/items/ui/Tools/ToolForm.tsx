@@ -19,6 +19,7 @@ import {
   ModalCardProvider,
   ModalCardTitle,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { getFileSizeLimit, INPUT_FORMAT } from "@carbon/utils";
@@ -122,7 +123,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
         });
 
     if (uploadError || !recordInsert || recordInsert.error) {
-      toast.error(t`Failed to upload model`);
+      toastError(t`Failed to upload model`, uploadError ?? recordInsert?.error);
     } else {
       setModelUploadId(modelId);
       setModelFile(file);

@@ -181,7 +181,7 @@ function GraphControlsChip({
                 aria-label="Search nodes"
               >
                 <LuSearch className="w-3.5 h-3.5" />
-                <kbd className="text-[10px] text-muted-foreground bg-muted/50 px-1 rounded max-md:hidden">
+                <kbd className="text-[0.625rem] text-muted-foreground bg-muted/50 px-1 rounded max-md:hidden">
                   /
                 </kbd>
               </button>
@@ -415,7 +415,7 @@ function SpacingSlider({
                 "text-muted-foreground hover:text-foreground hover:bg-accent/60"
               )}
             >
-              <span className="text-[10px] uppercase tracking-wide">
+              <span className="text-[0.625rem] uppercase tracking-wide">
                 Spacing
               </span>
               <span className="text-xs tabular-nums font-medium text-foreground">
@@ -457,7 +457,7 @@ function SpacingSlider({
               style={{ accentColor: "hsl(var(--foreground))" }}
             />
           </div>
-          <HStack className="w-full justify-between text-[10px] text-muted-foreground tabular-nums">
+          <HStack className="w-full justify-between text-[0.625rem] text-muted-foreground tabular-nums">
             <span>1</span>
             <span>5</span>
           </HStack>

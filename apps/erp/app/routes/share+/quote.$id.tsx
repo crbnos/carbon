@@ -4,6 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getQuoteDisplayId } from "@carbon/documents/utils";
+import { downloadUrl } from "@carbon/files";
 import { Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -19,6 +20,8 @@ import {
   generateHTML,
   Heading,
   HStack,
+  IconButton,
+  isRichTextEmpty,
   Modal,
   ModalBody,
   ModalContent,
@@ -29,12 +32,16 @@ import {
   ModalTitle,
   RadioGroup,
   RadioGroupItem,
+  RichTextView,
   Separator,
   Table,
   Tbody,
   Td,
   Th,
   Thead,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   Tr,
   TruncatedTooltipText,
   toast,
@@ -54,6 +61,7 @@ import {
   LuChevronRight,
   LuCircleX,
   LuCreditCard,
+  LuDownload,
   LuImage,
   LuTruck,
   LuUpload
@@ -75,13 +83,15 @@ import {
 import { getShippingMethodsList } from "~/modules/inventory/inventory.service";
 import { externalQuoteValidator } from "~/modules/sales/sales.models";
 import {
+  getFinalizedQuotePdf,
   getOpportunity,
   getQuoteByExternalId,
   getQuoteCustomerDetails,
   getQuotePayment,
   getQuoteShipment,
   getSalesOrderLines,
-  getSalesTerms
+  getSalesTerms,
+  isExternalQuoteExpired
 } from "~/modules/sales/sales.service";
 import {
   getQuoteLinePricesByQuoteId,
@@ -126,11 +136,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
-  if (
-    quote.data.expirationDate &&
-    new Date(quote.data.expirationDate) < new Date() &&
-    quote.data.status === "Sent"
-  ) {
+  if (isExternalQuoteExpired(quote.data)) {
     return {
       state: QuoteState.Expired,
       data: null
@@ -148,7 +154,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     paymentTerms,
     terms,
     shippingMethods,
-    opportunity
+    opportunity,
+    finalizedPdf
   ] = await Promise.all([
     getCompany(serviceRole, quote.data.companyId),
     getCompanySettings(serviceRole, quote.data.companyId),
@@ -160,7 +167,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getPaymentTermsList(serviceRole, quote.data.companyId),
     getSalesTerms(serviceRole, quote.data.companyId),
     getShippingMethodsList(serviceRole, quote.data.companyId),
-    getOpportunity(serviceRole, quote.data.opportunityId)
+    getOpportunity(serviceRole, quote.data.opportunityId),
+    getFinalizedQuotePdf(serviceRole, quote.data)
   ]);
 
   // A No Quote line is the company's own decision not to bid — the customer
@@ -269,6 +277,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
             leadTime: price.leadTime
           })) ?? null,
       customerDetails: customerDetails.data,
+      hasFinalizedPdf: finalizedPdf !== null,
       quotePayment: quotePayment.data,
       quoteShipment: quoteShipment.data,
       paymentTerm: paymentTerms.data?.find(
@@ -287,25 +296,64 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   };
 }
 
+const DownloadPdfButton = ({
+  url,
+  fileName
+}: {
+  url: string;
+  fileName: string;
+}) => {
+  const { t } = useLingui();
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <IconButton
+          aria-label={t`Download PDF`}
+          icon={<LuDownload />}
+          variant="ghost"
+          onClick={() =>
+            downloadUrl(url, fileName).catch(() =>
+              toast.error(t`Error downloading file`)
+            )
+          }
+        />
+      </TooltipTrigger>
+      <TooltipContent>
+        <Trans>Download PDF</Trans>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
 const Header = ({
   company,
   quote,
   customer,
-  locale
+  locale,
+  pdfUrl
 }: {
   company: QuoteData["company"];
   quote: QuoteData["quote"];
   customer: QuoteData["customerDetails"];
   locale: string;
+  pdfUrl: string | null;
 }) => (
   <div className="flex justify-between">
     <div className="flex items-center space-x-4 tracking-tight">
       <div>
         <CardTitle className="text-3xl">{company?.name ?? ""}</CardTitle>
         {quote?.quoteId && (
-          <p className="text-lg text-muted-foreground">
-            {getQuoteDisplayId(quote)}
-          </p>
+          <HStack spacing={1}>
+            <p className="text-lg text-muted-foreground">
+              {getQuoteDisplayId(quote)}
+            </p>
+            {pdfUrl && (
+              <DownloadPdfButton
+                url={pdfUrl}
+                fileName={`${getQuoteDisplayId(quote)}.pdf`}
+              />
+            )}
+          </HStack>
         )}
         {quote?.expirationDate && (
           <p className="text-lg text-muted-foreground">
@@ -540,12 +588,11 @@ const LineItems = ({
                   >
                     {line.description}
                   </TruncatedTooltipText>
-                  {Object.keys(line.externalNotes ?? {}).length > 0 && (
-                    <div
-                      className="prose dark:prose-invert mt-2 text-muted-foreground"
-                      dangerouslySetInnerHTML={{
-                        __html: generateHTML(line.externalNotes as JSONContent)
-                      }}
+                  {!isRichTextEmpty(line.externalNotes as JSONContent) && (
+                    <RichTextView
+                      content={line.externalNotes as JSONContent}
+                      empty={null}
+                      className="mt-2 text-muted-foreground"
                     />
                   )}
                 </div>
@@ -1033,6 +1080,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
     company,
     companySettings,
     customerDetails,
+    hasFinalizedPdf,
     paymentTerm,
     quote,
     quoteLines,
@@ -1271,6 +1319,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
             quote={quote}
             customer={customerDetails}
             locale={locale}
+            pdfUrl={hasFinalizedPdf ? path.to.externalQuotePdf(id) : null}
           />
         </CardHeader>
         <CardContent>
@@ -1282,16 +1331,15 @@ const Quote = ({ data }: { data: QuoteData }) => {
             setSelectedLines={setSelectedLines}
           />
 
-          {Object.keys(quote?.externalNotes ?? {}).length > 0 && (
+          {!isRichTextEmpty(quote?.externalNotes as JSONContent) && (
             <div className="mt-6 mb-2">
               <Heading size="h4" className="mb-2">
                 <Trans>Notes</Trans>
               </Heading>
-              <div
-                className="prose dark:prose-invert text-muted-foreground"
-                dangerouslySetInnerHTML={{
-                  __html: generateHTML(quote.externalNotes as JSONContent)
-                }}
+              <RichTextView
+                content={quote.externalNotes as JSONContent}
+                empty={null}
+                className="text-muted-foreground"
               />
             </div>
           )}
@@ -1381,38 +1429,36 @@ const Quote = ({ data }: { data: QuoteData }) => {
               />
             </HStack>
           </VStack>
-          <div className="flex flex-col gap-2">
-            {companySettings?.digitalQuoteEnabled &&
-              quote?.status === "Sent" && (
-                <>
-                  <DisabledReason
-                    className="w-full mt-8"
-                    reason={
-                      hasSelectedItem
-                        ? undefined
-                        : t`Select at least one item to accept the quote`
-                    }
-                  >
-                    <Button
-                      onClick={confirmQuoteModal.onOpen}
-                      size="lg"
-                      variant="primary"
-                      isDisabled={!hasSelectedItem}
-                      className="w-full text-lg"
-                    >
-                      <Trans>Accept Quote</Trans>
-                    </Button>
-                  </DisabledReason>
-                  <Button
-                    onClick={rejectQuoteModal.onOpen}
-                    size="lg"
-                    variant="link"
-                  >
-                    <Trans>Reject Quote</Trans>
-                  </Button>
-                </>
-              )}
-          </div>
+          {companySettings?.digitalQuoteEnabled && quote?.status === "Sent" && (
+            <div className="mt-8 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                onClick={rejectQuoteModal.onOpen}
+                size="lg"
+                variant="secondary"
+                className="w-full sm:w-auto"
+              >
+                <Trans>Reject Quote</Trans>
+              </Button>
+              <DisabledReason
+                className="w-full sm:w-auto"
+                reason={
+                  hasSelectedItem
+                    ? undefined
+                    : t`Select at least one item to accept the quote`
+                }
+              >
+                <Button
+                  onClick={confirmQuoteModal.onOpen}
+                  size="lg"
+                  variant="primary"
+                  isDisabled={!hasSelectedItem}
+                  className="w-full sm:w-auto"
+                >
+                  <Trans>Accept Quote</Trans>
+                </Button>
+              </DisabledReason>
+            </div>
+          )}
         </CardContent>
       </Card>
       {/* generateHTML returns nothing on the server, so the server never

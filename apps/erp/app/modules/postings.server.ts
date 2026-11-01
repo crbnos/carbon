@@ -32,7 +32,7 @@ import * as shared from "./shared/shared.service";
 import { invokePosting } from "./shared/shared.service";
 
 /**
- * The permission each posting checks a caller's client against. Pinned by
+ * The permission each posting checks a caller's client against. Checked by
  * `apps/erp/test/posting-permissions.test.ts`.
  */
 export const postingPermissions = {

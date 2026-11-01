@@ -52,7 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!overrideId) {
     throw redirect(
       path.to.salesPriceList,
-      await flash(request, error(params, "Failed to get price override id"))
+      await flash(request, error(null, "Failed to get price override id"))
     );
   }
 

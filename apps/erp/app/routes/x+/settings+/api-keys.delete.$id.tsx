@@ -3,15 +3,38 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import type { ActionFunctionArgs } from "react-router";
-import { useParams } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { useRouteData } from "~/hooks";
-import type { ApiKey } from "~/modules/settings/types";
+import { getApiKey } from "~/modules/settings/settings.service";
 import { getParams, path } from "~/utils/path";
+
+// The list holds only the rows scrolled so far, so the modal reads its own key.
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    update: "users"
+  });
+
+  const { id } = params;
+  if (!id) throw new Error("Could not find id");
+
+  const apiKey = await getApiKey(client, id, companyId);
+  if (apiKey.error) {
+    throw redirect(
+      `${path.to.apiKeys}?${getParams(request)}`,
+      await flash(request, error(apiKey.error, "Failed to load API key"))
+    );
+  }
+
+  return { apiKey: { name: apiKey.data.name } };
+}
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["id"] });
@@ -27,12 +50,9 @@ export async function action(args: ActionFunctionArgs) {
 export default function DeleteApiKeyRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
-  const routeData = useRouteData<{ apiKeys: ApiKey[] }>(path.to.apiKeys);
+  const { apiKey } = useLoaderData<typeof loader>();
   const closeRoute = useCloseRoute();
   const { t } = useLingui();
-
-  const apiKey = routeData?.apiKeys.find((apiKey) => apiKey.id === id);
-  if (!apiKey) return null;
 
   const onCancel = () => closeRoute();
 

@@ -7,6 +7,7 @@ import { $ } from "execa";
 import { pushAuthEmails } from "./auth-emails";
 import { client } from "./client";
 import { SUPABASE_ACCESS_TOKEN } from "./env";
+import { withRetry } from "./retry";
 
 type Workspace = {
   id: number;
@@ -25,7 +26,13 @@ function stepsFor(workspace: Workspace): Step[] {
     {
       name: `Inngest sync for workspace ${id} (${url_erp})`,
       // --fail: an HTTP error is a failed sync, not a successful curl.
-      run: () => $`curl --fail --silent --show-error -X PUT https://${url_erp}/api/inngest`
+      // Every ERP deploy starts a sync, and Inngest answers a PUT that lands
+      // with another one with a 400, so a failed sync is retried.
+      run: () =>
+        withRetry(
+          () =>
+            $`curl --fail --silent --show-error -X PUT https://${url_erp}/api/inngest`
+        )
     }
   ];
   // A hosted Supabase project keeps Auth's emails as settings: copy in the

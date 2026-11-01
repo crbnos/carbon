@@ -993,7 +993,9 @@ function BatchForm({
   return (
     <div className="flex flex-col gap-6 w-full p-6 border rounded-lg max-md:gap-4 max-md:p-4">
       <div className="flex justify-between items-center gap-4">
-        <Heading size="h4">Tracking Number</Heading>
+        <Heading size="h4">
+          <Trans>Batch Number</Trans>
+        </Heading>
         {hasTrackingLabel && (
           <PrintButton
             sourceDocument="Shipment"
@@ -1309,7 +1311,9 @@ function SerialForm({
   return (
     <div className="flex flex-col gap-6 p-6 border rounded-lg max-md:gap-4 max-md:p-4">
       <div className="flex justify-between items-center gap-4">
-        <Heading size="h4">Tracking Numbers</Heading>
+        <Heading size="h4">
+          <Trans>Serial Numbers</Trans>
+        </Heading>
         {hasTrackingLabel && (
           <PrintButton
             sourceDocument="Shipment"
@@ -1352,7 +1356,7 @@ function SerialForm({
             >
               <InputGroup isDisabled={isReadOnly}>
                 <Input
-                  placeholder={`Tracking Number ${index + 1}`}
+                  placeholder={t`Serial Number ${index + 1}`}
                   value={serialNumber.id}
                   onChange={(e) => {
                     const newValue = e.target.value;

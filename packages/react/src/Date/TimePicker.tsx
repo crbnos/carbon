@@ -11,7 +11,10 @@ import { InputGroup } from "../Input";
 import { DateSegment } from "./components/DateSegment";
 
 const TimePicker = (
-  props: Omit<TimeFieldStateOptions, "locale" | "createCalendar">
+  props: Omit<TimeFieldStateOptions, "locale" | "createCalendar"> & {
+    /** The field's name for assistive tech, when no label points at it. */
+    "aria-label"?: string;
+  }
 ) => {
   const { locale } = useLocale();
   const state = useTimeFieldState({

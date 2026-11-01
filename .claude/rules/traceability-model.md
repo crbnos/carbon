@@ -72,8 +72,12 @@ and MES services — NOT a single `post-production`:
   `trackedActivity` and a `trackedActivityOutput` for the production event.
 - **Scrap** (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`): `issue` case
   `jobOperationScrap` scraps the serial being made — `type: 'Scrap'` activity,
-  entity → `Scrapped`, then **spawns the next serial** (same `getNextSerialNumbers`
-  path as `jobOperationSerialComplete`) and reopens the make method's Done ops
+  entity → `Scrapped` (an unsplit seed is first cut to one unit, so only one unit
+  is scrapped), then **spawns a replacement unit**, numbered by
+  `getSpawnSerialNumber` like `jobOperationSerialComplete`'s next unit (left
+  unnumbered under the `production` serial number timing; the replacement of
+  an unsplit seed carries the seed's other units and stays unnumbered; a unit
+  already received to stock is refused), and reopens the make method's Done ops
   (`applyScrapReplacement`, `inventory.service.ts`) so the replacement runs the full routing. `issue`
   case `scrapTrackedEntity` scraps a subcomponent, branching on entity **state**:
   an `Available` part posts a `Scrap` (`Negative Adjmt.`) `itemLedger` at its

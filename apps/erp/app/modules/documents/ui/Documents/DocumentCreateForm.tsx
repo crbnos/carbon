@@ -6,7 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
-import { File, toast, useViewport } from "@carbon/react";
+import { File, toast, toastError, useViewport } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
@@ -57,7 +57,7 @@ const DocumentCreateForm = () => {
 
       if (fileUpload.error) {
         logger.error(fileUpload.error);
-        toast.error(t`Failed to upload file`);
+        toastError(t`Failed to upload file`, fileUpload.error);
       }
 
       if (fileUpload.data?.path) {

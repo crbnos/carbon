@@ -2,18 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getPayments } from "~/modules/invoicing/invoicing.service";
 import { PaymentsTable } from "~/modules/invoicing/ui";
 import type { Handle } from "~/utils/handle";
+import { paymentsList } from "~/utils/list-registry/invoicing.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   realtime: ["payment"],
@@ -23,68 +19,16 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "invoicing"
+  return loadListPage(request, paymentsList, {
+    dataKey: "payments",
+    onError: {
+      redirectTo: path.to.invoicing,
+      message: "Failed to fetch payments"
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = url.searchParams;
-  const search = searchParams.get("search");
-  const paymentType = searchParams.get("paymentType") as
-    | "Receipt"
-    | "Disbursement"
-    | null;
-  const status = searchParams.get("status") as
-    | "Draft"
-    | "Posted"
-    | "Voided"
-    | null;
-  const customerId = searchParams.get("customerId");
-  const supplierId = searchParams.get("supplierId");
-
-  const {
-    limit,
-    offset,
-    sorts,
-    filters = []
-  } = getGenericQueryFilters(searchParams);
-
-  // The "Counterparty" column filter spans two columns (customerId OR
-  // supplierId), so pull it out of the generic filters and hand it to
-  // getPayments, which applies it as an OR. The rest pass through normally.
-  const counterpartyIds = filters
-    .filter((f) => f.column === "counterparty")
-    .flatMap((f) => (f.value ?? "").split(","))
-    .filter(Boolean);
-  const passThroughFilters = filters.filter((f) => f.column !== "counterparty");
-
-  const payments = await getPayments(client, companyId, {
-    search,
-    paymentType,
-    status,
-    customerId,
-    supplierId,
-    counterpartyIds: counterpartyIds.length > 0 ? counterpartyIds : null,
-    limit,
-    offset,
-    sorts,
-    filters: passThroughFilters
-  });
-
-  if (payments.error) {
-    throw redirect(
-      path.to.invoicing,
-      await flash(request, error(payments.error, "Failed to fetch payments"))
-    );
-  }
-
-  return {
-    count: payments.count ?? 0,
-    payments: payments.data ?? []
-  };
 }
 
 export default function PaymentsRoute() {
-  const { count, payments } = useLoaderData<typeof loader>();
-  return <PaymentsTable data={payments} count={count} />;
+  const { count, payments, infinite } = useLoaderData<typeof loader>();
+  return <PaymentsTable data={payments} count={count} infinite={infinite} />;
 }

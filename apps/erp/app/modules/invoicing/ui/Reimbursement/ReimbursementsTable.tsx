@@ -18,6 +18,7 @@ import {
   LuUser
 } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyDecimalsLookup } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -29,10 +30,11 @@ type ReimbursementRow = Database["public"]["Tables"]["reimbursement"]["Row"];
 type ReimbursementsTableProps = {
   data: ReimbursementRow[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const ReimbursementsTable = memo(
-  ({ data, count }: ReimbursementsTableProps) => {
+  ({ data, count, infinite }: ReimbursementsTableProps) => {
     const { t } = useLingui();
     const { locale } = useLocale();
     // Each reimbursement carries its own currencyCode, so the amount is
@@ -135,6 +137,7 @@ const ReimbursementsTable = memo(
 
     return (
       <Table<ReimbursementRow>
+        infinite={infinite}
         count={count}
         columns={columns}
         data={data}

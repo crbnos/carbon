@@ -12,7 +12,6 @@ import {
   actionTaskParentId,
   actionTaskPermissions
 } from "@carbon/ee/action-task-entity";
-import { resolveIntegrationSecrets } from "@carbon/ee/integrations/secrets";
 import {
   getJiraClient,
   getJiraIssueFromExternalId,
@@ -28,7 +27,8 @@ import {
 } from "@carbon/ee/linear.server";
 import {
   createIssueSlackThread,
-  getCarbonEmployeeFromSlackId
+  getCarbonEmployeeFromSlackId,
+  getSlackWorkspace
 } from "@carbon/ee/slack.server";
 import { ERP_URL } from "@carbon/env";
 import { trigger } from "@carbon/jobs";
@@ -449,41 +449,31 @@ export const createIssueFromSlack = defineServiceFn({
     const serviceRole = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
 
-    const integration = await serviceRole
-      .from("companyIntegration")
-      .select("metadata, secretRef")
-      .eq("id", "slack")
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (integration.error || !integration.data) {
+    // The workspace's Slack connection holds the token and the channel picked
+    // at install; `companyIntegration.slack` is only the installed flag.
+    let workspace: Awaited<ReturnType<typeof getSlackWorkspace>>;
+    try {
+      workspace = await getSlackWorkspace(serviceRole, companyId);
+    } catch (error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the Slack connection",
+        error
+      );
+    }
+    if (workspace === null) {
       return ctx.error(
         "notFound",
-        "Slack integration not found for this workspace.",
-        integration.error
+        "Slack integration not found for this workspace."
       );
     }
 
     // The configured channel, not the one the form was opened from.
-    const channelId = (integration.data.metadata as { channel_id?: string })
-      ?.channel_id;
+    const channelId = workspace.channelId;
     if (!channelId) {
       return ctx.error("rule", "No channel configured for Slack integration");
     }
-
-    const secrets = (await resolveIntegrationSecrets(
-      serviceRole,
-      companyId,
-      "slack",
-      integration.data.metadata,
-      integration.data.secretRef
-    )) as { access_token?: string };
-    const slackToken = secrets.access_token;
-    if (!slackToken) {
-      return ctx.error(
-        "rule",
-        "Slack token not found. Please reconfigure the integration."
-      );
-    }
+    const slackToken = workspace.token;
 
     const employee = await getCarbonEmployeeFromSlackId(
       serviceRole,

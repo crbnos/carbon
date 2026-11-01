@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="thrLkLiq" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0b2f6b"/>
+      <stop offset="0.2" stop-color="#1f5fbf"/>
+      <stop offset="0.42" stop-color="#5a9cf2"/>
+      <stop offset="0.62" stop-color="#2a6fd0"/>
+      <stop offset="1" stop-color="#0a2a5e"/>
+    </linearGradient>
+    <linearGradient id="thrLkBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="0.22" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="0.34" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="0.42" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="0.8" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="thrLkPlastic" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#9da3a8"/>
+      <stop offset="0.2" stop-color="#e2e6e9"/>
+      <stop offset="0.42" stop-color="#ffffff"/>
+      <stop offset="0.72" stop-color="#cdd2d6"/>
+      <stop offset="1" stop-color="#959ba0"/>
+    </linearGradient>
+    <linearGradient id="thrLkPlasticTop" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#e3e7ea"/>
+      <stop offset="1" stop-color="#a9afb4"/>
+    </linearGradient>
+    <linearGradient id="thrLkLabel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5e120e"/>
+      <stop offset="0.18" stop-color="#a8231b"/>
+      <stop offset="0.38" stop-color="#e0483b"/>
+      <stop offset="0.6" stop-color="#b52a20"/>
+      <stop offset="1" stop-color="#4f0f0b"/>
+    </linearGradient>
+    <linearGradient id="thrLkCap" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0b0d0f"/>
+      <stop offset="0.2" stop-color="#2b3036"/>
+      <stop offset="0.38" stop-color="#5d646b"/>
+      <stop offset="0.55" stop-color="#2f343a"/>
+      <stop offset="1" stop-color="#08090b"/>
+    </linearGradient>
+    <linearGradient id="thrLkCapTop" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#5a6168"/>
+      <stop offset="0.5" stop-color="#2b3036"/>
+      <stop offset="1" stop-color="#101214"/>
+    </linearGradient>
+    <radialGradient id="thrLkShadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.3"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="540" cy="800" rx="330" ry="74" fill="url(#thrLkShadow)"/>
+  <!-- far wall of the clear bottle -->
+  <path d="M352 440 L352 772 A118 45 0 0 0 588 772 L588 440 C588 402 542 392 516 380 L424 380 C398 392 352 402 352 440 Z" fill="#dfe8f0" opacity="0.3"/>
+  <!-- blue liquid inside -->
+  <path d="M361 488 L361 766 A109 41 0 0 0 579 766 L579 488 Z" fill="url(#thrLkLiq)"/>
+  <ellipse cx="470" cy="488" rx="109" ry="41" fill="#6aa8f5" opacity="0.9"/>
+  <ellipse cx="470" cy="488" rx="103" ry="38" fill="none" stroke="#bcd9ff" stroke-opacity="0.6" stroke-width="2"/>
+  <!-- clear bottle wall -->
+  <path d="M352 440 L352 772 A118 45 0 0 0 588 772 L588 440 C588 402 542 392 516 380 L424 380 C398 392 352 402 352 440 Z" fill="url(#thrLkBody)" stroke="#8496a6" stroke-width="2.5"/>
+  <path d="M352 762 A118 45 0 0 0 588 762" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="3"/>
+  <!-- plain label band -->
+  <path d="M351 566 A119 45 0 0 0 589 566 L589 704 A119 45 0 0 1 351 704 Z" fill="url(#thrLkLabel)" stroke="#3d0b08" stroke-width="2"/>
+  <path d="M351 580 A119 45 0 0 0 589 580" fill="none" stroke="#ffffff" stroke-opacity="0.8" stroke-width="3"/>
+  <path d="M351 690 A119 45 0 0 0 589 690" fill="none" stroke="#ffffff" stroke-opacity="0.8" stroke-width="3"/>
+  <rect x="398" y="452" width="15" height="300" rx="7" fill="#ffffff" opacity="0.4"/>
+  <rect x="422" y="470" width="5" height="270" rx="2.5" fill="#ffffff" opacity="0.3"/>
+  <!-- threaded neck, skirt and tapered nozzle -->
+  <path d="M424 338 L424 382 A46 17.5 0 0 0 516 382 L516 338 Z" fill="url(#thrLkPlastic)" stroke="#8a9095" stroke-width="2"/>
+  <path d="M424 356 Q470 378 516 348" fill="none" stroke="#8a9095" stroke-width="2"/>
+  <path d="M424 367 Q470 389 516 359" fill="none" stroke="#8a9095" stroke-width="2"/>
+  <path d="M424 378 Q470 400 516 370" fill="none" stroke="#8a9095" stroke-width="2"/>
+  <ellipse cx="470" cy="338" rx="52" ry="19.8" fill="url(#thrLkPlasticTop)" stroke="#8a9095" stroke-width="2"/>
+  <path d="M432 336 L460 208 L480 208 L508 336 A38 14.4 0 0 1 432 336 Z" fill="url(#thrLkPlastic)" stroke="#8a9095" stroke-width="2"/>
+  <line x1="469" y1="226" x2="464" y2="330" stroke="#3d7fe0" stroke-opacity="0.3" stroke-width="4" stroke-linecap="round"/>
+  <ellipse cx="470" cy="208" rx="10" ry="3.8" fill="url(#thrLkPlasticTop)" stroke="#8a9095" stroke-width="1.6"/>
+  <ellipse cx="470" cy="208" rx="3.2" ry="1.4" fill="#1f5fbf"/>
+  <line x1="450" y1="322" x2="464" y2="226" stroke="#ffffff" stroke-opacity="0.8" stroke-width="4" stroke-linecap="round"/>
+  <!-- dark pointed cap set down beside the bottle -->
+  <ellipse cx="712" cy="796" rx="84" ry="34.2" fill="#000" opacity="0.2"/>
+  <path d="M646 690 L646 790 A60 22.8 0 0 0 766 790 L766 690 Z" fill="url(#thrLkCap)" stroke="#030405" stroke-width="2.5"/>
+  <line x1="648" y1="697.9" x2="648" y2="789.9" stroke="#000" stroke-opacity="0.6" stroke-width="1"/>
+  <line x1="649.1" y1="699.9" x2="649.1" y2="787.9" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <line x1="654" y1="703.4" x2="654" y2="795.4" stroke="#000" stroke-opacity="0.6" stroke-width="1.7"/>
+  <line x1="656" y1="705.4" x2="656" y2="793.4" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <line x1="663.6" y1="708.1" x2="663.6" y2="800.1" stroke="#000" stroke-opacity="0.6" stroke-width="2.5"/>
+  <line x1="666.4" y1="710.1" x2="666.4" y2="798.1" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <line x1="676" y1="711.7" x2="676" y2="803.7" stroke="#000" stroke-opacity="0.6" stroke-width="3"/>
+  <line x1="679.5" y1="713.7" x2="679.5" y2="801.7" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <line x1="690.5" y1="714" x2="690.5" y2="806" stroke="#000" stroke-opacity="0.6" stroke-width="3.4"/>
+  <line x1="694.3" y1="716" x2="694.3" y2="804" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <line x1="706" y1="714.8" x2="706" y2="806.8" stroke="#000" stroke-opacity="0.6" stroke-width="3.5"/>
+  <line x1="710" y1="716.8" x2="710" y2="804.8" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <line x1="721.5" y1="714" x2="721.5" y2="806" stroke="#000" stroke-opacity="0.6" stroke-width="3.4"/>
+  <line x1="725.4" y1="716" x2="725.4" y2="804" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <line x1="736" y1="711.7" x2="736" y2="803.7" stroke="#000" stroke-opacity="0.6" stroke-width="3"/>
+  <line x1="739.5" y1="713.7" x2="739.5" y2="801.7" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <line x1="748.4" y1="708.1" x2="748.4" y2="800.1" stroke="#000" stroke-opacity="0.6" stroke-width="2.5"/>
+  <line x1="751.3" y1="710.1" x2="751.3" y2="798.1" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <line x1="758" y1="703.4" x2="758" y2="795.4" stroke="#000" stroke-opacity="0.6" stroke-width="1.7"/>
+  <line x1="760" y1="705.4" x2="760" y2="793.4" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <line x1="764" y1="697.9" x2="764" y2="789.9" stroke="#000" stroke-opacity="0.6" stroke-width="1"/>
+  <line x1="765" y1="699.9" x2="765" y2="787.9" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <path d="M646 690 L682 598 L730 598 L766 690 A60 22.8 0 0 1 646 690 Z" fill="url(#thrLkCap)" stroke="#030405" stroke-width="2.5"/>
+  <path d="M646 690 A60 22.8 0 0 0 766 690" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+  <ellipse cx="706" cy="598" rx="24" ry="9.1" fill="url(#thrLkCapTop)" stroke="#030405" stroke-width="2"/>
+  <line x1="674" y1="682" x2="692" y2="608" stroke="#ffffff" stroke-opacity="0.2" stroke-width="5" stroke-linecap="round"/>
+</svg>

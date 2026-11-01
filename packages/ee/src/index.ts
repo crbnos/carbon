@@ -3,6 +3,8 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { Email } from "./email/config";
+import { Gmail } from "./gmail/config";
+import { GoogleCalendar } from "./google-calendar/config";
 import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Mount } from "./mount/config";
@@ -21,12 +23,19 @@ import type { QuickInstallConnector } from "./types";
 import { Xero } from "./xero/config";
 
 export { Email } from "./email/config";
-export type { EmailDelivery } from "./email/delivery";
+export type {
+  CompanyTransport,
+  EmailDelivery,
+  GmailAccount
+} from "./email/delivery";
 export {
-  documentSender,
+  companyTransport,
   emailSettingsForm,
+  parseEmailSettings,
+  picksCredentialFreeEmail,
   picksServerMail,
   resolveEmailDelivery,
+  sharedMailHeaders,
   withEmailDelivery
 } from "./email/delivery";
 export { defineIntegration } from "./fns";
@@ -66,6 +75,8 @@ import {
 export const integrations = [
   // Radan,
   Email,
+  Gmail,
+  GoogleCalendar,
   Jira,
   Linear,
   Mount,
@@ -85,6 +96,8 @@ export const integrations = [
 
 export type IntegrationID = (typeof integrations)[number]["id"];
 
+export { Gmail } from "./gmail/config";
+export { GoogleCalendar } from "./google-calendar/config";
 export { Jira } from "./jira/config";
 export { Mount } from "./mount/config";
 export { beginOAuthPopup } from "./oauth-popup";

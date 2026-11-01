@@ -27,6 +27,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  LuBan,
   LuBookMarked,
   LuCheck,
   LuChevronDown,
@@ -56,11 +57,14 @@ type StorageUnit = {
   depth: number | null;
   ancestorPath: string[] | null;
   storageTypeIds: string[] | null;
+  effectiveNettable: boolean | null;
 };
 
 type StorageUnitsTableProps = {
   data: StorageUnit[];
   count: number;
+  // The roots read SINGLE_LOAD_LIMIT rows: more may match.
+  isTruncated?: boolean;
   locations: { id: string; name: string }[];
   locationId: string;
   storageTypes: { id: string; name: string }[];
@@ -72,6 +76,7 @@ const StorageUnitsTable = memo(
   ({
     data,
     count,
+    isTruncated,
     locations: serverLocations,
     locationId,
     storageTypes: serverStorageTypes,
@@ -379,7 +384,7 @@ const StorageUnitsTable = memo(
               {withTypes &&
               table.getColumn("storageTypeIds")?.getIsVisible() &&
               row.original.storageTypeIds?.length ? (
-                <div className="text-[13px] font-normal text-muted-foreground">
+                <div className="text-[0.8125rem] font-normal text-muted-foreground">
                   <EnumerableAsText value>
                     {renderStorageTypes(row.original.storageTypeIds)}
                   </EnumerableAsText>
@@ -465,6 +470,26 @@ const StorageUnitsTable = memo(
             },
             pluralHeader: t`Storage Types`,
             icon: <LuLayers />
+          }
+        },
+        {
+          // effectiveNettable: its own flag, a parent's or a storage type's.
+          accessorKey: "effectiveNettable",
+          header: t`Non-nettable`,
+          cell: (item) => (
+            <Checkbox isChecked={item.getValue<boolean | null>() === false} />
+          ),
+          meta: {
+            filter: {
+              type: "static",
+              options: [
+                { value: "false", label: t`Non-nettable` },
+                { value: "true", label: t`Nettable` }
+              ]
+            },
+            pluralHeader: t`Non-nettable`,
+            icon: <LuBan />,
+            exportValue: (row) => row.effectiveNettable === false
           }
         },
 
@@ -648,6 +673,7 @@ const StorageUnitsTable = memo(
       <>
         <Table<StorageUnit>
           count={count}
+          isTruncated={isTruncated}
           columns={columns}
           data={displayRows}
           defaultColumnVisibility={defaultColumnVisibility}

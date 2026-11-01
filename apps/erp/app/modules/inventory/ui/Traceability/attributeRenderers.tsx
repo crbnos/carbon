@@ -197,7 +197,7 @@ export function AttributeList({ attrs }: { attrs: Record<string, any> }) {
               if (typeof value === "object") {
                 return (
                   <Row key={key} label={key}>
-                    <span className="text-[11px] font-mono break-all">
+                    <span className="text-[0.6875rem] font-mono break-all">
                       {JSON.stringify(value)}
                     </span>
                   </Row>

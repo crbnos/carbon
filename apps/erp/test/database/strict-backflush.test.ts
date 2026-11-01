@@ -9,7 +9,14 @@ import {
   issueMaterial,
   postInventoryAdjustment as postInventoryAdjustmentBody
 } from "../../app/modules/inventory/inventory.service";
-import { getMethod as getMethodBody } from "../../app/modules/production/production.service";
+import {
+  getMethod as getMethodBody,
+  getJobReleaseReadiness
+} from "../../app/modules/production/production.service";
+import {
+  getActiveMethodsMissingPullFrom,
+  getStrictBackflushGapCounts
+} from "../../app/modules/settings/settings.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import { assertMethodHasPullFrom } from "../../app/modules/shared/strict-backflush";
 import {
@@ -23,6 +30,7 @@ import {
 } from "./fixtures/always-post";
 import { handlesOf } from "./fixtures/handles";
 import { databaseTest } from "./fixtures/local-database";
+import { postgrestTest } from "./fixtures/local-supabase";
 
 type Ctx = Fixture["ctx"];
 
@@ -134,12 +142,17 @@ const byBin = (rows: { storageUnitId: string | null; quantity: number }[]) =>
     (a.storageUnitId ?? "").localeCompare(b.storageUnitId ?? "")
   );
 
-async function storageUnit(f: Fixture, name: string): Promise<string> {
+async function storageUnit(
+  f: Fixture,
+  name: string,
+  { nettable = true }: { nettable?: boolean } = {}
+): Promise<string> {
   const row = await f.db
     .insertInto("storageUnit")
     .values({
       name: `${f.prefix} ${name}`,
       locationId: f.locationId,
+      nettable,
       companyId: f.companyId,
       createdBy: USER
     })
@@ -802,6 +815,133 @@ databaseTest(
       expect(await jobLineBinFromBom(f, "4", { [f.locationId]: shelfB })).toBe(
         shelfB
       );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "under strict backflush, a non-nettable default bin leaves the job line without a bin",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const quarantine = await storageUnit(f, "Quarantine", {
+        nettable: false
+      });
+      const shelfB = await storageUnit(f, "Shelf B");
+      await stockBin(f, shelfB, 10);
+      await f.db
+        .insertInto("pickMethod")
+        .values({
+          itemId: f.partId,
+          locationId: f.locationId,
+          defaultStorageUnitId: quarantine,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .onConflict((oc) =>
+          oc
+            .columns(["itemId", "locationId"])
+            .doUpdateSet({ defaultStorageUnitId: quarantine })
+        )
+        .execute();
+
+      // Off: the fullest nettable bin, never the quarantine default.
+      expect(await jobLineBinFromBom(f, "1", {})).toBe(shelfB);
+
+      // On: no guess at all, so release asks for a Pull From.
+      await setStrict(f, true);
+      expect(await jobLineBinFromBom(f, "2", {})).toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "under strict backflush, a non-nettable Pull From blocks activation and release",
+  async (client) => {
+    const f = await alwaysPostFixture();
+    try {
+      const quarantine = await storageUnit(f, "Quarantine", {
+        nettable: false
+      });
+      const shelfA = await storageUnit(f, "Shelf A");
+      await setStrict(f, true);
+      const label = `${f.prefix}-PART (${f.prefix} Quarantine is non-nettable)`;
+
+      const makeMethodId = `${f.prefix}-make-method-quarantine`;
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("makeMethod")
+          .values({
+            id: makeMethodId,
+            itemId: f.assemblyId,
+            version: 98,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("methodMaterial")
+          .values({
+            makeMethodId,
+            itemId: f.partId,
+            itemType: "Part",
+            methodType: "Pull from Inventory",
+            quantity: 2,
+            unitOfMeasureCode: "EA",
+            storageUnitIds: { [f.locationId]: quarantine },
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+      await expect(
+        assertMethodHasPullFrom(f.db, {
+          makeMethodId,
+          companyId: f.companyId
+        })
+      ).rejects.toThrow(
+        `Set a Pull From storage unit before you activate this version: ${label}`
+      );
+
+      // An Active method with that line is listed, at the line's location.
+      await f.db
+        .updateTable("makeMethod")
+        .set({ status: "Active" })
+        .where("id", "=", makeMethodId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const listed = (
+        await getActiveMethodsMissingPullFrom(f.db, f.companyId)
+      ).data?.find((method) => method.makeMethodId === makeMethodId);
+      expect(listed?.materials).toEqual([`${f.prefix}-PART`]);
+      expect(listed?.locations).toHaveLength(1);
+
+      const job = await jobFixture(f);
+      await f.db
+        .updateTable("job")
+        .set({ status: "Ready" })
+        .where("id", "=", job.jobId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const readiness = async () =>
+        (await getJobReleaseReadiness(client, [job.jobId], f.companyId)).data
+          ?.jobs[0]?.materialsWithoutStorageUnit;
+      const gaps = async () =>
+        (await getStrictBackflushGapCounts(f.db, f.companyId)).data?.jobs;
+
+      await setMaterialBin(f, job.materialId, shelfA);
+      expect(await readiness()).toEqual([]);
+      expect(await gaps()).toBe(0);
+
+      await setMaterialBin(f, job.materialId, quarantine);
+      expect(await readiness()).toEqual([
+        { id: job.materialId, description: label }
+      ]);
+      expect(await gaps()).toBe(1);
     } finally {
       await f.cleanup();
     }

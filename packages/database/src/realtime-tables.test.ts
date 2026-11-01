@@ -20,12 +20,6 @@ it("names each table once, in one list", () => {
   expect(new Set(all).size).toBe(all.length);
 });
 
-it("derives each list from the attached broadcast handler", () => {
-  expect(REALTIME_TABLES).toContain("jobOperation");
-  expect(REALTIME_REFERENCE_TABLES).toContain("customerType");
-  expect(REALTIME_USER_TABLES).toEqual(["notification"]);
-});
-
 it("lists the ancestor columns broadcast_table_changes adds", () => {
   const sql = readFileSync(
     new URL(

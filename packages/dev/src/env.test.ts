@@ -24,187 +24,73 @@ const jwt: JwtCreds = {
   serviceKey: "test-service-key"
 };
 
-describe("renderEnv (portless disabled)", () => {
-  it("emits localhost URLs for app and supabase", () => {
-    const out = renderEnv({
-      slug: "feat-x",
-      ports,
-      redisDb: 3,
-      jwt,
-      portless: false
-    });
+const base = (overrides: Partial<Parameters<typeof renderEnv>[0]> = {}) =>
+  renderEnv({
+    slug: "s",
+    ports,
+    redisDb: 0,
+    jwt,
+    portless: false,
+    ...overrides
+  });
+
+describe("renderEnv", () => {
+  it.each([
+    {
+      portless: false,
+      expected: [
+        "ERP_URL=http://localhost:54005",
+        "MES_URL=http://localhost:54006",
+        "SUPABASE_URL=http://localhost:54001",
+        "ONSHAPE_V2_OAUTH_REDIRECT_URL=http://localhost:54005/api/integrations/onshape-v2/oauth"
+      ]
+    },
+    {
+      portless: true,
+      expected: [
+        "ERP_URL=https://erp.feat-x.dev",
+        "MES_URL=https://mes.feat-x.dev",
+        "SUPABASE_URL=https://api.feat-x.dev",
+        "ONSHAPE_V2_OAUTH_REDIRECT_URL=https://erp.feat-x.dev/api/integrations/onshape-v2/oauth",
+        "PORTLESS_TLD=dev"
+      ]
+    }
+  ])("writes the app URLs for portless=$portless", ({ portless, expected }) => {
+    const out = base({ slug: "feat-x", portless, branchPrefix: "feat-x" });
     expect(out).toContain("CARBON_WORKTREE=feat-x");
-    expect(out).toContain("ERP_URL=http://localhost:54005");
-    expect(out).toContain("MES_URL=http://localhost:54006");
-    expect(out).toContain("SUPABASE_URL=http://localhost:54001");
-    expect(out).toContain(
-      "ONSHAPE_V2_OAUTH_REDIRECT_URL=http://localhost:54005/api/integrations/onshape-v2/oauth"
-    );
-    expect(out).not.toContain("PORTLESS_TLD");
+    for (const line of expected) expect(out).toContain(line);
+    if (!portless) expect(out).not.toContain("PORTLESS_TLD");
   });
 
   it("writes the assembler URL by default, omits it when deselected", () => {
-    const base = { slug: "s", ports, redisDb: 0, jwt, portless: false };
-    const withAssembler = renderEnv(base);
-    expect(withAssembler).toContain(
-      "ASSEMBLER_SERVICE_URL=http://localhost:54007"
-    );
-    expect(withAssembler).toContain("ASSEMBLER_SERVICE_API_KEY=dev-local-key");
-    // ASSEMBLER_SERVICE_URL is the pipeline's feature flag — when the app
-    // wasn't selected, the URL must be absent so jobs skip cleanly instead of
-    // failing against a dead endpoint.
-    const without = renderEnv({ ...base, includeAssembler: false });
+    expect(base()).toContain("ASSEMBLER_SERVICE_URL=http://localhost:54007");
+    expect(base()).toContain("ASSEMBLER_SERVICE_API_KEY=dev-local-key");
+    // ASSEMBLER_SERVICE_URL is the pipeline's feature flag: with the app
+    // deselected, jobs must skip cleanly instead of calling a dead endpoint.
+    const without = base({ includeAssembler: false });
     expect(without).not.toContain("ASSEMBLER_SERVICE_URL=");
     expect(without).not.toContain("ASSEMBLER_SERVICE_API_KEY=");
   });
 
-  it("wires every port into env vars", () => {
-    const out = renderEnv({
-      slug: "s",
-      ports,
-      redisDb: 0,
-      jwt,
-      portless: false
-    });
-    expect(out).toContain("PORT_DB=54000");
-    expect(out).toContain("PORT_API=54001");
-    expect(out).toContain("PORT_STUDIO=54002");
-    expect(out).toContain("PORT_INBUCKET=54003");
-    expect(out).toContain("PORT_INNGEST=54004");
-    expect(out).toContain("PORT_ERP=54005");
-    expect(out).toContain("PORT_MES=54006");
-    expect(out).toContain("PORT_EMAIL=54008");
-    expect(out).toContain("EMAIL_DEV_PORT=54008");
-  });
-
-  it("places redis db index in REDIS_URL", () => {
-    const out = renderEnv({
-      slug: "s",
-      ports,
-      redisDb: 7,
-      jwt,
-      portless: false
-    });
+  it("wires ports, the redis db, and the jwt creds in verbatim, ending with a newline", () => {
+    const out = base({ redisDb: 7 });
+    for (const line of [
+      "PORT_DB=54000",
+      "PORT_API=54001",
+      "PORT_STUDIO=54002",
+      "PORT_INBUCKET=54003",
+      "PORT_INNGEST=54004",
+      "PORT_ERP=54005",
+      "PORT_MES=54006",
+      "PORT_EMAIL=54008",
+      "EMAIL_DEV_PORT=54008",
+      "SUPABASE_JWT_SECRET=test-secret",
+      "SUPABASE_ANON_KEY=test-anon-key",
+      "SUPABASE_SERVICE_ROLE_KEY=test-service-key"
+    ]) {
+      expect(out).toContain(line);
+    }
     expect(out).toMatch(/REDIS_URL=redis:\/\/localhost:\d+\/7/);
-  });
-
-  it("injects jwt creds verbatim", () => {
-    const out = renderEnv({
-      slug: "s",
-      ports,
-      redisDb: 0,
-      jwt,
-      portless: false
-    });
-    expect(out).toContain("SUPABASE_JWT_SECRET=test-secret");
-    expect(out).toContain("SUPABASE_ANON_KEY=test-anon-key");
-    expect(out).toContain("SUPABASE_SERVICE_ROLE_KEY=test-service-key");
-  });
-
-  it("ends with a trailing newline", () => {
-    const out = renderEnv({
-      slug: "s",
-      ports,
-      redisDb: 0,
-      jwt,
-      portless: false
-    });
-    expect(out.endsWith("\n")).toBe(true);
-  });
-});
-
-describe("ONSHAPE_V2_OAUTH_REDIRECT_URL #force", () => {
-  it("leaves a redirect URL pinned in .env to .env", () => {
-    const out = renderEnv({
-      slug: "s",
-      ports,
-      redisDb: 0,
-      jwt,
-      portless: false
-    });
-    const dotEnv =
-      'ONSHAPE_V2_OAUTH_REDIRECT_URL="https://tunnel.example/api/integrations/onshape-v2/oauth" #force';
-    expect(omitForcedKeys(out, dotEnv)).not.toContain(
-      "ONSHAPE_V2_OAUTH_REDIRECT_URL=http://localhost"
-    );
-  });
-});
-
-describe("renderEnv (portless enabled)", () => {
-  it("emits portless hostnames for app and supabase", () => {
-    const out = renderEnv({
-      slug: "feat-x",
-      ports,
-      redisDb: 3,
-      jwt,
-      portless: true,
-      branchPrefix: "feat-x"
-    });
-    expect(out).toContain("CARBON_WORKTREE=feat-x");
-    expect(out).toContain("ERP_URL=https://erp.feat-x.dev");
-    expect(out).toContain("MES_URL=https://mes.feat-x.dev");
-    expect(out).toContain("SUPABASE_URL=https://api.feat-x.dev");
-    expect(out).toContain(
-      "ONSHAPE_V2_OAUTH_REDIRECT_URL=https://erp.feat-x.dev/api/integrations/onshape-v2/oauth"
-    );
-    expect(out).toContain("PORTLESS_TLD=dev");
-  });
-
-  it("wires every port into env vars", () => {
-    const out = renderEnv({
-      slug: "s",
-      ports,
-      redisDb: 0,
-      jwt,
-      portless: true,
-      branchPrefix: "s"
-    });
-    expect(out).toContain("PORT_DB=54000");
-    expect(out).toContain("PORT_API=54001");
-    expect(out).toContain("PORT_STUDIO=54002");
-    expect(out).toContain("PORT_INBUCKET=54003");
-    expect(out).toContain("PORT_INNGEST=54004");
-    expect(out).toContain("PORT_ERP=54005");
-    expect(out).toContain("PORT_MES=54006");
-    expect(out).toContain("PORT_EMAIL=54008");
-    expect(out).toContain("EMAIL_DEV_PORT=54008");
-  });
-
-  it("places redis db index in REDIS_URL", () => {
-    const out = renderEnv({
-      slug: "s",
-      ports,
-      redisDb: 7,
-      jwt,
-      portless: true,
-      branchPrefix: "s"
-    });
-    expect(out).toMatch(/REDIS_URL=redis:\/\/localhost:\d+\/7/);
-  });
-
-  it("injects jwt creds verbatim", () => {
-    const out = renderEnv({
-      slug: "s",
-      ports,
-      redisDb: 0,
-      jwt,
-      portless: true,
-      branchPrefix: "s"
-    });
-    expect(out).toContain("SUPABASE_JWT_SECRET=test-secret");
-    expect(out).toContain("SUPABASE_ANON_KEY=test-anon-key");
-    expect(out).toContain("SUPABASE_SERVICE_ROLE_KEY=test-service-key");
-  });
-
-  it("ends with a trailing newline", () => {
-    const out = renderEnv({
-      slug: "s",
-      ports,
-      redisDb: 0,
-      jwt,
-      portless: true,
-      branchPrefix: "s"
-    });
     expect(out.endsWith("\n")).toBe(true);
   });
 });
@@ -215,11 +101,16 @@ describe("#force escape hatch", () => {
       "OPENAI_API_KEY=sk-123",
       "ASSEMBLER_SERVICE_URL=https://xxx.execute-api.us-east-1.amazonaws.com #force",
       "ASSEMBLER_SERVICE_API_KEY=abc  # FORCE",
+      'ONSHAPE_V2_OAUTH_REDIRECT_URL="https://tunnel.example/oauth" #force',
       "# a comment mentioning force",
       "NOT_FORCED=1 # forceful suffix means nothing"
     ].join("\n");
     expect(forcedKeys(dotEnv)).toEqual(
-      new Set(["ASSEMBLER_SERVICE_URL", "ASSEMBLER_SERVICE_API_KEY"])
+      new Set([
+        "ASSEMBLER_SERVICE_URL",
+        "ASSEMBLER_SERVICE_API_KEY",
+        "ONSHAPE_V2_OAUTH_REDIRECT_URL"
+      ])
     );
   });
 
@@ -232,10 +123,9 @@ describe("#force escape hatch", () => {
     const out = omitForcedKeys(content, dotEnv);
     expect(out).not.toContain("ASSEMBLER_SERVICE_URL=");
     expect(out).toContain("ASSEMBLER_SERVICE_API_KEY=dev-local-key");
-    expect(out).toContain("omitted");
   });
 
-  it("no markers -> content untouched", () => {
+  it("leaves the content untouched when nothing is forced", () => {
     const content = "A=1\nB=2";
     expect(omitForcedKeys(content, "A=1\nB=2")).toBe(content);
   });

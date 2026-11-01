@@ -22,6 +22,7 @@ import {
   datetime,
   getErrorMessage,
   getSalesOrderStatus,
+  requireAffected,
   round,
   suggestContractType,
   unchecked
@@ -49,7 +50,8 @@ import {
 } from "~/modules/settings/settings.service";
 import {
   inspectionPlanRequired,
-  optionalTiptapDoc
+  optionalTiptapDoc,
+  requiredTiptapDoc
 } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
@@ -150,9 +152,9 @@ export const createSalesRfq = defineServiceFn({
     lines: z
       .array(
         z.object({
-          partNumber: z.coerce.string().nullish(),
-          description: z.coerce.string().nullish(),
-          quantity: z.coerce.number().nullish()
+          partNumber: z.coerce.string<string>().nullish(),
+          description: z.coerce.string<string>().nullish(),
+          quantity: z.coerce.number<number>().nullish()
         })
       )
       .default([]),
@@ -523,11 +525,14 @@ export const attachSalesRfqFile = defineServiceFn({
       size: input.size,
       documentFolder: `opportunity-line/${lineId}`,
       setModel: (modelUploadId) =>
-        client
-          .from("salesRfqLine")
-          .update({ modelUploadId })
-          .eq("id", lineId)
-          .eq("companyId", companyId),
+        requireAffected(
+          client
+            .from("salesRfqLine")
+            .update({ modelUploadId })
+            .eq("id", lineId)
+            .eq("companyId", companyId)
+            .select("id")
+        ),
       lineName: "RFQ line"
     });
     if (moved) return moved;
@@ -1326,14 +1331,17 @@ export const configureQuoteLine = defineServiceFn({
     if (refused) return refused;
 
     const [updated, quoteLine] = await Promise.all([
-      client
-        .from("quoteLine")
-        .update({
-          configuration: configuration as Json,
-          updatedAt: datetime.timestamp(),
-          updatedBy: userId
-        })
-        .eq("id", lineId),
+      requireAffected(
+        client
+          .from("quoteLine")
+          .update({
+            configuration: configuration as Json,
+            updatedAt: datetime.timestamp(),
+            updatedBy: userId
+          })
+          .eq("id", lineId)
+          .select("id")
+      ),
       client.from("quoteLine").select("itemId").eq("id", lineId).single(),
       client.from("quoteLinePrice").delete().eq("quoteLineId", lineId)
     ]);
@@ -1653,15 +1661,18 @@ export const rejectDigitalQuote = defineServiceFn({
     const quote = await service.sentQuote(ctx, quoteId);
     if (quote instanceof Error) return quote;
 
-    const rejected = await ctx.asSystem.supabase
-      .from("quote")
-      .update({
-        status: "Lost",
-        digitalQuoteRejectedBy: rejectedBy,
-        digitalQuoteRejectedByEmail: rejectedByEmail
-      })
-      .eq("id", quoteId)
-      .eq("companyId", ctx.company.id);
+    const rejected = await requireAffected(
+      ctx.asSystem.supabase
+        .from("quote")
+        .update({
+          status: "Lost",
+          digitalQuoteRejectedBy: rejectedBy,
+          digitalQuoteRejectedByEmail: rejectedByEmail
+        })
+        .eq("id", quoteId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (rejected.error) {
       return ctx.error("internal", "Failed to reject quote", rejected.error);
     }
@@ -2033,19 +2044,22 @@ export const confirmSalesOrder = defineServiceFn({
 
     const lines = await service.getSalesOrderLines(serviceRole, salesOrderId);
     const { status } = getSalesOrderStatus(lines.data || []);
-    const confirmed = await client
-      .from("salesOrder")
-      .update({
-        status,
-        orderDate:
-          order.data.orderDate ??
-          datetime
-            .today(await getCompanyTimeZone(client, companyId))
-            .toString(),
-        updatedAt: datetime.timestamp(),
-        updatedBy: userId
-      })
-      .eq("id", salesOrderId);
+    const confirmed = await requireAffected(
+      client
+        .from("salesOrder")
+        .update({
+          status,
+          orderDate:
+            order.data.orderDate ??
+            datetime
+              .today(await getCompanyTimeZone(client, companyId))
+              .toString(),
+          updatedAt: datetime.timestamp(),
+          updatedBy: userId
+        })
+        .eq("id", salesOrderId)
+        .select("id")
+    );
     if (confirmed.error) {
       return ctx.error(
         "internal",
@@ -3087,7 +3101,7 @@ const quoteMaterialInput = z.object({
  * @mcp
  */
 export const createQuoteMaterial = defineServiceFn({
-  input: quoteMaterialInput,
+  input: quoteMaterialInput.extend({ id: z.string().min(1).optional() }),
   permission: { create: "sales" },
 
   async run(ctx, { customFields, ...material }) {
@@ -3279,12 +3293,17 @@ export const deleteQuoteMaterialsAndReprice = defineServiceFn({
 // The bill of process form requires times, units and rates; the API fills a
 // new operation's from its work center or process, and an update leaves out
 // what it was not sent.
-const quoteOperationInput = baseQuoteOperationValidator
-  .extend({
-    quoteId: z.string(),
-    quoteLineId: z.string(),
-    customFields: customFieldValues.optional()
-  })
+const quoteOperationFields = baseQuoteOperationValidator.extend({
+  quoteId: z.string(),
+  quoteLineId: z.string(),
+  customFields: customFieldValues.optional()
+});
+const quoteOperationInput = quoteOperationFields.refine(
+  ...inspectionPlanRequired
+);
+// A new operation's id is optional: the table makes one.
+const newQuoteOperationInput = quoteOperationFields
+  .extend({ id: z.string().min(1).optional() })
   .refine(...inspectionPlanRequired);
 
 /**
@@ -3300,7 +3319,7 @@ const quoteOperationInput = baseQuoteOperationValidator
  * @mcp
  */
 export const createQuoteOperation = defineServiceFn({
-  input: quoteOperationInput,
+  input: newQuoteOperationInput,
   permission: { create: "sales" },
 
   async run(ctx, { customFields, ...input }) {
@@ -3320,15 +3339,11 @@ export const createQuoteOperation = defineServiceFn({
       createdBy: ctx.auditUserId,
       customFields
     });
-    if (inserted.error || !inserted.data?.id) {
-      return ctx.error(
-        "internal",
-        "Failed to insert quote operation",
-        inserted.error
-      );
-    }
+    const row = unwrap(ctx, inserted);
+    if (row instanceof CarbonError) return row;
+    if (!row) return ctx.error("internal", "Failed to insert quote operation");
     await service.repriceQuoteLine(ctx, { quoteId, quoteLineId });
-    return { id: inserted.data.id };
+    return { id: row.id };
   }
 });
 
@@ -3417,11 +3432,14 @@ export const deleteQuoteOperationAndReprice = defineServiceFn({
       .eq("companyId", companyId)
       .single();
 
-    const deleted = await client
-      .from("quoteOperation")
-      .delete()
-      .eq("id", id)
-      .eq("companyId", companyId);
+    const deleted = await requireAffected(
+      client
+        .from("quoteOperation")
+        .delete()
+        .eq("id", id)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (deleted.error) {
       return ctx.error(
         "internal",
@@ -6862,7 +6880,7 @@ export const insertCustomerContact = defineServiceFn({
     return unwrap(
       ctx,
       await service.insertCustomerContact(
-        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         payload(ctx, input).forUpsert() as never
       )
     );
@@ -6941,16 +6959,23 @@ export const resolvePriceList = defineServiceFn({
     offset: z.number().int().default(0),
     customerId: z.string().optional(),
     customerTypeId: z.string().optional(),
+    allCustomers: z
+      .boolean()
+      .describe("Set true to list the prices set for every customer.")
+      .optional(),
     search: z.string().optional(),
     quantity: z.number().optional()
   }),
   permission: { update: "sales" },
   async run(ctx, input) {
-    return await service.resolvePriceList(
+    const { error, ...result } = await service.resolvePriceList(
       ctx.asCaller.supabase,
       ctx.company.id,
       payload(ctx, input).build() as never
     );
+    if (error)
+      return ctx.error("internal", "Failed to load the price list", error);
+    return result;
   }
 });
 
@@ -6971,11 +6996,14 @@ export const getBaseCatalog = defineServiceFn({
   }),
   permission: { view: "sales" },
   async run(ctx, input) {
-    return await service.getBaseCatalog(
+    const { error, ...result } = await service.getBaseCatalog(
       ctx.asCaller.supabase,
       ctx.company.id,
       payload(ctx, input).build() as never
     );
+    if (error)
+      return ctx.error("internal", "Failed to load the catalog", error);
+    return result;
   }
 });
 
@@ -7058,6 +7086,12 @@ export const updateCustomer = defineServiceFn({
 /**
  * Upsert customer item price override
  *
+ * @remarks
+ * Sets an item's price for one customer (`customerId`), one customer type
+ * (`customerTypeId`), or every customer (`allCustomers: true`). Exactly one
+ * scope is required: a price for every customer replaces the item's list
+ * price on every quote, so it is never the default.
+ *
  * @mcp destructive
  */
 export const upsertCustomerItemPriceOverride = defineServiceFn({
@@ -7065,6 +7099,12 @@ export const upsertCustomerItemPriceOverride = defineServiceFn({
     id: z.string().optional(),
     customerId: z.string().optional(),
     customerTypeId: z.string().optional(),
+    allCustomers: z
+      .boolean()
+      .describe(
+        "Set true to apply the price to every customer. Required when neither customerId nor customerTypeId is sent."
+      )
+      .optional(),
     itemId: z.string(),
     breaks: z.array(
       z.looseObject({
@@ -7833,6 +7873,7 @@ export const upsertQuoteLinePrices = defineServiceFn({
               amount: z.number(),
               adjustment: z.number().optional(),
               ruleId: z.string().optional(),
+              overrideId: z.string().optional(),
               label: z.string().optional()
             })
           )
@@ -7909,7 +7950,7 @@ export const createQuoteOperationStep = defineServiceFn({
   input: z.looseObject({
     operationId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().min(1),
+    description: requiredTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -7957,7 +7998,7 @@ export const updateQuoteOperationStep = defineServiceFn({
     .looseObject({
       operationId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().min(1),
+      description: requiredTiptapDoc,
       type: z.enum([
         "Task",
         "Value",

@@ -36,6 +36,35 @@ export const emailTheme = {
   }
 } as const;
 
+/**
+ * A `prefers-color-scheme: dark` block that skips Outlook.com and the new
+ * Outlook. Those run the query from the operating system's theme, not their
+ * own: on a dark OS, a message on Outlook's light reading pane took every dark
+ * rule, so a purchase order's panel went dark and its heading turned white on
+ * white (HTeuMeuLeu, "Making Emails React to Outlook.com's Dark Mode"; Can I
+ * email, `@media (prefers-color-scheme)`). Outlook prefixes every class with
+ * `x_`, in the markup and the CSS alike, so `:not([class^="x_"])` on each
+ * selector's first class matches everywhere but there, and Outlook does its
+ * own dark mode. Outlook.com also drops any rule containing `:not()` (Can I
+ * email, `:not()`: not supported, tested 2024-01, on a test where stripping
+ * only the `:not()` would have shown), so the rule never reaches it either
+ * way. A selector with no class would still reach Outlook, so it is refused.
+ */
+export function darkModeMedia(rules: string) {
+  const scoped = rules
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/([^{}]+)\{/g, (_, selectors: string) => {
+      const list = selectors.split(",").map((selector) => {
+        if (!/\.[A-Za-z]/.test(selector)) {
+          throw new Error(`darkModeMedia: "${selector.trim()}" has no class`);
+        }
+        return selector.replace(/\.([A-Za-z][\w-]*)/, '.$1:not([class^="x_"])');
+      });
+      return `${list.join(",")}{`;
+    });
+  return `@media (prefers-color-scheme: dark) {${scoped}}`;
+}
+
 // Industry-standard dark mode CSS for email clients
 export const getEmailDarkModeCSS = () => {
   return `
@@ -45,8 +74,8 @@ export const getEmailDarkModeCSS = () => {
       supported-color-schemes: light dark;
     }
 
-    /* Apple Mail, iOS Mail, and some webview clients */
-    @media (prefers-color-scheme: dark) {
+    /* Apple Mail, iOS Mail and other clients that run the theme's dark CSS */
+    ${darkModeMedia(`
       .email-body,
       .email-body > table > tbody > tr > td {
         background-color: ${emailTheme.dark.background} !important;
@@ -91,127 +120,7 @@ export const getEmailDarkModeCSS = () => {
       .dark-mode-show {
         display: block !important;
       }
-    }
-
-    /* Gmail Desktop Dark Mode - Multiple targeting approaches */
-    @media (prefers-color-scheme: dark) {
-      /* Gmail specific selectors */
-      .gmail_dark .email-body,
-      .gmail_dark .email-body > table > tbody > tr > td,
-      .gmail_dark_theme .email-body,
-      .gmail_dark_theme .email-body > table > tbody > tr > td,
-      [data-darkmode="true"] .email-body,
-      [data-darkmode="true"] .email-body > table > tbody > tr > td {
-        background-color: ${emailTheme.dark.background} !important;
-        color: ${emailTheme.dark.foreground} !important;
-      }
-      .gmail_dark .email-container,
-      .gmail_dark_theme .email-container,
-      [data-darkmode="true"] .email-container {
-        border-color: ${emailTheme.dark.border} !important;
-      }
-      .gmail_dark .email-text,
-      .gmail_dark_theme .email-text,
-      [data-darkmode="true"] .email-text {
-        color: ${emailTheme.dark.foreground} !important;
-      }
-      .gmail_dark .email-muted,
-      .gmail_dark_theme .email-muted,
-      [data-darkmode="true"] .email-muted {
-        color: ${emailTheme.dark.muted} !important;
-      }
-      .gmail_dark .email-accent,
-      .gmail_dark_theme .email-accent,
-      [data-darkmode="true"] .email-accent {
-        color: ${emailTheme.dark.accent} !important;
-        border-color: ${emailTheme.dark.accent} !important;
-      }
-      .gmail_dark .email-button,
-      .gmail_dark_theme .email-button,
-      [data-darkmode="true"] .email-button {
-        background-color: ${emailTheme.dark.accent} !important;
-        border-color: ${emailTheme.dark.accent} !important;
-        color: ${emailTheme.dark.accentForeground} !important;
-      }
-    }
-
-    /* Gmail Desktop conditional dark mode targeting */
-    @media screen and (prefers-color-scheme: dark) {
-      /* More aggressive Gmail desktop targeting */
-      div[style*="background"] .email-body,
-      div[style*="background"] .email-body > table > tbody > tr > td,
-      .ii .email-body,
-      .ii .email-body > table > tbody > tr > td {
-        background-color: ${emailTheme.dark.background} !important;
-        color: ${emailTheme.dark.foreground} !important;
-      }
-      div[style*="background"] .email-container,
-      .ii .email-container {
-        border-color: ${emailTheme.dark.border} !important;
-      }
-      div[style*="background"] .email-text,
-      .ii .email-text {
-        color: ${emailTheme.dark.foreground} !important;
-      }
-      div[style*="background"] .email-muted,
-      .ii .email-muted {
-        color: ${emailTheme.dark.muted} !important;
-      }
-      div[style*="background"] .email-accent,
-      .ii .email-accent {
-        color: ${emailTheme.dark.accent} !important;
-        border-color: ${emailTheme.dark.accent} !important;
-      }
-    }
-
-    /* Outlook Web App and Outlook mobile targeting */
-    [data-ogsc] .email-text {
-      color: ${emailTheme.dark.foreground} !important;
-    }
-    [data-ogsc] .email-muted {
-      color: ${emailTheme.dark.muted} !important;
-    }
-    [data-ogsc] .email-accent {
-      color: ${emailTheme.dark.accent} !important;
-      border-color: ${emailTheme.dark.accent} !important;
-    }
-    [data-ogsc] .dark-mode-hide {
-      display: none !important;
-    }
-    [data-ogsc] .dark-mode-show {
-      display: block !important;
-    }
-    [data-ogsc] .email-button {
-      color: ${emailTheme.dark.accentForeground} !important;
-    }
-    [data-ogsb] .email-button {
-      background-color: ${emailTheme.dark.accent} !important;
-      border-color: ${emailTheme.dark.accent} !important;
-    }
-
-    /* Outlook background targeting */
-    [data-ogsb] .email-body,
-    [data-ogsb] .email-body > table > tbody > tr > td {
-      background-color: ${emailTheme.dark.background} !important;
-    }
-    [data-ogsb] .email-panel {
-      background-color: ${emailTheme.dark.panel} !important;
-      border-color: ${emailTheme.dark.border} !important;
-    }
-    [data-ogsc] .email-panel-text {
-      color: ${emailTheme.dark.foreground} !important;
-    }
-    /* Gmail dark mode */
-    [data-darkmode="true"] .email-panel {
-      background-color: ${emailTheme.dark.panel} !important;
-      border-color: ${emailTheme.dark.border} !important;
-    }
-    [data-darkmode="true"] .email-panel-text {
-      color: ${emailTheme.dark.foreground} !important;
-    }
-    [data-ogsb] .email-container {
-      border-color: ${emailTheme.dark.border} !important;
-    }
+    `)}
   `;
 };
 

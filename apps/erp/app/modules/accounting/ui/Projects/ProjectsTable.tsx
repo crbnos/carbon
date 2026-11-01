@@ -14,6 +14,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Project } from "../../types";
@@ -21,9 +22,11 @@ import type { Project } from "../../types";
 type ProjectsTableProps = {
   data: Project[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
+const ProjectsTable = memo((props: ProjectsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -88,6 +91,7 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
 
   return (
     <Table<Project>
+      infinite={infinite}
       data={data}
       columns={columns}
       count={count}

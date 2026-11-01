@@ -5,12 +5,10 @@
 import { ClientOnly, cn, toast } from "@carbon/react";
 import { withUnorderedLast } from "@carbon/utils";
 import type {
-  Active,
   Announcements,
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
-  Over,
   UniqueIdentifier
 } from "@dnd-kit/core";
 import {
@@ -22,7 +20,7 @@ import {
   useSensor,
   useSensors
 } from "@dnd-kit/core";
-import { arrayMove, SortableContext } from "@dnd-kit/sortable";
+import { SortableContext } from "@dnd-kit/sortable";
 import {
   createContext,
   useContext,
@@ -40,18 +38,18 @@ import { ItemCard } from "./components/ItemCard";
 import type { KanbanMoveTo } from "./context/KanbanContext";
 import { KanbanProvider } from "./context/KanbanContext";
 import {
-  calculateFractionalPriority,
+  type BoardDragEvent,
+  type DragCommit,
+  type OperationDragOrigin,
+  type OperationItemDrag,
+  type OperationsDragState,
+  planCommitSubmissions,
+  reduceOperationsDrag,
+  resolveColumnCommit
+} from "./drag-lifecycle";
+import {
   comparePriorityThenId,
   createDragOrigin,
-  type DragOrigin,
-  type DragPreview,
-  getColumnPlacement,
-  getInsertionIndex,
-  getItemsInColumn,
-  getLogicalSlot,
-  isSamePlacement,
-  isSamePreview,
-  planColumnReorder,
   resolveInsertionMarker
 } from "./placement";
 import type { Column, DisplaySettings, Item, Progress } from "./types";
@@ -71,14 +69,7 @@ type KanbanProps = {
 
 const COLUMN_ORDER_KEY = "kanban-column-order";
 
-type OperationDragOrigin = DragOrigin<Item>;
-
-type KanbanDragState = {
-  origin: OperationDragOrigin;
-  preview: DragPreview | null;
-};
-
-const KanbanDragPreviewContext = createContext<KanbanDragState | null>(null);
+const KanbanDragPreviewContext = createContext<OperationItemDrag | null>(null);
 
 // A new options object makes a new sensor, and with it new listeners for
 // every card on every render of the board.
@@ -125,247 +116,6 @@ function PreviewItemCard({
       )}
     </div>
   );
-}
-
-function isOriginItemDrag(active: Active, origin: OperationDragOrigin) {
-  return (
-    hasDraggableData(active) &&
-    active.data.current?.type === "item" &&
-    String(active.id) === origin.item.id
-  );
-}
-
-function resolveDragPlacement(
-  origin: OperationDragOrigin,
-  over: Over | null,
-  items: readonly Item[],
-  itemsById: ReadonlyMap<string, Item>,
-  columnsById: ReadonlyMap<string, Column>
-): DragPreview | null {
-  if (
-    !over ||
-    over.disabled ||
-    !hasDraggableData(over) ||
-    !itemsById.has(origin.item.id)
-  ) {
-    return null;
-  }
-
-  const overId = String(over.id);
-  if (overId === origin.item.id) {
-    return { ...origin.placement, targetType: "item" };
-  }
-
-  const overData = over.data.current;
-  if (overData?.type === "item") {
-    const overItem = itemsById.get(overId);
-    if (
-      !overItem ||
-      overData.item.id !== overId ||
-      overData.item.columnId !== overItem.columnId ||
-      !columnsById.has(overItem.columnId)
-    ) {
-      return null;
-    }
-
-    const destinationColumn = columnsById.get(overItem.columnId);
-    if (!destinationColumn?.type.includes(origin.item.columnType)) {
-      return null;
-    }
-
-    // Compute the slot directly rather than via getItemPlacement so the
-    // insertion marker still renders when the two neighbors share a priority
-    // (no fractional gap) — the drop renumbers the column, so the preview must
-    // not disappear just because the fast-path priority is unavailable.
-    const destinationColumnId = overItem.columnId;
-    const destinationItems = getItemsInColumn(
-      items,
-      destinationColumnId,
-      origin.item.id
-    );
-    const sameColumn = origin.placement.columnId === destinationColumnId;
-    const insertionIndex = getInsertionIndex(
-      destinationItems,
-      overItem.id,
-      sameColumn,
-      origin.placement.slot.index
-    );
-    if (insertionIndex === null) return null;
-
-    const fractionalPriority = calculateFractionalPriority(
-      destinationItems[insertionIndex - 1]?.priority,
-      destinationItems[insertionIndex]?.priority
-    );
-    // The marker only needs the slot; the priority just has to be stable per
-    // slot so isSamePreview can dedupe. Fall back to the previous neighbor's
-    // priority (or the drag-start priority at the top of the column).
-    const priority =
-      fractionalPriority ??
-      destinationItems[insertionIndex - 1]?.priority ??
-      origin.placement.priority;
-
-    return {
-      columnId: destinationColumnId,
-      priority,
-      slot: getLogicalSlot(destinationItems, insertionIndex),
-      targetType: "item"
-    };
-  }
-
-  if (overData?.type === "column") {
-    if (
-      overData.column.id !== overId ||
-      !columnsById.has(overId) ||
-      overId === origin.placement.columnId
-    ) {
-      return null;
-    }
-
-    const destinationColumn = columnsById.get(overId);
-    if (!destinationColumn?.type.includes(origin.item.columnType)) {
-      return null;
-    }
-
-    const placement = getColumnPlacement(origin, items, overId);
-    return placement ? { ...placement, targetType: "column" } : null;
-  }
-
-  return null;
-}
-
-type DragCommit = {
-  columnId: string;
-  updates: { id: string; priority: number }[];
-};
-
-/**
- * Resolves the priority writes a drop should persist. Unlike
- * `resolveDragPlacement` (which drives the live insertion marker and gives up
- * when the two neighbors have no numeric gap), this never abandons a valid drop
- * over a priority collision: it falls back to renumbering the destination column
- * so a fully equal-priority column — every op still at the default `1` because
- * the scheduler has not sequenced them — can still be reordered. A no-op drop
- * (dropped back in place, invalid/incompatible target) returns null.
- */
-function resolveDragCommit(
-  origin: OperationDragOrigin,
-  over: Over | null,
-  items: readonly Item[],
-  itemsById: ReadonlyMap<string, Item>,
-  columnsById: ReadonlyMap<string, Column>
-): DragCommit | null {
-  if (
-    !over ||
-    over.disabled ||
-    !hasDraggableData(over) ||
-    !itemsById.has(origin.item.id)
-  ) {
-    return null;
-  }
-
-  const overId = String(over.id);
-  if (overId === origin.item.id) return null;
-
-  const overData = over.data.current;
-  if (overData?.type === "item") {
-    const overItem = itemsById.get(overId);
-    if (
-      !overItem ||
-      overData.item.id !== overId ||
-      overData.item.columnId !== overItem.columnId ||
-      !columnsById.has(overItem.columnId)
-    ) {
-      return null;
-    }
-
-    const destinationColumn = columnsById.get(overItem.columnId);
-    if (!destinationColumn?.type.includes(origin.item.columnType)) {
-      return null;
-    }
-
-    const destinationColumnId = overItem.columnId;
-    const destinationItems = getItemsInColumn(
-      items,
-      destinationColumnId,
-      origin.item.id
-    );
-    const sameColumn = origin.placement.columnId === destinationColumnId;
-    const insertionIndex = getInsertionIndex(
-      destinationItems,
-      overItem.id,
-      sameColumn,
-      origin.placement.slot.index
-    );
-    if (insertionIndex === null) return null;
-
-    const slot = getLogicalSlot(destinationItems, insertionIndex);
-    if (
-      isSamePlacement(origin.placement, {
-        columnId: destinationColumnId,
-        priority: origin.placement.priority,
-        slot
-      })
-    ) {
-      return null;
-    }
-
-    const fractionalPriority = calculateFractionalPriority(
-      destinationItems[insertionIndex - 1]?.priority,
-      destinationItems[insertionIndex]?.priority
-    );
-    const updates =
-      fractionalPriority === null
-        ? planColumnReorder(origin, items, destinationColumnId, insertionIndex)
-        : [{ id: origin.item.id, priority: fractionalPriority }];
-
-    return updates.length ? { columnId: destinationColumnId, updates } : null;
-  }
-
-  if (overData?.type === "column") {
-    if (overData.column.id !== overId) return null;
-    return resolveColumnCommit(origin, items, columnsById, overId);
-  }
-
-  return null;
-}
-
-/**
- * The priority writes for dropping a card on a column's background (it lands
- * at the column's end). Shared by the drop and by the phone "Move to" menu.
- */
-function resolveColumnCommit(
-  origin: OperationDragOrigin,
-  items: readonly Item[],
-  columnsById: ReadonlyMap<string, Column>,
-  columnId: string
-): DragCommit | null {
-  if (!columnsById.has(columnId) || columnId === origin.placement.columnId) {
-    return null;
-  }
-
-  const destinationColumn = columnsById.get(columnId);
-  if (!destinationColumn?.type.includes(origin.item.columnType)) {
-    return null;
-  }
-
-  const placement = getColumnPlacement(origin, items, columnId);
-  if (placement) {
-    return {
-      columnId,
-      updates: [{ id: origin.item.id, priority: placement.priority }]
-    };
-  }
-
-  // A background/empty-column drop whose origin priority collides with an
-  // existing card — renumber, appending the dragged op to the column's end.
-  const destinationItems = getItemsInColumn(items, columnId, origin.item.id);
-  const updates = planColumnReorder(
-    origin,
-    items,
-    columnId,
-    destinationItems.length
-  );
-  return updates.length ? { columnId, updates } : null;
 }
 
 const Kanban = ({
@@ -466,9 +216,9 @@ const Kanban = ({
   );
 
   const pickedUpItemColumn = useRef<string | null>(null);
-  const dragOriginRef = useRef<OperationDragOrigin | null>(null);
-  const dragTypeRef = useRef<"item" | "column" | null>(null);
-  const [dragState, setDragState] = useState<KanbanDragState | null>(null);
+  // A ref, not state: dnd-kit can fire the next event before a re-render.
+  const dragRef = useRef<OperationsDragState>(null);
+  const [dragState, setDragState] = useState<OperationItemDrag | null>(null);
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeItem, setActiveItem] = useState<Item | null>(null);
 
@@ -684,200 +434,60 @@ const Kanban = ({
     </KanbanProvider>
   );
 
+  function dispatchDrag(event: BoardDragEvent) {
+    const { state, effect } = reduceOperationsDrag(dragRef.current, event, {
+      items,
+      itemsById,
+      columnsById,
+      columnOrder
+    });
+    if (effect?.type === "reorderColumns") setStoredOrder(effect.columnOrder);
+    if (effect?.type === "commit") submitCommit(effect.origin, effect.commit);
+    dragRef.current = state;
+    setDragState(state?.type === "item" ? state : null);
+  }
+
   function clearDragState() {
     pickedUpItemColumn.current = null;
-    dragOriginRef.current = null;
-    dragTypeRef.current = null;
-    setDragState(null);
+    dispatchDrag({ type: "cancel" });
     setActiveItem(null);
     setActiveColumn(null);
   }
 
   function onDragStart(event: DragStartEvent) {
-    if (!hasDraggableData(event.active)) {
-      clearDragState();
-      return;
-    }
+    clearDragState();
+    dispatchDrag({ type: "start", active: event.active });
 
+    const state = dragRef.current;
+    if (!state || !hasDraggableData(event.active)) return;
     const data = event.active.data.current;
-    if (data?.type === "column") {
-      clearDragState();
-      dragTypeRef.current = "column";
+    if (state.type === "column" && data?.type === "column") {
       setActiveColumn(data.column);
-      return;
     }
-
-    if (data?.type === "item") {
-      clearDragState();
-      const activeItem = itemsById.get(String(event.active.id));
-      const origin = activeItem ? createDragOrigin(items, activeItem) : null;
-
-      if (!origin) return;
-
-      dragOriginRef.current = origin;
-      dragTypeRef.current = "item";
+    if (state.type === "item" && data?.type === "item") {
       pickedUpItemColumn.current = data.item.columnId;
-      setDragState({ origin, preview: null });
       setActiveItem(data.item);
     }
   }
 
   function onDragEnd(event: DragEndEvent) {
-    const origin = dragOriginRef.current;
-    const { active, over } = event;
-    const activeData = hasDraggableData(active)
-      ? active.data.current
-      : undefined;
-
-    if (
-      !dragTypeRef.current ||
-      !hasDraggableData(active) ||
-      !over ||
-      !hasDraggableData(over)
-    ) {
-      clearDragState();
-      return;
-    }
-
-    if (
-      dragTypeRef.current === "column" &&
-      activeData?.type === "column" &&
-      over.data.current?.type === "column"
-    ) {
-      const activeId = active.id;
-      const overId = over.id;
-      if (activeId !== overId) {
-        const activeColumnIndex = columnOrder.findIndex(
-          (id) => id === activeId
-        );
-        const overColumnIndex = columnOrder.findIndex((id) => id === overId);
-
-        if (activeColumnIndex >= 0 && overColumnIndex >= 0) {
-          setStoredOrder(
-            arrayMove(columnOrder, activeColumnIndex, overColumnIndex)
-          );
-        }
-      }
-      clearDragState();
-      return;
-    }
-
-    if (
-      dragTypeRef.current === "item" &&
-      activeData?.type === "item" &&
-      origin &&
-      isOriginItemDrag(active, origin)
-    ) {
-      // Resolve the actual priority writes. A pure reorder needs a single
-      // fractional priority; a collision (e.g. an unsequenced column where every
-      // card still sits at the default priority) renumbers the whole column, so
-      // several cards move at once.
-      const commit = resolveDragCommit(
-        origin,
-        over,
-        items,
-        itemsById,
-        columnsById
-      );
-
-      if (commit) submitCommit(origin, commit);
-    }
-
+    dispatchDrag({ type: "end", active: event.active, over: event.over });
     clearDragState();
   }
 
   // Persists a resolved move: each moved card writes through its own endpoint.
   function submitCommit(origin: OperationDragOrigin, commit: DragCommit) {
-    if (
-      isBatchItem(origin.item) &&
-      commit.columnId !== origin.placement.columnId
-    ) {
-      // A batch dropped on a DIFFERENT work center reassigns the whole batch
-      // (the server fn writes the work center to every member) and reschedules;
-      // the priority renumber is left to the resulting replan wave.
-      submit(
-        {
-          intent: "update",
-          batchId: origin.item.batchId,
-          workCenterId: commit.columnId
-        },
-        {
-          method: "post",
-          action: path.to.priorityBatchingUpdate,
-          navigate: false,
-          flushSync: true,
-          fetcherKey: `item:${origin.item.id}`
-        }
-      );
-    } else {
-      // Within-column reorder (or a non-batch cross-column move). Each
-      // renumbered card writes through its own endpoint: an operation writes
-      // its priority (+ work center), a batch card writes every member's
-      // priority so min(member) lands at the batch's new dispatch slot.
-      const flushSync = commit.updates.length === 1;
-      const isBatchCard = (id: string) => {
-        const target = itemsById.get(id);
-        return !!target && isBatchItem(target);
-      };
-      // Several operations renumbered by one drop go in ONE request. One
-      // request per card meant one page reload per card, and the board
-      // stuttered for seconds after the drop.
-      const operationUpdates = commit.updates.filter(
-        (update) => !isBatchCard(update.id)
-      );
-      if (operationUpdates.length > 1) {
-        submit(
-          {
-            columnId: commit.columnId,
-            updates: JSON.stringify(operationUpdates)
-          },
-          {
-            method: "post",
-            action: path.to.priorityOperationUpdate,
-            navigate: false,
-            // Not the card's own key: a later move of that card would
-            // replace this fetcher and drop the other cards' pending order.
-            fetcherKey: `reorder:${commit.columnId}`
-          }
-        );
-      }
-      for (const update of commit.updates) {
-        const target = itemsById.get(update.id);
-        if (operationUpdates.length > 1 && !isBatchCard(update.id)) {
-          continue;
-        }
-        if (target && isBatchItem(target)) {
-          submit(
-            {
-              intent: "reprioritize",
-              batchId: target.batchId,
-              priority: update.priority
-            },
-            {
-              method: "post",
-              action: path.to.priorityBatchingUpdate,
-              navigate: false,
-              flushSync,
-              fetcherKey: `item:${update.id}`
-            }
-          );
-        } else {
-          submit(
-            {
-              id: update.id,
-              columnId: commit.columnId,
-              priority: update.priority
-            },
-            {
-              method: "post",
-              action: path.to.priorityOperationUpdate,
-              navigate: false,
-              flushSync,
-              fetcherKey: `item:${update.id}`
-            }
-          );
-        }
-      }
+    for (const submission of planCommitSubmissions(origin, commit, itemsById)) {
+      submit(submission.payload, {
+        method: "post",
+        action:
+          submission.action === "batching"
+            ? path.to.priorityBatchingUpdate
+            : path.to.priorityOperationUpdate,
+        navigate: false,
+        flushSync: submission.flushSync,
+        fetcherKey: submission.fetcherKey
+      });
     }
   }
 
@@ -892,26 +502,7 @@ const Kanban = ({
   }
 
   function onDragOver(event: DragOverEvent) {
-    const origin = dragOriginRef.current;
-    if (!origin || !isOriginItemDrag(event.active, origin)) return;
-
-    const placement = resolveDragPlacement(
-      origin,
-      event.over,
-      items,
-      itemsById,
-      columnsById
-    );
-    const preview =
-      placement && !isSamePlacement(origin.placement, placement)
-        ? placement
-        : null;
-
-    setDragState((current) =>
-      current?.origin === origin && isSamePreview(current.preview, preview)
-        ? current
-        : { origin, preview }
-    );
+    dispatchDrag({ type: "over", active: event.active, over: event.over });
   }
 
   function onDragCancel() {

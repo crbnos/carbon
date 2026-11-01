@@ -413,7 +413,7 @@ const Option = ({
 
       {/* Group indicator badge */}
       {itemIsGroup && (
-        <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
+        <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[0.625rem] font-medium uppercase text-muted-foreground">
           Group
         </span>
       )}

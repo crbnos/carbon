@@ -3,7 +3,40 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { assemblyInstructionStepValidator } from "./production.models";
+import {
+  assemblyInstructionStepValidator,
+  isBatchDissolvable,
+  isBatchReleasable,
+  isJobBulkReleasable,
+  isJobDeletable,
+  jobStatus
+} from "./production.models";
+
+describe("isJobDeletable", () => {
+  it("accepts Draft, Planned and the 2 deprecated due statuses only", () => {
+    const deletable = jobStatus.filter(isJobDeletable);
+    expect(deletable).toEqual(["Draft", "Planned", "Overdue", "Due Today"]);
+    expect(isJobDeletable(null)).toBe(false);
+  });
+});
+
+describe("isJobBulkReleasable", () => {
+  it("accepts Draft and Planned only", () => {
+    expect(jobStatus.filter(isJobBulkReleasable)).toEqual(["Draft", "Planned"]);
+  });
+});
+
+describe("batch status gates", () => {
+  const statuses = ["Planned", "Active", "Completing", "Completed"];
+
+  it("releases a Planned batch only", () => {
+    expect(statuses.filter(isBatchReleasable)).toEqual(["Planned"]);
+  });
+
+  it("dissolves a Planned or Active batch only", () => {
+    expect(statuses.filter(isBatchDissolvable)).toEqual(["Planned", "Active"]);
+  });
+});
 
 // An assembly instruction List step needs at least one option, like the bill of
 // process steps (shared.models.test.ts). Blank rows are dropped first, so the

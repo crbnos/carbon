@@ -14,9 +14,18 @@ import { getJobDatabaseClient } from "../../../db";
 import { stageOrResumeRampCharge } from "./ramp-sync-card-stage";
 import type { RampSyncContext } from "./ramp-sync-shared";
 
-const runDatabaseTests = process.env.RUN_RAMP_DB_TESTS === "true";
-
 // Only the posting operation is substituted; everything else is real Postgres.
+const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
+const hasLocalDatabase = (() => {
+  try {
+    return LOCAL_HOSTS.includes(
+      new URL(process.env.SUPABASE_DB_URL ?? "").hostname
+    );
+  } catch {
+    return false;
+  }
+})();
+
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
 // A posting with a client runs as the caller behind it, else as the system.
 vi.mock("@carbon/api/postings.server", () => ({
@@ -29,7 +38,7 @@ vi.mock("@carbon/ee/ramp.server", async (importOriginal) => ({
   confirmSyncs: vi.fn().mockResolvedValue(undefined)
 }));
 
-describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
+describe.skipIf(!hasLocalDatabase)("Ramp card staging (Postgres)", () => {
   let db: Kysely<KyselyDatabase>;
   let fixture: {
     companyId: string;

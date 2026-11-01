@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { defineServiceFn } from "@carbon/api/service-fn.server";
+import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { z } from "zod";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
@@ -51,6 +51,14 @@ export const createShift = defineServiceFn({
     if (created.error || !created.data) {
       return ctx.error("internal", "Failed to create shift", created.error);
     }
+    // A new location shift adds hours to every work center that runs all of
+    // the location's shifts.
+    await notifyScheduleInputsChanged(
+      ctx.company.id,
+      "shift",
+      "Shift added",
+      created.data.id
+    );
     return { id: created.data.id };
   }
 });
@@ -70,6 +78,15 @@ export const updateShift = defineServiceFn({
   // The route gated on create; the write runs under the update policy.
   permission: { create: "people", update: "people" },
   async run(ctx, shift) {
+    const previous = await ctx.asCaller.supabase
+      .from("shift")
+      .select("locationId")
+      .eq("id", shift.id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (previous.error) {
+      return ctx.error("internal", "Failed to update shift", previous.error);
+    }
     const updated = await service.upsertShift(ctx.asCaller.supabase, {
       ...shift,
       companyId: ctx.company.id,
@@ -79,10 +96,15 @@ export const updateShift = defineServiceFn({
       return ctx.error("internal", "Failed to update shift", updated.error);
     }
     if (!updated.data) return ctx.error("notFound", "Shift not found");
+    // A shift moved to another location also changes the hours of the
+    // stations it leaves behind, which the shift-scoped notice cannot see.
+    const moved =
+      previous.data !== null && previous.data.locationId !== shift.locationId;
     await notifyScheduleInputsChanged(
       ctx.company.id,
-      "shift",
-      "Shift hours changed"
+      moved ? "location" : "shift",
+      moved ? "Shift moved to another location" : "Shift hours changed",
+      moved ? undefined : shift.id
     );
     return { id: shift.id };
   }
@@ -338,13 +360,20 @@ export const deleteHoliday = defineServiceFn({
   input: z.looseObject({ holidayId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
-    return unwrap(
+    const deleted = unwrap(
       ctx,
       await service.deleteHoliday(
         ctx.asCaller.supabase,
         input.holidayId as never
       )
     );
+    if (deleted instanceof CarbonError) return deleted;
+    await notifyScheduleInputsChanged(
+      ctx.company.id,
+      "location",
+      "Company holidays changed"
+    );
+    return deleted;
   }
 });
 
@@ -357,10 +386,18 @@ export const deleteShift = defineServiceFn({
   input: z.looseObject({ shiftId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
-    return unwrap(
+    const deleted = unwrap(
       ctx,
       await service.deleteShift(ctx.asCaller.supabase, input.shiftId as never)
     );
+    if (deleted instanceof CarbonError) return deleted;
+    await notifyScheduleInputsChanged(
+      ctx.company.id,
+      "shift",
+      "Shift removed",
+      input.shiftId
+    );
+    return deleted;
   }
 });
 
@@ -962,13 +999,20 @@ export const createHoliday = defineServiceFn({
   }),
   permission: { create: "people" },
   async run(ctx, input) {
-    return unwrap(
+    const saved = unwrap(
       ctx,
       await service.upsertHoliday(
         ctx.asCaller.supabase,
         payload(ctx, input).forCreate() as never
       )
     );
+    if (saved instanceof CarbonError) return saved;
+    await notifyScheduleInputsChanged(
+      ctx.company.id,
+      "location",
+      "Company holidays changed"
+    );
+    return saved;
   }
 });
 
@@ -994,13 +1038,20 @@ export const updateHoliday = defineServiceFn({
     .required({ id: true }),
   permission: { update: "people" },
   async run(ctx, input) {
-    return unwrap(
+    const saved = unwrap(
       ctx,
       await service.upsertHoliday(
         ctx.asCaller.supabase,
         payload(ctx, input).forUpdate() as never
       )
     );
+    if (saved instanceof CarbonError) return saved;
+    await notifyScheduleInputsChanged(
+      ctx.company.id,
+      "location",
+      "Company holidays changed"
+    );
+    return saved;
   }
 });
 

@@ -20,7 +20,6 @@ import {
   type FundingScope,
   type FundingSource,
   formatDate,
-  fundableDocumentAmounts,
   fundingScopeCovers,
   INPUT_FORMAT,
   round,
@@ -44,59 +43,18 @@ import {
   usePermissions
 } from "~/hooks";
 import { path } from "~/utils/path";
-
-// One row in the apply table — an open invoice for the payment's
-// counterparty, plus the user's selection + entered amounts.
-type OpenInvoice = {
-  id: string;
-  invoiceId: string;
-  dateDue: string | null;
-  currencyCode: string;
-  exchangeRate: number;
-  totalAmount: number;
-  balance: number;
-  remainingDocument: number;
-  status: string | null;
-  // The documents the invoice bills: a customer deposit funds only invoices of
-  // its own rental agreement or sales order.
-  rentalAgreementIds?: string[];
-  salesOrderIds?: string[];
-};
-
-type ExistingApplication = {
-  targetMemoId?: string | null;
-  targetReimbursementId?: string | null;
-  sourceAmount: number | null;
-  sourcePaymentId?: string | null;
-  targetSalesInvoiceId: string | null;
-  targetPurchaseInvoiceId: string | null;
-  appliedAmount: number;
-  discountAmount: number;
-  writeOffAmount: number;
-  targetExchangeRate: number;
-  sourceExchangeRate: number;
-  appliedDate: string;
-};
-
-// The invoice's read-only fields plus the editable selection state.
-type ApplyRow = {
-  sourceAmount: number;
-  id: string;
-  invoiceId: string;
-  dateDue: string | null;
-  currencyCode: string;
-  exchangeRate: number;
-  balance: number;
-  remainingDocument: number;
-  rentalAgreementIds?: string[];
-  salesOrderIds?: string[];
-  checked: boolean;
-  appliedAmount: number;
-  discountAmount: number;
-  writeOffAmount: number;
-};
-
-type AmountField = "appliedAmount" | "discountAmount" | "writeOffAmount";
+import {
+  type AmountField,
+  type ApplyRow,
+  autoApplyRows,
+  buildApplications,
+  type ExistingApplication,
+  fundingRequests,
+  type OpenInvoice,
+  seedApplyRows,
+  toggleApplyRow,
+  updateApplyAmount
+} from "./payment-logic";
 
 type PaymentApplyTableProps = {
   isRefund?: boolean;
@@ -179,79 +137,29 @@ const PaymentApplyTable = ({
   // Discount and write-off only exist on a trade invoice settlement.
   const hasAdjustments = !isRefund && !isReimbursement;
   const canEdit = permissions.can("update", "invoicing");
-  const seed = useMemo<ApplyRow[]>(() => {
-    const byInvoice = new Map<
-      string,
-      {
-        appliedAmount: number;
-        discountAmount: number;
-        writeOffAmount: number;
-        sourceAmount: number;
-      }
-    >();
-    for (const a of existingApplications) {
-      const id = isReimbursement
-        ? a.targetReimbursementId
-        : isRefund
-          ? a.targetMemoId
-          : isReceipt
-            ? a.targetSalesInvoiceId
-            : a.targetPurchaseInvoiceId;
-      if (!id) continue;
-      const existing = byInvoice.get(id) ?? {
-        appliedAmount: 0,
-        discountAmount: 0,
-        writeOffAmount: 0,
-        sourceAmount: 0
-      };
-      existing.appliedAmount = round(existing.appliedAmount + a.appliedAmount);
-      existing.discountAmount = round(
-        existing.discountAmount + a.discountAmount
-      );
-      existing.writeOffAmount = round(
-        existing.writeOffAmount + a.writeOffAmount
-      );
-      existing.sourceAmount = toDocumentAmount(
-        existing.sourceAmount +
-          (a.sourceAmount ??
-            toDocumentAmount(
-              a.appliedAmount,
-              a.targetExchangeRate,
-              currencyDecimals
-            )),
-        1,
+  const targets = useMemo(
+    () => ({ isReceipt, isRefund, isReimbursement }),
+    [isReceipt, isRefund, isReimbursement]
+  );
+  const seed = useMemo<ApplyRow[]>(
+    () =>
+      seedApplyRows({
+        openInvoices,
+        existingApplications,
+        targets,
+        paymentCurrency,
+        paymentScope,
         currencyDecimals
-      );
-      byInvoice.set(id, existing);
-    }
-    return openInvoices
-      .filter(
-        (inv) =>
-          inv.currencyCode === paymentCurrency &&
-          inv.remainingDocument > 0 &&
-          // A deposit lists only its own document's invoices (and any it is
-          // already applied to, so the refusal below can say why).
-          (fundingScopeCovers(paymentScope, inv) || byInvoice.has(inv.id))
-      )
-      .map((inv) => ({
-        ...inv,
-        checked: byInvoice.has(inv.id),
-        appliedAmount: 0,
-        discountAmount: 0,
-        writeOffAmount: 0,
-        sourceAmount: 0,
-        ...byInvoice.get(inv.id)
-      }));
-  }, [
-    openInvoices,
-    existingApplications,
-    isReceipt,
-    isRefund,
-    isReimbursement,
-    paymentCurrency,
-    paymentScope,
-    currencyDecimals
-  ]);
+      }),
+    [
+      openInvoices,
+      existingApplications,
+      targets,
+      paymentCurrency,
+      paymentScope,
+      currencyDecimals
+    ]
+  );
   const [rows, setRows] = useState<ApplyRow[]>(seed);
   const currentPayment = useMemo(
     () => ({
@@ -278,19 +186,7 @@ const PaymentApplyTable = ({
           priorSources,
           currencyDecimals,
           isAR: isReceipt,
-          requests: rows
-            .filter((r) => r.checked)
-            .map((r) => ({
-              targetId: r.id,
-              targetExchangeRate: r.exchangeRate,
-              remainingDocument: r.remainingDocument,
-              remainingBase: r.balance,
-              requestedDocumentPrincipal: r.sourceAmount,
-              discountAmount: r.discountAmount,
-              writeOffAmount: r.writeOffAmount,
-              rentalAgreementIds: r.rentalAgreementIds,
-              salesOrderIds: r.salesOrderIds
-            }))
+          requests: fundingRequests(rows)
         }),
         error: null
       };
@@ -353,99 +249,19 @@ const PaymentApplyTable = ({
       : 0;
   const toggleRow = useCallback(
     (id: string, checked: boolean) =>
-      setRows((prev) => {
-        const toggled = prev.find((r) => r.id === id);
-        // What this row can draw once every other selected row keeps its
-        // amount: deposits reach only their own document's invoices.
-        const available = toggled
-          ? fundableDocumentAmounts({
-              currentPayment,
-              priorSources,
-              currencyDecimals,
-              requests: [
-                ...prev
-                  .filter((r) => r.id !== id && r.checked)
-                  .map((r) => ({ ...r, maximumDocument: r.sourceAmount })),
-                { ...toggled, maximumDocument: toggled.remainingDocument }
-              ]
-            }).at(-1)!
-          : 0;
-        return prev.map((r) => {
-          if (r.id !== id) return r;
-          if (!checked)
-            return {
-              ...r,
-              checked: false,
-              sourceAmount: 0,
-              appliedAmount: 0,
-              discountAmount: 0,
-              writeOffAmount: 0
-            };
-          const sourceAmount = Math.min(available, r.remainingDocument);
-          return {
-            ...r,
-            checked: true,
-            sourceAmount,
-            appliedAmount:
-              sourceAmount === r.remainingDocument
-                ? r.balance
-                : Math.min(
-                    r.balance,
-                    toBaseAmount(sourceAmount, r.exchangeRate)
-                  ),
-            discountAmount: 0,
-            writeOffAmount: 0
-          };
-        });
-      }),
+      setRows((prev) =>
+        toggleApplyRow(prev, id, checked, {
+          currentPayment,
+          priorSources,
+          currencyDecimals
+        })
+      ),
     [currentPayment, priorSources, currencyDecimals]
   );
   const updateAmount = useCallback(
     (id: string, field: AmountField, value: number) =>
       setRows((prev) =>
-        prev.map((r) => {
-          if (r.id !== id) return r;
-          const next = { ...r, [field]: round(Math.max(0, value)) };
-          if (field === "appliedAmount")
-            next.sourceAmount = toDocumentAmount(
-              next.appliedAmount,
-              r.exchangeRate,
-              currencyDecimals
-            );
-          else if (
-            toDocumentAmount(
-              r.sourceAmount +
-                toDocumentAmount(
-                  r.discountAmount + r.writeOffAmount,
-                  r.exchangeRate,
-                  currencyDecimals
-                ),
-              1,
-              currencyDecimals
-            ) === r.remainingDocument
-          ) {
-            next.appliedAmount = Math.max(
-              0,
-              round(r.balance - next.discountAmount - next.writeOffAmount)
-            );
-            next.sourceAmount = Math.max(
-              0,
-              toDocumentAmount(
-                r.remainingDocument -
-                  toDocumentAmount(
-                    next.discountAmount + next.writeOffAmount,
-                    r.exchangeRate,
-                    currencyDecimals
-                  ),
-                1,
-                currencyDecimals
-              )
-            );
-          }
-          next.checked =
-            next.sourceAmount + next.discountAmount + next.writeOffAmount > 0;
-          return next;
-        })
+        updateApplyAmount(prev, id, field, value, currencyDecimals)
       ),
     [currencyDecimals]
   );
@@ -602,53 +418,14 @@ const PaymentApplyTable = ({
 
   const onAutoApply = useCallback(
     () =>
-      setRows((prev) => {
-        // Rows in order, each as much as the funding it may use allows.
-        const amounts = fundableDocumentAmounts({
+      setRows((prev) =>
+        autoApplyRows(prev, {
           currentPayment,
           priorSources,
           currencyDecimals,
-          requests: prev.map((r) => ({
-            ...r,
-            maximumDocument: r.remainingDocument
-          }))
-        });
-        const requests = prev.map((r, i) => ({
-          targetId: r.id,
-          targetExchangeRate: r.exchangeRate,
-          remainingDocument: r.remainingDocument,
-          remainingBase: r.balance,
-          requestedDocumentPrincipal: amounts[i]!,
-          discountAmount: 0,
-          writeOffAmount: 0,
-          rentalAgreementIds: r.rentalAgreementIds,
-          salesOrderIds: r.salesOrderIds
-        }));
-        const result = allocatePaymentFunding({
-          currentPayment,
-          priorSources,
-          requests,
-          currencyDecimals,
-          isAR: isReceipt
-        });
-        return prev.map((r) => {
-          const apps = result.applications.filter((a) => a.targetId === r.id);
-          return {
-            ...r,
-            checked: apps.length > 0,
-            sourceAmount: toDocumentAmount(
-              apps.reduce((sum, a) => sum + a.sourceAmount, 0),
-              1,
-              currencyDecimals
-            ),
-            appliedAmount: round(
-              apps.reduce((sum, a) => sum + a.appliedAmount, 0)
-            ),
-            discountAmount: 0,
-            writeOffAmount: 0
-          };
-        });
-      }),
+          isReceipt
+        })
+      ),
     [currentPayment, priorSources, currencyDecimals, isReceipt]
   );
   const onClear = useCallback(
@@ -667,25 +444,11 @@ const PaymentApplyTable = ({
   );
   const onSave = () => {
     if (preview.error) return;
-    const applications = rows
-      .filter(
-        (r) =>
-          r.checked && r.sourceAmount + r.discountAmount + r.writeOffAmount > 0
-      )
-      .map((r) => ({
-        targetSalesInvoiceId: hasAdjustments && isReceipt ? r.id : undefined,
-        targetPurchaseInvoiceId:
-          hasAdjustments && !isReceipt ? r.id : undefined,
-        targetMemoId: isRefund ? r.id : undefined,
-        targetReimbursementId: isReimbursement ? r.id : undefined,
-        appliedAmount: r.appliedAmount,
-        sourceAmount: r.sourceAmount,
-        discountAmount: r.discountAmount,
-        writeOffAmount: r.writeOffAmount,
-        targetExchangeRate: r.exchangeRate,
-        sourceExchangeRate: paymentExchangeRate,
-        appliedDate: today
-      }));
+    const applications = buildApplications(rows, {
+      targets,
+      paymentExchangeRate,
+      today
+    });
     const formData = new FormData();
     formData.set("applications", JSON.stringify(applications));
     fetcher.submit(formData, {

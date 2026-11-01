@@ -94,6 +94,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **UI & Forms** | |
 | Building forms (ValidatedForm + zod) | `.claude/rules/conventions-forms.md` + `packages/form/AGENTS.md` |
 | UI components and conventions | `.claude/rules/conventions-ui.md` + `packages/react/AGENTS.md` |
+| List tables: cursor paging, infinite scroll, list registry | `.claude/rules/table-infinite-scroll.md` + `.claude/rules/table-csv-export.md` |
 | i18n / translations (Lingui) | `.claude/rules/i18n-lingui-system.md` + `packages/locale/AGENTS.md` |
 | Flash messages and toasts | `.claude/rules/flash-system.md` |
 | Document templates / customizer | `.claude/rules/document-template-customizer.md` |
@@ -113,6 +114,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Kanban | `.claude/rules/kanban-system.md` |
 | Workflows (customer automation rules) | `.claude/rules/workflow-event-catalog.md` + `.claude/rules/workflow-matcher.md` + `.claude/rules/workflow-engine.md` + `packages/ee/src/workflows/AGENTS.md` |
 | Workflow run history + retention | `.claude/rules/workflow-run-history.md` |
+| Workflow integration steps (Activepieces pieces) | `.claude/rules/workflow-integrations.md` |
 | Fixed assets | `.claude/rules/fixed-asset-lifecycle.md` |
 | Rental agreements / leases / revenue recognition | `apps/erp/app/modules/sales/AGENTS.md` (Rentals) + `apps/erp/app/modules/accounting/AGENTS.md` (Revenue recognition, Sales-type leases) + `.claude/rules/fixed-asset-lifecycle.md` + `.claude/rules/accounting-sync-handlers.md` |
 | Lessee leases (ASC 842, leases the company pays) / lease runs | `apps/erp/app/modules/purchasing/AGENTS.md` (Leases) + `apps/erp/app/modules/accounting/AGENTS.md` (Run types, Lessee leases, Lease Liabilities report, Lessee cutover) + `apps/erp/app/modules/invoicing/AGENTS.md` (Lease line) + `.claude/rules/fixed-asset-lifecycle.md` (purchase option) |
@@ -175,7 +177,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Repo audit → handoff plans | `.claude/skills/improve/SKILL.md` |
 | Review your own branch before PR | `.claude/skills/self-review/SKILL.md` |
 | Resolving a merge or rebase conflict (always) | `.claude/skills/resolving-merge-conflicts/SKILL.md` |
-| Test-first work: good tests, seams, anti-patterns | `.claude/skills/tdd/SKILL.md` + `.claude/skills/test-driven-development/SKILL.md` |
+| Writing, reviewing or deleting a test (house style, where a check lives) | `.claude/rules/testing.md` |
+| Test-first work: the red→green loop, proof vs committed test | `.claude/skills/test-driven-development/SKILL.md` + `.claude/skills/tdd/SKILL.md` |
 
 ## Core Principles
 

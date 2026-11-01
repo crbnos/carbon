@@ -191,6 +191,8 @@ Phase-7 write) and throws on failure.
      `20260812002454`) — an indexed per-company read, replacing the old full
      `itemLedger` GROUP BY that grew with total history. Excludes `Rejected`
      tracked stock (matching `get_inventory_quantities`); the raw scan counted it.
+     MRP reads `quantityOnHand - quantityNonNettable`: stock in a non-nettable
+     storage unit is not supply (`inventory-system.md` → Non-nettable storage).
    - **Reads paginate**: every PostgREST read goes through `fetchAll`
      (`@carbon/database/fetch-all`, 1000-row pages + stable `.order()`) —
      production `max_rows = 1000`
@@ -525,8 +527,12 @@ never offered a Cancel, Defer or Expedite.
   `planning-week-geometry.ts`, unit-tested): heights compare along a row, not
   between rows. One tooltip per row follows the hovered week (the shared
   `TooltipContent` takes an `anchor` for this) and shows the week label, its
-  date range and the projected quantity; the hovered week is marked by an
-  overlay band that is cleared on `pointerleave` — it used to stay on the last
+  date range and the projected quantity; the week label (strip tooltip, CSV
+  headers, Demand Forecasts table) comes from `usePlanningWeekLabel`
+  (`ui/Planning/usePlanningWeekLabel.ts`): "Present Week", "Week 2", … or, with
+  `companySettings.useCalendarWeeks`, the ISO week of each period
+  (`planningWeekNumber`, read three days into the Sunday-start period,
+  tested). The hovered week is marked by an overlay band that is cleared on `pointerleave` — it used to stay on the last
   week touched. The per-week numbers stay in the CSV as
   `exportOnlyColumn`s keyed `week1`…`weekN`, so an export is unchanged.
 - **Suggested orders ARE the Order / Make actions.** The order drawer's
@@ -695,8 +701,10 @@ never offered a Cancel, Defer or Expedite.
   default on: a PO the planning Order button created — `purchaseOrder.createdFromPlanning`,
   cleared by any manual line change — finalizes without the approval rule), `PlanningHorizonCard`
   (`setPlanningHorizon`, `planningHorizonValidator`), `ForecastConsumptionCard`
-  (`setForecastConsumption`, `forecastConsumptionValidator`, 0–52 weeks each)
-  and `MrpScheduleCard` (`setMrpSchedule`, `mrpScheduleValidator`). An employee
+  (`setForecastConsumption`, `forecastConsumptionValidator`, 0–52 weeks each),
+  `MrpScheduleCard` (`setMrpSchedule`, `mrpScheduleValidator`) and
+  `CalendarWeeksCard` (`setCalendarWeeks` → `companySettings.useCalendarWeeks`,
+  default off: display only, see the week strip above). An employee
   id is saved only after `isActiveCompanyEmployee`; a bad value answers 400.
 - **Planning horizon (time fence).** `itemPlanning.planningHorizonDays` (per
   item + location, Part → Planning) else `companySettings.defaultPlanningHorizonDays`
@@ -837,6 +845,17 @@ never offered a Cancel, Defer or Expedite.
   re-creating its wrapper with the same column — it fails loudly (return type
   mismatch) until then. Generated types mark every RPC column non-null; the new
   ones are not (`PlanningGridColumns` in `production/types.ts`).
+- **The purchasing Supplier column is `defaultSupplierId`**, a grid RPC
+  column (`20261029080733`): the item's preferred supplier, else its earliest
+  active supplier part (`createdAt`, `id`). The column shows it, filters and
+  sorts on it, and seeds the row's ordering supplier. Before it, the cell fell
+  back to `suppliers[0]` (unordered `jsonb_agg`) while the filter matched
+  `preferredSupplierId` alone, so on a company with no preferred suppliers no
+  shown supplier matched any row. The filter's options are
+  `get_purchasing_planning_suppliers` (SECURITY INVOKER over the grid RPC):
+  each `defaultSupplierId` once, over the whole plan and before the grid's
+  filters, read on page 1 only (`getPurchasingPlanningSuppliers`); a failed
+  read falls back to every supplier.
 - **Create planned orders** — `planning.update.tsx` in each module:
   - production (`orderPlannedJobs`, `create: "production"`): inserts jobs +
     job methods, upserts `supplyForecast` (`'Production Order'`), then

@@ -4,10 +4,13 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  documentSender,
+  companyTransport,
   emailSettingsForm,
+  parseEmailSettings,
+  picksCredentialFreeEmail,
   picksServerMail,
   resolveEmailDelivery,
+  sharedMailHeaders,
   withEmailDelivery
 } from "./delivery";
 
@@ -68,56 +71,23 @@ describe("resolveEmailDelivery", () => {
       resolveEmailDelivery(installed({ provider: "server" }), false)
     ).toBeNull();
   });
-});
 
-describe("documentSender", () => {
-  const server = (fromEmail?: string) => ({
-    provider: "server" as const,
-    fromEmail
-  });
-  const serverFrom = "Carbon <no-reply@acme.co>";
-
-  it("never sends from the company's address, even on the server's domain", () => {
-    expect(documentSender(server("ceo@acme.co"), "Acme", serverFrom)).toEqual({
-      from: { name: "Acme", address: "no-reply@acme.co" },
-      replyTo: "ceo@acme.co"
-    });
-    expect(documentSender(server("ceo@bank.com"), "Acme", serverFrom)).toEqual({
-      from: { name: "Acme", address: "no-reply@acme.co" },
-      replyTo: "ceo@bank.com"
-    });
-  });
-
-  it("keeps a name with quotes or brackets as data, not address syntax", () => {
+  it("keeps a Gmail delivery with its account", () => {
     expect(
-      documentSender(server(), 'Acme "Evil" <x@y.z>', serverFrom).from
-    ).toEqual({ name: 'Acme "Evil" <x@y.z>', address: "no-reply@acme.co" });
-  });
-
-  it("falls back to the server's name without a company name", () => {
-    expect(documentSender(server(), null, serverFrom)).toEqual({
-      from: { name: "Carbon", address: "no-reply@acme.co" },
-      replyTo: undefined
-    });
-    expect(
-      documentSender(server(), "  ", '"Carbon" <no-reply@acme.co>').from
-    ).toEqual({ name: "Carbon", address: "no-reply@acme.co" });
-    // A bare server address has no name to borrow: the server's From stands.
-    expect(documentSender(server(), null, "no-reply@acme.co")).toEqual({
-      from: undefined,
-      replyTo: undefined
-    });
-  });
-
-  it("never sets a sender for Resend or SMTP integrations, or no delivery", () => {
-    expect(
-      documentSender(
-        { provider: "smtp", fromEmail: "a@acme.co" },
-        "Acme",
-        serverFrom
+      resolveEmailDelivery(
+        installed({ provider: "gmail", gmailConnectionId: "conn_1" }),
+        false
       )
-    ).toEqual({});
-    expect(documentSender(null, "Acme", serverFrom)).toEqual({});
+    ).toEqual({ provider: "gmail" });
+  });
+
+  it("cannot send through Gmail with no account picked", () => {
+    expect(
+      resolveEmailDelivery(
+        installed({ provider: "gmail", gmailConnectionId: "" }),
+        true
+      )
+    ).toBeNull();
   });
 });
 
@@ -163,9 +133,189 @@ describe("Email settings form", () => {
     expect(emailSettingsForm("slack", true)).toBeNull();
   });
 
+  it("offers only Active Gmail accounts, by their address", () => {
+    const form = emailSettingsForm("email", false, [
+      {
+        id: "c1",
+        name: "Sales",
+        accountLabel: "sales@acme.co",
+        status: "Active"
+      },
+      { id: "c2", name: "Old", accountLabel: "old@acme.co", status: "Expired" },
+      { id: "c3", name: "Ops", accountLabel: null, status: "Active" }
+    ]);
+    expect(form?.gmailConnectionOptions).toEqual([
+      { value: "c1", label: "sales@acme.co" },
+      { value: "c3", label: "Ops" }
+    ]);
+  });
+
   it("knows a save that picks server mail", () => {
     expect(picksServerMail("email", { provider: "server" })).toBe(true);
     expect(picksServerMail("email", { provider: "smtp" })).toBe(false);
     expect(picksServerMail("slack", { provider: "server" })).toBe(false);
+  });
+
+  it("saves server mail and Gmail without a credential, never Resend or SMTP", () => {
+    expect(picksCredentialFreeEmail("email", { provider: "server" })).toBe(
+      true
+    );
+    expect(picksCredentialFreeEmail("email", { provider: "gmail" })).toBe(true);
+    expect(picksCredentialFreeEmail("email", { provider: "resend" })).toBe(
+      false
+    );
+    expect(picksCredentialFreeEmail("email", { provider: "smtp" })).toBe(false);
+    // A legacy install has no provider and is Resend, which keeps a key.
+    expect(picksCredentialFreeEmail("email", { fromEmail: "a@b.co" })).toBe(
+      false
+    );
+    expect(picksCredentialFreeEmail("slack", { provider: "gmail" })).toBe(
+      false
+    );
+  });
+});
+
+describe("parseEmailSettings", () => {
+  it("reads a legacy install without a provider as Resend", () => {
+    const parsed = parseEmailSettings({
+      fromEmail: "sales@acme.co",
+      apiKey: "re_123"
+    });
+    expect(parsed.success && parsed.data.provider).toBe("resend");
+  });
+
+  it("refuses Gmail with no account picked", () => {
+    expect(
+      parseEmailSettings({ provider: "gmail", gmailConnectionId: "" }).success
+    ).toBe(false);
+  });
+});
+
+describe("companyTransport", () => {
+  it("sends Gmail through the picked account", () => {
+    expect(
+      companyTransport({ provider: "gmail", gmailConnectionId: "conn_1" })
+    ).toEqual({ kind: "gmail", connectionId: "conn_1" });
+  });
+
+  it("sends Resend through its relay with the company's key", () => {
+    expect(
+      companyTransport({
+        provider: "resend",
+        fromEmail: "sales@acme.co",
+        apiKey: "re_123"
+      })
+    ).toEqual({
+      kind: "smtp",
+      host: "smtp.resend.com",
+      port: 465,
+      secure: true,
+      user: "resend",
+      pass: "re_123",
+      fromEmail: "sales@acme.co"
+    });
+  });
+
+  it("sends SMTP through the company's own server", () => {
+    expect(
+      companyTransport({
+        provider: "smtp",
+        fromEmail: "sales@acme.co",
+        host: "mail.acme.co",
+        port: 587,
+        username: "sales",
+        password: "pw",
+        secure: false
+      })
+    ).toEqual({
+      kind: "smtp",
+      host: "mail.acme.co",
+      port: 587,
+      secure: false,
+      user: "sales",
+      pass: "pw",
+      fromEmail: "sales@acme.co"
+    });
+  });
+
+  it("refuses a Resend install whose key is missing", () => {
+    expect(() =>
+      companyTransport({
+        provider: "resend",
+        fromEmail: "sales@acme.co",
+        apiKey: ""
+      })
+    ).toThrow("The Resend API key is missing");
+  });
+
+  it("refuses server mail, which is not the company's own account", () => {
+    expect(() => companyTransport({ provider: "server" })).toThrow();
+  });
+});
+
+describe("sharedMailHeaders", () => {
+  const SERVER = "Carbon <no-reply@acme.co>";
+  const doc = (
+    over: Partial<Parameters<typeof sharedMailHeaders>[0]> = {}
+  ): Parameters<typeof sharedMailHeaders>[0] => ({
+    document: true,
+    companyName: "Acme",
+    ...over
+  });
+
+  it("never sends a document from the company's address, even on the server's domain", () => {
+    expect(
+      sharedMailHeaders(
+        doc({ replyTo: "rep@acme.co", companyAddress: "sales@acme.co" }),
+        SERVER
+      )
+    ).toEqual({
+      from: { name: "Acme", address: "no-reply@acme.co" },
+      replyTo: "rep@acme.co, sales@acme.co"
+    });
+    expect(
+      sharedMailHeaders(doc({ companyAddress: "ceo@bank.com" }), SERVER)
+    ).toEqual({
+      from: { name: "Acme", address: "no-reply@acme.co" },
+      replyTo: "ceo@bank.com"
+    });
+  });
+
+  it("keeps a name with quotes or brackets as data, not address syntax", () => {
+    expect(
+      sharedMailHeaders(doc({ companyName: 'Acme "Evil" <x@y.z>' }), SERVER)
+        .from
+    ).toEqual({ name: 'Acme "Evil" <x@y.z>', address: "no-reply@acme.co" });
+  });
+
+  it("falls back to the server's name without a company name", () => {
+    expect(sharedMailHeaders(doc({ companyName: null }), SERVER).from).toEqual({
+      name: "Carbon",
+      address: "no-reply@acme.co"
+    });
+    expect(
+      sharedMailHeaders(
+        doc({ companyName: "  " }),
+        '"Carbon" <no-reply@acme.co>'
+      ).from
+    ).toEqual({ name: "Carbon", address: "no-reply@acme.co" });
+    // A bare server address has no name to borrow: the server's From stands.
+    expect(
+      sharedMailHeaders(doc({ companyName: null }), "no-reply@acme.co")
+    ).toEqual({ from: undefined, replyTo: undefined });
+  });
+
+  it("sends other mail as the server, replying only to the caller", () => {
+    expect(
+      sharedMailHeaders(
+        {
+          document: false,
+          companyName: "Acme",
+          replyTo: "rep@acme.co",
+          companyAddress: "sales@acme.co"
+        },
+        SERVER
+      )
+    ).toEqual({ from: undefined, replyTo: "rep@acme.co" });
   });
 });

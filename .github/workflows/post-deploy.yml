@@ -24,14 +24,6 @@ jobs:
       github.event_name != 'deployment_status' ||
       (github.event.deployment_status.state == 'success' &&
       startsWith(github.event.deployment.environment, 'Production – carbon'))
-    # One sync at a time: every run syncs every workspace, and two at once
-    # collide (Inngest answers the second PUT with a 400). On the job, not
-    # the workflow, so a skipped run (an MES or docs deploy) never takes
-    # the slot. A newer run replaces a waiting one; it syncs everything
-    # the waiting one would have, later.
-    concurrency:
-      group: post-deploy-sync
-      cancel-in-progress: false
     runs-on: ubuntu-latest
 
     steps:

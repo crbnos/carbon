@@ -22,7 +22,7 @@ import {
   getTotal
 } from "../utils/sales-order";
 import { getMoneyFormatter, getRateFormatter } from "../utils/shared";
-import { DocumentCard } from "./components/DocumentCard";
+import { DocumentCard, documentCardStyles } from "./components/DocumentCard";
 import {
   detailText,
   labelText,
@@ -33,7 +33,8 @@ import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
   getEmailInlineStyles,
-  getEmailThemeClasses
+  getEmailThemeClasses,
+  HeadStyle
 } from "./components/Theme";
 
 interface SalesOrderEmailProps extends Email {
@@ -98,7 +99,10 @@ const SalesOrderEmail = ({
   );
 
   return (
-    <EmailThemeProvider preview={preview}>
+    <EmailThemeProvider
+      preview={preview}
+      additionalHeadContent={<HeadStyle css={documentCardStyles} />}
+    >
       <Body
         className={`my-auto mx-auto font-sans ${themeClasses.body}`}
         style={lightStyles.body}

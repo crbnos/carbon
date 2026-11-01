@@ -2,26 +2,33 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-vi.mock("../config/env", () => ({
-  CarbonEdition: "Community",
-  CONTROLLED_ENVIRONMENT: false,
-  DOMAIN: "localhost",
-  SESSION_IDLE_LOCK_MS: 15 * 60 * 1000,
-  SESSION_SECRET: "test-session-secret"
-}));
-
-// Import-safety only: these tests exercise the cookie (real react-router
-// signing); the database re-validation in `resolveConsolePinIn` is not faked.
-vi.mock("../lib/supabase/client.server", () => ({
-  getCarbonServiceRole: vi.fn()
-}));
-
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from "vitest";
 import {
   readConsolePinInCookieUnverified,
   setConsolePinIn
 } from "./console-pin.server";
+
+// The module reads its configuration once, at import, and builds a Supabase
+// client there.
+vi.hoisted(() => {
+  vi.stubEnv("DOMAIN", "localhost");
+  vi.stubEnv("CARBON_EDITION", "");
+  vi.stubEnv("AUTH_COOKIE_SUFFIX", "");
+  vi.stubEnv("CONTROLLED_ENVIRONMENT", "");
+  vi.stubEnv("SESSION_SECRET", "test-session-secret");
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+  vi.stubEnv("SUPABASE_ANON_KEY", "anon-key");
+});
+
+afterAll(() => vi.unstubAllEnvs());
 
 const companyId = "company-1";
 const terminal = "terminal-user";

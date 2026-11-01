@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!departmentId) {
     throw redirect(
       path.to.departments,
-      await flash(request, error(params, "Failed to get department id"))
+      await flash(request, error(null, "Failed to get department id"))
     );
   }
 

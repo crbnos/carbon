@@ -3,13 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { documentSender, resolveEmailDelivery } from "@carbon/ee";
-import {
-  DEFAULT_FROM,
-  SERVER_MAIL_CONFIGURED,
-  sendEmail
-} from "@carbon/lib/email.server";
 import { NonRetriableError } from "inngest";
+import { sendCompanyEmail } from "../../../email/company-email";
 import { inngest } from "../../client";
 import { emailDeliveryFailure } from "./delivery-failure";
 
@@ -48,59 +43,22 @@ export const sendEmailFunction = inngest.createFunction(
 
     const result = await step.run("send-email", async () => {
       logger.info("Email Job");
-      // Only document emails follow the company's Email settings; sign-in,
-      // security and notification mail always goes from the server's address.
-      let sender: ReturnType<typeof documentSender> = {};
-      if (payload.document && payload.companyId) {
-        const client = getCarbonServiceRole();
-        const integration = await client
-          .from("companyIntegration")
-          .select("active, metadata")
-          .eq("id", "email")
-          .eq("companyId", payload.companyId)
-          .maybeSingle();
-        if (integration.error) {
-          logger.error("Failed to read the company's Email integration", {
-            companyId: payload.companyId,
-            error: integration.error
-          });
-          throw integration.error;
+      // Every company email follows the company's Email settings; `from` on
+      // the event is the person replies should reach.
+      const response = await sendCompanyEmail(
+        getCarbonServiceRole(),
+        payload.companyId,
+        {
+          attachments: payload.attachments,
+          cc: ccRecipients,
+          document: payload.document === true,
+          html: payload.html,
+          replyTo: payload.from || undefined,
+          subject: payload.subject,
+          text: payload.text,
+          to: toRecipients
         }
-        const delivery = resolveEmailDelivery(
-          integration.data,
-          SERVER_MAIL_CONFIGURED
-        );
-        if (delivery?.provider === "server") {
-          const company = await client
-            .from("company")
-            .select("name")
-            .eq("id", payload.companyId)
-            .maybeSingle();
-          if (company.error) {
-            logger.error("Failed to read the company's name", {
-              companyId: payload.companyId,
-              error: company.error
-            });
-            throw company.error;
-          }
-          sender = documentSender(delivery, company.data?.name, DEFAULT_FROM);
-        }
-      }
-      // Replies reach the person who sent the document and the company's
-      // address, which server mail never sends from.
-      const replyTo = [...new Set([payload.from, sender.replyTo])]
-        .filter(Boolean)
-        .join(", ");
-      const response = await sendEmail({
-        from: sender.from,
-        attachments: payload.attachments,
-        cc: ccRecipients,
-        html: payload.html,
-        replyTo: replyTo || undefined,
-        subject: payload.subject,
-        text: payload.text,
-        to: toRecipients
-      });
+      );
       // Retry only what provably never reached the relay; everything else is
       // terminal, because a replay of an ambiguous failure is how one click
       // becomes three copies in the customer's inbox.

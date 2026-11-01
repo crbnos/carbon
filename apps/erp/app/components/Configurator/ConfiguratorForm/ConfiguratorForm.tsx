@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
   Switch,
-  toast
+  toastError
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
@@ -391,7 +391,7 @@ function ConfiguratorFormContent({
       if (result.success) {
         onSubmit(result.data);
       } else {
-        toast.error(t`Please fill out all required fields`);
+        toastError(t`Please fill out all required fields`, result.error);
       }
     } else {
       nextStep();

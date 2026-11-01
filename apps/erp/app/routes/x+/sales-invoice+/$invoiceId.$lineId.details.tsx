@@ -14,8 +14,13 @@ import { Fragment } from "react/jsx-runtime";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
-import { salesInvoiceLineValidator } from "~/modules/invoicing/invoicing.models";
+import { useRouteData } from "~/hooks";
+import {
+  isSalesInvoiceLocked,
+  salesInvoiceLineValidator
+} from "~/modules/invoicing/invoicing.models";
 import { getSalesInvoiceLine } from "~/modules/invoicing/invoicing.service";
+import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
 import { getOpportunityLineDocuments } from "~/modules/sales/sales.service";
 import {
@@ -73,6 +78,9 @@ export default function EditSalesInvoiceLineRoute() {
   if (!lineId) throw notFound("lineId not found");
 
   const { salesInvoiceLine, files } = useLoaderData<typeof loader>();
+  const routeData = useRouteData<{ salesInvoice: SalesInvoice }>(
+    path.to.salesInvoice(invoiceId)
+  );
 
   const initialValues = {
     id: salesInvoiceLine?.id ?? undefined,
@@ -115,7 +123,9 @@ export default function EditSalesInvoiceLineRoute() {
         table="salesInvoiceLine"
         title={t`Notes`}
         subTitle={getItemReadableId(items, salesInvoiceLine?.itemId) ?? ""}
+        isReadOnly={isSalesInvoiceLocked(routeData?.salesInvoice?.status)}
         internalNotes={salesInvoiceLine?.internalNotes as JSONContent}
+        externalNotes={salesInvoiceLine?.externalNotes as JSONContent}
       />
 
       <DeferredFiles resolve={files}>

@@ -11,19 +11,19 @@
     "clean": "rimraf .turbo node_modules",
     "lint": "biome lint --write ",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@carbon/database": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@internationalized/date": "catalog:",
-    "@supabase/supabase-js": "catalog:",
     "kysely": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

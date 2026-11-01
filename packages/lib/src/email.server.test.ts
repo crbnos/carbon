@@ -139,12 +139,14 @@ describe("sendEmail", () => {
     const { sendEmail } = await loadMailer();
     await sendEmail({ to: "a@b.com", subject: "hi", text: "hello" });
 
-    expect(createTransport).toHaveBeenCalledWith({
-      host: "smtp.resend.com",
-      port: 465,
-      secure: true,
-      auth: { user: "resend", pass: "re_123" }
-    });
+    expect(createTransport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: "smtp.resend.com",
+        port: 465,
+        secure: true,
+        auth: { user: "resend", pass: "re_123" }
+      })
+    );
   });
 
   it("prefers SMTP_* over the Resend fallback when both are set", async () => {

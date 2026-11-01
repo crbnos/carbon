@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { functions, inngest, setWorkflowDispatch } from "@carbon/jobs/inngest";
+import {
+  functions,
+  inngest,
+  setTableJobHandlers,
+  setWorkflowDispatch
+} from "@carbon/jobs/inngest";
 import { getLogger } from "@carbon/logger";
 import { describeRequest } from "@carbon/logger/middleware.server";
 import {
@@ -12,6 +17,7 @@ import {
 } from "@carbon/logger/tracing.server";
 import { serve } from "inngest/remix";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { tableJobHandlers } from "~/utils/table-jobs.server";
 import { scopesFromPermissions } from "./v1+/lib/base.server";
 import { callOperation } from "./v1+/lib/call.server";
 
@@ -33,7 +39,8 @@ const functionIds = new Set(
   })
 );
 
-// packages/jobs cannot import ~/modules, so the ERP app hands it the dispatcher.
+// packages/jobs cannot import ~/modules, so the ERP app hands it the dispatcher
+// and the table-job handlers (list registry reads for exports and bulk actions).
 // Wired on first request rather than at module scope: a top-level side effect is
 // not removable by the client build, which would drag the server-only jobs graph
 // into the browser bundle.
@@ -53,6 +60,7 @@ function wireWorkflowDispatch() {
       args
     )
   );
+  setTableJobHandlers(tableJobHandlers);
   dispatchWired = true;
 }
 

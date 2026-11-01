@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="sealKWall" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+      <stop offset="0.5" stop-color="#e6eef3" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.34"/>
+    </linearGradient>
+    <linearGradient id="sealKFloor" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef4f7"/>
+      <stop offset="1" stop-color="#c8d5dc"/>
+    </linearGradient>
+    <linearGradient id="sealKGasket" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4b4f55"/>
+      <stop offset="0.5" stop-color="#25282c"/>
+      <stop offset="1" stop-color="#121315"/>
+    </linearGradient>
+    <linearGradient id="sealKFiber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6a6d70"/>
+      <stop offset="0.5" stop-color="#45484b"/>
+      <stop offset="1" stop-color="#2a2c2e"/>
+    </linearGradient>
+    <radialGradient id="sealKShadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.3"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="540" cy="760" rx="440" ry="104" fill="url(#sealKShadow)"/>
+  <!-- clear compartment tray: floor and far walls -->
+  <polygon points="420,318 835.7,558 549.9,723 134.2,483" fill="#000" opacity="0.1" transform="translate(6 10)"/>
+  <polygon points="420,312 835.7,552 549.9,717 134.2,477" fill="url(#sealKFloor)" opacity="0.8" stroke="#8fa6b4" stroke-width="2"/>
+  <polygon points="420,312 835.7,552 835.7,492 420,252" fill="url(#sealKWall)" stroke="#8fa6b4" stroke-width="2"/>
+  <polygon points="420,312 134.2,477 134.2,417 420,252" fill="url(#sealKWall)" stroke="#8fa6b4" stroke-width="2"/>
+  <!-- compartments, back to front, each followed by its near dividers -->
+  <ellipse cx="418.1" cy="364.7" rx="26.9" ry="15.6" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="10"/>
+  <ellipse cx="416.1" cy="362.2" rx="26.9" ry="15.6" fill="none" stroke="#050506" stroke-width="9"/>
+  <ellipse cx="416.1" cy="362.2" rx="26.9" ry="15.6" fill="none" stroke="#1d1f22" stroke-width="7"/>
+  <ellipse cx="416.1" cy="360.7" rx="26.9" ry="15.6" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="2"/>
+  <path d="M392.9 368.8 A26.9 15.6 0 0 0 406.7 376.6" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.3" stroke-linecap="round"/>
+  <ellipse cx="452.7" cy="402.7" rx="24.5" ry="14.1" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="10"/>
+  <ellipse cx="450.7" cy="400.2" rx="24.5" ry="14.1" fill="none" stroke="#050506" stroke-width="9"/>
+  <ellipse cx="450.7" cy="400.2" rx="24.5" ry="14.1" fill="none" stroke="#1d1f22" stroke-width="7"/>
+  <ellipse cx="450.7" cy="398.7" rx="24.5" ry="14.1" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="2"/>
+  <path d="M429.7 406.2 A24.5 14.1 0 0 0 442.2 413.3" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.3" stroke-linecap="round"/>
+  <ellipse cx="385.2" cy="407.7" rx="29.4" ry="17" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="10"/>
+  <ellipse cx="383.2" cy="405.2" rx="29.4" ry="17" fill="none" stroke="#050506" stroke-width="9"/>
+  <ellipse cx="383.2" cy="405.2" rx="29.4" ry="17" fill="none" stroke="#1d1f22" stroke-width="7"/>
+  <ellipse cx="383.2" cy="403.7" rx="29.4" ry="17" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="2"/>
+  <path d="M357.9 412.4 A29.4 17 0 0 0 372.9 420.9" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.3" stroke-linecap="round"/>
+  <polygon points="558.6,392 415.7,474.5 415.7,420.5 558.6,338" fill="url(#sealKWall)" stroke="#8fa6b4" stroke-width="1.6"/>
+  <polygon points="277.1,394.5 415.7,474.5 415.7,420.5 277.1,340.5" fill="url(#sealKWall)" stroke="#8fa6b4" stroke-width="1.6"/>
+  <ellipse cx="558.4" cy="474.8" rx="63.7" ry="36.8" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="13"/>
+  <ellipse cx="556.4" cy="471.2" rx="63.7" ry="36.8" fill="none" stroke="#050506" stroke-width="12"/>
+  <ellipse cx="556.4" cy="471.2" rx="63.7" ry="36.8" fill="none" stroke="#1d1f22" stroke-width="10"/>
+  <ellipse cx="556.4" cy="469.1" rx="63.7" ry="36.8" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="2.8"/>
+  <path d="M501.6 486.7 A63.7 36.8 0 0 0 534.1 505.1" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="563.6" cy="465.8" rx="61.2" ry="35.4" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="13"/>
+  <ellipse cx="561.6" cy="462.2" rx="61.2" ry="35.4" fill="none" stroke="#050506" stroke-width="12"/>
+  <ellipse cx="561.6" cy="462.2" rx="61.2" ry="35.4" fill="none" stroke="#1d1f22" stroke-width="10"/>
+  <ellipse cx="561.6" cy="460.1" rx="61.2" ry="35.4" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="2.8"/>
+  <path d="M508.9 477.1 A61.2 35.4 0 0 0 540.2 494.8" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.8" stroke-linecap="round"/>
+  <polygon points="697.1,472 554.2,554.5 554.2,500.5 697.1,418" fill="url(#sealKWall)" stroke="#8fa6b4" stroke-width="1.6"/>
+  <polygon points="415.7,474.5 554.2,554.5 554.2,500.5 415.7,420.5" fill="url(#sealKWall)" stroke="#8fa6b4" stroke-width="1.6"/>
+  <ellipse cx="276.9" cy="477.9" rx="78.4" ry="45.3" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="15"/>
+  <ellipse cx="274.9" cy="473.8" rx="78.4" ry="45.3" fill="none" stroke="#050506" stroke-width="14"/>
+  <ellipse cx="274.9" cy="473.8" rx="78.4" ry="45.3" fill="none" stroke="#1d1f22" stroke-width="12"/>
+  <ellipse cx="274.9" cy="471.1" rx="78.4" ry="45.3" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="3.4"/>
+  <path d="M207.5 492.8 A78.4 45.3 0 0 0 247.5 515.4" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2.2" stroke-linecap="round"/>
+  <polygon points="415.7,474.5 272.8,557 272.8,503 415.7,420.5" fill="url(#sealKWall)" stroke="#8fa6b4" stroke-width="1.6"/>
+  <path d="M623.9 553.2 a71 41 0 1 0 142.1 0 a71 41 0 1 0 -142.1 0 Z M653.3 553.2 a41.6 24 0 1 0 83.3 0 a41.6 24 0 1 0 -83.3 0 Z" fill="#060607" fill-rule="evenodd" stroke="#000" stroke-width="1.5"/>
+  <path d="M623.9 547.2 a71 41 0 1 0 142.1 0 a71 41 0 1 0 -142.1 0 Z M653.3 547.2 a41.6 24 0 1 0 83.3 0 a41.6 24 0 1 0 -83.3 0 Z" fill="url(#sealKFiber)" fill-rule="evenodd" stroke="#0a0a0b" stroke-width="1.5"/>
+  <ellipse cx="695" cy="547.2" rx="66.1" ry="38.2" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <ellipse cx="746.8" cy="559.9" rx="5.5" ry="3.2" fill="#c9d4da"/>
+  <ellipse cx="673" cy="577.2" rx="5.5" ry="3.2" fill="#c9d4da"/>
+  <ellipse cx="643.1" cy="534.6" rx="5.5" ry="3.2" fill="#c9d4da"/>
+  <ellipse cx="716.9" cy="517.3" rx="5.5" ry="3.2" fill="#c9d4da"/>
+  <polygon points="554.2,554.5 692.8,634.5 692.8,580.5 554.2,500.5" fill="url(#sealKWall)" stroke="#8fa6b4" stroke-width="1.6"/>
+  <path d="M340 555.8 a73.5 42.4 0 1 0 147 0 a73.5 42.4 0 1 0 -147 0 Z M367 555.8 a46.5 26.9 0 1 0 93.1 0 a46.5 26.9 0 1 0 -93.1 0 Z" fill="#060607" fill-rule="evenodd" stroke="#000" stroke-width="1.5"/>
+  <path d="M340 549.8 a73.5 42.4 0 1 0 147 0 a73.5 42.4 0 1 0 -147 0 Z M367 549.8 a46.5 26.9 0 1 0 93.1 0 a46.5 26.9 0 1 0 -93.1 0 Z" fill="url(#sealKGasket)" fill-rule="evenodd" stroke="#0a0a0b" stroke-width="1.5"/>
+  <ellipse cx="413.5" cy="549.8" rx="68.6" ry="39.6" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <path d="M359.6 544.8 a53.9 31.1 0 1 0 107.8 0 a53.9 31.1 0 1 0 -107.8 0 Z M381.7 544.8 a31.8 18.4 0 1 0 63.7 0 a31.8 18.4 0 1 0 -63.7 0 Z" fill="#060607" fill-rule="evenodd" stroke="#000" stroke-width="1.5"/>
+  <path d="M359.6 538.8 a53.9 31.1 0 1 0 107.8 0 a53.9 31.1 0 1 0 -107.8 0 Z M381.7 538.8 a31.8 18.4 0 1 0 63.7 0 a31.8 18.4 0 1 0 -63.7 0 Z" fill="url(#sealKGasket)" fill-rule="evenodd" stroke="#0a0a0b" stroke-width="1.5"/>
+  <ellipse cx="413.5" cy="538.8" rx="49" ry="28.3" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+  <polygon points="554.2,554.5 411.3,637 411.3,583 554.2,500.5" fill="url(#sealKWall)" stroke="#8fa6b4" stroke-width="1.6"/>
+  <ellipse cx="552.3" cy="597.5" rx="15.9" ry="9.2" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="8"/>
+  <ellipse cx="550.3" cy="595.8" rx="15.9" ry="9.2" fill="none" stroke="#050506" stroke-width="7"/>
+  <ellipse cx="550.3" cy="595.8" rx="15.9" ry="9.2" fill="none" stroke="#1d1f22" stroke-width="5"/>
+  <ellipse cx="550.3" cy="594.6" rx="15.9" ry="9.2" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="1.4"/>
+  <path d="M536.6 599.6 A15.9 9.2 0 0 0 544.8 604.2" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1" stroke-linecap="round"/>
+  <ellipse cx="592.2" cy="614.5" rx="15.9" ry="9.2" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="8"/>
+  <ellipse cx="590.2" cy="612.8" rx="15.9" ry="9.2" fill="none" stroke="#050506" stroke-width="7"/>
+  <ellipse cx="590.2" cy="612.8" rx="15.9" ry="9.2" fill="none" stroke="#1d1f22" stroke-width="5"/>
+  <ellipse cx="590.2" cy="611.6" rx="15.9" ry="9.2" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="1.4"/>
+  <path d="M576.5 616.6 A15.9 9.2 0 0 0 584.6 621.2" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1" stroke-linecap="round"/>
+  <ellipse cx="613" cy="640.5" rx="15.9" ry="9.2" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="8"/>
+  <ellipse cx="611" cy="638.8" rx="15.9" ry="9.2" fill="none" stroke="#050506" stroke-width="7"/>
+  <ellipse cx="611" cy="638.8" rx="15.9" ry="9.2" fill="none" stroke="#1d1f22" stroke-width="5"/>
+  <ellipse cx="611" cy="637.6" rx="15.9" ry="9.2" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="1.4"/>
+  <path d="M597.3 642.6 A15.9 9.2 0 0 0 605.4 647.2" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1" stroke-linecap="round"/>
+  <ellipse cx="519.4" cy="622.5" rx="15.9" ry="9.2" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="8"/>
+  <ellipse cx="517.4" cy="620.8" rx="15.9" ry="9.2" fill="none" stroke="#050506" stroke-width="7"/>
+  <ellipse cx="517.4" cy="620.8" rx="15.9" ry="9.2" fill="none" stroke="#1d1f22" stroke-width="5"/>
+  <ellipse cx="517.4" cy="619.6" rx="15.9" ry="9.2" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="1.4"/>
+  <path d="M503.7 624.6 A15.9 9.2 0 0 0 511.9 629.2" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1" stroke-linecap="round"/>
+  <ellipse cx="559.3" cy="639.5" rx="15.9" ry="9.2" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="8"/>
+  <ellipse cx="557.3" cy="637.8" rx="15.9" ry="9.2" fill="none" stroke="#050506" stroke-width="7"/>
+  <ellipse cx="557.3" cy="637.8" rx="15.9" ry="9.2" fill="none" stroke="#1d1f22" stroke-width="5"/>
+  <ellipse cx="557.3" cy="636.6" rx="15.9" ry="9.2" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="1.4"/>
+  <path d="M543.6 641.6 A15.9 9.2 0 0 0 551.7 646.2" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1" stroke-linecap="round"/>
+  <ellipse cx="578.3" cy="664.5" rx="15.9" ry="9.2" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="8"/>
+  <ellipse cx="576.3" cy="662.8" rx="15.9" ry="9.2" fill="none" stroke="#050506" stroke-width="7"/>
+  <ellipse cx="576.3" cy="662.8" rx="15.9" ry="9.2" fill="none" stroke="#1d1f22" stroke-width="5"/>
+  <ellipse cx="576.3" cy="661.6" rx="15.9" ry="9.2" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="1.4"/>
+  <path d="M562.6 666.6 A15.9 9.2 0 0 0 570.7 671.2" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1" stroke-linecap="round"/>
+  <ellipse cx="498.6" cy="648.5" rx="15.9" ry="9.2" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="8"/>
+  <ellipse cx="496.6" cy="646.8" rx="15.9" ry="9.2" fill="none" stroke="#050506" stroke-width="7"/>
+  <ellipse cx="496.6" cy="646.8" rx="15.9" ry="9.2" fill="none" stroke="#1d1f22" stroke-width="5"/>
+  <ellipse cx="496.6" cy="645.6" rx="15.9" ry="9.2" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="1.4"/>
+  <path d="M482.9 650.6 A15.9 9.2 0 0 0 491.1 655.2" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1" stroke-linecap="round"/>
+  <ellipse cx="533.3" cy="672.5" rx="15.9" ry="9.2" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="8"/>
+  <ellipse cx="531.3" cy="670.8" rx="15.9" ry="9.2" fill="none" stroke="#050506" stroke-width="7"/>
+  <ellipse cx="531.3" cy="670.8" rx="15.9" ry="9.2" fill="none" stroke="#1d1f22" stroke-width="5"/>
+  <ellipse cx="531.3" cy="669.6" rx="15.9" ry="9.2" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="1.4"/>
+  <path d="M517.6 674.6 A15.9 9.2 0 0 0 525.7 679.2" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1" stroke-linecap="round"/>
+  <!-- near walls and rim, clear -->
+  <polygon points="835.7,558 549.9,723 549.9,657 835.7,492" fill="url(#sealKWall)" stroke="#8fa6b4" stroke-width="2.2"/>
+  <polygon points="134.2,483 549.9,723 549.9,657 134.2,417" fill="url(#sealKWall)" stroke="#8fa6b4" stroke-width="2.2"/>
+  <polygon points="420,252 835.7,492 549.9,657 134.2,417" fill="none" stroke="#ffffff" stroke-width="5" stroke-opacity="0.8" stroke-linejoin="round"/>
+  <polygon points="420,252 835.7,492 549.9,657 134.2,417" fill="none" stroke="#8fa6b4" stroke-width="1.6" stroke-linejoin="round"/>
+  <line x1="186.2" y1="461" x2="264.1" y2="544" stroke="#ffffff" stroke-opacity="0.7" stroke-width="5" stroke-linecap="round"/>
+  <line x1="212.2" y1="470" x2="246.8" y2="508" stroke="#ffffff" stroke-opacity="0.7" stroke-width="5" stroke-linecap="round"/>
+  <line x1="775.1" y1="539" x2="705.8" y2="617" stroke="#ffffff" stroke-opacity="0.7" stroke-width="5" stroke-linecap="round"/>
+  <polygon points="316.1,522 368,552 366.3,575 314.3,545" fill="#ffffff" opacity="0.5" stroke="#8fa6b4" stroke-width="1.6"/>
+  <!-- loose seals in front -->
+  <ellipse cx="690.5" cy="726.1" rx="41.6" ry="24" fill="none" stroke="#000" stroke-opacity="0.2" stroke-width="12"/>
+  <ellipse cx="688.5" cy="723" rx="41.6" ry="24" fill="none" stroke="#050506" stroke-width="11"/>
+  <ellipse cx="688.5" cy="723" rx="41.6" ry="24" fill="none" stroke="#1d1f22" stroke-width="9"/>
+  <ellipse cx="688.5" cy="721" rx="41.6" ry="24" fill="none" stroke="#6f747a" stroke-opacity="0.6" stroke-width="2.5"/>
+  <path d="M652.6 733.1 A41.6 24 0 0 0 673.9 745.1" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M277.1 698 a56.3 32.5 0 1 0 112.7 0 a56.3 32.5 0 1 0 -112.7 0 Z M299.1 698 a34.3 19.8 0 1 0 68.6 0 a34.3 19.8 0 1 0 -68.6 0 Z" fill="#060607" fill-rule="evenodd" stroke="#000" stroke-width="1.5"/>
+  <path d="M277.1 692 a56.3 32.5 0 1 0 112.7 0 a56.3 32.5 0 1 0 -112.7 0 Z M299.1 692 a34.3 19.8 0 1 0 68.6 0 a34.3 19.8 0 1 0 -68.6 0 Z" fill="url(#sealKGasket)" fill-rule="evenodd" stroke="#0a0a0b" stroke-width="1.5"/>
+  <ellipse cx="333.4" cy="692" rx="51.4" ry="29.7" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5"/>
+</svg>

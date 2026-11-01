@@ -7,7 +7,7 @@ import { useDatePicker } from "@react-aria/datepicker";
 import { useDatePickerState } from "@react-stately/datepicker";
 import type { DatePickerProps } from "@react-types/datepicker";
 import type { ReactNode } from "react";
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import { LuBan, LuCalendarClock, LuInfo } from "react-icons/lu";
 import { cn } from "..";
 import { Button } from "../Button";
@@ -35,6 +35,8 @@ const DatePicker = (
     size?: "sm" | "md" | "lg";
     /** Days to flag with a dot in the calendar, e.g. days that have work due. */
     isDateMarked?: (date: CalendarDate) => boolean;
+    /** The field's name for assistive tech; defaults to `label`. */
+    "aria-label"?: string;
   }
 ) => {
   const state = useDatePickerState({
@@ -43,8 +45,29 @@ const DatePicker = (
   });
 
   const ref = useRef<HTMLDivElement>(null);
+  // The label is drawn by the form field, not here, so name the group with it
+  // directly; a label react-aria points at but nothing renders names nothing.
+  const fieldName =
+    props["aria-label"] ??
+    (typeof props.label === "string" ? props.label : undefined);
   const { groupProps, fieldProps, buttonProps, dialogProps, calendarProps } =
-    useDatePicker(props, state, ref);
+    useDatePicker(
+      { ...props, label: undefined, "aria-label": fieldName },
+      state,
+      ref
+    );
+  // The inline variants render no group, so the button's labelledby (and the
+  // dialog's, which points at the button) would name it only "Calendar". Name
+  // it "Calendar <field>" as react-aria does when the group is drawn.
+  const inlineButtonLabel = fieldName
+    ? {
+        "aria-label": `${buttonProps["aria-label"]} ${fieldName}`,
+        "aria-labelledby": undefined
+      }
+    : {};
+  // The preview button also reads out the date it shows: its own label, then
+  // the visible value.
+  const previewValueId = useId();
 
   return (
     <Popover open={state.isOpen} onOpenChange={state.setOpen}>
@@ -61,8 +84,12 @@ const DatePicker = (
                     aria-label="Open date picker"
                     isDisabled={props.isDisabled}
                     {...buttonProps}
+                    {...inlineButtonLabel}
+                    aria-labelledby={`${buttonProps.id} ${previewValueId}`}
                   >
-                    {props.inline}
+                    <span id={previewValueId} className="contents">
+                      {props.inline}
+                    </span>
                     <LuCalendarClock />
                   </Button>
                 </PopoverTrigger>
@@ -91,6 +118,7 @@ const DatePicker = (
                         aria-label="Open date picker"
                         isDisabled={props.isDisabled}
                         {...buttonProps}
+                        {...inlineButtonLabel}
                       />
                     </PopoverTrigger>
                   </HStack>

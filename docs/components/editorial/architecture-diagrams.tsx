@@ -38,7 +38,9 @@ export type ArchitectureDiagramKey =
   | "triage"
   | "buy-hosted"
   | "buy-selfhosted"
-  | "plans";
+  | "plans"
+  | "connect"
+  | "ramp-modes";
 
 /* Part 1. The spine only: people, the two apps, Supabase over Postgres, and the event
  * loop back into the ERP. Redis and the Assembler are deliberately absent — they are
@@ -567,6 +569,44 @@ function Plans() {
   );
 }
 
+/* Connecting an integration, for the setup guides: three steps, the middle one happens
+ * in the other app. Generic on purpose so one drawing serves every guide. */
+function Connect() {
+  return (
+    <svg viewBox="0 0 740 96" className="w-full h-auto" role="img" aria-label="How connecting an app to Carbon works">
+      <ArrowDefs />
+
+      <Node x={16} y={18} w={206} h={60} label="1. Press Install" sub="in Carbon" tone="app" />
+      <Edge pts={[[222, 48], [267, 48]]} />
+      <Node x={267} y={18} w={206} h={60} label="2. Sign in and allow" sub="in the other app" tone="svc" />
+      <Edge pts={[[473, 48], [518, 48]]} />
+      <Node x={518} y={18} w={206} h={60} label="3. Connected" sub="back in Carbon" tone="app" />
+    </svg>
+  );
+}
+
+/* Ramp's connect question. Ramp lets one accounting system connect at a time, so the
+ * answer to "who keeps your books" decides what Carbon does with Ramp. */
+function RampModes() {
+  return (
+    <svg viewBox="0 0 740 226" className="w-full h-auto" role="img" aria-label="Choosing how Carbon connects to Ramp">
+      <ArrowDefs />
+
+      <Node x={235} y={14} w={270} h={50} label="Who keeps your books?" />
+
+      <Edge pts={[[300, 64], [300, 88], [185, 88], [185, 116]]} label="Carbon" labelAt={[242, 88]} />
+      <Edge pts={[[440, 64], [440, 88], [555, 88], [555, 116]]} label="another system" labelAt={[498, 88]} />
+
+      <Node x={30} y={116} w={310} h={56} label="Carbon is my accounting system" sub="Ramp spend flows into Carbon's books" tone="app" />
+      <Node x={400} y={116} w={310} h={56} label="Another system posts my ledger" sub="Your other system keeps Ramp's accounting spot" tone="svc" />
+
+      <text x={370} y={206} textAnchor="middle" fontSize="11" fill={INK_45}>
+        You pick once. To change it, uninstall Ramp in Carbon and connect again.
+      </text>
+    </svg>
+  );
+}
+
 export const architectureDiagrams: Record<ArchitectureDiagramKey, () => ReactElement> = {
   map: Map,
   click: Click,
@@ -578,4 +618,6 @@ export const architectureDiagrams: Record<ArchitectureDiagramKey, () => ReactEle
   "buy-hosted": BuyHosted,
   "buy-selfhosted": BuySelfHosted,
   plans: Plans,
+  connect: Connect,
+  "ramp-modes": RampModes,
 };

@@ -21,19 +21,19 @@ export function CombinatorToggle({ value, onChange, isReadOnly }: Props) {
         if (v === "and" || v === "or") onChange(v);
       }}
       disabled={isReadOnly}
-      className={cn("nodrag nopan gap-0 rounded-md border text-[10px]")}
+      className={cn("nodrag nopan gap-0 rounded-md border text-[0.625rem]")}
     >
       <ToggleGroupItem
         value="and"
         disabled={isReadOnly}
-        className="h-5 rounded-l-md rounded-r-none border-r px-1.5 text-[10px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        className="h-5 rounded-l-md rounded-r-none border-r px-1.5 text-[0.625rem] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
       >
         <Trans>AND</Trans>
       </ToggleGroupItem>
       <ToggleGroupItem
         value="or"
         disabled={isReadOnly}
-        className="h-5 rounded-l-none rounded-r-md px-1.5 text-[10px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        className="h-5 rounded-l-none rounded-r-md px-1.5 text-[0.625rem] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
       >
         <Trans>OR</Trans>
       </ToggleGroupItem>

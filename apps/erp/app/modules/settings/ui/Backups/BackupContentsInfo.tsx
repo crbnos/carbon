@@ -71,7 +71,7 @@ export function BackupContentsInfo() {
               group.entities.some(([, table]) => countOf(group.area, table) > 0)
             ).map((group) => (
               <div key={group.area} className="flex flex-col gap-0.5">
-                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <p className="text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground">
                   {t(AREA_LABELS[group.area])}
                 </p>
                 {group.entities

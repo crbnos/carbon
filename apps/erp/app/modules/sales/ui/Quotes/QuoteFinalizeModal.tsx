@@ -187,7 +187,7 @@ const QuotationFinalizeModal = ({
                 <Trans>Are you sure you want to finalize the quote?</Trans>
               </p>
               {warningLineReadableIds.length > 0 && (
-                <Alert variant="destructive">
+                <Alert variant="warning">
                   <LuTriangleAlert className="h-4 w-4" />
                   <AlertTitle>
                     <Trans>Lines need prices or lead times</Trans>
@@ -203,7 +203,7 @@ const QuotationFinalizeModal = ({
                 </Alert>
               )}
               {showShippingWarning && (
-                <Alert variant="destructive">
+                <Alert variant="warning">
                   <LuTriangleAlert className="h-4 w-4" />
                   <AlertTitle>
                     <Trans>Missing Shipping Costs</Trans>

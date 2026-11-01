@@ -20,12 +20,12 @@ import { Trans } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { DateTime, Hyperlink } from "~/components";
 import { useCurrencyFormatter } from "~/hooks";
-import type { getInvoiceSettlements } from "~/modules/invoicing/invoicing.service";
 import { path } from "~/utils/path";
-
-type PaymentApplication = NonNullable<
-  Awaited<ReturnType<typeof getInvoiceSettlements>>["data"]
->[number];
+import {
+  aggregateApplications,
+  type PaymentApplication,
+  unappliedPaymentCash
+} from "./payment-logic";
 
 type PaymentApplicationsProps = {
   isRefund?: boolean;
@@ -92,52 +92,13 @@ const PaymentApplications = ({
 }: PaymentApplicationsProps) => {
   const currencyFormatter = useCurrencyFormatter({ currency: baseCurrency });
   const documentFormatter = useCurrencyFormatter({ currency: paymentCurrency });
-  const byInvoice = new Map<
-    string,
-    PaymentApplication & { sourceRates: number[] }
-  >();
-  for (const a of splits) {
-    const id =
-      a.targetSalesInvoiceId ??
-      a.targetPurchaseInvoiceId ??
-      a.targetMemoId ??
-      a.targetReimbursementId ??
-      a.id;
-    const existing = byInvoice.get(id);
-    if (!existing) {
-      byInvoice.set(id, { ...a, sourceRates: [Number(a.sourceExchangeRate)] });
-      continue;
-    }
-    existing.appliedAmount = round(
-      existing.appliedAmount + Number(a.appliedAmount)
-    );
-    existing.discountAmount = round(
-      existing.discountAmount + Number(a.discountAmount)
-    );
-    existing.writeOffAmount = round(
-      existing.writeOffAmount + Number(a.writeOffAmount)
-    );
-    existing.sourceAmount =
-      (existing.sourceAmount ?? 0) + Number(a.sourceAmount ?? 0);
-    existing.fxGainLossAmount = round(
-      Number(existing.fxGainLossAmount ?? 0) + Number(a.fxGainLossAmount ?? 0)
-    );
-    existing.sourceRates = [
-      ...new Set([...existing.sourceRates, Number(a.sourceExchangeRate)])
-    ];
-  }
-  const applications = [...byInvoice.values()];
+  const applications = aggregateApplications(splits);
   const rateFormatter = useNumberFormatter(SCALE_FORMAT);
 
   const total = (
     field: "appliedAmount" | "discountAmount" | "writeOffAmount"
   ) => round(applications.reduce((sum, a) => sum + Number(a[field]), 0));
-  const unapplied =
-    paymentTotal -
-    splits.reduce(
-      (s, a) => s + (a.sourcePaymentId ? 0 : Number(a.sourceAmount ?? 0)),
-      0
-    );
+  const unapplied = unappliedPaymentCash(paymentTotal, splits);
 
   // Discount and write-off only exist on a trade invoice settlement.
   const hasAdjustments = !isRefund && !isReimbursement;

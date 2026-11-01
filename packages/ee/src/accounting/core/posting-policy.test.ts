@@ -15,9 +15,8 @@ import {
   resolvePostingSyncSettings
 } from "./posting";
 
-/** Resolve a v3 stored fragment exactly as production reads it. */
-// These tests exercise the POLICY, not delegation, so the settings are marked
-// carbon-owned. Delegation has its own tests in sync/delegation.test.ts.
+// The settings are marked carbon-owned: delegation has its own tests in
+// sync/delegation.test.ts.
 const settingsWith = (fragment?: Record<string, unknown>) =>
   asCarbonOwnedSettings(
     resolvePostingSyncSettings({
@@ -25,37 +24,53 @@ const settingsWith = (fragment?: Record<string, unknown>) =>
     })
   );
 
+type DecisionInput = Parameters<typeof getJournalPostingPolicyDecision>[0];
+
 const DOC_SYNC_ON = { invoiceEnabled: true, billEnabled: true };
 const DOC_SYNC_OFF = { invoiceEnabled: false, billEnabled: false };
+const AR_JOURNALS = { families: { ar: "journals", ap: "documents" } };
+const BILLS_ONLY = { invoiceEnabled: false, billEnabled: true };
+const CHARGE_SYNC = { ...DOC_SYNC_ON, chargeEnabled: true };
 
-// ── POSTING_POLICY totality & structure ──────────────────────────────────────
+const decide = ({
+  fragment,
+  ...input
+}: Partial<Omit<DecisionInput, "settings">> & {
+  fragment?: Record<string, unknown>;
+}) =>
+  getJournalPostingPolicyDecision({
+    sourceType: "Purchase Receipt",
+    docSync: DOC_SYNC_ON,
+    ...input,
+    settings: settingsWith(fragment)
+  });
+
+const PUSH = { kind: "push", granularity: "individual" };
+const docBacked = (entityType?: string) => ({
+  kind: "exclude",
+  reason: "DOC_BACKED",
+  ...(entityType ? { backingDocument: { entityType } } : {})
+});
+const excluded = (reason: string) => ({ kind: "exclude", reason });
+const warns = (code: string) => ({ kind: "warn", code });
 
 describe("POSTING_POLICY", () => {
-  it("is structurally valid for every source type", () => {
+  it("gives every document-represented type a family and a backing entity, and no journal type a family", () => {
     for (const sourceType of JOURNAL_ENTRY_SOURCE_TYPES) {
       const entry = POSTING_POLICY[sourceType];
-      expect(["journal", "document"]).toContain(entry.representation);
-
       if (entry.representation === "document") {
-        expect(
-          entry.family,
-          `${sourceType} is document-represented and must carry a family`
-        ).toBeDefined();
-        expect(
-          entry.backingEntityType,
-          `${sourceType} must declare its backing entity (or explicit null)`
-        ).not.toBeUndefined();
+        expect(entry.family, sourceType).toBeDefined();
+        expect(entry.backingEntityType, sourceType).not.toBeUndefined();
       } else {
-        expect(entry.family).toBeUndefined();
+        expect(entry.representation, sourceType).toBe("journal");
+        expect(entry.family, sourceType).toBeUndefined();
       }
-
-      if (entry.family === "per-line") {
-        expect(sourceType).toBe("Payment");
-      }
+      if (entry.family === "per-line") expect(sourceType).toBe("Payment");
     }
   });
 
-  it("derives the frozen v2 default/excluded lists exactly (behavior parity)", () => {
+  // Flipping a type's representation changes what reaches the provider.
+  it("derives the default (pushed) and excluded (document) source type lists", () => {
     expect([...POSTING_SYNC_DEFAULT_SOURCE_TYPES].sort()).toEqual(
       [
         "Purchase Receipt",
@@ -71,16 +86,10 @@ describe("POSTING_POLICY", () => {
         "Asset Disposal",
         "Non-Conformance",
         "Inbound Inspection",
-        // Added post-v2 with the Ramp integration: charge journals
-        // (Dr expense / Cr card liability) push to the provider like any other
-        // automated internal posting — no document representation exists.
         "Charge",
-        // Added post-v2 with maintenance labor: time on a maintenance dispatch
-        // posts Dr maintenance / Cr labor absorption, like Production Event.
         "Maintenance Event"
       ].sort()
     );
-
     expect([...POSTING_SYNC_EXCLUDED_SOURCE_TYPES].sort()).toEqual(
       [
         "Sales Invoice",
@@ -90,517 +99,354 @@ describe("POSTING_POLICY", () => {
         "Debit Memo",
         "Sales Return",
         "Purchase Return",
-        // Added post-v2 with the reimbursements work: a reimbursement is a
-        // document-represented AP posting. Its backingEntityType is still null
-        // until the reimbursement syncers land, so it parks DOC_SYNC_DISABLED
-        // rather than pushing — but it belongs in the excluded (document) list,
-        // not the journal-push one.
         "Reimbursement"
       ].sort()
     );
   });
 });
 
-// ── getJournalPostingPolicyDecision ──────────────────────────────────────────
-
 describe("getJournalPostingPolicyDecision", () => {
-  it("pushes enabled journal-represented types with their configured granularity", () => {
-    const settings = settingsWith();
+  it.each<[string, Parameters<typeof decide>[0], object]>([
+    // Journal-represented types
+    ["pushes a journal type individually by default", {}, PUSH],
+    [
+      "pushes Production Event individually (summary is opt-in)",
+      { sourceType: "Production Event" },
+      PUSH
+    ],
+    [
+      "pushes an automated type even when a stored enabled:false says otherwise",
+      {
+        fragment: {
+          sourceTypes: {
+            "Purchase Receipt": { enabled: false, granularity: "individual" }
+          }
+        }
+      },
+      PUSH
+    ],
+    [
+      "permanently excludes Manual",
+      { sourceType: "Manual" },
+      excluded("MANUAL_DISABLED")
+    ],
+    [
+      "excludes an unknown source type",
+      { sourceType: "Not A Source Type" },
+      excluded("SOURCE_TYPE_DISABLED")
+    ],
+    [
+      "excludes a missing source type",
+      { sourceType: null },
+      excluded("SOURCE_TYPE_DISABLED")
+    ],
+    [
+      "hands Inventory Adjustment to the entity syncer when that sync is on",
+      {
+        sourceType: "Inventory Adjustment",
+        inventoryAdjustmentEntitySyncEnabled: true
+      },
+      docBacked("inventoryAdjustment")
+    ],
 
-    expect(
-      getJournalPostingPolicyDecision({
-        sourceType: "Purchase Receipt",
-        settings,
-        docSync: DOC_SYNC_ON
-      })
-    ).toEqual({ kind: "push", granularity: "individual" });
-
-    // No type summarizes by default — daily summary is opt-in per type
-    expect(
-      getJournalPostingPolicyDecision({
-        sourceType: "Production Event",
-        settings,
-        docSync: DOC_SYNC_ON
-      })
-    ).toEqual({ kind: "push", granularity: "individual" });
-  });
-
-  it("always-on: a stored enabled:false cannot exclude an automated type; Manual is permanently excluded (MANUAL_DISABLED)", () => {
-    // Always-on model: automated journal types push regardless of any stored
-    // per-type enable flag (kept in the schema for backward-compatible
-    // parsing but never read by the decision).
-    const settings = settingsWith({
-      sourceTypes: {
-        "Purchase Receipt": { enabled: false, granularity: "individual" }
-      }
-    });
-
-    const stillPushes = getJournalPostingPolicyDecision({
-      sourceType: "Purchase Receipt",
-      settings,
-      docSync: DOC_SYNC_ON
-    });
-    expect(stillPushes).toMatchObject({ kind: "push" });
-
-    // Manual is the only non-syncable type (POSTING_POLICY syncable: false) —
-    // excluded permanently, regardless of stored config.
-    const manual = getJournalPostingPolicyDecision({
-      sourceType: "Manual",
-      settings,
-      docSync: DOC_SYNC_ON
-    });
-    expect(manual).toMatchObject({
-      kind: "exclude",
-      reason: "MANUAL_DISABLED"
-    });
-  });
-
-  it("excludes unknown and missing source types", () => {
-    const settings = settingsWith();
-    expect(
-      getJournalPostingPolicyDecision({
-        sourceType: "Not A Source Type",
-        settings,
-        docSync: DOC_SYNC_ON
-      })
-    ).toMatchObject({ kind: "exclude", reason: "SOURCE_TYPE_DISABLED" });
-    expect(
-      getJournalPostingPolicyDecision({
-        sourceType: null,
-        settings,
-        docSync: DOC_SYNC_ON
-      })
-    ).toMatchObject({ kind: "exclude", reason: "SOURCE_TYPE_DISABLED" });
-  });
-
-  it("hands Inventory Adjustment to the entity syncer when that sync is enabled", () => {
-    const decision = getJournalPostingPolicyDecision({
-      sourceType: "Inventory Adjustment",
-      settings: settingsWith(),
-      docSync: DOC_SYNC_ON,
-      inventoryAdjustmentEntitySyncEnabled: true
-    });
-    expect(decision).toMatchObject({
-      kind: "exclude",
-      reason: "DOC_BACKED",
-      backingDocument: { entityType: "inventoryAdjustment" }
-    });
-  });
-
-  describe("Charge — per-row charge backing", () => {
-    const chargeSync = { ...DOC_SYNC_ON, chargeEnabled: true };
-
-    it("hands a Charge with a supplier to the charge syncer", () => {
-      const decision = getJournalPostingPolicyDecision({
+    // Charge journals are backed per row
+    [
+      "hands a supplier Charge to the charge syncer",
+      {
         sourceType: "Charge",
-        settings: settingsWith(),
-        docSync: chargeSync,
+        docSync: CHARGE_SYNC,
         charge: { type: "Charge", hasSupplier: true }
-      });
-      expect(decision).toMatchObject({
-        kind: "exclude",
-        reason: "DOC_BACKED",
-        backingDocument: { entityType: "charge" }
-      });
-    });
-
-    it("keeps pushing a statement Payment / Cashback / Repayment as a journal entry", () => {
-      for (const type of ["Payment", "Cashback", "Repayment"] as const) {
-        expect(
-          getJournalPostingPolicyDecision({
-            sourceType: "Charge",
-            settings: settingsWith(),
-            docSync: chargeSync,
-            charge: { type, hasSupplier: true }
-          })
-        ).toMatchObject({ kind: "push" });
-      }
-    });
-
-    it("keeps pushing a Charge with no merchant supplier (no vendor for a charge object)", () => {
-      expect(
-        getJournalPostingPolicyDecision({
+      },
+      docBacked("charge")
+    ],
+    ...(["Payment", "Cashback", "Repayment"] as const).map(
+      (type): [string, Parameters<typeof decide>[0], object] => [
+        `keeps pushing a statement ${type} as a journal`,
+        {
           sourceType: "Charge",
-          settings: settingsWith(),
-          docSync: chargeSync,
-          charge: { type: "Charge", hasSupplier: false }
-        })
-      ).toMatchObject({ kind: "push" });
-    });
+          docSync: CHARGE_SYNC,
+          charge: { type, hasSupplier: true }
+        },
+        PUSH
+      ]
+    ),
+    [
+      "keeps pushing a Charge with no merchant supplier",
+      {
+        sourceType: "Charge",
+        docSync: CHARGE_SYNC,
+        charge: { type: "Charge", hasSupplier: false }
+      },
+      PUSH
+    ],
+    [
+      "keeps pushing a Credit when the provider cannot represent a refund",
+      {
+        sourceType: "Charge",
+        docSync: CHARGE_SYNC,
+        charge: { type: "Credit", hasSupplier: true }
+      },
+      PUSH
+    ],
+    [
+      "backs a Credit when the provider can represent a refund",
+      {
+        sourceType: "Charge",
+        docSync: { ...CHARGE_SYNC, chargeCreditEnabled: true },
+        charge: { type: "Credit", hasSupplier: true }
+      },
+      docBacked("charge")
+    ],
+    [
+      "pushes a Charge when charge sync is off",
+      { sourceType: "Charge", charge: { type: "Charge", hasSupplier: true } },
+      PUSH
+    ],
+    [
+      "pushes a Charge whose row is unknown",
+      { sourceType: "Charge", docSync: CHARGE_SYNC, charge: null },
+      PUSH
+    ],
 
-    it("backs a Credit only where the provider can represent a refund", () => {
-      const credit = { type: "Credit", hasSupplier: true } as const;
-      expect(
-        getJournalPostingPolicyDecision({
-          sourceType: "Charge",
-          settings: settingsWith(),
-          docSync: chargeSync,
-          charge: credit
-        })
-      ).toMatchObject({ kind: "push" });
-      expect(
-        getJournalPostingPolicyDecision({
-          sourceType: "Charge",
-          settings: settingsWith(),
-          docSync: { ...chargeSync, chargeCreditEnabled: true },
-          charge: credit
-        })
-      ).toMatchObject({ kind: "exclude", reason: "DOC_BACKED" });
-    });
-
-    it("pushes every charge as a journal entry when charge sync is off or the row is unknown", () => {
-      expect(
-        getJournalPostingPolicyDecision({
-          sourceType: "Charge",
-          settings: settingsWith(),
-          docSync: DOC_SYNC_ON,
-          charge: { type: "Charge", hasSupplier: true }
-        })
-      ).toMatchObject({ kind: "push" });
-      expect(
-        getJournalPostingPolicyDecision({
-          sourceType: "Charge",
-          settings: settingsWith(),
-          docSync: chargeSync,
-          charge: null
-        })
-      ).toMatchObject({ kind: "push" });
-    });
-  });
-
-  describe("documents mode (default families)", () => {
-    it("DOC_BACKED when the backing document sync is enabled", () => {
-      const decision = getJournalPostingPolicyDecision({
-        sourceType: "Sales Invoice",
-        settings: settingsWith(),
-        docSync: DOC_SYNC_ON
-      });
-      expect(decision).toMatchObject({
-        kind: "exclude",
-        reason: "DOC_BACKED",
-        backingDocument: { entityType: "invoice" }
-      });
-    });
-
-    it("parks DOC_SYNC_DISABLED when the backing document sync is off (delivery hole must be loud)", () => {
-      const decision = getJournalPostingPolicyDecision({
-        sourceType: "Purchase Invoice",
-        settings: settingsWith(),
-        docSync: DOC_SYNC_OFF
-      });
-      expect(decision).toMatchObject({
-        kind: "warn",
-        code: "DOC_SYNC_DISABLED"
-      });
-    });
-
-    it("parks RETURNS as DOC_SYNC_DISABLED (no document representation exists yet)", () => {
-      for (const sourceType of ["Sales Return", "Purchase Return"]) {
-        const decision = getJournalPostingPolicyDecision({
-          sourceType,
-          settings: settingsWith(),
-          docSync: DOC_SYNC_ON
-        });
-        expect(decision, sourceType).toMatchObject({
-          kind: "warn",
-          code: "DOC_SYNC_DISABLED"
-        });
-      }
-    });
-
-    /**
-     * `families.vendorCredit` was renamed to `families.supplierCredit`
-     * (Carbon says supplier; only the providers say vendor). The migration
-     * rewrites every stored row, but an instance still on the old code can
-     * write the old key mid-deploy — and because the key DEFAULTS to "none",
-     * dropping it does not fail, it silently stops pushing supplier credits
-     * for a company that had turned them on.
-     */
-    it("carries a stored families.vendorCredit onto supplierCredit", () => {
-      const decision = getJournalPostingPolicyDecision({
+    // documents mode (the default for ar/ap)
+    [
+      "leaves a Sales Invoice to the invoice syncer",
+      { sourceType: "Sales Invoice" },
+      docBacked("invoice")
+    ],
+    [
+      "warns when a documents-mode family's document sync is off",
+      { sourceType: "Purchase Invoice", docSync: DOC_SYNC_OFF },
+      warns("DOC_SYNC_DISABLED")
+    ],
+    [
+      "warns for Sales Return, which has no document yet",
+      { sourceType: "Sales Return" },
+      warns("DOC_SYNC_DISABLED")
+    ],
+    [
+      "warns for Purchase Return, which has no document yet",
+      { sourceType: "Purchase Return" },
+      warns("DOC_SYNC_DISABLED")
+    ],
+    [
+      "leaves Payment to the payment syncer whatever the document flags",
+      { sourceType: "Payment", docSync: DOC_SYNC_OFF, paymentFamily: "ar" },
+      docBacked("payment")
+    ],
+    [
+      "excludes a customer memo by default (memo families are opt-in)",
+      { sourceType: "Credit Memo", memoParty: "customer" },
+      excluded("FAMILY_OFF")
+    ],
+    [
+      "excludes a supplier memo by default",
+      { sourceType: "Debit Memo", memoParty: "supplier" },
+      excluded("FAMILY_OFF")
+    ],
+    // An instance on old code can still write the pre-rename key mid-deploy.
+    [
+      "reads a stored families.vendorCredit as supplierCredit",
+      {
         sourceType: "Debit Memo",
-        settings: settingsWith({ families: { vendorCredit: "documents" } }),
-        docSync: DOC_SYNC_ON,
-        memoParty: "supplier"
-      });
-      expect(decision).not.toMatchObject({ reason: "FAMILY_OFF" });
-    });
-
-    it("prefers supplierCredit when a stored fragment carries both keys", () => {
-      const decision = getJournalPostingPolicyDecision({
+        memoParty: "supplier",
+        fragment: { families: { vendorCredit: "documents" } },
+        docSync: { ...DOC_SYNC_ON, supplierCreditEnabled: true }
+      },
+      docBacked()
+    ],
+    [
+      "prefers supplierCredit when both keys are stored",
+      {
         sourceType: "Debit Memo",
-        settings: settingsWith({
+        memoParty: "supplier",
+        fragment: {
           families: { vendorCredit: "documents", supplierCredit: "none" }
-        }),
-        docSync: DOC_SYNC_ON,
-        memoParty: "supplier"
-      });
-      expect(decision).toMatchObject({
-        kind: "exclude",
-        reason: "FAMILY_OFF"
-      });
-    });
+        }
+      },
+      excluded("FAMILY_OFF")
+    ],
 
-    it("excludes memos as FAMILY_OFF by default (their families are opt-in)", () => {
-      // Memos DO have a document representation now; what stops them by
-      // default is that creditMemo/supplierCredit default to "none".
-      for (const [sourceType, memoParty] of [
-        ["Credit Memo", "customer"],
-        ["Debit Memo", "supplier"]
-      ] as const) {
-        const decision = getJournalPostingPolicyDecision({
-          sourceType,
-          settings: settingsWith(),
-          docSync: DOC_SYNC_ON,
-          memoParty
-        });
-        expect(decision, sourceType).toMatchObject({
-          kind: "exclude",
-          reason: "FAMILY_OFF"
-        });
-      }
-    });
-
-    it("DOC_BACKED for Payment regardless of doc flags (cash application is provider-native)", () => {
-      const decision = getJournalPostingPolicyDecision({
-        sourceType: "Payment",
-        settings: settingsWith(),
-        docSync: DOC_SYNC_OFF,
-        paymentFamily: "ar"
-      });
-      expect(decision).toMatchObject({
-        kind: "exclude",
-        reason: "DOC_BACKED",
-        backingDocument: { entityType: "payment" }
-      });
-    });
-  });
-
-  describe("journals mode", () => {
-    const journalsAr = settingsWith({
-      families: { ar: "journals", ap: "documents" }
-    });
-
-    it("pushes the family's journals with forced individual granularity", () => {
-      const decision = getJournalPostingPolicyDecision({
+    // journals mode
+    [
+      "pushes a journals-mode family individually",
+      {
         sourceType: "Sales Invoice",
-        settings: journalsAr,
-        docSync: { invoiceEnabled: false, billEnabled: true }
-      });
-      expect(decision).toEqual({ kind: "push", granularity: "individual" });
-
-      // Memos ride their OWN family (creditMemo/supplierCredit), not ar/ap.
-      const memo = getJournalPostingPolicyDecision({
+        fragment: AR_JOURNALS,
+        docSync: BILLS_ONLY
+      },
+      PUSH
+    ],
+    [
+      "pushes a memo on its own journals-mode family",
+      {
         sourceType: "Credit Memo",
-        settings: settingsWith({
+        memoParty: "customer",
+        fragment: {
           families: {
             ar: "journals",
             ap: "documents",
             creditMemo: "journals",
             supplierCredit: "none"
           }
-        }),
-        docSync: { invoiceEnabled: false, billEnabled: true },
-        memoParty: "customer"
-      });
-      expect(memo).toEqual({ kind: "push", granularity: "individual" });
-    });
-
-    it("parks DOUBLE_REPRESENTATION when the document sync is contradictorily enabled", () => {
-      const decision = getJournalPostingPolicyDecision({
-        sourceType: "Sales Invoice",
-        settings: journalsAr,
-        docSync: DOC_SYNC_ON
-      });
-      expect(decision).toMatchObject({
-        kind: "warn",
-        code: "DOUBLE_REPRESENTATION"
-      });
-    });
-
-    it("leaves the other family in documents mode untouched", () => {
-      const decision = getJournalPostingPolicyDecision({
+        },
+        docSync: BILLS_ONLY
+      },
+      PUSH
+    ],
+    [
+      "warns when a journals-mode family's document sync is also on",
+      { sourceType: "Sales Invoice", fragment: AR_JOURNALS },
+      warns("DOUBLE_REPRESENTATION")
+    ],
+    [
+      "leaves the other family in documents mode",
+      {
         sourceType: "Purchase Invoice",
-        settings: journalsAr,
-        docSync: { invoiceEnabled: false, billEnabled: true }
-      });
-      expect(decision).toMatchObject({
-        kind: "exclude",
-        reason: "DOC_BACKED",
-        backingDocument: { entityType: "bill" }
-      });
-    });
-  });
+        fragment: AR_JOURNALS,
+        docSync: BILLS_ONLY
+      },
+      docBacked("bill")
+    ],
 
-  describe("none mode", () => {
-    it("excludes the family with FAMILY_OFF (explicit, visible opt-out)", () => {
-      const settings = settingsWith({
-        families: { ar: "none", ap: "documents" }
-      });
-      const decision = getJournalPostingPolicyDecision({
+    // none mode
+    [
+      "excludes a family set to none",
+      {
         sourceType: "Sales Invoice",
-        settings,
-        docSync: DOC_SYNC_ON
-      });
-      expect(decision).toMatchObject({ kind: "exclude", reason: "FAMILY_OFF" });
-    });
-  });
+        fragment: { families: { ar: "none", ap: "documents" } }
+      },
+      excluded("FAMILY_OFF")
+    ],
 
-  describe("Payment per-line family resolution", () => {
-    const diverging = settingsWith({
-      families: { ar: "journals", ap: "documents" }
-    });
-
-    it("follows the resolved side when family modes diverge", () => {
-      expect(
-        getJournalPostingPolicyDecision({
-          sourceType: "Payment",
-          settings: diverging,
-          docSync: { invoiceEnabled: false, billEnabled: true },
-          paymentFamily: "ar"
-        })
-      ).toEqual({ kind: "push", granularity: "individual" });
-
-      expect(
-        getJournalPostingPolicyDecision({
-          sourceType: "Payment",
-          settings: diverging,
-          docSync: { invoiceEnabled: false, billEnabled: true },
-          paymentFamily: "ap"
-        })
-      ).toMatchObject({ kind: "exclude", reason: "DOC_BACKED" });
-    });
-
-    it("parks PAYMENT_FAMILY_UNRESOLVED when the side is unknown and modes diverge", () => {
-      const decision = getJournalPostingPolicyDecision({
+    // Payment resolves its family per line
+    [
+      "follows the AR side of a payment when the families diverge",
+      {
         sourceType: "Payment",
-        settings: diverging,
-        docSync: { invoiceEnabled: false, billEnabled: true },
-        paymentFamily: null
-      });
-      expect(decision).toMatchObject({
-        kind: "warn",
-        code: "PAYMENT_FAMILY_UNRESOLVED"
-      });
-    });
-
-    it("needs no side when both families share a mode", () => {
-      const decision = getJournalPostingPolicyDecision({
+        fragment: AR_JOURNALS,
+        docSync: BILLS_ONLY,
+        paymentFamily: "ar"
+      },
+      PUSH
+    ],
+    [
+      "follows the AP side of a payment when the families diverge",
+      {
         sourceType: "Payment",
-        settings: settingsWith(),
-        docSync: DOC_SYNC_ON,
+        fragment: AR_JOURNALS,
+        docSync: BILLS_ONLY,
+        paymentFamily: "ap"
+      },
+      docBacked()
+    ],
+    [
+      "warns when a payment's side is unknown and the families diverge",
+      {
+        sourceType: "Payment",
+        fragment: AR_JOURNALS,
+        docSync: BILLS_ONLY,
         paymentFamily: null
-      });
-      expect(decision).toMatchObject({
-        kind: "exclude",
-        reason: "DOC_BACKED"
-      });
-    });
+      },
+      warns("PAYMENT_FAMILY_UNRESOLVED")
+    ],
+    [
+      "needs no payment side when both families share a mode",
+      { sourceType: "Payment", paymentFamily: null },
+      docBacked()
+    ]
+  ])("%s", (_name, input, expected) => {
+    expect(decide(input)).toMatchObject(expected);
   });
 });
 
-// ── Memo families resolve by PARTY, not direction ────────────────────────────
+// The stored per-type list is a parse-compatible v2 field the decision no
+// longer reads: it can neither disable an automated type nor enable a
+// document-represented one, nor Manual.
+describe("stored source-type overrides", () => {
+  it.each([...POSTING_SYNC_DEFAULT_SOURCE_TYPES])(
+    "pushes %s even when a narrowed stored list omits it",
+    (sourceType) => {
+      expect(
+        decide({ sourceType, fragment: { sourceTypes: ["Manual"] } }).kind
+      ).toBe("push");
+    }
+  );
 
-describe("memo family resolution (per-party)", () => {
-  // Memo doc sync on for both sides, so the FAMILY MODE is the only variable.
+  it.each([...POSTING_SYNC_EXCLUDED_SOURCE_TYPES, "Manual"])(
+    "never pushes %s, even when the stored list names it",
+    (sourceType) => {
+      expect(
+        decide({
+          sourceType,
+          fragment: { sourceTypes: [sourceType], includeManual: true }
+        }).kind
+      ).not.toBe("push");
+    }
+  );
+});
+
+// The memo's PARTY picks its family, never the memo's direction: a supplier
+// Credit Memo is AP, a customer Debit Memo is AR.
+describe("memo family resolution", () => {
   const MEMO_DOC_SYNC = {
     invoiceEnabled: false,
     billEnabled: false,
     creditMemoEnabled: true,
     supplierCreditEnabled: true
   };
+  const families = (creditMemo: string, supplierCredit: string) => ({
+    families: { ar: "none", ap: "none", creditMemo, supplierCredit }
+  });
+  // ap is "none" in both: bills handed to a spend tool must not suppress
+  // supplier credits.
+  const customerOnly = families("documents", "none");
+  const supplierOnly = families("none", "documents");
 
-  // Only the customer family is on. A supplier memo must NOT be gated by it —
-  // which is exactly what direction-derived families got wrong.
-  const customerOnly = settingsWith({
-    families: {
-      ar: "none",
-      ap: "none",
-      creditMemo: "documents",
-      supplierCredit: "none"
+  it.each([
+    [
+      "Credit Memo",
+      "customer",
+      "customer family on",
+      customerOnly,
+      docBacked()
+    ],
+    ["Debit Memo", "customer", "customer family on", customerOnly, docBacked()],
+    ["Debit Memo", "supplier", "supplier family on", supplierOnly, docBacked()],
+    [
+      "Credit Memo",
+      "supplier",
+      "supplier family on",
+      supplierOnly,
+      docBacked()
+    ],
+    [
+      "Credit Memo",
+      "supplier",
+      "customer family on",
+      customerOnly,
+      excluded("FAMILY_OFF")
+    ],
+    [
+      "Debit Memo",
+      "customer",
+      "supplier family on",
+      supplierOnly,
+      excluded("FAMILY_OFF")
+    ],
+    [
+      "Credit Memo",
+      null,
+      "customer family on",
+      customerOnly,
+      warns("MEMO_PARTY_UNRESOLVED")
+    ]
+  ] as const)(
+    "decides a %s from a %s party with the %s",
+    (sourceType, memoParty, _families, fragment, expected) => {
+      expect(
+        decide({ sourceType, memoParty, fragment, docSync: MEMO_DOC_SYNC })
+      ).toMatchObject(expected);
     }
-  });
-
-  const supplierOnly = settingsWith({
-    families: {
-      ar: "none",
-      ap: "none",
-      creditMemo: "none",
-      supplierCredit: "documents"
-    }
-  });
-
-  const decide = (
-    sourceType: "Credit Memo" | "Debit Memo",
-    memoParty: "customer" | "supplier" | null,
-    settings: ReturnType<typeof settingsWith>
-  ) =>
-    getJournalPostingPolicyDecision({
-      sourceType,
-      settings,
-      docSync: MEMO_DOC_SYNC,
-      memoParty
-    });
-
-  it("gates a CUSTOMER memo by creditMemo in both directions", () => {
-    expect(decide("Credit Memo", "customer", customerOnly)).toMatchObject({
-      kind: "exclude",
-      reason: "DOC_BACKED"
-    });
-    // The crossing combo: a customer memo in the DEBIT direction is still AR.
-    expect(decide("Debit Memo", "customer", customerOnly)).toMatchObject({
-      kind: "exclude",
-      reason: "DOC_BACKED"
-    });
-  });
-
-  it("gates a SUPPLIER memo by supplierCredit in both directions", () => {
-    expect(decide("Debit Memo", "supplier", supplierOnly)).toMatchObject({
-      kind: "exclude",
-      reason: "DOC_BACKED"
-    });
-    // The crossing combo: a supplier memo in the CREDIT direction is still AP.
-    expect(decide("Credit Memo", "supplier", supplierOnly)).toMatchObject({
-      kind: "exclude",
-      reason: "DOC_BACKED"
-    });
-  });
-
-  it("does not let direction pick the family (the misclassification bug)", () => {
-    // Under direction-derived families a "Credit Memo" always resolved to the
-    // AR family, so a SUPPLIER credit memo was gated by the wrong side.
-    expect(decide("Credit Memo", "supplier", customerOnly)).toMatchObject({
-      kind: "exclude",
-      reason: "FAMILY_OFF"
-    });
-    // ...and a "Debit Memo" always resolved to AP, misfiling a CUSTOMER one.
-    expect(decide("Debit Memo", "customer", supplierOnly)).toMatchObject({
-      kind: "exclude",
-      reason: "FAMILY_OFF"
-    });
-  });
-
-  it("is decoupled from the invoice/bill families", () => {
-    // ap: "none" (bills handed to a spend tool) must NOT suppress vendor
-    // credits — the reason memos get their own families at all.
-    const apOff = settingsWith({
-      families: {
-        ar: "documents",
-        ap: "none",
-        creditMemo: "none",
-        supplierCredit: "documents"
-      }
-    });
-    expect(decide("Debit Memo", "supplier", apOff)).toMatchObject({
-      kind: "exclude",
-      reason: "DOC_BACKED"
-    });
-  });
-
-  it("parks MEMO_PARTY_UNRESOLVED rather than guessing a family", () => {
-    expect(decide("Credit Memo", null, customerOnly)).toMatchObject({
-      kind: "warn",
-      code: "MEMO_PARTY_UNRESOLVED"
-    });
-  });
+  );
 });

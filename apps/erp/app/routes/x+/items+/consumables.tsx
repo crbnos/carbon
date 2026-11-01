@@ -2,20 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getConsumables } from "~/modules/items/items.service";
 import { ConsumablesTable } from "~/modules/items/ui/Consumables";
 import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
+import { consumablesList } from "~/utils/list-registry/items.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   realtime: ["item"],
@@ -24,55 +20,31 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    bypassRls: true
-  });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const supplierId = searchParams.get("supplierId");
-
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [consumables, tags] = await Promise.all([
-    getConsumables(client, companyId, {
-      search,
-      supplierId,
-      limit,
-      offset,
-      sorts,
-      filters
+  return loadListPage(request, consumablesList, {
+    dataKey: "consumables",
+    bypassRls: true,
+    firstPage: async ({ client, companyId }) => ({
+      tags: (await getTagsList(client, companyId, "consumable")).data ?? []
     }),
-    getTagsList(client, companyId, "consumable")
-  ]);
-
-  if (consumables.error) {
-    redirect(
-      path.to.authenticatedRoot,
-      await flash(
-        request,
-        error(consumables.error, "Failed to fetch consumables")
-      )
-    );
-  }
-
-  return {
-    count: consumables.count ?? 0,
-    consumables: consumables.data ?? [],
-    tags: tags.data ?? []
-  };
+    onError: {
+      redirectTo: path.to.authenticatedRoot,
+      message: "Failed to fetch consumables"
+    }
+  });
 }
 
 export default function ConsumablesSearchRoute() {
-  const { count, consumables, tags } = useLoaderData<typeof loader>();
+  const { count, consumables, infinite, tags } = useLoaderData<typeof loader>();
   useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ConsumablesTable data={consumables} count={count} tags={tags} />
+      <ConsumablesTable
+        data={consumables}
+        count={count}
+        infinite={infinite}
+        tags={tags}
+      />
       <RecordOutlet />
     </VStack>
   );

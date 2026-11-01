@@ -64,7 +64,8 @@ export const STORAGE_PATH_COLUMNS = new Set([
   "originalPath",
   "optimizedModelPath",
   "glbPath",
-  "graphPath"
+  "graphPath",
+  "pmiPath"
 ]);
 
 /**

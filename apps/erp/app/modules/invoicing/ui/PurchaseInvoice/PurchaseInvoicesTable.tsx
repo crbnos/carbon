@@ -36,7 +36,8 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
+import type { InfiniteOptions } from "~/components/Table";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { purchaseInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
 import type { PurchaseInvoiceListItem } from "~/modules/invoicing/types";
@@ -47,15 +48,11 @@ import { path } from "~/utils/path";
 type PurchaseInvoicesTableProps = {
   data: PurchaseInvoiceListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const PurchaseInvoicesTable = memo(
-  ({ data, count }: PurchaseInvoicesTableProps) => {
-    useRealtime(
-      "purchaseInvoice",
-      `id=in.(${data.map((d) => d.id).join(",")})`
-    );
-
+  ({ data, count, infinite }: PurchaseInvoicesTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -349,6 +346,7 @@ const PurchaseInvoicesTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infinite={infinite}
           defaultColumnPinning={{
             left: ["invoiceId"]
           }}

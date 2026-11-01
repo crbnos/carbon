@@ -313,7 +313,7 @@ export function QuantityModal({
                       <AlertDescription>
                         <Trans>
                           This unit will be permanently scrapped and a
-                          replacement serial number will be created.
+                          replacement unit will be created.
                         </Trans>
                       </AlertDescription>
                     </Alert>

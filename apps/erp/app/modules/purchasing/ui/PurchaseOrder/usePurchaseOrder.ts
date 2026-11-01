@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { toast } from "@carbon/react";
+import { toastError } from "@carbon/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSubmit } from "react-router";
 import type { Receipt, Shipment } from "~/modules/inventory/types";
@@ -128,13 +128,13 @@ export const usePurchaseOrderRelatedDocuments = (
       const willRetry = failed && attempt < MAX_RELATED_DOCS_RETRIES;
 
       if (receipts.error) {
-        if (!willRetry) toast.error("Failed to load receipts");
+        if (!willRetry) toastError("Failed to load receipts", receipts.error);
       } else {
         setReceipts(receipts.data);
       }
 
       if (invoices.error) {
-        if (!willRetry) toast.error("Failed to load invoices");
+        if (!willRetry) toastError("Failed to load invoices", invoices.error);
       } else {
         setInvoices(
           invoices.data?.map((invoice) => ({
@@ -148,7 +148,7 @@ export const usePurchaseOrderRelatedDocuments = (
         );
       }
       if (shipments.error) {
-        if (!willRetry) toast.error("Failed to load shipments");
+        if (!willRetry) toastError("Failed to load shipments", shipments.error);
       } else {
         setShipments(shipments.data);
       }

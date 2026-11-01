@@ -46,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           search: null,
           status: "Under Construction",
           limit: 100,
-          offset: 0,
+          cursor: null,
           sorts: [],
           filters: []
         })
@@ -58,13 +58,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       id: assetClass.id,
       name: assetClass.name
     })),
-    underConstructionAssets: (underConstructionAssets?.data ?? []).map(
-      (asset) => ({
+    // The query reads one row past `limit` (the next-page probe); keep 100.
+    underConstructionAssets: (underConstructionAssets?.data ?? [])
+      .slice(0, 100)
+      .map((asset) => ({
         id: asset.id,
         fixedAssetId: asset.fixedAssetId,
         name: asset.name
-      })
-    )
+      }))
   };
 }
 

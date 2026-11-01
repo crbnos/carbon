@@ -9,9 +9,11 @@ import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import type { deadlineTypes } from "~/modules/production/production.models";
+import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 
 // The jobs table's bulk actions and the job properties panel: one field of
-// one or more jobs per post.
+// one or more jobs per post. The table's Delete posts `allMatching` in place
+// of the ids for every matching job.
 const updateForm = z.object({
   ids: zfd.repeatableOfType(z.string()),
   field: z.enum([
@@ -30,7 +32,8 @@ const updateForm = z.object({
     "startDate",
     "unitOfMeasureCode"
   ]),
-  value: zfd.text(z.string().optional())
+  value: zfd.text(z.string().optional()),
+  allMatching: zfd.text(z.string().optional())
 });
 
 const invalid = (message: string) =>
@@ -39,7 +42,20 @@ const invalid = (message: string) =>
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(updateForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const { ids, field, value } = input.data;
+  const { ids, field, value, allMatching } = input.data;
+
+  // Every matching row: the background job deletes the Draft, Planned, Due
+  // Today and Overdue jobs (deleteJobs, as for a selection) and skips the rest.
+  if (field === "delete") {
+    const started = await startBackgroundBulkAction(
+      args.request,
+      "jobs.delete",
+      { allMatching },
+      {}
+    );
+    if (started) return started;
+  }
+
   const job = (await carbon(args.request)).production;
 
   switch (field) {

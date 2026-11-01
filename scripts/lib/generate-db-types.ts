@@ -14,7 +14,7 @@ import {
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
-function validateDatabaseUrl(value: string | undefined): string {
+export function validateDatabaseUrl(value: string | undefined): string {
   if (!value?.trim()) {
     throw new Error(
       "SUPABASE_DB_URL is not set. Configure the local database before generating types."
@@ -75,7 +75,7 @@ export function sortRelationships(source: string): string {
   const lines = source.split("\n");
   const out: string[] = [];
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i] ?? "";
     out.push(line);
     if (!/^\s*Relationships: \[$/.test(line)) continue;
     const indent = line.match(/^\s*/)?.[0] ?? "";
@@ -83,24 +83,24 @@ export function sortRelationships(source: string): string {
     let j = i + 1;
     while (j < lines.length && lines[j] !== `${indent}]`) {
       if (lines[j] === `${indent}  {`) {
-        const entry = [lines[j]];
+        const entry = [lines[j] ?? ""];
         j++;
-        while (j < lines.length && !/^\s*\},?$/.test(lines[j]))
-          entry.push(lines[j++]);
-        entry.push(lines[j]);
+        while (j < lines.length && !/^\s*\},?$/.test(lines[j] ?? ""))
+          entry.push(lines[j++] ?? "");
+        entry.push(lines[j] ?? "");
         entries.push(entry);
       }
       j++;
     }
     if (j >= lines.length) continue;
-    const closing = lines[j];
+    const closing = lines[j] ?? "";
     entries.sort((a, b) => {
       const ka = a.slice(1, -1).join("\n");
       const kb = b.slice(1, -1).join("\n");
       return ka < kb ? -1 : ka > kb ? 1 : 0;
     });
     entries.forEach((entry, index) => {
-      const last = entry[entry.length - 1].replace(/,$/, "");
+      const last = (entry[entry.length - 1] ?? "").replace(/,$/, "");
       out.push(
         ...entry.slice(0, -1),
         index < entries.length - 1 ? `${last},` : last

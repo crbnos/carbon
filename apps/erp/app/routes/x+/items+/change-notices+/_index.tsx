@@ -2,67 +2,40 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getChangeNotices,
-  getChangeNoticeTypesList
-} from "~/modules/items/items.service";
+import { getChangeNoticeTypesList } from "~/modules/items/items.service";
 import { ChangeNoticesTable } from "~/modules/items/ui/ChangeNotice";
+import { changeNoticesList } from "~/utils/list-registry/items.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    role: "employee"
-  });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [changeNotices, types] = await Promise.all([
-    getChangeNotices(client, companyId, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
+  return loadListPage(request, changeNoticesList, {
+    dataKey: "changeNotices",
+    firstPage: async ({ client, companyId }) => ({
+      types: (await getChangeNoticeTypesList(client, companyId)).data ?? []
     }),
-    getChangeNoticeTypesList(client, companyId)
-  ]);
-
-  if (changeNotices.error) {
-    throw redirect(
-      path.to.authenticatedRoot,
-      await flash(
-        request,
-        error(changeNotices.error, "Error loading change notices")
-      )
-    );
-  }
-
-  return {
-    changeNotices: changeNotices.data ?? [],
-    count: changeNotices.count ?? 0,
-    types: types.data ?? []
-  };
+    onError: {
+      redirectTo: path.to.authenticatedRoot,
+      message: "Error loading change notices"
+    }
+  });
 }
 
 export default function ChangeNoticesIndexRoute() {
-  const { changeNotices, count, types } = useLoaderData<typeof loader>();
+  const { changeNotices, count, infinite, types } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ChangeNoticesTable data={changeNotices} count={count} types={types} />
+      <ChangeNoticesTable
+        data={changeNotices}
+        count={count}
+        infinite={infinite}
+        types={types}
+      />
       <RecordOutlet />
     </VStack>
   );

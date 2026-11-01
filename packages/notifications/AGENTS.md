@@ -22,7 +22,7 @@ Notification event taxonomy — enums and topic mapping shared across app routes
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/notifications typecheck  # tsgo --noEmit
+pnpm --filter @carbon/notifications typecheck  # tsc --noEmit
 ```
 
 ## Key Patterns

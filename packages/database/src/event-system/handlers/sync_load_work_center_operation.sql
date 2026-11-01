@@ -22,14 +22,18 @@ BEGIN
   -- This runs as the owner (the dispatchers are SECURITY DEFINER), and the
   -- event's workCenterId and jobOperationId are single-column FKs: an event
   -- may only load its OWN company's operation onto its own company's work
-  -- center, or another company's sensor time would land on it. (A starting
-  -- event reopens a Done operation first: sync_set_job_operation_in_progress.)
+  -- center, or another company's sensor time would land on it. A Done or
+  -- Canceled operation never loads: a starting event does not reopen it
+  -- (sync_set_job_operation_in_progress), and its unload only runs when the
+  -- status changes, so the load would never close.
   IF NOT EXISTS (
     SELECT 1 FROM "workCenter"
     WHERE "id" = v_work_center_id AND "companyId" = v_company_id
   ) OR NOT EXISTS (
     SELECT 1 FROM "jobOperation"
-    WHERE "id" = v_operation_id AND "companyId" = v_company_id
+    WHERE "id" = v_operation_id
+      AND "companyId" = v_company_id
+      AND "status" NOT IN ('Done', 'Canceled')
   ) THEN
     RETURN;
   END IF;

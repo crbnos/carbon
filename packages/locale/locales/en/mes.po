@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "\"{column}\" is required."
+msgstr "\"{column}\" is required."
+
 msgid "(Inactive)"
 msgstr "(Inactive)"
 
@@ -84,6 +87,12 @@ msgstr "{0} runs in batch {1}"
 msgid "{0} Scrapped"
 msgstr "{0} Scrapped"
 
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr "{columns} does not match an existing \"{target}\"."
+
+msgid "{columns} does not match an existing record."
+msgstr "{columns} does not match an existing record."
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} of {quantity}"
 
@@ -110,8 +119,26 @@ msgstr "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 
+msgid "A record with these values already exists."
+msgstr "A record with these values already exists."
+
+msgid "A record with this {columns} already exists."
+msgstr "A record with this {columns} already exists."
+
+msgid "A referenced record does not exist."
+msgstr "A referenced record does not exist."
+
+msgid "A required field was missing."
+msgstr "A required field was missing."
+
+msgid "A value is not valid."
+msgstr "A value is not valid."
+
 msgid "About"
 msgstr "About"
+
+msgid "About this field"
+msgstr "About this field"
 
 msgid "Accept"
 msgstr "Accept"
@@ -167,6 +194,9 @@ msgstr "Add Sample"
 
 msgid "Add Spare Part"
 msgstr "Add Spare Part"
+
+msgid "Add your signature"
+msgstr "Add your signature"
 
 msgid "Added"
 msgstr "Added"
@@ -226,6 +256,9 @@ msgstr "Are you sure you want to leave this page?"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr "Ask a supervisor to add the {processName} ability to your profile."
+
 msgid "Assembly steps"
 msgstr "Assembly steps"
 
@@ -253,18 +286,8 @@ msgstr "available"
 msgid "Available"
 msgstr "Available"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "Avatar option {0}"
-
 msgid "Avatar style"
 msgstr "Avatar style"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 
 msgid "Back"
 msgstr "Back"
@@ -306,6 +329,9 @@ msgstr "batch total"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Behind target by {daysBehindTarget} day(s)"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr "Bigger or smaller text. The layout stays put."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Blocked by {0}"
@@ -318,6 +344,11 @@ msgstr "Board view"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "But don't worry. You can use the forgot password flow to request a new magic link."
+
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr "By <0>{0}</0>, <1>{1}</1>"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
@@ -358,6 +389,9 @@ msgstr "Check your email"
 msgid "Choose a job"
 msgstr "Choose a job"
 
+msgid "Choose a PNG or JPG image"
+msgstr "Choose a PNG or JPG image"
+
 msgid "Choose an option"
 msgstr "Choose an option"
 
@@ -381,6 +415,9 @@ msgstr "Clear Search"
 
 msgid "Clear station default"
 msgstr "Clear station default"
+
+msgid "Click or drop to replace"
+msgstr "Click or drop to replace"
 
 msgid "Clock In"
 msgstr "Clock In"
@@ -429,6 +466,12 @@ msgstr "Column: {0}"
 msgid "Columns"
 msgstr "Columns"
 
+msgid "Comfortable"
+msgstr "Comfortable"
+
+msgid "Compact"
+msgstr "Compact"
+
 msgid "Companies"
 msgstr "Companies"
 
@@ -453,6 +496,9 @@ msgstr "Complete Batch"
 
 msgid "Complete passed"
 msgstr "Complete passed"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr "Complete the {trainingName} training to get the {processName} ability."
 
 msgid "Completed"
 msgstr "Completed"
@@ -504,6 +550,9 @@ msgstr "Create Rework"
 msgid "Current work"
 msgstr "Current work"
 
+msgid "Custom color"
+msgstr "Custom color"
+
 msgid "Customer"
 msgstr "Customer"
 
@@ -536,6 +585,9 @@ msgstr "Delete Step"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Delete Timecard (<0/>)"
+
+msgid "Density"
+msgstr "Density"
 
 msgid "Describe the problem..."
 msgstr "Describe the problem..."
@@ -595,6 +647,15 @@ msgstr "Drag to resize drawing and characteristics"
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "Dragging {0} cancelled."
+
+msgid "Draw"
+msgstr "Draw"
+
+msgid "Draw it, or upload an image of it."
+msgstr "Draw it, or upload an image of it."
+
+msgid "Drop an image of your signature"
+msgstr "Drop an image of your signature"
 
 msgid "Due"
 msgstr "Due"
@@ -701,6 +762,13 @@ msgstr "Expires <0/>"
 msgid "Expiring first"
 msgstr "Expiring first"
 
+msgid "Face"
+msgstr "Face"
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr "Face {0}"
+
 msgid "Failed"
 msgstr "Failed"
 
@@ -725,6 +793,9 @@ msgstr "Failed to fetch storageUnits"
 msgid "Failed to get options"
 msgstr "Failed to get options"
 
+msgid "Failed to process image"
+msgstr "Failed to process image"
+
 msgid "Failed to record gauge"
 msgstr "Failed to record gauge"
 
@@ -747,6 +818,9 @@ msgstr "Failed to upload file: {0}"
 
 msgid "Failed to upload image"
 msgstr "Failed to upload image"
+
+msgid "Failed to upload signature"
+msgstr "Failed to upload signature"
 
 msgid "File size exceeds 10MB limit"
 msgstr "File size exceeds 10MB limit"
@@ -900,6 +974,9 @@ msgstr "Issued {issuedQuantity} of {lotLabel}"
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr "It is still used by a \"{table}\" record; remove that first."
+
 msgid "Item"
 msgstr "Item"
 
@@ -935,6 +1012,12 @@ msgstr "Kit"
 
 msgid "Labor"
 msgstr "Labor"
+
+msgid "Large"
+msgstr "Large"
+
+msgid "Larger"
+msgstr "Larger"
 
 msgid "Last completed"
 msgstr "Last completed"
@@ -980,6 +1063,9 @@ msgstr "Loaded: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Loading item details..."
+
+msgid "Loading. There's no need to scan again."
+msgstr "Loading. There's no need to scan again."
 
 msgid "Loading..."
 msgstr "Loading..."
@@ -1190,6 +1276,12 @@ msgstr "No maintenance scheduled for today"
 msgid "No matches. Type to create one."
 msgstr "No matches. Type to create one."
 
+msgid "No matching record was found."
+msgstr "No matching record was found."
+
+msgid "No matching time"
+msgstr "No matching time"
+
 msgid "No materials"
 msgstr "No materials"
 
@@ -1241,6 +1333,9 @@ msgstr "No samples required."
 msgid "No scheduled time"
 msgstr "No scheduled time"
 
+msgid "No serial number"
+msgstr "No serial number"
+
 msgid "No serial numbers"
 msgstr "No serial numbers"
 
@@ -1276,6 +1371,9 @@ msgstr "None"
 
 msgid "Notes"
 msgstr "Notes"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "Nothing on this page uses that barcode"
 
 msgid "Nothing running"
 msgstr "Nothing running"
@@ -1434,8 +1532,8 @@ msgstr "Pick"
 msgid "Pick {0}"
 msgstr "Pick {0}"
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "Pick a style and an avatar, or shuffle for new ones."
+msgid "Pick a style, a color and a face."
+msgstr "Pick a style, a color and a face."
 
 msgid "Pick tracked item"
 msgstr "Pick tracked item"
@@ -1485,6 +1583,9 @@ msgstr "Please select an item"
 msgid "PM schedule lapsed"
 msgstr "PM schedule lapsed"
 
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr "PNG or JPG, dark ink on a plain background"
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 
@@ -1505,6 +1606,12 @@ msgstr "Print"
 
 msgid "Print batch list"
 msgstr "Print batch list"
+
+msgid "Printed on the purchase orders you approve."
+msgstr "Printed on the purchase orders you approve."
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr "Printed on the purchase orders you approve. Only you can see it here."
 
 msgid "Printer Settings"
 msgstr "Printer Settings"
@@ -1619,6 +1726,9 @@ msgstr "Remove part"
 msgid "Remove two-factor authentication"
 msgstr "Remove two-factor authentication"
 
+msgid "Removed signature"
+msgstr "Removed signature"
+
 msgid "Rename"
 msgstr "Rename"
 
@@ -1630,9 +1740,6 @@ msgstr "Require a 6-digit code from an authenticator app when signing in."
 
 msgid "Required"
 msgstr "Required"
-
-msgid "Reset"
-msgstr "Reset"
 
 msgid "Result"
 msgstr "Result"
@@ -1664,8 +1771,14 @@ msgstr "Same for every job"
 msgid "Save"
 msgstr "Save"
 
+msgid "Save signature"
+msgstr "Save signature"
+
 msgid "Save the form you're editing"
 msgstr "Save the form you're editing"
+
+msgid "Saved signature"
+msgstr "Saved signature"
 
 msgid "Scan"
 msgstr "Scan"
@@ -1687,6 +1800,12 @@ msgstr "Scan or search serial number..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "Scan or select the unit, then scan the kanban card again"
+
+msgid "Scan received"
+msgstr "Scan received"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
@@ -1862,6 +1981,9 @@ msgstr "Show keyboard shortcuts"
 msgid "Shuffle"
 msgstr "Shuffle"
 
+msgid "Sign here"
+msgstr "Sign here"
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 
@@ -1889,6 +2011,12 @@ msgstr "Sign out instead"
 msgid "Sign-in code"
 msgstr "Sign-in code"
 
+msgid "Signature"
+msgstr "Signature"
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
+msgstr "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
+
 msgid "Signed in as {stationName}"
 msgstr "Signed in as {stationName}"
 
@@ -1900,6 +2028,12 @@ msgstr "Size"
 
 msgid "Slack"
 msgstr "Slack"
+
+msgid "Small"
+msgstr "Small"
+
+msgid "Smaller"
+msgstr "Smaller"
 
 msgid "Source"
 msgstr "Source"
@@ -1951,6 +2085,9 @@ msgstr "Steps are missing"
 msgid "Storage Unit"
 msgstr "Storage Unit"
 
+msgid "Style"
+msgstr "Style"
+
 msgid "Style default"
 msgstr "Style default"
 
@@ -1993,11 +2130,18 @@ msgstr "System"
 msgid "Tag"
 msgstr "Tag"
 
+msgid "Text size"
+msgstr "Text size"
+
 msgid "The accent color used across Carbon."
 msgstr "The accent color used across Carbon."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 
 msgid "The jobs and parts that make up this run."
 msgstr "The jobs and parts that make up this run."
@@ -2014,6 +2158,12 @@ msgstr "The lot will still be dispositioned, but an NCR cannot be created until 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
+
+msgid "The values break a rule on this record."
+msgstr "The values break a rule on this record."
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr "The values break the rule \"{constraint}\"."
 
 msgid "Theme color"
 msgstr "Theme color"
@@ -2048,14 +2198,20 @@ msgstr "This part was made to order. Scrapping it can reopen its routing to make
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "This unit will be permanently scrapped and a replacement serial number will be created."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "This unit will be permanently scrapped and a replacement unit will be created."
 
 msgid "Thumbnail"
 msgstr "Thumbnail"
 
 msgid "Tick the jobs this was done for."
 msgstr "Tick the jobs this was done for."
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr "Tighter or roomier layout. The text stays put."
+
+msgid "Time"
+msgstr "Time"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Time and cost split across jobs proportionally to quantity."
@@ -2147,6 +2303,9 @@ msgstr "Type a message..."
 msgid "Unable to unlock"
 msgstr "Unable to unlock"
 
+msgid "Undo"
+msgstr "Undo"
+
 msgid "Unissued serial/batch materials"
 msgstr "Unissued serial/batch materials"
 
@@ -2203,6 +2362,9 @@ msgstr "Upload"
 
 msgid "Upload completed but no file path returned"
 msgstr "Upload completed but no file path returned"
+
+msgid "Uploaded signature"
+msgstr "Uploaded signature"
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -2266,8 +2428,26 @@ msgstr "Write a note…"
 msgid "Yes"
 msgstr "Yes"
 
+msgid "You can still start this operation."
+msgstr "You can still start this operation."
+
+msgid "You can't work on this operation"
+msgstr "You can't work on this operation"
+
+msgid "You do not have permission to do this"
+msgstr "You do not have permission to do this"
+
+msgid "You don't have permission to change this record, or it no longer exists."
+msgstr "You don't have permission to change this record, or it no longer exists."
+
+msgid "You don't have the {processName} ability"
+msgstr "You don't have the {processName} ability"
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr "Your {processName} qualification expired on {expiredDate}."
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
@@ -2280,6 +2460,9 @@ msgstr "Your profile could not be loaded."
 
 msgid "Your session was locked after inactivity."
 msgstr "Your session was locked after inactivity."
+
+msgid "Your signature"
+msgstr "Your signature"
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

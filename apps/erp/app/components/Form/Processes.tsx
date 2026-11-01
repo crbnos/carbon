@@ -13,14 +13,23 @@ import ProcessForm from "~/modules/resources/ui/Processes/ProcessForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 
-type ProcessSelectProps = Omit<CreatableMultiSelectProps, "options">;
+type ProcessSelectProps = Omit<CreatableMultiSelectProps, "options"> & {
+  /** Leave out Outside Processing — work a station or person never runs. */
+  inHouseOnly?: boolean;
+  /** Processes already saved: shown whatever their type, so they can be removed. */
+  saved?: string[];
+};
 
-const Processes = (props: ProcessSelectProps) => {
+const Processes = ({
+  inHouseOnly = false,
+  saved,
+  ...props
+}: ProcessSelectProps) => {
   const newProcessModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const options = useProcesses();
+  const options = useProcesses({ inHouseOnly, keep: saved });
 
   const emptyMessage = useEmptyState("process", {
     onCreate: () => newProcessModal.onOpen()
@@ -68,20 +77,32 @@ Processes.displayName = "Process";
 
 export default Processes;
 
-export const useProcesses = () => {
+export const useProcesses = ({
+  inHouseOnly = false,
+  keep
+}: {
+  inHouseOnly?: boolean;
+  /** Ids shown whatever their type. */
+  keep?: string[];
+} = {}) => {
   const fetcher = useLoaderQuery<Awaited<ReturnType<typeof getProcessesList>>>(
     path.to.api.processes
   );
 
   const options = useMemo(
     () =>
-      fetcher.data?.data
-        ? fetcher.data?.data.map((c) => ({
-            value: c.id,
-            label: c.name
-          }))
-        : [],
-    [fetcher.data]
+      (fetcher.data?.data ?? [])
+        .filter(
+          (process) =>
+            !inHouseOnly ||
+            process.processType !== "Outside Processing" ||
+            keep?.includes(process.id)
+        )
+        .map((process) => ({
+          value: process.id,
+          label: process.name
+        })),
+    [fetcher.data, inHouseOnly, keep]
   );
 
   return options;

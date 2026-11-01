@@ -116,6 +116,10 @@ function makeConvert(theme: DocumentTheme) {
       case "text":
         return node.text;
 
+      // Shift+Enter in the editor: a new line inside the same paragraph.
+      case "hardBreak":
+        return "\n";
+
       default:
         return null;
     }

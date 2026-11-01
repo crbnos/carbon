@@ -144,7 +144,6 @@ const IntegrationsList = ({
               key={integration.id}
               integration={integration}
               installed={installed.find((i) => i.id === integration.id) || null}
-              hasEarlyAccess={hasEarlyAccess}
             />
           );
         })}

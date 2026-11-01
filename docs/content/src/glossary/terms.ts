@@ -1169,6 +1169,10 @@ export const terms = {
     term: msg`Work Center`,
     definition: msg`Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there.`
   },
+  "non-nettable": {
+    term: msg`Non-nettable`,
+    definition: msg`Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again.`
+  },
 
   // ── Receipts (ReceiptForm) ──────────────────────────────────────────────
   "receipt-source-document": {
@@ -1725,8 +1729,8 @@ export const terms = {
     definition: msg`The specific operation on the job above that this PO line is purchasing; only operations marked outside-processing are selectable.`
   },
   "purchase-order-line-required-date": {
-    term: msg`Required Date`,
-    definition: msg`When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling.`
+    term: msg`Requested Date`,
+    definition: msg`When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling.`
   },
   "purchase-order-line-delivery-location": {
     term: msg`Delivery Location`,
@@ -1960,7 +1964,7 @@ export const terms = {
   // ── Resources: Contractors (ContractorForm) ─────────────────────────────
   "contractor-hours-per-week": {
     term: msg`Hours per Week`,
-    definition: msg`The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week.`
+    definition: msg`The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations.`
   },
 
   // ── Resources: Processes (ProcessForm) ──────────────────────────────────

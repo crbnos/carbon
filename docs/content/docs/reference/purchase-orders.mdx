@@ -38,6 +38,26 @@ The status is computed from the state of its lines, never set by hand.
   <Status name="Rejected" terminal>Sign-off was declined.</Status>
 </StatusFlow>
 
+## Dates
+
+The order and every line carry three dates: the <Term id="purchase-order-delivery-requested-date">Requested Date</Term>, the <Term id="purchase-order-delivery-promised-date">Promised Date</Term> and the <Term id="purchase-order-delivery-actual-date">Delivery Date</Term>.
+
+The order's dates are set on the **Shipping** card and in the properties panel. A line's dates are set in the **Dates** section of the line page, and the order summary shows each line's promised date as a **Promised** pill you can change in place.
+
+A new line starts on the order's Requested and Promised dates. When you change an order date, every line whose date is empty or still the old order date takes the new one. A line you gave its own date keeps it.
+
+<Callout type="info" title="The Delivery Date only reaches lines that received goods">
+The Delivery Date records when goods arrived, so a new order Delivery Date moves only lines with a quantity received. Posting a receipt also sets each received line's Delivery Date to the day of the receipt, which replaces a date you corrected by hand.
+</Callout>
+
+Each date locks at a different point:
+
+- **Requested Date** locks once the order is confirmed (from **"To Receive and Invoice"** onward).
+- **Promised Date** stays editable until the order is fully received (**"To Invoice"**, **"Completed"** or **"Closed"**). A line's promised date also locks when the line is received complete, and such a line keeps its requested and promised dates when the order's dates change.
+- **Delivery Date** can always be corrected.
+
+<Screenshot label="Purchase order line page: the Dates section with Requested Date disabled and Promised Date and Delivery Date editable on a To Receive order" caption="A confirmed order keeps the requested date and lets the promise move." />
+
 ## Related
 
 <Cards>
@@ -75,6 +95,12 @@ The line is already fully received; there's nothing left to short-close. Reopen 
 
 ### "Receiving is already closed for this line" / "Receiving is not closed for this line"
 The close/reopen action was applied twice. The line is already in the requested state — refresh the page to see the current state.
+
+### "Cannot change the requested date of a confirmed purchase order."
+A line's Requested Date (`purchaseOrderLine.requiredDate`) locks at the same statuses as the order. Reopen the order to change it, or record the supplier's new date as the Promised Date.
+
+### "Cannot change the promised date of a received line." / "…of a fully received purchase order." / "…of a closed purchase order."
+The line is received complete, the order is at "To Invoice" or "Completed", or the order was closed (a Closed order may still have lines with nothing received; reopen it to change the date). Line dates save one at a time through `updatePurchaseOrderLineDate`; the order's Receipt Promised Date through `updatePurchaseOrders`.
 
 ### "Failed to finalize purchase order"
 Generic wrapper. Common underlying causes: no PO number sequence configured for the company, or a PDF/email step failing (separate "Failed to generate PDF" / "Failed to send email" messages). Ask for the full error text and check the supplier contact's email if sending failed.

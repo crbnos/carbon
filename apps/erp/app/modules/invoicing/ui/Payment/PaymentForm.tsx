@@ -31,6 +31,11 @@ import {
   paymentValidator
 } from "~/modules/invoicing/invoicing.models";
 import { path } from "~/utils/path";
+import {
+  initialPaymentKind,
+  paymentDocumentCurrency,
+  paymentKindFields
+} from "./payment-logic";
 
 // Builds the "new payment" URL pre-filled from an invoice. side "ar" seeds the
 // customer (→ Receipt); "ap" seeds the supplier (→ Disbursement). Lives with the
@@ -107,7 +112,10 @@ const PaymentForm = ({
   const { t } = useLingui();
   const { company } = useUser();
   const [currencyCode, setCurrencyCode] = useState(
-    initialValues.currencyCode || company?.baseCurrencyCode || "USD"
+    paymentDocumentCurrency(
+      initialValues.currencyCode,
+      company?.baseCurrencyCode
+    )
   );
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const permissions = usePermissions();
@@ -115,25 +123,12 @@ const PaymentForm = ({
   const isLocked = isPaymentLocked(initialValues.status);
   const canMutate = permissions.can("update", "invoicing");
 
-  // Cash direction and subledger party are independent for refunds. An employee
-  // payee is neither: it is always cash OUT against the reimbursement control
-  // account, so it has a single kind rather than a payment/refund pair.
-  const initialKind = initialValues.employeeId
-    ? "employee-payment"
-    : initialValues.supplierId
-      ? initialValues.paymentType === "Receipt"
-        ? "supplier-refund"
-        : "supplier-payment"
-      : initialValues.paymentType === "Disbursement"
-        ? "customer-refund"
-        : "customer-payment";
+  const initialKind = initialPaymentKind(initialValues);
   const [paymentKind, setPaymentKind] = useState(initialKind);
-  const isEmployee = paymentKind === "employee-payment";
-  const isCustomer = paymentKind.startsWith("customer-");
-  const currentType =
-    paymentKind === "customer-payment" || paymentKind === "supplier-refund"
-      ? "Receipt"
-      : "Disbursement";
+  const kindFields = paymentKindFields(paymentKind);
+  const isEmployee = kindFields.party === "employeeId";
+  const isCustomer = kindFields.party === "customerId";
+  const currentType = kindFields.paymentType;
 
   // The deposit picker follows the selected customer; picking a customer clears
   // a document that belonged to the previous one.
@@ -211,17 +206,9 @@ const PaymentForm = ({
         {/* Exactly one party field is mounted, and the other two are
             blanked — the validator's one-of-three refine (and the DB's
             widened payment_party_check) rejects anything else. */}
-        {isEmployee ? (
-          <>
-            <Hidden name="customerId" value="" />
-            <Hidden name="supplierId" value="" />
-          </>
-        ) : (
-          <>
-            <Hidden name={isCustomer ? "supplierId" : "customerId"} value="" />
-            <Hidden name="employeeId" value="" />
-          </>
-        )}
+        {kindFields.blank.map((field) => (
+          <Hidden key={field} name={field} value="" />
+        ))}
         <Hidden name="salesOrderId" value={depositIds.salesOrderId} />
         <Hidden name="rentalAgreementId" value={depositIds.rentalAgreementId} />
         {isEditing && <Hidden name="paymentId" />}

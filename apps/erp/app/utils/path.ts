@@ -162,10 +162,28 @@ export const path = {
         ),
       inspectionDocuments: (itemId: string) =>
         generatePath(`${api}/quality/inspection-documents/${itemId}`),
+      integrationConnect: (piece: string) =>
+        generatePath(`${api}/integrations/connections/${piece}/connect`),
+      integrationConnectionCallback: `${api}/integrations/connections/callback`,
+      // The Sync Activity pages after the first; the tab adds `after`.
+      integrationSyncActivity: (id: string, status?: string | null) =>
+        `${generatePath(`${api}/integrations/${id}/sync-activity`)}${
+          status ? `?${new URLSearchParams({ status })}` : ""
+        }`,
       integrationSyncActivityCsv: (id: string, status?: string | null) =>
         `${generatePath(`${api}/integrations/${id}/sync-activity.csv`)}${
           status ? `?${new URLSearchParams({ status })}` : ""
         }`,
+      inventoryCountCsv: (inventoryCountId: string) =>
+        generatePath(`${api}/inventory-count/${inventoryCountId}.csv`),
+      inventoryCountGroup: (
+        inventoryCountId: string,
+        itemId: string,
+        storageUnitId: string | null
+      ) =>
+        `${generatePath(`${api}/inventory-count/${inventoryCountId}/group`)}?${new URLSearchParams(
+          { itemId, storageUnitId: storageUnitId ?? "" }
+        )}`,
       issueTypes: `${api}/quality/issue-types`,
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemConfigurable: `${api}/items/configurable`,
@@ -389,6 +407,7 @@ export const path = {
         generatePath(`${api}/purchasing/supplier-processes/${id}`),
       supplierTypes: `${api}/purchasing/supplier-types`,
       systemStatus: `${api}/system-status`,
+      tableExport: `${api}/table/export`,
       tags: (table?: string) =>
         generatePath(`${api}/shared/tags?table=${table}`),
       timecard: `${api}/people/timecard`,
@@ -416,7 +435,8 @@ export const path = {
       webhookTables: `${api}/webhook/tables?${build}`,
       workCenters: `${api}/resources/work-centers`,
       workCentersByLocation: (id: string) =>
-        generatePath(`${api}/resources/work-centers?location=${id}`)
+        generatePath(`${api}/resources/work-centers?location=${id}`),
+      workflowOptions: `${api}/workflows/options`
     },
     // The docs render every endpoint against a host. Hand them this deployment's
     // REST origin so a self-hosted or non-default-region reader sees their own
@@ -1129,6 +1149,7 @@ export const path = {
     externalCustomerFile: (id: string, path: string) =>
       generatePath(`/share/customer/${id}/${path}`),
     externalQuote: (id: string) => generatePath(`/share/quote/${id}`),
+    externalQuotePdf: (id: string) => generatePath(`/share/quote/${id}/pdf`),
     externalScar: (id: string) => generatePath(`/share/scar/${id}`),
     externalSupplierQuote: (id: string) =>
       generatePath(`/share/supplier-quote/${id}`),
@@ -1145,7 +1166,7 @@ export const path = {
         generatePath(`${file}/job/${jobId}/traveler.pdf`),
       kanbanLabelsPdf: (
         ids: string | string[],
-        action: "order" | "start" | "complete"
+        action: "order" | "start" | "complete" | "all"
       ) => {
         const idString = Array.isArray(ids) ? ids.join(",") : ids;
         return generatePath(
@@ -1201,6 +1222,8 @@ export const path = {
 
       purchaseReturnOrder: (id: string) =>
         generatePath(`${file}/purchase-return-order/${id}.pdf`),
+      purchasingRfq: (id: string) =>
+        generatePath(`${file}/purchasing-rfq/${id}.pdf`),
       quote: (id: string) => generatePath(`${file}/quote/${id}.pdf`),
       receiptLabelsPdf: (
         id: string,
@@ -1418,6 +1441,9 @@ export const path = {
     inspections: `${x}/quality/inspections`,
     integration: (id: string) =>
       generatePath(`${x}/settings/integrations/${id}`),
+    integrationAccounts: (id: string) =>
+      `${generatePath(`${x}/settings/integrations/${id}`)}?tab=connections`,
+    integrationConnections: `${x}/settings/integrations/connections`,
     integrationDeactivate: (id: string) =>
       generatePath(`${x}/settings/integrations/deactivate/${id}`),
     integrations: `${x}/settings/integrations`,
@@ -1428,12 +1454,18 @@ export const path = {
       generatePath(`${x}/inventory-count/${id}/confirm`),
     inventoryCountDelete: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/delete`),
+    inventoryCountImport: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/import`),
     inventoryCountLineUpdate: `${x}/inventory-count/lines/update`,
     inventoryCountPost: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/post`),
     inventoryCountReopen: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/reopen`),
+    inventoryCountScan: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/scan`),
     inventoryCounts: `${x}/inventory/inventory-count`,
+    inventoryCountUnitNew: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/units/new`),
     inventoryItem: (id: string) =>
       generatePath(`${x}/inventory/quantities/${id}/details`),
     inventoryItemActivity: (id: string) =>
@@ -2087,6 +2119,8 @@ export const path = {
       generatePath(`${x}/purchase-order/${id}/finalize`),
     purchaseOrderLine: (orderId: string, id: string) =>
       generatePath(`${x}/purchase-order/${orderId}/${id}/details`),
+    purchaseOrderLineDate: (orderId: string, id: string) =>
+      generatePath(`${x}/purchase-order/${orderId}/${id}/date`),
     purchaseOrderLineOrder: (orderId: string) =>
       generatePath(`${x}/purchase-order/${orderId}/line-order`),
     purchaseOrderLineReceiving: (orderId: string, id: string) =>
@@ -2227,6 +2261,7 @@ export const path = {
     receiptVoid: (id: string) => generatePath(`${x}/receipt/${id}/void`),
     receivables: `${x}/invoicing/receivables`,
     receivablesAdjust: `${x}/invoicing/receivables/adjust`,
+    receiving: `${x}/inventory/receiving`,
     refreshSession: "/refresh-session",
     // Reimbursements — employee expense payables imported from a spend tool.
     // The list lives under invoicing (it is an AP nav entry); the document is a
@@ -2638,6 +2673,8 @@ export const path = {
       generatePath(`${x}/resources/work-centers/${id}`),
     workCenterActivate: (id: string) =>
       generatePath(`${x}/resources/work-centers/activate/${id}`),
+    workCenterDeactivate: (id: string) =>
+      generatePath(`${x}/resources/work-centers/deactivate/${id}`),
     workCenters: `${x}/resources/work-centers`,
     workflow: (id: string) => generatePath(`${x}/workflow/${id}`),
     workflowCanvas: (id: string) => generatePath(`${x}/workflow/${id}/canvas`),

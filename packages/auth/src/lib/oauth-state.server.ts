@@ -40,9 +40,14 @@ export type OAuthStatePayload = {
  *
  * It is deliberately NOT part of the match: the callback has no independent copy
  * to compare against, so "matching" it would only compare the cookie to itself.
+ *
+ * `name` and `connectionId` are the same kind of field for a workflow piece: the
+ * account the consent is saved under, and the one row a Reconnect revives.
  */
 export type OAuthStateExtras = {
   mode?: string;
+  name?: string;
+  connectionId?: string;
 };
 
 type StoredOAuthState = OAuthStatePayload &
@@ -52,6 +57,21 @@ type StoredOAuthState = OAuthStatePayload &
   };
 
 type StoredOAuthStates = Record<string, StoredOAuthState>;
+
+function extrasOf(stored: StoredOAuthState): OAuthStateExtras {
+  return {
+    mode: stored.mode,
+    name: stored.name,
+    connectionId: stored.connectionId
+  };
+}
+
+/** A state issued for other extras is never handed to a connect for these. */
+function sameExtras(a: OAuthStateExtras, b: OAuthStateExtras) {
+  return (
+    a.mode === b.mode && a.name === b.name && a.connectionId === b.connectionId
+  );
+}
 
 const isTestEdition = CarbonEdition === Edition.Test;
 const cookieDomain = isTestEdition ? undefined : getCookieDomain(DOMAIN);
@@ -147,9 +167,9 @@ export async function issueOAuthStates(
       !!existing &&
       existing.userId === payload.userId &&
       existing.companyId === payload.companyId &&
-      // `mode` rides the cookie to be stamped on the install, so a state issued
-      // for one mode must never be handed to a connect for another.
-      existing.mode === payload.mode &&
+      // The extras ride the cookie to be acted on by the callback, so a state
+      // issued for one mode (or account) must never serve a connect for another.
+      sameExtras(existing, payload) &&
       existing.expiresAt - now >= OAUTH_STATE_REUSE_MIN_REMAINING_MS;
 
     if (reusable) {
@@ -185,6 +205,42 @@ export async function issueOAuthState(
 }
 
 /**
+ * Remove the entry `find` picks and say whether it is valid for `state` and the
+ * session's user and company. Single-use whether or not it matched; every other
+ * pending entry is left in place.
+ */
+async function consumeStoredState(
+  request: Request,
+  state: string,
+  owner: Pick<OAuthStatePayload, "userId" | "companyId">,
+  find: (states: StoredOAuthStates) => StoredOAuthState | undefined
+) {
+  const session = await oauthStateStorage.getSession(
+    request.headers.get("Cookie")
+  );
+  const states = readStates(session);
+  const stored = find(states);
+
+  const valid =
+    !!stored &&
+    !!state &&
+    stored.expiresAt > Date.now() &&
+    stored.state === state &&
+    stored.userId === owner.userId &&
+    stored.companyId === owner.companyId;
+
+  if (stored) delete states[stored.integrationId];
+
+  return {
+    valid,
+    cookie: await commitStates(session, states),
+    // Only a VALID entry leaves this function: an invalid one would hand the
+    // caller attacker-supplied values that passed no check.
+    stored: valid ? stored : undefined
+  };
+}
+
+/**
  * Check a callback's `state` against the one stored for `expected.integrationId`
  * and remove it — single-use whether or not it matched. Other integrations'
  * pending states are left in place.
@@ -194,33 +250,43 @@ export async function consumeOAuthState(
   state: string,
   expected: OAuthStatePayload
 ) {
-  const session = await oauthStateStorage.getSession(
-    request.headers.get("Cookie")
+  const { valid, cookie, stored } = await consumeStoredState(
+    request,
+    state,
+    expected,
+    (states) => states[expected.integrationId]
   );
-  const states = readStates(session);
-  const stored = states[expected.integrationId];
-
-  const valid =
-    !!stored &&
-    !!state &&
-    stored.expiresAt > Date.now() &&
-    stored.state === state &&
-    stored.integrationId === expected.integrationId &&
-    stored.userId === expected.userId &&
-    stored.companyId === expected.companyId;
-
-  delete states[expected.integrationId];
-
   return {
     valid,
-    cookie: await commitStates(session, states),
-    /**
-     * The stored payload, for fields the callback cannot re-derive — only when
-     * the state was VALID. Returning it on an invalid state would hand the
-     * caller attacker-supplied values that passed no check.
-     */
-    payload: valid
-      ? ({ mode: stored?.mode } satisfies OAuthStateExtras)
+    cookie,
+    /** The stored extras, for fields the callback cannot re-derive — only when
+     * the state was VALID. */
+    payload: stored ? extrasOf(stored) : undefined
+  };
+}
+
+/**
+ * For a callback shared by several integrations (the workflow pieces' one
+ * redirect URI), which cannot know the integration before reading the state:
+ * find the pending entry holding `state`, check it like `consumeOAuthState`, and
+ * remove it. The payload names the integration, only when the state was valid.
+ */
+export async function consumeOAuthStateByValue(
+  request: Request,
+  state: string,
+  owner: Pick<OAuthStatePayload, "userId" | "companyId">
+) {
+  const { valid, cookie, stored } = await consumeStoredState(
+    request,
+    state,
+    owner,
+    (states) => Object.values(states).find((entry) => entry.state === state)
+  );
+  return {
+    valid,
+    cookie,
+    payload: stored
+      ? { integrationId: stored.integrationId, ...extrasOf(stored) }
       : undefined
   };
 }

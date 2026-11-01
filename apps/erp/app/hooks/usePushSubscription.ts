@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getLogger } from "@carbon/logger";
-import { toast } from "@carbon/react";
+import { toast, toastError } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import { path } from "~/utils/path";
@@ -212,7 +212,7 @@ export function usePushSubscription({
         return true;
       } catch (error) {
         logger.error(failure, { error });
-        toast.error(failure);
+        toastError(failure, error);
         return false;
       } finally {
         setBusy(false);

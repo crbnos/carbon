@@ -107,15 +107,18 @@ function ClauseRowImpl({
     [leftType]
   );
 
-  // Self-heal: stored op no longer in the field's allowed set
+  // A whole object has no operators; the clause waits for one of its fields.
+  const comparable = availableOps.length > 0;
+
+  // Self-heal: stored op no longer allowed. Skipped when nothing is allowed, or it rewrites forever.
   useEffect(() => {
-    if (!leftType) return;
+    if (!leftType || !comparable) return;
     if (availableOps.includes(clause.operator)) return;
     onChange(index, {
       operator: pickDefaultOp(availableOps),
       right: undefined
     });
-  }, [leftType, availableOps, clause.operator, index, onChange]);
+  }, [leftType, comparable, availableOps, clause.operator, index, onChange]);
 
   // Column options for "column" mode
   const columnOptions = useMemo(() => {
@@ -226,11 +229,11 @@ function ClauseRowImpl({
                 })
               }
               available={Array.from(availableOps)}
-              disabled={!leftType || isReadOnly}
+              disabled={!leftType || !comparable || isReadOnly}
             />
           </Field>
 
-          {leftType ? (
+          {leftType && comparable ? (
             <ValueField
               label={t`Value`}
               placeholder={t`Type '{' for a variable`}
@@ -254,7 +257,9 @@ function ClauseRowImpl({
           ) : (
             <Field label={t`Value`}>
               <div className="flex h-9 items-center rounded-md border border-dashed border-border px-3 text-xs text-muted-foreground">
-                {t`Pick a property first`}
+                {leftType
+                  ? t`Pick one of its fields`
+                  : t`Pick a property first`}
               </div>
             </Field>
           )}

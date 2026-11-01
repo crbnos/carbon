@@ -39,7 +39,7 @@ pnpm --filter @carbon/auth test
 
 | Subpath | Provides |
 |---------|----------|
-| `.` (index) | Env re-exports, Supabase client factories, `getClaims`, cookie/http/result utils, validators |
+| `.` (index) | Env re-exports, Supabase client factories, `getClaims`, cookie/http/result utils, validators. `error(cause, message)` puts `describeCause(cause)` (`@carbon/utils`) on the result as `reason`, and the flash toast shows it as its second line |
 | `./auth.server` | `requirePermissions`, API key auth (30s Redis-cached `getApiKeyRecord` + `bustApiKeyCache`, from `services/api-key.server.ts`), `hashApiKey`, `hashOAuthSecret` |
 | `./mfa.server` | TOTP MFA: `enrollTotpFactor`, `verifyTotpChallenge`, `unenrollTotpFactor`, `userHasVerifiedTotpFactor` (Redis-cached), `adminDeleteTotpFactors` |
 | `./session.server` | `createCookieSessionStorage`, `requireAuthSession` (incl. MFA re-check), `destroyAuthSession`, session refresh, pending-MFA session + `completeMfaChallenge`; `pushEndpointCookie` (signed `carbon-push`, this browser's Web Push endpoint) — `clearAuthCookies` deletes that endpoint's `pushSubscription` rows on every same-site sign-out (a cross-site navigation skips it, per the GET-write rule) |

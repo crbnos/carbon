@@ -63,6 +63,19 @@ export type WorkCenterSpec = {
   machineRate: number;
 };
 
+/**
+ * A party address that replaces `foundation.partyAddress*` for one customer or
+ * supplier — a foreign buyer an export rule must see, or a foreign vendor.
+ */
+export type PartyAddressSpec = {
+  addressLine1: string;
+  city: string;
+  stateProvince: string;
+  postalCode: string;
+  /** ISO 3166-1 alpha-2, upper case. */
+  countryCode: string;
+};
+
 export type CustomerSpec = {
   name: string;
   type: string;
@@ -73,6 +86,8 @@ export type CustomerSpec = {
   currencyCode?: string;
   /** Defaults to Net 30. */
   paymentTerm?: string;
+  /** Omitted = the dataset-wide `foundation.partyAddress*`. */
+  address?: PartyAddressSpec;
 };
 
 export type SupplierSpec = {
@@ -86,6 +101,8 @@ export type SupplierSpec = {
   currencyCode?: string;
   /** Defaults to Net 30. */
   paymentTerm?: string;
+  /** Omitted = the dataset-wide `foundation.partyAddress*`. */
+  address?: PartyAddressSpec;
 };
 
 export type ContactSpec = {
@@ -235,6 +252,11 @@ export type FoundationData = {
   employeeJob: EmployeeJobSpec;
   warehouses: WarehouseSpec[];
   storageTypes: string[];
+  /**
+   * Storage types whose units are non-nettable (a quarantine area): MRP and
+   * picking ignore the stock in them. Each is one of storageTypes.
+   */
+  nonNettableStorageTypes: string[];
   /** Insertion order matters — a parent shelf must precede its children. */
   shelves: ShelfSpec[];
   printerRoute: PrinterRouteSpec | null;
@@ -294,6 +316,12 @@ export type ItemSpec = {
    * readableId — a service's readableId is its name, which is no file name.
    */
   thumbnail?: string;
+  /**
+   * Values for the item's custom fields, keyed by `CustomFieldSpec.name` on the
+   * item's type table (`part`, `material`, …). Tier 10 writes them into that
+   * table's `customFields` JSON, keyed by the field's id, as the item form does.
+   */
+  customFieldValues?: Record<string, string | number | boolean>;
 };
 
 export type MethodType =
@@ -736,6 +764,8 @@ export type SalesOrderLineSpec = {
   sortOrder?: number;
   /** Extra seed log line, for orders whose lines are the interesting part. */
   log?: string;
+  /** The line's description (a contract line item, a CLIN). Omitted = the item's name. */
+  description?: string;
 };
 
 export type SalesOrderSpec = {
@@ -744,6 +774,8 @@ export type SalesOrderSpec = {
   status: string;
   orderDateOffset: DayOffset;
   assignee?: "self";
+  /** The customer's PO or contract number, shown on the order. */
+  customerReference?: string;
   lines: SalesOrderLineSpec[];
 };
 
@@ -807,6 +839,10 @@ export type SalesStatusOrderSpec = {
   lineStatus: string;
   orderDateOffset: DayOffset;
   unitPrice: number;
+  /** The customer's PO or contract number, shown on the order. */
+  customerReference?: string;
+  /** The line's description (a contract line item, a CLIN). Omitted = the item's name. */
+  lineDescription?: string;
 };
 
 export type StaggeredDeliverySpec = {
@@ -2220,7 +2256,12 @@ export type PlanningData = {
 };
 
 // Must stay in step with DATASETS in index.ts — a key with no dataset is unusable.
-export type DatasetKey = "satellite" | "robotics" | "precision" | "motor";
+export type DatasetKey =
+  | "satellite"
+  | "robotics"
+  | "precision"
+  | "motor"
+  | "defense";
 
 // One industry story's worth of data. The tiers hold the insertion logic; a
 // Dataset holds everything that differs between stories.

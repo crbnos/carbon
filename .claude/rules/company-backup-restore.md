@@ -175,7 +175,7 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   `{targetCompanyId}/` + remapped id segments), `rewriteToTemplateAssetPath`
   (`{co}/…` → `_templates/{industryId}/…`). `STORAGE_PATH_COLUMNS` =
   `thumbnailPath`, `modelPath`, `originalPath`, `optimizedModelPath`,
-  `glbPath`, `graphPath` — every `modelUpload` artifact column. A backup enumerates assets by LISTING the bucket under
+  `glbPath`, `graphPath`, `pmiPath` — every `modelUpload` artifact column. A backup enumerates assets by LISTING the bucket under
   `{companyId}/` (`company-export.ts`), not by reading these columns, so raw CAD
   IS carried; a column missing from this set survives a cross-company restore
   still pointing at the SOURCE company's prefix (which is what left restored

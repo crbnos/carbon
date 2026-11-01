@@ -4,7 +4,11 @@
 
 import type React from "react";
 import { Container } from "react-email";
+import { flatCardOnPhones } from "./notificationStyles";
 import { getEmailInlineStyles, getEmailThemeClasses } from "./Theme";
+
+/** The card's phone-width rule, for the document email's <head>. */
+export const documentCardStyles = flatCardOnPhones("doc-card", "20px 16px");
 
 // The bordered card a document email sits in. Classic Outlook ignores
 // max-width, so an MSO-only ghost table holds it to 600px there; every
@@ -20,7 +24,7 @@ export function DocumentCard({ children }: { children: React.ReactNode }) {
         }}
       />
       <Container
-        className={`mx-auto py-5 px-5 w-full max-w-[600px] ${getEmailThemeClasses().container}`}
+        className={`mx-auto py-5 px-5 w-full max-w-[600px] doc-card ${getEmailThemeClasses().container}`}
         style={{
           borderStyle: "solid",
           borderWidth: "1px",

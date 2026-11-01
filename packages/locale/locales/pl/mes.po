@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "\"{column}\" is required."
+msgstr ""
+
 msgid "(Inactive)"
 msgstr "(Nieaktywny)"
 
@@ -84,6 +87,12 @@ msgstr "{0} przebiegów w partii produkcyjnej {1}"
 msgid "{0} Scrapped"
 msgstr "{0} Odrzuconych"
 
+msgid "{columns} does not match an existing \"{target}\"."
+msgstr ""
+
+msgid "{columns} does not match an existing record."
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} z {quantity}"
 
@@ -110,8 +119,26 @@ msgstr "🚨 Uwaga: {0} Twoje konto zostanie przeniesione na erp.try.carbon.ms"
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Poprzednie zakończenie nie zostało ukończone. Ponowienie wznawia pozostałe kroki — ilości nie są liczone podwójnie."
 
+msgid "A record with these values already exists."
+msgstr ""
+
+msgid "A record with this {columns} already exists."
+msgstr ""
+
+msgid "A referenced record does not exist."
+msgstr ""
+
+msgid "A required field was missing."
+msgstr ""
+
+msgid "A value is not valid."
+msgstr ""
+
 msgid "About"
 msgstr "O programie"
+
+msgid "About this field"
+msgstr "O tym polu"
 
 msgid "Accept"
 msgstr "Zaakceptuj"
@@ -167,6 +194,9 @@ msgstr "Dodaj próbkę"
 
 msgid "Add Spare Part"
 msgstr "Dodaj część zamienną"
+
+msgid "Add your signature"
+msgstr ""
 
 msgid "Added"
 msgstr "Dodano"
@@ -226,6 +256,9 @@ msgstr "Czy na pewno chcesz opuścić tę stronę?"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "Czy na pewno chcesz oznaczyć tę operację jako gotową? Spowoduje to zakończenie wszystkich aktywnych zdarzeń produkcyjnych dla tej operacji."
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "Kroki montażu"
 
@@ -253,18 +286,8 @@ msgstr "dostępne"
 msgid "Available"
 msgstr "Dostępne"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "Opcja awatara {0}"
-
 msgid "Avatar style"
 msgstr "Styl awatara"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "Awatary z <0>{0}</0> autorstwa {1}, licencjonowane na warunkach <1>{2}</1>."
 
 msgid "Back"
 msgstr "Wstecz"
@@ -306,6 +329,9 @@ msgstr "razem partia produkcyjna"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Opóźnione o {daysBehindTarget} dni"
 
+msgid "Bigger or smaller text. The layout stays put."
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Zablokowane przez {0}"
@@ -318,6 +344,11 @@ msgstr "Widok tablicy"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Ale nie martw się. Możesz użyć funkcji resetowania hasła, aby poprosić o nowy magiczny link."
+
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Logując się, akceptujesz <0>Regulamin</0> i <1>Politykę prywatności.</1>"
@@ -358,6 +389,9 @@ msgstr "Sprawdź swoją skrzynkę e-mail"
 msgid "Choose a job"
 msgstr "Wybierz zlecenie produkcyjne"
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose an option"
 msgstr "Wybierz opcję"
 
@@ -381,6 +415,9 @@ msgstr "Wyczyść wyszukiwanie"
 
 msgid "Clear station default"
 msgstr "Wyczyść domyślną stację"
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Clock In"
 msgstr "Rozpoczęcie pracy"
@@ -429,6 +466,12 @@ msgstr "Kolumna: {0}"
 msgid "Columns"
 msgstr "Kolumny"
 
+msgid "Comfortable"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
 msgid "Companies"
 msgstr "Firmy"
 
@@ -453,6 +496,9 @@ msgstr "Zakończ partię"
 
 msgid "Complete passed"
 msgstr "Zakończ zaliczone"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
 
 msgid "Completed"
 msgstr "Ukończone"
@@ -504,6 +550,9 @@ msgstr "Utwórz poprawkę"
 msgid "Current work"
 msgstr "Bieżąca praca"
 
+msgid "Custom color"
+msgstr ""
+
 msgid "Customer"
 msgstr "Klient"
 
@@ -536,6 +585,9 @@ msgstr "Usuń krok"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Usuń kartę czasu (<0/>)"
+
+msgid "Density"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "Opisz problem..."
@@ -595,6 +647,15 @@ msgstr "Przeciągnij, aby zmienić rozmiar rysunku i cech"
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "Przeciąganie {0} anulowane."
+
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Due"
 msgstr "Termin"
@@ -701,6 +762,13 @@ msgstr "Wygasa <0/>"
 msgid "Expiring first"
 msgstr "Wygasające pierwsze"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Failed"
 msgstr "Nieudane"
 
@@ -725,6 +793,9 @@ msgstr "Nie udało się pobrać jednostek magazynowych"
 msgid "Failed to get options"
 msgstr "Nie udało się pobrać opcji"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Nie udało się zarejestrować przyrządu pomiarowego"
 
@@ -747,6 +818,9 @@ msgstr "Nie udało się przesłać pliku: {0}"
 
 msgid "Failed to upload image"
 msgstr "Nie udało się przesłać plik"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "File size exceeds 10MB limit"
 msgstr "Rozmiar pliku przekracza limit 10 MB"
@@ -900,6 +974,9 @@ msgstr "Wydane {issuedQuantity} z {lotLabel}"
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "Wydane {issuedQuantity} z {lotLabel} — pozostaje {remainingQuantity}"
 
+msgid "It is still used by a \"{table}\" record; remove that first."
+msgstr ""
+
 msgid "Item"
 msgstr "Pozycja"
 
@@ -935,6 +1012,12 @@ msgstr "Zestaw"
 
 msgid "Labor"
 msgstr "Robocizna"
+
+msgid "Large"
+msgstr ""
+
+msgid "Larger"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Ostatnio ukończono"
@@ -980,6 +1063,9 @@ msgstr "Załadowany: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Ładowanie szczegółów pozycji..."
+
+msgid "Loading. There's no need to scan again."
+msgstr "Ładowanie. Nie trzeba skanować ponownie."
 
 msgid "Loading..."
 msgstr "Ładowanie..."
@@ -1190,6 +1276,12 @@ msgstr "Brak zaplanowanego utrzymania ruchu na dziś"
 msgid "No matches. Type to create one."
 msgstr "Brak wyników. Wpisz, aby utworzyć nowy."
 
+msgid "No matching record was found."
+msgstr ""
+
+msgid "No matching time"
+msgstr "Brak pasującej godziny"
+
 msgid "No materials"
 msgstr "Brak materiałów"
 
@@ -1241,6 +1333,9 @@ msgstr "Nie wymagane żadne próbki."
 msgid "No scheduled time"
 msgstr "Brak zaplanowanego czasu"
 
+msgid "No serial number"
+msgstr "Brak numeru seryjnego"
+
 msgid "No serial numbers"
 msgstr "Brak numerów seryjnych"
 
@@ -1276,6 +1371,9 @@ msgstr "Brak"
 
 msgid "Notes"
 msgstr "Notatki"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "Nic na tej stronie nie używa tego kodu kreskowego"
 
 msgid "Nothing running"
 msgstr "Nic nie działa"
@@ -1434,8 +1532,8 @@ msgstr "Pobierz"
 msgid "Pick {0}"
 msgstr "Pobierz {0}"
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "Wybierz styl i awatar, lub tasuj, aby otrzymać nowe."
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "Wybierz śledzony element"
@@ -1485,6 +1583,9 @@ msgstr "Wybierz pozycję"
 msgid "PM schedule lapsed"
 msgstr "Harmonogram PM wygasł"
 
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Naciśnij ? na dowolnej stronie, aby otworzyć tę listę. Skróty klawiszowe są ignorowane podczas wpisywania w polu."
 
@@ -1505,6 +1606,12 @@ msgstr "Drukuj"
 
 msgid "Print batch list"
 msgstr "Drukuj listę partii produkcyjnych"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Ustawienia drukarki"
@@ -1619,6 +1726,9 @@ msgstr "Usuń część"
 msgid "Remove two-factor authentication"
 msgstr "Usuń uwierzytelnianie dwuskładnikowe"
 
+msgid "Removed signature"
+msgstr ""
+
 msgid "Rename"
 msgstr "Zmień nazwę"
 
@@ -1630,9 +1740,6 @@ msgstr "Wymaga 6-cyfrowego kodu z aplikacji uwierzytelniającej podczas logowani
 
 msgid "Required"
 msgstr "Wymagane"
-
-msgid "Reset"
-msgstr "Zresetuj"
 
 msgid "Result"
 msgstr "Wynik"
@@ -1664,8 +1771,14 @@ msgstr "To samo dla każdego zlecenia produkcyjnego"
 msgid "Save"
 msgstr "Zapisz"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Zapisz formularz, który edytujesz"
+
+msgid "Saved signature"
+msgstr ""
 
 msgid "Scan"
 msgstr "Skanuj"
@@ -1687,6 +1800,12 @@ msgstr "Skanuj lub wyszukaj numer seryjny..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Skanuj lub wybierz jednostkę śledzoną z tej partii, aby dodać ją jako kolumnę próby, a następnie zapisz jej wynik w siatce."
+
+msgid "Scan or select the unit, then scan the kanban card again"
+msgstr "Zeskanuj lub wybierz jednostkę, a następnie ponownie zeskanuj kartę kanban"
+
+msgid "Scan received"
+msgstr "Skan odebrany"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Skanuj ten kod QR aplikacją uwierzytelniającą (np. Google Authenticator lub 1Password), a następnie wprowadź 6-cyfrowy kod, który wyświetla."
@@ -1862,6 +1981,9 @@ msgstr "Pokaż skróty klawiaturowe"
 msgid "Shuffle"
 msgstr "Tasuj"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Zaloguj się za pomocą biometrii zamiast magicznego linku. Klucze dostępu są chronione za pomocą Face ID, Touch ID lub PIN urządzenia."
 
@@ -1889,6 +2011,12 @@ msgstr "Zamiast tego wyloguj się"
 msgid "Sign-in code"
 msgstr ""
 
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
+msgstr ""
+
 msgid "Signed in as {stationName}"
 msgstr "Zalogowany jako {stationName}"
 
@@ -1900,6 +2028,12 @@ msgstr "Rozmiar"
 
 msgid "Slack"
 msgstr "Slack"
+
+msgid "Small"
+msgstr ""
+
+msgid "Smaller"
+msgstr ""
 
 msgid "Source"
 msgstr "Źródło"
@@ -1951,6 +2085,9 @@ msgstr "Brakuje kroków"
 msgid "Storage Unit"
 msgstr "Jednostka magazynowa"
 
+msgid "Style"
+msgstr ""
+
 msgid "Style default"
 msgstr "Domyślny styl"
 
@@ -1993,11 +2130,18 @@ msgstr "System"
 msgid "Tag"
 msgstr "Tag"
 
+msgid "Text size"
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Kolor akcentu używany w Carbon."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Ukończona ilość dla tej operacji jest mniejsza niż wymagana ilość {targetQuantity}."
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "Zlecenia produkcyjne i części, które składają się na ten przebieg."
@@ -2014,6 +2158,12 @@ msgstr "Partia będzie nadal dyspozycjonowana, ale nie można utworzyć NCR, dop
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Czasomierz i zakończenie są wspólne dla wszystkich {0} zleceń produkcyjnych. Kroki, materiały i pliki tutaj należą do tego zlecenia produkcyjnego."
+
+msgid "The values break a rule on this record."
+msgstr ""
+
+msgid "The values break the rule \"{constraint}\"."
+msgstr ""
 
 msgid "Theme color"
 msgstr "Kolor motywu"
@@ -2048,14 +2198,20 @@ msgstr "Ta część została wyprodukowana na zamówienie. Jej skierowanie do br
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Ta część będzie skierowana do braku ze zapasów. Jej wymaganie pozostaje otwarte, aby można było wydać zamiennik."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Ta jednostka zostanie bezpowrotnie złomowana i zostanie utworzony nowy numer seryjny zamiennika."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Ta jednostka zostanie bezpowrotnie złomowana i zostanie utworzona jednostka zastępcza."
 
 msgid "Thumbnail"
 msgstr "Miniatura"
 
 msgid "Tick the jobs this was done for."
 msgstr "Zaznacz zlecenia produkcyjne, dla których to zostało wykonane."
+
+msgid "Tighter or roomier layout. The text stays put."
+msgstr ""
+
+msgid "Time"
+msgstr "Godzina"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Czas i koszt rozdzielone na zlecenia produkcyjne proporcjonalnie do ilości."
@@ -2147,6 +2303,9 @@ msgstr "Wpisz wiadomość..."
 msgid "Unable to unlock"
 msgstr "Nie można odblokować"
 
+msgid "Undo"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "Niewydane materiały seryjne/partyjne"
 
@@ -2203,6 +2362,9 @@ msgstr "Prześlij plik"
 
 msgid "Upload completed but no file path returned"
 msgstr "Przesłanie zakończone, ale nie zwrócona ścieżka pliku"
+
+msgid "Uploaded signature"
+msgstr ""
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -2266,8 +2428,26 @@ msgstr "Napisz notatkę…"
 msgid "Yes"
 msgstr "Tak"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You do not have permission to do this"
+msgstr ""
+
+msgid "You don't have permission to change this record, or it no longer exists."
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Pracujesz od {hoursElapsed} godzin. Zapomniałeś o zakończeniu pracy?"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Twoje konto nie należy jeszcze do żadnej firmy. Ukończ wdrażanie w Carbon ERP, aby kontynuować."
@@ -2280,6 +2460,9 @@ msgstr "Twój profil nie mógł zostać załadowany."
 
 msgid "Your session was locked after inactivity."
 msgstr "Twoja sesja została zablokowana z powodu nieaktywności."
+
+msgid "Your signature"
+msgstr ""
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

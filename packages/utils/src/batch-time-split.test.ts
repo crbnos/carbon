@@ -58,33 +58,44 @@ describe("splitSecondsByWeight", () => {
 });
 
 describe("sliceEventByWeight", () => {
-  it("produces contiguous windows that tile the recorded span", () => {
-    const windows = sliceEventByWeight(
+  it("tiles the recorded span with contiguous windows in proportion to weight", () => {
+    expect(
+      sliceEventByWeight(
+        {
+          startTime: "2026-07-14T00:00:00.000Z",
+          endTime: "2026-07-14T01:10:00.000Z"
+        },
+        [
+          { id: "a", weight: 5 },
+          { id: "b", weight: 20 },
+          { id: "c", weight: 10 }
+        ]
+      )
+    ).toEqual([
       {
+        id: "a",
         startTime: "2026-07-14T00:00:00.000Z",
-        endTime: "2026-07-14T01:10:00.000Z"
+        endTime: "2026-07-14T00:10:00.000Z",
+        durationSeconds: 600
       },
-      [
-        { id: "a", weight: 5 },
-        { id: "b", weight: 20 },
-        { id: "c", weight: 10 }
-      ]
-    );
-    const [a, b, c] = windows;
-    // Durations follow the proportional split.
-    expect(windows.map((w) => w.durationSeconds)).toEqual([600, 2400, 1200]);
-    // Windows are contiguous: each starts where the previous ended.
-    expect(a!.startTime).toBe("2026-07-14T00:00:00.000Z");
-    expect(a!.endTime).toBe(b!.startTime);
-    expect(b!.endTime).toBe(c!.startTime);
-    // Last window closes out the parent span exactly.
-    expect(c!.endTime).toBe("2026-07-14T01:10:00.000Z");
+      {
+        id: "b",
+        startTime: "2026-07-14T00:10:00.000Z",
+        endTime: "2026-07-14T00:50:00.000Z",
+        durationSeconds: 2400
+      },
+      {
+        id: "c",
+        startTime: "2026-07-14T00:50:00.000Z",
+        endTime: "2026-07-14T01:10:00.000Z",
+        durationSeconds: 1200
+      }
+    ]);
   });
 });
 
 describe("buildBatchCompletionPlan", () => {
-  // The AC[6] scenario: members with qty 5/20/10, one 70-minute machine event,
-  // scrap entered only on the middle member.
+  // Members with qty 5/20/10, one 70-minute machine event, scrap only on the middle one.
   const members = [
     { jobOperationId: "op-a", operationQuantity: 5, quantity: 5 },
     {
@@ -99,58 +110,59 @@ describe("buildBatchCompletionPlan", () => {
     id: "evt-1",
     type: "Machine",
     startTime: "2026-07-14T00:00:00.000Z",
-    endTime: "2026-07-14T01:10:00.000Z", // 70 minutes
+    endTime: "2026-07-14T01:10:00.000Z",
+    workCenterId: "wc-1",
+    employeeId: "emp-1"
+  };
+  const slice = {
+    sourceEventId: "evt-1",
+    type: "Machine",
     workCenterId: "wc-1",
     employeeId: "emp-1"
   };
 
-  it("slices the 70-minute event into 10/40/20-minute per-member events", () => {
-    const plan = buildBatchCompletionPlan([machineEvent], members);
-
-    expect(plan.memberEvents.map((e) => e.durationSeconds)).toEqual([
-      10 * 60,
-      40 * 60,
-      20 * 60
+  it("slices each event into one per-member event carrying the source's metadata", () => {
+    expect(
+      buildBatchCompletionPlan([machineEvent], members).memberEvents
+    ).toEqual([
+      {
+        ...slice,
+        jobOperationId: "op-a",
+        startTime: "2026-07-14T00:00:00.000Z",
+        endTime: "2026-07-14T00:10:00.000Z",
+        durationSeconds: 600
+      },
+      {
+        ...slice,
+        jobOperationId: "op-b",
+        startTime: "2026-07-14T00:10:00.000Z",
+        endTime: "2026-07-14T00:50:00.000Z",
+        durationSeconds: 2400
+      },
+      {
+        ...slice,
+        jobOperationId: "op-c",
+        startTime: "2026-07-14T00:50:00.000Z",
+        endTime: "2026-07-14T01:10:00.000Z",
+        durationSeconds: 1200
+      }
     ]);
-    // Each slice keeps its own member + the source event's metadata.
-    expect(plan.memberEvents.map((e) => e.jobOperationId)).toEqual([
-      "op-a",
-      "op-b",
-      "op-c"
-    ]);
-    expect(plan.memberEvents.every((e) => e.type === "Machine")).toBe(true);
-    expect(plan.memberEvents.every((e) => e.sourceEventId === "evt-1")).toBe(
-      true
-    );
-    expect(plan.memberEvents.every((e) => e.workCenterId === "wc-1")).toBe(
-      true
-    );
-
-    // Windows are contiguous and tile the parent span exactly.
-    const [a, b, c] = plan.memberEvents;
-    expect(a!.startTime).toBe("2026-07-14T00:00:00.000Z");
-    expect(a!.endTime).toBe(b!.startTime);
-    expect(b!.endTime).toBe(c!.startTime);
-    expect(c!.endTime).toBe("2026-07-14T01:10:00.000Z");
   });
 
-  it("emits a Production row per member and a Scrap row only where entered", () => {
-    const plan = buildBatchCompletionPlan([machineEvent], members);
-
-    expect(plan.quantities).toEqual([
+  it("emits a Production row per member and a Scrap row only where entered, with or without events", () => {
+    const quantities = [
       { jobOperationId: "op-a", type: "Production", quantity: 5 },
       { jobOperationId: "op-b", type: "Production", quantity: 20 },
       { jobOperationId: "op-b", type: "Scrap", quantity: 2 },
       { jobOperationId: "op-c", type: "Production", quantity: 10 }
-    ]);
-  });
-
-  it("handles a batch with no recorded events (quantities still produced)", () => {
-    const plan = buildBatchCompletionPlan([], members);
-    expect(plan.memberEvents).toEqual([]);
-    expect(plan.quantities.filter((q) => q.type === "Production")).toHaveLength(
-      3
-    );
+    ];
+    expect(
+      buildBatchCompletionPlan([machineEvent], members).quantities
+    ).toEqual(quantities);
+    expect(buildBatchCompletionPlan([], members)).toEqual({
+      memberEvents: [],
+      quantities
+    });
   });
 });
 
@@ -207,64 +219,36 @@ describe("assertAllOperationsClaimed", () => {
 });
 
 describe("assertBatchWorkCenterMutable", () => {
-  it("allows changing the work center of a Planned batch", () => {
-    // Planned is the staged, pre-release state — nothing has run, so the
-    // work center is still freely assignable.
-    expect(() => assertBatchWorkCenterMutable("Planned")).not.toThrow();
-  });
+  it.each(["Planned", "Active"] as const)(
+    "allows changing the work center of a %s batch",
+    (status) => {
+      expect(() => assertBatchWorkCenterMutable(status)).not.toThrow();
+    }
+  );
 
-  it("allows changing the work center of an Active batch", () => {
-    expect(() => assertBatchWorkCenterMutable("Active")).not.toThrow();
-  });
-
-  it("rejects changing the work center of a Completing batch", () => {
-    expect(() => assertBatchWorkCenterMutable("Completing")).toThrow(
-      /not active/
-    );
-  });
-
-  it("rejects changing the work center of a Completed batch", () => {
-    expect(() => assertBatchWorkCenterMutable("Completed")).toThrow(
-      /not active/
-    );
-  });
-
-  it("rejects changing the work center of a Cancelled batch", () => {
-    expect(() => assertBatchWorkCenterMutable("Cancelled")).toThrow(
-      /not active/
-    );
-  });
+  it.each(["Completing", "Completed", "Cancelled"] as const)(
+    "refuses changing the work center of a %s batch",
+    (status) => {
+      expect(() => assertBatchWorkCenterMutable(status)).toThrow(/not active/);
+    }
+  );
 });
 
 describe("planBatchCompletion", () => {
-  it("rejects a Planned batch (must be released first)", () => {
-    // A Planned batch has never been released to the floor — nothing has run
-    // against it, so there is nothing to complete.
-    expect(() => planBatchCompletion("Planned")).toThrow(
-      /Only an active batch can be completed/
-    );
-  });
-
-  it("slices on the first attempt (Active batch)", () => {
+  it("slices an Active batch", () => {
     expect(planBatchCompletion("Active")).toBe("slice");
   });
 
-  it("resumes an in-flight completion (Completing batch)", () => {
-    // The two-phase flow: a prior attempt committed the timer slice + flipped the
-    // batch to 'Completing', then a post-commit step (issue / Done / GL) failed.
-    // A retry must RESUME the idempotent post-commit steps, never re-slice.
+  it("resumes a Completing batch rather than slicing it again", () => {
+    // A prior attempt committed the slice; a post-commit step failed.
     expect(planBatchCompletion("Completing")).toBe("resume");
   });
 
-  it("rejects an already-completed batch", () => {
-    expect(() => planBatchCompletion("Completed")).toThrow(
-      /already been completed/
-    );
-  });
-
-  it("rejects a cancelled batch", () => {
-    expect(() => planBatchCompletion("Cancelled")).toThrow(
-      /Only an active batch can be completed/
-    );
+  it.each([
+    ["Planned", /Only an active batch can be completed/],
+    ["Cancelled", /Only an active batch can be completed/],
+    ["Completed", /already been completed/]
+  ] as const)("refuses to complete a %s batch", (status, error) => {
+    expect(() => planBatchCompletion(status)).toThrow(error);
   });
 });

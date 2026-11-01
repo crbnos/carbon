@@ -16,18 +16,11 @@
  * tool it lists now passes, or when a tool could not be called at all.
  */
 
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  writeFileSync
-} from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { getUserScopedClient } from "@carbon/auth/client.server";
 import { today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { scopesFromPermissions } from "~/routes/api+/v1+/lib/base.server";
@@ -43,16 +36,20 @@ import {
   usesNames
 } from "./inputs";
 import { givenInputs } from "./read-tools.inputs";
+import {
+  companyGroupOf,
+  describeError,
+  loadSchema,
+  placeholders,
+  refuseDrift,
+  target,
+  withTimeout
+} from "./shared";
 
 const HERE = path.dirname(new URL(import.meta.url).pathname);
 const BASELINE = path.join(HERE, "read-tools.baseline.json");
-const MIGRATIONS = path.join(
-  HERE,
-  "../../../../packages/database/supabase/migrations"
-);
 const REPORT =
   process.env.CARBON_SWEEP_REPORT ?? path.join(HERE, ".report/read-tools.json");
-const CALL_TIMEOUT_MS = 30_000;
 /** How many real values of an argument are tried before "no row matches" stands. */
 const CANDIDATES = 12;
 
@@ -77,30 +74,6 @@ interface Entry {
 }
 
 const db = getDatabaseClient();
-
-async function target() {
-  const companyId = process.env.SWEEP_COMPANY_ID;
-  const userId = process.env.SWEEP_USER_ID;
-  if (companyId && userId) return { companyId, userId };
-
-  // The dev seed's own user, in whichever of its companies has the most data.
-  const email = process.env.DEV_BYPASS_EMAIL;
-  if (!email) {
-    throw new Error(
-      "Set SWEEP_COMPANY_ID and SWEEP_USER_ID, or DEV_BYPASS_EMAIL for a seeded stack."
-    );
-  }
-  const found = await sql<{ userId: string; companyId: string }>`
-    select u."id" as "userId", m."companyId"
-    from "user" u
-    join "userToCompany" m on m."userId" = u."id" and m."role" = 'employee'
-    where u."email" = ${email}
-    order by (select count(*) from "item" i where i."companyId" = m."companyId") desc
-    limit 1`.execute(db);
-  const row = found.rows[0];
-  if (!row) throw new Error(`No employee membership found for ${email}.`);
-  return row;
-}
 
 /**
  * Existing values of a column, read as the user: ids the caller could really
@@ -138,46 +111,6 @@ function sampler(client: SupabaseClient, companyId: string) {
 
 /** A planned argument that could not be given a value, and why. */
 class NoValue extends Error {}
-
-/**
- * A value of the column's type that matches no row, for a company that has no
- * row to take a real one from. The tool still runs its query — the wrong
- * column or a missing function shows — and answers with nothing.
- */
-function placeholders(
-  types: Map<string, string>,
-  enums: Map<string, string>,
-  day: string
-) {
-  return ({ table, column }: Column): unknown => {
-    const type = types.get(`${table}.${column}`);
-    switch (type) {
-      case "text":
-      case "varchar":
-      case "bpchar":
-      case "citext":
-        return "sweep-no-such-row";
-      case "uuid":
-        return "00000000-0000-0000-0000-000000000000";
-      case "bool":
-        return false;
-      case "date":
-        return day;
-      case "timestamp":
-      case "timestamptz":
-        return `${day}T00:00:00+00:00`;
-      case "int2":
-      case "int4":
-      case "int8":
-      case "numeric":
-      case "float4":
-      case "float8":
-        return 0;
-      default:
-        return type ? enums.get(type) : undefined;
-    }
-  };
-}
 
 /**
  * The plan's arguments as real values, one set per candidate: set `n` uses the
@@ -263,62 +196,11 @@ function rowsOf(data: unknown): number | null {
   return data === null || data === undefined ? 0 : null;
 }
 
-function describeError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-async function withTimeout<T>(work: Promise<T>): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const expired = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () => reject(new Error(`no answer after ${CALL_TIMEOUT_MS / 1000} s`)),
-      CALL_TIMEOUT_MS
-    );
-  });
-  try {
-    return await Promise.race([work, expired]);
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-/**
- * Migrations on this branch that the stack has not applied, and the reverse.
- * A tool that calls a function the database does not have yet fails for a
- * reason that is not the tool's, so the sweep refuses to run on a stack that is
- * behind unless told the drift is known.
- */
-async function schemaDrift() {
-  const applied = await sql<{ version: string }>`
-    select version from supabase_migrations.schema_migrations`.execute(db);
-  const inDatabase = new Set(applied.rows.map((row) => row.version));
-  const onBranch = readdirSync(MIGRATIONS)
-    .filter((file) => file.endsWith(".sql"))
-    .map((file) => file.slice(0, file.indexOf("_")));
-  const branch = new Set(onBranch);
-  return {
-    notApplied: onBranch.filter((version) => !inDatabase.has(version)),
-    notOnBranch: [...inDatabase].filter((version) => !branch.has(version))
-  };
-}
-
 describe("every read tool, against real data", () => {
   it("answers without an error", async () => {
-    const drift = await schemaDrift();
-    if (drift.notApplied.length > 0 && process.env.CARBON_SWEEP_ALLOW_DRIFT !== "1") {
-      throw new Error(
-        `The stack has not applied ${drift.notApplied.length} migration(s) on this branch (${drift.notApplied.join(", ")}). Run pnpm db:migrate, or set CARBON_SWEEP_ALLOW_DRIFT=1 to sweep anyway.`
-      );
-    }
-    const { companyId, userId } = await target();
-    const company = await sql<{ companyGroupId: string }>`
-      select "companyGroupId" from "company" where "id" = ${companyId}`.execute(db);
-    const companyGroupId = company.rows[0]?.companyGroupId;
-    if (!companyGroupId) {
-      // Dispatching with no group would fail the group-scoped tools for a
-      // reason that is the setup's, and a person could then baseline them.
-      throw new Error(`Company ${companyId} not found, or it has no company group.`);
-    }
+    const drift = await refuseDrift(db);
+    const { companyId, userId } = await target(db);
+    const companyGroupId = await companyGroupOf(db, companyId);
 
     // The sweep user calls as an OAuth connector would: gated on their own permissions.
     const claims = await getUserClaims(userId, companyId);
@@ -326,20 +208,7 @@ describe("every read tool, against real data", () => {
 
     const reads = OPERATIONS.filter((tool) => tool.classification === "READ");
     const filtersByTool = publishedParamFilters();
-    const columns = await sql<{ table: string; column: string; type: string }>`
-      select table_name as "table", column_name as "column", udt_name as "type"
-      from information_schema.columns where table_schema = 'public'`.execute(db);
-    const tables = new Map<string, Set<string>>();
-    const types = new Map<string, string>();
-    for (const { table, column, type } of columns.rows) {
-      tables.set(table, (tables.get(table) ?? new Set()).add(column));
-      types.set(`${table}.${column}`, type);
-    }
-    const labels = await sql<{ type: string; label: string }>`
-      select distinct on (t.typname) t.typname as "type", e.enumlabel as "label"
-      from pg_enum e join pg_type t on t.oid = e.enumtypid
-      order by t.typname, e.enumsortorder`.execute(db);
-    const enums = new Map(labels.rows.map(({ type, label }) => [type, label]));
+    const { tables, types, enums } = await loadSchema(db);
     const knowledge = {
       consensus: consensusByName([...filtersByTool.values()].flat()),
       tables

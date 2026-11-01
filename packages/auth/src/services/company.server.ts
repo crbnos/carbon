@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { CarbonEdition, DOMAIN } from "@carbon/auth";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
 import { companyPlanCacheKey, Edition, isInternalEmail } from "@carbon/utils";
 import * as cookie from "cookie";
+import { CarbonEdition, DOMAIN } from "../config/env";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import { authCookieName, getCookieDomain } from "../utils/cookie";
 

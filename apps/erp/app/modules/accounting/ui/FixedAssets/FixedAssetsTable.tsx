@@ -28,6 +28,7 @@ import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { path } from "~/utils/path";
@@ -41,12 +42,19 @@ import FixedAssetStatus from "./FixedAssetStatus";
 type FixedAssetsTableProps = {
   data: FixedAssetListItem[];
   count: number;
+  infinite: InfiniteOptions;
   assetClasses: { id: string; name: string }[];
   primaryAction?: ReactNode;
 };
 
 const FixedAssetsTable = memo(
-  ({ data, count, assetClasses, primaryAction }: FixedAssetsTableProps) => {
+  ({
+    data,
+    count,
+    assetClasses,
+    primaryAction,
+    infinite
+  }: FixedAssetsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -218,6 +226,7 @@ const FixedAssetsTable = memo(
     return (
       <>
         <Table<FixedAssetListItem>
+          infinite={infinite}
           data={data}
           columns={columns}
           count={count}

@@ -220,9 +220,6 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
                 isChecked={(item) =>
                   !!selected?.includes(item.value) || item.value === value
                 }
-                isHelperPadded={(item) =>
-                  !selected?.includes(item.value) && item.value === value
-                }
                 onSelect={(item, { isCreateOption }) => {
                   if (isCreateOption) {
                     onCreateOption?.(search);

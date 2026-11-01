@@ -8,6 +8,7 @@
 
 import {
   needsPullFrom,
+  nonNettablePullFromLabel,
   summarizeList
 } from "@carbon/database/strict-backflush";
 
@@ -135,6 +136,47 @@ export function jobReleaseProblems(job: {
   ];
 }
 
+/**
+ * The purchase order each supplier's outside operations start on in a
+ * release, and the suppliers whose jobs must be refused because the user has
+ * to choose among their Draft POs.
+ *
+ * `chosen` is the Release dialog's choice: a supplier keeps its pick when it
+ * is one of its Drafts, else starts a new PO, and nobody is asked again.
+ * Without a choice, a supplier with Drafts must choose, unless `carried`
+ * names one of them: a background release runs in slices of 25 jobs, and
+ * `carried` (the map the previous slice returned) is the PO an earlier slice
+ * created, which the supplier keeps.
+ */
+export function startingPurchaseOrders(
+  suppliers: {
+    supplierId: string;
+    draftPurchaseOrders: { id: string }[];
+  }[],
+  {
+    chosen,
+    carried = {}
+  }: { chosen?: Record<string, string>; carried?: Record<string, string> } = {}
+): {
+  purchaseOrders: Record<string, string>;
+  suppliersToChoose: Set<string>;
+} {
+  const purchaseOrders: Record<string, string> = {};
+  const suppliersToChoose = new Set<string>();
+  for (const { supplierId, draftPurchaseOrders } of suppliers) {
+    const kept = (chosen ?? carried)[supplierId];
+    if (kept && draftPurchaseOrders.some((po) => po.id === kept)) {
+      purchaseOrders[supplierId] = kept;
+      continue;
+    }
+    purchaseOrders[supplierId] = "new";
+    if (!chosen && draftPurchaseOrders.length > 0) {
+      suppliersToChoose.add(supplierId);
+    }
+  }
+  return { purchaseOrders, suppliersToChoose };
+}
+
 export type StorageUnitLine = {
   id: string;
   description: string;
@@ -145,14 +187,24 @@ export type StorageUnitLine = {
     itemTrackingType: string | null;
     readableIdWithRevision: string | null;
   } | null;
+  storageUnit?: { name: string; effectiveNettable: boolean } | null;
 };
 
+/**
+ * The parts with no Pull From under strict backflush. A line whose bin is
+ * non-nettable (quarantine) counts too, named with its bin: the backflush
+ * would consume stock that is on hold.
+ */
 export function materialsWithoutStorageUnit(
   lines: StorageUnitLine[]
 ): { id: string; description: string }[] {
   const byDescription = new Map<string, { id: string; description: string }>();
   for (const line of lines) {
-    if (line.storageUnitId) continue;
+    const quarantine =
+      line.storageUnitId && line.storageUnit?.effectiveNettable === false
+        ? line.storageUnit.name
+        : null;
+    if (line.storageUnitId && !quarantine) continue;
     if (
       !needsPullFrom({
         methodType: line.methodType,
@@ -161,7 +213,10 @@ export function materialsWithoutStorageUnit(
       })
     )
       continue;
-    const description = line.item?.readableIdWithRevision || line.description;
+    const part = line.item?.readableIdWithRevision || line.description;
+    const description = quarantine
+      ? nonNettablePullFromLabel(part, quarantine)
+      : part;
     if (!byDescription.has(description))
       byDescription.set(description, { id: line.id, description });
   }

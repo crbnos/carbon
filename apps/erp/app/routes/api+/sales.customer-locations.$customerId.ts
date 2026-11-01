@@ -28,7 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       locations,
       await flash(
         request,
-        error(locations.error, "Failed to get supplier locations")
+        error(locations.error, "Failed to get customer locations")
       )
     );
   }

@@ -28,7 +28,7 @@ MRP recalculates on its own every 3 hours. To run it once a day instead, go to *
 | Production demand | Job material still to issue, offset by lead time. |
 | Forecast demand | Manually entered demand projections. |
 | Open supply | Open jobs and open purchase-order lines. |
-| On hand | The item ledger balance. |
+| On hand | The item ledger balance, without rejected lots and without stock in <Term id="non-nettable">non-nettable</Term> storage units. |
 
 ## Reorder policy
 
@@ -44,7 +44,7 @@ An item's **<Term>replenishment system</Term>** determines where its shortage ap
 
 ## Reading the grid
 
-Each row is an item at the location. **Stock Availability** draws the projected stock for every planning week as one strip; the CSV export keeps a column per week. **1st Negative On Hand** is the first week the projection goes below zero. **Latest Order Date** is the date you must order by to receive in time (the required date less the lead time); it turns red once it has passed. Open a row to see the order drawer.
+Each row is an item at the location. **Stock Availability** draws the projected stock for every planning week as one strip; the CSV export keeps a column per week. Weeks are numbered from today ("Present Week", "Week 2", …); to number them by calendar week of the year instead ("Week 44", "Week 45", …), turn on **Settings → Planning → Calendar Weeks**. That setting also numbers the weeks in Demand Forecasts. **1st Negative On Hand** is the first week the projection goes below zero. **Latest Order Date** is the date you must order by to receive in time (the required date less the lead time); it turns red once it has passed. Open a row to see the order drawer.
 
 ## Planning actions
 

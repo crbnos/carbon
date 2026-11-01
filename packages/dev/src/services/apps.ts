@@ -4,9 +4,10 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
+import { delimiter } from "node:path";
 import { parse } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
-import { join } from "pathe";
+import { dirname, join } from "pathe";
 import pc from "picocolors";
 import { isAtLeastAsNew, onShutdown, readLines } from "../helpers.js";
 import { type PortMap, sameWorktreePath } from "../worktree.js";
@@ -235,33 +236,99 @@ export function spawnApps(opts: {
 
 const ASSEMBLER_PREFIX = pc.yellow(pc.bold("asm | "));
 
-/**
- * Fail fast (before spawning) when the assembler is selected but its one-time
- * native OCCT dependency isn't built. `cargo run --release` would otherwise
- * either fail deep in a cc/link error or trigger a ~30-min build — neither is
- * what a plain `crbn up` should do. We never auto-build it: the user runs the
- * OCCT script once, then the assembler is available.
- */
-/** Non-throwing check: is the assembler's one-time native OCCT build present? */
-export function assemblerDepsBuilt(): boolean {
-  const prefix =
+/** Where the one-time OCCT build lives: per machine, shared by every worktree. */
+function occtPrefix(): string {
+  return (
     process.env.OCCT_PREFIX ||
-    join(homedir(), ".cache", "carbon-occt", "8.0.0-p1");
-  return existsSync(prefix);
+    join(homedir(), ".cache", "carbon-occt", "8.0.0-p1")
+  );
 }
 
-export function assertAssemblerDepsBuilt(): void {
-  if (!assemblerDepsBuilt()) {
-    const prefix =
-      process.env.OCCT_PREFIX ||
-      join(homedir(), ".cache", "carbon-occt", "8.0.0-p1");
-    throw new Error(
-      `Assembler selected, but its OCCT dependency isn't built.\n` +
-        `  expected: ${prefix}\n` +
-        `  build it once (~15-30 min): apps/assembler/scripts/build-occt.sh\n` +
-        `  then re-run, or run without the assembler app.`
-    );
+/**
+ * The cargo the assembler runs with: the first on PATH, else rustup's default
+ * home — a shell started before Rust was installed has not sourced
+ * `~/.cargo/env` yet, and that must not read as "Rust is missing".
+ */
+export function cargoBinary(
+  env: NodeJS.ProcessEnv = process.env
+): string | null {
+  for (const dir of (env.PATH ?? "").split(delimiter)) {
+    if (dir && existsSync(join(dir, "cargo"))) return join(dir, "cargo");
   }
+  const fallback = join(
+    env.CARGO_HOME || join(homedir(), ".cargo"),
+    "bin",
+    "cargo"
+  );
+  return existsSync(fallback) ? fallback : null;
+}
+
+/**
+ * The FCL headers the `collision` crate compiles against, at the prefix its
+ * build.rs resolves (`FCL_PREFIX`, else Homebrew's `opt` layout on macOS, else
+ * `/usr`). Missing, the assembler build fails minutes in on a C++ include.
+ */
+function fclInstalled(env: NodeJS.ProcessEnv = process.env): boolean {
+  const prefix =
+    env.FCL_PREFIX ||
+    (process.platform === "darwin"
+      ? process.arch === "arm64"
+        ? "/opt/homebrew/opt/fcl"
+        : "/usr/local/opt/fcl"
+      : "/usr");
+  return existsSync(join(prefix, "include", "fcl"));
+}
+
+/**
+ * What the assembler still needs on this machine, as the message that says how
+ * to install it, or null when Rust, FCL and the OCCT build are all present.
+ * `crbn up` checks it before booting anything, because `cargo run --release`
+ * would otherwise fail minutes in on a missing tool, header or library. It
+ * never installs or builds them itself.
+ */
+export function assemblerMissingPrerequisite(): string | null {
+  const instead = "  then re-run, or run without the assembler app.";
+  if (cargoBinary() === null) {
+    return [
+      "Assembler selected, but Rust (cargo) isn't installed.",
+      "  install it once per machine:",
+      "    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
+      instead
+    ].join("\n");
+  }
+  if (!fclInstalled()) {
+    return [
+      "Assembler selected, but the FCL collision library isn't installed.",
+      "  install it once per machine (pulls libccd, eigen, octomap):",
+      "    brew install fcl            # Linux: libfcl-dev, or set FCL_PREFIX",
+      instead
+    ].join("\n");
+  }
+  if (!existsSync(occtPrefix())) {
+    return [
+      "Assembler selected, but its OCCT dependency isn't built.",
+      `  expected: ${occtPrefix()}`,
+      "  build it once per machine (~15-30 min, every worktree shares it):",
+      "    brew install cmake ninja   # once; the script needs cmake",
+      "    apps/assembler/scripts/build-occt.sh",
+      instead
+    ].join("\n");
+  }
+  return null;
+}
+
+/**
+ * Cargo's build directory for the assembler. Every worktree builds the same
+ * crates, so one shared directory turns each new worktree's first
+ * `cargo run --release` (minutes, several GB) into an incremental build of
+ * what its branch changed. Cargo locks the directory, so two worktrees
+ * building at once wait for each other rather than corrupt it. A
+ * `CARGO_TARGET_DIR` the developer set (shell or `.env*`) wins.
+ */
+export function assemblerCargoTargetDir(env: NodeJS.ProcessEnv): string {
+  return (
+    env.CARGO_TARGET_DIR || join(homedir(), ".cache", "carbon-cargo-target")
+  );
 }
 
 const auxChildren = new Set<ExecaChildProcess>();
@@ -301,9 +368,11 @@ export function spawnAssembler(opts: {
 
   // `cargo run --release` compiles-if-stale then runs, so a Rust change is
   // picked up on the next `crbn up` (the CLI does not watch/rebuild otherwise).
-  // First build is slow (OCCT/FCL); incremental is quick. Run from the workspace
-  // root so cargo resolves the `assembler` package.
-  const file = "cargo";
+  // First build is slow (OCCT/FCL); incremental is quick, and the build
+  // directory is shared across worktrees (`assemblerCargoTargetDir`). Run from
+  // the workspace root so cargo resolves the `assembler` package.
+  const cargo = cargoBinary();
+  const file = cargo ?? "cargo";
   const args = ["run", "--release", "-p", "assembler"];
   const cwd = root;
   // Merge the worktree .env* stack so the assembler shares the same REDIS_URL as
@@ -313,7 +382,12 @@ export function spawnAssembler(opts: {
   // portless's self-signed CA needs no extra trust wiring. Passing
   // REDIS_URL points the service at the stateless Redis-backed job +
   // result store; unset (no worktree REDIS_URL) => in-memory, single-process.
+  // Put cargo's own directory first on PATH, so rustc and the rustup proxies
+  // resolve even when cargo was found only in ~/.cargo/bin.
+  const pathEnv = appEnv.PATH ?? process.env.PATH ?? "";
   const extraEnv: NodeJS.ProcessEnv = {
+    ...(cargo ? { PATH: `${dirname(cargo)}${delimiter}${pathEnv}` } : {}),
+    CARGO_TARGET_DIR: assemblerCargoTargetDir({ ...process.env, ...appEnv }),
     PORT: String(port),
     ASSEMBLER_SERVICE_API_KEY: "dev-local-key",
     ASSEMBLER_DEV_MODE: "true",

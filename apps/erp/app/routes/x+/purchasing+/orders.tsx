@@ -2,19 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getPurchaseOrders } from "~/modules/purchasing/purchasing.service";
 import { PurchaseOrdersTable } from "~/modules/purchasing/ui/PurchaseOrder";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { purchaseOrdersList } from "~/utils/list-registry/purchasing.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   realtime: ["purchaseOrder"],
@@ -23,52 +19,26 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing",
-    bypassRls: true
+  return loadListPage(request, purchaseOrdersList, {
+    dataKey: "purchasOrders",
+    bypassRls: true,
+    onError: {
+      redirectTo: path.to.authenticatedRoot,
+      message: "Failed to fetch purchase orders"
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const status = searchParams.get("status");
-  const supplierId = searchParams.get("supplierId");
-
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const purchasOrders = await getPurchaseOrders(client, companyId, {
-    search,
-    status,
-    supplierId,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
-
-  if (purchasOrders.error) {
-    redirect(
-      path.to.authenticatedRoot,
-      await flash(
-        request,
-        error(purchasOrders.error, "Failed to fetch purchase orders")
-      )
-    );
-  }
-
-  return {
-    count: purchasOrders.count ?? 0,
-    purchasOrders: purchasOrders.data ?? []
-  };
 }
 
 export default function PurchaseOrdersSearchRoute() {
-  const { count, purchasOrders } = useLoaderData<typeof loader>();
+  const { count, purchasOrders, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <PurchaseOrdersTable data={purchasOrders} count={count} />
+      <PurchaseOrdersTable
+        data={purchasOrders}
+        count={count}
+        infinite={infinite}
+      />
       <RecordOutlet />
     </VStack>
   );

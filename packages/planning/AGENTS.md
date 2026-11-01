@@ -45,6 +45,9 @@ Single subpath `@carbon/planning` (`./src/index.ts`):
 | `runLocationSchedule` / `runExpediteWhatIf` | Finite scheduling — regenerate a whole location, or a simulate-only expedite what-if (`src/scheduling/run-schedule.ts`) |
 | `runQuoteLeadTimeWhatIf(params)` | Capable-to-promise for a quote line — drives the pure `WorkCenterSelector` with synthetic ops (queued vs front-of-queue contexts) per quantity, returns `QuoteLeadTimeForecast`; persists nothing (`src/scheduling/quote-lead-time.ts`) |
 | `resolveLocationWindows` / `resolveWorkCenterWindows` / `subtractIntervals` | Machine/work-center availability window resolvers (`src/scheduling/`) |
+| `closeHolidays` / `downtimeOutages` | The engine's holiday closing and open-maintenance outages, so the ERP's Capacity and Coverage views read the same working time (`src/scheduling/machine-availability.ts`) |
+| `remainingWorkHours` | The hours an open operation still needs, as the engine counts them: setup + max(labor, machine), netted by quantity complete, setup dropped once it has a production event (`src/scheduling/duration-calculator.ts`) |
+| `SCHEDULING_HORIZON_DAYS` | How far ahead the engine places work (`src/scheduling/finite-context.ts`) |
 | types (`LadderShiftRow`, `MrpPayload`, `MrpResult`, `LocationScheduleResult`, `ExpediteWhatIfResult`, `NewlyLateJob`, …) | Engine type surface |
 
 Internal to the engine, not exported: `generatePlanningActions(client, db, { companyId, userId })`

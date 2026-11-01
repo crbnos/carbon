@@ -3,12 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
 import { scrapTrackedEntityValidator } from "~/services/models";
-import { getTrackedEntity } from "~/services/operations.service";
+import {
+  abilityBlockRefusal,
+  getTrackedEntity
+} from "~/services/operations.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
@@ -27,6 +31,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  const serviceRole = await getCarbonServiceRole();
+  const material = await serviceRole
+    .from("jobMaterial")
+    .select("jobOperationId")
+    .eq("id", materialId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  const refusal = material.data?.jobOperationId
+    ? await abilityBlockRefusal(serviceRole, {
+        operationId: material.data.jobOperationId,
+        employeeId: userId,
+        companyId
+      })
+    : null;
+  if (refusal) {
+    return data({ success: false, message: refusal }, { status: 403 });
   }
 
   const trackedEntity = await getTrackedEntity(client, trackedEntityId);

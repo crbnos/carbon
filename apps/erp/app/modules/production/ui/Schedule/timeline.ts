@@ -32,6 +32,11 @@ export type TimelineNodeDetail = {
    * a "where it would run" marker, not a real booking, and it holds no capacity.
    */
   unschedulable?: boolean;
+  /**
+   * For an unschedulable operation whose process needs a qualified operator:
+   * who is qualified, and the stations the manning board has them at.
+   */
+  qualifiedPeople?: { name: string; stations: string[] }[];
   /** Why the row starts when it does (queue, predecessor, operator) */
   scheduleNote?: string | null;
   /** Time spent waiting for capacity before the start */
@@ -47,6 +52,9 @@ export type TimelineNodeDetail = {
    */
   jobId?: string;
   jobReadableId?: string;
+  /** The operation and resource a reservation holds — for the board's counts. */
+  operationId?: string;
+  resourceId?: string;
   /** The operation's own description — shown as a secondary "Operation" row. */
   operationDescription?: string | null;
   /**

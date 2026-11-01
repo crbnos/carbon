@@ -42,7 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!dimensionId) {
     throw redirect(
       `${path.to.dimensions}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get a dimension id"))
+      await flash(request, error(null, "Failed to get a dimension id"))
     );
   }
 

@@ -10,7 +10,7 @@ import {
   Select,
   ValidatedForm
 } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -85,9 +85,7 @@ const JobProperties = () => {
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   const [type, setType] = useState<MethodItemType>(
@@ -537,10 +535,8 @@ const JobProperties = () => {
           onChange={(value) => {
             const next = value?.value ?? "";
             setDeadlineType(next);
+            // One post: the server clears the date a type takes none of.
             onUpdate("deadlineType", next || null);
-            if (!deadlineRequiresDueDate(next)) {
-              onUpdate("dueDate", null);
-            }
           }}
         />
       </ValidatedForm>

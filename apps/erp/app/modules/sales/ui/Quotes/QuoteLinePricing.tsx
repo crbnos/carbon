@@ -34,6 +34,7 @@ import {
   TooltipTrigger,
   Tr,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, round } from "@carbon/utils";
@@ -271,7 +272,7 @@ const QuoteLinePricing = ({
         logger.error("Failed to update quote line pricing", {
           error: costUpdate.error
         });
-        toast.error(t`Failed to update quote line`);
+        toastError(t`Failed to update quote line`, costUpdate.error);
       }
     },
     [additionalCharges, lineId, carbon, t]
@@ -306,7 +307,7 @@ const QuoteLinePricing = ({
         logger.error("Failed to update quote line pricing", {
           error: costUpdate.error
         });
-        toast.error("Failed to update quote line");
+        toastError("Failed to update quote line", costUpdate.error);
       }
     },
     [additionalCharges, carbon, lineId]
@@ -336,7 +337,7 @@ const QuoteLinePricing = ({
         logger.error("Failed to update quote line pricing", {
           error: costUpdate.error
         });
-        toast.error("Failed to update quote line");
+        toastError("Failed to update quote line", costUpdate.error);
       }
     },
     [additionalCharges, lineId, carbon]
@@ -532,7 +533,7 @@ const QuoteLinePricing = ({
         logger.error("Failed to update quote line pricing", {
           error: costUpdate.error
         });
-        toast.error(t`Failed to update item cost`);
+        toastError(t`Failed to update item cost`, costUpdate.error);
       }
     },
     [carbon, line.itemId, t]
@@ -591,7 +592,7 @@ const QuoteLinePricing = ({
         logger.error("Failed to update quote line pricing", {
           error: priceUpdate.error
         });
-        toast.error(t`Failed to update category markups`);
+        toastError(t`Failed to update category markups`, priceUpdate.error);
       }
     },
     [
@@ -671,7 +672,7 @@ const QuoteLinePricing = ({
           logger.error("Failed to update quote line pricing", {
             error: update.error
           });
-          toast.error("Failed to update quote line");
+          toastError("Failed to update quote line", update.error);
         }
       } else {
         const insert = await carbon?.from("quoteLinePrice").insert({
@@ -684,7 +685,7 @@ const QuoteLinePricing = ({
           logger.error("Failed to update quote line pricing", {
             error: insert.error
           });
-          toast.error(t`Failed to insert quote line`);
+          toastError(t`Failed to insert quote line`, insert.error);
         }
       }
     },

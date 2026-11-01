@@ -4,6 +4,7 @@
 
 import redis from "./client";
 
+export { redisFlagsStore } from "./flags-store";
 export type { LeaseAcquisition } from "./lease";
 export { acquireLease, releaseLease, renewLease, withLease } from "./lease";
 export type {
