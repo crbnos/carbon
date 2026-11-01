@@ -4367,6 +4367,9 @@ msgstr "배치 번호"
 msgid "Batch Number"
 msgstr "배치 번호"
 
+msgid "Batch or Serial Number"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "배치 속성"
 
