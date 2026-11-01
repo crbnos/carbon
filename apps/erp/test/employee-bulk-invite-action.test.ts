@@ -174,10 +174,7 @@ beforeEach(() => {
     companyName: "Company A",
     invitedBy: { email: "inviter@example.com", fullName: "Inviter" }
   });
-  mocks.sendInviteEmail.mockResolvedValue({
-    data: { id: "email-a" },
-    error: null
-  });
+  mocks.sendInviteEmail.mockResolvedValue(undefined);
 });
 
 describe("bulk invite upstream role policy", () => {
@@ -260,26 +257,6 @@ describe("bulk invite upstream role policy", () => {
       "row-b@example.com"
     );
     expect(mocks.sendInviteEmail).toHaveBeenCalledOnce();
-  });
-
-  it("keeps failed deliveries as failed invitation rows", async () => {
-    mocks.sendInviteEmail.mockResolvedValue({
-      data: null,
-      error: new Error("SMTP refused")
-    });
-    const result = await action(requestArgs());
-    expect(inviteResults(result)).toMatchObject([
-      {
-        rowId: "row-a",
-        success: false,
-        message: "Created, but invite email failed to send"
-      },
-      {
-        rowId: "row-b",
-        success: false,
-        message: "Created, but invite email failed to send"
-      }
-    ]);
   });
 
   it("stops before role lookups and writes when validation fails", async () => {

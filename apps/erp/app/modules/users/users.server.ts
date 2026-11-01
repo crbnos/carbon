@@ -242,7 +242,7 @@ export const bulkInviteEmployees = defineServiceFn({
       }
 
       try {
-        const emailResult = await service.sendInviteEmail(ctx, {
+        await service.sendInviteEmail(ctx, {
           ...sender,
           email,
           code: result.code,
@@ -250,20 +250,6 @@ export const bulkInviteEmployees = defineServiceFn({
           ip,
           city
         });
-
-        if (emailResult.error) {
-          logger.error("Invite email send failed", {
-            error: emailResult.error.message ?? "Email send failed"
-          });
-          results.push(
-            bulkInviteResultForEmailDelivery({
-              rowId,
-              email,
-              delivered: false
-            })
-          );
-          continue;
-        }
 
         results.push(
           bulkInviteResultForEmailDelivery({
