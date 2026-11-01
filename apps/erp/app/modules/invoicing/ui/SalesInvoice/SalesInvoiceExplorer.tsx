@@ -253,6 +253,7 @@ function SalesInvoiceLineItem({
   const location = useOptimisticLocation();
   const rentalLineTypeLabel = useRentalLineTypeLabel();
   const isRental = line.invoiceLineType === "Rental";
+  const isLabor = line.invoiceLineType === "Labor";
 
   const isSelected =
     location.pathname === path.to.salesInvoiceLine(invoiceId, line.id!);
@@ -261,7 +262,7 @@ function SalesInvoiceLineItem({
     line.invoiceLineType === "Fixed Asset"
       ? (line as any).assetName || line.description
       : distinctItemText(
-          getItemReadableId(items, line.itemId),
+          isLabor ? t`Labor` : getItemReadableId(items, line.itemId),
           line.description
         );
 
@@ -291,7 +292,9 @@ function SalesInvoiceLineItem({
                   ? rentalLineTypeLabel(line.rentalLineType)
                   : line.invoiceLineType === "Fixed Asset"
                     ? (line as any).assetReadableId || "Fixed Asset"
-                    : (getItemReadableId(items, line.itemId) ?? "")}
+                    : isLabor
+                      ? t`Labor`
+                      : (getItemReadableId(items, line.itemId) ?? "")}
               </span>
               {secondaryText && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">

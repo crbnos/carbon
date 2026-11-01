@@ -1042,6 +1042,9 @@ msgstr "人工类别"
 msgid "Labor ended"
 msgstr "人工结束"
 
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "人工费率未设置。在设置之前，无法记录或计费时间。"
+
 msgid "Labor until <0/>"
 msgstr "人工直到 <0/>"
 
@@ -2068,6 +2071,9 @@ msgstr "会话已锁定"
 
 msgid "Set Clock Out"
 msgstr "设置收工"
+
+msgid "Set rates"
+msgstr "设置费率"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "设置您停止工作的时间，或确认您仍在工作。"

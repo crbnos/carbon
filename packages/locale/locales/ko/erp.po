@@ -784,6 +784,9 @@ msgstr "{hour} h"
 msgid "{hours} h"
 msgstr "{hours}시간"
 
+msgid "{hours} h × {rate}"
+msgstr "{hours}시간 × {rate}"
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# 부품이 생성됨} other {# 부품이 생성됨}}"
 
@@ -1334,6 +1337,9 @@ msgstr "0/100, 50/50 또는 완료율과 같은 적립 가치 기법이 있는 �
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "수신한 상품이지만 아직 청구되지 않은 상품의 가치를 보유하는 정산 계정이며, 공급업체 송장이 이를 정산합니다."
 
+msgid "A clock is still running on this job."
+msgstr "이 작업 지시에 시계가 계속 실행 중입니다."
+
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "마감된 프로젝트는 더 이상 비용이 추가되지 않으며 다시 열 수 없습니다. 모든 발주서 라인과 작업 지시가 완료된 경우에만 마감하세요."
 
@@ -1462,6 +1468,9 @@ msgstr "할인은 특정 날짜에 종료될 수 있으며, 라인은 이후 정
 
 msgid "A draft run must be posted or deleted first."
 msgstr "초안 실행을 먼저 전기하거나 삭제해야 합니다."
+
+msgid "A draft sales invoice is created for the job, and the job becomes Invoiced."
+msgstr "작업 지시에 대한 초안 매출 송장이 생성되고 작업 지시가 송장 발행됨이 됩니다."
 
 msgid "A draft set of plan changes with a title and a reason. The current plan does not change until the request is approved, and then it applies whole, in one step."
 msgstr "제목과 사유가 있는 계획 변경 초안 집합입니다. 현재 계획은 요청이 승인될 때까지 변경되지 않으며, 승인되면 전체가 한 번에 적용됩니다."
@@ -1603,6 +1612,9 @@ msgstr "각 공급업체마다 새로운 발주서가 생성됩니다. 또는 �
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "현재 리비전을 복사하여 새 리비전이 생성됩니다"
+
+msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
+msgstr "새 서비스 작업 지시는 청구 요금을 복사합니다. 각 시간 항목은 원가 요금으로 그 원가를 전기합니다."
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "현재 사이즈를 복사하여 새 사이즈가 생성됩니다"
@@ -4497,6 +4509,9 @@ msgstr "연관"
 msgid "Assumptions"
 msgstr "가정사항"
 
+msgid "At {billRate} per hour (the job's bill rate)"
+msgstr "시간당 {billRate} (작업 지시의 청구 요금)"
+
 msgid "At {locationName}"
 msgstr "{locationName}에서"
 
@@ -5000,6 +5015,9 @@ msgstr "청구 요금"
 
 msgid "Bill Rate"
 msgstr "청구 요율"
+
+msgid "Bill Rate (per hour)"
+msgstr "청구 요금 (시간당)"
 
 msgid "Bill To"
 msgstr "청구 대상"
@@ -6547,6 +6565,10 @@ msgstr "호환성 규칙"
 msgid "Complete"
 msgstr "완료"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Complete {0}"
+msgstr "{0} 완료 처리"
+
 #. placeholder {0}: getCompleteQuantity(operation)
 #. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
 msgid "Complete {0}/{1}"
@@ -7784,6 +7806,9 @@ msgstr "요소 생성"
 msgid "Create Forecast"
 msgstr "예측 생성"
 
+msgid "Create Invoice"
+msgstr "송장 생성"
+
 msgid "Create Issue"
 msgstr "이슈 생성"
 
@@ -8700,6 +8725,9 @@ msgstr "기본 승인자"
 
 msgid "Default Attachments"
 msgstr "기본 첨부 파일"
+
+msgid "Default bill rate per hour"
+msgstr "시간당 기본 청구 요금"
 
 msgid "Default cash account for transactions in non-base currencies."
 msgstr "기준 통화 이외 통화 거래에 사용할 기본 현금 계정입니다."
@@ -12315,6 +12343,9 @@ msgstr "배치 크기가 표준과 다를 때 고정 원가 상각 차이"
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "회계 기간이 게시되거나 종료되면 고정됩니다. 변경하려면 모든 공개 기간을 삭제하십시오."
 
+msgid "Fixed price"
+msgstr "고정 가격"
+
 msgid "Fixed Price"
 msgstr "고정 가격"
 
@@ -13176,9 +13207,6 @@ msgstr "지급된 시간"
 
 msgid "Hours per Week"
 msgstr "주당 시간"
-
-msgid "Hours, for a labor item"
-msgstr "노무 항목의 시간"
 
 msgid "Hours/100 Pieces"
 msgstr "시간/100개"
@@ -14057,6 +14085,10 @@ msgstr "초대됨"
 msgid "Invoice"
 msgstr "송장"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Invoice {0}"
+msgstr "{0} 송장 발행"
+
 msgid "Invoice {invoiceDate}"
 msgstr "송장 {invoiceDate}"
 
@@ -14695,6 +14727,9 @@ msgstr "노무 카테고리"
 msgid "Labor category: {0}"
 msgstr "노무 카테고리: {0}"
 
+msgid "Labor cost per hour"
+msgstr "시간당 노무 원가"
+
 msgid "Labor Costs"
 msgstr "노무 비용"
 
@@ -14707,9 +14742,6 @@ msgstr "노무 종료"
 msgid "Labor Hours"
 msgstr "노무 시간"
 
-msgid "Labor Item"
-msgstr "노무 항목"
-
 msgid "Labor rate"
 msgstr "노무 요금"
 
@@ -14719,8 +14751,14 @@ msgstr "노무 단가"
 msgid "Labor Rate (Hourly)"
 msgstr "노무 단가(시간당)"
 
+msgid "Labor rates"
+msgstr "노무 요금"
+
 msgid "Labor Rates"
 msgstr "노무 요율"
+
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "노무 요금이 설정되지 않았습니다. 설정될 때까지 시간을 기록하거나 청구할 수 없습니다."
 
 msgid "Labor time"
 msgstr "노무 시간"
@@ -22249,6 +22287,9 @@ msgstr "이 풀에서 계정 {0}을(를) 제거하시겠습니까? 이미 계산
 msgid "Remove the received serial and batch numbers from stock"
 msgstr "수령한 일련번호 및 배치 번호를 재고에서 제거"
 
+msgid "Remove the time entries and return the parts first."
+msgstr "먼저 시간 항목을 제거하고 부품을 반환합니다."
+
 msgid "Remove this item"
 msgstr "이 항목 제거"
 
@@ -22925,6 +22966,9 @@ msgstr "이미 임차된 단위의 임차료와 같이 실현되었지만 아직
 
 msgid "Revenue End"
 msgstr "매출 종료"
+
+msgid "Revenue from service jobs"
+msgstr "서비스 작업 지시의 매출"
 
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "판매형 리스 개시 시 렌탈료의 현재가로 대변 기입되는 매출 계정과목."
@@ -24401,15 +24445,6 @@ msgstr "서비스 작업 지시"
 msgid "Service Jobs"
 msgstr "서비스 작업 지시"
 
-msgid "Service Labor"
-msgstr "서비스 노무"
-
-msgid "Service Labor Item"
-msgstr "서비스 노무 품목"
-
-msgid "Service labor item updated"
-msgstr "서비스 노무 품목이 업데이트되었습니다"
-
 msgid "Service lines"
 msgstr "서비스 라인"
 
@@ -24418,6 +24453,12 @@ msgstr "서비스 기간"
 
 msgid "Service Provider Details"
 msgstr "서비스 공급자 세부 정보"
+
+msgid "Service Revenue"
+msgstr "서비스 매출"
+
+msgid "Service settings updated"
+msgstr "서비스 설정이 업데이트되었습니다"
 
 msgid "Service start"
 msgstr "서비스 시작일"
@@ -24497,6 +24538,9 @@ msgstr "요율 설정"
 msgid "Set Rate, FY{fiscalYear}"
 msgstr "요율 설정, FY{fiscalYear}"
 
+msgid "Set rates"
+msgstr "요금 설정"
+
 msgid "Set terms"
 msgstr "약관 설정"
 
@@ -24511,6 +24555,9 @@ msgstr "회계 처리를 보려면 시작 날짜, 종료 날짜 및 지불 조�
 
 msgid "Set the fiscal year settings."
 msgstr "회계연도를 설정하세요."
+
+msgid "Set the job's bill rate first."
+msgstr "먼저 작업 지시의 청구 요금을 설정합니다."
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
 msgstr "이관 정산 계정을 그룹이 아닌 활성 자본 계정으로 설정하세요."
@@ -25567,6 +25614,9 @@ msgstr "예비용으로만 재고를 보유합니다."
 
 msgid "Stockout"
 msgstr "재고 부족"
+
+msgid "Stop clock and complete"
+msgstr "시계 중지 및 완료 처리"
 
 msgid "Stop raising purchase orders after this date"
 msgstr "이 날짜 이후로 발주서를 발행하지 마십시오"
@@ -26655,6 +26705,9 @@ msgstr "배치가 {0}이며 계획됨이 아닙니다"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "배치는 가장 급한 항목의 일정에 맞춰 실행되며 나머지는 앞당겨집니다"
 
+msgid "The bill rate is locked: the estimate was sent to the customer."
+msgstr "청구 요금이 잠겨 있습니다: 견적이 고객에게 전송되었습니다."
+
 #. placeholder {0}: nameOf(gap.lineId)
 msgid "The billing element of {0} is not marked as a billing element."
 msgstr "{0}의 청구 요소가 청구 요소로 표시되어 있지 않습니다."
@@ -27126,6 +27179,9 @@ msgstr "품목의 임차료"
 
 msgid "The job closes without work. A job with time entries or issued parts cannot be cancelled."
 msgstr "작업 지시가 시간 항목 없이 마감됩니다. 시간 항목이나 부품 지급이 있는 작업 지시는 취소될 수 없습니다."
+
+msgid "The job closes. Its time and parts cannot change until it is reopened."
+msgstr "작업 지시가 마감됩니다. 다시 열릴 때까지 시간과 부품을 변경할 수 없습니다."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "그 날에 마감될 작업 지시 시간(작업이 실행되는 날이 아닌 마감일 기준)이며, 기한 초과 작업은 기한 초과 섹션에 표시됩니다."
@@ -27641,9 +27697,6 @@ msgstr "판매 대신 임대 목적으로 구축하거나 자본화할 개 단�
 msgid "the selected class"
 msgstr "선택한 클래스"
 
-msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
-msgstr "서비스 주문, 견적 및 송장에서 시간 가격을 정하는 판매 가격의 서비스 품목입니다."
-
 msgid "The service, and how it reads on the invoice."
 msgstr "서비스 및 송장에 표시되는 방식"
 
@@ -28080,6 +28133,9 @@ msgstr "이 파일은 더 이상 사용할 수 없거나 다운로드할 권한�
 
 msgid "This Fiscal Year"
 msgstr "이번 회계연도"
+
+msgid "This Fixed Price job has no price."
+msgstr "이 고정 가격 작업 지시에는 가격이 없습니다."
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "이메일 도메인이 아래에서 확인될 때까지 이는 효과가 없습니다."

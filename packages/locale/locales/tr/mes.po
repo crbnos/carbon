@@ -1042,6 +1042,9 @@ msgstr "İşçilik kategorisi"
 msgid "Labor ended"
 msgstr "İşçilik Sona Erdi"
 
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "İşçilik oranları ayarlanmamıştır. Zaman ayarlanana kadar kaydedilemez veya faturalandırılamaz."
+
 msgid "Labor until <0/>"
 msgstr "İşçilik <0/> kadar"
 
@@ -2068,6 +2071,9 @@ msgstr "Oturum kilitlendi"
 
 msgid "Set Clock Out"
 msgstr "İş bitişini ayarla"
+
+msgid "Set rates"
+msgstr "Oranları Ayarla"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Çalışmayı bitirdiğiniz zamanı ayarlayın veya hala çalışmakta olduğunuzu onaylayın."

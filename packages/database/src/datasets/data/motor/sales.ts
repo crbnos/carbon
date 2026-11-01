@@ -1106,7 +1106,7 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
       status: "Sent",
       sentWorkdaysBack: 3,
       lines: [
-        { item: "Service Technician", quantity: 6, unitPrice: 135 },
+        { quantity: 6, unitPrice: 135 },
         {
           item: "Dynamometer Certification",
           description: "Dynamometer run and certificate after the repair",
@@ -1200,7 +1200,7 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
       respondedWorkdaysBack: 15,
       respondedBy: "Wes Talbot",
       lines: [
-        { item: "Service Technician", quantity: 8, unitPrice: 135 },
+        { quantity: 8, unitPrice: 135 },
         {
           item: "Dynamometer Certification",
           description: "Dynamometer run and certificate after the repair",
@@ -1284,6 +1284,6 @@ export const motorSales: SalesData = {
     }
   ],
   customerAssets: CUSTOMER_ASSETS,
-  serviceLaborItem: "Service Technician",
+  serviceLaborRates: { cost: 58, bill: 135 },
   serviceJobs: SERVICE_JOBS
 };

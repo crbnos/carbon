@@ -357,12 +357,20 @@ function ServiceJobExplorerChildItem({
   const permissions = usePermissions();
   const formatQuantity = useQuantityFormatter();
   const formatMoney = useCurrencyFormatter();
+  const formatRate = useCurrencyFormatter({ rate: true });
   const editLink = getEditLink(jobId, child);
   const link = editLink ?? getItemLink(child, items);
   const canDelete = isEditable && permissions.can("delete", "service");
 
   const amount = getChildAmount(child);
   const costSource = getCostSource(child);
+  // A Labor estimate line: hours at the job's bill rate.
+  let laborRate: string | null = null;
+  if (child.type === "estimate" && !child.itemId) {
+    const hours = formatQuantity(child.quantity);
+    const rate = formatRate.format(child.unitPrice);
+    laborRate = t`${hours} h × ${rate}`;
+  }
 
   const content = (
     <div className="flex pr-7 h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-2 text-sm hover:bg-accent w-full font-medium whitespace-nowrap">
@@ -379,6 +387,11 @@ function ServiceJobExplorerChildItem({
       {child.type === "item" && child.lineType === "Part" && (
         <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
           {formatQuantity(child.quantity ?? 0)}
+        </span>
+      )}
+      {laborRate && (
+        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+          {laborRate}
         </span>
       )}
       {amount !== null && (
@@ -502,7 +515,10 @@ function getChildIcon(child: ServiceJobExplorerChild) {
   }
 }
 
-/** A row's text: the item, or "Name · Date · Hours" for a time entry. */
+/**
+ * A row's text: the item, "Labor" for an estimate line with no item, or
+ * "Name · Date · Hours" for a time entry.
+ */
 function useChildLabel() {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
@@ -511,7 +527,9 @@ function useChildLabel() {
   return (child: ServiceJobExplorerChild): string => {
     switch (child.type) {
       case "estimate":
-        return child.description || child.item?.name || child.itemId;
+        return (
+          child.description || child.item?.name || child.itemId || t`Labor`
+        );
       case "item":
         return child.description || child.item?.name || child.itemId;
       case "time": {
@@ -532,10 +550,11 @@ function getItemLink(
   child: ServiceJobExplorerChild,
   items: ReturnType<typeof useItems>[0]
 ): string | null {
-  if (child.type === "time") return null;
-  const item = items.find((i) => i.id === child.itemId);
+  if (child.type === "time" || !child.itemId) return null;
+  const itemId = child.itemId;
+  const item = items.find((i) => i.id === itemId);
   if (!item) return null;
-  return getLinkToItemDetails(item.type as MethodItemType, child.itemId);
+  return getLinkToItemDetails(item.type as MethodItemType, itemId);
 }
 
 export default ServiceJobExplorer;

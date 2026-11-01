@@ -392,6 +392,12 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
             termId: "account-default-sales-shipping-revenue"
           },
           {
+            name: "serviceRevenueAccount",
+            label: t`Service Revenue`,
+            description: t`Revenue from service jobs`,
+            badgeType: "Revenue"
+          },
+          {
             name: "salesDiscountAccount",
             label: t`Sales Discounts`,
             description: t`Contra-revenue account for discounts given on sales`,

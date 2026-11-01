@@ -7,20 +7,16 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { isServiceJobLocked } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useCompanyToday, useRouteData, useUser } from "~/hooks";
 import { serviceJobTimeValidator } from "~/modules/service/service.models";
 import type { ServiceJobDetail } from "~/modules/service/types";
 import ServiceJobTimeForm from "~/modules/service/ui/ServiceJob/ServiceJobTimeForm";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "service"
-  });
-  const settings = await getCompanySettings(client, companyId);
-  return { laborItemId: settings.data?.serviceLaborItemId ?? "" };
+  await requirePermissions(request, { update: "service" });
+  return null;
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -40,7 +36,6 @@ export default function NewServiceJobTimeRoute() {
   const { jobId } = useParams();
   if (!jobId) throw new Error("Could not find jobId");
   const navigate = useNavigate();
-  const { laborItemId } = useLoaderData<typeof loader>();
   const user = useUser();
   const today = useCompanyToday();
   const routeData = useRouteData<{ job: ServiceJobDetail }>(
@@ -52,7 +47,6 @@ export default function NewServiceJobTimeRoute() {
       initialValues={{
         serviceJobId: jobId,
         employeeId: user.id,
-        laborItemId,
         entryDate: today,
         hours: 1,
         billable: routeData?.job?.coverage === "Billable",

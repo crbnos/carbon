@@ -1352,7 +1352,10 @@ export const SalesInvoiceLineSchema = z.object({
   nonTaxableAddOnCost: z.number().default(0),
   taxPercent: z.number(),
   // Merchandise net of the line discount, in base currency.
-  lineAmount: z.number()
+  lineAmount: z.number(),
+  // The service job a line bills. Its revenue posts to Service Revenue, not
+  // the Sales account, so the provider line takes `serviceRevenueAccountId`.
+  serviceJobId: withNullable(z.string())
 });
 
 export const SalesInvoiceSchema = z.object({
@@ -1387,6 +1390,13 @@ export const SalesInvoiceSchema = z.object({
    * carry the account implicitly through the provider item's own config).
    */
   salesRevenueAccountId: z.string().nullable(),
+  /**
+   * The account the ORIGINAL journal credited for service job revenue
+   * ("Service Revenue" lines), replayed like `salesRevenueAccountId`. Null
+   * when the invoice has no service job lines, or when its posting cannot
+   * name exactly one account.
+   */
+  serviceRevenueAccountId: withNullable(z.string()),
   exchangeRate: z.number(),
   postingDate: z.string().nullish(),
   dateIssued: withNullable(z.string()),

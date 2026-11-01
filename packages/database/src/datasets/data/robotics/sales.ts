@@ -1105,7 +1105,7 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
       status: "Sent",
       sentWorkdaysBack: 3,
       lines: [
-        { item: "Field Service Engineer", quantity: 10, unitPrice: 165 },
+        { quantity: 10, unitPrice: 165 },
         {
           item: "Robot Calibration & Certification",
           description: "Recalibration and certificate after the repair",
@@ -1198,7 +1198,7 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
       respondedWorkdaysBack: 15,
       respondedBy: "Tomas Aguilar",
       lines: [
-        { item: "Field Service Engineer", quantity: 8, unitPrice: 165 },
+        { quantity: 8, unitPrice: 165 },
         {
           item: "Robot Calibration & Certification",
           description: "Recalibration and certificate after the repair",
@@ -1282,6 +1282,6 @@ export const roboticsSales: SalesData = {
     }
   ],
   customerAssets: CUSTOMER_ASSETS,
-  serviceLaborItem: "Field Service Engineer",
+  serviceLaborRates: { cost: 72, bill: 165 },
   serviceJobs: SERVICE_JOBS
 };

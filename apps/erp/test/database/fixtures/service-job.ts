@@ -4,9 +4,9 @@
 
 // A scratch company for the service job posting regressions: the project
 // posting fixture's company (accounts, defaults, an open period, a cutover)
-// plus Cost of Service and Warranty Expense accounts, a customer, a labor
-// item, and helpers for a job, its time, and an RMA line. Deleted by
-// `cleanup()`.
+// plus Cost of Service and Warranty Expense accounts, the service labor rates
+// (cost 40, bill 95 per hour), a customer, a Service item for charges, and
+// helpers for a job, its time, and an RMA line. Deleted by `cleanup()`.
 
 import type { Database } from "@carbon/database";
 import { sql } from "kysely";
@@ -23,7 +23,7 @@ export async function serviceJobFixture() {
   const { db, companyId, prefix, account } = f;
   const USER = PROJECT_TEST_USER;
   const customerId = `${prefix}-customer`;
-  const laborItemId = `${prefix}-labor-item`;
+  const serviceItemId = `${prefix}-service-item`;
   let jobCount = 0;
 
   await db.transaction().execute(async (trx) => {
@@ -59,9 +59,14 @@ export async function serviceJobFixture() {
       .values({ id: customerId, name: "Service customer", companyId })
       .execute();
     await trx
+      .updateTable("companySettings")
+      .set({ serviceLaborCostRate: 40, serviceLaborBillRate: 95 })
+      .where("id", "=", companyId)
+      .execute();
+    await trx
       .insertInto("item")
       .values({
-        id: laborItemId,
+        id: serviceItemId,
         readableId: `${prefix}-BENCH`,
         name: "Bench Repair",
         type: "Service",
@@ -71,26 +76,12 @@ export async function serviceJobFixture() {
         createdBy: USER
       })
       .execute();
-    await trx
-      .deleteFrom("itemCost")
-      .where("itemId", "=", laborItemId)
-      .execute();
-    await trx
-      .insertInto("itemCost")
-      .values({
-        itemId: laborItemId,
-        costingMethod: "Standard",
-        unitCost: 40,
-        companyId,
-        createdBy: USER
-      })
-      .execute();
   });
 
   return {
     ...f,
     customerId,
-    laborItemId,
+    serviceItemId,
     /** A job at `locationId`. */
     async addJob(args: {
       locationId: string;
@@ -99,6 +90,8 @@ export async function serviceJobFixture() {
       billingMethod?: Enums["serviceBillingMethod"];
       estimateStatus?: Enums["serviceEstimateStatus"] | null;
       salesReturnOrderLineId?: string | null;
+      /** The job's bill rate per hour; none unless given. */
+      laborBillRate?: number | null;
     }) {
       jobCount += 1;
       const job = await db
@@ -110,6 +103,7 @@ export async function serviceJobFixture() {
           billingMethod: args.billingMethod ?? "Time and Materials",
           estimateStatus: args.estimateStatus ?? null,
           salesReturnOrderLineId: args.salesReturnOrderLineId ?? null,
+          laborBillRate: args.laborBillRate ?? null,
           customerId,
           locationId: args.locationId,
           companyId,
@@ -119,17 +113,16 @@ export async function serviceJobFixture() {
         .executeTakeFirstOrThrow();
       return job;
     },
-    /** A time entry on the fixture's labor item. */
+    /** A time entry; `running` is a clock with no end. */
     async addTime(
       serviceJobId: string,
-      args: { hours: number; running?: boolean; laborItemId?: string }
+      args: { hours: number; running?: boolean }
     ) {
       return db
         .insertInto("serviceJobTime")
         .values({
           serviceJobId,
           employeeId: USER,
-          laborItemId: args.laborItemId ?? laborItemId,
           entryDate: "2026-10-01",
           hours: args.hours,
           ...(args.running ? { startTime: "2026-10-01T09:00:00Z" } : {}),

@@ -17,7 +17,7 @@ import { PROJECT_TEST_USER } from "../fixtures/project-posting";
 import { serviceJobFixture } from "../fixtures/service-job";
 
 /** The service job fixture, plus its own AR and Sales accounts, a sale
- *  price on the labor item and a sales invoice sequence. */
+ *  price on the charge item and a sales invoice sequence. */
 async function invoiceFixture() {
   const f = await serviceJobFixture();
   await f.db.transaction().execute(async (trx) => {
@@ -54,12 +54,12 @@ async function invoiceFixture() {
     // An item insert may already have created its price row.
     await trx
       .deleteFrom("itemUnitSalePrice")
-      .where("itemId", "=", f.laborItemId)
+      .where("itemId", "=", f.serviceItemId)
       .execute();
     await trx
       .insertInto("itemUnitSalePrice")
       .values({
-        itemId: f.laborItemId,
+        itemId: f.serviceItemId,
         unitSalePrice: 95,
         currencyCode: "USD",
         companyId: f.companyId,
@@ -104,7 +104,7 @@ async function invoiceFixture() {
 }
 
 databaseTest(
-  "invoicing a Completed Time and Materials job bills its hours and parts, and posting it writes AR and Sales only",
+  "invoicing a Completed Time and Materials job bills its hours on one Labor line and its parts, and posting it writes AR and Sales only",
   async () => {
     const f = await invoiceFixture();
     try {
@@ -112,9 +112,13 @@ databaseTest(
         quantity: 5,
         unitCost: 30
       });
-      const job = await f.addJob({ locationId, status: "In Progress" });
+      const job = await f.addJob({
+        locationId,
+        status: "In Progress",
+        laborBillRate: 95
+      });
+      await f.addTime(job.id, { hours: 2 });
       await f.addTime(job.id, { hours: 1 });
-      await f.addTime(job.id, { hours: 0.5 });
       await f.db
         .insertInto("serviceJobItem")
         .values({
@@ -163,7 +167,8 @@ databaseTest(
         locationId,
         customerReference: job.serviceJobId
       });
-      expect(Number(header.totalAmount)).toEqual(262.5);
+      // 3 hours at 95 is 285, and the fuse 120.
+      expect(Number(header.totalAmount)).toEqual(405);
 
       const lines = await f.db
         .selectFrom("salesInvoiceLine")
@@ -173,6 +178,7 @@ databaseTest(
           "description",
           "quantity",
           "unitPrice",
+          "unitOfMeasureCode",
           "serviceJobId"
         ])
         .where("invoiceId", "=", invoiceId)
@@ -186,11 +192,12 @@ databaseTest(
           line.description,
           Number(line.quantity),
           Number(line.unitPrice),
+          line.unitOfMeasureCode,
           line.serviceJobId
         ])
       ).toEqual([
-        ["Service", f.laborItemId, "Bench Repair", 1.5, 95, job.id],
-        ["Service", partId, "Fuse", 1, 120, job.id]
+        ["Labor", null, "Labor", 3, 95, "EA", job.id],
+        ["Service", partId, "Fuse", 1, 120, "EA", job.id]
       ]);
 
       const invoiced = await f.db
@@ -232,8 +239,8 @@ databaseTest(
           byAccount.map((line) => [line.accountId, Number(line.amount)])
         )
       ).toEqual({
-        [f.account("receivables")]: 262.5,
-        [f.account("sales")]: 262.5
+        [f.account("receivables")]: 405,
+        [f.account("sales")]: 405
       });
 
       // The part left stock when it was issued: the invoice moves none.
@@ -284,7 +291,7 @@ databaseTest(
 
       await f.db
         .updateTable("serviceJob")
-        .set({ serviceItemId: f.laborItemId, fixedPrice: 450 })
+        .set({ serviceItemId: f.serviceItemId, fixedPrice: 450 })
         .where("id", "=", fixed.id)
         .where("companyId", "=", f.companyId)
         .execute();
@@ -303,7 +310,7 @@ databaseTest(
           Number(line.unitPrice),
           line.serviceJobId
         ])
-      ).toEqual([[f.laborItemId, 1, 450, fixed.id]]);
+      ).toEqual([[f.serviceItemId, 1, 450, fixed.id]]);
 
       const warranty = await f.addJob({
         locationId,
@@ -312,6 +319,12 @@ databaseTest(
       });
       const refused = await f.createServiceInvoice(warranty.id);
       expect(refused.error?.message).toContain("Only a Billable job");
+
+      // Billable hours on a job with no bill rate: refused.
+      const unrated = await f.addJob({ locationId, status: "Completed" });
+      await f.addTime(unrated.id, { hours: 1 });
+      const noRate = await f.createServiceInvoice(unrated.id);
+      expect(noRate.error?.message).toBe("Set the job's bill rate first.");
     } finally {
       await f.cleanup();
     }
@@ -336,7 +349,11 @@ databaseTest(
           .executeTakeFirstOrThrow();
 
       // Delete the whole Draft invoice.
-      const deleted = await f.addJob({ locationId, status: "Completed" });
+      const deleted = await f.addJob({
+        locationId,
+        status: "Completed",
+        laborBillRate: 95
+      });
       await f.addTime(deleted.id, { hours: 1 });
       const first = await f.createServiceInvoice(deleted.id);
       expect(first.error).toBeNull();
@@ -355,14 +372,18 @@ databaseTest(
 
       // Delete the invoice's lines one by one: the job is released only
       // when no line names it any more.
-      const lined = await f.addJob({ locationId, status: "Completed" });
+      const lined = await f.addJob({
+        locationId,
+        status: "Completed",
+        laborBillRate: 95
+      });
       await f.addTime(lined.id, { hours: 1 });
       await f.db
         .insertInto("serviceJobItem")
         .values({
           serviceJobId: lined.id,
           lineType: "Charge",
-          itemId: f.laborItemId,
+          itemId: f.serviceItemId,
           description: "Travel",
           quantity: 1,
           unitPrice: 50,
@@ -401,7 +422,11 @@ databaseTest(
       });
 
       // Void a posted invoice.
-      const voided = await f.addJob({ locationId, status: "Completed" });
+      const voided = await f.addJob({
+        locationId,
+        status: "Completed",
+        laborBillRate: 95
+      });
       await f.addTime(voided.id, { hours: 1 });
       const third = await f.createServiceInvoice(voided.id);
       expect(third.error).toBeNull();

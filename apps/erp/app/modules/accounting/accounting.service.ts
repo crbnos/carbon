@@ -7997,7 +7997,7 @@ export async function getRevenueRecognitionRunLines(
     client
       .from("revenueRecognitionRunLine")
       .select(
-        "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, customerContractLineId, leaseId, journalId, revenue:customerContractRevenue!revenueRecognitionSchedule_customerContractRevenue_fkey(id, periodStart, amount, earnedToDate, estimateAtCompletion, transactionPrice, progress), contractLine:customerContractLine!revenueRecognitionSchedule_customerContractLine_fkey(id, description, customerContractId, contract:customerContract!customerContractLine_contract_fkey(id, customerContractId), element:projectElement!customerContractLine_projectElement_fkey(id, readableId, name)))"
+        "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, customerContractLineId, leaseId, serviceJobId, journalId, revenue:customerContractRevenue!revenueRecognitionSchedule_customerContractRevenue_fkey(id, periodStart, amount, earnedToDate, estimateAtCompletion, transactionPrice, progress), contractLine:customerContractLine!revenueRecognitionSchedule_customerContractLine_fkey(id, description, customerContractId, contract:customerContract!customerContractLine_contract_fkey(id, customerContractId), element:projectElement!customerContractLine_projectElement_fkey(id, readableId, name)))"
       )
       .eq("runId", runId)
       .eq("companyId", companyId)
@@ -11021,7 +11021,8 @@ export async function postRevenueRecognitionRun(
         "s.customerContractLineId",
         "s.customerContractRevenueId",
         "s.leaseId",
-        "s.leaseScheduleLineId"
+        "s.leaseScheduleLineId",
+        "s.serviceJobId"
       ])
       .where("l.runId", "=", runId)
       .where("l.companyId", "=", companyId)
@@ -11262,12 +11263,31 @@ export async function postRevenueRecognitionRun(
             .where("sl.companyId", "=", companyId)
             .execute();
 
+    // Service job accruals reference the job, with its customer and location.
+    const serviceJobIds = [
+      ...new Set(
+        rows
+          .map((row) => row.serviceJobId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    const serviceJobs =
+      serviceJobIds.length === 0
+        ? []
+        : await trx
+            .selectFrom("serviceJob")
+            .select(["id", "customerId", "locationId"])
+            .where("id", "in", serviceJobIds)
+            .where("companyId", "=", companyId)
+            .execute();
+
     const sources: RecognitionSources = {
       invoiceLines: invoiceLineById,
       rentalLines: rentalLineById,
       contractLines: contractLineById,
       leases: new Map(leases.map((lease) => [lease.id, lease])),
-      leaseAssets: new Map(leaseAssets.map((asset) => [asset.id, asset]))
+      leaseAssets: new Map(leaseAssets.map((asset) => [asset.id, asset])),
+      serviceJobs: new Map(serviceJobs.map((job) => [job.id, job]))
     };
     // Throws when an account has no class.
     const { journals, runJournal } = buildRecognitionJournals({
@@ -22189,6 +22209,249 @@ export async function synthesizeRentalAccruals(
     .execute();
 }
 
+/** The run's refusal when a service accrual has no Contract Assets account. */
+export const SERVICE_REVENUE_CONTRACT_ASSETS_MISSING =
+  "Set the Contract Assets account default before recognizing service revenue.";
+
+/**
+ * Accrues the revenue a Billable service job has earned but not yet billed
+ * (Dr Contract Assets / Cr Service Revenue), so revenue is earned over time,
+ * not at the invoice. Spec 2026-10-31 §3.
+ *
+ * Which jobs: Billable and not Cancelled, created on or before `periodEnd`,
+ * with no invoice or one that is still Draft or Pending. A job that has
+ * since become non-billable (Warranty, Contract, Cancelled) but still holds
+ * unbilled accruals earns 0, so its accruals reverse. A job whose invoice
+ * posted is skipped: the invoice cleared its accruals.
+ *
+ * Earned to date at `periodEnd`:
+ * - Time and Materials: billable closed hours (`entryDate` ≤ `periodEnd`)
+ *   × the job's `laborBillRate`, plus billable Part and Charge lines created
+ *   by then × their price.
+ * - Fixed Price: `fixedPrice` × min(1, closed billable hours ÷ the Accepted
+ *   estimate's labor hours). With no labor hours on the estimate it is 0
+ *   until the job completes; a completed job has earned all of `fixedPrice`.
+ *
+ * The row is cumulative: earned to date minus every unbilled Accrual row of
+ * the job (any status), so an hour added or deleted after an accrual posted
+ * is caught up by the next run, and proposing the same period twice writes
+ * nothing new. A negative difference is a negative row. Amounts are in the
+ * base currency: a job bills at its rate in the company's currency.
+ */
+export async function synthesizeServiceJobRevenue(
+  trx: KyselyTx,
+  ctx: RunProposalContext
+): Promise<void> {
+  const { companyId, periodEnd, userId } = ctx;
+  const { year, month } = parseIsoDate(periodEnd);
+  const monthStart = formatIsoDate(year, month, 1);
+
+  // Serialize concurrent proposals: the accrued sum below is read-then-insert.
+  await lockRecognitionProposals(trx, companyId);
+
+  const jobs = await trx
+    .selectFrom("serviceJob as sj")
+    .innerJoin("company as co", "co.id", "sj.companyId")
+    .leftJoin("salesInvoice as si", (join) =>
+      join
+        .onRef("si.id", "=", "sj.salesInvoiceId")
+        .onRef("si.companyId", "=", "sj.companyId")
+    )
+    .select([
+      "sj.id",
+      "sj.coverage",
+      "sj.status",
+      "sj.billingMethod",
+      "sj.laborBillRate",
+      "sj.fixedPrice",
+      "sj.estimateStatus",
+      // The company's day, never the session's UTC one.
+      sql<
+        string | null
+      >`(sj."completedAt" AT TIME ZONE co."timezone")::date::text`.as(
+        "completedOn"
+      )
+    ])
+    .where("sj.companyId", "=", companyId)
+    .where(
+      sql<string>`(sj."createdAt" AT TIME ZONE co."timezone")::date`,
+      "<=",
+      periodEnd
+    )
+    .where((eb) =>
+      eb.or([
+        eb("sj.salesInvoiceId", "is", null),
+        eb("si.status", "in", ["Draft", "Pending"])
+      ])
+    )
+    .where((eb) =>
+      eb.or([
+        eb.and([
+          eb("sj.coverage", "=", "Billable"),
+          eb("sj.status", "<>", "Cancelled")
+        ]),
+        eb.exists(
+          eb
+            .selectFrom("revenueRecognitionSchedule as s")
+            .select("s.id")
+            .whereRef("s.serviceJobId", "=", "sj.id")
+            .where("s.companyId", "=", companyId)
+            .where("s.type", "=", "Accrual")
+            .where("s.billedBySalesInvoiceLineId", "is", null)
+        )
+      ])
+    )
+    .orderBy("sj.id")
+    .execute();
+  if (jobs.length === 0) return;
+  const jobIds = jobs.map((job) => job.id);
+
+  const [hours, items, estimateHours, accrued] = await Promise.all([
+    // Closed entries only: a running clock has not earned anything yet.
+    trx
+      .selectFrom("serviceJobTime")
+      .select([
+        "serviceJobId",
+        sql<number>`COALESCE(SUM("hours"), 0)`.as("hours")
+      ])
+      .where("companyId", "=", companyId)
+      .where("serviceJobId", "in", jobIds)
+      .where("billable", "=", true)
+      .where("hours", ">", 0)
+      .where("entryDate", "<=", periodEnd)
+      .where((eb) =>
+        eb.or([eb("startTime", "is", null), eb("endTime", "is not", null)])
+      )
+      .groupBy("serviceJobId")
+      .execute(),
+    trx
+      .selectFrom("serviceJobItem as i")
+      .innerJoin("company as co", "co.id", "i.companyId")
+      .select([
+        "i.serviceJobId",
+        sql<number>`COALESCE(SUM(i."quantity" * i."unitPrice"), 0)`.as("amount")
+      ])
+      .where("i.companyId", "=", companyId)
+      .where("i.serviceJobId", "in", jobIds)
+      .where("i.billable", "=", true)
+      .where(
+        sql<string>`(i."createdAt" AT TIME ZONE co."timezone")::date`,
+        "<=",
+        periodEnd
+      )
+      .groupBy("i.serviceJobId")
+      .execute(),
+    // A Labor estimate line has no item; its quantity is hours.
+    trx
+      .selectFrom("serviceJobEstimateLine")
+      .select([
+        "serviceJobId",
+        sql<number>`COALESCE(SUM("quantity"), 0)`.as("hours")
+      ])
+      .where("companyId", "=", companyId)
+      .where("serviceJobId", "in", jobIds)
+      .where("itemId", "is", null)
+      .groupBy("serviceJobId")
+      .execute(),
+    trx
+      .selectFrom("revenueRecognitionSchedule")
+      .select([
+        "serviceJobId",
+        sql<number>`COALESCE(SUM("amount"), 0)`.as("amount")
+      ])
+      .where("companyId", "=", companyId)
+      .where("serviceJobId", "in", jobIds)
+      .where("type", "=", "Accrual")
+      .where("billedBySalesInvoiceLineId", "is", null)
+      .groupBy("serviceJobId")
+      .execute()
+  ]);
+  const sumByJob = <K extends string>(
+    rows: ({ serviceJobId: string | null } & Record<K, number>)[],
+    key: K
+  ) =>
+    new Map(
+      rows.flatMap((row) =>
+        row.serviceJobId ? [[row.serviceJobId, Number(row[key])] as const] : []
+      )
+    );
+  const hoursByJob = sumByJob(hours, "hours");
+  const itemsByJob = sumByJob(items, "amount");
+  const estimateHoursByJob = sumByJob(estimateHours, "hours");
+  const accruedByJob = sumByJob(accrued, "amount");
+
+  const earnedToDate = (job: (typeof jobs)[number]): number => {
+    if (job.coverage !== "Billable" || job.status === "Cancelled") return 0;
+    const loggedHours = hoursByJob.get(job.id) ?? 0;
+    if (job.billingMethod === "Time and Materials") {
+      return (
+        loggedHours * Number(job.laborBillRate ?? 0) +
+        (itemsByJob.get(job.id) ?? 0)
+      );
+    }
+    if (job.fixedPrice === null) return 0;
+    const fixedPrice = Number(job.fixedPrice);
+    const completed =
+      (job.status === "Completed" || job.status === "Invoiced") &&
+      job.completedOn !== null &&
+      job.completedOn <= periodEnd;
+    if (completed) return fixedPrice;
+    const laborHours =
+      job.estimateStatus === "Accepted"
+        ? (estimateHoursByJob.get(job.id) ?? 0)
+        : 0;
+    if (laborHours <= EPSILON) return 0;
+    return fixedPrice * Math.min(1, loggedHours / laborHours);
+  };
+
+  const accruals = jobs.flatMap((job) => {
+    const amount = round(earnedToDate(job) - (accruedByJob.get(job.id) ?? 0));
+    return Math.abs(amount) < EPSILON ? [] : [{ serviceJobId: job.id, amount }];
+  });
+  if (accruals.length === 0) return;
+
+  const defaults = await trx
+    .selectFrom("accountDefault")
+    .select([
+      "contractAssetAccount",
+      "serviceRevenueAccount",
+      "salesAccount",
+      "retainedEarningsAccount"
+    ])
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!defaults?.contractAssetAccount) {
+    throw new Error(SERVICE_REVENUE_CONTRACT_ASSETS_MISSING);
+  }
+  // An empty Service Revenue default falls back to Sales (DEFAULT_FALLBACKS).
+  const serviceRevenueAccount = configuredDefaultAccount(
+    defaults,
+    "serviceRevenueAccount"
+  );
+  if (!serviceRevenueAccount) {
+    throw new MissingAccountDefaultError("serviceRevenueAccount");
+  }
+
+  await trx
+    .insertInto("revenueRecognitionSchedule")
+    .values(
+      accruals.map((accrual) => ({
+        companyId,
+        type: "Accrual" as const,
+        status: "Planned" as const,
+        serviceJobId: accrual.serviceJobId,
+        periodStart: monthStart,
+        periodEnd,
+        scheduledDate: periodEnd,
+        amount: accrual.amount,
+        debitAccountId: defaults.contractAssetAccount!,
+        creditAccountId: serviceRevenueAccount,
+        createdBy: userId
+      }))
+    )
+    .execute();
+}
+
 /**
  * Recognizes contract revenue (plan D5): every Planned `customerContractRevenue`
  * month starting on or before `periodEnd`, of a confirmed contract (Active, or
@@ -22424,7 +22687,7 @@ export async function synthesizeContractRevenue(
 
 /** The synthesizers a run of `type` runs before it selects its rows. A lease
  *  run synthesizes rental accruals; a revenue recognition run synthesizes
- *  project and contract revenue. Neither ever runs the other's. `extra` is
+ *  project, contract and service job revenue. Neither ever runs the other's. `extra` is
  *  the commercial project revenue synthesizer (`@carbon/ee`, decision R1),
  *  which degrades to nothing without PROJECT_REVENUE; a test passes its own.
  *  It runs, in a revenue recognition run, before the Right to Invoice and
@@ -22436,7 +22699,12 @@ export function runRowSynthesizers(
 ): RunRowSynthesizer[] {
   return type === "Lease"
     ? [synthesizeRentalAccruals]
-    : [...extra, synthesizeProjectRevenue, synthesizeContractRevenue];
+    : [
+        ...extra,
+        synthesizeProjectRevenue,
+        synthesizeContractRevenue,
+        synthesizeServiceJobRevenue
+      ];
 }
 
 export type RunProposal = { id: string; runId: string; lineCount: number };

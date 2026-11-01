@@ -17,6 +17,9 @@ export function getLineDescription(
       );
     case "Comment":
       return line?.description;
+    // A service job's billed hours: no item.
+    case "Labor":
+      return "Labor";
     default:
       return line?.itemReadableId;
   }
@@ -28,6 +31,8 @@ export function getLineDescriptionDetails(
   switch (line?.invoiceLineType) {
     case "Fixed Asset":
       return line?.description;
+    case "Labor":
+      return distinctItemText("Labor", line?.description) ?? "";
     case "Comment":
     default:
       // A service's readable id is its name — don't print it twice.

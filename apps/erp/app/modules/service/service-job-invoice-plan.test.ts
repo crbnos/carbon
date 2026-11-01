@@ -14,16 +14,13 @@ const timeAndMaterials: ServiceInvoiceJob = {
   serviceJobId: "SJ000001",
   billingMethod: "Time and Materials",
   serviceItemId: null,
-  fixedPrice: null
+  fixedPrice: null,
+  laborBillRate: 95
 };
 
-const bench = (hours: number, billable = true): ServiceInvoiceTime => ({
-  laborItemId: "bench",
-  laborItemName: "Bench Repair",
-  hours,
-  billable,
-  unitSalePrice: 95,
-  unitOfMeasureCode: "HR"
+const hours = (value: number, billable = true): ServiceInvoiceTime => ({
+  hours: value,
+  billable
 });
 
 const part = (
@@ -49,11 +46,11 @@ const shape = (lines: ReturnType<typeof planServiceJobInvoiceLines>) =>
   ]);
 
 describe("planServiceJobInvoiceLines", () => {
-  it("bills Time and Materials: hours per labor item, then parts, then charges", () => {
+  it("bills Time and Materials: one Labor line, then parts, then charges", () => {
     const lines = planServiceJobInvoiceLines({
       job: timeAndMaterials,
       serviceItem: null,
-      time: [bench(1), bench(0.5)],
+      time: [hours(1), hours(0.5)],
       items: [
         part({
           lineType: "Charge",
@@ -64,49 +61,38 @@ describe("planServiceJobInvoiceLines", () => {
         part()
       ]
     });
-    expect(lines.every((line) => line.invoiceLineType === "Service")).toBe(
-      true
-    );
+    expect(lines.map((line) => line.invoiceLineType)).toEqual([
+      "Labor",
+      "Service",
+      "Service"
+    ]);
     expect(shape(lines)).toEqual([
-      ["bench", "Bench Repair", 1.5, 95, "HR"],
+      [null, "Labor", 1.5, 95, "EA"],
       ["fuse", "Fuse", 1, 120, "EA"],
       ["trip", "Trip fee", 1, 50, "EA"]
     ]);
   });
 
-  it("gives each labor item its own line at its own rate", () => {
+  it("bills every billable hour on one Labor line at the job's bill rate", () => {
     const lines = planServiceJobInvoiceLines({
       job: timeAndMaterials,
       serviceItem: null,
-      time: [
-        bench(2),
-        {
-          laborItemId: "field",
-          laborItemName: "Field Technician",
-          hours: 3,
-          billable: true,
-          unitSalePrice: 140,
-          unitOfMeasureCode: null
-        },
-        bench(1)
-      ],
+      time: [hours(2), hours(1)],
       items: []
     });
-    expect(shape(lines)).toEqual([
-      ["bench", "Bench Repair", 3, 95, "HR"],
-      ["field", "Field Technician", 3, 140, "EA"]
-    ]);
+    expect(shape(lines)).toEqual([[null, "Labor", 3, 95, "EA"]]);
+    expect(lines[0]!.quantity * lines[0]!.unitPrice).toBe(285);
   });
 
   it("leaves out non-billable time, parts and charges", () => {
     const lines = planServiceJobInvoiceLines({
       job: timeAndMaterials,
       serviceItem: null,
-      time: [bench(1.5), bench(4, false)],
+      time: [hours(1.5), hours(4, false)],
       items: [part(), part({ itemId: "screw", billable: false })]
     });
     expect(shape(lines)).toEqual([
-      ["bench", "Bench Repair", 1.5, 95, "HR"],
+      [null, "Labor", 1.5, 95, "EA"],
       ["fuse", "Fuse", 1, 120, "EA"]
     ]);
   });
@@ -115,21 +101,31 @@ describe("planServiceJobInvoiceLines", () => {
     const lines = planServiceJobInvoiceLines({
       job: timeAndMaterials,
       serviceItem: null,
-      time: [bench(1)],
+      time: [hours(1)],
       items: [part({ quantity: 0 })]
     });
-    expect(shape(lines)).toEqual([["bench", "Bench Repair", 1, 95, "HR"]]);
+    expect(shape(lines)).toEqual([[null, "Labor", 1, 95, "EA"]]);
   });
 
-  it("refuses billable hours on a labor item with no sale price", () => {
+  it("refuses billable hours on a job with no bill rate", () => {
     expect(() =>
       planServiceJobInvoiceLines({
-        job: timeAndMaterials,
+        job: { ...timeAndMaterials, laborBillRate: null },
         serviceItem: null,
-        time: [{ ...bench(1), unitSalePrice: 0 }],
+        time: [hours(1)],
         items: []
       })
-    ).toThrow("The labor item Bench Repair has no sale price per hour");
+    ).toThrow("Set the job's bill rate first.");
+  });
+
+  it("bills parts with no bill rate when no hours are billable", () => {
+    const lines = planServiceJobInvoiceLines({
+      job: { ...timeAndMaterials, laborBillRate: null },
+      serviceItem: null,
+      time: [hours(2, false)],
+      items: [part()]
+    });
+    expect(shape(lines)).toEqual([["fuse", "Fuse", 1, 120, "EA"]]);
   });
 
   it("refuses a job with nothing billable", () => {
@@ -137,7 +133,7 @@ describe("planServiceJobInvoiceLines", () => {
       planServiceJobInvoiceLines({
         job: timeAndMaterials,
         serviceItem: null,
-        time: [bench(2, false)],
+        time: [hours(2, false)],
         items: []
       })
     ).toThrow("has no billable time, part or charge to invoice");
@@ -153,7 +149,7 @@ describe("planServiceJobInvoiceLines", () => {
       },
       serviceItem: { name: "Depot Repair", unitOfMeasureCode: null },
       // Time and parts are in the price.
-      time: [bench(3)],
+      time: [hours(3)],
       items: [part()]
     });
     expect(shape(lines)).toEqual([["repair", "Depot Repair", 1, 450, "EA"]]);
@@ -181,6 +177,6 @@ describe("planServiceJobInvoiceLines", () => {
         time: [],
         items: []
       })
-    ).toThrow("has no fixed price");
+    ).toThrow("Set the job's fixed price first.");
   });
 });

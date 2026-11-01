@@ -13,6 +13,8 @@ export interface ServiceJobEstimateLine {
   quantity: string;
   unitPrice: string;
   amount: string;
+  /** A Labor line: its quantity is hours and its price is per hour. */
+  isLabor?: boolean;
 }
 
 export interface ServiceJobEstimate {
@@ -132,8 +134,12 @@ const EstimateBody = ({ estimate }: { estimate: ServiceJobEstimate }) => {
           wrap={false}
         >
           <Text style={tw(COL_DESCRIPTION)}>{line.description}</Text>
-          <Text style={tw(COL_QUANTITY)}>{line.quantity}</Text>
-          <Text style={tw(COL_PRICE)}>{line.unitPrice}</Text>
+          <Text style={tw(COL_QUANTITY)}>
+            {line.isLabor ? `${line.quantity} h` : line.quantity}
+          </Text>
+          <Text style={tw(COL_PRICE)}>
+            {line.isLabor ? `${line.unitPrice} / h` : line.unitPrice}
+          </Text>
           <Text style={tw(COL_AMOUNT)}>{line.amount}</Text>
         </View>
       ))}

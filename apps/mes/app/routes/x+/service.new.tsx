@@ -15,10 +15,11 @@ import { userContext } from "~/context";
 import { serviceJobNewValidator } from "~/services/models";
 import {
   CLOCK_ALREADY_RUNNING,
-  getDefaultLaborItemId,
   getRunningServiceClock,
+  getServiceLaborRates,
   insertServiceJob,
   isRunningClockConflict,
+  SERVICE_LABOR_COST_RATE_MISSING,
   startServiceClock
 } from "~/services/service.service";
 import { path } from "~/utils/path";
@@ -52,7 +53,7 @@ export async function action({ context, request }: ActionFunctionArgs) {
 
   // The writes below are service-role, so every id from the form must be this
   // company's: the customer, and the asset (which must be that customer's).
-  const [customer, asset, laborItemId, running] = await Promise.all([
+  const [customer, asset, rates, running] = await Promise.all([
     serviceRole
       .from("customer")
       .select("id")
@@ -67,7 +68,7 @@ export async function action({ context, request }: ActionFunctionArgs) {
           .eq("companyId", companyId)
           .maybeSingle()
       : null,
-    getDefaultLaborItemId(serviceRole, companyId),
+    getServiceLaborRates(serviceRole, companyId),
     getRunningServiceClock(serviceRole, { employeeId: userId, companyId })
   ]);
   if (
@@ -85,16 +86,20 @@ export async function action({ context, request }: ActionFunctionArgs) {
       await flash(request, error(null, "Customer or asset not found"))
     );
   }
-  if (!laborItemId.data) {
+  if (rates.error) {
     return data(
       {},
       await flash(
         request,
-        error(
-          laborItemId.error,
-          "Set the default labor item in the ERP's invoicing settings before you start a clock"
-        )
+        error(rates.error, "Failed to load the company settings")
       )
+    );
+  }
+  // The job starts a clock, whose cost posts at the company's cost rate.
+  if (rates.data.costRate === null) {
+    return data(
+      {},
+      await flash(request, error(null, SERVICE_LABOR_COST_RATE_MISSING))
     );
   }
   if (running.data) {
@@ -122,6 +127,7 @@ export async function action({ context, request }: ActionFunctionArgs) {
     coverage: input.coverage,
     problem: input.problem,
     assignee: userId,
+    laborBillRate: rates.data.billRate,
     companyId,
     createdBy: userId
   });
@@ -135,7 +141,6 @@ export async function action({ context, request }: ActionFunctionArgs) {
   const clock = await startServiceClock(serviceRole, {
     serviceJobId: job.data.id,
     employeeId: userId,
-    laborItemId: laborItemId.data,
     billable: input.coverage === "Billable",
     companyId,
     createdBy: userId

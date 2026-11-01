@@ -16,11 +16,6 @@ databaseTest(
   async () => {
     const f = await serviceJobFixture();
     try {
-      await f.db
-        .updateTable("companySettings")
-        .set({ serviceLaborItemId: f.laborItemId })
-        .where("id", "=", f.companyId)
-        .execute();
       const { locationId } = await f.addStockedItem("unit", {
         quantity: 1,
         unitCost: 10
@@ -38,7 +33,7 @@ databaseTest(
       const day = () =>
         f.db
           .selectFrom("serviceJobTime")
-          .select(["hours", "startTime", "laborItemId", "billable"])
+          .select(["id", "hours", "startTime", "unitCost", "billable"])
           .where("serviceJobId", "=", job.id)
           .orderBy("createdAt")
           .execute();
@@ -49,7 +44,6 @@ databaseTest(
         .values({
           serviceJobId: job.id,
           employeeId: PROJECT_TEST_USER,
-          laborItemId: f.laborItemId,
           entryDate: "2026-10-01",
           startTime: "2026-10-01T08:00:00Z",
           endTime: "2026-10-01T09:30:00Z",
@@ -66,12 +60,28 @@ databaseTest(
         [1.5, false]
       ]);
       const manual = (await day())[1];
-      expect(manual?.laborItemId).toBe(f.laborItemId);
       expect(manual?.billable).toBe(true);
+
+      // The saved day posts its cost: both closed entries at 40 per hour.
+      expect(
+        (await day()).map((row) => Number(row.unitCost))
+      ).toEqual([40, 40]);
+      const posted = async () => {
+        const lines = await f.db
+          .selectFrom("journalLine")
+          .select((eb) => eb.fn.sum<number>("amount").as("amount"))
+          .where("documentType", "=", "Service Job")
+          .where("documentId", "=", job.id)
+          .where("accountId", "=", f.account("cost-of-service"))
+          .executeTakeFirstOrThrow();
+        return Number(lines.amount ?? 0);
+      };
+      expect(await posted()).toBe(120);
 
       // The same manual entry is saved again, never a second one.
       expect(await setDay(4)).toEqual({ saved: true, warning: null });
       expect((await day()).map((row) => Number(row.hours))).toEqual([1.5, 2.5]);
+      expect(await posted()).toBe(160);
 
       // Below the clock time: nothing is written.
       expect(await setDay(1)).toEqual({
@@ -83,6 +93,7 @@ databaseTest(
       // Equal to the clock time: the manual entry goes.
       expect(await setDay(1.5)).toEqual({ saved: true, warning: null });
       expect((await day()).map((row) => Number(row.hours))).toEqual([1.5]);
+      expect(await posted()).toBe(60);
 
       // A closed job takes no time.
       await f.db

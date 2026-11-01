@@ -46,7 +46,8 @@ export type ServiceReturnUnit = {
  *    every unit's asset At Depot.
  * 3. Inserts one Open Depot job per line: Billable for Return for Service,
  *    Warranty for Return for Warranty, with the RMA's customer, site and
- *    contact, and the line's item, serial, asset and problem.
+ *    contact, the line's item, serial, asset and problem, and the company's
+ *    default bill rate.
  * 4. Writes a `Return Receipt` activity per serial with `At Depot` and the
  *    job's id, and the serial as its output.
  */
@@ -135,6 +136,12 @@ export async function createServiceJobsForReturn(
     companyId,
     units.length
   );
+  // Each job bills at the company's default rate (Settings → Service).
+  const settings = await trx
+    .selectFrom("companySettings")
+    .select("serviceLaborBillRate")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
   const jobs = await trx
     .insertInto("serviceJob")
     .values(
@@ -159,6 +166,7 @@ export async function createServiceJobsForReturn(
             null,
           locationId: unit.locationId,
           salesReturnOrderLineId: unit.salesReturnOrderLineId,
+          laborBillRate: settings?.serviceLaborBillRate ?? null,
           // The RMA line's short text, as the rich text the job holds.
           problem: toJson(textToRichTextDoc(unit.problem)),
           companyId,

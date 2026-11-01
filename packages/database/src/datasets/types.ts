@@ -942,7 +942,11 @@ export type CustomerAssetSpec = {
   partsWarrantyEndOffset: DayOffset | null;
 };
 
-/** A service job time entry, on the labor item `sales.serviceLaborItem`. */
+/**
+ * A service job time entry. Every entry is closed, so it carries the
+ * company's cost rate (`sales.serviceLaborRates.cost`) and tier 09 posts its
+ * own journal (post-service-job `post-time`).
+ */
 export type ServiceJobTimeSpec = {
   /** Working days before the anchor, Saturday and Sunday skipped (`workdayBefore`). */
   workdaysBack: number;
@@ -966,20 +970,23 @@ export type ServiceJobAssignmentSpec = {
   note?: string;
 };
 
-/** An estimate line or a charge: a Service item at a price. */
+/**
+ * An estimate line or a charge: a Service item at a price. An estimate line
+ * with no item is a Labor line (quantity = hours) at the job's bill rate.
+ */
 export type ServiceJobLineSpec = {
-  item: string;
+  item?: string;
   description?: string;
   quantity: number;
   unitPrice: number;
 };
 
 /**
- * A service job on a customer asset (Time and Materials). Completed and
- * Invoiced store each time entry's cost (the labor item's unit cost) and get
- * the completion journal post-service-job writes (tier 09: Dr the coverage
- * account / Cr labor absorption). Invoiced also has the Draft invoice
- * createServiceInvoice leaves, every line carrying `serviceJobId`. A job from
+ * A service job on a customer asset (Time and Materials), at the company's
+ * bill rate (`laborBillRate`). Each time entry stores the cost rate and gets
+ * its own journal (tier 09: Dr the coverage account / Cr labor absorption).
+ * Invoiced also has the Draft invoice createServiceInvoice leaves: one Labor
+ * line, then the charges, every line carrying `serviceJobId`. A job from
  * an RMA line names it in `salesReturnLine`. Parts are not seeded: an issued
  * part needs the issue posting's ledger, cost and journal rows. Registered in
  * ctx.refs.documents as `sj:<key>`.
@@ -1020,7 +1027,7 @@ export type ServiceJobSpec = {
   };
   time: ServiceJobTimeSpec[];
   /** Charges: Service items at a price and no cost (phase 1). */
-  charges: (ServiceJobLineSpec & { billable?: boolean })[];
+  charges: (ServiceJobLineSpec & { item: string; billable?: boolean })[];
   /** Completed and Invoiced: the completion day, in working days before the anchor. */
   completedWorkdaysBack?: number;
   /** Invoiced: the Draft invoice's issue day, in working days before the anchor. */
@@ -1045,11 +1052,10 @@ export type SalesData = {
   /** Field service: units at customers. */
   customerAssets: CustomerAssetSpec[];
   /**
-   * The Service item every time entry names, with its cost per hour
-   * (standardCost) and bill rate (unitSalePrice). Tier 04 sets it as
-   * `companySettings.serviceLaborItemId`.
+   * The cost and bill rate per hour of service labor. Tier 04 sets them as
+   * `companySettings.serviceLaborCostRate` / `serviceLaborBillRate`.
    */
-  serviceLaborItem: string;
+  serviceLaborRates: { cost: number; bill: number };
   serviceJobs: ServiceJobSpec[];
 };
 

@@ -5,11 +5,11 @@
 // The invoice lines of a Completed Billable service job, pure.
 // `createServiceInvoice` (`service.service.ts`) reads the job and writes what
 // this returns.
-// - Time and Materials: one line per labor item at Σ billable hours × the
-//   labor item's sale price, then one line per billable Part, then one line
-//   per billable Charge.
+// - Time and Materials: one Labor line at Σ billable hours × the job's bill
+//   rate, then one line per billable Part, then one line per billable Charge.
 // - Fixed Price: one line, the job's service item at its fixed price.
-// Spec: `.ai/specs/2026-10-22-service-jobs-and-returns.md` → Postings, rule 4.
+// Spec: `.ai/specs/2026-10-22-service-jobs-and-returns.md` → Postings, rule 4;
+// `.ai/specs/2026-10-31-service-labor-rates-and-time-posting.md` → 4.
 
 import { InvalidInputError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
@@ -23,6 +23,8 @@ export type ServiceInvoiceJob = {
   billingMethod: ServiceBillingMethod;
   serviceItemId: string | null;
   fixedPrice: number | null;
+  /** The job's bill rate per hour at invoicing; null when it has none. */
+  laborBillRate: number | null;
 };
 
 /** The job's service item, read for a Fixed Price job. */
@@ -32,13 +34,8 @@ export type ServiceInvoiceServiceItem = {
 };
 
 export type ServiceInvoiceTime = {
-  laborItemId: string;
-  laborItemName: string;
   hours: number;
   billable: boolean;
-  /** The labor item's sale price per hour; null when it has none. */
-  unitSalePrice: number | null;
-  unitOfMeasureCode: string | null;
 };
 
 export type ServiceInvoiceItem = {
@@ -52,21 +49,41 @@ export type ServiceInvoiceItem = {
   unitOfMeasureCode: string | null;
 };
 
-export type PlannedServiceJobInvoiceLine = {
-  invoiceLineType: "Service";
-  itemId: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  unitOfMeasureCode: string;
-};
+/**
+ * A Labor line has no item: its quantity is hours. It carries the default
+ * unit, since an invoice line needs one.
+ */
+export type PlannedServiceJobInvoiceLine =
+  | {
+      invoiceLineType: "Service";
+      itemId: string;
+      description: string;
+      quantity: number;
+      unitPrice: number;
+      unitOfMeasureCode: string;
+    }
+  | {
+      invoiceLineType: "Labor";
+      itemId: null;
+      description: string;
+      quantity: number;
+      unitPrice: number;
+      unitOfMeasureCode: string;
+    };
 
 const DEFAULT_UNIT_OF_MEASURE = "EA";
 
+/** Refused when billable hours need the job's bill rate and it has none. */
+export const SERVICE_JOB_BILL_RATE_MISSING = "Set the job's bill rate first.";
+
+/** Refused when a Fixed Price job has no price to bill. */
+export const SERVICE_JOB_FIXED_PRICE_MISSING =
+  "Set the job's fixed price first.";
+
 /**
  * The lines of a service job's invoice, in order. Refuses a Fixed Price job
- * with no service item or no fixed price, a labor item with billable hours
- * and no sale price, and a job with nothing to bill.
+ * with no service item or no fixed price, billable hours on a job with no
+ * bill rate, and a job with nothing to bill.
  */
 export function planServiceJobInvoiceLines(args: {
   job: ServiceInvoiceJob;
@@ -83,9 +100,7 @@ export function planServiceJobInvoiceLines(args: {
       );
     }
     if (job.fixedPrice === null) {
-      throw new InvalidInputError(
-        `Service job ${job.serviceJobId} is Fixed Price and has no fixed price. Accept an estimate or set the price first.`
-      );
+      throw new InvalidInputError(SERVICE_JOB_FIXED_PRICE_MISSING);
     }
     return [
       {
@@ -100,30 +115,24 @@ export function planServiceJobInvoiceLines(args: {
     ];
   }
 
-  // One line per labor item, in the order the time first names it.
-  const labor = new Map<string, { entry: ServiceInvoiceTime; hours: number }>();
-  for (const entry of args.time) {
-    if (!entry.billable) continue;
-    const current = labor.get(entry.laborItemId);
-    if (current) current.hours += entry.hours;
-    else labor.set(entry.laborItemId, { entry, hours: entry.hours });
-  }
+  // One Labor line: every billable hour at the job's bill rate.
+  const hours = args.time.reduce(
+    (sum, entry) => (entry.billable ? sum + entry.hours : sum),
+    0
+  );
 
   const lines: PlannedServiceJobInvoiceLine[] = [];
-  for (const { entry, hours } of labor.values()) {
-    if (hours <= EPSILON) continue;
-    if (!(Number(entry.unitSalePrice ?? 0) > 0)) {
-      throw new InvalidInputError(
-        `The labor item ${entry.laborItemName} has no sale price per hour. Set its unit sale price first.`
-      );
+  if (hours > EPSILON) {
+    if (job.laborBillRate === null) {
+      throw new InvalidInputError(SERVICE_JOB_BILL_RATE_MISSING);
     }
     lines.push({
-      invoiceLineType: "Service",
-      itemId: entry.laborItemId,
-      description: entry.laborItemName,
+      invoiceLineType: "Labor",
+      itemId: null,
+      description: "Labor",
       quantity: round(hours),
-      unitPrice: round(Number(entry.unitSalePrice)),
-      unitOfMeasureCode: entry.unitOfMeasureCode ?? DEFAULT_UNIT_OF_MEASURE
+      unitPrice: round(job.laborBillRate),
+      unitOfMeasureCode: DEFAULT_UNIT_OF_MEASURE
     });
   }
 

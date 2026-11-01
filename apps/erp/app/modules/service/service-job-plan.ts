@@ -3,14 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The journal lines a service job posts, pure: the coverage account its cost
-// goes to, the completion journal (labor), and the reclass a coverage change
-// writes for the parts already issued. `postServiceJob` and the `serviceJob*`
+// goes to, the cost groups of its time entries, and the reclass a coverage
+// change writes for the parts already issued. `postServiceJob` and the `serviceJob*`
 // issue types (`service.service.ts`, `inventory.service.ts`) read the
 // database and write what this returns.
 // Spec: `.ai/specs/2026-10-22-service-jobs-and-returns.md` → Postings.
 
 import { InvalidInputError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
+import { journalReference } from "@carbon/database";
 import {
   type AutomaticJournalStatus,
   type OptionalDefaultRole,
@@ -23,6 +24,10 @@ import {
   EPSILON,
   round
 } from "@carbon/utils";
+import type {
+  LaborDimension,
+  LaborGroup
+} from "~/modules/resources/resources.service";
 
 type ServiceCoverage = Database["public"]["Enums"]["serviceCoverage"];
 
@@ -81,61 +86,40 @@ export type ServiceJobJournalLine = {
   accountDefaultRole: OptionalDefaultRole | null;
 };
 
-/** A time entry, with its labor item's cost per hour. */
-export type ServiceJobTimeCost = {
-  laborItemId: string;
-  laborItemName: string;
-  hours: number;
-  unitCost: number;
-};
-
 /**
- * The completion journal: one pair per labor item, Dr the coverage account /
- * Cr labor absorption, at Σ hours × the item's cost per hour. A labor item
- * whose entries cost nothing writes no pair. Returns no lines when the job's
- * time costs nothing.
+ * What a job's closed time entries should have posted: per entry, Dr the
+ * coverage account / Cr labor absorption at hours × the entry's cost rate,
+ * keyed by the entry (`journalReference.to.serviceJobTime`). An entry that
+ * costs nothing has no groups, so its prior lines reverse. The reconcile
+ * (`reconcileServiceJobTime`) diffs this against what the journal holds.
  */
-export function buildServiceJobCompletionLines(args: {
-  coverage: ServiceCoverage;
+export function buildServiceTimeCostGroups(args: {
+  entries: { id: string; hours: number; unitCost: number }[];
   coverageAccountId: string;
-  laborAbsorption: {
-    accountId: string;
-    accountDefaultRole: OptionalDefaultRole | null;
-  };
-  time: ServiceJobTimeCost[];
-}): { lines: ServiceJobJournalLine[]; total: number } {
-  const byItem = new Map<string, { name: string; cost: number }>();
-  for (const entry of args.time) {
-    const current = byItem.get(entry.laborItemId) ?? {
-      name: entry.laborItemName,
-      cost: 0
-    };
-    current.cost += Number(entry.hours) * Number(entry.unitCost);
-    byItem.set(entry.laborItemId, current);
-  }
-
-  const lines: ServiceJobJournalLine[] = [];
-  let total = 0;
-  for (const { name, cost: exact } of byItem.values()) {
-    const cost = round(exact);
-    if (cost < EPSILON) continue;
-    total += cost;
-    lines.push(
+  laborAbsorptionAccountId: string;
+  dimensions: LaborDimension[];
+}): LaborGroup[] {
+  const groups: LaborGroup[] = [];
+  for (const entry of args.entries) {
+    const cost = round(Number(entry.hours) * Number(entry.unitCost));
+    if (cost <= EPSILON) continue;
+    const reference = journalReference.to.serviceJobTime(entry.id);
+    groups.push(
       {
+        reference,
         accountId: args.coverageAccountId,
-        description: `${coverageLineDescription(args.coverage)}: ${name}`,
-        amount: debit("expense", cost),
-        accountDefaultRole: null
+        dimensions: [...args.dimensions],
+        amount: debit("expense", cost)
       },
       {
-        accountId: args.laborAbsorption.accountId,
-        description: `Labor Absorption: ${name}`,
-        amount: credit("expense", cost),
-        accountDefaultRole: args.laborAbsorption.accountDefaultRole
+        reference,
+        accountId: args.laborAbsorptionAccountId,
+        dimensions: [...args.dimensions],
+        amount: credit("expense", cost)
       }
     );
   }
-  return { lines, total: round(total) };
+  return groups;
 }
 
 /**

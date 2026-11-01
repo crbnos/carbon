@@ -1042,6 +1042,9 @@ msgstr "Personalkategorie"
 msgid "Labor ended"
 msgstr "Personal beendet"
 
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "Personalsätze sind nicht festgelegt. Die Zeit kann nicht protokolliert oder abgerechnet werden, bis sie festgelegt sind."
+
 msgid "Labor until <0/>"
 msgstr "Personal bis <0/>"
 
@@ -2068,6 +2071,9 @@ msgstr "Sitzung gesperrt"
 
 msgid "Set Clock Out"
 msgstr "Ausstempelzeit setzen"
+
+msgid "Set rates"
+msgstr "Sätze festlegen"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Legen Sie die Uhrzeit fest, zu der Sie mit der Arbeit aufgehört haben, oder bestätigen Sie, dass Sie noch arbeiten."

@@ -343,7 +343,8 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
       "Material",
       "Tool",
       "Fixed Asset",
-      "Rental"
+      "Rental",
+      "Labor"
     ].includes(line.invoiceLineType)
   ) {
     throw new Error(`Unsupported invoice line type: ${line.invoiceLineType}`);

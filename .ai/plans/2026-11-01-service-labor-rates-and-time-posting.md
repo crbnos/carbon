@@ -6,26 +6,26 @@
 **Branch:** projects-port-main-v1
 
 ## Progress
-- [ ] Task 1: Add the `Labor` invoice line type (migration)
-- [ ] Task 2: Add the rate, revenue and link columns (migration)
-- [ ] Task 3: Regenerate types
-- [ ] Task 4: Add the Service Revenue account default
-- [ ] Task 5: Add Settings → Service
-- [ ] Task 6: Add the time reference and generalize the superseded filter
-- [ ] Task 7: Build the time cost groups (pure)
-- [ ] Task 8: Add the `post-time` reconcile
-- [ ] Task 9: Change Complete, Reopen and Set Coverage
-- [ ] Task 10: Change the ERP time writes
-- [ ] Task 11: Add the job bill rate and fixed price
-- [ ] Task 12: Add the Labor estimate line
-- [ ] Task 13: Bill labor on one Labor invoice line
-- [ ] Task 14: Post service job invoices to Service Revenue and clear accruals
-- [ ] Task 15: Accrue service revenue in the revenue recognition run
-- [ ] Task 16: Sync Service Revenue to QuickBooks, Xero and Rillet
-- [ ] Task 17: Add the ERP stop clock and the Complete, Invoice and Cancel guards
-- [ ] Task 18: Change the MES clock, New Job and My Time
-- [ ] Task 19: Show the missing-rate warning on both job pages
-- [ ] Task 20: Change the demo data
+- [x] Task 1: Add the `Labor` invoice line type (migration)
+- [x] Task 2: Add the rate, revenue and link columns (migration)
+- [x] Task 3: Regenerate types
+- [x] Task 4: Add the Service Revenue account default
+- [x] Task 5: Add Settings → Service
+- [x] Task 6: Add the time reference and generalize the superseded filter
+- [x] Task 7: Build the time cost groups (pure)
+- [x] Task 8: Add the `post-time` reconcile
+- [x] Task 9: Change Complete, Reopen and Set Coverage
+- [x] Task 10: Change the ERP time writes
+- [x] Task 11: Add the job bill rate and fixed price
+- [x] Task 12: Add the Labor estimate line
+- [x] Task 13: Bill labor on one Labor invoice line
+- [x] Task 14: Post service job invoices to Service Revenue and clear accruals
+- [x] Task 15: Accrue service revenue in the revenue recognition run
+- [x] Task 16: Sync Service Revenue to QuickBooks, Xero and Rillet
+- [x] Task 17: Add the ERP stop clock and the Complete, Invoice and Cancel guards
+- [x] Task 18: Change the MES clock, New Job and My Time
+- [x] Task 19: Show the missing-rate warning on both job pages
+- [x] Task 20: Change the demo data
 - [ ] Task 21: Update the docs and rules
 - [ ] Task 22: Verify in the browser
 
@@ -437,12 +437,11 @@ set -a; . ./.env.local; set +a; pnpm exec vitest run test/database/create-servic
 1. Add `serviceJob: boolean` to `postingAccountNeeds`: true when any line has `serviceJobId`.
 2. When `needs.serviceJob`, resolve `serviceRevenueAccount` (with its fallback) and read `contractAssetAccount` in the plan. Expose `serviceRevenue` in `charges()`.
 3. Load the unbilled service Accrual rows: `type 'Accrual'`, `serviceJobId` IN the invoice's jobs, `billedBySalesInvoiceLineId IS NULL`, any status.
-4. For a line with `serviceJobId`, return `{ book: "legs", legs }`:
-   1. The first line of each job: a Contract Assets leg (`accountClass "Asset"`, `description "Contract Assets"`, `amount` = the job's accrued sum), when the sum is not 0.
-   2. Then a Service Revenue leg (`accountClass "Revenue"`, `description "Service Revenue"`) for the remainder.
-   3. Other lines of the job: one Service Revenue leg.
-5. If `buildSalesPostingLines` refuses a negative remainder, STOP and report. The fallback is the spec's Risks row: cap the Contract Assets leg at the line revenue.
-6. Stamp the job's accrual rows with the first line's id. Copy the CASE UPDATE and its count check.
+4. Spread the job's unbilled accrual over the job's invoice lines, in sort order. Each line takes min(accrual left, its revenue). For each line with `serviceJobId`, return `{ book: "legs", legs }`:
+   1. A Contract Assets leg (`accountClass "Asset"`, `description "Contract Assets"`, `amount` = the line's share), when the share is not 0.
+   2. A Service Revenue leg (`accountClass "Revenue"`, `description "Service Revenue"`) for the remainder.
+5. If accrual is left after the last line of the job, write reclass lines outside the builder: Cr Contract Assets / Dr Service Revenue for that excess. Copy the `reclass` lines of `planContractInvoiceLine`. (Correction 2026-11-01: `buildSalesPostingLines` refuses a leg larger than its line, so the whole accrual cannot sit on one line.)
+6. Stamp the job's accrual rows with the job's first line id. Copy the CASE UPDATE and its count check.
 7. In the void, clear the stamp for the voided lines.
 8. Add `'Labor'` to the line-type lists and UI branches. A Labor line shows "Labor" and has no item link.
 9. Write tests:

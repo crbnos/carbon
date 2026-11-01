@@ -100,11 +100,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .filter(Boolean)
       .join(", ") || null;
 
+  // A line with no item is Labor: hours at the job's bill rate.
   const priced = (lines.data ?? []).map((line) => ({
-    description: line.description || line.item?.name || line.itemId,
+    description: line.description || line.item?.name || line.itemId || "Labor",
     quantity: line.quantity,
     unitPrice: line.unitPrice,
-    amount: line.quantity * line.unitPrice
+    amount: line.quantity * line.unitPrice,
+    isLabor: !line.itemId
   }));
   const asset = job.data.customerAsset;
 
@@ -125,7 +127,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       description: line.description,
       quantity: formatQuantity(line.quantity, locale),
       unitPrice: price.format(line.unitPrice),
-      amount: money(line.amount)
+      amount: money(line.amount),
+      isLabor: line.isLabor
     })),
     total: money(priced.reduce((sum, line) => sum + line.amount, 0))
   };

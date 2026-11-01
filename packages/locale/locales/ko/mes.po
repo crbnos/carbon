@@ -1042,6 +1042,9 @@ msgstr "노무 분류"
 msgid "Labor ended"
 msgstr "노무 완료"
 
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "노무 요금이 설정되지 않았습니다. 설정될 때까지 시간을 기록하거나 청구할 수 없습니다."
+
 msgid "Labor until <0/>"
 msgstr "노무 <0/>까지"
 
@@ -2068,6 +2071,9 @@ msgstr "세션 잠김"
 
 msgid "Set Clock Out"
 msgstr "작업 종료 설정"
+
+msgid "Set rates"
+msgstr "요금 설정"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "작업을 중단한 시간을 설정하거나 계속 작업 중임을 확인하세요."

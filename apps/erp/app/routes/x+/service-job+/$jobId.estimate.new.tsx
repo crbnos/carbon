@@ -39,11 +39,12 @@ export default function NewServiceJobEstimateLineRoute() {
     <ServiceJobEstimateLineForm
       initialValues={{
         serviceJobId: jobId,
-        itemId: "",
+        itemId: undefined,
         description: "",
         quantity: 1,
         unitPrice: 0
       }}
+      laborBillRate={job?.laborBillRate ?? null}
       isLocked={
         isServiceJobLocked(job?.status) ||
         job?.estimateStatus === "Sent" ||

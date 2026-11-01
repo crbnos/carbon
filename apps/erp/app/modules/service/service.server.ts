@@ -393,7 +393,10 @@ export const createServiceJob = defineServiceFn({
  * job's customer's; a job from a return or on an asset keeps its customer,
  * and a job with issued parts keeps its location. `findings` and
  * `resolution` take the editor's document as JSON; `repairable` takes `true`
- * or `false`. The status and the coverage are not set here.
+ * or `false`. `laborBillRate` (per hour) also sets the price of the job's
+ * Labor estimate lines, and is refused once the estimate is Sent or
+ * Accepted; `fixedPrice` is refused unless the job is Fixed Price. The
+ * status and the coverage are not set here.
  *
  * @mcp
  */
@@ -404,7 +407,9 @@ export const updateServiceJob = defineServiceFn({
   async run(ctx, { ids, field, value }) {
     const jobs = await ctx.asCaller.supabase
       .from("serviceJob")
-      .select("id, status, customerId, salesReturnOrderLineId, customerAssetId")
+      .select(
+        "id, status, customerId, salesReturnOrderLineId, customerAssetId, estimateStatus, billingMethod"
+      )
       .in("id", ids)
       .eq("companyId", ctx.company.id);
     if (jobs.error) {
@@ -431,6 +436,20 @@ export const updateServiceJob = defineServiceFn({
 
     const values = await service.serviceJobFieldValues(ctx, field, value);
     if (values instanceof CarbonError) return values;
+
+    if (field === "laborBillRate") {
+      try {
+        await service.updateServiceJobLaborBillRate(ctx.asSystem.pg, {
+          ids,
+          companyId: ctx.company.id,
+          updatedBy: ctx.auditUserId,
+          laborBillRate: values.laborBillRate ?? null
+        });
+      } catch (err) {
+        return ctx.error("internal", "Failed to update the bill rate", err);
+      }
+      return { ids };
+    }
 
     const update = await service.updateServiceJob(ctx.asCaller.supabase, {
       ids,
@@ -534,15 +553,15 @@ const [completeInput, reopenInput, setCoverageInput] =
   postServiceJobInput.options;
 
 /**
- * Complete a service job and post its time.
+ * Complete a service job.
  *
  * @remarks
- * Runs `post-service-job`: one journal for all the job's time, a pair per
- * labor item, Dr the coverage account (Cost of Service, or Warranty Expense)
- * / Cr Labor Absorption at hours × the labor item's unit cost. Refused when
- * the job is not Open, In Progress or On Hold, has a labor item with no
- * cost, or has a clock running. A
- * job from an RMA line updates the RMA's status.
+ * Runs `post-service-job`. Time posts as it is logged; Complete first posts
+ * any time cost not yet posted (Dr the coverage account, Cost of Service or
+ * Warranty Expense / Cr Labor Absorption at hours × the entry's cost rate)
+ * and is refused if that fails. Refused when the job is not Open, In
+ * Progress or On Hold, or has a clock running. A job from an RMA line
+ * updates the RMA's status.
  *
  * @mcp
  */
@@ -561,9 +580,9 @@ export const completeServiceJob = defineServiceFn({
  * Reopen a Completed service job.
  *
  * @remarks
- * Runs `post-service-job`: voids the completion journal with a negated copy,
- * clears the cost stored on each time entry and moves the job back to In
- * Progress. An Invoiced job cannot reopen.
+ * Runs `post-service-job`: moves the job back to In Progress. It posts no
+ * journal: the time cost stays posted. An Invoiced job cannot reopen, nor
+ * can a job whose RMA unit was shipped back, scrapped or replaced.
  *
  * @mcp
  */
@@ -583,8 +602,9 @@ export const reopenServiceJob = defineServiceFn({
  *
  * @remarks
  * Runs `post-service-job`: the cost of the parts already issued moves from
- * the old coverage account to the new one in one journal. Refused once the
- * job is Completed, Invoiced or Cancelled.
+ * the old coverage account to the new one in one journal, and the posted
+ * time cost moves in a second. Refused once the job is Completed, Invoiced
+ * or Cancelled.
  *
  * @mcp
  */
@@ -604,9 +624,11 @@ export const setServiceJobCoverage = defineServiceFn({
  *
  * @remarks
  * Runs `create-service-invoice`: one Draft sales invoice. A Time and
- * Materials job bills its billable hours per labor item at the labor item's
- * sale price, then each billable part and charge; a Fixed Price job bills one
- * line of its service item at the fixed price. Every line names the job, so
+ * Materials job bills its billable hours on one Labor line at the job's bill
+ * rate (refused while the job has none), then each billable part and charge;
+ * a Fixed Price job bills one line of its service item at the fixed price.
+ * `fixedPrice` sets the price of a Fixed Price job that has none, in the
+ * same transaction; it is refused on any other job. Every line names the job, so
  * posting the invoice writes revenue only: the parts already left stock. The
  * job moves to Invoiced. Refused unless the job is Completed and Billable.
  * Returns the invoice.
@@ -630,9 +652,11 @@ export const createServiceInvoice = defineServiceFn({
  * Add or save a line of a service job's estimate.
  *
  * @remarks
- * A labor item (its quantity is hours), a part or a charge, with a unit
- * price. Refused when the job is Completed, Invoiced or Cancelled, and while
- * the estimate is Sent or Accepted. The item must be the company's.
+ * With no `itemId` it is a Labor line: its quantity is hours and its unit
+ * price is the job's bill rate (refused while the job has none). Otherwise a
+ * part or a charge at `unitPrice`; the item must be the company's. Refused
+ * when the job is Completed, Invoiced or Cancelled, and while the estimate is
+ * Sent or Accepted.
  *
  * @mcp
  */
@@ -649,14 +673,34 @@ export const upsertServiceJobEstimateLine = defineServiceFn({
         `The estimate is ${job.estimateStatus}. Its lines cannot change.`
       );
     }
-    const refused = await refuseUnlessOwned(ctx, "item", { id: line.itemId });
-    if (refused) return refused;
+    let unitPrice: number;
+    if (line.itemId) {
+      const refused = await refuseUnlessOwned(ctx, "item", {
+        id: line.itemId
+      });
+      if (refused) return refused;
+      if (line.unitPrice === undefined) {
+        return ctx.error("validation", "Unit price is required");
+      }
+      unitPrice = line.unitPrice;
+    } else {
+      if (job.laborBillRate === null) {
+        return ctx.error("rule", "Set the job's bill rate first.");
+      }
+      unitPrice = job.laborBillRate;
+    }
 
+    const values = { ...line, unitPrice };
     const upsert = await service.upsertServiceJobEstimateLine(
       ctx.asCaller.supabase,
       id
-        ? { ...line, id, companyId: ctx.company.id, updatedBy: ctx.auditUserId }
-        : { ...line, companyId: ctx.company.id, createdBy: ctx.auditUserId }
+        ? {
+            ...values,
+            id,
+            companyId: ctx.company.id,
+            updatedBy: ctx.auditUserId
+          }
+        : { ...values, companyId: ctx.company.id, createdBy: ctx.auditUserId }
     );
     return unwrap(ctx, upsert);
   }
@@ -840,10 +884,12 @@ export const recordServiceJobEstimateResponse = defineServiceFn({
  * Add or save a time entry on a service job.
  *
  * @remarks
- * Hours one employee worked on one day, at a labor item's cost and bill
- * rate. The employee must be an active employee of the company, and the labor
- * item a Service item of the company. Refused when the job is Completed,
- * Invoiced or Cancelled. Time posts when the job is completed.
+ * Hours one employee worked on one day. The employee must be an active
+ * employee of the company. Refused when the job is Completed, Invoiced or
+ * Cancelled, or when the company has no labor cost rate (Settings →
+ * Service). Then the job's time cost posts: a closed entry costs hours × the
+ * cost rate, Dr the coverage account / Cr Labor Absorption. When that fails,
+ * the entry is still saved and `warning` says so.
  *
  * @mcp
  */
@@ -856,11 +902,7 @@ export const upsertServiceJobTime = defineServiceFn({
     if (job instanceof CarbonError) return job;
     const refused =
       (await service.refuseUnlessEmployee(ctx, time.employeeId)) ??
-      (await service.refuseUnlessServiceItem(
-        ctx,
-        time.laborItemId,
-        "The labor item"
-      ));
+      (await service.refuseWithoutLaborCostRate(ctx));
     if (refused) return refused;
 
     const upsert = await service.upsertServiceJobTime(
@@ -869,7 +911,19 @@ export const upsertServiceJobTime = defineServiceFn({
         ? { ...time, id, companyId: ctx.company.id, updatedBy: ctx.auditUserId }
         : { ...time, companyId: ctx.company.id, createdBy: ctx.auditUserId }
     );
-    return unwrap(ctx, upsert);
+    const saved = unwrap(ctx, upsert);
+    if (saved instanceof CarbonError) return saved;
+
+    const postingError = await service.postServiceJobTime(
+      ctx,
+      time.serviceJobId
+    );
+    return {
+      ...saved,
+      warning: postingError
+        ? `Time entry saved, but its cost did not post: ${postingError}`
+        : null
+    };
   }
 });
 
@@ -877,7 +931,10 @@ export const upsertServiceJobTime = defineServiceFn({
  * Remove a time entry from a service job.
  *
  * @remarks
- * Refused when the job is Completed, Invoiced or Cancelled.
+ * Refused when the job is Completed, Invoiced or Cancelled, or when the
+ * company has no labor cost rate (Settings → Service). Then the job's time
+ * cost posts again, which reverses the entry's cost; when that fails, the
+ * entry is still removed and `warning` says so.
  *
  * @mcp destructive
  */
@@ -888,7 +945,10 @@ export const deleteServiceJobTime = defineServiceFn({
   async run(ctx, { serviceJobId, id }) {
     const job = await service.editableServiceJob(ctx, serviceJobId);
     if (job instanceof CarbonError) return job;
-    return unwrap(
+    const refused = await service.refuseWithoutLaborCostRate(ctx);
+    if (refused) return refused;
+
+    const removed = unwrap(
       ctx,
       await service.deleteServiceJobTime(ctx.asCaller.supabase, {
         id,
@@ -896,6 +956,59 @@ export const deleteServiceJobTime = defineServiceFn({
         companyId: ctx.company.id
       })
     );
+    if (removed instanceof CarbonError) return removed;
+
+    const postingError = await service.postServiceJobTime(ctx, serviceJobId);
+    return {
+      ...removed,
+      warning: postingError
+        ? `Time entry removed, but its cost was not reversed: ${postingError}`
+        : null
+    };
+  }
+});
+
+/**
+ * Stop every clock running on a service job.
+ *
+ * @remarks
+ * Each running entry ends now. Its hours are the time since it started, and
+ * its day is the company's day it started on. Then the job's time cost
+ * posts; when that fails, the clocks are still stopped and `warning` says
+ * so. Refused when the job is Completed, Invoiced or Cancelled. A job with no
+ * running clock stops nothing.
+ *
+ * @mcp
+ */
+export const stopServiceJobClock = defineServiceFn({
+  input: z.object({ serviceJobId: z.string().min(1) }),
+  permission: { update: "service" },
+
+  async run(ctx, { serviceJobId }) {
+    const job = await service.editableServiceJob(ctx, serviceJobId);
+    if (job instanceof CarbonError) return job;
+
+    let stopped: string[];
+    try {
+      stopped = await service.stopServiceJobClocks(ctx.asSystem.pg, {
+        serviceJobId,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      });
+    } catch (err) {
+      return ctx.error("internal", "Failed to stop the clock", err);
+    }
+
+    const postingError =
+      stopped.length > 0
+        ? await service.postServiceJobTime(ctx, serviceJobId)
+        : null;
+    return {
+      ids: stopped,
+      warning: postingError
+        ? `Clock stopped, but its cost did not post: ${postingError}`
+        : null
+    };
   }
 });
 
@@ -904,13 +1017,14 @@ export const deleteServiceJobTime = defineServiceFn({
  *
  * @remarks
  * The difference from the day's clock entries is written to the day's one
- * manual entry (no clock): saved, added at the company's service labor item,
- * or removed at 0. A total below the clock entries writes nothing and comes
- * back as `warning`: clock time is edited on the job. Refused when the job is
- * Completed, Invoiced or Cancelled. Like My Time and the MES clock it needs
- * only company membership: any employee may log time on any open job, since
- * more than one person works on a job. Service time never goes through
- * timesheet submit or approval.
+ * manual entry (no clock): saved, added, or removed at 0. The job's time
+ * cost posts in the same transaction. A total below the clock entries writes
+ * nothing and comes back as `warning`: clock time is edited on the job.
+ * Refused when the job is Completed, Invoiced or Cancelled, or when the
+ * company has no labor cost rate (Settings → Service). Like My Time and the
+ * MES clock it needs only company membership: any employee may log time on
+ * any open job, since more than one person works on a job. Service time
+ * never goes through timesheet submit or approval.
  */
 export const setServiceJobDayHours = defineServiceFn({
   input: serviceJobDayHoursValidator,
@@ -918,6 +1032,8 @@ export const setServiceJobDayHours = defineServiceFn({
   permission: {},
 
   async run(ctx, input) {
+    const refused = await service.refuseWithoutLaborCostRate(ctx);
+    if (refused) return refused;
     return run(ctx, "setServiceJobDayHours", () =>
       service.setServiceJobDayHours(ctx.asSystem.pg, {
         ...input,

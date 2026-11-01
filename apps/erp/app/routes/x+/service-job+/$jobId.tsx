@@ -7,12 +7,19 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { storage } from "@carbon/files";
 import type { JSONContent } from "@carbon/react";
-import { RecordOutlet, VStack } from "@carbon/react";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  RecordOutlet,
+  VStack
+} from "@carbon/react";
 import { isServiceJobLocked, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useParams } from "react-router";
+import { Link, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getServiceJob,
@@ -28,6 +35,7 @@ import {
   ServiceJobProblem
 } from "~/modules/service/ui/ServiceJob/ServiceJobNotes";
 import ServiceJobProperties from "~/modules/service/ui/ServiceJob/ServiceJobProperties";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -59,11 +67,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const [job, time, items, estimateLines] = await Promise.all([
+  const [job, time, items, estimateLines, companySettings] = await Promise.all([
     getServiceJob(client, jobId),
     getServiceJobTime(client, jobId),
     getServiceJobItems(client, jobId),
-    getServiceJobEstimateLines(client, jobId)
+    getServiceJobEstimateLines(client, jobId),
+    getCompanySettings(client, companyId)
   ]);
 
   if (job.error || !job.data || job.data.companyId !== companyId) {
@@ -78,6 +87,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     time: time.data ?? [],
     items: items.data ?? [],
     estimateLines: estimateLines.data ?? [],
+    laborCostRate: companySettings.data?.serviceLaborCostRate ?? null,
     files: getServiceJobFiles(client, companyId, jobId)
   };
 }
@@ -85,12 +95,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function ServiceJobRoute() {
   const { t } = useLingui();
   const { jobId } = useParams();
-  const { job, time, items, estimateLines, files } =
+  const { job, time, items, estimateLines, laborCostRate, files } =
     useLoaderData<typeof loader>();
 
   if (!jobId) throw new Error("Could not find jobId");
 
   const isLocked = isServiceJobLocked(job.status);
+  // Time cannot be logged without the cost rate, nor billed without the
+  // job's bill rate.
+  const isMissingRates =
+    !isLocked &&
+    (laborCostRate === null ||
+      (job.coverage === "Billable" && job.laborBillRate === null));
 
   return (
     <PanelProvider>
@@ -110,6 +126,25 @@ export default function ServiceJobRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
+                    {isMissingRates && (
+                      <Alert variant="warning">
+                        <LuTriangleAlert />
+                        <AlertTitle>
+                          <Trans>
+                            Labor rates are not set. Time cannot be logged or
+                            billed until they are.
+                          </Trans>
+                        </AlertTitle>
+                        <AlertDescription>
+                          <Link
+                            to={path.to.serviceSettings}
+                            className="font-medium hover:underline"
+                          >
+                            <Trans>Set rates</Trans>
+                          </Link>
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     <ServiceJobProblem
                       key={`problem-${jobId}`}
                       id={jobId}

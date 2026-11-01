@@ -224,6 +224,7 @@ export const path = {
     service: `${x}/service`,
     serviceJob: (id: string) => generatePath(`${x}/service/${id}`),
     serviceJobDetail: (id: string) => `${getAppUrl()}${x}/service-job/${id}`,
+    serviceSettings: `${ERP_URL}/x/settings/service`,
     serviceTime: `${x}/service-time`,
     setupRequired: "/setup-required",
     startOperation: (id: string) => generatePath(`${x}/start/${id}`),

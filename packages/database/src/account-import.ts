@@ -88,6 +88,7 @@ export const ROLE_NAMES = {
   migrationClearingAccount: "Migration Clearing",
   salesAccount: "Sales",
   salesShippingRevenueAccount: "Shipping Revenue",
+  serviceRevenueAccount: "Service Revenue",
   salesDiscountAccount: "Sales Discounts",
   salesReturnsAccount: "Sales Returns",
   customerPaymentDiscountAccount: "Customer Payment Discounts",

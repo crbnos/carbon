@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertBalanced, EPSILON, round } from "../../precision.ts";
+import { journalReference } from "../../utils.ts";
 import { workdayBefore } from "../dates.ts";
 import {
   insertId,
@@ -25,7 +26,7 @@ import {
   receiptJournal,
   salesInvoiceJournal,
   scrapJournal,
-  serviceJobCompletionJournal,
+  serviceJobTimeJournal,
   shipmentJournal,
   voidJournal
 } from "./posting-journals.ts";
@@ -718,19 +719,20 @@ export async function postPayment(
 }
 
 /**
- * post-service-job `complete` for every Completed and Invoiced job tier 04
- * seeded: one Posted 'Service Job' journal on the completion day, Dr the
- * coverage account (Warranty: warrantyExpenseAccount; else
+ * post-service-job `post-time` for every time entry tier 04 seeded (all are
+ * closed): one Posted 'Service Job' journal per entry on the entry's day, Dr
+ * the coverage account (Warranty: warrantyExpenseAccount; else
  * costOfServiceAccount, falling back to costOfGoodsSoldAccount) / Cr
- * laborAbsorptionAccount, each line tagged with the job's location when a
- * Location dimension is active, and the job's `completionJournalId` set.
+ * laborAbsorptionAccount at hours × the cost rate. Each line names the entry
+ * (`journalReference.to.serviceJobTime`) and carries the job's location when
+ * a Location dimension is active.
  */
-export async function postServiceJobs(
+export async function postServiceJobTime(
   ctx: Ctx,
   posting: PostingContext
 ): Promise<void> {
   const jobs = ctx.dataset.sales.serviceJobs.filter(
-    (job) => job.status === "Completed" || job.status === "Invoiced"
+    (job) => job.time.length > 0
   );
   if (jobs.length === 0) return;
   const [defaults] = await rows<{
@@ -763,32 +765,15 @@ export async function postServiceJobs(
      ORDER BY id LIMIT 1`,
     [ctx.companyGroupId]
   );
-  const labor = need(
-    ctx.refs.items,
-    ctx.dataset.sales.serviceLaborItem,
-    "labor item"
-  );
+  const unitCost = ctx.dataset.sales.serviceLaborRates.cost;
   const locationId = ctx.refs.locations.Plant ?? ctx.locationId;
+  const laborAbsorption = expenseAccount(
+    defaults?.laborAbsorptionAccount,
+    "laborAbsorptionAccount"
+  );
 
   for (const spec of jobs) {
-    if (spec.completedWorkdaysBack === undefined) {
-      throw new Error(`Seed: service job "${spec.key}" has no completion day`);
-    }
     const jobId = need(ctx.refs.documents, `sj:${spec.key}`, "service job");
-    const journal = serviceJobCompletionJournal({
-      serviceJobReadableId: need(ctx.refs.misc, `sj-readable:${spec.key}`),
-      coverage: spec.coverage,
-      laborItemName: labor.name,
-      unitCost: labor.unitCost,
-      hours: spec.time.map((entry) => entry.hours)
-    });
-    if (journal.lines.length === 0) continue;
-    assertBalanced(
-      round(journal.lines.reduce((net, line) => net + line.amount, 0)),
-      0,
-      EPSILON,
-      `${journal.description} journal`
-    );
     const accountIds = {
       coverage:
         spec.coverage === "Warranty"
@@ -801,47 +786,60 @@ export async function postServiceJobs(
                 defaults?.costOfGoodsSoldAccount,
               "costOfServiceAccount"
             ),
-      laborAbsorption: expenseAccount(
-        defaults?.laborAbsorptionAccount,
-        "laborAbsorptionAccount"
-      )
+      laborAbsorption
     };
-    const postingDate = workdayBefore(ctx.anchor, spec.completedWorkdaysBack);
-    ctx.log(`journal — ${journal.description}`);
-    const journalEntryId = await nextJournalEntryId(ctx);
-    const journalId = await insertId(ctx, "journal", {
-      journalEntryId,
-      accountingPeriodId: periodFor(posting, postingDate),
-      description: journal.description,
-      postingDate,
-      sourceType: "Service Job",
-      status: "Posted",
-      postedAt: `${postingDate}T17:00:00Z`,
-      postedBy: ctx.userId
-    });
-    for (const line of journal.lines) {
-      const lineId = await insertId(ctx, "journalLine", {
-        journalId,
-        accountId: accountIds[line.account],
-        description: line.description,
-        amount: line.amount,
-        quantity: 1,
-        documentType: "Service Job",
-        documentId: jobId,
-        journalLineReference: `${journalEntryId}-1`
+    for (const [index, entry] of spec.time.entries()) {
+      const entryId = need(
+        ctx.refs.misc,
+        `sjt:${spec.key}:${index}`,
+        "service job time"
+      );
+      const journal = serviceJobTimeJournal({
+        serviceJobReadableId: need(ctx.refs.misc, `sj-readable:${spec.key}`),
+        coverage: spec.coverage,
+        unitCost,
+        hours: entry.hours
       });
-      if (location) {
-        await insertMaybe(ctx, "journalLineDimension", {
-          journalLineId: lineId,
-          dimensionId: location.id,
-          valueId: locationId
+      if (journal.lines.length === 0) continue;
+      assertBalanced(
+        round(journal.lines.reduce((net, line) => net + line.amount, 0)),
+        0,
+        EPSILON,
+        `${journal.description} journal`
+      );
+      const postingDate = workdayBefore(ctx.anchor, entry.workdaysBack);
+      ctx.log(`journal — ${journal.description} (${postingDate})`);
+      const journalEntryId = await nextJournalEntryId(ctx);
+      const journalId = await insertId(ctx, "journal", {
+        journalEntryId,
+        accountingPeriodId: periodFor(posting, postingDate),
+        description: journal.description,
+        postingDate,
+        sourceType: "Service Job",
+        status: "Posted",
+        postedAt: `${postingDate}T17:00:00Z`,
+        postedBy: ctx.userId
+      });
+      for (const line of journal.lines) {
+        const lineId = await insertId(ctx, "journalLine", {
+          journalId,
+          accountId: accountIds[line.account],
+          description: line.description,
+          amount: line.amount,
+          quantity: 1,
+          documentType: "Service Job",
+          documentId: jobId,
+          documentLineReference: journalReference.to.serviceJobTime(entryId),
+          journalLineReference: `${journalEntryId}-1`
         });
+        if (location) {
+          await insertMaybe(ctx, "journalLineDimension", {
+            journalLineId: lineId,
+            dimensionId: location.id,
+            valueId: locationId
+          });
+        }
       }
     }
-    await ctx.client.query(
-      `UPDATE "serviceJob" SET "completionJournalId" = $1
-       WHERE id = $2 AND "companyId" = $3`,
-      [journalId, jobId, ctx.companyId]
-    );
   }
 }

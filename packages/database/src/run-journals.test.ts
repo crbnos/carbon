@@ -300,7 +300,10 @@ describe("buildRecognitionJournals", () => {
       ]
     ]),
     leases: new Map(),
-    leaseAssets: new Map()
+    leaseAssets: new Map(),
+    serviceJobs: new Map([
+      ["sj-1", { customerId: "cust-4", locationId: "loc-4" }]
+    ])
   };
   const classById = new Map([
     ["deferred", "Liability" as const],
@@ -464,6 +467,69 @@ describe("buildRecognitionJournals", () => {
         }
       }
     ]);
+  });
+
+  it("references the service job, with its customer and location", () => {
+    const { journals } = build([
+      row({
+        scheduleId: "service",
+        type: "Accrual",
+        amount: -95,
+        debitAccountId: "unbilled",
+        salesInvoiceLineId: null,
+        serviceJobId: "sj-1"
+      })
+    ]);
+    const [journal] = journals as [(typeof journals)[number]];
+    expect(
+      journal.lines.map(
+        ({
+          accountId,
+          amount,
+          description,
+          documentType,
+          documentId,
+          dimensions
+        }) => ({
+          accountId,
+          amount,
+          description,
+          documentType,
+          documentId,
+          dimensions
+        })
+      )
+    ).toEqual([
+      {
+        accountId: "unbilled",
+        amount: -95,
+        description: "Unbilled service accrued",
+        documentType: "Service Job",
+        documentId: "sj-1",
+        dimensions: { Customer: "cust-4", Location: "loc-4" }
+      },
+      {
+        accountId: "sales",
+        amount: -95,
+        description: "Service revenue accrued",
+        documentType: "Service Job",
+        documentId: "sj-1",
+        dimensions: { Customer: "cust-4", Location: "loc-4" }
+      }
+    ]);
+  });
+
+  it("refuses a service row whose job was not loaded", () => {
+    expect(() =>
+      build([
+        row({
+          scheduleId: "service",
+          type: "Accrual",
+          salesInvoiceLineId: null,
+          serviceJobId: "sj-missing"
+        })
+      ])
+    ).toThrow("Service job sj-missing of schedule row service was not loaded");
   });
 
   it("refuses an account with no class", () => {

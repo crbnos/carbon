@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { journalReference } from "@carbon/database";
 import { describe, expect, it } from "vitest";
 import {
   buildCoverageReclassLines,
-  buildServiceJobCompletionLines,
+  buildServiceTimeCostGroups,
   MISSING_WARRANTY_EXPENSE_ACCOUNT,
   serviceCoverageAccount
 } from "./service-job-plan";
@@ -16,8 +17,6 @@ const defaults = {
   warrantyExpenseAccount: "warranty",
   retainedEarningsAccount: "re"
 };
-
-const absorption = { accountId: "absorb", accountDefaultRole: null };
 
 const pairs = (lines: { accountId: string; amount: number }[]) =>
   lines.map((line) => [line.accountId, line.amount]);
@@ -52,67 +51,53 @@ describe("serviceCoverageAccount", () => {
   });
 });
 
-describe("buildServiceJobCompletionLines", () => {
-  it("writes one pair per labor item at hours × cost", () => {
-    const { lines, total } = buildServiceJobCompletionLines({
-      coverage: "Billable",
-      coverageAccountId: "cos",
-      laborAbsorption: absorption,
-      time: [
-        {
-          laborItemId: "bench",
-          laborItemName: "Bench",
-          hours: 1,
-          unitCost: 40
-        },
-        {
-          laborItemId: "bench",
-          laborItemName: "Bench",
-          hours: 0.5,
-          unitCost: 40
-        },
-        { laborItemId: "field", laborItemName: "Field", hours: 2, unitCost: 55 }
-      ]
+describe("buildServiceTimeCostGroups", () => {
+  const accounts = {
+    coverageAccountId: "cos",
+    laborAbsorptionAccountId: "absorb",
+    dimensions: [{ dimensionId: "location", valueId: "depot" }]
+  };
+
+  it("posts hours × cost per entry, keyed by the entry", () => {
+    const groups = buildServiceTimeCostGroups({
+      ...accounts,
+      entries: [{ id: "t1", hours: 1.5, unitCost: 40 }]
     });
-    expect(pairs(lines)).toEqual([
-      ["cos", 60],
-      ["absorb", -60],
-      ["cos", 110],
-      ["absorb", -110]
+    expect(
+      groups.map((group) => [group.reference, group.accountId, group.amount])
+    ).toEqual([
+      [journalReference.to.serviceJobTime("t1"), "cos", 60],
+      [journalReference.to.serviceJobTime("t1"), "absorb", -60]
     ]);
-    expect(total).toBe(170);
-    expect(lines.reduce((sum, line) => sum + line.amount, 0)).toBe(0);
+    expect(groups.every((group) => group.dimensions.length === 1)).toBe(true);
   });
 
-  it("writes nothing when the time costs nothing", () => {
-    const { lines, total } = buildServiceJobCompletionLines({
-      coverage: "Warranty",
-      coverageAccountId: "warranty",
-      laborAbsorption: absorption,
-      time: [
-        { laborItemId: "bench", laborItemName: "Bench", hours: 0, unitCost: 40 }
-      ]
-    });
-    expect(lines).toEqual([]);
-    expect(total).toBe(0);
+  it("writes nothing for an entry that costs nothing", () => {
+    expect(
+      buildServiceTimeCostGroups({
+        ...accounts,
+        entries: [{ id: "t1", hours: 0, unitCost: 40 }]
+      })
+    ).toEqual([]);
   });
 
-  it("keeps a Provisional stand-in's role on the absorption line", () => {
-    const { lines } = buildServiceJobCompletionLines({
-      coverage: "Billable",
-      coverageAccountId: "cos",
-      laborAbsorption: {
-        accountId: "re",
-        accountDefaultRole: "laborAbsorptionAccount"
-      },
-      time: [
-        { laborItemId: "bench", laborItemName: "Bench", hours: 1, unitCost: 40 }
+  it("writes one pair per entry, each with its own reference", () => {
+    const groups = buildServiceTimeCostGroups({
+      ...accounts,
+      entries: [
+        { id: "t1", hours: 1, unitCost: 40 },
+        { id: "t2", hours: 2, unitCost: 55 }
       ]
     });
-    expect(lines.map((line) => line.accountDefaultRole)).toEqual([
-      null,
-      "laborAbsorptionAccount"
+    expect(
+      groups.map((group) => [group.reference, group.accountId, group.amount])
+    ).toEqual([
+      [journalReference.to.serviceJobTime("t1"), "cos", 40],
+      [journalReference.to.serviceJobTime("t1"), "absorb", -40],
+      [journalReference.to.serviceJobTime("t2"), "cos", 110],
+      [journalReference.to.serviceJobTime("t2"), "absorb", -110]
     ]);
+    expect(groups.reduce((sum, group) => sum + group.amount, 0)).toBe(0);
   });
 });
 

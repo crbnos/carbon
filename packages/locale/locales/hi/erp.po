@@ -784,6 +784,9 @@ msgstr "{hour} h"
 msgid "{hours} h"
 msgstr "{hours} घं"
 
+msgid "{hours} h × {rate}"
+msgstr "{hours} घंटे × {rate}"
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# पार्ट बनाया गया} other {# पार्ट्स बनाए गए}}"
 
@@ -1334,6 +1337,9 @@ msgstr "एक नियंत्रण खाते के नीचे एक 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "एक क्लीयरिंग खाता जो प्राप्त किए गए लेकिन अभी तक चालान नहीं किए गए सामान का मूल्य रखता है; आपूर्तिकर्ता चालान इसे साफ करता है।"
 
+msgid "A clock is still running on this job."
+msgstr "इस जॉब पर एक घड़ी अभी भी चल रही है।"
+
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "एक बंद परियोजना अब कोई और शुल्क नहीं लेती है और इसे फिर से नहीं खोला जा सकता है। इसे केवल बंद करें जब उस पर हर क्रय आदेश पंक्ति और जॉब हो गया हो।"
 
@@ -1462,6 +1468,9 @@ msgstr "एक छूट किसी तारीख को समाप्त 
 
 msgid "A draft run must be posted or deleted first."
 msgstr "एक ड्राफ्ट रन को पहले पोस्ट किया जाना चाहिए या हटाया जाना चाहिए।"
+
+msgid "A draft sales invoice is created for the job, and the job becomes Invoiced."
+msgstr "जॉब के लिए एक ड्राफ्ट विक्रय चालान बनाया जाता है, और जॉब चालान किया गया हो जाता है।"
 
 msgid "A draft set of plan changes with a title and a reason. The current plan does not change until the request is approved, and then it applies whole, in one step."
 msgstr "एक शीर्षक और कारण के साथ योजना परिवर्तनों का एक ड्राफ्ट सेट। वर्तमान योजना तब तक नहीं बदलती जब तक अनुरोध अनुमोदित न हो जाए, और फिर यह पूरी तरह से लागू होती है, एक चरण में।"
@@ -1603,6 +1612,9 @@ msgstr "प्रत्येक आपूर्तिकर्ता के ल
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "वर्तमान रिवीजन की एक प्रति का उपयोग करके एक नई रिवीजन बनाई जाएगी"
+
+msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
+msgstr "एक नई सेवा जॉब बिल दर को कॉपी करता है। प्रत्येक समय प्रविष्टि लागत दर पर इसकी लागत पोस्ट करती है।"
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "एक नया आकार वर्तमान आकार की प्रतिलिपि का उपयोग करके बनाया जाएगा"
@@ -4497,6 +4509,9 @@ msgstr "संबंध"
 msgid "Assumptions"
 msgstr "मान्यताएँ"
 
+msgid "At {billRate} per hour (the job's bill rate)"
+msgstr "{billRate} प्रति घंटे (जॉब की बिल दर)"
+
 msgid "At {locationName}"
 msgstr "{locationName} पर"
 
@@ -5000,6 +5015,9 @@ msgstr "बिलिंग दर"
 
 msgid "Bill Rate"
 msgstr "बिल दर"
+
+msgid "Bill Rate (per hour)"
+msgstr "बिल दर (प्रति घंटे)"
 
 msgid "Bill To"
 msgstr "बिल प्राप्तकर्ता"
@@ -6547,6 +6565,10 @@ msgstr "अनुकूलता नियम"
 msgid "Complete"
 msgstr "पूर्ण करें"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Complete {0}"
+msgstr "{0} को पूर्ण करें"
+
 #. placeholder {0}: getCompleteQuantity(operation)
 #. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
 msgid "Complete {0}/{1}"
@@ -7784,6 +7806,9 @@ msgstr "तत्व बनाएँ"
 msgid "Create Forecast"
 msgstr "पूर्वानुमान बनाएं"
 
+msgid "Create Invoice"
+msgstr "चालान बनाएँ"
+
 msgid "Create Issue"
 msgstr "समस्या बनाएं"
 
@@ -8700,6 +8725,9 @@ msgstr "डिफ़ॉल्ट अनुमोदक"
 
 msgid "Default Attachments"
 msgstr "डिफ़ॉल्ट अनुलग्नक"
+
+msgid "Default bill rate per hour"
+msgstr "प्रति घंटे डिफ़ॉल्ट बिल दर"
 
 msgid "Default cash account for transactions in non-base currencies."
 msgstr "गैर-आधार मुद्राओं में लेनदेन के लिए डिफ़ॉल्ट नकद खाता।"
@@ -12315,6 +12343,9 @@ msgstr "निर्धारित लागत परिशोधन विच
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "एक बार लेखा अवधियों को पोस्ट किया जाने या बंद किए जाने के बाद निर्धारित। इसे बदलने के लिए सभी खुली अवधियों को हटाएँ।"
 
+msgid "Fixed price"
+msgstr "निश्चित मूल्य"
+
 msgid "Fixed Price"
 msgstr "निर्धारित मूल्य"
 
@@ -13176,9 +13207,6 @@ msgstr "भुगतान किए गए घंटे"
 
 msgid "Hours per Week"
 msgstr "सप्ताह में घंटे"
-
-msgid "Hours, for a labor item"
-msgstr "श्रम आइटम के लिए घंटे"
 
 msgid "Hours/100 Pieces"
 msgstr "घंटे/100 पीस"
@@ -14057,6 +14085,10 @@ msgstr "आमंत्रित"
 msgid "Invoice"
 msgstr "चालान"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Invoice {0}"
+msgstr "{0} का चालान"
+
 msgid "Invoice {invoiceDate}"
 msgstr "चालान {invoiceDate}"
 
@@ -14695,6 +14727,9 @@ msgstr "श्रम श्रेणी"
 msgid "Labor category: {0}"
 msgstr "श्रम श्रेणी: {0}"
 
+msgid "Labor cost per hour"
+msgstr "प्रति घंटे श्रम लागत"
+
 msgid "Labor Costs"
 msgstr "श्रम लागत"
 
@@ -14707,9 +14742,6 @@ msgstr "श्रम समाप्त"
 msgid "Labor Hours"
 msgstr "श्रम घंटे"
 
-msgid "Labor Item"
-msgstr "श्रम आइटम"
-
 msgid "Labor rate"
 msgstr "श्रम दर"
 
@@ -14719,8 +14751,14 @@ msgstr "श्रम दर"
 msgid "Labor Rate (Hourly)"
 msgstr "श्रम दर (प्रति घंटा)"
 
+msgid "Labor rates"
+msgstr "श्रम दरें"
+
 msgid "Labor Rates"
 msgstr "श्रम दरें"
+
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "श्रम दरें सेट नहीं हैं। समय को तब तक लॉग या बिल नहीं किया जा सकता जब तक वे न हों।"
 
 msgid "Labor time"
 msgstr "श्रम समय"
@@ -22249,6 +22287,9 @@ msgstr "इस पूल से खाता {0} को निकालें? �
 msgid "Remove the received serial and batch numbers from stock"
 msgstr "प्राप्त सीरियल और बैच नंबर को स्टॉक से निकालें"
 
+msgid "Remove the time entries and return the parts first."
+msgstr "पहले समय प्रविष्टियों को निकालें और पार्ट्स वापस करें।"
+
 msgid "Remove this item"
 msgstr "इस आइटम को निकालें"
 
@@ -22925,6 +22966,9 @@ msgstr "राजस्व अर्जित लेकिन अभी चा�
 
 msgid "Revenue End"
 msgstr "राजस्व अंत"
+
+msgid "Revenue from service jobs"
+msgstr "सेवा जॉब से राजस्व"
 
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "बिक्रय-प्रकार पट्टे की शुरुआत में पट्टे की भुगतान के वर्तमान मूल्य के लिए राजस्व लेजर खाता क्रेडिट किया गया।"
@@ -24401,15 +24445,6 @@ msgstr "सेवा जॉब"
 msgid "Service Jobs"
 msgstr "सेवा जॉब"
 
-msgid "Service Labor"
-msgstr "सेवा श्रम"
-
-msgid "Service Labor Item"
-msgstr "सेवा श्रम आइटम"
-
-msgid "Service labor item updated"
-msgstr "सेवा श्रम आइटम अपडेट किया गया"
-
 msgid "Service lines"
 msgstr "सेवा पंक्तियां"
 
@@ -24418,6 +24453,12 @@ msgstr "सेवा अवधि"
 
 msgid "Service Provider Details"
 msgstr "सेवा प्रदाता विवरण"
+
+msgid "Service Revenue"
+msgstr "सेवा राजस्व"
+
+msgid "Service settings updated"
+msgstr "सेवा सेटिंग्स अपडेट की गईं"
 
 msgid "Service start"
 msgstr "सेवा की शुरुआत"
@@ -24497,6 +24538,9 @@ msgstr "दर सेट करें"
 msgid "Set Rate, FY{fiscalYear}"
 msgstr "दर सेट करें, वित्तीय वर्ष {fiscalYear}"
 
+msgid "Set rates"
+msgstr "दरें सेट करें"
+
 msgid "Set terms"
 msgstr "शर्तें सेट करें"
 
@@ -24511,6 +24555,9 @@ msgstr "लेखांकन व्यवहार को देखने क�
 
 msgid "Set the fiscal year settings."
 msgstr "वित्तीय वर्ष सेटिंग्स सेट करें।"
+
+msgid "Set the job's bill rate first."
+msgstr "पहले जॉब की बिल दर सेट करें।"
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
 msgstr "माइग्रेशन क्लीयरिंग खाता को एक सक्रिय इक्विटी खाता पर सेट करें जो एक समूह नहीं है।"
@@ -25567,6 +25614,9 @@ msgstr "केवल स्पेयर के लिए स्टॉक कि�
 
 msgid "Stockout"
 msgstr "स्टॉक आउट"
+
+msgid "Stop clock and complete"
+msgstr "घड़ी बंद करें और पूर्ण करें"
 
 msgid "Stop raising purchase orders after this date"
 msgstr "इस तारीख के बाद क्रय आदेश जारी करना बंद करें"
@@ -26655,6 +26705,9 @@ msgstr "बैच {0} है, योजनाबद्ध नहीं है"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "बैच अपने सबसे जरूरी सदस्य के समय चलता है — बाकी पहले खींचे जाते हैं"
 
+msgid "The bill rate is locked: the estimate was sent to the customer."
+msgstr "बिल दर लॉक है: अनुमान ग्राहक को भेजा गया था।"
+
 #. placeholder {0}: nameOf(gap.lineId)
 msgid "The billing element of {0} is not marked as a billing element."
 msgstr "{0} का बिलिंग तत्व बिलिंग तत्व के रूप में चिह्नित नहीं है।"
@@ -27126,6 +27179,9 @@ msgstr "आइटम की किराये की दर"
 
 msgid "The job closes without work. A job with time entries or issued parts cannot be cancelled."
 msgstr "यह जॉब बिना कार्य के बंद हो जाता है। समय प्रविष्टियों या जारी किए गए पार्ट्स वाली जॉब को रद्द नहीं किया जा सकता है।"
+
+msgid "The job closes. Its time and parts cannot change until it is reopened."
+msgstr "जॉब बंद हो जाता है। इसके समय और पार्ट्स तब तक नहीं बदल सकते जब तक इसे फिर से नहीं खोला जाता।"
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "उस दिन देय नौकरी के घंटे (देय तारीख आधार पर, वह दिन नहीं जब काम चलता है), अतिदेय कार्य पिछली देय में।"
@@ -27641,9 +27697,6 @@ msgstr "किराये पर देने के लिए निर्म�
 msgid "the selected class"
 msgstr "चयनित कक्षा"
 
-msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
-msgstr "सेवा आइटम जिसकी बिक्री मूल्य एक सेवा आदेश पर समय को मूल्य देता है, इसके अनुमान पर और इसके चालान पर।"
-
 msgid "The service, and how it reads on the invoice."
 msgstr "सेवा, और यह चालान पर कैसे पढ़ी जाती है।"
 
@@ -28080,6 +28133,9 @@ msgstr "यह फाइल अब उपलब्ध नहीं है, य�
 
 msgid "This Fiscal Year"
 msgstr "यह वित्तीय वर्ष"
+
+msgid "This Fixed Price job has no price."
+msgstr "इस निश्चित मूल्य जॉब का कोई मूल्य नहीं है।"
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "जब तक नीचे एक ईमेल डोमेन सत्यापित नहीं किया जाता, तब तक इसका कोई प्रभाव नहीं होगा।"

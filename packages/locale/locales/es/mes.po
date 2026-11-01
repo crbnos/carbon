@@ -1042,6 +1042,9 @@ msgstr "Categoría de mano de obra"
 msgid "Labor ended"
 msgstr "Mano de obra finalizada"
 
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "Las tarifas de mano de obra no están establecidas. El tiempo no puede registrarse ni facturarse hasta que lo estén."
+
 msgid "Labor until <0/>"
 msgstr "Mano de obra hasta <0/>"
 
@@ -2068,6 +2071,9 @@ msgstr "Sesión bloqueada"
 
 msgid "Set Clock Out"
 msgstr "Establecer Fichar salida"
+
+msgid "Set rates"
+msgstr "Establecer tarifas"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Establece la hora en que dejaste de trabajar o confirma que aún estás trabajando."

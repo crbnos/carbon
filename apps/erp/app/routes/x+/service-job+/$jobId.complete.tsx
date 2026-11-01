@@ -5,11 +5,28 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
+import { serviceJobFixedPriceValidator } from "~/modules/service/service.models";
 
-/** Completes the job: `post-service-job` posts its time in one journal. */
+/**
+ * Completes the job: `post-service-job` posts its time in one journal. A
+ * fixed price from the dialog is saved on the job first.
+ */
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator().request(args, { params: ["jobId"] });
+  const input = await validator(serviceJobFixedPriceValidator).request(args, {
+    params: ["jobId"]
+  });
   if ("invalid" in input) return input.invalid;
+  const { jobId } = input.params;
   const api = await carbon(args.request);
-  return api.service.completeServiceJob({ serviceJobId: input.params.jobId });
+
+  if (input.data.fixedPrice !== undefined) {
+    const saved = await api.service.updateServiceJob({
+      ids: [jobId],
+      field: "fixedPrice",
+      value: String(input.data.fixedPrice)
+    });
+    if (saved.error) return saved;
+  }
+
+  return api.service.completeServiceJob({ serviceJobId: jobId });
 }

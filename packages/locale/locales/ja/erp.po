@@ -784,6 +784,9 @@ msgstr "{hour} h"
 msgid "{hours} h"
 msgstr "{hours}時間"
 
+msgid "{hours} h × {rate}"
+msgstr "{hours} h × {rate}"
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {部品 # 件作成されました} other {部品 # 件作成されました}}"
 
@@ -1334,6 +1337,9 @@ msgstr "獲得価値技法（0/100、50/50、パーセント完了など）を�
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "受け取ったが請求されていない商品の価値を保有するクリアリング勘定。仕入先請求書がそれを結済します。"
 
+msgid "A clock is still running on this job."
+msgstr "この製造指図でタイマーが実行されています。"
+
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "クローズ済のプロジェクトはそれ以上の請求を受け取らず、再度開くことはできません。すべての発注書明細とそれ上の製造指図が完了したときのみクローズしてください。"
 
@@ -1462,6 +1468,9 @@ msgstr "値引は日付で終了でき、その後明細は完全な料率で請
 
 msgid "A draft run must be posted or deleted first."
 msgstr "下書き実行は最初に転記済にするか削除する必要があります。"
+
+msgid "A draft sales invoice is created for the job, and the job becomes Invoiced."
+msgstr "草案の売上請求書が製造指図で作成され、製造指図が請求済になります。"
 
 msgid "A draft set of plan changes with a title and a reason. The current plan does not change until the request is approved, and then it applies whole, in one step."
 msgstr "タイトルと理由を持つ計画変更の下書きセット。現在の計画は要求が承認されるまで変更されず、承認されると全体が一度に適用されます。"
@@ -1603,6 +1612,9 @@ msgstr "仕入先ごとに新しい発注書が作成されます。または、
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "現在のリビジョンのコピーを使用して、新しいリビジョンが作成されます"
+
+msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
+msgstr "新しい外注サービス製造指図は請求単価をコピーします。各時間エントリは原価単価でコストを転記します。"
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "新しいサイズが現在のサイズのコピーを使用して作成されます"
@@ -4497,6 +4509,9 @@ msgstr "関連項目"
 msgid "Assumptions"
 msgstr "前提条件"
 
+msgid "At {billRate} per hour (the job's bill rate)"
+msgstr "{billRate}時間あたり（製造指図の請求単価）"
+
 msgid "At {locationName}"
 msgstr "{locationName}で"
 
@@ -5000,6 +5015,9 @@ msgstr "請求率"
 
 msgid "Bill Rate"
 msgstr "ビルレート"
+
+msgid "Bill Rate (per hour)"
+msgstr "請求単価（時間あたり）"
 
 msgid "Bill To"
 msgstr "請求先"
@@ -6547,6 +6565,10 @@ msgstr "互換性ルール"
 msgid "Complete"
 msgstr "完了"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Complete {0}"
+msgstr "完了する {0}"
+
 #. placeholder {0}: getCompleteQuantity(operation)
 #. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
 msgid "Complete {0}/{1}"
@@ -7784,6 +7806,9 @@ msgstr "要素を作成"
 msgid "Create Forecast"
 msgstr "予測を作成"
 
+msgid "Create Invoice"
+msgstr "請求書を作成"
+
 msgid "Create Issue"
 msgstr "問題を作成"
 
@@ -8700,6 +8725,9 @@ msgstr "デフォルト承認者"
 
 msgid "Default Attachments"
 msgstr "デフォルト添付ファイル"
+
+msgid "Default bill rate per hour"
+msgstr "デフォルト請求単価（時間あたり）"
 
 msgid "Default cash account for transactions in non-base currencies."
 msgstr "非基本通貨での取引のデフォルト現金勘定。"
@@ -12315,6 +12343,9 @@ msgstr "バッチサイズが標準と異なる場合の固定原価配賦差異
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "会計期間に転記またはクローズされた後は固定されます。変更するにはすべてのオープン期間を削除してください。"
 
+msgid "Fixed price"
+msgstr "定額価格"
+
 msgid "Fixed Price"
 msgstr "固定価格"
 
@@ -13176,9 +13207,6 @@ msgstr "支払時間"
 
 msgid "Hours per Week"
 msgstr "週間あたりの時間"
-
-msgid "Hours, for a labor item"
-msgstr "労務品目の時間数"
 
 msgid "Hours/100 Pieces"
 msgstr "時間/100個"
@@ -14057,6 +14085,10 @@ msgstr "招待済み"
 msgid "Invoice"
 msgstr "請求書"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Invoice {0}"
+msgstr "請求書 {0}"
+
 msgid "Invoice {invoiceDate}"
 msgstr "請求書 {invoiceDate}"
 
@@ -14695,6 +14727,9 @@ msgstr "労務カテゴリ"
 msgid "Labor category: {0}"
 msgstr "労務カテゴリー: {0}"
 
+msgid "Labor cost per hour"
+msgstr "労務原価（時間あたり）"
+
 msgid "Labor Costs"
 msgstr "労務費"
 
@@ -14707,9 +14742,6 @@ msgstr "労務終了"
 msgid "Labor Hours"
 msgstr "労務時間"
 
-msgid "Labor Item"
-msgstr "労務品目"
-
 msgid "Labor rate"
 msgstr "労務単価"
 
@@ -14719,8 +14751,14 @@ msgstr "労務費率"
 msgid "Labor Rate (Hourly)"
 msgstr "労務単価（時間当たり）"
 
+msgid "Labor rates"
+msgstr "労務単価"
+
 msgid "Labor Rates"
 msgstr "労務レート"
+
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "労務単価が設定されていません。設定されるまで、時間をログまたは請求することはできません。"
 
 msgid "Labor time"
 msgstr "労務時間"
@@ -22249,6 +22287,9 @@ msgstr "このプールから勘定科目{0}を除去しますか？既に計算
 msgid "Remove the received serial and batch numbers from stock"
 msgstr "受け入れたシリアル番号とバッチ番号を在庫から除去する"
 
+msgid "Remove the time entries and return the parts first."
+msgstr "まず時間エントリを除去し、部品を返却してください。"
+
 msgid "Remove this item"
 msgstr "このアイテムを除去"
 
@@ -22925,6 +22966,9 @@ msgstr "レンタル中の機器の日数分など、獲得済みだがまだ請
 
 msgid "Revenue End"
 msgstr "売上高終了"
+
+msgid "Revenue from service jobs"
+msgstr "外注サービス製造指図からの売上高"
 
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "セールスタイプリースの開始時にリース支払いの現在価値を貸方に記入する売上高勘定科目"
@@ -24401,15 +24445,6 @@ msgstr "サービス製造指図"
 msgid "Service Jobs"
 msgstr "サービス製造指図"
 
-msgid "Service Labor"
-msgstr "外注サービス労務"
-
-msgid "Service Labor Item"
-msgstr "外注サービス労務品目"
-
-msgid "Service labor item updated"
-msgstr "外注サービス労務品目が更新されました"
-
 msgid "Service lines"
 msgstr "外注サービス明細"
 
@@ -24418,6 +24453,12 @@ msgstr "サービス期間"
 
 msgid "Service Provider Details"
 msgstr "サービスプロバイダーの詳細"
+
+msgid "Service Revenue"
+msgstr "外注サービス売上高"
+
+msgid "Service settings updated"
+msgstr "外注サービス設定が更新されました"
 
 msgid "Service start"
 msgstr "サービス開始日"
@@ -24497,6 +24538,9 @@ msgstr "料率を設定"
 msgid "Set Rate, FY{fiscalYear}"
 msgstr "料率を設定、FY{fiscalYear}"
 
+msgid "Set rates"
+msgstr "単価を設定"
+
 msgid "Set terms"
 msgstr "条件を設定"
 
@@ -24511,6 +24555,9 @@ msgstr "開始日、終了日、および支払条件を設定して、会計処
 
 msgid "Set the fiscal year settings."
 msgstr "会計年度を設定してください。"
+
+msgid "Set the job's bill rate first."
+msgstr "まず製造指図の請求単価を設定してください。"
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
 msgstr "マイグレーション清算勘定科目をグループではない有効な純資産勘定科目に設定してください。"
@@ -25567,6 +25614,9 @@ msgstr "スペア用のみ在庫あり。"
 
 msgid "Stockout"
 msgstr "欠品"
+
+msgid "Stop clock and complete"
+msgstr "タイマーを停止して完了"
 
 msgid "Stop raising purchase orders after this date"
 msgstr "この日付以降の発注書の作成を停止"
@@ -26655,6 +26705,9 @@ msgstr "バッチは{0}で、計画済ではありません"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "バッチは最も急ぎのメンバーに合わせて実行され、他は前倒しになります"
 
+msgid "The bill rate is locked: the estimate was sent to the customer."
+msgstr "請求単価がロック中です：見積が顧客に送信されました。"
+
 #. placeholder {0}: nameOf(gap.lineId)
 msgid "The billing element of {0} is not marked as a billing element."
 msgstr "{0}の請求要素は請求要素としてマークされていません。"
@@ -27126,6 +27179,9 @@ msgstr "品目のレンタル料金"
 
 msgid "The job closes without work. A job with time entries or issued parts cannot be cancelled."
 msgstr "製造指図は作業なくクローズします。時間エントリまたは発行部品を持つ製造指図はキャンセルできません。"
+
+msgid "The job closes. Its time and parts cannot change until it is reopened."
+msgstr "製造指図がクローズします。再度開くまで、時間と部品は変更できません。"
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "その日に期限切れになるジョブの時間（作業が実行される日ではなく、期限日ベース）、期限超過の作業は「期限超過」に表示されます。"
@@ -27641,9 +27697,6 @@ msgstr "販売ではなくレンタルアウトするために構築または資
 msgid "the selected class"
 msgstr "選択されたクラス"
 
-msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
-msgstr "サービス注文の時間の価格、見積、請求書を決定するサービス品目。"
-
 msgid "The service, and how it reads on the invoice."
 msgstr "外注サービスおよび請求書での表示方法"
 
@@ -28080,6 +28133,9 @@ msgstr "このファイルは利用できなくなったか、ダウンロード
 
 msgid "This Fiscal Year"
 msgstr "この会計年度"
+
+msgid "This Fixed Price job has no price."
+msgstr "この定額価格製造指図には価格がありません。"
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "メールドメインが下で検証されるまで、これは効果がありません。"

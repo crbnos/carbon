@@ -370,14 +370,19 @@ export const salesInvoiceLineValidator = z
     // "Rental" lines are written by rental invoice generation, never offered as
     // a choice (it is not in `salesInvoiceLineType`); it is accepted here so a
     // rental line's shape validates. The DB requires a rental agreement line on
-    // every Rental row, so a hand-posted one is still refused.
-    invoiceLineType: z.enum([...itemType, "Fixture", "Fixed Asset", "Rental"], {
-      error: "Type is required"
-    }),
+    // every Rental row, so a hand-posted one is still refused. "Labor" lines
+    // are written by service job invoicing the same way: billed hours with no
+    // item, edited for hours, rate and tax only.
+    invoiceLineType: z.enum(
+      [...itemType, "Fixture", "Fixed Asset", "Rental", "Labor"],
+      {
+        error: "Type is required"
+      }
+    ),
     // Wrapped in zfd.text so an empty-string submission (the form always posts a
     // hidden methodType) coerces to undefined instead of failing the enum check.
     // Requiredness is enforced conditionally by the refine below, which exempts
-    // Fixed Asset and Rental lines.
+    // Fixed Asset, Rental and Labor lines.
     methodType: zfd.text(
       z
         .enum(methodType, {
@@ -433,7 +438,8 @@ export const salesInvoiceLineValidator = z
     (data) => {
       if (
         data.invoiceLineType === "Fixed Asset" ||
-        data.invoiceLineType === "Rental"
+        data.invoiceLineType === "Rental" ||
+        data.invoiceLineType === "Labor"
       )
         return true;
       return !!data.methodType;

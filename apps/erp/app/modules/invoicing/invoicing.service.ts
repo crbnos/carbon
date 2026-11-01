@@ -6520,6 +6520,119 @@ export function planContractInvoiceLine(args: {
   }
   return { movement, revenueLegs, reclass };
 }
+
+export type ServiceJobPostingAccounts = {
+  /** Service Revenue, or Sales when the default is empty. */
+  serviceRevenue: SalesPostingAccount;
+  /** Null when the default is empty; required only to clear an accrual. */
+  contractAsset: SalesPostingAccount | null;
+};
+
+/** An unbilled Accrual row of a service job (any status). */
+export type ServiceJobAccrualFact = { id: string; amount: number };
+
+/** A service job line, with its revenue in base (`salesRevenueBase`). */
+export type ServiceJobLineFact = {
+  id: string;
+  serviceJobId: string;
+  sortOrder: number;
+  revenueBase: number;
+};
+
+export type ServiceJobRevenuePlan = {
+  /** The Contract Assets share of each line, by invoice line id. */
+  shares: Map<string, number>;
+  /** The accrual left after a job's last line, by that line's id. */
+  excess: Map<string, number>;
+  /** Accrual row id → the invoice line that bills it: the job's first. */
+  billedAccruals: Map<string, string>;
+};
+
+/**
+ * Spreads each job's unbilled accrual over the job's invoice lines in sort
+ * order: each line takes min(accrual left, its revenue) off Contract Assets.
+ * What is left after the job's last line is its `excess`, which that line
+ * reclasses (`planServiceJobLine`). A revenue leg can never be larger than
+ * its line (`buildSalesPostingLines`), so one line cannot take it all.
+ */
+export function planServiceJobRevenue(
+  lines: readonly ServiceJobLineFact[],
+  accruals: ReadonlyMap<string, readonly ServiceJobAccrualFact[]>
+): ServiceJobRevenuePlan {
+  const plan: ServiceJobRevenuePlan = {
+    shares: new Map(),
+    excess: new Map(),
+    billedAccruals: new Map()
+  };
+  const byJob = Map.groupBy(lines, (line) => line.serviceJobId);
+  for (const [serviceJobId, jobLines] of byJob) {
+    const ordered = [...jobLines].sort(
+      (a, b) =>
+        a.sortOrder - b.sortOrder || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+    );
+    const rows = accruals.get(serviceJobId) ?? [];
+    let left = round(rows.reduce((sum, row) => sum + row.amount, 0));
+    for (const line of ordered) {
+      const share =
+        left > 0 && line.revenueBase > 0
+          ? round(Math.min(left, line.revenueBase))
+          : 0;
+      plan.shares.set(line.id, share);
+      left = round(left - share);
+    }
+    const last = ordered[ordered.length - 1]!;
+    if (left !== 0) plan.excess.set(last.id, left);
+    for (const row of rows) plan.billedAccruals.set(row.id, ordered[0]!.id);
+  }
+  return plan;
+}
+
+/**
+ * One service job line's revenue side: a Contract Assets leg for its share
+ * of the job's accrual, then Service Revenue for the rest of the line. On
+ * the job's last line, `excess` (accrual no line could take) becomes reclass
+ * lines, Cr Contract Assets / Dr Service Revenue, that sum to zero: the
+ * revenue the run accrued beyond what was billed comes back off Service
+ * Revenue, and Contract Assets is cleared.
+ */
+export function planServiceJobLine(args: {
+  share: number;
+  excess: number;
+  accounts: ServiceJobPostingAccounts;
+}): { revenueLegs: SalesRevenueLeg[]; reclass: ContractReclassLine[] } {
+  const { share, excess, accounts } = args;
+  const serviceRevenue = {
+    account: accounts.serviceRevenue,
+    accountClass: "Revenue" as const,
+    description: "Service Revenue"
+  };
+  if (share === 0 && excess === 0) {
+    return { revenueLegs: [serviceRevenue], reclass: [] };
+  }
+  if (!isLeaf(accounts.contractAsset, "Asset")) {
+    throw new InvalidInputError(
+      "Service job invoices that clear accrued revenue need the Contract Assets account mapped in the accounting defaults"
+    );
+  }
+  const contractAsset = {
+    account: accounts.contractAsset,
+    accountClass: "Asset" as const,
+    description: "Contract Assets"
+  };
+  return {
+    revenueLegs:
+      share === 0
+        ? [serviceRevenue]
+        : [{ ...contractAsset, amount: share }, serviceRevenue],
+    reclass:
+      excess === 0
+        ? []
+        : [
+            { ...contractAsset, credit: excess },
+            { ...serviceRevenue, credit: round(-excess) }
+          ]
+  };
+}
 type Tables = Database["public"]["Tables"];
 
 type AccountDefaults = Tables["accountDefault"]["Row"];
@@ -6534,6 +6647,9 @@ export type SalesInvoiceAccountNeeds = {
   rental: { purchaseOption: boolean } | null;
   /** The invoice has contract lines. */
   contract: boolean;
+  /** The invoice has service job lines: they credit Service Revenue and
+   *  clear the job's accrued revenue off Contract Assets. */
+  serviceJob?: boolean;
   /** Other accounts that a line posts to, read with the defaults. */
   accountIds: (string | null | undefined)[];
 };
@@ -6635,6 +6751,26 @@ export function planSalesInvoiceAccounts(
       defaults.realizedExchangeLossAccount
     );
   }
+
+  // Service job lines credit Service Revenue (Sales when it is empty) and
+  // clear the job's accrued revenue off Contract Assets. Contract Assets is
+  // required only when a job has accrued revenue to clear.
+  const serviceJobAccountIds = needs.serviceJob
+    ? {
+        serviceRevenue: resolveDefaultAccount(
+          defaults,
+          "serviceRevenueAccount",
+          postingStatus
+        ).accountId,
+        contractAsset: defaults.contractAssetAccount
+      }
+    : null;
+  if (serviceJobAccountIds) {
+    read(
+      serviceJobAccountIds.serviceRevenue,
+      serviceJobAccountIds.contractAsset
+    );
+  }
   read(...needs.accountIds);
 
   return {
@@ -6644,6 +6780,7 @@ export function planSalesInvoiceAccounts(
     shippingAccountId,
     deferredRevenueAccountId,
     rentalAccountIds,
+    serviceJobAccountIds,
     contract: needs.contract,
     /** The ids to read. A stand-in is not an account. */
     accountIds: [...ids].filter((id) => !standIns.isPlaceholder(id))
@@ -6779,6 +6916,22 @@ export function resolveSalesInvoiceAccounts(
     leaf(defaults.salesAccount, "Revenue", "Sales", true);
   }
 
+  // Contract Assets is checked by the line that clears an accrual
+  // (`planServiceJobLine`): a job with nothing accrued never needs it.
+  let serviceJob: ServiceJobPostingAccounts | null = null;
+  if (plan.serviceJobAccountIds) {
+    const serviceRevenue = account(plan.serviceJobAccountIds.serviceRevenue);
+    if (!isLeaf(serviceRevenue, "Revenue")) {
+      throw new Error(
+        "Service Revenue account is invalid; expected an active Revenue leaf in this company group"
+      );
+    }
+    serviceJob = {
+      serviceRevenue,
+      contractAsset: account(plan.serviceJobAccountIds.contractAsset) ?? null
+    };
+  }
+
   const receivablesAccountId = (intercompany: boolean) =>
     intercompany ? plan.receivables.intercompany : plan.receivables.standard;
 
@@ -6793,11 +6946,13 @@ export function resolveSalesInvoiceAccounts(
       receivables: account(receivablesAccountId(intercompany)),
       sales: account(plan.defaults.salesAccount),
       shipping: account(plan.shippingAccountId),
-      tax: account(plan.defaults.salesTaxPayableAccount)
+      tax: account(plan.defaults.salesTaxPayableAccount),
+      serviceRevenue: serviceJob?.serviceRevenue ?? null
     }),
     deferredRevenue,
     rental,
-    contract
+    contract,
+    serviceJob
   };
 }
 
@@ -6866,7 +7021,11 @@ export type SalesInvoiceLine = Pick<
   | "rentalAgreementLineId"
   | "rentalBillingPeriodId"
   | "rentalLineType"
->;
+> &
+  // Read by the service job book only (`planServiceJobRevenue`).
+  Partial<
+    Pick<Tables["salesInvoiceLine"]["Row"], "serviceJobId" | "sortOrder">
+  >;
 
 /** The line types that sell an item. */
 export const ITEM_LINE_TYPES: ReadonlySet<string> = new Set([
@@ -6925,12 +7084,24 @@ export type SalesLineRevenue =
   | { book: "contract" }
   /** The rental agreement line (`planRentalLine`). */
   | { book: "rental" }
+  /** The service job: Contract Assets for its accrued revenue, then Service
+   *  Revenue (`planServiceJobRevenue`). */
+  | { book: "service"; serviceJobId: string }
   /** The asset's disposal: proceeds against its carrying value. */
   | { book: "disposal" };
 
 /** Where the posting books a line's revenue. A Comment line posts nothing
  *  and never gets here. */
 export function postingLineRevenue(line: SalesInvoiceLine): SalesLineRevenue {
+  if (
+    line.serviceJobId &&
+    (line.invoiceLineType === "Labor" ||
+      ITEM_LINE_TYPES.has(line.invoiceLineType))
+  ) {
+    return { book: "service", serviceJobId: line.serviceJobId };
+  }
+  // A Labor line with no job is plain revenue.
+  if (line.invoiceLineType === "Labor") return { book: "sales" };
   if (ITEM_LINE_TYPES.has(line.invoiceLineType)) {
     if (line.customerContractLineId) return { book: "contract" };
     const period = deferredServicePeriod(line);
@@ -6970,6 +7141,9 @@ export function postingAccountNeeds(
     contract: lines.some(
       (line) =>
         !!line.customerContractLineId && line.invoiceLineType !== "Comment"
+    ),
+    serviceJob: lines.some(
+      (line) => !!line.serviceJobId && line.invoiceLineType !== "Comment"
     ),
     accountIds: [...assetClasses].flatMap((assetClass) => [
       assetClass?.assetAccountId,
@@ -7079,6 +7253,11 @@ export type SalesInvoiceJournalFacts = {
   rental: SalesInvoiceRentalFacts | null;
   /** Required by a `disposal` line. */
   disposal: SalesInvoiceDisposalFacts | null;
+  /** A `service` line's job accruals: unbilled Accrual rows (any status),
+   *  by service job. None means nothing accrued. */
+  serviceJob?: {
+    accruals: ReadonlyMap<string, readonly ServiceJobAccrualFact[]>;
+  } | null;
 };
 
 /** What the posting writes with the journal, from the same lines. */
@@ -7286,6 +7465,30 @@ export function buildSalesInvoiceJournal(
     });
   };
 
+  // Each service job's accrual, spread over its lines before any posts.
+  const serviceLines: ServiceJobLineFact[] = [];
+  for (const line of facts.lines) {
+    if (line.invoiceLineType === "Comment") continue;
+    const revenue = facts.revenue(line);
+    if (revenue.book !== "service") continue;
+    serviceLines.push({
+      id: line.id,
+      serviceJobId: revenue.serviceJobId,
+      sortOrder: line.sortOrder ?? 0,
+      revenueBase: roundSalesPostingAmounts({
+        ...line,
+        allocatedHeaderShipping: facts.headerShipping.get(line.id) ?? 0
+      }).salesRevenueBase
+    });
+  }
+  const servicePlan = planServiceJobRevenue(
+    serviceLines,
+    facts.serviceJob?.accruals ?? new Map()
+  );
+  for (const [accrualId, lineId] of servicePlan.billedAccruals) {
+    journal.billedAccruals.set(accrualId, lineId);
+  }
+
   for (const line of facts.lines) {
     if (line.invoiceLineType === "Comment") continue;
     const revenue = facts.revenue(line);
@@ -7426,6 +7629,44 @@ export function buildSalesInvoiceJournal(
             movement: plan.movement
           });
         }
+        break;
+      }
+      case "service": {
+        // A service job line: Cr Contract Assets for its share of the job's
+        // accrued revenue, the rest Cr Service Revenue. The job's last line
+        // reclasses the accrual no line could take.
+        const plan = planServiceJobLine({
+          share: servicePlan.shares.get(line.id) ?? 0,
+          excess: servicePlan.excess.get(line.id) ?? 0,
+          accounts: required(
+            accounts.serviceJob,
+            "the service revenue accounts"
+          )
+        });
+        const built = buildSalesPostingLines({
+          line: postingLine,
+          context,
+          accounts: charges,
+          revenueLegs: plan.revenueLegs,
+          metadata
+        });
+        push(built.lines, built.metadata);
+        // Same journal line reference, so a VOID reverses them with the line.
+        push(
+          plan.reclass.map((reclass) => ({
+            accountId: reclass.account.id,
+            description: reclass.description,
+            amount: signedCreditAmount(reclass.accountClass, reclass.credit),
+            quantity: round(line.quantity),
+            documentType: "Invoice" as const,
+            documentId: invoice.id,
+            externalDocumentId: context.externalDocumentId,
+            documentLineReference: context.documentLineReference,
+            journalLineReference: context.journalLineReference,
+            companyId
+          })),
+          metadata
+        );
         break;
       }
       case "disposal": {
@@ -8699,6 +8940,46 @@ export async function postSalesInvoice(
           return byLine;
         };
 
+        // Each service job's revenue the run accrued and no invoice billed
+        // yet, Planned or Posted: the job's lines bill it off Contract Assets.
+        const serviceJobIds = [
+          ...new Set(
+            salesInvoiceLines.data
+              .filter(
+                (line: InvoiceLineRecord) =>
+                  !!line.serviceJobId && line.invoiceLineType !== "Comment"
+              )
+              .map((line: InvoiceLineRecord) => line.serviceJobId!)
+          )
+        ];
+        const serviceAccruals = await (serviceJobIds.length > 0
+          ? many(
+              db,
+              "revenueRecognitionSchedule",
+              {
+                companyId,
+                serviceJobId: serviceJobIds,
+                type: "Accrual",
+                billedBySalesInvoiceLineId: isNull
+              },
+              { columns: ["id", "serviceJobId", "amount"], orderBy: ["id"] }
+            )
+          : noRows<
+              Pick<
+                rows.Tables["revenueRecognitionSchedule"]["Row"],
+                "id" | "serviceJobId" | "amount"
+              >
+            >());
+        if (serviceAccruals.error)
+          throw new Error("Failed to fetch service job accruals");
+        const serviceAccrualsByJob = new Map<string, ServiceJobAccrualFact[]>();
+        for (const row of serviceAccruals.data ?? []) {
+          if (!row.serviceJobId) continue;
+          const facts = serviceAccrualsByJob.get(row.serviceJobId) ?? [];
+          facts.push({ id: row.id, amount: Number(row.amount) });
+          serviceAccrualsByJob.set(row.serviceJobId, facts);
+        }
+
         // Lines that bill a project's billable items or a service job: a
         // part issued to either already left stock and posted its cost, so
         // these lines post revenue only. One query per invoice.
@@ -8767,7 +9048,8 @@ export async function postSalesInvoice(
           disposal: {
             assets: assetsById,
             latestDisposal: latestDisposalByAsset
-          }
+          },
+          serviceJob: { accruals: serviceAccrualsByJob }
         });
         const journalLineInserts = journal.lines;
 
@@ -9161,12 +9443,13 @@ export async function postSalesInvoice(
                 .execute();
             }
 
-            // Accrued rent this invoice bills moved off the contract asset;
-            // stamp each Accrual row with the line that billed it. A row still
-            // Planned debits the contract asset when its run posts, cancelling
-            // this credit, so the balance nets to zero whichever posts first.
-            // The guard columns make a concurrent bill fail loudly instead of
-            // crediting the contract asset twice.
+            // Accrued rent or service revenue this invoice bills moved off
+            // the contract asset; stamp each Accrual row with the line that
+            // billed it (a service job's rows with the job's first line). A
+            // row still Planned debits the contract asset when its run posts,
+            // cancelling this credit, so the balance nets to zero whichever
+            // posts first. The guard columns make a concurrent bill fail
+            // loudly instead of crediting the contract asset twice.
             if (journal.billedAccruals.size > 0) {
               const billed = [...journal.billedAccruals];
               const stamped = await trx
@@ -9193,7 +9476,7 @@ export async function postSalesInvoice(
                 .executeTakeFirst();
               if (Number(stamped.numUpdatedRows) !== billed.length) {
                 throw new Error(
-                  "A rental accrual changed while this invoice was posting; post it again"
+                  "An accrual changed while this invoice was posting; post it again"
                 );
               }
             }
@@ -9255,7 +9538,8 @@ export async function postSalesInvoice(
                 controlAccountId: receivablesAccountId,
                 revenueAccountIds: [
                   defaults.salesAccount,
-                  accounts.shippingAccountId
+                  accounts.shippingAccountId,
+                  accounts.serviceJob?.serviceRevenue.id
                 ].filter((id): id is string => !!id),
                 cogsAccountId: cogsAccount
               }
@@ -9705,6 +9989,25 @@ export async function postSalesInvoice(
               .deleteFrom("revenueRecognitionSchedule")
               .where("companyId", "=", companyId)
               .where("salesInvoiceLineId", "in", invoiceLineIds)
+              .execute();
+          }
+
+          // A service job's accruals are unbilled again: the reversed journal
+          // restores the contract asset they were billed off.
+          const serviceLineIds = salesInvoiceLines.data
+            .filter((line) => !!line.serviceJobId)
+            .map((line) => line.id);
+          if (serviceLineIds.length > 0) {
+            await trx
+              .updateTable("revenueRecognitionSchedule")
+              .set({
+                billedBySalesInvoiceLineId: null,
+                updatedBy: userId,
+                updatedAt: datetime.timestamp()
+              })
+              .where("companyId", "=", companyId)
+              .where("type", "=", "Accrual")
+              .where("billedBySalesInvoiceLineId", "in", serviceLineIds)
               .execute();
           }
 

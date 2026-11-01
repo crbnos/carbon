@@ -784,6 +784,9 @@ msgstr "{hour} ч"
 msgid "{hours} h"
 msgstr "{hours} ч"
 
+msgid "{hours} h × {rate}"
+msgstr "{hours} h × {rate}"
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# деталь создана} other {# деталей создано}}"
 
@@ -1334,6 +1337,9 @@ msgstr "Расчетный элемент ниже счета контроля, 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Счет, содержащий стоимость полученных товаров, еще не выставленных счетом; счет-фактура поставщика его очищает."
 
+msgid "A clock is still running on this job."
+msgstr "На этом производственном заказе по-прежнему работает таймер."
+
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "Закрытый проект не принимает больше начислений и не может быть переоткрыт. Закройте его только когда каждая строка заказа поставщику и производственный заказ на нём готовы."
 
@@ -1462,6 +1468,9 @@ msgstr "Скидка может закончиться в определенну
 
 msgid "A draft run must be posted or deleted first."
 msgstr "Черновой запуск должен быть проведен или удален в первую очередь."
+
+msgid "A draft sales invoice is created for the job, and the job becomes Invoiced."
+msgstr "Черновик счета-фактуры продажи создается для производственного заказа, и заказ становится Выставлен счет."
 
 msgid "A draft set of plan changes with a title and a reason. The current plan does not change until the request is approved, and then it applies whole, in one step."
 msgstr "Набор изменений плана в черновике с названием и причиной. Текущий план не меняется до утверждения запроса, а затем он применяется полностью за один шаг."
@@ -1603,6 +1612,9 @@ msgstr "Для каждого поставщика будет создан но�
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "Новая ревизия будет создана на основе копии текущей ревизии"
+
+msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
+msgstr "Новый производственный заказ услуги копирует расценку. Каждая запись времени проводит свою стоимость по расценке стоимости."
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "Новый размер будет создан с использованием копии текущего размера"
@@ -4497,6 +4509,9 @@ msgstr "Связи"
 msgid "Assumptions"
 msgstr "Предположения"
 
+msgid "At {billRate} per hour (the job's bill rate)"
+msgstr "По {billRate} в час (почасовая ставка производственного заказа)"
+
 msgid "At {locationName}"
 msgstr "В {locationName}"
 
@@ -5000,6 +5015,9 @@ msgstr "Ставка выставления счета"
 
 msgid "Bill Rate"
 msgstr "Ставка выставления счетов"
+
+msgid "Bill Rate (per hour)"
+msgstr "Почасовая расценка (в час)"
 
 msgid "Bill To"
 msgstr "Счет для"
@@ -6547,6 +6565,10 @@ msgstr "Правила совместимости"
 msgid "Complete"
 msgstr "Завершить"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Complete {0}"
+msgstr "Завершить {0}"
+
 #. placeholder {0}: getCompleteQuantity(operation)
 #. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
 msgid "Complete {0}/{1}"
@@ -7784,6 +7806,9 @@ msgstr "Создать элементы"
 msgid "Create Forecast"
 msgstr "Создать прогноз"
 
+msgid "Create Invoice"
+msgstr "Создать счет-фактуру"
+
 msgid "Create Issue"
 msgstr "Создать проблему"
 
@@ -8700,6 +8725,9 @@ msgstr "Утверждающий по умолчанию"
 
 msgid "Default Attachments"
 msgstr "Вложения по умолчанию"
+
+msgid "Default bill rate per hour"
+msgstr "Почасовая расценка по умолчанию"
 
 msgid "Default cash account for transactions in non-base currencies."
 msgstr "Счет наличных денежных средств по умолчанию для операций в не базовой валюте."
@@ -12315,6 +12343,9 @@ msgstr "Отклонение амортизации постоянных зат�
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "Зафиксирован после размещения или закрытия учетных периодов. Удалите все открытые периоды, чтобы его изменить."
 
+msgid "Fixed price"
+msgstr "Фиксированная цена"
+
 msgid "Fixed Price"
 msgstr "Фиксированная цена"
 
@@ -13176,9 +13207,6 @@ msgstr "Оплаченные часы"
 
 msgid "Hours per Week"
 msgstr "Часов в неделю"
-
-msgid "Hours, for a labor item"
-msgstr "Часы для трудового элемента"
 
 msgid "Hours/100 Pieces"
 msgstr "Часов/100 Штук"
@@ -14057,6 +14085,10 @@ msgstr "Приглашено"
 msgid "Invoice"
 msgstr "Счет-фактура"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Invoice {0}"
+msgstr "Счет-фактура {0}"
+
 msgid "Invoice {invoiceDate}"
 msgstr "Счет-фактура {invoiceDate}"
 
@@ -14695,6 +14727,9 @@ msgstr "Категория труда"
 msgid "Labor category: {0}"
 msgstr "Категория труда: {0}"
 
+msgid "Labor cost per hour"
+msgstr "Стоимость труда в час"
+
 msgid "Labor Costs"
 msgstr "Стоимость труда"
 
@@ -14707,9 +14742,6 @@ msgstr "Труд завершен"
 msgid "Labor Hours"
 msgstr "Часы труда"
 
-msgid "Labor Item"
-msgstr "Трудовой элемент"
-
 msgid "Labor rate"
 msgstr "Ставка трудозатрат"
 
@@ -14719,8 +14751,14 @@ msgstr "Ставка оплаты труда"
 msgid "Labor Rate (Hourly)"
 msgstr "Почасовая ставка труда"
 
+msgid "Labor rates"
+msgstr "Ставки труда"
+
 msgid "Labor Rates"
 msgstr "Ставки труда"
+
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "Ставки труда не установлены. Время не может быть зарегистрировано или выставлено в счете до их установления."
 
 msgid "Labor time"
 msgstr "Трудозатраты"
@@ -22249,6 +22287,9 @@ msgstr "Убрать счет {0} из этого пула? Уже рассчи�
 msgid "Remove the received serial and batch numbers from stock"
 msgstr "Убрать полученные серийные номера и номера серий из запаса"
 
+msgid "Remove the time entries and return the parts first."
+msgstr "Сначала удалите записи времени и верните детали."
+
 msgid "Remove this item"
 msgstr "Убрать этот элемент"
 
@@ -22925,6 +22966,9 @@ msgstr "Выручка, заработанная, но еще не выстав�
 
 msgid "Revenue End"
 msgstr "Конец выручки"
+
+msgid "Revenue from service jobs"
+msgstr "Выручка от производственных заказов услуг"
 
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "Счет учета выручки, кредитуемый при начале лизинга продажного типа для текущей стоимости платежей по лизингу."
@@ -24401,15 +24445,6 @@ msgstr "Задача обслуживания"
 msgid "Service Jobs"
 msgstr "Задачи обслуживания"
 
-msgid "Service Labor"
-msgstr "Услуга — труд"
-
-msgid "Service Labor Item"
-msgstr "Номенклатура услуги труда"
-
-msgid "Service labor item updated"
-msgstr "Номенклатура услуги труда обновлена"
-
 msgid "Service lines"
 msgstr "Строки услуг"
 
@@ -24418,6 +24453,12 @@ msgstr "Период обслуживания"
 
 msgid "Service Provider Details"
 msgstr "Детали поставщика услуг"
+
+msgid "Service Revenue"
+msgstr "Выручка от услуг"
+
+msgid "Service settings updated"
+msgstr "Параметры услуг обновлены"
 
 msgid "Service start"
 msgstr "Начало обслуживания"
@@ -24497,6 +24538,9 @@ msgstr "Установить ставку"
 msgid "Set Rate, FY{fiscalYear}"
 msgstr "Установить ставку, ФГ{fiscalYear}"
 
+msgid "Set rates"
+msgstr "Установить ставки"
+
 msgid "Set terms"
 msgstr "Установить условия"
 
@@ -24511,6 +24555,9 @@ msgstr "Установите дату начала, дату окончания 
 
 msgid "Set the fiscal year settings."
 msgstr "Установить параметры финансового года."
+
+msgid "Set the job's bill rate first."
+msgstr "Сначала установите почасовую ставку производственного заказа."
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
 msgstr "Установить счет Очистка миграции в активный счет собственного капитала, который не является группой."
@@ -25567,6 +25614,9 @@ msgstr "Хранится только для запасных частей."
 
 msgid "Stockout"
 msgstr "Дефицит"
+
+msgid "Stop clock and complete"
+msgstr "Остановить таймер и завершить"
 
 msgid "Stop raising purchase orders after this date"
 msgstr "Прекратить создание заказов поставщику после этой даты"
@@ -26655,6 +26705,9 @@ msgstr "Серия {0}, а не запланирована"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Партия выполняется по самому срочному элементу — остальные сдвигаются раньше"
 
+msgid "The bill rate is locked: the estimate was sent to the customer."
+msgstr "Почасовая ставка заблокирована: смета была отправлена клиенту."
+
 #. placeholder {0}: nameOf(gap.lineId)
 msgid "The billing element of {0} is not marked as a billing element."
 msgstr "Элемент выставления счета {0} не отмечен как элемент выставления счета."
@@ -27126,6 +27179,9 @@ msgstr "Ставка аренды номенклатуры"
 
 msgid "The job closes without work. A job with time entries or issued parts cannot be cancelled."
 msgstr "Производственный заказ закрывается без работ. Производственный заказ с записями времени или выданными деталями не может быть отменен."
+
+msgid "The job closes. Its time and parts cannot change until it is reopened."
+msgstr "Производственный заказ закрывается. Его время и детали не могут измениться, пока он не будет переоткрыт."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "рабочие часы, подлежащие в этот день (на основе даты срока, не дня выполнения работы), с просроченной работой в разделе «Просроченные»."
@@ -27641,9 +27697,6 @@ msgstr "Класс основных средств, заранее создан�
 msgid "the selected class"
 msgstr "выбранный класс"
 
-msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
-msgstr "Номенклатура услуги, цена продажи которой определяет время по заказу на услугу, на его смете и в его счете-фактуре."
-
 msgid "The service, and how it reads on the invoice."
 msgstr "Услуга и как она отображается на счете-фактуре."
 
@@ -28080,6 +28133,9 @@ msgstr "Этот файл больше не доступен или у вас н
 
 msgid "This Fiscal Year"
 msgstr "Этот финансовый год"
+
+msgid "This Fixed Price job has no price."
+msgstr "Этот производственный заказ с фиксированной ценой не имеет цены."
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "Это не вступит в силу до проверки домена электронной почты ниже."

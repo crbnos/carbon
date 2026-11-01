@@ -29,7 +29,7 @@ import {
   postPayment,
   postPurchaseInvoices,
   postSalesInvoices,
-  postServiceJobs
+  postServiceJobTime
 } from "../helpers/post-documents.ts";
 import {
   insertId,
@@ -244,7 +244,7 @@ export async function runTier9(ctx: Ctx): Promise<void> {
   await seedIndirectPools(ctx, accountIdByNumber);
   await postSalesInvoices(ctx, posting);
   await postPurchaseInvoices(ctx, posting);
-  await postServiceJobs(ctx, posting);
+  await postServiceJobTime(ctx, posting);
 
   for (const spec of data.memos) {
     const isCredit = spec.direction === "Credit";

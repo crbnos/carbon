@@ -14,7 +14,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { isServiceJobLocked } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, isServiceJobLocked } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
@@ -27,9 +27,15 @@ import {
   CustomerContact,
   CustomerLocation,
   Item,
-  Location
+  Location,
+  NumberControlled
 } from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  usePermissions,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import MaintenancePriority from "~/modules/resources/ui/Maintenance/MaintenancePriority";
 import type { action as coverageAction } from "~/routes/x+/service-job+/$jobId.coverage";
 import type { action as updateAction } from "~/routes/x+/service-job+/update";
@@ -58,6 +64,9 @@ const ServiceJobProperties = () => {
   if (!jobId) throw new Error("jobId not found");
 
   const permissions = usePermissions();
+  const { company } = useUser();
+  const currencyCode = company.baseCurrencyCode;
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
   const workSiteLabels = useWorkSiteLabels();
   const billingMethodLabels = useBillingMethodLabels();
 
@@ -103,6 +112,9 @@ const ServiceJobProperties = () => {
 
   const isLocked = isServiceJobLocked(job?.status);
   const isDisabled = isLocked || !permissions.can("update", "service");
+  // The customer saw the estimate at this rate.
+  const isBillRateLocked =
+    job?.estimateStatus === "Sent" || job?.estimateStatus === "Accepted";
 
   const asset = job?.customerAsset;
   const returnOrder = job?.salesReturnOrderLine?.salesReturnOrder;
@@ -338,6 +350,65 @@ const ServiceJobProperties = () => {
           }}
         />
       </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{ laborBillRate: job?.laborBillRate ?? undefined }}
+        validator={z.object({
+          laborBillRate: zfd.numeric(z.number().min(0).optional())
+        })}
+        className="w-full"
+      >
+        <NumberControlled
+          name="laborBillRate"
+          label={t`Bill Rate (per hour)`}
+          inline
+          isReadOnly={isDisabled || isBillRateLocked}
+          value={job?.laborBillRate ?? Number.NaN}
+          minValue={0}
+          formatOptions={INPUT_FORMAT.rate(currencyCode, currencyDecimals)}
+          step={INPUT_STEP.rate}
+          onChange={(value) => {
+            onUpdate(
+              "laborBillRate",
+              Number.isNaN(value) ? null : String(value)
+            );
+          }}
+        />
+        {isBillRateLocked && (
+          <span className="text-xs text-muted-foreground">
+            <Trans>
+              The bill rate is locked: the estimate was sent to the customer.
+            </Trans>
+          </span>
+        )}
+      </ValidatedForm>
+
+      {job?.billingMethod === "Fixed Price" && (
+        <ValidatedForm
+          defaultValues={{ fixedPrice: job?.fixedPrice ?? undefined }}
+          validator={z.object({
+            fixedPrice: zfd.numeric(z.number().min(0).optional())
+          })}
+          className="w-full"
+        >
+          <NumberControlled
+            name="fixedPrice"
+            label={t`Fixed Price`}
+            inline
+            isReadOnly={isDisabled}
+            value={job?.fixedPrice ?? Number.NaN}
+            minValue={0}
+            formatOptions={INPUT_FORMAT.money(currencyCode, currencyDecimals)}
+            step={INPUT_STEP.money(currencyDecimals)}
+            onChange={(value) => {
+              onUpdate(
+                "fixedPrice",
+                Number.isNaN(value) ? null : String(value)
+              );
+            }}
+          />
+        </ValidatedForm>
+      )}
 
       {job?.billingMethod === "Fixed Price" && (
         <ValidatedForm

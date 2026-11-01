@@ -1042,6 +1042,9 @@ msgstr "Labor category"
 msgid "Labor ended"
 msgstr "Labor ended"
 
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "Labor rates are not set. Time cannot be logged or billed until they are."
+
 msgid "Labor until <0/>"
 msgstr "Labor until <0/>"
 
@@ -2068,6 +2071,9 @@ msgstr "Session locked"
 
 msgid "Set Clock Out"
 msgstr "Set Clock Out"
+
+msgid "Set rates"
+msgstr "Set rates"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Set the time you stopped working, or acknowledge that you're still working."

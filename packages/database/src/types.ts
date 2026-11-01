@@ -422,6 +422,7 @@ export type Database = {
           salesTaxPayableAccount: string
           scrapAccount: string | null
           serviceChargeAccount: string
+          serviceRevenueAccount: string | null
           subcontractingVarianceAccount: string
           supplierPaymentDiscountAccount: string
           supplierPrepaymentAccount: string
@@ -499,6 +500,7 @@ export type Database = {
           salesTaxPayableAccount: string
           scrapAccount?: string | null
           serviceChargeAccount: string
+          serviceRevenueAccount?: string | null
           subcontractingVarianceAccount: string
           supplierPaymentDiscountAccount: string
           supplierPrepaymentAccount: string
@@ -576,6 +578,7 @@ export type Database = {
           salesTaxPayableAccount?: string
           scrapAccount?: string | null
           serviceChargeAccount?: string
+          serviceRevenueAccount?: string | null
           subcontractingVarianceAccount?: string
           supplierPaymentDiscountAccount?: string
           supplierPrepaymentAccount?: string
@@ -1520,6 +1523,20 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_serviceChargeAccount_fkey"
             columns: ["serviceChargeAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_serviceRevenueAccount_fkey"
+            columns: ["serviceRevenueAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_serviceRevenueAccount_fkey"
+            columns: ["serviceRevenueAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -8489,7 +8506,8 @@ export type Database = {
           salesJobCompletedNotificationGroup: string[]
           salesRuleNotificationGroup: string[]
           samplingStandard: Database["public"]["Enums"]["samplingStandard"]
-          serviceLaborItemId: string | null
+          serviceLaborBillRate: number | null
+          serviceLaborCostRate: number | null
           shelfLabelSize: string | null
           showBomExplorerReadableId: boolean
           showCurrencyTrailingZeros: boolean
@@ -8576,7 +8594,8 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
-          serviceLaborItemId?: string | null
+          serviceLaborBillRate?: number | null
+          serviceLaborCostRate?: number | null
           shelfLabelSize?: string | null
           showBomExplorerReadableId?: boolean
           showCurrencyTrailingZeros?: boolean
@@ -8663,7 +8682,8 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
-          serviceLaborItemId?: string | null
+          serviceLaborBillRate?: number | null
+          serviceLaborCostRate?: number | null
           shelfLabelSize?: string | null
           showBomExplorerReadableId?: boolean
           showCurrencyTrailingZeros?: boolean
@@ -8778,48 +8798,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "companySettings_serviceLaborItem_fkey"
-            columns: ["serviceLaborItemId"]
-            isOneToOne: false
-            referencedRelation: "consumables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companySettings_serviceLaborItem_fkey"
-            columns: ["serviceLaborItemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companySettings_serviceLaborItem_fkey"
-            columns: ["serviceLaborItemId"]
-            isOneToOne: false
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companySettings_serviceLaborItem_fkey"
-            columns: ["serviceLaborItemId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companySettings_serviceLaborItem_fkey"
-            columns: ["serviceLaborItemId"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companySettings_serviceLaborItem_fkey"
-            columns: ["serviceLaborItemId"]
-            isOneToOne: false
-            referencedRelation: "tools"
-            referencedColumns: ["id"]
           }
         ]
       }
@@ -66016,6 +65994,7 @@ export type Database = {
           runLineId: string | null
           salesInvoiceLineId: string | null
           scheduledDate: string
+          serviceJobId: string | null
           status: Database["public"]["Enums"]["revenueScheduleStatus"]
           type: Database["public"]["Enums"]["revenueScheduleType"]
           updatedAt: string | null
@@ -66045,6 +66024,7 @@ export type Database = {
           runLineId?: string | null
           salesInvoiceLineId?: string | null
           scheduledDate: string
+          serviceJobId?: string | null
           status?: Database["public"]["Enums"]["revenueScheduleStatus"]
           type: Database["public"]["Enums"]["revenueScheduleType"]
           updatedAt?: string | null
@@ -66074,6 +66054,7 @@ export type Database = {
           runLineId?: string | null
           salesInvoiceLineId?: string | null
           scheduledDate?: string
+          serviceJobId?: string | null
           status?: Database["public"]["Enums"]["revenueScheduleStatus"]
           type?: Database["public"]["Enums"]["revenueScheduleType"]
           updatedAt?: string | null
@@ -66239,6 +66220,13 @@ export type Database = {
             columns: ["rentalLeaseScheduleLineId", "companyId"]
             isOneToOne: false
             referencedRelation: "rentalLeaseScheduleLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "revenueRecognitionSchedule_serviceJob_fkey"
+            columns: ["serviceJobId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "serviceJob"
             referencedColumns: ["id", "companyId"]
           },
           {
@@ -71205,7 +71193,6 @@ export type Database = {
           billingMethod: Database["public"]["Enums"]["serviceBillingMethod"]
           companyId: string
           completedAt: string | null
-          completionJournalId: string | null
           coverage: Database["public"]["Enums"]["serviceCoverage"]
           createdAt: string
           createdBy: string
@@ -71225,6 +71212,7 @@ export type Database = {
           fixedPrice: number | null
           id: string
           itemId: string | null
+          laborBillRate: number | null
           locationId: string
           priority: Database["public"]["Enums"]["serviceJobPriority"]
           problem: Json | null
@@ -71247,7 +71235,6 @@ export type Database = {
           billingMethod?: Database["public"]["Enums"]["serviceBillingMethod"]
           companyId: string
           completedAt?: string | null
-          completionJournalId?: string | null
           coverage?: Database["public"]["Enums"]["serviceCoverage"]
           createdAt?: string
           createdBy: string
@@ -71267,6 +71254,7 @@ export type Database = {
           fixedPrice?: number | null
           id?: string
           itemId?: string | null
+          laborBillRate?: number | null
           locationId: string
           priority?: Database["public"]["Enums"]["serviceJobPriority"]
           problem?: Json | null
@@ -71289,7 +71277,6 @@ export type Database = {
           billingMethod?: Database["public"]["Enums"]["serviceBillingMethod"]
           companyId?: string
           completedAt?: string | null
-          completionJournalId?: string | null
           coverage?: Database["public"]["Enums"]["serviceCoverage"]
           createdAt?: string
           createdBy?: string
@@ -71309,6 +71296,7 @@ export type Database = {
           fixedPrice?: number | null
           id?: string
           itemId?: string | null
+          laborBillRate?: number | null
           locationId?: string
           priority?: Database["public"]["Enums"]["serviceJobPriority"]
           problem?: Json | null
@@ -71389,20 +71377,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "serviceJob_completionJournalId_fkey"
-            columns: ["completionJournalId"]
-            isOneToOne: false
-            referencedRelation: "journal"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serviceJob_completionJournalId_fkey"
-            columns: ["completionJournalId"]
-            isOneToOne: false
-            referencedRelation: "journalEntries"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "serviceJob_createdBy_fkey"
@@ -71834,7 +71808,7 @@ export type Database = {
           createdBy: string
           description: string | null
           id: string
-          itemId: string
+          itemId: string | null
           quantity: number
           serviceJobId: string
           sortOrder: number
@@ -71848,7 +71822,7 @@ export type Database = {
           createdBy: string
           description?: string | null
           id?: string
-          itemId: string
+          itemId?: string | null
           quantity: number
           serviceJobId: string
           sortOrder?: number
@@ -71862,7 +71836,7 @@ export type Database = {
           createdBy?: string
           description?: string | null
           id?: string
-          itemId?: string
+          itemId?: string | null
           quantity?: number
           serviceJobId?: string
           sortOrder?: number
@@ -72270,7 +72244,6 @@ export type Database = {
           entryDate: string
           hours: number
           id: string
-          laborItemId: string
           note: string | null
           serviceJobId: string
           startTime: string | null
@@ -72288,7 +72261,6 @@ export type Database = {
           entryDate: string
           hours?: number
           id?: string
-          laborItemId: string
           note?: string | null
           serviceJobId: string
           startTime?: string | null
@@ -72306,7 +72278,6 @@ export type Database = {
           entryDate?: string
           hours?: number
           id?: string
-          laborItemId?: string
           note?: string | null
           serviceJobId?: string
           startTime?: string | null
@@ -72412,48 +72383,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "serviceJobTime_laborItemId_fkey"
-            columns: ["laborItemId"]
-            isOneToOne: false
-            referencedRelation: "consumables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serviceJobTime_laborItemId_fkey"
-            columns: ["laborItemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serviceJobTime_laborItemId_fkey"
-            columns: ["laborItemId"]
-            isOneToOne: false
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serviceJobTime_laborItemId_fkey"
-            columns: ["laborItemId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serviceJobTime_laborItemId_fkey"
-            columns: ["laborItemId"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serviceJobTime_laborItemId_fkey"
-            columns: ["laborItemId"]
-            isOneToOne: false
-            referencedRelation: "tools"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "serviceJobTime_serviceJobId_fkey"
@@ -107210,6 +107139,7 @@ export type Database = {
         | "Fixture"
         | "Fixed Asset"
         | "Rental"
+        | "Labor"
       salesInvoiceStatus:
         | "Draft"
         | "Pending"
@@ -109014,6 +108944,7 @@ export const Constants = {
         "Fixture",
         "Fixed Asset",
         "Rental",
+        "Labor",
       ],
       salesInvoiceStatus: [
         "Draft",

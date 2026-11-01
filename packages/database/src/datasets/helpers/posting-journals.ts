@@ -539,8 +539,8 @@ export function consumeFifo(
   return total;
 }
 
-/** A completion journal line: which of the two accounts, and its amount. */
-export type ServiceJobCompletionLine = {
+/** A time entry's journal line: which of the two accounts, and its amount. */
+export type ServiceJobTimeLine = {
   account: "coverage" | "laborAbsorption";
   description: string;
   /** Both accounts are Expense: a debit is positive. */
@@ -548,35 +548,31 @@ export type ServiceJobCompletionLine = {
 };
 
 /**
- * post-service-job `complete` (`buildServiceJobCompletionLines`): one pair for
- * the job's one labor item, Dr the coverage account / Cr labor absorption at
- * Σ hours × the item's cost per hour. No lines when the time costs nothing.
+ * post-service-job `post-time` (`buildServiceTimeCostGroups`) for one closed
+ * time entry: Dr the coverage account / Cr labor absorption at hours × the
+ * entry's cost rate. No lines when the entry costs nothing.
  */
-export function serviceJobCompletionJournal(args: {
+export function serviceJobTimeJournal(args: {
   serviceJobReadableId: string;
   coverage: "Billable" | "Warranty" | "Contract";
-  laborItemName: string;
   unitCost: number;
-  hours: readonly number[];
-}): { description: string; lines: ServiceJobCompletionLine[] } {
-  const cost = round(
-    args.hours.reduce((sum, hours) => sum + hours * args.unitCost, 0)
-  );
-  const description = `Service Job ${args.serviceJobReadableId}`;
-  if (cost < EPSILON) return { description, lines: [] };
-  const coverageLabel =
-    args.coverage === "Warranty" ? "Warranty Expense" : "Cost of Service";
+  hours: number;
+}): { description: string; lines: ServiceJobTimeLine[] } {
+  const cost = round(args.hours * args.unitCost);
+  const description = `Service Job Time ${args.serviceJobReadableId}`;
+  if (cost <= EPSILON) return { description, lines: [] };
   return {
     description,
     lines: [
       {
         account: "coverage",
-        description: `${coverageLabel}: ${args.laborItemName}`,
+        description:
+          args.coverage === "Warranty" ? "Warranty Expense" : "Cost of Service",
         amount: debit("expense", cost)
       },
       {
         account: "laborAbsorption",
-        description: `Labor Absorption: ${args.laborItemName}`,
+        description: "Labor Absorption",
         amount: credit("expense", cost)
       }
     ]

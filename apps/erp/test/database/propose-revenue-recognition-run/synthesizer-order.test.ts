@@ -8,7 +8,8 @@ import {
   type RunRowSynthesizer,
   runRowSynthesizers,
   synthesizeContractRevenue,
-  synthesizeRentalAccruals
+  synthesizeRentalAccruals,
+  synthesizeServiceJobRevenue
 } from "../../../app/modules/accounting/accounting.service";
 import {
   projectRevenueWriters,
@@ -34,14 +35,15 @@ vi.mock("@carbon/ee/project-revenue.server", async (importOriginal) => ({
   projectRevenueSynthesizers: vi.fn(() => commercial.synthesizers)
 }));
 
-test("a Revenue Recognition run takes the commercial synthesizers before Right to Invoice and the contract revenue", async () => {
+test("a Revenue Recognition run takes the commercial synthesizers before Right to Invoice, the contract revenue and the service job revenue", async () => {
   const extra: RunRowSynthesizer = async () => {
     // Writes nothing: only its place in the order matters.
   };
   expect(runRowSynthesizers("Revenue Recognition", [extra])).toEqual([
     extra,
     synthesizeProjectRevenue,
-    synthesizeContractRevenue
+    synthesizeContractRevenue,
+    synthesizeServiceJobRevenue
   ]);
 
   // With no list given, the commercial synthesizers built from the ERP's
@@ -54,7 +56,8 @@ test("a Revenue Recognition run takes the commercial synthesizers before Right t
     expect(runRowSynthesizers("Revenue Recognition")).toEqual([
       extra,
       synthesizeProjectRevenue,
-      synthesizeContractRevenue
+      synthesizeContractRevenue,
+      synthesizeServiceJobRevenue
     ]);
     expect(projectRevenueSynthesizers).toHaveBeenCalledWith(
       projectRevenueWriters

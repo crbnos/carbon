@@ -14,11 +14,15 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   toast,
   useDisclosure
 } from "@carbon/react";
 import { isServiceJobLocked, serviceJobPrimaryAction } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useRef } from "react";
 import {
   LuCircleCheck,
   LuCirclePause,
@@ -39,12 +43,19 @@ import type { action as completeAction } from "~/routes/x+/service-job+/$jobId.c
 import type { action as sendAction } from "~/routes/x+/service-job+/$jobId.estimate.send";
 import type { action as reopenAction } from "~/routes/x+/service-job+/$jobId.reopen";
 import type { action as statusAction } from "~/routes/x+/service-job+/$jobId.status";
+import type { action as stopClockAction } from "~/routes/x+/service-job+/$jobId.stop-clock";
 import { path } from "~/utils/path";
 import type { ServiceJobStatusAction } from "../../service.models";
 import { SERVICE_JOB_STATUS_TRANSITIONS } from "../../service.models";
-import type { ServiceJobDetail, ServiceJobEstimateLine } from "../../types";
+import type {
+  ServiceJobDetail,
+  ServiceJobEstimateLine,
+  ServiceJobItem,
+  ServiceJobTime
+} from "../../types";
 import CoverageBadge from "./CoverageBadge";
 import EstimateResponseModal from "./EstimateResponseModal";
+import ServiceJobActionModal from "./ServiceJobActionModal";
 import ServiceJobStatus from "./ServiceJobStatus";
 
 const ServiceJobHeader = () => {
@@ -55,15 +66,31 @@ const ServiceJobHeader = () => {
   const routeData = useRouteData<{
     job: ServiceJobDetail;
     estimateLines: ServiceJobEstimateLine[];
+    time: ServiceJobTime[];
+    items: ServiceJobItem[];
   }>(path.to.serviceJob(jobId));
   const job = routeData?.job;
   const status = job?.status;
   const hasEstimateLines = (routeData?.estimateLines.length ?? 0) > 0;
+  const time = routeData?.time ?? [];
+  const hasRunningClock = time.some(
+    (entry) => entry.startTime !== null && entry.endTime === null
+  );
+  // Cancel is refused while the job has time or issued parts.
+  const hasWork =
+    time.length > 0 ||
+    (routeData?.items ?? []).some((item) => item.lineType === "Part");
+  const needsFixedPrice =
+    job?.billingMethod === "Fixed Price" && job?.fixedPrice === null;
 
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "service");
   const cancelModal = useDisclosure();
   const responseModal = useDisclosure();
+  const completeModal = useDisclosure();
+  const invoiceModal = useDisclosure();
+  // The price the Complete dialog asked for, kept while the clock stops.
+  const completeFixedPrice = useRef<number | undefined>(undefined);
 
   const statusFetcher = useAction<typeof statusAction>({
     onSuccess: () => {
@@ -75,20 +102,42 @@ const ServiceJobHeader = () => {
     onSuccess: () => toast.success(t`Estimate sent`)
   });
   const completeFetcher = useAction<typeof completeAction>({
-    onSuccess: () => toast.success(t`Job completed`)
+    onSuccess: () => {
+      toast.success(t`Job completed`);
+      completeModal.onClose();
+    }
   });
   const reopenFetcher = useAction<typeof reopenAction>({
     onSuccess: () => toast.success(t`Job reopened`)
   });
-  const invoiceFetcher = useAction();
+  const invoiceFetcher = useAction({
+    onSettled: () => invoiceModal.onClose()
+  });
+
+  const submitComplete = (fixedPrice: number | undefined) => {
+    completeFetcher.submit(
+      fixedPrice === undefined ? {} : { fixedPrice: String(fixedPrice) },
+      { method: "post", action: path.to.serviceJobComplete(jobId) }
+    );
+  };
+  // Stop clock and complete: the clocks stop and post first.
+  const stopClockFetcher = useAction<typeof stopClockAction>({
+    onSuccess: (result) => {
+      if (result.data?.warning) toast.warning(result.data.warning);
+      submitComplete(completeFixedPrice.current);
+    }
+  });
 
   const isBusy = [
     statusFetcher,
     sendFetcher,
     completeFetcher,
+    stopClockFetcher,
     reopenFetcher,
     invoiceFetcher
   ].some((fetcher) => fetcher.state !== "idle");
+  const isCompleting =
+    completeFetcher.state !== "idle" || stopClockFetcher.state !== "idle";
 
   const primaryAction = job ? serviceJobPrimaryAction(job) : null;
   const isLocked = isServiceJobLocked(status);
@@ -124,6 +173,25 @@ const ServiceJobHeader = () => {
     statusFetcher.submit(
       { action },
       { method: "post", action: path.to.serviceJobStatus(jobId) }
+    );
+  };
+
+  const confirmComplete = (fixedPrice: number | undefined) => {
+    if (hasRunningClock) {
+      completeFixedPrice.current = fixedPrice;
+      stopClockFetcher.submit(
+        {},
+        { method: "post", action: path.to.serviceJobStopClock(jobId) }
+      );
+      return;
+    }
+    submitComplete(fixedPrice);
+  };
+
+  const confirmInvoice = (fixedPrice: number | undefined) => {
+    invoiceFetcher.submit(
+      fixedPrice === undefined ? {} : { fixedPrice: String(fixedPrice) },
+      { method: "post", action: path.to.serviceJobInvoice(jobId) }
     );
   };
 
@@ -185,14 +253,31 @@ const ServiceJobHeader = () => {
         <DropdownMenuIcon icon={<LuLoaderCircle />} />
         <Trans>Reopen</Trans>
       </DropdownMenuItem>
-      <DropdownMenuItem
-        destructive
-        disabled={!isAllowed("Cancel")}
-        onClick={cancelModal.onOpen}
-      >
-        <DropdownMenuIcon icon={<LuCircleX />} />
-        <Trans>Cancel Job</Trans>
-      </DropdownMenuItem>
+      {hasWork ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {/* A disabled item fires no pointer events: the span does. */}
+            <span tabIndex={0} className="block">
+              <DropdownMenuItem destructive disabled>
+                <DropdownMenuIcon icon={<LuCircleX />} />
+                <Trans>Cancel Job</Trans>
+              </DropdownMenuItem>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            <Trans>Remove the time entries and return the parts first.</Trans>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <DropdownMenuItem
+          destructive
+          disabled={!isAllowed("Cancel")}
+          onClick={cancelModal.onOpen}
+        >
+          <DropdownMenuIcon icon={<LuCircleX />} />
+          <Trans>Cancel Job</Trans>
+        </DropdownMenuItem>
+      )}
     </>
   );
 
@@ -218,20 +303,15 @@ const ServiceJobHeader = () => {
         );
       case "Complete":
         return (
-          <completeFetcher.Form
-            method="post"
-            action={path.to.serviceJobComplete(jobId)}
+          <Button
+            leftIcon={<LuCircleCheck />}
+            variant="primary"
+            isDisabled={!canComplete}
+            isLoading={isCompleting}
+            onClick={completeModal.onOpen}
           >
-            <Button
-              type="submit"
-              leftIcon={<LuCircleCheck />}
-              variant="primary"
-              isDisabled={!canComplete}
-              isLoading={completeFetcher.state !== "idle"}
-            >
-              <Trans>Complete</Trans>
-            </Button>
-          </completeFetcher.Form>
+            <Trans>Complete</Trans>
+          </Button>
         );
       case "Record Response":
         return (
@@ -246,20 +326,15 @@ const ServiceJobHeader = () => {
         );
       case "Create Invoice":
         return (
-          <invoiceFetcher.Form
-            method="post"
-            action={path.to.serviceJobInvoice(jobId)}
+          <Button
+            leftIcon={<LuCreditCard />}
+            variant="primary"
+            isDisabled={!canInvoice}
+            isLoading={invoiceFetcher.state !== "idle"}
+            onClick={invoiceModal.onOpen}
           >
-            <Button
-              type="submit"
-              leftIcon={<LuCreditCard />}
-              variant="primary"
-              isDisabled={!canInvoice}
-              isLoading={invoiceFetcher.state !== "idle"}
-            >
-              <Trans>Invoice</Trans>
-            </Button>
-          </invoiceFetcher.Form>
+            <Trans>Invoice</Trans>
+          </Button>
         );
       default:
         return null;
@@ -285,6 +360,48 @@ const ServiceJobHeader = () => {
       />
       {responseModal.isOpen && (
         <EstimateResponseModal jobId={jobId} onClose={responseModal.onClose} />
+      )}
+      {completeModal.isOpen && (
+        <ServiceJobActionModal
+          title={<Trans>Complete {job?.serviceJobId}</Trans>}
+          description={
+            hasRunningClock ? (
+              <Trans>A clock is still running on this job.</Trans>
+            ) : (
+              <Trans>
+                The job closes. Its time and parts cannot change until it is
+                reopened.
+              </Trans>
+            )
+          }
+          submitLabel={
+            hasRunningClock ? (
+              <Trans>Stop clock and complete</Trans>
+            ) : (
+              <Trans>Complete</Trans>
+            )
+          }
+          needsFixedPrice={needsFixedPrice}
+          isPending={isCompleting}
+          onConfirm={confirmComplete}
+          onClose={completeModal.onClose}
+        />
+      )}
+      {invoiceModal.isOpen && (
+        <ServiceJobActionModal
+          title={<Trans>Invoice {job?.serviceJobId}</Trans>}
+          description={
+            <Trans>
+              A draft sales invoice is created for the job, and the job becomes
+              Invoiced.
+            </Trans>
+          }
+          submitLabel={<Trans>Create Invoice</Trans>}
+          needsFixedPrice={needsFixedPrice}
+          isPending={invoiceFetcher.state !== "idle"}
+          onConfirm={confirmInvoice}
+          onClose={invoiceModal.onClose}
+        />
       )}
       {cancelModal.isOpen && (
         <Modal

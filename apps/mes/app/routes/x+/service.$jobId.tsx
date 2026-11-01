@@ -13,6 +13,9 @@ import { getLogger } from "@carbon/logger";
 import { useAction, useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   cn,
   DropdownMenuIcon,
@@ -64,6 +67,7 @@ import {
   LuShieldCheck,
   LuSquareUser,
   LuTimer,
+  LuTriangleAlert,
   LuX
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -103,6 +107,7 @@ import {
   getServiceJobFiles,
   getServiceJobItems,
   getServiceJobTime,
+  getServiceLaborRates,
   type ServiceJobTechnicianUpdate,
   updateServiceJobFields
 } from "~/services/service.service";
@@ -121,14 +126,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Service job is required");
 
-  const [job, time, items, files, runningClock, timeZone] = await Promise.all([
-    getServiceJob(client, companyId, jobId),
-    getServiceJobTime(client, companyId, jobId),
-    getServiceJobItems(client, companyId, jobId),
-    getServiceJobFiles(client, companyId, jobId),
-    getRunningServiceClock(client, { employeeId: userId, companyId }),
-    getCompanyTimeZone(client, companyId)
-  ]);
+  const [job, time, items, files, runningClock, timeZone, laborRates] =
+    await Promise.all([
+      getServiceJob(client, companyId, jobId),
+      getServiceJobTime(client, companyId, jobId),
+      getServiceJobItems(client, companyId, jobId),
+      getServiceJobFiles(client, companyId, jobId),
+      getRunningServiceClock(client, { employeeId: userId, companyId }),
+      getCompanyTimeZone(client, companyId),
+      getServiceLaborRates(client, companyId)
+    ]);
 
   if (!job.data || job.data.companyId !== companyId) {
     throw redirect(
@@ -144,6 +151,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // A signature captured before signatures were removed is not a photo.
     files: (files.data ?? []).filter((file) => file.name !== "signature.png"),
     runningClock: runningClock.data,
+    laborCostRate: laborRates.data.costRate,
     today: datetime.today(timeZone).toString(),
     companyId,
     userId
@@ -490,8 +498,17 @@ function PhotosSection({
 }
 
 export default function ServiceJobRoute() {
-  const { job, time, items, files, runningClock, today, companyId, userId } =
-    useLoaderData<typeof loader>();
+  const {
+    job,
+    time,
+    items,
+    files,
+    runningClock,
+    laborCostRate,
+    today,
+    companyId,
+    userId
+  } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const { locale } = useLocale();
   const clockFetcher = useFetcher();
@@ -513,6 +530,12 @@ export default function ServiceJobRoute() {
   );
 
   const isLocked = isServiceJobLocked(job.status);
+  // Time cannot be logged without the cost rate, nor billed without the
+  // job's bill rate.
+  const isMissingRates =
+    !isLocked &&
+    (laborCostRate === null ||
+      (job.coverage === "Billable" && job.laborBillRate === null));
   const isRunningHere = runningClock?.serviceJobId === job.id;
   const isRunningElsewhere = !!runningClock && !isRunningHere;
   const isBusy = clockFetcher.state !== "idle";
@@ -706,6 +729,27 @@ export default function ServiceJobRoute() {
         dock={dock}
       >
         <WorkRecordPane value="details">
+          {isMissingRates && (
+            <Alert variant="warning">
+              <LuTriangleAlert />
+              <AlertTitle>
+                <Trans>
+                  Labor rates are not set. Time cannot be logged or billed until
+                  they are.
+                </Trans>
+              </AlertTitle>
+              <AlertDescription>
+                <a
+                  href={path.to.serviceSettings}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium hover:underline"
+                >
+                  <Trans>Set rates</Trans>
+                </a>
+              </AlertDescription>
+            </Alert>
+          )}
           <WorkRecordTitle title={job.customer?.name} subtitle={unit} />
           <WorkRecordStats>
             <WorkRecordStat
@@ -864,9 +908,6 @@ export default function ServiceJobRoute() {
                       <Th className="text-sm">
                         <Trans>When</Trans>
                       </Th>
-                      <Th className="text-sm">
-                        <Trans>Labor</Trans>
-                      </Th>
                       <Th className="text-sm text-right">
                         <Trans>Hours</Trans>
                       </Th>
@@ -901,9 +942,6 @@ export default function ServiceJobRoute() {
                           ) : (
                             <DateTime value={entry.entryDate} variant="date" />
                           )}
-                        </Td>
-                        <Td className="text-sm text-muted-foreground">
-                          {entry.laborItem?.name}
                         </Td>
                         <Td className="text-right font-mono text-sm">
                           {entry.startTime && !entry.endTime

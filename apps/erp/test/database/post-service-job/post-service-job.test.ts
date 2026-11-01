@@ -4,16 +4,28 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
-import {
-  SERVICE_JOB_BEFORE_CUTOVER_ERROR,
-  SERVICE_JOB_UNIT_LEFT_ERROR
-} from "../../../app/modules/service/service.service";
+import { SERVICE_JOB_UNIT_LEFT_ERROR } from "../../../app/modules/service/service.service";
 import { databaseTest } from "../fixtures/local-database";
 import { PROJECT_TEST_USER } from "../fixtures/project-posting";
 import { serviceJobFixture } from "../fixtures/service-job";
 
+/** The ids of the job's 'Service Job' journals. */
+async function serviceJobJournals(
+  f: Awaited<ReturnType<typeof serviceJobFixture>>,
+  serviceJobId: string
+) {
+  const rows = await f.db
+    .selectFrom("journalLine")
+    .select("journalId")
+    .distinct()
+    .where("documentType", "=", "Service Job")
+    .where("documentId", "=", serviceJobId)
+    .execute();
+  return rows.map((row) => row.journalId);
+}
+
 databaseTest(
-  "completing a job posts its time to Cost of Service, and reopening reverses it",
+  "completing a job posts only the time not yet posted, and reopening posts nothing",
   async () => {
     const f = await serviceJobFixture();
     try {
@@ -23,8 +35,15 @@ databaseTest(
       });
       const job = await f.addJob({ locationId, coverage: "Billable" });
       await f.addTime(job.id, { hours: 1 });
-      await f.addTime(job.id, { hours: 0.5 });
+      const posted = await f.postServiceJob({
+        action: "post-time",
+        serviceJobId: job.id
+      });
+      expect(posted.error).toBeNull();
+      expect(await serviceJobJournals(f, job.id)).toHaveLength(1);
 
+      // An entry whose post-after-write failed: Complete catches it up.
+      await f.addTime(job.id, { hours: 0.5 });
       const completed = await f.postServiceJob({
         action: "complete",
         serviceJobId: job.id,
@@ -33,36 +52,41 @@ databaseTest(
       expect(completed.error).toBeNull();
       const journalId = completed.data?.journalId as string;
       expect(await f.journalLines(journalId)).toEqual([
-        [f.account("cost-of-service"), 60],
-        [f.account("labor-absorption"), -60]
+        [f.account("cost-of-service"), 20],
+        [f.account("labor-absorption"), -20]
       ]);
-
       const journal = await f.db
         .selectFrom("journal")
         .select(["sourceType", "status"])
         .where("id", "=", journalId)
         .executeTakeFirstOrThrow();
       expect(journal).toEqual({ sourceType: "Service Job", status: "Posted" });
-      const documents = await f.db
-        .selectFrom("journalLine")
-        .select(["documentType", "documentId"])
-        .distinct()
-        .where("journalId", "=", journalId)
-        .execute();
-      expect(documents).toEqual([
-        { documentType: "Service Job", documentId: job.id }
-      ]);
+      expect(await serviceJobJournals(f, job.id)).toHaveLength(2);
 
       const header = await f.db
         .selectFrom("serviceJob")
-        .select(["status", "completionJournalId", "signedByName"])
+        .select(["status", "signedByName"])
         .where("id", "=", job.id)
         .executeTakeFirstOrThrow();
       expect(header).toEqual({
         status: "Completed",
-        completionJournalId: journalId,
         signedByName: "Pat Customer"
       });
+
+      const reopened = await f.postServiceJob({
+        action: "reopen",
+        serviceJobId: job.id
+      });
+      expect(reopened.error).toBeNull();
+      expect(reopened.data?.journalId).toBeNull();
+      expect(await serviceJobJournals(f, job.id)).toHaveLength(2);
+      const after = await f.db
+        .selectFrom("serviceJob")
+        .select(["status", "completedAt"])
+        .where("id", "=", job.id)
+        .executeTakeFirstOrThrow();
+      expect(after).toEqual({ status: "In Progress", completedAt: null });
+      // Each entry keeps the rate it posted at.
       const costed = await f.db
         .selectFrom("serviceJobTime")
         .select(["unitCost"])
@@ -70,33 +94,14 @@ databaseTest(
         .execute();
       expect(costed.map((row) => Number(row.unitCost))).toEqual([40, 40]);
 
-      const reopened = await f.postServiceJob({
-        action: "reopen",
+      // Completing again with nothing new writes no journal.
+      const again = await f.postServiceJob({
+        action: "complete",
         serviceJobId: job.id
       });
-      expect(reopened.error).toBeNull();
-      expect(
-        await f.journalLines(reopened.data?.journalId as string)
-      ).toEqual([
-        [f.account("labor-absorption"), 60],
-        [f.account("cost-of-service"), -60]
-      ]);
-      const after = await f.db
-        .selectFrom("serviceJob")
-        .select(["status", "completionJournalId", "completedAt"])
-        .where("id", "=", job.id)
-        .executeTakeFirstOrThrow();
-      expect(after).toEqual({
-        status: "In Progress",
-        completionJournalId: null,
-        completedAt: null
-      });
-      const cleared = await f.db
-        .selectFrom("serviceJobTime")
-        .select(["unitCost"])
-        .where("serviceJobId", "=", job.id)
-        .execute();
-      expect(cleared.map((row) => row.unitCost)).toEqual([null, null]);
+      expect(again.error).toBeNull();
+      expect(again.data?.journalId).toBeNull();
+      expect(await serviceJobJournals(f, job.id)).toHaveLength(2);
     } finally {
       await f.cleanup();
     }
@@ -182,6 +187,41 @@ databaseTest(
 );
 
 databaseTest(
+  "a coverage change moves the posted time to the new coverage account",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const { locationId } = await f.addStockedItem("unit", {
+        quantity: 1,
+        unitCost: 10
+      });
+      const job = await f.addJob({ locationId, coverage: "Billable" });
+      await f.addTime(job.id, { hours: 1.5 });
+      const posted = await f.postServiceJob({
+        action: "post-time",
+        serviceJobId: job.id
+      });
+      expect(posted.error).toBeNull();
+
+      const changed = await f.postServiceJob({
+        action: "set-coverage",
+        serviceJobId: job.id,
+        coverage: "Warranty"
+      });
+      expect(changed.error).toBeNull();
+      expect(await f.journalLines(changed.data?.journalId as string)).toEqual(
+        [
+          [f.account("warranty"), 60],
+          [f.account("cost-of-service"), -60]
+        ]
+      );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
   "a job completes without an accepted estimate",
   async () => {
     const f = await serviceJobFixture();
@@ -215,41 +255,25 @@ databaseTest(
   }
 );
 
-databaseTest(
-  "completion refuses a running clock and a labor item with no cost",
-  async () => {
-    const f = await serviceJobFixture();
-    try {
-      const { locationId } = await f.addStockedItem("unit", {
-        quantity: 1,
-        unitCost: 10
-      });
-      const job = await f.addJob({ locationId });
-      await f.addTime(job.id, { hours: 0, running: true });
+databaseTest("completion refuses a running clock", async () => {
+  const f = await serviceJobFixture();
+  try {
+    const { locationId } = await f.addStockedItem("unit", {
+      quantity: 1,
+      unitCost: 10
+    });
+    const job = await f.addJob({ locationId });
+    await f.addTime(job.id, { hours: 0, running: true });
 
-      const running = await f.postServiceJob({
-        action: "complete",
-        serviceJobId: job.id
-      });
-      expect(running.error?.message).toBe("Stop the running clock first.");
-
-      await f.db
-        .updateTable("itemCost")
-        .set({ unitCost: 0 })
-        .where("itemId", "=", f.laborItemId)
-        .execute();
-      const uncosted = await f.postServiceJob({
-        action: "complete",
-        serviceJobId: job.id
-      });
-      expect(uncosted.error?.message).toMatch(
-        /The labor item .*-BENCH has no cost per hour/
-      );
-    } finally {
-      await f.cleanup();
-    }
+    const running = await f.postServiceJob({
+      action: "complete",
+      serviceJobId: job.id
+    });
+    expect(running.error?.message).toBe("Stop the running clock first.");
+  } finally {
+    await f.cleanup();
   }
-);
+});
 
 databaseTest(
   "completing a job from an RMA line moves the RMA on once the unit is back",
@@ -385,54 +409,6 @@ databaseTest(
         serviceJobId: replacedJob.id
       });
       expect(replacedReopen.error?.message).toBe(SERVICE_JOB_UNIT_LEFT_ERROR);
-    } finally {
-      await f.cleanup();
-    }
-  }
-);
-
-databaseTest(
-  "a job completed before the accounting cutover cannot reopen",
-  async () => {
-    const f = await serviceJobFixture();
-    try {
-      const { locationId } = await f.addStockedItem("unit", {
-        quantity: 1,
-        unitCost: 10
-      });
-      const job = await f.addJob({ locationId, coverage: "Billable" });
-      await f.addTime(job.id, { hours: 1 });
-      const completed = await f.postServiceJob({
-        action: "complete",
-        serviceJobId: job.id
-      });
-      expect(completed.error).toBeNull();
-      const journalId = completed.data?.journalId as string;
-
-      // What the cutover's enable does to a journal posted before it.
-      await f.db.transaction().execute(async (trx) => {
-        await sql`SET LOCAL session_replication_role = replica`.execute(trx);
-        await trx
-          .updateTable("journal")
-          .set({ status: "Superseded" })
-          .where("id", "=", journalId)
-          .execute();
-      });
-
-      const reopened = await f.postServiceJob({
-        action: "reopen",
-        serviceJobId: job.id
-      });
-      expect(reopened.error?.message).toBe(SERVICE_JOB_BEFORE_CUTOVER_ERROR);
-      const after = await f.db
-        .selectFrom("serviceJob")
-        .select(["status", "completionJournalId"])
-        .where("id", "=", job.id)
-        .executeTakeFirstOrThrow();
-      expect(after).toEqual({
-        status: "Completed",
-        completionJournalId: journalId
-      });
     } finally {
       await f.cleanup();
     }

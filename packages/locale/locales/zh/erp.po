@@ -784,6 +784,9 @@ msgstr "{hour} h"
 msgid "{hours} h"
 msgstr "{hours} h"
 
+msgid "{hours} h × {rate}"
+msgstr "{hours} h × {rate}"
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# 个零件已创建} other {# 个零件已创建}}"
 
@@ -1334,6 +1337,9 @@ msgstr "控制账户下的应计费用单位，采用挣值法，如 0/100、50/
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "持有已收但未开票商品价值的结算账户；供应商发票将其结清。"
 
+msgid "A clock is still running on this job."
+msgstr "此工单上仍在运行计时器。"
+
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "已关闭的项目不再接受费用且无法重新打开。仅在该项目上的每个采购订单行和工单都完成时才关闭它。"
 
@@ -1462,6 +1468,9 @@ msgstr "折扣可以在某个日期结束；该行随后按全额费率计费。
 
 msgid "A draft run must be posted or deleted first."
 msgstr "草稿凭证必须先过账或删除。"
+
+msgid "A draft sales invoice is created for the job, and the job becomes Invoiced."
+msgstr "为工单创建草稿销售发票，工单变为已开票。"
 
 msgid "A draft set of plan changes with a title and a reason. The current plan does not change until the request is approved, and then it applies whole, in one step."
 msgstr "一份包含标题和原因的草稿计划变更集。当前计划在请求获得审批后才会更改，并整体一次性应用。"
@@ -1603,6 +1612,9 @@ msgstr "将为每个供应商创建一个新的采购订单。或者，您可以
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "将使用当前修订版的副本创建新的修订版"
+
+msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
+msgstr "新的服务工单复制账单费率。每个时间条目以成本费率过账其成本。"
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "将使用当前尺寸的副本创建新尺寸"
@@ -4497,6 +4509,9 @@ msgstr "关联"
 msgid "Assumptions"
 msgstr "假设"
 
+msgid "At {billRate} per hour (the job's bill rate)"
+msgstr "每小时 {billRate}（工单的账单费率）"
+
 msgid "At {locationName}"
 msgstr "在 {locationName}"
 
@@ -5000,6 +5015,9 @@ msgstr "计费费率"
 
 msgid "Bill Rate"
 msgstr "计费费率"
+
+msgid "Bill Rate (per hour)"
+msgstr "账单费率（每小时）"
 
 msgid "Bill To"
 msgstr "账单收款人"
@@ -6547,6 +6565,10 @@ msgstr "兼容性规则"
 msgid "Complete"
 msgstr "完成"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Complete {0}"
+msgstr "完成 {0}"
+
 #. placeholder {0}: getCompleteQuantity(operation)
 #. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
 msgid "Complete {0}/{1}"
@@ -7784,6 +7806,9 @@ msgstr "创建元素"
 msgid "Create Forecast"
 msgstr "创建预测"
 
+msgid "Create Invoice"
+msgstr "创建发票"
+
 msgid "Create Issue"
 msgstr "创建问题"
 
@@ -8700,6 +8725,9 @@ msgstr "默认审批人"
 
 msgid "Default Attachments"
 msgstr "默认附件"
+
+msgid "Default bill rate per hour"
+msgstr "默认每小时账单费率"
 
 msgid "Default cash account for transactions in non-base currencies."
 msgstr "非基础货币交易的默认现金账户。"
@@ -12315,6 +12343,9 @@ msgstr "当批量与标准不符时的固定成本摊销差异"
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "一旦会计期间已过账或已关闭即被固定。删除所有未结期间以更改它。"
 
+msgid "Fixed price"
+msgstr "固定价格"
+
 msgid "Fixed Price"
 msgstr "固定价格"
 
@@ -13176,9 +13207,6 @@ msgstr "已支付小时数"
 
 msgid "Hours per Week"
 msgstr "每周小时数"
-
-msgid "Hours, for a labor item"
-msgstr "人工项目的工时数"
 
 msgid "Hours/100 Pieces"
 msgstr "小时/100件"
@@ -14057,6 +14085,10 @@ msgstr "已邀请"
 msgid "Invoice"
 msgstr "发票"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Invoice {0}"
+msgstr "发票 {0}"
+
 msgid "Invoice {invoiceDate}"
 msgstr "发票 {invoiceDate}"
 
@@ -14695,6 +14727,9 @@ msgstr "人工分类"
 msgid "Labor category: {0}"
 msgstr "人工类别: {0}"
 
+msgid "Labor cost per hour"
+msgstr "每小时人工成本"
+
 msgid "Labor Costs"
 msgstr "人工成本"
 
@@ -14707,9 +14742,6 @@ msgstr "人工已结束"
 msgid "Labor Hours"
 msgstr "人工小时"
 
-msgid "Labor Item"
-msgstr "人工项目"
-
 msgid "Labor rate"
 msgstr "人工费率"
 
@@ -14719,8 +14751,14 @@ msgstr "人工费率"
 msgid "Labor Rate (Hourly)"
 msgstr "人工费率（每小时）"
 
+msgid "Labor rates"
+msgstr "人工费率"
+
 msgid "Labor Rates"
 msgstr "人工费率"
+
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "人工费率未设置。在设置之前，无法记录或计费时间。"
 
 msgid "Labor time"
 msgstr "人工工时"
@@ -22249,6 +22287,9 @@ msgstr "从此池中移除账户{0}？已计算的费率保留。"
 msgid "Remove the received serial and batch numbers from stock"
 msgstr "从库存中移除已收货的序列号和批次号"
 
+msgid "Remove the time entries and return the parts first."
+msgstr "先删除时间条目并退回零件。"
+
 msgid "Remove this item"
 msgstr "移除此物料"
 
@@ -22925,6 +22966,9 @@ msgstr "已赚取但尚未开票的收入，例如单位已租赁天数的租金
 
 msgid "Revenue End"
 msgstr "收入结束"
+
+msgid "Revenue from service jobs"
+msgstr "来自服务工单的收入"
 
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "在销售型租赁开始时贷记的收入总账科目，用于记录租赁支付现值。"
@@ -24401,15 +24445,6 @@ msgstr "服务工单"
 msgid "Service Jobs"
 msgstr "服务工单"
 
-msgid "Service Labor"
-msgstr "服务人工"
-
-msgid "Service Labor Item"
-msgstr "服务人工物料"
-
-msgid "Service labor item updated"
-msgstr "服务人工物料已更新"
-
 msgid "Service lines"
 msgstr "服务行"
 
@@ -24418,6 +24453,12 @@ msgstr "服务期间"
 
 msgid "Service Provider Details"
 msgstr "服务提供商详情"
+
+msgid "Service Revenue"
+msgstr "服务收入"
+
+msgid "Service settings updated"
+msgstr "服务设置已更新"
 
 msgid "Service start"
 msgstr "服务开始"
@@ -24497,6 +24538,9 @@ msgstr "设置费率"
 msgid "Set Rate, FY{fiscalYear}"
 msgstr "设置费率，FY{fiscalYear}"
 
+msgid "Set rates"
+msgstr "设置费率"
+
 msgid "Set terms"
 msgstr "设置条款"
 
@@ -24511,6 +24555,9 @@ msgstr "设置开始日期、结束日期和付款条件以查看会计处理。
 
 msgid "Set the fiscal year settings."
 msgstr "设置会计年度。"
+
+msgid "Set the job's bill rate first."
+msgstr "先设置工单的账单费率。"
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
 msgstr "将迁移清算账户设置为启用的非组所有者权益账户。"
@@ -25567,6 +25614,9 @@ msgstr "仅库存备件。"
 
 msgid "Stockout"
 msgstr "缺货"
+
+msgid "Stop clock and complete"
+msgstr "停止计时器并完成"
 
 msgid "Stop raising purchase orders after this date"
 msgstr "在此日期后停止提出采购订单"
@@ -26655,6 +26705,9 @@ msgstr "生产批次是{0},不是已计划"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "批次按最紧急成员的时间运行——其余成员将被提前"
 
+msgid "The bill rate is locked: the estimate was sent to the customer."
+msgstr "账单费率已锁定：估价已发送给客户。"
+
 #. placeholder {0}: nameOf(gap.lineId)
 msgid "The billing element of {0} is not marked as a billing element."
 msgstr "行{0}的开票要素未标记为开票要素。"
@@ -27126,6 +27179,9 @@ msgstr "该物料的租赁费率"
 
 msgid "The job closes without work. A job with time entries or issued parts cannot be cancelled."
 msgstr "工单在没有工作的情况下关闭。已有工作时数或已发出零件的工单无法取消。"
+
+msgid "The job closes. Its time and parts cannot change until it is reopened."
+msgstr "工单关闭。在重新打开之前，其时间和零件无法更改。"
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "该天到期的任务小时数（以截止日期为基础，而不是工作运行的日期），逾期工作在逾期中。"
@@ -27641,9 +27697,6 @@ msgstr "用于您制造或资本化以出租而非销售的单位的预置资产
 msgid "the selected class"
 msgstr "选定的类别"
 
-msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
-msgstr "其销售价格在服务订单、其估算和发票上为时间定价的服务物料。"
-
 msgid "The service, and how it reads on the invoice."
 msgstr "服务及其在发票上的显示方式。"
 
@@ -28080,6 +28133,9 @@ msgstr "此文件不再可用，或您没有权限下载它。"
 
 msgid "This Fiscal Year"
 msgstr "此会计年度"
+
+msgid "This Fixed Price job has no price."
+msgstr "此固定价格工单没有价格。"
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "在下面验证电子邮件域之前，这不会产生任何影响。"

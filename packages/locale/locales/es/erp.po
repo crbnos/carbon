@@ -784,6 +784,9 @@ msgstr "{hour} h"
 msgid "{hours} h"
 msgstr "{hours} h"
 
+msgid "{hours} h × {rate}"
+msgstr "{hours} h × {rate}"
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# pieza creada} other {# piezas creadas}}"
 
@@ -1334,6 +1337,9 @@ msgstr "Un elemento facturable por debajo de una cuenta de control que tiene una
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Una cuenta de compensación que mantiene el valor de bienes recibidos pero aún no facturados; la factura del proveedor la cancela."
 
+msgid "A clock is still running on this job."
+msgstr "Aún hay un reloj en marcha en esta orden de trabajo."
+
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "Un proyecto cerrado no acepta más cargos y no se puede reabrir. Ciérralo solo cuando cada línea de orden de compra y orden de trabajo esté hecha."
 
@@ -1462,6 +1468,9 @@ msgstr "Un descuento puede terminar en una fecha; la línea entonces factura su 
 
 msgid "A draft run must be posted or deleted first."
 msgstr "Una ejecución en borrador debe ser contabilizada o eliminada primero."
+
+msgid "A draft sales invoice is created for the job, and the job becomes Invoiced."
+msgstr "Se crea un borrador de factura de venta para la orden de trabajo, y la orden de trabajo se convierte en Facturado."
 
 msgid "A draft set of plan changes with a title and a reason. The current plan does not change until the request is approved, and then it applies whole, in one step."
 msgstr "Un conjunto de cambios de plan en borrador con un título y una razón. El plan actual no cambia hasta que la solicitud sea aprobada, y luego se aplica completo, en un paso."
@@ -1603,6 +1612,9 @@ msgstr "Se creará una nueva orden de compra para cada proveedor. Alternativamen
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "Se creará una nueva revisión utilizando una copia de la revisión actual"
+
+msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
+msgstr "Una nueva orden de servicio copia la tarifa de facturación. Cada entrada de tiempo contabiliza su costo a la tarifa de costo."
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "Se creará un nuevo tamaño utilizando una copia del tamaño actual"
@@ -4497,6 +4509,9 @@ msgstr "Asociaciones"
 msgid "Assumptions"
 msgstr "Supuestos"
 
+msgid "At {billRate} per hour (the job's bill rate)"
+msgstr "A {billRate} por hora (la tarifa de facturación de la orden de trabajo)"
+
 msgid "At {locationName}"
 msgstr "En {locationName}"
 
@@ -5000,6 +5015,9 @@ msgstr "Tasa de facturación"
 
 msgid "Bill Rate"
 msgstr "Tasa de facturación"
+
+msgid "Bill Rate (per hour)"
+msgstr "Tarifa de facturación (por hora)"
 
 msgid "Bill To"
 msgstr "Facturar a"
@@ -6547,6 +6565,10 @@ msgstr "Reglas de compatibilidad"
 msgid "Complete"
 msgstr "Completar"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Complete {0}"
+msgstr "Completar {0}"
+
 #. placeholder {0}: getCompleteQuantity(operation)
 #. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
 msgid "Complete {0}/{1}"
@@ -7784,6 +7806,9 @@ msgstr "Crear elementos"
 msgid "Create Forecast"
 msgstr "Crear pronóstico"
 
+msgid "Create Invoice"
+msgstr "Crear factura"
+
 msgid "Create Issue"
 msgstr "Crear Problema"
 
@@ -8700,6 +8725,9 @@ msgstr "Aprobador Predeterminado"
 
 msgid "Default Attachments"
 msgstr "Adjuntos Predeterminados"
+
+msgid "Default bill rate per hour"
+msgstr "Tarifa de facturación predeterminada por hora"
 
 msgid "Default cash account for transactions in non-base currencies."
 msgstr "Cuenta de efectivo predeterminada para transacciones en monedas que no son la base."
@@ -12315,6 +12343,9 @@ msgstr "Desviación de amortización de costos fijos cuando el tamaño del lote 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "Se fija una vez que los períodos contables se han registrado o cerrado. Elimine todos los períodos abiertos para cambiarlo."
 
+msgid "Fixed price"
+msgstr "Precio fijo"
+
 msgid "Fixed Price"
 msgstr "Precio fijo"
 
@@ -13176,9 +13207,6 @@ msgstr "Horas pagadas"
 
 msgid "Hours per Week"
 msgstr "Horas por Semana"
-
-msgid "Hours, for a labor item"
-msgstr "Horas, para un artículo de mano de obra"
 
 msgid "Hours/100 Pieces"
 msgstr "Horas/100 Piezas"
@@ -14057,6 +14085,10 @@ msgstr "Invitado"
 msgid "Invoice"
 msgstr "Factura"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Invoice {0}"
+msgstr "Factura {0}"
+
 msgid "Invoice {invoiceDate}"
 msgstr "Factura {invoiceDate}"
 
@@ -14695,6 +14727,9 @@ msgstr "Categoría de mano de obra"
 msgid "Labor category: {0}"
 msgstr "Categoría de mano de obra: {0}"
 
+msgid "Labor cost per hour"
+msgstr "Costo de mano de obra por hora"
+
 msgid "Labor Costs"
 msgstr "Costos de mano de obra"
 
@@ -14707,9 +14742,6 @@ msgstr "Mano de obra finalizada"
 msgid "Labor Hours"
 msgstr "Horas de Mano de obra"
 
-msgid "Labor Item"
-msgstr "Artículo de mano de obra"
-
 msgid "Labor rate"
 msgstr "Tarifa de mano de obra"
 
@@ -14719,8 +14751,14 @@ msgstr "Tarifa de Mano de Obra"
 msgid "Labor Rate (Hourly)"
 msgstr "Tarifa de Mano de Obra (Por Hora)"
 
+msgid "Labor rates"
+msgstr "Tarifas de mano de obra"
+
 msgid "Labor Rates"
 msgstr "Tasas de mano de obra"
+
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "Las tarifas de mano de obra no están establecidas. El tiempo no puede registrarse ni facturarse hasta que lo estén."
 
 msgid "Labor time"
 msgstr "Tiempo de mano de obra"
@@ -22249,6 +22287,9 @@ msgstr "¿Quitar la cuenta {0} de este grupo? Las tarifas ya calculadas la manti
 msgid "Remove the received serial and batch numbers from stock"
 msgstr "Quitar los números de serie y de lote de producción recibidos de las existencias"
 
+msgid "Remove the time entries and return the parts first."
+msgstr "Quitar las entradas de tiempo y devolver las piezas primero."
+
 msgid "Remove this item"
 msgstr "Quitar este artículo"
 
@@ -22925,6 +22966,9 @@ msgstr "Ingresos por ventas ganados pero aún no facturados, como alquiler por d
 
 msgid "Revenue End"
 msgstr "Fin de ingresos por ventas"
+
+msgid "Revenue from service jobs"
+msgstr "Ingresos por ventas de órdenes de servicio"
 
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "Cuenta contable de Ingresos por ventas acreditada al inicio de un arrendamiento de tipo venta por el valor presente de los pagos de arrendamiento."
@@ -24401,15 +24445,6 @@ msgstr "Orden de Trabajo de Servicio"
 msgid "Service Jobs"
 msgstr "Órdenes de Trabajo de Servicio"
 
-msgid "Service Labor"
-msgstr "Mano de obra por servicio"
-
-msgid "Service Labor Item"
-msgstr "Artículo de mano de obra por servicio"
-
-msgid "Service labor item updated"
-msgstr "Artículo de Mano de obra de Servicio actualizado"
-
 msgid "Service lines"
 msgstr "Líneas de servicio"
 
@@ -24418,6 +24453,12 @@ msgstr "Período de Servicio"
 
 msgid "Service Provider Details"
 msgstr "Detalles del proveedor de servicios"
+
+msgid "Service Revenue"
+msgstr "Ingresos por servicios"
+
+msgid "Service settings updated"
+msgstr "Configuración de servicio actualizada"
 
 msgid "Service start"
 msgstr "Inicio de Servicio"
@@ -24497,6 +24538,9 @@ msgstr "Establecer tarifa"
 msgid "Set Rate, FY{fiscalYear}"
 msgstr "Establecer tarifa, AF{fiscalYear}"
 
+msgid "Set rates"
+msgstr "Establecer tarifas"
+
 msgid "Set terms"
 msgstr "Establecer términos"
 
@@ -24511,6 +24555,9 @@ msgstr "Establezca la fecha de inicio, la fecha de fin y las condiciones de pago
 
 msgid "Set the fiscal year settings."
 msgstr "Establezca la Configuración de Ejercicio fiscal."
+
+msgid "Set the job's bill rate first."
+msgstr "Establecer primero la tarifa de facturación de la orden de trabajo."
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
 msgstr "Establezca la cuenta de Liquidación de Migración en una cuenta de Patrimonio Activa que no sea un grupo."
@@ -25567,6 +25614,9 @@ msgstr "Almacenado solo para repuestos."
 
 msgid "Stockout"
 msgstr "Rotura de stock"
+
+msgid "Stop clock and complete"
+msgstr "Detener reloj y completar"
 
 msgid "Stop raising purchase orders after this date"
 msgstr "Dejar de crear órdenes de compra después de esta fecha"
@@ -26655,6 +26705,9 @@ msgstr "El lote de producción es {0}, no Planificado"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "El lote se ejecuta según su miembro más urgente — los demás se adelantan"
 
+msgid "The bill rate is locked: the estimate was sent to the customer."
+msgstr "La tarifa de facturación está bloqueada: la estimación se envió al cliente."
+
 #. placeholder {0}: nameOf(gap.lineId)
 msgid "The billing element of {0} is not marked as a billing element."
 msgstr "El elemento de facturación de {0} no está marcado como elemento de facturación."
@@ -27126,6 +27179,9 @@ msgstr "La tarifa de renta del artículo"
 
 msgid "The job closes without work. A job with time entries or issued parts cannot be cancelled."
 msgstr "La orden de trabajo se cierra sin trabajo. Una orden de trabajo con entradas de tiempo o piezas emitidas no puede ser cancelada."
+
+msgid "The job closes. Its time and parts cannot change until it is reopened."
+msgstr "La orden de trabajo se cierra. Su tiempo y sus piezas no pueden cambiar hasta que se reabra."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "las horas de Orden de trabajo vencidas ese día (una base de fecha de vencimiento, no el día que se ejecuta el trabajo), con trabajo Atrasado en Pasado vencido."
@@ -27641,9 +27697,6 @@ msgstr "La clase de activo predefinida para unidades que construyes o capitaliza
 msgid "the selected class"
 msgstr "la clase seleccionada"
 
-msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
-msgstr "El artículo de servicio cuyo precio de venta fija el precio del tiempo en una orden de servicio, en su estimado y en su factura."
-
 msgid "The service, and how it reads on the invoice."
 msgstr "El servicio, y cómo se lee en la factura."
 
@@ -28080,6 +28133,9 @@ msgstr "Este archivo ya no está disponible, o no tienes permiso para descargarl
 
 msgid "This Fiscal Year"
 msgstr "Este Ejercicio fiscal"
+
+msgid "This Fixed Price job has no price."
+msgstr "Esta orden de trabajo de precio fijo no tiene precio."
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "Esto no tiene efecto hasta que se verifique un dominio de correo electrónico a continuación."

@@ -83,6 +83,7 @@ import {
 } from "~/services/projects.service";
 import {
   getServiceTimeWeek,
+  postServiceJobTime,
   saveServiceDayHours
 } from "~/services/service.service";
 import { path } from "~/utils/path";
@@ -221,7 +222,8 @@ export async function action({ request }: ActionFunctionArgs) {
           "The hours are invalid"
       };
     }
-    const result = await saveServiceDayHours(await getCarbonServiceRole(), {
+    const serviceRole = await getCarbonServiceRole();
+    const result = await saveServiceDayHours(serviceRole, {
       ...validation.data,
       companyId,
       userId,
@@ -245,6 +247,24 @@ export async function action({ request }: ActionFunctionArgs) {
         success: false,
         message: result.data.warning,
         isWarning: true
+      };
+    }
+    // The hours are saved; their cost posts in the ERP. A failed posting only
+    // warns: the next write to the job's time posts it again.
+    const posting = await postServiceJobTime(serviceRole, {
+      serviceJobId: validation.data.serviceJobId,
+      companyId,
+      userId
+    });
+    if (posting.error) {
+      logger.error("Failed to post a service job's time cost", {
+        companyId,
+        serviceJobId: validation.data.serviceJobId,
+        error: posting.error
+      });
+      return {
+        success: true,
+        message: `The hours are saved, but their labor cost did not post: ${posting.error.message}`
       };
     }
     return { success: true, message: null };
@@ -484,6 +504,10 @@ export default function MESTimesheetPage() {
   // comes back as a warning; either refusal puts the bar back.
   const savingServiceKey = useRef<string | null>(null);
   const serviceCellFetcher = useAction<typeof action>({
+    // Saved, but the labor cost did not post: a warning, the bar stays.
+    onSuccess: (data) => {
+      if (data.message) toast.warning(data.message);
+    },
     onError: (data) => {
       if ("isWarning" in data && data.isWarning) {
         toast.warning(data.message);

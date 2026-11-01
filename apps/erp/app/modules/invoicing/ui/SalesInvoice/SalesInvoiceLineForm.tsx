@@ -170,8 +170,11 @@ const SalesInvoiceItemLineForm = ({
   const isLocked = isSalesInvoiceLocked(routeData?.salesInvoice?.status);
   const isEditable = !isLocked;
 
-  const [lineType, setLineType] = useState<ItemType>(
-    initialValues.invoiceLineType as ItemType
+  // A Labor line is a service job's billed hours: no item, no method and no
+  // location, only hours, a rate and tax.
+  const isLabor = initialValues.invoiceLineType === "Labor";
+  const [lineType, setLineType] = useState<ItemType | "Labor">(
+    initialValues.invoiceLineType as ItemType | "Labor"
   );
   // The picker's type filter. It starts on every item type; the line's own
   // type is a real enum value — "Item" is not one — and follows the selected
@@ -493,6 +496,7 @@ const SalesInvoiceItemLineForm = ({
                     className={cn(
                       isEditing &&
                         !isFixedAsset &&
+                        !isLabor &&
                         !itemData?.itemId &&
                         "text-muted-foreground"
                     )}
@@ -500,6 +504,8 @@ const SalesInvoiceItemLineForm = ({
                     {isEditing ? (
                       isFixedAsset ? (
                         initialValues.assetReadableId || "Fixed Asset"
+                      ) : isLabor ? (
+                        t`Labor`
                       ) : (
                         (getItemReadableId(items, itemData?.itemId) ?? "...")
                       )
@@ -516,7 +522,9 @@ const SalesInvoiceItemLineForm = ({
                           </span>
                         ) : (
                           distinctItemText(
-                            getItemReadableId(items, itemData?.itemId),
+                            isLabor
+                              ? t`Labor`
+                              : getItemReadableId(items, itemData?.itemId),
                             itemData?.description
                           ) && <span>{itemData?.description}</span>
                         )}
@@ -526,7 +534,7 @@ const SalesInvoiceItemLineForm = ({
                             className="flex items-center gap-2"
                           >
                             {initialValues?.quantity}{" "}
-                            {!isFixedAsset && (
+                            {!isFixedAsset && !isLabor && (
                               <MethodIcon type={itemData.methodType} />
                             )}
                           </Badge>
@@ -600,21 +608,23 @@ const SalesInvoiceItemLineForm = ({
                       </Alert>
                     )}
                     <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                      <Item
-                        autoFocus={!isEditing}
-                        name="itemId"
-                        label={i18n._(itemTypeLabel(itemFilter))}
-                        type={itemFilter}
-                        validItemTypes={[...itemType]}
-                        locationId={locationId}
-                        // Required by a refine rather than the schema object,
-                        // so the field can't infer this for itself.
-                        isOptional={false}
-                        onChange={(value) => {
-                          onItemChange(value?.value as string);
-                        }}
-                        onTypeChange={onTypeChange}
-                      />
+                      {!isLabor && (
+                        <Item
+                          autoFocus={!isEditing}
+                          name="itemId"
+                          label={i18n._(itemTypeLabel(itemFilter))}
+                          type={itemFilter}
+                          validItemTypes={[...itemType]}
+                          locationId={locationId}
+                          // Required by a refine rather than the schema object,
+                          // so the field can't infer this for itself.
+                          isOptional={false}
+                          onChange={(value) => {
+                            onItemChange(value?.value as string);
+                          }}
+                          onTypeChange={onTypeChange}
+                        />
+                      )}
 
                       <FormControl className="col-span-2 max-md:col-span-full">
                         <FormLabel isOptional>
@@ -638,35 +648,38 @@ const SalesInvoiceItemLineForm = ({
                         "Tool",
                         "Consumable",
                         "Service",
-                        "Fixture"
+                        "Fixture",
+                        "Labor"
                       ].includes(lineType) && (
                         <>
-                          <div className="space-y-2">
-                            <SelectControlled
-                              name="methodType"
-                              label={t`Method`}
-                              termId="method-type"
-                              options={
-                                methodType.map((m) => ({
-                                  label: (
-                                    <span className="flex items-center gap-2">
-                                      <MethodIcon type={m} />
-                                      {m}
-                                    </span>
-                                  ),
-                                  value: m
-                                })) ?? []
-                              }
-                              value={itemData.methodType}
-                              onChange={(newValue) => {
-                                if (newValue)
-                                  setItemData((d) => ({
-                                    ...d,
-                                    methodType: newValue?.value
-                                  }));
-                              }}
-                            />
-                          </div>
+                          {!isLabor && (
+                            <div className="space-y-2">
+                              <SelectControlled
+                                name="methodType"
+                                label={t`Method`}
+                                termId="method-type"
+                                options={
+                                  methodType.map((m) => ({
+                                    label: (
+                                      <span className="flex items-center gap-2">
+                                        <MethodIcon type={m} />
+                                        {m}
+                                      </span>
+                                    ),
+                                    value: m
+                                  })) ?? []
+                                }
+                                value={itemData.methodType}
+                                onChange={(newValue) => {
+                                  if (newValue)
+                                    setItemData((d) => ({
+                                      ...d,
+                                      methodType: newValue?.value
+                                    }));
+                                }}
+                              />
+                            </div>
+                          )}
 
                           <NumberControlled
                             name="quantity"
@@ -730,13 +743,15 @@ const SalesInvoiceItemLineForm = ({
                               />
                             </>
                           )}
-                          <Location
-                            name="locationId"
-                            label={t`Shipping Location`}
-                            value={locationId}
-                            onChange={onLocationChange}
-                          />
-                          {lineType !== "Service" && (
+                          {!isLabor && (
+                            <Location
+                              name="locationId"
+                              label={t`Shipping Location`}
+                              value={locationId}
+                              onChange={onLocationChange}
+                            />
+                          )}
+                          {lineType !== "Service" && !isLabor && (
                             <StorageUnit
                               name="storageUnitId"
                               label={t`Storage Unit`}
@@ -764,7 +779,8 @@ const SalesInvoiceItemLineForm = ({
                       "Tool",
                       "Consumable",
                       "Service",
-                      "Fixture"
+                      "Fixture",
+                      "Labor"
                     ].includes(lineType) && (
                       <div className="w-full">
                         <div className="w-full border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 mt-4">

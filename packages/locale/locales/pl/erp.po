@@ -784,6 +784,9 @@ msgstr "{hour} h"
 msgid "{hours} h"
 msgstr "{hours} h"
 
+msgid "{hours} h × {rate}"
+msgstr "{hours} h × {rate}"
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# część utworzona} other {# części utworzone}}"
 
@@ -1334,6 +1337,9 @@ msgstr "Element obciążalny poniżej konta kontrolnego, który ma technikę war
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Konto kompensacyjne zawierające wartość towarów otrzymanych, ale jeszcze niezafakturowanych; faktura dostawcy go wyzerowuje."
 
+msgid "A clock is still running on this job."
+msgstr "Czasomierz wciąż działa na tym zleceniu produkcyjnym."
+
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "Zamknięty projekt nie przyjmuje więcej opłat i nie może być ponownie otwarty. Zamknij go tylko wtedy, gdy każda pozycja zamówienia zakupu i każde zlecenie produkcyjne są gotowe."
 
@@ -1462,6 +1468,9 @@ msgstr "Rabat może wygasnąć w określonym dniu; pozycja jest wtedy rozliczana
 
 msgid "A draft run must be posted or deleted first."
 msgstr "Wersja robocza musi być najpierw zaksięgowana lub usunięta."
+
+msgid "A draft sales invoice is created for the job, and the job becomes Invoiced."
+msgstr "Wersja robocza faktury sprzedaży jest tworzona dla zlecenia produkcyjnego, a zlecenie produkcyjne zostaje Zafakturowano."
 
 msgid "A draft set of plan changes with a title and a reason. The current plan does not change until the request is approved, and then it applies whole, in one step."
 msgstr "Wersja robocza zestawu zmian planu z tytułem i powodem. Bieżący plan nie zmienia się aż do zatwierdzenia żądania, a następnie stosuje się całość w jednym kroku."
@@ -1603,6 +1612,9 @@ msgstr "Dla każdego dostawcy zostanie utworzone nowe zamówienie zakupu. Altern
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "Nowa rewizja zostanie utworzona za pomocą kopii bieżącej rewizji"
+
+msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
+msgstr "Nowe zlecenie produkcyjne usługi kopiuje stawkę rozliczeniową. Każdy wpis czasu księguje swój koszt w stawce kosztowej."
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "Nowy rozmiar zostanie utworzony przy użyciu kopii bieżącego rozmiaru"
@@ -4497,6 +4509,9 @@ msgstr "Powiązania"
 msgid "Assumptions"
 msgstr "Założenia"
 
+msgid "At {billRate} per hour (the job's bill rate)"
+msgstr "Przy {billRate} za godzinę (stawka rozliczeniowa zlecenia produkcyjnego)"
+
 msgid "At {locationName}"
 msgstr "W {locationName}"
 
@@ -5000,6 +5015,9 @@ msgstr "Stawka rozliczeniowa"
 
 msgid "Bill Rate"
 msgstr "Stawka rozliczeniowa"
+
+msgid "Bill Rate (per hour)"
+msgstr "Stawka rozliczeniowa (za godzinę)"
 
 msgid "Bill To"
 msgstr "Rachunek dla"
@@ -6547,6 +6565,10 @@ msgstr "Reguły Kompatybilności"
 msgid "Complete"
 msgstr "Ukończ"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Complete {0}"
+msgstr "Zakończ {0}"
+
 #. placeholder {0}: getCompleteQuantity(operation)
 #. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
 msgid "Complete {0}/{1}"
@@ -7784,6 +7806,9 @@ msgstr "Utwórz elementy"
 msgid "Create Forecast"
 msgstr "Utwórz prognozę"
 
+msgid "Create Invoice"
+msgstr "Utwórz Fakturę"
+
 msgid "Create Issue"
 msgstr "Utwórz problem"
 
@@ -8700,6 +8725,9 @@ msgstr "Domyślny Zatwierdzający"
 
 msgid "Default Attachments"
 msgstr "Domyślne załączniki"
+
+msgid "Default bill rate per hour"
+msgstr "Domyślna stawka rozliczeniowa za godzinę"
 
 msgid "Default cash account for transactions in non-base currencies."
 msgstr "Domyślne konto gotówkowe dla transakcji w walutach innych niż waluta bazowa."
@@ -12315,6 +12343,9 @@ msgstr "Odchylenie amortyzacji kosztu stałego gdy wielkość partii produkcyjne
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "Ustalone po zaksięgowaniu lub zamknięciu okresów księgowych. Aby zmienić, usuń wszystkie otwarte okresy."
 
+msgid "Fixed price"
+msgstr "Cena stała"
+
 msgid "Fixed Price"
 msgstr "Stała cena"
 
@@ -13176,9 +13207,6 @@ msgstr "Godziny opłacone"
 
 msgid "Hours per Week"
 msgstr "Godziny na tydzień"
-
-msgid "Hours, for a labor item"
-msgstr "Godziny dla pozycji robocizny"
 
 msgid "Hours/100 Pieces"
 msgstr "Godziny/100 Sztuk"
@@ -14057,6 +14085,10 @@ msgstr "Zaproszony"
 msgid "Invoice"
 msgstr "Faktura"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Invoice {0}"
+msgstr "Faktura {0}"
+
 msgid "Invoice {invoiceDate}"
 msgstr "Faktura {invoiceDate}"
 
@@ -14695,6 +14727,9 @@ msgstr "Kategoria robocizny"
 msgid "Labor category: {0}"
 msgstr "Kategoria robocizny: {0}"
 
+msgid "Labor cost per hour"
+msgstr "Koszt robocizny za godzinę"
+
 msgid "Labor Costs"
 msgstr "Koszty robocizny"
 
@@ -14707,9 +14742,6 @@ msgstr "Robocizna zakończona"
 msgid "Labor Hours"
 msgstr "Godziny Robocizny"
 
-msgid "Labor Item"
-msgstr "Pozycja robocizny"
-
 msgid "Labor rate"
 msgstr "Stawka robocizny"
 
@@ -14719,8 +14751,14 @@ msgstr "Stawka robocizny"
 msgid "Labor Rate (Hourly)"
 msgstr "Stawka robocizny (godzinowa)"
 
+msgid "Labor rates"
+msgstr "Stawki robocizny"
+
 msgid "Labor Rates"
 msgstr "Stawki robocizny"
+
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "Stawki robocizny nie są ustawione. Czas nie może być rejestrowany ani rozliczany, dopóki nie zostaną ustawione."
 
 msgid "Labor time"
 msgstr "Czas robocizny"
@@ -22249,6 +22287,9 @@ msgstr "Usunąć konto {0} z tej puli? Już obliczone stawki je zachowują."
 msgid "Remove the received serial and batch numbers from stock"
 msgstr "Usuń z listy otrzymane numery seryjne i partie produktów ze zapasu"
 
+msgid "Remove the time entries and return the parts first."
+msgstr "Usuń z listy wpisy czasu i najpierw zwróć części."
+
 msgid "Remove this item"
 msgstr "Usuń ten artykuł"
 
@@ -22925,6 +22966,9 @@ msgstr "Przychody ze sprzedaży zarobione, ale jeszcze niezafakturowane, takie j
 
 msgid "Revenue End"
 msgstr "Koniec przychodów"
+
+msgid "Revenue from service jobs"
+msgstr "Przychody ze sprzedaży ze zleceń produkcyjnych usług"
 
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "Konto księgowe przychodów ze sprzedaży do ujęcia na zawarciu leasingu finansowego za bieżącą wartość rat leasingu."
@@ -24401,15 +24445,6 @@ msgstr "Zlecenie Usługowe"
 msgid "Service Jobs"
 msgstr "Zlecenia Usługowe"
 
-msgid "Service Labor"
-msgstr "Robocizna serwisowa"
-
-msgid "Service Labor Item"
-msgstr "Artykuł robocizny serwisowej"
-
-msgid "Service labor item updated"
-msgstr "Artykuł usługi roboczej zaktualizowano"
-
 msgid "Service lines"
 msgstr "Pozycje usług"
 
@@ -24418,6 +24453,12 @@ msgstr "Okres świadczenia"
 
 msgid "Service Provider Details"
 msgstr "Szczegóły dostawcy usług"
+
+msgid "Service Revenue"
+msgstr "Przychody ze sprzedaży usług"
+
+msgid "Service settings updated"
+msgstr "Ustawienia usług zaktualizowane"
 
 msgid "Service start"
 msgstr "Początek usługi"
@@ -24497,6 +24538,9 @@ msgstr "Ustaw stawkę"
 msgid "Set Rate, FY{fiscalYear}"
 msgstr "Ustaw stawkę, FY{fiscalYear}"
 
+msgid "Set rates"
+msgstr "Ustaw stawki"
+
 msgid "Set terms"
 msgstr "Ustaw warunki"
 
@@ -24511,6 +24555,9 @@ msgstr "Ustaw datę rozpoczęcia, datę zakończenia i warunki płatności, aby 
 
 msgid "Set the fiscal year settings."
 msgstr "Skonfiguruj ustawienia roku obrotowego."
+
+msgid "Set the job's bill rate first."
+msgstr "Najpierw ustaw stawkę rozliczeniową zlecenia produkcyjnego."
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
 msgstr "Ustaw konto Rozliczenia migracji na aktywne konto Kapitału własnego, które nie jest grupą."
@@ -25567,6 +25614,9 @@ msgstr "Przechowywane tylko do części zamiennych."
 
 msgid "Stockout"
 msgstr "Brak zapasów"
+
+msgid "Stop clock and complete"
+msgstr "Zatrzymaj czasomierz i zakończ"
 
 msgid "Stop raising purchase orders after this date"
 msgstr "Przestań wystawiać zamówienia zakupu po tej dacie"
@@ -26655,6 +26705,9 @@ msgstr "Partia produkcyjna to {0}, a nie Zaplanowano"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Partia biegnie według najpilniejszego elementu — pozostałe są przyspieszane"
 
+msgid "The bill rate is locked: the estimate was sent to the customer."
+msgstr "Stawka rozliczeniowa jest zablokowana: kosztorys został wysłany do klienta."
+
 #. placeholder {0}: nameOf(gap.lineId)
 msgid "The billing element of {0} is not marked as a billing element."
 msgstr "Element rozliczeniowy {0} nie jest oznaczony jako element rozliczeniowy."
@@ -27126,6 +27179,9 @@ msgstr "Stawka wynajmu artykułu"
 
 msgid "The job closes without work. A job with time entries or issued parts cannot be cancelled."
 msgstr "Zlecenie produkcyjne zamyka się bez pracy. Zlecenie produkcyjne z wpisami czasu lub wydanymi częściami nie może być anulowane."
+
+msgid "The job closes. Its time and parts cannot change until it is reopened."
+msgstr "Zlecenie produkcyjne się zamyka. Jego czas i części nie mogą się zmienić, dopóki nie zostanie ponownie otwarte."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "godziny zadania należne tego dnia (na podstawie terminu, nie dnia wykonania), z zalegającymi pracami w Zalegające."
@@ -27641,9 +27697,6 @@ msgstr "Klasa środków trwałych dla jednostek, które budujesz lub kapitalizuj
 msgid "the selected class"
 msgstr "wybranej klasy"
 
-msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
-msgstr "Artykuł usługi, którego cena sprzedaży stanowi cenę czasu na zamówieniu usługi, na jego szacunku i na jego fakturze."
-
 msgid "The service, and how it reads on the invoice."
 msgstr "Usługa i jak pojawia się na fakturze."
 
@@ -28080,6 +28133,9 @@ msgstr "Ten plik nie jest już dostępny lub nie masz uprawnień do jego pobrani
 
 msgid "This Fiscal Year"
 msgstr "Ten rok obrotowy"
+
+msgid "This Fixed Price job has no price."
+msgstr "To zlecenie produkcyjne o cenie stałej nie ma ceny."
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "To nie ma żadnego wpływu do momentu weryfikacji domeny e-mail poniżej."

@@ -1042,6 +1042,9 @@ msgstr "Catégorie de main-d'œuvre"
 msgid "Labor ended"
 msgstr "Main-d'œuvre terminée"
 
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "Les tarifs de main-d'œuvre ne sont pas définis. Le temps ne peut pas être enregistré ou facturé jusqu'à ce qu'ils le soient."
+
 msgid "Labor until <0/>"
 msgstr "Main-d'œuvre jusqu'à <0/>"
 
@@ -2068,6 +2071,9 @@ msgstr "Session verrouillée"
 
 msgid "Set Clock Out"
 msgstr "Définir le pointage fin"
+
+msgid "Set rates"
+msgstr "Définir les tarifs"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Enregistrez l'heure à laquelle vous avez cessé de travailler, ou confirmez que vous continuez à travailler."

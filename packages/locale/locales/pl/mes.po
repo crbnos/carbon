@@ -1042,6 +1042,9 @@ msgstr "Kategoria robocizny"
 msgid "Labor ended"
 msgstr "Robocizna zakończona"
 
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "Stawki robocizny nie są ustawione. Czas nie może być rejestrowany ani rozliczany, dopóki nie zostaną ustawione."
+
 msgid "Labor until <0/>"
 msgstr "Robocizna do <0/>"
 
@@ -2068,6 +2071,9 @@ msgstr "Sesja zablokowana"
 
 msgid "Set Clock Out"
 msgstr "Ustaw zakończenie pracy"
+
+msgid "Set rates"
+msgstr "Ustaw stawki"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Ustaw czas, w którym przestałeś pracować, lub potwierdź, że nadal pracujesz."

@@ -175,6 +175,8 @@ export const serviceJobUpdateFields = [
   "locationId",
   "workSite",
   "billingMethod",
+  "laborBillRate",
+  "fixedPrice",
   "priority",
   "serviceItemId",
   "assignee",
@@ -191,26 +193,48 @@ export const serviceJobUpdateValidator = z.object({
   value: z.string().nullish()
 });
 
-/** A priced line of a job's estimate: a labor item (hours), a part or a charge. */
+/**
+ * Complete and Create Invoice: the fixed price their dialog asks for when a
+ * Fixed Price job has none. Saved on the job before the action.
+ */
+export const serviceJobFixedPriceValidator = z.object({
+  fixedPrice: zfd.numeric(z.number().min(0).optional())
+});
+
+/** The dialog's form, where the fixed price is required. */
+export const serviceJobRequiredFixedPriceValidator = z.object({
+  fixedPrice: zfd.numeric(
+    z.number({ message: "Fixed price is required" }).min(0)
+  )
+});
+
+/**
+ * A priced line of a job's estimate. With no item it is a Labor line: its
+ * quantity is hours and its price is the job's bill rate. Otherwise a part or
+ * a charge at its unit price.
+ */
 export const serviceJobEstimateLineValidator = z.object({
   id: zfd.text(z.string().optional()),
   serviceJobId: z.string().min(1, { message: "Job is required" }),
-  itemId: z.string().min(1, { message: "Item is required" }),
+  itemId: zfd.text(z.string().optional()),
   description: zfd.text(z.string().optional()),
   quantity: zfd.numeric(
     z.number().positive({ message: "Quantity must be more than 0" })
   ),
+  /** An item line's price. A Labor line takes the job's bill rate. */
   unitPrice: zfd.numeric(
-    z.number().min(0, { message: "Unit price cannot be negative" })
+    z.number().min(0, { message: "Unit price cannot be negative" }).optional()
   )
 });
 
-/** Hours one employee worked on a job on one day, at a labor item's rates. */
+/**
+ * Hours one employee worked on a job on one day. The cost posts at the
+ * company's labor cost rate (Settings → Service).
+ */
 export const serviceJobTimeValidator = z.object({
   id: zfd.text(z.string().optional()),
   serviceJobId: z.string().min(1, { message: "Job is required" }),
   employeeId: z.string().min(1, { message: "Employee is required" }),
-  laborItemId: z.string().min(1, { message: "Labor item is required" }),
   entryDate: requiredDate,
   hours: zfd.numeric(
     z

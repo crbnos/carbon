@@ -585,6 +585,7 @@ export const defaultIncomeAcountValidator = z.object({
     message: "Warranty expense account is required"
   }),
   costOfServiceAccount: z.string().optional(),
+  serviceRevenueAccount: z.string().optional(),
   assetDepreciationExpenseAccount: z.string().min(1, {
     message: "Depreciation expense account is required"
   }),

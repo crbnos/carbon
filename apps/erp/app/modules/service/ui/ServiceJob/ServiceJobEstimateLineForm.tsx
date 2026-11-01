@@ -6,6 +6,7 @@ import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   Button,
+  cn,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -13,6 +14,9 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
+  Label,
+  ToggleGroup,
+  ToggleGroupItem,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
@@ -27,7 +31,12 @@ import {
   NumberControlled,
   Submit
 } from "~/components/Form";
-import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { serviceJobEstimateLineValidator } from "../../service.models";
@@ -35,16 +44,21 @@ import { useItemSalePrice } from "./useItemSalePrice";
 
 type ServiceJobEstimateLineFormProps = {
   initialValues: z.infer<typeof serviceJobEstimateLineValidator>;
+  /** The job's bill rate per hour: a Labor line's price. */
+  laborBillRate: number | null;
   isLocked: boolean;
   onClose: () => void;
 };
 
+type LineType = "Labor" | "Item";
+
 /**
- * A priced line of a job's estimate: a labor item (its quantity is hours), a
- * part or a charge item. Picking the item fills in its sale price.
+ * A priced line of a job's estimate. Labor is hours at the job's bill rate;
+ * Item is a part or a charge item, and picking it fills in its sale price.
  */
 const ServiceJobEstimateLineForm = ({
   initialValues,
+  laborBillRate,
   isLocked,
   onClose
 }: ServiceJobEstimateLineFormProps) => {
@@ -53,12 +67,18 @@ const ServiceJobEstimateLineForm = ({
   const { company } = useUser();
   const currencyCode = company.baseCurrencyCode;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
+  const rateFormatter = useCurrencyFormatter({ rate: true });
   const getSalePrice = useItemSalePrice();
 
   const isEditing = !!initialValues.id;
   const isDisabled = isLocked || !permissions.can("update", "service");
 
-  const [unitPrice, setUnitPrice] = useState(initialValues.unitPrice);
+  const [lineType, setLineType] = useState<LineType>(
+    isEditing && initialValues.itemId ? "Item" : "Labor"
+  );
+  const [unitPrice, setUnitPrice] = useState(initialValues.unitPrice ?? 0);
+  const billRate =
+    laborBillRate === null ? null : rateFormatter.format(laborBillRate);
   const [itemType, setItemType] = useState<MethodItemType | "Item">("Item");
 
   const fetcher = useAction({ onSuccess: onClose });
@@ -96,39 +116,83 @@ const ServiceJobEstimateLineForm = ({
             <Hidden name="id" />
             <Hidden name="serviceJobId" />
             <VStack spacing={4}>
-              <Item
-                name="itemId"
-                label={t`Item`}
-                type={itemType}
-                onTypeChange={(type) => setItemType(type)}
-                onChange={async (value) => {
-                  const itemId = value?.value as string | undefined;
-                  if (!itemId) return;
-                  const defaults = await getSalePrice(itemId);
-                  setUnitPrice(defaults.unitPrice);
-                }}
-              />
+              <VStack spacing={2}>
+                <Label>
+                  <Trans>Line</Trans>
+                </Label>
+                <ToggleGroup
+                  type="single"
+                  aria-label={t`Line`}
+                  className="gap-0 rounded-full border border-border bg-muted p-0.5 shadow-sm"
+                  value={lineType}
+                  disabled={isDisabled}
+                  onValueChange={(value) => {
+                    // Clicking the selected choice again does not clear it.
+                    if (value) setLineType(value as LineType);
+                  }}
+                >
+                  {[
+                    { value: "Labor", label: t`Labor` },
+                    { value: "Item", label: t`Item` }
+                  ].map((option) => (
+                    <ToggleGroupItem
+                      key={option.value}
+                      value={option.value}
+                      className={cn(
+                        "rounded-full bg-transparent text-muted-foreground transition-all duration-200 hover:bg-active hover:text-active-foreground data-[state=on]:shadow-sm",
+                        "h-7 px-4 text-sm",
+                        "data-[state=on]:bg-background data-[state=on]:text-foreground hover:data-[state=on]:bg-background hover:data-[state=on]:text-foreground"
+                      )}
+                    >
+                      {option.label}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </VStack>
+              {lineType === "Item" && (
+                <Item
+                  name="itemId"
+                  label={t`Item`}
+                  type={itemType}
+                  onTypeChange={(type) => setItemType(type)}
+                  onChange={async (value) => {
+                    const itemId = value?.value as string | undefined;
+                    if (!itemId) return;
+                    const defaults = await getSalePrice(itemId);
+                    setUnitPrice(defaults.unitPrice);
+                  }}
+                />
+              )}
               <Input name="description" label={t`Description`} />
               <Number
                 name="quantity"
-                label={t`Quantity`}
-                helperText={t`Hours, for a labor item`}
+                label={lineType === "Labor" ? t`Hours` : t`Quantity`}
                 minValue={0}
                 formatOptions={INPUT_FORMAT.quantity}
                 step={INPUT_STEP.quantity}
               />
-              <NumberControlled
-                name="unitPrice"
-                label={t`Unit Price`}
-                value={unitPrice}
-                onChange={setUnitPrice}
-                minValue={0}
-                formatOptions={INPUT_FORMAT.rate(
-                  currencyCode,
-                  currencyDecimals
-                )}
-                step={INPUT_STEP.rate}
-              />
+              {lineType === "Labor" ? (
+                <p className="text-sm text-muted-foreground">
+                  {billRate === null ? (
+                    <Trans>Set the job's bill rate first.</Trans>
+                  ) : (
+                    <Trans>At {billRate} per hour (the job's bill rate)</Trans>
+                  )}
+                </p>
+              ) : (
+                <NumberControlled
+                  name="unitPrice"
+                  label={t`Unit Price`}
+                  value={unitPrice}
+                  onChange={setUnitPrice}
+                  minValue={0}
+                  formatOptions={INPUT_FORMAT.rate(
+                    currencyCode,
+                    currencyDecimals
+                  )}
+                  step={INPUT_STEP.rate}
+                />
+              )}
             </VStack>
           </DrawerBody>
           <DrawerFooter>

@@ -272,12 +272,9 @@ export const updateInventorySettings = defineServiceFn({
  * invoice when the daily job creates it, the receivables email (the Reply-To
  * and a CC on automated invoice emails), who is also notified about
  * invoices, whether documents print the centralized receivables billing
- * address, that address itself (a null field clears it), the default CC
- * on customer emails, and the service labor item: the service item whose
- * sale price prices time on a service order, its estimate and its invoice
- * (null clears it; anything but a Service item is refused). "Post and Send
- * via Stripe" is refused until Stripe is connected in Integrations, or every
- * recurring invoice would be held.
+ * address, that address itself (a null field clears it) and the default CC
+ * on customer emails. "Post and Send via Stripe" is refused until Stripe is
+ * connected in Integrations, or every recurring invoice would be held.
  *
  * @mcp
  */
@@ -288,21 +285,13 @@ export const updateInvoicingSettings = defineServiceFn({
     invoiceNotificationGroup: notificationGroup.optional(),
     accountsReceivableAddress: z.boolean().optional(),
     accountsReceivableBillingAddress: billingAddressInput.optional(),
-    defaultCustomerCc: z.array(z.string().email()).optional(),
-    serviceLaborItemId: z.string().min(1).nullable().optional()
+    defaultCustomerCc: z.array(z.string().email()).optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
     const { accountsReceivableBillingAddress, ...settings } = input;
-
-    if (
-      settings.serviceLaborItemId &&
-      !(await service.isCompanyServiceItem(ctx, settings.serviceLaborItemId))
-    ) {
-      return ctx.error("rule", "Choose a service item");
-    }
 
     if (
       settings.invoiceAutomation === "Post and Send via Stripe" &&
@@ -734,6 +723,37 @@ export const updateTimeSettings = defineServiceFn({
           : {})
       },
       "Failed to save the time settings"
+    );
+    return saved ?? input;
+  }
+});
+
+/**
+ * Update the service settings.
+ *
+ * @remarks
+ * Writes the fields sent and leaves the rest: the labor cost per hour, which
+ * each service time entry posts its cost at, and the default bill rate per
+ * hour, which a new service job copies. A null rate clears it.
+ *
+ * @param serviceLaborCostRate - The labor cost per hour, in the company's base currency.
+ * @param serviceLaborBillRate - The default bill rate per hour, in the company's base currency.
+ *
+ * @mcp
+ */
+export const updateServiceSettings = defineServiceFn({
+  input: z.object({
+    serviceLaborCostRate: z.number().min(0).nullable().optional(),
+    serviceLaborBillRate: z.number().min(0).nullable().optional()
+  }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    const refused = service.nothingSent(ctx, input);
+    if (refused) return refused;
+    const saved = await service.saveCompanySettings(
+      ctx,
+      input,
+      "Failed to save the service settings"
     );
     return saved ?? input;
   }

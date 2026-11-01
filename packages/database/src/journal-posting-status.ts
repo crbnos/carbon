@@ -93,6 +93,7 @@ export const OPTIONAL_DEFAULT_ROLES = [
   "salesReturnsAccount",
   "salesShippingRevenueAccount",
   "scrapAccount",
+  "serviceRevenueAccount",
   "variableLeaseExpenseAccount",
   "migrationClearingAccount"
 ] as const;
@@ -109,7 +110,8 @@ export const DEFAULT_FALLBACKS = {
   intercompanyPayablesAccount: "payablesAccount",
   intercompanyReceivablesAccount: "receivablesAccount",
   salesReturnsAccount: "salesAccount",
-  scrapAccount: "inventoryAdjustmentVarianceAccount"
+  scrapAccount: "inventoryAdjustmentVarianceAccount",
+  serviceRevenueAccount: "salesAccount"
 } as const satisfies Partial<Record<OptionalDefaultRole, string>>;
 type FallbackRole = keyof typeof DEFAULT_FALLBACKS;
 
@@ -141,6 +143,7 @@ export const OPTIONAL_DEFAULT_LABELS: Record<OptionalDefaultRole, string> = {
   salesReturnsAccount: "Sales Returns",
   salesShippingRevenueAccount: "Shipping Revenue",
   scrapAccount: "Scrap / Cost of Quality",
+  serviceRevenueAccount: "Service Revenue",
   rightOfUseAssetAccount: "Right-of-Use Assets",
   accumulatedRightOfUseAmortizationAccount:
     "Accumulated Amortization – Right-of-Use Assets",

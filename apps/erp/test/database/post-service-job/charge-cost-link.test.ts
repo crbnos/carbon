@@ -129,7 +129,7 @@ describe.skipIf(!client)("a charge's paid cost", () => {
         f.account("cost-of-service")
       );
       const charge = {
-        itemId: f.laborItemId,
+        itemId: f.serviceItemId,
         description: "Hotel",
         quantity: 2,
         unitPrice: 120,
@@ -193,7 +193,7 @@ describe.skipIf(!client)("a charge's paid cost", () => {
       const raced = await client!.from("serviceJobItem").insert({
         serviceJobId: other.id,
         lineType: "Charge",
-        itemId: f.laborItemId,
+        itemId: f.serviceItemId,
         description: "Hotel",
         quantity: 1,
         unitPrice: 0,

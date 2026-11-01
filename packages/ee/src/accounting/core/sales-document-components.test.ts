@@ -12,11 +12,15 @@ import {
   assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
   hasRevenueComponent,
-  isRevenueComponent
+  hasSalesRevenueComponent,
+  hasServiceRevenueComponent,
+  isRevenueComponent,
+  isServiceRevenueComponent
 } from "./sales-document-components";
 import {
   loadSalesInvoices,
   requirePostedSalesAccountId,
+  requirePostedServiceRevenueAccountId,
   requirePostedShippingAccountId
 } from "./sales-invoice-source";
 import type { Accounting } from "./types";
@@ -501,7 +505,11 @@ function sourceDatabase(
       isGroup: false
     }
   ],
-  invoiceIds = ["invoice"]
+  invoiceIds = ["invoice"],
+  service: {
+    serviceJobId?: string;
+    accrualRows?: Array<Record<string, unknown>>;
+  } = {}
 ) {
   const source = fixture();
   const headerValues: Record<string, unknown> = Object.fromEntries(
@@ -529,6 +537,7 @@ function sourceDatabase(
     ])
   );
   lineValues["salesInvoiceLine.invoiceId"] = source.id;
+  lineValues["salesInvoiceLine.serviceJobId"] = service.serviceJobId ?? null;
   lineValues["item.readableIdWithRevision"] = "SERVICE";
   const reads: Array<{
     table: string;
@@ -578,6 +587,8 @@ function sourceDatabase(
         },
         async execute() {
           if (table === "journalLine") return postingRows;
+          if (table === "revenueRecognitionSchedule")
+            return service.accrualRows ?? [];
           const values = table === "salesInvoice" ? headerValues : lineValues;
           return invoiceIds.map((id) =>
             Object.fromEntries(
@@ -985,6 +996,162 @@ describe("per-invoice revenue-account defects do not fail their batch", () => {
   });
 });
 
+/**
+ * A service job line credits "Service Revenue" for what its job's accrual did
+ * not cover and "Contract Assets" for what it did (`planServiceJobLine`). The
+ * provider receives the whole line as Service Revenue: the run journals that
+ * accrued the revenue never sync.
+ */
+describe("replayed service revenue account", () => {
+  const posting = (
+    accountId: string,
+    description: string,
+    accountClass = "Revenue"
+  ) => ({
+    documentId: "a",
+    accountId,
+    description,
+    amount: 95,
+    accountClass,
+    isGroup: false
+  });
+
+  it("extracts the Service Revenue account and ignores the Contract Assets leg", async () => {
+    const { database } = sourceDatabase(
+      false,
+      [
+        posting("service-4300", "Service Revenue"),
+        posting("contract-1250", "Contract Assets", "Asset")
+      ],
+      ["a"],
+      { serviceJobId: "sj-1" }
+    );
+    const invoice = (
+      await loadSalesInvoices(database as never, {
+        companyId: "company",
+        ids: ["a"]
+      })
+    ).get("a")!;
+    expect(invoice.serviceRevenueAccountId).toBe("service-4300");
+    expect(invoice.salesRevenueAccountId).toBeNull();
+    expect(invoice.lines[0]?.serviceJobId).toBe("sj-1");
+    expect(requirePostedServiceRevenueAccountId(invoice)).toBe("service-4300");
+  });
+
+  it("replays the accrual's credit account when the accrual covered every service line", async () => {
+    // Accrued 285, invoiced 285: the line credits Contract Assets in full and
+    // the journal has no Service Revenue line to read.
+    const { database, reads } = sourceDatabase(
+      false,
+      [posting("contract-1250", "Contract Assets", "Asset")],
+      ["a"],
+      {
+        serviceJobId: "sj-1",
+        accrualRows: [
+          {
+            billedBySalesInvoiceLineId: "line-a",
+            accountId: "service-4300",
+            accountClass: "Revenue",
+            isGroup: false
+          }
+        ]
+      }
+    );
+    const invoice = (
+      await loadSalesInvoices(database as never, {
+        companyId: "company",
+        ids: ["a"]
+      })
+    ).get("a")!;
+    expect(invoice.serviceRevenueAccountId).toBe("service-4300");
+    const read = reads.find(
+      (read) => read.table === "revenueRecognitionSchedule"
+    )!;
+    expect(read.where).toEqual(
+      expect.arrayContaining([
+        ["revenueRecognitionSchedule.companyId", "=", "company"],
+        ["revenueRecognitionSchedule.type", "=", "Accrual"],
+        [
+          "revenueRecognitionSchedule.billedBySalesInvoiceLineId",
+          "in",
+          ["line-a"]
+        ]
+      ])
+    );
+  });
+
+  it("does not read accruals when the journal names the account, or the invoice has no service line", async () => {
+    for (const [postings, service] of [
+      [[posting("service-4300", "Service Revenue")], { serviceJobId: "sj-1" }],
+      [[posting("sales-4000", "Sales Account")], {}]
+    ] as const) {
+      const { database, reads } = sourceDatabase(
+        false,
+        [...postings],
+        ["a"],
+        service
+      );
+      await loadSalesInvoices(database as never, {
+        companyId: "company",
+        ids: ["a"]
+      });
+      expect(
+        reads.some((read) => read.table === "revenueRecognitionSchedule")
+      ).toBe(false);
+    }
+  });
+
+  it("refuses a service invoice whose Service Revenue hit two accounts", async () => {
+    const { database } = sourceDatabase(
+      false,
+      [
+        posting("service-4300", "Service Revenue"),
+        posting("service-4301", "Service Revenue")
+      ],
+      ["a"],
+      { serviceJobId: "sj-1" }
+    );
+    const invoice = (
+      await loadSalesInvoices(database as never, {
+        companyId: "company",
+        ids: ["a"]
+      })
+    ).get("a")!;
+    expect(invoice.serviceRevenueAccountId).toBeNull();
+    expect(
+      failureOf(() => requirePostedServiceRevenueAccountId(invoice))
+    ).toEqual({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      invoiceId: "a"
+    });
+  });
+
+  it("puts a service job's revenue components on Service Revenue and its shipping on Shipping", () => {
+    const source = fixture();
+    source.lines[0] = { ...source.lines[0]!, serviceJobId: "sj-1" } as never;
+    const { components } = build(source);
+    expect(
+      components.map((component) => [
+        component.kind,
+        isServiceRevenueComponent(component)
+      ])
+    ).toEqual([
+      ["Merchandise", true],
+      ["TaxableAddOn", true],
+      ["NonTaxableAddOn", true],
+      ["LineShipping", false],
+      ["HeaderShipping", false]
+    ]);
+    // A service-only invoice posts no "Sales Account" line, so it must not
+    // need one.
+    expect(hasSalesRevenueComponent(components)).toBe(false);
+    expect(hasServiceRevenueComponent(components)).toBe(true);
+    expect(hasSalesRevenueComponent(build(fixture()).components)).toBe(true);
+    expect(hasServiceRevenueComponent(build(fixture()).components)).toBe(false);
+  });
+});
+
 describe("fixed-asset disposal components", () => {
   /**
    * `post-sales-invoice` posts NO "Sales Account" line for a Fixed Asset line
@@ -1000,6 +1167,7 @@ describe("fixed-asset disposal components", () => {
     itemId: null,
     itemCode: null,
     invoiceLineType: "Fixed Asset",
+    serviceJobId: null as string | null,
     description: "Haas VF-2 disposal",
     quantity: 1,
     unitAmount: 5000,

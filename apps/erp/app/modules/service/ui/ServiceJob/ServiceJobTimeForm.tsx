@@ -13,6 +13,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
+  toast,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
@@ -23,7 +24,6 @@ import {
   DatePicker,
   Employee,
   Hidden,
-  Item,
   Number,
   Submit,
   TextArea
@@ -39,8 +39,9 @@ type ServiceJobTimeFormProps = {
 };
 
 /**
- * Hours one employee worked on a job on one day, at a labor item's cost and
- * bill rate. The time posts when the job is completed.
+ * Hours one employee worked on a job on one day. Saving posts the entry's
+ * cost at the company's labor cost rate; when that fails the entry is still
+ * saved and the action's `warning` says so.
  */
 const ServiceJobTimeForm = ({
   initialValues,
@@ -52,7 +53,14 @@ const ServiceJobTimeForm = ({
   const isEditing = !!initialValues.id;
   const isDisabled = isLocked || !permissions.can("update", "service");
 
-  const fetcher = useAction({ onSuccess: onClose });
+  // A route sends a service function's result as `{ data, error }`.
+  const fetcher = useAction<{ data: { warning?: string | null } | null }>({
+    onSuccess: (result) => {
+      const warning = result?.data?.warning;
+      if (warning) toast.warning(warning);
+      onClose();
+    }
+  });
 
   return (
     <Drawer
@@ -86,12 +94,6 @@ const ServiceJobTimeForm = ({
             <Hidden name="serviceJobId" />
             <VStack spacing={4}>
               <Employee name="employeeId" label={t`Employee`} />
-              <Item
-                name="laborItemId"
-                label={t`Labor Item`}
-                type="Service"
-                validItemTypes={["Service"]}
-              />
               <DatePicker name="entryDate" label={t`Date`} />
               <Number
                 name="hours"

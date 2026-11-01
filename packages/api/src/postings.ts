@@ -478,9 +478,10 @@ export const postMaintenanceEventInput = z.object({
 });
 
 /**
- * Complete, reopen or change the coverage of a service job. Completing posts
- * its time, reopening reverses that, and a coverage change reclasses the cost
- * of the parts already issued.
+ * Complete, reopen or change the coverage of a service job, or post its time.
+ * `post-time` reconciles the cost of the job's closed time entries with the
+ * journal. Complete and a coverage change run the same reconcile; a coverage
+ * change also reclasses the cost of the parts already issued.
  */
 export const postServiceJobInput = z.discriminatedUnion("action", [
   z.object({
@@ -497,6 +498,10 @@ export const postServiceJobInput = z.discriminatedUnion("action", [
     action: z.literal("set-coverage"),
     serviceJobId: z.string().min(1),
     coverage: z.enum(["Billable", "Warranty", "Contract"])
+  }),
+  z.object({
+    action: z.literal("post-time"),
+    serviceJobId: z.string().min(1)
   })
 ]);
 

@@ -46,7 +46,6 @@ export default function ServiceJobTimeRoute() {
         id: entry.id,
         serviceJobId: jobId,
         employeeId: entry.employeeId,
-        laborItemId: entry.laborItemId,
         entryDate: entry.entryDate,
         hours: entry.hours,
         billable: entry.billable,

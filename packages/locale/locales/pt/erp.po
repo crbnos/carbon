@@ -784,6 +784,9 @@ msgstr "{hour} h"
 msgid "{hours} h"
 msgstr "{hours} h"
 
+msgid "{hours} h × {rate}"
+msgstr "{hours} h × {rate}"
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# peça criada} other {# peças criadas}}"
 
@@ -1334,6 +1337,9 @@ msgstr "Um elemento faturável abaixo de uma conta de controle que possui uma t�
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Uma conta de compensação que mantém o valor das mercadorias recebidas mas ainda não faturadas; a fatura do fornecedor a limpa."
 
+msgid "A clock is still running on this job."
+msgstr "Um cronômetro ainda está rodando nesta ordem de produção."
+
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "Um projeto fechado não aceita mais cobranças e não pode ser reaberto. Feche-o apenas quando todas as linhas do pedido de compra e ordem de produção nele contidas estiverem concluídas."
 
@@ -1462,6 +1468,9 @@ msgstr "Um desconto pode terminar em uma data; a linha cobra então sua taxa tot
 
 msgid "A draft run must be posted or deleted first."
 msgstr "Um rascunho deve ser contabilizado ou excluído primeiro."
+
+msgid "A draft sales invoice is created for the job, and the job becomes Invoiced."
+msgstr "Uma fatura de venda em rascunho é criada para a ordem de produção, e a ordem se torna Faturada."
 
 msgid "A draft set of plan changes with a title and a reason. The current plan does not change until the request is approved, and then it applies whole, in one step."
 msgstr "Um conjunto de alterações de plano em Rascunho com um título e um motivo. O plano atual não muda até que a solicitação seja aprovada e então é aplicado integralmente em uma etapa."
@@ -1603,6 +1612,9 @@ msgstr "Uma nova ordem de compra será criada para cada fornecedor. Alternativam
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "Uma nova revisão será criada usando uma cópia da revisão atual"
+
+msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
+msgstr "Uma nova ordem de serviço copia a taxa de faturamento. Cada entrada de tempo contabiliza seu custo à taxa de custo."
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "Um novo tamanho será criado usando uma cópia do tamanho atual"
@@ -4497,6 +4509,9 @@ msgstr "Associações"
 msgid "Assumptions"
 msgstr "Premissas"
 
+msgid "At {billRate} per hour (the job's bill rate)"
+msgstr "A {billRate} por hora (a taxa de faturamento da ordem)"
+
 msgid "At {locationName}"
 msgstr "Em {locationName}"
 
@@ -5000,6 +5015,9 @@ msgstr "Taxa de faturamento"
 
 msgid "Bill Rate"
 msgstr "Taxa de Faturamento"
+
+msgid "Bill Rate (per hour)"
+msgstr "Taxa de Faturamento (por hora)"
 
 msgid "Bill To"
 msgstr "Faturar Para"
@@ -6547,6 +6565,10 @@ msgstr "Regras de compatibilidade"
 msgid "Complete"
 msgstr "Concluir"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Complete {0}"
+msgstr "Concluir {0}"
+
 #. placeholder {0}: getCompleteQuantity(operation)
 #. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
 msgid "Complete {0}/{1}"
@@ -7784,6 +7806,9 @@ msgstr "Criar elementos"
 msgid "Create Forecast"
 msgstr "Criar Previsão"
 
+msgid "Create Invoice"
+msgstr "Criar Fatura"
+
 msgid "Create Issue"
 msgstr "Criar Problema"
 
@@ -8700,6 +8725,9 @@ msgstr "Aprovador Padrão"
 
 msgid "Default Attachments"
 msgstr "Anexos Padrão"
+
+msgid "Default bill rate per hour"
+msgstr "Taxa de faturamento padrão por hora"
 
 msgid "Default cash account for transactions in non-base currencies."
 msgstr "Conta de caixa padrão para transações em moedas não-base."
@@ -12315,6 +12343,9 @@ msgstr "Variação de amortização de custo fixo quando o tamanho do lote difer
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "Fixado após períodos contábeis serem contabilizados ou fechados. Exclua todos os períodos abertos para alterá-lo."
 
+msgid "Fixed price"
+msgstr "Preço fixo"
+
 msgid "Fixed Price"
 msgstr "Preço fixo"
 
@@ -13176,9 +13207,6 @@ msgstr "Horas Pagas"
 
 msgid "Hours per Week"
 msgstr "Horas por Semana"
-
-msgid "Hours, for a labor item"
-msgstr "Horas, para um item de mão de obra"
 
 msgid "Hours/100 Pieces"
 msgstr "Horas/100 Peças"
@@ -14057,6 +14085,10 @@ msgstr "Convidado"
 msgid "Invoice"
 msgstr "Fatura"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Invoice {0}"
+msgstr "Fatura {0}"
+
 msgid "Invoice {invoiceDate}"
 msgstr "Fatura {invoiceDate}"
 
@@ -14695,6 +14727,9 @@ msgstr "Categoria de Mão de Obra"
 msgid "Labor category: {0}"
 msgstr "Categoria de Mão de obra: {0}"
 
+msgid "Labor cost per hour"
+msgstr "Custo de mão de obra por hora"
+
 msgid "Labor Costs"
 msgstr "Custos de mão de obra"
 
@@ -14707,9 +14742,6 @@ msgstr "Mão de obra encerrada"
 msgid "Labor Hours"
 msgstr "Horas de Mão de Obra"
 
-msgid "Labor Item"
-msgstr "Item de Mão de obra"
-
 msgid "Labor rate"
 msgstr "Taxa de mão de obra"
 
@@ -14719,8 +14751,14 @@ msgstr "Taxa de Mão de Obra"
 msgid "Labor Rate (Hourly)"
 msgstr "Taxa de Mão de Obra (Por Hora)"
 
+msgid "Labor rates"
+msgstr "Taxas de mão de obra"
+
 msgid "Labor Rates"
 msgstr "Taxas de Mão de Obra"
+
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "As taxas de mão de obra não estão definidas. O tempo não pode ser registrado ou faturado até que sejam."
 
 msgid "Labor time"
 msgstr "Tempo de mão de obra"
@@ -22249,6 +22287,9 @@ msgstr "Remover a conta {0} deste pool? As taxas já computadas a mantêm."
 msgid "Remove the received serial and batch numbers from stock"
 msgstr "Remover os números de série e lote recebidos do estoque"
 
+msgid "Remove the time entries and return the parts first."
+msgstr "Remova os registros de tempo e devolva as peças primeiro."
+
 msgid "Remove this item"
 msgstr "Remover este item"
 
@@ -22925,6 +22966,9 @@ msgstr "Receita auferida mas não faturada, como aluguel de dias que uma unidade
 
 msgid "Revenue End"
 msgstr "Fim da Receita"
+
+msgid "Revenue from service jobs"
+msgstr "Receita de ordens de serviço"
 
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "Conta contábil de Receita creditada no início de um arrendamento de venda pelo valor presente dos pagamentos de aluguel."
@@ -24401,15 +24445,6 @@ msgstr "Ordem de Serviço"
 msgid "Service Jobs"
 msgstr "Ordens de Serviço"
 
-msgid "Service Labor"
-msgstr "Mão de obra do serviço"
-
-msgid "Service Labor Item"
-msgstr "Item de mão de obra do serviço"
-
-msgid "Service labor item updated"
-msgstr "Item de mão de obra de serviço atualizado"
-
 msgid "Service lines"
 msgstr "Linhas de Serviço"
 
@@ -24418,6 +24453,12 @@ msgstr "Período de Serviço"
 
 msgid "Service Provider Details"
 msgstr "Detalhes do Provedor de Serviço"
+
+msgid "Service Revenue"
+msgstr "Receita de Serviço"
+
+msgid "Service settings updated"
+msgstr "Configurações de serviço atualizadas"
 
 msgid "Service start"
 msgstr "Início do Serviço"
@@ -24497,6 +24538,9 @@ msgstr "Definir taxa"
 msgid "Set Rate, FY{fiscalYear}"
 msgstr "Definir taxa, EF{fiscalYear}"
 
+msgid "Set rates"
+msgstr "Definir taxas"
+
 msgid "Set terms"
 msgstr "Definir termos"
 
@@ -24511,6 +24555,9 @@ msgstr "Defina a data de início, a data de término e as condições de pagamen
 
 msgid "Set the fiscal year settings."
 msgstr "Defina as configurações do ano fiscal."
+
+msgid "Set the job's bill rate first."
+msgstr "Defina a taxa de faturamento da ordem primeiro."
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
 msgstr "Defina a conta de compensação de migração para uma conta ativa de patrimônio líquido que não é um grupo."
@@ -25567,6 +25614,9 @@ msgstr "Armazenado apenas para peças de reposição."
 
 msgid "Stockout"
 msgstr "Ruptura de estoque"
+
+msgid "Stop clock and complete"
+msgstr "Parar cronômetro e concluir"
 
 msgid "Stop raising purchase orders after this date"
 msgstr "Parar de criar pedidos de compra após esta data"
@@ -26655,6 +26705,9 @@ msgstr "O Lote de produção é {0}, não Planejado"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "O lote é executado no prazo do membro mais urgente — os demais são adiantados"
 
+msgid "The bill rate is locked: the estimate was sent to the customer."
+msgstr "A taxa de faturamento está bloqueada: a estimativa foi enviada ao cliente."
+
 #. placeholder {0}: nameOf(gap.lineId)
 msgid "The billing element of {0} is not marked as a billing element."
 msgstr "O elemento de faturação de {0} não está marcado como elemento de faturação."
@@ -27126,6 +27179,9 @@ msgstr "A taxa de aluguel do item"
 
 msgid "The job closes without work. A job with time entries or issued parts cannot be cancelled."
 msgstr "A ordem de produção fecha sem trabalho. Uma ordem de produção com registros de tempo ou peças emitidas não pode ser cancelada."
+
+msgid "The job closes. Its time and parts cannot change until it is reopened."
+msgstr "A ordem fecha. Seu tempo e peças não podem mudar até que seja reabertas."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "as horas de trabalho devidas naquele dia (com base na data de vencimento, não no dia em que o trabalho é executado), com trabalho atrasado em Vencido."
@@ -27641,9 +27697,6 @@ msgstr "A classe de ativo pré-configurada para unidades que você constrói ou 
 msgid "the selected class"
 msgstr "a classe selecionada"
 
-msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
-msgstr "O item de serviço cujo preço de venda precifica tempo em uma ordem de serviço, em sua estimativa e em sua fatura."
-
 msgid "The service, and how it reads on the invoice."
 msgstr "O serviço, e como aparece na fatura."
 
@@ -28080,6 +28133,9 @@ msgstr "Este arquivo não está mais disponível, ou você não tem permissão p
 
 msgid "This Fiscal Year"
 msgstr "Este Ano Fiscal"
+
+msgid "This Fixed Price job has no price."
+msgstr "Esta ordem de preço fixo não tem preço."
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "Isto não tem efeito até que um domínio de email seja verificado abaixo."

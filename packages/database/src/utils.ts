@@ -38,6 +38,7 @@ export const journalReference = {
     materialIssue: (id: string) => `material-issue:${id}`,
     productionEvent: (id: string) => `production-event:${id}`,
     maintenanceEvent: (id: string) => `maintenance-event:${id}`,
+    serviceJobTime: (id: string) => `service-job-time:${id}`,
     timesheet: (entryId: string) => `timesheet:${entryId}`,
     projectExpense: (entryId: string) => `project-expense:${entryId}`
   }

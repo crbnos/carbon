@@ -43,7 +43,7 @@ import {
   receiptJournal,
   salesInvoiceJournal,
   scrapJournal,
-  serviceJobCompletionJournal,
+  serviceJobTimeJournal,
   shipmentJournal,
   signedNet,
   voidJournal
@@ -2378,14 +2378,15 @@ const DISPATCHABLE_SERVICE_JOB_STATUSES = new Set([
 ]);
 
 /**
- * Service jobs: each names a seeded asset and bills the dataset's labor item
- * (a Service item with a cost and a sale price). A job from an RMA line names
+ * Service jobs: each names a seeded asset and bills at the dataset's labor
+ * rates (a positive cost and bill rate); an estimate line with no item is a
+ * Labor line at the bill rate. A job from an RMA line names
  * a received Service or Warranty line of the asset's unit, with the coverage
  * that return type gives it, and every such line has exactly one job; an In
  * Progress RMA has a job that is not done. Dates follow the job: time on or
- * after opening, completion after the last entry and in an open period, the
- * invoice after completion. Completed and Invoiced jobs post a balanced
- * completion journal; an Invoiced job is Billable and bills something. Only
+ * after opening and in an open period (each entry posts its own balanced
+ * journal on its day), completion after the last entry, the invoice after
+ * completion. An Invoiced job is Billable and bills something. Only
  * open jobs have dispatch assignments (one per weekday, positive hours), and
  * at least one open job has none, so the grid and its backlog both show rows.
  */
@@ -2395,16 +2396,10 @@ function serviceJobs(ctx: ValidationCtx): void {
   const services = new Map(
     dataset.items.services.map((item) => [item.readableId, item])
   );
-  const labor = services.get(sales.serviceLaborItem);
-  if (!labor) {
+  const rates = sales.serviceLaborRates;
+  if (!(rates.cost > 0 && rates.bill > 0)) {
     fail(
-      `sales.serviceLaborItem: "${sales.serviceLaborItem}" is not a Service item`
-    );
-  } else if (
-    !((labor.standardCost ?? 0) > 0 && (labor.unitSalePrice ?? 0) > 0)
-  ) {
-    fail(
-      `sales.serviceLaborItem: "${labor.readableId}" needs a cost per hour (standardCost) and a bill rate (unitSalePrice)`
+      `sales.serviceLaborRates: needs a positive cost and bill rate per hour (cost ${rates.cost}, bill ${rates.bill})`
     );
   }
   const assets = new Map(sales.customerAssets.map((a) => [a.key, a]));
@@ -2416,13 +2411,23 @@ function serviceJobs(ctx: ValidationCtx): void {
   let backlog = 0;
 
   const checkLine = (where: string, line: ServiceJobLineSpec) => {
-    need("item", where, line.item);
-    if (!services.has(line.item)) {
-      fail(`${where} "${line.item}": not a Service item`);
+    // No item: a Labor estimate line, hours at the job's bill rate.
+    const label = line.item ?? "Labor";
+    if (line.item === undefined) {
+      if (Math.abs(line.unitPrice - rates.bill) > EPSILON) {
+        fail(
+          `${where} Labor: unit price ${line.unitPrice} is not the bill rate ${rates.bill}`
+        );
+      }
+    } else {
+      need("item", where, line.item);
+      if (!services.has(line.item)) {
+        fail(`${where} "${line.item}": not a Service item`);
+      }
     }
     if (line.quantity <= 0)
-      fail(`${where} "${line.item}": quantity must be positive`);
-    if (line.unitPrice < 0) fail(`${where} "${line.item}": negative price`);
+      fail(`${where} "${label}": quantity must be positive`);
+    if (line.unitPrice < 0) fail(`${where} "${label}": negative price`);
   };
 
   for (const job of sales.serviceJobs) {
@@ -2500,6 +2505,22 @@ function serviceJobs(ctx: ValidationCtx): void {
           `${where} time: ${entry.workdaysBack} working days back, before the job opened`
         );
       }
+      // post-service-job post-time: each closed entry posts on its day.
+      if (maxCalendarDaysBack(entry.workdaysBack) > -OPEN_PERIOD_MIN_OFFSET) {
+        fail(
+          `${where} time: ${entry.workdaysBack} working days back, its journal needs an Open period`
+        );
+      }
+      const journal = serviceJobTimeJournal({
+        serviceJobReadableId: job.key,
+        coverage: job.coverage,
+        unitCost: rates.cost,
+        hours: entry.hours
+      });
+      const net = round(journal.lines.reduce((sum, l) => sum + l.amount, 0));
+      if (Math.abs(net) > EPSILON) {
+        fail(`${where} time: its journal does not balance (net ${net})`);
+      }
       if (entry.clock) {
         const start = secondsOfDay(entry.clock.start);
         const end = secondsOfDay(entry.clock.end);
@@ -2553,25 +2574,6 @@ function serviceJobs(ctx: ValidationCtx): void {
     if (completed !== undefined) {
       if (job.time.some((entry) => entry.workdaysBack < completed)) {
         fail(`${where}: time is logged after the job completed`);
-      }
-      if (maxCalendarDaysBack(completed) > -OPEN_PERIOD_MIN_OFFSET) {
-        fail(`${where}: the completion journal needs an Open period`);
-      }
-      const journal = serviceJobCompletionJournal({
-        serviceJobReadableId: job.key,
-        coverage: job.coverage,
-        laborItemName: sales.serviceLaborItem,
-        unitCost: labor?.standardCost ?? 0,
-        hours: job.time.map((entry) => entry.hours)
-      });
-      const net = round(journal.lines.reduce((sum, l) => sum + l.amount, 0));
-      if (Math.abs(net) > EPSILON) {
-        fail(`${where}: completion journal does not balance (net ${net})`);
-      }
-      if (journal.lines.length === 0) {
-        fail(
-          `${where}: a done job with no costed time posts no completion journal`
-        );
       }
     }
     const invoiced = job.invoiceWorkdaysBack;

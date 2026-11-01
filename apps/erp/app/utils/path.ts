@@ -2631,6 +2631,8 @@ export const path = {
       generatePath(`${x}/service-job/${id}/reopen`),
     serviceJobStatus: (id: string) =>
       generatePath(`${x}/service-job/${id}/status`),
+    serviceJobStopClock: (id: string) =>
+      generatePath(`${x}/service-job/${id}/stop-clock`),
     serviceJobs: `${x}/service-jobs`,
     serviceJobTime: (jobId: string, timeId: string) =>
       generatePath(`${x}/service-job/${jobId}/time/${timeId}`),
@@ -2644,6 +2646,7 @@ export const path = {
     serviceSales: (id: string) => generatePath(`${x}/service/${id}/sales`),
     serviceSchedule: `${x}/service-jobs/schedule`,
     serviceScheduleUpdate: `${x}/service-jobs/schedule/update`,
+    serviceSettings: `${x}/settings/service`,
     serviceSupplier: (serviceId: string, id: string) =>
       generatePath(`${x}/service/${serviceId}/purchasing/${id}`),
     services: `${x}/items/services`,

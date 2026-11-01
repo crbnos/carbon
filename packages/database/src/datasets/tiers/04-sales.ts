@@ -74,9 +74,9 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   // already exists and only needs the digital-quote flags flipped on. Without
   // digitalQuoteEnabled the public quote page renders no Accept/Reject buttons,
   // and without digitalQuoteIncludesPurchaseOrders the PO-upload field is gone.
-  // The service labor item is the default every new service job time entry
-  // names (tier 02 created it).
-  ctx.log("company settings — digital quotes enabled, service labor item");
+  // The service labor rates: the cost every time entry posts at and the bill
+  // rate every new service job copies (Settings → Service).
+  ctx.log("company settings — digital quotes enabled, service labor rates");
   await insertRow(
     ctx,
     "companySettings",
@@ -84,15 +84,12 @@ export async function runTier4(ctx: Ctx): Promise<void> {
       id: companyId,
       digitalQuoteEnabled: true,
       digitalQuoteIncludesPurchaseOrders: true,
-      serviceLaborItemId: need(
-        ctx.refs.items,
-        data.serviceLaborItem,
-        "service labor item"
-      ).id
+      serviceLaborCostRate: data.serviceLaborRates.cost,
+      serviceLaborBillRate: data.serviceLaborRates.bill
     },
     {
       onConflict:
-        '("id") DO UPDATE SET "digitalQuoteEnabled" = true, "digitalQuoteIncludesPurchaseOrders" = true, "serviceLaborItemId" = EXCLUDED."serviceLaborItemId"'
+        '("id") DO UPDATE SET "digitalQuoteEnabled" = true, "digitalQuoteIncludesPurchaseOrders" = true, "serviceLaborCostRate" = EXCLUDED."serviceLaborCostRate", "serviceLaborBillRate" = EXCLUDED."serviceLaborBillRate"'
     }
   );
 
@@ -971,11 +968,12 @@ async function seedCustomerAssets(ctx: Ctx): Promise<void> {
  * - a job from an RMA line is created Open at the receipt by
  *   `createServiceJobsForReturn` (receipt-service-return.ts), with its
  *   `Return Receipt` activity on the asset's serial;
- * - time entries are the employee's, on the labor item; a Completed or
- *   Invoiced job stores each entry's cost (`postServiceJob` complete), and
- *   tier 09 writes the completion journal;
+ * - a job copies the company's bill rate (`laborBillRate`); an estimate line
+ *   with no item is a Labor line at that rate;
+ * - time entries are the employee's and all closed, so each stores the
+ *   company's cost rate (`post-time`), and tier 09 writes its journal;
  * - an Invoiced job has the Draft invoice `createServiceInvoice` drafts: one
- *   line per labor item (billable hours × its sale price), then each billable
+ *   Labor line (billable hours × the job's bill rate), then each billable
  *   charge, every line with `serviceJobId`, tax 0;
  * - an open job's dispatch assignments are the user's, on weekdays of the
  *   anchor's week.
@@ -983,18 +981,9 @@ async function seedCustomerAssets(ctx: Ctx): Promise<void> {
 async function seedServiceJobs(ctx: Ctx): Promise<void> {
   const data = ctx.dataset.sales;
   if (data.serviceJobs.length === 0) return;
-  const { companyId, userId } = ctx;
+  const { userId } = ctx;
   const plantId = ctx.refs.locations.Plant ?? ctx.locationId;
-  const labor = need(ctx.refs.items, data.serviceLaborItem, "labor item");
-  const laborSalePrice = Number(
-    (
-      await ctx.client.query<{ unitSalePrice: string | null }>(
-        `SELECT "unitSalePrice" FROM "itemUnitSalePrice"
-         WHERE "itemId" = $1 AND "companyId" = $2`,
-        [labor.id, companyId]
-      )
-    ).rows[0]?.unitSalePrice ?? 0
-  );
+  const rates = data.serviceLaborRates;
   const assetByKey = Object.fromEntries(
     data.customerAssets.map((asset) => [asset.key, asset])
   );
@@ -1023,7 +1012,6 @@ async function seedServiceJobs(ctx: Ctx): Promise<void> {
             ctx.anchor,
             need(returnByKey, rma.salesReturn, "sales return").dateOffset
           );
-    const done = spec.status === "Completed" || spec.status === "Invoiced";
     const completedDate =
       spec.completedWorkdaysBack === undefined
         ? undefined
@@ -1038,6 +1026,7 @@ async function seedServiceJobs(ctx: Ctx): Promise<void> {
       workSite: spec.workSite,
       billingMethod: "Time and Materials",
       priority: spec.priority,
+      laborBillRate: rates.bill,
       customerId,
       customerLocationId,
       customerAssetId: need(ctx.refs.misc, `asset:${spec.asset}`),
@@ -1081,39 +1070,47 @@ async function seedServiceJobs(ctx: Ctx): Promise<void> {
     ctx.refs.misc[`sj-readable:${spec.key}`] = serviceJobId;
 
     for (const [index, line] of (estimate?.lines ?? []).entries()) {
-      const item = need(ctx.refs.items, line.item, "item");
+      // No item: a Labor line, hours at the job's bill rate.
+      const item =
+        line.item === undefined
+          ? undefined
+          : need(ctx.refs.items, line.item, "item");
       await insertRow(ctx, "serviceJobEstimateLine", {
         serviceJobId: jobId,
-        itemId: item.id,
-        description: line.description ?? item.name,
+        itemId: item?.id,
+        description: line.description ?? item?.name,
         quantity: line.quantity,
-        unitPrice: line.unitPrice,
+        unitPrice: item === undefined ? rates.bill : line.unitPrice,
         sortOrder: index + 1
       });
     }
 
-    for (const entry of spec.time) {
+    // Tier 09 posts each entry's journal: `sjt:<job key>:<index>`.
+    for (const [index, entry] of spec.time.entries()) {
       const entryDate = day(entry.workdaysBack);
-      await insertRow(ctx, "serviceJobTime", {
-        serviceJobId: jobId,
-        employeeId: userId,
-        laborItemId: labor.id,
-        entryDate,
-        startTime:
-          entry.clock === undefined
-            ? undefined
-            : at(entryDate, entry.clock.start),
-        endTime:
-          entry.clock === undefined
-            ? undefined
-            : at(entryDate, entry.clock.end),
-        hours: entry.hours,
-        billable: entry.billable ?? true,
-        // Stored by post-service-job complete: the labor item's unit cost.
-        unitCost: done ? labor.unitCost : undefined,
-        note: entry.note,
-        createdAt: at(entryDate, "17:00:00")
-      });
+      ctx.refs.misc[`sjt:${spec.key}:${index}`] = await insertId(
+        ctx,
+        "serviceJobTime",
+        {
+          serviceJobId: jobId,
+          employeeId: userId,
+          entryDate,
+          startTime:
+            entry.clock === undefined
+              ? undefined
+              : at(entryDate, entry.clock.start),
+          endTime:
+            entry.clock === undefined
+              ? undefined
+              : at(entryDate, entry.clock.end),
+          hours: entry.hours,
+          billable: entry.billable ?? true,
+          // Stored by post-service-job post-time: the company's cost rate.
+          unitCost: rates.cost,
+          note: entry.note,
+          createdAt: at(entryDate, "17:00:00")
+        }
+      );
     }
 
     // The dispatch grid's blocks this week (`upsertServiceJobAssignment`).
@@ -1184,12 +1181,7 @@ async function seedServiceJobs(ctx: Ctx): Promise<void> {
         customerId,
         customerLocationId,
         plantId,
-        labor: {
-          id: labor.id,
-          name: labor.name,
-          unitOfMeasureCode: labor.unitOfMeasureCode,
-          salePrice: laborSalePrice
-        }
+        laborBillRate: rates.bill
       });
     }
   }
@@ -1205,12 +1197,7 @@ async function insertServiceInvoice(
     customerId: string;
     customerLocationId: string;
     plantId: string;
-    labor: {
-      id: string;
-      name: string;
-      unitOfMeasureCode: string;
-      salePrice: number;
-    };
+    laborBillRate: number;
   }
 ): Promise<void> {
   if (spec.invoiceWorkdaysBack === undefined) {
@@ -1223,15 +1210,25 @@ async function insertServiceInvoice(
       .filter((entry) => entry.billable ?? true)
       .reduce((sum, entry) => sum + entry.hours, 0)
   );
-  const lines = [
+  // planServiceJobInvoiceLines: one Labor line (no item, unit EA), then the
+  // charges.
+  const lines: {
+    invoiceLineType: "Labor" | "Service";
+    itemId: string | undefined;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    unitOfMeasureCode: string;
+  }[] = [
     ...(billableHours > 0
       ? [
           {
-            itemId: args.labor.id,
-            description: args.labor.name,
+            invoiceLineType: "Labor" as const,
+            itemId: undefined,
+            description: "Labor",
             quantity: billableHours,
-            unitPrice: round(args.labor.salePrice),
-            unitOfMeasureCode: args.labor.unitOfMeasureCode
+            unitPrice: round(args.laborBillRate),
+            unitOfMeasureCode: "EA"
           }
         ]
       : []),
@@ -1240,6 +1237,7 @@ async function insertServiceInvoice(
       .map((charge) => {
         const item = need(ctx.refs.items, charge.item, "item");
         return {
+          invoiceLineType: "Service" as const,
           itemId: item.id,
           description: charge.description ?? item.name,
           quantity: charge.quantity,
@@ -1284,7 +1282,7 @@ async function insertServiceInvoice(
   for (const [index, line] of lines.entries()) {
     await insertRow(ctx, "salesInvoiceLine", {
       invoiceId,
-      invoiceLineType: "Service",
+      invoiceLineType: line.invoiceLineType,
       itemId: line.itemId,
       description: line.description,
       quantity: line.quantity,

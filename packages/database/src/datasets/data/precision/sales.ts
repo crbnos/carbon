@@ -1108,7 +1108,7 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
       status: "Sent",
       sentWorkdaysBack: 3,
       lines: [
-        { item: "Service Technician", quantity: 6, unitPrice: 125 },
+        { quantity: 6, unitPrice: 125 },
         {
           item: "CMM Program Development",
           description: "CMM re-inspection program after the repair",
@@ -1201,7 +1201,7 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
       respondedWorkdaysBack: 15,
       respondedBy: "Lucia Bertrand",
       lines: [
-        { item: "Service Technician", quantity: 8, unitPrice: 125 },
+        { quantity: 8, unitPrice: 125 },
         {
           item: "CMM Program Development",
           description: "CMM re-inspection program after the repair",
@@ -1285,6 +1285,6 @@ export const precisionSales: SalesData = {
     }
   ],
   customerAssets: CUSTOMER_ASSETS,
-  serviceLaborItem: "Service Technician",
+  serviceLaborRates: { cost: 54, bill: 125 },
   serviceJobs: SERVICE_JOBS
 };

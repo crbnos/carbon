@@ -282,9 +282,10 @@ export const invoiceAutomationValidator = z.object({
   invoiceAutomation: z.enum(invoiceAutomations)
 });
 
-/** The service item whose sale price prices service time. */
-export const serviceLaborItemValidator = z.object({
-  serviceLaborItemId: zfd.text(z.string().optional())
+/** The company's service labor rates: cost per hour and default bill rate. */
+export const serviceSettingsValidator = z.object({
+  serviceLaborCostRate: zfd.numeric(z.number().min(0).optional()),
+  serviceLaborBillRate: zfd.numeric(z.number().min(0).optional())
 });
 
 export const mrpScheduleTypes = ["Every 3 Hours", "Daily"] as const;

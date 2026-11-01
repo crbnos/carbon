@@ -1042,6 +1042,9 @@ msgstr "労務カテゴリー"
 msgid "Labor ended"
 msgstr "労務終了"
 
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "労務単価が設定されていません。設定されるまで、時間をログまたは請求することはできません。"
+
 msgid "Labor until <0/>"
 msgstr "労務<0/>まで"
 
@@ -2068,6 +2071,9 @@ msgstr "セッションはロック中です。"
 
 msgid "Set Clock Out"
 msgstr "作業終了を設定"
+
+msgid "Set rates"
+msgstr "単価を設定"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "作業を停止した時刻を設定するか、まだ作業中であることを確認してください。"

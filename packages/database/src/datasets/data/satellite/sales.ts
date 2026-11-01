@@ -1107,7 +1107,7 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
       status: "Sent",
       sentWorkdaysBack: 3,
       lines: [
-        { item: "Field Service Engineer", quantity: 12, unitPrice: 225 },
+        { quantity: 12, unitPrice: 225 },
         {
           item: "Thermal Vacuum Test",
           description: "Post-repair thermal vacuum requalification",
@@ -1201,7 +1201,7 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
       respondedWorkdaysBack: 15,
       respondedBy: "Sofia Lindqvist",
       lines: [
-        { item: "Field Service Engineer", quantity: 8, unitPrice: 225 },
+        { quantity: 8, unitPrice: 225 },
         {
           item: "Thermal Vacuum Test",
           description: "Post-repair thermal vacuum requalification",
@@ -1285,6 +1285,6 @@ export const satelliteSales: SalesData = {
     }
   ],
   customerAssets: CUSTOMER_ASSETS,
-  serviceLaborItem: "Field Service Engineer",
+  serviceLaborRates: { cost: 95, bill: 225 },
   serviceJobs: SERVICE_JOBS
 };

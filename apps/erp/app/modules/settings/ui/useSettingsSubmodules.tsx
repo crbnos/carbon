@@ -18,6 +18,7 @@ import {
   LuFlaskConical,
   LuFolderCheck,
   LuFolderKanban,
+  LuHeadphones,
   LuHeartHandshake,
   LuHistory,
   LuImage,
@@ -163,6 +164,12 @@ export default function useSettingsSubmodules() {
             to: path.to.timeSettings,
             role: "employee",
             icon: <LuTimer />
+          },
+          {
+            name: t`Service`,
+            to: path.to.serviceSettings,
+            role: "employee",
+            icon: <LuHeadphones />
           },
           {
             name: t`Quality`,

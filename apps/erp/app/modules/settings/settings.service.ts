@@ -3294,23 +3294,6 @@ export async function dcaaTimekeepingRefusal(
   return null;
 }
 
-/**
- * Whether `itemId` is one of the company's service items. The service labor
- * item prices service time, so it must be a Service.
- */
-export async function isCompanyServiceItem(
-  ctx: ServiceContext,
-  itemId: string
-): Promise<boolean> {
-  const item = await ctx.asCaller.supabase
-    .from("item")
-    .select("type")
-    .eq("id", itemId)
-    .eq("companyId", ctx.company.id)
-    .maybeSingle();
-  return item.data?.type === "Service";
-}
-
 /** Multi-company management is open to internal (Carbon) users only, for now. */
 export async function refuseUnlessInternalUser(
   ctx: ServiceContext

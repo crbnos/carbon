@@ -20,7 +20,7 @@ import {
   VStack
 } from "@carbon/react";
 import { distinctItemText, getItemReadableId } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -63,6 +63,7 @@ const LineItems = ({
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
+  const { t } = useLingui();
   const { isPhone } = useViewport();
   const [items] = useItems();
   const percentFormatter = usePercentFormatter();
@@ -84,7 +85,9 @@ const LineItems = ({
         ? rentalLineTypeLabel(line.rentalLineType)
         : line.invoiceLineType === "Fixed Asset"
           ? (line as any).assetReadableId || "Fixed Asset"
-          : getItemReadableId(items, line.itemId);
+          : line.invoiceLineType === "Labor"
+            ? t`Labor`
+            : getItemReadableId(items, line.itemId);
     const description = distinctItemText(itemReadableId, line.description);
     // The discount reduces the merchandise only (the generated net
     // prices); add-ons and shipping are not discounted.
@@ -221,7 +224,8 @@ const LineItems = ({
                     >
                       {line.quantity}
                       {line.invoiceLineType !== "Fixed Asset" &&
-                        line.invoiceLineType !== "Rental" && (
+                        line.invoiceLineType !== "Rental" &&
+                        line.invoiceLineType !== "Labor" && (
                           <MethodIcon
                             type={line.methodType ?? "Pull from Inventory"}
                           />

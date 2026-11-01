@@ -2878,6 +2878,9 @@ export default {
             $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.leaseScheduleLineId"
           },
           {
+            $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.serviceJobId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -3018,6 +3021,9 @@ export default {
             $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.leaseScheduleLineId"
           },
           {
+            $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.serviceJobId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -3110,6 +3116,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.leaseScheduleLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.serviceJobId"
           },
           {
             $ref: "#/parameters/body.revenueRecognitionSchedule"
@@ -25165,9 +25174,6 @@ export default {
             $ref: "#/parameters/rowFilter.serviceJobTime.employeeId"
           },
           {
-            $ref: "#/parameters/rowFilter.serviceJobTime.laborItemId"
-          },
-          {
             $ref: "#/parameters/rowFilter.serviceJobTime.entryDate"
           },
           {
@@ -25272,9 +25278,6 @@ export default {
             $ref: "#/parameters/rowFilter.serviceJobTime.employeeId"
           },
           {
-            $ref: "#/parameters/rowFilter.serviceJobTime.laborItemId"
-          },
-          {
             $ref: "#/parameters/rowFilter.serviceJobTime.entryDate"
           },
           {
@@ -25331,9 +25334,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.serviceJobTime.employeeId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.serviceJobTime.laborItemId"
           },
           {
             $ref: "#/parameters/rowFilter.serviceJobTime.entryDate"
@@ -51322,6 +51322,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.costOfServiceAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.serviceRevenueAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -51606,6 +51609,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.costOfServiceAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.serviceRevenueAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -51842,6 +51848,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.costOfServiceAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.serviceRevenueAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -57001,9 +57010,6 @@ export default {
             $ref: "#/parameters/rowFilter.serviceJob.completedAt"
           },
           {
-            $ref: "#/parameters/rowFilter.serviceJob.completionJournalId"
-          },
-          {
             $ref: "#/parameters/rowFilter.serviceJob.salesInvoiceId"
           },
           {
@@ -57026,6 +57032,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.serviceJob.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceJob.laborBillRate"
           },
           {
             $ref: "#/parameters/select"
@@ -57174,9 +57183,6 @@ export default {
             $ref: "#/parameters/rowFilter.serviceJob.completedAt"
           },
           {
-            $ref: "#/parameters/rowFilter.serviceJob.completionJournalId"
-          },
-          {
             $ref: "#/parameters/rowFilter.serviceJob.salesInvoiceId"
           },
           {
@@ -57199,6 +57205,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.serviceJob.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceJob.laborBillRate"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -57301,9 +57310,6 @@ export default {
             $ref: "#/parameters/rowFilter.serviceJob.completedAt"
           },
           {
-            $ref: "#/parameters/rowFilter.serviceJob.completionJournalId"
-          },
-          {
             $ref: "#/parameters/rowFilter.serviceJob.salesInvoiceId"
           },
           {
@@ -57326,6 +57332,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.serviceJob.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceJob.laborBillRate"
           },
           {
             $ref: "#/parameters/body.serviceJob"
@@ -115483,9 +115492,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireProjectElement"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.serviceLaborItemId"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.timekeepingControls"
           },
           {
@@ -115508,6 +115514,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serviceLaborBillRate"
           },
           {
             $ref: "#/parameters/select"
@@ -115797,9 +115809,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireProjectElement"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.serviceLaborItemId"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.timekeepingControls"
           },
           {
@@ -115822,6 +115831,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serviceLaborBillRate"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -116065,9 +116080,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireProjectElement"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.serviceLaborItemId"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.timekeepingControls"
           },
           {
@@ -116090,6 +116102,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serviceLaborBillRate"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -133910,6 +133928,10 @@ export default {
         leaseScheduleLineId: {
           format: "text",
           type: "string"
+        },
+        serviceJobId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -144225,7 +144247,6 @@ export default {
         "companyId",
         "serviceJobId",
         "employeeId",
-        "laborItemId",
         "entryDate",
         "hours",
         "billable",
@@ -144252,12 +144273,6 @@ export default {
         employeeId: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        laborItemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -156792,6 +156807,12 @@ export default {
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
           type: "string"
+        },
+        serviceRevenueAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -159337,12 +159358,6 @@ export default {
           format: "timestamp with time zone",
           type: "string"
         },
-        completionJournalId: {
-          description:
-            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
-          format: "text",
-          type: "string"
-        },
         salesInvoiceId: {
           description:
             "Note:\nThis is a Foreign Key to `salesInvoice.id`.<fk table='salesInvoice' column='id'/>",
@@ -159380,6 +159395,10 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        laborBillRate: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -162272,7 +162291,8 @@ export default {
             "Consumable",
             "Fixture",
             "Fixed Asset",
-            "Rental"
+            "Rental",
+            "Labor"
           ],
           format: 'public."salesInvoiceLineType"',
           type: "string"
@@ -173874,7 +173894,6 @@ export default {
         "id",
         "companyId",
         "serviceJobId",
-        "itemId",
         "quantity",
         "unitPrice",
         "sortOrder",
@@ -186260,7 +186279,8 @@ export default {
             "Consumable",
             "Fixture",
             "Fixed Asset",
-            "Rental"
+            "Rental",
+            "Labor"
           ],
           format: 'public."salesInvoiceLineType"',
           type: "string"
@@ -187327,12 +187347,6 @@ export default {
           format: "boolean",
           type: "boolean"
         },
-        serviceLaborItemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
         timekeepingControls: {
           default: "Standard",
           enum: ["Standard", "DCAA"],
@@ -187372,6 +187386,14 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        serviceLaborCostRate: {
+          format: "numeric",
+          type: "number"
+        },
+        serviceLaborBillRate: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -189714,6 +189736,12 @@ export default {
     },
     "rowFilter.revenueRecognitionSchedule.leaseScheduleLineId": {
       name: "leaseScheduleLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.revenueRecognitionSchedule.serviceJobId": {
+      name: "serviceJobId",
       required: false,
       in: "query",
       type: "string"
@@ -201326,12 +201354,6 @@ export default {
     },
     "rowFilter.serviceJobTime.employeeId": {
       name: "employeeId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.serviceJobTime.laborItemId": {
-      name: "laborItemId",
       required: false,
       in: "query",
       type: "string"
@@ -215279,6 +215301,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.accountDefault.serviceRevenueAccount": {
+      name: "serviceRevenueAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.warehouse": {
       name: "warehouse",
       description: "warehouse",
@@ -218054,12 +218082,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.serviceJob.completionJournalId": {
-      name: "completionJournalId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.serviceJob.salesInvoiceId": {
       name: "salesInvoiceId",
       required: false,
@@ -218104,6 +218126,12 @@ export default {
     },
     "rowFilter.serviceJob.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.serviceJob.laborBillRate": {
+      name: "laborBillRate",
       required: false,
       in: "query",
       type: "string"
@@ -249229,12 +249257,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.serviceLaborItemId": {
-      name: "serviceLaborItemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.timekeepingControls": {
       name: "timekeepingControls",
       required: false,
@@ -249279,6 +249301,18 @@ export default {
     },
     "rowFilter.companySettings.postAppliedBurden": {
       name: "postAppliedBurden",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.serviceLaborCostRate": {
+      name: "serviceLaborCostRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.serviceLaborBillRate": {
+      name: "serviceLaborBillRate",
       required: false,
       in: "query",
       type: "string"

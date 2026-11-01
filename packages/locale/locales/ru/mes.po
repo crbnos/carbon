@@ -1042,6 +1042,9 @@ msgstr "Категория труда"
 msgid "Labor ended"
 msgstr "Труд завершен"
 
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "Ставки труда не установлены. Время не может быть зарегистрировано или выставлено в счете до их установления."
+
 msgid "Labor until <0/>"
 msgstr "Труд до <0/>"
 
@@ -2068,6 +2071,9 @@ msgstr "Сеанс заблокирован"
 
 msgid "Set Clock Out"
 msgstr "Установить окончание работы"
+
+msgid "Set rates"
+msgstr "Установить ставки"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Установите время окончания работы или подтвердите, что вы все еще работаете."

@@ -784,6 +784,9 @@ msgstr "{hour} h"
 msgid "{hours} h"
 msgstr "{hours} h"
 
+msgid "{hours} h × {rate}"
+msgstr "{hours} h × {rate}"
+
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# part created} other {# parts created}}"
 
@@ -1334,6 +1337,9 @@ msgstr "A chargeable element below a control account that has an earned value te
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 
+msgid "A clock is still running on this job."
+msgstr "A clock is still running on this job."
+
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 
@@ -1462,6 +1468,9 @@ msgstr "A discount can end on a date; the line then bills its full rate."
 
 msgid "A draft run must be posted or deleted first."
 msgstr "A draft run must be posted or deleted first."
+
+msgid "A draft sales invoice is created for the job, and the job becomes Invoiced."
+msgstr "A draft sales invoice is created for the job, and the job becomes Invoiced."
 
 msgid "A draft set of plan changes with a title and a reason. The current plan does not change until the request is approved, and then it applies whole, in one step."
 msgstr "A draft set of plan changes with a title and a reason. The current plan does not change until the request is approved, and then it applies whole, in one step."
@@ -1603,6 +1612,9 @@ msgstr "A new purchase order will be created for each supplier. Alternatively, y
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "A new revision will be created using a copy of the current revision"
+
+msgid "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
+msgstr "A new service job copies the bill rate. Each time entry posts its cost at the cost rate."
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "A new size will be created using a copy of the current size"
@@ -4497,6 +4509,9 @@ msgstr "Associations"
 msgid "Assumptions"
 msgstr "Assumptions"
 
+msgid "At {billRate} per hour (the job's bill rate)"
+msgstr "At {billRate} per hour (the job's bill rate)"
+
 msgid "At {locationName}"
 msgstr "At {locationName}"
 
@@ -5000,6 +5015,9 @@ msgstr "Bill rate"
 
 msgid "Bill Rate"
 msgstr "Bill Rate"
+
+msgid "Bill Rate (per hour)"
+msgstr "Bill Rate (per hour)"
 
 msgid "Bill To"
 msgstr "Bill To"
@@ -6547,6 +6565,10 @@ msgstr "Compatibility rules"
 msgid "Complete"
 msgstr "Complete"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Complete {0}"
+msgstr "Complete {0}"
+
 #. placeholder {0}: getCompleteQuantity(operation)
 #. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
 msgid "Complete {0}/{1}"
@@ -7784,6 +7806,9 @@ msgstr "Create Elements"
 msgid "Create Forecast"
 msgstr "Create Forecast"
 
+msgid "Create Invoice"
+msgstr "Create Invoice"
+
 msgid "Create Issue"
 msgstr "Create Issue"
 
@@ -8700,6 +8725,9 @@ msgstr "Default Approver"
 
 msgid "Default Attachments"
 msgstr "Default Attachments"
+
+msgid "Default bill rate per hour"
+msgstr "Default bill rate per hour"
 
 msgid "Default cash account for transactions in non-base currencies."
 msgstr "Default cash account for transactions in non-base currencies."
@@ -12315,6 +12343,9 @@ msgstr "Fixed cost amortization variance when batch size differs from standard"
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 
+msgid "Fixed price"
+msgstr "Fixed price"
+
 msgid "Fixed Price"
 msgstr "Fixed Price"
 
@@ -13176,9 +13207,6 @@ msgstr "Hours Paid"
 
 msgid "Hours per Week"
 msgstr "Hours per Week"
-
-msgid "Hours, for a labor item"
-msgstr "Hours, for a labor item"
 
 msgid "Hours/100 Pieces"
 msgstr "Hours/100 Pieces"
@@ -14057,6 +14085,10 @@ msgstr "Invited"
 msgid "Invoice"
 msgstr "Invoice"
 
+#. placeholder {0}: job?.serviceJobId
+msgid "Invoice {0}"
+msgstr "Invoice {0}"
+
 msgid "Invoice {invoiceDate}"
 msgstr "Invoice {invoiceDate}"
 
@@ -14695,6 +14727,9 @@ msgstr "Labor Category"
 msgid "Labor category: {0}"
 msgstr "Labor category: {0}"
 
+msgid "Labor cost per hour"
+msgstr "Labor cost per hour"
+
 msgid "Labor Costs"
 msgstr "Labor Costs"
 
@@ -14707,9 +14742,6 @@ msgstr "Labor ended"
 msgid "Labor Hours"
 msgstr "Labor Hours"
 
-msgid "Labor Item"
-msgstr "Labor Item"
-
 msgid "Labor rate"
 msgstr "Labor rate"
 
@@ -14719,8 +14751,14 @@ msgstr "Labor Rate"
 msgid "Labor Rate (Hourly)"
 msgstr "Labor Rate (Hourly)"
 
+msgid "Labor rates"
+msgstr "Labor rates"
+
 msgid "Labor Rates"
 msgstr "Labor Rates"
+
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "Labor rates are not set. Time cannot be logged or billed until they are."
 
 msgid "Labor time"
 msgstr "Labor time"
@@ -22249,6 +22287,9 @@ msgstr "Remove the account {0} from this pool? Rates already computed keep it."
 msgid "Remove the received serial and batch numbers from stock"
 msgstr "Remove the received serial and batch numbers from stock"
 
+msgid "Remove the time entries and return the parts first."
+msgstr "Remove the time entries and return the parts first."
+
 msgid "Remove this item"
 msgstr "Remove this item"
 
@@ -22925,6 +22966,9 @@ msgstr "Revenue earned but not yet invoiced, such as rent for days a unit has al
 
 msgid "Revenue End"
 msgstr "Revenue End"
+
+msgid "Revenue from service jobs"
+msgstr "Revenue from service jobs"
 
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
@@ -24401,15 +24445,6 @@ msgstr "Service Job"
 msgid "Service Jobs"
 msgstr "Service Jobs"
 
-msgid "Service Labor"
-msgstr "Service Labor"
-
-msgid "Service Labor Item"
-msgstr "Service Labor Item"
-
-msgid "Service labor item updated"
-msgstr "Service labor item updated"
-
 msgid "Service lines"
 msgstr "Service lines"
 
@@ -24418,6 +24453,12 @@ msgstr "Service Period"
 
 msgid "Service Provider Details"
 msgstr "Service Provider Details"
+
+msgid "Service Revenue"
+msgstr "Service Revenue"
+
+msgid "Service settings updated"
+msgstr "Service settings updated"
 
 msgid "Service start"
 msgstr "Service start"
@@ -24497,6 +24538,9 @@ msgstr "Set Rate"
 msgid "Set Rate, FY{fiscalYear}"
 msgstr "Set Rate, FY{fiscalYear}"
 
+msgid "Set rates"
+msgstr "Set rates"
+
 msgid "Set terms"
 msgstr "Set terms"
 
@@ -24511,6 +24555,9 @@ msgstr "Set the commencement date, the end date and the payment terms to see the
 
 msgid "Set the fiscal year settings."
 msgstr "Set the fiscal year settings."
+
+msgid "Set the job's bill rate first."
+msgstr "Set the job's bill rate first."
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
 msgstr "Set the Migration Clearing account to an active Equity account that is not a group."
@@ -25567,6 +25614,9 @@ msgstr "Stocked for spares only."
 
 msgid "Stockout"
 msgstr "Stockout"
+
+msgid "Stop clock and complete"
+msgstr "Stop clock and complete"
 
 msgid "Stop raising purchase orders after this date"
 msgstr "Stop raising purchase orders after this date"
@@ -26655,6 +26705,9 @@ msgstr "The batch is {0}, not Planned"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "The batch runs at its most urgent member's time — the others are pulled early"
 
+msgid "The bill rate is locked: the estimate was sent to the customer."
+msgstr "The bill rate is locked: the estimate was sent to the customer."
+
 #. placeholder {0}: nameOf(gap.lineId)
 msgid "The billing element of {0} is not marked as a billing element."
 msgstr "The billing element of {0} is not marked as a billing element."
@@ -27126,6 +27179,9 @@ msgstr "The item's rental rate"
 
 msgid "The job closes without work. A job with time entries or issued parts cannot be cancelled."
 msgstr "The job closes without work. A job with time entries or issued parts cannot be cancelled."
+
+msgid "The job closes. Its time and parts cannot change until it is reopened."
+msgstr "The job closes. Its time and parts cannot change until it is reopened."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
@@ -27641,9 +27697,6 @@ msgstr "The seeded asset class for units you build or capitalize to rent out rat
 msgid "the selected class"
 msgstr "the selected class"
 
-msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
-msgstr "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
-
 msgid "The service, and how it reads on the invoice."
 msgstr "The service, and how it reads on the invoice."
 
@@ -28080,6 +28133,9 @@ msgstr "This file is no longer available, or you don't have permission to downlo
 
 msgid "This Fiscal Year"
 msgstr "This Fiscal Year"
+
+msgid "This Fixed Price job has no price."
+msgstr "This Fixed Price job has no price."
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "This has no effect until an email domain is verified below."

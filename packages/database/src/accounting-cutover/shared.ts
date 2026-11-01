@@ -135,7 +135,8 @@ export const ACCOUNT_DEFAULT_COLUMNS = [
   "projectExpenseAccount",
   "warrantyExpenseAccount",
   "contractLossProvisionAccount",
-  "costOfServiceAccount"
+  "costOfServiceAccount",
+  "serviceRevenueAccount"
 ] as const satisfies readonly (keyof AccountDefaults)[];
 
 export type AccountDefaultColumn = (typeof ACCOUNT_DEFAULT_COLUMNS)[number];

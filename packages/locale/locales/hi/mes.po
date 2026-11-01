@@ -1042,6 +1042,9 @@ msgstr "श्रम श्रेणी"
 msgid "Labor ended"
 msgstr "श्रम समाप्त"
 
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "श्रम दरें सेट नहीं हैं। समय को तब तक लॉग या बिल नहीं किया जा सकता जब तक वे न हों।"
+
 msgid "Labor until <0/>"
 msgstr "श्रम <0/> तक"
 
@@ -2068,6 +2071,9 @@ msgstr "सत्र लॉक किया गया"
 
 msgid "Set Clock Out"
 msgstr "कार्य समाप्ति सेट करें"
+
+msgid "Set rates"
+msgstr "दरें सेट करें"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "वह समय निर्धारित करें जब आपने काम करना बंद किया, या स्वीकार करें कि आप अभी भी काम कर रहे हैं।"

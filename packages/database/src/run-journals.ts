@@ -357,22 +357,31 @@ const CONTRACT_ACCRUAL_DESCRIPTIONS = {
   credit: "Revenue recognized"
 };
 
+const SERVICE_ACCRUAL_DESCRIPTIONS = {
+  debit: "Unbilled service accrued",
+  credit: "Service revenue accrued"
+};
+
 /**
  * The two journal line descriptions of a revenue recognition schedule row. A
  * lessee lease's row reads the lessee pair; a contract Accrual row accrues a
- * contract asset, not unbilled rent; every other row reads its type's pair.
+ * contract asset, and a service job's Accrual row unbilled service, not
+ * unbilled rent; every other row reads its type's pair.
  */
 export function revenueRowDescriptions(row: {
   type: RevenueScheduleType;
   customerContractLineId: string | null;
   leaseId?: string | null;
+  serviceJobId?: string | null;
 }): { debit: string; credit: string } {
-  return (
-    (row.leaseId ? LESSEE_LINE_DESCRIPTIONS[row.type] : undefined) ??
-    (row.customerContractLineId && row.type === "Accrual"
-      ? CONTRACT_ACCRUAL_DESCRIPTIONS
-      : REVENUE_LINE_DESCRIPTIONS[row.type])
-  );
+  if (row.leaseId && LESSEE_LINE_DESCRIPTIONS[row.type]) {
+    return LESSEE_LINE_DESCRIPTIONS[row.type]!;
+  }
+  if (row.type === "Accrual") {
+    if (row.customerContractLineId) return CONTRACT_ACCRUAL_DESCRIPTIONS;
+    if (row.serviceJobId) return SERVICE_ACCRUAL_DESCRIPTIONS;
+  }
+  return REVENUE_LINE_DESCRIPTIONS[row.type];
 }
 
 /** A revenue recognition schedule row, with the amount its run posts. */
@@ -392,6 +401,8 @@ export type RecognitionScheduleRow = {
   /** A lessee lease's row: the lease, and the schedule line it posts. */
   leaseId: string | null;
   leaseScheduleLineId: string | null;
+  /** A service job's Accrual row: the job it accrues revenue for. */
+  serviceJobId?: string | null;
 };
 
 /** The documents the rows' journal lines reference, by source line id. */
@@ -431,6 +442,8 @@ export type RecognitionSources = {
   /** Each lessee schedule line's asset and the asset's location, by
    *  `leaseScheduleLine` id. Every lessee row's line must be here. */
   leaseAssets: Map<string, { leaseLineId: string; locationId: string | null }>;
+  /** Service jobs, by job id. Every service row's job must be here. */
+  serviceJobs?: Map<string, { customerId: string; locationId: string | null }>;
 };
 
 export type RecognitionJournal = RunJournal & {
@@ -493,6 +506,22 @@ function recognitionSource(
       }
     };
   }
+  // A service job's accrual references the job, with its customer and
+  // location. The job must be loaded: a line with no customer would post
+  // untraceably.
+  if (row.serviceJobId) {
+    const job = sources.serviceJobs?.get(row.serviceJobId);
+    if (!job) {
+      throw new Error(
+        `Service job ${row.serviceJobId} of schedule row ${row.scheduleId} was not loaded`
+      );
+    }
+    return {
+      documentType: "Service Job",
+      documentId: row.serviceJobId,
+      dimensions: { Customer: job.customerId, Location: job.locationId }
+    };
+  }
   // A row references its invoice, else its rental agreement, else its
   // contract.
   const invoice = row.salesInvoiceLineId
@@ -541,8 +570,9 @@ function recognitionSource(
  * still gets a journal, with no lines. The run's journal is the one of its
  * own period end, else the latest.
  *
- * Throws when an account of any row has no class, or when a lessee row's
- * lease or leased asset is not in `sources`.
+ * Throws when an account of any row has no class, when a lessee row's
+ * lease or leased asset is not in `sources`, or when a service row's job is
+ * not.
  */
 export function buildRecognitionJournals(args: {
   /** A lease run posts as 'Lease Run', a revenue recognition run as

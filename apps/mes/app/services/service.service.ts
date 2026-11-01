@@ -118,9 +118,7 @@ export async function getServiceJobTime(
 ) {
   return client
     .from("serviceJobTime")
-    .select(
-      "id, employeeId, entryDate, startTime, endTime, hours, laborItem:item!serviceJobTime_laborItemId_fkey(id, name)"
-    )
+    .select("id, employeeId, entryDate, startTime, endTime, hours")
     .eq("serviceJobId", serviceJobId)
     .eq("companyId", companyId)
     .order("entryDate", { ascending: false })
@@ -160,6 +158,8 @@ export async function insertServiceJob(
     coverage: Database["public"]["Enums"]["serviceCoverage"];
     problem: string;
     assignee: string;
+    /** The company's `serviceLaborBillRate`, copied onto the job. */
+    laborBillRate: number | null;
     companyId: string;
     createdBy: string;
   }
@@ -195,6 +195,7 @@ export async function insertServiceJob(
       workSite: args.workSite,
       coverage: args.coverage,
       billingMethod: "Time and Materials",
+      laborBillRate: args.laborBillRate,
       priority: "Medium",
       // Typed on the floor as plain text; the job holds rich text.
       problem: textToRichTextDoc(args.problem) as Json | null,
@@ -207,15 +208,31 @@ export async function insertServiceJob(
     .single();
 }
 
-/** The company's default labor item: the rate a new clock entry is costed at. */
-export async function getDefaultLaborItemId(client: Client, companyId: string) {
+/**
+ * The ERP's refusal of a time entry while the company has no labor cost rate,
+ * word for word (`SERVICE_LABOR_COST_RATE_MISSING`).
+ */
+export const SERVICE_LABOR_COST_RATE_MISSING =
+  "Set the labor cost rate in Settings → Service.";
+
+/**
+ * The company's service labor rates (Settings → Service), per hour in the
+ * base currency: `costRate` posts a time entry's cost, `billRate` is copied
+ * onto a new job. Either is null while it is not set.
+ */
+export async function getServiceLaborRates(client: Client, companyId: string) {
   const settings = await client
     .from("companySettings")
-    .select("serviceLaborItemId")
+    .select("serviceLaborCostRate, serviceLaborBillRate")
     .eq("id", companyId)
     .maybeSingle();
+  const rate = (value: number | null | undefined) =>
+    value === null || value === undefined ? null : Number(value);
   return {
-    data: settings.data?.serviceLaborItemId ?? null,
+    data: {
+      costRate: rate(settings.data?.serviceLaborCostRate),
+      billRate: rate(settings.data?.serviceLaborBillRate)
+    },
     error: settings.error
   };
 }
@@ -274,7 +291,6 @@ export async function startServiceClock(
   args: {
     serviceJobId: string;
     employeeId: string;
-    laborItemId: string;
     billable: boolean;
     companyId: string;
     createdBy: string;
@@ -286,7 +302,6 @@ export async function startServiceClock(
     .insert({
       serviceJobId: args.serviceJobId,
       employeeId: args.employeeId,
-      laborItemId: args.laborItemId,
       billable: args.billable,
       entryDate: datetime.today(timeZone).toString(),
       startTime: datetime.timestamp(),
@@ -398,6 +413,25 @@ export async function updateServiceJobFields(
     .eq("companyId", args.companyId)
     .select("id")
     .single();
+}
+
+/**
+ * Posts the job's time cost in the ERP (`post-service-job`, `post-time`): it
+ * reconciles every closed entry's journal with its hours. Idempotent, so call
+ * it after any write to the job's time.
+ */
+export async function postServiceJobTime(
+  client: Client,
+  args: { serviceJobId: string; companyId: string; userId: string }
+) {
+  return erpPosting(
+    "post-service-job",
+    { client, companyId: args.companyId, userId: args.userId },
+    {
+      action: "post-time",
+      serviceJobId: args.serviceJobId
+    }
+  );
 }
 
 /**
@@ -520,11 +554,11 @@ export const SERVICE_DAY_HAS_CLOCK_TIME =
 /**
  * My Time: sets an employee's total hours on a job for one day, by the ERP's
  * rules (`setServiceJobDayHours`). The difference from the day's clock
- * entries goes to the day's one manual entry (no clock): saved, added at the
- * company's service labor item (billable when the job is Billable), or
- * removed at 0. A total below the clock entries writes nothing
+ * entries goes to the day's one manual entry (no clock): saved, added
+ * (billable when the job is Billable), or removed at 0. A total below the clock entries writes nothing
  * (`saved: false`) and comes back as `warning`. Refuses a Completed, Invoiced
- * or Cancelled job and a day with two manual entries. Any employee may log
+ * or Cancelled job, a company with no labor cost rate, and a day with two
+ * manual entries. The caller posts the job's time cost after a save. Any employee may log
  * time on any open job, as on the clock.
  *
  * `client` is the service role: every read and write is scoped to
@@ -560,6 +594,14 @@ export async function saveServiceDayHours(
   }
   if (!job.data) return refused("Service job not found");
   if (isServiceJobLocked(job.data.status)) return refused(SERVICE_JOB_CLOSED);
+
+  const rates = await getServiceLaborRates(client, args.companyId);
+  if (rates.error) {
+    return refused("Failed to load the company settings", rates.error);
+  }
+  if (rates.data.costRate === null) {
+    return refused(SERVICE_LABOR_COST_RATE_MISSING);
+  }
 
   const day = await client
     .from("serviceJobTime")
@@ -623,18 +665,10 @@ export async function saveServiceDayHours(
     return saved;
   }
 
-  const laborItemId = await getDefaultLaborItemId(client, args.companyId);
-  if (laborItemId.error) {
-    return refused("Failed to load the service labor item", laborItemId.error);
-  }
-  if (!laborItemId.data) {
-    return refused("Set the service labor item in Settings → Invoicing first");
-  }
   const inserted = await client.from("serviceJobTime").insert({
     companyId: args.companyId,
     serviceJobId: job.data.id,
     employeeId: args.employeeId,
-    laborItemId: laborItemId.data,
     entryDate: args.entryDate,
     hours: manual,
     billable: job.data.coverage === "Billable",

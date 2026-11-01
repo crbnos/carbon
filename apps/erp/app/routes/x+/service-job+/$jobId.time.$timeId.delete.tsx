@@ -18,6 +18,12 @@ export async function action(args: ActionFunctionArgs) {
     serviceJobId: jobId,
     id: timeId
   });
+  // The entry is gone either way; a failed reversal is the flash.
+  if (result.data?.warning) {
+    return respond(args.request, {
+      error: { message: result.data.warning }
+    }).redirect(path.to.serviceJob(jobId));
+  }
   return respond(args.request, result).redirect(path.to.serviceJob(jobId), {
     message: "Time entry removed"
   });

@@ -1042,6 +1042,9 @@ msgstr "Categoria di manodopera"
 msgid "Labor ended"
 msgstr "Manodopera terminata"
 
+msgid "Labor rates are not set. Time cannot be logged or billed until they are."
+msgstr "Le tariffe della manodopera non sono impostate. Il tempo non può essere registrato o fatturato finché non lo sono."
+
 msgid "Labor until <0/>"
 msgstr "Manodopera fino a <0/>"
 
@@ -2068,6 +2071,9 @@ msgstr "Sessione bloccata"
 
 msgid "Set Clock Out"
 msgstr "Registra timbra fine"
+
+msgid "Set rates"
+msgstr "Imposta tariffe"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Imposta l'ora in cui hai smesso di lavorare, o conferma che stai ancora lavorando."

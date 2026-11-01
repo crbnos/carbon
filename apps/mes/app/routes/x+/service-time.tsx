@@ -13,9 +13,11 @@ import { data } from "react-router";
 import {
   CLOCK_ALREADY_RUNNING,
   completeServiceJob,
-  getDefaultLaborItemId,
   getRunningServiceClock,
+  getServiceLaborRates,
   isRunningClockConflict,
+  postServiceJobTime,
+  SERVICE_LABOR_COST_RATE_MISSING,
   startServiceClock,
   stopServiceClock,
   updateServiceJobStatus
@@ -26,8 +28,9 @@ const logger = getLogger("mes", "service-time");
 
 /**
  * The technician's clock on a service job, and its completion. Start writes a
- * time entry with a start time; Stop sets its end, hours and day; Complete
- * stops the clock and completes the job in the ERP (`post-service-job`).
+ * time entry with a start time; Stop sets its end, hours and day, then posts
+ * the job's time cost in the ERP; Complete stops the clock and completes the
+ * job in the ERP (`post-service-job`).
  */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -90,24 +93,27 @@ export async function action({ request }: ActionFunctionArgs) {
           );
     }
 
-    const laborItemId = await getDefaultLaborItemId(serviceRole, companyId);
-    if (!laborItemId.data) {
+    // The entry's cost posts at the company's cost rate when the clock stops.
+    const rates = await getServiceLaborRates(serviceRole, companyId);
+    if (rates.error) {
       return data(
         {},
         await flash(
           request,
-          error(
-            laborItemId.error,
-            "Set the default labor item in the ERP's invoicing settings before you start a clock"
-          )
+          error(rates.error, "Failed to load the company settings")
         )
+      );
+    }
+    if (rates.data.costRate === null) {
+      return data(
+        {},
+        await flash(request, error(null, SERVICE_LABOR_COST_RATE_MISSING))
       );
     }
 
     const started = await startServiceClock(serviceRole, {
       serviceJobId,
       employeeId: userId,
-      laborItemId: laborItemId.data,
       billable: job.data.coverage === "Billable",
       companyId,
       createdBy: userId
@@ -164,6 +170,30 @@ export async function action({ request }: ActionFunctionArgs) {
         await flash(request, error(null, "Your clock is not running"))
       );
     }
+
+    const posting = await postServiceJobTime(serviceRole, {
+      serviceJobId: stopped.data.serviceJobId,
+      companyId,
+      userId
+    });
+    if (posting.error) {
+      logger.error("Failed to post the service job's time cost", {
+        companyId,
+        serviceJobId: stopped.data.serviceJobId,
+        error: posting.error
+      });
+      return data(
+        {},
+        await flash(request, {
+          ...error(
+            posting.error,
+            "Clock stopped, but its labor cost did not post"
+          ),
+          description: posting.error.message
+        })
+      );
+    }
+
     return data({}, await flash(request, success("Clock stopped")));
   }
 

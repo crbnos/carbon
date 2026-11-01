@@ -27,10 +27,12 @@ import {
 } from "@carbon/database/journal-posting-status";
 import { inOrder, maybeSingle, rpcValue } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
+import { getLogger } from "@carbon/logger";
 import {
   coverageAccountRole,
   datetime,
   documentHasImages,
+  EPSILON,
   isServiceJobLocked,
   manualHoursForDay,
   richTextToPlainText,
@@ -39,25 +41,33 @@ import {
   toBaseAmount
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import type { Transaction } from "kysely";
+import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import {
+  diffLaborGroups,
+  type LaborDimension,
+  type LaborGroup,
+  withoutSupersededEntries
+} from "../resources/resources.service";
 import { refreshSalesReturnOrderStatus } from "../sales/sales.service";
 import {
   allocateJournalLineIds,
   createAdjustmentJournal,
-  insertNegatedJournal,
+  invokePosting,
   isActiveCompanyEmployee,
   refuseUnlessOwned,
-  resolveAccountingPeriod
+  resolveAccountingPeriod,
+  TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "../shared/shared.service";
 import type {
   customerAssetUpdateValidator,
   customerAssetValidator,
   ServiceBillingMethod,
   ServiceCoverage,
+  ServiceEstimateStatus,
   ServiceJobPriority,
   ServiceJobStatus,
   ServiceWorkSite,
@@ -76,11 +86,14 @@ import {
 import { planServiceJobInvoiceLines } from "./service-job-invoice-plan";
 import {
   buildCoverageReclassLines,
-  buildServiceJobCompletionLines,
+  buildServiceTimeCostGroups,
+  type ServiceJobJournalLine,
   serviceCoverageAccount
 } from "./service-job-plan";
 
 type Client = SupabaseClient<Database>;
+
+const logger = getLogger("erp", "service");
 
 /**
  * A refusal the operation returns as its own message: the item is not
@@ -371,7 +384,7 @@ export async function getServiceJobTime(client: Client, serviceJobId: string) {
   return client
     .from("serviceJobTime")
     .select(
-      "*, employee:user!serviceJobTime_employeeId_fkey(id, fullName, avatarUrl), laborItem:item!serviceJobTime_laborItemId_fkey(id, readableIdWithRevision, name)"
+      "*, employee:user!serviceJobTime_employeeId_fkey(id, fullName, avatarUrl)"
     )
     .eq("serviceJobId", serviceJobId)
     .order("entryDate", { ascending: false })
@@ -484,7 +497,7 @@ export async function editableServiceJob(ctx: ServiceContext, jobId: string) {
   const job = await ctx.asCaller.supabase
     .from("serviceJob")
     .select(
-      "id, status, coverage, billingMethod, estimateStatus, salesReturnOrderLineId, repairable"
+      "id, status, coverage, billingMethod, estimateStatus, salesReturnOrderLineId, repairable, laborBillRate"
     )
     .eq("id", jobId)
     .eq("companyId", ctx.company.id)
@@ -519,12 +532,12 @@ export async function lockServiceJob(
       "estimateStatus",
       "salesReturnOrderLineId",
       "repairable",
-      "completionJournalId",
       "locationId",
       "customerId",
       "customerLocationId",
       "serviceItemId",
-      "fixedPrice"
+      "fixedPrice",
+      "laborBillRate"
     ])
     .where("id", "=", args.serviceJobId)
     .where("companyId", "=", args.companyId)
@@ -539,7 +552,8 @@ export async function lockServiceJob(
 
 /**
  * Inserts a job with the next `serviceJob` number, unless one is given. The
- * operation (`createServiceJob`) checks the ids and chooses the coverage.
+ * operation (`createServiceJob`) checks the ids and chooses the coverage. The
+ * job's bill rate is the company's default (Settings → Service).
  */
 export async function insertServiceJob(
   client: Client,
@@ -591,6 +605,13 @@ export async function insertServiceJob(
     serviceJobId = seq.data;
   }
 
+  const settings = await client
+    .from("companySettings")
+    .select("serviceLaborBillRate")
+    .eq("id", input.companyId)
+    .maybeSingle();
+  if (settings.error) return { data: null, error: settings.error };
+
   return client
     .from("serviceJob")
     .insert({
@@ -609,6 +630,7 @@ export async function insertServiceJob(
       billingMethod: input.billingMethod,
       priority: input.priority,
       serviceItemId: input.serviceItemId ?? null,
+      laborBillRate: settings.data?.serviceLaborBillRate ?? null,
       assignee: input.assignee ?? null,
       dueDate: input.dueDate ?? null,
       problem: input.problem ?? null,
@@ -682,6 +704,36 @@ export async function refuseUnlessServiceItem(
   return null;
 }
 
+/** Refused when a time entry needs the company's cost rate and none is set. */
+export const SERVICE_LABOR_COST_RATE_MISSING =
+  "Set the labor cost rate in Settings → Service.";
+
+/**
+ * Refuses a time write while the company has no labor cost rate
+ * (Settings → Service): the entry's cost could not post.
+ */
+export async function refuseWithoutLaborCostRate(ctx: ServiceContext) {
+  const settings = await ctx.asSystem.supabase
+    .from("companySettings")
+    .select("serviceLaborCostRate")
+    .eq("id", ctx.company.id)
+    .maybeSingle();
+  if (settings.error) {
+    return ctx.error(
+      "internal",
+      "Failed to load the company settings",
+      settings.error
+    );
+  }
+  if (
+    settings.data?.serviceLaborCostRate === null ||
+    settings.data?.serviceLaborCostRate === undefined
+  ) {
+    return ctx.error("rule", SERVICE_LABOR_COST_RATE_MISSING);
+  }
+  return null;
+}
+
 /**
  * The customer asset a job is about, when it is the company's: its unit (item
  * and serial), its owner and its warranty dates.
@@ -718,6 +770,8 @@ export type ServiceJobHeaderUpdate = Partial<
     | "locationId"
     | "workSite"
     | "billingMethod"
+    | "laborBillRate"
+    | "fixedPrice"
     | "priority"
     | "serviceItemId"
     | "assignee"
@@ -755,10 +809,56 @@ export async function updateServiceJob(
 }
 
 /**
+ * Sets the bill rate on one or more jobs and, in the same transaction, the
+ * unit price of their Labor estimate lines (the lines with no item).
+ */
+export async function updateServiceJobLaborBillRate(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    ids: string[];
+    companyId: string;
+    updatedBy: string;
+    laborBillRate: number | null;
+  }
+) {
+  const updatedAt = datetime.timestamp();
+  await db.transaction().execute(async (trx) => {
+    await trx
+      .updateTable("serviceJob")
+      .set({
+        laborBillRate: args.laborBillRate,
+        updatedBy: args.updatedBy,
+        updatedAt
+      })
+      .where("id", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    if (args.laborBillRate === null) return;
+    await trx
+      .updateTable("serviceJobEstimateLine")
+      .set({
+        unitPrice: args.laborBillRate,
+        updatedBy: args.updatedBy,
+        updatedAt
+      })
+      .where("serviceJobId", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .where("itemId", "is", null)
+      .execute();
+  });
+}
+
+/** Refused when the bill rate changes after the customer saw the estimate. */
+export const SERVICE_JOB_BILL_RATE_LOCKED =
+  "The bill rate is locked: the estimate was sent to the customer.";
+
+/**
  * The refusal a header field change gets from the jobs it would change, else
  * null. A customer location, contact or asset must be each job's customer's.
  * A job from a return or on an asset keeps its customer. A job with a Part
- * line keeps its location: the parts were issued from it.
+ * line keeps its location: the parts were issued from it. The bill rate is
+ * locked once the estimate is Sent or Accepted, and only a Fixed Price job
+ * takes a fixed price.
  */
 export async function serviceJobFieldRefusal(
   ctx: ServiceContext,
@@ -767,6 +867,8 @@ export async function serviceJobFieldRefusal(
     customerId: string;
     salesReturnOrderLineId: string | null;
     customerAssetId: string | null;
+    estimateStatus: ServiceEstimateStatus | null;
+    billingMethod: ServiceBillingMethod;
   }[],
   field: (typeof serviceJobUpdateFields)[number],
   value: string | null | undefined
@@ -837,6 +939,17 @@ export async function serviceJobFieldRefusal(
       }
       return null;
     }
+    case "laborBillRate":
+      return jobs.some(
+        (job) =>
+          job.estimateStatus === "Sent" || job.estimateStatus === "Accepted"
+      )
+        ? ctx.error("rule", SERVICE_JOB_BILL_RATE_LOCKED)
+        : null;
+    case "fixedPrice":
+      return jobs.some((job) => job.billingMethod !== "Fixed Price")
+        ? ctx.error("rule", "Only a Fixed Price job has a fixed price.")
+        : null;
     default:
       return null;
   }
@@ -938,6 +1051,26 @@ export async function serviceJobFieldValues(
       return text && !/^\d{4}-\d{2}-\d{2}$/.test(text)
         ? ctx.error("validation", "Enter a date")
         : { dueDate: text };
+    case "laborBillRate":
+    case "fixedPrice": {
+      if (text === null) {
+        return field === "laborBillRate"
+          ? { laborBillRate: null }
+          : { fixedPrice: null };
+      }
+      const amount = Number(text);
+      if (!Number.isFinite(amount) || amount < 0) {
+        return ctx.error(
+          "validation",
+          field === "laborBillRate"
+            ? "The bill rate must be a number of 0 or more"
+            : "The fixed price must be a number of 0 or more"
+        );
+      }
+      return field === "laborBillRate"
+        ? { laborBillRate: round(amount) }
+        : { fixedPrice: round(amount) };
+    }
     case "problem":
       return { problem: problemDocument(text) };
     case "findings":
@@ -965,10 +1098,13 @@ export async function serviceJobFieldValues(
 
 type EstimateLineInput = Omit<
   z.infer<typeof serviceJobEstimateLineValidator>,
-  "id"
->;
+  "id" | "unitPrice"
+> & { unitPrice: number };
 
-/** Adds an estimate line (`createdBy`) or saves one (`id`). */
+/**
+ * Adds an estimate line (`createdBy`) or saves one (`id`). A line with no
+ * item is a Labor line.
+ */
 export async function upsertServiceJobEstimateLine(
   client: Client,
   line:
@@ -980,7 +1116,7 @@ export async function upsertServiceJobEstimateLine(
       })
 ) {
   const values = {
-    itemId: line.itemId,
+    itemId: line.itemId ?? null,
     description: line.description ?? null,
     quantity: line.quantity,
     unitPrice: line.unitPrice
@@ -1036,7 +1172,6 @@ export async function upsertServiceJobTime(
 ) {
   const values = {
     employeeId: time.employeeId,
-    laborItemId: time.laborItemId,
     entryDate: time.entryDate,
     hours: time.hours,
     billable: time.billable,
@@ -1082,15 +1217,48 @@ export async function deleteServiceJobTime(
     .single();
 }
 
+/**
+ * Stops every clock still running on a job, in one statement: its end time
+ * is now, its hours the time since it started (never negative, at the
+ * internal scale), and its day the company's day it started on, as the MES
+ * `stopServiceClock` computes them with `clockHours` and
+ * `datetime.businessDay`. Returns the ids of the entries it stopped. The
+ * caller posts their cost.
+ */
+export async function stopServiceJobClocks(
+  db: Kysely<KyselyDatabase>,
+  args: { serviceJobId: string; companyId: string; updatedBy: string }
+): Promise<string[]> {
+  const timeZone = await getCompanyTimeZone(db, args.companyId);
+  const endTime = datetime.timestamp();
+  const stopped = await db
+    .updateTable("serviceJobTime")
+    .set({
+      endTime,
+      hours: sql<number>`GREATEST(0, ROUND((EXTRACT(EPOCH FROM (${endTime}::timestamptz - "startTime")) / 3600)::numeric, 5))`,
+      entryDate: sql<string>`("startTime" AT TIME ZONE ${timeZone})::date`,
+      updatedBy: args.updatedBy,
+      updatedAt: endTime
+    })
+    .where("serviceJobId", "=", args.serviceJobId)
+    .where("companyId", "=", args.companyId)
+    .where("startTime", "is not", null)
+    .where("endTime", "is", null)
+    .returning("id")
+    .execute();
+  return stopped.map((row) => row.id);
+}
+
 export const SERVICE_DAY_HAS_CLOCK_TIME =
   "This day has clock time on the job. Edit it on the job.";
 
 /**
  * My Time: sets an employee's total hours on a job for one day. The
  * difference from the day's clock entries goes to the day's one manual entry
- * (no clock): saved, added at the company's service labor item, or removed
- * at 0. A total below the clock entries writes nothing (`saved: false`) and
- * comes back as `warning`. Locks the job FOR UPDATE and refuses a Completed, Invoiced or
+ * (no clock): saved, added, or removed at 0. Then the job's time cost is
+ * reconciled in the same transaction (`reconcileServiceJobTime`). A total
+ * below the clock entries writes nothing (`saved: false`) and comes back as
+ * `warning`. Locks the job FOR UPDATE and refuses a Completed, Invoiced or
  * Cancelled one. Any employee may log time on any open job, as on the MES
  * clock: the assignee owns the job, but more than one person works on it.
  */
@@ -1148,10 +1316,7 @@ export async function setServiceJobDayHours(
           .where("companyId", "=", args.companyId)
           .execute();
       }
-      return { saved: true, warning: null };
-    }
-
-    if (existing) {
+    } else if (existing) {
       await trx
         .updateTable("serviceJobTime")
         .set({
@@ -1162,32 +1327,26 @@ export async function setServiceJobDayHours(
         .where("id", "=", existing.id)
         .where("companyId", "=", args.companyId)
         .execute();
-      return { saved: true, warning: null };
+    } else {
+      await trx
+        .insertInto("serviceJobTime")
+        .values({
+          companyId: args.companyId,
+          serviceJobId: job.id,
+          employeeId: args.employeeId,
+          entryDate: args.entryDate,
+          hours: manual,
+          billable: job.coverage === "Billable",
+          createdBy: args.userId
+        })
+        .execute();
     }
 
-    const settings = await trx
-      .selectFrom("companySettings")
-      .select("serviceLaborItemId")
-      .where("id", "=", args.companyId)
-      .executeTakeFirst();
-    if (!settings?.serviceLaborItemId) {
-      throw new InvalidInputError(
-        "Set the service labor item in Settings → Invoicing first"
-      );
-    }
-    await trx
-      .insertInto("serviceJobTime")
-      .values({
-        companyId: args.companyId,
-        serviceJobId: job.id,
-        employeeId: args.employeeId,
-        laborItemId: settings.serviceLaborItemId,
-        entryDate: args.entryDate,
-        hours: manual,
-        billable: job.coverage === "Billable",
-        createdBy: args.userId
-      })
-      .execute();
+    await reconcileServiceJobTime(trx, {
+      companyId: args.companyId,
+      serviceJobId: job.id,
+      userId: args.userId
+    });
     return { saved: true, warning: null };
   });
 }
@@ -1802,10 +1961,6 @@ export const postServiceJobPermission = {
   update: "service"
 } satisfies PermissionRule<z.output<typeof postServiceJobInput>>;
 
-type ServiceJobPostingLine = ReturnType<
-  typeof buildServiceJobCompletionLines
->["lines"][number];
-
 /**
  * One 'Service Job' journal of a job's lines, each tagged with the job's
  * location when a Location dimension is active. Returns the journal's id.
@@ -1814,7 +1969,7 @@ async function writeServiceJobJournal(
   trx: Transaction<KyselyDatabase>,
   args: {
     job: { id: string; locationId: string };
-    lines: ServiceJobPostingLine[];
+    lines: ServiceJobJournalLine[];
     description: string;
     postingStatus: AutomaticJournalStatus;
     postingDate: string;
@@ -1927,11 +2082,318 @@ async function refreshJobReturnOrder(
   );
 }
 
+/**
+ * Reconciles the cost of a job's closed time entries with the journal, inside
+ * the caller's transaction. Each entry with `hours` > 0 and no running clock
+ * costs hours × its `unitCost`; an entry with no `unitCost` takes the
+ * company's `serviceLaborCostRate` and keeps it, so a later rate change never
+ * moves a posted entry. The desired pair per entry is Dr the job's coverage
+ * account / Cr laborAbsorptionAccount, keyed by
+ * `journalReference.to.serviceJobTime`; the difference from what the journal
+ * already holds posts as one 'Service Job' journal. A deleted entry reverses,
+ * and a coverage change moves the posted cost. Returns the journal's id, or
+ * null when nothing changed. Copies `postMaintenanceEvent`.
+ */
+export async function reconcileServiceJobTime(
+  trx: Transaction<KyselyDatabase>,
+  args: { companyId: string; serviceJobId: string; userId: string }
+): Promise<string | null> {
+  const { companyId, userId } = args;
+  const job = await lockServiceJob(trx, {
+    serviceJobId: args.serviceJobId,
+    companyId
+  });
+  // Provisional before the company's accounting cutover, Posted after it.
+  const postingStatus = await journalPostingStatus(trx, companyId);
+
+  const [time, settings, defaults, location, priorLines, supersededLines] =
+    await Promise.all([
+      trx
+        .selectFrom("serviceJobTime")
+        .select(["id", "hours", "unitCost"])
+        .where("serviceJobId", "=", job.id)
+        .where("companyId", "=", companyId)
+        .where("hours", ">", 0)
+        .where((eb) =>
+          eb.or([eb("startTime", "is", null), eb("endTime", "is not", null)])
+        )
+        .execute(),
+      trx
+        .selectFrom("companySettings")
+        .select("serviceLaborCostRate")
+        .where("id", "=", companyId)
+        .executeTakeFirst(),
+      serviceJobAccountDefaults(trx, companyId),
+      trx
+        .selectFrom("dimension")
+        .innerJoin(
+          "company",
+          "company.companyGroupId",
+          "dimension.companyGroupId"
+        )
+        .select(["dimension.id"])
+        .where("company.id", "=", companyId)
+        .where("dimension.active", "=", true)
+        .where("dimension.entityType", "=", "Location")
+        .executeTakeFirst(),
+      trx
+        .selectFrom("journalLine")
+        .innerJoin("journal", (join) =>
+          join
+            .onRef("journal.id", "=", "journalLine.journalId")
+            .onRef("journal.companyId", "=", "journalLine.companyId")
+        )
+        .select([
+          "journalLine.id",
+          "journalLine.documentLineReference",
+          "journalLine.accountId",
+          "journalLine.amount"
+        ])
+        .where("journalLine.documentType", "=", "Service Job")
+        .where("journalLine.documentId", "=", job.id)
+        .where(
+          "journalLine.documentLineReference",
+          "like",
+          "service-job-time:%"
+        )
+        .where("journalLine.companyId", "=", companyId)
+        .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+        .execute(),
+      // Lines the enable superseded: posted before the cutover.
+      trx
+        .selectFrom("journalLine")
+        .innerJoin("journal", (join) =>
+          join
+            .onRef("journal.id", "=", "journalLine.journalId")
+            .onRef("journal.companyId", "=", "journalLine.companyId")
+        )
+        .select([
+          "journalLine.documentLineReference",
+          "journalLine.accountId",
+          "journalLine.amount"
+        ])
+        .where("journalLine.documentType", "=", "Service Job")
+        .where("journalLine.documentId", "=", job.id)
+        .where(
+          "journalLine.documentLineReference",
+          "like",
+          "service-job-time:%"
+        )
+        .where("journalLine.companyId", "=", companyId)
+        .where("journal.status", "=", "Superseded")
+        .execute()
+    ]);
+
+  // Each entry keeps the rate it first posted at.
+  const rate =
+    settings?.serviceLaborCostRate === null ||
+    settings?.serviceLaborCostRate === undefined
+      ? null
+      : Number(settings.serviceLaborCostRate);
+  const unrated = time.filter((entry) => entry.unitCost === null);
+  if (unrated.length > 0) {
+    if (rate === null) {
+      throw new InvalidInputError(SERVICE_LABOR_COST_RATE_MISSING);
+    }
+    await trx
+      .updateTable("serviceJobTime")
+      .set({
+        unitCost: rate,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where(
+        "id",
+        "in",
+        unrated.map((entry) => entry.id)
+      )
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+  const entries = time.map((entry) => ({
+    id: entry.id,
+    hours: Number(entry.hours),
+    unitCost: entry.unitCost === null ? (rate ?? 0) : Number(entry.unitCost)
+  }));
+
+  // The accounts are resolved only when there is cost to post: an empty
+  // default refuses nothing that writes no line.
+  const costs = entries.some(
+    (entry) => round(entry.hours * entry.unitCost) > EPSILON
+  );
+  const laborAbsorption = costs
+    ? resolveDefaultAccount(defaults, "laborAbsorptionAccount", postingStatus)
+    : null;
+  const desired =
+    costs && laborAbsorption
+      ? buildServiceTimeCostGroups({
+          entries,
+          coverageAccountId: serviceCoverageAccount(
+            defaults,
+            job.coverage,
+            postingStatus
+          ),
+          laborAbsorptionAccountId: laborAbsorption.accountId,
+          dimensions: location
+            ? [{ dimensionId: location.id, valueId: job.locationId }]
+            : []
+        })
+      : [];
+
+  // What the journal already holds, with each line's own tags.
+  const priorDimensions =
+    priorLines.length > 0
+      ? await trx
+          .selectFrom("journalLineDimension")
+          .select(["journalLineId", "dimensionId", "valueId"])
+          .where(
+            "journalLineId",
+            "in",
+            priorLines.map((line) => line.id)
+          )
+          .where("companyId", "=", companyId)
+          .execute()
+      : [];
+  const dimensionsByLine = new Map<string, LaborDimension[]>();
+  for (const d of priorDimensions) {
+    const list = dimensionsByLine.get(d.journalLineId) ?? [];
+    list.push({ dimensionId: d.dimensionId, valueId: d.valueId });
+    dimensionsByLine.set(d.journalLineId, list);
+  }
+  const prior: LaborGroup[] = priorLines.map((line) => ({
+    reference: line.documentLineReference ?? "",
+    accountId: line.accountId ?? "",
+    dimensions: dimensionsByLine.get(line.id) ?? [],
+    amount: Number(line.amount)
+  }));
+
+  const expenseAccountIds = new Set(
+    [
+      defaults.costOfServiceAccount,
+      defaults.warrantyExpenseAccount,
+      defaults.costOfGoodsSoldAccount
+    ].filter((id): id is string => !!id)
+  );
+  const kept = withoutSupersededEntries(
+    desired,
+    supersededLines.map((line) => ({
+      reference: line.documentLineReference ?? "",
+      accountId: line.accountId ?? "",
+      amount: Number(line.amount)
+    })),
+    expenseAccountIds
+  );
+  if (kept.changed.length > 0) {
+    throw new InvalidInputError(TIME_ENTRY_BEFORE_CUTOVER_ERROR);
+  }
+  const delta = diffLaborGroups(kept.desired, prior);
+  if (delta.length === 0) return null;
+
+  const postingDate = datetime
+    .today(await getCompanyTimeZone(trx, companyId))
+    .toString();
+  // A Provisional journal has no accounting period.
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? (await resolveAccountingPeriod(trx, companyId, postingDate, "current"))
+          .id
+      : null;
+  const journalId = await createAdjustmentJournal(trx, {
+    companyId,
+    accountingPeriodId,
+    status: postingStatus,
+    description: `Service Job Time ${job.serviceJobId}${
+      prior.length > 0 ? " (Adjustment)" : ""
+    }`,
+    postingDate,
+    userId,
+    sourceType: "Service Job"
+  });
+
+  // One line per insert: each carries its own tags, and a multi-row
+  // RETURNING does not promise insert order.
+  const journalLineReference = nanoid();
+  for (const group of delta) {
+    const isCostLine = expenseAccountIds.has(group.accountId);
+    const line = await trx
+      .insertInto("journalLine")
+      .values({
+        journalId,
+        accountId: group.accountId,
+        description: isCostLine
+          ? group.accountId === defaults.warrantyExpenseAccount
+            ? "Warranty Expense"
+            : "Cost of Service"
+          : "Labor Absorption",
+        // A Provisional absorption line on Retained Earnings is a stand-in,
+        // the new one or the reversal of a prior one; the enable re-points it.
+        accountDefaultRole:
+          postingStatus === "Provisional" &&
+          !isCostLine &&
+          group.accountId === defaults.retainedEarningsAccount
+            ? "laborAbsorptionAccount"
+            : null,
+        amount: group.amount,
+        quantity: 1,
+        documentType: "Service Job",
+        documentId: job.id,
+        documentLineReference: group.reference,
+        journalLineReference,
+        companyId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    if (group.dimensions.length > 0) {
+      await trx
+        .insertInto("journalLineDimension")
+        .values(
+          group.dimensions.map((d) => ({
+            journalLineId: line.id,
+            dimensionId: d.dimensionId,
+            valueId: d.valueId,
+            companyId
+          }))
+        )
+        .execute();
+    }
+  }
+  return journalId;
+}
+
+/**
+ * Runs `post-service-job` `post-time` for one job as the system: the
+ * operation has already authorized the change, and a delete-only user must
+ * still reverse its cost. Returns the failure's message, or null. Copies
+ * `postMaintenanceLabor`.
+ */
+export async function postServiceJobTime(
+  ctx: ServiceContext,
+  serviceJobId: string
+): Promise<string | null> {
+  const posting = await invokePosting(
+    {
+      db: ctx.asSystem.pg,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    },
+    "post-service-job",
+    { action: "post-time" as const, serviceJobId },
+    postServiceJob
+  );
+  if (posting.error) {
+    logger.error("Failed to post service job time", {
+      companyId: ctx.company.id,
+      serviceJobId,
+      error: posting.error
+    });
+    return posting.error.message || "Failed to post service job time";
+  }
+  return null;
+}
+
 export const SERVICE_JOB_UNIT_LEFT_ERROR =
   "This unit has already left the repair; it cannot be reopened.";
-
-export const SERVICE_JOB_BEFORE_CUTOVER_ERROR =
-  "This job was completed before the accounting cutover and cannot be reopened.";
 
 /**
  * Refuses to reopen a job whose RMA unit has moved on: shipped back,
@@ -1974,21 +2436,21 @@ const COMPLETABLE_STATUSES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Completes, reopens or changes the coverage of a service job, in one
- * transaction with the job row locked.
+ * Completes, reopens or changes the coverage of a service job, or posts its
+ * time, in one transaction with the job row locked.
  *
- * - `complete` posts the job's time: one journal, a pair per labor item, Dr
- *   the coverage account / Cr laborAbsorptionAccount at hours × the labor
- *   item's `itemCost.unitCost`, stored on each time row. Refused with a labor
- *   item that has no cost, or with a clock still running. An estimate is
- *   never required.
- * - `reopen` voids that journal with a negated copy and moves a Completed job
- *   back to In Progress. An Invoiced job cannot reopen, nor can a job whose
- *   RMA unit was shipped back, scrapped or replaced, nor one whose
- *   completion journal the accounting cutover superseded.
+ * - `complete` refuses a clock still running, runs the time reconcile
+ *   (`reconcileServiceJobTime`) and sets the job Completed. It writes no
+ *   journal of its own; the reconcile's journal, if any, is `journalId`. An
+ *   estimate is never required.
+ * - `reopen` moves a Completed job back to In Progress and writes no
+ *   journal. An Invoiced job cannot reopen, nor can a job whose RMA unit was
+ *   shipped back, scrapped or replaced.
  * - `set-coverage` moves the cost of the parts already issued from the old
- *   coverage account to the new one, in one journal, and sets the coverage.
- *   Refused once the job is Completed.
+ *   coverage account to the new one, in one journal, sets the coverage, then
+ *   runs the time reconcile, which moves the posted time. `journalId` is the
+ *   parts journal, else the time journal. Refused once the job is Completed.
+ * - `post-time` runs the time reconcile alone.
  *
  * Completing and reopening a job from an RMA line re-derive that RMA's status.
  */
@@ -2021,109 +2483,32 @@ export async function postServiceJob(
           );
         }
 
-        const [time, defaults] = await Promise.all([
-          trx
-            .selectFrom("serviceJobTime")
-            .innerJoin("item", (join) =>
-              join
-                .onRef("item.id", "=", "serviceJobTime.laborItemId")
-                .onRef("item.companyId", "=", "serviceJobTime.companyId")
-            )
-            .leftJoin("itemCost", (join) =>
-              join
-                .onRef("itemCost.itemId", "=", "serviceJobTime.laborItemId")
-                .onRef("itemCost.companyId", "=", "serviceJobTime.companyId")
-            )
-            .select([
-              "serviceJobTime.laborItemId",
-              "serviceJobTime.hours",
-              "serviceJobTime.startTime",
-              "serviceJobTime.endTime",
-              "item.name as laborItemName",
-              "item.readableIdWithRevision as laborItemReadableId",
-              "itemCost.unitCost"
-            ])
-            .where("serviceJobTime.serviceJobId", "=", job.id)
-            .where("serviceJobTime.companyId", "=", companyId)
-            .execute(),
-          serviceJobAccountDefaults(trx, companyId)
-        ]);
-
-        const uncosted = time.find(
-          (entry) => !(Number(entry.unitCost ?? 0) > 0)
-        );
-        if (uncosted) {
-          throw new InvalidInputError(
-            `The labor item ${
-              uncosted.laborItemReadableId ?? uncosted.laborItemName
-            } has no cost per hour. Set its unit cost first.`
-          );
-        }
-        if (time.some((entry) => entry.startTime && !entry.endTime)) {
+        const running = await trx
+          .selectFrom("serviceJobTime")
+          .select("id")
+          .where("serviceJobId", "=", job.id)
+          .where("companyId", "=", companyId)
+          .where("startTime", "is not", null)
+          .where("endTime", "is", null)
+          .limit(1)
+          .executeTakeFirst();
+        if (running) {
           throw new InvalidInputError("Stop the running clock first.");
         }
 
-        // The accounts are resolved only when there is cost to post: an
-        // empty default refuses nothing that writes no line.
-        const costs = time.map((entry) => ({
-          laborItemId: entry.laborItemId,
-          laborItemName: entry.laborItemName,
-          hours: Number(entry.hours),
-          unitCost: Number(entry.unitCost)
-        }));
-        const { lines } = costs.some((entry) => entry.hours > 0)
-          ? buildServiceJobCompletionLines({
-              coverage: job.coverage,
-              coverageAccountId: serviceCoverageAccount(
-                defaults,
-                job.coverage,
-                postingStatus
-              ),
-              laborAbsorption: resolveDefaultAccount(
-                defaults,
-                "laborAbsorptionAccount",
-                postingStatus
-              ),
-              time: costs
-            })
-          : { lines: [] };
-
-        const journalId =
-          lines.length > 0
-            ? await writeServiceJobJournal(trx, {
-                job,
-                lines,
-                description: `Service Job ${job.serviceJobId}`,
-                postingStatus,
-                postingDate,
-                companyId,
-                userId
-              })
-            : null;
-
-        // Each entry keeps the cost it was posted at.
-        if (time.length > 0) {
-          await trx
-            .updateTable("serviceJobTime")
-            .from("itemCost")
-            .set((eb) => ({
-              unitCost: eb.ref("itemCost.unitCost"),
-              updatedBy: userId,
-              updatedAt: now
-            }))
-            .whereRef("itemCost.itemId", "=", "serviceJobTime.laborItemId")
-            .whereRef("itemCost.companyId", "=", "serviceJobTime.companyId")
-            .where("serviceJobTime.serviceJobId", "=", job.id)
-            .where("serviceJobTime.companyId", "=", companyId)
-            .execute();
-        }
+        // Time posts as it is logged; Complete only catches up what a
+        // failed post-after-write left behind, and refuses if it cannot.
+        const journalId = await reconcileServiceJobTime(trx, {
+          companyId,
+          serviceJobId: job.id,
+          userId
+        });
 
         await trx
           .updateTable("serviceJob")
           .set({
             status: "Completed",
             completedAt: now,
-            completionJournalId: journalId,
             ...(input.signedByName !== undefined
               ? { signedByName: input.signedByName }
               : {}),
@@ -2170,55 +2555,11 @@ export async function postServiceJob(
           companyId
         );
 
-        let journalId: string | null = null;
-        if (job.completionJournalId) {
-          // The cutover superseded a journal posted before it: there is no
-          // live journal to void.
-          const completion = await trx
-            .selectFrom("journal")
-            .select("status")
-            .where("id", "=", job.completionJournalId)
-            .where("companyId", "=", companyId)
-            .executeTakeFirst();
-          if (
-            !completion ||
-            !(DOCUMENT_JOURNAL_STATUSES as readonly string[]).includes(
-              completion.status
-            )
-          ) {
-            throw new InvalidInputError(SERVICE_JOB_BEFORE_CUTOVER_ERROR);
-          }
-          const originalLines = await trx
-            .selectFrom("journalLine")
-            .selectAll()
-            .where("journalId", "=", job.completionJournalId)
-            .where("companyId", "=", companyId)
-            .execute();
-          journalId = await insertNegatedJournal(trx, {
-            companyId,
-            userId,
-            originalLines,
-            description: `Reopen Service Job ${job.serviceJobId}`,
-            sourceType: "Service Job",
-            postingStatus,
-            date: postingDate,
-            periodMode: "current",
-            postedAt: now
-          });
-        }
-
-        await trx
-          .updateTable("serviceJobTime")
-          .set({ unitCost: null, updatedBy: userId, updatedAt: now })
-          .where("serviceJobId", "=", job.id)
-          .where("companyId", "=", companyId)
-          .execute();
         await trx
           .updateTable("serviceJob")
           .set({
             status: "In Progress",
             completedAt: null,
-            completionJournalId: null,
             updatedBy: userId,
             updatedAt: now
           })
@@ -2236,7 +2577,7 @@ export async function postServiceJob(
           success: true,
           serviceJobId: job.id,
           status: "In Progress",
-          journalId
+          journalId: null
         };
       }
 
@@ -2307,6 +2648,30 @@ export async function postServiceJob(
           .where("id", "=", job.id)
           .where("companyId", "=", companyId)
           .execute();
+        // The posted time moves to the new coverage account.
+        const timeJournalId = await reconcileServiceJobTime(trx, {
+          companyId,
+          serviceJobId: job.id,
+          userId
+        });
+        return {
+          success: true,
+          serviceJobId: job.id,
+          status: job.status,
+          journalId: journalId ?? timeJournalId
+        };
+      }
+
+      case "post-time": {
+        const job = await lockServiceJob(trx, {
+          serviceJobId: input.serviceJobId,
+          companyId
+        });
+        const journalId = await reconcileServiceJobTime(trx, {
+          companyId,
+          serviceJobId: job.id,
+          userId
+        });
         return {
           success: true,
           serviceJobId: job.id,
@@ -2328,7 +2693,9 @@ export async function postServiceJob(
 // when they were issued, and the time posted its cost at completion.
 
 export const createServiceInvoiceInput = z.object({
-  serviceJobId: z.string().min(1)
+  serviceJobId: z.string().min(1),
+  /** The price of a Fixed Price job that has none, saved before billing. */
+  fixedPrice: z.number().min(0).optional()
 });
 
 export type CreateServiceInvoiceResult = {
@@ -2346,10 +2713,13 @@ export const createServiceInvoicePermission = {
 /**
  * Drafts the invoice of one Completed Billable service job, in one
  * transaction:
- * 1. locks the job and refuses unless it is Completed and Billable;
+ * 1. locks the job and refuses unless it is Completed and Billable; a
+ *    `fixedPrice` is saved on a Fixed Price job that has none (the Create
+ *    Invoice dialog asks for it) and refused on any other job;
  * 2. builds the lines (`planServiceJobInvoiceLines`): Time and Materials bills
- *    Σ billable hours × each labor item's sale price, then each billable
- *    Part and Charge; Fixed Price bills the service item at the fixed price;
+ *    one Labor line, Σ billable hours × the job's bill rate, then each
+ *    billable Part and Charge; Fixed Price bills the service item at the
+ *    fixed price;
  * 3. inserts the opportunity, the header (the customer, the job's location,
  *    the customer's payment term and currency) and `salesInvoiceShipment`;
  * 4. inserts the lines, each with `serviceJobId`;
@@ -2360,7 +2730,7 @@ export async function createServiceInvoice(
   ctx: ServiceContext,
   raw: z.input<typeof createServiceInvoiceInput>
 ): Promise<CreateServiceInvoiceResult> {
-  const { serviceJobId } = createServiceInvoiceInput.parse(raw);
+  const { serviceJobId, fixedPrice } = createServiceInvoiceInput.parse(raw);
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
@@ -2386,6 +2756,30 @@ export async function createServiceInvoice(
         `Service job ${job.serviceJobId} is ${job.coverage}. Only a Billable job is invoiced.`
       );
     }
+    if (fixedPrice !== undefined) {
+      if (job.billingMethod !== "Fixed Price") {
+        throw new InvalidInputError(
+          "Only a Fixed Price job has a fixed price."
+        );
+      }
+      if (job.fixedPrice !== null) {
+        throw new InvalidInputError(
+          `Service job ${job.serviceJobId} already has a fixed price.`
+        );
+      }
+      await trx
+        .updateTable("serviceJob")
+        .set({
+          fixedPrice,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", job.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    const jobFixedPrice =
+      fixedPrice ?? (job.fixedPrice === null ? null : Number(job.fixedPrice));
     const customerId = job.customerId;
 
     const [time, items, serviceItem, customerPayment, customer, company] =
@@ -2393,38 +2787,9 @@ export async function createServiceInvoice(
         () =>
           trx
             .selectFrom("serviceJobTime")
-            .innerJoin("item", (join) =>
-              join
-                .onRef("item.id", "=", "serviceJobTime.laborItemId")
-                .onRef("item.companyId", "=", "serviceJobTime.companyId")
-            )
-            .leftJoin("itemUnitSalePrice", (join) =>
-              join
-                .onRef(
-                  "itemUnitSalePrice.itemId",
-                  "=",
-                  "serviceJobTime.laborItemId"
-                )
-                .onRef(
-                  "itemUnitSalePrice.companyId",
-                  "=",
-                  "serviceJobTime.companyId"
-                )
-            )
-            .select([
-              "serviceJobTime.laborItemId",
-              "serviceJobTime.hours",
-              "serviceJobTime.billable",
-              "item.name as laborItemName",
-              "item.unitOfMeasureCode",
-              "itemUnitSalePrice.unitSalePrice",
-              "itemUnitSalePrice.salesUnitOfMeasureCode"
-            ])
-            .where("serviceJobTime.serviceJobId", "=", job.id)
-            .where("serviceJobTime.companyId", "=", companyId)
-            .orderBy("serviceJobTime.entryDate")
-            .orderBy("serviceJobTime.createdAt")
-            .orderBy("serviceJobTime.id")
+            .select(["hours", "billable"])
+            .where("serviceJobId", "=", job.id)
+            .where("companyId", "=", companyId)
             .execute(),
         () =>
           trx
@@ -2478,18 +2843,14 @@ export async function createServiceInvoice(
         serviceJobId: job.serviceJobId,
         billingMethod: job.billingMethod,
         serviceItemId: job.serviceItemId,
-        fixedPrice: job.fixedPrice === null ? null : Number(job.fixedPrice)
+        fixedPrice: jobFixedPrice,
+        laborBillRate:
+          job.laborBillRate === null ? null : Number(job.laborBillRate)
       },
       serviceItem: serviceItem ?? null,
       time: time.map((entry) => ({
-        laborItemId: entry.laborItemId,
-        laborItemName: entry.laborItemName,
         hours: Number(entry.hours),
-        billable: entry.billable,
-        unitSalePrice:
-          entry.unitSalePrice === null ? null : Number(entry.unitSalePrice),
-        unitOfMeasureCode:
-          entry.salesUnitOfMeasureCode ?? entry.unitOfMeasureCode
+        billable: entry.billable
       })),
       items: items.map((item) => ({
         lineType: item.lineType,
