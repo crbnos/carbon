@@ -18,6 +18,8 @@ import type { AssemblyReview, PartReview, ReleaseReview } from "./review";
 import {
   applyCount,
   applyRequestBody,
+  assetCounts,
+  assetOffers,
   clearFieldErrors,
   createReview,
   defaultSelectedPartIds,
@@ -26,7 +28,8 @@ import {
   indexFieldErrors,
   normalizeWarnings,
   patchPartStatuses,
-  replenishmentMismatches
+  replenishmentMismatches,
+  setAssetRows
 } from "./review";
 import type { PanelPartStatus } from "./status";
 
@@ -405,7 +408,9 @@ describe("applyRequestBody", () => {
     expect(applyRequestBody(edited)).toEqual({
       planId: "plan-2",
       edits: { "ASM-001": { name: "Base plate" } },
-      excluded: ["PAD-005"]
+      excluded: ["PAD-005"],
+      modelRows: [],
+      drawingRows: []
     });
   });
 
@@ -424,7 +429,9 @@ describe("applyRequestBody", () => {
     expect(applyRequestBody(edited)).toEqual({
       planId: "plan-2",
       edits: { "PAD-005": { name: "Pad" } },
-      excluded: []
+      excluded: [],
+      modelRows: [],
+      drawingRows: []
     });
   });
 
@@ -824,5 +831,107 @@ describe("replenishmentMismatches", () => {
       "ASM-009 is one unit in Onshape (Show Assembly only), so no BOM is written for it, but Carbon makes it"
     ]);
     expect(replenishmentMismatches(plan, {}, new Set(["ASM-009"]))).toEqual([]);
+  });
+});
+
+describe("assembly file picks", () => {
+  const model = (partNumber: string) => ({
+    partNumber,
+    kind: "partstudio" as const,
+    documentId: "d",
+    wvm: "w" as const,
+    wvmId: "w1",
+    elementId: "ps",
+    partId: "JHD",
+    configuration: null
+  });
+  const drawings = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      elementId: `drw-${index}`,
+      name: `Drawing ${index}`
+    }));
+  const base = assemblyPlan();
+  const plan = assemblyPlan({
+    root: { ...base.root, assets: { model: null, drawings: drawings(1) } },
+    items: [
+      {
+        ...base.items[0]!,
+        assets: { model: model("PAD-005"), drawings: drawings(2) }
+      },
+      // No assets: standard content, released, or linked elsewhere.
+      base.items[1]!
+    ]
+  });
+
+  it("offers STEP models and drawings only on rows that have them", () => {
+    expect(assetOffers(plan)).toEqual({
+      model: ["PAD-005"],
+      drawing: ["ASM-001", "PAD-005"]
+    });
+  });
+
+  it("starts with nothing picked and sends empty lists", () => {
+    const review = assemblyReview(plan);
+    expect(assetCounts(review)).toEqual({ models: 0, drawings: 0, current: 0 });
+    expect(applyRequestBody(review)).toMatchObject({
+      modelRows: [],
+      drawingRows: []
+    });
+  });
+
+  it("picks All for a kind, ignoring rows that do not offer it", () => {
+    const review = setAssetRows(
+      assemblyReview(plan),
+      "drawing",
+      ["ASM-001", "PAD-005", "HDW-010"],
+      true
+    );
+    expect(assetCounts(review)).toEqual({ models: 0, drawings: 3, current: 0 });
+    expect(applyRequestBody(review)).toMatchObject({
+      modelRows: [],
+      drawingRows: ["ASM-001", "PAD-005"]
+    });
+  });
+
+  it("clears with None after All", () => {
+    const all = setAssetRows(assemblyReview(plan), "model", ["PAD-005"], true);
+    const none = setAssetRows(all, "model", ["PAD-005"], false);
+    expect(applyRequestBody(all)).toMatchObject({ modelRows: ["PAD-005"] });
+    expect(applyRequestBody(none)).toMatchObject({ modelRows: [] });
+  });
+
+  it("sends no pick for an excluded row", () => {
+    const review = {
+      ...setAssetRows(assemblyReview(plan), "model", ["PAD-005"], true),
+      excluded: new Set(["PAD-005"])
+    };
+    expect(applyRequestBody(review)).toMatchObject({ modelRows: [] });
+    expect(assetCounts(review)).toEqual({ models: 0, drawings: 0, current: 0 });
+  });
+
+  it("counts a picked file the item already has as current, not as an export", () => {
+    const marked = assemblyPlan({
+      ...plan,
+      items: [
+        {
+          ...plan.items[0]!,
+          assets: {
+            model: model("PAD-005"),
+            modelCurrent: true,
+            drawings: [
+              { elementId: "drw-0", name: "Drawing 0", current: true },
+              { elementId: "drw-1", name: "Drawing 1" }
+            ]
+          }
+        }
+      ]
+    });
+    const review = setAssetRows(
+      setAssetRows(assemblyReview(marked), "model", ["PAD-005"], true),
+      "drawing",
+      ["PAD-005"],
+      true
+    );
+    expect(assetCounts(review)).toEqual({ models: 0, drawings: 1, current: 2 });
   });
 });

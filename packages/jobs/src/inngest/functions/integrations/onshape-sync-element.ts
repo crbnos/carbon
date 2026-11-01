@@ -31,6 +31,18 @@ import {
   type StagedModel
 } from "./onshape-fetch";
 import { withRateLimitRetry } from "./onshape-rate-limit";
+import {
+  assemblySourceKeyAt,
+  MODEL_SOURCE_ENTITY_TYPE,
+  partSourceId,
+  reusableModelUploadId
+} from "./onshape-source-keys";
+
+export {
+  assemblySourceKeyAt,
+  partSourceId,
+  reusableModelUploadId
+} from "./onshape-source-keys";
 
 // Export→stage→attach for ONE Onshape element, released or in a workspace
 // (`runOnshapeElementSync`), and the PDF export of one released drawing.
@@ -56,7 +68,9 @@ export interface SyncOnshapeElementInput {
   documentId: string;
   versionId: string; // released version, or workspace id when sourceWvm is "w"
   sourceWvm?: "w" | "v"; // path segment for export/thumbnail calls; default "v"
-  // Workspace ids are mutable, so a Part Studio model id also hashes this.
+  // Workspace ids are mutable, so a Part Studio model id also hashes this:
+  // the workspace's parts state (`workspaceSourceStates`), not Onshape's part
+  // microversion, which is the whole document's.
   sourceMicroversionId?: string;
   modelElementId: string; // released Part Studio OR Assembly element to export
   modelElementKind: "partstudio" | "assembly"; // from the revision's elementType (0/1)
@@ -79,10 +93,6 @@ const POLL_MAX_DELAY_MS = 30000;
 const WEBHOOK_WAIT_MS = 5 * 60 * 1000;
 const WAIT_BUDGET_MS = 60 * 60 * 1000;
 const TRANSLATION_COMPLETE_EVENT = "carbon/onshape-translation-complete";
-
-// An assembly's last export is recorded per item as a mapping row, so a push of
-// an unchanged assembly reuses its model instead of exporting it again.
-const MODEL_SOURCE_ENTITY_TYPE = "modelSource";
 
 // Size caps — the SAME limits Carbon enforces on manual uploads (CadModel.tsx /
 // document upload), since synced assets land in the same buckets. The raw model
@@ -383,44 +393,13 @@ export function assertSelection(input: SyncOnshapeElementInput) {
   }
 }
 
-// Immutable generation: old optimizer/thumbnail/compact jobs can only finish
-// against their old model ID. Replays of this exact released source share one
-// ID; a different part/configuration cannot reuse its artifacts. A whole
-// assembly, or a workspace part with no microversion, has no fixed source to
-// name; the attach names it by its bytes instead. The tag changed with the
-// export format: a GLTF generation of the same source already holds the
-// "selected-part-v1" id, and reusing it would fail the attach's identity check.
-export function partSourceId(input: SyncOnshapeElementInput): string | null {
-  if (
-    input.modelElementKind !== "partstudio" ||
-    (input.sourceWvm === "w" && !input.sourceMicroversionId)
-  ) {
-    return null;
-  }
-  return `onshape-${createHash("sha256")
-    .update(
-      JSON.stringify([
-        "selected-part-step-v1",
-        input.companyId,
-        input.itemId,
-        input.documentId,
-        input.versionId,
-        input.modelElementId,
-        input.partId,
-        input.configuration ?? "",
-        ...(input.sourceWvm === "w" ? [input.sourceMicroversionId] : [])
-      ])
-    )
-    .digest("hex")
-    .slice(0, 40)}`;
-}
-
 /**
  * What an assembly export is made from: the released version, or the
- * workspace's current microversion, which changes on any edit to the document
- * (an assembly's own microversion would miss an edit to a part it uses). Null
- * for a part (named by partSourceId), or when the microversion cannot be read:
- * the sync then exports as before.
+ * workspace's assemblies state (`workspaceSourceStates`), which changes with
+ * any Part Studio, assembly or Studio in the document but not with a drawing (an
+ * assembly's own microversion would miss an edit to a part it uses). Null for
+ * a part (named by partSourceId), or when the state cannot be read: the sync
+ * then exports as before.
  */
 async function assemblySourceKey(
   carbon: CarbonClient,
@@ -432,41 +411,18 @@ async function assemblySourceKey(
   if (input.sourceWvm === "w") {
     try {
       const client = await onshapeClient(carbon, input);
-      state = await client.getCurrentMicroversion(
-        input.documentId,
-        input.versionId
-      );
+      state = (
+        await client.getWorkspaceSourceStates(input.documentId, input.versionId)
+      ).assemblies;
     } catch (error) {
       console.warn(
-        `onshape sync: could not read the microversion of ${label}; exporting`,
+        `onshape sync: could not read the source state of ${label}; exporting`,
         error
       );
       return null;
     }
   }
   return assemblySourceKeyAt(input, state);
-}
-
-/** The assembly source key once its version or microversion (`state`) is known. */
-export function assemblySourceKeyAt(
-  input: Pick<
-    SyncOnshapeElementInput,
-    "documentId" | "sourceWvm" | "modelElementId" | "configuration"
-  >,
-  state: string
-): string {
-  return createHash("sha256")
-    .update(
-      JSON.stringify([
-        "assembly-source-v1",
-        input.documentId,
-        input.sourceWvm ?? "v",
-        state,
-        input.modelElementId,
-        input.configuration ?? ""
-      ])
-    )
-    .digest("hex");
 }
 
 /** The item's current model, when it was exported from `source`. */
@@ -512,29 +468,6 @@ async function currentModelFromSource(
     throw new Error(`existing model lookup failed: ${model.error.message}`);
   }
   return model.data ? { id: model.data.id, name: model.data.name } : null;
-}
-
-/**
- * The model the last export from `source` produced, when the item still uses
- * it. A different source, or a model replaced since (by hand or another sync),
- * means the export runs again.
- */
-export function reusableModelUploadId(
-  mapping: { externalId: string | null; metadata: unknown } | null,
-  itemModelUploadId: string | null | undefined,
-  source: string
-): string | null {
-  const modelUploadId = (
-    mapping?.metadata as { modelUploadId?: unknown } | null
-  )?.modelUploadId;
-  if (
-    mapping?.externalId !== source ||
-    typeof modelUploadId !== "string" ||
-    itemModelUploadId !== modelUploadId
-  ) {
-    return null;
-  }
-  return modelUploadId;
 }
 
 /** Remember which source the item's new model came from. Only an

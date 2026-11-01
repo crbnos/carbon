@@ -210,10 +210,18 @@ export const OnshapeSync = ({
   };
 
   const upsertBomFetcher = useAction<typeof onShapeSyncAction>({
-    onSuccess: () => {
+    onSuccess: (result) => {
       setBomRows([]);
       setLastSyncedAt(new Date().toISOString());
-      toast.success(t`BOM synced successfully`);
+      // A sub-assembly a change notice holds, or a released one, keeps its BOM.
+      const skipped =
+        "data" in result && result.data ? result.data.skipped : [];
+      if (skipped.length > 0) {
+        const notWritten = skipped.join("; ");
+        toast.warning(t`BOM synced. Not written: ${notWritten}`);
+      } else {
+        toast.success(t`BOM synced successfully`);
+      }
     }
   });
   const saveBom = () => {

@@ -29,6 +29,7 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
+import { postingFailure } from "~/modules/inventory/inventory.service";
 import { replanAfterItemChange } from "~/modules/production/production.server";
 import {
   booleanField,
@@ -1101,6 +1102,12 @@ export const createMethodVersion = defineServiceFn({
  * or updates the parts it names and rewrites the method's materials. The
  * method's item is then mapped to the Onshape document, version and element
  * (replacing its earlier mapping), stamped with the sync time.
+ *
+ * It writes nothing into a Draft a change notice holds, or into a released
+ * (Production) revision when release control enforces it, as the Onshape
+ * panel refuses them (`loadMethodWriteRefusals`): a refused method given is
+ * a `rule` error and nothing is written; a refused sub-assembly keeps its
+ * BOM and is listed in `skipped` as `<part number>: <reason>`.
  */
 export const syncOnshapeMethod = defineServiceFn({
   input: z.object({
@@ -1135,7 +1142,8 @@ export const syncOnshapeMethod = defineServiceFn({
       service.syncMakeMethod
     );
     if (synced.error) {
-      return ctx.error("internal", "Failed to sync onshape data", synced.error);
+      // Below 500 the sync refused, in words for the person.
+      return postingFailure(ctx, synced.error, "Failed to sync onshape data");
     }
 
     const cleared = await ctx.asSystem.supabase
@@ -1168,7 +1176,7 @@ export const syncOnshapeMethod = defineServiceFn({
       });
     }
 
-    return { itemId };
+    return { itemId, skipped: synced.data.skipped };
   }
 });
 

@@ -5,6 +5,7 @@
 import { carbonFor } from "@carbon/api/carbon.server";
 import type { OnshapePropertyValue } from "@carbon/ee";
 import {
+  bomColumnIds,
   MAPPABLE_VALUE_TYPES,
   parseDescriptionModes,
   parsePropertyMap
@@ -38,7 +39,8 @@ const querySchema = z.object({
   documentId: z.string().min(1),
   wv: z.enum(["w", "v", "m"]),
   wvId: z.string().min(1),
-  elementId: z.string().min(1)
+  elementId: z.string().min(1),
+  configuration: z.string().nullish()
 });
 
 /** Fields page data for the element the panel is open on. */
@@ -53,12 +55,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     documentId: url.searchParams.get("documentId"),
     wv: url.searchParams.get("wv"),
     wvId: url.searchParams.get("wvId"),
-    elementId: url.searchParams.get("elementId")
+    elementId: url.searchParams.get("elementId"),
+    configuration: url.searchParams.get("configuration")
   });
   if (!parsed.success) {
     return data({ error: "Missing Onshape context" }, { status: 400 });
   }
-  const { documentId, wv, wvId, elementId } = parsed.data;
+  const { documentId, wv, wvId, elementId, configuration } = parsed.data;
 
   const onshape = await getOnshapeClient(
     client,
@@ -86,9 +89,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // A part studio's properties live on its parts: take the union across them.
   let properties: OnshapePropertyValue[];
+  let isAssembly = false;
   try {
     const elements = await onshape.client.getElementsIn(document);
     const element = elements.find((e) => e.id === elementId);
+    isAssembly = element?.elementType === "ASSEMBLY";
     if (element?.elementType === "PARTSTUDIO") {
       // Hidden parts count: a property only on a hidden part is still mappable.
       const parts = await onshape.client.getPartsInElement(document, elementId);
@@ -119,6 +124,67 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return data(failure.body, { status: failure.status });
   }
 
+  // An assembly's BOM columns: the Item and Quantity rows show the one
+  // detected, or offer the columns when none is. Non-fatal: the rest of the
+  // page needs no BOM.
+  let bom: {
+    columns: {
+      propertyId: string;
+      name: string;
+      valueType: string;
+      propertyName?: string;
+    }[];
+    detected: { item: string | null; quantity: string | null };
+  } | null = null;
+  if (isAssembly) {
+    try {
+      // Only the headers are used, and the top level has them all. The
+      // configuration is the one a push of this element reads.
+      const payload = (await onshape.client.getBillOfMaterialsIn(
+        document,
+        elementId,
+        configuration,
+        { topLevelOnly: true }
+      )) as { headers?: unknown };
+      const headers = (
+        Array.isArray(payload?.headers) ? payload.headers : []
+      ).flatMap((header: Record<string, unknown>) =>
+        typeof header?.id === "string" && typeof header.name === "string"
+          ? [
+              {
+                id: header.id,
+                name: header.name,
+                propertyName: header.propertyName,
+                valueType:
+                  typeof header.valueType === "string"
+                    ? header.valueType
+                    : "STRING"
+              }
+            ]
+          : []
+      );
+      const detected = bomColumnIds(headers);
+      bom = {
+        columns: headers.map((header) => ({
+          propertyId: header.id,
+          name: header.name,
+          valueType: header.valueType,
+          ...(typeof header.propertyName === "string"
+            ? { propertyName: header.propertyName }
+            : {})
+        })),
+        detected: { item: detected.item, quantity: detected.quantity }
+      };
+    } catch (error) {
+      logger.warn("Failed to read the BOM columns for the Fields page", {
+        companyId,
+        documentId,
+        elementId,
+        error
+      });
+    }
+  }
+
   const reads = await Promise.all([
     client
       .from("companyIntegration")
@@ -127,7 +193,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("companyId", companyId)
       .maybeSingle(),
     loadPartCustomFieldDefinitions(client, companyId),
-    loadPlanOptions(client, companyId)
+    loadPlanOptions(client, companyId),
+    // Changing where part numbers come from re-matches these on the next push.
+    client
+      .from("externalIntegrationMapping")
+      .select("entityId", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+      .eq("entityType", "item")
   ]).catch((error) => {
     logger.error("Failed to read custom fields", { companyId, error });
     return null;
@@ -135,7 +208,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!reads) {
     return data({ error: "Failed to read custom fields" }, { status: 500 });
   }
-  const [integration, definitions, options] = reads;
+  const [integration, definitions, options, links] = reads;
+  if (links.error) {
+    logger.warn("Failed to count the panel's item links", {
+      companyId,
+      error: links.error
+    });
+  }
   if (integration.error) {
     logger.error("Failed to read the property map", {
       companyId,
@@ -158,7 +237,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       descriptionModes: parseDescriptionModes(integration.data?.metadata),
       pushDefaults: options.defaults,
       definitions,
-      units: options.unitsOfMeasure
+      units: options.unitsOfMeasure,
+      bom,
+      // A failed count only loses the warning.
+      linkedItems: links.count ?? 0
     },
     { headers: { "Cache-Control": "no-store" } }
   );

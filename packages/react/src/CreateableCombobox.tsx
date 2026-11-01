@@ -44,6 +44,9 @@ export type CreatableComboboxProps = Omit<
   inlineAddLabel?: string;
   onChange?: (selected: string) => void;
   onCreateOption?: (inputValue: string) => void;
+  /** The create row's text for a search, in place of "Create …". The row then
+   * shows only while searching, since its text needs the search. */
+  createOptionText?: (search: string) => string;
   itemHeight?: number;
 };
 
@@ -65,6 +68,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       inline,
       inlineAddLabel,
       onCreateOption,
+      createOptionText,
       ...props
     },
     ref
@@ -215,7 +219,8 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
                 onSearchChange={setSearch}
                 creatable
                 createLabel={label}
-                showCreateOptionOnEmpty
+                createText={createOptionText}
+                showCreateOptionOnEmpty={!createOptionText}
                 getItemValue={getCreatableComboboxItemValue}
                 isChecked={(item) =>
                   !!selected?.includes(item.value) || item.value === value

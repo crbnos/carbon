@@ -4,13 +4,16 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  chooseSyncMethod,
   diffMethod,
   duplicateMethodOperationStep,
   getItemDemand,
   getLockVerdict,
   getUnreleasedChangeOrderIssue,
   getUnreleasedChangeOrderItems,
-  LOCKED_REVISION_MESSAGE
+  LOCKED_REVISION_MESSAGE,
+  methodWriteRefusal,
+  pickSyncDraft
 } from "./items.service";
 
 // A minimal live methodMaterial row (only the fields diffMethod compares + id).
@@ -682,6 +685,116 @@ describe("getLockVerdict", () => {
       );
     }
   );
+});
+
+// The verdict both Onshape writers share: the panel's push and the sync
+// connection's BOM sync (`loadMethodWriteRefusals`).
+describe("methodWriteRefusal", () => {
+  it.each(["off", "warn", "enforce"] as const)(
+    "refuses a change notice's Draft under release control %s",
+    (releaseControl) => {
+      expect(
+        methodWriteRefusal(
+          { changeOrderId: "co_1", revisionStatus: "Design" },
+          { noticeNumber: "ECO-000001", releaseControl }
+        )
+      ).toBe(
+        "its make method is a Draft on change notice ECO-000001. Change the BOM there."
+      );
+    }
+  );
+
+  it("refuses a change notice's Draft whose number could not be read", () => {
+    expect(
+      methodWriteRefusal(
+        { changeOrderId: "co_1", revisionStatus: null },
+        { noticeNumber: undefined, releaseControl: "off" }
+      )
+    ).toBe(
+      "its make method is a Draft on a change notice. Change the BOM there."
+    );
+  });
+
+  it.each([
+    ["enforce", LOCKED_REVISION_MESSAGE],
+    ["warn", null],
+    ["off", null]
+  ] as const)(
+    "gives a released revision under release control %s the BOM editor's verdict",
+    (releaseControl, refusal) => {
+      expect(
+        methodWriteRefusal(
+          { changeOrderId: null, revisionStatus: "Production" },
+          { releaseControl }
+        )
+      ).toBe(refusal);
+    }
+  );
+
+  it("writes a method no notice holds on a revision that is not released", () => {
+    expect(
+      methodWriteRefusal(
+        { changeOrderId: null, revisionStatus: "Design" },
+        { releaseControl: "enforce" }
+      )
+    ).toBeNull();
+  });
+});
+
+describe("chooseSyncMethod", () => {
+  it("skips a refused method, Draft or Active, and keeps its id", () => {
+    expect(
+      chooseSyncMethod({ id: "mm_draft", status: "Draft" }, "held")
+    ).toEqual({ action: "skip", makeMethodId: "mm_draft", reason: "held" });
+    expect(
+      chooseSyncMethod({ id: "mm_active", status: "Active" }, "released")
+    ).toEqual({
+      action: "skip",
+      makeMethodId: "mm_active",
+      reason: "released"
+    });
+  });
+
+  it("rewrites a Draft no notice holds", () => {
+    expect(
+      chooseSyncMethod({ id: "mm_draft", status: "Draft" }, undefined)
+    ).toEqual({ action: "write", makeMethodId: "mm_draft" });
+  });
+
+  it("never edits an Active method: it goes through a Draft", () => {
+    expect(
+      chooseSyncMethod({ id: "mm_active", status: "Active" }, null)
+    ).toEqual({ action: "draftFromActive", activeMakeMethodId: "mm_active" });
+  });
+});
+
+describe("pickSyncDraft", () => {
+  it("takes the newest Draft no change notice holds", () => {
+    expect(
+      pickSyncDraft([
+        { id: "v2", version: 2, changeOrderId: null },
+        { id: "v4", version: 4, changeOrderId: null },
+        { id: "v3", version: 3, changeOrderId: null }
+      ])?.id
+    ).toBe("v4");
+  });
+
+  // A notice's Draft is max(version) + 1, so a newest-first pick lands on it.
+  it("passes over a newer Draft a change notice holds", () => {
+    expect(
+      pickSyncDraft([
+        { id: "v2", version: 2, changeOrderId: null },
+        { id: "v3", version: 3, changeOrderId: "co_1" }
+      ])?.id
+    ).toBe("v2");
+  });
+
+  it("finds none when every Draft is a change notice's", () => {
+    expect(
+      pickSyncDraft([{ id: "v2", version: 2, changeOrderId: "co_1" }])
+    ).toBeNull();
+    expect(pickSyncDraft([])).toBeNull();
+  });
 });
 
 type Row = Record<string, unknown> | null;

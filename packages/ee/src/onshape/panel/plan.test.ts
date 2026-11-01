@@ -5,6 +5,9 @@
 import { describe, expect, it } from "vitest";
 import type { OnshapeBomNode } from "./bom";
 import {
+  assemblyAssetRows,
+  assemblyDrawingDocuments,
+  assemblyDrawingTargets,
   assemblyTextChanges,
   bomLineItemType,
   buildAssemblyPlan,
@@ -28,6 +31,9 @@ import {
   proposeItem,
   proposeMappedItem,
   reconcileMethodForReplenishment,
+  rowDrawingKey,
+  withAssemblyDrawings,
+  withCurrentFiles,
   withRefusedMethods
 } from "./plan";
 import { DEFAULT_PUSH_DEFAULTS } from "./preferences";
@@ -400,6 +406,19 @@ describe("buildPartPlan", () => {
     });
     expect(rows[0]?.action).toBe("unchanged");
     expect(rows[0]?.changes).toEqual([]);
+  });
+
+  it("judges a workspace part unchanged by its workspace's source state, not Onshape's part microversion", () => {
+    expect(
+      planParts({ mappings: linked("ws-1"), sourceState: "ws-1" })[0]?.action
+    ).toBe("unchanged");
+    expect(
+      planParts({ mappings: linked("m2"), sourceState: "ws-2" })[0]?.action
+    ).toBe("update");
+    // Unread: the part exports, even though its part microversion matches.
+    expect(
+      planParts({ mappings: linked("m2"), sourceState: null })[0]
+    ).toMatchObject({ action: "update", microversionId: null });
   });
 
   it("treats a mapping whose item is gone as no link", () => {
@@ -845,6 +864,21 @@ describe("buildReleasePlan", () => {
       options,
       ...over
     });
+
+  it("marks a revision Onshape made obsolete and still plans it as usual", () => {
+    const plan = planRelease({
+      release: {
+        ...release,
+        items: [releaseItem({ partNumber: "PAD-005", obsolete: true })]
+      }
+    });
+    expect(plan.items[0]).toMatchObject({
+      partNumber: "PAD-005",
+      action: "create",
+      obsolete: true
+    });
+    expect(planRelease().items.some((item) => item.obsolete)).toBe(false);
+  });
 
   it("classifies reuse / revision / create, children and drawings", () => {
     const plan = planRelease({
@@ -2058,5 +2092,305 @@ describe("mergeExistingItemEdits on top of mapped values", () => {
       target
     );
     expect(overridden.ok && overridden.changed).toEqual({});
+  });
+});
+
+describe("assembly row assets", () => {
+  const source = (
+    over: Partial<NonNullable<OnshapeBomNode["itemSource"]>>
+  ) => ({
+    documentId: "d",
+    elementId: "ps",
+    wvmType: "w",
+    wvmId: "w1",
+    ...over
+  });
+  const nodes: OnshapeBomNode[] = [
+    node({
+      index: "1",
+      partNumber: "SUB-110",
+      name: "Frame",
+      itemSource: source({ elementId: "sub" }),
+      children: [
+        node({
+          index: "1.1",
+          level: 2,
+          partNumber: "BRK-010",
+          itemSource: source({ partId: "JHD" })
+        })
+      ]
+    }),
+    node({
+      index: "2",
+      partNumber: "PLT-020",
+      itemSource: source({ partId: "JKD" })
+    }),
+    node({
+      index: "3",
+      partNumber: "NUT-M6",
+      standardContent: true,
+      itemSource: source({ documentId: "std", elementId: "nut", partId: "N" })
+    })
+  ];
+  const plan = (over: Partial<AssemblyInput> = {}) =>
+    planAssembly({ nodes, linkedItemIds: new Set(), ...over });
+  const assetsOf = (built: ReturnType<typeof planAssembly>) =>
+    Object.fromEntries(
+      built.items.map((item) => [
+        item.partNumber,
+        item.assets ? (item.assets.model?.kind ?? "none") : "no files"
+      ])
+    );
+
+  it("offers a STEP model on new parts and sub-assemblies, none on standard content", () => {
+    expect(assetsOf(plan())).toEqual({
+      "SUB-110": "assembly",
+      "BRK-010": "partstudio",
+      "PLT-020": "partstudio",
+      "NUT-M6": "no files"
+    });
+    expect(plan().root.assets).toEqual({ model: null, drawings: [] });
+  });
+
+  it("offers files on an item already linked to its row, and on an unlinked item", () => {
+    const built = plan({
+      items: [
+        { id: "brk", readableId: "BRK-010", revision: "0", name: "B" },
+        { id: "plt", readableId: "PLT-020", revision: "0", name: "P" }
+      ],
+      linkedItemIdByExternalId: new Map([["d:ps:JHD", "brk"]]),
+      linkedItemIds: new Set(["brk"])
+    });
+    expect(assetsOf(built)).toMatchObject({
+      "BRK-010": "partstudio",
+      "PLT-020": "partstudio"
+    });
+  });
+
+  it("offers nothing on an item linked to another source, or a source linked to another item", () => {
+    const built = plan({
+      items: [
+        { id: "brk", readableId: "BRK-010", revision: "0", name: "B" },
+        { id: "plt", readableId: "PLT-020", revision: "0", name: "P" },
+        { id: "other", readableId: "OTHER-1", revision: "0", name: "O" }
+      ],
+      linkedItemIdByExternalId: new Map([["d:ps:JKD", "other"]]),
+      linkedItemIds: new Set(["brk", "other"])
+    });
+    expect(assetsOf(built)).toMatchObject({
+      "BRK-010": "no files",
+      "PLT-020": "no files"
+    });
+  });
+
+  it("offers nothing on a part released in Carbon, or on a released root", () => {
+    const built = plan({
+      ...releasedRoot,
+      items: [
+        ...releasedRoot.items,
+        { id: "brk", readableId: "BRK-010", revision: "A", name: "B" }
+      ],
+      released: new Map([
+        ["BRK-010", { itemId: "brk", revision: "A" }],
+        ["WB-100", { itemId: "root", revision: "A" }]
+      ])
+    });
+    expect(assetsOf(built)["BRK-010"]).toBe("no files");
+    expect(built.root.assets).toBeUndefined();
+  });
+
+  it("offers nothing when two part numbers come from one source", () => {
+    const built = plan({
+      nodes: [
+        node({
+          index: "1",
+          partNumber: "PLT-020",
+          itemSource: source({ partId: "JKD" })
+        }),
+        node({
+          index: "2",
+          partNumber: "PLT-021",
+          itemSource: source({ partId: "JKD" })
+        })
+      ]
+    });
+    expect(assetsOf(built)).toEqual({
+      "PLT-020": "no files",
+      "PLT-021": "no files"
+    });
+  });
+
+  it("lists the root's document and each source document once", () => {
+    expect(
+      assemblyDrawingDocuments(
+        plan({
+          nodes: [
+            ...nodes,
+            node({
+              index: "4",
+              partNumber: "PIN-030",
+              itemSource: source({
+                documentId: "lib",
+                wvmType: "v",
+                wvmId: "v7",
+                partId: "P"
+              })
+            })
+          ]
+        })
+      )
+    ).toEqual([
+      { documentId: "d", wvm: "w", wvmId: "w1" },
+      { documentId: "lib", wvm: "v", wvmId: "v7" }
+    ]);
+  });
+
+  it("names every row of the tree as a drawing target, rows without files included", () => {
+    expect(
+      assemblyDrawingTargets(plan(), nodes).map((target) => [
+        target.partNumber,
+        target.kind
+      ])
+    ).toEqual([
+      ["WB-100", "assembly"],
+      ["SUB-110", "assembly"],
+      ["BRK-010", "partstudio"],
+      ["PLT-020", "partstudio"],
+      ["NUT-M6", "partstudio"]
+    ]);
+  });
+
+  it("puts a tied drawing on its row and drops one tied to a row without files", () => {
+    const drawing = (elementId: string) => ({
+      documentId: "d",
+      wvm: "w" as const,
+      wvmId: "w1",
+      elementId,
+      name: `Drawing ${elementId}`,
+      microversionId: "mv",
+      references: []
+    });
+    const placed = withAssemblyDrawings(
+      plan(),
+      {
+        ties: [
+          { partNumber: "WB-100", drawing: drawing("a") },
+          { partNumber: "PLT-020", drawing: drawing("b") },
+          { partNumber: "PLT-020", drawing: drawing("c") },
+          { partNumber: "NUT-M6", drawing: drawing("d") }
+        ],
+        skipped: [{ elementId: "e", name: "Drawing e", reason: "not-in-push" }]
+      },
+      ["one document unread"]
+    );
+    expect(placed.plan.root.assets?.drawings).toEqual([
+      { elementId: "a", name: "Drawing a" }
+    ]);
+    expect(
+      placed.plan.items.find((item) => item.partNumber === "PLT-020")?.assets
+        ?.drawings
+    ).toEqual([
+      { elementId: "b", name: "Drawing b" },
+      { elementId: "c", name: "Drawing c" }
+    ]);
+    expect(placed.ties.map((tie) => tie.drawing.elementId)).toEqual([
+      "a",
+      "b",
+      "c"
+    ]);
+    expect(placed.plan.skippedDrawings).toHaveLength(1);
+    expect(placed.plan.fileWarnings).toEqual(["one document unread"]);
+  });
+  it("builds the picked rows' exports on their items, counting unlinked and current files", () => {
+    const drawing = (elementId: string) => ({
+      documentId: "d",
+      wvm: "w" as const,
+      wvmId: "w1",
+      elementId,
+      name: `Drawing ${elementId}`,
+      microversionId: "mv",
+      references: []
+    });
+    const placed = withAssemblyDrawings(plan(), {
+      ties: [
+        { partNumber: "WB-100", drawing: drawing("a") },
+        { partNumber: "PLT-020", drawing: drawing("b") }
+      ],
+      skipped: []
+    });
+    const marked = withCurrentFiles(placed.plan, {
+      models: new Set(["PLT-020"]),
+      drawings: new Set([rowDrawingKey("PLT-020", "b")])
+    });
+    const rows = assemblyAssetRows({
+      plan: marked,
+      ties: placed.ties,
+      modelRows: new Set(["PLT-020", "BRK-010"]),
+      drawingRows: new Set(["WB-100", "PLT-020"]),
+      // BRK-010's item ended up linked elsewhere.
+      itemIdFor: (partNumber) =>
+        partNumber === "BRK-010" ? null : `item-${partNumber}`
+    });
+    expect(rows.models).toEqual([
+      {
+        itemId: "item-PLT-020",
+        partNumber: "PLT-020",
+        kind: "partstudio",
+        documentId: "d",
+        wvm: "w",
+        wvmId: "w1",
+        elementId: "ps",
+        partId: "JKD",
+        configuration: null
+      }
+    ]);
+    expect(
+      rows.drawings.map((row) => [
+        row.itemId,
+        row.drawingElementId,
+        row.target.kind
+      ])
+    ).toEqual([
+      ["item-WB-100", "a", "assembly"],
+      ["item-PLT-020", "b", "partstudio"]
+    ]);
+    expect(rows.unlinked).toBe(1);
+    expect(rows.current).toEqual({ models: 1, drawings: 1 });
+  });
+
+  it("marks files Carbon holds from an earlier state, and the root's own model", () => {
+    const placed = withAssemblyDrawings(plan(), {
+      ties: [
+        {
+          partNumber: "PLT-020",
+          drawing: {
+            documentId: "d",
+            wvm: "w",
+            wvmId: "w1",
+            elementId: "b",
+            name: "Drawing b",
+            microversionId: "mv",
+            references: []
+          }
+        }
+      ],
+      skipped: []
+    });
+    const marked = withCurrentFiles(placed.plan, {
+      models: new Set(),
+      drawings: new Set(),
+      outOfDate: {
+        models: new Set(["PLT-020"]),
+        drawings: new Set([rowDrawingKey("PLT-020", "b")])
+      },
+      rootModel: true
+    });
+    const plate = marked.items.find((item) => item.partNumber === "PLT-020");
+    expect(plate?.assets?.modelOutOfDate).toBe(true);
+    expect(plate?.assets?.modelCurrent).toBeUndefined();
+    expect(plate?.assets?.drawings).toEqual([
+      { elementId: "b", name: "Drawing b", outOfDate: true }
+    ]);
+    expect(marked.root.modelCurrent).toBe(true);
   });
 });
