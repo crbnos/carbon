@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { hasPermission } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
@@ -201,10 +200,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId, permissions } = await requirePermissions(
-    request,
-    {}
-  );
+  const { client, companyId, userId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
   const intent = formData.get("intent");
@@ -229,13 +225,7 @@ export async function action({ request }: ActionFunctionArgs) {
       ...validation.data,
       companyId,
       userId,
-      employeeId: userId,
-      mustBeAssigned: !hasPermission(
-        permissions,
-        "service",
-        "update",
-        companyId
-      )
+      employeeId: userId
     });
     if (result.error || !result.data) {
       if (result.error?.cause) {
@@ -1368,10 +1358,7 @@ function AddServiceJob({
       <div className="flex max-h-72 flex-col gap-2 overflow-y-auto">
         {serviceJobs.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            <Trans>
-              You have no other open service jobs. A job shows here when you
-              lead it or are assigned to it this week.
-            </Trans>
+            <Trans>There are no other open service jobs.</Trans>
           </p>
         ) : (
           serviceJobs.map((job) => (

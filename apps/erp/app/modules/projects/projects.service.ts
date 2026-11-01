@@ -14547,8 +14547,8 @@ export async function moveActionPegsToSupply(
  *
  * Service time is read next to it, never mixed in: `serviceRows` has one row
  * per service job the employee has time on or is assigned to that week, and
- * `serviceJobs` the employee's open jobs (assigned that week, or lead) that
- * Add row offers. Service time never goes through submit or approval.
+ * `serviceJobs` every open job in the company, which Add row offers: anyone
+ * may log time on a job, not only its assignee. Service time never goes through submit or approval.
  */
 export async function getTimesheetWeekView(
   client: SupabaseClient<Database>,
@@ -14570,7 +14570,7 @@ export async function getTimesheetWeekView(
     job,
     serviceTime,
     serviceAssignments,
-    leadServiceJobs
+    openServiceJobs
   ] = await Promise.all([
     getTimesheetWeek(client, {
       companyId,
@@ -14612,13 +14612,12 @@ export async function getTimesheetWeekView(
       .eq("companyId", companyId)
       .gte("scheduledDate", weekStart)
       .lte("scheduledDate", weekEnd),
-    // Add row also offers the open jobs the employee leads.
+    // Add row offers every open job.
     client
       .from("serviceJob")
       .select(
         "id, serviceJobId, status, customer:customer!serviceJob_customerId_fkey(name)"
       )
-      .eq("assignee", employeeId)
       .eq("companyId", companyId)
       .not("status", "in", '("Completed","Invoiced","Cancelled")')
   ]);
@@ -14630,7 +14629,7 @@ export async function getTimesheetWeekView(
     ["the employee job", job],
     ["the service time", serviceTime],
     ["the service assignments", serviceAssignments],
-    ["the service jobs", leadServiceJobs]
+    ["the service jobs", openServiceJobs]
   ] as const) {
     if (result.error) {
       logger.error("Failed to load the timesheet week", {
@@ -14698,10 +14697,7 @@ export async function getTimesheetWeekView(
     }))
   );
   const serviceJobs = new Map<string, ReturnType<typeof serviceJobOf>>();
-  for (const serviceJob of [
-    ...(serviceAssignments.data ?? []).map((row) => row.serviceJob),
-    ...(leadServiceJobs.data ?? [])
-  ]) {
+  for (const serviceJob of openServiceJobs.data ?? []) {
     if (!isServiceJobLocked(serviceJob.status)) {
       serviceJobs.set(serviceJob.id, serviceJobOf(serviceJob));
     }

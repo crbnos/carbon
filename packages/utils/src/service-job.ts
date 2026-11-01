@@ -97,40 +97,8 @@ export type ServiceJobRuleFields = {
   estimateStatus: ServiceEstimateStatus | null;
 };
 
-/**
- * True when the job needs an accepted estimate before it completes: a Fixed
- * Price job, or a Billable job from an RMA line (a Return for Service line).
- * A job found not repairable completes without one, so its evaluation time
- * can be billed. Warranty and Contract jobs never need one.
- */
-export function needsAcceptedEstimate(
-  job: Pick<
-    ServiceJobRuleFields,
-    "coverage" | "billingMethod" | "salesReturnOrderLineId" | "repairable"
-  >
-): boolean {
-  if (job.repairable === false) return false;
-  if (job.coverage !== "Billable") return false;
-  return job.billingMethod === "Fixed Price" || !!job.salesReturnOrderLineId;
-}
-
-/** False while the job needs an accepted estimate and has none. */
-export function canComplete(
-  job: Pick<
-    ServiceJobRuleFields,
-    | "coverage"
-    | "billingMethod"
-    | "salesReturnOrderLineId"
-    | "repairable"
-    | "estimateStatus"
-  >
-): boolean {
-  return !needsAcceptedEstimate(job) || job.estimateStatus === "Accepted";
-}
-
 export type ServiceJobPrimaryAction =
   | "Start"
-  | "Send Estimate"
   | "Complete"
   | "Record Response"
   | "Create Invoice";
@@ -146,7 +114,7 @@ export function serviceJobPrimaryAction(
     case "Open":
       return "Start";
     case "In Progress":
-      return canComplete(job) ? "Complete" : "Send Estimate";
+      return "Complete";
     case "Awaiting Approval":
       return job.coverage === "Billable" ? "Record Response" : null;
     case "Completed":

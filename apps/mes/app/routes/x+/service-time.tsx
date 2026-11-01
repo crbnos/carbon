@@ -47,7 +47,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // job must be this company's.
   const job = await serviceRole
     .from("serviceJob")
-    .select("id, serviceJobId, status, coverage, signedByName, signaturePath")
+    .select("id, serviceJobId, status, coverage")
     .eq("id", serviceJobId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -190,8 +190,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const completed = await completeServiceJob(serviceRole, {
       serviceJobId,
-      signedByName: job.data.signedByName ?? undefined,
-      signaturePath: job.data.signaturePath ?? undefined,
       companyId,
       userId
     });

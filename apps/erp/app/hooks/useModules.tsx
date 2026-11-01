@@ -13,6 +13,7 @@ import {
   LuFiles,
   LuFolderCheck,
   LuFolderKanban,
+  LuHeadphones,
   LuHeartHandshake,
   LuLandmark,
   LuSettings,
@@ -20,8 +21,7 @@ import {
   LuShoppingCart,
   LuTvMinimalPlay,
   LuUsers,
-  LuWorkflow,
-  LuWrench
+  LuWorkflow
 } from "react-icons/lu";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
@@ -142,7 +142,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
       permission: "service",
       name: t`Service`,
       to: path.to.serviceJobs,
-      icon: LuWrench
+      icon: LuHeadphones
     },
     {
       key: "settings",

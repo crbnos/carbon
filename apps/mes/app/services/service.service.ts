@@ -375,14 +375,9 @@ export type ServiceJobTechnicianUpdate = {
   findings?: Json;
   resolution?: Json;
   repairable?: boolean | null;
-  signaturePath?: string;
-  signedByName?: string;
 };
 
-/**
- * Writes the technician's findings, resolution or repairable flag, or the
- * customer's signature.
- */
+/** Writes the technician's findings, resolution or repairable flag. */
 export async function updateServiceJobFields(
   client: Client,
   args: {
@@ -407,14 +402,12 @@ export async function updateServiceJobFields(
 
 /**
  * Completes the job in the ERP (`post-service-job`): posts its time to the
- * coverage account and stores the customer's signature, when there is one.
+ * coverage account.
  */
 export async function completeServiceJob(
   client: Client,
   args: {
     serviceJobId: string;
-    signedByName?: string;
-    signaturePath?: string;
     companyId: string;
     userId: string;
   }
@@ -424,9 +417,7 @@ export async function completeServiceJob(
     { client, companyId: args.companyId, userId: args.userId },
     {
       action: "complete",
-      serviceJobId: args.serviceJobId,
-      signedByName: args.signedByName,
-      signaturePath: args.signaturePath
+      serviceJobId: args.serviceJobId
     }
   );
 }
@@ -449,9 +440,9 @@ const serviceJobOf = (serviceJob: ServiceJobOfRow): ServiceTimeRowJob => ({
 
 /**
  * The employee's service week on My Time, as the ERP's: one row per job with
- * time or an assignment in the week (`rows`), and the open jobs the employee
- * is assigned to that week or leads, which **Add** offers (`jobs`). Three
- * reads, whatever the number of jobs.
+ * time or an assignment in the week (`rows`), and every open job in the
+ * company, which **Add** offers (`jobs`): anyone may log time on a job, not
+ * only its assignee. Three reads, whatever the number of jobs.
  */
 export async function getServiceTimeWeek(
   client: Client,
@@ -461,7 +452,7 @@ export async function getServiceTimeWeek(
   jobs: ServiceTimeRowJob[];
   error: PostgrestError | null;
 }> {
-  const [time, assignments, ledJobs] = await Promise.all([
+  const [time, assignments, openJobs] = await Promise.all([
     client
       .from("serviceJobTime")
       .select(
@@ -485,7 +476,6 @@ export async function getServiceTimeWeek(
       .select(
         "id, serviceJobId, status, customer:customer!serviceJob_customerId_fkey(name)"
       )
-      .eq("assignee", args.employeeId)
       .eq("companyId", args.companyId)
       .not("status", "in", CLOSED_STATUSES)
   ]);
@@ -504,10 +494,7 @@ export async function getServiceTimeWeek(
   );
 
   const jobs = new Map<string, ServiceTimeRowJob>();
-  for (const serviceJob of [
-    ...(assignments.data ?? []).map((row) => row.serviceJob),
-    ...(ledJobs.data ?? [])
-  ]) {
+  for (const serviceJob of openJobs.data ?? []) {
     if (!isServiceJobLocked(serviceJob.status)) {
       jobs.set(serviceJob.id, serviceJobOf(serviceJob));
     }
@@ -518,7 +505,7 @@ export async function getServiceTimeWeek(
     jobs: [...jobs.values()].sort((a, b) =>
       a.serviceJobId.localeCompare(b.serviceJobId)
     ),
-    error: time.error ?? assignments.error ?? ledJobs.error ?? null
+    error: time.error ?? assignments.error ?? openJobs.error ?? null
   };
 }
 
@@ -537,8 +524,8 @@ export const SERVICE_DAY_HAS_CLOCK_TIME =
  * company's service labor item (billable when the job is Billable), or
  * removed at 0. A total below the clock entries writes nothing
  * (`saved: false`) and comes back as `warning`. Refuses a Completed, Invoiced
- * or Cancelled job, a day with two manual entries and, with
- * `mustBeAssigned`, a job the employee neither leads nor is assigned to.
+ * or Cancelled job and a day with two manual entries. Any employee may log
+ * time on any open job, as on the clock.
  *
  * `client` is the service role: every read and write is scoped to
  * `companyId` here, which is the ownership check.
@@ -552,7 +539,6 @@ export async function saveServiceDayHours(
     serviceJobId: string;
     entryDate: string;
     hours: number;
-    mustBeAssigned: boolean;
   }
 ): Promise<{
   data: { saved: boolean; warning: string | null } | null;
@@ -565,7 +551,7 @@ export async function saveServiceDayHours(
 
   const job = await client
     .from("serviceJob")
-    .select("id, status, coverage, assignee")
+    .select("id, status, coverage")
     .eq("id", args.serviceJobId)
     .eq("companyId", args.companyId)
     .maybeSingle();
@@ -574,22 +560,6 @@ export async function saveServiceDayHours(
   }
   if (!job.data) return refused("Service job not found");
   if (isServiceJobLocked(job.data.status)) return refused(SERVICE_JOB_CLOSED);
-
-  if (args.mustBeAssigned && job.data.assignee !== args.employeeId) {
-    const assignment = await client
-      .from("serviceJobAssignment")
-      .select("id")
-      .eq("serviceJobId", job.data.id)
-      .eq("companyId", args.companyId)
-      .eq("employeeId", args.employeeId)
-      .limit(1);
-    if (assignment.error) {
-      return refused("Failed to load the job's assignments", assignment.error);
-    }
-    if ((assignment.data ?? []).length === 0) {
-      return refused("You can log time only on a job you are assigned to");
-    }
-  }
 
   const day = await client
     .from("serviceJobTime")

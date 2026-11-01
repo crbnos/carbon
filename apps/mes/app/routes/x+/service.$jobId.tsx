@@ -13,15 +13,11 @@ import { getLogger } from "@carbon/logger";
 import { useAction, useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
-  Badge,
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   cn,
+  DropdownMenuIcon,
+  DropdownMenuItem,
   Heading,
-  HStack,
   IconButton,
   isRichTextEmpty,
   Modal,
@@ -30,19 +26,22 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  RadioGroup,
-  RadioGroupButton,
   RichTextView,
-  SidebarTrigger,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  ToggleGroup,
+  ToggleGroupItem,
+  Tr,
   toast,
   useDebounce,
   useDisclosure,
-  useViewport,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import {
-  canComplete,
   datetime,
   formatQuantity,
   isServiceJobLocked,
@@ -53,22 +52,49 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { nanoid } from "nanoid";
 import { useMemo, useState } from "react";
-import { FaPause, FaPlay } from "react-icons/fa6";
-import { LuArrowLeft, LuCheck, LuCirclePlus, LuX } from "react-icons/lu";
+import { FaCheck } from "react-icons/fa6";
+import {
+  LuBarcode,
+  LuCalendarClock,
+  LuCheck,
+  LuCirclePlus,
+  LuClock,
+  LuExternalLink,
+  LuMapPin,
+  LuShieldCheck,
+  LuSquareUser,
+  LuTimer,
+  LuX
+} from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, useFetcher, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import FileDropzone from "~/components/FileDropzone";
-import { MesAppBar } from "~/components/MesAppBar";
+import {
+  IconButtonWithTooltip,
+  PauseButton,
+  PlayButton
+} from "~/components/JobOperation/components/Controls";
 import {
   CoverageBadge,
   ServiceJobAddPartModal,
-  ServiceJobSignature,
   ServiceJobStatus,
+  ServicePriorityIcon,
   useWorkSiteLabels,
   WarrantyBadge
 } from "~/components/ServiceJob";
+import {
+  WorkRecordChip,
+  WorkRecordDock,
+  WorkRecordPane,
+  WorkRecordSection,
+  WorkRecordShell,
+  WorkRecordStat,
+  WorkRecordStats,
+  WorkRecordTablePanel,
+  WorkRecordTitle
+} from "~/components/WorkRecord";
 import { useImageUpload, useUser } from "~/hooks";
 import { erpPosting } from "~/services/erp";
 import {
@@ -115,7 +141,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     job: job.data,
     time: time.data ?? [],
     items: items.data ?? [],
-    // The signature is shown on its own card, not with the photos.
+    // A signature captured before signatures were removed is not a photo.
     files: (files.data ?? []).filter((file) => file.name !== "signature.png"),
     runningClock: runningClock.data,
     today: datetime.today(timeZone).toString(),
@@ -265,7 +291,7 @@ function useUpdateField(jobId: string) {
   };
 }
 
-function ServiceJobNotesCard({
+function ServiceJobNotesSection({
   jobId,
   field,
   content: initialContent,
@@ -285,42 +311,39 @@ function ServiceJobNotesCard({
   );
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>
-          {field === "findings" ? (
-            <Trans>Findings</Trans>
-          ) : (
-            <Trans>Resolution</Trans>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLocked ? (
-          <RichTextView
-            content={initialContent}
-            empty={
-              field === "findings" ? (
-                <Trans>No findings</Trans>
-              ) : (
-                <Trans>No resolution</Trans>
-              )
-            }
-          />
+    <WorkRecordSection
+      title={
+        field === "findings" ? (
+          <Trans>Findings</Trans>
         ) : (
-          <Editor
-            initialValue={(initialContent ?? {}) as JSONContent}
-            onUpload={onUploadImage}
-            onChange={onUpdateContent}
-            className="[&_.is-empty]:text-muted-foreground min-h-[120px] py-3 px-4 border rounded-md w-full"
-          />
-        )}
-      </CardContent>
-    </Card>
+          <Trans>Resolution</Trans>
+        )
+      }
+    >
+      {isLocked ? (
+        <RichTextView
+          content={initialContent}
+          empty={
+            field === "findings" ? (
+              <Trans>No findings</Trans>
+            ) : (
+              <Trans>No resolution</Trans>
+            )
+          }
+        />
+      ) : (
+        <Editor
+          initialValue={(initialContent ?? {}) as JSONContent}
+          onUpload={onUploadImage}
+          onChange={onUpdateContent}
+          className="[&_.is-empty]:text-muted-foreground min-h-[120px] py-3 px-4 border rounded-md w-full"
+        />
+      )}
+    </WorkRecordSection>
   );
 }
 
-function RepairableCard({
+function RepairableSection({
   jobId,
   repairable: initialRepairable,
   isLocked
@@ -334,44 +357,52 @@ function RepairableCard({
   const [repairable, setRepairable] = useState(initialRepairable);
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>
-          <Trans>Repairable</Trans>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <RadioGroup
-          aria-label={t`Repairable`}
-          className="flex gap-2"
-          value={repairable === null ? "" : String(repairable)}
-          disabled={isLocked}
-          onValueChange={(value) => {
-            setRepairable(value === "true");
-            onUpdate("repairable", value);
-          }}
-        >
-          {[
-            { value: "true", label: t`Yes` },
-            { value: "false", label: t`No` }
-          ].map((option) => (
-            <RadioGroupButton
-              key={option.value}
-              value={option.value}
-              className="h-11 min-w-24 data-[state=checked]:border-2 data-[state=checked]:border-primary"
-            >
-              {option.label}
-            </RadioGroupButton>
-          ))}
-        </RadioGroup>
-      </CardContent>
-    </Card>
+    <WorkRecordSection title={<Trans>Repairable</Trans>}>
+      <ToggleGroup
+        type="single"
+        aria-label={t`Repairable`}
+        className="w-fit gap-0 rounded-full border border-border bg-muted p-1 shadow-sm"
+        value={repairable === null ? "" : String(repairable)}
+        disabled={isLocked}
+        onValueChange={(value) => {
+          // Clicking the selected answer again does not clear it.
+          if (!value) return;
+          setRepairable(value === "true");
+          onUpdate("repairable", value);
+        }}
+      >
+        {[
+          {
+            value: "true",
+            label: t`Yes`,
+            on: "data-[state=on]:bg-emerald-600 data-[state=on]:text-white hover:data-[state=on]:bg-emerald-600 hover:data-[state=on]:text-white"
+          },
+          {
+            value: "false",
+            label: t`No`,
+            on: "data-[state=on]:bg-red-600 data-[state=on]:text-white hover:data-[state=on]:bg-red-600 hover:data-[state=on]:text-white"
+          }
+        ].map((option) => (
+          <ToggleGroupItem
+            key={option.value}
+            value={option.value}
+            className={cn(
+              "rounded-full bg-transparent text-muted-foreground transition-all duration-200 hover:bg-active hover:text-active-foreground data-[state=on]:shadow-sm",
+              "h-10 min-w-24 px-6 text-base",
+              option.on
+            )}
+          >
+            {option.label}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+    </WorkRecordSection>
   );
 }
 
 type JobFile = Awaited<ReturnType<typeof loader>>["files"][number];
 
-function PhotosCard({
+function PhotosSection({
   jobId,
   companyId,
   files,
@@ -413,52 +444,48 @@ function PhotosCard({
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>
-          <Trans>Photos</Trans>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        {files.length > 0 ? (
-          <div className="grid grid-cols-3 gap-2">
-            {files.map((file) => {
-              const filePath = `${companyId}/service-job/${jobId}/${file.name}`;
-              return getDocumentType(file.name) === "Image" ? (
-                <a
-                  key={file.id ?? file.name}
-                  href={getPrivateUrl(filePath)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="overflow-hidden rounded-lg border border-border"
-                >
-                  <img
-                    src={getPrivateUrl(filePath)}
-                    alt={file.name}
-                    className="aspect-square w-full object-cover"
-                  />
-                </a>
-              ) : (
-                <a
-                  key={file.id ?? file.name}
-                  href={getPrivateUrl(filePath)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex aspect-square items-center justify-center rounded-lg border border-border p-2 text-xs text-muted-foreground break-all"
-                >
-                  {file.name}
-                </a>
-              );
-            })}
-          </div>
-        ) : (
-          <span className="text-xs text-muted-foreground">
-            <Trans>No photos yet</Trans>
-          </span>
-        )}
-        {!isLocked && !isUploading && <FileDropzone onDrop={onDrop} />}
-      </CardContent>
-    </Card>
+    <WorkRecordSection
+      title={<Trans>Photos</Trans>}
+      description={<Trans>Photos of the unit, shared with the ERP job.</Trans>}
+    >
+      {files.length > 0 ? (
+        <div className="grid grid-cols-3 gap-2 lg:grid-cols-4">
+          {files.map((file) => {
+            const filePath = `${companyId}/service-job/${jobId}/${file.name}`;
+            return getDocumentType(file.name) === "Image" ? (
+              <a
+                key={file.id ?? file.name}
+                href={getPrivateUrl(filePath)}
+                target="_blank"
+                rel="noreferrer"
+                className="overflow-hidden rounded-lg border border-border"
+              >
+                <img
+                  src={getPrivateUrl(filePath)}
+                  alt={file.name}
+                  className="aspect-square w-full object-cover"
+                />
+              </a>
+            ) : (
+              <a
+                key={file.id ?? file.name}
+                href={getPrivateUrl(filePath)}
+                target="_blank"
+                rel="noreferrer"
+                className="flex aspect-square items-center justify-center rounded-lg border border-border p-2 text-xs text-muted-foreground break-all"
+              >
+                {file.name}
+              </a>
+            );
+          })}
+        </div>
+      ) : (
+        <span className="text-sm text-muted-foreground">
+          <Trans>No photos yet</Trans>
+        </span>
+      )}
+      {!isLocked && !isUploading && <FileDropzone onDrop={onDrop} />}
+    </WorkRecordSection>
   );
 }
 
@@ -467,10 +494,10 @@ export default function ServiceJobRoute() {
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const { locale } = useLocale();
-  const { isPhone } = useViewport();
   const clockFetcher = useFetcher();
   const returnFetcher = useFetcher();
   const addPart = useDisclosure();
+  const [tab, setTab] = useState("details");
   const [confirmComplete, setConfirmComplete] = useState(false);
   const [allItems] = useItems();
   const workSites = useWorkSiteLabels();
@@ -489,7 +516,6 @@ export default function ServiceJobRoute() {
   const isRunningHere = runningClock?.serviceJobId === job.id;
   const isRunningElsewhere = !!runningClock && !isRunningHere;
   const isBusy = clockFetcher.state !== "idle";
-  const completable = canComplete(job);
 
   const todayHours = time
     .filter((entry) => entry.employeeId === userId && entry.entryDate === today)
@@ -514,168 +540,348 @@ export default function ServiceJobRoute() {
     .filter(Boolean)
     .join(" · ");
 
-  return (
-    <div className="flex flex-col flex-1">
-      <MesAppBar
-        title={job.serviceJobId}
-        subtitle={<Trans>Service</Trans>}
-        back={{ to: path.to.service }}
-      />
-      {!isPhone && (
-        <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card max-md:hidden">
-          <div className="flex items-center gap-2 px-2 w-full justify-between">
-            <HStack>
-              <SidebarTrigger />
-              <Link to={path.to.service}>
-                <Button variant="ghost" size="sm" aria-label={t`Back`}>
-                  <LuArrowLeft className="h-4 w-4" />
-                </Button>
+  const properties = [
+    {
+      label: <Trans>Assignee</Trans>,
+      value: job.assignee ? (
+        <EmployeeAvatar employeeId={job.assignee} size="xs" />
+      ) : (
+        <span className="text-muted-foreground">
+          <Trans>Unassigned</Trans>
+        </span>
+      )
+    },
+    {
+      label: <Trans>Unit</Trans>,
+      value: unit || (
+        <span className="text-muted-foreground">
+          <Trans>No unit</Trans>
+        </span>
+      )
+    }
+  ];
+
+  const dock = isLocked ? (
+    <WorkRecordDock
+      properties={properties}
+      actions={
+        <div className="flex flex-col items-center gap-1 rounded-lg border bg-card p-3 text-center">
+          <LuCheck className="size-6 text-emerald-500" />
+          <ServiceJobStatus status={job.status} />
+          <span className="text-xs text-muted-foreground">
+            <Trans>Total time: {quantity(totalHours)} h</Trans>
+          </span>
+        </div>
+      }
+      compactActions={<ServiceJobStatus status={job.status} />}
+    />
+  ) : (
+    <WorkRecordDock
+      properties={properties}
+      clock={
+        isRunningHere ? (
+          <PauseButton
+            type="button"
+            disabled={isBusy}
+            onClick={() => submitClock("Stop")}
+          />
+        ) : (
+          <PlayButton
+            type="button"
+            disabled={isBusy || isRunningElsewhere}
+            onClick={() => submitClock("Start")}
+          />
+        )
+      }
+      caption={
+        isRunningHere ? (
+          <>
+            <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 max-md:leading-tight">
+              <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
+              <span>
+                <Trans>Running</Trans>
+              </span>
+            </span>
+            {runningClock?.startTime && (
+              <span className="text-sm text-muted-foreground">
+                <Trans>
+                  since{" "}
+                  <DateTime value={runningClock.startTime} variant="time" />
+                </Trans>
+              </span>
+            )}
+          </>
+        ) : isRunningElsewhere && runningClock ? (
+          <span className="text-sm text-muted-foreground">
+            <Trans>
+              Running on{" "}
+              <Link
+                to={path.to.serviceJob(runningClock.serviceJobId)}
+                className="underline"
+              >
+                {runningClock.serviceJob?.serviceJobId}
               </Link>
-              <Heading size="h4">{job.serviceJobId}</Heading>
-              <ServiceJobStatus status={job.status} />
-            </HStack>
-          </div>
-        </header>
-      )}
+            </Trans>
+          </span>
+        ) : (
+          <span className="text-sm text-muted-foreground">
+            <Trans>Start clock</Trans>
+          </span>
+        )
+      }
+      actions={
+        <Button
+          size="lg"
+          variant="secondary"
+          className="w-full"
+          leftIcon={<FaCheck />}
+          isDisabled={isBusy}
+          onClick={() => setConfirmComplete(true)}
+        >
+          <Trans>Complete</Trans>
+        </Button>
+      }
+      compactActions={
+        <IconButtonWithTooltip
+          icon={<FaCheck />}
+          tooltip={t`Complete`}
+          disabled={isBusy}
+          onClick={() => setConfirmComplete(true)}
+        />
+      }
+    />
+  );
 
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4">
-        <VStack spacing={4} className="max-w-2xl mx-auto">
-          <div className="flex w-full items-center md:hidden">
+  return (
+    <>
+      <WorkRecordShell
+        recordId={job.serviceJobId}
+        back={{ to: path.to.service, label: <Trans>Service</Trans> }}
+        tabs={[
+          { value: "details", label: <Trans>Details</Trans> },
+          { value: "notes", label: <Trans>Notes</Trans> },
+          { value: "photos", label: <Trans>Photos</Trans> }
+        ]}
+        tab={tab}
+        onTabChange={setTab}
+        chips={
+          <>
             <ServiceJobStatus status={job.status} />
-          </div>
-
-          {/* Customer and unit */}
-          <Card className="w-full">
-            <CardHeader className="max-md:hidden">
-              <CardTitle className="text-sm text-muted-foreground font-normal">
-                <Trans>Customer</Trans>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <VStack spacing={2} className="items-start">
-                <span className="hidden text-xs text-muted-foreground max-md:block">
-                  <Trans>Customer</Trans>
-                </span>
-                <span className="text-lg font-semibold">
-                  {job.customer?.name}
-                </span>
-                {unit && (
-                  <span className="text-sm text-muted-foreground">{unit}</span>
-                )}
-                <HStack spacing={2} className="flex-wrap">
-                  <CoverageBadge coverage={job.coverage} />
-                  <Badge variant="outline">{workSites[job.workSite]}</Badge>
-                  {job.customerAsset && (
-                    <WarrantyBadge asset={job.customerAsset} today={today} />
-                  )}
-                </HStack>
-              </VStack>
-            </CardContent>
-          </Card>
-
-          {/* Problem */}
-          {!isRichTextEmpty(job.problem as JSONContent) && (
-            <Card className="w-full">
-              <CardHeader>
-                <CardTitle className="text-sm text-muted-foreground font-normal">
-                  <Trans>Problem</Trans>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RichTextView
-                  content={job.problem as JSONContent}
-                  empty={null}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Clock */}
-          {!isLocked && (
-            <Card className="w-full">
-              <CardHeader className="max-md:hidden">
-                <CardTitle>
-                  <span className="text-sm text-muted-foreground">
-                    <Trans>Today: {quantity(todayHours)} h</Trans>
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 max-md:pt-4">
-                <p className="mb-3 text-xs text-muted-foreground md:hidden">
-                  <Trans>Today: {quantity(todayHours)} h</Trans>
-                </p>
-                <VStack spacing={4} className="items-center">
-                  <button
-                    type="button"
-                    aria-label={isRunningHere ? t`Stop` : t`Start`}
-                    disabled={isBusy || isRunningElsewhere}
-                    onClick={() =>
-                      submitClock(isRunningHere ? "Stop" : "Start")
-                    }
-                    className={cn(
-                      "group size-24 flex flex-row items-center gap-2 justify-center rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:scale-105 transition-all text-white text-3xl border-b-4 active:border-b-0 active:translate-y-1 motion-reduce:transition-none motion-reduce:hover:scale-100 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:cursor-not-allowed",
-                      isRunningHere
-                        ? "bg-red-500 hover:bg-red-600 border-red-700"
-                        : "bg-emerald-500 hover:bg-emerald-600 border-emerald-700"
-                    )}
-                  >
-                    {isRunningHere ? (
-                      <FaPause className="group-hover:scale-110" />
-                    ) : (
-                      <FaPlay className="group-hover:scale-110" />
-                    )}
-                  </button>
-                  {isRunningHere && runningClock?.startTime && (
-                    <span className="text-sm text-muted-foreground">
+            <WorkRecordChip icon={<LuSquareUser />}>
+              {job.customer?.name}
+            </WorkRecordChip>
+            {job.trackedEntity && (
+              <WorkRecordChip icon={<LuBarcode />}>
+                {job.trackedEntity.readableId}
+              </WorkRecordChip>
+            )}
+            <CoverageBadge coverage={job.coverage} />
+            <WorkRecordChip icon={<LuMapPin />}>
+              {workSites[job.workSite]}
+            </WorkRecordChip>
+            <WorkRecordChip
+              icon={<ServicePriorityIcon priority={job.priority} />}
+            >
+              {job.priority}
+            </WorkRecordChip>
+            {job.dueDate && (
+              <WorkRecordChip icon={<LuCalendarClock />}>
+                <DateTime value={job.dueDate} variant="date" />
+              </WorkRecordChip>
+            )}
+          </>
+        }
+        menu={
+          <DropdownMenuItem asChild>
+            <a
+              href={path.to.serviceJobDetail(job.id)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <DropdownMenuIcon icon={<LuExternalLink />} />
+              <Trans>Service Job Details</Trans>
+            </a>
+          </DropdownMenuItem>
+        }
+        dock={dock}
+      >
+        <WorkRecordPane value="details">
+          <WorkRecordTitle title={job.customer?.name} subtitle={unit} />
+          <WorkRecordStats>
+            <WorkRecordStat
+              title={<Trans>Today</Trans>}
+              icon={<LuTimer className="h-3 w-3 text-muted-foreground" />}
+            >
+              <Heading size="h1" className="font-sans">
+                {t`${quantity(todayHours)} h`}
+              </Heading>
+            </WorkRecordStat>
+            <WorkRecordStat
+              title={<Trans>Total Time</Trans>}
+              icon={<LuClock className="h-3 w-3 text-muted-foreground" />}
+            >
+              <Heading size="h1" className="font-sans">
+                {t`${quantity(totalHours)} h`}
+              </Heading>
+            </WorkRecordStat>
+            <WorkRecordStat
+              title={<Trans>Warranty</Trans>}
+              icon={<LuShieldCheck className="h-3 w-3 text-muted-foreground" />}
+              className="max-xl:col-span-2"
+            >
+              {job.customerAsset ? (
+                <VStack spacing={1} className="justify-start">
+                  <WarrantyBadge asset={job.customerAsset} today={today} />
+                  {job.customerAsset.laborWarrantyEndDate && (
+                    <span className="text-muted-foreground text-sm">
                       <Trans>
-                        Running since{" "}
+                        Labor until{" "}
                         <DateTime
-                          value={runningClock.startTime}
-                          variant="time"
+                          value={job.customerAsset.laborWarrantyEndDate}
+                          variant="date"
                         />
-                      </Trans>
-                    </span>
-                  )}
-                  {isRunningElsewhere && runningClock && (
-                    <span className="text-sm text-muted-foreground text-center">
-                      <Trans>
-                        Your clock is running on{" "}
-                        <Link
-                          to={path.to.serviceJob(runningClock.serviceJobId)}
-                          className="underline"
-                        >
-                          {runningClock.serviceJob?.serviceJobId}
-                        </Link>
-                        . Stop it there first.
                       </Trans>
                     </span>
                   )}
                 </VStack>
-              </CardContent>
-            </Card>
+              ) : (
+                <span className="text-muted-foreground text-sm">
+                  <Trans>No registered asset</Trans>
+                </span>
+              )}
+            </WorkRecordStat>
+          </WorkRecordStats>
+
+          {!isRichTextEmpty(job.problem as JSONContent) && (
+            <WorkRecordSection title={<Trans>Problem</Trans>}>
+              <RichTextView content={job.problem as JSONContent} empty={null} />
+            </WorkRecordSection>
           )}
 
-          {/* Time entries */}
+          <RepairableSection
+            jobId={job.id}
+            repairable={job.repairable}
+            isLocked={isLocked}
+          />
+
+          {(!isLocked || items.length > 0) && (
+            <WorkRecordSection
+              title={<Trans>Parts</Trans>}
+              action={
+                !isLocked && (
+                  <Button
+                    leftIcon={<LuCirclePlus />}
+                    variant="secondary"
+                    size="lg"
+                    onClick={addPart.onOpen}
+                  >
+                    <Trans>Add Part</Trans>
+                  </Button>
+                )
+              }
+            >
+              <WorkRecordTablePanel>
+                <Table className="w-full text-base">
+                  <Thead className="bg-muted/40">
+                    <Tr>
+                      <Th className="text-sm">
+                        <Trans>Part</Trans>
+                      </Th>
+                      <Th className="text-sm">
+                        <Trans>Quantity</Trans>
+                      </Th>
+                      <Th className="text-sm" />
+                    </Tr>
+                  </Thead>
+                  <Tbody className="[&>tr:last-child]:border-0 [&>tr]:border-b">
+                    {items.length > 0 ? (
+                      items.map((line) => (
+                        <Tr key={line.id} className="[&>td]:py-3">
+                          <Td>
+                            <VStack spacing={0}>
+                              <span className="font-medium">
+                                {line.item?.readableIdWithRevision}
+                              </span>
+                              <span className="text-muted-foreground text-sm">
+                                {line.item?.name}
+                                {line.lineType === "Charge"
+                                  ? ` · ${t`Charge`}`
+                                  : ""}
+                              </span>
+                            </VStack>
+                          </Td>
+                          <Td className="tabular-nums">
+                            {quantity(Number(line.quantity))}{" "}
+                            {line.unitOfMeasureCode}
+                          </Td>
+                          <Td className="text-right">
+                            {!isLocked && line.lineType === "Part" && (
+                              <IconButton
+                                aria-label={t`Return part`}
+                                size="lg"
+                                variant="ghost"
+                                icon={<LuX className="h-4 w-4" />}
+                                isDisabled={returnFetcher.state !== "idle"}
+                                onClick={() => {
+                                  const formData = new FormData();
+                                  formData.append("intent", "return-part");
+                                  formData.append("serviceJobItemId", line.id);
+                                  returnFetcher.submit(formData, {
+                                    method: "post",
+                                    action: path.to.serviceJob(job.id)
+                                  });
+                                }}
+                              />
+                            )}
+                          </Td>
+                        </Tr>
+                      ))
+                    ) : (
+                      <Tr>
+                        <Td
+                          colSpan={3}
+                          className="py-8 text-muted-foreground text-center"
+                        >
+                          <Trans>No parts added yet</Trans>
+                        </Td>
+                      </Tr>
+                    )}
+                  </Tbody>
+                </Table>
+              </WorkRecordTablePanel>
+            </WorkRecordSection>
+          )}
+
           {time.length > 0 && (
-            <Card className="w-full">
-              <CardHeader>
-                <CardTitle>
-                  <Trans>Time Entries</Trans>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="w-full divide-y">
-                  {time.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="py-2 flex justify-between items-center gap-2"
-                    >
-                      <VStack spacing={2} className="items-start min-w-0">
-                        <EmployeeAvatar
-                          employeeId={entry.employeeId}
-                          size="xs"
-                        />
-                        <span className="text-xs text-muted-foreground">
+            <WorkRecordSection title={<Trans>Time Entries</Trans>}>
+              <WorkRecordTablePanel>
+                <Table className="w-full text-base">
+                  <Thead className="bg-muted/40">
+                    <Tr>
+                      <Th className="text-sm">
+                        <Trans>Employee</Trans>
+                      </Th>
+                      <Th className="text-sm">
+                        <Trans>When</Trans>
+                      </Th>
+                      <Th className="text-sm">
+                        <Trans>Labor</Trans>
+                      </Th>
+                      <Th className="text-sm text-right">
+                        <Trans>Hours</Trans>
+                      </Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody className="[&>tr:last-child]:border-0 [&>tr]:border-b">
+                    {time.map((entry) => (
+                      <Tr key={entry.id} className="[&>td]:py-3">
+                        <Td>
+                          <EmployeeAvatar
+                            employeeId={entry.employeeId}
+                            size="xs"
+                          />
+                        </Td>
+                        <Td className="text-sm">
                           {entry.startTime ? (
                             <>
                               <DateTime
@@ -695,162 +901,48 @@ export default function ServiceJobRoute() {
                           ) : (
                             <DateTime value={entry.entryDate} variant="date" />
                           )}
-                          {entry.laborItem?.name
-                            ? ` · ${entry.laborItem.name}`
-                            : ""}
-                        </span>
-                      </VStack>
-                      <span className="text-sm font-mono shrink-0">
-                        {entry.startTime && !entry.endTime
-                          ? t`Running`
-                          : t`${quantity(Number(entry.hours ?? 0))} h`}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Parts */}
-          {(!isLocked || items.length > 0) && (
-            <Card className="w-full">
-              <CardHeader>
-                <HStack className="justify-between w-full">
-                  <CardTitle className="text-sm font-medium">
-                    <Trans>Parts</Trans>
-                  </CardTitle>
-                  {!isLocked && (
-                    <Button
-                      variant="secondary"
-                      leftIcon={<LuCirclePlus />}
-                      className="max-md:h-11"
-                      onClick={addPart.onOpen}
-                    >
-                      <Trans>Add</Trans>
-                    </Button>
-                  )}
-                </HStack>
-              </CardHeader>
-              <CardContent>
-                {items.length > 0 ? (
-                  <div className="w-full divide-y">
-                    {items.map((line) => (
-                      <div
-                        key={line.id}
-                        className="py-2 flex justify-between items-center gap-2"
-                      >
-                        <VStack spacing={0} className="items-start min-w-0">
-                          <span className="text-sm truncate w-full">
-                            {line.item?.name}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {quantity(Number(line.quantity))}{" "}
-                            {line.unitOfMeasureCode}
-                            {line.lineType === "Charge"
-                              ? ` · ${t`Charge`}`
-                              : ""}
-                          </span>
-                        </VStack>
-                        {!isLocked && line.lineType === "Part" && (
-                          <IconButton
-                            aria-label={t`Return part`}
-                            size="lg"
-                            variant="ghost"
-                            icon={<LuX className="h-4 w-4" />}
-                            isDisabled={returnFetcher.state !== "idle"}
-                            onClick={() => {
-                              const formData = new FormData();
-                              formData.append("intent", "return-part");
-                              formData.append("serviceJobItemId", line.id);
-                              returnFetcher.submit(formData, {
-                                method: "post",
-                                action: path.to.serviceJob(job.id)
-                              });
-                            }}
-                          />
-                        )}
-                      </div>
+                        </Td>
+                        <Td className="text-sm text-muted-foreground">
+                          {entry.laborItem?.name}
+                        </Td>
+                        <Td className="text-right font-mono text-sm">
+                          {entry.startTime && !entry.endTime
+                            ? t`Running`
+                            : t`${quantity(Number(entry.hours ?? 0))} h`}
+                        </Td>
+                      </Tr>
                     ))}
-                  </div>
-                ) : (
-                  <span className="text-xs text-muted-foreground">
-                    <Trans>No parts added yet</Trans>
-                  </span>
-                )}
-              </CardContent>
-            </Card>
+                  </Tbody>
+                </Table>
+              </WorkRecordTablePanel>
+            </WorkRecordSection>
           )}
+        </WorkRecordPane>
 
-          <ServiceJobNotesCard
+        <WorkRecordPane value="notes">
+          <ServiceJobNotesSection
             jobId={job.id}
             field="findings"
             content={job.findings as JSONContent | null}
             isLocked={isLocked}
           />
-          <ServiceJobNotesCard
+          <ServiceJobNotesSection
             jobId={job.id}
             field="resolution"
             content={job.resolution as JSONContent | null}
             isLocked={isLocked}
           />
-          <RepairableCard
-            jobId={job.id}
-            repairable={job.repairable}
-            isLocked={isLocked}
-          />
-          <PhotosCard
+        </WorkRecordPane>
+
+        <WorkRecordPane value="photos">
+          <PhotosSection
             jobId={job.id}
             companyId={companyId}
             files={files}
             isLocked={isLocked}
           />
-          <ServiceJobSignature
-            serviceJobId={job.id}
-            signaturePath={job.signaturePath}
-            signedByName={job.signedByName}
-            isDisabled={isLocked}
-          />
-
-          {/* Complete */}
-          {isLocked ? (
-            <Card className="w-full bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800">
-              <CardContent className="pt-6">
-                <VStack spacing={2}>
-                  <LuCheck className="h-8 w-8 text-emerald-600" />
-                  <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                    <ServiceJobStatus status={job.status} />
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    <Trans>Total time: {quantity(totalHours)} h</Trans>
-                  </span>
-                </VStack>
-              </CardContent>
-            </Card>
-          ) : (
-            <VStack spacing={2} className="w-full">
-              <Button
-                size="lg"
-                variant="primary"
-                leftIcon={<LuCheck />}
-                isDisabled={isBusy || !completable}
-                onClick={() => setConfirmComplete(true)}
-                className="w-full h-12"
-              >
-                <Trans>Complete</Trans>
-              </Button>
-              {!completable && (
-                <span className="text-xs text-muted-foreground">
-                  <Trans>
-                    This job needs an accepted estimate before it can be
-                    completed.
-                  </Trans>
-                </span>
-              )}
-            </VStack>
-          )}
-        </VStack>
-      </main>
+        </WorkRecordPane>
+      </WorkRecordShell>
 
       {addPart.isOpen && (
         <ServiceJobAddPartModal
@@ -904,6 +996,6 @@ export default function ServiceJobRoute() {
           </ModalContent>
         </Modal>
       )}
-    </div>
+    </>
   );
 }

@@ -29,7 +29,7 @@ Migrations `20261023070940_service-job-enum-values.sql`,
 
 | Table (id prefix) | Holds |
 |---|---|
-| `serviceJob` (`sj`) | The job. Readable `serviceJobId` from sequence `serviceJob` (`SJ`). Customer, optional `customerAssetId` (sets `itemId` + `trackedEntityId`), `locationId` (our depot, the parts source), `workSite` Depot / Customer Site, `coverage`, `billingMethod` Time and Materials / Fixed Price, `priority`, `assignee` (lead technician), `problem`, `findings` / `resolution` (JSON rich text), `repairable` (null until someone decides), the estimate columns, `fixedPrice`, `serviceItemId` (what a Fixed Price job bills), `completionJournalId`, `salesInvoiceId`, `salesReturnOrderLineId`, `signaturePath` / `signedByName` |
+| `serviceJob` (`sj`) | The job. Readable `serviceJobId` from sequence `serviceJob` (`SJ`). Customer, optional `customerAssetId` (sets `itemId` + `trackedEntityId`), `locationId` (our depot, the parts source), `workSite` Depot / Customer Site, `coverage`, `billingMethod` Time and Materials / Fixed Price, `priority`, `assignee` (lead technician), `problem`, `findings` / `resolution` (JSON rich text), `repairable` (null until someone decides), the estimate columns, `fixedPrice`, `serviceItemId` (what a Fixed Price job bills), `completionJournalId`, `salesInvoiceId`, `salesReturnOrderLineId`, `signaturePath` / `signedByName` (no screen captures a signature any more; the columns hold older ones) |
 | `serviceJobEstimateLine` (`sjel`) | A labor item (quantity = hours), a part or a charge, at a unit price |
 | `serviceJobTime` (`sjt`) | One time entry: employee, labor item, `entryDate`, `hours`, `billable`. `startTime` / `endTime` only on an MES clock entry. `unitCost` is stored by Complete and cleared by Reopen |
 | `serviceJobItem` (`sji`) | `lineType` Part (written only by the `issue` posting) or Charge (a Service item at a price; may link the line that paid it) |
@@ -75,15 +75,14 @@ every child-row write goes through `editableServiceJob` (operations) or
 Estimate lines are locked while the estimate is Sent or Accepted; a Declined
 estimate is editable again.
 
-## The estimate rule
+## The estimate
 
-`needsAcceptedEstimate` / `canComplete` (`@carbon/utils`): a job needs an
-Accepted estimate before Complete when it is Billable AND (Fixed Price OR has a
-`salesReturnOrderLineId`), unless `repairable === false`. Warranty and Contract
-jobs never need one. `postServiceJob` re-checks `canComplete` under the row lock.
+An estimate is optional: no job needs an Accepted estimate before Complete.
+(A `needsAcceptedEstimate` / `canComplete` gate once refused a Billable Fixed
+Price or RMA job without one; it was removed on request.)
 
 `serviceJobPrimaryAction` picks the header's one primary action: Open → Start;
-In Progress → Complete, or Send Estimate while `canComplete` is false; Awaiting
+In Progress → Complete; Awaiting
 Approval → Record Response (Billable); Completed → Create Invoice (Billable).
 Everything else (Send/Print Estimate, Hold, Resume, Reopen, Cancel Job) is in
 the ⋯ menu (`ServiceJobHeader.tsx`).
@@ -142,7 +141,7 @@ The issue journal is written by the shared valuation in `inventory.service.ts`
 the job booked (`resolveMaintenanceReturnCost` over the job's `costLedger` rows).
 
 Complete refuses: a status that is not Open / In Progress / On Hold,
-`!canComplete`, a labor item with no cost ("… has no cost per hour. Set its
+a labor item with no cost ("… has no cost per hour. Set its
 unit cost first."), and a running clock ("Stop the running clock first."). Time
 posts ONLY at completion; until then entries are freely editable. There is no
 WIP: the customer owns the unit.
@@ -252,7 +251,7 @@ void → At Depot; Scrap Unit → Returned. Shipment creation is
 Routes `apps/mes/app/routes/x+/`: `service.tsx` (layout), `service._index.tsx`
 (the queue: **Today**, jobs assigned to me today; **Open at this location**),
 `service.new.tsx`, `service.$jobId.tsx`, `service.$jobId.add-and-issue.tsx`,
-`service.$jobId.signature.tsx`, `service-time.tsx`. Sidebar and tab bar entry
+`service-time.tsx`. Sidebar and tab bar entry
 **Service**, shortcut `alt+8` (`MES_NAV_SHORTCUTS.service`). Data access in
 `apps/mes/app/services/service.service.ts`.
 
@@ -266,12 +265,11 @@ Routes `apps/mes/app/routes/x+/`: `service.tsx` (layout), `service._index.tsx`
   negative) and `entryDate` = the company's business day of the start. A second
   Start is refused ("Your clock is running on … Stop it first."); the unique
   index backs the check (`CLOCK_ALREADY_RUNNING`). Complete stops the
-  technician's own clock on this job, then posts `post-service-job` `complete`
-  with the stored signature.
+  technician's own clock on this job, then posts `post-service-job` `complete`.
 - **Parts**: `erpPosting("issue", …)` (`serviceJob*` types, from
   `add-and-issue`); the job page's `return-part` intent runs
   `serviceJobUnconsume`.
-- Plain writes (findings, resolution, repairable, signature, status) use the
+- Plain writes (findings, resolution, repairable, status) use the
   service role after a `companyId` ownership check, as maintenance does. The
   routes call `requirePermissions(request, {})`.
 
@@ -284,7 +282,8 @@ never go through timesheet submit, approval, certification or DCAA.
   `getServiceTimeWeek`. Both group with `groupServiceTimeRows`
   (`@carbon/utils`): one row per job, a row with no hours for a job the employee
   is assigned to that week, rows locked when the job is locked. **Add** lists
-  the open jobs the employee is assigned to that week or leads.
+  every open job in the company. The assignee owns a job; more than one
+  person works on it, so time is never limited to the assignee.
 - Write: ERP `x+/timesheet.service.tsx` → `setServiceJobDayHours`; MES
   `saveServiceDayHours` (a copy with the same rules and messages, on the
   service-role client). The bar sets the day's TOTAL; `manualHoursForDay` turns
@@ -293,9 +292,8 @@ never go through timesheet submit, approval, certification or DCAA.
   - A total below the day's clock hours writes nothing and returns `warning`
     `SERVICE_DAY_HAS_CLOCK_TIME` ("Edit it on the job").
   - Two or more manual entries on the day are refused.
-  - Permission `{}` (company membership, like `saveTimesheetEntry`). Without
-    `update: service` the caller must lead the job or hold an assignment on it
-    (`mustBeAssigned`).
+  - Permission `{}` (company membership, like `saveTimesheetEntry` and the
+    MES clock): any employee may log time on any open job.
 
 ## Dispatch grid
 

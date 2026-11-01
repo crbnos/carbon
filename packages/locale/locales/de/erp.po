@@ -1458,7 +1458,7 @@ msgid "A different inspector is required"
 msgstr "Ein anderer Prüfer ist erforderlich"
 
 msgid "A discount can end on a date; the line then bills its full rate."
-msgstr ""
+msgstr "Ein Rabatt kann an einem Datum enden; die Position berechnet dann zum vollen Satz."
 
 msgid "A draft run must be posted or deleted first."
 msgstr "Ein Entwurf muss zuerst gebucht oder gelöscht werden."
@@ -1668,7 +1668,7 @@ msgid "A price on a rental agreement at which the customer can buy the unit, cou
 msgstr "Ein Preis auf einer Mietvereinbarung, zu dem der Kunde die Einheit kaufen kann, gezählt als Mietzahlung, die das Mietverhältnis zum Mietkauf macht, wenn die Ausübung angemessen wahrscheinlich ist, und abgerechnet durch Verkauf an Kunde."
 
 msgid "A price per unit, billed on the line's billing events"
-msgstr ""
+msgstr "Ein Preis pro Einheit, abgerechnet zu den Abrechnungsereignissen der Position"
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Ein Angebot; Entwurf → Versendet → Bestellt, oder endet mit Verloren, Abgelaufen oder Storniert."
@@ -1821,7 +1821,7 @@ msgid "A receipt's supplier changes"
 msgstr "Der Lieferant eines Wareneingangs ändert sich"
 
 msgid "A recurring line bills every period at its rate; a one-time line bills once."
-msgstr ""
+msgstr "Eine wiederkehrende Position wird jede Periode zum Satz abgerechnet; eine einmalige Position wird einmal abgerechnet."
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Eine Mietvereinbarung muss in der Basiswährung des Unternehmens aktiviert werden. Ändern Sie zuerst die Vereinbarungswährung."
@@ -1935,7 +1935,7 @@ msgid "A set of instructions to pull a job's outstanding materials from the ware
 msgstr "Ein Satz von Anweisungen, um die ausstehenden Materialien eines Fertigungsauftrags aus dem Lager zu kommissionieren und sie im Linienlager bereitzustellen; Kommissionieren bewegt den Bestand zum Einsatzort statt ihn zu verbrauchen."
 
 msgid "A set price, billed on the line's billing events"
-msgstr ""
+msgstr "Ein festgelegter Preis, abgerechnet zu den Abrechnungsereignissen der Position"
 
 msgid "A shipment is created"
 msgstr "Eine Lieferung wird erstellt"
@@ -2497,6 +2497,9 @@ msgstr "Domäne hinzufügen"
 msgid "Add a line for each CLIN: Time & Materials, Cost Plus or Fixed Price."
 msgstr "Fügen Sie für jede CLIN eine Position hinzu: Zeit & Material, Kosten-Plus oder Festpreis."
 
+msgid "Add a line for each part of the work: Time & Materials, Cost Plus or Fixed Price."
+msgstr "Hinzufügen Sie eine Position für jeden Teil der Arbeit: Zeit und Material, Kostenplus oder Pauschalpreis."
+
 msgid "Add a line to the document"
 msgstr "Eine Position zum Dokument hinzufügen"
 
@@ -2666,7 +2669,7 @@ msgid "Add Item"
 msgstr "Element hinzufügen"
 
 msgid "Add Job"
-msgstr ""
+msgstr "Fertigungsauftrag hinzufügen"
 
 msgid "Add Journal Entry"
 msgstr "Buchungszeile hinzufügen"
@@ -3182,7 +3185,7 @@ msgid "Allowable Cost"
 msgstr "Zulässige Kosten"
 
 msgid "Allowable cost, plus a fee"
-msgstr ""
+msgstr "Zulässige Kosten plus Gebühr"
 
 msgid "Allows acknowledge & continue"
 msgstr "Ermöglicht Bestätigung & Fortfahren"
@@ -5041,7 +5044,7 @@ msgid "Billing"
 msgstr "Abrechnung"
 
 msgid "Billing & funding"
-msgstr ""
+msgstr "Abrechnung & Finanzierung"
 
 msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
 msgstr "Abrechnung einer Miete in festen Perioden, entweder in Monaten vom Startdatum an, Kalendermonaten oder aufeinanderfolgenden 28-Tage-Perioden, wobei jede Periode am ersten Tag (Vorauszahlung) oder am letzten Tag (Nachzahlung) fakturiert wird."
@@ -5089,7 +5092,7 @@ msgid "Billing periods are cut when the agreement is activated."
 msgstr "Abrechnungsperioden werden erstellt, wenn der Vertrag aktiviert wird."
 
 msgid "Billing stops at the funded amount."
-msgstr ""
+msgstr "Die Abrechnung stoppt beim finanzierten Betrag."
 
 msgid "Billing stops at this amount"
 msgstr "Die Abrechnung stoppt bei diesem Betrag"
@@ -6070,7 +6073,7 @@ msgid "Children"
 msgstr "Unterelemente"
 
 msgid "Children and jobs"
-msgstr ""
+msgstr "Untergeordnete und Fertigungsaufträge"
 
 msgid "Choose a backup"
 msgstr "Wählen Sie eine Sicherung"
@@ -7069,9 +7072,6 @@ msgstr "Steuern Sie, ob Artikel-IDs (Teile, Materialien, Verbrauchsmaterialien, 
 msgid "Controller, Accountant"
 msgstr "Controller, Buchhalter"
 
-msgid "Controls"
-msgstr "Kontrollen"
-
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "Steuert, wie die Planung mit eingestellten Artikeln umgeht: „Zuerst verbrauchen\" verbraucht den verfügbaren Bestand bevor zum Nachfolger gewechselt wird, „Bevorzuge Neu\" leitet neue Nachfrage sofort zum Nachfolger um, „Nur Bestand\" behält nur eine minimale Servicereserve, und „Kein Bestand\" entfernt den Artikel vollständig aus der Planung."
 
@@ -7784,9 +7784,6 @@ msgstr "Elemente erstellen"
 msgid "Create Forecast"
 msgstr "Prognose erstellen"
 
-msgid "Create Invoice"
-msgstr "Rechnung erstellen"
-
 msgid "Create Issue"
 msgstr "Problem erstellen"
 
@@ -8498,7 +8495,7 @@ msgid "Dates"
 msgstr "Daten"
 
 msgid "Dates & revenue"
-msgstr ""
+msgstr "Daten & Umsatzerlöse"
 
 msgid "Dawn's breaking, {name}."
 msgstr "Es wird hell, {name}."
@@ -8542,12 +8539,6 @@ msgstr "Tage frei"
 
 msgid "Days Remaining"
 msgstr "Verbleibende Tage"
-
-msgid "DCAA"
-msgstr "DCAA"
-
-msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
-msgstr "DCAA erfordert tägliche Einträge, einen Grund für jede Änderung, Zertifizierung beim Einreichen und Belastung nur durch Projektmitglieder."
 
 msgid "DCAA rules"
 msgstr "DCAA-Regeln"
@@ -9581,7 +9572,7 @@ msgid "discount {was} → {now}"
 msgstr "Rabatt {was} → {now}"
 
 msgid "Discount and tax"
-msgstr ""
+msgstr "Rabatt und Steuer"
 
 msgid "Discount Days"
 msgstr "Rabatttage"
@@ -10698,6 +10689,9 @@ msgstr "Mitarbeiter, die dieser Schulung zugewiesen sind, können sie öffnen. D
 
 msgid "Employees can no longer open this training."
 msgstr "Mitarbeiter können diese Schulung nicht mehr öffnen."
+
+msgid "Employees certify their week with this text when they submit a timesheet."
+msgstr "Mitarbeiter bestätigen ihre Woche mit diesem Text, wenn sie einen Zeitnachweis einreichen."
 
 msgid "Employees complete a training in Carbon"
 msgstr "Mitarbeiter schließen eine Schulung in Carbon ab"
@@ -11941,6 +11935,9 @@ msgstr "Fehler beim Speichern des Leistungswerts"
 msgid "Failed to save tools"
 msgstr "Werkzeuge konnten nicht gespeichert werden"
 
+msgid "Failed to turn on government contracting"
+msgstr "Fehler beim Aktivieren der Regierungsvergabe"
+
 msgid "Failed to update batch property"
 msgstr "Fehler beim Aktualisieren der Batch-Eigenschaft"
 
@@ -12556,7 +12553,7 @@ msgid "Funding Actions"
 msgstr "Finanzierungsaktionen"
 
 msgid "Funding notice"
-msgstr ""
+msgstr "Finanzierungsmitteilung"
 
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr "Finanzierung ohne die Gebühr; die Finanzierungsmitteilungen vergleichen die Kosten damit"
@@ -12920,6 +12917,9 @@ msgstr "Google Places API-Schlüssel nicht konfiguriert"
 msgid "Government contracting"
 msgstr "Staatliche Auftragsvergabe"
 
+msgid "Government Contracting"
+msgstr "Regierungsvergabe"
+
 msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
 msgstr "Staatsfinanzierung eines Pauschalvertrags auf Grundlage der tatsächlich angefallenen Kosten (FAR 32.5). Der Auftragnehmer fordert diese auf einem SF 1443 an, und die Regierung zieht diese von Lieferzahlungen ein."
 
@@ -13149,7 +13149,7 @@ msgid "Hours assumed from location shifts"
 msgstr "Stunden aus Standortschichten angenommen"
 
 msgid "Hours at bill rates, plus material and other cost with handling"
-msgstr ""
+msgstr "Stunden zu Abrechnungssätzen, plus Material und sonstige Kosten mit Handling"
 
 msgid "Hours at this station"
 msgstr "Stunden bei dieser Station"
@@ -13231,14 +13231,11 @@ msgstr "Wie jede Position ihre Umsatzerlöse verdient: verteilt nach Tag oder gl
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Wie die Miete jeder Einheit in Perioden aufgeteilt wird und wann in einer Periode sie fakturiert wird."
 
-msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
-msgstr "Wie Mitarbeiter Zeit in Projekten erfassen. Normal hält das Zeiterfassungsformular einfach. DCAA fügt die Steuerelemente hinzu, die eine Regierungsvertragsprüfung überprüft."
-
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "wie weit die geplante Arbeit über die verfügbaren Stunden (+) hinausgeht oder wie viele Stunden noch frei sind."
 
 msgid "How it bills"
-msgstr ""
+msgstr "Wie es abgerechnet wird"
 
 msgid "How items roll up for posting and reporting"
 msgstr "Wie Artikel für Buchung und Berichterstattung zusammengefasst werden"
@@ -13292,7 +13289,7 @@ msgid "How many were actually picked?"
 msgstr "Wie viele wurden tatsächlich gepickt?"
 
 msgid "How many, and the rate each one bills."
-msgstr ""
+msgstr "Wie viele und der Satz, zu dem jede abgerechnet wird."
 
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "Wie oft der Kunde fakturiert wird und ab wann. Die unten stehenden Rechnungen folgen."
@@ -13316,7 +13313,7 @@ msgid "How the job ranks when the scheduler hands out capacity — ASAP claims f
 msgstr "Wie der Fertigungsauftrag eingestuft wird, wenn der Planer Kapazität verteilt — ASAP beansprucht zuerst, dann Hard Deadline, Soft Deadline und No Deadline zuletzt. Nur ein Ranking-Signal; kein Deadline-Typ blockiert oder sperrt die Platzierung."
 
 msgid "How the line's revenue is recognized."
-msgstr ""
+msgstr "Wie der Umsatz der Position erkannt wird."
 
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "Wie der Werkstoff beschafft wird (Eigenfertigung, Fremdbeschaffung oder aus Bestand entnehmen) und die Lagereinheit, daraus entnommen wird."
@@ -14330,8 +14327,11 @@ msgstr "Ausstellungsdatum"
 msgid "Issues"
 msgstr "Probleme"
 
+msgid "It decides how the line is priced."
+msgstr "Es entscheidet, wie die Position bepreist wird."
+
 msgid "It decides what the next step asks for."
-msgstr ""
+msgstr "Es entscheidet, was der nächste Schritt anfordert."
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "Es ist genehmigt, kann aber nicht angewendet werden. Öffnen Sie es erneut, überprüfen Sie diese Zeilen und reichen Sie es erneut ein."
@@ -26766,8 +26766,8 @@ msgstr "Das Unternehmen hat bereits einen gebuchten Eröffnungsbuchungssatz."
 msgid "The company has no account defaults."
 msgstr "Das Unternehmen hat keine Kontostandardwerte."
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "Der Zeiterfassungsmodus des Unternehmens ist Standard oder DCAA, festgelegt unter Einstellungen → Zeit. DCAA fügt das Eingabefenster, Gründe für verspätete und geänderte Zeiten, die wöchentliche Zertifizierung und die Zeitkartenkontrolle hinzu."
+msgid "The company's timesheet mode, Standard or DCAA, turned on with Use DCAA controls at Settings → Projects. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr "Der Zeitnachweismodus des Unternehmens, Normal oder DCAA, wird mit DCAA-Steuerelemente verwenden in Einstellungen → Projekte aktiviert. DCAA fügt das Eingabefenster, Gründe für Verspätung und geänderte Zeit, die wöchentliche Bestätigung und die Zeitkartenprüfung hinzu."
 
 msgid "The Contract Assets default account is empty."
 msgstr "Das Standardkonto für Vertragsvermögenswerte ist leer."
@@ -26962,8 +26962,8 @@ msgstr "Der Endpunkt, der eine POST-Anfrage mit den aktualisierten Daten empfän
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "Die technische Zeichnung, an die dieser Prüfplan gekoppelt ist; Prüfungen, die gegen diesen Teil aufgezeichnet werden, beziehen sich auf diese Zeichnung."
 
-msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
-msgstr "Das Eingebungsfenster, die Zeitkartenprüfung, Verdünnung und die Zertifizierung, die ein Mitarbeiter bei der Einreichung unterzeichnet."
+msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
+msgstr "Das Eingabefenster, die Zeitkartenprüfung, die Verdünnung und die Bestätigung, die ein Mitarbeiter beim Einreichen signiert. DCAA wird in Einstellungen → Projekte ein- und ausgeschaltet."
 
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "Die Schätzung zum Abschluss ist älter als {ESTIMATE_MAX_AGE_MONTHS} Monate. Aktualisieren Sie sie, bevor Sie einreichen."
@@ -27396,8 +27396,11 @@ msgstr "Der Teil wird dem bestehenden Bestand entnommen, wenn das übergeordnete
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "Der Anteil einer Lieferzahlung, den die Regierung zurückbehält, um ihre Akontozahlungen oder leistungsabhängigen Zahlungen zu sichern: der Rückbehaltssatz mal die Rechnung, nicht mehr als die noch ausstehende Finanzierung."
 
+msgid "The part or service, and how it reads on the invoice."
+msgstr "Der Teil oder die Dienstleistung und wie sie auf der Rechnung angezeigt wird."
+
 msgid "The part or service, and the CLIN it is billed under."
-msgstr ""
+msgstr "Das Teil oder die Dienstleistung und die CLIN, unter der es abgerechnet wird."
 
 msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
 msgstr "Der Pfad, den eine fertige Baugruppe nimmt, wenn sie in den Zusammenbau eintritt. Sie kommt vor den Teilen des Schritts. Bis du mit „Pfad bearbeiten“ einen zeichnest, gleitet sie von der Seite ein."
@@ -27642,7 +27645,7 @@ msgid "The service item whose sale price prices time on a service order, on its 
 msgstr "Der Dienstleistungsartikel, dessen Verkaufspreis die Zeit auf einem Serviceauftrag, auf seiner Schätzung und auf seiner Rechnung bepreist."
 
 msgid "The service, and how it reads on the invoice."
-msgstr ""
+msgstr "Die Dienstleistung und wie sie auf der Rechnung angezeigt wird."
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Die Dienstleistungen, die dieser Vertrag abrechnet: Einmalige Gebühren und wiederkehrende Gebühren. Klicken Sie auf eine Zelle, um sie zu ändern."
@@ -27897,7 +27900,7 @@ msgid "The work center's own bin where picked material is staged for production 
 msgstr "Der eigene Lagerplatz des Arbeitsplatzes, wo kommissionierte Materialien für die Produktion bereitgestellt werden, im Gegensatz zu seinem Lager-Quellenregal."
 
 msgid "The work the line bills, and the markup on it."
-msgstr ""
+msgstr "Die Arbeit, die die Position abrechnet, und der Aufschlag darauf."
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Die Arbeitszeiten und Kalender, die die Planung steuern"
@@ -27937,6 +27940,9 @@ msgstr "Es wurden mehr Stücke versandt als bestellt"
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Es gibt keine aktiven Lieferantenofferten zum Vergleichen für diese Anfrage."
+
+msgid "There are no other open service jobs."
+msgstr "Es gibt keine anderen offenen Dienstleistungsaufträge."
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Es gibt Fremdvergabe-Arbeitsgänge, die mit diesem Fertigungsauftrag verknüpft sind und keine Lieferanten haben. Bitte weisen Sie jedem Fremdvergabe-Arbeitsgang einen Lieferant zu, bevor Sie freigeben."
@@ -29040,8 +29046,14 @@ msgstr "Versuchen Sie einen anderen Namen."
 msgid "Tuesday"
 msgstr "Dienstag"
 
+msgid "Turn On"
+msgstr "Aktivieren"
+
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Aktivieren Sie <0>die Erleichterung für kurzfristige Mietdauern in Einstellungen → Buchhaltung</0>, oder"
+
+msgid "Turn on government contracting"
+msgstr "Regierungsvergabe aktivieren"
 
 msgid "Turn on the built-in pieces"
 msgstr "Aktivieren Sie die integrierten Komponenten"
@@ -29051,6 +29063,9 @@ msgstr "Synchronisierung deaktiviert"
 
 msgid "Turned on sync"
 msgstr "Synchronisierung aktiviert"
+
+msgid "Turns on DCAA timekeeping and the government contracting fields: cost objectives, allowable cost, CLINs and funding actions. Its timesheet rules are at Settings → Time."
+msgstr "Aktiviert die DCAA-Zeitverfolgung und die Regierungsvergabefelder: Kostenziele, zulässige Kosten, CLINs und Finanzierungsmaßnahmen. Die Zeitnachweisregeln befinden sich in Einstellungen → Zeit."
 
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "Zwölf Monate oder weniger. Nichts wird in die Bilanz aufgenommen; jede Rechnung wird als Aufwand verbucht."
@@ -29701,6 +29716,9 @@ msgstr "Verwenden Sie ein fertiges Unterbauteil in diesem Schritt"
 
 msgid "Use Current View"
 msgstr "Aktuelle Anzeige verwenden"
+
+msgid "Use DCAA controls"
+msgstr "DCAA-Steuerelemente verwenden"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Metrisches System für Standard-Materialdimensionen verwenden."
@@ -30497,7 +30515,7 @@ msgid "What is leased, for example Forklift FL-12"
 msgstr "Was geleased wird, zum Beispiel Gabelstapler FL-12"
 
 msgid "What it bills"
-msgstr ""
+msgstr "Was es abrechnet"
 
 msgid "What it is"
 msgstr "Was es ist"
@@ -30533,7 +30551,7 @@ msgid "What the customer pays up front, the tax on rent, and when invoices are d
 msgstr "Was der Kunde im Voraus zahlt, die Steuer auf die Miete und wann Rechnungen fällig sind."
 
 msgid "What the customer pays, billed on the line's billing events."
-msgstr ""
+msgstr "Was der Kunde bezahlt, abgerechnet zu den Abrechnungsereignissen der Position."
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "Wovon der Countdown der Fälligkeitsfrist beginnt (Rechnungsdatum, Monatsende usw.)."
@@ -30674,7 +30692,7 @@ msgid "When the lease starts and how long it runs, including renewals that are r
 msgstr "Wann der Mietvertrag beginnt und wie lange er läuft, einschließlich Verlängerungen, die mit angemessener Sicherheit erwartet werden."
 
 msgid "When the line starts and ends."
-msgstr ""
+msgstr "Wann die Position beginnt und endet."
 
 msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
 msgstr "Wenn die geplante Menge in der Zu-Lagereinheit unter diese Ebene fällt, wird eine ausgelöste Umlagerung für die Menge erstellt. Leer lassen nur zum Scannen."
@@ -31201,9 +31219,6 @@ msgstr "Sie kaufen effektiv das Anlagegut. Zinsen und Abschreibung des Nutzungsr
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "Sie haben {0} Zeilen aus einer PDF-Datei, die keinem Bestandsartikel zugeordnet sind."
-
-msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
-msgstr "Sie haben keine anderen offenen Serviceaufträge. Ein Auftrag wird hier angezeigt, wenn Sie ihn diese Woche leiten oder bearbeiten."
 
 msgid "You haven't created any contacts yet."
 msgstr "Du hast noch keine Kontakte erstellt."

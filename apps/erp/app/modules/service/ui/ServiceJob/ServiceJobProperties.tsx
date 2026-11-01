@@ -250,16 +250,11 @@ const ServiceJobProperties = () => {
           <Trans>Asset</Trans>
         </h3>
         {asset ? (
-          <HStack className="w-full min-w-0">
-            <Hyperlink to={path.to.customerAsset(asset.id)}>
-              <span className="whitespace-nowrap">
-                {asset.trackedEntity?.readableId}
-              </span>
-            </Hyperlink>
-            <span className="shrink-0">
-              <WarrantyBadge asset={asset} />
+          <Hyperlink to={path.to.customerAsset(asset.id)}>
+            <span className="whitespace-nowrap">
+              {asset.trackedEntity?.readableId}
             </span>
-          </HStack>
+          </Hyperlink>
         ) : (
           <span className="text-muted-foreground">
             <Trans>No asset</Trans>
@@ -273,6 +268,15 @@ const ServiceJobProperties = () => {
           </span>
         )}
       </VStack>
+
+      {asset && (
+        <VStack spacing={2}>
+          <h3 className="text-xs text-muted-foreground">
+            <Trans>Warranty</Trans>
+          </h3>
+          <WarrantyBadge asset={asset} />
+        </VStack>
+      )}
 
       <ValidatedForm
         defaultValues={{ coverage: job?.coverage ?? "" }}

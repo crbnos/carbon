@@ -3,6 +3,7 @@
 > Status: draft
 > Author: Claude (with Brad Barbin)
 > Date: 2026-10-22
+> Scope note (2026-10-31): labor rates and time posting are replaced by `2026-10-31-service-labor-rates-and-time-posting.md`. Decisions 9 and 10 and answer Q3 below no longer apply.
 
 ## TLDR
 

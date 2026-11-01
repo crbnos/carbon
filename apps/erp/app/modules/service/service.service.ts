@@ -28,7 +28,6 @@ import {
 import { inOrder, maybeSingle, rpcValue } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
-  canComplete,
   coverageAccountRole,
   datetime,
   documentHasImages,
@@ -1092,8 +1091,8 @@ export const SERVICE_DAY_HAS_CLOCK_TIME =
  * (no clock): saved, added at the company's service labor item, or removed
  * at 0. A total below the clock entries writes nothing (`saved: false`) and
  * comes back as `warning`. Locks the job FOR UPDATE and refuses a Completed, Invoiced or
- * Cancelled one; with `mustBeAssigned`, also a job the employee is neither
- * assigned to nor leads.
+ * Cancelled one. Any employee may log time on any open job, as on the MES
+ * clock: the assignee owns the job, but more than one person works on it.
  */
 export async function setServiceJobDayHours(
   db: Kysely<KyselyDatabase>,
@@ -1104,7 +1103,6 @@ export async function setServiceJobDayHours(
     serviceJobId: string;
     entryDate: string;
     hours: number;
-    mustBeAssigned: boolean;
   }
 ): Promise<{ saved: boolean; warning: string | null }> {
   return db.transaction().execute(async (trx) => {
@@ -1113,37 +1111,6 @@ export async function setServiceJobDayHours(
       companyId: args.companyId,
       open: true
     });
-
-    if (args.mustBeAssigned) {
-      const assigned = await trx
-        .selectFrom("serviceJob")
-        .select("id")
-        .where("id", "=", job.id)
-        .where("companyId", "=", args.companyId)
-        .where((eb) =>
-          eb.or([
-            eb("assignee", "=", args.employeeId),
-            eb.exists(
-              eb
-                .selectFrom("serviceJobAssignment")
-                .select("serviceJobAssignment.id")
-                .whereRef(
-                  "serviceJobAssignment.serviceJobId",
-                  "=",
-                  "serviceJob.id"
-                )
-                .where("serviceJobAssignment.companyId", "=", args.companyId)
-                .where("serviceJobAssignment.employeeId", "=", args.employeeId)
-            )
-          ])
-        )
-        .executeTakeFirst();
-      if (!assigned) {
-        throw new InvalidInputError(
-          "You can log time only on a job you are assigned to"
-        );
-      }
-    }
 
     const dayEntries = await trx
       .selectFrom("serviceJobTime")
@@ -2012,9 +1979,9 @@ const COMPLETABLE_STATUSES: ReadonlySet<string> = new Set([
  *
  * - `complete` posts the job's time: one journal, a pair per labor item, Dr
  *   the coverage account / Cr laborAbsorptionAccount at hours × the labor
- *   item's `itemCost.unitCost`, stored on each time row. Refused without an
- *   accepted estimate when the job needs one (`canComplete`), with a labor
- *   item that has no cost, or with a clock still running.
+ *   item's `itemCost.unitCost`, stored on each time row. Refused with a labor
+ *   item that has no cost, or with a clock still running. An estimate is
+ *   never required.
  * - `reopen` voids that journal with a negated copy and moves a Completed job
  *   back to In Progress. An Invoiced job cannot reopen, nor can a job whose
  *   RMA unit was shipped back, scrapped or replaced, nor one whose
@@ -2051,11 +2018,6 @@ export async function postServiceJob(
         if (!COMPLETABLE_STATUSES.has(job.status)) {
           throw new InvalidInputError(
             `A job that is ${job.status} cannot be completed.`
-          );
-        }
-        if (!canComplete(job)) {
-          throw new InvalidInputError(
-            "This job needs an accepted estimate before it can be completed."
           );
         }
 

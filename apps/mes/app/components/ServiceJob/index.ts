@@ -4,10 +4,10 @@
 
 export { NewServiceJobModal } from "./NewServiceJobModal";
 export { ServiceJobAddPartModal } from "./ServiceJobAddPartModal";
-export { ServiceJobSignature } from "./ServiceJobSignature";
 export {
   CoverageBadge,
   ServiceJobStatus,
+  ServicePriorityIcon,
   useCoverageLabels,
   useServiceJobStatusLabels,
   useWorkSiteLabels,

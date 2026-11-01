@@ -1458,7 +1458,7 @@ msgid "A different inspector is required"
 msgstr "異なる検査担当者が必須です"
 
 msgid "A discount can end on a date; the line then bills its full rate."
-msgstr ""
+msgstr "値引は日付で終了でき、その後明細は完全な料率で請求されます。"
 
 msgid "A draft run must be posted or deleted first."
 msgstr "下書き実行は最初に転記済にするか削除する必要があります。"
@@ -1668,7 +1668,7 @@ msgid "A price on a rental agreement at which the customer can buy the unit, cou
 msgstr "得意先がその資産を購入できる賃貸借契約上の価格であり、リース支払としてカウントされ、その行使が合理的に確実な場合にそのリースがセールスタイプリースとなり、得意先に売却によって請求されます。"
 
 msgid "A price per unit, billed on the line's billing events"
-msgstr ""
+msgstr "単位あたりの価格で、明細の請求イベント時に請求されます"
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "価格付き販売見積。下書き→送信→発注済、または失注・期限切れ・キャンセル済で終了。"
@@ -1821,7 +1821,7 @@ msgid "A receipt's supplier changes"
 msgstr "領収書の仕入先が変更される"
 
 msgid "A recurring line bills every period at its rate; a one-time line bills once."
-msgstr ""
+msgstr "定期的な明細は毎期その料率で請求され、一度限りの明細は一度だけ請求されます。"
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "レンタル契約を有効化するには、会社の基本通貨である必要があります。契約通貨を先に変更してください。"
@@ -1935,7 +1935,7 @@ msgid "A set of instructions to pull a job's outstanding materials from the ware
 msgstr "製造指図の未処理の材料を倉庫から引き出し、ラインサイドで配置するための一連の指示。ピッキングは在庫を消費するのではなく、使用の地点に移動させます。"
 
 msgid "A set price, billed on the line's billing events"
-msgstr ""
+msgstr "固定価格で、明細の請求イベント時に請求されます"
 
 msgid "A shipment is created"
 msgstr "出荷が作成される"
@@ -2497,6 +2497,9 @@ msgstr "ドメインを追加"
 msgid "Add a line for each CLIN: Time & Materials, Cost Plus or Fixed Price."
 msgstr "各CLINの明細を追加してください: 工数・材料費、コスト・プラス、または固定価格。"
 
+msgid "Add a line for each part of the work: Time & Materials, Cost Plus or Fixed Price."
+msgstr "作業の各部分について明細を追加してください：Time & Materials、Cost Plus、またはFixed Price。"
+
 msgid "Add a line to the document"
 msgstr "文書に明細を追加"
 
@@ -2666,7 +2669,7 @@ msgid "Add Item"
 msgstr "アイテムを追加"
 
 msgid "Add Job"
-msgstr ""
+msgstr "製造指図を追加"
 
 msgid "Add Journal Entry"
 msgstr "仕訳行を追加"
@@ -3182,7 +3185,7 @@ msgid "Allowable Cost"
 msgstr "許可可能な原価"
 
 msgid "Allowable cost, plus a fee"
-msgstr ""
+msgstr "許容原価と料金"
 
 msgid "Allows acknowledge & continue"
 msgstr "確認して続行できます"
@@ -5041,7 +5044,7 @@ msgid "Billing"
 msgstr "請求"
 
 msgid "Billing & funding"
-msgstr ""
+msgstr "請求と資金"
 
 msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
 msgstr "レンタル請求は固定期間で行われ、開始日からの月、カレンダー月、または連続する28日間のいずれかを期間とします。各期間は最初の日（前払い）または最後の日（後払い）に請求済です。"
@@ -5089,7 +5092,7 @@ msgid "Billing periods are cut when the agreement is activated."
 msgstr "契約が有効化されると請求期間が作成されます。"
 
 msgid "Billing stops at the funded amount."
-msgstr ""
+msgstr "請求は資金額で停止します。"
 
 msgid "Billing stops at this amount"
 msgstr "請求はこの金額で停止します"
@@ -6070,7 +6073,7 @@ msgid "Children"
 msgstr "子要素"
 
 msgid "Children and jobs"
-msgstr ""
+msgstr "子要素と製造指図"
 
 msgid "Choose a backup"
 msgstr "バックアップを選択"
@@ -7069,9 +7072,6 @@ msgstr "アイテムID（部品、材料、消耗品、工具、およびサー�
 msgid "Controller, Accountant"
 msgstr "コントローラー、会計士"
 
-msgid "Controls"
-msgstr "統制"
-
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "計画が廃止品目をどのように処理するかを制御します：先に消費は在庫がなくなるまで消費してから後継品目に切り替え、新を優先は新しい所要量を即座に後継品目にリダイレクト、在庫のみは最小サービス在庫のみを保持、在庫なしは品目を計画から完全に除外します。"
 
@@ -7784,9 +7784,6 @@ msgstr "要素を作成"
 msgid "Create Forecast"
 msgstr "予測を作成"
 
-msgid "Create Invoice"
-msgstr "請求書を作成"
-
 msgid "Create Issue"
 msgstr "問題を作成"
 
@@ -8498,7 +8495,7 @@ msgid "Dates"
 msgstr "日付"
 
 msgid "Dates & revenue"
-msgstr ""
+msgstr "日付と売上高"
 
 msgid "Dawn's breaking, {name}."
 msgstr "明け方ですね、{name}さん。"
@@ -8542,12 +8539,6 @@ msgstr "休日"
 
 msgid "Days Remaining"
 msgstr "残り日数"
-
-msgid "DCAA"
-msgstr "DCAA"
-
-msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
-msgstr "DCAIAは毎日のエントリー、各変更の理由、提出時の認証、およびプロジェクトメンバーによるチャージのみを要求します。"
 
 msgid "DCAA rules"
 msgstr "DCAA ルール"
@@ -9581,7 +9572,7 @@ msgid "discount {was} → {now}"
 msgstr "値引 {was} → {now}"
 
 msgid "Discount and tax"
-msgstr ""
+msgstr "値引と税"
 
 msgid "Discount Days"
 msgstr "値引日数"
@@ -10698,6 +10689,9 @@ msgstr "この教育訓練に割り当てられた従業員は開くことがで
 
 msgid "Employees can no longer open this training."
 msgstr "従業員はこの教育訓練を開くことができなくなりました。"
+
+msgid "Employees certify their week with this text when they submit a timesheet."
+msgstr "従業員がタイムシートを提出するときに、このテキストで週を認証します。"
 
 msgid "Employees complete a training in Carbon"
 msgstr "従業員がCarbonで教育訓練を完了する"
@@ -11941,6 +11935,9 @@ msgstr "獲得価値の保存に失敗しました"
 msgid "Failed to save tools"
 msgstr "ツールの保存に失敗しました"
 
+msgid "Failed to turn on government contracting"
+msgstr "Government Contractingの有効化に失敗しました"
+
 msgid "Failed to update batch property"
 msgstr "バッチプロパティの更新に失敗しました"
 
@@ -12556,7 +12553,7 @@ msgid "Funding Actions"
 msgstr "資金調達措置"
 
 msgid "Funding notice"
-msgstr ""
+msgstr "資金通知"
 
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr "手数料なしの資金調達。資金調達通知は費用と比較します"
@@ -12920,6 +12917,9 @@ msgstr "Google Places APIキーが設定されていません"
 msgid "Government contracting"
 msgstr "政府契約"
 
+msgid "Government Contracting"
+msgstr "Government Contracting"
+
 msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
 msgstr "発生原価に基づく固定価格契約の政府資金調達（FAR 32.5）。外部作業者がSF 1443で申請し、政府が納品支払から回収します。"
 
@@ -13149,7 +13149,7 @@ msgid "Hours assumed from location shifts"
 msgstr "場所のシフトから想定される時間"
 
 msgid "Hours at bill rates, plus material and other cost with handling"
-msgstr ""
+msgstr "請求料率での工数、材料および処理含む原価"
 
 msgid "Hours at this station"
 msgstr "このステーションの時間"
@@ -13231,14 +13231,11 @@ msgstr "各明細が売上高を得る方法：日ごとに分散するか、毎
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "各個のレンタル料がどのように期間に分割され、期間内のいつ請求されるかを説明します。"
 
-msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
-msgstr "従業員がプロジェクトの時間を記録する方法。標準ではタイムシートをシンプルに保ちます。DCAは政府契約監査がチェックするコントロールを追加します。"
-
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "スケジュール済みの作業が利用可能な時間をどの程度超過しているか（+）、または空いている時間がどの程度あるか。"
 
 msgid "How it bills"
-msgstr ""
+msgstr "請求方法"
 
 msgid "How items roll up for posting and reporting"
 msgstr "アイテムが転記とレポートにどのようにロールアップされるか"
@@ -13292,7 +13289,7 @@ msgid "How many were actually picked?"
 msgstr "実際にはいくつ選ばれましたか？"
 
 msgid "How many, and the rate each one bills."
-msgstr ""
+msgstr "数量と請求料率"
 
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "得意先がどのくらいの頻度で請求されるか、いつから。以下の請求書が続きます。"
@@ -13316,7 +13313,7 @@ msgid "How the job ranks when the scheduler hands out capacity — ASAP claims f
 msgstr "スケジューラーが容量を割り当てるときに製造指図がどのようにランク付けされるか — ASAP が最初に請求し、その後ハード期限、ソフト期限、期限なしが最後です。ランキング信号のみ；期限タイプは配置をブロックまたはゲートしません。"
 
 msgid "How the line's revenue is recognized."
-msgstr ""
+msgstr "明細の売上高認識方法"
 
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "材料がどのように調達されるか(内製、購入、または在庫から引当)と、それが引き当てられる保管ユニット"
@@ -14330,8 +14327,11 @@ msgstr "発行日"
 msgid "Issues"
 msgstr "問題"
 
+msgid "It decides how the line is priced."
+msgstr "明細の価格設定方法を決定します。"
+
 msgid "It decides what the next step asks for."
-msgstr ""
+msgstr "次のステップの要件を決定します。"
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "承認済ですが適用できません。再オープンしてこれらの行を確認してから、もう一度提出してください。"
@@ -26766,8 +26766,8 @@ msgstr "会社には既に転記済の期首残高仕訳があります。"
 msgid "The company has no account defaults."
 msgstr "会社に勘定科目のデフォルト設定がありません。"
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "会社のタイムシートモードは標準またはDCAAで、設定 → 時間で設定されます。DCAAは入力ウィンドウ、遅刻および時間変更の理由、毎週の認証、およびタイムカード確認を追加します。"
+msgid "The company's timesheet mode, Standard or DCAA, turned on with Use DCAA controls at Settings → Projects. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr "会社のタイムシートモード（標準またはDCAA）は、設定→プロジェクトでDCAA制御を使用してオンになっています。DCAA は入力ウィンドウ、遅刻と変更時間の理由、毎週の認証とタイムカード確認を追加します。"
 
 msgid "The Contract Assets default account is empty."
 msgstr "契約資産のデフォルトアカウントが空です。"
@@ -26962,8 +26962,8 @@ msgstr "テーブルが更新されたときに、更新されたデータを含
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "この検査計画が関連付けられているエンジニアリング図面。このパーツに対して記録された検査はこの図面を参照します。"
 
-msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
-msgstr "入力ウィンドウ、タイムカード確認、希釈および従業員が提出時に署名する認定。"
+msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
+msgstr "従業員が提出時に署名する入力ウィンドウ、タイムカード確認、希釈、および認証。DCAA は設定→プロジェクトでオン/オフになります。"
 
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "完了までの推定値は{ESTIMATE_MAX_AGE_MONTHS}ヶ月以上前です。提出する前に更新してください。"
@@ -27396,8 +27396,11 @@ msgstr "部品はその親製品が製造されるときに既存在庫から取
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "政府が進捗支払または成果支払を回収するために納品支払から控除する部分。清算率 × 請求書で計算され、未清算融資額を超えません。"
 
+msgid "The part or service, and how it reads on the invoice."
+msgstr "部品または外注サービス、および請求書での表記方法。"
+
 msgid "The part or service, and the CLIN it is billed under."
-msgstr ""
+msgstr "部品または外注サービス、および請求対象の CLIN"
 
 msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
 msgstr "完成した部分組立がビルドに加わる際に1つのピースとして移動するパス。ステップの部品より前に到着します。編集パスで描くまでは、ビルドの脇からスライドして現れます。"
@@ -27642,7 +27645,7 @@ msgid "The service item whose sale price prices time on a service order, on its 
 msgstr "サービス注文の時間の価格、見積、請求書を決定するサービス品目。"
 
 msgid "The service, and how it reads on the invoice."
-msgstr ""
+msgstr "外注サービスおよび請求書での表示方法"
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "このコントラクトが請求する外注サービス：1回限りの料金と定期的な料金。セルをクリックして変更してください。"
@@ -27897,7 +27900,7 @@ msgid "The work center's own bin where picked material is staged for production 
 msgstr "作業区が持つ自身のビンで、ピッキング済の材料が生産で引き出されるようにステージングされる場所です。倉庫の仕入元の棚とは異なります。"
 
 msgid "The work the line bills, and the markup on it."
-msgstr ""
+msgstr "明細で請求する作業と上乗せ"
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "スケジューリングを駆動する勤務時間とカレンダー"
@@ -27937,6 +27940,9 @@ msgstr "出荷されたものが発注数より多い"
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "このRFQに対して比較する有効な仕入先見積がありません。"
+
+msgid "There are no other open service jobs."
+msgstr "他にオープンな外注サービス製造指図はありません。"
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "この製造指図に関連する外注工程があり、それらに仕入先が割り当てられていません。リリースする前に、各外注工程に仕入先を割り当ててください。"
@@ -29040,8 +29046,14 @@ msgstr "別の名前を試してください。"
 msgid "Tuesday"
 msgstr "火曜日"
 
+msgid "Turn On"
+msgstr "オンにする"
+
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "<0>設定 → 会計で短期リースの簡便処理をオンにしてください</0>、または"
+
+msgid "Turn on government contracting"
+msgstr "Government Contractingをオンにする"
 
 msgid "Turn on the built-in pieces"
 msgstr "組み込み機能をオンにする"
@@ -29051,6 +29063,9 @@ msgstr "同期をオフにしました"
 
 msgid "Turned on sync"
 msgstr "同期をオンにしました"
+
+msgid "Turns on DCAA timekeeping and the government contracting fields: cost objectives, allowable cost, CLINs and funding actions. Its timesheet rules are at Settings → Time."
+msgstr "DCAA勤務時間追跡とGovernment Contractingフィールドをオンにします：原価目標、許容可能な原価、CLIN、および資金調達アクション。タイムシート規則は設定→時間にあります。"
 
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "12か月以下。貸借対照表に何も計上されません。各請求書は費用化されます。"
@@ -29701,6 +29716,9 @@ msgstr "このステップで完成したサブアセンブリを使用"
 
 msgid "Use Current View"
 msgstr "現在のビューを使用"
+
+msgid "Use DCAA controls"
+msgstr "DCAA制御を使用する"
 
 msgid "Use metric system for default material dimensions."
 msgstr "デフォルト材料ディメンションにメートル法を使用してください。"
@@ -30497,7 +30515,7 @@ msgid "What is leased, for example Forklift FL-12"
 msgstr "リースされている内容（例：Forklift FL-12など）"
 
 msgid "What it bills"
-msgstr ""
+msgstr "請求内容"
 
 msgid "What it is"
 msgstr "それが何であるか"
@@ -30533,7 +30551,7 @@ msgid "What the customer pays up front, the tax on rent, and when invoices are d
 msgstr "得意先が前払いするもの、レンタル料に対する税、そして請求書が期限になるとき。"
 
 msgid "What the customer pays, billed on the line's billing events."
-msgstr ""
+msgstr "得意先が支払う額で、明細の請求イベント時に請求されます。"
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "期日カウントダウンが開始される内容(請求書日付、月末など)。"
@@ -30674,7 +30692,7 @@ msgid "When the lease starts and how long it runs, including renewals that are r
 msgstr "リースが開始される時期と期間、および合理的に確実な更新を含みます。"
 
 msgid "When the line starts and ends."
-msgstr ""
+msgstr "明細の開始日と終了日"
 
 msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
 msgstr "宛先保管ユニットの予定数量がこのレベル以下に落ちると、リリース済の在庫転送がかんばん数量で作成されます。スキャンのみの場合は空白のままにしてください。"
@@ -31201,9 +31219,6 @@ msgstr "実質的に資産を購入します。使用権資産の利息と償却
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "あなたは、PDFから抽出された{0}行を持っていますが、これらはインベントリアイテムにマップされていません。"
-
-msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
-msgstr "他にオープンなサービス製造指図がありません。製造指図は、今週あなたがリードしているか割り当てられている場合に表示されます。"
 
 msgid "You haven't created any contacts yet."
 msgstr "まだ担当者を作成していません。"

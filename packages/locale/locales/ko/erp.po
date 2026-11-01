@@ -1458,7 +1458,7 @@ msgid "A different inspector is required"
 msgstr "다른 검사자가 필요합니다"
 
 msgid "A discount can end on a date; the line then bills its full rate."
-msgstr ""
+msgstr "할인은 특정 날짜에 종료될 수 있으며, 라인은 이후 정가로 청구됩니다."
 
 msgid "A draft run must be posted or deleted first."
 msgstr "초안 실행을 먼저 전기하거나 삭제해야 합니다."
@@ -1668,7 +1668,7 @@ msgid "A price on a rental agreement at which the customer can buy the unit, cou
 msgstr "고객이 장비를 구매할 수 있는 임차료 계약상의 가격으로, 행사 가능성이 높으면 임차료 지불로 계산되어 판매-유형 리스가 되며, 고객에게 판매하는 것으로 청구됩니다."
 
 msgid "A price per unit, billed on the line's billing events"
-msgstr ""
+msgstr "개당 가격, 라인의 청구 이벤트에 따라 청구됨"
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "가격이 책정된 판매 견적으로 초안 → 전송됨 → 발주됨 또는 실주, 만료됨, 취소됨으로 끝납니다."
@@ -1821,7 +1821,7 @@ msgid "A receipt's supplier changes"
 msgstr "입고의 공급업체가 변경됩니다."
 
 msgid "A recurring line bills every period at its rate; a one-time line bills once."
-msgstr ""
+msgstr "반복 라인은 매 기간마다 요금으로 청구되고, 일회성 라인은 한 번만 청구됩니다."
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "임차 계약을 활성화하려면 회사의 기본 통화여야 합니다. 먼저 계약 통화를 변경하세요."
@@ -1935,7 +1935,7 @@ msgid "A set of instructions to pull a job's outstanding materials from the ware
 msgstr "작업 지시의 미처리 자재를 창고에서 인출하여 라인사이드에 배치하기 위한 지시사항 집합; 피킹은 재고를 소비하지 않고 사용 지점으로 이동합니다."
 
 msgid "A set price, billed on the line's billing events"
-msgstr ""
+msgstr "정해진 가격, 라인의 청구 이벤트에 따라 청구됨"
 
 msgid "A shipment is created"
 msgstr "출하가 생성됨"
@@ -2497,6 +2497,9 @@ msgstr "도메인 추가"
 msgid "Add a line for each CLIN: Time & Materials, Cost Plus or Fixed Price."
 msgstr "각 CLIN에 대해 라인을 추가하세요: 시간 및 자재, 원가가산제 또는 정가제."
 
+msgid "Add a line for each part of the work: Time & Materials, Cost Plus or Fixed Price."
+msgstr "작업의 각 부분에 대해 라인을 추가하세요: 시간 및 자재, 원가 플러스 또는 정액 가격."
+
 msgid "Add a line to the document"
 msgstr "문서에 라인 추가"
 
@@ -2666,7 +2669,7 @@ msgid "Add Item"
 msgstr "품목 추가"
 
 msgid "Add Job"
-msgstr ""
+msgstr "작업 지시 추가"
 
 msgid "Add Journal Entry"
 msgstr "분개 추가"
@@ -3182,7 +3185,7 @@ msgid "Allowable Cost"
 msgstr "허용 가능한 원가"
 
 msgid "Allowable cost, plus a fee"
-msgstr ""
+msgstr "허용 원가 및 수수료"
 
 msgid "Allows acknowledge & continue"
 msgstr "확인 후 계속 진행 허용"
@@ -5041,7 +5044,7 @@ msgid "Billing"
 msgstr "결제"
 
 msgid "Billing & funding"
-msgstr ""
+msgstr "청구 및 자금"
 
 msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
 msgstr "임대료를 고정된 기간으로 청구: 시작일로부터의 월, 달력월, 또는 연속 28일 기간 중 선택하며, 각 기간은 첫날(선입금) 또는 마지막날(후불금)에 송장 발행됨."
@@ -5089,7 +5092,7 @@ msgid "Billing periods are cut when the agreement is activated."
 msgstr "청구 기간은 계약이 활성화될 때 생성됩니다."
 
 msgid "Billing stops at the funded amount."
-msgstr ""
+msgstr "청구는 자금 지원 금액에서 중단됩니다."
 
 msgid "Billing stops at this amount"
 msgstr "이 금액에서 청구가 중단됩니다"
@@ -6070,7 +6073,7 @@ msgid "Children"
 msgstr "하위 항목"
 
 msgid "Children and jobs"
-msgstr ""
+msgstr "자식 항목 및 작업 지시"
 
 msgid "Choose a backup"
 msgstr "백업 선택"
@@ -7069,9 +7072,6 @@ msgstr "품목 ID(부품, 자재, 소모품, 공구, 서비스)에 소문자 포
 msgid "Controller, Accountant"
 msgstr "컨트롤러, 회계 담당자"
 
-msgid "Controls"
-msgstr "제어"
-
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "계획이 단종 품목을 처리하는 방식을 제어합니다: 우선 소진은 후속 품목으로 전환하기 전에 현재고를 소진하고, 신규 우선은 새로운 소요량을 즉시 후속 품목으로 리디렉트하며, 재고만은 최소 서비스 예비만 유지하고, 재고 없음은 계획에서 품목을 완전히 제거합니다."
 
@@ -7784,9 +7784,6 @@ msgstr "요소 생성"
 msgid "Create Forecast"
 msgstr "예측 생성"
 
-msgid "Create Invoice"
-msgstr "송장 생성"
-
 msgid "Create Issue"
 msgstr "이슈 생성"
 
@@ -8498,7 +8495,7 @@ msgid "Dates"
 msgstr "날짜"
 
 msgid "Dates & revenue"
-msgstr ""
+msgstr "날짜 및 매출"
 
 msgid "Dawn's breaking, {name}."
 msgstr "{name}님, 새벽이 밝아오고 있네요."
@@ -8542,12 +8539,6 @@ msgstr "휴무일"
 
 msgid "Days Remaining"
 msgstr "남은 일수"
-
-msgid "DCAA"
-msgstr "DCAA"
-
-msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
-msgstr "DCAA는 매일 항목, 각 변경에 대한 사유, 제출 시 인증 및 프로젝트 멤버에 의해서만 청구할 것을 요구합니다."
 
 msgid "DCAA rules"
 msgstr "DCAA 규칙"
@@ -9581,7 +9572,7 @@ msgid "discount {was} → {now}"
 msgstr "할인 {was} → {now}"
 
 msgid "Discount and tax"
-msgstr ""
+msgstr "할인 및 세금"
 
 msgid "Discount Days"
 msgstr "할인 일수"
@@ -10698,6 +10689,9 @@ msgstr "이 교육에 할당된 직원들이 그것을 열 수 있습니다. 콘
 
 msgid "Employees can no longer open this training."
 msgstr "직원들은 더 이상 이 교육을 열 수 없습니다."
+
+msgid "Employees certify their week with this text when they submit a timesheet."
+msgstr "직원이 타임시트를 제출할 때 이 텍스트로 주를 인증합니다."
 
 msgid "Employees complete a training in Carbon"
 msgstr "직원들이 Carbon에서 교육을 완료합니다"
@@ -11941,6 +11935,9 @@ msgstr "획득 가치를 저장할 수 없습니다"
 msgid "Failed to save tools"
 msgstr "도구 저장 실패"
 
+msgid "Failed to turn on government contracting"
+msgstr "정부 계약을 켜지 못했습니다"
+
 msgid "Failed to update batch property"
 msgstr "배치 속성을 업데이트하지 못했습니다"
 
@@ -12556,7 +12553,7 @@ msgid "Funding Actions"
 msgstr "자금 조성 조치"
 
 msgid "Funding notice"
-msgstr ""
+msgstr "자금 지원 공지"
 
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr "수수료 없는 자금 조성; 자금 조성 공지는 이와 함께 원가를 비교합니다"
@@ -12920,6 +12917,9 @@ msgstr "Google Places API 키가 설정되지 않았습니다"
 msgid "Government contracting"
 msgstr "정부 계약"
 
+msgid "Government Contracting"
+msgstr "정부 계약"
+
 msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
 msgstr "비용 발생 기반의 고정가격 계약 정부 자금 지원(FAR 32.5). 계약자는 SF 1443으로 요청하며, 정부는 납품 지불에서 회수합니다."
 
@@ -13149,7 +13149,7 @@ msgid "Hours assumed from location shifts"
 msgstr "사업장 교대조에서 가정한 시간"
 
 msgid "Hours at bill rates, plus material and other cost with handling"
-msgstr ""
+msgstr "청구 요금의 시간, 자재 및 기타 원가(처리비 포함)"
 
 msgid "Hours at this station"
 msgstr "이 스테이션의 시간"
@@ -13231,14 +13231,11 @@ msgstr "각 라인이 매출을 얻는 방법: 일별 분산 또는 월별 균�
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "각 단위의 렌트가 기간으로 나뉘는 방식과 기간 내 언제 송장이 발행되는지입니다."
 
-msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
-msgstr "직원이 프로젝트에서 시간을 기록하는 방법입니다. 표준은 타임시트를 단순하게 유지합니다. DCAA는 정부 계약 감사가 확인하는 컨트롤을 추가합니다."
-
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "예약된 작업이 가용 시간을 초과한 정도(+) 또는 남은 여유 시간."
 
 msgid "How it bills"
-msgstr ""
+msgstr "청구 방식"
 
 msgid "How items roll up for posting and reporting"
 msgstr "품목이 전기 및 보고를 위해 합산되는 방식"
@@ -13292,7 +13289,7 @@ msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"
 
 msgid "How many, and the rate each one bills."
-msgstr ""
+msgstr "수량 및 각각의 청구 요금"
 
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "고객이 송장을 받는 빈도 및 시기입니다. 아래 송장들을 참조하세요."
@@ -13316,7 +13313,7 @@ msgid "How the job ranks when the scheduler hands out capacity — ASAP claims f
 msgstr "스케줄러가 용량을 배분할 때 작업 지시의 순위 — ASAP가 먼저 요청되고, 그 다음 고정 기한, 유연 기한, 기한 없음 순입니다. 순위 신호일 뿐이며, 어떤 기한 유형도 배치를 차단하거나 제한하지 않습니다."
 
 msgid "How the line's revenue is recognized."
-msgstr ""
+msgstr "라인의 매출이 인식되는 방식"
 
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "자재 구매 방식(사내 생산, 구매 또는 재고 사용) 및 자재를 보관하는 보관 단위."
@@ -14330,8 +14327,11 @@ msgstr "출고일"
 msgid "Issues"
 msgstr "이슈"
 
+msgid "It decides how the line is priced."
+msgstr "라인의 가격 책정 방식을 결정합니다."
+
 msgid "It decides what the next step asks for."
-msgstr ""
+msgstr "다음 단계가 요청하는 것을 결정합니다."
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "승인되었지만 적용할 수 없습니다. 다시 열어 이 행을 확인한 후 다시 제출하세요."
@@ -26766,8 +26766,8 @@ msgstr "회사에 이미 전기된 개시잔액 전표가 있습니다."
 msgid "The company has no account defaults."
 msgstr "회사에 계정 기본값이 없습니다."
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "회사의 타임시트 모드는 표준 또는 DCAA이며, 설정 → 시간에서 설정됩니다. DCAA는 항목 입력 창, 지연 및 변경된 시간의 이유, 매주 인증 및 타임카드 확인을 추가합니다."
+msgid "The company's timesheet mode, Standard or DCAA, turned on with Use DCAA controls at Settings → Projects. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr "회사의 타임시트 모드, 보통 검사 또는 DCAA, 설정 → 프로젝트에서 DCAA 컨트롤 사용으로 켜짐. DCAA는 입력 창, 늦음 및 변경된 시간의 이유, 매주 인증 및 타임카드 확인을 추가합니다."
 
 msgid "The Contract Assets default account is empty."
 msgstr "계약 자산 기본 계정이 비어 있습니다."
@@ -26962,8 +26962,8 @@ msgstr "테이블이 업데이트될 때 변경된 데이터를 담은 POST 요�
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "이 검사 계획이 연결된 엔지니어링 드로잉입니다. 이 부품에 대해 기록된 검사는 이 드로잉을 참조합니다."
 
-msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
-msgstr "항목 창, 타임카드 확인, 희석 및 직원이 제출할 때 서명하는 인증."
+msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
+msgstr "입력 창, 타임카드 확인, 희석 및 직원이 제출할 때 서명하는 인증. DCAA는 설정 → 프로젝트에서 켜지고 꺼집니다."
 
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "완료 예상치가 {ESTIMATE_MAX_AGE_MONTHS}개월 이상 되었습니다. 제출하기 전에 업데이트하세요."
@@ -27396,8 +27396,11 @@ msgstr "부품은 상위 부품이 구축될 때 기존 재고에서 가져오�
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "정부가 기성금 또는 실적금으로부터의 회수를 위해 보유하는 납기금의 일부: 송장 금액에 정산율을 곱한 금액으로, 미정산 금융액을 초과하지 않음."
 
+msgid "The part or service, and how it reads on the invoice."
+msgstr "부품 또는 서비스, 그리고 송장에 표시되는 방식."
+
 msgid "The part or service, and the CLIN it is billed under."
-msgstr ""
+msgstr "부품 또는 서비스, 및 청구 기준 CLIN"
 
 msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
 msgstr "완성된 소부조립품이 조립에 참여할 때 하나의 부분으로 이동하는 경로입니다. 단계의 자체 부품이 도착하기 전에 도착하며, 경로 편집으로 직접 그릴 때까지 조립 옆에서 들어옵니다."
@@ -27642,7 +27645,7 @@ msgid "The service item whose sale price prices time on a service order, on its 
 msgstr "서비스 주문, 견적 및 송장에서 시간 가격을 정하는 판매 가격의 서비스 품목입니다."
 
 msgid "The service, and how it reads on the invoice."
-msgstr ""
+msgstr "서비스 및 송장에 표시되는 방식"
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "이 계약이 청구하는 서비스: 일회성 수수료 및 반복 요금입니다. 셀을 클릭하여 변경하세요."
@@ -27897,7 +27900,7 @@ msgid "The work center's own bin where picked material is staged for production 
 msgstr "작업장의 자체 빈으로, 피킹된 자재가 생산이 사용할 수 있도록 준비되는 곳이며, 창고 원본 선반과는 다릅니다."
 
 msgid "The work the line bills, and the markup on it."
-msgstr ""
+msgstr "라인이 청구하는 작업 및 마진"
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "일정 수립의 기준이 되는 근무 시간 및 캘린더"
@@ -27937,6 +27940,9 @@ msgstr "주문한 수량보다 배송한 수량이 더 많습니다."
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "이 RFQ와 비교할 활성 공급업체 견적이 없습니다."
+
+msgid "There are no other open service jobs."
+msgstr "다른 미결 서비스 작업 지시가 없습니다."
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "이 작업 지시와 관련된 외주 공정이 있지만 공급업체가 없습니다. 릴리스하기 전에 각 외주 공정에 공급업체를 할당하십시오."
@@ -29040,8 +29046,14 @@ msgstr "다른 이름을 시도하세요."
 msgid "Tuesday"
 msgstr "화요일"
 
+msgid "Turn On"
+msgstr "켜기"
+
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "<0>설정 → 회계에서 단기 리스 간편법</0>을 켜세요, 또는"
+
+msgid "Turn on government contracting"
+msgstr "정부 계약 켜기"
 
 msgid "Turn on the built-in pieces"
 msgstr "내장 기능을 켜세요"
@@ -29051,6 +29063,9 @@ msgstr "동기화가 꺼졌습니다"
 
 msgid "Turned on sync"
 msgstr "동기화가 켜졌습니다"
+
+msgid "Turns on DCAA timekeeping and the government contracting fields: cost objectives, allowable cost, CLINs and funding actions. Its timesheet rules are at Settings → Time."
+msgstr "DCAA 시간 추적 및 정부 계약 필드를 켭니다: 원가 목표, 허용 가능한 원가, CLIN 및 자금 조치. 타임시트 규칙은 설정 → 시간에 있습니다."
 
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "12개월 이하. 재무상태표에 기록되지 않습니다. 각 송장은 비용화됩니다."
@@ -29701,6 +29716,9 @@ msgstr "완성된 하위 어셈블리를 이 단계에서 사용"
 
 msgid "Use Current View"
 msgstr "현재 보기 사용"
+
+msgid "Use DCAA controls"
+msgstr "DCAA 컨트롤 사용"
 
 msgid "Use metric system for default material dimensions."
 msgstr "기본 자재 치수에 미터법 시스템 사용"
@@ -30497,7 +30515,7 @@ msgid "What is leased, for example Forklift FL-12"
 msgstr "예를 들어 포크리프트 FL-12와 같이 리스되는 것"
 
 msgid "What it bills"
-msgstr ""
+msgstr "청구 대상"
 
 msgid "What it is"
 msgstr "무엇인지"
@@ -30533,7 +30551,7 @@ msgid "What the customer pays up front, the tax on rent, and when invoices are d
 msgstr "고객이 선금으로 지불하는 금액, 렌트에 대한 세금, 그리고 송장이 만기인 시기입니다."
 
 msgid "What the customer pays, billed on the line's billing events."
-msgstr ""
+msgstr "고객이 지불하는 금액, 라인의 청구 이벤트에 따라 청구됨"
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "납기일 카운트다운이 시작되는 지점 (송장 일자, 월말 등)."
@@ -30674,7 +30692,7 @@ msgid "When the lease starts and how long it runs, including renewals that are r
 msgstr "리스가 시작되는 시기 및 실행 기간(합리적으로 확실한 갱신 포함)"
 
 msgid "When the line starts and ends."
-msgstr ""
+msgstr "라인의 시작 및 종료 시간"
 
 msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
 msgstr "도착 보관 단위의 예상 수량이 이 레벨 아래로 내려가면 수량만큼의 릴리스됨 재고 이송이 생성됩니다. 스캔 전용인 경우 비워두세요."
@@ -31201,9 +31219,6 @@ msgstr "사실상 자산을 구입합니다. 사용권 자산의 이자와 상�
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "PDF에서 추출된 라인 중 {0}개가 재고 품목에 매핑되지 않았습니다."
-
-msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
-msgstr "다른 미결 서비스 작업 지시가 없습니다. 작업 지시는 당신이 이번 주에 리드하거나 할당받은 경우에 여기에 표시됩니다."
 
 msgid "You haven't created any contacts yet."
 msgstr "아직 담당자를 생성하지 않았습니다."

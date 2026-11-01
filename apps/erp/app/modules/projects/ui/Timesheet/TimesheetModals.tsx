@@ -171,10 +171,7 @@ function AddServiceJobForm({
           {tabs}
           {serviceJobs.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              <Trans>
-                You have no other open service jobs. A job shows here when you
-                lead it or are assigned to it this week.
-              </Trans>
+              <Trans>There are no other open service jobs.</Trans>
             </p>
           ) : (
             <Select

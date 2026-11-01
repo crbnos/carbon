@@ -2497,6 +2497,9 @@ msgstr "Add a domain"
 msgid "Add a line for each CLIN: Time & Materials, Cost Plus or Fixed Price."
 msgstr "Add a line for each CLIN: Time & Materials, Cost Plus or Fixed Price."
 
+msgid "Add a line for each part of the work: Time & Materials, Cost Plus or Fixed Price."
+msgstr "Add a line for each part of the work: Time & Materials, Cost Plus or Fixed Price."
+
 msgid "Add a line to the document"
 msgstr "Add a line to the document"
 
@@ -7069,9 +7072,6 @@ msgstr "Control whether item IDs (parts, materials, consumables, tools, and serv
 msgid "Controller, Accountant"
 msgstr "Controller, Accountant"
 
-msgid "Controls"
-msgstr "Controls"
-
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 
@@ -7783,9 +7783,6 @@ msgstr "Create Elements"
 
 msgid "Create Forecast"
 msgstr "Create Forecast"
-
-msgid "Create Invoice"
-msgstr "Create Invoice"
 
 msgid "Create Issue"
 msgstr "Create Issue"
@@ -8542,12 +8539,6 @@ msgstr "Days Off"
 
 msgid "Days Remaining"
 msgstr "Days Remaining"
-
-msgid "DCAA"
-msgstr "DCAA"
-
-msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
-msgstr "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
 
 msgid "DCAA rules"
 msgstr "DCAA rules"
@@ -10699,6 +10690,9 @@ msgstr "Employees assigned to this training can open it. The content, guide and 
 msgid "Employees can no longer open this training."
 msgstr "Employees can no longer open this training."
 
+msgid "Employees certify their week with this text when they submit a timesheet."
+msgstr "Employees certify their week with this text when they submit a timesheet."
+
 msgid "Employees complete a training in Carbon"
 msgstr "Employees complete a training in Carbon"
 
@@ -11941,6 +11935,9 @@ msgstr "Failed to save the earned value"
 msgid "Failed to save tools"
 msgstr "Failed to save tools"
 
+msgid "Failed to turn on government contracting"
+msgstr "Failed to turn on government contracting"
+
 msgid "Failed to update batch property"
 msgstr "Failed to update batch property"
 
@@ -12920,6 +12917,9 @@ msgstr "Google Places API key not configured"
 msgid "Government contracting"
 msgstr "Government contracting"
 
+msgid "Government Contracting"
+msgstr "Government Contracting"
+
 msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
 msgstr "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
 
@@ -13230,9 +13230,6 @@ msgstr "How each line earns its revenue: spread by the day or evenly per month, 
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "How each unit's rent is cut into periods, and when in a period it is invoiced."
-
-msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
-msgstr "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "how far the scheduled work is over the available hours (+) or how many hours are still free."
@@ -14329,6 +14326,9 @@ msgstr "Issued Date"
 
 msgid "Issues"
 msgstr "Issues"
+
+msgid "It decides how the line is priced."
+msgstr "It decides how the line is priced."
 
 msgid "It decides what the next step asks for."
 msgstr "It decides what the next step asks for."
@@ -26766,8 +26766,8 @@ msgstr "The company already has a posted opening balance journal."
 msgid "The company has no account defaults."
 msgstr "The company has no account defaults."
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgid "The company's timesheet mode, Standard or DCAA, turned on with Use DCAA controls at Settings → Projects. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr "The company's timesheet mode, Standard or DCAA, turned on with Use DCAA controls at Settings → Projects. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
 
 msgid "The Contract Assets default account is empty."
 msgstr "The Contract Assets default account is empty."
@@ -26962,8 +26962,8 @@ msgstr "The endpoint that receives a POST request with the updated data when the
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 
-msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
-msgstr "The entry window, the timecard check, dilution and the certification an employee signs at submit."
+msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
+msgstr "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
@@ -27395,6 +27395,9 @@ msgstr "The part is taken from existing stock when its parent is built — no ne
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
+
+msgid "The part or service, and how it reads on the invoice."
+msgstr "The part or service, and how it reads on the invoice."
 
 msgid "The part or service, and the CLIN it is billed under."
 msgstr "The part or service, and the CLIN it is billed under."
@@ -27937,6 +27940,9 @@ msgstr "There are more shipped than ordered"
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "There are no active supplier quotes to compare for this RFQ."
+
+msgid "There are no other open service jobs."
+msgstr "There are no other open service jobs."
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
@@ -29040,8 +29046,14 @@ msgstr "Try a different name."
 msgid "Tuesday"
 msgstr "Tuesday"
 
+msgid "Turn On"
+msgstr "Turn On"
+
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
+
+msgid "Turn on government contracting"
+msgstr "Turn on government contracting"
 
 msgid "Turn on the built-in pieces"
 msgstr "Turn on the built-in pieces"
@@ -29051,6 +29063,9 @@ msgstr "Turned off sync"
 
 msgid "Turned on sync"
 msgstr "Turned on sync"
+
+msgid "Turns on DCAA timekeeping and the government contracting fields: cost objectives, allowable cost, CLINs and funding actions. Its timesheet rules are at Settings → Time."
+msgstr "Turns on DCAA timekeeping and the government contracting fields: cost objectives, allowable cost, CLINs and funding actions. Its timesheet rules are at Settings → Time."
 
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
@@ -29701,6 +29716,9 @@ msgstr "Use a finished sub-assembly in this step"
 
 msgid "Use Current View"
 msgstr "Use Current View"
+
+msgid "Use DCAA controls"
+msgstr "Use DCAA controls"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Use metric system for default material dimensions."
@@ -31204,9 +31222,6 @@ msgstr "You effectively buy the asset. Interest and amortization of the right-of
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
-
-msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
-msgstr "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
 
 msgid "You haven't created any contacts yet."
 msgstr "You haven't created any contacts yet."

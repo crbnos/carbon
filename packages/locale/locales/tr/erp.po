@@ -1458,7 +1458,7 @@ msgid "A different inspector is required"
 msgstr "Farklı bir denetçi gereklidir"
 
 msgid "A discount can end on a date; the line then bills its full rate."
-msgstr ""
+msgstr "İskonto bir tarihte bitebilir; satır daha sonra tam oranını faturalanır."
 
 msgid "A draft run must be posted or deleted first."
 msgstr "Taslak çalıştırma önce muhasebeleştirilmeli veya silinmelidir."
@@ -1668,7 +1668,7 @@ msgid "A price on a rental agreement at which the customer can buy the unit, cou
 msgstr "Müşterinin birimi satın alabileceği bir kiralama sözleşmesi üzerinde bir fiyat, uygulanması makul olduğunda kiralamayı satış tipi yapan bir kira ödemesi olarak sayılan ve Müşteriye Sat tarafından faturalandırılan."
 
 msgid "A price per unit, billed on the line's billing events"
-msgstr ""
+msgstr "Birim başına bir fiyat, satırın faturalama olaylarında faturalandırılır"
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Fiyatlandırılmış satış teklifi; Taslak → Gönderilen → Sipariş edildi, ya da Kaybedildi, Süresi doldu veya İptal edildi ile sonlanır."
@@ -1821,7 +1821,7 @@ msgid "A receipt's supplier changes"
 msgstr "Makbuzun tedarikçisi değişti"
 
 msgid "A recurring line bills every period at its rate; a one-time line bills once."
-msgstr ""
+msgstr "Yinelenen satır her dönemde kendi oranında faturalanır; tek seferlik satır bir kez faturalanır."
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Bir kira sözleşmesi, etkinleştirilmek için şirketin temel para biriminde olmalıdır. Önce sözleşmenin para birimini değiştirin."
@@ -1935,7 +1935,7 @@ msgid "A set of instructions to pull a job's outstanding materials from the ware
 msgstr "Bir iş emrinin ihtiyaç duyulan malzemeleri depodan çekmek ve onları hat yanına hazırlamak için bir dizi talimat; bir toplama işi stoğu tüketmek yerine kullanım noktasına hareket ettirir."
 
 msgid "A set price, billed on the line's billing events"
-msgstr ""
+msgstr "Sabit bir fiyat, satırın faturalama olaylarında faturalandırılır"
 
 msgid "A shipment is created"
 msgstr "Bir sevkiyat oluşturuldu"
@@ -2497,6 +2497,9 @@ msgstr "Alan adı ekle"
 msgid "Add a line for each CLIN: Time & Materials, Cost Plus or Fixed Price."
 msgstr "Her CLIN için bir satır ekleyin: Zaman ve Malzeme, Maliyet Artı veya Sabit Fiyat."
 
+msgid "Add a line for each part of the work: Time & Materials, Cost Plus or Fixed Price."
+msgstr "İş bölümlerinin her biri için bir satır ekleyin: Zaman ve Malzeme, Maliyet Artı veya Sabit Fiyat."
+
 msgid "Add a line to the document"
 msgstr "Belgeye bir satır ekle"
 
@@ -2666,7 +2669,7 @@ msgid "Add Item"
 msgstr "Öğe Ekle"
 
 msgid "Add Job"
-msgstr ""
+msgstr "İş Emri Ekle"
 
 msgid "Add Journal Entry"
 msgstr "Yevmiye Kaydı Ekle"
@@ -3182,7 +3185,7 @@ msgid "Allowable Cost"
 msgstr "İzin Verilen Maliyet"
 
 msgid "Allowable cost, plus a fee"
-msgstr ""
+msgstr "İzin verilen maliyet, artı bir ücret"
 
 msgid "Allows acknowledge & continue"
 msgstr "Onaylayıp devam etmeye izin verir"
@@ -5041,7 +5044,7 @@ msgid "Billing"
 msgstr "Faturalandırma"
 
 msgid "Billing & funding"
-msgstr ""
+msgstr "Faturalama ve finansman"
 
 msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
 msgstr "Bir kiralama işleminin sabit dönemlerle faturalandırılması: başlangıç tarihinden itibaren aylar, takvim ayları veya ardışık 28 günlük dönemler halinde, her biri ilk gününde (Peşin) veya son gününde (Sonradan) faturalandırılır."
@@ -5089,7 +5092,7 @@ msgid "Billing periods are cut when the agreement is activated."
 msgstr "Faturalandırma dönemleri, sözleşme etkinleştirildiğinde oluşturulur."
 
 msgid "Billing stops at the funded amount."
-msgstr ""
+msgstr "Faturalama finanse edilen miktarda durur."
 
 msgid "Billing stops at this amount"
 msgstr "Fatura bu tutarda durur"
@@ -6070,7 +6073,7 @@ msgid "Children"
 msgstr "Alt öğeler"
 
 msgid "Children and jobs"
-msgstr ""
+msgstr "Alt öğeler ve iş emirleri"
 
 msgid "Choose a backup"
 msgstr "Yedek seçin"
@@ -7069,9 +7072,6 @@ msgstr "Stok kartı ID'lerinin (parçalar, malzeme, sarf malzemeleri, takımlar 
 msgid "Controller, Accountant"
 msgstr "Kontrolör, Muhasebeci"
 
-msgid "Controls"
-msgstr "Denetimler"
-
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "Planlamanın kullanımdan kaldırılan bir öğeyi nasıl işlediğini kontrol eder: Önce Tüket mevcut stoğu tüketir ve ardından halefi kullanmaya geçer, Yeni Tercih et yeni talebi hemen halefi yönlendirir, Yalnızca Stok minimum bir hizmet rezervi tutar ve Stok Yok öğeyi planlama işleminden tamamen çıkarır.\""
 
@@ -7784,9 +7784,6 @@ msgstr "Öğeler Oluştur"
 msgid "Create Forecast"
 msgstr "Tahmin Oluştur"
 
-msgid "Create Invoice"
-msgstr "Fatura Oluştur"
-
 msgid "Create Issue"
 msgstr "Sorun Oluştur"
 
@@ -8498,7 +8495,7 @@ msgid "Dates"
 msgstr "Tarihler"
 
 msgid "Dates & revenue"
-msgstr ""
+msgstr "Tarihler ve hasılat"
 
 msgid "Dawn's breaking, {name}."
 msgstr "Şafak söküyor, {name}."
@@ -8542,12 +8539,6 @@ msgstr "İzin Günleri"
 
 msgid "Days Remaining"
 msgstr "Kalan Günler"
-
-msgid "DCAA"
-msgstr "DCAA"
-
-msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
-msgstr "DCAA, günlük giriş, her değişiklik için bir neden, gönderme sırasında sertifikasyon ve yalnızca proje üyeleri tarafından yüklemeyi gerektirir."
 
 msgid "DCAA rules"
 msgstr "DCAA kuralları"
@@ -9581,7 +9572,7 @@ msgid "discount {was} → {now}"
 msgstr "iskonto {was} → {now}"
 
 msgid "Discount and tax"
-msgstr ""
+msgstr "İskonto ve vergi"
 
 msgid "Discount Days"
 msgstr "İskonto Günleri"
@@ -10698,6 +10689,9 @@ msgstr "Bu eğitime atanan çalışanlar açabilir. İçerik, kılavuz ve sorula
 
 msgid "Employees can no longer open this training."
 msgstr "Çalışanlar artık bu eğitimi açamaz."
+
+msgid "Employees certify their week with this text when they submit a timesheet."
+msgstr "Çalışanlar, bir zaman çizelgesi gönderirken bu metinle haftalarını sertifikalandırırlar."
 
 msgid "Employees complete a training in Carbon"
 msgstr "Çalışanlar Carbon'da eğitimi tamamlarlar"
@@ -11941,6 +11935,9 @@ msgstr "Kazanılan değer kaydedilemedi"
 msgid "Failed to save tools"
 msgstr "Araç kaydedilemedi"
 
+msgid "Failed to turn on government contracting"
+msgstr "Hükümet tarafından sağlanan hizmetleri açmak başarısız oldu"
+
 msgid "Failed to update batch property"
 msgstr "Toplu özelliği güncelleme başarısız oldu"
 
@@ -12556,7 +12553,7 @@ msgid "Funding Actions"
 msgstr "Finansman İşlemleri"
 
 msgid "Funding notice"
-msgstr ""
+msgstr "Finansman bildirimi"
 
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr "Ücretsiz finansman; finansman bildirimleri maliyeti bununla karşılaştırır"
@@ -12920,6 +12917,9 @@ msgstr "Google Yerler API anahtarı yapılandırılmamış"
 msgid "Government contracting"
 msgstr "Devlet müteahhitliği"
 
+msgid "Government Contracting"
+msgstr "Hükümet Tarafından Sağlanan Hizmetler"
+
 msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
 msgstr "Hükümet tarafından sabit fiyatlı bir sözleşmeye dayalı ortaya çıkan maliyete (FAR 32.5) verilen finansman. Taşeron bunu bir SF 1443 ile talep eder ve hükümet bunu teslimat ödemelerinden geri alır."
 
@@ -13149,7 +13149,7 @@ msgid "Hours assumed from location shifts"
 msgstr "Konum vardiyalarından varsayılan saatler"
 
 msgid "Hours at bill rates, plus material and other cost with handling"
-msgstr ""
+msgstr "Faturalama oranlarında saatler, artı malzeme ve işleme ile diğer maliyetler"
 
 msgid "Hours at this station"
 msgstr "Bu istasyonda saatler"
@@ -13231,14 +13231,11 @@ msgstr "Her satırın hasılatını nasıl kazandığı: gün bazında dağıtı
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Her adetin kirası dönemlere nasıl bölündüğü ve bir dönem içinde ne zaman faturalandırıldığı."
 
-msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
-msgstr "Çalışanların projeler üzerinde zamanı nasıl kaydettikleri. Normal zaman çizelgesini basit tutar. DCAA hükümet sözleşmesi denetiminin kontrol ettiği kontrolleri ekler."
-
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "Planlanan işin mevcut saatleri ne kadar aştığı (+) veya kaç saatin hala boş olması."
 
 msgid "How it bills"
-msgstr ""
+msgstr "Nasıl faturalanır"
 
 msgid "How items roll up for posting and reporting"
 msgstr "Stok kartları muhasebeleştirme ve raporlama için nasıl toplanır"
@@ -13292,7 +13289,7 @@ msgid "How many were actually picked?"
 msgstr "Gerçekte kaç tane toplandı?"
 
 msgid "How many, and the rate each one bills."
-msgstr ""
+msgstr "Kaç tane ve her birinin faturalama oranı."
 
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "Müşteriye ne sıklıkla fatura gönderilir ve ne zaman başlayıp gönderilir. Aşağıdaki faturalar bunu takip eder."
@@ -13316,7 +13313,7 @@ msgid "How the job ranks when the scheduler hands out capacity — ASAP claims f
 msgstr "İş emri'nin, zamanlayıcı kapasite dağıttığında nasıl sıralandığı — ASAP ilk öncelik alır, sonra Sert Son Tarih, Esnek Son Tarih ve Son Tarih Yok son sırada. Yalnızca bir sıralama sinyali; hiçbir son tarih türü yerleştirmeyi engellemiyor veya kısıtlamıyor."
 
 msgid "How the line's revenue is recognized."
-msgstr ""
+msgstr "Satırın hasılatının nasıl muhasebeleştirildiği."
 
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "Malzemenin nasıl tedarik edildiği (üretim, satın alma veya stoktan kullanım) ve çekildiği depolama birimi."
@@ -14330,8 +14327,11 @@ msgstr "Düzenlenme Tarihi"
 msgid "Issues"
 msgstr "Sorunlar"
 
+msgid "It decides how the line is priced."
+msgstr "Satırın nasıl fiyatlandırıldığını belirler."
+
 msgid "It decides what the next step asks for."
-msgstr ""
+msgstr "Sonraki adımın ne istediğini belirler."
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "Onaylandı ama uygulanamıyor. Yeniden açın, bu satırları kontrol edin, ardından yeniden gönderin."
@@ -26766,8 +26766,8 @@ msgstr "Şirket zaten muhasebeleştirilmiş bir açılış bakiyesi muhasebe fi�
 msgid "The company has no account defaults."
 msgstr "Şirketin hesap varsayılanları yoktur."
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "Şirketin zaman çizelgesi modu Standard veya DCAA olarak ayarlanmıştır ve Ayarlar → Zaman içinde ayarlanmıştır. DCAA giriş penceresini, gecikmeler ve değişen saatlerin nedenlerini, haftalık sertifikasyonu ve timecard kontrolünü ekler."
+msgid "The company's timesheet mode, Standard or DCAA, turned on with Use DCAA controls at Settings → Projects. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr "Şirketin zaman çizelgesi modu, Normal veya DCAA, Ayarlar → Projeler'de DCAA denetimlerini kullan ile açılır. DCAA giriş penceresini, geç kalma nedenleri ve değiştirilmiş zamanı, haftalık sertifikasyonu ve zaman kartı denetimini ekler."
 
 msgid "The Contract Assets default account is empty."
 msgstr "Sözleşme Varlıkları varsayılan hesabı boş."
@@ -26962,8 +26962,8 @@ msgstr "Tablo güncellendiğinde güncellenmiş verilerle bir POST isteği alan 
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "Bu kontrol planının bağlı olduğu mühendislik çizimi; bu parçaya karşı kaydedilen muayeneler bu çizime geri referans verir."
 
-msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
-msgstr "Giriş penceresi, zaman kartı kontrolü, sulandırma ve çalışanın sunumda imzaladığı belgelendirme."
+msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
+msgstr "Giriş penceresi, zaman kartı denetimi, seyreltme ve çalışanın gönderme sırasında imzaladığı sertifikasyon. DCAA, Ayarlar → Projeler'de açılıp kapatılır."
 
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
 msgstr "Tamamlanmak için tahmin {ESTIMATE_MAX_AGE_MONTHS} aydan daha eskidir. Göndermeden önce güncelleyiniz."
@@ -27396,8 +27396,11 @@ msgstr "Parça, ebeveyninin inşa edildiğinde mevcut stoktan alınır - yeni i�
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "Teslimat ödemesinin, hükümetin ilerleme veya performansa dayalı ödemelerini geri almak için tuttuğu kısmı: tasfiye oranı çarpı fatura, hala tasfiye edilmemiş finansmanı aşmamak üzere."
 
+msgid "The part or service, and how it reads on the invoice."
+msgstr "Parça veya hizmet, ve faturada nasıl okunur."
+
 msgid "The part or service, and the CLIN it is billed under."
-msgstr ""
+msgstr "Parça veya hizmet ve faturalandırıldığı CLIN."
 
 msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
 msgstr "Bitmiş bir alt-montajın montajla birleştirildiğinde tek bir parça olarak izlediği yolu. Adımın kendi parçalarından önce gelir; Yolu Düzenle ile bir yol çizemeyene kadar, yapının yanından kaymaya devam eder."
@@ -27642,7 +27645,7 @@ msgid "The service item whose sale price prices time on a service order, on its 
 msgstr "Satış fiyatı, bir hizmet emrindeki zamanı, tahminini ve faturasını fiyatlandıran hizmet stok kartı."
 
 msgid "The service, and how it reads on the invoice."
-msgstr ""
+msgstr "Hizmet ve faturada nasıl görünür."
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Bu sözleşmenin faturalandırdığı hizmetler: bir kerelik ücretler ve tekrarlayan ücretler. Değiştirmek için bir hücreyi tıklayın."
@@ -27897,7 +27900,7 @@ msgid "The work center's own bin where picked material is staged for production 
 msgstr "Depo kaynak Rafının aksine, Toplandı malzemelerin üretime çekilmek üzere hazırlandığı İş merkezinin Göz'ü."
 
 msgid "The work the line bills, and the markup on it."
-msgstr ""
+msgstr "Satırın faturaladığı iş ve bunun üzerine olan kâr marjı."
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Çalışma saatleri ve planlama yöneten takvimler"
@@ -27937,6 +27940,9 @@ msgstr "Sipariş edilenden daha fazlası gönderildi"
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Bu RFQ için karşılaştırılacak aktif tedarikçi teklifi bulunmamaktadır."
+
+msgid "There are no other open service jobs."
+msgstr "Başka açık hizmet iş emirleri yoktur."
 
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Bu işle ilgili tedarikçisi olmayan dış operasyonlar bulunmaktadır. İşlemden önce her dış operasyona bir tedarikçi atayınız."
@@ -29040,8 +29046,14 @@ msgstr "Farklı bir ad deneyin."
 msgid "Tuesday"
 msgstr "Salı"
 
+msgid "Turn On"
+msgstr "Aç"
+
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Açın <0>Ayarlar → Muhasebe'de Kısa Vadeli Kiralama Muafiyeti</0> veya"
+
+msgid "Turn on government contracting"
+msgstr "Hükümet tarafından sağlanan hizmetleri aç"
 
 msgid "Turn on the built-in pieces"
 msgstr "Yerleşik parçaları açın"
@@ -29051,6 +29063,9 @@ msgstr "Senkronizasyonu kapatıldı"
 
 msgid "Turned on sync"
 msgstr "Senkronizasyonu açıldı"
+
+msgid "Turns on DCAA timekeeping and the government contracting fields: cost objectives, allowable cost, CLINs and funding actions. Its timesheet rules are at Settings → Time."
+msgstr "DCAA zaman takibi ve hükümet tarafından sağlanan hizmetler alanlarını açar: maliyet hedefleri, izin verilen maliyet, CLIN'ler ve finansman eylemleri. Zaman çizelgesi kuralları Ayarlar → Saat'tedir."
 
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "On iki ay veya daha az. Bilançoya hiçbir şey gelmez; her fatura gider olarak kaydedilir."
@@ -29701,6 +29716,9 @@ msgstr "Bu Adımda Bitmiş Alt Montajı Kullan"
 
 msgid "Use Current View"
 msgstr "Mevcut Görünümü Kullan"
+
+msgid "Use DCAA controls"
+msgstr "DCAA denetimlerini kullan"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Varsayılan malzeme boyutları için metrik sistemi kullanın."
@@ -30497,7 +30515,7 @@ msgid "What is leased, for example Forklift FL-12"
 msgstr "Kiralanan nedir, örneğin Forklift FL-12"
 
 msgid "What it bills"
-msgstr ""
+msgstr "Ne faturalanır"
 
 msgid "What it is"
 msgstr "Ne olduğu"
@@ -30533,7 +30551,7 @@ msgid "What the customer pays up front, the tax on rent, and when invoices are d
 msgstr "Müşterinin peşin ödediği, kiranın vergisi ve faturaların vadesi."
 
 msgid "What the customer pays, billed on the line's billing events."
-msgstr ""
+msgstr "Müşterinin ödediği, satırın faturalama olaylarında faturalandırılır."
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "Vade tarihinin geri sayımı nereden başlıyor (fatura tarihi, ay sonu, vb.)."
@@ -30674,7 +30692,7 @@ msgid "When the lease starts and how long it runs, including renewals that are r
 msgstr "Kiralama ne zaman başladığı ve ne kadar sürdüğü, makul ölçüde kesin olan yenilemeleri de kapsayarak."
 
 msgid "When the line starts and ends."
-msgstr ""
+msgstr "Satırın ne zaman başladığı ve bittiği."
 
 msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
 msgstr "To depolama birimindeki tahmini miktar bu seviyenin altına düştüğünde, kanban miktarı için Serbest bırakıldı stok transferi oluşturulur. Yalnızca tarama için boş bırakın."
@@ -31201,9 +31219,6 @@ msgstr "Siz faktik olarak kıymeti edinirsiniz. Kullanım hakkı kıymetinin fai
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "{0} satırı PDF'den çıkarıldı ancak hiçbir envanter öğesine eşlenmedi."
-
-msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
-msgstr "Başka açık hizmet iş emriniz yok. Bir iş emri bu hafta bunu yönettiyseniz veya size görev olarak verilmişse burada görünür."
 
 msgid "You haven't created any contacts yet."
 msgstr "Henüz hiç ilgili kişi oluşturmadınız."

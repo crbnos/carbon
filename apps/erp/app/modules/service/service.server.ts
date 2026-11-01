@@ -540,8 +540,8 @@ const [completeInput, reopenInput, setCoverageInput] =
  * Runs `post-service-job`: one journal for all the job's time, a pair per
  * labor item, Dr the coverage account (Cost of Service, or Warranty Expense)
  * / Cr Labor Absorption at hours × the labor item's unit cost. Refused when
- * the job is not Open, In Progress or On Hold, needs an accepted estimate it
- * does not have, has a labor item with no cost, or has a clock running. A
+ * the job is not Open, In Progress or On Hold, has a labor item with no
+ * cost, or has a clock running. A
  * job from an RMA line updates the RMA's status.
  *
  * @mcp
@@ -907,15 +907,14 @@ export const deleteServiceJobTime = defineServiceFn({
  * manual entry (no clock): saved, added at the company's service labor item,
  * or removed at 0. A total below the clock entries writes nothing and comes
  * back as `warning`: clock time is edited on the job. Refused when the job is
- * Completed, Invoiced or Cancelled. Like My Time itself it needs only company
- * membership, so the job must be one the caller is assigned to or leads,
- * unless the caller has `update: service`. Service time never goes through
+ * Completed, Invoiced or Cancelled. Like My Time and the MES clock it needs
+ * only company membership: any employee may log time on any open job, since
+ * more than one person works on a job. Service time never goes through
  * timesheet submit or approval.
  */
 export const setServiceJobDayHours = defineServiceFn({
   input: serviceJobDayHoursValidator,
-  // Your own time on your own job; anyone else's job needs `update: service`,
-  // which the body checks.
+  // Your own time, on any open job.
   permission: {},
 
   async run(ctx, input) {
@@ -924,8 +923,7 @@ export const setServiceJobDayHours = defineServiceFn({
         ...input,
         companyId: ctx.company.id,
         userId: ctx.auditUserId,
-        employeeId: ctx.auditUserId,
-        mustBeAssigned: !ctx.can({ update: "service" })
+        employeeId: ctx.auditUserId
       })
     );
   }

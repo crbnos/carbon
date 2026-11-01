@@ -5,12 +5,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  canComplete,
   coverageAccountRole,
   groupServiceTimeRows,
   isServiceJobLocked,
   manualHoursForDay,
-  needsAcceptedEstimate,
   type ServiceJobRuleFields,
   type ServiceTimeRowJob,
   serviceJobPrimaryAction,
@@ -76,71 +74,6 @@ describe("suggestCoverage", () => {
   });
 });
 
-describe("needsAcceptedEstimate", () => {
-  it("is true for a Fixed Price job", () => {
-    expect(needsAcceptedEstimate(job({ billingMethod: "Fixed Price" }))).toBe(
-      true
-    );
-  });
-
-  it("is true for a Billable job from an RMA line", () => {
-    expect(
-      needsAcceptedEstimate(job({ salesReturnOrderLineId: "srol_1" }))
-    ).toBe(true);
-  });
-
-  it("is false when the unit is not repairable", () => {
-    expect(
-      needsAcceptedEstimate(
-        job({
-          billingMethod: "Fixed Price",
-          salesReturnOrderLineId: "srol_1",
-          repairable: false
-        })
-      )
-    ).toBe(false);
-  });
-
-  it("is false for a Time and Materials job from the office", () => {
-    expect(needsAcceptedEstimate(job())).toBe(false);
-  });
-
-  it("is false for Warranty and Contract jobs", () => {
-    for (const coverage of ["Warranty", "Contract"] as const) {
-      expect(
-        needsAcceptedEstimate(
-          job({
-            coverage,
-            billingMethod: "Fixed Price",
-            salesReturnOrderLineId: "srol_1"
-          })
-        )
-      ).toBe(false);
-    }
-  });
-});
-
-describe("canComplete", () => {
-  it("refuses a job that needs an estimate and has none accepted", () => {
-    expect(canComplete(job({ billingMethod: "Fixed Price" }))).toBe(false);
-    expect(
-      canComplete(job({ billingMethod: "Fixed Price", estimateStatus: "Sent" }))
-    ).toBe(false);
-  });
-
-  it("allows a job with an accepted estimate", () => {
-    expect(
-      canComplete(
-        job({ billingMethod: "Fixed Price", estimateStatus: "Accepted" })
-      )
-    ).toBe(true);
-  });
-
-  it("allows a job that needs no estimate", () => {
-    expect(canComplete(job())).toBe(true);
-  });
-});
-
 describe("serviceJobPrimaryAction", () => {
   it("is Start for an Open job", () => {
     expect(serviceJobPrimaryAction(job({ status: "Open" }))).toBe("Start");
@@ -149,14 +82,14 @@ describe("serviceJobPrimaryAction", () => {
     ).toBe("Start");
   });
 
-  it("is Send Estimate for an In Progress job that needs one", () => {
+  it("is Complete for an In Progress job, with or without an estimate", () => {
+    expect(serviceJobPrimaryAction(job())).toBe("Complete");
     expect(
       serviceJobPrimaryAction(job({ salesReturnOrderLineId: "srol_1" }))
-    ).toBe("Send Estimate");
-  });
-
-  it("is Complete for any other In Progress job", () => {
-    expect(serviceJobPrimaryAction(job())).toBe("Complete");
+    ).toBe("Complete");
+    expect(serviceJobPrimaryAction(job({ billingMethod: "Fixed Price" }))).toBe(
+      "Complete"
+    );
     expect(
       serviceJobPrimaryAction(
         job({ billingMethod: "Fixed Price", estimateStatus: "Accepted" })

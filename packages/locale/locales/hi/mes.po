@@ -723,6 +723,9 @@ msgstr "ईमेल पता"
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "ईमेल सूचनाएं आपकी कंपनी की वर्तमान योजना में शामिल नहीं हैं; ईमेल प्राथमिकताएं लागू होंगी यदि वे सक्षम हैं।"
 
+msgid "Employee"
+msgstr "कर्मचारी"
+
 msgid "Empty work centers"
 msgstr "खाली वर्क सेंटर"
 
@@ -797,9 +800,6 @@ msgstr "storageUnits को प्राप्त करने में वि�
 msgid "Failed to get options"
 msgstr "विकल्प प्राप्त करने में विफल"
 
-msgid "Failed to read the signature"
-msgstr "हस्ताक्षर पढ़ने में विफल"
-
 msgid "Failed to record gauge"
 msgstr "गेज रिकॉर्ड करने में विफल"
 
@@ -815,9 +815,6 @@ msgstr "परिणाम को सहेजने में विफल"
 msgid "Failed to save the hours"
 msgstr "घंटे सहेजने में विफल रहा"
 
-msgid "Failed to save the signature"
-msgstr "हस्ताक्षर सहेजने में विफल"
-
 msgid "Failed to submit the week"
 msgstr "सप्ताह सबमिट करने में विफल रहा"
 
@@ -832,6 +829,9 @@ msgstr "फाइल अपलोड करने में विफल: {0}"
 
 msgid "Failed to upload image"
 msgstr "इमेज अपलोड करने में विफल"
+
+msgid "Failure Mode"
+msgstr "विफलता मोड"
 
 msgid "File size exceeds 10MB limit"
 msgstr "फ़ाइल का आकार 10MB की सीमा से अधिक है"
@@ -896,6 +896,9 @@ msgstr "शीर्षक {level}"
 
 msgid "Hide description"
 msgstr "विवरण छिपाएं"
+
+msgid "Hours"
+msgstr "घंटे"
 
 msgid "How Carbon looks in this browser."
 msgstr "इस ब्राउज़र में Carbon कैसा दिखता है।"
@@ -1039,6 +1042,9 @@ msgstr "श्रम श्रेणी"
 msgid "Labor ended"
 msgstr "श्रम समाप्त"
 
+msgid "Labor until <0/>"
+msgstr "श्रम <0/> तक"
+
 msgid "Last completed"
 msgstr "अंतिम पूर्ण"
 
@@ -1143,9 +1149,6 @@ msgstr "मुख्य"
 
 msgid "Maintenance"
 msgstr "रखरखाव"
-
-msgid "Maintenance Completed"
-msgstr "रखरखाव पूर्ण"
 
 msgid "Maintenance overdue"
 msgstr "रखरखाव अतिदेय"
@@ -1366,6 +1369,9 @@ msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं
 msgid "No recent operations"
 msgstr "कोई हाल की ऑपरेशन नहीं"
 
+msgid "No registered asset"
+msgstr "कोई पंजीकृत संपत्ति नहीं"
+
 msgid "No remaining entities to inspect."
 msgstr "निरीक्षण करने के लिए कोई शेष इकाई नहीं है।"
 
@@ -1408,6 +1414,9 @@ msgstr "कोई स्टॉक नहीं"
 msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
 
+msgid "No unit"
+msgstr "कोई इकाई नहीं"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — ऑन-हैंड नकारात्मक हो जाएगा जब तक गिनती समेकित नहीं हो जाती।"
 
@@ -1423,8 +1432,11 @@ msgstr "कोई वर्क सेंटर मौजूद नहीं ह�
 msgid "None"
 msgstr "कोई नहीं"
 
-msgid "Not signed."
-msgstr "हस्ताक्षरित नहीं।"
+msgid "Not scheduled"
+msgstr "निर्धारित नहीं"
+
+msgid "Not set"
+msgstr "सेट नहीं"
 
 msgid "Notes"
 msgstr "नोट्स"
@@ -1593,6 +1605,9 @@ msgstr "फोटो सफलतापूर्वक अपलोड हुई
 
 msgid "Photos"
 msgstr "फ़ोटो"
+
+msgid "Photos of the unit, shared with the ERP job."
+msgstr "इकाई की फ़ोटो, ERP जॉब के साथ साझा की गई।"
 
 msgid "Pick"
 msgstr "चुनें"
@@ -1855,8 +1870,9 @@ msgstr "पुनः कार्य की मात्रा"
 msgid "Running"
 msgstr "चल रहा है"
 
-msgid "Running since <0/>"
-msgstr "<0/> के बाद से चल रहा है"
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Running on <0>{0}</0>"
+msgstr "<0>{0}</0> पर चल रहा है"
 
 msgid "Sales"
 msgstr "बिक्री"
@@ -1869,9 +1885,6 @@ msgstr "हर जॉब के लिए समान"
 
 msgid "Save"
 msgstr "सहेजें"
-
-msgid "Save Signature"
-msgstr "हस्ताक्षर सहेजें"
 
 msgid "Save the form you're editing"
 msgstr "जो फॉर्म आप संपादित कर रहे हैं उसे सहेजें"
@@ -2047,6 +2060,9 @@ msgstr "सेवा"
 msgid "Service job"
 msgstr "सेवा जॉब"
 
+msgid "Service Job Details"
+msgstr "सेवा जॉब विवरण"
+
 msgid "Session locked"
 msgstr "सत्र लॉक किया गया"
 
@@ -2086,9 +2102,6 @@ msgstr "कीबोर्ड शॉर्टकट दिखाएं"
 msgid "Shuffle"
 msgstr "शफल करें"
 
-msgid "Sign Again"
-msgstr "फिर से साइन करें"
-
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "जादुई लिंक के बजाय बायोमेट्रिक्स से साइन इन करें। पासकी को Face ID, Touch ID, या आपकी डिवाइस PIN द्वारा सुरक्षित किया जाता है।"
 
@@ -2110,23 +2123,17 @@ msgstr "साइन आउट"
 msgid "Sign out instead"
 msgstr "इसके बजाय साइन आउट करें"
 
-msgid "Signature"
-msgstr "हस्ताक्षर"
-
 msgid "Signature pad"
 msgstr "हस्ताक्षर पैड"
-
-msgid "Signed by"
-msgstr "द्वारा साइन किया गया"
-
-msgid "Signed by {signedByName}"
-msgstr "द्वारा साइन किया गया {signedByName}"
 
 msgid "Signed in as {stationName}"
 msgstr "के रूप में साइन इन किया गया {stationName}"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "साइन इन करने के लिए अब कोड की आवश्यकता नहीं होगी। पुष्टि करने के लिए अपने प्रमाणकर्ता ऐप्लिकेशन से वर्तमान 6-अंकीय कोड दर्ज करें।"
+
+msgid "since <0/>"
+msgstr "<0/> के बाद से"
 
 msgid "Size"
 msgstr "आकार"
@@ -2150,6 +2157,9 @@ msgstr "शुरू करें"
 msgid "Start {0}"
 msgstr "{0} शुरू करें"
 
+msgid "Start clock"
+msgstr "घड़ी शुरू करें"
+
 msgid "Start Job"
 msgstr "जॉब शुरू करें"
 
@@ -2158,6 +2168,9 @@ msgstr "ऑपरेशन को शुरू करें या रोके�
 
 msgid "Start timer"
 msgstr "टाइमर शुरू करें"
+
+msgid "Start work"
+msgstr "कार्य शुरू करें"
 
 msgid "Station User"
 msgstr "स्टेशन उपयोगकर्ता"
@@ -2183,9 +2196,6 @@ msgstr "चरण"
 
 msgid "Steps are missing"
 msgstr "चरण गायब हैं"
-
-msgid "Stop"
-msgstr "रोकें"
 
 msgid "Storage Unit"
 msgstr "भंडारण इकाई"
@@ -2238,6 +2248,9 @@ msgstr "सिस्टम"
 msgid "Tag"
 msgstr "टैग"
 
+msgid "Takes the work center offline"
+msgstr "वर्क सेंटर को ऑफ़लाइन ले जाता है"
+
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "{selectedLabel} में समय जोड़ने के लिए किसी दिन को टैप करें। घंटे बदलने के लिए किसी बार के निचले किनारे को ड्रैग करें।"
 
@@ -2284,6 +2297,9 @@ msgstr "फिर"
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "इस सामग्री के लिए कोई उपलब्ध या उपयोग की गई ट्रैक की गई पार्ट नहीं है।"
 
+msgid "There are no other open service jobs."
+msgstr "कोई अन्य खुला सेवा जॉब नहीं है।"
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "बिल ऑफ मेटेरियल पर सीरियल या बैच ट्रैक किए गए मेटेरियल हैं जो पूरी तरह से जारी नहीं किए गए हैं। जारी किए बिना पूरा करने से गलत ट्रेसेबिलिटी रिकॉर्ड हो सकते हैं।"
 
@@ -2295,9 +2311,6 @@ msgstr "इस बैच के पास कोई कार्य निर्
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "यह जानकारी सभी उपयोगकर्ताओं के लिए दृश्यमान होगी, इसलिए सावधान रहें कि आप क्या साझा करते हैं।"
-
-msgid "This job needs an accepted estimate before it can be completed."
-msgstr "इस जॉब को पूर्ण होने से पहले एक स्वीकृत अनुमान की आवश्यकता है।"
 
 msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"
@@ -2335,9 +2348,8 @@ msgstr "समय और लागत मात्रा के अनुपा�
 msgid "Time Entries"
 msgstr "समय प्रविष्टियाँ"
 
-#. placeholder {0}: formatDuration(totalDuration)
-msgid "Time Worked: {0}"
-msgstr "समय काम किया: {0}"
+msgid "Time Worked"
+msgstr "किया गया समय"
 
 msgid "To pick"
 msgstr "पिकिंग के लिए"
@@ -2347,10 +2359,6 @@ msgstr "चलाने के लिए"
 
 msgid "Today"
 msgstr "आज"
-
-#. placeholder {0}: quantity(todayHours)
-msgid "Today: {0} h"
-msgstr "आज: {0} h"
 
 msgid "Toggle labor"
 msgstr "श्रम टॉगल करें"
@@ -2384,6 +2392,9 @@ msgstr "कुल घंटे"
 
 msgid "Total Quantity"
 msgstr "कुल मात्रा"
+
+msgid "Total Time"
+msgstr "कुल समय"
 
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
@@ -2430,8 +2441,14 @@ msgstr "एक संदेश लिखें..."
 msgid "Unable to unlock"
 msgstr "अनलॉक करने में असमर्थ"
 
+msgid "Unassigned"
+msgstr "अनुलग्न"
+
 msgid "Unissued serial/batch materials"
 msgstr "अजारी सीरीज़/बैच सामग्री"
+
+msgid "Unit"
+msgstr "इकाई"
 
 msgid "Unknown"
 msgstr "अज्ञात"
@@ -2461,6 +2478,9 @@ msgstr "अनियोजित रखरखाव आइटम, पिछल�
 
 msgid "Unsaved changes"
 msgstr "असहेजे परिवर्तन"
+
+msgid "Until <0/>"
+msgstr "<0/> तक"
 
 msgid "Up next"
 msgstr "अगला"
@@ -2533,6 +2553,9 @@ msgstr "हमने आपके खाते में साइन इन क
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} क्या है?"
 
+msgid "When"
+msgstr "कब"
+
 msgid "Whole batch"
 msgstr "पूरा बैच"
 
@@ -2551,24 +2574,20 @@ msgstr "कार्य निर्देश"
 msgid "Work Site"
 msgstr "कार्य स्थल"
 
+msgid "Working"
+msgstr "काम कर रहा है"
+
 msgid "Write a note…"
 msgstr "एक नोट लिखें…"
 
 msgid "Yes"
 msgstr "हां"
 
-msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
-msgstr "आपके पास कोई अन्य खुला सेवा जॉब नहीं है। एक जॉब यहां दिखाई देता है जब आप इसका नेतृत्व करते हैं या इसे इस सप्ताह असाइन किया जाता है।"
-
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटों से कार्य पर हैं। क्या आप कार्य समाप्त करना भूल गए?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "आपका खाता अभी तक किसी कंपनी का हिस्सा नहीं है। जारी रखने के लिए Carbon ERP में ऑनबोर्डिंग पूर्ण करें।"
-
-#. placeholder {0}: runningClock.serviceJob?.serviceJobId
-msgid "Your clock is running on <0>{0}</0>. Stop it there first."
-msgstr "आपकी घड़ी <0>{0}</0> पर चल रही है। पहले इसे वहां रोकें।"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "आपके संगठन को एक ऑथेंटिकेटर ऐप की आवश्यकता है। इसे Carbon में सेट अप करें, फिर यहाँ वापस आएं।"

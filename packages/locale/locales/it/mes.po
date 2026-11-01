@@ -723,6 +723,9 @@ msgstr "Indirizzo Email"
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "Le notifiche tramite email non sono incluse nel piano attuale della tua Azienda; le preferenze di email verranno applicate se abilitate."
 
+msgid "Employee"
+msgstr "Dipendente"
+
 msgid "Empty work centers"
 msgstr "Centri di lavoro vuoti"
 
@@ -797,9 +800,6 @@ msgstr "Impossibile recuperare le unità di archiviazione"
 msgid "Failed to get options"
 msgstr "Impossibile ottenere le opzioni"
 
-msgid "Failed to read the signature"
-msgstr "Impossibile leggere la firma"
-
 msgid "Failed to record gauge"
 msgstr "Impossibile registrare lo strumento di misura"
 
@@ -815,9 +815,6 @@ msgstr "Errore durante il salvataggio del risultato"
 msgid "Failed to save the hours"
 msgstr "Impossibile salvare le ore"
 
-msgid "Failed to save the signature"
-msgstr "Impossibile salvare la firma"
-
 msgid "Failed to submit the week"
 msgstr "Impossibile inviare la settimana"
 
@@ -832,6 +829,9 @@ msgstr "Impossibile caricare il file: {0}"
 
 msgid "Failed to upload image"
 msgstr "Impossibile caricare l'immagine"
+
+msgid "Failure Mode"
+msgstr "Modalità di guasto"
 
 msgid "File size exceeds 10MB limit"
 msgstr "La dimensione del file supera il limite di 10MB"
@@ -896,6 +896,9 @@ msgstr "Intestazione {level}"
 
 msgid "Hide description"
 msgstr "Nascondi descrizione"
+
+msgid "Hours"
+msgstr "Ore"
 
 msgid "How Carbon looks in this browser."
 msgstr "Come appare Carbon in questo browser."
@@ -1039,6 +1042,9 @@ msgstr "Categoria di manodopera"
 msgid "Labor ended"
 msgstr "Manodopera terminata"
 
+msgid "Labor until <0/>"
+msgstr "Manodopera fino a <0/>"
+
 msgid "Last completed"
 msgstr "Ultimo completato"
 
@@ -1143,9 +1149,6 @@ msgstr "Principale"
 
 msgid "Maintenance"
 msgstr "Manutenzione"
-
-msgid "Maintenance Completed"
-msgstr "Manutenzione Completata"
 
 msgid "Maintenance overdue"
 msgstr "Manutenzione in ritardo"
@@ -1366,6 +1369,9 @@ msgstr "Nessuna stampante configurata"
 msgid "No recent operations"
 msgstr "Nessuna operazione recente"
 
+msgid "No registered asset"
+msgstr "Nessun bene registrato"
+
 msgid "No remaining entities to inspect."
 msgstr "Nessuna entità rimanente da ispezionare."
 
@@ -1408,6 +1414,9 @@ msgstr "Nessun stock"
 msgid "No time entries for this week"
 msgstr "Nessuna registrazione oraria per questa settimana"
 
+msgid "No unit"
+msgstr "Nessuna unità"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Non è registrata giacenza di deposito per questo articolo. Puoi comunque effettuare il prelievo — la giacenza disponibile diventerà negativa fino al riconciliamento dell'inventario."
 
@@ -1423,8 +1432,11 @@ msgstr "Nessun centro di lavoro esistente"
 msgid "None"
 msgstr "Nessuno"
 
-msgid "Not signed."
-msgstr "Non firmato."
+msgid "Not scheduled"
+msgstr "Non programmato"
+
+msgid "Not set"
+msgstr "Non impostato"
 
 msgid "Notes"
 msgstr "Note"
@@ -1593,6 +1605,9 @@ msgstr "Foto caricata con successo"
 
 msgid "Photos"
 msgstr "Foto"
+
+msgid "Photos of the unit, shared with the ERP job."
+msgstr "Foto dell'unità, condivise con l'ordine di produzione ERP."
 
 msgid "Pick"
 msgstr "Preleva"
@@ -1855,8 +1870,9 @@ msgstr "Quantità di rilavorazione"
 msgid "Running"
 msgstr "In esecuzione"
 
-msgid "Running since <0/>"
-msgstr "In esecuzione da <0/>"
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Running on <0>{0}</0>"
+msgstr "In esecuzione su <0>{0}</0>"
 
 msgid "Sales"
 msgstr "Vendite"
@@ -1869,9 +1885,6 @@ msgstr "Uguale per ogni ordine di produzione"
 
 msgid "Save"
 msgstr "Salva"
-
-msgid "Save Signature"
-msgstr "Salva Firma"
 
 msgid "Save the form you're editing"
 msgstr "Salva il modulo che stai modificando"
@@ -2047,6 +2060,9 @@ msgstr "Servizio"
 msgid "Service job"
 msgstr "Ordine di servizio"
 
+msgid "Service Job Details"
+msgstr "Dettagli dell'ordine di servizio"
+
 msgid "Session locked"
 msgstr "Sessione bloccata"
 
@@ -2086,9 +2102,6 @@ msgstr "Mostra i tasti di scelta rapida"
 msgid "Shuffle"
 msgstr "Mescola"
 
-msgid "Sign Again"
-msgstr "Firma di nuovo"
-
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Accedi con dati biometrici invece di un link magico. I Passkey sono protetti da Face ID, Touch ID o dal PIN del tuo dispositivo."
 
@@ -2110,23 +2123,17 @@ msgstr "Esci"
 msgid "Sign out instead"
 msgstr "Esci invece"
 
-msgid "Signature"
-msgstr "Firma"
-
 msgid "Signature pad"
 msgstr "Pad firma"
-
-msgid "Signed by"
-msgstr "Firmato da"
-
-msgid "Signed by {signedByName}"
-msgstr "Firmato da {signedByName}"
 
 msgid "Signed in as {stationName}"
 msgstr "Connesso come {stationName}"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "L'accesso non richiederà più un codice. Inserisci il codice a 6 cifre corrente dalla tua app autenticatore per confermare."
+
+msgid "since <0/>"
+msgstr "da <0/>"
 
 msgid "Size"
 msgstr "Dimensione"
@@ -2150,6 +2157,9 @@ msgstr "Avvia"
 msgid "Start {0}"
 msgstr "Avvia {0}"
 
+msgid "Start clock"
+msgstr "Avvia cronometro"
+
 msgid "Start Job"
 msgstr "Avvia ordine di produzione"
 
@@ -2158,6 +2168,9 @@ msgstr "Avvia o sospendi l'operazione"
 
 msgid "Start timer"
 msgstr "Avvia cronometro"
+
+msgid "Start work"
+msgstr "Inizia lavoro"
 
 msgid "Station User"
 msgstr "Utente Stazione"
@@ -2183,9 +2196,6 @@ msgstr "Passi"
 
 msgid "Steps are missing"
 msgstr "Passi mancanti"
-
-msgid "Stop"
-msgstr "Ferma"
 
 msgid "Storage Unit"
 msgstr "Unità di Stoccaggio"
@@ -2238,6 +2248,9 @@ msgstr "Sistema"
 msgid "Tag"
 msgstr "Etichetta"
 
+msgid "Takes the work center offline"
+msgstr "Porta il centro di lavoro offline"
+
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Tocca un giorno per aggiungere tempo a {selectedLabel}. Trascina il bordo inferiore di una barra per cambiare le sue ore."
 
@@ -2284,6 +2297,9 @@ msgstr "poi"
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Non ci sono componenti tracciati disponibili o consumati per questo materiale."
 
+msgid "There are no other open service jobs."
+msgstr "Non ci sono altri ordini di servizio aperti."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Ci sono materiali tracciati per numero di serie o lotto nella distinta base che non sono stati completamente prelevati. Completare senza prelevare potrebbe causare registrazioni di tracciabilità errate."
 
@@ -2295,9 +2311,6 @@ msgstr "Questo lotto di produzione non ha istruzioni di lavoro."
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Questa informazione sarà visibile a tutti gli utenti, quindi fai attenzione a quello che condividi."
-
-msgid "This job needs an accepted estimate before it can be completed."
-msgstr "Questo ordine di produzione necessita di una stima accettata prima di poter essere completato."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Questo lotto è scaduto e non può essere prelevato."
@@ -2335,9 +2348,8 @@ msgstr "Tempo e costo ripartiti tra gli ordini di produzione in proporzione alla
 msgid "Time Entries"
 msgstr "Registrazioni Orarie"
 
-#. placeholder {0}: formatDuration(totalDuration)
-msgid "Time Worked: {0}"
-msgstr "Tempo Lavorato: {0}"
+msgid "Time Worked"
+msgstr "Tempo lavorato"
 
 msgid "To pick"
 msgstr "Da prelevare"
@@ -2347,10 +2359,6 @@ msgstr "Da eseguire"
 
 msgid "Today"
 msgstr "Oggi"
-
-#. placeholder {0}: quantity(todayHours)
-msgid "Today: {0} h"
-msgstr "Oggi: {0} h"
 
 msgid "Toggle labor"
 msgstr "Commuta Manodopera"
@@ -2384,6 +2392,9 @@ msgstr "Ore totali"
 
 msgid "Total Quantity"
 msgstr "Quantità Totale"
+
+msgid "Total Time"
+msgstr "Tempo totale"
 
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
@@ -2430,8 +2441,14 @@ msgstr "Scrivi un messaggio..."
 msgid "Unable to unlock"
 msgstr "Impossibile sbloccare"
 
+msgid "Unassigned"
+msgstr "Non assegnato"
+
 msgid "Unissued serial/batch materials"
 msgstr "Materiali seriali/lotto non prelevati"
+
+msgid "Unit"
+msgstr "Unità"
 
 msgid "Unknown"
 msgstr "Sconosciuto"
@@ -2461,6 +2478,9 @@ msgstr "Articoli di manutenzione non pianificati, ultimi {0} giorni"
 
 msgid "Unsaved changes"
 msgstr "Modifiche non salvate"
+
+msgid "Until <0/>"
+msgstr "Fino a <0/>"
 
 msgid "Up next"
 msgstr "Prossimo"
@@ -2533,6 +2553,9 @@ msgstr "Ti abbiamo inviato un link di accesso al tuo account."
 msgid "What is {translatedTerm}?"
 msgstr "Cos'è {translatedTerm}?"
 
+msgid "When"
+msgstr "Quando"
+
 msgid "Whole batch"
 msgstr "Intero Lotto di produzione"
 
@@ -2551,24 +2574,20 @@ msgstr "Istruzioni di lavoro"
 msgid "Work Site"
 msgstr "Sito di lavoro"
 
+msgid "Working"
+msgstr "In corso"
+
 msgid "Write a note…"
 msgstr "Scrivi una Nota…"
 
 msgid "Yes"
 msgstr "Sì"
 
-msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
-msgstr "Non hai altri ordini di servizio aperti. Un ordine appare qui quando lo guidi o ti viene assegnato questa settimana."
-
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sei timbrato da {hoursElapsed} ore. Hai dimenticato di timbra fine?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Il tuo account non è ancora parte di un'azienda. Completa l'onboarding in Carbon ERP per continuare."
-
-#. placeholder {0}: runningClock.serviceJob?.serviceJobId
-msgid "Your clock is running on <0>{0}</0>. Stop it there first."
-msgstr "Il tuo orologio è in esecuzione su <0>{0}</0>. Fermalo lì per primo."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "La tua organizzazione richiede un'app di autenticazione. Configurala in Carbon, quindi torna qui."

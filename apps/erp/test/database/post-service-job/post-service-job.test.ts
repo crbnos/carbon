@@ -182,7 +182,7 @@ databaseTest(
 );
 
 databaseTest(
-  "a job that needs an accepted estimate cannot complete",
+  "a job completes without an accepted estimate",
   async () => {
     const f = await serviceJobFixture();
     try {
@@ -202,15 +202,13 @@ databaseTest(
         action: "complete",
         serviceJobId: job.id
       });
-      expect(completed.error?.message).toBe(
-        "This job needs an accepted estimate before it can be completed."
-      );
+      expect(completed.error).toBeNull();
       const header = await f.db
         .selectFrom("serviceJob")
         .select(["status"])
         .where("id", "=", job.id)
         .executeTakeFirstOrThrow();
-      expect(header.status).toBe("In Progress");
+      expect(header.status).toBe("Completed");
     } finally {
       await f.cleanup();
     }

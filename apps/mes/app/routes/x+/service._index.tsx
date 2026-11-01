@@ -25,13 +25,9 @@ import {
 import { datetime, richTextToPlainText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BsExclamationSquareFill } from "react-icons/bs";
 import { LuCirclePlus } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
-import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
-import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
-import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import type { ColumnFilter } from "~/components/Filter";
 import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
@@ -42,6 +38,7 @@ import {
   CoverageBadge,
   NewServiceJobModal,
   ServiceJobStatus,
+  ServicePriorityIcon,
   useCoverageLabels,
   useServiceJobStatusLabels,
   useWorkSiteLabels
@@ -132,21 +129,6 @@ type ServiceJobCardData = Awaited<
   ReturnType<typeof loader>
 >["openJobs"][number];
 
-function getPriorityIcon(
-  priority: Database["public"]["Enums"]["serviceJobPriority"]
-) {
-  switch (priority) {
-    case "Critical":
-      return <BsExclamationSquareFill className="text-red-500" />;
-    case "High":
-      return <HighPriorityIcon />;
-    case "Medium":
-      return <MediumPriorityIcon />;
-    case "Low":
-      return <LowPriorityIcon />;
-  }
-}
-
 function ServiceJobCard({ job }: { job: ServiceJobCardData }) {
   const workSites = useWorkSiteLabels();
   const unit = [job.item?.name, job.trackedEntity?.readableId]
@@ -154,8 +136,8 @@ function ServiceJobCard({ job }: { job: ServiceJobCardData }) {
     .join(" · ");
 
   return (
-    <Link to={path.to.serviceJob(job.id)}>
-      <Card className="hover:border-primary/50 transition-colors cursor-pointer p-0">
+    <Link to={path.to.serviceJob(job.id)} className="block h-full">
+      <Card className="flex h-full cursor-pointer flex-col p-0">
         <CardHeader className="pb-2">
           <HStack className="justify-between">
             <HStack spacing={2} className="min-w-0">
@@ -166,7 +148,7 @@ function ServiceJobCard({ job }: { job: ServiceJobCardData }) {
             </HStack>
             <HStack spacing={2} className="shrink-0">
               {job.assignee && <EmployeeAvatar employeeId={job.assignee} />}
-              {getPriorityIcon(job.priority)}
+              <ServicePriorityIcon priority={job.priority} />
             </HStack>
           </HStack>
           <CardTitle className="text-base truncate">
@@ -178,7 +160,7 @@ function ServiceJobCard({ job }: { job: ServiceJobCardData }) {
             </CardDescription>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1">
           <VStack spacing={2} className="items-start">
             {job.problem && (
               <p className="text-sm line-clamp-2 w-full">{job.problem}</p>

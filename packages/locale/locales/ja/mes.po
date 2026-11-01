@@ -723,6 +723,9 @@ msgstr "メール住所"
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "メール通知は会社の現在のプランに含まれていません。有効にすると、メール設定が適用されます。"
 
+msgid "Employee"
+msgstr "従業員"
+
 msgid "Empty work centers"
 msgstr "作業区が空です"
 
@@ -797,9 +800,6 @@ msgstr "storageUnitsの取得に失敗しました"
 msgid "Failed to get options"
 msgstr "オプションの取得に失敗しました"
 
-msgid "Failed to read the signature"
-msgstr "署名の読み込みに失敗しました"
-
 msgid "Failed to record gauge"
 msgstr "測定器の記録に失敗しました"
 
@@ -815,9 +815,6 @@ msgstr "結果の保存に失敗しました"
 msgid "Failed to save the hours"
 msgstr "時間の保存に失敗しました"
 
-msgid "Failed to save the signature"
-msgstr "署名の保存に失敗しました"
-
 msgid "Failed to submit the week"
 msgstr "週の提出に失敗しました"
 
@@ -832,6 +829,9 @@ msgstr "ファイルのアップロードに失敗しました: {0}"
 
 msgid "Failed to upload image"
 msgstr "画像のアップロードに失敗しました"
+
+msgid "Failure Mode"
+msgstr "故障モード"
 
 msgid "File size exceeds 10MB limit"
 msgstr "ファイルサイズが10MBの制限を超えています"
@@ -896,6 +896,9 @@ msgstr "見出し {level}"
 
 msgid "Hide description"
 msgstr "説明を非表示"
+
+msgid "Hours"
+msgstr "時間"
 
 msgid "How Carbon looks in this browser."
 msgstr "このブラウザでのCarbonの表示方法。"
@@ -1039,6 +1042,9 @@ msgstr "労務カテゴリー"
 msgid "Labor ended"
 msgstr "労務終了"
 
+msgid "Labor until <0/>"
+msgstr "労務<0/>まで"
+
 msgid "Last completed"
 msgstr "最後に完了"
 
@@ -1143,9 +1149,6 @@ msgstr "メイン"
 
 msgid "Maintenance"
 msgstr "保全"
-
-msgid "Maintenance Completed"
-msgstr "保全完了"
 
 msgid "Maintenance overdue"
 msgstr "保全が期限超過"
@@ -1366,6 +1369,9 @@ msgstr "プリンターが設定されていません"
 msgid "No recent operations"
 msgstr "最近の工程はありません"
 
+msgid "No registered asset"
+msgstr "登録済資産がない"
+
 msgid "No remaining entities to inspect."
 msgstr "検査するエンティティが残っていません。"
 
@@ -1408,6 +1414,9 @@ msgstr "在庫なし"
 msgid "No time entries for this week"
 msgstr "今週のタイムエントリーはありません"
 
+msgid "No unit"
+msgstr "ユニットなし"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。在庫数が負になるまで、実在庫は負のままになります。"
 
@@ -1423,8 +1432,11 @@ msgstr "作業区が存在しません。"
 msgid "None"
 msgstr "なし"
 
-msgid "Not signed."
-msgstr "署名されていません。"
+msgid "Not scheduled"
+msgstr "スケジュール未設定"
+
+msgid "Not set"
+msgstr "未設定"
 
 msgid "Notes"
 msgstr "メモ"
@@ -1593,6 +1605,9 @@ msgstr "写真がアップロードされました"
 
 msgid "Photos"
 msgstr "写真"
+
+msgid "Photos of the unit, shared with the ERP job."
+msgstr "個の写真、製造指図と共有"
 
 msgid "Pick"
 msgstr "ピック"
@@ -1855,8 +1870,9 @@ msgstr "手直し数量"
 msgid "Running"
 msgstr "実行中"
 
-msgid "Running since <0/>"
-msgstr "<0/>から実行中"
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Running on <0>{0}</0>"
+msgstr "<0>{0}</0>で実行中"
 
 msgid "Sales"
 msgstr "販売"
@@ -1869,9 +1885,6 @@ msgstr "すべての製造指図で同じ"
 
 msgid "Save"
 msgstr "保存"
-
-msgid "Save Signature"
-msgstr "署名を保存"
 
 msgid "Save the form you're editing"
 msgstr "編集中のフォームを保存"
@@ -2047,6 +2060,9 @@ msgstr "外注サービス"
 msgid "Service job"
 msgstr "外注サービス製造指図"
 
+msgid "Service Job Details"
+msgstr "サービスジョブ詳細"
+
 msgid "Session locked"
 msgstr "セッションはロック中です。"
 
@@ -2086,9 +2102,6 @@ msgstr "キーボードショートカットを表示"
 msgid "Shuffle"
 msgstr "シャッフル"
 
-msgid "Sign Again"
-msgstr "再度署名"
-
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "マジックリンクの代わりに生体認証でサインインしてください。パスキーはFace ID、Touch ID、またはデバイスPINで保護されています。"
 
@@ -2110,23 +2123,17 @@ msgstr "サインアウト"
 msgid "Sign out instead"
 msgstr "代わりにサインアウト"
 
-msgid "Signature"
-msgstr "署名"
-
 msgid "Signature pad"
 msgstr "署名パッド"
-
-msgid "Signed by"
-msgstr "署名者"
-
-msgid "Signed by {signedByName}"
-msgstr "署名者: {signedByName}"
 
 msgid "Signed in as {stationName}"
 msgstr "{stationName} としてサインイン中"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "サインインにコードが不要になります。確認するために認証器アプリの現在の6桁コードを入力してください。"
+
+msgid "since <0/>"
+msgstr "<0/>から"
 
 msgid "Size"
 msgstr "サイズ"
@@ -2150,6 +2157,9 @@ msgstr "開始"
 msgid "Start {0}"
 msgstr "{0}を開始"
 
+msgid "Start clock"
+msgstr "クロック開始"
+
 msgid "Start Job"
 msgstr "製造指図を開始"
 
@@ -2158,6 +2168,9 @@ msgstr "工程を開始 / 一時停止"
 
 msgid "Start timer"
 msgstr "タイマーを開始"
+
+msgid "Start work"
+msgstr "作業開始"
 
 msgid "Station User"
 msgstr "ステーションユーザー"
@@ -2183,9 +2196,6 @@ msgstr "ステップ"
 
 msgid "Steps are missing"
 msgstr "ステップが未記録です"
-
-msgid "Stop"
-msgstr "停止"
 
 msgid "Storage Unit"
 msgstr "保管ユニット"
@@ -2238,6 +2248,9 @@ msgstr "システム"
 msgid "Tag"
 msgstr "タグ"
 
+msgid "Takes the work center offline"
+msgstr "作業区をオフラインにする"
+
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "日をタップして{selectedLabel}に時間を追加してください。バーの下部をドラッグして時間を変更してください。"
 
@@ -2284,6 +2297,9 @@ msgstr "その後"
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "このマテリアルについて、利用可能または消費済みの追跡部品がありません。"
 
+msgid "There are no other open service jobs."
+msgstr "他にオープンなサービスジョブがありません"
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "部品表にシリアルまたはバッチ追跡対象の材料が完全に払い出されていません。払出なしで完了すると、トレーサビリティ記録が不正確になる可能性があります。"
 
@@ -2295,9 +2311,6 @@ msgstr "このバッチには作業手順書がありません。"
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "この情報はすべてのユーザーに表示されるため、共有内容に注意してください。"
-
-msgid "This job needs an accepted estimate before it can be completed."
-msgstr "この製造指図を完了する前に、承諾済の見積もりが必要です。"
 
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
@@ -2335,9 +2348,8 @@ msgstr "時間と原価が数量に比例して製造指図全体に分配され
 msgid "Time Entries"
 msgstr "タイムエントリー"
 
-#. placeholder {0}: formatDuration(totalDuration)
-msgid "Time Worked: {0}"
-msgstr "作業時間: {0}"
+msgid "Time Worked"
+msgstr "作業時間"
 
 msgid "To pick"
 msgstr "ピッキング待ち"
@@ -2347,10 +2359,6 @@ msgstr "実行待ち"
 
 msgid "Today"
 msgstr "今日"
-
-#. placeholder {0}: quantity(todayHours)
-msgid "Today: {0} h"
-msgstr "今日: {0} h"
 
 msgid "Toggle labor"
 msgstr "労務を切り替える"
@@ -2384,6 +2392,9 @@ msgstr "合計時間"
 
 msgid "Total Quantity"
 msgstr "合計数量"
+
+msgid "Total Time"
+msgstr "合計時間"
 
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
@@ -2430,8 +2441,14 @@ msgstr "メッセージを入力..."
 msgid "Unable to unlock"
 msgstr "ロック解除できません"
 
+msgid "Unassigned"
+msgstr "未割り当て"
+
 msgid "Unissued serial/batch materials"
 msgstr "未払出のシリアル/バッチ材料"
+
+msgid "Unit"
+msgstr "個"
 
 msgid "Unknown"
 msgstr "不明"
@@ -2461,6 +2478,9 @@ msgstr "計画外の保全指示、過去{0}日間"
 
 msgid "Unsaved changes"
 msgstr "未保存の変更"
+
+msgid "Until <0/>"
+msgstr "<0/>まで"
 
 msgid "Up next"
 msgstr "次は"
@@ -2533,6 +2553,9 @@ msgstr "アカウントにサインインするためのマジックリンクを
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}とは何ですか?"
 
+msgid "When"
+msgstr "いつ"
+
 msgid "Whole batch"
 msgstr "バッチ全体"
 
@@ -2551,24 +2574,20 @@ msgstr "作業手順書"
 msgid "Work Site"
 msgstr "作業現場"
 
+msgid "Working"
+msgstr "作業中"
+
 msgid "Write a note…"
 msgstr "メモを書く…"
 
 msgid "Yes"
 msgstr "はい"
 
-msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
-msgstr "他のオープンな外注サービス製造指図はありません。あなたがリードするか、今週割り当てられた製造指図がここに表示されます。"
-
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "作業開始から{hoursElapsed}時間が経過しています。作業終了を忘れていませんか？"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "あなたのアカウントはまだ会社に属していません。継続するには、Carbon ERP でオンボーディングを完了してください。"
-
-#. placeholder {0}: runningClock.serviceJob?.serviceJobId
-msgid "Your clock is running on <0>{0}</0>. Stop it there first."
-msgstr "クロックが<0>{0}</0>で実行中です。まずそこで停止してください。"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定してから、ここに戻ってください。"

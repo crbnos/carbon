@@ -223,8 +223,7 @@ export const path = {
     scrapReasons: `${api}/scrap-reasons`,
     service: `${x}/service`,
     serviceJob: (id: string) => generatePath(`${x}/service/${id}`),
-    serviceJobSignature: (id: string) =>
-      generatePath(`${x}/service/${id}/signature`),
+    serviceJobDetail: (id: string) => `${getAppUrl()}${x}/service-job/${id}`,
     serviceTime: `${x}/service-time`,
     setupRequired: "/setup-required",
     startOperation: (id: string) => generatePath(`${x}/start/${id}`),

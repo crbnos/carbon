@@ -2542,18 +2542,6 @@ function serviceJobs(ctx: ValidationCtx): void {
     if (job.status === "Awaiting Approval" && estimate?.status !== "Sent") {
       fail(`${where}: an Awaiting Approval job has a Sent estimate`);
     }
-    // canComplete (@carbon/utils service-job.ts).
-    if (
-      done &&
-      job.coverage === "Billable" &&
-      job.repairable !== false &&
-      origin &&
-      estimate?.status !== "Accepted"
-    ) {
-      fail(
-        `${where}: a Billable job from an RMA line completes only with an Accepted estimate`
-      );
-    }
     for (const charge of job.charges) checkLine(`${where} charge`, charge);
 
     const completed = job.completedWorkdaysBack;

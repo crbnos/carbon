@@ -26,15 +26,14 @@ databaseTest(
         unitCost: 10
       });
       const job = await f.addJob({ locationId });
-      const setDay = (hours: number, mustBeAssigned = false) =>
+      const setDay = (hours: number) =>
         setServiceJobDayHours(f.db, {
           companyId: f.companyId,
           userId: PROJECT_TEST_USER,
           employeeId: PROJECT_TEST_USER,
           serviceJobId: job.id,
           entryDate: "2026-10-01",
-          hours,
-          mustBeAssigned
+          hours
         });
       const day = () =>
         f.db
@@ -43,9 +42,6 @@ databaseTest(
           .where("serviceJobId", "=", job.id)
           .orderBy("createdAt")
           .execute();
-
-      // Not assigned and not the lead: refused.
-      await expect(setDay(2, true)).rejects.toThrow(/assigned/);
 
       // A clock entry of 1.5 h and a new total of 3 h: 1.5 h manual.
       await f.db

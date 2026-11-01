@@ -723,6 +723,9 @@ msgstr "E-posta Adresi"
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "E-posta bildirimleri şirketinizin mevcut planına dahil değildir; e-posta tercihleri etkinleştirilirse uygulanacaktır."
 
+msgid "Employee"
+msgstr "Çalışan"
+
 msgid "Empty work centers"
 msgstr "Boş iş merkezleri"
 
@@ -797,9 +800,6 @@ msgstr "Depolama birimlerini almak başarısız oldu"
 msgid "Failed to get options"
 msgstr "Seçenekler alınamadı"
 
-msgid "Failed to read the signature"
-msgstr "İmza okunamadı"
-
 msgid "Failed to record gauge"
 msgstr "Ölçüm aleti kaydedilemedi"
 
@@ -815,9 +815,6 @@ msgstr "Sonuç kaydedilemedi"
 msgid "Failed to save the hours"
 msgstr "Saatler kaydedilemedi"
 
-msgid "Failed to save the signature"
-msgstr "İmza kaydedilemedi"
-
 msgid "Failed to submit the week"
 msgstr "Hafta gönderilemedi"
 
@@ -832,6 +829,9 @@ msgstr "Dosyayı yüklemede başarısız oldu: {0}"
 
 msgid "Failed to upload image"
 msgstr "Görsel yüklenemedi"
+
+msgid "Failure Mode"
+msgstr "Arıza Modu"
 
 msgid "File size exceeds 10MB limit"
 msgstr "Dosya boyutu 10MB sınırını aşıyor"
@@ -896,6 +896,9 @@ msgstr "Başlık {level}"
 
 msgid "Hide description"
 msgstr "Açıklamayı gizle"
+
+msgid "Hours"
+msgstr "Saat"
 
 msgid "How Carbon looks in this browser."
 msgstr "Bu tarayıcıda Carbon'un görünüşü."
@@ -1039,6 +1042,9 @@ msgstr "İşçilik kategorisi"
 msgid "Labor ended"
 msgstr "İşçilik Sona Erdi"
 
+msgid "Labor until <0/>"
+msgstr "İşçilik <0/> kadar"
+
 msgid "Last completed"
 msgstr "Son olarak tamamlanan"
 
@@ -1143,9 +1149,6 @@ msgstr "Ana"
 
 msgid "Maintenance"
 msgstr "Bakım"
-
-msgid "Maintenance Completed"
-msgstr "Bakım Tamamlandı"
 
 msgid "Maintenance overdue"
 msgstr "Bakım gecikmiş"
@@ -1366,6 +1369,9 @@ msgstr "Yazıcı yapılandırılmadı"
 msgid "No recent operations"
 msgstr "Son operasyon yok"
 
+msgid "No registered asset"
+msgstr "Kaydedilmiş varlık yok"
+
 msgid "No remaining entities to inspect."
 msgstr "İncelenecek kalan varlık yok."
 
@@ -1408,6 +1414,9 @@ msgstr "Stok yok"
 msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
 
+msgid "No unit"
+msgstr "Adet yok"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden yapılana kadar eldeki stok negatif olabilir, ancak yine de alabilirsiniz."
 
@@ -1423,8 +1432,11 @@ msgstr "Çalışma merkezi bulunmamaktadır"
 msgid "None"
 msgstr "Hiçbiri"
 
-msgid "Not signed."
-msgstr "İmzalanmadı."
+msgid "Not scheduled"
+msgstr "Planlanmamış"
+
+msgid "Not set"
+msgstr "Ayarlanmamış"
 
 msgid "Notes"
 msgstr "Notlar"
@@ -1593,6 +1605,9 @@ msgstr "Fotoğraf başarıyla yüklendi"
 
 msgid "Photos"
 msgstr "Fotoğraflar"
+
+msgid "Photos of the unit, shared with the ERP job."
+msgstr "Birimin fotoğrafları, ERP iş emri ile paylaşılmış."
 
 msgid "Pick"
 msgstr "Topla"
@@ -1855,8 +1870,9 @@ msgstr "Yeniden işleme miktarı"
 msgid "Running"
 msgstr "Çalışıyor"
 
-msgid "Running since <0/>"
-msgstr "Şu tarihten beri çalışıyor <0/>"
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Running on <0>{0}</0>"
+msgstr "<0>{0}</0> üzerinde çalışıyor"
 
 msgid "Sales"
 msgstr "Satış"
@@ -1869,9 +1885,6 @@ msgstr "Her iş emri için aynı"
 
 msgid "Save"
 msgstr "Kaydet"
-
-msgid "Save Signature"
-msgstr "İmzayı Kaydet"
 
 msgid "Save the form you're editing"
 msgstr "Düzenlediğiniz formu kaydetin"
@@ -2047,6 +2060,9 @@ msgstr "Hizmet"
 msgid "Service job"
 msgstr "Hizmet İş emri"
 
+msgid "Service Job Details"
+msgstr "Hizmet İş Emri Ayrıntıları"
+
 msgid "Session locked"
 msgstr "Oturum kilitlendi"
 
@@ -2086,9 +2102,6 @@ msgstr "Klavye kısayollarını göster"
 msgid "Shuffle"
 msgstr "Karıştır"
 
-msgid "Sign Again"
-msgstr "Tekrar İmzala"
-
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sihirli bir bağlantı yerine biyometrik veriler ile oturum açın. Geçiş anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
 
@@ -2110,23 +2123,17 @@ msgstr "Oturumu Kapat"
 msgid "Sign out instead"
 msgstr "Bunun yerine oturumu kapat"
 
-msgid "Signature"
-msgstr "İmza"
-
 msgid "Signature pad"
 msgstr "İmza Yastığı"
-
-msgid "Signed by"
-msgstr "İmzalayan"
-
-msgid "Signed by {signedByName}"
-msgstr "İmzalayan: {signedByName}"
 
 msgid "Signed in as {stationName}"
 msgstr "Oturum açıldı olarak {stationName}"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Oturum açma artık bir kod gerektirmeyecek. Onaylamak için kimlik doğrulayıcı uygulamanızdan geçerli 6 haneli kodu girin."
+
+msgid "since <0/>"
+msgstr "<0/> itibaren"
 
 msgid "Size"
 msgstr "Boyut"
@@ -2150,6 +2157,9 @@ msgstr "Başlat"
 msgid "Start {0}"
 msgstr "Başlat {0}"
 
+msgid "Start clock"
+msgstr "Saati Başlat"
+
 msgid "Start Job"
 msgstr "İş emrini Başlat"
 
@@ -2158,6 +2168,9 @@ msgstr "Operasyonu başlat veya duraklat"
 
 msgid "Start timer"
 msgstr "Zamanlayıcıyı Başlat"
+
+msgid "Start work"
+msgstr "İşe Başla"
 
 msgid "Station User"
 msgstr "İstasyon Kullanıcısı"
@@ -2183,9 +2196,6 @@ msgstr "Adımlar"
 
 msgid "Steps are missing"
 msgstr "Adımlar eksik"
-
-msgid "Stop"
-msgstr "Durdur"
 
 msgid "Storage Unit"
 msgstr "Depolama Birimi"
@@ -2238,6 +2248,9 @@ msgstr "Sistem"
 msgid "Tag"
 msgstr "Etiket"
 
+msgid "Takes the work center offline"
+msgstr "İş merkezini çevrimdışı alır"
+
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Bir gün seçerek {selectedLabel} için süre ekleyin. Bir çubuğun alt kenarını sürükleyerek saatlerini değiştirin."
 
@@ -2284,6 +2297,9 @@ msgstr "sonra"
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Bu malzeme için hiçbir kullanılabilir veya tüketilmiş izlenmiş parça yoktur."
 
+msgid "There are no other open service jobs."
+msgstr "Başka açık hizmet iş emirleri yok."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Malzeme listesindeki seri veya parti takipli malzemeler tam olarak verilmemiş. Vermeden tamamlamak, yanlış izlenebilirlik kayıtlarına neden olabilir."
 
@@ -2295,9 +2311,6 @@ msgstr "Bu partinin iş talimatı yok."
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Bu bilgiler tüm kullanıcılara görünür olacak, bu nedenle paylaştığınız şeylere dikkat edin."
-
-msgid "This job needs an accepted estimate before it can be completed."
-msgstr "Bu iş emri tamamlanmadan önce kabul edilmiş bir tahminle hazırlanmalı."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Bu lot'un süresi doldu ve toplanamaz."
@@ -2335,9 +2348,8 @@ msgstr "Zaman ve maliyet, miktar ile orantılı olarak iş emirleri arasında b�
 msgid "Time Entries"
 msgstr "Zaman Girişleri"
 
-#. placeholder {0}: formatDuration(totalDuration)
-msgid "Time Worked: {0}"
-msgstr "Çalışma Süresi: {0}"
+msgid "Time Worked"
+msgstr "Çalışılan Zaman"
 
 msgid "To pick"
 msgstr "Toplanacak"
@@ -2347,10 +2359,6 @@ msgstr "Çalıştırılacak"
 
 msgid "Today"
 msgstr "Bugün"
-
-#. placeholder {0}: quantity(todayHours)
-msgid "Today: {0} h"
-msgstr "Bugün: {0} h"
 
 msgid "Toggle labor"
 msgstr "İşçiliği Aç/Kapat"
@@ -2384,6 +2392,9 @@ msgstr "Toplam saat"
 
 msgid "Total Quantity"
 msgstr "Toplam Miktar"
+
+msgid "Total Time"
+msgstr "Toplam Zaman"
 
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
@@ -2430,8 +2441,14 @@ msgstr "Bir mesaj yaz..."
 msgid "Unable to unlock"
 msgstr "Kilit açılamıyor"
 
+msgid "Unassigned"
+msgstr "Atanmamış"
+
 msgid "Unissued serial/batch materials"
 msgstr "Yayımlanmamış seri/parti malzemeleri"
+
+msgid "Unit"
+msgstr "Adet"
 
 msgid "Unknown"
 msgstr "Bilinmiyor"
@@ -2461,6 +2478,9 @@ msgstr "Planlanmamış bakım öğeleri, son {0} gün"
 
 msgid "Unsaved changes"
 msgstr "Kaydedilmemiş değişiklikler"
+
+msgid "Until <0/>"
+msgstr "<0/> kadar"
 
 msgid "Up next"
 msgstr "Sırada"
@@ -2533,6 +2553,9 @@ msgstr "Hesabınıza giriş yapmak için size bir sihirli bağlantı gönderdik.
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} nedir?"
 
+msgid "When"
+msgstr "Ne zaman"
+
 msgid "Whole batch"
 msgstr "Tüm Parti"
 
@@ -2551,24 +2574,20 @@ msgstr "İş talimatları"
 msgid "Work Site"
 msgstr "İş Sahanı"
 
+msgid "Working"
+msgstr "Çalışıyor"
+
 msgid "Write a note…"
 msgstr "Bir not yazın…"
 
 msgid "Yes"
 msgstr "Evet"
 
-msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
-msgstr "Başka açık hizmet iş emri yoktur. Bu hafta yönettiğiniz veya size atanan bir iş emri buraya gösterilir."
-
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed} saattir zaman kaydı yapıyorsunuz. İş bitişini yapmayı unuttunuz mu?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Hesabınız henüz bir şirkete ait değildir. Devam etmek için Carbon ERP'de yerleşimi tamamlayın."
-
-#. placeholder {0}: runningClock.serviceJob?.serviceJobId
-msgid "Your clock is running on <0>{0}</0>. Stop it there first."
-msgstr "Saatiniz <0>{0}</0> üzerinde çalışıyor. Önce onu orada durdurun."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Kuruluşunuz bir kimlik doğrulama uygulaması gerektirir. Bunu Carbon'da ayarlayın, ardından buraya geri dönün."

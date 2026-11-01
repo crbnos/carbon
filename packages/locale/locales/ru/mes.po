@@ -723,6 +723,9 @@ msgstr "Адрес электронной почты"
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "Уведомления по электронной почте не включены в текущий план вашей организации; предпочтения электронной почты будут применены, если они включены."
 
+msgid "Employee"
+msgstr "Сотрудник"
+
 msgid "Empty work centers"
 msgstr "Пустые рабочие центры"
 
@@ -797,9 +800,6 @@ msgstr "Не удалось получить единицы хранения"
 msgid "Failed to get options"
 msgstr "Не удалось получить параметры"
 
-msgid "Failed to read the signature"
-msgstr "Не удалось прочитать подпись"
-
 msgid "Failed to record gauge"
 msgstr "Не удалось записать средство измерения"
 
@@ -815,9 +815,6 @@ msgstr "Не удалось сохранить результат"
 msgid "Failed to save the hours"
 msgstr "Не удалось сохранить часы"
 
-msgid "Failed to save the signature"
-msgstr "Не удалось сохранить подпись"
-
 msgid "Failed to submit the week"
 msgstr "Не удалось отправить неделю"
 
@@ -832,6 +829,9 @@ msgstr "Не удалось загрузить файл: {0}"
 
 msgid "Failed to upload image"
 msgstr "Не удалось загрузить изображение"
+
+msgid "Failure Mode"
+msgstr "Режим отказа"
 
 msgid "File size exceeds 10MB limit"
 msgstr "Размер файла превышает ограничение в 10 МБ"
@@ -896,6 +896,9 @@ msgstr "Заголовок {level}"
 
 msgid "Hide description"
 msgstr "Скрыть описание"
+
+msgid "Hours"
+msgstr "Часы"
 
 msgid "How Carbon looks in this browser."
 msgstr "Внешний вид Carbon в этом браузере."
@@ -1039,6 +1042,9 @@ msgstr "Категория труда"
 msgid "Labor ended"
 msgstr "Труд завершен"
 
+msgid "Labor until <0/>"
+msgstr "Труд до <0/>"
+
 msgid "Last completed"
 msgstr "Последнее завершено"
 
@@ -1143,9 +1149,6 @@ msgstr "Основное"
 
 msgid "Maintenance"
 msgstr "Техобслуживание"
-
-msgid "Maintenance Completed"
-msgstr "Техобслуживание завершено"
 
 msgid "Maintenance overdue"
 msgstr "Техобслуживание просрочено"
@@ -1366,6 +1369,9 @@ msgstr "Принтер не настроен"
 msgid "No recent operations"
 msgstr "Нет недавних операций"
 
+msgid "No registered asset"
+msgstr "Нет зарегистрированного актива"
+
 msgid "No remaining entities to inspect."
 msgstr "Нет оставшихся объектов для проверки."
 
@@ -1408,6 +1414,9 @@ msgstr "Нет запасов"
 msgid "No time entries for this week"
 msgstr "Нет записей учёта времени за эту неделю"
 
+msgid "No unit"
+msgstr "Нет единицы"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его подобрать — количество в наличии станет отрицательным до тех пор, пока инвентаризация не будет согласована."
 
@@ -1423,8 +1432,11 @@ msgstr "Рабочие центры отсутствуют"
 msgid "None"
 msgstr "Нет"
 
-msgid "Not signed."
-msgstr "Не подписано."
+msgid "Not scheduled"
+msgstr "Не запланировано"
+
+msgid "Not set"
+msgstr "Не установлено"
 
 msgid "Notes"
 msgstr "Примечания"
@@ -1593,6 +1605,9 @@ msgstr "Фото успешно загружено"
 
 msgid "Photos"
 msgstr "Фото"
+
+msgid "Photos of the unit, shared with the ERP job."
+msgstr "Фотографии единицы, общие с производственным заказом в ERP."
 
 msgid "Pick"
 msgstr "Выбрать"
@@ -1855,8 +1870,9 @@ msgstr "Количество для доработки"
 msgid "Running"
 msgstr "Работает"
 
-msgid "Running since <0/>"
-msgstr "Выполняется с <0/>"
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Running on <0>{0}</0>"
+msgstr "Работает на <0>{0}</0>"
 
 msgid "Sales"
 msgstr "Продажи"
@@ -1869,9 +1885,6 @@ msgstr "То же самое для всех производственных з
 
 msgid "Save"
 msgstr "Сохранить"
-
-msgid "Save Signature"
-msgstr "Сохранить подпись"
 
 msgid "Save the form you're editing"
 msgstr "Сохранить редактируемую форму"
@@ -2047,6 +2060,9 @@ msgstr "Услуга"
 msgid "Service job"
 msgstr "Заказ на услугу"
 
+msgid "Service Job Details"
+msgstr "Подробности работы по услуге"
+
 msgid "Session locked"
 msgstr "Сеанс заблокирован"
 
@@ -2086,9 +2102,6 @@ msgstr "Показать горячие клавиши"
 msgid "Shuffle"
 msgstr "Перемешать"
 
-msgid "Sign Again"
-msgstr "Подпишите еще раз"
-
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Войдите с помощью биометрии вместо волшебной ссылки. Ключи доступа защищены с помощью Face ID, Touch ID или PIN вашего устройства."
 
@@ -2110,23 +2123,17 @@ msgstr "Выйти"
 msgid "Sign out instead"
 msgstr "Вместо этого выйдите"
 
-msgid "Signature"
-msgstr "Подпись"
-
 msgid "Signature pad"
 msgstr "Подпись"
-
-msgid "Signed by"
-msgstr "Подписано"
-
-msgid "Signed by {signedByName}"
-msgstr "Подписано {signedByName}"
 
 msgid "Signed in as {stationName}"
 msgstr "Вход выполнен как {stationName}"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Вход больше не будет требовать код. Введите текущий 6-значный код из приложения аутентификации для подтверждения."
+
+msgid "since <0/>"
+msgstr "с <0/>"
 
 msgid "Size"
 msgstr "Размер"
@@ -2150,6 +2157,9 @@ msgstr "Старт"
 msgid "Start {0}"
 msgstr "Начать {0}"
 
+msgid "Start clock"
+msgstr "Начать отсчет времени"
+
 msgid "Start Job"
 msgstr "Начать производственный заказ"
 
@@ -2158,6 +2168,9 @@ msgstr "Запустить или приостановить операцию"
 
 msgid "Start timer"
 msgstr "Запустить таймер"
+
+msgid "Start work"
+msgstr "Начать работу"
 
 msgid "Station User"
 msgstr "Пользователь станции"
@@ -2183,9 +2196,6 @@ msgstr "Шаги"
 
 msgid "Steps are missing"
 msgstr "Шаги не заполнены"
-
-msgid "Stop"
-msgstr "Остановить"
 
 msgid "Storage Unit"
 msgstr "Единица хранения"
@@ -2238,6 +2248,9 @@ msgstr "Система"
 msgid "Tag"
 msgstr "Тег"
 
+msgid "Takes the work center offline"
+msgstr "Переводит рабочий центр в режим offline"
+
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Коснитесь дня, чтобы добавить время к {selectedLabel}. Перетащите нижний край столбца, чтобы изменить его часы."
 
@@ -2284,6 +2297,9 @@ msgstr "затем"
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Для этого материала нет доступных или израсходованных отслеживаемых деталей."
 
+msgid "There are no other open service jobs."
+msgstr "Нет других открытых работ по обслуживанию."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "В спецификации есть материалы с серийным или партионным учётом, которые не были полностью выданы. Завершение без выдачи может привести к некорректным записям прослеживаемости."
 
@@ -2295,9 +2311,6 @@ msgstr "Эта серия не имеет рабочих инструкций."
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Эта информация будет видна всем пользователям, поэтому будьте осторожны с тем, что вы делитесь."
-
-msgid "This job needs an accepted estimate before it can be completed."
-msgstr "Для завершения этого производственного заказа требуется принятая смета."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Срок этой партии истек, и она не может быть отобрана."
@@ -2335,9 +2348,8 @@ msgstr "Время и себестоимость распределяются м
 msgid "Time Entries"
 msgstr "Записи учёта времени"
 
-#. placeholder {0}: formatDuration(totalDuration)
-msgid "Time Worked: {0}"
-msgstr "Отработанное время: {0}"
+msgid "Time Worked"
+msgstr "Отработанное время"
 
 msgid "To pick"
 msgstr "Для отбора"
@@ -2347,10 +2359,6 @@ msgstr "Для запуска"
 
 msgid "Today"
 msgstr "Сегодня"
-
-#. placeholder {0}: quantity(todayHours)
-msgid "Today: {0} h"
-msgstr "Сегодня: {0} ч"
 
 msgid "Toggle labor"
 msgstr "Переключить труд"
@@ -2384,6 +2392,9 @@ msgstr "Итого часов"
 
 msgid "Total Quantity"
 msgstr "Общее количество"
+
+msgid "Total Time"
+msgstr "Общее время"
 
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
@@ -2430,8 +2441,14 @@ msgstr "Введите сообщение..."
 msgid "Unable to unlock"
 msgstr "Не удалось разблокировать"
 
+msgid "Unassigned"
+msgstr "Не назначено"
+
 msgid "Unissued serial/batch materials"
 msgstr "Невыданные серийные/партионные материалы"
+
+msgid "Unit"
+msgstr "Единица"
 
 msgid "Unknown"
 msgstr "Неизвестно"
@@ -2461,6 +2478,9 @@ msgstr "Незапланированные элементы техобслужи
 
 msgid "Unsaved changes"
 msgstr "Несохранённые изменения"
+
+msgid "Until <0/>"
+msgstr "До <0/>"
 
 msgid "Up next"
 msgstr "Следующее"
@@ -2533,6 +2553,9 @@ msgstr "Мы отправили вам ссылку для входа в ваш 
 msgid "What is {translatedTerm}?"
 msgstr "Что такое {translatedTerm}?"
 
+msgid "When"
+msgstr "Когда"
+
 msgid "Whole batch"
 msgstr "Вся серия"
 
@@ -2551,24 +2574,20 @@ msgstr "Рабочие инструкции"
 msgid "Work Site"
 msgstr "Объект"
 
+msgid "Working"
+msgstr "В работе"
+
 msgid "Write a note…"
 msgstr "Напишите примечание…"
 
 msgid "Yes"
 msgstr "Да"
 
-msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
-msgstr "У вас нет других открытых заказов на услуги. Заказ появляется здесь, когда вы его возглавляете или когда он назначен вам на эту неделю."
-
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Вы находились на работе {hoursElapsed} часов. Вы забыли записать окончание работы?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Ваша учетная запись еще не входит ни в одну Организацию. Завершите подготовку к работе в Carbon ERP, чтобы продолжить."
-
-#. placeholder {0}: runningClock.serviceJob?.serviceJobId
-msgid "Your clock is running on <0>{0}</0>. Stop it there first."
-msgstr "Ваш таймер работает на <0>{0}</0>. Сначала остановите его там."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Ваша организация требует приложения аутентификатора. Настройте его в Carbon, а затем вернитесь сюда."

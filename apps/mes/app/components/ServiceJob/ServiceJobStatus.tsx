@@ -15,6 +15,10 @@ import {
   warrantyStatus
 } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
+import { BsExclamationSquareFill } from "react-icons/bs";
+import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
+import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
+import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
 
 type Enums = Database["public"]["Enums"];
 type ServiceJobStatusType = Enums["serviceJobStatus"];
@@ -123,4 +127,22 @@ export function WarrantyBadge({
   return (
     <Badge variant={WARRANTY_BADGE_VARIANT[status]}>{labels[status]}</Badge>
   );
+}
+
+/** A service job's priority as the maintenance and job queues show it. */
+export function ServicePriorityIcon({
+  priority
+}: {
+  priority: Enums["serviceJobPriority"];
+}) {
+  switch (priority) {
+    case "Critical":
+      return <BsExclamationSquareFill className="text-red-500" />;
+    case "High":
+      return <HighPriorityIcon />;
+    case "Medium":
+      return <MediumPriorityIcon />;
+    case "Low":
+      return <LowPriorityIcon />;
+  }
 }

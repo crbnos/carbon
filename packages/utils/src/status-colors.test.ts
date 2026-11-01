@@ -55,7 +55,7 @@ describe("service status colors", () => {
       "In Progress": "blue",
       "On Hold": "orange",
       Completed: "green",
-      Invoiced: "purple",
+      Invoiced: "green",
       Cancelled: "red"
     });
   });

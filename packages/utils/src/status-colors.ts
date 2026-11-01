@@ -252,7 +252,7 @@ export const SERVICE_JOB_STATUS_COLOR_MAP = {
   "In Progress": "blue",
   "On Hold": "orange",
   Completed: "green",
-  Invoiced: "purple",
+  Invoiced: "green",
   Cancelled: "red"
 } as const satisfies Record<string, StatusColor>;
 

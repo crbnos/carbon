@@ -29,8 +29,6 @@ import {
   IconButton,
   Label,
   MENU_ITEM_SHORTCUTS,
-  RadioGroup,
-  RadioGroupButton,
   RichTextView,
   Skeleton,
   Table,
@@ -38,6 +36,8 @@ import {
   Td,
   Th,
   Thead,
+  ToggleGroup,
+  ToggleGroupItem,
   Tr,
   toast,
   useDebounce,
@@ -117,31 +117,44 @@ export function ServiceJobProblem({
           <Label>
             <Trans>Repairable</Trans>
           </Label>
-          <RadioGroup
+          <ToggleGroup
+            type="single"
             aria-label={t`Repairable`}
-            className="flex gap-2"
+            className="gap-0 rounded-full border border-border bg-muted p-0.5 shadow-sm"
             value={repairable === null ? "" : String(repairable)}
             disabled={isReadOnly}
             onValueChange={(value) => {
+              // Clicking the selected answer again does not clear it.
+              if (!value) return;
               setRepairable(value === "true");
               onUpdate("repairable", value);
             }}
           >
             {[
-              { value: "true", label: t`Yes` },
-              { value: "false", label: t`No` }
+              {
+                value: "true",
+                label: t`Yes`,
+                on: "data-[state=on]:bg-emerald-600 data-[state=on]:text-white hover:data-[state=on]:bg-emerald-600 hover:data-[state=on]:text-white"
+              },
+              {
+                value: "false",
+                label: t`No`,
+                on: "data-[state=on]:bg-red-600 data-[state=on]:text-white hover:data-[state=on]:bg-red-600 hover:data-[state=on]:text-white"
+              }
             ].map((option) => (
-              <RadioGroupButton
+              <ToggleGroupItem
                 key={option.value}
                 value={option.value}
                 className={cn(
-                  "data-[state=checked]:border-2 data-[state=checked]:border-primary"
+                  "rounded-full bg-transparent text-muted-foreground transition-all duration-200 hover:bg-active hover:text-active-foreground data-[state=on]:shadow-sm",
+                  "h-7 px-4 text-sm",
+                  option.on
                 )}
               >
                 {option.label}
-              </RadioGroupButton>
+              </ToggleGroupItem>
             ))}
-          </RadioGroup>
+          </ToggleGroup>
         </CardFooter>
       }
     />

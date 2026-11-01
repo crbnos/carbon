@@ -24,12 +24,13 @@ import {
   LuCirclePause,
   LuCirclePlay,
   LuCircleX,
+  LuCreditCard,
   LuFile,
   LuLoaderCircle,
   LuMessageSquareReply,
   LuPlay,
-  LuReceipt,
-  LuSend
+  LuSend,
+  LuTvMinimalPlay
 } from "react-icons/lu";
 import { useParams } from "react-router";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
@@ -148,6 +149,16 @@ const ServiceJobHeader = () => {
         <DropdownMenuIcon icon={<LuFile />} />
         <Trans>Print Estimate</Trans>
       </DropdownMenuItem>
+      <DropdownMenuItem asChild>
+        <a
+          href={path.to.external.mesServiceJob(jobId)}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <DropdownMenuIcon icon={<LuTvMinimalPlay />} />
+          <Trans>Open in MES</Trans>
+        </a>
+      </DropdownMenuItem>
       <DropdownMenuItem
         disabled={!isAllowed("Hold")}
         onClick={() => submitStatus("Hold")}
@@ -205,18 +216,6 @@ const ServiceJobHeader = () => {
             </Button>
           </statusFetcher.Form>
         );
-      case "Send Estimate":
-        return (
-          <Button
-            leftIcon={<LuSend />}
-            variant="primary"
-            isDisabled={!canSendEstimate}
-            isLoading={sendFetcher.state !== "idle"}
-            onClick={sendEstimate}
-          >
-            <Trans>Send Estimate</Trans>
-          </Button>
-        );
       case "Complete":
         return (
           <completeFetcher.Form
@@ -253,12 +252,12 @@ const ServiceJobHeader = () => {
           >
             <Button
               type="submit"
-              leftIcon={<LuReceipt />}
+              leftIcon={<LuCreditCard />}
               variant="primary"
               isDisabled={!canInvoice}
               isLoading={invoiceFetcher.state !== "idle"}
             >
-              <Trans>Create Invoice</Trans>
+              <Trans>Invoice</Trans>
             </Button>
           </invoiceFetcher.Form>
         );

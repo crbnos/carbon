@@ -8,7 +8,7 @@ Files (`.claude/rules/module-files.md`): `service.server.ts` holds the `defineSe
 - **Service job** — `serviceJob`, readable `SJ…`. One customer, an optional customer asset, a work site (Depot / Customer Site), a location (our depot). Status: Open → In Progress ⇄ On Hold → Completed → Invoiced; Awaiting Approval while an estimate waits; Cancelled. Completed, Invoiced and Cancelled are locked (`isServiceJobLocked`).
 - **Coverage** — who bears the cost: Billable, Warranty or Contract, one per job. Billable and Contract cost goes to `costOfServiceAccount` (falls back to COGS), Warranty to `warrantyExpenseAccount` (no fallback). `suggestCoverage` defaults it from the asset's warranty dates.
 - **Labor item** — an item of type Service: `itemCost.unitCost` is the cost per hour, the unit sale price the bill rate. Default `companySettings.serviceLaborItemId`.
-- **Estimate** — `serviceJobEstimateLine` rows, sent and answered on the job (no sales quote). Required before Complete for a Billable job that is Fixed Price or came from an RMA line, unless `repairable` is false (`canComplete`).
+- **Estimate** — `serviceJobEstimateLine` rows, sent and answered on the job (no sales quote). Optional: a job completes without an accepted estimate.
 - **Charge** — a `serviceJobItem` Charge line: a Service item at a price, optionally linked to the reimbursement or supplier invoice line that paid its cost.
 - **Customer asset** — one shipped serial at a customer (`customerAsset`): In Service, At Depot (received on an RMA Service or Warranty line), Returned.
 
@@ -21,7 +21,7 @@ Files (`.claude/rules/module-files.md`): `service.server.ts` holds the `defineSe
 - MUST name new path helpers `serviceJob*`, `serviceSchedule*` or `customerAsset*`. `path.to.service`, `services` and `x+/service+/` belong to the Service ITEM page.
 
 ### Ask First
-- Changing `needsAcceptedEstimate`, `coverageAccountRole` or `suggestCoverage` in `@carbon/utils` — the ERP, the MES and the postings all read them.
+- Changing `coverageAccountRole` or `suggestCoverage` in `@carbon/utils` — the ERP, the MES and the postings all read them.
 - Adding a status or a transition — `serviceJobPrimaryAction`, `getSalesReturnOrderStatus` and `SHIP_BACK_JOB_STATUSES` (`inventory/shipment-service-return.ts`) depend on the set.
 - Letting service time enter timesheet submit, approval or DCAA — it is kept out on purpose.
 
