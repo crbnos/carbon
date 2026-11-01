@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { ONSHAPE_PROPERTIES, onshapePropertyField } from "@carbon/ee";
 import { getOnshapeClient } from "@carbon/ee/onshape";
 import { getLogger } from "@carbon/logger";
 import { getReadableIdWithRevision } from "@carbon/utils";
@@ -74,10 +75,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         // Map each header to its corresponding value in the row
         headers.forEach((header) => {
           const value = row.headerIdToValue[header.id];
+          // Onshape's own columns go under their default label ("Part
+          // number"), whatever a BOM template calls them; matched by id or
+          // property name, never by label.
+          const field = onshapePropertyField({
+            id: header.id,
+            propertyName: header.propertyName
+          });
           // Some columns (e.g. Material) come back as an object carrying a
           // displayName rather than a plain string — unwrap those so the
           // flattened value is usable downstream (Revision, State, etc.).
-          rowData[header.name] =
+          rowData[field ? ONSHAPE_PROPERTIES[field].label : header.name] =
             value && typeof value === "object"
               ? value.displayName || ""
               : value || "";

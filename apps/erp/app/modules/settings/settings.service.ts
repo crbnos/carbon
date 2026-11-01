@@ -94,6 +94,7 @@ import type {
 } from "@carbon/ee";
 import {
   integrations as availableIntegrations,
+  BOM_LINE_FIELDS,
   bomLineItemType,
   CUSTOM_FIELD_TYPE_LABELS,
   changeNoticeDescriptionJson,
@@ -105,6 +106,7 @@ import {
   flattenNodes,
   getIntegrationConfigById,
   getIntegrationIdsByRole,
+  IDENTITY_FIELDS,
   type IntegrationHealthcheckResult,
   type IntegrationID,
   ITEM_METHOD_TYPES,
@@ -131,6 +133,7 @@ import {
   STANDARD_FIELD_IDS,
   splitSecrets,
   standardField,
+  standardSourceErrors,
   targetKey,
   translationErrors
 } from "@carbon/ee";
@@ -8336,7 +8339,9 @@ const entrySchema = z.object({
   valueType: z.string().min(1),
   target: z.discriminatedUnion("kind", [
     z.object({ kind: z.literal("customField"), fieldId: z.string().min(1) }),
-    z.object({ kind: z.literal("item"), field: z.enum(STANDARD_FIELD_IDS) })
+    z.object({ kind: z.literal("item"), field: z.enum(STANDARD_FIELD_IDS) }),
+    z.object({ kind: z.literal("identity"), field: z.enum(IDENTITY_FIELDS) }),
+    z.object({ kind: z.literal("bomLine"), field: z.enum(BOM_LINE_FIELDS) })
   ]),
   mode: modeSchema,
   translations: z
@@ -8427,6 +8432,14 @@ export async function saveOnshapePropertyMap(
 
   // The editor hides unmappable rows; this guards a hand-made payload.
   for (const entry of entries) {
+    // A source for Part number, Item, … writes no field: its own rules.
+    if (entry.target.kind === "identity" || entry.target.kind === "bomLine") {
+      const errors = standardSourceErrors(entry);
+      if (errors.length > 0) {
+        fieldErrors.push({ key: entry.onshapePropertyId, errors });
+      }
+      continue;
+    }
     if (!Object.hasOwn(MAPPABLE_VALUE_TYPES, entry.valueType)) {
       fieldErrors.push({
         key: entry.onshapePropertyId,

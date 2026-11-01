@@ -15,6 +15,7 @@ import {
   IntegrationSecretUnavailableError,
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
+import { identityValue } from "../panel/standard-sources";
 import { normalizeConfiguration } from "../panel/status";
 import { apiCallPathKey } from "./api-call-key";
 import {
@@ -592,19 +593,17 @@ export class OnshapeClient {
       parentId?: string | null;
       elementType?: number;
       elementId?: string | null;
-      properties?: Array<{ name?: string; value?: unknown }>;
+      properties?: Array<{
+        propertyId?: string;
+        name?: string;
+        value?: unknown;
+      }>;
       children?: RawItem[];
     };
     const pkg = await this.request<{ items?: RawItem[] }>(
       "GET",
       `/api/v10/releasepackages/${releaseId}?detailed=true`
     );
-    const text = (item: RawItem, name: string) => {
-      const value = item.properties?.find((p) => p.name === name)?.value;
-      return typeof value === "string" && value.trim() !== ""
-        ? value.trim()
-        : null;
-    };
     const out: OnshapeReleasePackageItem[] = [];
     const walk = (items: RawItem[], parentId: string | null) => {
       for (const item of items) {
@@ -615,8 +614,9 @@ export class OnshapeClient {
           elementType:
             typeof item.elementType === "number" ? item.elementType : -1,
           elementId: item.elementId ?? null,
-          partNumber: text(item, "Part number"),
-          revision: text(item, "Revision")
+          // Onshape's own properties: the release records name them.
+          partNumber: identityValue(item.properties ?? [], "partNumber"),
+          revision: identityValue(item.properties ?? [], "revision")
         });
         walk(item.children ?? [], item.id);
       }
@@ -679,14 +679,16 @@ export class OnshapeClient {
     );
   }
 
+  /** `topLevelOnly`: the assembly's own lines, under the same headers. */
   async getBillOfMaterialsIn(
     document: OnshapeDocument,
     elementId: string,
-    configuration?: string | null
+    configuration?: string | null,
+    { topLevelOnly = false }: { topLevelOnly?: boolean } = {}
   ): Promise<Record<string, unknown>> {
     return this.request<Record<string, unknown>>(
       "GET",
-      `/api/v10/assemblies/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=true&includeTopLevelAssemblyRow=true&thumbnail=false${configurationQuery(configuration)}`
+      `/api/v10/assemblies/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/bom?indented=true&multiLevel=${!topLevelOnly}&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=true&includeTopLevelAssemblyRow=true&thumbnail=false${configurationQuery(configuration)}`
     );
   }
 
