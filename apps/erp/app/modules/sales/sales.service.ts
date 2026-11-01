@@ -1671,6 +1671,21 @@ export async function getQuoteByExternalId(
     .single();
 }
 
+/**
+ * Whether a Sent quote's share link has expired: from the start (UTC) of its
+ * expiration date. The digital quote and its PDF download both refuse it.
+ */
+export function isExternalQuoteExpired(quote: {
+  expirationDate: string | null;
+  status: string;
+}) {
+  return (
+    quote.status === "Sent" &&
+    !!quote.expirationDate &&
+    parseDate(quote.expirationDate).compare(datetime.today("UTC")) <= 0
+  );
+}
+
 export async function getQuoteLinePrices(
   client: SupabaseClient<Database>,
   quoteLineId: string
@@ -12203,6 +12218,34 @@ export async function attachDocumentPdf(
     );
   }
   return { file, fileName, documentFilePath };
+}
+
+/**
+ * The PDF a quote was last finalized with (`finalizeAndSendQuote`), or null
+ * when it has none or the file was deleted from the opportunity's documents.
+ * The digital quote offers it for download.
+ */
+export async function getFinalizedQuotePdf(
+  client: SupabaseClient<Database>,
+  quote: { id: string; companyId: string }
+) {
+  const document = await client
+    .from("document")
+    .select("name, path")
+    .eq("sourceDocument", "Quote")
+    .eq("sourceDocumentId", quote.id)
+    .eq("companyId", quote.companyId)
+    .eq("active", true)
+    .order("createdAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (document.error || !document.data) return null;
+
+  // Removing a file from the opportunity's documents leaves its row behind.
+  const exists = await storage(client)
+    .company(quote.companyId)
+    .exists(document.data.path);
+  return exists.data ? document.data : null;
 }
 
 /** Render a sales order's PDF and attach it to its opportunity. */
