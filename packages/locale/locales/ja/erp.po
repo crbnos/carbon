@@ -28202,6 +28202,9 @@ msgstr "この品目はコンフィグレータを通じて構築され、その
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "この品目の部品表には棚寿命が有効な入力がないため、BOM から使用期限は計算されません。"
 
+msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
+msgstr "この製造指図には請求レートがありません。時間を請求する前に、プロパティで請求レートを設定してください。"
+
 msgid "This job will be received to inventory. It will no longer be available on the shop floor."
 msgstr "この製造指図は在庫に受け入れられます。製造現場で利用できなくなります。"
 

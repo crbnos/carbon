@@ -2318,6 +2318,9 @@ msgstr "このバッチには作業手順書がありません。"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "この情報はすべてのユーザーに表示されるため、共有内容に注意してください。"
 
+msgid "This job has no bill rate. Ask the office to set it before the time is billed."
+msgstr "この製造指図には請求レートがありません。時間が請求される前にオフィスに設定するよう依頼してください。"
+
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
 

@@ -28202,6 +28202,9 @@ msgstr "Dieser Artikel wird über einen Konfigurator gebaut und löst seine Komp
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "Die Stückliste dieses Artikels hat keine Eingaben mit aktivierter Haltbarkeit, daher wird kein Verfall aus der BOM berechnet."
 
+msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
+msgstr "Dieser Fertigungsauftrag hat keinen Stundensatz. Legen Sie den Stundensatz in seinen Eigenschaften fest, bevor die Zeit abgerechnet werden kann."
+
 msgid "This job will be received to inventory. It will no longer be available on the shop floor."
 msgstr "Dieser Auftrag wird im Bestand eingegangen. Er ist nicht mehr auf der Werkstatt verfügbar."
 

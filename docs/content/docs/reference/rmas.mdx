@@ -28,13 +28,13 @@ Each line has a <Term>return type</Term> that decides what its receipt does.
 | Return type | The unit | On receipt |
 |---|---|---|
 | **Return to Stock** | Becomes yours again | Enters inventory at its original shipment cost, On Hold, ready for a disposition |
-| **Return for Service** | Stays the customer's | Posts no value and opens a Billable [service job](/docs/reference/service-jobs) at the receiving location |
+| **Return for Service** | Stays the customer's | Posts no value and opens a Billable [service job](/docs/reference/service-jobs) at the receiving location, at the default bill rate from **Settings → Service** |
 | **Return for Warranty** | Stays the customer's | Posts no value and opens a Warranty service job |
 
 A Service or Warranty line holds one unit. Picking an asset on the line suggests Return for Warranty while the asset's labor or parts warranty runs today; **Add from assets** applies the same rule. Its asset moves to **"At Depot"** when the receipt posts.
 
 <Callout type="note" title="Diagnosis happens on the job, not the RMA.">
-The technician logs diagnosis time on the service job and marks the unit repairable or not.
+The technician logs diagnosis time on the service job and marks the unit repairable or not. Each time entry posts its cost to the job's coverage account when it is saved. A Billable job earns its revenue month by month and is invoiced from the job, not from the RMA.
 </Callout>
 
 ## Header fields

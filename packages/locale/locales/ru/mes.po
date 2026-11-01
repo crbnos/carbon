@@ -2318,6 +2318,9 @@ msgstr "Эта серия не имеет рабочих инструкций."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Эта информация будет видна всем пользователям, поэтому будьте осторожны с тем, что вы делитесь."
 
+msgid "This job has no bill rate. Ask the office to set it before the time is billed."
+msgstr "У этого производственного заказа нет ставки расчетов. Попросите офис установить её перед тем, как время будет рассчитано."
+
 msgid "This lot is expired and can't be picked."
 msgstr "Срок этой партии истек, и она не может быть отобрана."
 

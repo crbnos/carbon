@@ -2318,6 +2318,9 @@ msgstr "Dieses Los hat keine Arbeitsanweisung."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Diese Informationen sind für alle Benutzer sichtbar, seien Sie also vorsichtig, was Sie teilen."
 
+msgid "This job has no bill rate. Ask the office to set it before the time is billed."
+msgstr "Dieser Fertigungsauftrag hat keinen Stundensatz. Bitten Sie das Büro, ihn festzulegen, bevor die Zeit abgerechnet wird."
+
 msgid "This lot is expired and can't be picked."
 msgstr "Dieses Los ist abgelaufen und kann nicht entnommen werden."
 

@@ -18,20 +18,24 @@ maintenance dispatch (`maintenanceDispatch`), not the project: there is no
 project, no work tree and no visit. The customer RMA decides per line whether a
 unit is restocked or serviced; a serviced line opens a job when its receipt posts.
 
-Spec: `.ai/specs/2026-10-22-service-jobs-and-returns.md`. Postings research:
+Specs: `.ai/specs/2026-10-22-service-jobs-and-returns.md`, and
+`.ai/specs/2026-10-31-service-labor-rates-and-time-posting.md` (labor rates,
+time posted per entry, ASC 606 revenue). Postings research:
 `.ai/research/2026-10-22-service-rma-postings.md`. Module guide:
 `apps/erp/app/modules/service/AGENTS.md`.
 
 ## The record
 
 Migrations `20261023070940_service-job-enum-values.sql`,
-`20261023071039_service-jobs.sql`, `20261023071226_service-jobs-rls.sql`.
+`20261023071039_service-jobs.sql`, `20261023071226_service-jobs-rls.sql`,
+`20261101042555_service-labor-invoice-line-type.sql`,
+`20261101043733_service-labor-rates.sql`.
 
 | Table (id prefix) | Holds |
 |---|---|
-| `serviceJob` (`sj`) | The job. Readable `serviceJobId` from sequence `serviceJob` (`SJ`). Customer, optional `customerAssetId` (sets `itemId` + `trackedEntityId`), `locationId` (our depot, the parts source), `workSite` Depot / Customer Site, `coverage`, `billingMethod` Time and Materials / Fixed Price, `priority`, `assignee` (lead technician), `problem`, `findings` / `resolution` (JSON rich text), `repairable` (null until someone decides), the estimate columns, `fixedPrice`, `serviceItemId` (what a Fixed Price job bills), `completionJournalId`, `salesInvoiceId`, `salesReturnOrderLineId`, `signaturePath` / `signedByName` (no screen captures a signature any more; the columns hold older ones) |
-| `serviceJobEstimateLine` (`sjel`) | A labor item (quantity = hours), a part or a charge, at a unit price |
-| `serviceJobTime` (`sjt`) | One time entry: employee, labor item, `entryDate`, `hours`, `billable`. `startTime` / `endTime` only on an MES clock entry. `unitCost` is stored by Complete and cleared by Reopen |
+| `serviceJob` (`sj`) | The job. Readable `serviceJobId` from sequence `serviceJob` (`SJ`). Customer, optional `customerAssetId` (sets `itemId` + `trackedEntityId`), `locationId` (our depot, the parts source), `workSite` Depot / Customer Site, `coverage`, `billingMethod` Time and Materials / Fixed Price, `laborBillRate` (per hour, see Labor rates), `priority`, `assignee` (lead technician), `problem`, `findings` / `resolution` (JSON rich text), `repairable` (null until someone decides), the estimate columns, `fixedPrice`, `serviceItemId` (what a Fixed Price job bills), `salesInvoiceId`, `salesReturnOrderLineId`, `signaturePath` / `signedByName` (no screen captures a signature any more; the columns hold older ones) |
+| `serviceJobEstimateLine` (`sjel`) | A part or a charge at a unit price, or a **Labor** line: `itemId` NULL, quantity = hours, `unitPrice` = the job's `laborBillRate` |
+| `serviceJobTime` (`sjt`) | One time entry: employee, `entryDate`, `hours`, `billable`. `startTime` / `endTime` only on a clock entry. `unitCost` is the cost rate the entry first posted at; the time reconcile sets it once and never changes it |
 | `serviceJobItem` (`sji`) | `lineType` Part (written only by the `issue` posting) or Charge (a Service item at a price; may link the line that paid it) |
 | `serviceJobAssignment` (`sja`) | Technician, `scheduledDate`, `plannedHours`. Unique per job, employee and date |
 
@@ -49,7 +53,9 @@ service role or the system connection after its own `companyId` check.
 (`serviceJobFieldRefusal`): a customer location, contact or asset must be the
 job's customer's; a job from a return or on an asset keeps its customer; a job
 with a Part line keeps its location ("Return the issued parts before changing
-the job's location.").
+the job's location."); `laborBillRate` is refused once the estimate is Sent or
+Accepted (`SERVICE_JOB_BILL_RATE_LOCKED`); `fixedPrice` is refused unless the
+job is Fixed Price.
 
 ## Statuses
 
@@ -65,8 +71,8 @@ every child-row write goes through `editableServiceJob` (operations) or
 | Start, Hold, Resume, Cancel | `setServiceJobStatus` (`SERVICE_JOB_STATUS_TRANSITIONS`, `service.models.ts`) | Start Open → In Progress; Hold Open or In Progress → On Hold; Resume On Hold → In Progress; Cancel from any open status, refused while the job has time entries or Part lines |
 | Send Estimate | `sendServiceJobEstimate` | Billable only, at least one line, not already Accepted. Estimate Sent, job Awaiting Approval |
 | Record Response | `recordServiceJobEstimateResponse` | Estimate must be Sent. Accepted → job Open; a Fixed Price job's `fixedPrice` = Σ quantity × unit price. Declined → job In Progress and `repairable = false` |
-| Complete | `completeServiceJob` → `postServiceJob` `complete` | From Open, In Progress or On Hold |
-| Reopen | `reopenServiceJob` → `postServiceJob` `reopen` | Completed → In Progress. Invoiced is refused; so is a job whose RMA unit shipped back, was scrapped or replaced (`SERVICE_JOB_UNIT_LEFT_ERROR`), and one whose completion journal is not a live document journal, e.g. Superseded by the cutover (`SERVICE_JOB_BEFORE_CUTOVER_ERROR`) |
+| Complete | `completeServiceJob` → `postServiceJob` `complete` | From Open, In Progress or On Hold. Refused while a clock runs. Runs the time reconcile and refuses if it fails; writes no journal of its own |
+| Reopen | `reopenServiceJob` → `postServiceJob` `reopen` | Completed → In Progress. Writes no journal: the time cost stays posted. Invoiced is refused; so is a job whose RMA unit shipped back, was scrapped or replaced (`SERVICE_JOB_UNIT_LEFT_ERROR`) |
 | Create Invoice | `createServiceInvoice` | Completed and Billable → Invoiced |
 | MES clock Start | `x+/service-time.tsx` | An Open job goes In Progress |
 | MES New Job | `x+/service.new.tsx` | Inserted In Progress |
@@ -75,11 +81,34 @@ every child-row write goes through `editableServiceJob` (operations) or
 Estimate lines are locked while the estimate is Sent or Accepted; a Declined
 estimate is editable again.
 
+### Guards before the click
+
+The UI shows each rule before an action fails:
+
+| Rule | What the UI does |
+|---|---|
+| No cost rate in Settings → Service, or a Billable job with no bill rate | The ERP job page (`x+/service-job+/$jobId.tsx`) and the MES job page (`x+/service.$jobId.tsx`) show a warning, "Labor rates are not set", with a link to Settings → Service |
+| The bill rate after the estimate is Sent or Accepted | `ServiceJobProperties` shows the field read-only with the reason |
+| A Fixed Price job with no `fixedPrice` | The Complete and Create Invoice dialogs (`ServiceJobActionModal.tsx`) ask for the price |
+| A running clock at Complete (ERP) | The Complete dialog offers **Stop clock and complete**: `x+/service-job+/$jobId.stop-clock` (`stopServiceJobClock`), then Complete |
+| Cancel on a job with time or Part lines | `ServiceJobHeader` disables **Cancel Job**; its tooltip says to remove the time and return the parts first |
+
+The Complete route saves a fixed price from the dialog with `updateServiceJob`
+before it completes. Create Invoice sends the price to `createServiceInvoice`,
+which saves it inside the invoice transaction.
+
 ## The estimate
 
 An estimate is optional: no job needs an Accepted estimate before Complete.
 (A `needsAcceptedEstimate` / `canComplete` gate once refused a Billable Fixed
 Price or RMA job without one; it was removed on request.)
+
+A line with no item is a **Labor** line: its quantity is hours, and
+`upsertServiceJobEstimateLine` sets its `unitPrice` to the job's
+`laborBillRate` (refused while the job has none). When the bill rate changes,
+`updateServiceJobLaborBillRate` sets `unitPrice` on the job's Labor lines in
+the same Kysely transaction. The estimate PDF (`ServiceJobEstimatePDF`) shows
+a Labor line as hours × rate.
 
 `serviceJobPrimaryAction` picks the header's one primary action: Open → Start;
 In Progress → Complete; Awaiting
@@ -103,24 +132,34 @@ the ⋯ menu (`ServiceJobHeader.tsx`).
   (`serviceJobPrimaryAction` offers Create Invoice to Billable only). Contract
   coverage from a service contract is phase 3.
 
-## Labor items
+## Labor rates
 
-A labor item is an item of type Service. Its `itemCost.unitCost` is the cost per
-hour; its `itemUnitSalePrice.unitSalePrice` is the bill rate per hour. Each time
-entry names one (`refuseUnlessServiceItem`). The company default is
-`companySettings.serviceLaborItemId` (Settings → Invoicing → Service Labor
-Item). The MES clock and a new My Time entry use the default; without it they
-refuse.
+Service labor has two rates per hour, in the company's base currency. No
+Service item stands for labor.
+
+| Rate | Where | Used for |
+|---|---|---|
+| `companySettings.serviceLaborCostRate` | Settings → Service (`x+/settings+/service.tsx`, `updateServiceSettings`, `update: settings`) | The cost of every time entry. The reconcile stores it in `serviceJobTime.unitCost` when the entry first posts; a later change never re-rates a posted entry |
+| `companySettings.serviceLaborBillRate` | Settings → Service | The default bill rate. Every create path copies it into `serviceJob.laborBillRate`: ERP New (`insertServiceJob`), MES New Job, the RMA receipt (`createServiceJobsForReturn`) and the demo datasets |
+| `serviceJob.laborBillRate` | The job's properties panel (`updateServiceJob`, field `laborBillRate`) | The Labor estimate lines and the Labor invoice line. Editable while the job is open and its estimate is not Sent or Accepted |
+
+Without a cost rate, every time write is refused with
+`SERVICE_LABOR_COST_RATE_MISSING` ("Set the labor cost rate in Settings →
+Service."): `refuseWithoutLaborCostRate` in the ERP time operations, and the
+same text in the MES clock Start, MES New Job and MES My Time
+(`getServiceLaborRates`).
 
 ## Postings
 
-The completion, reopen and reclass journals have `sourceType` `'Service Job'`
-and line `documentType` `'Service Job'` (`writeServiceJobJournal`, with the
-job's location as a Location dimension when one is active). The issue journal
-is an `'Inventory Adjustment'` source (`createAdjustmentJournal`'s default) whose
-ledger and lines carry `documentType` `'Service Job Consumption'`. Every one is
+The time journal (`reconcileServiceJobTime`) and the coverage reclass journal
+(`writeServiceJobJournal`) have `sourceType` `'Service Job'` and line
+`documentType` `'Service Job'`. Each line carries the job's location as a
+Location dimension when one is active. The issue journal is an `'Inventory
+Adjustment'` source (`createAdjustmentJournal`'s default) whose ledger and
+lines carry `documentType` `'Service Job Consumption'`. These three are
 Provisional before the company's accounting cutover, Posted after it
-(`journalPostingStatus`).
+(`journalPostingStatus`). A revenue accrual posts in the run's
+`'Revenue Recognition'` journal, with line `documentType` `'Service Job'`.
 
 | Event | Dr | Cr | Written by |
 |---|---|---|---|
@@ -128,10 +167,10 @@ Provisional before the company's accounting cutover, Posted after it
 | RMA receipt, Service or Warranty line | none | none | `postReceipt` → `createServiceJobsForReturn` (`inventory/receipt-service-return.ts`) |
 | Part issued to a job | coverage account | Inventory | `issueServiceJobPart` → `issue` `serviceJobInventory` (non-tracked) / `serviceJobTrackedEntities` (serial or batch) |
 | Part returned from a job | Inventory | coverage account | `unissueServiceJobPart` → `issue` `serviceJobUnconsume` (returns everything still issued and deletes the line) |
-| Job Completed | coverage account | `laborAbsorptionAccount` | `postServiceJob` `complete`: one journal, a pair per labor item at Σ hours × `itemCost.unitCost` (`buildServiceJobCompletionLines`); stores `unitCost` on each time row |
-| Job reopened | negated copy of the completion journal | | `postServiceJob` `reopen` (`insertNegatedJournal`) |
-| Coverage changed | new coverage account | old coverage account | `postServiceJob` `set-coverage` at the issued parts' net cost (Σ `costLedger` `'Service Job Consumption'` for the job; `buildCoverageReclassLines`). No journal when both coverages share an account |
-| Billable job invoice | AR | Sales | `createServiceInvoice` drafts it; `postSalesInvoice` posts a line with `serviceJobId` as revenue only (no shipment, item ledger or COGS) |
+| Time entry closed, edited or deleted | coverage account | `laborAbsorptionAccount` | `postServiceJob` `post-time` → `reconcileServiceJobTime`: the difference per entry, hours × `unitCost` (see Time cost below) |
+| Coverage changed | new coverage account | old coverage account | `postServiceJob` `set-coverage` at the issued parts' net cost (Σ `costLedger` `'Service Job Consumption'` for the job; `buildCoverageReclassLines`). No journal when both coverages share an account. Then the time reconcile moves the posted time |
+| Revenue earned, not billed (month end) | `contractAssetAccount` | `serviceRevenueAccount` | `synthesizeServiceJobRevenue` in the Revenue Recognition run (see Revenue below) |
+| Billable job invoice | AR | Contract Assets (the job's accrual), then Service Revenue | `createServiceInvoice` drafts it; `postSalesInvoice` posts a line with `serviceJobId` as revenue only (no shipment, item ledger or COGS) |
 | Warranty replacement shipment | `warrantyExpenseAccount` | Inventory | `postShipment`: a sales order line whose `salesReturnOrderLineId` is a Return for Warranty line gets `cogsAccountOverride` |
 | Ship a serviced unit back | none | none | `postShipment` → `shipServiceUnits` (`inventory/shipment-service-return.ts`) |
 | Charge with a linked cost | none (the linked document already posted) | | `upsertServiceJobCharge` |
@@ -140,11 +179,46 @@ The issue journal is written by the shared valuation in `inventory.service.ts`
 (the `offsetAccount` is `serviceCoverageAccount`); a return reverses at the cost
 the job booked (`resolveMaintenanceReturnCost` over the job's `costLedger` rows).
 
-Complete refuses: a status that is not Open / In Progress / On Hold,
-a labor item with no cost ("… has no cost per hour. Set its
-unit cost first."), and a running clock ("Stop the running clock first."). Time
-posts ONLY at completion; until then entries are freely editable. There is no
-WIP: the customer owns the unit.
+There is no WIP: the customer owns the unit, so time and parts cost go
+straight to the coverage account.
+
+### Time cost
+
+Each time entry posts its cost when it closes. The posting copies
+maintenance labor (`postMaintenanceEvent`, `resources.service.ts`).
+`reconcileServiceJobTime` (`service.service.ts`) does the work:
+
+1. It locks the job and reads every closed entry: `hours` > 0 and no running
+   clock.
+2. An entry with no `unitCost` takes `serviceLaborCostRate` and stores it.
+   With no cost rate it refuses (`SERVICE_LABOR_COST_RATE_MISSING`).
+3. `buildServiceTimeCostGroups` (`service-job-plan.ts`) builds the desired
+   pair per entry: Dr the coverage account / Cr `laborAbsorptionAccount`, at
+   hours × `unitCost`.
+4. It reads the prior lines of the job's live journals. Each line's
+   `documentLineReference` is `journalReference.to.serviceJobTime(id)`
+   (`service-job-time:<id>`).
+5. `diffLaborGroups` posts the difference as one journal, "Service Job Time
+   SJ…", dated the company's today.
+
+A deleted entry has no desired lines, so its prior lines reverse. A coverage
+change needs no extra code: the next reconcile moves the posted cost. A change
+to an entry posted before the accounting cutover is refused
+(`withoutSupersededEntries`, `TIME_ENTRY_BEFORE_CUTOVER_ERROR`).
+
+Every write to `serviceJobTime` runs the reconcile:
+
+| Write | Where the reconcile runs |
+|---|---|
+| ERP My Time (`setServiceJobDayHours`) | In the same Kysely transaction |
+| ERP job page create, edit, delete (`upsertServiceJobTime`, `deleteServiceJobTime`) | After the write, as the system (`postServiceJobTime`). A failure keeps the write and returns `warning` |
+| ERP stop clock (`stopServiceJobClock` → `stopServiceJobClocks`) | After the write. A failure returns `warning` |
+| MES clock Stop, MES My Time | After the write, through `erpPosting` `post-service-job` `post-time` (MES `postServiceJobTime`) |
+| Coverage change (`set-coverage`) | In the same transaction |
+| Complete | In the Complete transaction. Complete refuses if it fails |
+
+A failed post-after-write leaves the entry unposted. The next reconcile of the
+job posts it, and Complete always runs one.
 
 ## The invoice
 
@@ -154,17 +228,99 @@ inserts an `opportunity`, a Draft `salesInvoice` (customer's currency and
 payment terms, `customerReference` = the job number, tax 0),
 `salesInvoiceShipment` and the lines, each with `serviceJobId`.
 
-- Time and Materials: one line per labor item at Σ billable hours × its sale
-  price, then every billable Part and Charge at its `unitPrice`. A labor item
-  with billable hours and no sale price is refused.
-- Fixed Price: one line, `serviceItemId` at `fixedPrice`; refused without either.
+- Time and Materials: one **Labor** line (`invoiceLineType` `'Labor'`, no
+  item, unit `EA`) at Σ billable hours × the job's `laborBillRate` at
+  invoicing. Then every billable Part and Charge at its `unitPrice`. Billable
+  hours on a job with no bill rate are refused
+  (`SERVICE_JOB_BILL_RATE_MISSING`).
+- Fixed Price: one line, `serviceItemId` at `fixedPrice`; refused without
+  either (`SERVICE_JOB_FIXED_PRICE_MISSING`). The input's optional
+  `fixedPrice` sets the price of a job that has none, inside the invoice
+  transaction.
 - Nothing billable is refused.
+
+The sales invoice line form shows a Labor line as "Labor" with no item, and
+edits only its hours, rate and tax.
 
 Deleting the Draft invoice (`deleteSalesInvoiceReleasingRentals`) or its last
 line naming a job (`deleteSalesInvoiceLineReleasingRentals`) sets the job back
 to Completed with no `salesInvoiceId` (`releaseServiceJobInvoiceStamps`), in
 the delete's transaction. Voiding a posted one (`postSalesInvoice` `void`)
-does the same, so the job can be invoiced again.
+does the same, so the job can be invoiced again. The void also clears
+`billedBySalesInvoiceLineId` on the job's Accrual rows, so they are unbilled
+again.
+
+## Revenue (ASC 606)
+
+A repair improves a unit the customer controls, so a Billable job earns its
+revenue over time (606-10-25-27(b)). Service revenue has its own account,
+`accountDefault.serviceRevenueAccount` (Accounting → Default Accounts →
+Service Revenue). When it is empty, `DEFAULT_FALLBACKS` resolves it to
+`salesAccount`.
+
+### The accrual
+
+`synthesizeServiceJobRevenue` (`accounting.service.ts`) is the last
+synthesizer of a Revenue Recognition run (`runRowSynthesizers`). It runs
+under the proposal lock. It reads every job created on or before the run's
+`periodEnd` that has no invoice, or a Draft or Pending one, and is either
+Billable and not Cancelled, or still holds unbilled accruals.
+
+| Billing | Earned to date at `periodEnd` |
+|---|---|
+| Time and Materials | Σ billable closed hours (`entryDate` ≤ `periodEnd`) × `laborBillRate`, plus Σ billable Part and Charge lines created by then × their price |
+| Fixed Price, Completed on or before `periodEnd` | `fixedPrice` |
+| Fixed Price, open | `fixedPrice` × min(1, closed billable hours ÷ the Accepted estimate's Labor hours) |
+| Fixed Price with no Labor hours on an Accepted estimate, or no `fixedPrice` | 0 |
+| Not Billable any more, or Cancelled | 0, so its open accruals reverse |
+
+The row is cumulative: earned to date minus Σ the job's unbilled Accrual rows
+(any status). A non-zero difference becomes one Planned Accrual row:
+`serviceJobId`, Dr `contractAssetAccount` / Cr Service Revenue,
+`scheduledDate` = `periodEnd`. A negative difference is a negative row.
+Without `contractAssetAccount` the run refuses with
+`SERVICE_REVENUE_CONTRACT_ASSETS_MISSING`. A Warranty or Contract job never
+earns revenue.
+
+`postRevenueRecognitionRun` posts the row with `documentType`
+`'Service Job'` and the Customer and Location dimensions of the job
+(`RecognitionSources.serviceJobs`, `run-journals.ts`). Its line descriptions
+are "Unbilled service accrued" / "Service revenue accrued"
+(`revenueRowDescriptions`).
+
+### Invoice relief
+
+`postSalesInvoice` (`invoicing.service.ts`) gives a line with `serviceJobId`
+the `book: "service"` revenue. It loads the job's unbilled Accrual rows
+(Planned or Posted) and spreads them over the job's lines:
+
+1. `planServiceJobRevenue` walks the job's lines in sort order. Each line
+   takes min(accrual left, its revenue) as a Contract Assets leg.
+   `buildSalesPostingLines` refuses a leg larger than its line, so one line
+   cannot take it all.
+2. `planServiceJobLine` credits the rest of each line to "Service Revenue".
+3. If accrual is left after the job's last line, that line also writes a
+   reclass that sums to 0: Cr Contract Assets / Dr Service Revenue. This
+   takes back the revenue the run accrued beyond what was billed.
+4. Posting stamps every cleared Accrual row with the job's first line
+   (`billedBySalesInvoiceLineId`).
+
+So nothing stays on Contract Assets after the job is billed, and Service
+Revenue ends at the invoice amount.
+
+### Accounting sync
+
+`classifyAccountingPostingRole` (`@carbon/database` `accounting-posting.ts`)
+maps a "Service Revenue" line to the `ServiceRevenue` role. The "Contract
+Assets" leg stays unclassified: the run journals do not sync
+(`defaultEnabled: false`), so the provider books the whole line as revenue.
+`loadSalesInvoices` (`packages/ee/src/accounting/core/sales-invoice-source.ts`)
+replays `serviceRevenueAccountId` from the posted journal. If no Service
+Revenue line posted (the accrual covered every line), it reads the credit
+account of the Accrual rows the invoice cleared. Each component carries its
+`serviceJobId`; `isServiceRevenueComponent` routes it to that account.
+QuickBooks and Rillet use a second synthetic sales item or product, and Xero
+uses the line's account code. See `.claude/rules/accounting-sync-handlers.md`.
 
 ## The RMA
 
@@ -256,16 +412,22 @@ Routes `apps/mes/app/routes/x+/`: `service.tsx` (layout), `service._index.tsx`
 `apps/mes/app/services/service.service.ts`.
 
 - **New Job**: scan or pick a serial or a customer. Inserted In Progress,
-  `assignee` = the technician, at the technician's location, Time and Materials,
-  and the clock starts at the default labor item. Refused while the
-  technician's clock runs on another job.
-- **Clock** (`service-time.tsx`, actions Start / Stop / Complete). Start inserts
-  a `serviceJobTime` row with `startTime`, `hours` 0, `entryDate` today; an Open
-  job goes In Progress. Stop sets `endTime`, `hours` = `clockHours` (never
-  negative) and `entryDate` = the company's business day of the start. A second
-  Start is refused ("Your clock is running on … Stop it first."); the unique
-  index backs the check (`CLOCK_ALREADY_RUNNING`). Complete stops the
-  technician's own clock on this job, then posts `post-service-job` `complete`.
+  `assignee` = the technician, at the technician's location, Time and
+  Materials, `laborBillRate` = the company's bill rate, and the clock starts.
+  Refused while the technician's clock runs on another job, and while the
+  company has no cost rate.
+- **Clock** (`service-time.tsx`, actions Start / Stop / Complete). Start
+  refuses while the company has no cost rate. It inserts a `serviceJobTime`
+  row with `startTime`, `hours` 0, `entryDate` today; an Open job goes In
+  Progress. Stop sets `endTime`, `hours` = `clockHours` (never negative) and
+  `entryDate` = the company's business day of the start. Then it posts the
+  job's time (`postServiceJobTime`); a failure flashes "Clock stopped, but its
+  labor cost did not post". A second Start is refused ("Your clock is running
+  on … Stop it first."); the unique index backs the check
+  (`CLOCK_ALREADY_RUNNING`). Complete stops the technician's own clock on this
+  job, then posts `post-service-job` `complete`.
+- The job page shows the "Labor rates are not set" warning (see Guards before
+  the click).
 - **Parts**: `erpPosting("issue", …)` (`serviceJob*` types, from
   `add-and-issue`); the job page's `return-part` intent runs
   `serviceJobUnconsume`.
@@ -287,8 +449,12 @@ never go through timesheet submit, approval, certification or DCAA.
 - Write: ERP `x+/timesheet.service.tsx` → `setServiceJobDayHours`; MES
   `saveServiceDayHours` (a copy with the same rules and messages, on the
   service-role client). The bar sets the day's TOTAL; `manualHoursForDay` turns
-  it into the day's one manual entry (no clock): updated, inserted at the
-  default labor item (`billable` = coverage is Billable), or deleted at 0.
+  it into the day's one manual entry (no clock): updated, inserted
+  (`billable` = coverage is Billable), or deleted at 0.
+  - Both refuse while the company has no cost rate.
+  - The ERP reconciles the job's time cost in the same transaction. The MES
+    posts it after the save (`postServiceJobTime`); a failure keeps the hours
+    and shows a warning toast.
   - A total below the day's clock hours writes nothing and returns `warning`
     `SERVICE_DAY_HAS_CLOCK_TIME` ("Edit it on the job").
   - Two or more manual entries on the day are refused.
@@ -343,9 +509,12 @@ the write, backed by the partial unique indexes
 
 ## Demo datasets
 
-Each dataset seeds 5 service jobs (one per main status), time, estimate lines,
-a charge, 4 assignments and a labor item set as `serviceLaborItemId`, plus an In
-Progress RMA with a received Return for Service line. See
+Each dataset seeds the labor rates (`sales.serviceLaborRates`, set as
+`serviceLaborCostRate` / `serviceLaborBillRate`), 5 service jobs (one per main
+status) at the bill rate, time, estimate lines with a Labor line, a charge and
+4 assignments. It also seeds an In Progress RMA with a received Return for
+Service line. Every seeded time entry is closed, stores the cost rate and has
+its own Posted time journal (tier 09, `serviceJobTimeJournal`). See
 `.claude/rules/onboarding-company-templates.md`.
 
 ## Known gaps
@@ -356,6 +525,11 @@ Progress RMA with a received Return for Service line. See
 - **Phase 3** is out of scope: contract coverage from a service contract,
   supplier warranty recovery, preventive maintenance on customer assets.
 - Seeded jobs carry no issued parts (the tiers do not model the issue posting's
-  ledger rows), and the seeded Invoiced job's invoice is Draft.
+  ledger rows), and the seeded Invoiced job's invoice is Draft. The datasets
+  seed no service revenue accruals: the first Revenue Recognition run writes
+  them.
+- Rates are per company. There is no rate per employee or per job type.
+- Existing data was not migrated: a job created before the rates has no
+  `laborBillRate` until someone sets it.
 - `changeReturnLineToService` is two operations, not one transaction: a
   failure after the coverage change leaves the job Billable on a Warranty line.

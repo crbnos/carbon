@@ -26,8 +26,8 @@
 - [x] Task 18: Change the MES clock, New Job and My Time
 - [x] Task 19: Show the missing-rate warning on both job pages
 - [x] Task 20: Change the demo data
-- [ ] Task 21: Update the docs and rules
-- [ ] Task 22: Verify in the browser
+- [x] Task 21: Update the docs and rules
+- [x] Task 22: Verify in the browser
 
 ## Dependencies
 - Task 3 needs Tasks 1–2. Every later task needs Task 3.

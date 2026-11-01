@@ -1,6 +1,6 @@
 # Service Labor Rates, Time Posting and Revenue Recognition
 
-> Status: draft
+> Status: in-progress
 > Author: Claude (with Brad Barbin)
 > Date: 2026-10-31
 
@@ -123,7 +123,10 @@ Every write to `serviceJobTime` runs the reconcile:
    |---|---|
    | Time and Materials | Σ billable closed hours (`entryDate` ≤ `periodEnd`) × `laborBillRate`, plus Σ billable Part and Charge lines × their price |
    | Fixed Price | `fixedPrice` × min(1, closed hours ÷ the accepted estimate's labor hours) |
-   | Fixed Price, no labor hours on the estimate, or no `fixedPrice` | 0 until the job is Completed, then `fixedPrice` |
+   | Fixed Price, Completed on or before `periodEnd` | `fixedPrice` |
+   | Fixed Price, no labor hours on the estimate | 0 until the job is Completed, then `fixedPrice` |
+   | No `fixedPrice` | 0 |
+   | Not Billable any more, or Cancelled, before the invoice posts | 0, so the open accruals reverse |
 
 4. It subtracts the sum of the job's unbilled Accrual rows (any status). A
    non-zero difference becomes one new Accrual row:
@@ -144,13 +147,16 @@ Every write to `serviceJobTime` runs the reconcile:
    `unitPrice` on the job's Labor estimate lines.
 3. A Time and Materials invoice gets one Labor line: billable hours × the
    job's `laborBillRate` at invoicing. A Labor line has
-   `invoiceLineType` `'Labor'` and no item. Parts and Charges keep their
-   lines.
+   `invoiceLineType` `'Labor'`, no item and the unit `EA`. Parts and Charges
+   keep their lines.
 4. Every invoice line with a `serviceJobId` credits revenue through legs:
-   1. **Contract Assets** for the job's unbilled accrual balance (the first
-      line of the job takes it all).
-   2. **Service Revenue** for the rest. The rest may be negative when the
-      accrual was higher. That is a revenue true-up.
+   1. **Contract Assets** for its share of the job's unbilled accrual. The
+      job's lines take the accrual in sort order, each up to its own
+      revenue (`planServiceJobRevenue`).
+   2. **Service Revenue** for the rest of the line.
+   3. If accrual is left after the job's last line, that line writes a
+      reclass that sums to 0: Cr Contract Assets / Dr Service Revenue. That
+      is the revenue true-up.
 5. Posting stamps the cleared Accrual rows with `billedBySalesInvoiceLineId`.
    A void clears the stamp.
 6. `serviceRevenueAccount` is a new account default. If it is empty, it falls
@@ -165,7 +171,9 @@ Every write to `serviceJobTime` runs the reconcile:
 3. `loadSalesInvoices` returns the service revenue account next to the sales
    account.
 4. Each invoice component carries its `serviceJobId`. A component with one
-   uses the service revenue account.
+   uses the service revenue account. If no Service Revenue line posted (the
+   accrual covered every line), sync reads the credit account of the Accrual
+   rows that the invoice cleared.
 5. QuickBooks, Xero and Rillet each map that component to the service revenue
    account: QuickBooks and Rillet through a second sales item or product,
    Xero through the line's account code.
@@ -355,7 +363,21 @@ Deviations:
 - [x] Q12. Fixed Price progress now or later? — **Answer:** Now, by hours ÷ the accepted estimate's labor hours. (Brad, 2026-11-01.)
 - [x] Q13. Do Charges post to Service Revenue? — **Answer:** Yes. (Brad, 2026-11-01.)
 
+## Implementation Notes (2026-11-01)
+
+The code differs from the design above in six places. The code wins.
+
+| # | Design | Implementation | Why |
+|---|---|---|---|
+| 1 | The job's first invoice line clears the whole accrual | The accrual spreads over the job's lines in sort order, each up to its own revenue. Accrual left after the last line becomes a reclass on that line: Cr Contract Assets / Dr Service Revenue, sum 0 | `buildSalesPostingLines` refuses a revenue leg larger than its line |
+| 2 | Fixed Price earns by hours; only a job with no estimate labor hours earns all of `fixedPrice` at completion | A Fixed Price job Completed on or before `periodEnd` earns all of `fixedPrice` | Completed work is fully earned, whatever the hours were |
+| 3 | Not specified | A job that leaves Billable, or is Cancelled, before its invoice posts earns 0. The next run reverses its open accruals | Revenue must not stay accrued on work that will not be billed |
+| 4 | Sync maps the Service Revenue leg | When the accrual covered every line, the journal has no Service Revenue line. Sync falls back to the credit account of the Accrual rows that the invoice stamped | Otherwise the invoice names no service revenue account and sync refuses it |
+| 5 | A Labor invoice line has no item | It also carries the unit `EA` | An invoice line needs a unit |
+| 6 | Create Invoice asks for a missing fixed price | `createServiceInvoice` takes an optional `fixedPrice` and saves it inside the invoice transaction. The Complete route saves it with `updateServiceJob` before it completes | The price and the invoice are saved together or not at all |
+
 ## Changelog
 
 - 2026-10-31: Created. Replaces decisions 9 and 10 and answer Q3 of `2026-10-22-service-jobs-and-returns.md` (labor items; time posts at completion).
 - 2026-11-01: Added ASC 606 revenue recognition, the Service Revenue account, sync support, the Fixed Price field and the ERP stop clock.
+- 2026-11-01: Implemented (Tasks 1–20, commit 527277fce3). Status in-progress. Added Implementation Notes: the accrual spreads over the job's invoice lines with a reclass for the excess, a Completed Fixed Price job earns all of `fixedPrice`, a job that leaves Billable or is Cancelled reverses its accruals, sync falls back to the accrual rows' credit account, the Labor line uses unit `EA`, and Create Invoice saves a missing fixed price inside its transaction. Docs and rules updated (Task 21).

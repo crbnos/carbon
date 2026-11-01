@@ -28202,6 +28202,9 @@ msgstr "Este artículo se construye mediante un configurador y resuelve sus comp
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "La lista de materiales de este artículo no tiene entradas con vida útil habilitada, por lo que no se calculará ninguna caducidad de la BOM."
 
+msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
+msgstr "Esta orden de trabajo no tiene una tarifa de facturación. Establezca la tarifa de facturación en sus propiedades antes de poder facturar el tiempo."
+
 msgid "This job will be received to inventory. It will no longer be available on the shop floor."
 msgstr "Esta orden de trabajo será recibida al inventario. Ya no estará disponible en la planta."
 

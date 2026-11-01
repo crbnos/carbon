@@ -2318,6 +2318,9 @@ msgstr "This batch has no work instructions."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "This information will be visible to all users, so be careful what you share."
 
+msgid "This job has no bill rate. Ask the office to set it before the time is billed."
+msgstr "This job has no bill rate. Ask the office to set it before the time is billed."
+
 msgid "This lot is expired and can't be picked."
 msgstr "This lot is expired and can't be picked."
 

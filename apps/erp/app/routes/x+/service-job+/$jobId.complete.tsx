@@ -8,8 +8,9 @@ import type { ActionFunctionArgs } from "react-router";
 import { serviceJobFixedPriceValidator } from "~/modules/service/service.models";
 
 /**
- * Completes the job: `post-service-job` posts its time in one journal. A
- * fixed price from the dialog is saved on the job first.
+ * Completes the job: `post-service-job` reconciles its time cost (each entry
+ * posted as it was logged) and sets it Completed. A fixed price from the
+ * dialog is saved on the job first.
  */
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(serviceJobFixedPriceValidator).request(args, {

@@ -28202,6 +28202,9 @@ msgstr "यह आइटम एक कॉन्फ़िगरेटर के �
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "इस आइटम की सामग्री सूची में शेल्फ-लाइफ सक्षम कोई इनपुट नहीं हैं, इसलिए BOM से कोई समाप्ति की गणना नहीं की जाएगी।"
 
+msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
+msgstr "इस जॉब की कोई बिलिंग दर नहीं है। समय बिल किए जाने से पहले इसके गुणों में बिलिंग दर सेट करें।"
+
 msgid "This job will be received to inventory. It will no longer be available on the shop floor."
 msgstr "यह जॉब इन्वेंटरी में प्राप्त किया जाएगा। यह शॉप फ्लोर पर अब उपलब्ध नहीं होगा।"
 

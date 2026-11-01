@@ -28202,6 +28202,9 @@ msgstr "Bu Stok kartı, bir yapılandırıcı aracılığıyla oluşturulur ve b
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "Bu stok kartının ürün ağacında raf ömrü etkin olan girdiler yoktur, bu nedenle BOM'dan hiçbir son kullanma tarihi hesaplanmayacaktır."
 
+msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
+msgstr "Bu iş emrinin fatura oranı yoktur. Zaman faturalandırılmadan önce İş emri özelliklerinde fatura oranını ayarlayın."
+
 msgid "This job will be received to inventory. It will no longer be available on the shop floor."
 msgstr "Bu iş emri envantere alınacaktır. Atölye'de artık kullanılamayacaktır."
 

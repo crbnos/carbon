@@ -28202,6 +28202,9 @@ msgstr "Эта номенклатура собирается через конф
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "Спецификация этой номенклатуры не имеет входов с включенным сроком хранения, поэтому срок годности не будет рассчитан из BOM."
 
+msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
+msgstr "У этого производственного заказа нет ставки расчетов. Установите ставку расчетов в его свойствах перед тем, как время сможет быть рассчитано."
+
 msgid "This job will be received to inventory. It will no longer be available on the shop floor."
 msgstr "Этот производственный заказ будет получен в запасы. Он больше не будет доступен в цехе."
 

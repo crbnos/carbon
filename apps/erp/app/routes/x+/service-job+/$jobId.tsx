@@ -103,10 +103,13 @@ export default function ServiceJobRoute() {
   const isLocked = isServiceJobLocked(job.status);
   // Time cannot be logged without the cost rate, nor billed without the
   // job's bill rate.
-  const isMissingRates =
+  // The company's cost rate is a setting; a job's bill rate is on the job.
+  const isMissingCostRate = !isLocked && laborCostRate === null;
+  const isMissingBillRate =
     !isLocked &&
-    (laborCostRate === null ||
-      (job.coverage === "Billable" && job.laborBillRate === null));
+    !isMissingCostRate &&
+    job.coverage === "Billable" &&
+    job.laborBillRate === null;
 
   return (
     <PanelProvider>
@@ -126,7 +129,7 @@ export default function ServiceJobRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
-                    {isMissingRates && (
+                    {isMissingCostRate && (
                       <Alert variant="warning">
                         <LuTriangleAlert />
                         <AlertTitle>
@@ -143,6 +146,17 @@ export default function ServiceJobRoute() {
                             <Trans>Set rates</Trans>
                           </Link>
                         </AlertDescription>
+                      </Alert>
+                    )}
+                    {isMissingBillRate && (
+                      <Alert variant="warning">
+                        <LuTriangleAlert />
+                        <AlertTitle>
+                          <Trans>
+                            This job has no bill rate. Set Bill Rate in its
+                            properties before its time can be billed.
+                          </Trans>
+                        </AlertTitle>
                       </Alert>
                     )}
                     <ServiceJobProblem

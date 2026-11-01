@@ -28202,6 +28202,9 @@ msgstr "Questo articolo viene costruito tramite un configuratore e risolve i suo
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "La distinta base di questo articolo non ha componenti con scadenza abilitata, quindi nessuna scadenza verrà calcolata dalla BOM."
 
+msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
+msgstr "Questo ordine di produzione non ha una tariffa di fatturazione. Imposta la tariffa di fatturazione nelle sue proprietà prima che il tempo possa essere fatturato."
+
 msgid "This job will be received to inventory. It will no longer be available on the shop floor."
 msgstr "Questo ordine di produzione verrà ricevuto in magazzino. Non sarà più disponibile in officina."
 

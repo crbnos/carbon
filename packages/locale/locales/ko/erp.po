@@ -28202,6 +28202,9 @@ msgstr "이 품목은 컨피그레이터를 통해 구성되며 주문당 구성
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "이 품목의 자재 명세서에는 유통기한이 활성화된 입력이 없으므로 BOM에서 유통기한이 계산되지 않습니다."
 
+msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
+msgstr "이 작업 지시에는 청구 요금이 없습니다. 시간을 청구하기 전에 해당 속성에서 청구 요금을 설정하십시오."
+
 msgid "This job will be received to inventory. It will no longer be available on the shop floor."
 msgstr "이 작업 지시는 재고 관리에 입고될 것입니다. 현장에서 더 이상 가용하지 않을 것입니다."
 

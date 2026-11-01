@@ -2318,6 +2318,9 @@ msgstr "Questo lotto di produzione non ha istruzioni di lavoro."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Questa informazione sarà visibile a tutti gli utenti, quindi fai attenzione a quello che condividi."
 
+msgid "This job has no bill rate. Ask the office to set it before the time is billed."
+msgstr "Questo ordine di produzione non ha una tariffa di fatturazione. Chiedi all'ufficio di impostarla prima che il tempo sia fatturato."
+
 msgid "This lot is expired and can't be picked."
 msgstr "Questo lotto è scaduto e non può essere prelevato."
 

@@ -28202,6 +28202,9 @@ msgstr "This item is built via a configurator and resolves its components per-or
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 
+msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
+msgstr "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
+
 msgid "This job will be received to inventory. It will no longer be available on the shop floor."
 msgstr "This job will be received to inventory. It will no longer be available on the shop floor."
 

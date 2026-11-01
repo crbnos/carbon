@@ -2318,6 +2318,9 @@ msgstr "이 배치는 작업 표준서가 없습니다."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "이 정보는 모든 사용자에게 표시되므로 공유 내용을 주의하십시오."
 
+msgid "This job has no bill rate. Ask the office to set it before the time is billed."
+msgstr "이 작업 지시에는 청구 요금이 없습니다. 시간이 청구되기 전에 사무실에서 설정하도록 요청하십시오."
+
 msgid "This lot is expired and can't be picked."
 msgstr "로트가 만료되었으며 피킹할 수 없습니다."
 

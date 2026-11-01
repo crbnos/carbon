@@ -28202,6 +28202,9 @@ msgstr "这个物料是通过配置器构建的，根据订单解析其组件；
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "这个物料的物料清单中没有启用保质期的输入，因此不会从 BOM 计算有效期。"
 
+msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
+msgstr "此工单没有账单费率。在其属性中设置账单费率，然后才能对时间进行账单处理。"
+
 msgid "This job will be received to inventory. It will no longer be available on the shop floor."
 msgstr "该工单将被收入库存。它将不再在车间可用。"
 

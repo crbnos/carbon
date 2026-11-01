@@ -2318,6 +2318,9 @@ msgstr "इस बैच के पास कोई कार्य निर्
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "यह जानकारी सभी उपयोगकर्ताओं के लिए दृश्यमान होगी, इसलिए सावधान रहें कि आप क्या साझा करते हैं।"
 
+msgid "This job has no bill rate. Ask the office to set it before the time is billed."
+msgstr "इस जॉब की कोई बिलिंग दर नहीं है। समय बिल किए जाने से पहले कार्यालय से इसे सेट करने के लिए कहें।"
+
 msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"
 

@@ -532,10 +532,14 @@ export default function ServiceJobRoute() {
   const isLocked = isServiceJobLocked(job.status);
   // Time cannot be logged without the cost rate, nor billed without the
   // job's bill rate.
-  const isMissingRates =
+  // The company's cost rate is a setting; a job's bill rate is on the job,
+  // which the office sets in the ERP.
+  const isMissingCostRate = !isLocked && laborCostRate === null;
+  const isMissingBillRate =
     !isLocked &&
-    (laborCostRate === null ||
-      (job.coverage === "Billable" && job.laborBillRate === null));
+    !isMissingCostRate &&
+    job.coverage === "Billable" &&
+    job.laborBillRate === null;
   const isRunningHere = runningClock?.serviceJobId === job.id;
   const isRunningElsewhere = !!runningClock && !isRunningHere;
   const isBusy = clockFetcher.state !== "idle";
@@ -729,7 +733,7 @@ export default function ServiceJobRoute() {
         dock={dock}
       >
         <WorkRecordPane value="details">
-          {isMissingRates && (
+          {isMissingCostRate && (
             <Alert variant="warning">
               <LuTriangleAlert />
               <AlertTitle>
@@ -748,6 +752,17 @@ export default function ServiceJobRoute() {
                   <Trans>Set rates</Trans>
                 </a>
               </AlertDescription>
+            </Alert>
+          )}
+          {isMissingBillRate && (
+            <Alert variant="warning">
+              <LuTriangleAlert />
+              <AlertTitle>
+                <Trans>
+                  This job has no bill rate. Ask the office to set it before the
+                  time is billed.
+                </Trans>
+              </AlertTitle>
             </Alert>
           )}
           <WorkRecordTitle title={job.customer?.name} subtitle={unit} />

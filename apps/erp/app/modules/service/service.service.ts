@@ -2690,7 +2690,7 @@ export async function postServiceJob(
 // It follows create-service-order-invoice (sequence, opportunity, header,
 // salesInvoiceShipment, then lines). Every line carries `serviceJobId`, so
 // post-sales-invoice posts revenue only for it: the parts already left stock
-// when they were issued, and the time posted its cost at completion.
+// when they were issued, and each time entry posted its cost when logged.
 
 export const createServiceInvoiceInput = z.object({
   serviceJobId: z.string().min(1),
