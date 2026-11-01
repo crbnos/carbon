@@ -1072,7 +1072,7 @@ export async function getReceiptRelatedItems(
   const [invoices, salesReturnOrder] = await Promise.all([
     supplierInteractionId
       ? client
-          .from("purchaseInvoice")
+          .from("purchaseInvoices")
           .select("id, invoiceId, status")
           .eq("supplierInteractionId", supplierInteractionId)
           .eq("companyId", companyId)
