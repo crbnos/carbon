@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { journalReference } from "@carbon/database";
+import { getCompanyTimeZone, journalReference } from "@carbon/database";
+import { datetime } from "@carbon/utils";
 import { expect } from "vitest";
 import { SERVICE_LABOR_COST_RATE_MISSING } from "../../../app/modules/service/service.service";
 import { databaseTest } from "../fixtures/local-database";
@@ -191,3 +192,193 @@ databaseTest("an entry with no cost rate is refused", async () => {
     await f.cleanup();
   }
 });
+
+/**
+ * Splits the fixture's one open period: January 2025 Open, February 2025 in
+ * `february`, and the fixture's period from March 2025 on (it holds today).
+ * Returns the two new periods' ids.
+ */
+async function splitPeriods(f: Fixture, february: "Open" | "Closed" | "Locked") {
+  await f.db
+    .updateTable("accountingPeriod")
+    .set({ startDate: "2025-03-01" })
+    .where("id", "=", `${f.prefix}-period`)
+    .where("companyId", "=", f.companyId)
+    .execute();
+  const rows = await f.db
+    .insertInto("accountingPeriod")
+    .values(
+      (
+        [
+          ["2025-01-01", "2025-01-31", 1, "Open"],
+          ["2025-02-01", "2025-02-28", 2, february]
+        ] as const
+      ).map(([startDate, endDate, periodNumber, closeStatus]) => ({
+        startDate,
+        endDate,
+        fiscalYear: 2025,
+        periodNumber,
+        status: "Inactive" as const,
+        closeStatus,
+        companyId: f.companyId,
+        createdBy: "system"
+      }))
+    )
+    .returning(["id", "periodNumber"])
+    .execute();
+  const idOf = (periodNumber: number) =>
+    rows.find((row) => row.periodNumber === periodNumber)?.id;
+  return { january: idOf(1), february: idOf(2) };
+}
+
+/** A closed entry dated `entryDate`. */
+async function addTimeOn(
+  f: Fixture,
+  serviceJobId: string,
+  args: { hours: number; entryDate: string }
+) {
+  const entry = await f.addTime(serviceJobId, { hours: args.hours });
+  await f.db
+    .updateTable("serviceJobTime")
+    .set({ entryDate: args.entryDate })
+    .where("id", "=", entry.id)
+    .where("companyId", "=", f.companyId)
+    .execute();
+  return entry;
+}
+
+/** The job's time journals, oldest posting date first, with their lines. */
+async function timeJournals(f: Fixture, serviceJobId: string) {
+  const journals = await f.db
+    .selectFrom("journal")
+    .select(["id", "postingDate", "accountingPeriodId"])
+    .where("companyId", "=", f.companyId)
+    .where("id", "in", (eb) =>
+      eb
+        .selectFrom("journalLine")
+        .select("journalId")
+        .where("documentType", "=", "Service Job")
+        .where("documentId", "=", serviceJobId)
+        .where("companyId", "=", f.companyId)
+    )
+    .orderBy("postingDate")
+    .execute();
+  return Promise.all(
+    journals.map(async (journal) => ({
+      ...journal,
+      lines: await f.journalLines(journal.id)
+    }))
+  );
+}
+
+async function companyToday(f: Fixture) {
+  return datetime.today(await getCompanyTimeZone(f.db, f.companyId)).toString();
+}
+
+databaseTest(
+  "an entry in an Open earlier month posts on its entry date",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const periods = await splitPeriods(f, "Open");
+      const job = await jobFor(f);
+      await addTimeOn(f, job.id, { hours: 1, entryDate: "2025-01-15" });
+
+      await postTime(f, job.id);
+      const journals = await timeJournals(f, job.id);
+      expect(journals).toEqual([
+        {
+          id: expect.any(String),
+          postingDate: "2025-01-15",
+          accountingPeriodId: periods.january,
+          lines: [
+            [f.account("cost-of-service"), 40],
+            [f.account("labor-absorption"), -40]
+          ]
+        }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+for (const closeStatus of ["Closed", "Locked"] as const) {
+  databaseTest(
+    `an entry in a ${closeStatus} period posts on today's date`,
+    async () => {
+      const f = await serviceJobFixture();
+      try {
+        await splitPeriods(f, closeStatus);
+        const job = await jobFor(f);
+        await addTimeOn(f, job.id, { hours: 1, entryDate: "2025-02-15" });
+
+        await postTime(f, job.id);
+        const journals = await timeJournals(f, job.id);
+        expect(journals).toEqual([
+          {
+            id: expect.any(String),
+            postingDate: await companyToday(f),
+            accountingPeriodId: `${f.prefix}-period`,
+            lines: [
+              [f.account("cost-of-service"), 40],
+              [f.account("labor-absorption"), -40]
+            ]
+          }
+        ]);
+      } finally {
+        await f.cleanup();
+      }
+    }
+  );
+}
+
+databaseTest(
+  "entries on two dates post two journals, each balanced on its date",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const periods = await splitPeriods(f, "Open");
+      const job = await jobFor(f);
+      await addTimeOn(f, job.id, { hours: 1, entryDate: "2025-01-15" });
+      await addTimeOn(f, job.id, { hours: 2, entryDate: "2025-02-10" });
+
+      await postTime(f, job.id);
+      const journals = await timeJournals(f, job.id);
+      expect(
+        journals.map((journal) => ({
+          postingDate: journal.postingDate,
+          accountingPeriodId: journal.accountingPeriodId,
+          lines: journal.lines
+        }))
+      ).toEqual([
+        {
+          postingDate: "2025-01-15",
+          accountingPeriodId: periods.january,
+          lines: [
+            [f.account("cost-of-service"), 40],
+            [f.account("labor-absorption"), -40]
+          ]
+        },
+        {
+          postingDate: "2025-02-10",
+          accountingPeriodId: periods.february,
+          lines: [
+            [f.account("cost-of-service"), 80],
+            [f.account("labor-absorption"), -80]
+          ]
+        }
+      ]);
+      // Both accounts are Expense: a balanced journal sums to 0.
+      for (const journal of journals) {
+        const sum = journal.lines.reduce(
+          (total, [, amount]) => total + Number(amount),
+          0
+        );
+        expect(sum).toBe(0);
+      }
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

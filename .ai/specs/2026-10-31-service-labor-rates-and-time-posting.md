@@ -89,8 +89,10 @@ The posting copies maintenance labor (`postMaintenanceEvent`,
    takes `serviceLaborCostRate` and stores it.
 5. It reads the prior lines: `documentLineReference =
    journalReference.to.serviceJobTime(id)`.
-6. It posts the difference (`diffLaborGroups`) in one journal, `sourceType`
-   `'Service Job'`.
+6. It posts the difference (`diffLaborGroups`) in journals with `sourceType`
+   `'Service Job'`. Each entry's lines are dated on its `entryDate`, unless
+   that period is Closed or Locked. Then they are dated today. Each posting
+   date gets one journal.
 7. A deleted entry has no desired lines, so its prior lines reverse.
 8. A coverage change needs no special code. The next reconcile moves the
    posted cost to the new coverage account.
@@ -365,7 +367,7 @@ Deviations:
 
 ## Implementation Notes (2026-11-01)
 
-The code differs from the design above in six places. The code wins.
+The code differs from the design above in seven places. The code wins.
 
 | # | Design | Implementation | Why |
 |---|---|---|---|
@@ -375,6 +377,7 @@ The code differs from the design above in six places. The code wins.
 | 4 | Sync maps the Service Revenue leg | When the accrual covered every line, the journal has no Service Revenue line. Sync falls back to the credit account of the Accrual rows that the invoice stamped | Otherwise the invoice names no service revenue account and sync refuses it |
 | 5 | A Labor invoice line has no item | It also carries the unit `EA` | An invoice line needs a unit |
 | 6 | Create Invoice asks for a missing fixed price | `createServiceInvoice` takes an optional `fixedPrice` and saves it inside the invoice transaction. The Complete route saves it with `updateServiceJob` before it completes | The price and the invoice are saved together or not at all |
+| 7 | The time difference posts in one journal, dated the company's today | Each entry's lines are dated on its `entryDate`, unless that period is Closed or Locked, or the day is before the cutover. Then, and for a deleted entry, they are dated today. Each posting date gets one journal (`serviceTimePostingDates`) | The revenue run counts hours by `entryDate`. A cost dated today put the cost and the revenue of one entry in different months |
 
 ## Changelog
 

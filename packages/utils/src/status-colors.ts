@@ -261,7 +261,7 @@ export const SERVICE_JOB_STATUS_COLOR_MAP = {
 export const SERVICE_COVERAGE_COLOR_MAP = {
   Billable: "green",
   Warranty: "blue",
-  Contract: "purple"
+  Contract: "blue"
 } as const satisfies Record<string, StatusColor>;
 
 // A billable item (projectBillableItemStatus): waiting for an invoice, held

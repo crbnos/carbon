@@ -61,7 +61,7 @@ cd apps/erp && pnpm exec vitest run test/database/post-service-job test/database
 
 ## Key Service Functions
 - `postServiceJob(ctx, { action })` — `post-time` (the time reconcile alone), `complete` (refuses a running clock, runs the reconcile, writes no journal of its own), `reopen` (no journal), `set-coverage` (parts reclass, then the reconcile moves posted time). Registered for the MES as `post-service-job`.
-- `reconcileServiceJobTime(trx, args)` — per entry, Dr coverage / Cr labor absorption at hours × `unitCost`, keyed `journalReference.to.serviceJobTime(id)`; posts the difference (`diffLaborGroups`) as one `'Service Job'` journal. Copies `postMaintenanceEvent`.
+- `reconcileServiceJobTime(trx, args)` — per entry, Dr coverage / Cr labor absorption at hours × `unitCost`, keyed `journalReference.to.serviceJobTime(id)`; posts the difference (`diffLaborGroups`) as one `'Service Job'` journal per posting date: the entry's date, or today when that period is Closed or Locked, the date is before the cutover, or the entry was deleted. Copies `postMaintenanceEvent`.
 - `postServiceJobTime(ctx, serviceJobId)` — runs `post-time` as the system after a write; returns the failure's message or null.
 - `stopServiceJobClocks(db, args)` — stops every running clock on a job (operation `stopServiceJobClock`, then `postServiceJobTime`).
 - `createServiceInvoice(ctx, { serviceJobId, fixedPrice? })` — Draft sales invoice: a Time and Materials job bills one `'Labor'` line (billable hours × `laborBillRate`, no item) then its parts and charges; `fixedPrice` sets a missing price inside the transaction. Every line carries `serviceJobId`, which `postSalesInvoice` posts as revenue only (`book: "service"`).

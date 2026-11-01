@@ -17,12 +17,14 @@ import type {
   ServiceContext
 } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
-import { getCompanyTimeZone } from "@carbon/database";
+import { getCompanyTimeZone, journalReference } from "@carbon/database";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   type AutomaticJournalStatus,
   journalPostingStatus,
+  postingStatusFor,
+  readAccountingCutoverDate,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
 import { inOrder, maybeSingle, rpcValue } from "@carbon/database/rows";
@@ -2090,9 +2092,13 @@ async function refreshJobReturnOrder(
  * moves a posted entry. The desired pair per entry is Dr the job's coverage
  * account / Cr laborAbsorptionAccount, keyed by
  * `journalReference.to.serviceJobTime`; the difference from what the journal
- * already holds posts as one 'Service Job' journal. A deleted entry reverses,
- * and a coverage change moves the posted cost. Returns the journal's id, or
- * null when nothing changed. Copies `postMaintenanceEvent`.
+ * already holds posts as 'Service Job' journals. Each entry's difference is
+ * dated on its `entryDate`, as the revenue recognition run counts the hours,
+ * unless that day's period is Closed or Locked (`serviceTimePostingDates`);
+ * then, and for a deleted entry, it is dated today. One journal per posting
+ * date: an entry's lines balance, so each journal balances. A deleted entry
+ * reverses, and a coverage change moves the posted cost. Returns the first
+ * journal's id, or null when nothing changed. Copies `postMaintenanceEvent`.
  */
 export async function reconcileServiceJobTime(
   trx: Transaction<KyselyDatabase>,
@@ -2104,85 +2110,92 @@ export async function reconcileServiceJobTime(
     companyId
   });
   // Provisional before the company's accounting cutover, Posted after it.
-  const postingStatus = await journalPostingStatus(trx, companyId);
+  const cutoverDate = await readAccountingCutoverDate(trx, companyId);
+  const postingStatus = postingStatusFor(cutoverDate);
 
-  const [time, settings, defaults, location, priorLines, supersededLines] =
-    await Promise.all([
-      trx
-        .selectFrom("serviceJobTime")
-        .select(["id", "hours", "unitCost"])
-        .where("serviceJobId", "=", job.id)
-        .where("companyId", "=", companyId)
-        .where("hours", ">", 0)
-        .where((eb) =>
-          eb.or([eb("startTime", "is", null), eb("endTime", "is not", null)])
-        )
-        .execute(),
-      trx
-        .selectFrom("companySettings")
-        .select("serviceLaborCostRate")
-        .where("id", "=", companyId)
-        .executeTakeFirst(),
-      serviceJobAccountDefaults(trx, companyId),
-      trx
-        .selectFrom("dimension")
-        .innerJoin(
-          "company",
-          "company.companyGroupId",
-          "dimension.companyGroupId"
-        )
-        .select(["dimension.id"])
-        .where("company.id", "=", companyId)
-        .where("dimension.active", "=", true)
-        .where("dimension.entityType", "=", "Location")
-        .executeTakeFirst(),
-      trx
-        .selectFrom("journalLine")
-        .innerJoin("journal", (join) =>
-          join
-            .onRef("journal.id", "=", "journalLine.journalId")
-            .onRef("journal.companyId", "=", "journalLine.companyId")
-        )
-        .select([
-          "journalLine.id",
-          "journalLine.documentLineReference",
-          "journalLine.accountId",
-          "journalLine.amount"
-        ])
-        .where("journalLine.documentType", "=", "Service Job")
-        .where("journalLine.documentId", "=", job.id)
-        .where(
-          "journalLine.documentLineReference",
-          "like",
-          "service-job-time:%"
-        )
-        .where("journalLine.companyId", "=", companyId)
-        .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-        .execute(),
-      // Lines the enable superseded: posted before the cutover.
-      trx
-        .selectFrom("journalLine")
-        .innerJoin("journal", (join) =>
-          join
-            .onRef("journal.id", "=", "journalLine.journalId")
-            .onRef("journal.companyId", "=", "journalLine.companyId")
-        )
-        .select([
-          "journalLine.documentLineReference",
-          "journalLine.accountId",
-          "journalLine.amount"
-        ])
-        .where("journalLine.documentType", "=", "Service Job")
-        .where("journalLine.documentId", "=", job.id)
-        .where(
-          "journalLine.documentLineReference",
-          "like",
-          "service-job-time:%"
-        )
-        .where("journalLine.companyId", "=", companyId)
-        .where("journal.status", "=", "Superseded")
-        .execute()
-    ]);
+  const [
+    time,
+    entryDates,
+    settings,
+    defaults,
+    location,
+    priorLines,
+    supersededLines
+  ] = await Promise.all([
+    trx
+      .selectFrom("serviceJobTime")
+      .select(["id", "hours", "unitCost"])
+      .where("serviceJobId", "=", job.id)
+      .where("companyId", "=", companyId)
+      .where("hours", ">", 0)
+      .where((eb) =>
+        eb.or([eb("startTime", "is", null), eb("endTime", "is not", null)])
+      )
+      .execute(),
+    // Every entry's day, also one now at 0 hours: its reversal posts there.
+    trx
+      .selectFrom("serviceJobTime")
+      .select(["id", "entryDate"])
+      .where("serviceJobId", "=", job.id)
+      .where("companyId", "=", companyId)
+      .execute(),
+    trx
+      .selectFrom("companySettings")
+      .select("serviceLaborCostRate")
+      .where("id", "=", companyId)
+      .executeTakeFirst(),
+    serviceJobAccountDefaults(trx, companyId),
+    trx
+      .selectFrom("dimension")
+      .innerJoin(
+        "company",
+        "company.companyGroupId",
+        "dimension.companyGroupId"
+      )
+      .select(["dimension.id"])
+      .where("company.id", "=", companyId)
+      .where("dimension.active", "=", true)
+      .where("dimension.entityType", "=", "Location")
+      .executeTakeFirst(),
+    trx
+      .selectFrom("journalLine")
+      .innerJoin("journal", (join) =>
+        join
+          .onRef("journal.id", "=", "journalLine.journalId")
+          .onRef("journal.companyId", "=", "journalLine.companyId")
+      )
+      .select([
+        "journalLine.id",
+        "journalLine.documentLineReference",
+        "journalLine.accountId",
+        "journalLine.amount"
+      ])
+      .where("journalLine.documentType", "=", "Service Job")
+      .where("journalLine.documentId", "=", job.id)
+      .where("journalLine.documentLineReference", "like", "service-job-time:%")
+      .where("journalLine.companyId", "=", companyId)
+      .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+      .execute(),
+    // Lines the enable superseded: posted before the cutover.
+    trx
+      .selectFrom("journalLine")
+      .innerJoin("journal", (join) =>
+        join
+          .onRef("journal.id", "=", "journalLine.journalId")
+          .onRef("journal.companyId", "=", "journalLine.companyId")
+      )
+      .select([
+        "journalLine.documentLineReference",
+        "journalLine.accountId",
+        "journalLine.amount"
+      ])
+      .where("journalLine.documentType", "=", "Service Job")
+      .where("journalLine.documentId", "=", job.id)
+      .where("journalLine.documentLineReference", "like", "service-job-time:%")
+      .where("journalLine.companyId", "=", companyId)
+      .where("journal.status", "=", "Superseded")
+      .execute()
+  ]);
 
   // Each entry keeps the rate it first posted at.
   const rate =
@@ -2289,9 +2302,138 @@ export async function reconcileServiceJobTime(
   const delta = diffLaborGroups(kept.desired, prior);
   if (delta.length === 0) return null;
 
-  const postingDate = datetime
+  // Each entry posts on its own day when that day's period takes postings,
+  // so its cost lands in the month the revenue run counts its hours.
+  const today = datetime
     .today(await getCompanyTimeZone(trx, companyId))
     .toString();
+  const entryDateByReference = new Map(
+    entryDates.map((entry) => [
+      journalReference.to.serviceJobTime(entry.id),
+      entry.entryDate
+    ])
+  );
+  const postingDateByEntryDate = await serviceTimePostingDates(trx, {
+    companyId,
+    entryDates: delta.flatMap((group) => {
+      const entryDate = entryDateByReference.get(group.reference);
+      return entryDate ? [entryDate] : [];
+    }),
+    cutoverDate,
+    today
+  });
+  const groupsByPostingDate = new Map<string, LaborGroup[]>();
+  for (const group of delta) {
+    // A deleted entry has no day any more: its reversal posts today.
+    const entryDate = entryDateByReference.get(group.reference);
+    const postingDate =
+      (entryDate && postingDateByEntryDate.get(entryDate)) || today;
+    const groups = groupsByPostingDate.get(postingDate) ?? [];
+    groups.push(group);
+    groupsByPostingDate.set(postingDate, groups);
+  }
+
+  let firstJournalId: string | null = null;
+  for (const postingDate of [...groupsByPostingDate.keys()].sort()) {
+    const journalId = await writeServiceTimeJournal(trx, {
+      job,
+      groups: groupsByPostingDate.get(postingDate) ?? [],
+      postingDate,
+      postingStatus,
+      isAdjustment: prior.length > 0,
+      defaults,
+      expenseAccountIds,
+      companyId,
+      userId
+    });
+    firstJournalId ??= journalId;
+  }
+  return firstJournalId;
+}
+
+/**
+ * The day each entry's time cost posts, by entry date. Before the cutover
+ * (Provisional, no period) it is the entry's own day. After it, the entry's
+ * own day while the period that holds it takes postings, else today: a
+ * period that is Closed or Locked, or a day before the cutover. A day with no
+ * period yet gets one from `resolveAccountingPeriod`, as today's does.
+ */
+async function serviceTimePostingDates(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    entryDates: string[];
+    cutoverDate: string | null;
+    today: string;
+  }
+): Promise<Map<string, string>> {
+  const { companyId, cutoverDate, today } = args;
+  const entryDates = [...new Set(args.entryDates)].sort();
+  const postingDates = new Map<string, string>();
+  if (entryDates.length === 0) return postingDates;
+  if (!cutoverDate) {
+    for (const entryDate of entryDates) postingDates.set(entryDate, entryDate);
+    return postingDates;
+  }
+  // The rows and lock `resolveAccountingPeriod` takes, read without its
+  // refusal, in its order: the first period that holds a day is its period.
+  const periods = await trx
+    .selectFrom("accountingPeriod")
+    .select([
+      sql<string>`"startDate"::text`.as("startDate"),
+      sql<string>`"endDate"::text`.as("endDate"),
+      "closeStatus",
+      "closedAt"
+    ])
+    .where("companyId", "=", companyId)
+    .where("startDate", "<=", entryDates[entryDates.length - 1])
+    .where("endDate", ">=", entryDates[0])
+    .orderBy("startDate")
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+  for (const entryDate of entryDates) {
+    const period = periods.find(
+      (row) => row.startDate <= entryDate && row.endDate >= entryDate
+    );
+    const closed =
+      !!period &&
+      (period.closeStatus === "Locked" ||
+        period.closeStatus === "Closed" ||
+        period.closedAt !== null);
+    postingDates.set(
+      entryDate,
+      entryDate < cutoverDate || closed ? today : entryDate
+    );
+  }
+  return postingDates;
+}
+
+/** Writes one 'Service Job' time journal for the lines of one posting date. */
+async function writeServiceTimeJournal(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    job: { id: string; serviceJobId: string };
+    groups: LaborGroup[];
+    postingDate: string;
+    postingStatus: AutomaticJournalStatus;
+    isAdjustment: boolean;
+    defaults: Awaited<ReturnType<typeof serviceJobAccountDefaults>>;
+    expenseAccountIds: Set<string>;
+    companyId: string;
+    userId: string;
+  }
+): Promise<string> {
+  const {
+    job,
+    groups,
+    postingDate,
+    postingStatus,
+    defaults,
+    expenseAccountIds,
+    companyId,
+    userId
+  } = args;
   // A Provisional journal has no accounting period.
   const accountingPeriodId =
     postingStatus === "Posted"
@@ -2303,7 +2445,7 @@ export async function reconcileServiceJobTime(
     accountingPeriodId,
     status: postingStatus,
     description: `Service Job Time ${job.serviceJobId}${
-      prior.length > 0 ? " (Adjustment)" : ""
+      args.isAdjustment ? " (Adjustment)" : ""
     }`,
     postingDate,
     userId,
@@ -2313,7 +2455,7 @@ export async function reconcileServiceJobTime(
   // One line per insert: each carries its own tags, and a multi-row
   // RETURNING does not promise insert order.
   const journalLineReference = nanoid();
-  for (const group of delta) {
+  for (const group of groups) {
     const isCostLine = expenseAccountIds.has(group.accountId);
     const line = await trx
       .insertInto("journalLine")

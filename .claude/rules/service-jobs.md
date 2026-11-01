@@ -198,8 +198,12 @@ maintenance labor (`postMaintenanceEvent`, `resources.service.ts`).
 4. It reads the prior lines of the job's live journals. Each line's
    `documentLineReference` is `journalReference.to.serviceJobTime(id)`
    (`service-job-time:<id>`).
-5. `diffLaborGroups` posts the difference as one journal, "Service Job Time
-   SJ…", dated the company's today.
+5. `diffLaborGroups` posts the difference as "Service Job Time SJ…"
+   journals. Each entry's lines are dated on its `entryDate`, the day the
+   revenue run counts its hours. If that period is Closed or Locked, or the
+   day is before the cutover, they are dated the company's today. A deleted
+   entry's reversal is also dated today (`serviceTimePostingDates`). Each
+   posting date gets its own journal, and each journal balances.
 
 A deleted entry has no desired lines, so its prior lines reverse. A coverage
 change needs no extra code: the next reconcile moves the posted cost. A change
