@@ -877,12 +877,6 @@ msgstr "Вернуться к операции"
 msgid "Go to onboarding"
 msgstr "Перейти к первоначальной настройке"
 
-msgid "Halloween surprise"
-msgstr "Сюрприз на Хэллоуин"
-
-msgid "Happy Halloween"
-msgstr "Счастливого Хэллоуина"
-
 msgid "Heading {level}"
 msgstr "Заголовок {level}"
 
@@ -1591,9 +1585,6 @@ msgstr "График обслуживания истек"
 
 msgid "PNG or JPG, dark ink on a plain background"
 msgstr ""
-
-msgid "Poke the spider… if you dare"
-msgstr "Ткните паука… если осмелитесь"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Нажмите ? на любой странице, чтобы открыть этот список. Горячие клавиши отключены при вводе в поле."
