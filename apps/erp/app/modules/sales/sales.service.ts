@@ -79,6 +79,7 @@ import {
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
 import {
+  isStoredDocumentPdf,
   storage,
   storedDocumentPdfName,
   TEMP_STAGING_BUCKET
@@ -12227,25 +12228,58 @@ export async function attachDocumentPdf(
  */
 export async function getFinalizedQuotePdf(
   client: SupabaseClient<Database>,
-  quote: { id: string; companyId: string }
+  quote: {
+    id: string;
+    companyId: string;
+    quoteId: string | null;
+    opportunityId: string | null;
+  }
 ) {
-  const document = await client
+  if (!quote.quoteId || !quote.opportunityId) return null;
+
+  const documents = await client
     .from("document")
     .select("name, path")
     .eq("sourceDocument", "Quote")
     .eq("sourceDocumentId", quote.id)
     .eq("companyId", quote.companyId)
     .eq("active", true)
-    .order("createdAt", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (document.error || !document.data) return null;
+    .order("createdAt", { ascending: false });
+  if (documents.error) {
+    logger.error("Failed to read the quote's documents", {
+      companyId: quote.companyId,
+      quoteId: quote.id,
+      error: documents.error
+    });
+    return null;
+  }
 
-  // Removing a file from the opportunity's documents leaves its row behind.
-  const exists = await storage(client)
-    .company(quote.companyId)
-    .exists(document.data.path);
-  return exists.data ? document.data : null;
+  // Anyone can file a document against the quote; only the PDF finalize
+  // stored, by its name and folder, is the customer's to download.
+  const folder = `${quote.companyId}/opportunity/${quote.opportunityId}/`;
+  const pdf = documents.data.find(
+    (document) =>
+      document.path === `${folder}${document.name}` &&
+      isStoredDocumentPdf(document.name, [quote.quoteId!])
+  );
+  if (!pdf) return null;
+
+  // Removing a file from the opportunity's documents leaves its row behind,
+  // which `exists` answers with false. It throws on any other storage fault;
+  // the download is optional, so that only hides it.
+  try {
+    const exists = await storage(client)
+      .company(quote.companyId)
+      .exists(pdf.path);
+    return exists.data ? pdf : null;
+  } catch (error) {
+    logger.error("Failed to check the finalized quote PDF in storage", {
+      companyId: quote.companyId,
+      quoteId: quote.id,
+      error
+    });
+    return null;
+  }
 }
 
 /** Render a sales order's PDF and attach it to its opportunity. */
