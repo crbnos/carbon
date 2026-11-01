@@ -23,7 +23,9 @@ export const SHORTCUTS = {
   /** Open the shortcut help overlay. */
   help: "shift+slash" as ShortcutInput,
   /** Toggle the app sidebar. */
-  sidebarToggle: "mod+b" as ShortcutInput
+  sidebarToggle: "mod+b" as ShortcutInput,
+  /** Undo the last edit inside a drawing surface (the signature pad). */
+  undo: "mod+z" as ShortcutInput
 } as const;
 
 /**

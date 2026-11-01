@@ -34,9 +34,15 @@ import {
   Tr,
   TruncatedTooltipText,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
-import { distinctItemText, INPUT_FORMAT, pluralize } from "@carbon/utils";
+import {
+  distinctItemText,
+  INPUT_FORMAT,
+  pluralize,
+  requireAffected
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -142,16 +148,19 @@ const QuoteToOrderDrawer = ({
       }
 
       const purchaseOrderDocumentPath = getPath(file);
-      const { error } = await carbon
-        .from("opportunity")
-        .update({
-          purchaseOrderDocumentPath
-        })
-        .eq("id", quoteData?.opportunity?.id!);
+      const { error } = await requireAffected(
+        carbon
+          .from("opportunity")
+          .update({
+            purchaseOrderDocumentPath
+          })
+          .eq("id", quoteData?.opportunity?.id!)
+          .select("id")
+      );
 
       if (error) {
         logger.error("Error updating opportunity:", error);
-        toast.error(t`Failed to update opportunity with purchase order`);
+        toastError(t`Failed to update opportunity with purchase order`, error);
       } else {
         setTimeout(() => {
           setPurchaseOrder(file);
@@ -171,18 +180,21 @@ const QuoteToOrderDrawer = ({
     setUploading(true);
 
     const [opportunityDelete] = await Promise.all([
-      carbon
-        .from("opportunity")
-        .update({
-          purchaseOrderDocumentPath: null
-        })
-        .eq("id", quoteData?.opportunity.id!),
+      requireAffected(
+        carbon
+          .from("opportunity")
+          .update({
+            purchaseOrderDocumentPath: null
+          })
+          .eq("id", quoteData?.opportunity.id!)
+          .select("id")
+      ),
       // @ts-expect-error
       deleteAttachment(purchaseOrder!)
     ]);
 
     if (opportunityDelete.error) {
-      toast.error(t`Failed to remove purchase order`);
+      toastError(t`Failed to remove purchase order`, opportunityDelete.error);
     } else {
       setPurchaseOrder(null);
       setPoNumber("");

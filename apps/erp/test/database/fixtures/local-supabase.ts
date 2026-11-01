@@ -5,6 +5,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import type { Database } from "@carbon/database";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { it } from "vitest";
+import { hasLocalDatabase } from "./local-database";
 
 function localEnv(): Record<string, string> | null {
   const file = [".env.local", "../../.env.local"].find((path) =>
@@ -50,4 +52,14 @@ function localClient(
   return createClient<Database>(`http://localhost:${port}`, key, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
+}
+
+/** A database case that also reads through the local PostgREST: it skips when
+ *  there is no local stack to build the service-role client from. */
+export function postgrestTest(
+  name: string,
+  fn: (client: SupabaseClient<Database>) => void | Promise<void>
+): void {
+  const client = hasLocalDatabase ? localServiceRoleClient() : null;
+  it.skipIf(!client)(name, () => fn(client!), 60_000);
 }

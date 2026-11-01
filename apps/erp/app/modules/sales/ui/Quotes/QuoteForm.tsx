@@ -13,6 +13,7 @@ import {
   CardTitle,
   cn,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -104,7 +105,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
         .eq("id", newValue.value)
         .single();
       if (error) {
-        toast.error(t`Error fetching customer data`);
+        toastError(t`Error fetching customer data`, error);
       } else {
         setCustomer((prev) => ({
           ...prev,

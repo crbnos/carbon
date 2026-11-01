@@ -13,6 +13,7 @@ import {
 } from "vitest";
 import {
   consumeOAuthState,
+  consumeOAuthStateByValue,
   issueOAuthState,
   issueOAuthStates
 } from "./oauth-state.server";
@@ -202,5 +203,143 @@ describe("OAuth state session", () => {
     );
 
     expect(consumed.valid).toBe(false);
+  });
+});
+
+// One redirect URI serves every workflow piece, so their callback finds the
+// state by its value instead of by an integration it cannot know yet.
+describe("OAuth state found by value", () => {
+  const piece = {
+    integrationId: "google-calendar",
+    userId: "user-1",
+    companyId: "company-1",
+    name: "Ops calendar",
+    connectionId: "icn_1"
+  };
+  const owner = { userId: piece.userId, companyId: piece.companyId };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-11T12:00:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("returns the entry holding the value, with the integration and its extras", async () => {
+    const issued = await issueOAuthState(piece);
+    const consumed = await consumeOAuthStateByValue(
+      requestWithCookie(cookieHeader(issued.cookie)),
+      issued.state,
+      owner
+    );
+
+    expect(consumed.valid).toBe(true);
+    expect(consumed.payload).toMatchObject({
+      integrationId: "google-calendar",
+      name: "Ops calendar",
+      connectionId: "icn_1"
+    });
+  });
+
+  it.each([
+    ["user", { ...owner, userId: "user-2" }],
+    ["company", { ...owner, companyId: "company-2" }]
+  ])(
+    "refuses another %s, and returns nothing from the entry",
+    async (_label, other) => {
+      const issued = await issueOAuthState(piece);
+      const consumed = await consumeOAuthStateByValue(
+        requestWithCookie(cookieHeader(issued.cookie)),
+        issued.state,
+        other
+      );
+
+      expect(consumed.valid).toBe(false);
+      expect(consumed.payload).toBeUndefined();
+    }
+  );
+
+  it("refuses an expired state", async () => {
+    const issued = await issueOAuthState(piece);
+    vi.advanceTimersByTime(60 * 60 * 1000 + 1);
+
+    const consumed = await consumeOAuthStateByValue(
+      requestWithCookie(cookieHeader(issued.cookie)),
+      issued.state,
+      owner
+    );
+
+    expect(consumed.valid).toBe(false);
+  });
+
+  it("refuses a value no entry holds", async () => {
+    const issued = await issueOAuthState(piece);
+    const consumed = await consumeOAuthStateByValue(
+      requestWithCookie(cookieHeader(issued.cookie)),
+      "not-a-state",
+      owner
+    );
+
+    expect(consumed.valid).toBe(false);
+  });
+
+  it("is single-use, even when the first attempt was refused", async () => {
+    const issued = await issueOAuthState(piece);
+    const refused = await consumeOAuthStateByValue(
+      requestWithCookie(cookieHeader(issued.cookie)),
+      issued.state,
+      { ...owner, userId: "user-2" }
+    );
+    const retried = await consumeOAuthStateByValue(
+      requestWithCookie(cookieHeader(refused.cookie)),
+      issued.state,
+      owner
+    );
+
+    expect(refused.valid).toBe(false);
+    expect(retried.valid).toBe(false);
+  });
+
+  it("leaves other integrations' pending states in place", async () => {
+    const ramp = await issueOAuthState(expected);
+    const both = await issueOAuthState(
+      piece,
+      requestWithCookie(cookieHeader(ramp.cookie))
+    );
+
+    const pieceConsumed = await consumeOAuthStateByValue(
+      requestWithCookie(cookieHeader(both.cookie)),
+      both.state,
+      owner
+    );
+    const rampConsumed = await consumeOAuthState(
+      requestWithCookie(cookieHeader(pieceConsumed.cookie)),
+      ramp.state,
+      expected
+    );
+
+    expect(pieceConsumed.valid).toBe(true);
+    expect(rampConsumed.valid).toBe(true);
+  });
+
+  // The account name rides the cookie into the saved connection, so a state
+  // issued for one account must never serve a connect for another.
+  it("issues a new state for another account instead of reusing one", async () => {
+    const first = await issueOAuthState(piece);
+    const second = await issueOAuthState(
+      { ...piece, name: "Sales calendar", connectionId: undefined },
+      requestWithCookie(cookieHeader(first.cookie))
+    );
+
+    expect(second.state).not.toBe(first.state);
+    const consumed = await consumeOAuthStateByValue(
+      requestWithCookie(cookieHeader(second.cookie)),
+      second.state,
+      owner
+    );
+    expect(consumed.payload?.name).toBe("Sales calendar");
+    expect(consumed.payload?.connectionId).toBeUndefined();
   });
 });

@@ -1302,9 +1302,16 @@ export async function generatePlanningActions(
       ])
       .where("companyId", "=", companyId)
       .execute(),
+    // Nettable on-hand, the figure runMrp plans against.
     db
       .selectFrom("itemStockQuantities")
-      .select(["itemId", "locationId", "quantityOnHand"])
+      .select((eb) => [
+        "itemId",
+        "locationId",
+        eb("quantityOnHand", "-", eb.ref("quantityNonNettable")).as(
+          "quantityNettable"
+        )
+      ])
       .where("companyId", "=", companyId)
       .execute(),
     db
@@ -1371,7 +1378,7 @@ export async function generatePlanningActions(
     if (row.itemId && row.locationId) {
       onHandByItemLocation.set(
         `${row.itemId}${KEY_SEP}${row.locationId}`,
-        Number(row.quantityOnHand) || 0
+        Number(row.quantityNettable) || 0
       );
     }
   }

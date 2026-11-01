@@ -243,7 +243,7 @@ const BottomSheetTitle = forwardRef<
     ref={ref}
     className={cn(
       "text-sm font-medium text-muted-foreground",
-      "max-md:truncate max-md:text-[17px] max-md:font-semibold max-md:text-foreground",
+      "max-md:truncate max-md:text-[1.0625rem] max-md:font-semibold max-md:text-foreground",
       className
     )}
     {...props}
@@ -265,7 +265,7 @@ BottomSheetDescription.displayName = "BottomSheetDescription";
 
 /** One 48pt row of a phone sheet: a menu item, an option or a link. */
 const sheetRowClassName =
-  "relative flex min-h-12 w-full select-none items-center gap-3 rounded-sm px-3 text-left text-[15px] text-foreground outline-none transition-colors hover:bg-accent focus-visible:bg-accent active:bg-accent disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50";
+  "relative flex min-h-12 w-full select-none items-center gap-3 rounded-sm px-3 text-left text-[0.9375rem] text-foreground outline-none transition-colors hover:bg-accent focus-visible:bg-accent active:bg-accent disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50";
 
 /** The uppercase label over a section of sheet rows. */
 const SheetSectionLabel = forwardRef<

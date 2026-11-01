@@ -3,14 +3,20 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Json } from "@carbon/database";
-import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Checkbox,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTag, LuTrash } from "react-icons/lu";
+import { LuBan, LuPencil, LuTag, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -18,6 +24,7 @@ import { path } from "~/utils/path";
 type StorageType = {
   id: string;
   name: string;
+  nettable: boolean;
   companyId: string;
   customFields: Json;
 };
@@ -25,9 +32,11 @@ type StorageType = {
 type StorageTypesTableProps = {
   data: StorageType[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
+const StorageTypesTable = memo((props: StorageTypesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -49,6 +58,25 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
           </Hyperlink>
         ),
         meta: { mobile: "P1", icon: <LuTag /> }
+      },
+      {
+        accessorKey: "nettable",
+        header: t`Non-nettable`,
+        cell: (item) => (
+          <Checkbox isChecked={item.getValue<boolean>() === false} />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: [
+              { value: "false", label: t`Non-nettable` },
+              { value: "true", label: t`Nettable` }
+            ]
+          },
+          pluralHeader: t`Non-nettable`,
+          icon: <LuBan />,
+          exportValue: (row) => !row.nettable
+        }
       }
     ];
     return [...defaultColumns, ...customColumns];
@@ -90,6 +118,7 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
   return (
     <Table<(typeof rows)[number]>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count}
       importCSV={[

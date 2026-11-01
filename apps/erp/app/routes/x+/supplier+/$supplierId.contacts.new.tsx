@@ -7,13 +7,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { isUniqueViolation, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useNavigate, useParams } from "react-router";
 import { supplierContactValidator } from "~/modules/purchasing/purchasing.models";
 import { insertSupplierContact } from "~/modules/purchasing/purchasing.service";
 import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContactForm";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -23,7 +24,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "purchasing"
   });
 
-  // RLS doesn't work for selecting a contact with no supplier
   const client = getCarbonServiceRole();
 
   const { supplierId } = params;
@@ -55,59 +55,33 @@ export async function action({ request, params }: ActionFunctionArgs) {
       : null
   ]);
 
-  const createSupplierContact = await insertSupplierContact(client, {
-    supplierId,
-    companyId,
-    contact,
-    supplierLocationId,
-    customFields: setCustomFields(formData)
-  });
+  const createSupplierContact = await insertSupplierContact(
+    getDatabaseClient(),
+    {
+      supplierId,
+      companyId,
+      contact,
+      supplierLocationId,
+      customFields: setCustomFields(formData)
+    }
+  );
 
   if (createSupplierContact.error) {
-    let errorMessage = "Failed to create supplier contact";
-    if (isUniqueViolation(createSupplierContact.error)) {
-      const contact = await client
-        .from("contact")
-        .select("id")
-        .eq("email", validation.data.email)
-        .eq("companyId", companyId)
-        .single();
-      if (contact.data) {
-        const supplierContact = await client
-          .from("supplierContact")
-          .select("supplierId")
-          .eq("contactId", contact.data.id)
-          .single();
-        if (supplierContact.data) {
-          const supplier = await client
-            .from("supplier")
-            .select("name")
-            .eq("id", supplierContact.data.supplierId)
-            .single();
-          errorMessage = `Contact ${validation.data.email} already exists for ${supplier.data?.name}`;
-        } else {
-          const customerContact = await client
-            .from("customerContact")
-            .select("customerId")
-            .eq("contactId", contact.data.id)
-            .single();
-          if (customerContact.data) {
-            const customer = await client
-              .from("customer")
-              .select("name")
-              .eq("id", customerContact.data.customerId)
-              .single();
-            errorMessage = `Contact ${validation.data.email} already exists for ${customer.data?.name}`;
-          }
-        }
-      }
-    }
-
+    // The form reads `{ data, error }`; never send it the database's message.
     return modal
-      ? createSupplierContact
+      ? {
+          data: null,
+          error: { message: "Failed to create supplier contact" }
+        }
       : redirect(
           path.to.supplierContacts(supplierId),
-          await flash(request, error(createSupplierContact.error, errorMessage))
+          await flash(
+            request,
+            error(
+              createSupplierContact.error,
+              "Failed to create supplier contact"
+            )
+          )
         );
   }
 

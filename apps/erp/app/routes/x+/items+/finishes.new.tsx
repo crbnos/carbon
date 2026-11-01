@@ -61,10 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!materialFinishId) {
     return data(
       {},
-      await flash(
-        request,
-        error(insertMaterialFinish, "Failed to insert material finish")
-      )
+      await flash(request, error(null, "Failed to insert material finish"))
     );
   }
 

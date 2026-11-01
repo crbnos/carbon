@@ -62,6 +62,7 @@ const TimePicker = ({ name, label, termId, onChange }: TimePickerProps) => {
         //@ts-expect-error
         onChange={handleChange}
         isDisabled={isDisabled}
+        aria-label={label}
       />
       {error && <FormErrorMessage>{error}</FormErrorMessage>}
     </FormControl>

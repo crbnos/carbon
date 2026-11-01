@@ -31,9 +31,10 @@ import {
   Th,
   Thead,
   Tr,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
-import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import { MODEL_RAW_KEEP_MAX_BYTES, requireAffected } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -370,7 +371,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
         .remove([getPath(file)]);
 
       if (error) {
-        toast.error(error.message || t`Error deleting file`);
+        toastError(t`Error deleting file`, error);
         return;
       }
 
@@ -383,12 +384,15 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
   const deleteModel = useCallback(async () => {
     if (!carbon) return;
 
-    const { error } = await carbon
-      .from("item")
-      .update({ modelUploadId: null })
-      .eq("id", itemId);
+    const { error } = await requireAffected(
+      carbon
+        .from("item")
+        .update({ modelUploadId: null })
+        .eq("id", itemId)
+        .select("id")
+    );
     if (error) {
-      toast.error(t`Error removing model from item`);
+      toastError(t`Error removing model from item`, error);
       return;
     }
     toast.success(t`Model removed from item`);
@@ -414,7 +418,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
       try {
         await downloadUrl(url, file.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Error", { error: error });
       }
     },

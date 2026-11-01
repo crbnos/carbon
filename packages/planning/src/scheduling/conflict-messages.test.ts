@@ -8,6 +8,7 @@ import {
   classifyLatePlacement,
   composeBehindTarget,
   composeLateConflict,
+  composeNoFreeOperator,
   composePlacementNote,
   formatWaitDuration,
   type LatePlacementCause,
@@ -291,6 +292,14 @@ describe("composeBehindTarget", () => {
   it("calls an operation with no description 'an operation'", () => {
     expect(composeBehindTarget([op({ description: null })], "UTC")).toBe(
       "First behind target: an operation (due 2026-07-16, projected 2026-07-18)"
+    );
+  });
+});
+
+describe("composeNoFreeOperator", () => {
+  it("says everyone qualified is committed elsewhere on the board", () => {
+    expect(composeNoFreeOperator("Weld", 3)).toBe(
+      "No free operator for Weld: all 3 people qualified are assigned to other stations on the manning board"
     );
   });
 });

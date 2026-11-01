@@ -29,10 +29,12 @@ export {
   buildArchivedEmail,
   deleteJitSsoUser,
   emailDomain,
+  isThrowawaySsoAccount,
   linkSsoIdentityToUser,
   mergeInvitePermissions,
   migrateUserToSso,
   removeSsoIdentitiesForDomain,
+  removeSsoIdentitiesForProvider,
   seedSsoIdentityForUser,
   ssoProviderColumn,
   uncoveredSsoDomainError

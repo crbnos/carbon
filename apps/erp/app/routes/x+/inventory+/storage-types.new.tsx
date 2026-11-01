@@ -36,7 +36,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function NewStorageTypeRoute() {
   const closeRoute = useCloseRoute();
-  const initialValues = { name: "" };
+  const initialValues = { name: "", nonNettable: false };
 
   return (
     <StorageTypeForm

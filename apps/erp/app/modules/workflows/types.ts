@@ -13,3 +13,10 @@ export type BuilderNode = Node<
   expanded?: boolean;
 };
 export type BuilderEdge = Edge;
+
+/** Why a dropdown could not be filled. Resolved to words in the builder. */
+export type OptionsErrorCode =
+  | "reconnect"
+  | "refreshing"
+  | "forbidden"
+  | "failed";

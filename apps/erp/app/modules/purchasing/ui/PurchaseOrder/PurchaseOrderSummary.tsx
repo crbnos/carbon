@@ -53,6 +53,7 @@ import type {
   PurchaseOrderLine,
   Supplier
 } from "../../types";
+import { PurchaseOrderLinePromisedDate } from "./PurchaseOrderLineDates";
 
 const LineItems = ({
   currencyCode,
@@ -60,9 +61,11 @@ const LineItems = ({
   formatter,
   locale,
   lines,
+  order,
   shouldConvertCurrency
 }: {
   currencyCode: string;
+  order: PurchaseOrder | undefined;
   presentationCurrencyFormatter: Intl.NumberFormat;
   formatter: Intl.NumberFormat;
   locale: string;
@@ -247,6 +250,17 @@ const LineItems = ({
                       </Badge>
                     ) : null}
                   </div>
+                  {!isIndirect && (
+                    <PurchaseOrderLinePromisedDate
+                      line={{
+                        id: line.id,
+                        purchaseOrderId: orderId,
+                        receivedComplete: line.receivedComplete ?? false,
+                        promisedDate: line.promisedDate
+                      }}
+                      order={order}
+                    />
+                  )}
                 </VStack>
               </div>
             </div>
@@ -576,6 +590,7 @@ const PurchaseOrderSummary = ({
           formatter={formatter}
           locale={locale}
           lines={routeData?.lines ?? []}
+          order={routeData?.purchaseOrder}
           shouldConvertCurrency={shouldConvertCurrency}
         />
 

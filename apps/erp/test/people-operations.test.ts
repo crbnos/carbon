@@ -42,12 +42,17 @@ describe("timeCardError", () => {
 
 // The boundary is PostgREST: a real supabase-js client whose fetch answers the
 // shift UPDATE with `rows`, as RLS leaves them. An UPDATE that reaches no row
-// is not an error there, so the empty answer is the case to refuse.
-function shiftCaller(rows: { id: string }[]) {
+// is not an error there, so the empty answer is the case to refuse. The read
+// before it (the shift's current location) answers with `stored`.
+function shiftCaller(
+  rows: { id: string }[],
+  stored: { locationId: string }[] = rows.map(() => ({ locationId: "loc-1" }))
+) {
   const sent: { method: string; url: URL }[] = [];
   const fetchStub = async (input: RequestInfo | URL, init?: RequestInit) => {
-    sent.push({ method: init?.method ?? "GET", url: new URL(String(input)) });
-    return new Response(JSON.stringify(rows), {
+    const method = init?.method ?? "GET";
+    sent.push({ method, url: new URL(String(input)) });
+    return new Response(JSON.stringify(method === "GET" ? stored : rows), {
       status: 200,
       headers: { "Content-Type": "application/json" }
     });
@@ -117,10 +122,10 @@ describe("updateShift", () => {
       category: "notFound",
       message: "Shift not found"
     });
-    expect(sent).toHaveLength(1);
-    expect(sent[0]?.method).toBe("PATCH");
-    expect(sent[0]?.url.searchParams.get("id")).toBe("eq.shift-missing");
-    expect(sent[0]?.url.searchParams.get("companyId")).toBe("eq.company-1");
+    const patch = sent.filter((request) => request.method === "PATCH");
+    expect(patch).toHaveLength(1);
+    expect(patch[0]?.url.searchParams.get("id")).toBe("eq.shift-missing");
+    expect(patch[0]?.url.searchParams.get("companyId")).toBe("eq.company-1");
     expect(trigger).not.toHaveBeenCalled();
   });
 
@@ -131,8 +136,28 @@ describe("updateShift", () => {
       SHIFT
     );
     expect(result).toEqual({ data: { id: "shift-1" }, error: null });
-    expect(trigger.mock.calls.map(([event]) => event)).toEqual([
-      "schedule-inputs-changed"
+    expect(trigger.mock.calls).toEqual([
+      [
+        "schedule-inputs-changed",
+        expect.objectContaining({ kind: "shift", entityId: "shift-1" })
+      ]
+    ]);
+  });
+
+  // The stations at the old location lose the shift's hours too, and the
+  // shift-scoped notice only sees the new location.
+  it("re-plans the company when the shift moves to another location", async () => {
+    const { client } = shiftCaller([{ id: "shift-1" }], [{ locationId: "hq" }]);
+    const result = await updateShift(
+      shiftContext(client, ["company-1"]),
+      SHIFT
+    );
+    expect(result).toEqual({ data: { id: "shift-1" }, error: null });
+    expect(trigger.mock.calls).toEqual([
+      [
+        "schedule-inputs-changed",
+        expect.objectContaining({ kind: "location", entityId: undefined })
+      ]
     ]);
   });
 });

@@ -74,10 +74,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {
         id: null
       },
-      await flash(
-        request,
-        error(updateMethodOperation, "Failed to update method operation")
-      )
+      await flash(request, error(null, "Failed to update method operation"))
     );
   }
 

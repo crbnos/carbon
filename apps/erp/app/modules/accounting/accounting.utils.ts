@@ -1138,6 +1138,62 @@ function isCalendarDateString(value: string): boolean {
 // non-deletable system definition).
 export const LOCK_PERIOD_TASK_NAME = "Lock the period";
 
+/**
+ * What the document behind a general ledger line says about who it was with.
+ * Keyed by the document's id: every posting writes the record's `id`
+ * (an `xid()`, unique across tables) into `journalLine.documentId`.
+ */
+export type GeneralLedgerDocument = {
+  invoiceNumber: string | null;
+  supplierInvoiceNumber: string | null;
+  customerId: string | null;
+  supplierId: string | null;
+  // A card charge with no supplier still names who was paid
+  merchantName: string | null;
+};
+
+export type GeneralLedgerCounterparty = {
+  party: string | null;
+  invoiceNumber: string | null;
+  supplierInvoiceNumber: string | null;
+};
+
+/**
+ * The customer or supplier and the invoice of a general ledger line. An
+ * invoice line names its invoice in `documentId`; a payment line names the
+ * payment there and the invoice it settles in `documentLineReference`.
+ */
+export function generalLedgerCounterparty(
+  line: {
+    documentType: string | null;
+    documentId: string | null;
+    documentLineReference: string | null;
+  },
+  documents: ReadonlyMap<string, GeneralLedgerDocument>,
+  partyNames: ReadonlyMap<string, string>
+): GeneralLedgerCounterparty {
+  const document = line.documentId ? documents.get(line.documentId) : undefined;
+  const invoice =
+    line.documentType === "Payment" && line.documentLineReference
+      ? documents.get(line.documentLineReference)
+      : document;
+
+  const partyId =
+    document?.customerId ??
+    document?.supplierId ??
+    invoice?.customerId ??
+    invoice?.supplierId;
+
+  return {
+    party:
+      (partyId ? partyNames.get(partyId) : undefined) ??
+      document?.merchantName ??
+      null,
+    invoiceNumber: invoice?.invoiceNumber ?? null,
+    supplierInvoiceNumber: invoice?.supplierInvoiceNumber ?? null
+  };
+}
+
 /** The companies a financial report covers: every company for "all", the one
  *  named, else the user's own. Null when the selection is empty or names a
  *  company outside the group, so a report never reads another group's ledger. */

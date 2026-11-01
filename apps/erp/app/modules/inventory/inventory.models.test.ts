@@ -5,6 +5,8 @@
 import { describe, expect, it } from "vitest";
 import {
   finishPickingList,
+  inventoryCountScanValidator,
+  inventoryCountUnitValidator,
   kanbanValidator,
   planSerialBoxWrite,
   receiptFixedAssetLineUpdateValidator,
@@ -385,5 +387,33 @@ describe("finishPickingList", () => {
       outcome: "finish",
       status: "Partial"
     });
+  });
+});
+
+describe("inventory count validators", () => {
+  it("accepts a scan with a code", () => {
+    expect(
+      inventoryCountScanValidator.safeParse({ code: "SN-1" }).success
+    ).toBe(true);
+  });
+  it("refuses a scan with an empty code", () => {
+    expect(inventoryCountScanValidator.safeParse({ code: " " }).success).toBe(
+      false
+    );
+  });
+  it("refuses a negative scan quantity", () => {
+    expect(
+      inventoryCountScanValidator.safeParse({ code: "L-1", quantity: "-1" })
+        .success
+    ).toBe(false);
+  });
+  it("requires an item on a unit added by hand", () => {
+    expect(
+      inventoryCountUnitValidator.safeParse({ code: "SN-1" }).success
+    ).toBe(false);
+    expect(
+      inventoryCountUnitValidator.safeParse({ code: "SN-1", itemId: "i_1" })
+        .success
+    ).toBe(true);
   });
 });

@@ -105,6 +105,15 @@ Material is consumed against an operation from the same panel. The **"Issue"** a
 
 Two edge cases surface right in the flow rather than failing silently. Issuing expired stock is governed by a policy (`Warn`, `Block`, or `BlockWithOverride`); an overridable block asks for a **"Reason for issuing expired stock"**. And when a pick splits a batch, the station reports a **"Batch Split Occurred"** and offers to **"Convert to New Size/Revision"** or scrap the remainder.
 
+### When you don't have the required ability
+
+A process can require an ability (see [requiring an ability](/docs/reference/work-centers#requiring-an-ability)). When you open one of its operations without that ability, or with a qualification that has expired, a banner says so and names the training that grants it. The process decides what happens next:
+
+- **Warn**: a yellow banner, **"You don't have the … ability"**, and you can work as usual.
+- **Block**: a red banner, **"You can't work on this operation"**. Start, **"Log completed"**, Scrap, Rework, **"Mark as Done"**, recording steps, issuing material and inspection verdicts are disabled, and the timer does not start by itself. A timer that is already running can still be paused.
+
+The same applies in the guided assembly view and the inspection view.
+
 ### Clocking in and out
 
 When the `timeCardEnabled` company setting is on, the sidebar carries a time card: **"Clock In"** and **"Clock Out"**, a **"My Hours"** view (a table of **Date**, **Clock In**, **Clock Out**, **Duration**), and a **"Clocked in since"** badge with the start time while a shift is open. Leave a shift open too long and Carbon nudges: after twelve hours it asks **"Forgot to Clock Out?"** with **"I'm Still Working"** or **"Set Clock Out"**. Time cards are labor time for payroll and presence; they are separate from the per-operation production events that drive job costing.
@@ -162,6 +171,9 @@ The picking list is already `Completed` or `Cancelled`, which locks it — the f
 
 ### Finish is blocked or warns ("Insufficient quantity" / "Steps are missing")
 **"Finish"** flips the operation to `Done`, but guards fire first. If reported quantity is short you'll see **"Insufficient quantity"**; if procedure steps aren't satisfied, **"Steps are missing"**. You can override with **"Finish Anyways"**. Separately, if tracked material was never issued, the operator must tick **"I understand and want to complete without issuing"** to proceed.
+
+### "You can't work on this operation"
+The operation's process requires an ability you don't hold, or your qualification expired, and the process is set to **Block**. Complete the training the banner names, or ask a supervisor to add the ability on your Abilities page. A planner can also switch the process to **Warn** under **Resources → Processes**.
 
 ### "Forgot to Clock Out?"
 A time card was left open for twelve hours or more. Choose **"I'm Still Working"** to keep the shift open, or **"Set Clock Out"** to close it. Time cards are labor/presence time for payroll — separate from the per-operation production events that drive job costing.

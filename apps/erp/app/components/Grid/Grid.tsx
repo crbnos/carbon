@@ -23,15 +23,13 @@ import {
   getCoreRowModel,
   useReactTable
 } from "@tanstack/react-table";
-import type { Range } from "@tanstack/react-virtual";
-import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
-import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuCirclePlus } from "react-icons/lu";
 import type {
   EditableTableCellComponent,
   Position
 } from "~/components/Editable";
+import { useVirtualRows } from "~/components/Table/useVirtualRows";
 import { Row } from "./components";
 import { getAccessorKey, updateNestedProperty } from "./utils";
 
@@ -387,22 +385,9 @@ const Grid = <T extends object>({
   // The selected row stays rendered when it scrolls out of view: it holds the
   // keyboard focus and, mid-edit, the open editor. Dropping it would lose both.
   const selectedRow = selectedCell?.row;
-  const rangeExtractor = useCallback(
-    (range: Range) => {
-      const indexes = defaultRangeExtractor(range);
-      if (
-        selectedRow === undefined ||
-        selectedRow >= range.count ||
-        indexes.includes(selectedRow)
-      ) {
-        return indexes;
-      }
-      return [...indexes, selectedRow].sort((a, b) => a - b);
-    },
-    [selectedRow]
-  );
+  const keepSelectedRow = useCallback(() => selectedRow, [selectedRow]);
 
-  const rowVirtualizer = useVirtualizer({
+  const { virtualizer: rowVirtualizer, renderRows } = useVirtualRows({
     enabled: isVirtual,
     count: rows.length,
     getScrollElement: () => tableContainerRef.current,
@@ -410,10 +395,10 @@ const Grid = <T extends object>({
     estimateSize: () => ESTIMATED_ROW_HEIGHT,
     overscan: OVERSCAN,
     scrollMargin: HEADER_HEIGHT,
-    rangeExtractor,
+    keepIndex: keepSelectedRow,
     // The scroller is not measured until after the first render; without this
     // that render would draw no rows at all.
-    initialRect: { width: 0, height: maxHeight ?? 0 }
+    initialHeight: maxHeight ?? 0
   });
 
   const renderRow = (row: (typeof rows)[number], virtualIndex?: number) => (
@@ -441,27 +426,14 @@ const Grid = <T extends object>({
   // is not rendered, so the scrollbar and every row's position stay true.
   const renderVirtualRows = () => {
     const columnCount = table.getVisibleLeafColumns().length;
-    const spacer = (key: string, height: number) => (
-      <tr key={key} aria-hidden>
-        <td colSpan={columnCount} style={{ height, padding: 0 }} />
-      </tr>
+    return renderRows(
+      (index) => renderRow(rows[index]!, index),
+      (key, height) => (
+        <tr key={key} aria-hidden>
+          <td colSpan={columnCount} style={{ height, padding: 0 }} />
+        </tr>
+      )
     );
-
-    const rendered: ReactNode[] = [];
-    let offset = 0;
-    for (const item of rowVirtualizer.getVirtualItems()) {
-      const row = rows[item.index];
-      if (!row) continue;
-      const start = item.start - HEADER_HEIGHT;
-      if (start > offset) {
-        rendered.push(spacer(`before-${item.index}`, start - offset));
-      }
-      rendered.push(renderRow(row, item.index));
-      offset = item.end - HEADER_HEIGHT;
-    }
-    const totalSize = rowVirtualizer.getTotalSize();
-    if (totalSize > offset) rendered.push(spacer("after", totalSize - offset));
-    return rendered;
   };
 
   // In a virtualized grid "New" sits under the scroller, always in view, so

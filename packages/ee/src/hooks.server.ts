@@ -2,7 +2,13 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { emailHealthcheck } from "./email/hooks.server";
+import { revokeConnectionsForPiece } from "./integrations/connections";
+import {
+  ACTIVEPIECES_PIECES,
+  type ActivepiecesPiece
+} from "./integrations/pieces";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
 import { mountHealthcheck } from "./mount/hooks.server";
@@ -28,6 +34,7 @@ import {
   rilletOnUninstall
 } from "./rillet/hooks.server";
 import { senseHealthcheck, senseOnUninstall } from "./sense/hooks.server";
+import { slackOnConnect } from "./slack/hooks.server";
 import {
   stripeConnectHealthcheck,
   stripeConnectOnInstall,
@@ -50,6 +57,31 @@ import {
 } from "./xero/hooks.server";
 
 /**
+ * A workflow-integration card's whole uninstall behaviour is "revoke the accounts
+ * it connected", and its `id` IS the piece name — so a new piece needs no entry
+ * here. Health for a piece card is decided in erp's `getIntegrationHealth` (it
+ * needs the allowlist's required scopes, which ee cannot see); only uninstall
+ * lives here. Slack's card serves the Carbon Assistant and workflow steps alike,
+ * so uninstalling it revokes every connected workspace.
+ */
+const pieceConnectHooks: Partial<
+  Record<ActivepiecesPiece, IntegrationServerHooks["onConnect"]>
+> = {
+  slack: slackOnConnect
+};
+
+const pieceHooks: Record<string, IntegrationServerHooks> = Object.fromEntries(
+  ACTIVEPIECES_PIECES.map((piece) => [
+    piece,
+    {
+      onUninstall: (companyId: string) =>
+        revokeConnectionsForPiece(getCarbonServiceRole(), piece, companyId),
+      onConnect: pieceConnectHooks[piece]
+    }
+  ])
+);
+
+/**
  * Server-side hooks registry for integrations.
  *
  * Hooks that depend on server-only modules (like getCarbonServiceRole)
@@ -58,6 +90,7 @@ import {
  * their server-only lifecycle hooks.
  */
 const serverHooks: Record<string, IntegrationServerHooks> = {
+  ...pieceHooks,
   email: {
     onHealthcheck: emailHealthcheck
   },

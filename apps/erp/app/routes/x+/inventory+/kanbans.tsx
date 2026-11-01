@@ -12,18 +12,22 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
+  getKanbanItems,
   getKanbanProjectedQuantities,
-  getKanbans
+  KANBAN_ITEMS_PAGING
 } from "~/modules/inventory/inventory.service";
 import KanbansTable from "~/modules/inventory/ui/Kanbans/KanbansTable";
 import { getLocationsList } from "~/modules/resources/resources.service";
 import { getKanbanOutputSetting } from "~/modules/settings/settings.service";
 import { getUserDefaults } from "~/modules/users/users.service";
+import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
+import { listErrorPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 const logger = getLogger("erp", "kanbans");
+
 export const handle: Handle = {
   breadcrumb: msg`Kanbans`,
   to: path.to.kanbans,
@@ -40,7 +44,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
 
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   let locationId = searchParams.get("location");
@@ -74,34 +78,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const [kanbans, kanbanOutput] = await Promise.all([
-    getKanbans(client, locationId, companyId, {
+  const [result, kanbanOutput] = await Promise.all([
+    getKanbanItems(client, locationId, companyId, {
       search,
       limit,
-      offset,
+      cursor,
       sorts,
       filters
     }),
     getKanbanOutputSetting(client, companyId)
   ]);
 
-  if (kanbans.error) {
+  if (result.error) {
+    if (cursor) {
+      logger.error("Failed to load a later page of kanbans", {
+        companyId,
+        error: result.error
+      });
+      return listErrorPage("kanbanItems");
+    }
     throw redirect(
       path.to.authenticatedRoot,
-      await flash(request, error(kanbans.error, "Failed to fetch kanbans"))
+      await flash(request, error(result.error, "Failed to fetch kanbans"))
     );
   }
 
-  // One query for every armed Transfer kanban on the page. A failure only
-  // hides the Projected (To) column; the list still loads.
-  const armedKanbanIds = (kanbans.data ?? [])
-    .filter(
-      (kanban) =>
-        kanban.replenishmentSystem === "Transfer" &&
-        kanban.replenishmentLevel !== null &&
-        kanban.id
-    )
-    .map((kanban) => kanban.id!);
+  const page = toPage(result.data, { limit, sorts }, KANBAN_ITEMS_PAGING);
+
+  // One query for every armed Transfer kanban on the page. Each row carries
+  // its own value, so every loaded page has it. A failure only hides the
+  // projected quantity; the list still loads.
+  const armedKanbanIds = page.rows.flatMap((item) =>
+    item.kanbans
+      .filter(
+        (kanban) =>
+          kanban.replenishmentSystem === "Transfer" &&
+          kanban.replenishmentLevel !== null
+      )
+      .map((kanban) => kanban.id)
+  );
 
   const projectedQuantities: Record<string, number> = {};
   if (armedKanbanIds.length > 0) {
@@ -123,26 +138,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    count: kanbans.count ?? 0,
-    kanbans: kanbans.data ?? [],
+    count: result.count,
+    kanbanItems: page.rows.map((item) => ({
+      ...item,
+      kanbans: item.kanbans.map((kanban) => ({
+        ...kanban,
+        projectedQuantity: projectedQuantities[kanban.id] ?? null
+      }))
+    })),
+    nextCursor: page.nextCursor,
     kanbanOutput: kanbanOutput.data?.kanbanOutput ?? "qrcode",
-    locationId,
-    projectedQuantities
+    locationId
   };
 }
 
 export default function KanbansRoute() {
-  const { count, kanbans, locationId, kanbanOutput, projectedQuantities } =
+  const { count, kanbanItems, nextCursor, locationId, kanbanOutput } =
     useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <KanbansTable
-        data={kanbans}
+        data={kanbanItems}
         count={count}
+        nextCursor={nextCursor}
         locationId={locationId}
         kanbanOutput={kanbanOutput}
-        projectedQuantities={projectedQuantities}
       />
       <RecordOutlet />
     </VStack>

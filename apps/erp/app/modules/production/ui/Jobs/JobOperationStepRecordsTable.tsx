@@ -53,10 +53,12 @@ type JobOperationStepRecord = {
 type JobOperationStepRecordsTableProps = {
   data: JobOperationStepRecord[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const JobOperationStepRecordsTable = memo(
-  ({ data, count }: JobOperationStepRecordsTableProps) => {
+  ({ data, count, nextCursor }: JobOperationStepRecordsTableProps) => {
     const { jobId } = useParams();
     const { t } = useLingui();
     if (!jobId) throw new Error("Job ID is required");
@@ -237,6 +239,8 @@ const JobOperationStepRecordsTable = memo(
       <Table<JobOperationStepRecord>
         compact
         count={count}
+        // Scoped to one job: no list registry entry, so no `listKey`.
+        infinite={{ dataKey: "stepRecords", nextCursor }}
         columns={columns}
         data={data}
         title={t`Step Records`}

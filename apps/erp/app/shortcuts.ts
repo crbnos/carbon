@@ -58,12 +58,6 @@ export const ONBOARDING_SHORTCUTS = {
   continue: "enter"
 } as const satisfies Record<string, ShortcutInput>;
 
-/** Table pagination. */
-export const PAGINATION_SHORTCUTS = {
-  previous: "arrowleft",
-  next: "arrowright"
-} as const satisfies Record<string, ShortcutInput>;
-
 /**
  * Unattributed Time review drawer. The table behind it pages on the arrows,
  * so the queue moves on j/k; 1–6 assign the matching suggestion card.

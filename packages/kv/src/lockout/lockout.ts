@@ -32,17 +32,17 @@ export const DEFAULT_MAX_LOCK_SECONDS = 60 * 60; // cap: 1 hour
 export const DEFAULT_LEVEL_TTL_SECONDS = 24 * 60 * 60; // 1 day
 
 /**
- * The per-account allowance for a login route, from its per-IP hourly
- * RATE_LIMIT: a quarter of the hour's budget per 15-minute window, never
- * fewer than DEFAULT_MAX_ATTEMPTS. At the default RATE_LIMIT of 5 that is
+ * The per-account allowance for a login route, from its per-IP RATE_LIMIT
+ * (attempts per 5 minutes): a quarter of it per 15-minute window, never
+ * fewer than DEFAULT_MAX_ATTEMPTS. At the default RATE_LIMIT of 10 that is
  * the default; a deployment that raises RATE_LIMIT raises this with it,
  * one knob for both.
  */
-export function maxAttemptsForRateLimit(ratePerHour: number): number {
-  if (!Number.isFinite(ratePerHour) || ratePerHour <= 0) {
+export function maxAttemptsForRateLimit(rateLimit: number): number {
+  if (!Number.isFinite(rateLimit) || rateLimit <= 0) {
     return DEFAULT_MAX_ATTEMPTS;
   }
-  return Math.max(DEFAULT_MAX_ATTEMPTS, Math.ceil(ratePerHour / 4));
+  return Math.max(DEFAULT_MAX_ATTEMPTS, Math.ceil(rateLimit / 4));
 }
 
 const DEFAULT_PREFIX = "@carbon/lockout";

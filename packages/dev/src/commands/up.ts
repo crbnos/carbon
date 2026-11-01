@@ -14,8 +14,7 @@ import { currentBranch } from "../git.js";
 import { onShutdown, tryConnect } from "../helpers.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
 import {
-  assemblerDepsBuilt,
-  assertAssemblerDepsBuilt,
+  assemblerMissingPrerequisite,
   installDeps,
   installSkills,
   spawnApps,
@@ -190,18 +189,21 @@ export async function up(opts: UpOpts = {}) {
         // the assembler still fails fast below.
         APP_CHOICES.map((c) => c.value).filter((v) => {
           if (v !== "assembler") return true;
-          if (assemblerDepsBuilt()) return true;
+          if (assemblerMissingPrerequisite() === null) return true;
           log.warn(
-            "assembler skipped from --all: its OCCT build isn't present " +
-              "(apps/assembler/scripts/build-occt.sh)"
+            "assembler skipped from --all: Rust, FCL or its OCCT build isn't " +
+              "present (pick the assembler on its own to see what to install)"
           );
           return false;
         })
       : await pickApps()
     : [];
   // Fail before booting anything heavy (docker, migrations) if the assembler is
-  // selected without its one-time OCCT build.
-  if (selectedApps.includes("assembler")) assertAssemblerDepsBuilt();
+  // selected without Rust, FCL or its one-time OCCT build.
+  if (selectedApps.includes("assembler")) {
+    const missing = assemblerMissingPrerequisite();
+    if (missing) throw new Error(missing);
+  }
   const size: StackSize = {
     minimal,
     full: !minimal && opts.full === true,

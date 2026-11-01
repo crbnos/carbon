@@ -37,7 +37,12 @@ import {
   Tr,
   useViewport
 } from "@carbon/react";
-import { datetime, fromLocalDateTime, toLocalDateTime } from "@carbon/utils";
+import {
+  datetime,
+  fromLocalDateTime,
+  requireAffected,
+  toLocalDateTime
+} from "@carbon/utils";
 import type { CalendarDateTime } from "@internationalized/date";
 import { toCalendarDateTime } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -169,10 +174,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "deleteEntry") {
     const entryId = formData.get("entryId") as string;
-    const result = await client
-      .from("timeCardEntry")
-      .delete()
-      .eq("id", entryId);
+    const result = await requireAffected(
+      client.from("timeCardEntry").delete().eq("id", entryId).select("id")
+    );
     return { success: !result.error, error: result.error?.message };
   }
 

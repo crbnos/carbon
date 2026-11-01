@@ -38,8 +38,8 @@ import {
   seedSsoIdentityForUser,
   uncoveredSsoDomainError
 } from "@carbon/ee/sso.server";
+import { batchTrigger, trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
-import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import {
   isNotificationTopic,
@@ -48,18 +48,29 @@ import {
   notificationPreferenceCompanyId
 } from "@carbon/notifications";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
-import { datetime, Edition, getClientIp } from "@carbon/utils";
+import {
+  chunkArray,
+  datetime,
+  Edition,
+  getClientIp,
+  isOwnSignaturePath,
+  requireAffected,
+  SIGNATURES_BUCKET
+} from "@carbon/utils";
 import { now, parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 import { render } from "react-email";
 import type { z } from "zod";
 import { getAttribute } from "~/modules/people/people.service";
 import { getSupplierContact } from "~/modules/purchasing/purchasing.service";
 import { getCustomerContact } from "~/modules/sales/sales.service";
 import type { EmployeeInsert, InviteInsert, User } from "~/modules/users/types";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import {
+  type BulkUserAction,
+  canBulkActOnUser
+} from "~/modules/users/users.models";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { insertEmployeeJob } from "../people/people.service";
 import type { UserSelectGroupMembers } from "./types";
@@ -207,7 +218,9 @@ export async function deleteGroup(
   client: SupabaseClient<Database>,
   groupId: string
 ) {
-  return client.from("group").delete().eq("id", groupId);
+  return requireAffected(
+    client.from("group").delete().eq("id", groupId).select("id")
+  );
 }
 
 export async function getCompaniesForUser(
@@ -295,6 +308,10 @@ export async function getUsersWithVerifiedMfa(
   return client.rpc("users_with_verified_mfa", { company_id: companyId });
 }
 
+export const EMPLOYEES_PAGING: Paging = {
+  defaultSorts: [{ column: "lastName", ascending: true }]
+};
+
 export async function getEmployees(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -304,7 +321,7 @@ export async function getEmployees(
 ) {
   let query = client
     .from("employees")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -320,11 +337,13 @@ export async function getEmployees(
     query = query.in("status", ["Active", "Invited"]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "lastName", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, EMPLOYEES_PAGING);
   return query;
 }
+
+export const CONSOLE_OPERATORS_PAGING: Paging = {
+  defaultSorts: [{ column: "lastName", ascending: true }]
+};
 
 /**
  * Gets console operators — users with @console.internal emails.
@@ -344,7 +363,7 @@ export async function getConsoleOperators(
 ) {
   let query = client
     .from("employees")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .like("email", "%@console.internal");
 
@@ -352,9 +371,7 @@ export async function getConsoleOperators(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "lastName", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, CONSOLE_OPERATORS_PAGING);
   return query;
 }
 
@@ -369,6 +386,10 @@ export async function getEmployeeType(
     .single();
 }
 
+export const EMPLOYEE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getEmployeeTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -376,7 +397,7 @@ export async function getEmployeeTypes(
 ) {
   let query = client
     .from("employeeType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -384,9 +405,7 @@ export async function getEmployeeTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, EMPLOYEE_TYPES_PAGING);
   }
 
   return query;
@@ -1138,7 +1157,13 @@ export async function createCustomerAccount(
   const code = crypto.randomUUID();
   const [contactUpdate, customerAccountInsert, inviteInsert] =
     await Promise.all([
-      client.from("customerContact").update({ userId }).eq("id", id),
+      requireAffected(
+        client
+          .from("customerContact")
+          .update({ userId })
+          .eq("id", id)
+          .select("id")
+      ),
       insertCustomerAccount(client, {
         id: userId,
         customerId,
@@ -1525,7 +1550,13 @@ export async function createSupplierAccount(
   const code = crypto.randomUUID();
   const [contactUpdate, supplierAccountInsert, inviteInsert] =
     await Promise.all([
-      client.from("supplierContact").update({ userId }).eq("id", id),
+      requireAffected(
+        client
+          .from("supplierContact")
+          .update({ userId })
+          .eq("id", id)
+          .select("id")
+      ),
       insertSupplierAccount(client, {
         id: userId,
         supplierId,
@@ -2099,13 +2130,16 @@ export async function convertConsoleOperatorToUser(
   }
 
   // Update user record: real email + no longer console operator
-  const updateUser = await serviceRole
-    .from("user")
-    .update({
-      email: email.toLowerCase(),
-      isConsoleOperator: false
-    } as any)
-    .eq("id", userId);
+  const updateUser = await requireAffected(
+    serviceRole
+      .from("user")
+      .update({
+        email: email.toLowerCase(),
+        isConsoleOperator: false
+      } as any)
+      .eq("id", userId)
+      .select("id")
+  );
 
   if (updateUser.error) {
     // Cleanup auth
@@ -2310,24 +2344,32 @@ export async function sendInviteEmail(
     invite.code,
     ctx.company.id
   );
-  await sendEmail({
-    to: invite.email,
-    subject: `You have been invited to join ${invite.companyName} on Carbon`,
-    headers: { "X-Entity-Ref-ID": nanoid() },
-    html: await render(
-      InviteEmail({
-        invitedByEmail: invite.invitedBy.email,
-        invitedByName: invite.invitedBy.fullName ?? "",
-        email: invite.email,
-        name: invite.name,
-        companyName: invite.companyName,
-        inviteLink,
-        ip: invite.ip ?? "127.0.0.1",
-        location: invite.city ?? "Unknown",
-        controlledEnvironment: CONTROLLED_ENVIRONMENT
-      })
-    )
+  const email = InviteEmail({
+    invitedByEmail: invite.invitedBy.email,
+    invitedByName: invite.invitedBy.fullName ?? "",
+    email: invite.email,
+    name: invite.name,
+    companyName: invite.companyName,
+    inviteLink,
+    ip: invite.ip ?? "127.0.0.1",
+    location: invite.city ?? "Unknown",
+    controlledEnvironment: CONTROLLED_ENVIRONMENT
   });
+  // Queued so it follows the company's Email settings; a failed dispatch only logs.
+  try {
+    await trigger("send-email", {
+      to: invite.email,
+      subject: `You have been invited to join ${invite.companyName} on Carbon`,
+      html: await render(email),
+      text: await render(email, { plainText: true }),
+      companyId: ctx.company.id
+    });
+  } catch (error) {
+    logger.error("Failed to queue the invite email", {
+      companyId: ctx.company.id,
+      error
+    });
+  }
 }
 
 /** Email a new customer or supplier account its invite link. */
@@ -2602,12 +2644,15 @@ export async function deleteUserAttributeValue(
     userAttributeValueId: string;
   }
 ) {
-  return client
-    .from("userAttributeValue")
-    .delete()
-    .eq("id", args.userAttributeValueId)
-    .eq("userAttributeId", args.userAttributeId)
-    .eq("userId", args.userId);
+  return requireAffected(
+    client
+      .from("userAttributeValue")
+      .delete()
+      .eq("id", args.userAttributeValueId)
+      .eq("userAttributeId", args.userAttributeId)
+      .eq("userId", args.userId)
+      .select("id")
+  );
 }
 
 export async function getAccount(client: SupabaseClient<Database>, id: string) {
@@ -2727,14 +2772,76 @@ export async function updateAvatar(
   userId: string,
   avatarUrl: string | null
 ) {
-  return client
+  return requireAffected(
+    client
+      .from("user")
+      .update(
+        sanitize({
+          avatarUrl
+        })
+      )
+      .eq("id", userId)
+      .select("id")
+  );
+}
+
+/**
+ * Save a user's signature path, and delete the file it replaces unless an
+ * approval recorded it: an approved document keeps printing the signature its
+ * approver had on file when they approved it.
+ */
+export async function updateSignature(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  userId: string,
+  signaturePath: string | null
+) {
+  const previous = await client
     .from("user")
-    .update(
-      sanitize({
-        avatarUrl
-      })
-    )
-    .eq("id", userId);
+    .select("signaturePath")
+    .eq("id", userId)
+    .single();
+  if (previous.error) {
+    logger.error("Failed to read the signature being replaced", {
+      userId,
+      error: previous.error
+    });
+  }
+
+  const saved = await requireAffected(
+    client
+      .from("user")
+      .update({ signaturePath, updatedAt: datetime.timestamp() })
+      .eq("id", userId)
+      .select("id")
+  );
+  if (saved.error) return saved;
+
+  const replaced = previous.data?.signaturePath;
+  if (!isOwnSignaturePath(userId, replaced) || replaced === signaturePath) {
+    return saved;
+  }
+
+  const recorded = await db
+    .selectFrom("approvalRequest")
+    .select("id")
+    .where("decisionSignaturePath", "=", replaced)
+    .limit(1)
+    .executeTakeFirst();
+  if (recorded) return saved;
+
+  // The bucket lets a user add files but not delete them.
+  const removal = await getCarbonServiceRole()
+    .storage.from(SIGNATURES_BUCKET)
+    .remove([replaced]);
+  if (removal.error) {
+    logger.error("Failed to remove the replaced signature", {
+      userId,
+      path: replaced,
+      error: removal.error
+    });
+  }
+  return saved;
 }
 
 export async function updatePublicAccount(
@@ -2747,7 +2854,13 @@ export async function updatePublicAccount(
     phone?: string;
   }
 ) {
-  return client.from("user").update(sanitize(account)).eq("id", account.id);
+  return requireAffected(
+    client
+      .from("user")
+      .update(sanitize(account))
+      .eq("id", account.id)
+      .select("id")
+  );
 }
 
 /** Values are set through `upsertAttributeValue`, which checks who may. */
@@ -2873,4 +2986,145 @@ export async function refuseAttributeValueChange(
   }
   if (!attribute.data?.canSelfManage) return ctx.error("forbidden", refusal);
   return null;
+}
+
+// --- Bulk actions of the Employees table --------------------------------
+// The action routes call the `queue*` functions with the selected users; the
+// background bulk-action job (`~/utils/table-jobs.server`) first narrows each
+// chunk of matching users with `selectUsersForBulkAction`, then calls them.
+
+/** Queues the `user-admin` deactivate job for each user. */
+export async function queueUserDeactivations(args: {
+  userIds: string[];
+  companyId: string;
+  actorId: string;
+  ip?: string;
+}) {
+  await batchTrigger(
+    "user-admin",
+    args.userIds.map((id) => ({
+      payload: {
+        id,
+        type: "deactivate" as const,
+        companyId: args.companyId,
+        actorId: args.actorId,
+        ip: args.ip
+      }
+    }))
+  );
+}
+
+/** Queues the `user-admin` resend-invite job for each user. */
+export async function queueInviteResends(args: {
+  userIds: string[];
+  companyId: string;
+  location: string;
+  ip: string;
+}) {
+  await batchTrigger(
+    "user-admin",
+    args.userIds.map((id) => ({
+      payload: {
+        id,
+        type: "resend" as const,
+        companyId: args.companyId,
+        location: args.location,
+        ip: args.ip
+      }
+    }))
+  );
+}
+
+/** Queues the `update-permissions` job for each user. */
+export async function queuePermissionUpdates(args: {
+  userIds: string[];
+  companyId: string;
+  actorId: string;
+  permissions: Record<
+    string,
+    { view: boolean; create: boolean; update: boolean; delete: boolean }
+  >;
+  addOnly: boolean;
+  ip?: string;
+}) {
+  await batchTrigger(
+    "update-permissions",
+    args.userIds.map((id) => ({
+      payload: {
+        id,
+        permissions: args.permissions,
+        addOnly: args.addOnly,
+        companyId: args.companyId,
+        actorId: args.actorId,
+        ip: args.ip
+      }
+    }))
+  );
+}
+
+/**
+ * The users a bulk action on the Employees table may act on, from the ids
+ * the background job read from the list: employees of the company only, by
+ * the table's own rule (`canBulkActOnUser`). Reads with the service role, as
+ * the action routes and the jobs they queue do, always scoped to the company.
+ */
+export async function selectUsersForBulkAction(args: {
+  action: BulkUserAction;
+  userIds: string[];
+  companyId: string;
+  actorId: string;
+}): Promise<{ allowed: string[]; skipped: number }> {
+  const serviceRole = getCarbonServiceRole();
+  const ids = [...new Set(args.userIds)];
+  const rows: {
+    id: string | null;
+    active: boolean | null;
+    email: string | null;
+  }[] = [];
+  for (const chunk of chunkArray(ids, 100)) {
+    const employees = await serviceRole
+      .from("employees")
+      .select("id, active, email")
+      .in("id", chunk)
+      .eq("companyId", args.companyId);
+    if (employees.error) {
+      logger.error("Failed to load the users of a bulk action", {
+        companyId: args.companyId,
+        error: employees.error
+      });
+      throw new Error("Failed to load the users of a bulk action");
+    }
+    rows.push(...employees.data);
+  }
+
+  let unrevokedInviteEmails = new Set<string>();
+  if (args.action === "invite") {
+    const emails = rows.flatMap((row) => (row.email ? [row.email] : []));
+    for (const chunk of chunkArray(emails, 100)) {
+      const invites = await serviceRole
+        .from("invite")
+        .select("email")
+        .in("email", chunk)
+        .eq("companyId", args.companyId)
+        .is("acceptedAt", null)
+        .is("revokedAt", null);
+      if (invites.error) {
+        logger.error("Failed to load the invites of a bulk action", {
+          companyId: args.companyId,
+          error: invites.error
+        });
+        throw new Error("Failed to load the invites of a bulk action");
+      }
+      unrevokedInviteEmails = new Set([
+        ...unrevokedInviteEmails,
+        ...invites.data.map((invite) => invite.email)
+      ]);
+    }
+  }
+
+  const context = { actorId: args.actorId, unrevokedInviteEmails };
+  const allowed = rows
+    .filter((row) => canBulkActOnUser(args.action, row, context))
+    .flatMap((row) => (row.id ? [row.id] : []));
+  return { allowed, skipped: ids.length - allowed.length };
 }

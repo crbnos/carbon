@@ -178,7 +178,7 @@ export function MaterialRowDetails({
 
   if (isPhone) {
     return (
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem] text-muted-foreground">
         <span className="font-medium text-foreground tabular-nums">
           <Trans>Qty {quantity}</Trans>
         </span>
@@ -269,7 +269,7 @@ export function OperationRowDetails({
 
   if (isPhone) {
     return (
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem] text-muted-foreground">
         {times.map(([type, time, unit]) => (
           <span key={type} className="inline-flex items-center gap-1">
             <TimeTypeIcon type={type} className="size-3.5" />

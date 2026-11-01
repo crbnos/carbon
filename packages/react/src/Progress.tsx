@@ -40,7 +40,7 @@ const Progress = forwardRef<
         style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
       />
       {numerator !== undefined && denominator !== undefined && (
-        <span className="absolute text-[9px] tabular-nums text-foreground right-2 top-1/2 transform -translate-y-1/2">
+        <span className="absolute text-[0.5625rem] tabular-nums text-foreground right-2 top-1/2 transform -translate-y-1/2">
           {numerator} of {denominator}
         </span>
       )}

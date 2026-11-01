@@ -19,7 +19,13 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
-import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
+import {
+  Boolean,
+  CustomFormFields,
+  Hidden,
+  Input,
+  Submit
+} from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { storageTypeValidator } from "../../inventory.models";
@@ -88,6 +94,13 @@ const StorageTypeForm = ({
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
                 <Input name="name" label={t`Name`} />
+                <Boolean
+                  name="nonNettable"
+                  label={t`Non-nettable`}
+                  termId="non-nettable"
+                  bordered
+                  description={t`Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it.`}
+                />
                 <CustomFormFields table="storageType" />
               </VStack>
             </ModalDrawerBody>

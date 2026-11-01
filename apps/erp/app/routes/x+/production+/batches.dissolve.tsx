@@ -4,55 +4,48 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { updateJobOperationBatch } from "~/modules/production/production.service";
-import { getDatabaseClient } from "~/services/database.server";
+import { dissolveBatches } from "~/modules/production/production.server";
+import { serviceContext } from "~/modules/service-context.server";
+import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 
-// Bulk dissolve — one server-fn dissolve per selected batch. Each is independent:
-// a batch that has recorded production is refused (the server fn's own guard) and
-// reported in `failed` while the rest still dissolve. Fetcher-driven; the table
-// toasts the summary and the loader revalidates.
+// Bulk dissolve (`dissolveBatches`): one dissolve per selected Planned or
+// Active batch. Each is independent: a batch that has recorded production is
+// refused and reported in `failed` while the rest still dissolve; a
+// Completing or Completed batch is skipped. `{ allMatching }` in
+// place of `batchIds` dissolves every matching batch in the background job
+// instead. Fetcher-driven; the table toasts the summary and the loader
+// revalidates.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
-  });
+  const auth = await requirePermissions(request, { update: "production" });
 
-  const { batchIds } = (await request.json()) as { batchIds?: string[] };
-  const ids = [...new Set((batchIds ?? []).filter(Boolean))];
+  const json = (await request.json().catch(() => null)) as {
+    batchIds?: string[];
+    allMatching?: unknown;
+  } | null;
+  const started = await startBackgroundBulkAction(
+    request,
+    "batches.dissolve",
+    { allMatching: json?.allMatching },
+    {}
+  );
+  if (started) return started;
+
+  const ids = [
+    ...new Set(
+      (Array.isArray(json?.batchIds) ? json.batchIds : []).filter(
+        (id): id is string => typeof id === "string" && id.length > 0
+      )
+    )
+  ];
   if (ids.length === 0) {
     return { success: false, message: "No batches selected" };
   }
 
-  // Resolve readable ids up front so failures name the batch, not its nanoid.
-  const rows = await client
-    .from("jobOperationBatch")
-    .select("id, readableId")
-    .in("id", ids)
-    .eq("companyId", companyId);
-  const readableById = new Map(
-    (rows.data ?? []).map((r) => [r.id, r.readableId] as const)
-  );
-
-  let dissolved = 0;
-  const failed: { readableId: string; message: string }[] = [];
-  for (const batchId of ids) {
-    const result = await updateJobOperationBatch(client, getDatabaseClient(), {
-      type: "dissolve",
-      batchId,
-      companyId,
-      userId
-    });
-    if (result.error) {
-      failed.push({
-        readableId: readableById.get(batchId) ?? batchId,
-        message: getErrorMessage(result.error, "Failed to dissolve")
-      });
-    } else {
-      dissolved += 1;
-    }
-  }
-
-  return { success: true, dissolved, failed };
+  const result = await dissolveBatches(serviceContext(auth), {
+    batchIds: ids
+  });
+  if (result.error) return { success: false, message: result.error.message };
+  return { success: true, ...result.data };
 }

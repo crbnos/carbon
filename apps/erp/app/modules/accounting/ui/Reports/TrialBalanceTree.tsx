@@ -89,9 +89,7 @@ const TrialBalanceTree = memo(
 
     const openLedger = (accountId: string) => {
       if (!ledgerPath) return;
-      const nextParams = new URLSearchParams(params);
-      nextParams.delete("offset");
-      const qs = nextParams.toString();
+      const qs = params.toString();
       navigate(qs ? `${ledgerPath(accountId)}?${qs}` : ledgerPath(accountId));
     };
 

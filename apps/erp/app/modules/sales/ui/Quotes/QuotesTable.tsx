@@ -38,6 +38,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
@@ -49,9 +50,10 @@ import QuoteStatus from "./QuoteStatus";
 type QuotesTableProps = {
   data: QuotationListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
+const QuotesTable = memo(({ data, count, infinite }: QuotesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -351,6 +353,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
     <>
       <Table<QuotationListItem>
         count={count}
+        infinite={infinite}
         columns={columns}
         data={data}
         defaultColumnPinning={{

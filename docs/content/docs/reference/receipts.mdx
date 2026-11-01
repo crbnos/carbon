@@ -7,6 +7,12 @@ A **receipt** records incoming goods from a <Term id="purchase-order">purchase o
 
 Each receipt line references the purchase-order line it fulfills. Posting increases inventory and the order line's received quantity. Its journal debits inventory—or <Term id="wip">work-in-process</Term> for outside processing—and credits a <Term id="gr-ir">goods-received-not-invoiced</Term> accrual that the supplier invoice later clears.
 
+## Find the purchase order for a delivery
+
+**Inventory → Receiving** lists every line still to be received on a purchase order waiting to be received, grouped by order, oldest first. Search with whatever the packing slip shows: order number, supplier, part number or name, the supplier's part number, the supplier's reference, or the tracking number. Every word must match, and case, spaces and punctuation are ignored, so `RAB-514` finds `RAB514`.
+
+Each order has a **Receive** button that creates its receipt. An order that already has a Draft receipt shows that receipt's number instead, and opens it. The page needs view access to both Inventory and Purchasing.
+
 ## Fields
 
 <FieldTable>

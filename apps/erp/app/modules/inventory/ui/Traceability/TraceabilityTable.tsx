@@ -275,7 +275,7 @@ function TreeRow({
           </span>
         )}
         {!row.isReference && entity.sourceDocument && (
-          <span className="text-[11px] text-muted-foreground truncate max-w-[140px] hidden md:inline">
+          <span className="text-[0.6875rem] text-muted-foreground truncate max-w-[140px] hidden md:inline">
             {entity.sourceDocument}
           </span>
         )}
@@ -346,7 +346,7 @@ function TreeRow({
         </span>
       )}
       {!row.isReference && activity.sourceDocument && (
-        <span className="text-[11px] text-muted-foreground truncate max-w-[140px] hidden md:inline">
+        <span className="text-[0.6875rem] text-muted-foreground truncate max-w-[140px] hidden md:inline">
           {activity.sourceDocument}
         </span>
       )}
@@ -412,7 +412,7 @@ function RefBadge() {
   return (
     <Badge
       variant="outline"
-      className="text-[9px] px-1 py-0 uppercase tracking-wide"
+      className="text-[0.5625rem] px-1 py-0 uppercase tracking-wide"
     >
       ref
     </Badge>

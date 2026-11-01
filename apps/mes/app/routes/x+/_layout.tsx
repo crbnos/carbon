@@ -29,7 +29,7 @@ import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
 import { RouteRealtime, useLoaderQuery } from "@carbon/query";
-import { setClientCompanyId } from "@carbon/query/cache";
+import { RefreshRate, setClientCompanyId } from "@carbon/query/cache";
 import {
   AnnouncementBar,
   Button,
@@ -39,8 +39,10 @@ import {
   ItarUserCertification,
   SidebarProvider,
   TooltipProvider,
+  toast,
   useKeyboardWedge,
   useNProgress,
+  useScanPending,
   VStack
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
@@ -68,14 +70,14 @@ import {
   Form,
   Outlet,
   useLoaderData,
-  useLocation,
-  useNavigate
+  useLocation
 } from "react-router";
 import { AppSidebar } from "~/components";
 import { ConsolePill } from "~/components/ConsolePill";
 import { isTabBarPath, MesTabBar } from "~/components/MesTabBar";
 import { PinInOverlay } from "~/components/PinInOverlay";
 import RealtimeDataProvider from "~/components/RealtimeDataProvider";
+import { ScanPendingOverlay } from "~/components/ScanPendingOverlay";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
 import ShortcutHelp from "~/components/ShortcutHelp";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
@@ -360,7 +362,6 @@ export default function AuthenticatedRoute() {
     shellLoadedAt = Date.now();
   }, [loaderData]);
 
-  const navigate = useNavigate();
   const { pathname } = useLocation();
   const showTabBar = isTabBarPath(pathname);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -392,24 +393,21 @@ export default function AuthenticatedRoute() {
   }, [consoleIsIdle]);
 
   useNProgress();
+
+  const userId = user?.id;
+  const { t } = useLingui();
   useKeyboardWedge({
     test: (input) =>
       (input.startsWith(MES_URL) || input.startsWith(ERP_URL)) &&
       !input.includes("/kanban/complete/"), // we handle this more gracefully in JobOperation
-    callback: (input) => {
-      try {
-        const url = new URL(input);
-        navigate(url.pathname + url.search);
-      } catch {
-        navigate(input);
-      }
-    }
+    inTextFields: true,
+    onUnrecognized: () => toast.error(t`Nothing on this page uses that barcode`)
   });
-
-  const userId = user?.id;
-  const { t } = useLingui();
+  const scanPending = useScanPending();
+  // Not data a save or a realtime change touches, so it refreshes on its own.
   const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
-    path.to.api.systemStatus
+    path.to.api.systemStatus,
+    { invalidate: false, refetchInterval: RefreshRate.Low }
   );
   const { locale } = useLocale();
   const moveDate = systemStatus.data?.accountMoveDate;
@@ -558,6 +556,7 @@ export default function AuthenticatedRoute() {
                   {/* From lg the shell does not scroll, so the page area stops at the
                       screen and each page's own scroller takes the overflow. */}
                   <div
+                    data-app-card
                     className={cn(
                       "flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border lg:max-h-[calc(100dvh-1rem)]",
                       showTabBar && "max-md:pb-[var(--mes-tab-bar-h)]"
@@ -608,6 +607,7 @@ export default function AuthenticatedRoute() {
                       </Await>
                     </Suspense>
                   )}
+                  {scanPending && <ScanPendingOverlay />}
                   {consoleMode && !pinnedInUser && (
                     <PinInOverlay
                       companyId={company.companyId!}

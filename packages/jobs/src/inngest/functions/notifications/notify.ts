@@ -4,13 +4,15 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { fetchAllByIds } from "@carbon/database";
-import { resolveIntegrationSecrets } from "@carbon/ee";
 import { emailNotificationsEnabled } from "@carbon/ee/email-notifications.server";
 import {
   type CompanyIntegration,
   notifyTaskAssigned
 } from "@carbon/ee/notifications";
-import { getSlackUserIdByCarbonId } from "@carbon/ee/slack.server";
+import {
+  getSlackUserIdByCarbonId,
+  getSlackWorkspace
+} from "@carbon/ee/slack.server";
 import {
   CONTROLLED_ENVIRONMENT,
   ERP_URL,
@@ -234,7 +236,16 @@ const defaultDestinations: Partial<
   // email per sweep cycle would be noise. Browser push still follows in-app,
   // so the integration's last editor gets a push every sweep (30 min) until
   // the failures clear — deliberate: push mirrors the bell exactly.
-  [NotificationEvent.IntegrationSync]: [NotificationDestination.InApp]
+  [NotificationEvent.IntegrationSync]: [NotificationDestination.InApp],
+  // One per export the user asked for; the email link downloads the file. The
+  // job sends a failure in-app only, since there is no file to link to.
+  [NotificationEvent.TableExport]: [
+    NotificationDestination.InApp,
+    NotificationDestination.Email
+  ],
+  // In-app only: the counts are the whole message, and there is no file or
+  // record for an email to link to.
+  [NotificationEvent.TableBulkAction]: [NotificationDestination.InApp]
 };
 
 export const notifyFunction = inngest.createFunction(
@@ -762,29 +773,17 @@ export const notifyFunction = inngest.createFunction(
       const slackEvents = await step.run(
         "resolve-slack-recipients",
         async () => {
-          const { data: integration, error } = await client
-            .from("companyIntegration")
-            .select("active, metadata, secretRef")
-            .eq("companyId", payload.companyId)
-            .eq("id", "slack")
-            .maybeSingle();
-
-          if (error) {
-            console.error("Failed to resolve Slack integration", error);
+          // The company's Slack connection (oldest Active); the token comes
+          // from the vault through the one sanctioned reader. A workspace that
+          // cannot be read is "no Slack", exactly as an uninstalled one was.
+          let accessToken: string | undefined;
+          try {
+            accessToken = (await getSlackWorkspace(client, payload.companyId))
+              ?.token;
+          } catch (error) {
+            console.error("Failed to resolve Slack workspace", error);
             return [];
           }
-          if (!integration?.active) return [];
-
-          // Secret material (access_token) lives in Supabase Vault; merge it
-          // back so we read the same shape as before. `client` is service-role.
-          const metadata = (await resolveIntegrationSecrets(
-            client,
-            payload.companyId,
-            "slack",
-            integration.metadata,
-            integration.secretRef
-          )) as { access_token?: string } | null;
-          const accessToken = metadata?.access_token;
           if (!accessToken) return [];
 
           const ctaUrl = buildNotificationLink(

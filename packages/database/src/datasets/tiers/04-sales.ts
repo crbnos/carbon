@@ -242,7 +242,8 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         currencyCode: "USD",
         opportunityId,
         orderDate: resolveDate(ctx.anchor, spec.order.orderDateOffset),
-        assignee: spec.order.assignee === "self" ? ctx.userId : undefined
+        assignee: spec.order.assignee === "self" ? ctx.userId : undefined,
+        customerReference: spec.order.customerReference
       });
       await insertRow(ctx, "salesOrderPayment", {
         id: orderId,
@@ -273,7 +274,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
           salesOrderId: orderId,
           salesOrderLineType: "Part",
           itemId: item.id,
-          description: item.name,
+          description: line.description ?? item.name,
           saleQuantity: line.saleQuantity,
           unitPrice: line.unitPrice,
           unitOfMeasureCode: "EA",
@@ -438,7 +439,8 @@ export async function runTier4(ctx: Ctx): Promise<void> {
       locationId: plantId,
       currencyCode: "USD",
       opportunityId: oppId,
-      orderDate: resolveDate(ctx.anchor, spec.orderDateOffset)
+      orderDate: resolveDate(ctx.anchor, spec.orderDateOffset),
+      customerReference: spec.customerReference
     });
     await insertRow(ctx, "salesOrderPayment", {
       id: soId,
@@ -457,7 +459,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
       salesOrderId: soId,
       salesOrderLineType: "Part",
       itemId: item.id,
-      description: item.name,
+      description: spec.lineDescription ?? item.name,
       saleQuantity: 1,
       unitPrice: spec.unitPrice,
       unitOfMeasureCode: "EA",

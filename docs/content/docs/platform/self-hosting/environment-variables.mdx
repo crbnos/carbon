@@ -18,7 +18,7 @@ Platform-wide behavior and edition.
 <EnvVar name="ERP_URL" type="url">Public URL of the ERP app. Required for the MES: it sends shop-floor postings (material issues, completions, picking) to this address.</EnvVar>
 <EnvVar name="MES_URL" type="url">Public URL of the MES app.</EnvVar>
 <EnvVar name="DEFAULT_LANGUAGE" type="string">Default UI language.</EnvVar>
-<EnvVar name="RATE_LIMIT" type="number">Requests per window allowed against the API.</EnvVar>
+<EnvVar name="RATE_LIMIT" type="number">Sign-in, MFA and unlock attempts allowed per IP every 5 minutes (default 10).</EnvVar>
 </EnvVars>
 
 ## Database — Supabase
@@ -113,12 +113,20 @@ OAuth credentials for each connector, all optional, set only the ones you use.
 <EnvVar name="JIRA_CLIENT_SECRET" type="string">Jira OAuth client secret.</EnvVar>
 <EnvVar name="SLACK_CLIENT_ID" type="string">Slack OAuth client id.</EnvVar>
 <EnvVar name="SLACK_CLIENT_SECRET" type="string">Slack OAuth client secret.</EnvVar>
+<EnvVar name="SLACK_OAUTH_REDIRECT_URL" type="url">Callback for the Slack install: `https://<erp-host>/api/integrations/slack/oauth`. Must be registered on the Slack app. See [Connect Slack](/docs/integrations/setup/slack).</EnvVar>
+<EnvVar name="SLACK_SIGNING_SECRET" type="string">The Slack app's signing secret. Required: without it the Slack install ends on an error, and Carbon refuses Slack interactivity requests it cannot verify.</EnvVar>
+<EnvVar name="SLACK_STATE_SECRET" type="string">Any long random string. Signs the state of a Slack install. Required: without it the install cannot start.</EnvVar>
+<EnvVar name="RAMP_CLIENT_ID" type="string">Client id of the Ramp developer app. Without it the Ramp card reads Not Configured. See [Connect Ramp](/docs/integrations/setup/ramp).</EnvVar>
+<EnvVar name="RAMP_CLIENT_SECRET" type="string">Client secret of the Ramp developer app.</EnvVar>
 <EnvVar name="ONSHAPE_CLIENT_ID" type="string">Client id of the Onshape OAuth application for the pull integration (`onshape`). Without it the Onshape card reads Not Configured.</EnvVar>
 <EnvVar name="ONSHAPE_CLIENT_SECRET" type="string">Client secret of the pull integration's Onshape OAuth application.</EnvVar>
 <EnvVar name="ONSHAPE_OAUTH_REDIRECT_URL" type="url">Callback for the pull integration: `https://<erp-host>/api/integrations/onshape/oauth`. Must be registered on the pull integration's Onshape application.</EnvVar>
 <EnvVar name="ONSHAPE_V2_CLIENT_ID" type="string">Client id of the Onshape OAuth application for the panel integration (`onshape-v2`), a separate application from the pull integration's. Without it the Onshape V2 card reads Not Configured.</EnvVar>
 <EnvVar name="ONSHAPE_V2_CLIENT_SECRET" type="string">Client secret of the panel integration's Onshape OAuth application.</EnvVar>
 <EnvVar name="ONSHAPE_V2_OAUTH_REDIRECT_URL" type="url">Callback for the panel integration: `https://<erp-host>/api/integrations/onshape-v2/oauth`. Must be registered on the panel integration's Onshape application. Without it the Onshape V2 Connect button fails with "Onshape isn't configured".</EnvVar>
+<EnvVar name="GOOGLE_CLIENT_ID" type="string">Client id of the Google OAuth application used by the Google Calendar and Gmail workflow steps. Without it both cards read Coming soon.</EnvVar>
+<EnvVar name="GOOGLE_CLIENT_SECRET" type="string">Client secret of that Google OAuth application.</EnvVar>
+<EnvVar name="GOOGLE_OAUTH_REDIRECT_URL" type="url">Callback for workflow integration connections: `https://<erp-host>/api/integrations/connections/callback`. Must be registered on the Google OAuth application.</EnvVar>
 <EnvVar name="EXCHANGE_RATES_API_KEY" type="string">Currency exchange-rate feed.</EnvVar>
 <EnvVar name="GOOGLE_PLACES_API_KEY" type="string">Address autocomplete.</EnvVar>
 </EnvVars>

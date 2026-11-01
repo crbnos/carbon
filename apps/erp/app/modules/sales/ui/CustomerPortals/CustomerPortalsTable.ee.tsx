@@ -15,6 +15,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { CustomerAvatar, Hyperlink, New, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -24,10 +25,11 @@ type CustomerPortalsTableProps = {
   appUrl: string;
   data: CustomerPortal[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const CustomerPortalsTable = memo(
-  ({ appUrl, data, count }: CustomerPortalsTableProps) => {
+  ({ appUrl, data, count, infinite }: CustomerPortalsTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -59,6 +61,8 @@ const CustomerPortalsTable = memo(
         {
           accessorKey: "portalLink",
           header: t`Portal Link`,
+          // The link is built from the id; `externalLink` has no such column to sort by.
+          enableSorting: false,
           cell: ({ row }) => {
             const portalUrl = `${appUrl}/share/customer/${row.original.id}`;
             return (
@@ -123,6 +127,7 @@ const CustomerPortalsTable = memo(
         data={data}
         columns={columns}
         count={count}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "sales") && (
             <New

@@ -22,7 +22,12 @@ import {
 import type { ChartConfig } from "@carbon/react/Chart";
 import { ChartContainer, ChartTooltip } from "@carbon/react/Chart";
 import { formatDate } from "@carbon/utils";
-import { getLocalTimeZone, startOfWeek, today } from "@internationalized/date";
+import {
+  getLocalTimeZone,
+  parseDate,
+  startOfWeek,
+  today
+} from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { memo, useDeferredValue, useEffect, useMemo, useState } from "react";
@@ -37,7 +42,12 @@ import {
 } from "recharts";
 import type { z } from "zod";
 import { Hidden, Item, Location, Number, Submit } from "~/components/Form";
-import { usePermissions, useQuantityFormatter } from "~/hooks";
+import {
+  useCompanySettings,
+  usePermissions,
+  useQuantityFormatter
+} from "~/hooks";
+import { planningWeekNumber } from "~/modules/production/ui/Planning/planning-week-number";
 import { path } from "~/utils/path";
 import { demandProjectionValidator } from "../../production.models";
 
@@ -98,13 +108,28 @@ const DemandProjectionsForm = ({
 
   const timeZone = getLocalTimeZone();
   const startDate = startOfWeek(today(timeZone), "en-US");
-  const weekLabels = Array.from({ length: WEEK_COUNT }, (_, i) => {
+  const useCalendarWeeks = useCompanySettings()?.useCalendarWeeks ?? false;
+  // The number each week is headed with: 1, 2, … from this week, or the
+  // calendar week of the year when the company plans by calendar week.
+  const firstWeek = startDate.toString();
+  const weekNumbers = useMemo(
+    () =>
+      Array.from({ length: WEEK_COUNT }, (_, i) =>
+        planningWeekNumber(
+          parseDate(firstWeek).add({ weeks: i }).toString(),
+          i,
+          useCalendarWeeks
+        )
+      ),
+    [firstWeek, useCalendarWeeks]
+  );
+  const weekLabels = weekNumbers.map((weekNumber, i) => {
     const formattedDate = formatDate(
       startDate.add({ weeks: i }).toString(),
       { month: "numeric", day: "numeric" },
       i18n.locale
     );
-    return t`Week ${i + 1} (${formattedDate})`;
+    return t`Week ${weekNumber} (${formattedDate})`;
   });
 
   // Local mirror of the 52 week inputs, seeded from initialValues, that drives
@@ -151,12 +176,12 @@ const DemandProjectionsForm = ({
     return deferredWeekValues.map((demand, i) => {
       cumulative += demand;
       return {
-        week: i + 1,
+        week: weekNumbers[i] ?? i + 1,
         demand,
         cumulative
       };
     });
-  }, [deferredWeekValues]);
+  }, [deferredWeekValues, weekNumbers]);
 
   const chartConfig: ChartConfig = useMemo(
     () => ({

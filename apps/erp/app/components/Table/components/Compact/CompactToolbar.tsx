@@ -167,7 +167,7 @@ export function CompactToolbar({
                 onClick={() => setSheetOpen(true)}
               />
               {activeCount > 0 ? (
-                <span className="pointer-events-none absolute -top-1 -right-1 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] font-medium leading-4 text-primary-foreground tabular-nums">
+                <span className="pointer-events-none absolute -top-1 -right-1 min-w-4 rounded-full bg-primary px-1 text-center text-[0.625rem] font-medium leading-4 text-primary-foreground tabular-nums">
                   {activeCount}
                 </span>
               ) : null}
@@ -217,7 +217,7 @@ export function CompactToolbar({
  * authenticated route" and the page answered 500.
  */
 function ExportCsvItem({ csvExport }: { csvExport: DownloadProps }) {
-  const exportCsv = useCsvDownload(csvExport);
+  const { onClick: exportCsv } = useCsvDownload(csvExport);
   return (
     <DropdownMenuItem onClick={exportCsv}>
       <DropdownMenuIcon icon={<LuDownload />} />

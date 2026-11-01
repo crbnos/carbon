@@ -20,6 +20,7 @@ import {
   getEnforcementRules
 } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -35,7 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const rules = await getEnforcementRules(client, "sales", companyId, {
     search: null,
-    limit: 1000,
+    limit: SINGLE_LOAD_LIMIT,
     offset: 0,
     sorts: []
   });

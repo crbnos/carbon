@@ -23,6 +23,7 @@ import { Enumerable } from "./Enumerable";
 import { EnumerableGroup } from "./EnumerableGroup";
 import { ExchangeRateUpdatedAt } from "./ExchangeRateUpdatedAt";
 import FileDropzone from "./FileDropzone";
+import { Highlight, searchMatches } from "./Highlight";
 import Hyperlink from "./Hyperlink";
 import {
   MethodBadge,
@@ -83,6 +84,7 @@ export {
   ExchangeRateUpdatedAt,
   exportOnlyColumn,
   FileDropzone,
+  Highlight,
   Hyperlink,
   ItemLifecycleBadge,
   ItemThumbnail,
@@ -111,6 +113,7 @@ export {
   SourcingTypeIcon,
   SupplierAvatar,
   SupplierAvatarGroup,
+  searchMatches,
   Table,
   TimeTypeIcon,
   TrackingTypeIcon,

@@ -13,6 +13,7 @@ export const printerContexts = [
   "shipping",
   "receiving",
   "inventory",
+  "kanban",
   "workCenter"
 ] as const;
 
@@ -22,7 +23,8 @@ const sourceDocumentContexts: Record<string, PrinterContext> = {
   Shipment: "shipping",
   Receipt: "receiving",
   StockTransfer: "inventory",
-  StorageUnit: "inventory"
+  StorageUnit: "inventory",
+  Kanban: "kanban"
 };
 
 /**
@@ -81,6 +83,7 @@ export function emptyLocationAssignment(): LocationAssignment {
     shipping: { printerRouteId: null, autoPrint: true },
     receiving: { printerRouteId: null, autoPrint: true },
     inventory: { printerRouteId: null, autoPrint: true },
+    kanban: { printerRouteId: null, autoPrint: true },
     workCenters: {}
   };
 }

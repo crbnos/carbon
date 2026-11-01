@@ -32,11 +32,6 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
 
 FROM deps AS build
 ARG APP
-# CDN base for client assets, baked into the build (vite base is build-time;
-# apps/*/vite.config.ts normalizes the trailing slash). Empty keeps assets
-# same-origin — the controlled/air-gapped variant is this default, not a flag.
-ARG ASSETS_URL
-ENV ASSETS_URL=${ASSETS_URL}
 RUN --mount=type=cache,id=turbo,target=/repo/.turbo,sharing=locked \
     pnpm run build:${APP}
 # Build scratch `runner` must not inherit: .vite is the dep-optimizer cache,
@@ -103,7 +98,9 @@ FROM bootstrap AS ops
 # The app's production dependencies, installed on their own: what the built
 # server loads from node_modules. The bundle inlines everything else, so that
 # is @carbon/serve, which `pnpm start` runs from source, and whatever the
-# bundle leaves external (erp's AI SDK). Every package lists in
+# bundle leaves external (erp's AI SDK). @carbon/database's too: the chart's
+# wait-for-migrations init container runs this image in packages/database
+# and loads pg from there. Every package lists in
 # `dependencies` only what its runtime code imports, so no build tool, CLI or
 # test runner is installed here. Its own stage, so the files it deletes leave
 # no layer behind in `runner`.
@@ -112,7 +109,8 @@ ARG APP
 ARG SOURCEMAPS
 RUN rm -rf node_modules apps/*/node_modules packages/*/node_modules docs/content/node_modules
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
-    pnpm install --prod --frozen-lockfile --prefer-offline --ignore-scripts --filter-prod "${APP}..."
+    pnpm install --prod --frozen-lockfile --prefer-offline --ignore-scripts \
+      --filter-prod "${APP}..." --filter-prod @carbon/database
 COPY --from=build /repo/apps/${APP}/build ./apps/${APP}/build
 RUN find node_modules -type f \( -name '*.d.ts' -o -name '*.d.mts' \
         -o -name '*.d.cts' -o -name '*.md' \) -delete 2>/dev/null || true ; \

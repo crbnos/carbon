@@ -24,6 +24,7 @@ import {
   ModalHeader,
   ModalTitle,
   toast,
+  toastError,
   useDisclosure,
   useViewport
 } from "@carbon/react";
@@ -429,7 +430,7 @@ function CreateRevisionModal({
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success === false) {
-      toast.error(fetcher.data?.message);
+      toastError(fetcher.data.message, fetcher.data);
     }
 
     if (fetcher.data?.success === true) {

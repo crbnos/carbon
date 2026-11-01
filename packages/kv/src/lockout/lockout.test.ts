@@ -276,8 +276,8 @@ describe("AccountLockout", () => {
 });
 
 describe("maxAttemptsForRateLimit", () => {
-  it("is a quarter of the hourly RATE_LIMIT, never below the default", () => {
-    expect(maxAttemptsForRateLimit(5)).toBe(DEFAULT_MAX_ATTEMPTS);
+  it("is a quarter of RATE_LIMIT, never below the default", () => {
+    expect(maxAttemptsForRateLimit(10)).toBe(DEFAULT_MAX_ATTEMPTS);
     expect(maxAttemptsForRateLimit(1000)).toBe(250);
     expect(maxAttemptsForRateLimit(30)).toBe(8);
     expect(maxAttemptsForRateLimit(Number.NaN)).toBe(DEFAULT_MAX_ATTEMPTS);

@@ -25,6 +25,7 @@ const log = getLogger("jobs", "print-job");
 import type { GeneratedContent, PrintableDocumentItem } from "./renderers";
 import { renderItemBuiltIn, renderItemWithTemplate } from "./renderers";
 import {
+  type KanbanCardItem,
   resolveKanbanData,
   resolveStorageUnitData,
   resolveTrackedEntityData
@@ -58,75 +59,101 @@ export const printJobFunction = inngest.createFunction(
       printerRouteId: explicitPrinterRouteId
     } = payload;
 
-    const thirtySecondsAgo = new Date(Date.now() - 30_000).toISOString();
-    const { count: recentJobCount } = await client
-      .from("printJob")
-      .select("id", { count: "exact", head: true })
-      .eq("sourceDocumentId", sourceDocumentId)
-      .eq("companyId", companyId)
-      .eq("origin", "auto")
-      .gte("createdAt", thirtySecondsAgo);
+    // Everything that writes print jobs runs in ONE step. A step makes Inngest
+    // run the function again from the top, so code outside a step runs again:
+    // the duplicate guard then saw the job just written and threw, and a
+    // kanban's Start and Complete cards (the second label onward of any
+    // document) were never printed.
+    const { printJobIds, deliverJobIds } = await step.run(
+      "create-print-jobs",
+      async () => {
+        const thirtySecondsAgo = new Date(Date.now() - 30_000).toISOString();
+        const { count: recentJobCount } = await client
+          .from("printJob")
+          .select("id", { count: "exact", head: true })
+          .eq("sourceDocumentId", sourceDocumentId)
+          .eq("companyId", companyId)
+          .eq("origin", "auto")
+          .gte("createdAt", thirtySecondsAgo);
 
-    if (recentJobCount && recentJobCount > 0) {
-      throw new NonRetriableError(
-        `Print jobs already exist for ${sourceDocument} ${sourceDocumentId}`
-      );
-    }
+        if (recentJobCount && recentJobCount > 0) {
+          throw new NonRetriableError(
+            `Print jobs already exist for ${sourceDocument} ${sourceDocumentId}`
+          );
+        }
 
-    let printerConfig: Awaited<ReturnType<typeof getCachedPrinterConfig>> =
-      null;
+        let printerConfig: Awaited<ReturnType<typeof getCachedPrinterConfig>> =
+          null;
 
-    if (explicitPrinterRouteId) {
-      const { data: route } = await client
-        .from("printerRoute")
-        .select("id, name, format, mediaSizeId, printerUrl, apiKey, templateId")
-        .eq("id", explicitPrinterRouteId)
-        .eq("companyId", companyId)
-        .single();
-      if (route) {
-        printerConfig = {
-          printerRouteId: route.id,
-          printerUrl: route.printerUrl,
-          format: route.format as "zpl" | "pdf",
-          mediaSizeId: route.mediaSizeId,
-          templateId: route.templateId,
-          autoPrint: true
-        };
+        if (explicitPrinterRouteId) {
+          const { data: route } = await client
+            .from("printerRoute")
+            .select(
+              "id, name, format, mediaSizeId, printerUrl, apiKey, templateId"
+            )
+            .eq("id", explicitPrinterRouteId)
+            .eq("companyId", companyId)
+            .single();
+          if (route) {
+            printerConfig = {
+              printerRouteId: route.id,
+              printerUrl: route.printerUrl,
+              format: route.format as "zpl" | "pdf",
+              mediaSizeId: route.mediaSizeId,
+              templateId: route.templateId,
+              autoPrint: true
+            };
+          }
+        } else if (locationId) {
+          printerConfig = await getCachedPrinterConfig(
+            client,
+            companyId,
+            locationId,
+            getPrinterContextForSource(sourceDocument, workCenterId),
+            workCenterId
+          );
+        }
+
+        const documentTypeIds = getDocumentTypesForSource(sourceDocument);
+        const allPrintJobIds: string[] = [];
+        const allDeliverJobIds: string[] = [];
+
+        for (const documentTypeId of documentTypeIds) {
+          const docType = getDocumentType(documentTypeId);
+          if (!docType) continue;
+
+          const created = await processDocumentType(client, {
+            documentTypeId,
+            hasBuiltInRenderer: docType.builtInRenderer !== null,
+            sourceDocument,
+            sourceDocumentId,
+            companyId,
+            userId,
+            printerUrl: printerConfig?.printerUrl ?? "",
+            format: printerConfig?.format ?? docType.defaultFormat,
+            mediaSizeId: printerConfig?.mediaSizeId ?? DEFAULT_MEDIA_SIZE_ID,
+            templateId: printerConfig?.templateId ?? null
+          });
+
+          allPrintJobIds.push(...created.printJobIds);
+          allDeliverJobIds.push(...created.deliverJobIds);
+        }
+
+        return { printJobIds: allPrintJobIds, deliverJobIds: allDeliverJobIds };
       }
-    } else if (locationId) {
-      printerConfig = await getCachedPrinterConfig(
-        client,
-        companyId,
-        locationId,
-        getPrinterContextForSource(sourceDocument, workCenterId),
-        workCenterId
+    );
+
+    if (deliverJobIds.length > 0) {
+      await step.sendEvent(
+        "deliver",
+        deliverJobIds.map((printJobId) => ({
+          name: "carbon/print-job-deliver" as const,
+          data: { printJobId, companyId }
+        }))
       );
     }
 
-    const documentTypeIds = getDocumentTypesForSource(sourceDocument);
-    const allPrintJobIds: string[] = [];
-
-    for (const documentTypeId of documentTypeIds) {
-      const docType = getDocumentType(documentTypeId);
-      if (!docType) continue;
-
-      const printJobIds = await processDocumentType(client, step, {
-        documentTypeId,
-        hasBuiltInRenderer: docType.builtInRenderer !== null,
-        sourceDocument,
-        sourceDocumentId,
-        companyId,
-        userId,
-        printerUrl: printerConfig?.printerUrl ?? "",
-        format: printerConfig?.format ?? docType.defaultFormat,
-        mediaSizeId: printerConfig?.mediaSizeId ?? DEFAULT_MEDIA_SIZE_ID,
-        templateId: printerConfig?.templateId ?? null
-      });
-
-      allPrintJobIds.push(...printJobIds);
-    }
-
-    return { printJobIds: allPrintJobIds, count: allPrintJobIds.length };
+    return { printJobIds, count: printJobIds.length };
   }
 );
 
@@ -179,6 +206,12 @@ async function resolveDocumentItems(
   }
 }
 
+const KANBAN_CARD_NAMES: Record<KanbanCardItem["action"], string> = {
+  order: "Create",
+  start: "Start",
+  complete: "Complete"
+};
+
 function describeDocument(
   doc: PrintableDocumentItem,
   readableId: string | null,
@@ -193,6 +226,7 @@ function describeDocument(
       break;
     case "kanbanCard":
       if (doc.item.itemId) parts.push(doc.item.itemId);
+      parts.push(KANBAN_CARD_NAMES[doc.item.action]);
       break;
     case "storageUnitLabel":
       break;
@@ -201,14 +235,10 @@ function describeDocument(
   return parts.join(" — ");
 }
 
+/** Writes and renders a print job per document; returns the jobs to send
+ *  to a printer (the caller delivers them, outside the step). */
 async function processDocumentType(
   client: SupabaseClient<Database>,
-  step: {
-    sendEvent: (
-      id: string,
-      payload: { name: string; data: Record<string, unknown> }
-    ) => Promise<unknown>;
-  },
   ctx: {
     documentTypeId: DocumentTypeId;
     hasBuiltInRenderer: boolean;
@@ -221,7 +251,7 @@ async function processDocumentType(
     mediaSizeId: string;
     templateId: string | null;
   }
-): Promise<string[]> {
+): Promise<{ printJobIds: string[]; deliverJobIds: string[] }> {
   const {
     documentTypeId,
     hasBuiltInRenderer,
@@ -242,9 +272,9 @@ async function processDocumentType(
     sourceDocumentId,
     companyId
   );
-  if (docs.length === 0) return [];
-
   const printJobIds: string[] = [];
+  const deliverJobIds: string[] = [];
+  if (docs.length === 0) return { printJobIds, deliverJobIds };
 
   for (const doc of docs) {
     const job = await createPrintJob(client, {
@@ -301,10 +331,7 @@ async function processDocumentType(
       );
 
       if (printerUrl) {
-        await step.sendEvent(`deliver-${jobId}`, {
-          name: "carbon/print-job-deliver",
-          data: { printJobId: jobId, companyId }
-        });
+        deliverJobIds.push(jobId);
       } else {
         await updatePrintJobStatus(client, jobId, companyId, "completed");
       }
@@ -320,5 +347,5 @@ async function processDocumentType(
     }
   }
 
-  return printJobIds;
+  return { printJobIds, deliverJobIds };
 }

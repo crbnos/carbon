@@ -29,7 +29,7 @@ async function waitForLockWait(
       WHERE datname = current_database()
         AND pid <> pg_backend_pid()
         AND wait_event_type = 'Lock'
-        AND query ILIKE '%for update%'`.execute(db);
+        AND query ~* 'for (no key )?update'`.execute(db);
     if (rows[0]!.waiting > 0) return;
     await new Promise((resolve) => setTimeout(resolve, 25));
   }

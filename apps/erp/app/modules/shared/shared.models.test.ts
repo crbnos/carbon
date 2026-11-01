@@ -4,11 +4,15 @@
 
 import { TiptapText } from "@carbon/files/markdown";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import {
+  booleanField,
+  jsonInput,
   normalizeOperationSourceIds,
   operationStepValidator,
   optionalPlainTextDoc,
   optionalTiptapDoc,
+  requiredTiptapDoc,
   toTiptapDoc
 } from "./shared.models";
 
@@ -283,5 +287,65 @@ describe("operationStepValidator list options", () => {
     expect(
       operationStepValidator.safeParse({ ...listStep(), type: "Task" }).success
     ).toBe(true);
+  });
+});
+
+// An API caller sends JSON values; a form sends text. Each input helper takes
+// both and gives the code the same value.
+
+describe("requiredTiptapDoc", () => {
+  it("stores Markdown text and a document alike as a document", () => {
+    expect(requiredTiptapDoc.parse("hi")).toEqual(doc);
+    expect(requiredTiptapDoc.parse(doc)).toEqual(doc);
+  });
+
+  it("reads a document sent as JSON text as that document", () => {
+    expect(requiredTiptapDoc.parse(JSON.stringify(doc))).toEqual(doc);
+  });
+
+  it("refuses an empty value", () => {
+    expect(requiredTiptapDoc.safeParse("  ").success).toBe(false);
+    expect(requiredTiptapDoc.safeParse(undefined).success).toBe(false);
+  });
+});
+
+describe("jsonInput", () => {
+  const schema = z.object({
+    configuration: jsonInput(
+      z.record(z.string(), z.any()).nullable().optional()
+    )
+  });
+
+  it("takes the value itself or the form's JSON text", () => {
+    expect(schema.parse({ configuration: { size: 2 } })).toEqual({
+      configuration: { size: 2 }
+    });
+    expect(schema.parse({ configuration: '{"size":2}' })).toEqual({
+      configuration: { size: 2 }
+    });
+  });
+
+  it("reads empty text as no value", () => {
+    expect(schema.parse({ configuration: "" })).toEqual({});
+  });
+
+  it("refuses text that is not the value", () => {
+    expect(schema.safeParse({ configuration: "size=2" }).success).toBe(false);
+  });
+});
+
+describe("booleanField", () => {
+  it.each([
+    [true, true],
+    [false, false],
+    ["true", true],
+    ["false", false]
+  ])("reads %s as %s", (value, expected) => {
+    expect(booleanField().parse(value)).toBe(expected);
+  });
+
+  it("refuses anything else", () => {
+    expect(booleanField().safeParse("yes").success).toBe(false);
+    expect(booleanField().safeParse(undefined).success).toBe(false);
   });
 });

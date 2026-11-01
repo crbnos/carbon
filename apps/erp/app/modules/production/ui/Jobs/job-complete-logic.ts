@@ -78,6 +78,74 @@ export function getReceivableSerialUnits(
     .map((entity) => entity.readableId as string);
 }
 
+/**
+ * How the Complete dialog lets the quantity be chosen for a serial job.
+ *
+ * - `serials`: every unit left to receive is a numbered single unit, so the
+ *   dialog lists the serials a completion takes.
+ * - `numberOnReceipt`: the item has a serial sequence and some units are
+ *   unnumbered, still one unsplit seed, or held by no row yet. The completion
+ *   numbers the units it receives and creates the missing ones
+ *   (`complete_job_to_inventory`), so the quantity can be chosen up to
+ *   `receivableCount` even though the serials cannot be named yet. This does
+ *   not depend on the serial number timing: a job left unnumbered by a timing
+ *   that has since changed to `jobCreation` is numbered on receipt too.
+ * - `locked`: the quantity stays what the shop floor finished — unnumbered
+ *   units of an item with no serial sequence, or receipts that could not be
+ *   read.
+ */
+export type SerialCompleteChoice =
+  | { mode: "serials"; serials: string[] }
+  | { mode: "numberOnReceipt"; receivableCount: number }
+  | { mode: "locked" };
+
+export function getSerialCompleteChoice({
+  trackedEntities,
+  receivedEntityIds,
+  hasSerialSequence,
+  jobQuantity
+}: {
+  trackedEntities: JobSerialUnit[];
+  /** Null when the job's receipts could not be read. */
+  receivedEntityIds: ReadonlySet<string> | null;
+  /** Whether the item has a serial sequence the completion can draw from. */
+  hasSerialSequence: boolean;
+  jobQuantity: number;
+}): SerialCompleteChoice {
+  // Without the receipts the dialog could offer a unit the job already
+  // received, whatever the timing.
+  if (!receivedEntityIds) return { mode: "locked" };
+
+  // The shop floor's first completion or scrap of an unsplit seed leaves it
+  // holding one unit and spawns the rest one at a time, so the rows can hold
+  // fewer units than the job quantity. Only a completion that numbers on
+  // receipt creates the missing units. A scrapped unit does not count: the job
+  // still owes it.
+  const unitsWithoutRow = hasSerialSequence
+    ? Math.max(
+        jobQuantity -
+          trackedEntities
+            .filter((entity) => entity.status !== "Scrapped")
+            .reduce((total, entity) => total + Number(entity.quantity), 0),
+        0
+      )
+    : 0;
+
+  const serials = getReceivableSerialUnits(trackedEntities, receivedEntityIds);
+  if (serials && unitsWithoutRow === 0) return { mode: "serials", serials };
+  // With a sequence the completion numbers whatever it receives unnumbered.
+  if (!hasSerialSequence) return { mode: "locked" };
+
+  const receivableCount =
+    trackedEntities
+      .filter((entity) => isUnreceived(entity, receivedEntityIds))
+      .reduce((total, entity) => total + Number(entity.quantity), 0) +
+    unitsWithoutRow;
+  return receivableCount > 0
+    ? { mode: "numberOnReceipt", receivableCount }
+    : { mode: "locked" };
+}
+
 /** Units finished on the shop floor that the job has not received yet. */
 export function getFinishedUnreceivedQuantity(
   trackedEntities: JobSerialUnit[],

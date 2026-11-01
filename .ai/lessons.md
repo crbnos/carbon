@@ -1353,6 +1353,31 @@ any new `memo` writer.
 
 **Applies to:** `apps/erp/app/root.tsx` (and `apps/mes/app/root.tsx`) loader `env` objects, `packages/env/src/index.ts` `getBrowserEnv()`, any `window.env`-gated integration/feature flag.
 
+## Secret material is read through ONE reader — never off a column
+
+**Context:** After `20260817132607` moved integration tokens into the Vault, three readers kept
+reading `companyIntegration.metadata.access_token` directly (`send-slack.ts`, `integrations.slack.interactive.ts`,
+`notify.ts`). They did not fail — they got `undefined`, fell back or returned `[]`, and Slack DMs /
+slash commands silently stopped for weeks. When Slack later moved to `integrationConnection`
+(`20261026151304`), the same class of miss happened again with `notify.ts` because the consumer map
+was built from module exports, not from a grep of the column.
+
+**Rule:** A credential has exactly one reader (`resolveIntegrationSecrets` for `companyIntegration`,
+`readConnectionAccessToken` / `resolveConnectionAuth` for `integrationConnection`). Before changing
+where a secret lives, grep for the *column and id* (`"companyIntegration"` + `"slack"`,
+`metadata.access_token`, `secretRef`) across `apps/` and `packages/`, not for function names — and
+make the old path fail loudly (throw) rather than return `undefined`.
+
+**Applies to:** every `companyIntegration` / `integrationConnection` reader; any future secret move.
+
+## `.po` catalogs are committed only after `lingui:clean`
+
+**Context:** `pnpm run lingui:extract` alone leaves `#: path:line` origin comments and a
+`POT-Creation-Date` header in all 26 catalogs — 170k diff lines for ~30 real strings.
+
+**Rule:** always `pnpm run lingui:extract && pnpm run lingui:clean` (or `pnpm run translate`);
+the commit hook normalises, but the working tree should never carry the noise.
+
 ## Kysely builds ONE column list per multi-row insert — a conditionally-set key writes NULL into its siblings
 
 **Context:** `get-method`'s `quoteLineToJob` builds every `jobMaterial` row into one array, then inserts them with a single `trx.insertInto("jobMaterial").values(rows)`. Only rows whose item had an effective supersession successor carried a `unitCost` key; the rest omitted it, on the assumption that omitting a key lets the column default apply.
@@ -1412,6 +1437,26 @@ any new `memo` writer.
 **Rule:** When a bare-`tsx` (or plain-node) script hits `does not provide an export named …`, fix the SCRIPT's runtime import chain: move the pure logic it needs into a module with no runtime `@carbon/*` imports (type-only imports are fine — they erase) and import that. `packages/jobs/src/backups/schema.ts` is the pattern; `packages/database`'s seed scripts (relative `.ts` imports only) are the older precedent. Never change a shared package's `type`/`exports` for one script's benefit.
 
 **Applies to:** `packages/jobs/src/scripts/**`, `packages/database/src/{seed,check}-*.ts`, `ci/src/**`, and any new `tsx`-run script in a CJS-rooted package.
+
+## Compare OAuth scopes the way the vendor REPORTS them, not the way you asked
+
+**Context:** The Gmail allowlist row requested `["…/auth/gmail.send", "email"]`, the spelling
+the Activepieces piece uses. Google's token response came back with
+`openid …/auth/gmail.send …/auth/userinfo.email` — the alias canonicalised, an unrequested
+`openid` added. `missingScopes(granted, required)` reported `email` missing and the account
+showed "Reconnect needed" the second it connected. Google Calendar's piece has the same alias
+and was never caught only because its first connections predate scope recording.
+
+**Rule:** Every scope in an allowlist row (and anything else that feeds `requiredScopesFor`)
+is spelled exactly as the vendor echoes it in the token response — for Google the full
+`https://www.googleapis.com/auth/…` URL. When a piece's own list uses an alias, override
+`oauth.scope` with the canonical form (same set of permissions). `oauth.test.ts` refuses
+`email` / `profile` / `openid` on any row. When a "reconnect needed" appears on a freshly
+connected account, diff `metadata.scopes` against `requiredScopesFor` before anything else.
+
+**Applies to:** `packages/jobs/src/workflows/integrations/allowlist.ts` `oauth.scope`,
+`packages/ee/src/integrations/connections.ts` `missingScopes`, any future vendor whose token
+response normalises scope names (Microsoft returns short names for Graph scopes too).
 
 ## `CREATE OR REPLACE VIEW` cannot reorder columns — DROP + CREATE when `t.*` grows
 
@@ -3640,6 +3685,15 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 
 **Applies to:** `apps/erp/app/routes/api+/v1+/lib/base.server.ts`, `apps/erp/app/routes/api+/mcp+/_index.ts`, every `@mcp`-tagged service taking `db: Kysely<KyselyDatabase>`.
 
+## A constant between `/** @mcp read */` and its function drops the MCP tool
+
+**Context:** Cursor paging (2026-10-13) gave each paged list service an exported `*_DEFAULT_SORTS` constant. The list registry and the loaders read it, so it sits next to the service function.
+
+**Problem:** Twice during that work, the constant went between the doc block and the function. TypeScript attaches a doc comment to the declaration directly under it, so the `@mcp read` tag then belonged to the constant. The generator reads the doc block of exported functions only (`getJsDocs()` in `scripts/lib/service-ast.ts`); it skips a constant that is not a function. The function silently stopped being a tool and left `tool-manifest.digest.json`. Typecheck, tests and the build all passed.
+
+**Rule:** Put a new constant ABOVE the doc block of a service function, never between the block and the function. After you edit a `*.service.ts` file, run `pnpm run generate:mcp`. Then diff the tool names in `tool-manifest.digest.json`. A tool name that disappears is a displaced tag until you prove otherwise.
+
+**Applies to:** `apps/erp/app/modules/*/*.service.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`.
 
 ## A cookie that was only ever written is not a stored preference
 
@@ -4040,6 +4094,26 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** `postReceipt` / `postShipment` and every posting in `inventory.service.ts` that builds update maps before its write loop.
 
+## Open an OAuth popup in the click, before you fetch its URL
+
+**Context:** Install and Add account on a workflow piece card (`startIntegrationConnect`, `packages/ee/src/integrations/connect.ts`) fetch the consent URL from the connect route, then open it in a popup.
+
+**Problem:** The old code awaited the fetch and then called `window.open`. The await can outlive the click's transient user activation, so Chrome blocked the popup without an error, and Install looked like it did nothing.
+
+**Rule:** Call `beginOAuthPopup()` (`packages/ee/src/oauth-popup.ts`) synchronously in the click handler, before any await. Then fetch the URL and call `navigate(url)` on the handle. If the fetch fails, call `close()`. If the browser blocked the popup anyway, `navigate` falls back to the current window.
+
+**Applies to:** every consent or payment flow that opens a window after a request: the piece cards, the Onshape connect, any new OAuth integration.
+
+## One OAuth state mechanism: the cookie helper, consumed by value for a shared callback
+
+**Context:** The workflow pieces (Slack, Gmail, Google Calendar) signed their own OAuth state with an HMAC helper in `settings.service.ts`, beside the cookie-bound state that every other integration uses (`@carbon/auth/oauth-state.server`).
+
+**Problem:** Two mechanisms meant two sets of binding, expiry and single-use rules to keep correct, and a review had to check both. The pieces share one callback route, so that route cannot know which integration's entry to consume before it reads the state.
+
+**Rule:** Issue every OAuth state with `issueOAuthState`. Carry extra facts (`mode`, `name`, `connectionId`) as `OAuthStateExtras`, never in the query string. Pass the request, so the other integrations' pending entries survive the Set-Cookie. A callback that serves several integrations calls `consumeOAuthStateByValue`; it finds the entry that holds the value and takes the integration id from that entry. Do not add a second signer.
+
+**Applies to:** `api+/integrations.connections.$piece.connect.ts`, `api+/integrations.connections.callback.ts`, `api+/integrations.$id.connect.ts`, and any new OAuth connect or callback route.
+
 ## A header and the get-method copy into it share one transaction
 
 **Context:** New Version on a make method inserted the `makeMethod` header through supabase-js, set the source version Active, then ran get-method's `makeMethodToMakeMethod` copy, which opened its own Kysely transaction. A version change notice and the Onshape panel's Draft did the same in their own code.
@@ -4059,6 +4133,26 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** When the server derives a value for a blank cell, remove that field's `default` from `fieldMappings`, and pin the absence in a test (`shared.method-import-append.test.ts` → "presets no BOM unit and no operation type"). A wizard Default and a server fallback cannot both apply.
 
 **Applies to:** every table in `fieldMappings` (`apps/erp/app/modules/shared/imports.models.ts`) whose importer has a fallback for a blank cell.
+
+## A temporary override lives in the thing it overrides, not in its callers
+
+**Context:** Halloween had to be the theme for everyone while in season (2026-10). The first cut replaced the cookie read in all three apps' `getTheme` (`services/theme.server.ts`) with `resolveTheme(halloweenTheme.name)`.
+
+**Problem:** Undoing it meant rewriting three deleted cookie reads from memory, and nothing pointed at them: deleting `halloween-theme.ts` would just break the imports. The mesh colors in `MeshGradientBackground.tsx` (a `Record<string, …>`, so no compile error) and a test that imported the theme directly had the same shape. The removal checklist went stale twice as pieces were added.
+
+**Rule:** Put a seasonal or temporary behaviour on the removable unit itself (its `available` window and `mesh` on the `SeasonalTheme`, read by the shared resolver) and keep callers generic, so deleting the unit turns the behaviour off. Test the mechanism on a fixture, not on the instance. Keep ONE removal checklist, next to the code, and make every other comment point to it.
+
+**Applies to:** `packages/utils/src/themes.ts` seasonal themes, `packages/react/src/Halloween/`, any feature flag, promo or seasonal UI.
+
+## The theme a page renders is not the theme the user picked
+
+**Context:** A seasonal theme made `getTheme` (`services/theme.server.ts`) return the seasonal name for everyone in season (2026-10).
+
+**Problem:** The ERP's onboarding theme step and `x+/account+/theme.tsx` also read `getTheme` to seed and post back the user's own pick. In season they posted the seasonal name, `themeColorValidator` refused it, and onboarding could not get past the theme step. The theme pickers meanwhile painted a chosen theme onto `<body>` while the server kept rendering the seasonal one.
+
+**Rule:** Keep "what to render" (`getTheme` → `resolveTheme`) and "what the user chose" (`getStoredTheme` → `storedTheme`) as two reads, and decide the season once, in the root loader (`Document` renders the name with `themeByName`). A picker that cannot take effect is disabled and says why (`useSeasonalTheme`, `SeasonalThemeNotice`).
+
+**Applies to:** `packages/utils/src/themes.ts`, every app's `services/theme.server.ts` and `root.tsx`, every theme picker.
 
 ## Registering on `load` from entry.client never registers in dev
 
@@ -4099,3 +4193,123 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Do not promise a closed-app badge on macOS Chrome. Test the badge with the app hidden (⌘H), not closed, and test the closed case on a platform meant to keep it (an iPhone Home Screen app) before calling it broken.
 
 **Applies to:** `apps/erp/app/hooks/useAppBadge.ts`, `apps/erp/public/service-worker.js`, the `send-push` badge count.
+
+## A scheduler decision is only stored when every write-back guard agrees
+
+**Context:** The scheduler balances an operation that has not started onto any work center of its process (F10, 2026-10-26).
+
+**Problem:** Two separate "never overwrite a stored work center" guards sat between the decision and the database: one in `applyWorkCenterSelections`, one in the engine's `buildWrites`. Fixing the first one alone changed nothing in the database. The `capacityReservation` row named the chosen station while `jobOperation.workCenterId` kept the old one, and every unit test still passed.
+
+**Rule:** When you change what the scheduler decides, trace the value to the write (`placementWrites`, `run-overlay.ts`). Test the decision and the write together, then remove the write fix and confirm a test goes red.
+
+**Applies to:** `packages/planning/src/scheduling/` — `apply-work-center-selections.ts`, `run-overlay.ts`, `scheduling-engine.ts`.
+
+## An SQL test that inserts an employee needs the company's root group first
+
+**Context:** Seeding employees in a `supabase/tests/*.test.sql` file (`rpc-privileges.test.sql`, 2026-10-26).
+
+**Problem:** The `employee` insert fires the employee-type group interceptor, which needs the company's "All Employees" root group. A test company made by hand has no root group, so the insert fails. `SET session_replication_role` is not permitted there.
+
+**Rule:** Insert the root group first, with the id `getGroupId` builds: `'00000000-0000-' || substr(c,1,4) || '-' || substr(c,5,4) || '-' || substr(c,9,12)` for company id `c`. Then insert the employee type and the employee.
+
+**Applies to:** SQL tests under `packages/database/supabase/tests/` that create employees.
+
+## `setGenericQueryFilters` erases a query's row type
+
+**Context:** Inventory → Receiving read a view through `setGenericQueryFilters` and its route annotated the rows with a hand-written type (2026-10-26).
+
+**Problem:** The helper's signature is typed loosely (it carries `@ts-expect-error`), so whatever it returns awaits to rows of type `any`. An annotation on those rows is an unchecked cast: renaming a column in the select string, or dropping it from the view, compiles clean and renders blank. Types in `types.ts` derived through `ReturnType<typeof getX>` are `any` the same way.
+
+**Rule:** Keep the typed builder. Assign the helper's result back to the query variable (`query = setGenericQueryFilters(query, { filters })`), which keeps the variable's declared type, then apply the sort and `.range()` on it directly. Derive the row type from that function in `types.ts`, and narrow a view's never-null keys once at the loader boundary rather than guarding them in components.
+
+**Applies to:** list reads in `apps/erp/app/modules/*/*.service.ts` that call `setGenericQueryFilters`, and the `types.ts` row types derived from them.
+
+
+## OCCT keeps every document it opened by path, and refuses to open it again
+
+**Context:** The optimize ingest gained a PMI pass (`read_pmi`, `crates/occt-bridge/src/pmi.cc`) that reads the same `.xbf` the optimiser had just tessellated with `read_xbf` (2026-10-26).
+
+**Problem:** `TDocStd_Application::Open(path, doc)` registers the document with the application until `Close(doc)`. `read_xbf` never closes it, so the second open of the same path failed with `PCDM_RS_AlreadyRetrieved` ("could not open XBF document"). The hermetic converter test passed, because it opened the `.xbf` only once; only the assembler's ingest test, which runs both passes, showed it.
+
+**Rule:** A second reader of an `.xbf` opens it from a stream (`Open(std::istream&, doc)`), which skips the path check, and calls `xcaf_app()->Close(doc)` when done. Test any new pass over the ingest's xbf through `run_ingest`, not only through the converter.
+
+**Applies to:** `crates/occt-bridge/src/*.cc` (any function that opens a BinXCAF document), `apps/assembler/src/actions/optimize.rs` (`run_ingest`).
+
+## A save that reconciles a whole set must be shown the whole set, whatever the page filters
+
+**Context:** The People board's day editor (`PeopleHoursModal` → `setPeopleDay`) saves a person's day: it updates the rows it is sent and DELETES the rows of the save's shift it is not sent (2026-10-28).
+
+**Problem:** The editor opened with the rows the page showed. The department filter hid rows at other stations, and the shift filter hid rows of other shifts, while the save was scoped to the person's own shift (or every shift, for a person with none). Saving deleted rows the user never saw, or inserted a second row for a station the person already held in another shift.
+
+**Rule:** A save that reconciles a set (deletes what it is not sent) gets that set from the same scope the server deletes by, never from what the page filtered. Pass the unfiltered rows next to the filtered ones and select the save's scope in one pure helper (`editorDayRows`, `peopleShared.ts`), with a test.
+
+**Applies to:** `apps/erp/app/modules/production/ui/Schedule/People/*` (Board and Matrix editors), `setPeopleDay` and any other "make these rows the whole day/week" write in `production.service.ts`.
+
+## A new table handler's generated migration fails locally with "must be owner"
+
+**Context:** A new statement handler (`queue_pmi_inspection_plans`) was added to `event-system/handlers/` and `attachments.ts`. `pnpm db:migrate` synced it, then `authz migration` wrote the generated migration that ships it (2026-10-27).
+
+**Problem:** The next `pnpm db:migrate` failed on that migration with `must be owner of function queue_pmi_inspection_plans`. The sync had created the function as `supabase_admin`. Every older handler is owned by `postgres`, the role the migration runs its `CREATE OR REPLACE` as. Production never syncs, so only a local database that synced first is affected.
+
+**Rule:** If the generated migration of a new managed function fails locally with "must be owner", run `ALTER FUNCTION public.<name>() OWNER TO postgres;` as `supabase_admin`, then run `pnpm db:migrate` again. Do not edit the generated migration.
+
+**Applies to:** `packages/database/src/event-system/handlers/*.sql`, `packages/database/src/event-system/functions/*.sql`, `pnpm --filter @carbon/database authz migration`.
+
+## A form validator is not an API contract
+
+**Context:** `production_createJobOperation` answered a bare 500 "Failed to insert job operation" to an API caller (2026-10-27).
+
+**Problem:** Operations moved from routes kept the route's input and error handling. The form sent a fresh client-made `id` for each new row, so the create input required one and an API caller had to invent it; a reused id failed the insert. The route's toast-only `ctx.error("internal", "Failed to …", error)` (448 of them) then hid the database's reason, so a duplicate key or a reference to nothing read as our failure.
+
+**Rule:** A create input leaves the new row's `id` optional when the table has a default (`mcp-create-inputs.test.ts` fails otherwise). A database refusal the caller can fix is reported as itself: `defineServiceFn` maps an `internal` error whose cause is one (`databaseRefusal`), so don't swallow the cause. A yes/no field is a real boolean that also parses the form's `"true"` / `"false"` (`booleanField`, `shared.models.ts`), so the API publishes `boolean`. A rich-text (JSON) column takes `optionalTiptapDoc` / `requiredTiptapDoc`, never `z.string()` or `z.unknown()`: a raw string is stored as a JSON scalar the editor cannot read. A JSON value a form posts as text takes `jsonInput(schema)`. Never `z.preprocess` / `z.coerce` / `z.any()` bare in an operation's input: the manifest publishes those as "anything".
+
+**Applies to:** every `defineServiceFn` in `apps/erp/app/modules/*/*.server.ts`, and any validator reused as an operation's input.
+
+## A global pnpm virtual store breaks this repo's peer dependencies
+
+**Context:** A worktree installed while `enable-global-virtual-store=true` was set in the
+user's global pnpm config (`~/Library/Preferences/pnpm/rc`).
+
+**Problem:** Packages are linked from `~/Library/pnpm/store/v10/links/…`, where a package
+cannot resolve its peers. The ERP dev server failed every page with `Cannot find package
+'@tiptap/core'`, the database tests could not load, and the scoped typechecks reported about
+7,000 React type errors in files nobody had changed, identical on `main`. It reads as a
+broken branch, not a broken install.
+
+**Rule:** When `readlink apps/erp/node_modules/react-icons` points into
+`Library/pnpm/store/…/links`, reinstall the worktree with the global store off:
+`pnpm install --frozen-lockfile --config.enable-global-virtual-store=false
+--config.confirmModulesPurge=false`. Before blaming a change for mass type errors, compare
+the error set against an untouched checkout of `main`.
+
+**Applies to:** Any worktree; typecheck, vitest and `crbn up` runs.
+
+## A derived flag on a row that `ON DELETE SET NULL` points at must be released before the delete
+
+**Context:** `itemStockQuantities.quantityNonNettable` counts the stock in storage units whose `effectiveNettable` is false. `itemLedger.storageUnitId` references `storageUnit` with `ON DELETE SET NULL` (2026-10-28).
+
+**Problem:** Deleting a non-nettable unit sets its ledger rows' `storageUnitId` to NULL, and the ledger's statement handler then sees rows that point at no unit, which count as nettable. It cannot tell the stock was non-nettable, because the unit row is already gone, so `quantityNonNettable` keeps the stock forever. An AFTER interceptor on the unit is too late as well: the foreign key's own trigger has already nulled the rows.
+
+**Rule:** When an aggregate is keyed on a property of a row that an `ON DELETE SET NULL` foreign key points at, undo that row's contribution in a BEFORE DELETE interceptor (`storage_unit_release_non_nettable_stock`), while the referencing rows still point at it. Prefer recomputing an aggregate from its source over adjusting it by deltas wherever the input can change without a write to the aggregated table (`util.refresh_storage_unit_nettable`).
+
+**Applies to:** `packages/database/src/event-system/handlers/`, any derived total over `itemLedger` keyed on a `storageUnit` property.
+
+## Code outside an Inngest step runs again after every step
+
+**Context:** Printing a Make kanban to a printer printed the Create card only, never Start or Complete (2026-10-28).
+
+**Problem:** `print-job` wrote its `printJob` rows in the function body and called `step.sendEvent` per job. Each step makes Inngest invoke the function again from the top with the finished steps memoized, so the body ran again: its 30 s duplicate guard found the job the first pass had just written and threw `NonRetriableError`. Every document with more than one label (kanban cards, a receipt's serials) printed its first label only, and the run read as a "duplicate" rather than a failure.
+
+**Rule:** In an Inngest function, every database read that decides something and every write goes inside a `step.run`; the body between steps must be safe to run again. Collect the events in the step and send them with one `step.sendEvent` after it.
+
+**Applies to:** `packages/jobs/src/inngest/functions/**` — any function that writes outside `step.run` and then calls a `step.*` method.
+
+## `error(cause, …)` shows the cause to the user
+
+**Context:** Error toasts gained a second line with the real reason. `error(cause, title)` in `@carbon/auth` now reads the cause with `describeCause` and the flash shows it (2026-10-29).
+
+**Problem:** The change reached every app, but the sweep covered ERP and MES only. The Academy and Starter sign-in pages passed `user.error` from a `.single()` read. An unknown email then showed "No matching record was found." and an inactive account showed nothing, so an outsider could tell whether an account existed.
+
+**Rule:** On a page an outsider can reach (sign-in, invite, verify, callback, MFA, SSO, a share link), log the real error with the module logger and pass `null` as the cause. Everywhere else, pass the real error object, never `params`, a result wrapper or a string that repeats the title.
+
+**Applies to:** every `error(` call in `apps/*/app/routes/_public+`, `_auth+`, `share+` and `api+/login*`, and any new app that registers `flashClientMiddleware`.

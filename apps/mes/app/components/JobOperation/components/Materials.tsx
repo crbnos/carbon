@@ -247,6 +247,8 @@ type OperationMaterialsProps = {
   /** Only for batched operations. */
   batchMaterialTotals?: Record<string, BatchMaterialTotal> | null;
   onIssue: (material: JobMaterial) => void;
+  // The operator may not issue on this operation (ability policy 'block')
+  disabled?: boolean;
 };
 
 /** The operation's materials: a table from md, a list on phones. */
@@ -262,7 +264,12 @@ export function OperationMaterials(props: OperationMaterialsProps) {
 
 type LayoutProps = OperationMaterialsProps & { groups: MaterialGroup[] };
 
-function MaterialsTable({ groups, parentIsSerial, onIssue }: LayoutProps) {
+function MaterialsTable({
+  groups,
+  parentIsSerial,
+  onIssue,
+  disabled
+}: LayoutProps) {
   const { t } = useLingui();
   const [items] = useItems();
 
@@ -273,6 +280,7 @@ function MaterialsTable({ groups, parentIsSerial, onIssue }: LayoutProps) {
         variant="ghost"
         icon={<LuGitBranchPlus />}
         className="h-8 w-8"
+        isDisabled={disabled}
         onClick={() => onIssue(row.material)}
       />
     ) : row.issue === "scan" && row.isKitChild ? (
@@ -281,6 +289,7 @@ function MaterialsTable({ groups, parentIsSerial, onIssue }: LayoutProps) {
         variant="secondary"
         icon={<LuQrCode />}
         className="h-8 w-8"
+        isDisabled={disabled}
         onClick={() => onIssue(row.material)}
       />
     ) : row.issue === "scan" ? (
@@ -289,6 +298,7 @@ function MaterialsTable({ groups, parentIsSerial, onIssue }: LayoutProps) {
         size="lg"
         variant={row.isPrimaryIssue ? "primary" : "secondary"}
         leftIcon={<LuQrCode />}
+        isDisabled={disabled}
         onClick={() => onIssue(row.material)}
       >
         <Trans>Issue</Trans>
@@ -463,7 +473,12 @@ function MaterialsTable({ groups, parentIsSerial, onIssue }: LayoutProps) {
   );
 }
 
-function MaterialsList({ groups, parentIsSerial, onIssue }: LayoutProps) {
+function MaterialsList({
+  groups,
+  parentIsSerial,
+  onIssue,
+  disabled
+}: LayoutProps) {
   const { t } = useLingui();
   const [items] = useItems();
 
@@ -520,6 +535,7 @@ function MaterialsList({ groups, parentIsSerial, onIssue }: LayoutProps) {
               variant="secondary"
               size="lg"
               icon={<LuQrCode />}
+              isDisabled={disabled}
               onClick={() => onIssue(material)}
             />
           ) : row.issue ? (
@@ -530,6 +546,7 @@ function MaterialsList({ groups, parentIsSerial, onIssue }: LayoutProps) {
               leftIcon={
                 row.issue === "scan" ? <LuQrCode /> : <LuGitBranchPlus />
               }
+              isDisabled={disabled}
               onClick={() => onIssue(material)}
             >
               <Trans>Issue</Trans>

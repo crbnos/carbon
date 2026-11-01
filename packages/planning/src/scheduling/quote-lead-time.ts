@@ -88,7 +88,7 @@ export type QuoteOperationRow = {
 export type MaterialAvailability = {
   /** itemReplenishment.leadTime, default 7 */
   leadTimeDaysByItem: Map<string, number>;
-  /** itemStockQuantities at the location */
+  /** Nettable on-hand at the location (itemStockQuantities) */
   onHandByItem: Map<string, number>;
 };
 
@@ -563,7 +563,7 @@ async function loadQuoteLineRouting(
 
 /**
  * Item lead times (itemReplenishment.leadTime, default 7) and location on-hand
- * (itemStockQuantities, the aggregate runMrp reads) for the material floors.
+ * (nettable itemStockQuantities, as runMrp reads it) for the material floors.
  */
 async function loadMaterialAvailability(
   db: Kysely<DB>,
@@ -584,7 +584,12 @@ async function loadMaterialAvailability(
       .execute(),
     db
       .selectFrom("itemStockQuantities")
-      .select(["itemId", "quantityOnHand"])
+      .select((eb) => [
+        "itemId",
+        eb("quantityOnHand", "-", eb.ref("quantityNonNettable")).as(
+          "quantityNettable"
+        )
+      ])
       .where("itemId", "in", itemIds)
       .where("locationId", "=", locationId)
       .where("companyId", "=", companyId)
@@ -600,7 +605,7 @@ async function loadMaterialAvailability(
   }
   for (const r of stockRows) {
     if (r.itemId != null) {
-      onHandByItem.set(r.itemId, Number(r.quantityOnHand) || 0);
+      onHandByItem.set(r.itemId, Number(r.quantityNettable) || 0);
     }
   }
   return { leadTimeDaysByItem, onHandByItem };

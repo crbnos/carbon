@@ -4,7 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
-import { ChoiceCardGroup, toast } from "@carbon/react";
+import { ChoiceCardGroup, toastError } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
@@ -115,7 +115,7 @@ const RentalAgreementDetailsForm = ({
     // answer is for a customer no longer picked.
     if (latestCustomerId.current !== next) return;
     if (error) {
-      toast.error(t`Error fetching customer data`);
+      toastError(t`Error fetching customer data`, error);
       return;
     }
     if (data.currencyCode) setCurrencyCode(data.currencyCode);

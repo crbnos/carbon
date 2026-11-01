@@ -76,7 +76,13 @@ export async function action({ request }: ActionFunctionArgs) {
     });
     return data(
       {},
-      await flash(request, error(null, "Work center or failure mode not found"))
+      await flash(
+        request,
+        error(
+          workCenter.error ?? failureModes.error ?? null,
+          "Work center or failure mode not found"
+        )
+      )
     );
   }
   const locationId = workCenter.data.locationId ?? undefined;

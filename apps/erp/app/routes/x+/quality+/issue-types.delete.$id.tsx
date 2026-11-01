@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) {
     throw redirect(
       `${path.to.issueTypes}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get an issue type id"))
+      await flash(request, error(null, "Failed to get an issue type id"))
     );
   }
 

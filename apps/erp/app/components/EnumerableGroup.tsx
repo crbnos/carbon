@@ -81,7 +81,7 @@ const EnumerableGroup = ({
           <PopoverTrigger
             aria-label={t`Show ${overflow.length} more`}
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex min-h-[1.5rem] items-center rounded-md border bg-secondary px-2 text-[12px] font-bold tabular-nums text-secondary-foreground outline-none transition-colors hover:bg-secondary/80 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="inline-flex min-h-[1.5rem] items-center rounded-md border bg-secondary px-2 text-[0.75rem] font-bold tabular-nums text-secondary-foreground outline-none transition-colors hover:bg-secondary/80 focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             +{overflow.length}
           </PopoverTrigger>

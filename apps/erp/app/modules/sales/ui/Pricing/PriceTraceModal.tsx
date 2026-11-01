@@ -164,9 +164,13 @@ export function PriceTraceTable({
                   className="text-sm text-muted-foreground max-w-[320px]"
                   title={step.source}
                 >
-                  {step.ruleId ? (
+                  {step.ruleId || step.overrideId ? (
                     <Link
-                      to={path.to.pricingRule(step.ruleId)}
+                      to={
+                        step.ruleId
+                          ? path.to.pricingRule(step.ruleId)
+                          : path.to.priceOverride(step.overrideId!)
+                      }
                       target="_blank"
                       rel="noreferrer"
                       className="hover:text-foreground hover:underline decoration-dotted underline-offset-2 inline-flex items-center gap-1 max-w-full"

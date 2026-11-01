@@ -30,13 +30,27 @@ export async function ensureFont(_family?: string): Promise<void> {
   registerDocumentFonts();
 }
 
-// Falls back to Helvetica for an unregistered family so react-pdf never throws
+// Each bundled family's Central European glyphs (ś, ł, ő, č…) live in a separate
+// "<family> Latin Ext" face (see scripts/generate-fonts.mjs).
+const LATIN_EXT_SUFFIX = " Latin Ext";
+
+// The font stack for a body font: react-pdf picks the first font with a glyph for
+// each character, so "Przemyśl" draws "ś" from the Latin Ext face. Inter closes
+// the stack because not every face covers Latin Ext (the built-in PDF fonts have
+// none of it, Lato only a few letters). Only registered names enter the stack,
+// and an unregistered family falls back to Helvetica, so react-pdf never throws
 // "Font family not registered".
-export function getSafeFontFamily(family: string | undefined | null): string {
+export function getSafeFontFamily(family: string | undefined | null): string[] {
   registerDocumentFonts();
-  if (!family) return "Helvetica";
-  if (BUILT_IN_FONTS.includes(family)) return family;
-  return Font.getRegisteredFontFamilies().includes(family)
-    ? family
-    : "Helvetica";
+  const registered = Font.getRegisteredFontFamilies();
+  const base =
+    family && (BUILT_IN_FONTS.includes(family) || registered.includes(family))
+      ? family
+      : "Helvetica";
+  const fallbacks = [
+    `${base}${LATIN_EXT_SUFFIX}`,
+    "Inter",
+    `Inter${LATIN_EXT_SUFFIX}`
+  ].filter((name) => name !== base && registered.includes(name));
+  return [base, ...new Set(fallbacks)];
 }

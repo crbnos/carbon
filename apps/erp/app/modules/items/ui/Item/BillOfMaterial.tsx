@@ -32,6 +32,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
+  toastError,
   useDisclosure,
   useThrottle,
   useViewport
@@ -795,7 +796,7 @@ function MaterialForm({
       .single();
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 

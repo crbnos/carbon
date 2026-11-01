@@ -21,6 +21,7 @@ import {
 import { useNavigate } from "react-router";
 import { CustomerAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import {
   useCurrencyFormatter,
   useDateFormatter,
@@ -40,9 +41,11 @@ import type { ContractListItem } from "./types";
 type ContractsTableProps = {
   data: ContractListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ContractsTable = memo(({ data, count }: ContractsTableProps) => {
+const ContractsTable = memo((props: ContractsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -242,6 +245,7 @@ const ContractsTable = memo(({ data, count }: ContractsTableProps) => {
     <>
       <Table<ContractListItem>
         count={count}
+        infinite={infinite}
         columns={columns}
         data={data}
         defaultColumnPinning={{

@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.materialSubstances,
       await flash(
         request,
-        error(params, "Failed to get an material substance id")
+        error(null, "Failed to get an material substance id")
       )
     );
   }

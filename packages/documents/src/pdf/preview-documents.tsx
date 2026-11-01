@@ -12,9 +12,11 @@ import PackingSlipPDF from "./PackingSlipPDF";
 import ProductLabelPDF from "./ProductLabelPDF";
 import PurchaseOrderPDF from "./PurchaseOrderPDF";
 import PurchaseReturnOrderPDF from "./PurchaseReturnOrderPDF";
+import PurchasingRfqPDF from "./PurchasingRfqPDF";
 import { SAMPLE_PACKING_SLIP } from "./packingSlip.samples";
 import { SAMPLE_PURCHASE_ORDER } from "./purchaseOrder.samples";
 import { SAMPLE_PURCHASE_RETURN_ORDER } from "./purchaseReturnOrder.samples";
+import { SAMPLE_PURCHASING_RFQ } from "./purchasingRfq.samples";
 import QuotePDF from "./QuotePDF";
 import { SAMPLE_QUOTE } from "./quote.samples";
 import SalesInvoicePDF from "./SalesInvoicePDF";
@@ -48,6 +50,10 @@ export const DOCUMENT_PDFS: Record<DocumentTemplateType, PreviewEntry> = {
   purchaseReturnOrder: {
     Component: PurchaseReturnOrderPDF,
     sample: SAMPLE_PURCHASE_RETURN_ORDER
+  },
+  purchasingRfq: {
+    Component: PurchasingRfqPDF,
+    sample: SAMPLE_PURCHASING_RFQ
   },
   quote: { Component: QuotePDF, sample: SAMPLE_QUOTE },
   packingSlip: { Component: PackingSlipPDF, sample: SAMPLE_PACKING_SLIP },

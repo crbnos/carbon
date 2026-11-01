@@ -58,3 +58,118 @@ declare module "@tanstack/react-table" {
 }
 
 export type ColumnSizeMap = Map<string, { width: number; startX: number }>;
+
+/**
+ * Turns on infinite scroll for a list whose loader pages with a cursor
+ * (`toPage`). The Table fetches the next page from the same route loader.
+ *
+ * Two ways to use it:
+ * - `<Table infinite={options}>`: the Table runs `useInfiniteRows` itself.
+ * - Controlled: the parent calls `useInfiniteRows({ initialRows, infinite })`
+ *   and passes the result as `<Table data={initialRows} infiniteRows={result}>`.
+ *   The parent then reads `result.rows` (every loaded row) with no state copy,
+ *   for example to total or plan over them.
+ */
+export type InfiniteOptions = {
+  /** The key of the rows array in the loader data, for example "salesOrders". */
+  dataKey: string;
+  /** The loader's `nextCursor`: null when page 1 is the whole list. */
+  nextCursor: string | null;
+  /**
+   * The list's key in the server list registry (`utils/list-registry`). Only
+   * a registered list gets the background export and bulk-action paths.
+   */
+  listKey?: string;
+  /**
+   * URL search params that do not define the list, for example the param
+   * that opens a drawer over it. A change of one keeps the loaded pages, the
+   * scroll offset and the selection. `after` is always ignored.
+   */
+  ignoreParams?: string[];
+  /**
+   * The rows' unique id column when it is not `id`. It de-duplicates rows
+   * that move between pages and keys the rows (selection, edits).
+   */
+  idColumn?: string;
+  /**
+   * The URL that serves the later pages, with its own search. Default: the
+   * list route's own URL (`useFormAction()`). Set it when the rows come from
+   * an `api+` loader instead of the route. Its response has the same shape:
+   * `{ [dataKey]: rows, nextCursor }`, and `listError` on a failed page.
+   */
+  pageUrl?: string;
+};
+
+/**
+ * What a list loader returns, next to its rows key, for a later page
+ * (`?after=`) that failed: `{ [dataKey]: [], nextCursor: null, listError }`.
+ * The Table then shows "Couldn't load more rows" with Retry, and keeps the
+ * rows it has. Page 1 throws (or redirects) as before.
+ */
+export type InfiniteListError = {
+  /** A short message for the log; the Table does not show it. */
+  listError: string;
+};
+
+/** The state of an infinite list (`useInfiniteRows`). */
+export type InfiniteRows<T> = {
+  /** Page 1 from the loader, then every page loaded after it. */
+  rows: T[];
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  loadError: boolean;
+  /**
+   * Loads the next page. Does nothing after an error. During a refresh of
+   * the loaded pages it waits and loads when the refresh ends.
+   */
+  loadMore: () => void;
+  /** Repeats the request that failed. */
+  retry: () => void;
+  /**
+   * Loads pages until the list ends or `limit` rows are loaded. `resetKey`
+   * is the list's key when it ended: a different key than at the start means
+   * the list changed while it loaded.
+   */
+  loadAll: (
+    limit: number
+  ) => Promise<{ rows: T[]; complete: boolean; resetKey: string }>;
+  totalLoaded: number;
+  /** The scroll offset to put back after Back navigation, else null. */
+  restoredScrollTop: number | null;
+  /** The list reports its scroll offset here, so Back can restore it. */
+  rememberScrollTop: (scrollTop: number) => void;
+  /**
+   * The list's identity: the URL search without `after` and `ignoreParams`
+   * (and the `pageUrl` search). A new key drops the loaded pages.
+   */
+  resetKey: string;
+  /**
+   * The tick (`rowEdits.ts`) when the load of the current rows started. An
+   * inline edit made before it is in the rows already.
+   */
+  syncedAt: number;
+  /** The options in use; undefined when infinite scroll is off. */
+  options?: InfiniteOptions;
+};
+
+/**
+ * "Every row that matches the list's URL search": the selection a list makes
+ * past 1,000 rows. The browser does not load those rows; a job reads them.
+ */
+export type AllMatchingSelection = {
+  listKey: string;
+  /** The list's URL search (`location.search`) when the user chose it. */
+  search: string;
+  /** The header count then: an estimate from 1,000 rows up. */
+  count: number;
+};
+
+/** The second argument of `renderActions`. */
+export type BulkActionScope = {
+  /**
+   * Set when the selection is every matching row, not only the selected rows.
+   * An action without a background path shows itself disabled with the
+   * tooltip from `useAllMatchingUnsupportedLabel`.
+   */
+  allMatching?: AllMatchingSelection;
+};

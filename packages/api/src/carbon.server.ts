@@ -10,7 +10,7 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { type FailureReason, redirect } from "@carbon/utils";
 import type { z } from "zod";
 import {
   type RouteResult,
@@ -112,7 +112,9 @@ export function carbonFor(auth: CallerAuth): Api<RegisteredRouter> {
  */
 export function respond(
   request: Request,
-  result: { error: { message: string } | null }
+  result: {
+    error: { message: string; title?: string; reason?: FailureReason } | null;
+  }
 ) {
   return {
     async redirect(
@@ -122,7 +124,10 @@ export function respond(
       if (result.error) {
         throw redirect(
           onError ?? to,
-          await flash(request, error(null, result.error.message))
+          await flash(request, {
+            ...error(null, result.error.title ?? result.error.message),
+            ...(result.error.reason && { reason: result.error.reason })
+          })
         );
       }
       if (message) throw redirect(to, await flash(request, success(message)));

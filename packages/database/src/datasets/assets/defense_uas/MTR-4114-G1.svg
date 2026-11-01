@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="mtrAGun" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1e2125"/>
+      <stop offset="0.12" stop-color="#454c52"/>
+      <stop offset="0.32" stop-color="#8a939b"/>
+      <stop offset="0.5" stop-color="#5d656c"/>
+      <stop offset="0.78" stop-color="#363c42"/>
+      <stop offset="1" stop-color="#1a1d20"/>
+    </linearGradient>
+    <linearGradient id="mtrAGunTop" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#8f979f"/>
+      <stop offset="0.4" stop-color="#5f676e"/>
+      <stop offset="1" stop-color="#2a2f34"/>
+    </linearGradient>
+    <linearGradient id="mtrABlk" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#060708"/>
+      <stop offset="0.15" stop-color="#24272b"/>
+      <stop offset="0.35" stop-color="#4a4f55"/>
+      <stop offset="0.55" stop-color="#24272a"/>
+      <stop offset="1" stop-color="#050606"/>
+    </linearGradient>
+    <linearGradient id="mtrABlkTop" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#4f545a"/>
+      <stop offset="0.5" stop-color="#24272b"/>
+      <stop offset="1" stop-color="#0d0e10"/>
+    </linearGradient>
+    <linearGradient id="mtrAChrome" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="mtrAChromeFace" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.34" stop-color="#dfe6ea"/>
+      <stop offset="0.7" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="mtrATan" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4f3f29"/>
+      <stop offset="0.15" stop-color="#937a53"/>
+      <stop offset="0.36" stop-color="#d4bf95"/>
+      <stop offset="0.6" stop-color="#a68a5f"/>
+      <stop offset="1" stop-color="#45372a"/>
+    </linearGradient>
+    <linearGradient id="mtrATanTop" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#e0cea6"/>
+      <stop offset="0.5" stop-color="#b39a6e"/>
+      <stop offset="1" stop-color="#75603f"/>
+    </linearGradient>
+    <linearGradient id="mtrACu" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5a2e14"/>
+      <stop offset="0.4" stop-color="#c47a3c"/>
+      <stop offset="0.6" stop-color="#e6a466"/>
+      <stop offset="1" stop-color="#7a3f1a"/>
+    </linearGradient>
+    <radialGradient id="mtrAShadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.3"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="500" cy="800" rx="360" ry="80" fill="url(#mtrAShadow)"/>
+  <!-- stator mount base -->
+  <path d="M290 602 L290 716 A222 84.4 0 0 0 734 716 L734 602 Z" fill="url(#mtrABlk)" stroke="#030404" stroke-width="3"/>
+  <path d="M290 709 A222 84.4 0 0 0 734 709" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="2"/>
+  <!-- silver base band -->
+  <path d="M290 646 A222 84.4 0 0 0 734 646 L734 668 A222 84.4 0 0 1 290 668 Z" fill="url(#mtrAChrome)" stroke="#1a1c1f" stroke-width="2"/>
+  <path d="M290 650 A222 84.4 0 0 0 734 650" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.6"/>
+  <ellipse cx="622" cy="763.1" rx="10.8" ry="8" fill="#2f3337" stroke="#000" stroke-width="1.5"/>
+  <ellipse cx="622" cy="763.1" rx="4.9" ry="3.5" fill="#0b0c0d"/>
+  <ellipse cx="402" cy="763.1" rx="10.8" ry="8" fill="#2f3337" stroke="#000" stroke-width="1.5"/>
+  <ellipse cx="402" cy="763.1" rx="4.9" ry="3.5" fill="#0b0c0d"/>
+  <!-- three phase leads through a moulded grommet -->
+  <rect x="318" y="680" width="58" height="44" rx="10" fill="url(#mtrABlk)" stroke="#000" stroke-width="2"/>
+  <path d="M196 750 L167.7 768.9" fill="none" stroke="#6f767c" stroke-width="11" stroke-linecap="round"/>
+  <path d="M196 750 L167.7 768.9" fill="none" stroke="#d3d8dc" stroke-width="6" stroke-linecap="round"/>
+  <path d="M352 690 C 300 692 250 714 196 750" fill="none" stroke="#020202" stroke-width="18" stroke-linecap="round"/>
+  <path d="M352 690 C 300 692 250 714 196 750" fill="none" stroke="#25282c" stroke-width="12" stroke-linecap="round"/>
+  <path d="M352 690 C 300 692 250 714 196 750" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="3" stroke-linecap="round"/>
+  <path d="M202 788 L177.4 811.5" fill="none" stroke="#6f767c" stroke-width="11" stroke-linecap="round"/>
+  <path d="M202 788 L177.4 811.5" fill="none" stroke="#d3d8dc" stroke-width="6" stroke-linecap="round"/>
+  <path d="M350 703 C 296 714 248 744 202 788" fill="none" stroke="#020202" stroke-width="18" stroke-linecap="round"/>
+  <path d="M350 703 C 296 714 248 744 202 788" fill="none" stroke="#25282c" stroke-width="12" stroke-linecap="round"/>
+  <path d="M350 703 C 296 714 248 744 202 788" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="3" stroke-linecap="round"/>
+  <path d="M228 822 L208.3 849.7" fill="none" stroke="#6f767c" stroke-width="11" stroke-linecap="round"/>
+  <path d="M228 822 L208.3 849.7" fill="none" stroke="#d3d8dc" stroke-width="6" stroke-linecap="round"/>
+  <path d="M348 716 C 300 738 262 774 228 822" fill="none" stroke="#020202" stroke-width="18" stroke-linecap="round"/>
+  <path d="M348 716 C 300 738 262 774 228 822" fill="none" stroke="#25282c" stroke-width="12" stroke-linecap="round"/>
+  <path d="M348 716 C 300 738 262 774 228 822" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="3" stroke-linecap="round"/>
+  <!-- air gap with stator windings glinting -->
+  <path d="M276 584 L276 602 A236 89.7 0 0 0 748 602 L748 584 Z" fill="#110d0a" stroke="#050404" stroke-width="2"/>
+  <line x1="740" y1="610.6" x2="740" y2="622.2" stroke="#c27a3e" stroke-width="1.5" stroke-opacity="0.8"/>
+  <line x1="725.9" y1="626.1" x2="725.9" y2="636.9" stroke="#c27a3e" stroke-width="2.1" stroke-opacity="0.8"/>
+  <line x1="705.3" y1="640.5" x2="705.3" y2="650.4" stroke="#c27a3e" stroke-width="2.9" stroke-opacity="0.8"/>
+  <line x1="678.9" y1="653.2" x2="678.9" y2="662.4" stroke="#c27a3e" stroke-width="3.5" stroke-opacity="0.8"/>
+  <line x1="647.4" y1="663.8" x2="647.4" y2="672.5" stroke="#c27a3e" stroke-width="4.1" stroke-opacity="0.8"/>
+  <line x1="611.7" y1="672.1" x2="611.7" y2="680.3" stroke="#c27a3e" stroke-width="4.5" stroke-opacity="0.8"/>
+  <line x1="573.1" y1="677.8" x2="573.1" y2="685.6" stroke="#c27a3e" stroke-width="4.8" stroke-opacity="0.8"/>
+  <line x1="532.6" y1="680.6" x2="532.6" y2="688.4" stroke="#c27a3e" stroke-width="5" stroke-opacity="0.8"/>
+  <line x1="491.4" y1="680.6" x2="491.4" y2="688.4" stroke="#c27a3e" stroke-width="5" stroke-opacity="0.8"/>
+  <line x1="450.9" y1="677.8" x2="450.9" y2="685.6" stroke="#c27a3e" stroke-width="4.8" stroke-opacity="0.8"/>
+  <line x1="412.3" y1="672.1" x2="412.3" y2="680.3" stroke="#c27a3e" stroke-width="4.5" stroke-opacity="0.8"/>
+  <line x1="376.6" y1="663.8" x2="376.6" y2="672.5" stroke="#c27a3e" stroke-width="4.1" stroke-opacity="0.8"/>
+  <line x1="345.1" y1="653.2" x2="345.1" y2="662.4" stroke="#c27a3e" stroke-width="3.5" stroke-opacity="0.8"/>
+  <line x1="318.7" y1="640.5" x2="318.7" y2="650.4" stroke="#c27a3e" stroke-width="2.9" stroke-opacity="0.8"/>
+  <line x1="298.1" y1="626.1" x2="298.1" y2="636.9" stroke="#c27a3e" stroke-width="2.1" stroke-opacity="0.8"/>
+  <line x1="284" y1="610.6" x2="284" y2="622.2" stroke="#c27a3e" stroke-width="1.5" stroke-opacity="0.8"/>
+  <!-- gunmetal rotor bell -->
+  <path d="M262 330 L262 584 A250 95 0 0 0 762 584 L762 330 Z" fill="url(#mtrAGun)" stroke="#121417" stroke-width="3"/>
+  <path d="M262 568 A250 95 0 0 0 762 568" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="2"/>
+  <path d="M262 564 A250 95 0 0 0 762 564" fill="none" stroke="#0c0d0f" stroke-opacity="0.5" stroke-width="2"/>
+  <path d="M262 408 A250 95 0 0 0 762 408" fill="none" stroke="#0c0d0f" stroke-opacity="0.5" stroke-width="3"/>
+  <path d="M262 412 A250 95 0 0 0 762 412" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+  <rect x="392" y="430" width="22" height="150" fill="#ffffff" opacity="0.1"/>
+  <rect x="428" y="436" width="8" height="150" fill="#ffffff" opacity="0.1"/>
+  <!-- cooling slots in the top band -->
+  <polygon points="755.4,368.5 761,356.5 761,400.5 755.4,412.5" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <line x1="755.4" y1="415" x2="761" y2="403" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="742.9,382.7 751,374.2 751,418.2 742.9,426.7" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <line x1="742.9" y1="429.2" x2="751" y2="420.7" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="723.3,397 733.8,390 733.8,434 723.3,441" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="726.3,402 730.7,399 730.7,429 726.3,432" fill="url(#mtrACu)" opacity="0.6"/>
+  <line x1="723.3" y1="443.5" x2="733.8" y2="436.5" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="697.2,409.9 709.8,404.2 709.8,448.2 697.2,453.9" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="700.9,415.3 706.2,412.9 706.2,442.9 700.9,445.3" fill="url(#mtrACu)" opacity="0.6"/>
+  <line x1="697.2" y1="456.4" x2="709.8" y2="450.7" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="665.5,421.1 679.9,416.5 679.9,460.5 665.5,465.1" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="669.7,426.7 675.7,424.8 675.7,454.8 669.7,456.7" fill="url(#mtrACu)" opacity="0.6"/>
+  <line x1="665.5" y1="467.6" x2="679.9" y2="463" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="629,430 645,426.5 645,470.5 629,474" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="633.6,436 640.4,434.5 640.4,464.5 633.6,466" fill="url(#mtrACu)" opacity="0.6"/>
+  <line x1="629" y1="476.5" x2="645" y2="473" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="589,436.5 606.1,434.1 606.1,478.1 589,480.5" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="593.9,442.8 601.1,441.8 601.1,471.8 593.9,472.8" fill="url(#mtrACu)" opacity="0.6"/>
+  <line x1="589" y1="483" x2="606.1" y2="480.6" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="546.5,440.2 564.3,439 564.3,483 546.5,484.2" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="551.7,446.8 559.1,446.3 559.1,476.3 551.7,476.8" fill="url(#mtrACu)" opacity="0.6"/>
+  <line x1="546.5" y1="486.7" x2="564.3" y2="485.5" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="503,441 521,441 521,485 503,485" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="508.2,448 515.8,448 515.8,478 508.2,478" fill="url(#mtrACu)" opacity="0.6"/>
+  <line x1="503" y1="487.5" x2="521" y2="487.5" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="459.7,439 477.5,440.2 477.5,484.2 459.7,483" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="464.9,446.3 472.3,446.8 472.3,476.8 464.9,476.3" fill="url(#mtrACu)" opacity="0.6"/>
+  <line x1="459.7" y1="485.5" x2="477.5" y2="486.7" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="417.9,434.1 435,436.5 435,480.5 417.9,478.1" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="422.9,441.8 430.1,442.8 430.1,472.8 422.9,471.8" fill="url(#mtrACu)" opacity="0.6"/>
+  <line x1="417.9" y1="480.6" x2="435" y2="483" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="379,426.5 395,430 395,474 379,470.5" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="383.6,434.5 390.4,436 390.4,466 383.6,464.5" fill="url(#mtrACu)" opacity="0.6"/>
+  <line x1="379" y1="473" x2="395" y2="476.5" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="344.1,416.5 358.5,421.1 358.5,465.1 344.1,460.5" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="348.3,424.8 354.3,426.7 354.3,456.7 348.3,454.8" fill="url(#mtrACu)" opacity="0.6"/>
+  <line x1="344.1" y1="463" x2="358.5" y2="467.6" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="314.2,404.2 326.8,409.9 326.8,453.9 314.2,448.2" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="317.8,412.9 323.1,415.3 323.1,445.3 317.8,442.9" fill="url(#mtrACu)" opacity="0.6"/>
+  <line x1="314.2" y1="450.7" x2="326.8" y2="456.4" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="290.2,390 300.7,397 300.7,441 290.2,434" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="293.3,399 297.7,402 297.7,432 293.3,429" fill="url(#mtrACu)" opacity="0.6"/>
+  <line x1="290.2" y1="436.5" x2="300.7" y2="443.5" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="273,374.2 281.1,382.7 281.1,426.7 273,418.2" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <line x1="273" y1="420.7" x2="281.1" y2="429.2" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <polygon points="263,356.5 268.6,368.5 268.6,412.5 263,400.5" fill="#0a0b0d" stroke="#050607" stroke-width="1.2" stroke-linejoin="round"/>
+  <line x1="263" y1="403" x2="268.6" y2="415" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <!-- top face with spoke vents -->
+  <ellipse cx="512" cy="330" rx="250" ry="95" fill="url(#mtrAGunTop)" stroke="#121417" stroke-width="3"/>
+  <ellipse cx="512" cy="330" rx="240" ry="91" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2.5"/>
+  <ellipse cx="512" cy="330" rx="228" ry="86.6" fill="none" stroke="#0b0c0e" stroke-opacity="0.4" stroke-width="2"/>
+  <polygon points="709.9,348.8 705.3,354.7 699.5,360.5 692.5,366.2 684.2,371.5 674.9,376.7 664.6,381.5 653.2,386 640.9,390.1 627.8,393.8 614,397.1 565,364.9 572.2,363.2 579,361.2 585.4,359.1 591.3,356.7 596.7,354.2 601.5,351.6 605.8,348.8 609.4,345.9 612.5,342.8 614.9,339.7" fill="#0c0d0f" stroke="#050607" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="687.5,355.6 680.5,361.7 672,367.5 662.1,373 651,378.1 638.6,382.8 625.1,387.1 585.4,367 594.2,364.3 602.2,361.2 609.4,357.9 615.8,354.3 621.3,350.6 625.9,346.6" fill="url(#mtrACu)" opacity="0.4"/>
+  <polygon points="526.2,407.3 509.9,407.5 493.5,407.2 477.3,406.4 461.3,405.1 445.6,403.3 430.3,401 415.6,398.3 401.5,395.2 388.1,391.6 375.5,387.6 441.1,359.9 447.6,362 454.6,363.9 461.9,365.5 469.6,366.9 477.5,368.1 485.6,369 494,369.7 502.4,370.1 510.9,370.3 519.4,370.2" fill="#0c0d0f" stroke="#050607" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="502.2,401.3 484.8,400.7 467.6,399.4 450.8,397.5 434.5,395.1 418.9,392.1 404.2,388.5 442,368 451.6,370.3 461.7,372.2 472.3,373.8 483.2,375 494.3,375.9 505.6,376.3" fill="url(#mtrACu)" opacity="0.4"/>
+  <polygon points="322.9,359 317.3,353.2 313.1,347.2 310.1,341.1 308.4,334.9 308,328.6 309,322.4 311.2,316.3 314.8,310.2 319.6,304.3 325.6,298.5 415.2,313.6 412,316.6 409.5,319.7 407.7,322.9 406.5,326.1 406,329.3 406.2,332.5 407.1,335.7 408.6,338.9 410.9,342 413.7,345.1" fill="#0c0d0f" stroke="#050607" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="330.4,348.5 326.7,342 324.5,335.4 324,328.8 325.1,322.1 327.9,315.6 332.2,309.1 395.3,316.4 392.5,320.6 390.7,324.9 390,329.2 390.3,333.5 391.7,337.8 394.2,342" fill="url(#mtrACu)" opacity="0.4"/>
+  <polygon points="380.9,270.6 393.8,266.8 407.5,263.4 421.9,260.4 436.9,257.9 452.4,255.9 468.2,254.3 484.3,253.2 500.6,252.6 517,252.5 533.3,252.9 523.1,289.9 514.6,289.7 506.1,289.8 497.6,290.1 489.2,290.7 481,291.5 473,292.5 465.2,293.9 457.7,295.4 450.6,297.2 443.9,299.1" fill="#0c0d0f" stroke="#050607" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="409.6,270.1 424.7,266.7 440.6,263.9 457,261.7 474,260 491.3,259 508.7,258.6 509.9,283.6 498.5,283.9 487.3,284.6 476.3,285.7 465.6,287.1 455.4,288.9 445.6,291.1" fill="url(#mtrACu)" opacity="0.4"/>
+  <polygon points="620.1,264.3 633.6,267.8 646.4,271.7 658.2,276 669.2,280.6 679.1,285.5 688,290.8 695.7,296.3 702.2,302 707.5,307.9 711.5,313.9 615.7,321.6 613.6,318.5 610.8,315.4 607.4,312.5 603.4,309.6 598.8,306.9 593.7,304.3 588,301.9 581.8,299.7 575.2,297.7 568.2,295.8" fill="#0c0d0f" stroke="#050607" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="630.3,274.5 643.4,278.9 655.3,283.8 666,289 675.4,294.6 683.3,300.6 689.8,306.7 627.4,314.9 623.2,310.9 618,307.1 611.9,303.4 605,300 597.3,296.8 588.8,294" fill="url(#mtrACu)" opacity="0.4"/>
+  <line x1="620" y1="330.7" x2="714" y2="331.3" stroke="#ffffff" stroke-opacity="0.1" stroke-width="3"/>
+  <line x1="543.6" y1="369.2" x2="571.1" y2="403.4" stroke="#ffffff" stroke-opacity="0.1" stroke-width="3"/>
+  <line x1="423.5" y1="353.5" x2="346.5" y2="374" stroke="#ffffff" stroke-opacity="0.1" stroke-width="3"/>
+  <line x1="425.7" y1="305.3" x2="350.7" y2="283.8" stroke="#ffffff" stroke-opacity="0.1" stroke-width="3"/>
+  <line x1="547.2" y1="291.2" x2="577.8" y2="257.4" stroke="#ffffff" stroke-opacity="0.1" stroke-width="3"/>
+  <!-- prop-mount hub cap -->
+  <ellipse cx="512" cy="333" rx="92" ry="35.7" fill="#000" opacity="0.3"/>
+  <path d="M426 296 L426 330 A86 32.7 0 0 0 598 330 L598 296 Z" fill="url(#mtrAGun)" stroke="#121417" stroke-width="2.5"/>
+  <ellipse cx="512" cy="296" rx="86" ry="32.7" fill="url(#mtrAGunTop)" stroke="#121417" stroke-width="2.5"/>
+  <ellipse cx="512" cy="296" rx="78" ry="29.7" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+  <ellipse cx="550.2" cy="310.5" rx="8" ry="3.6" fill="#0b0c0e"/>
+  <ellipse cx="473.8" cy="310.5" rx="8" ry="3.6" fill="#0b0c0e"/>
+  <ellipse cx="473.8" cy="281.5" rx="8" ry="3.6" fill="#0b0c0e"/>
+  <ellipse cx="550.2" cy="281.5" rx="8" ry="3.6" fill="#0b0c0e"/>
+  <path d="M494 258 L494 296 A18 6.8 0 0 0 530 296 L530 258 Z" fill="url(#mtrAChrome)" stroke="#3d4348" stroke-width="2"/>
+  <path d="M494 280 A18 6.8 0 0 0 530 280" fill="none" stroke="#30353a" stroke-width="2.5"/>
+  <ellipse cx="512" cy="258" rx="18" ry="6.8" fill="url(#mtrAChromeFace)" stroke="#3d4348" stroke-width="2"/>
+</svg>

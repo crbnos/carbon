@@ -15,6 +15,8 @@ import { join } from "pathe";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PortMap } from "../worktree.js";
 import {
+  assemblerCargoTargetDir,
+  cargoBinary,
   spawnApps,
   spawnEmailPreview,
   stopAuxApps,
@@ -228,4 +230,34 @@ describe("aux app lifecycle", () => {
 
     await expect(exited).resolves.toBeUndefined();
   }, 20_000);
+});
+
+describe("assemblerCargoTargetDir", () => {
+  it("shares one build directory across worktrees by default", () => {
+    expect(assemblerCargoTargetDir({})).toMatch(
+      /\.cache\/carbon-cargo-target$/
+    );
+  });
+
+  it("keeps a CARGO_TARGET_DIR the developer set", () => {
+    expect(assemblerCargoTargetDir({ CARGO_TARGET_DIR: "/tmp/mine" })).toBe(
+      "/tmp/mine"
+    );
+  });
+});
+
+describe("cargoBinary", () => {
+  it("finds cargo in rustup's home when PATH lacks it", () => {
+    const home = mkdtempSync(join(tmpdir(), "cargo-home-"));
+    mkdirSync(join(home, "bin"));
+    writeFileSync(join(home, "bin", "cargo"), "");
+    expect(cargoBinary({ PATH: "", CARGO_HOME: home })).toBe(
+      join(home, "bin", "cargo")
+    );
+  });
+
+  it("is null when Rust is not installed", () => {
+    const home = mkdtempSync(join(tmpdir(), "cargo-home-"));
+    expect(cargoBinary({ PATH: "", CARGO_HOME: home })).toBeNull();
+  });
 });

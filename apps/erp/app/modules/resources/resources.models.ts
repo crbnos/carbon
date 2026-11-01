@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { Constants } from "@carbon/database";
 import { isUnsafeStoragePath } from "@carbon/files";
 import {
   type BatchRules,
@@ -332,6 +333,11 @@ export const partnerValidator = z.object({
   // abilityId: z.string().min(1, { message: "Invalid ability" }),
 });
 
+// What MES does when an operator lacks the ability a process requires.
+// 'Warn' shows a banner; 'Block' refuses production work on the operation.
+export const processAbilityPolicies =
+  Constants.public.Enums.processAbilityPolicy;
+
 export const processValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -354,6 +360,7 @@ export const processValidator = z
       .optional()
       .default("Sequential"),
     requiresAbility: zfd.checkbox(),
+    abilityPolicy: z.enum(processAbilityPolicies).optional(),
     batchRuleItem: z.enum(batchRuleLevels).optional(),
     batchRuleSubstance: z.enum(batchRuleLevels).optional(),
     batchRuleGrade: z.enum(batchRuleLevels).optional(),
@@ -714,3 +721,26 @@ export const workCenterValidator = z
       path: ["minimumBatchQuantity"]
     }
   );
+
+/**
+ * The work center form: its Operating hours choice is posted only to be
+ * checked, since "Some Shifts" with no shift picked would save as every
+ * shift. The API takes `workCenterValidator`, where `alwaysOn` and `shifts`
+ * say it all.
+ */
+export const workCenterFormValidator = workCenterValidator
+  .safeExtend({
+    operatingHours: zfd.text(z.enum(["all", "some", "lightsOut"]).optional())
+  })
+  .refine(
+    (data) => data.operatingHours !== "some" || (data.shifts?.length ?? 0) > 0,
+    { message: "Select at least one shift", path: ["shifts"] }
+  );
+
+/** The form's data as the API takes it: the choice was only for checking. */
+export function withoutOperatingHours<T extends { operatingHours?: unknown }>({
+  operatingHours: _operatingHours,
+  ...data
+}: T): Omit<T, "operatingHours"> {
+  return data;
+}

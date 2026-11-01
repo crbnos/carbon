@@ -215,9 +215,47 @@ URL strings in links, redirects, and form actions.
 
 ## Theme System
 
-Themes are defined in `packages/utils/src/themes.ts` and selected via the
-`useTheme()` hook (`apps/erp/app/hooks/useTheme.tsx`). Each theme supplies HSL
-values for CSS variables (`--primary`, `--background`, `--foreground`, `--card`,
-`--popover`, `--secondary`, `--muted`, `--accent`, `--destructive`).
-Theme names: `zinc`, `neutral`, `red`, `orange`, `yellow`, `green`, `blue`,
-`violet`. <!-- UNVERIFIED: display labels like "Modern"/"Brutal"/"Cherry" not re-confirmed in current code -->
+Themes are defined in `packages/utils/src/themes.ts` (`themes`, the only list
+of theme names) and selected via the `useTheme()` hook
+(`apps/erp/app/hooks/useTheme.tsx`). Each theme supplies HSL values for CSS
+variables (`--primary`, `--background`, `--foreground`, `--card`, `--popover`,
+`--secondary`, `--muted`, `--accent`, `--destructive`) and its four `mesh`
+colors per mode (the ERP's onboarding backdrop). Theme names: `zinc`
+(the default, `DEFAULT_THEME_NAME`), `neutral`, `red`, `orange`, `yellow`,
+`green`, `blue`, `violet`, plus seasonal ones.
+
+The choice is a `theme` cookie per browser, never a database column. Each app's
+`getTheme` (`services/theme.server.ts`) is the theme to RENDER: it resolves
+through `themeForRequest` and `resolveTheme`, which return the default for a
+name no longer in `themes`, so removing a theme needs no migration and breaks
+no browser that still holds it. The pickers show `getTheme` as chosen. The
+root `Document` renders the loader's name with `themeByName`, so the season is
+decided once, on the server.
+
+A seasonal theme (`seasonalThemes`, never in `themes`) shows only inside the
+signed-in app (`isAppPath`, `/x`): every other page (sign-in, shared links,
+onboarding) gets the stored everyday theme, so public pages always show the
+brand, and the onboarding theme step lists only `themes`. Inside the app it is
+on by default while in season: it replaces every theme for everyone who has not
+picked another one, and when the season ends everyone is back on their own
+cookie. While in season every picker inside the app (the ERP avatar menu and
+mobile profile sheet, Account → Appearance) lists it first (`pickableThemes`),
+and `themeColorValidator` accepts it. What a pick writes is
+`themeCookieWrites` (`@carbon/utils`, as data; each app's `setTheme`
+serializes it with its cookie domain): an everyday theme is stored, and when
+picked inside the app (`inApp`) while a seasonal theme is on, a second cookie,
+`SEASONAL_OFF_COOKIE`, holds the seasonal theme's name for 30 days, which
+`themeForRequest` passes to `resolveTheme` as `seasonalOff`. Onboarding's pick
+(`inApp: false`) only stores the theme. Picking the seasonal theme clears that
+cookie and keeps the stored one. Its season is the `available` window on the
+theme (`ThemeWindow`, month and day inside one calendar year), and that
+window is the only switch: no flag, no deploy on the day. The server has no time zone for the user, so `isInSeason` is true
+while it is the season anywhere on Earth (UTC+14 reaches `from`, UTC-12 has
+not left `to`); a fixed UTC check turned it on hours late east of UTC. To
+preview one locally, widen its window. A seasonal theme lives in its own file
+(`<name>-theme.ts`) and declares everything about itself on the
+`SeasonalTheme` object (its window, its colors and `mesh`), so no other code
+names it: removing it is that file,
+its `seasonalThemes` entry and its `index.ts` export. `themes.test.ts` tests
+the window on a fixture and loops over `seasonalThemes`, so it survives the
+removal unchanged.

@@ -98,7 +98,11 @@ export default function ApiKeysUpgradeOverlay() {
   return (
     <UpgradeOverlay>
       <UpgradeOverlayPreview>
-        <ApiKeysTable data={mockApiKeys} count={mockApiKeys.length} />
+        <ApiKeysTable
+          data={mockApiKeys}
+          count={mockApiKeys.length}
+          infinite={{ dataKey: "data", nextCursor: null }}
+        />
       </UpgradeOverlayPreview>
       <UpgradeOverlayCard>
         <UpgradeOverlayIcon>

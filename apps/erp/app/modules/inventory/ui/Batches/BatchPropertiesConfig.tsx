@@ -28,7 +28,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -81,7 +81,8 @@ export default function BatchPropertiesConfig({
 
   const submit = useSubmit();
   const fetcher = useAction<typeof batchPropertyAction>({
-    onError: () => toast.error(t`Failed to update batch property`)
+    onError: (data) =>
+      toastError(t`Failed to update batch property`, data.error)
   });
 
   const propertiesById = new Map<string, BatchProperty>(

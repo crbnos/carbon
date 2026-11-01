@@ -4,6 +4,10 @@
 
 import { useCarbon } from "@carbon/auth";
 import {
+  type Database,
+  getNonNettableTrackedEntityIds
+} from "@carbon/database";
+import {
   Button,
   Combobox as ComboboxBase,
   cn,
@@ -30,6 +34,7 @@ import {
   toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { useCallback, useEffect, useState } from "react";
 import {
   LuCheck,
@@ -119,14 +124,19 @@ export function MaintenanceAddPartModal({
 
           // Fetch serial numbers if serial tracked
           if (data.itemTrackingType === "Serial") {
-            const { data: serials } = await carbon
-              .from("trackedEntity")
-              .select("id, readableId, status")
-              .eq("sourceDocumentId", itemId)
-              .eq("status", "Available");
+            const serials = await withoutNonNettableLots(
+              carbon,
+              (
+                await carbon
+                  .from("trackedEntity")
+                  .select("id, readableId, status, companyId")
+                  .eq("sourceDocumentId", itemId)
+                  .eq("status", "Available")
+              ).data
+            );
 
             setSerialOptions(
-              serials?.map((sn) => ({
+              serials.map((sn) => ({
                 label: sn.readableId
                   ? `${sn.readableId} — ${sn.id}`
                   : (sn.id ?? ""),
@@ -137,14 +147,19 @@ export function MaintenanceAddPartModal({
 
           // Fetch batch numbers if batch tracked
           if (data.itemTrackingType === "Batch") {
-            const { data: batches } = await carbon
-              .from("trackedEntity")
-              .select("id, readableId, status, quantity")
-              .eq("sourceDocumentId", itemId)
-              .eq("status", "Available");
+            const batches = await withoutNonNettableLots(
+              carbon,
+              (
+                await carbon
+                  .from("trackedEntity")
+                  .select("id, readableId, status, quantity, companyId")
+                  .eq("sourceDocumentId", itemId)
+                  .eq("status", "Available")
+              ).data
+            );
 
             setBatchOptions(
-              batches?.map((batch) => ({
+              batches.map((batch) => ({
                 label: batch.readableId
                   ? `${batch.readableId} — ${batch.id.slice(0, 10)} — ${batch.quantity} available`
                   : `${batch.id.slice(0, 10)} — ${batch.quantity} available`,
@@ -675,4 +690,20 @@ export function MaintenanceAddPartModal({
       </ModalContent>
     </Modal>
   );
+}
+
+/** Spare parts never come out of a non-nettable (quarantine) unit unasked. */
+async function withoutNonNettableLots<
+  T extends { id: string; companyId: string }
+>(client: SupabaseClient<Database>, lots: T[] | null): Promise<T[]> {
+  if (!lots?.length) return [];
+  const quarantined = await getNonNettableTrackedEntityIds(
+    client,
+    lots[0].companyId,
+    lots.map((lot) => lot.id)
+  );
+  // Without the bins any lot could be a quarantined one: offer none.
+  const held = quarantined.data;
+  if (quarantined.error || !held) return [];
+  return lots.filter((lot) => !held.has(lot.id));
 }

@@ -7,6 +7,7 @@ paths:
   - "packages/database/src/event-system/functions/log_*.sql"
   - "apps/*/app/components/RealtimeDataProvider.tsx"
   - "apps/*/app/stores/**"
+  - "apps/erp/app/components/Table/useInfiniteRows.ts"
 ---
 
 # Realtime: broadcast topics, route declarations, live lists
@@ -105,6 +106,20 @@ the navigation that follows a save restarts that navigation.
   that a list is COMPLETE, only that each name can broadcast.
 - A table missing from `attachments.ts`: add `broadcast_table_changes` to its
   entry, `pnpm db:migrate`, then `authz migration <name>`.
+
+**Infinite-scroll lists.** A list loader returns page 1 only (100 rows). The
+pages after it come from `useInfiniteRows`
+(`apps/erp/app/components/Table/useInfiniteRows.ts`). When a revalidation gives
+the same list (the same reset key, see `table-infinite-scroll.md`) a new page 1, the hook fetches the loaded pages again, in
+order and with fresh cursors. Then it swaps them in at once, so edits, new rows
+and deleted rows show in place and the scroll position stays. It keeps at most
+20 pages (`MAX_REFRESH_PAGES`, 2,000 rows), and the cursor continues after the
+last one. Revalidations that arrive during a refresh wait for one more refresh,
+not one each. A `loadMore` during a refresh waits and runs when it ends. So a
+list page needs only its table name in `handle.realtime`.
+Do not add `useRealtime(table, "id=in.(…)")` with the loaded ids to a list
+table. The plain table name already follows every row of the company, and an
+id list names page 1 only.
 
 | For | Use |
 |---|---|

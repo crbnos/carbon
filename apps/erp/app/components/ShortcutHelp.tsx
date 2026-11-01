@@ -13,7 +13,6 @@ import {
   EXPLORER_SHORTCUTS,
   MODULE_GO_TO,
   MODULE_GO_TO_PREFIX,
-  PAGINATION_SHORTCUTS,
   SHORTCUTS,
   searchShortcut
 } from "~/shortcuts";
@@ -75,16 +74,6 @@ const ShortcutHelp = () => {
       {
         shortcut: SHORTCUTS.newRecord,
         description: t`New record`,
-        group: listPages
-      },
-      {
-        shortcut: PAGINATION_SHORTCUTS.previous,
-        description: t`Previous page`,
-        group: listPages
-      },
-      {
-        shortcut: PAGINATION_SHORTCUTS.next,
-        description: t`Next page`,
         group: listPages
       },
       {

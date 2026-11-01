@@ -7,7 +7,7 @@ Employee management, departments, shifts, holidays, time tracking (clock in/out,
 - **People vs Users vs Employees** — `user` is the global auth identity. `employee` is a per-company record with composite PK `(id, companyId)` where `id → user.id`. `employeeJob` holds title, location, department, shift, and manager. See `.claude/rules/user-employee-job-relationships.md`.
 - **Departments** — hierarchical organizational units via `parentDepartmentId`. Used for org structure and reporting.
 - **Shifts** — work schedules with day-of-week boolean flags (`monday`..`sunday`), start/end times, and location. Assigned to employees via `employeeJob.shiftId`.
-- **Holidays** — company-specific non-working days with year grouping.
+- **Holidays** — company-specific non-working days with year grouping. The scheduler closes every work center that is not lights-out (`workCenter.alwaysOn`) for the whole day in the plant timezone, and treats every person as absent.
 - **Time Tracking** — `clockIn`/`clockOut` functions manage `timeCardEntry` records. Weekly hours aggregated via `getWeeklyHoursForEmployees`.
 - **Contacts** — external contacts (not employees) associated with customers/suppliers via the `contact` table.
 - **Employee Attributes** — custom field system: categories → attributes → values. Each attribute has a data type (text, numeric, boolean, date, user, file, list) from `attributeDataType`. Values stored per user in `userAttributeValue`.
@@ -70,7 +70,8 @@ pnpm --filter erp test -- people   # vitest filters by file path
 
 Each is a `defineServiceFn` const in `people.server.ts`. The route calls it as `api.people.<name>(input)`; the API and MCP publish the ones tagged `@mcp` as `people_<name>`. Routes validate the request, call one, and answer with `respond(request, result).redirect(…)` (a flash) or the result.
 
-- `createShift` (people create), `updateShift` (people create and update: the old route's gate and the `shift` UPDATE policy; refused `notFound` when the update reaches no row of the company, and only then marks active jobs for rescheduling, `notifyScheduleInputsChanged`). Published.
+- `createShift` (people create), `updateShift` (people create and update: the old route's gate and the `shift` UPDATE policy; refused `notFound` when the update reaches no row of the company), `deleteShift` (people delete; sets `active: false`). All three notify the scheduler with kind `shift` and the shift id, so the mark step stamps the jobs on the work centers that run the shift; an update that moves the shift to another location notifies kind `location` (company-wide), since the stations it left lose its hours too. Published.
+- `createHoliday`, `updateHoliday`, `deleteHoliday` — the holiday calendar (`x+/people+/holidays.*`). A holiday closes the plant for the scheduler, so each one notifies kind `location` after it saves.
 - `updatePersonJob` — the person's job (`updateEmployeeJob`: ids checked against the company, `employeeShift` kept in step, one transaction), then reschedules. Published.
 - The person timecard page (`x+/person+/$personId.timecard.tsx`): `clockInPerson`, `clockOutPerson`, `addPersonTimeCardEntry`, `updatePersonTimeCardEntry`, `deletePersonTimeCardEntry`. They need only people view, as that page always did, so they stay unpublished. A helper's own refusal ("Already clocked in") is a `rule` error; a database error is `internal`.
 - `clockInSelf`, `clockOutSelf` for the caller (`api+/people.timecard.ts`, the "Forgot to clock out?" prompt). Unpublished.

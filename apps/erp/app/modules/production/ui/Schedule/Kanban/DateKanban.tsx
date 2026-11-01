@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getLogger } from "@carbon/logger";
-import { ClientOnly, cn, toast } from "@carbon/react";
+import { ClientOnly, cn, toastError } from "@carbon/react";
 import type {
   DragEndEvent,
   DragOverEvent,
@@ -150,7 +150,10 @@ function useDateUpdateFailureToast() {
         // Surface a friendly, translated message; log the raw server detail.
         if (data?.error?.message)
           logger.error("Reschedule failed", { error: data.error.message });
-        toast.error(t`Couldn't reschedule the job. Please try again.`);
+        toastError(
+          t`Couldn't reschedule the job. Please try again.`,
+          data?.error
+        );
       }
     }
   }, [fetchers, t]);

@@ -24,6 +24,7 @@ import type {
   getPurchaseLinePivotLines,
   getReportViews
 } from "./accounting.service";
+import type { GeneralLedgerCounterparty } from "./accounting.utils";
 
 export type Account = NonNullable<
   Awaited<ReturnType<typeof getAccount>>["data"]
@@ -456,6 +457,9 @@ export type JournalEntry = NonNullable<
 export type GeneralLedgerLine = NonNullable<
   NonNullable<Awaited<ReturnType<typeof getGeneralLedgerLines>>>["data"]
 >[number];
+
+/** A general ledger line with the customer or supplier and invoice it was posted from. */
+export type GeneralLedgerRow = GeneralLedgerLine & GeneralLedgerCounterparty;
 
 export type JournalEntryListItem = NonNullable<
   NonNullable<Awaited<ReturnType<typeof getJournalEntries>>>["data"]

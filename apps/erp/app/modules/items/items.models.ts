@@ -65,6 +65,44 @@ export const itemReplenishmentSystems = [
   "Buy and Make"
 ] as const;
 
+/** The fields the item tables' bulk Update sets on many items at once. */
+export const itemBulkUpdateFields = [
+  "itemPostingGroupId",
+  "replenishmentSystem",
+  "defaultMethodType",
+  "sourcingType",
+  "itemTrackingType"
+] as const;
+
+export type ItemBulkUpdateField = (typeof itemBulkUpdateFields)[number];
+
+export function isItemBulkUpdateField(
+  field: unknown
+): field is ItemBulkUpdateField {
+  return itemBulkUpdateFields.some((allowed) => allowed === field);
+}
+
+/** One field set on many items (the items tables' Update): the field and a
+ *  value it takes. Any item group id, or none, is a value. */
+export const itemBulkUpdateValidator = z.discriminatedUnion("field", [
+  z.object({
+    field: z.literal("itemTrackingType"),
+    value: z.enum(itemTrackingTypes)
+  }),
+  z.object({
+    field: z.literal("replenishmentSystem"),
+    value: z.enum(itemReplenishmentSystems)
+  }),
+  z.object({
+    field: z.literal("defaultMethodType"),
+    value: z.enum(methodType)
+  }),
+  z.object({ field: z.literal("sourcingType"), value: z.enum(sourcingType) }),
+  z.object({ field: z.literal("itemPostingGroupId"), value: z.string() })
+]);
+
+export type ItemBulkUpdate = z.infer<typeof itemBulkUpdateValidator>;
+
 // Maps an edit of ONE of the three interlocked item-level fields
 // (replenishmentSystem, defaultMethodType, sourcingType) to the columns that must
 // change together on the item, plus the values to mirror down to method materials.
@@ -210,10 +248,10 @@ export const itemValidator = z.object({
   // itemShelfLife row. Truly absent fields (non-form callers like MCP that
   // don't set shelfLifeMode at all) remain undefined, which the upsert
   // helper treats as a no-op.
-  shelfLifeMode: z.preprocess(
-    (v) => (v === "" ? "NotManaged" : v),
-    z.enum(shelfLifeModes).optional()
-  ),
+  shelfLifeMode: z
+    .union([z.literal(""), z.enum(shelfLifeModes)])
+    .transform((v) => (v === "" ? "NotManaged" : v))
+    .optional(),
   shelfLifeDays: zfd.numeric(z.number().positive().optional()),
   shelfLifeTriggerProcessId: zfd.text(z.string().optional()),
   // Whether the clock starts when the trigger process begins ('Before') or

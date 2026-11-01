@@ -128,7 +128,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
+    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "5 m"),
     analytics: true
   });
   const { success } = await ratelimit.limit(ip);
@@ -345,6 +345,15 @@ export default function LoginRoute() {
   const [ssoLoading, setSsoLoading] = useState(false);
   const [ssoError, setSsoError] = useState<string | null>(null);
   const conditionalAbortRef = useRef<AbortController | null>(null);
+
+  // A sign-in GoTrue refused (sent here by the index route). Only the code
+  // is read: the copy is ours, so a crafted link cannot put text on this page.
+  const authErrorCode = searchParams.get("error");
+  const authError = authErrorCode
+    ? authErrorCode === "signup_disabled"
+      ? t`There is no Carbon account for this email yet. Ask your administrator to invite you, then sign in again.`
+      : t`Sign-in failed. Try again.`
+    : null;
 
   // A forced logout (see destroyAuthSession) arrives as a bare 302, leaving the
   // browser no trace of what went wrong. "no-claims" is almost always a user
@@ -654,14 +663,18 @@ export default function LoginRoute() {
             <Hidden name="botToken" value={bot.token} />
             <VStack spacing={2}>
               {((fetcher.data?.success === false && fetcher.data?.message) ||
-                ssoError) && (
+                ssoError ||
+                authError) && (
                 <Alert variant="destructive">
                   <LuCircleAlert className="w-4 h-4" />
                   <AlertTitle>
                     <Trans>Authentication Error</Trans>
                   </AlertTitle>
                   <AlertDescription>
-                    {ssoError ?? fetcher.data?.message}
+                    {ssoError ??
+                      (fetcher.data?.success === false && fetcher.data?.message
+                        ? fetcher.data.message
+                        : authError)}
                   </AlertDescription>
                 </Alert>
               )}

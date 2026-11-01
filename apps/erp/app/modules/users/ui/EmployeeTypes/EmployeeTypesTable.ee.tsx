@@ -11,6 +11,7 @@ import { LuPencil, LuTrash, LuUsers } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { EmployeeType } from "~/modules/users/types";
 import { path } from "~/utils/path";
@@ -18,9 +19,11 @@ import { path } from "~/utils/path";
 type EmployeeTypesTableProps = {
   data: EmployeeType[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
+const EmployeeTypesTable = memo((props: EmployeeTypesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -92,6 +95,7 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
   return (
     <Table<(typeof data)[number]>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count}
       primaryAction={

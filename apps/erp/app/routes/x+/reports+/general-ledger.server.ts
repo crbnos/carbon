@@ -83,7 +83,7 @@ export async function resolveGeneralLedgerRequest(request: Request) {
       datetime.today(await getCompanyTimeZone(client, companyId)).toString()
   );
 
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   return {
@@ -101,6 +101,6 @@ export async function resolveGeneralLedgerRequest(request: Request) {
       filters
     },
     limit,
-    offset
+    cursor
   };
 }

@@ -2,9 +2,12 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import { Email } from "./config";
+import { Gmail } from "../gmail/config";
+import { readConnection } from "../integrations/connections";
+import { parseEmailSettings } from "./delivery";
 
 const logger = getLogger("ee", "email");
 
@@ -16,7 +19,7 @@ const logger = getLogger("ee", "email");
  *
  * - `server`: healthy when this server has mail settings. The company's From
  *   cannot make it undeliverable: it is only ever the Reply-To beside the
- *   server's own From (see `documentSender`), so the relay only ever sees its
+ *   server's own From (see `sharedMailHeaders`), so the relay only ever sees its
  *   own sender.
  * - `resend`: hits `GET https://api.resend.com/domains` with the API key.
  *   A 2xx means the key is valid and has read access; a 401
@@ -25,6 +28,8 @@ const logger = getLogger("ee", "email");
  * - `smtp`:   dynamically imports `nodemailer`, builds a transport from the
  *   stored host/port/username/password/secure and calls `.verify()`, which
  *   performs a handshake without sending mail.
+ * - `gmail`:  the picked connection is this company's Gmail account and is
+ *   Active. An Expired or Revoked one needs a reconnect on the Gmail card.
  *
  * Returns `true` on success and `false` on any failure (invalid metadata,
  * network error, bad credentials). Never throws — the settings page caches
@@ -32,23 +37,27 @@ const logger = getLogger("ee", "email");
  * in the integrations list.
  */
 export async function emailHealthcheck(
-  _companyId: string,
+  companyId: string,
   metadata: Record<string, unknown>
 ): Promise<boolean> {
-  // Legacy installs predate the `provider` field — default them to Resend
-  // the same way `send-email.ts` does so existing configs stay healthy.
-  const withProvider =
-    metadata && typeof metadata === "object" && !("provider" in metadata)
-      ? { provider: "resend", ...metadata }
-      : metadata;
-
-  const parsed = Email.schema.safeParse(withProvider);
+  const parsed = parseEmailSettings(metadata);
   if (!parsed.success) return false;
 
   const data = parsed.data;
   if (data.provider === "server") return SERVER_MAIL_CONFIGURED;
 
   try {
+    if (data.provider === "gmail") {
+      const connection = await readConnection(
+        getCarbonServiceRole(),
+        companyId,
+        data.gmailConnectionId
+      );
+      return (
+        connection?.pieceName === Gmail.id && connection.status === "Active"
+      );
+    }
+
     if (data.provider === "resend") {
       const response = await fetch("https://api.resend.com/domains", {
         method: "GET",

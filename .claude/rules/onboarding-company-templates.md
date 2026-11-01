@@ -288,6 +288,23 @@ user's real data, so a second apply would overwrite it. (This replaced an older
 `item`-rows guard, whose retry-idempotency job `wipeFirst` plus snapshot reuse now does
 structurally.)
 
+## Optional per-record seed fields
+
+Four optional fields let a dataset say more than the shared defaults. Omitted, each one
+leaves the row exactly as before, so a dataset that does not use them is unchanged.
+
+| Field | Written by | Effect |
+|---|---|---|
+| `CustomerSpec.address` / `SupplierSpec.address` (`PartyAddressSpec`) | tier 01, the contact's location address | replaces `foundation.partyAddress*` for that party — a foreign buyer an export rule must see (`customer.location.countryCode` reads the order's ship-to address) |
+| `ItemSpec.customFieldValues` | tier 10, after `seedCustomFields` | writes the values into the item's type-table `customFields` JSON keyed by the `customField` id, the shape the item form saves; one UPDATE per type table |
+| `SalesOrderSpec.customerReference` / `SalesStatusOrderSpec.customerReference` | tier 04 | the customer's PO or contract number on the order |
+| `SalesOrderLineSpec.description` / `SalesStatusOrderSpec.lineDescription` | tier 04 | the line description (a CLIN); omitted = the item's name |
+
+The validator's `items` rule checks that each `customFieldValues` key names an
+`ops.customFields` field on the item's own type table, and that a List value is one of the
+field's `listOptions`. Its `foundation` rule checks that an address `countryCode` is two
+upper-case letters.
+
 ## Dates are offsets, never literals
 
 Every date in a dataset is a `DayOffset` — a signed number of days from the moment the
@@ -480,7 +497,8 @@ lists the models, and no third-party CAD remains, so no attribution is owed.
 Every dataset assembly seeds **sub-assemblies**, each shaped to its product (satellite: three
 benches → two parents → integration; robotics: wide, the link assembly uses both joint drives and the
 controller joins the main build unused; precision: three levels deep, one step fits two
-sub-assemblies; motor: a chain).
+sub-assemblies; motor: a chain; defense: four benches, the propulsion pods fitted inside the arm
+set, then the main integration).
 `AssemblyStepSpec` takes `key`, `isSubAssembly` (a header row), `parent` (the header a member
 belongs to) and `usedIn` (headers only: the later step that fits the finished unit).
 Steps also carry planner-baked motion — `motion`, `view` (the camera's plan hint) and
@@ -506,7 +524,7 @@ carries the paths across intact with nothing to re-upload.
 ## Adding an industry
 
 1. `data/<key>/` — one file per slice, mirroring `data/satellite/` (the canonical pattern;
-   the other three mirror its shape). All twelve slices, `ops` included, are required, and
+   the other four mirror its shape). All twelve slices, `ops` included, are required, and
    the new-shape fields are non-optional, so the compiler enforces parity. The validator
    additionally requires the listed arrays to be non-empty and every `COVERAGE` set
    in `validate.ts` (quote / sales-order / invoice / PO / receipt / job-op /
@@ -517,17 +535,22 @@ carries the paths across intact with nothing to re-upload.
 3. Add `"<key>"` to `DatasetKey` in `types.ts`.
 4. Set `industryId` on the dataset to the matching `industry` row id, and add that row in
    a migration if it does not exist yet (`aerospace_satellite` was added by
-   `20260813023744_add-aerospace-industry.sql`; the other three shipped in
-   `20260617100002_onboarding-and-backups.sql`).
+   `20260813023744_add-aerospace-industry.sql`, `defense_uas` by
+   `20261026083820_add-defense-industry.sql`; the other three shipped in
+   `20260617100002_onboarding-and-backups.sql`). A new `iconName` also needs an entry in
+   `INDUSTRY_ICONS` (`apps/erp/app/routes/onboarding+/industry.tsx`), or the card falls
+   back to the factory icon.
 5. Add its workflow builder to `SEED_WORKFLOW_BUILDERS` (`tiers/workflow-definitions.ts`)
    so `packages/ee/src/workflows/seed-workflows.test.ts` validates its definitions.
-6. Verify: `pnpm db:check:datasets -- --dataset <key>` (runs the validator, then applies it and checks
+6. Bundle its assets under `assets/<industryId>/`: one SVG per item, and the CAD assembly's
+   `models/<name>.glb` + `.graph.json` (the validator fails without the graph).
+7. Verify: `pnpm db:check:datasets -- --dataset <key>` (runs the validator, then applies it and checks
    the `coverage.ts` row-count floors).
 
 Volume is the coverage contract: match the existing datasets' row counts roughly, so every
 list screen in the ERP has rows and every detail screen opens.
 
-All four industries have a dataset today. An industry without one is **hidden** from the
+All five industries have a dataset today. An industry without one is **hidden** from the
 onboarding picker (`industry.tsx` filters on `datasetForIndustry`) rather than silently
 provisioning a clean company — a card promising sample data that delivers none is worse
 than no card.
@@ -535,7 +558,7 @@ than no card.
 ## The drift check
 
 ```bash
-pnpm db:check:datasets                       # all four
+pnpm db:check:datasets                       # all five
 pnpm db:check:datasets -- --dataset motor    # one
 ```
 
@@ -588,7 +611,7 @@ Before that pass it dates the seeded locations one second after the bootstrap on
 same `createdAt`.
 
 After the tiers and before the rollback, `findCoverageShortfalls` (`verify.ts`) counts every
-table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 255 tables, measured across all four
+table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 261 tables, measured across the first four
 datasets: floor = the smallest count any dataset produced, ×0.8 for volume tables) in one
 `UNION ALL` query and fails the dataset with every shortfall listed as
 `table: expected ≥ N, got M`. That is what catches a tier that silently writes nothing. Most

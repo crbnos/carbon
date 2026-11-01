@@ -144,18 +144,72 @@ export async function getMethodPartsMissingPullFrom(
   const locations = await getPullFromLocations(db, companyId);
 
   const locationIds = locations.map((location) => location.id);
-  return [
+  const pulled = lines.filter(needsPullFrom);
+
+  // A non-nettable (quarantine) Pull From is no Pull From: the backflush would
+  // consume stock that is on hold.
+  const namedIds = [
     ...new Set(
-      lines
-        .filter(needsPullFrom)
-        .filter(
-          (line) =>
-            missingPullFromLocations(line.storageUnitIds, locationIds).length >
-            0
-        )
-        .map((line) => line.readableIdWithRevision ?? line.itemId)
+      pulled.flatMap((line) =>
+        pullFromStorageUnitIds(line.storageUnitIds, locationIds)
+      )
     )
   ];
+  const nonNettable = new Map(
+    namedIds.length === 0
+      ? []
+      : (
+          await db
+            .selectFrom("storageUnit")
+            .where("companyId", "=", companyId)
+            .where("id", "in", namedIds)
+            .where("effectiveNettable", "=", false)
+            .select(["id", "name"])
+            .execute()
+        ).map((unit) => [unit.id, unit.name])
+  );
+
+  const parts: string[] = [];
+  for (const line of pulled) {
+    const part = line.readableIdWithRevision ?? line.itemId;
+    if (missingPullFromLocations(line.storageUnitIds, locationIds).length > 0) {
+      parts.push(part);
+      continue;
+    }
+    const quarantine = pullFromStorageUnitIds(
+      line.storageUnitIds,
+      locationIds
+    ).find((id) => nonNettable.has(id));
+    if (quarantine) {
+      parts.push(nonNettablePullFromLabel(part, nonNettable.get(quarantine)!));
+    }
+  }
+  return [...new Set(parts)];
+}
+
+/** The storage units a BoM line names as its Pull From at these locations. */
+function pullFromStorageUnitIds(
+  storageUnitIds: unknown,
+  locationIds: readonly string[]
+): string[] {
+  const map =
+    storageUnitIds && typeof storageUnitIds === "object"
+      ? (storageUnitIds as Record<string, unknown>)
+      : {};
+  return locationIds.flatMap((locationId) => {
+    const storageUnitId = map[locationId];
+    return typeof storageUnitId === "string" && storageUnitId.length > 0
+      ? [storageUnitId]
+      : [];
+  });
+}
+
+/** How a part whose Pull From is non-nettable is named in a refusal. */
+export function nonNettablePullFromLabel(
+  part: string,
+  storageUnitName: string
+): string {
+  return `${part} (${storageUnitName} is non-nettable)`;
 }
 
 export function activationRefusalMessage(parts: readonly string[]): string {

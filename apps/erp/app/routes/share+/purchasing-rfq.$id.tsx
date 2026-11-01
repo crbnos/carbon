@@ -127,9 +127,9 @@ const Header = ({
         {rfq?.rfqId && (
           <p className="text-lg text-muted-foreground">{rfq.rfqId}</p>
         )}
-        {rfq?.dueDate && (
+        {rfq?.expirationDate && (
           <p className="text-lg text-muted-foreground">
-            Due <DateTime value={rfq.dueDate} variant="date" />
+            Due <DateTime value={rfq.expirationDate} variant="date" />
           </p>
         )}
       </div>
@@ -267,6 +267,7 @@ const LinePricing = ({ line }: { line: PurchasingRFQLine }) => {
           <Tr className="whitespace-nowrap">
             <Th className="w-[50px]" />
             <Th className="w-2">Quantity</Th>
+            <Th className="w-[80px]">Unit</Th>
             <Th className="w-[150px]">Unit Price</Th>
             <Th className="w-[120px]">Lead Time</Th>
             <Th className="w-[150px]">Shipping Cost</Th>
@@ -281,6 +282,10 @@ const LinePricing = ({ line }: { line: PurchasingRFQLine }) => {
                 <div className="w-4 h-4 border rounded" />
               </Td>
               <Td>{qty}</Td>
+              <Td>
+                {line.purchaseUnitOfMeasureCode ??
+                  line.inventoryUnitOfMeasureCode}
+              </Td>
               <Td className="text-muted-foreground">—</Td>
               <Td className="text-muted-foreground">—</Td>
               <Td className="text-muted-foreground">—</Td>
