@@ -5,6 +5,8 @@
 import type { Database } from "@carbon/database";
 import type {
   getBatchProperties,
+  getInventoryCountGroupSummaries,
+  getInventoryCountGroups,
   getInventoryCountLines,
   getInventoryCounts,
   getInventoryItems,
@@ -66,6 +68,14 @@ export type InventoryCount = NonNullable<
 
 export type InventoryCountLine = NonNullable<
   Awaited<ReturnType<typeof getInventoryCountLines>>["data"]
+>[number];
+
+export type InventoryCountGroup = NonNullable<
+  Awaited<ReturnType<typeof getInventoryCountGroups>>["data"]
+>[number];
+
+export type InventoryCountGroupSummary = Awaited<
+  ReturnType<typeof getInventoryCountGroupSummaries>
 >[number];
 
 export type Receipt = NonNullable<

@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import { describeCause, type FailureReason } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { databaseRefusal } from "./database-refusal";
@@ -37,15 +38,25 @@ export type ErrorCategory = keyof typeof ERROR_STATUS;
 
 /**
  * The one error a service function returns. `message` is written for the
- * user; `cause` is the underlying failure and is logged, never shown.
+ * user; `cause` is the underlying failure and is logged. An `internal`
+ * failure also carries `title` (the operation's own message) and `reason`
+ * (what the cause says, as data — a trigger's RAISE, an exception's message),
+ * which the toast shows as its second line.
  */
 export class CarbonError<
   C extends ErrorCategory = ErrorCategory
 > extends Error {
   readonly category: C;
   readonly cause?: unknown;
+  readonly title?: string;
+  readonly reason?: FailureReason;
 
-  constructor(category: C, message: string, cause?: unknown) {
+  constructor(
+    category: C,
+    message: string,
+    cause?: unknown,
+    detail?: { title?: string; reason?: FailureReason }
+  ) {
     // A refusal is an expected outcome that is returned, not thrown: nobody
     // reads its stack, and capturing one is most of what creating it costs.
     const limit = Error.stackTraceLimit;
@@ -54,6 +65,12 @@ export class CarbonError<
     Error.stackTraceLimit = limit;
     this.category = category;
     this.cause = cause;
+    const reason =
+      detail?.reason ??
+      (category === "internal" ? describeCause(cause) : null) ??
+      undefined;
+    this.reason = reason;
+    this.title = detail?.title ?? (reason ? message : undefined);
   }
 
   get status(): (typeof ERROR_STATUS)[C] {
@@ -440,19 +457,25 @@ function refusalFromDatabase(
 ): CarbonError | null {
   const known = databaseRefusal(cause);
   if (!known) return null;
-  return new CarbonError(
-    known.category,
-    message
-      ? `${message.replace(/[.:]\s*$/, "")}: ${known.message}`
-      : known.message,
-    cause
-  );
+  if (!message) return new CarbonError(known.category, known.message, cause);
+  const title = message.replace(/[.:]\s*$/, "");
+  return new CarbonError(known.category, `${title}: ${known.message}`, cause, {
+    title,
+    reason: known.reason
+  });
 }
 
 /** A `CarbonError` as it crosses to the client: its fields, never its cause. */
 export type SerializedError<E> =
   E extends CarbonError<infer C>
-    ? { category: C; message: string; status: (typeof ERROR_STATUS)[C] }
+    ? {
+        category: C;
+        message: string;
+        status: (typeof ERROR_STATUS)[C];
+        /** The operation's own message, when `reason` says why it failed. */
+        title?: string;
+        reason?: FailureReason;
+      }
     : never;
 
 /** A service function's result as a route sends it. */
@@ -469,9 +492,15 @@ export function toResult<T, E extends CarbonError>(
   result: Result<T, E>
 ): RouteResult<Result<T, E>> {
   if (result.error === null) return result as RouteResult<Result<T, E>>;
-  const { category, message, status } = result.error;
+  const { category, message, status, title, reason } = result.error;
   return {
     data: null,
-    error: { category, message, status }
+    error: {
+      category,
+      message,
+      status,
+      ...(title && { title }),
+      ...(reason && { reason })
+    }
   } as RouteResult<Result<T, E>>;
 }

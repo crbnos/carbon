@@ -213,7 +213,7 @@ export function PeopleCard({
             {item.abilities.map((ability) => (
               <span
                 key={ability}
-                className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+                className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[0.6875rem] font-medium text-muted-foreground"
               >
                 {ability}
               </span>

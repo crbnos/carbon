@@ -45,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (id !== params.actionId) {
     return data(
       { success: false },
-      await flash(request, error("Invalid action ID", "Invalid action ID"))
+      await flash(request, error(null, "Invalid action ID"))
     );
   }
 

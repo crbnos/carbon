@@ -44,7 +44,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!assetClassId) {
     throw redirect(
       path.to.assetClasses,
-      await flash(request, error(params, "Failed to get asset class id"))
+      await flash(request, error(null, "Failed to get asset class id"))
     );
   }
 

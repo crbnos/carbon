@@ -25,6 +25,7 @@ import {
   isAllowedAvatarValue,
   isOwnAvatarUpload,
   isOwnSignaturePath,
+  requireAffected,
   requiresItarEntityCertification
 } from "@carbon/utils";
 import { nanoid } from "nanoid";
@@ -1602,10 +1603,13 @@ export const setOwnFlag = defineServiceFn({
     }
 
     const flags = (user.data?.flags as Record<string, boolean> | null) ?? {};
-    const updated = await client
-      .from("user")
-      .update({ flags: { ...flags, [flag]: value } })
-      .eq("id", userId);
+    const updated = await requireAffected(
+      client
+        .from("user")
+        .update({ flags: { ...flags, [flag]: value } })
+        .eq("id", userId)
+        .select("id")
+    );
     if (updated.error) {
       return ctx.error("internal", "Failed to update flag", updated.error);
     }

@@ -62,10 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!materialFormId) {
     return data(
       {},
-      await flash(
-        request,
-        error(insertMaterialForm, "Failed to insert material form")
-      )
+      await flash(request, error(null, "Failed to insert material form"))
     );
   }
 

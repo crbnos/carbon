@@ -45,7 +45,7 @@ export function MobileAppBar() {
       </SidebarPresentationProvider>
     ) : null;
   const titleText = (
-    <span className="min-w-0 max-w-full truncate text-[17px] font-semibold leading-tight">
+    <span className="min-w-0 max-w-full truncate text-[1.0625rem] font-semibold leading-tight">
       {sectionTitle ? (
         <>
           <span className="peer empty:hidden">{sectionTitle}</span>

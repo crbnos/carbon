@@ -33,7 +33,7 @@ import {
   resolvePieceAuth
 } from "@carbon/jobs/integrations";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { datetime, requireAffected } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
@@ -184,16 +184,19 @@ export async function updateWorkflow(
     updatedBy: string;
   }
 ) {
-  return client
-    .from("workflow")
-    .update({
-      name: workflow.name,
-      description: workflow.description ?? null,
-      updatedBy: workflow.updatedBy,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", workflow.id)
-    .eq("companyId", workflow.companyId);
+  return requireAffected(
+    client
+      .from("workflow")
+      .update({
+        name: workflow.name,
+        description: workflow.description ?? null,
+        updatedBy: workflow.updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", workflow.id)
+      .eq("companyId", workflow.companyId)
+      .select("id")
+  );
 }
 
 export async function insertWorkflowVersion(
@@ -234,17 +237,20 @@ export async function updateWorkflowDefinition(
     updatedBy: string;
   }
 ) {
-  return client
-    .from("workflowVersion")
-    .update({
-      nodes: definition.nodes,
-      edges: definition.edges,
-      formatVersion: definition.formatVersion,
-      updatedBy: definition.updatedBy,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", definition.versionId)
-    .eq("companyId", definition.companyId);
+  return requireAffected(
+    client
+      .from("workflowVersion")
+      .update({
+        nodes: definition.nodes,
+        edges: definition.edges,
+        formatVersion: definition.formatVersion,
+        updatedBy: definition.updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", definition.versionId)
+      .eq("companyId", definition.companyId)
+      .select("id")
+  );
 }
 
 /**
@@ -293,11 +299,14 @@ export async function updateWorkflowNodePositions(
       : { ...(node as object), position: { x: position.x, y: position.y } };
   });
 
-  return client
-    .from("workflowVersion")
-    .update({ nodes: nodes as unknown as Json })
-    .eq("id", versionId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("workflowVersion")
+      .update({ nodes: nodes as unknown as Json })
+      .eq("id", versionId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 // No audit bump: panning the canvas is not an edit to the workflow, and stamping
@@ -310,11 +319,14 @@ export async function updateWorkflowCanvasState(
     canvasState
   }: { id: string; companyId: string; canvasState: Json }
 ) {
-  return client
-    .from("workflow")
-    .update({ canvasState })
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("workflow")
+      .update({ canvasState })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function deleteWorkflow(
@@ -322,11 +334,14 @@ export async function deleteWorkflow(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("workflow")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("workflow")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export const WORKFLOW_RUNS_PAGING: Paging = {
@@ -648,15 +663,18 @@ export async function publishWorkflowVersion(
     return { ok: false, issues };
   }
 
-  const promoted = await client
-    .from("workflow")
-    .update({
-      publishedVersionId: versionId,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", workflowId)
-    .eq("companyId", companyId);
+  const promoted = await requireAffected(
+    client
+      .from("workflow")
+      .update({
+        publishedVersionId: versionId,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", workflowId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 
   if (promoted.error) {
     return { ok: false, issues: [], message: promoted.error.message };
@@ -684,15 +702,18 @@ export async function unpublishWorkflow(
     userId: string;
   }
 ): Promise<WorkflowSyncResult> {
-  const updated = await client
-    .from("workflow")
-    .update({
-      publishedVersionId: null,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", workflowId)
-    .eq("companyId", companyId);
+  const updated = await requireAffected(
+    client
+      .from("workflow")
+      .update({
+        publishedVersionId: null,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", workflowId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 
   if (updated.error) {
     return { ok: false, issues: [], message: updated.error.message };

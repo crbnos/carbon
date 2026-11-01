@@ -22,6 +22,7 @@ import {
   type FlatTree,
   flattenTree,
   generateBomIds,
+  requireAffected,
   round,
   type TrackedActivityAttributes
 } from "@carbon/utils";
@@ -384,12 +385,15 @@ export async function deleteAttributeRecord(
   client: SupabaseClient<Database>,
   args: { id: string; companyId: string; userId: string }
 ) {
-  return client
-    .from("jobOperationStepRecord")
-    .delete()
-    .eq("id", args.id)
-    .eq("companyId", args.companyId)
-    .eq("createdBy", args.userId);
+  return requireAffected(
+    client
+      .from("jobOperationStepRecord")
+      .delete()
+      .eq("id", args.id)
+      .eq("companyId", args.companyId)
+      .eq("createdBy", args.userId)
+      .select("id")
+  );
 }
 
 export async function finishJobOperation(

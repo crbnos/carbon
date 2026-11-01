@@ -4,7 +4,7 @@
 
 import type { Json } from "@carbon/database";
 import { CreatableMultiSelect, DatePicker, ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Button,
   Copy,
@@ -13,7 +13,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -82,9 +81,7 @@ const PurchasingRFQProperties = () => {
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration

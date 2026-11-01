@@ -4323,3 +4323,13 @@ the error set against an untouched checkout of `main`.
 **Rule:** Sometimes a journal posts straight to the balance it values, with no subledger or adjustment account between them. Then read the booked balance without that journal's source type. `readRevaluationExposures` subtracts every `Currency Revaluation` journal dated on or before `periodEnd`. It also does not count those journals as activity that makes the account an exposure. To test it, post the run, then ask the drift check whether the run is still current.
 
 **Applies to:** `readRevaluationExposures` and `isCurrencyRevaluationRunCurrent` in `apps/erp/app/modules/accounting/accounting.service.ts`, and any later run that posts to an account it also reads.
+
+## `error(cause, …)` shows the cause to the user
+
+**Context:** Error toasts gained a second line with the real reason. `error(cause, title)` in `@carbon/auth` now reads the cause with `describeCause` and the flash shows it (2026-10-29).
+
+**Problem:** The change reached every app, but the sweep covered ERP and MES only. The Academy and Starter sign-in pages passed `user.error` from a `.single()` read. An unknown email then showed "No matching record was found." and an inactive account showed nothing, so an outsider could tell whether an account existed.
+
+**Rule:** On a page an outsider can reach (sign-in, invite, verify, callback, MFA, SSO, a share link), log the real error with the module logger and pass `null` as the cause. Everywhere else, pass the real error object, never `params`, a result wrapper or a string that repeats the title.
+
+**Applies to:** every `error(` call in `apps/*/app/routes/_public+`, `_auth+`, `share+` and `api+/login*`, and any new app that registers `flashClientMiddleware`.

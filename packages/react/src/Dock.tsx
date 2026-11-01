@@ -78,7 +78,7 @@ const DockItem = forwardRef<HTMLButtonElement, DockItemProps>(
       ref={ref}
       type="button"
       className={cn(
-        "flex h-10 shrink-0 items-center justify-center gap-2 rounded-full text-[15px] text-muted-foreground outline-none transition-colors active:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:bg-accent data-[state=open]:text-foreground [&_svg]:size-5",
+        "flex h-10 shrink-0 items-center justify-center gap-2 rounded-full text-[0.9375rem] text-muted-foreground outline-none transition-colors active:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:bg-accent data-[state=open]:text-foreground [&_svg]:size-5",
         label ? "pl-3 pr-4" : "w-11",
         className
       )}
@@ -117,7 +117,7 @@ function DockMenuSection({
  * for a current choice) is lit; the rest stay muted until touched.
  */
 const dockMenuRowClassName =
-  "relative flex min-h-11 w-full select-none items-center gap-3 rounded-lg px-3 text-left text-[15px] text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:bg-accent focus-visible:text-foreground active:bg-accent aria-[current=page]:bg-accent aria-[current=page]:text-foreground aria-[current=true]:bg-accent aria-[current=true]:text-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:shrink-0";
+  "relative flex min-h-11 w-full select-none items-center gap-3 rounded-lg px-3 text-left text-[0.9375rem] text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:bg-accent focus-visible:text-foreground active:bg-accent aria-[current=page]:bg-accent aria-[current=page]:text-foreground aria-[current=true]:bg-accent aria-[current=true]:text-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:shrink-0";
 
 /**
  * A switcher above the panel: icon, name, and ⇕ after a hairline. A tap
@@ -148,7 +148,7 @@ function DockSwitcher({
       disabled={!onSwitch}
       onClick={onSwitch}
       className={cn(
-        "flex h-10 min-w-0 shrink items-center gap-2 rounded-full border border-border bg-popover pl-2 text-[15px] font-medium text-foreground shadow-lg outline-none transition-colors active:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-100",
+        "flex h-10 min-w-0 shrink items-center gap-2 rounded-full border border-border bg-popover pl-2 text-[0.9375rem] font-medium text-foreground shadow-lg outline-none transition-colors active:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-100",
         onSwitch ? "pr-3" : "pr-3.5",
         className
       )}
@@ -203,7 +203,7 @@ function DockFinder({
         <CommandPrimitive.Input
           autoFocus
           placeholder={placeholder}
-          className="h-full min-w-0 flex-1 bg-transparent text-[16px] text-foreground outline-none placeholder:text-muted-foreground"
+          className="h-full min-w-0 flex-1 bg-transparent text-[1rem] text-foreground outline-none placeholder:text-muted-foreground"
         />
         <button
           type="button"
@@ -268,7 +268,7 @@ function DockFinderItem({
       value={value}
       onSelect={onSelect}
       aria-current={isCurrent ? "true" : undefined}
-      className="min-h-11 gap-3 rounded-lg px-3 py-0 text-[15px] text-foreground aria-selected:bg-accent"
+      className="min-h-11 gap-3 rounded-lg px-3 py-0 text-[0.9375rem] text-foreground aria-selected:bg-accent"
     >
       {icon ? (
         <span className="flex size-6 shrink-0 items-center justify-center [&>svg]:size-[18px]">

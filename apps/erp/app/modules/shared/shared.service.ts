@@ -138,6 +138,7 @@ import {
   type LeasePaymentRowInput,
   redirect,
   remainingLeasePayments,
+  requireAffected,
   resolveTrackedEntityBins,
   round,
   settleQuantity,
@@ -213,14 +214,18 @@ export async function deleteNote(
   client: SupabaseClient<Database>,
   noteId: string
 ) {
-  return client.from("note").update({ active: false }).eq("id", noteId);
+  return requireAffected(
+    client.from("note").update({ active: false }).eq("id", noteId).select("id")
+  );
 }
 
 export async function deleteSavedView(
   client: SupabaseClient<Database>,
   viewId: string
 ) {
-  return client.from("tableView").delete().eq("id", viewId);
+  return requireAffected(
+    client.from("tableView").delete().eq("id", viewId).select("id")
+  );
 }
 
 export async function generateEmbedding(
@@ -526,7 +531,13 @@ export async function updateModelThumbnail(
   modelId: string,
   thumbnailPath: string
 ) {
-  return client.from("modelUpload").update({ thumbnailPath }).eq("id", modelId);
+  return requireAffected(
+    client
+      .from("modelUpload")
+      .update({ thumbnailPath })
+      .eq("id", modelId)
+      .select("id")
+  );
 }
 
 export async function updateNote(
@@ -534,7 +545,9 @@ export async function updateNote(
   id: string,
   note: string
 ) {
-  return client.from("note").update({ note }).eq("id", id);
+  return requireAffected(
+    client.from("note").update({ note }).eq("id", id).select("id")
+  );
 }
 
 export async function upsertSavedView(

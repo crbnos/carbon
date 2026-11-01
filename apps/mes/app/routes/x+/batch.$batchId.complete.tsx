@@ -176,7 +176,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(completeResult.error.message || null, "Failed to complete batch")
+        error(completeResult.error, "Failed to complete batch")
       )
     );
   }

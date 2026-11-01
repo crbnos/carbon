@@ -214,7 +214,12 @@ interface TableProps<T extends object> {
   // scrolls sideways, so it can put actions at its right edge.
   groupRowsBy?: {
     key: (row: T) => string;
-    header: (rows: T[]) => ReactNode;
+    // A header that returns null is not drawn (a run that needs none). `group`
+    // collapses the run: its rows hide behind the header until toggled back.
+    header: (
+      rows: T[],
+      group?: { collapsed: boolean; toggle: () => void }
+    ) => ReactNode;
   };
   // Phones: "list" (default) renders 3-line rows from the columns'
   // `meta.mobile` priorities; "table" keeps the grid, scrolling sideways with
@@ -969,10 +974,12 @@ const Table = <T extends object>({
   const rows = table.getRowModel().rows;
   const visibleColumns = table.getVisibleLeafColumns();
 
-  // Row id → the rows of the group that row starts (only group starts appear).
-  const groupStarts = useMemo(() => {
+  // Row id → the rows of the group that row starts (only group starts appear),
+  // and row id → its group's key, for collapsing.
+  const { groupStarts, groupKeyByRowId } = useMemo(() => {
     const starts = new Map<string, T[]>();
-    if (!groupRowsBy) return starts;
+    const keys = new Map<string, string>();
+    if (!groupRowsBy) return { groupStarts: starts, groupKeyByRowId: keys };
     let current: T[] = [];
     let previousKey: string | undefined;
     for (const row of rows) {
@@ -983,9 +990,13 @@ const Table = <T extends object>({
         previousKey = key;
       }
       current.push(row.original);
+      keys.set(row.id, key);
     }
-    return starts;
+    return { groupStarts: starts, groupKeyByRowId: keys };
   }, [rows, groupRowsBy]);
+  const [collapsedGroups, setCollapsedGroups] = useState<
+    Record<string, boolean>
+  >({});
 
   /* Row virtualization: only the rows in view (plus overscan) are in the DOM.
      One virtual item is one data row, with its group header and expanded row
@@ -1681,6 +1692,21 @@ const Table = <T extends object>({
                 );
 
                 const groupRows = groupStarts.get(row.id);
+                const groupKey = groupKeyByRowId.get(row.id);
+                const groupCollapsed = groupKey
+                  ? !!collapsedGroups[groupKey]
+                  : false;
+                const groupHeader =
+                  groupRows && groupRowsBy && groupKey
+                    ? groupRowsBy.header(groupRows, {
+                        collapsed: groupCollapsed,
+                        toggle: () =>
+                          setCollapsedGroups((current) => ({
+                            ...current,
+                            [groupKey]: !current[groupKey]
+                          }))
+                      })
+                    : null;
 
                 return (
                   <Tbody
@@ -1688,7 +1714,7 @@ const Table = <T extends object>({
                     ref={rowVirtualizer.measureElement}
                     data-index={virtualIndex}
                   >
-                    {groupRows && groupRowsBy && (
+                    {groupHeader !== null && groupHeader !== undefined && (
                       <Tr>
                         <Td
                           colSpan={visibleColumns.length}
@@ -1707,13 +1733,13 @@ const Table = <T extends object>({
                                 : undefined
                             }
                           >
-                            {groupRowsBy.header(groupRows)}
+                            {groupHeader}
                           </div>
                         </Td>
                       </Tr>
                     )}
-                    {rowContent}
-                    {rowIsExpanded && (
+                    {!groupCollapsed && rowContent}
+                    {!groupCollapsed && rowIsExpanded && (
                       <Tr>
                         <Td
                           colSpan={visibleColumns.length}

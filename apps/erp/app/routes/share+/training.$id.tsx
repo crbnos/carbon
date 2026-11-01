@@ -431,7 +431,7 @@ export default function TrainingWizard() {
                 <LuFlag />
               </div>
               <div className="flex flex-col">
-                <span className="uppercase text-[10px] font-display font-semibold text-muted-foreground">
+                <span className="uppercase text-[0.625rem] font-display font-semibold text-muted-foreground">
                   Training
                 </span>
                 <CardTitle className="text-2xl">{training.name}</CardTitle>
@@ -793,7 +793,7 @@ function ResultsView({
               {actionData.passed ? <LuCircleCheck /> : <LuCircleX />}
             </div>
             <div className="flex flex-col">
-              <span className="uppercase text-[10px] font-display font-semibold text-muted-foreground">
+              <span className="uppercase text-[0.625rem] font-display font-semibold text-muted-foreground">
                 Training Complete
               </span>
               <CardTitle className="text-2xl">{training.name}</CardTitle>

@@ -48,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!entryId) {
     throw redirect(
       path.to.peopleTimecard,
-      await flash(request, error(params, "Failed to get entry id"))
+      await flash(request, error(null, "Failed to get entry id"))
     );
   }
 

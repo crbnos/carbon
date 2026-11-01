@@ -54,6 +54,7 @@ import {
   Edition,
   getClientIp,
   isOwnSignaturePath,
+  requireAffected,
   SIGNATURES_BUCKET
 } from "@carbon/utils";
 import { now, parseAbsolute } from "@internationalized/date";
@@ -217,7 +218,9 @@ export async function deleteGroup(
   client: SupabaseClient<Database>,
   groupId: string
 ) {
-  return client.from("group").delete().eq("id", groupId);
+  return requireAffected(
+    client.from("group").delete().eq("id", groupId).select("id")
+  );
 }
 
 export async function getCompaniesForUser(
@@ -1154,7 +1157,13 @@ export async function createCustomerAccount(
   const code = crypto.randomUUID();
   const [contactUpdate, customerAccountInsert, inviteInsert] =
     await Promise.all([
-      client.from("customerContact").update({ userId }).eq("id", id),
+      requireAffected(
+        client
+          .from("customerContact")
+          .update({ userId })
+          .eq("id", id)
+          .select("id")
+      ),
       insertCustomerAccount(client, {
         id: userId,
         customerId,
@@ -1541,7 +1550,13 @@ export async function createSupplierAccount(
   const code = crypto.randomUUID();
   const [contactUpdate, supplierAccountInsert, inviteInsert] =
     await Promise.all([
-      client.from("supplierContact").update({ userId }).eq("id", id),
+      requireAffected(
+        client
+          .from("supplierContact")
+          .update({ userId })
+          .eq("id", id)
+          .select("id")
+      ),
       insertSupplierAccount(client, {
         id: userId,
         supplierId,
@@ -2115,13 +2130,16 @@ export async function convertConsoleOperatorToUser(
   }
 
   // Update user record: real email + no longer console operator
-  const updateUser = await serviceRole
-    .from("user")
-    .update({
-      email: email.toLowerCase(),
-      isConsoleOperator: false
-    } as any)
-    .eq("id", userId);
+  const updateUser = await requireAffected(
+    serviceRole
+      .from("user")
+      .update({
+        email: email.toLowerCase(),
+        isConsoleOperator: false
+      } as any)
+      .eq("id", userId)
+      .select("id")
+  );
 
   if (updateUser.error) {
     // Cleanup auth
@@ -2626,12 +2644,15 @@ export async function deleteUserAttributeValue(
     userAttributeValueId: string;
   }
 ) {
-  return client
-    .from("userAttributeValue")
-    .delete()
-    .eq("id", args.userAttributeValueId)
-    .eq("userAttributeId", args.userAttributeId)
-    .eq("userId", args.userId);
+  return requireAffected(
+    client
+      .from("userAttributeValue")
+      .delete()
+      .eq("id", args.userAttributeValueId)
+      .eq("userAttributeId", args.userAttributeId)
+      .eq("userId", args.userId)
+      .select("id")
+  );
 }
 
 export async function getAccount(client: SupabaseClient<Database>, id: string) {
@@ -2751,14 +2772,17 @@ export async function updateAvatar(
   userId: string,
   avatarUrl: string | null
 ) {
-  return client
-    .from("user")
-    .update(
-      sanitize({
-        avatarUrl
-      })
-    )
-    .eq("id", userId);
+  return requireAffected(
+    client
+      .from("user")
+      .update(
+        sanitize({
+          avatarUrl
+        })
+      )
+      .eq("id", userId)
+      .select("id")
+  );
 }
 
 /**
@@ -2784,10 +2808,13 @@ export async function updateSignature(
     });
   }
 
-  const saved = await client
-    .from("user")
-    .update({ signaturePath, updatedAt: datetime.timestamp() })
-    .eq("id", userId);
+  const saved = await requireAffected(
+    client
+      .from("user")
+      .update({ signaturePath, updatedAt: datetime.timestamp() })
+      .eq("id", userId)
+      .select("id")
+  );
   if (saved.error) return saved;
 
   const replaced = previous.data?.signaturePath;
@@ -2827,7 +2854,13 @@ export async function updatePublicAccount(
     phone?: string;
   }
 ) {
-  return client.from("user").update(sanitize(account)).eq("id", account.id);
+  return requireAffected(
+    client
+      .from("user")
+      .update(sanitize(account))
+      .eq("id", account.id)
+      .select("id")
+  );
 }
 
 /** Values are set through `upsertAttributeValue`, which checks who may. */

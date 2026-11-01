@@ -462,19 +462,19 @@ export const SearchModal = () => {
           <div className="border-t border-border px-4 py-2 flex items-center justify-between text-xs text-muted-foreground max-md:hidden">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">
+                <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[0.625rem]">
                   Up/Down
                 </kbd>
                 <Trans>Navigate</Trans>
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">
+                <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[0.625rem]">
                   Enter
                 </kbd>
                 <Trans>Select</Trans>
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">
+                <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[0.625rem]">
                   Esc
                 </kbd>
                 <Trans>Close</Trans>

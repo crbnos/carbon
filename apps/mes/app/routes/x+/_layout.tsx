@@ -29,7 +29,7 @@ import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
 import { RouteRealtime, useLoaderQuery } from "@carbon/query";
-import { setClientCompanyId } from "@carbon/query/cache";
+import { RefreshRate, setClientCompanyId } from "@carbon/query/cache";
 import {
   AnnouncementBar,
   Button,
@@ -45,7 +45,6 @@ import {
   useScanPending,
   VStack
 } from "@carbon/react";
-import { HalloweenLayer } from "@carbon/react/Halloween";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
@@ -405,8 +404,10 @@ export default function AuthenticatedRoute() {
     onUnrecognized: () => toast.error(t`Nothing on this page uses that barcode`)
   });
   const scanPending = useScanPending();
+  // Not data a save or a realtime change touches, so it refreshes on its own.
   const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
-    path.to.api.systemStatus
+    path.to.api.systemStatus,
+    { invalidate: false, refetchInterval: RefreshRate.Low }
   );
   const { locale } = useLocale();
   const moveDate = systemStatus.data?.accountMoveDate;
@@ -573,9 +574,6 @@ export default function AuthenticatedRoute() {
                       defaultLinkLabel={t`Learn more`}
                     />
                     <Outlet key={companyId} />
-                    {/* Seasonal: shows only with the Halloween theme. Remove
-                        with packages/react/src/Halloween/. */}
-                    <HalloweenLayer />
                   </div>
                   <MesTabBar
                     activeEvents={activeEvents}

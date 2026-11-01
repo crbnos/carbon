@@ -21,7 +21,14 @@ import { isUnsafeStoragePath } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { async, datetime, pick, pluckUnique, unchecked } from "@carbon/utils";
+import {
+  async,
+  datetime,
+  pick,
+  pluckUnique,
+  requireAffected,
+  unchecked
+} from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { updateChangeNotice } from "~/modules/items/items.service";
@@ -599,11 +606,14 @@ export const setIssueActionDueDate = defineServiceFn({
   permission: { update: "quality" },
 
   async run(ctx, { id, dueDate }) {
-    const { error } = await ctx.asCaller.supabase
-      .from("nonConformanceActionTask")
-      .update({ dueDate: dueDate || null })
-      .eq("id", id)
-      .eq("companyId", ctx.company.id);
+    const { error } = await requireAffected(
+      ctx.asCaller.supabase
+        .from("nonConformanceActionTask")
+        .update({ dueDate: dueDate || null })
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (error) return ctx.error("internal", error.message, error);
     return { id };
   }
@@ -715,15 +725,18 @@ export const updateIssueItemField = defineServiceFn({
       return { id: input.id };
     }
 
-    const update = await client
-      .from("nonConformanceItem")
-      .update({
-        disposition: input.value,
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", input.id)
-      .eq("companyId", companyId);
+    const update = await requireAffected(
+      client
+        .from("nonConformanceItem")
+        .update({
+          disposition: input.value,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", input.id)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (update.error) {
       return ctx.error("internal", "Failed to update issue item", update.error);
     }
@@ -1756,15 +1769,18 @@ export const setInspectionDocumentDrawingNumber = defineServiceFn({
   permission: { update: "quality" },
 
   async run(ctx, { id, drawingNumber }) {
-    const { error } = await ctx.asCaller.supabase
-      .from("inspectionDocument")
-      .update({
-        drawingNumber: drawingNumber?.trim() || null,
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", id)
-      .eq("companyId", ctx.company.id);
+    const { error } = await requireAffected(
+      ctx.asCaller.supabase
+        .from("inspectionDocument")
+        .update({
+          drawingNumber: drawingNumber?.trim() || null,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (error) {
       return ctx.error(
         "internal",

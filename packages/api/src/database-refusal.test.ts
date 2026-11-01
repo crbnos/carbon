@@ -29,14 +29,16 @@ describe("databaseRefusal", () => {
   it("names the duplicate key, without the company or the value", () => {
     expect(databaseRefusal(duplicateId)).toEqual({
       category: "conflict",
-      message: 'A record with this "id" already exists.'
+      message: 'A record with this "id" already exists.',
+      reason: expect.any(Object)
     });
   });
 
   it("names the reference that matches nothing", () => {
     expect(databaseRefusal(missingProcedure)).toEqual({
       category: "conflict",
-      message: '"procedureId" does not match an existing "procedure".'
+      message: '"procedureId" does not match an existing "procedure".',
+      reason: expect.any(Object)
     });
   });
 
@@ -49,6 +51,16 @@ describe("databaseRefusal", () => {
     ).toBe('It is still used by a "jobMaterial" record; remove that first.');
   });
 
+  it("passes a trigger's own text through under its constraint code's category", () => {
+    const message =
+      'Cannot delete unit of measure "KG" because it is in use: jobMaterial (2)';
+    expect(databaseRefusal({ code: "23503", message, details: null })).toEqual({
+      category: "conflict",
+      message,
+      reason: { code: "raw", values: { text: message } }
+    });
+  });
+
   it("names a missing required column, from PostgREST or node-postgres", () => {
     const message =
       'null value in column "processId" of relation "jobOperation" violates not-null constraint';
@@ -57,7 +69,11 @@ describe("databaseRefusal", () => {
     );
     expect(
       databaseRefusal({ code: "23502", message, column: "processId" })
-    ).toEqual({ category: "validation", message: '"processId" is required.' });
+    ).toEqual({
+      category: "validation",
+      message: '"processId" is required.',
+      reason: expect.any(Object)
+    });
   });
 
   it("passes a bad value's own message through as a validation error", () => {
@@ -68,7 +84,8 @@ describe("databaseRefusal", () => {
       })
     ).toEqual({
       category: "validation",
-      message: 'Invalid input value for enum "factor": "Hours".'
+      message: 'Invalid input value for enum "factor": "Hours".',
+      reason: expect.any(Object)
     });
   });
 

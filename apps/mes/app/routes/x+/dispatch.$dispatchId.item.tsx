@@ -20,7 +20,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { dispatchId } = params;
 
   if (!dispatchId) {
-    return data({}, await flash(request, error("Dispatch ID is required")));
+    return data(
+      {},
+      await flash(request, error(null, "Dispatch ID is required"))
+    );
   }
 
   const formData = await request.formData();
@@ -34,13 +37,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const unitOfMeasureCode = formData.get("unitOfMeasureCode") as string;
 
     if (!itemId) {
-      return data({}, await flash(request, error("Item is required")));
+      return data({}, await flash(request, error(null, "Item is required")));
     }
 
     if (!quantity || quantity <= 0) {
       return data(
         {},
-        await flash(request, error("Valid quantity is required"))
+        await flash(request, error(null, "Valid quantity is required"))
       );
     }
 
@@ -69,7 +72,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       });
       return data(
         {},
-        await flash(request, error(null, "Failed to add spare part"))
+        await flash(
+          request,
+          error(
+            dispatch.error ?? item.error ?? null,
+            "Failed to add spare part"
+          )
+        )
       );
     }
 
@@ -99,7 +108,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const itemId = formData.get("itemId") as string;
 
     if (!itemId) {
-      return data({}, await flash(request, error("Item ID is required")));
+      return data({}, await flash(request, error(null, "Item ID is required")));
     }
 
     const result = await erpPosting(

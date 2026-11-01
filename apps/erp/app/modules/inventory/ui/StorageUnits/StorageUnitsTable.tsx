@@ -384,7 +384,7 @@ const StorageUnitsTable = memo(
               {withTypes &&
               table.getColumn("storageTypeIds")?.getIsVisible() &&
               row.original.storageTypeIds?.length ? (
-                <div className="text-[13px] font-normal text-muted-foreground">
+                <div className="text-[0.8125rem] font-normal text-muted-foreground">
                   <EnumerableAsText value>
                     {renderStorageTypes(row.original.storageTypeIds)}
                   </EnumerableAsText>

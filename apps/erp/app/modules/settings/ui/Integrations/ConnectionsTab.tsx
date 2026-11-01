@@ -19,6 +19,7 @@ import {
   HStack,
   Input,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -116,7 +117,7 @@ export function ConnectionsTab({
           description: i18n._(failure.description)
         });
       } else {
-        toast.error(t`Couldn't start the authorization.`);
+        toastError(t`Couldn't start the authorization.`, error);
       }
     } finally {
       setConnecting(false);

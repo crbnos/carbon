@@ -45,7 +45,7 @@ function CapacityTh({ className, ...props }: ComponentProps<typeof Th>) {
 }
 
 const SERIES_LABEL =
-  "whitespace-nowrap text-[11px] font-medium uppercase tracking-wider text-muted-foreground";
+  "whitespace-nowrap text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground";
 
 type CapacityWorkCenter = {
   id: string;
@@ -529,7 +529,7 @@ export function PeopleCapacity({
                               <div className="flex flex-col items-center leading-tight">
                                 <span>{formatHours(available)}</span>
                                 {staffed > 0 && (
-                                  <span className="text-[11px] text-muted-foreground/70 tabular-nums">
+                                  <span className="text-[0.6875rem] text-muted-foreground/70 tabular-nums">
                                     <Trans>
                                       {formatHours(staffed)}h staffed
                                     </Trans>
@@ -543,7 +543,7 @@ export function PeopleCapacity({
                           <div className="flex flex-col items-center leading-tight">
                             <span>{formatHours(availableWeek)}</span>
                             {staffedWeek > 0 && (
-                              <span className="text-[11px] text-muted-foreground/70 tabular-nums">
+                              <span className="text-[0.6875rem] text-muted-foreground/70 tabular-nums">
                                 <Trans>
                                   {formatHours(staffedWeek)}h staffed
                                 </Trans>

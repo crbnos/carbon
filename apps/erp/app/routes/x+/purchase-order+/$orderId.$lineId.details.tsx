@@ -51,7 +51,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (line.error) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),
-      await flash(request, error(line.error, "Failed to load sales order line"))
+      await flash(
+        request,
+        error(line.error, "Failed to load purchase order line")
+      )
     );
   }
 

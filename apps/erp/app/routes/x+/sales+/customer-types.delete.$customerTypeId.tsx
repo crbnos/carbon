@@ -46,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!customerTypeId) {
     throw redirect(
       `${path.to.customerTypes}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get an customer type id"))
+      await flash(request, error(null, "Failed to get an customer type id"))
     );
   }
 

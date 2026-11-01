@@ -463,7 +463,7 @@ const SidebarGroupLabel = React.forwardRef<
       className={cn(
         // Vercel style: very muted, uppercase, smaller text
         // ease-out-quint for consistent spring-like feel with sidebar expansion
-        "flex h-7 shrink-0 items-center rounded-md px-2 text-[11px] font-medium uppercase tracking-wider text-foreground/50 outline-none ring-sidebar-ring transition-[margin,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none focus-visible:ring-2 [&>svg]:size-3.5 [&>svg]:shrink-0",
+        "flex h-7 shrink-0 items-center rounded-md px-2 text-[0.6875rem] font-medium uppercase tracking-wider text-foreground/50 outline-none ring-sidebar-ring transition-[margin,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none focus-visible:ring-2 [&>svg]:size-3.5 [&>svg]:shrink-0",
         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
         className
       )}

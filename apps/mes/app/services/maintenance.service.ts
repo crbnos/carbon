@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { requireAffected } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { erpPosting } from "~/services/erp";
 
@@ -306,11 +307,14 @@ export async function deleteMaintenanceDispatchItem(
   itemId: string,
   companyId: string
 ) {
-  return client
-    .from("maintenanceDispatchItem")
-    .delete()
-    .eq("id", itemId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("maintenanceDispatchItem")
+      .delete()
+      .eq("id", itemId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function getMaintenanceDispatchItemTrackedEntities(

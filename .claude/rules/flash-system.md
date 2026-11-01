@@ -23,15 +23,17 @@ import { flash } from "@carbon/auth/session.server";     // session.server.ts
 
 - `success(message = "Request succeeded", data?): Result` → `{ success: true, message }`.
   Note: the `data` arg is accepted but **ignored** (not returned).
-- `error(error: any, message = "Request failed"): Result` → `{ success: false, message }`.
+- `error(error: any, message = "Request failed"): Result` → `{ success: false, message, reason? }`.
   Logs via `getLogger("auth").error(message, { error })` (`@carbon/logger`) when `error` is truthy.
+  `reason` is `describeCause(error)` (`@carbon/utils`): why it failed, as data. Pass the real
+  error object, never `params` or a string that repeats the title.
 - `flash(request, result): Promise<{ headers: { "Set-Cookie": ... } }>` — commits the
   result into the `carbon` session cookie and returns a `ResponseInit`-shaped object you
   spread as the response's second arg. That cookie also holds the signed-in session,
   so `flash` and `getSessionFlash` commit with `maxAge: SESSION_MAX_AGE`; without it a
   toast turned the session into one that ends when the browser closes.
 - `Result` type (`packages/auth/src/types.ts`):
-  `{ success: boolean; message?: string; flash?: "success" | "error" }`.
+  `{ success: boolean; message?: string; description?: string; reason?: FailureReason; flash?: "success" | "error" }`.
 
 ## Usage in actions
 
@@ -76,10 +78,32 @@ return data(
   `Set-Cookie` headers into context. The root loader must surface both — returning the
   headers is what commits the cleared session so the flash doesn't leak to the next page.
 - `flashClientMiddleware` (client) reads `root` route data after `next()` and calls
-  `toast.success(result.message)` / `toast.error(result.message)` from `@carbon/react`.
+  `toast.success(result.message)` / `toast.error(result.message, { description })` from
+  `@carbon/react`. The error description is `result.description`, else
+  `errorDescription(result.message, result.reason)`.
   The toast fire lives here — there is **no** `useEffect`-on-`result` in the root
   component anymore.
 - `getSessionFlash` returns `null` when there is no `message`, so empty flashes never toast.
+
+## Show why it failed
+
+Every error toast has a title (what failed) and, when the cause says something, a second
+line (why). The reason travels as data, `FailureReason` (`packages/utils/src/error-reason.ts`):
+a `code` and its `values`. The browser translates it with `<ErrorReason>`
+(`packages/react/src/ErrorReason.tsx`). A `raw` reason (a RAISE in our SQL, an exception's
+message) is shown as it is.
+
+| Where the error is | Use |
+|---|---|
+| A legacy action | `error(theRealError, "Failed to …")`; the flash carries the reason |
+| A service function | `ctx.error("internal", "Failed to …", cause)`; `toResult` sends `title` and `reason` |
+| A custom `useAction` `onError` | `toastServiceError(data)` (`@carbon/query`) |
+| A browser `catch`, a storage upload, a legacy fetcher result | `toastError(title, cause)` (`@carbon/react`) |
+| A single-record update or delete by id | `requireAffected(builder.select("id"))` (`@carbon/utils`); a write RLS skipped then fails with "You don't have permission to change this record, or it no longer exists." |
+
+On a page an outsider can reach (sign-in, invite, verify, callback, MFA, SSO, a share link),
+log the real error with the module logger and pass `null` as the cause: a raw reason there can
+tell an outsider that an account exists.
 
 ## Gotchas
 

@@ -94,7 +94,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     logger.error(stockTransfers.error);
     throw redirect(
       path.to.authenticatedRoot,
-      await flash(request, error(null, "Error loading stock transfers"))
+      await flash(
+        request,
+        error(stockTransfers.error, "Error loading stock transfers")
+      )
     );
   }
 
