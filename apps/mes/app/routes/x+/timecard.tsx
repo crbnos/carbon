@@ -151,10 +151,13 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "clockOut") {
+    // "Forgot to clock out?" sends the time the person stopped working.
+    const at = formData.get("clockOut");
     const result = await clockOut(client, {
       employeeId: userId,
       companyId,
-      updatedBy: userId
+      updatedBy: userId,
+      clockOut: typeof at === "string" && at ? at : undefined
     });
     return { success: !result.error, error: result.error?.message };
   }

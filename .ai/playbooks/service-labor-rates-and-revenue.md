@@ -1,11 +1,12 @@
 # Service Labor Rates, Time Cost Posting and Service Revenue
 
-Last tested: 2026-11-01 (commit 527277fce3)
+Last tested: 2026-11-01 (commits 527277fce3, 8f8ed70e50)
 Spec: `.ai/specs/2026-10-31-service-labor-rates-and-time-posting.md`
 Routes: /x/settings/service, /x/service-job/new, /x/service-job/<id>,
 /x/service-job/<id>/time/new, /x/service-job/<id>/estimate/new,
 /file/service-job-estimate/<id>.pdf, MES /x/service/<id>,
-/x/accounting/revenue-recognition-runs (not yet tested: ERP went down)
+/x/accounting/revenue-recognition-runs, /x/revenue-recognition-run/<id>,
+/x/sales-invoice/<id>/details
 
 ## Prerequisites
 - Company `Carbon Development` (dbj96cioa0g02e1gpk40), user test@carbon.ms.
@@ -92,6 +93,60 @@ Routes: /x/settings/service, /x/service-job/new, /x/service-job/<id>,
 - On a job with time entries: ⋯ → "Cancel Job" is disabled. Hover its wrapper:
   tooltip "Remove the time entries and return the parts first."
 
+### 9. Revenue accrual (revenue recognition run)
+- Accounting → Closing → Revenue Recognition (/x/accounting/revenue-recognition-runs).
+  "New Run" opens a dialog with one date field "Period end". It defaults to
+  the month after the latest run (10/31/2026 with no runs, then 11/30/2026).
+  `requestSubmit` the dialog form ("Create Run"). Redirects to
+  /x/revenue-recognition-run/<id> (RR00000N, Draft).
+- The page shows a Journal preview (Contract Assets Dr / Sales Cr), then
+  "Deferrals" and "Accruals" tables. A service job accrual row shows Source "—"
+  (the page does not link service jobs).
+- The synthesizer only reads a job CREATED on or before the period end
+  (company time zone). A job made on Nov 1 with time back-dated to Oct 30 gets
+  no October accrual: it accrues in the November run.
+- Rows: `revenueRecognitionSchedule` with `serviceJobId`, type Accrual,
+  status Planned, amount = billable hours (entryDate <= periodEnd) × bill rate
+  + billable parts/charges. Fixed Price completed by period end = fixedPrice.
+  ```sql
+  select s.type, s.status, s.amount, s."periodEnd", j."serviceJobId"
+  from "revenueRecognitionSchedule" s join "serviceJob" j on j.id=s."serviceJobId"
+  order by s."createdAt" desc limit 5;
+  ```
+- Post: header "Post" is a form button; `requestSubmit` it (no dialog). The
+  run gets `journalId`; the Documents panel lists the journal entry. Each job
+  posts Dr Contract Assets / Cr Sales (Service Revenue default empty),
+  `documentType` 'Service Job', descriptions "Unbilled service accrued" /
+  "Service revenue accrued", dated the period end:
+  ```sql
+  select jo."journalEntryId", jo."postingDate", a.name, jl.amount, jl.description
+  from "journalLine" jl join journal jo on jo.id=jl."journalId" join account a on a.id=jl."accountId"
+  where jo.id=(select "journalId" from "revenueRecognitionRun" where "runId"='RR00000N')
+    and jl."documentType"='Service Job';
+  ```
+  Amounts are signed by the account's natural balance: + on Contract Assets
+  is a debit, + on Sales is a credit.
+
+### 10. Invoice clears the accrual
+- On a Completed Billable job: header "Invoice" opens "Invoice SJ…" ("A draft
+  sales invoice is created for the job, and the job becomes Invoiced.").
+  `requestSubmit` its form ("Create Invoice"). Redirects to
+  /x/sales-invoice/<id>/details; the job is Invoiced.
+- T&M: one line, `invoiceLineType` 'Labor', no item, unit EA, description
+  "Labor", quantity = billable hours, unit price = job bill rate.
+- Header "Post" opens "Post Invoice" ("Are you sure you want to post this
+  invoice?"); `requestSubmit` its form. Status → Submitted.
+- Journal: Dr Accounts Receivable, Cr Contract Assets up to the accrual, Cr
+  Sales/Service Revenue for any rest. The accrual row gets
+  `billedBySalesInvoiceLineId` = the Labor line id:
+  ```sql
+  select jo."journalEntryId", a.name, jl.amount, jl."documentType"
+  from "journalLine" jl join journal jo on jo.id=jl."journalId" join account a on a.id=jl."accountId"
+  where jl."documentId"='<salesInvoice.id>';
+  select "billedBySalesInvoiceLineId" from "revenueRecognitionSchedule"
+  where "serviceJobId"=(select id from "serviceJob" where "serviceJobId"='SJ…');
+  ```
+
 ## Selector Notes
 - Job page header: "More options" (⋯) is the first button after the job id;
   the status action ("Start", "Complete", "Record Response") is on the right.
@@ -101,8 +156,15 @@ Routes: /x/settings/service, /x/service-job/new, /x/service-job/<id>,
   `f.requestSubmit([...f.querySelectorAll('button')].find(x=>x.type==='submit'))`.
 - Screenshots: pass an ABSOLUTE path to `agent-browser screenshot`, or it saves
   under ~/.agent-browser/tmp.
+- On login, a "Forgot to Clock Out?" modal can appear (open timecard).
+  "I'm Still Working" only dismisses it (sessionStorage); it writes nothing.
 - No pdftotext on the machine: render the PDF with `qlmanage -t -s 1400 -o .`.
 
 ## Common Failures
 - 502 Bad Gateway on the ERP: the `crbn up` ERP child process died
   (2026-11-01, during step 9). The supervisor did not restart it.
+- No service accrual for a job in the expected month: check the job's
+  `createdAt` in the company time zone. The run skips jobs created after the
+  period end, even when their time entries are dated inside it.
+- Invoice posting clears every unbilled Accrual row of the job, posted or
+  still Planned in a Draft run. Post the run first.

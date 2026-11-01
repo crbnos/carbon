@@ -7,7 +7,7 @@ import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { datetime, searchFilter } from "@carbon/utils";
-import { getDayOfWeek, today } from "@internationalized/date";
+import { getDayOfWeek, parseAbsolute, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { DataType } from "~/modules/shared/types";
@@ -865,12 +865,23 @@ export async function clockOut(
   if (!open.data) {
     return { data: null, error: { message: "Not currently clocked in" } };
   }
+  const at = args.clockOut ?? datetime.timestamp();
+  // The table refuses it too (timeCardEntry_clockOut_after_clockIn); say why.
+  if (
+    parseAbsolute(at, "UTC").compare(parseAbsolute(open.data.clockIn, "UTC")) <=
+    0
+  ) {
+    return {
+      data: null,
+      error: { message: "Clock out must be after you clocked in" }
+    };
+  }
 
   return client
     .from("timeCardEntry")
     .update(
       sanitize({
-        clockOut: args.clockOut ?? datetime.timestamp(),
+        clockOut: at,
         note: args.note,
         updatedBy: args.updatedBy,
         updatedAt: datetime.timestamp()

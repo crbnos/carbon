@@ -22273,11 +22273,9 @@ export async function synthesizeServiceJobRevenue(
       )
     ])
     .where("sj.companyId", "=", companyId)
-    .where(
-      sql<string>`(sj."createdAt" AT TIME ZONE co."timezone")::date`,
-      "<=",
-      periodEnd
-    )
+    // No job-creation filter: earned to date already counts only hours dated
+    // by the period end (a back-dated entry belongs to its own month, as its
+    // cost does), and a job with nothing by then earns 0.
     .where((eb) =>
       eb.or([
         eb("sj.salesInvoiceId", "is", null),

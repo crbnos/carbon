@@ -1517,7 +1517,7 @@
     {"name":"sales_getSalesReturnOrderCredits","classification":"READ","schema":"3fdcd215dc22","response":"49639d091139","permission":"sales:view","paginates":false},
     {"name":"sales_getSalesReturnOrderIssues","classification":"READ","schema":"3fdcd215dc22","response":"7cc200ea4b26","permission":"sales:view","paginates":false},
     {"name":"sales_getSalesReturnOrderLine","classification":"READ","schema":"e2b1df794940","response":"0fc49a129133","permission":"sales:view","paginates":false},
-    {"name":"sales_getSalesReturnOrderLines","classification":"READ","schema":"3fdcd215dc22","response":"be2ae6237337","permission":"sales:view","paginates":false},
+    {"name":"sales_getSalesReturnOrderLines","classification":"READ","schema":"3fdcd215dc22","response":"1c0ee859760c","permission":"sales:view","paginates":false},
     {"name":"sales_getSalesReturnOrderReceipts","classification":"READ","schema":"3fdcd215dc22","response":"184a88ad855b","permission":"sales:view","paginates":false},
     {"name":"sales_getSalesReturnOrders","classification":"READ","schema":"6fdb647c5b76","response":"4f638d5fff16","permission":"sales:view","paginates":true},
     {"name":"sales_getSalesRFQ","classification":"READ","schema":"7f8214d1083f","response":"976840e1df1f","permission":"sales:view","paginates":false},
