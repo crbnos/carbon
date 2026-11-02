@@ -147,10 +147,11 @@ Every write to `serviceJobTime` runs the reconcile:
    rate.
 2. When the job's bill rate changes, the same Kysely transaction sets
    `unitPrice` on the job's Labor estimate lines.
-3. A Time and Materials invoice gets one Labor line: billable hours × the
-   job's `laborBillRate` at invoicing. A Labor line has
-   `invoiceLineType` `'Labor'`, no item and the unit `EA`. Parts and Charges
-   keep their lines.
+3. A Time and Materials invoice gets one labor line: billable hours × the
+   job's `laborBillRate` at invoicing. The line has `invoiceLineType`
+   `'Service'`, no item, the description "Labor" and the unit `EA`. Parts and
+   Charges keep their lines. The invoice shows the description as the line's
+   name.
 4. Every invoice line with a `serviceJobId` credits revenue through legs:
    1. **Contract Assets** for its share of the job's unbilled accrual. The
       job's lines take the accrual in sort order, each up to its own
@@ -217,7 +218,7 @@ Every write to `serviceJobTime` runs the reconcile:
 | Sync | A `ServiceRevenue` role and a per-component account in all three providers | Today sync allows one revenue account per invoice. |
 | Where the cost reconcile lives | A `post-time` action on `post-service-job` | The MES may already call `post-service-job` (`MES_POSTINGS`). |
 | Labor estimate line | An estimate line with `itemId` NULL | No new table. |
-| Labor invoice line | `salesInvoiceLineType` value `'Labor'`, no item | A plain hours × rate line. |
+| Labor invoice line | `salesInvoiceLineType` `'Service'`, no item, description "Labor" | A plain hours × rate line. The line type is the title when a line has no item, and "Service" names what was billed (Brad, 2026-11-01). The `'Labor'` enum value stays for old rows. |
 | Existing data | No migration | Brad (Q6). |
 | Competitor research | Not done | The rules come from ASC 606 and Carbon's own maintenance labor and rental accrual code. |
 | Multi-tenancy (heuristic 1) | No new table | — |
@@ -276,7 +277,7 @@ the Rate kind.
 | Time writes: no labor item; refuse with no cost rate; run the reconcile | `service.server.ts`, `service.service.ts`, `apps/mes/app/services/service.service.ts`, `apps/mes/app/routes/x+/service-time.tsx`, `service.new.tsx` |
 | `stopServiceJobClock` (ERP) | `service.server.ts`, `service.service.ts` |
 | `updateServiceJob`: `laborBillRate` and `fixedPrice` | `service.server.ts`, `service.service.ts`, `service.models.ts` |
-| `createServiceInvoice`: one Labor line | `service.service.ts`, `service-job-invoice-plan.ts` |
+| `createServiceInvoice`: one labor line (Service, no item) | `service.service.ts`, `service-job-invoice-plan.ts` |
 | `synthesizeServiceJobRevenue`; `runRowSynthesizers`; run posting branch | `apps/erp/app/modules/accounting/accounting.service.ts`, `packages/database/src/run-journals.ts` |
 | Service job invoice legs, accrual relief, void | `apps/erp/app/modules/invoicing/invoicing.service.ts`, `packages/database/src/sales-posting-amounts.ts` |
 | `serviceRevenueAccount` default | `accounting.models.ts`, `AccountDefaultsForm.tsx`, `journal-posting-status.ts`, `accounting-cutover/shared.ts`, `account-import.ts` |
@@ -311,7 +312,7 @@ Deviations:
 | Estimate PDF | A Labor line shows hours × rate |
 | ERP Complete and Create Invoice | A dialog. It asks for the price on a Fixed Price job with none. Complete offers Stop clock and complete. |
 | ERP job ⋯ menu | Cancel disabled with a reason when the job has time or parts |
-| Sales invoice | A Labor line shows "Labor" with no item |
+| Sales invoice | A Service line with no item shows its description ("Labor", "Fixed price service") as its name |
 
 ## Acceptance Criteria
 
@@ -367,7 +368,7 @@ Deviations:
 
 ## Implementation Notes (2026-11-01)
 
-The code differs from the design above in seven places. The code wins.
+The code differs from the design above in eight places. The code wins.
 
 | # | Design | Implementation | Why |
 |---|---|---|---|
@@ -378,6 +379,7 @@ The code differs from the design above in seven places. The code wins.
 | 5 | A Labor invoice line has no item | It also carries the unit `EA` | An invoice line needs a unit |
 | 6 | Create Invoice asks for a missing fixed price | `createServiceInvoice` takes an optional `fixedPrice` and saves it inside the invoice transaction. The Complete route saves it with `updateServiceJob` before it completes | The price and the invoice are saved together or not at all |
 | 7 | The time difference posts in one journal, dated the company's today | Each entry's lines are dated on its `entryDate`, unless that period is Closed or Locked, or the day is before the cutover. Then, and for a deleted entry, they are dated today. Each posting date gets one journal (`serviceTimePostingDates`) | The revenue run counts hours by `entryDate`. A cost dated today put the cost and the revenue of one entry in different months |
+| 8 | The labor line and the Fixed Price line have `invoiceLineType` `'Labor'` | Both are `'Service'` with no item (`planServiceJobInvoiceLines`). The invoice line form, explorer, summary, PDF and email name an item-less Service line by its description. `isDirectItemLine` needs an item, so the line ships nothing. Old `'Labor'` rows render and post as Service lines; the form saves them as Service | The type is the line's title when there is no item, and "Labor" was wrong for a Fixed Price line (Brad) |
 
 ## Changelog
 
@@ -385,3 +387,4 @@ The code differs from the design above in seven places. The code wins.
 - 2026-11-01: Added ASC 606 revenue recognition, the Service Revenue account, sync support, the Fixed Price field and the ERP stop clock.
 - 2026-11-01: Implemented (Tasks 1–20, commit 527277fce3). Status in-progress. Added Implementation Notes: the accrual spreads over the job's invoice lines with a reclass for the excess, a Completed Fixed Price job earns all of `fixedPrice`, a job that leaves Billable or is Cancelled reverses its accruals, sync falls back to the accrual rows' credit account, the Labor line uses unit `EA`, and Create Invoice saves a missing fixed price inside its transaction. Docs and rules updated (Task 21).
 - 2026-11-01: Fixed Price bills one plain `'Labor'` line with no item: "Fixed price service", 1 × `fixedPrice`, unit `EA` (Brad). The job's Billed Item field is gone. Migration `20261102011400_drop-service-job-service-item.sql` drops `serviceJob.serviceItemId`.
+- 2026-11-01: item-less service job lines bill as type Service (Brad); 'Labor' kept only for old rows. Implementation Note 8.

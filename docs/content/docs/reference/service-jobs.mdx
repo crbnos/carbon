@@ -92,8 +92,10 @@ Each entry posts its cost as soon as it is saved or its clock stops: one journal
 
 **Create Invoice** drafts a sales [invoice](/docs/reference/invoices) for a Completed Billable job and moves the job to Invoiced.
 
-- **Time and Materials** bills one **Labor** line, the billable hours at the job's bill rate, then each billable part and charge.
-- **Fixed Price** bills one plain line, "Fixed price service", at the job's **Fixed Price**. It names no item: time, parts and charges are in the price. If the job has no price, the dialog asks for it.
+- **Time and Materials** bills one line named "Labor", the billable hours at the job's bill rate, then each billable part and charge.
+- **Fixed Price** bills one line, "Fixed price service", at the job's **Fixed Price**. Time, parts and charges are in the price. If the job has no price, the dialog asks for it.
+
+Every line is a Service line. The "Labor" and "Fixed price service" lines have no item, so the invoice shows the line's description as its name. On the invoice, you can change their description, quantity, price and tax.
 
 Posting the invoice records revenue only. The parts already left inventory when they were issued.
 
@@ -188,7 +190,7 @@ A reimbursement or supplier invoice line pays one charge only.
 - Rates: `companySettings.serviceLaborCostRate` / `serviceLaborBillRate` (Settings → Service, `/x/settings/service`); `serviceJob.laborBillRate`; `serviceJobTime.unitCost` holds the rate an entry posted at.
 - Postings: `postServiceJob` (`post-time`, `complete`, `reopen`, `set-coverage`) and `createServiceInvoice` in `apps/erp/app/modules/service/service.service.ts`; the time reconcile is `reconcileServiceJobTime`; parts through the `issue` types `serviceJobInventory`, `serviceJobTrackedEntities`, `serviceJobUnconsume`.
 - Journals: source `Service Job` (time cost per entry, `documentLineReference` `service-job-time:<id>`; coverage reclass); part issues write `Service Job Consumption` ledger rows. Complete and Reopen write no journal.
-- Revenue: `synthesizeServiceJobRevenue` writes Accrual rows (`revenueRecognitionSchedule.serviceJobId`) in the Revenue Recognition run; `postSalesInvoice` clears them on the job's invoice (`planServiceJobRevenue`) and credits `accountDefault.serviceRevenueAccount` (falls back to Sales). A Time and Materials invoice bills one `Labor` line (`invoiceLineType` `Labor`, no item).
+- Revenue: `synthesizeServiceJobRevenue` writes Accrual rows (`revenueRecognitionSchedule.serviceJobId`) in the Revenue Recognition run; `postSalesInvoice` clears them on the job's invoice (`planServiceJobRevenue`) and credits `accountDefault.serviceRevenueAccount` (falls back to Sales). The labor and fixed price lines are `invoiceLineType` `Service` with no item; lines written before 2026-11-01 have the type `Labor` and post the same way.
 - Routes: list `/x/service-jobs`, job `/x/service-job/<id>`, schedule `/x/service-jobs/schedule`, assets `/x/service-jobs/assets`; MES `/x/service`.
 - Rules: `.claude/rules/service-jobs.md`.
 </AgentContext>

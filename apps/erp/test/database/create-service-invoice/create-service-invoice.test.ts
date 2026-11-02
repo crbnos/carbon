@@ -107,7 +107,7 @@ async function invoiceFixture() {
 }
 
 databaseTest(
-  "invoicing a Completed Time and Materials job bills its hours on one Labor line and its parts, and posting it writes AR and Sales only",
+  "invoicing a Completed Time and Materials job bills its hours on one Service line with no item and its parts, and posting it writes AR and Sales only",
   async () => {
     const f = await invoiceFixture();
     try {
@@ -199,7 +199,7 @@ databaseTest(
           line.serviceJobId
         ])
       ).toEqual([
-        ["Labor", null, "Labor", 3, 95, "EA", job.id],
+        ["Service", null, "Labor", 3, 95, "EA", job.id],
         ["Service", partId, "Fuse", 1, 120, "EA", job.id]
       ]);
 
@@ -272,7 +272,7 @@ databaseTest(
 );
 
 databaseTest(
-  "a Fixed Price job bills one plain line at its price, and a Warranty job is refused",
+  "a Fixed Price job bills one Service line with no item at its price, and a Warranty job is refused",
   async () => {
     const f = await invoiceFixture();
     try {
@@ -325,7 +325,7 @@ databaseTest(
           line.serviceJobId
         ])
       ).toEqual([
-        ["Labor", null, "Fixed price service", 1, 450, "EA", fixed.id]
+        ["Service", null, "Fixed price service", 1, 450, "EA", fixed.id]
       ]);
 
       const warranty = await f.addJob({

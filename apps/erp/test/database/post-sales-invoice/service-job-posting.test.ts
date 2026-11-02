@@ -15,8 +15,8 @@ import { serviceJobFixture } from "../fixtures/service-job";
 /**
  * The service job fixture with AR, Sales, Service Revenue and Contract
  * Assets accounts, a sales invoice sequence, and a Completed Time and
- * Materials job: 3 hours at 95 (one Labor line of 285) and, when `charge`
- * is set, a 95 charge line, for an invoice of 380.
+ * Materials job: 3 hours at 95 (one labor line of 285: a Service line with
+ * no item) and, when `charge` is set, a 95 charge line, for an invoice of 380.
  */
 async function servicePostingFixture(args: {
   serviceRevenueAccount: boolean;
@@ -144,7 +144,7 @@ async function servicePostingFixture(args: {
       expect(posted.error).toBeNull();
       const lines = await f.db
         .selectFrom("salesInvoiceLine")
-        .select(["id", "invoiceLineType"])
+        .select(["id", "invoiceLineType", "itemId"])
         .where("invoiceId", "=", invoiceId)
         .where("companyId", "=", f.companyId)
         .orderBy("sortOrder")
@@ -174,6 +174,35 @@ async function servicePostingFixture(args: {
         rows.map((row) => [row.accountId, Number(row.amount)])
       );
     },
+    /** What the invoice moved in stock: shipments, item and cost ledger
+     *  rows. */
+    async stockMoved(invoiceId: string) {
+      const [shipments, itemLedger, costLedger] = await Promise.all([
+        f.db
+          .selectFrom("shipment")
+          .select("id")
+          .where("sourceDocumentId", "=", invoiceId)
+          .where("companyId", "=", f.companyId)
+          .execute(),
+        f.db
+          .selectFrom("itemLedger")
+          .select("id")
+          .where("documentId", "=", invoiceId)
+          .where("companyId", "=", f.companyId)
+          .execute(),
+        f.db
+          .selectFrom("costLedger")
+          .select("id")
+          .where("documentId", "=", invoiceId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      ]);
+      return {
+        shipments: shipments.length,
+        itemLedger: itemLedger.length,
+        costLedger: costLedger.length
+      };
+    },
     /** Each accrual row's stamp. */
     async stamps(ids: string[]) {
       const rows = await f.db
@@ -202,19 +231,76 @@ async function servicePostingFixture(args: {
 }
 
 databaseTest(
-  "a Labor line with nothing accrued credits Service Revenue",
+  "a labor line (Service, no item) with nothing accrued credits Service Revenue and moves no stock",
   async () => {
     const f = await servicePostingFixture({
       serviceRevenueAccount: true,
       charge: false
     });
     try {
-      const { lines } = await f.invoiceAndPost();
-      expect(lines.map((line) => line.invoiceLineType)).toEqual(["Labor"]);
+      const { invoiceId, lines } = await f.invoiceAndPost();
+      expect(
+        lines.map((line) => [line.invoiceLineType, line.itemId])
+      ).toEqual([["Service", null]]);
       expect(await f.postedByAccount()).toEqual({
         [f.account("receivables")]: 285,
         [f.account("service-revenue")]: 285
       });
+      // No shipment, item ledger, cost relief or COGS for a line with no item.
+      expect(await f.stockMoved(invoiceId)).toEqual({
+        shipments: 0,
+        itemLedger: 0,
+        costLedger: 0
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a line written as Labor before the change posts like a Service line with no item",
+  async () => {
+    const f = await servicePostingFixture({
+      serviceRevenueAccount: true,
+      charge: false
+    });
+    try {
+      const accrual = await f.accrue(100);
+      const created = await invokePosting(
+        handlesOf(f.ctx),
+        "create-service-invoice",
+        { serviceJobId: f.job.id },
+        createServiceInvoice
+      );
+      expect(created.error).toBeNull();
+      const invoiceId = created.data!.salesInvoiceId;
+      // An old Draft row: the type the labor line had before 2026-11-01.
+      const line = await f.db
+        .updateTable("salesInvoiceLine")
+        .set({ invoiceLineType: "Labor" })
+        .where("invoiceId", "=", invoiceId)
+        .where("companyId", "=", f.companyId)
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const posted = await invokePosting(
+        handlesOf(f.ctx),
+        "post-sales-invoice",
+        { type: "post", invoiceId },
+        postSalesInvoice
+      );
+      expect(posted.error).toBeNull();
+      expect(await f.postedByAccount()).toEqual({
+        [f.account("receivables")]: 285,
+        [f.account("contract-asset")]: -100,
+        [f.account("service-revenue")]: 185
+      });
+      expect(await f.stockMoved(invoiceId)).toEqual({
+        shipments: 0,
+        itemLedger: 0,
+        costLedger: 0
+      });
+      expect(await f.stamps([accrual])).toEqual({ [accrual]: line.id });
     } finally {
       await f.cleanup();
     }
@@ -231,9 +317,11 @@ databaseTest(
     try {
       const accruals = [await f.accrue(200), await f.accrue(85)];
       const { lines } = await f.invoiceAndPost();
-      expect(lines.map((line) => line.invoiceLineType)).toEqual([
-        "Labor",
-        "Service"
+      expect(
+        lines.map((line) => [line.invoiceLineType, line.itemId])
+      ).toEqual([
+        ["Service", null],
+        ["Service", f.serviceItemId]
       ]);
       // Credits are negative on an asset, positive on revenue.
       expect(await f.postedByAccount()).toEqual({

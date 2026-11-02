@@ -221,6 +221,10 @@ export const createSalesInvoiceLine = defineServiceFn({
 
   async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
     const line = service.salesInvoiceLineRow(input);
+    // Only service job invoicing writes a Service line with no item.
+    if (line.invoiceLineType === "Service" && !line.itemId) {
+      return ctx.error("validation", "Item is required");
+    }
     const locked = await service.unlockedSalesInvoice(
       ctx,
       line.invoiceId,
@@ -309,6 +313,27 @@ export const updateSalesInvoiceLine = defineServiceFn({
       "Cannot modify a locked sales invoice. Reopen it first."
     );
     if (locked) return locked;
+
+    // A Service line saved with no item must have had none: a service job's
+    // labor or fixed price line. A line with an item keeps one.
+    if (line.invoiceLineType === "Service" && !line.itemId) {
+      const stored = await ctx.asSystem.supabase
+        .from("salesInvoiceLine")
+        .select("itemId")
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .single();
+      if (stored.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load the sales invoice line",
+          stored.error
+        );
+      }
+      if (stored.data.itemId) {
+        return ctx.error("validation", "Item is required");
+      }
+    }
 
     let check: SalesRuleCheck = { violations: [], ruleNames: {} };
     if (line.itemId) {

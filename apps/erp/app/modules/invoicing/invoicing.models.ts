@@ -363,6 +363,35 @@ function isValidServicePeriod(data: {
   }
 }
 
+/**
+ * A sales invoice line that bills a service with no item: a service job's
+ * labor or fixed price line, written by `createServiceInvoice`. Its
+ * description names it, and it has no method, location or stock. "Labor" is
+ * the type those lines had before 2026-11-01; old rows still carry it and
+ * read the same way.
+ */
+export function isItemlessServiceLine(line: {
+  invoiceLineType?: string | null;
+  itemId?: string | null;
+}): boolean {
+  return (
+    (line.invoiceLineType === "Service" || line.invoiceLineType === "Labor") &&
+    !line.itemId
+  );
+}
+
+/**
+ * An edit of a Service line with no item. Only an existing line may have no
+ * item: `updateSalesInvoiceLine` refuses one that had an item.
+ */
+function isEditedItemlessServiceLine(data: {
+  id?: string;
+  invoiceLineType: string;
+  itemId?: string;
+}): boolean {
+  return !!data.id && isItemlessServiceLine(data);
+}
+
 export const salesInvoiceLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -370,19 +399,14 @@ export const salesInvoiceLineValidator = z
     // "Rental" lines are written by rental invoice generation, never offered as
     // a choice (it is not in `salesInvoiceLineType`); it is accepted here so a
     // rental line's shape validates. The DB requires a rental agreement line on
-    // every Rental row, so a hand-posted one is still refused. "Labor" lines
-    // are written by service job invoicing the same way: billed hours with no
-    // item, edited for hours, rate and tax only.
-    invoiceLineType: z.enum(
-      [...itemType, "Fixture", "Fixed Asset", "Rental", "Labor"],
-      {
-        error: "Type is required"
-      }
-    ),
+    // every Rental row, so a hand-posted one is still refused.
+    invoiceLineType: z.enum([...itemType, "Fixture", "Fixed Asset", "Rental"], {
+      error: "Type is required"
+    }),
     // Wrapped in zfd.text so an empty-string submission (the form always posts a
     // hidden methodType) coerces to undefined instead of failing the enum check.
     // Requiredness is enforced conditionally by the refine below, which exempts
-    // Fixed Asset, Rental and Labor lines.
+    // Fixed Asset and Rental lines and a Service line with no item.
     methodType: zfd.text(
       z
         .enum(methodType, {
@@ -417,7 +441,7 @@ export const salesInvoiceLineValidator = z
       ["Part", "Service", "Material", "Tool", "Consumable"].includes(
         data.invoiceLineType
       )
-        ? data.itemId
+        ? !!data.itemId || isEditedItemlessServiceLine(data)
         : true,
     {
       message: "Item is required",
@@ -439,7 +463,7 @@ export const salesInvoiceLineValidator = z
       if (
         data.invoiceLineType === "Fixed Asset" ||
         data.invoiceLineType === "Rental" ||
-        data.invoiceLineType === "Labor"
+        isEditedItemlessServiceLine(data)
       )
         return true;
       return !!data.methodType;

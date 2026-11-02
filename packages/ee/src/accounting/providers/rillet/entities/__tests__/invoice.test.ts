@@ -418,7 +418,7 @@ describe("Rillet service job revenue", () => {
     source.lines.push({
       ...source.lines[0]!,
       id: "sil_labor",
-      invoiceLineType: "Labor",
+      invoiceLineType: "Service",
       itemId: null,
       itemCode: null,
       description: "Labor",

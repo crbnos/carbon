@@ -84,7 +84,10 @@ import { itemType, methodType } from "~/modules/shared/shared.models";
 import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import { isSalesInvoiceLocked } from "../../invoicing.models";
+import {
+  isItemlessServiceLine,
+  isSalesInvoiceLocked
+} from "../../invoicing.models";
 import ContractInvoiceLineSource from "./ContractInvoiceLineSource";
 import RentalInvoiceLineSummary from "./RentalInvoiceLineSummary";
 
@@ -170,11 +173,12 @@ const SalesInvoiceItemLineForm = ({
   const isLocked = isSalesInvoiceLocked(routeData?.salesInvoice?.status);
   const isEditable = !isLocked;
 
-  // A Labor line is a service job's billed hours: no item, no method and no
-  // location, only hours, a rate and tax.
-  const isLabor = initialValues.invoiceLineType === "Labor";
-  const [lineType, setLineType] = useState<ItemType | "Labor">(
-    initialValues.invoiceLineType as ItemType | "Labor"
+  // A Service line with no item is a service job's labor or fixed price
+  // line: no item, no method and no location, only its description, quantity,
+  // price and tax. An old "Labor" line saves as a Service line.
+  const isItemless = isItemlessServiceLine(initialValues);
+  const [lineType, setLineType] = useState<ItemType>(
+    isItemless ? "Service" : (initialValues.invoiceLineType as ItemType)
   );
   // The picker's type filter. It starts on every item type; the line's own
   // type is a real enum value — "Item" is not one — and follows the selected
@@ -496,7 +500,7 @@ const SalesInvoiceItemLineForm = ({
                     className={cn(
                       isEditing &&
                         !isFixedAsset &&
-                        !isLabor &&
+                        !isItemless &&
                         !itemData?.itemId &&
                         "text-muted-foreground"
                     )}
@@ -504,8 +508,8 @@ const SalesInvoiceItemLineForm = ({
                     {isEditing ? (
                       isFixedAsset ? (
                         initialValues.assetReadableId || "Fixed Asset"
-                      ) : isLabor ? (
-                        t`Labor`
+                      ) : isItemless ? (
+                        itemData.description || t`Service`
                       ) : (
                         (getItemReadableId(items, itemData?.itemId) ?? "...")
                       )
@@ -522,8 +526,8 @@ const SalesInvoiceItemLineForm = ({
                           </span>
                         ) : (
                           distinctItemText(
-                            isLabor
-                              ? t`Labor`
+                            isItemless
+                              ? itemData.description
                               : getItemReadableId(items, itemData?.itemId),
                             itemData?.description
                           ) && <span>{itemData?.description}</span>
@@ -534,7 +538,7 @@ const SalesInvoiceItemLineForm = ({
                             className="flex items-center gap-2"
                           >
                             {initialValues?.quantity}{" "}
-                            {!isFixedAsset && !isLabor && (
+                            {!isFixedAsset && !isItemless && (
                               <MethodIcon type={itemData.methodType} />
                             )}
                           </Badge>
@@ -608,7 +612,7 @@ const SalesInvoiceItemLineForm = ({
                       </Alert>
                     )}
                     <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                      {!isLabor && (
+                      {!isItemless && (
                         <Item
                           autoFocus={!isEditing}
                           name="itemId"
@@ -648,11 +652,10 @@ const SalesInvoiceItemLineForm = ({
                         "Tool",
                         "Consumable",
                         "Service",
-                        "Fixture",
-                        "Labor"
+                        "Fixture"
                       ].includes(lineType) && (
                         <>
-                          {!isLabor && (
+                          {!isItemless && (
                             <div className="space-y-2">
                               <SelectControlled
                                 name="methodType"
@@ -723,7 +726,7 @@ const SalesInvoiceItemLineForm = ({
                               }))
                             }
                           />
-                          {lineType === "Service" && (
+                          {lineType === "Service" && !isItemless && (
                             <>
                               <DatePicker
                                 name="serviceStartDate"
@@ -743,7 +746,7 @@ const SalesInvoiceItemLineForm = ({
                               />
                             </>
                           )}
-                          {!isLabor && (
+                          {!isItemless && (
                             <Location
                               name="locationId"
                               label={t`Shipping Location`}
@@ -751,7 +754,7 @@ const SalesInvoiceItemLineForm = ({
                               onChange={onLocationChange}
                             />
                           )}
-                          {lineType !== "Service" && !isLabor && (
+                          {lineType !== "Service" && (
                             <StorageUnit
                               name="storageUnitId"
                               label={t`Storage Unit`}
@@ -779,8 +782,7 @@ const SalesInvoiceItemLineForm = ({
                       "Tool",
                       "Consumable",
                       "Service",
-                      "Fixture",
-                      "Labor"
+                      "Fixture"
                     ].includes(lineType) && (
                       <div className="w-full">
                         <div className="w-full border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 mt-4">

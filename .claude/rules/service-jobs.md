@@ -28,7 +28,8 @@ time posted per entry, ASC 606 revenue). Postings research:
 
 Migrations `20261023070940_service-job-enum-values.sql`,
 `20261023071039_service-jobs.sql`, `20261023071226_service-jobs-rls.sql`,
-`20261101042555_service-labor-invoice-line-type.sql`,
+`20261101042555_service-labor-invoice-line-type.sql` (the `'Labor'`
+invoice line type, written by nothing now; see The invoice),
 `20261101043733_service-labor-rates.sql`.
 
 | Table (id prefix) | Holds |
@@ -141,7 +142,7 @@ Service item stands for labor.
 |---|---|---|
 | `companySettings.serviceLaborCostRate` | Settings → Service (`x+/settings+/service.tsx`, `updateServiceSettings`, `update: settings`) | The cost of every time entry. The reconcile stores it in `serviceJobTime.unitCost` when the entry first posts; a later change never re-rates a posted entry |
 | `companySettings.serviceLaborBillRate` | Settings → Service | The default bill rate. Every create path copies it into `serviceJob.laborBillRate`: ERP New (`insertServiceJob`), MES New Job, the RMA receipt (`createServiceJobsForReturn`) and the demo datasets |
-| `serviceJob.laborBillRate` | The job's properties panel (`updateServiceJob`, field `laborBillRate`) | The Labor estimate lines and the Labor invoice line. Editable while the job is open and its estimate is not Sent or Accepted |
+| `serviceJob.laborBillRate` | The job's properties panel (`updateServiceJob`, field `laborBillRate`) | The Labor estimate lines and the invoice's labor line. Editable while the job is open and its estimate is not Sent or Accepted |
 
 Without a cost rate, every time write is refused with
 `SERVICE_LABOR_COST_RATE_MISSING` ("Set the labor cost rate in Settings →
@@ -230,17 +231,17 @@ job posts it, and Complete always runs one.
 the pure `planServiceJobInvoiceLines` (`service-job-invoice-plan.ts`), and
 inserts an `opportunity`, a Draft `salesInvoice` (customer's currency and
 payment terms, `customerReference` = the job number, tax 0),
-`salesInvoiceShipment` and the lines, each with `serviceJobId`.
+`salesInvoiceShipment` and the lines, each with `serviceJobId`. Every line
+is `invoiceLineType` `'Service'`.
 
-- Time and Materials: one **Labor** line (`invoiceLineType` `'Labor'`, no
-  item, unit `EA`) at Σ billable hours × the job's `laborBillRate` at
-  invoicing. Then every billable Part and Charge at its `unitPrice`. Billable
-  hours on a job with no bill rate are refused
+- Time and Materials: one labor line with no item (unit `EA`, description
+  "Labor", `SERVICE_JOB_LABOR_LINE`) at Σ billable hours × the job's
+  `laborBillRate` at invoicing. Then every billable Part and Charge at its
+  `unitPrice`. Billable hours on a job with no bill rate are refused
   (`SERVICE_JOB_BILL_RATE_MISSING`).
-- Fixed Price: one plain line with no item (`invoiceLineType` `'Labor'`,
-  quantity 1, unit `EA`, description "Fixed price service",
-  `SERVICE_JOB_FIXED_PRICE_LINE`) at `fixedPrice`. Time, parts and charges
-  are in the price. Refused without a price
+- Fixed Price: one line with no item (quantity 1, unit `EA`, description
+  "Fixed price service", `SERVICE_JOB_FIXED_PRICE_LINE`) at `fixedPrice`.
+  Time, parts and charges are in the price. Refused without a price
   (`SERVICE_JOB_FIXED_PRICE_MISSING`). The input's optional `fixedPrice`
   sets the price of a job that has none, inside the invoice transaction.
   A service job names no item to bill: migration
@@ -248,8 +249,19 @@ payment terms, `customerReference` = the job number, tax 0),
   `serviceJob.serviceItemId`.
 - Nothing billable is refused.
 
-The sales invoice line form shows a Labor line as "Labor" with no item, and
-edits only its hours, rate and tax.
+A Service line with no item (`isItemlessServiceLine`, `invoicing.models.ts`)
+is named by its description in the line form, the explorer, the summary and
+the PDF and email (`@carbon/documents` `utils/sales-invoice.ts`). The form
+edits only its description, quantity, price and tax. Only an existing line
+may have no item: `salesInvoiceLineValidator` accepts it on an edit,
+`updateSalesInvoiceLine` refuses it when the stored line has an item, and
+`createSalesInvoiceLine` refuses it. `isDirectItemLine` needs an item, so the
+line ships nothing and has no cost.
+
+Before 2026-11-01 these lines had the type `'Labor'` (migration
+`20261101042555`; a Postgres enum value cannot be dropped). Old rows render
+and post as Service lines (`postingLineRevenue`), and saving one in the form
+changes it to Service. Nothing writes `'Labor'` now.
 
 Deleting the Draft invoice (`deleteSalesInvoiceReleasingRentals`) or its last
 line naming a job (`deleteSalesInvoiceLineReleasingRentals`) sets the job back

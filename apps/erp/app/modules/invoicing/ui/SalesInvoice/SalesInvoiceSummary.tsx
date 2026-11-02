@@ -37,7 +37,10 @@ import {
 } from "~/hooks";
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
-import { isSalesInvoiceLocked } from "../../invoicing.models";
+import {
+  isItemlessServiceLine,
+  isSalesInvoiceLocked
+} from "../../invoicing.models";
 import type {
   SalesInvoice,
   SalesInvoiceLine,
@@ -85,8 +88,8 @@ const LineItems = ({
         ? rentalLineTypeLabel(line.rentalLineType)
         : line.invoiceLineType === "Fixed Asset"
           ? (line as any).assetReadableId || "Fixed Asset"
-          : line.invoiceLineType === "Labor"
-            ? t`Labor`
+          : isItemlessServiceLine(line)
+            ? line.description || t`Service`
             : getItemReadableId(items, line.itemId);
     const description = distinctItemText(itemReadableId, line.description);
     // The discount reduces the merchandise only (the generated net
@@ -225,7 +228,7 @@ const LineItems = ({
                       {line.quantity}
                       {line.invoiceLineType !== "Fixed Asset" &&
                         line.invoiceLineType !== "Rental" &&
-                        line.invoiceLineType !== "Labor" && (
+                        !isItemlessServiceLine(line) && (
                           <MethodIcon
                             type={line.methodType ?? "Pull from Inventory"}
                           />

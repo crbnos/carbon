@@ -409,7 +409,7 @@ describe("Xero service job revenue", () => {
     source.lines.push({
       ...source.lines[0]!,
       id: "sil-labor",
-      invoiceLineType: "Labor",
+      invoiceLineType: "Service",
       itemId: null,
       itemCode: null,
       description: "Labor",

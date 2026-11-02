@@ -7043,11 +7043,13 @@ export const ITEM_LINE_TYPES: ReadonlySet<string> = new Set([
  * is in the invoice journal. A sales-order or Make-to-Order line keeps the
  * COGS that its shipment posted. A contract line never ships: a project
  * contract line may name a part, but its job already charged the cost to the
- * project, and its delivery moves no stock.
+ * project, and its delivery moves no stock. A Service line with no item (a
+ * service job's labor or fixed price line) ships nothing and has no cost.
  */
 export function isDirectItemLine(line: SalesInvoiceLine): boolean {
   return (
     ITEM_LINE_TYPES.has(line.invoiceLineType) &&
+    line.itemId !== null &&
     line.salesOrderLineId === null &&
     line.customerContractLineId === null &&
     line.methodType !== "Make to Order"
@@ -7093,16 +7095,14 @@ export type SalesLineRevenue =
 /** Where the posting books a line's revenue. A Comment line posts nothing
  *  and never gets here. */
 export function postingLineRevenue(line: SalesInvoiceLine): SalesLineRevenue {
-  if (
-    line.serviceJobId &&
-    (line.invoiceLineType === "Labor" ||
-      ITEM_LINE_TYPES.has(line.invoiceLineType))
-  ) {
+  // "Labor" is the type a service job's item-less lines had before they
+  // became Service lines. Old rows post as Service lines.
+  const lineType =
+    line.invoiceLineType === "Labor" ? "Service" : line.invoiceLineType;
+  if (line.serviceJobId && ITEM_LINE_TYPES.has(lineType)) {
     return { book: "service", serviceJobId: line.serviceJobId };
   }
-  // A Labor line with no job is plain revenue.
-  if (line.invoiceLineType === "Labor") return { book: "sales" };
-  if (ITEM_LINE_TYPES.has(line.invoiceLineType)) {
+  if (ITEM_LINE_TYPES.has(lineType)) {
     if (line.customerContractLineId) return { book: "contract" };
     const period = deferredServicePeriod(line);
     return period ? { book: "deferral", ...period } : { book: "sales" };

@@ -45,7 +45,7 @@ const shape = (lines: ReturnType<typeof planServiceJobInvoiceLines>) =>
   ]);
 
 describe("planServiceJobInvoiceLines", () => {
-  it("bills Time and Materials: one Labor line, then parts, then charges", () => {
+  it("bills Time and Materials: one labor line, then parts, then charges, all Service lines", () => {
     const lines = planServiceJobInvoiceLines({
       job: timeAndMaterials,
       time: [hours(1), hours(0.5)],
@@ -60,7 +60,7 @@ describe("planServiceJobInvoiceLines", () => {
       ]
     });
     expect(lines.map((line) => line.invoiceLineType)).toEqual([
-      "Labor",
+      "Service",
       "Service",
       "Service"
     ]);
@@ -71,7 +71,7 @@ describe("planServiceJobInvoiceLines", () => {
     ]);
   });
 
-  it("bills every billable hour on one Labor line at the job's bill rate", () => {
+  it("bills every billable hour on one labor line with no item at the job's bill rate", () => {
     const lines = planServiceJobInvoiceLines({
       job: timeAndMaterials,
       time: [hours(2), hours(1)],
@@ -131,7 +131,7 @@ describe("planServiceJobInvoiceLines", () => {
     ).toThrow("has no billable time, part or charge to invoice");
   });
 
-  it("bills a Fixed Price job as one plain line with no item", () => {
+  it("bills a Fixed Price job as one Service line with no item", () => {
     const lines = planServiceJobInvoiceLines({
       job: {
         ...timeAndMaterials,
@@ -144,7 +144,7 @@ describe("planServiceJobInvoiceLines", () => {
     });
     expect(
       lines.map((line) => [line.invoiceLineType, ...shape([line])[0]!])
-    ).toEqual([["Labor", null, "Fixed price service", 1, 450, "EA"]]);
+    ).toEqual([["Service", null, "Fixed price service", 1, 450, "EA"]]);
   });
 
   it("refuses a Fixed Price job with no price", () => {

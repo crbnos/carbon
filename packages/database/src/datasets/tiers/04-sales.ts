@@ -1210,10 +1210,10 @@ async function insertServiceInvoice(
       .filter((entry) => entry.billable ?? true)
       .reduce((sum, entry) => sum + entry.hours, 0)
   );
-  // planServiceJobInvoiceLines: one Labor line (no item, unit EA), then the
-  // charges.
+  // planServiceJobInvoiceLines: one labor line (a Service line with no item,
+  // unit EA), then the charges.
   const lines: {
-    invoiceLineType: "Labor" | "Service";
+    invoiceLineType: "Service";
     itemId: string | undefined;
     description: string;
     quantity: number;
@@ -1223,7 +1223,7 @@ async function insertServiceInvoice(
     ...(billableHours > 0
       ? [
           {
-            invoiceLineType: "Labor" as const,
+            invoiceLineType: "Service" as const,
             itemId: undefined,
             description: "Labor",
             quantity: billableHours,

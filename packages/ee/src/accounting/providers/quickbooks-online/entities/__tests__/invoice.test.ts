@@ -475,7 +475,7 @@ describe("QBO service job revenue", () => {
           makeLine({ id: "part", quantity: 1, unitPrice: 50, lineAmount: 50 }),
           makeLine({
             id: "labor",
-            invoiceLineType: "Labor",
+            invoiceLineType: "Service",
             itemId: null,
             itemCode: null,
             description: "Labor",

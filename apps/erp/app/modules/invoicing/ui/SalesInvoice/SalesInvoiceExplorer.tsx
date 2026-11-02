@@ -49,7 +49,10 @@ import type { ItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import { isSalesInvoiceLocked } from "../../invoicing.models";
+import {
+  isItemlessServiceLine,
+  isSalesInvoiceLocked
+} from "../../invoicing.models";
 import type { SalesInvoice, SalesInvoiceLine } from "../../types";
 import DeleteSalesInvoiceLine from "./DeleteSalesInvoiceLine";
 import SalesInvoiceLineForm from "./SalesInvoiceLineForm";
@@ -215,7 +218,10 @@ function SalesInvoiceLineBody({
   isOverlay?: boolean;
 }) {
   const [items] = useItems();
-  const readableId = getItemReadableId(items, line.itemId) ?? "";
+  // A Service line with no item is named by its description.
+  const readableId = isItemlessServiceLine(line)
+    ? (line.description ?? "")
+    : (getItemReadableId(items, line.itemId) ?? "");
   const description = distinctItemText(readableId, line.description);
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
@@ -253,7 +259,8 @@ function SalesInvoiceLineItem({
   const location = useOptimisticLocation();
   const rentalLineTypeLabel = useRentalLineTypeLabel();
   const isRental = line.invoiceLineType === "Rental";
-  const isLabor = line.invoiceLineType === "Labor";
+  // A service job's labor or fixed price line: its description names it.
+  const isItemless = isItemlessServiceLine(line);
 
   const isSelected =
     location.pathname === path.to.salesInvoiceLine(invoiceId, line.id!);
@@ -261,10 +268,12 @@ function SalesInvoiceLineItem({
   const secondaryText =
     line.invoiceLineType === "Fixed Asset"
       ? (line as any).assetName || line.description
-      : distinctItemText(
-          isLabor ? t`Labor` : getItemReadableId(items, line.itemId),
-          line.description
-        );
+      : isItemless
+        ? undefined
+        : distinctItemText(
+            getItemReadableId(items, line.itemId),
+            line.description
+          );
 
   return (
     <VStack spacing={0} className="border-b">
@@ -292,8 +301,8 @@ function SalesInvoiceLineItem({
                   ? rentalLineTypeLabel(line.rentalLineType)
                   : line.invoiceLineType === "Fixed Asset"
                     ? (line as any).assetReadableId || "Fixed Asset"
-                    : isLabor
-                      ? t`Labor`
+                    : isItemless
+                      ? line.description || t`Service`
                       : (getItemReadableId(items, line.itemId) ?? "")}
               </span>
               {secondaryText && (
@@ -328,25 +337,26 @@ function SalesInvoiceLineItem({
                   <Trans>Delete Line</Trans>
                 </DropdownMenuItem>
                 {/* @ts-expect-error */}
-                {itemType.includes(line.invoiceLineType ?? "") && (
-                  <DropdownMenuItem
-                    shortcut={MENU_ITEM_SHORTCUTS.view}
-                    asChild
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Link
-                      to={getLinkToItemDetails(
-                        line.invoiceLineType as ItemType,
-                        line.itemId!
-                      )}
+                {itemType.includes(line.invoiceLineType ?? "") &&
+                  line.itemId && (
+                    <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.view}
+                      asChild
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <DropdownMenuIcon
-                        icon={<MethodItemTypeIcon type={"Part"} />}
-                      />
-                      <Trans>View Item Master</Trans>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
+                      <Link
+                        to={getLinkToItemDetails(
+                          line.invoiceLineType as ItemType,
+                          line.itemId!
+                        )}
+                      >
+                        <DropdownMenuIcon
+                          icon={<MethodItemTypeIcon type={"Part"} />}
+                        />
+                        <Trans>View Item Master</Trans>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

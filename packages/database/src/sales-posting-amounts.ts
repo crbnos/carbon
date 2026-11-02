@@ -344,6 +344,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
       "Tool",
       "Fixed Asset",
       "Rental",
+      // A service job's item-less line before 2026-11-01; posts as Service.
       "Labor"
     ].includes(line.invoiceLineType)
   ) {
