@@ -415,7 +415,7 @@ it (`api-keys.tsx` + `RecordOutlet`).
 
 - 2026-10-30: Created. Three Ask-First questions answered by the user. The
   other decisions are autonomous and logged in the run record.
-- 2026-10-30: Built on `naveenkash/rinw9`. Two changes from the design:
+- 2026-10-30: Built on `naveenkash/identity-federation`. Two changes from the design:
   1. The chooser modal opens inside the new API key route (`api-keys.new.tsx`).
      The table's **New** button keeps its link and its `n` shortcut.
   2. `ApiKeysTable` no longer renders an `Outlet`. The route already renders a

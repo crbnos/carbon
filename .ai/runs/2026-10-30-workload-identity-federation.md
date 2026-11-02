@@ -24,7 +24,7 @@
 - STE-80 pass done on research, spec, plan and this run record.
 
 ## Outcome
-- Built and committed locally on `naveenkash/identity-federation-like-claude` (Conductor renamed the branch from `naveenkash/rinw9` during the run). Not pushed, no PR, as the user asked.
+- Built and committed locally on `naveenkash/identity-federation`. Not pushed, no PR, as the user asked.
 
 ## 2026-10-31: Claude Console parity
 - Scope (user): everything on the Console screens except service accounts and CEL conditions.

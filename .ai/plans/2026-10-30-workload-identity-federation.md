@@ -3,7 +3,7 @@
 **Spec:** .ai/specs/2026-10-30-workload-identity-federation.md
 **Research:** .ai/research/workload-identity-federation.md
 **Closest sibling:** API key (`api-keys*.tsx`, `ui/ApiKeys/`, `packages/ee/src/api-keys.server.ts`)
-**Branch:** naveenkash/rinw9
+**Branch:** naveenkash/identity-federation
 
 ## Progress
 - [x] Task 1: Move the SSRF guard to `@carbon/lib`
