@@ -48,7 +48,7 @@ export function PortLabel({
   return (
     <span
       className={cn(
-        "pointer-events-none absolute right-0 top-1/2 translate-x-[calc(100%+0.75rem)] whitespace-nowrap rounded bg-background/80 px-1 text-[10px] font-medium",
+        "pointer-events-none absolute right-0 top-1/2 translate-x-[calc(100%+0.75rem)] whitespace-nowrap rounded bg-background/80 px-1 text-[0.625rem] font-medium",
         lifted ? "-translate-y-[115%]" : "-translate-y-1/2",
         LABEL_TONE[tone]
       )}

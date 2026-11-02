@@ -27,6 +27,7 @@ import {
   LuChevronDown,
   LuCircleX,
   LuEye,
+  LuFile,
   LuGitCompare,
   LuLoaderCircle,
   LuSend,
@@ -152,6 +153,18 @@ const PurchasingRFQHeader = () => {
                 </Button>
               </RecordAction>
             )}
+
+            <RecordAction slot="overflow">
+              <Button leftIcon={<LuFile />} variant="secondary" asChild>
+                <a
+                  target="_blank"
+                  href={path.to.file.purchasingRfq(rfqId)}
+                  rel="noreferrer"
+                >
+                  <Trans>PDF</Trans>
+                </a>
+              </Button>
+            </RecordAction>
 
             {/* Share Dropdown - for Requested status with external links */}
             {status === "Requested" && hasSuppliers && (

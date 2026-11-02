@@ -2,20 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getParts } from "~/modules/items/items.service";
 import { PartsTable } from "~/modules/items/ui/Parts";
 import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
+import { partsList } from "~/utils/list-registry/items.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 import { useRealtime } from "../../../hooks";
 
 export const handle: Handle = {
@@ -25,53 +21,27 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    bypassRls: true
-  });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const supplierId = searchParams.get("supplierId");
-
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [parts, tags] = await Promise.all([
-    getParts(client, companyId, {
-      search,
-      supplierId,
-      limit,
-      offset,
-      sorts,
-      filters
+  return loadListPage(request, partsList, {
+    dataKey: "parts",
+    bypassRls: true,
+    firstPage: async ({ client, companyId }) => ({
+      tags: (await getTagsList(client, companyId, "part")).data ?? []
     }),
-    getTagsList(client, companyId, "part")
-  ]);
-
-  if (parts.error) {
-    redirect(
-      path.to.authenticatedRoot,
-      await flash(request, error(parts.error, "Failed to fetch parts"))
-    );
-  }
-
-  return {
-    count: parts.count ?? 0,
-    parts: parts.data ?? [],
-    tags: tags.data ?? []
-  };
+    onError: {
+      redirectTo: path.to.authenticatedRoot,
+      message: "Failed to fetch parts"
+    }
+  });
 }
 
 export default function PartsSearchRoute() {
-  const { count, parts, tags } = useLoaderData<typeof loader>();
+  const { count, parts, infinite, tags } = useLoaderData<typeof loader>();
 
   useRealtime("part");
 
   return (
     <VStack spacing={0} className="h-full">
-      <PartsTable data={parts} count={count} tags={tags} />
+      <PartsTable data={parts} count={count} infinite={infinite} tags={tags} />
       <RecordOutlet />
     </VStack>
   );

@@ -268,6 +268,7 @@ export function StartStopButton({
   isTrackedActivity,
   trackedEntityId,
   batchId,
+  startDisabled = false,
   ...props
 }: ComponentProps<"button"> & {
   eventType: (typeof productionEventType)[number];
@@ -281,6 +282,9 @@ export function StartStopButton({
   // When set, the start/stop event is tagged as part of this batch — sliced per
   // member at batch completion, and cost posting is deferred until then.
   batchId?: string;
+  // Starting is refused (ability policy 'block'); a running timer can still
+  // be paused.
+  startDisabled?: boolean;
 }) {
   const fetcher = useFetcher<ProductionEvent>();
 
@@ -379,7 +383,7 @@ export function StartStopButton({
       ) : (
         <PlayButton
           ref={startStopRef}
-          disabled={fetcher.state !== "idle"}
+          disabled={startDisabled || fetcher.state !== "idle"}
           type="submit"
         />
       )}

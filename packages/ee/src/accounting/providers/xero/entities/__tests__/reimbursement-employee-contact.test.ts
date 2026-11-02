@@ -4,6 +4,10 @@
 
 import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  type FakeDatabase,
+  fakeDatabase
+} from "../../../../core/fake-database-test-fixture";
 import type { ReimbursementSource } from "../../../../core/reimbursement-source";
 import { XeroReimbursementSyncer } from "../reimbursement";
 
@@ -13,33 +17,15 @@ import { XeroReimbursementSyncer } from "../reimbursement";
 // names, so the retry's POST fails with a duplicate-name validation error.
 // Without a lookup-before-create that reimbursement can never sync again.
 
-const { mappings } = vi.hoisted(() => ({
-  mappings: new Map<string, string>()
-}));
-
-vi.mock("../../../../core/external-mapping", () => ({
-  createMappingService: () => ({
-    getByEntity: async () => null,
-    getExternalId: async (_type: string, id: string) =>
-      mappings.get(id) ?? null,
-    link: async (
-      _type: string,
-      id: string,
-      _provider: string,
-      externalId: string
-    ) => {
-      mappings.set(id, externalId);
-    }
-  })
-}));
-
-vi.mock("../../../../core/utils", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../../core/utils")>()),
-  withTriggersDisabled: async (
-    _db: unknown,
-    operation: (tx: unknown) => Promise<unknown>
-  ) => operation({})
-}));
+let db: FakeDatabase;
+beforeEach(() => {
+  db = fakeDatabase();
+});
+/** The Xero contact the employee is mapped to, if any. */
+const employeeContactMapping = (employeeId: string) =>
+  db
+    .rows("externalIntegrationMapping")
+    .find((row) => row.entityId === employeeId)?.externalId;
 
 const reimbursement: ReimbursementSource = {
   id: "reimb_1",
@@ -84,7 +70,7 @@ const CONTACT_NAME = "Dana Okafor (dana@example.com)";
 
 function syncer(request: ReturnType<typeof vi.fn>) {
   const instance = new XeroReimbursementSyncer({
-    database: {} as never,
+    database: db.database,
     companyId: "company-1",
     entityType: "reimbursement",
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
@@ -94,8 +80,6 @@ function syncer(request: ReturnType<typeof vi.fn>) {
     resolveEmployeeContact(local: ReimbursementSource): Promise<string>;
   };
 }
-
-beforeEach(() => mappings.clear());
 
 describe("Xero employee-contact JIT create", () => {
   it("adopts the existing Contact found by exact name instead of POSTing a duplicate", async () => {
@@ -126,7 +110,7 @@ describe("Xero employee-contact JIT create", () => {
     );
     // The adoption is what makes the retry recoverable: the mapping the first
     // attempt failed to write is written now.
-    expect(mappings.get("emp_1")).toBe("contact-orphan");
+    expect(employeeContactMapping("emp_1")).toBe("contact-orphan");
   });
 
   it("creates the Contact with a deterministic Idempotency-Key when Xero has none", async () => {
@@ -151,7 +135,7 @@ describe("Xero employee-contact JIT create", () => {
         }
       })
     );
-    expect(mappings.get("emp_1")).toBe("contact-new");
+    expect(employeeContactMapping("emp_1")).toBe("contact-new");
   });
 
   it("refuses to guess when two Contacts share the employee's name", async () => {
@@ -167,6 +151,6 @@ describe("Xero employee-contact JIT create", () => {
     await expect(
       syncer(request).resolveEmployeeContact(reimbursement)
     ).rejects.toThrow(/Multiple Xero contacts are named/);
-    expect(mappings.size).toBe(0);
+    expect(db.rows("externalIntegrationMapping")).toEqual([]);
   });
 });

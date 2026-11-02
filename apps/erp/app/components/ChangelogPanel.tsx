@@ -38,7 +38,7 @@ export default function ChangelogPanel({
         >
           <div className="px-4 pt-4 pb-3 space-y-2">
             <div className="flex items-center justify-between">
-              <Badge variant="blue" className="h-5 px-1.5 text-[10px]">
+              <Badge variant="blue" className="h-5 px-1.5 text-[0.625rem]">
                 <Trans>New</Trans>
               </Badge>
               <IconButton

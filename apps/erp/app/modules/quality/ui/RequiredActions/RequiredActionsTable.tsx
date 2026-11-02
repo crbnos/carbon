@@ -18,6 +18,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { RequiredAction } from "../../types";
@@ -25,10 +26,11 @@ import type { RequiredAction } from "../../types";
 type RequiredActionsTableProps = {
   data: RequiredAction[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const RequiredActionsTable = memo(
-  ({ data, count }: RequiredActionsTableProps) => {
+  ({ data, count, infinite }: RequiredActionsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -103,6 +105,7 @@ const RequiredActionsTable = memo(
       <>
         <Table<RequiredAction>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           primaryAction={

@@ -73,11 +73,12 @@ jobs:
       - name: Run deployment
         run: pnpm --filter ci ci:deploy
 
-  # Inngest learns the new function list once the new tasks serve it.
+  # Inngest learns the new function list, and hosted Supabase the Auth
+  # emails, once the new tasks serve them.
   sync:
-    name: Sync Inngest
+    name: Post Deploy Sync
     needs: deploy
-    uses: ./.github/workflows/inngest.yml
+    uses: ./.github/workflows/post-deploy.yml
     secrets: inherit
 
   # One leg per AWS account (prod and govcloud); each deploys only its own

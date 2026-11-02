@@ -4,17 +4,21 @@
 
 import {
   Body,
-  Button,
   Container,
   Heading,
   Link,
   Preview,
   Section,
   Text
-} from "@react-email/components";
+} from "react-email";
+import { Button } from "./components/Button";
 import { Logo } from "./components/Logo";
 import { notificationStyles } from "./components/notificationStyles";
-import { EmailThemeProvider, getEmailThemeClasses } from "./components/Theme";
+import {
+  EmailThemeProvider,
+  getEmailThemeClasses,
+  HeadStyle
+} from "./components/Theme";
 
 interface Props {
   recipientName?: string;
@@ -40,7 +44,7 @@ export const CompanyDeletionWarningEmail = ({
       preview={
         <Preview>{`${companyName} will be deleted on or after ${deletionDate}`}</Preview>
       }
-      additionalHeadContent={<style>{notificationStyles}</style>}
+      additionalHeadContent={<HeadStyle css={notificationStyles} />}
     >
       <Body
         className={`my-auto mx-auto font-sans nf-body ${themeClasses.body}`}
@@ -103,26 +107,7 @@ export const CompanyDeletionWarningEmail = ({
           </Section>
 
           <Section className="text-center mb-[24px]">
-            <Button
-              href={billingUrl}
-              className="nf-cta"
-              style={{
-                backgroundColor: "#0e0e0e",
-                borderColor: "#0e0e0e",
-                borderRadius: 10,
-                borderStyle: "solid",
-                borderWidth: 1,
-                color: "#ffffff",
-                display: "inline-block",
-                fontSize: 14,
-                fontWeight: 500,
-                padding: "13px 24px",
-                textAlign: "center",
-                textDecoration: "none"
-              }}
-            >
-              <span style={{ verticalAlign: "middle" }}>Choose a plan</span>
-            </Button>
+            <Button href={billingUrl}>Choose a plan</Button>
           </Section>
 
           <Text

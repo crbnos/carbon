@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import ts from "typescript";
+import ts from "typescript5";
 import type { SourceFile, Violation } from "../check";
 
 export const STAMP_MATCHES_COLUMNS = "stamp-matches-columns";

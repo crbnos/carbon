@@ -5,19 +5,21 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import {
-  getLocationsList,
-  getMaintenanceSchedulesByLocation
-} from "~/modules/resources/resources.service";
+import { getLocationsList } from "~/modules/resources/resources.service";
 import type { MaintenanceSchedule } from "~/modules/resources/types";
 import MaintenanceSchedulesTable from "~/modules/resources/ui/MaintenanceSchedule/MaintenanceSchedulesTable";
 import type { Handle } from "~/utils/handle";
+import { fetchListPage } from "~/utils/list-registry/index.server";
+import { listErrorPage, listInfinite } from "~/utils/list-registry/load.server";
+import { maintenanceSchedulesList } from "~/utils/list-registry/resources.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "maintenance-schedules");
 
 export const handle: Handle = {
   breadcrumb: msg`Scheduled Maintenances`,
@@ -25,17 +27,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { client, companyId } = await requirePermissions(
+    request,
+    maintenanceSchedulesList.permission
+  );
 
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
+  const searchParams = new URL(request.url).searchParams;
   const locationId = searchParams.get("location");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
 
   const locations = await getLocationsList(client, companyId);
   const locationsList = locations.data ?? [];
@@ -47,29 +45,37 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return {
       data: [],
       count: 0,
+      nextCursor: null,
+      infinite: listInfinite(maintenanceSchedulesList, "data", null),
       locations: locationsList,
       locationId: null
     };
   }
 
-  const schedules = await getMaintenanceSchedulesByLocation(
+  // The registry query reads the location from the URL: pass the default.
+  const listParams = new URLSearchParams(searchParams);
+  listParams.set("location", selectedLocationId);
+  const schedules = await fetchListPage(
+    maintenanceSchedulesList,
     client,
     companyId,
-    selectedLocationId,
-    {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }
+    listParams
   );
 
-  if (!schedules.data) {
+  if (schedules.error) {
+    if (searchParams.get("after")) {
+      logger.error("Failed to load a later page of maintenance schedules", {
+        companyId,
+        error: schedules.error
+      });
+      return listErrorPage("data");
+    }
     return data(
       {
         data: [] as MaintenanceSchedule[],
         count: 0,
+        nextCursor: null,
+        infinite: listInfinite(maintenanceSchedulesList, "data", null),
         locations: locationsList,
         locationId: selectedLocationId
       },
@@ -81,21 +87,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    data: (schedules.data ?? []) as MaintenanceSchedule[],
-    count: schedules.count ?? 0,
+    data: schedules.rows as MaintenanceSchedule[],
+    count: schedules.count,
+    exactCount: schedules.exactCount,
+    nextCursor: schedules.nextCursor,
+    infinite: listInfinite(
+      maintenanceSchedulesList,
+      "data",
+      schedules.nextCursor
+    ),
     locations: locationsList,
     locationId: selectedLocationId
   };
 }
 
 export default function MaintenanceSchedulesRoute() {
-  const { data, count, locations, locationId } = useLoaderData<typeof loader>();
+  const { data, count, infinite, locations, locationId } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <MaintenanceSchedulesTable
         data={data ?? []}
         count={count ?? 0}
+        infinite={infinite}
         locations={locations}
         locationId={locationId}
       />

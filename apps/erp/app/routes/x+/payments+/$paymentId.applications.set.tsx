@@ -5,7 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import {
@@ -99,10 +99,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } catch (e) {
     throw redirect(
       path.to.payment(paymentId),
-      await flash(
-        request,
-        error(e, e instanceof Error ? e.message : "Failed to save applications")
-      )
+      await flash(request, {
+        ...error(e, "Failed to save applications"),
+        message: getErrorMessage(e, "Failed to save applications")
+      })
     );
   }
 

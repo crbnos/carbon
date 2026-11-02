@@ -48,7 +48,7 @@ export function AgentBlockChoice({ input }: { input: unknown }) {
   const canConfirm = selectedIds.size > 0 || freeText.trim().length > 0;
 
   return (
-    <div className="my-1 overflow-hidden rounded-lg border bg-background">
+    <div className="my-1 overflow-hidden rounded-lg border bg-card">
       {block.prompt && (
         <p className="px-3 pb-1.5 pt-2.5 text-xs text-muted-foreground">
           {block.prompt}

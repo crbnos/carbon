@@ -2,17 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getQualityDocuments } from "~/modules/quality/quality.service";
 import QualityDocumentsTable from "~/modules/quality/ui/Documents/QualityDocumentsTable";
 import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { qualityDocumentsList } from "~/utils/list-registry/quality.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Quality Documents`,
@@ -20,43 +19,24 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "quality",
-    role: "employee"
+  return loadListPage(request, qualityDocumentsList, {
+    dataKey: "qualityDocuments",
+    firstPage: async ({ client, companyId }) => ({
+      tags: (await getTagsList(client, companyId, "qualityDocument")).data ?? []
+    })
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [qualityDocuments, tags] = await Promise.all([
-    getQualityDocuments(client, companyId, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    getTagsList(client, companyId, "qualityDocument")
-  ]);
-
-  return {
-    qualityDocuments: qualityDocuments.data ?? [],
-    count: qualityDocuments.count ?? 0,
-    tags: tags.data ?? []
-  };
 }
 
 export default function QualityDocumentsRoute() {
-  const { qualityDocuments, count, tags } = useLoaderData<typeof loader>();
+  const { qualityDocuments, count, infinite, tags } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <QualityDocumentsTable
         data={qualityDocuments}
         count={count}
+        infinite={infinite}
         tags={tags}
       />
       <RecordOutlet />

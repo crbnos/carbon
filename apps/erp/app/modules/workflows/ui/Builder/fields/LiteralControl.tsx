@@ -4,7 +4,9 @@
 
 import type { ValueOrRef, ValueType } from "@carbon/ee/workflows";
 import {
+  CreatableMultiSelect,
   DatePicker,
+  DateTimePicker,
   Input,
   NumberDecrementStepper,
   NumberField,
@@ -19,27 +21,25 @@ import {
   SelectValue,
   Switch
 } from "@carbon/react";
-import { parseDate } from "@internationalized/date";
+import { toZoned } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import type { KeyboardEvent, ReactNode } from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
+import { useCompanyTimeZone } from "~/hooks";
+import { asCalendarDate, asCalendarDateTime, isWritableList } from "./control";
 import { RECORD_PICKERS } from "./recordPickers";
-
-/** Stored dates are the `YYYY-MM-DD` the picker itself writes. Anything else is a
- * value from elsewhere, and an empty picker beats a crash. */
-function asCalendarDate(value: unknown) {
-  if (typeof value !== "string" || !value) return null;
-  try {
-    return parseDate(value.slice(0, 10));
-  } catch {
-    return null;
-  }
-}
 
 type LiteralControlProps = {
   type: ValueType;
   choices?: readonly string[];
-  value: string | number | boolean | null | undefined;
+  /** The input is a moment, not a calendar day: render a date AND time picker
+   * and store a full ISO instant, resolved against the company's timezone. */
+  precision?: "datetime";
+  value: string | number | boolean | string[] | null | undefined;
+  /** The catalog's default, shown when nothing is stored yet. A boolean control
+   * especially must display what the run will actually send — an untouched
+   * toggle rendered OFF while the effective default was ON lied twice over. */
+  defaultValue?: unknown;
   onChange: (next: ValueOrRef | undefined) => void;
   /** Opens the variable menu. Every control here has two modes, and `{` is the one
    * way into the second. */
@@ -51,12 +51,15 @@ type LiteralControlProps = {
 export function LiteralControl({
   type,
   choices,
+  precision,
   value,
+  defaultValue,
   onChange,
   onRequestVariable,
   isReadOnly = false
 }: LiteralControlProps) {
   const { t } = useLingui();
+  const companyTimeZone = useCompanyTimeZone();
 
   function emit(raw: string | number | boolean | null | undefined) {
     if (raw === undefined || raw === "" || raw === null) {
@@ -107,7 +110,39 @@ export function LiteralControl({
     );
   }
 
-  // 2. Primitive kinds
+  // 2. A list of plain text — recipients, attendees — typed one entry at a time,
+  //    each becoming a chip. The vendor's field is an ARRAY, and the chips make
+  //    "this goes to several people" visible where a text box would not; the
+  //    stored value is a literal list. A list from an earlier step is still `{`.
+  if (isWritableList(type)) {
+    const entries = Array.isArray(value)
+      ? value.filter((entry): entry is string => typeof entry === "string")
+      : [];
+    const emitList = (next: readonly string[]) => {
+      const cleaned = [
+        ...new Set(next.map((entry) => entry.trim()).filter(Boolean))
+      ];
+      onChange(
+        cleaned.length === 0
+          ? undefined
+          : { kind: "literal", type, value: cleaned }
+      );
+    };
+    return shell(
+      <CreatableMultiSelect
+        size="md"
+        value={entries}
+        options={entries.map((entry) => ({ label: entry, value: entry }))}
+        onChange={emitList}
+        onCreateOption={(input) => emitList([...entries, input])}
+        placeholder={t`Type a value and press Enter…`}
+        isReadOnly={isReadOnly}
+        className="w-full"
+      />
+    );
+  }
+
+  // 3. Primitive kinds
   if (type.kind === "primitive") {
     switch (type.of) {
       // Unreachable via pickControl; kept so LiteralControl stays total over ValueType.
@@ -161,7 +196,12 @@ export function LiteralControl({
       }
 
       case "boolean": {
-        const boolValue = typeof value === "boolean" ? value : false;
+        const boolValue =
+          typeof value === "boolean"
+            ? value
+            : typeof defaultValue === "boolean"
+              ? defaultValue
+              : false;
         return shell(
           <Switch
             checked={boolValue}
@@ -173,6 +213,33 @@ export function LiteralControl({
       }
 
       case "date": {
+        // A vendor's DATE_TIME. The picked wall clock is resolved against the
+        // COMPANY's timezone, not the browser's — two admins in different
+        // offices must not store different moments for the same typed time — and
+        // stored as a full ISO instant, so the piece's own
+        // `dayjs(value).format(...)` reproduces that moment whatever zone the
+        // worker runs in.
+        if (precision === "datetime") {
+          return shell(
+            <DateTimePicker
+              // A workflow step's time is read by a machine in another system,
+              // not by whoever happens to be looking at the canvas, so it is
+              // shown as an unambiguous 24-hour clock. Carbon's own date-and-time
+              // fields (timecards, maintenance) keep their locale's clock.
+              hourCycle={24}
+              value={asCalendarDateTime(value, companyTimeZone)}
+              onChange={(date) =>
+                emit(
+                  date
+                    ? toZoned(date, companyTimeZone).toAbsoluteString()
+                    : undefined
+                )
+              }
+              aria-label={t`Date and time`}
+              isDisabled={isReadOnly}
+            />
+          );
+        }
         return shell(
           <DatePicker
             value={asCalendarDate(value)}
@@ -188,7 +255,7 @@ export function LiteralControl({
     }
   }
 
-  // 3. Entity → the Carbon selector for that record
+  // 4. Entity → the Carbon selector for that record
   if (type.kind === "entity") {
     const Picker = RECORD_PICKERS[type.of];
     if (Picker) {

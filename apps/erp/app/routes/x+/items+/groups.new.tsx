@@ -64,10 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!itemPostingGroupId) {
     return data(
       {},
-      await flash(
-        request,
-        error(insertItemPostingGroup, "Failed to insert item group")
-      )
+      await flash(request, error(null, "Failed to insert item group"))
     );
   }
 

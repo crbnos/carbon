@@ -11,7 +11,7 @@ const MAX_ATTEMPTS = 10;
 const RETRY_DELAY_MS = 2_000;
 
 // A PUT to our own serve endpoint is Inngest's registration handshake — the
-// same request `ci/src/jobs.ts` curls from CI after a deploy. Doing it here
+// same request `ci/src/post-deploy.ts` curls from CI after a deploy. Doing it here
 // too means a freshly booted task (deploy, ECS reschedule, autoscale-out)
 // re-syncs itself immediately instead of waiting on that external job, which
 // only fires after a "Deploy Apps" success on `main`. `serveHost` (set from

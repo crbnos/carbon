@@ -23,7 +23,7 @@ import { inngest } from "../../client";
 // The threshold and the age below are repeated in
 // `util.notification_digest_has_work` (the migration that defines it). Change
 // both: a stricter rule there leaves these digests unmade.
-// `scheduled-sql-thresholds.test.ts` fails when the two disagree.
+// the `scheduled-sql-constants` check (@carbon/checks) fails when they disagree.
 export const DIGEST_THRESHOLD = 5;
 // Minutes. Set to 0 for instant testing; production target is ~60 so users
 // get a chance to see live notifications before they roll up.

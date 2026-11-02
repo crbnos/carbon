@@ -11,7 +11,14 @@ paths:
 Outbound (`shipment`) and inbound (`receipt`) documents are header + lines. They mirror
 each other closely. UI lives in `apps/erp/app/modules/inventory/ui/{Shipments,Receipts}/`;
 routes in `apps/erp/app/routes/x+/{shipment,receipt}+/` (NOT under `inventory+/` — that
-only holds the two list routes `shipments.tsx` / `receipts.tsx`).
+only holds the two list routes `shipments.tsx` / `receipts.tsx`, and `receiving.tsx`).
+
+**Inventory → Receiving** (`inventory+/receiving.tsx`, `ui/Receiving/ReceivingTable.tsx`)
+is how a clerk finds the purchase order a delivery belongs to: the open lines of the
+`purchaseOrderLinesToReceive` view, grouped by order and searched by anything on the
+packing slip. Its Receive button posts to `receipt+/new.tsx` exactly as the PO header's
+does; an order with a Draft receipt opens that receipt instead. See the inventory
+module's AGENTS.md (Key Service Functions).
 <!-- UNVERIFIED: warehouse transfers are a separate system (modules/inventory/ui/WarehouseTransfers, routes x+/warehouse-transfer+/) — out of scope for this rule. -->
 
 ## Routes (per document, e.g. `shipment+/`)

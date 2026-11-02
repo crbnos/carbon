@@ -26,12 +26,17 @@ export {
   type CalendarWindow,
   subtractIntervals
 } from "./scheduling/calendar-utils.ts";
+export { remainingWorkHours } from "./scheduling/duration-calculator.ts";
+export { SCHEDULING_HORIZON_DAYS } from "./scheduling/finite-context.ts";
 export {
+  closeHolidays,
+  downtimeOutages,
   type LadderShiftRow,
   resolveLocationWindows,
   resolveWorkCenterWindows,
   type WorkCenterAvailabilityInput
 } from "./scheduling/machine-availability.ts";
+export { subtractDates } from "./scheduling/people-utils.ts";
 export {
   type QuoteLeadTimeForecast,
   type QuoteLeadTimeScenario,

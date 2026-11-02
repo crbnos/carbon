@@ -12,6 +12,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { stepRecordValidator } from "~/services/models";
 import {
+  abilityBlockRefusal,
   backflushUntrackedMaterialsOnStepRecord,
   insertAttributeRecord
 } from "~/services/operations.service";
@@ -28,6 +29,24 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  // A missing step is left to insertAttributeRecord's not-found refusal.
+  const step = await serviceRole
+    .from("jobOperationStep")
+    .select("operationId")
+    .eq("id", validation.data.jobOperationStepId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  const refusal = step.data
+    ? await abilityBlockRefusal(serviceRole, {
+        operationId: step.data.operationId,
+        employeeId: userId,
+        companyId
+      })
+    : null;
+  if (refusal) {
+    return data({}, await flash(request, error(null, refusal)));
   }
 
   const attributeRecord = await insertAttributeRecord(serviceRole, {

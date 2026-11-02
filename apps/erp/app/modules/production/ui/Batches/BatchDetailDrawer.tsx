@@ -450,6 +450,8 @@ export function BatchDetailDrawer({
                               <ItemThumbnail
                                 thumbnailPath={
                                   member.jobMakeMethod?.item?.thumbnailPath ??
+                                  member.jobMakeMethod?.item?.modelUpload
+                                    ?.thumbnailPath ??
                                   null
                                 }
                                 type="Part"

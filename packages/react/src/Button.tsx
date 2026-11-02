@@ -242,7 +242,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           presentation?.kind === "bar" &&
             (isIconCell ? "shrink-0" : "w-full min-w-0"),
           isRow &&
-            "h-12 w-full min-w-0 shrink justify-start rounded-sm px-3 text-[15px] font-normal text-foreground shadow-none",
+            "h-12 w-full min-w-0 shrink justify-start rounded-sm px-3 text-[0.9375rem] font-normal text-foreground shadow-none",
           isRow && variant === "destructive" && "text-destructive"
         )}
         type={asChild ? undefined : (props.type ?? "button")}

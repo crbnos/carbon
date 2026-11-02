@@ -19,6 +19,7 @@ import {
   verifyBotProtection
 } from "@carbon/auth/auth.server";
 import { flash, getAuthSession } from "@carbon/auth/session.server";
+import { markSignInBrowser } from "@carbon/auth/sign-in-browser.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
 import { Ratelimit, redis } from "@carbon/kv";
@@ -66,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
+    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "5 m"),
     analytics: true
   });
   const { success } = await ratelimit.limit(ip);
@@ -121,11 +122,15 @@ export async function action({ request }: ActionFunctionArgs) {
   } else {
     return data(
       error(user, "User record not found"),
-      await flash(request, error(user.error, "User record not found"))
+      await flash(request, error(null, "User record not found"))
     );
   }
 
-  return { success: true };
+  // This browser asked: the email's link completes only here.
+  return data(
+    { success: true as const },
+    { headers: { "Set-Cookie": await markSignInBrowser() } }
+  );
 }
 
 export default function LoginRoute() {

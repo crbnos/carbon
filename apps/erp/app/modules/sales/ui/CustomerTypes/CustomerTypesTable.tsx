@@ -11,6 +11,7 @@ import { LuPencil, LuShapes, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -19,9 +20,11 @@ import type { CustomerType } from "../../types";
 type CustomerTypesTableProps = {
   data: CustomerType[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const CustomerTypesTable = memo(({ data, count }: CustomerTypesTableProps) => {
+const CustomerTypesTable = memo((props: CustomerTypesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -96,6 +99,7 @@ const CustomerTypesTable = memo(({ data, count }: CustomerTypesTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={infinite}
       primaryAction={
         permissions.can("create", "sales") && (
           <New

@@ -21,7 +21,9 @@ import EmployeeAvatarGroup from "./EmployeeAvatarGroup";
 import Empty from "./Empty";
 import { Enumerable } from "./Enumerable";
 import { EnumerableGroup } from "./EnumerableGroup";
+import { ExchangeRateUpdatedAt } from "./ExchangeRateUpdatedAt";
 import FileDropzone from "./FileDropzone";
+import { Highlight, searchMatches } from "./Highlight";
 import Hyperlink from "./Hyperlink";
 import {
   MethodBadge,
@@ -60,6 +62,7 @@ import SupplierAvatarGroup from "./SupplierAvatarGroup";
 import Table, { exportOnlyColumn } from "./Table";
 import { VersionMenu } from "./VersionMenu";
 
+export type { JournalPreviewRow };
 export {
   Assignee,
   Avatar,
@@ -81,8 +84,10 @@ export {
   Empty,
   Enumerable,
   EnumerableGroup,
+  ExchangeRateUpdatedAt,
   exportOnlyColumn,
   FileDropzone,
+  Highlight,
   Hyperlink,
   ItemLifecycleBadge,
   ItemThumbnail,
@@ -114,10 +119,10 @@ export {
   SourcingTypeIcon,
   SupplierAvatar,
   SupplierAvatarGroup,
+  searchMatches,
   Table,
   TimeTypeIcon,
   TrackingTypeIcon,
   useOptimisticAssignment,
   VersionMenu
 };
-export type { JournalPreviewRow };

@@ -32,7 +32,10 @@ export async function action({ request }: ActionFunctionArgs) {
   const workCenterId = formData.get("workCenterId") as string;
 
   if (!dispatchId) {
-    return data({}, await flash(request, error("Dispatch ID is required")));
+    return data(
+      {},
+      await flash(request, error(null, "Dispatch ID is required"))
+    );
   }
 
   const serviceRole = await getCarbonServiceRole();
@@ -65,7 +68,13 @@ export async function action({ request }: ActionFunctionArgs) {
     });
     return data(
       {},
-      await flash(request, error(null, "Maintenance dispatch not found"))
+      await flash(
+        request,
+        error(
+          ownedDispatch.error ?? ownedWorkCenter?.error ?? null,
+          "Maintenance dispatch not found"
+        )
+      )
     );
   }
 

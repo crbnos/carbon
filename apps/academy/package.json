@@ -61,7 +61,7 @@
     "dev": "NODE_EXTRA_CA_CERTS=$HOME/.portless/ca.pem react-router dev",
     "lint": "biome lint --write",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsgo --noEmit",
+    "typecheck": "react-router typegen && tsc --noEmit",
     "typegen": "react-router typegen"
   },
   "sideEffects": [

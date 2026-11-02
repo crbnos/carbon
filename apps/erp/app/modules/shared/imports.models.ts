@@ -1769,6 +1769,11 @@ export const fieldMappings = {
       label: "Active",
       required: false,
       type: "boolean"
+    },
+    nonNettable: {
+      label: "Non-nettable",
+      required: false,
+      type: "boolean"
     }
   },
   unitOfMeasure: {
@@ -1800,6 +1805,11 @@ export const fieldMappings = {
       label: "Name",
       required: true,
       type: "string"
+    },
+    nonNettable: {
+      label: "Non-nettable",
+      required: false,
+      type: "boolean"
     }
   },
   scrapReason: {
@@ -2843,7 +2853,13 @@ export const importSchemas: Record<
     active: z
       .string()
       .optional()
-      .describe("Whether the storage unit is active (true/false)")
+      .describe("Whether the storage unit is active (true/false)"),
+    nonNettable: z
+      .string()
+      .optional()
+      .describe(
+        "Whether MRP and picking ignore the stock in the storage unit (true/false). Blank leaves an existing unit's setting unchanged."
+      )
   }),
   service: z.object({
     id: z
@@ -2922,7 +2938,13 @@ export const importSchemas: Record<
     name: z
       .string()
       .min(1, { message: "Name is required" })
-      .describe("The name of the storage type (e.g. Cold Storage, Hazardous)")
+      .describe("The name of the storage type (e.g. Cold Storage, Hazardous)"),
+    nonNettable: z
+      .string()
+      .optional()
+      .describe(
+        "Whether every storage unit of this type is non-nettable (true/false)"
+      )
   }),
   scrapReason: z.object({
     name: z

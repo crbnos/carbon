@@ -25,7 +25,7 @@ export type CardChargeSource = {
 };
 
 /** node-postgres returns Date objects although generated DB types say string. */
-function sourceTimestamp(value: string | Date | null): string | null {
+export function sourceTimestamp(value: string | Date | null): string | null {
   return value instanceof Date
     ? fromDate(value, "UTC").toAbsoluteString()
     : value;

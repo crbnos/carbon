@@ -10,9 +10,9 @@ import { EMAIL_DOMAIN, sendEmail } from "@carbon/lib/email.server";
 import { getResend } from "@carbon/lib/resend.server";
 import { getSlackClient } from "@carbon/lib/slack.server";
 import { getTwentyClient } from "@carbon/lib/twenty.server";
-import { render } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateText, Output } from "ai";
+import { render } from "react-email";
 import { z } from "zod/v3";
 import { inngest } from "../../client";
 

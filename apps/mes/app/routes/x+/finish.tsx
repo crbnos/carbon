@@ -11,7 +11,10 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { finishValidator } from "~/services/models";
-import { finishJobOperation } from "~/services/operations.service";
+import {
+  abilityBlockRefusal,
+  finishJobOperation
+} from "~/services/operations.service";
 import { readOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
@@ -25,6 +28,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  const refusal = await abilityBlockRefusal(serviceRole, {
+    operationId: validation.data.jobOperationId,
+    employeeId: userId,
+    companyId
+  });
+  if (refusal) {
+    return data({}, await flash(request, error(null, refusal)));
   }
 
   const finishOperation = await finishJobOperation(serviceRole, {

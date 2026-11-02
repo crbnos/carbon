@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { actionOutcome, serviceErrorMessage } from "./action-outcome";
+import {
+  actionOutcome,
+  serviceError,
+  serviceErrorMessage
+} from "./action-outcome";
 
 describe("actionOutcome", () => {
   it("is nothing while there is no data", () => {
@@ -45,5 +49,37 @@ describe("serviceErrorMessage", () => {
     expect(serviceErrorMessage({ success: false, message: "Nope" })).toBeNull();
     expect(serviceErrorMessage({ error: "Nope" })).toBeNull();
     expect(serviceErrorMessage(null)).toBeNull();
+  });
+});
+
+describe("serviceError", () => {
+  it("shows the title and the reason when the error carries them", () => {
+    const reason = { code: "duplicate", values: { columns: '"readableId"' } };
+    expect(
+      serviceError({
+        data: null,
+        error: {
+          category: "conflict",
+          message:
+            'Failed to update: A record with this "readableId" already exists.',
+          status: 409,
+          title: "Failed to update",
+          reason
+        }
+      })
+    ).toEqual({ title: "Failed to update", reason });
+  });
+
+  it("shows the message when there is no title", () => {
+    expect(
+      serviceError({
+        data: null,
+        error: { category: "rule", message: "The order is locked", status: 422 }
+      })
+    ).toEqual({ title: "The order is locked" });
+  });
+
+  it("is nothing for a legacy result", () => {
+    expect(serviceError({ success: false, message: "No" })).toBeNull();
   });
 });

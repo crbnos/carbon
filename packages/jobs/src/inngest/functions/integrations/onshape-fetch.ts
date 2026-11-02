@@ -91,26 +91,37 @@ export async function fetchWithAssembler(
           }
         })
     });
-    const result = job.result as {
-      contentHash?: string;
-      outputs?: { raw?: { bytes?: number } };
-    } | null;
-    if (!result?.contentHash) {
-      throw new NonRetriableError("assembler fetch returned no content hash");
-    }
-    return {
-      stagedPath: input.stagedPath,
-      size: result.outputs?.raw?.bytes ?? 0,
-      contentHash: result.contentHash
-    };
+    return stagedModelFromFetch(job.result, input.stagedPath);
   } catch (error) {
     // Decided here: an error class does not survive the invoke back to the
     // caller, a returned value does.
-    if (error instanceof AssemblerJobError && error.code === "LIMIT_EXCEEDED") {
-      return { tooLarge: true };
-    }
+    if (isExportTooLarge(error)) return { tooLarge: true };
     throw error;
   }
+}
+
+/** The staged export a finished fetch job reports; no content hash is a permanent failure. */
+export function stagedModelFromFetch(
+  jobResult: unknown,
+  stagedPath: string
+): StagedModel {
+  const result = jobResult as {
+    contentHash?: string;
+    outputs?: { raw?: { bytes?: number } };
+  } | null;
+  if (!result?.contentHash) {
+    throw new NonRetriableError("assembler fetch returned no content hash");
+  }
+  return {
+    stagedPath,
+    size: result.outputs?.raw?.bytes ?? 0,
+    contentHash: result.contentHash
+  };
+}
+
+/** An export past the raw model cap is skipped for good, never retried. */
+export function isExportTooLarge(error: unknown): boolean {
+  return error instanceof AssemblerJobError && error.code === "LIMIT_EXCEEDED";
 }
 
 export const onshapeFetchFunction = inngest.createFunction(

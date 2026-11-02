@@ -229,7 +229,7 @@ export function PinInOverlay({
             <div className="py-1">
               {operatorList.recent.length > 0 && (
                 <>
-                  <p className="px-4 pt-1.5 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  <p className="px-4 pt-1.5 pb-1 text-[0.625rem] font-medium uppercase tracking-wider text-muted-foreground">
                     <Trans>Recent</Trans>
                   </p>
                   {operatorList.recent.map((person) => (
@@ -270,7 +270,7 @@ export function PinInOverlay({
         {/* Station user option — for exiting console mode */}
         {stationUser && !search && (
           <div className="border-t">
-            <p className="px-4 pt-1.5 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            <p className="px-4 pt-1.5 pb-1 text-[0.625rem] font-medium uppercase tracking-wider text-muted-foreground">
               <Trans>Station User</Trans>
             </p>
             <OperatorRow
@@ -303,7 +303,7 @@ export function PinInOverlay({
                   onComplete={handlePinComplete}
                   disabled={isPinning}
                   autoFocus
-                  containerClassName="[&_[data-slot=input-otp-slot]]:text-[0px]"
+                  containerClassName="[&_[data-slot=input-otp-slot]]:text-[0rem]"
                 >
                   <InputOTPGroup>
                     <InputOTPSlot

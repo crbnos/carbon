@@ -45,10 +45,10 @@ import {
   textToRichTextDoc,
   toBaseAmount
 } from "@carbon/utils";
-import { renderAsync } from "@react-email/components";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
@@ -3173,8 +3173,8 @@ export async function emailServiceJobEstimate(
       .join(" ")
   });
   const [html, text] = await Promise.all([
-    renderAsync(template),
-    renderAsync(template, { plainText: true })
+    render(template),
+    render(template, { plainText: true })
   ]);
 
   await trigger("send-email", {

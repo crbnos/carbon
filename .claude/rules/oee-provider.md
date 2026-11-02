@@ -103,9 +103,10 @@ exposes the open row's operation as `loadedJobOperationId`.
 - **Older starts are refused.** A start earlier than the newest boundary in
   the work center's history (the latest `loadedAt` or `unloadedAt`) writes
   nothing, so a late event never undoes a later load or unload. A reload of
-  the operation already loaded writes nothing. There is no status rule: a
-  starting event reopens a Done operation first
-  (`sync_set_job_operation_in_progress`, a BEFORE interceptor).
+  the operation already loaded writes nothing. A Done or Canceled operation
+  never loads: a starting event does not reopen it
+  (`sync_set_job_operation_in_progress`), and its unload only runs on a status
+  change, so that load would never close.
 - **Unload.** A `jobOperation` status change to `Done` or `Canceled` ends the
   operation's open row, and so does deleting the operation or moving it to
   another work center (the old work center unloads). An unload sets

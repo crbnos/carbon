@@ -24,6 +24,8 @@ import {
   Edition,
   isAllowedAvatarValue,
   isOwnAvatarUpload,
+  isOwnSignaturePath,
+  requireAffected,
   requiresItarEntityCertification
 } from "@carbon/utils";
 import { nanoid } from "nanoid";
@@ -1470,6 +1472,35 @@ export const updateOwnAvatar = defineServiceFn({
 });
 
 /**
+ * Set or remove the caller's own signature.
+ *
+ * @remarks
+ * `path` is a file the caller uploaded to their own folder of the
+ * `signatures` bucket, or null to remove the signature. The replaced file is
+ * deleted unless an approval recorded it.
+ */
+export const updateOwnSignature = defineServiceFn({
+  input: z.object({ path: z.string().nullable() }),
+  permission: {},
+  async run(ctx, { path }) {
+    const userId = ctx.auditUserId;
+    if (path !== null && !isOwnSignaturePath(userId, path)) {
+      return ctx.error("validation", "Invalid signature path");
+    }
+    const saved = await service.updateSignature(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      userId,
+      path
+    );
+    if (saved.error) {
+      return ctx.error("internal", "Failed to update signature", saved.error);
+    }
+    return { signaturePath: path };
+  }
+});
+
+/**
  * Set a person's value of an attribute.
  *
  * @remarks
@@ -1572,10 +1603,13 @@ export const setOwnFlag = defineServiceFn({
     }
 
     const flags = (user.data?.flags as Record<string, boolean> | null) ?? {};
-    const updated = await client
-      .from("user")
-      .update({ flags: { ...flags, [flag]: value } })
-      .eq("id", userId);
+    const updated = await requireAffected(
+      client
+        .from("user")
+        .update({ flags: { ...flags, [flag]: value } })
+        .eq("id", userId)
+        .select("id")
+    );
     if (updated.error) {
       return ctx.error("internal", "Failed to update flag", updated.error);
     }

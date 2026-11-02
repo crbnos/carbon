@@ -78,6 +78,7 @@ export default function MachineTimeUpgradeOverlay() {
         <MachineTimeTable
           data={mockMachineTimes}
           count={mockMachineTimes.length}
+          nextCursor={null}
           workCenters={[]}
           locations={[]}
         />

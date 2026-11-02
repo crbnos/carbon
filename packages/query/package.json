@@ -12,10 +12,9 @@
     "clean": "rimraf .turbo node_modules",
     "lint": "biome lint --write ",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@carbon/database": "workspace:*",
     "@carbon/env": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/react": "workspace:*",
@@ -25,6 +24,7 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@carbon/database": "workspace:*",
     "@types/react": "catalog:",
     "react": "catalog:",
     "react-router": "catalog:",

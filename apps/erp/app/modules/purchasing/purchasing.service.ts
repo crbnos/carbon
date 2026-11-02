@@ -23,12 +23,18 @@ import {
   getCompanyTimeZone
 } from "@carbon/database";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
-import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import {
+  type Kysely,
+  type KyselyDatabase,
+  type KyselyTx,
+  withTransaction
+} from "@carbon/database/client";
 import {
   type AutomaticJournalStatus,
   journalPostingStatus,
   readAccountingCutoverDate
 } from "@carbon/database/journal-posting-status";
+import { toJson } from "@carbon/database/json";
 import type { AccountClass } from "@carbon/database/ledger";
 import { toStoredAmount } from "@carbon/database/ledger";
 import { assertBalanced, equals } from "@carbon/database/precision";
@@ -46,12 +52,18 @@ import {
   supplierPartCurrency
 } from "@carbon/database/supplier-part-price";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
-import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
+import {
+  getPurchaseOrderDisplayId,
+  type PurchaseOrderApproval
+} from "@carbon/documents/pdf";
+import { getDocumentApproval } from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   getCompanyPrivateBucket,
   getFileExtension,
+  isStoredDocumentPdf,
   storage,
+  storedDocumentPdfName,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { isModelRawDownloadable } from "@carbon/files/cad";
@@ -91,13 +103,13 @@ import {
   normalizeLesseeLegs,
   openEndedLeaseHorizon,
   paymentMonthIndex,
-  RoundingMode,
   remeasureLease,
+  requireAffected,
   round,
+  SIGNATURES_BUCKET,
   searchFilter
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
-import { renderAsync } from "@react-email/components";
 import {
   PostgrestError,
   type PostgrestResponse,
@@ -106,6 +118,7 @@ import {
 } from "@supabase/supabase-js";
 import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import { z } from "zod";
 import { getPaymentTermsList } from "~/modules/accounting/accounting.service";
 import {
@@ -120,10 +133,9 @@ import {
 } from "~/modules/settings/settings.service";
 import { getUser } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { stripSpecialCharacters } from "~/utils/string";
-import { sanitize } from "~/utils/supabase";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
+import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
   getExchangeRate
@@ -182,6 +194,10 @@ import {
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
+  type PurchaseOrderDateField,
+  planningLineCurrencyCode,
+  planningQuantityChange,
+  purchaseOrderLineDateOfOrderDate,
   taxPairForQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
@@ -218,7 +234,9 @@ export async function deletePurchaseOrder(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
 ) {
-  return client.from("purchaseOrder").delete().eq("id", purchaseOrderId);
+  return requireAffected(
+    client.from("purchaseOrder").delete().eq("id", purchaseOrderId).select("id")
+  );
 }
 
 /**
@@ -261,10 +279,13 @@ export async function deletePurchaseOrderLine(
 ) {
   const cleared = await clearPlanningOrigin(client, { purchaseOrderLineId });
   if (cleared.error) return { data: null, error: cleared.error };
-  return client
-    .from("purchaseOrderLine")
-    .delete()
-    .eq("id", purchaseOrderLineId);
+  return requireAffected(
+    client
+      .from("purchaseOrderLine")
+      .delete()
+      .eq("id", purchaseOrderLineId)
+      .select("id")
+  );
 }
 
 // Creates a new Draft PO header + delivery + payment via insertPurchaseOrder
@@ -365,7 +386,9 @@ export async function deleteSupplier(
   client: SupabaseClient<Database>,
   supplierId: string
 ) {
-  return client.from("supplier").delete().eq("id", supplierId);
+  return requireAffected(
+    client.from("supplier").delete().eq("id", supplierId).select("id")
+  );
 }
 
 export async function deleteSupplierContact(
@@ -380,10 +403,13 @@ export async function deleteSupplierContact(
     .eq("id", supplierContactId)
     .single();
   if (supplierContact.data) {
-    const contactDelete = await client
-      .from("contact")
-      .delete()
-      .eq("id", supplierContact.data.contactId);
+    const contactDelete = await requireAffected(
+      client
+        .from("contact")
+        .delete()
+        .eq("id", supplierContact.data.contactId)
+        .select("id")
+    );
 
     if (contactDelete.error) {
       return contactDelete;
@@ -405,14 +431,23 @@ export async function deleteSupplierLocation(
     .single();
 
   if (supplierLocation?.addressId) {
-    return client.from("address").delete().eq("id", supplierLocation.addressId);
+    return requireAffected(
+      client
+        .from("address")
+        .delete()
+        .eq("id", supplierLocation.addressId)
+        .select("id")
+    );
   } else {
     // The supplierLocation should always have an addressId, but just in case
-    return client
-      .from("supplierLocation")
-      .delete()
-      .eq("supplierId", supplierId)
-      .eq("id", supplierLocationId);
+    return requireAffected(
+      client
+        .from("supplierLocation")
+        .delete()
+        .eq("supplierId", supplierId)
+        .eq("id", supplierLocationId)
+        .select("id")
+    );
   }
 }
 
@@ -420,7 +455,9 @@ export async function deleteSupplierBankAccount(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("supplierBankAccount").delete().eq("id", id);
+  return requireAffected(
+    client.from("supplierBankAccount").delete().eq("id", id).select("id")
+  );
 }
 
 /**
@@ -506,28 +543,40 @@ export async function deleteSupplierProcess(
   client: SupabaseClient<Database>,
   supplierProcessId: string
 ) {
-  return client.from("supplierProcess").delete().eq("id", supplierProcessId);
+  return requireAffected(
+    client
+      .from("supplierProcess")
+      .delete()
+      .eq("id", supplierProcessId)
+      .select("id")
+  );
 }
 
 export async function deleteSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
 ) {
-  return client.from("supplierQuote").delete().eq("id", supplierQuoteId);
+  return requireAffected(
+    client.from("supplierQuote").delete().eq("id", supplierQuoteId).select("id")
+  );
 }
 
 export async function deleteSupplierQuoteLine(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("supplierQuoteLine").delete().eq("id", id);
+  return requireAffected(
+    client.from("supplierQuoteLine").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteSupplierType(
   client: SupabaseClient<Database>,
   supplierTypeId: string
 ) {
-  return client.from("supplierType").delete().eq("id", supplierTypeId);
+  return requireAffected(
+    client.from("supplierType").delete().eq("id", supplierTypeId).select("id")
+  );
 }
 
 export async function getPurchaseOrder(
@@ -541,6 +590,10 @@ export async function getPurchaseOrder(
     .single();
 }
 
+export const PURCHASE_ORDERS_PAGING: Paging = {
+  defaultSorts: [{ column: "purchaseOrderId", ascending: false }]
+};
+
 export async function getPurchaseOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -552,7 +605,10 @@ export async function getPurchaseOrders(
 ) {
   let query = client
     .from("purchaseOrders")
-    .select(PURCHASE_ORDERS_LIST_COLUMNS, { count: LIST_COUNT })
+    // Later pages (`cursor`) skip the count: the first page already has it.
+    .select(PURCHASE_ORDERS_LIST_COLUMNS, {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -569,9 +625,7 @@ export async function getPurchaseOrders(
     query = query.eq("status", args.status as never);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "purchaseOrderId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASE_ORDERS_PAGING);
 
   return query;
 }
@@ -596,6 +650,80 @@ export async function getPurchaseOrderLocations(
     .select("*")
     .eq("id", purchaseOrderId)
     .single();
+}
+
+/**
+ * Who approved a purchase order and on which day in the company's timezone:
+ * the PDF's `order.approved*` merge fields, the order's properties panel and
+ * `purchasing.getPurchaseOrderApproval`. Null when it was not approved.
+ * `withSignature` also reads the approver's signature recorded at approval,
+ * as a data URL for the PDF; a missing file prints the name and date only.
+ */
+export async function getPurchaseOrderApproval(
+  serviceRole: SupabaseClient<Database>,
+  {
+    companyId,
+    purchaseOrderId,
+    timezone,
+    withSignature = false
+  }: {
+    companyId: string;
+    purchaseOrderId: string;
+    timezone: string;
+    withSignature?: boolean;
+  }
+): Promise<(PurchaseOrderApproval & { approvedById: string | null }) | null> {
+  const approval = await getDocumentApproval(
+    serviceRole,
+    "purchaseOrder",
+    purchaseOrderId,
+    companyId
+  );
+  if (!approval) return null;
+  return {
+    approvedBy: approval.approvedBy,
+    approvedById: approval.approvedById,
+    approvedDate: datetime
+      .businessDay(approval.approvedAt, timezone)
+      .toString(),
+    signature:
+      withSignature && approval.signaturePath
+        ? await getSignatureDataUrl(serviceRole, approval.signaturePath)
+        : null
+  };
+}
+
+async function getSignatureDataUrl(
+  serviceRole: SupabaseClient<Database>,
+  path: string
+) {
+  const { data, error } = await serviceRole.storage
+    .from(SIGNATURES_BUCKET)
+    .download(path);
+  if (!data) {
+    logger.warn("Failed to read an approval signature", { path, error });
+    return null;
+  }
+  // The owner can write any bytes under a PNG or JPEG name, and an image
+  // react-pdf cannot decode fails the whole PDF. Trust the bytes, not the name.
+  const bytes = Buffer.from(await data.arrayBuffer());
+  const type = imageTypeOf(bytes);
+  if (!type) {
+    logger.warn("An approval signature is not a PNG or JPEG", { path });
+    return null;
+  }
+  return `data:${type};base64,${bytes.toString("base64")}`;
+}
+
+const PNG_SIGNATURE = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
+]);
+const JPEG_SIGNATURE = Buffer.from([0xff, 0xd8, 0xff]);
+
+function imageTypeOf(bytes: Buffer): "image/png" | "image/jpeg" | null {
+  if (bytes.subarray(0, 8).equals(PNG_SIGNATURE)) return "image/png";
+  if (bytes.subarray(0, 3).equals(JPEG_SIGNATURE)) return "image/jpeg";
+  return null;
 }
 
 export async function getPurchaseOrderPayment(
@@ -684,6 +812,19 @@ export async function getPurchasingDocumentsAssignedToMe(
   return merged;
 }
 
+// What the row's Order / Make button offers (the grid RPC's orderQuantity,
+// from MRP's open new-supply actions), then the part number so a page is
+// stable when many rows have nothing to order. An item has one row per
+// netting segment ('' is common, then each project with project stock), so
+// the segment breaks the tie between its rows before the id does.
+export const PURCHASING_PLANNING_PAGING: Paging = {
+  defaultSorts: [
+    { column: "orderQuantity", ascending: false },
+    { column: "readableIdWithRevision", ascending: true },
+    { column: "planningSegmentId", ascending: true }
+  ]
+};
+
 export async function getPurchasingPlanning(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -721,7 +862,8 @@ export async function getPurchasingPlanning(
       action_assignees: args.actionAssignees
     },
     {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     }
   );
 
@@ -735,18 +877,25 @@ export async function getPurchasingPlanning(
     query = query.or(planningSegmentFilter(args.segments));
   }
 
-  // What the row's Order / Make button offers (the grid RPC's orderQuantity,
-  // from MRP's open new-supply actions), then the part number so a page is
-  // stable when many rows have nothing to order.
-  query = setGenericQueryFilters(query, args, [
-    { column: "orderQuantity", ascending: false },
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
-  // An item has one row per netting segment ('' is common, then each project
-  // with project stock), so the segment breaks the tie between its rows.
-  query = query.order("planningSegmentId");
+  query = setGenericQueryFilters(query, args, PURCHASING_PLANNING_PAGING);
 
   return query;
+}
+
+/** The default suppliers (`defaultSupplierId`) of the items the purchasing
+ *  plan lists, each once: the options of the grid's Supplier filter. Read over
+ *  the whole plan, not the loaded page, and before the grid's filters. */
+export async function getPurchasingPlanningSuppliers(
+  client: SupabaseClient<Database>,
+  locationId: string,
+  companyId: string,
+  periods: string[]
+) {
+  return client.rpc("get_purchasing_planning_suppliers", {
+    location_id: locationId,
+    company_id: companyId,
+    periods
+  });
 }
 
 export async function getPurchasingTerms(
@@ -1018,6 +1167,10 @@ export async function getSupplierQuoteByExternalLinkId(
     .single();
 }
 
+export const SUPPLIER_QUOTES_PAGING: Paging = {
+  defaultSorts: [{ column: "supplierQuoteId", ascending: false }]
+};
+
 export async function getSupplierQuotes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1027,7 +1180,7 @@ export async function getSupplierQuotes(
 ) {
   let query = client
     .from("supplierQuotes")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1036,9 +1189,7 @@ export async function getSupplierQuotes(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "supplierQuoteId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, SUPPLIER_QUOTES_PAGING);
   return query;
 }
 
@@ -1121,33 +1272,46 @@ export async function getSupplierReportContacts(
   supplierIds: string[]
 ) {
   return Promise.all([
-    client
-      .from("supplier")
-      .select(
-        `id, purchasingContact:supplierContact!supplier_purchasingContactId_fkey(contact(fullName, email, workPhone))`
-      )
-      .eq("companyId", companyId)
-      .in("id", supplierIds),
-    client
-      .from("supplierPayment")
-      .select(
-        `supplierId,
+    fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplier")
+        .select(
+          `id, purchasingContact:supplierContact!supplier_purchasingContactId_fkey(contact(fullName, email, workPhone))`
+        )
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id", { ascending: true })
+    ),
+    fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplierPayment")
+        .select(
+          `supplierId,
          invoiceContact:supplierContact!supplierPayment_invoiceSupplierContactId_fkey(contact(fullName, email, workPhone)),
          invoiceLocation:supplierLocation!supplierPayment_invoiceSupplierLocationId_fkey(address(addressLine1, addressLine2, city, stateProvince, postalCode, country(name)))`
-      )
-      .eq("companyId", companyId)
-      .in("supplierId", supplierIds),
-    client
-      .from("supplierShipping")
-      .select(
-        `supplierId,
+        )
+        .eq("companyId", companyId)
+        .in("supplierId", batch)
+        .order("supplierId", { ascending: true })
+    ),
+    fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplierShipping")
+        .select(
+          `supplierId,
          shippingContact:supplierContact!supplierShipping_shippingSupplierContactId_fkey(contact(fullName, email, workPhone)),
          shippingLocation:supplierLocation!supplierShipping_shippingSupplierLocationId_fkey(address(addressLine1, addressLine2, city, stateProvince, postalCode, country(name)))`
-      )
-      .eq("companyId", companyId)
-      .in("supplierId", supplierIds)
+        )
+        .eq("companyId", companyId)
+        .in("supplierId", batch)
+        .order("supplierId", { ascending: true })
+    )
   ]);
 }
+
+export const SUPPLIERS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
 
 export async function getSuppliers(
   client: SupabaseClient<Database>,
@@ -1161,7 +1325,7 @@ export async function getSuppliers(
   let query = client
     .from("suppliers")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1180,9 +1344,7 @@ export async function getSuppliers(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SUPPLIERS_PAGING);
   return query;
 }
 
@@ -1209,6 +1371,10 @@ export async function getSupplierType(
     .single();
 }
 
+export const SUPPLIER_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getSupplierTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1216,7 +1382,7 @@ export async function getSupplierTypes(
 ) {
   let query = client
     .from("supplierType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1224,9 +1390,7 @@ export async function getSupplierTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, SUPPLIER_TYPES_PAGING);
   }
 
   return query;
@@ -1255,7 +1419,7 @@ export async function insertSupplier(
 }
 
 export async function insertSupplierContact(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   supplierContact: {
     supplierId: string;
     companyId: string;
@@ -1264,40 +1428,69 @@ export async function insertSupplierContact(
     customFields?: Json;
   }
 ) {
-  const insertContact = await client
-    .from("contact")
-    .insert([
-      {
-        ...supplierContact.contact,
-        companyId: supplierContact.companyId,
-        isCustomer: false
+  const { supplierId, companyId, supplierLocationId, contact } =
+    supplierContact;
+  try {
+    // One transaction: a contact with no supplier link is invisible in the app.
+    const id = await withTransaction(db, async (trx) => {
+      const owner = await trx
+        .selectFrom("supplier")
+        .select("id")
+        .where("id", "=", supplierId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) return "Supplier not found";
+      if (supplierLocationId) {
+        const location = await trx
+          .selectFrom("supplierLocation")
+          .select("id")
+          .where("id", "=", supplierLocationId)
+          .where("supplierId", "=", supplierId)
+          .executeTakeFirst();
+        if (!location) return "Location not found";
       }
-    ])
-    .select("id")
-    .single();
 
-  if (insertContact.error) {
-    return insertContact;
+      const inserted = await trx
+        .insertInto("contact")
+        .values({
+          companyId,
+          isCustomer: false,
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          title: contact.title,
+          email: contact.email,
+          mobilePhone: contact.mobilePhone,
+          homePhone: contact.homePhone,
+          workPhone: contact.workPhone,
+          notes: contact.notes
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const link = await trx
+        .insertInto("supplierContact")
+        .values({
+          supplierId,
+          contactId: inserted.id,
+          supplierLocationId,
+          companyId,
+          customFields: toJson(supplierContact.customFields)
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      return { id: link.id };
+    });
+    return typeof id === "string"
+      ? { data: null, error: ruleError(id) }
+      : { data: id, error: null };
+  } catch (error) {
+    logger.error("Failed to create supplier contact", {
+      companyId,
+      supplierId,
+      error
+    });
+    return { data: null, error: error as Error };
   }
-
-  const contactId = insertContact.data?.id;
-  if (!contactId) {
-    return { data: null, error: new Error("Contact ID not found") };
-  }
-
-  return client
-    .from("supplierContact")
-    .insert([
-      {
-        supplierId: supplierContact.supplierId,
-        contactId,
-        supplierLocationId: supplierContact.supplierLocationId,
-        companyId: supplierContact.companyId,
-        customFields: supplierContact.customFields
-      }
-    ])
-    .select("id")
-    .single();
 }
 
 export async function insertSupplierInteraction(
@@ -1387,10 +1580,13 @@ export async function finalizePurchaseOrder(
     updateData.orderDate = datetime.today(companyTz).toString();
   }
 
-  return client
-    .from("purchaseOrder")
-    .update(updateData)
-    .eq("id", purchaseOrderId);
+  return requireAffected(
+    client
+      .from("purchaseOrder")
+      .update(updateData)
+      .eq("id", purchaseOrderId)
+      .select("id")
+  );
 }
 
 /** Not published: `purchasing_sendSupplierQuoteToSupplier` sends a quote, with its share link and email. */
@@ -1400,13 +1596,16 @@ export async function sendSupplierQuote(
   userId: string
 ) {
   // Send keeps status as Draft, just updates timestamp
-  const quoteUpdate = await client
-    .from("supplierQuote")
-    .update({
-      updatedAt: datetime.timestamp(),
-      updatedBy: userId
-    })
-    .eq("id", supplierQuoteId);
+  const quoteUpdate = await requireAffected(
+    client
+      .from("supplierQuote")
+      .update({
+        updatedAt: datetime.timestamp(),
+        updatedBy: userId
+      })
+      .eq("id", supplierQuoteId)
+      .select("id")
+  );
 
   if (quoteUpdate.error) {
     return quoteUpdate;
@@ -1428,7 +1627,9 @@ export async function updatePurchaseOrderExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("purchaseOrder").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("purchaseOrder").update(update).eq("id", update.id).select("id")
+  );
 }
 
 export async function updatePurchaseOrderFavorite(
@@ -1463,7 +1664,9 @@ export async function updatePurchaseOrderStatus(
     updatedBy: string;
   }
 ) {
-  return client.from("purchaseOrder").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("purchaseOrder").update(update).eq("id", update.id).select("id")
+  );
 }
 
 /** `updatePurchaseOrderStatus` on a Kysely handle, for a status change that
@@ -1698,7 +1901,9 @@ export async function updateSupplierQuoteExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("supplierQuote").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("supplierQuote").update(update).eq("id", update.id).select("id")
+  );
 }
 
 export async function updateSupplierQuoteFavorite(
@@ -1732,7 +1937,9 @@ export async function updateSupplierQuoteStatus(
     updatedBy: string;
   }
 ) {
-  return client.from("supplierQuote").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("supplierQuote").update(update).eq("id", update.id).select("id")
+  );
 }
 
 export async function updateSupplierShipping(
@@ -2180,10 +2387,19 @@ export async function upsertPurchaseOrderLine(
     return updatePurchaseOrderLineRestatingCompletion(client, companyId, line);
   }
 
-  const existing = await client
-    .from("purchaseOrderLine")
-    .select("sortOrder")
-    .eq("purchaseOrderId", normalized.purchaseOrderId);
+  const [existing, delivery] = await Promise.all([
+    client
+      .from("purchaseOrderLine")
+      .select("sortOrder")
+      .eq("purchaseOrderId", normalized.purchaseOrderId),
+    client
+      .from("purchaseOrderDelivery")
+      .select("receiptRequestedDate, receiptPromisedDate")
+      .eq("id", normalized.purchaseOrderId)
+      .eq("companyId", normalized.companyId)
+      .maybeSingle()
+  ]);
+  if (delivery.error) return { data: null, error: delivery.error };
 
   const maxSortOrder = (existing.data ?? []).reduce(
     (max, row) => Math.max(max, row.sortOrder ?? 0),
@@ -2192,7 +2408,20 @@ export async function upsertPurchaseOrderLine(
 
   return client
     .from("purchaseOrderLine")
-    .insert([{ ...normalized, sortOrder: maxSortOrder + 1 }])
+    .insert([
+      {
+        ...normalized,
+        requiredDate:
+          normalized.requiredDate ??
+          delivery.data?.receiptRequestedDate ??
+          undefined,
+        promisedDate:
+          normalized.promisedDate ??
+          delivery.data?.receiptPromisedDate ??
+          undefined,
+        sortOrder: maxSortOrder + 1
+      }
+    ])
     .select("id")
     .single();
 }
@@ -2439,41 +2668,36 @@ export async function applyPurchasingPlanningActions(
     );
     if (quantities.length > 0) {
       const lineIds = [...new Set(quantities.map((a) => a.lineId))];
-      // A PO with no currency is in the company's base currency, as the PO
-      // line form reads it; refusing it failed every Increase / Decrease on
-      // such a PO with "Currency (none) has no precision".
-      const lines = (
-        await trx
-          .selectFrom("purchaseOrderLine as pol")
-          .innerJoin("purchaseOrder as po", "po.id", "pol.purchaseOrderId")
-          .innerJoin("company as c", "c.id", "po.companyId")
-          .select([
-            "pol.id",
-            "pol.supplierUnitPrice",
-            "pol.supplierShippingCost",
-            "pol.purchaseQuantity",
-            "pol.quantityReceived",
-            "pol.quantityInvoiced",
-            "pol.receivedComplete",
-            "pol.taxPercent",
-            "pol.supplierTaxAmount",
-            "pol.conversionFactor",
-            "po.currencyCode",
-            "c.baseCurrencyCode"
-          ])
-          .where("pol.id", "in", lineIds)
-          .where("pol.companyId", "=", companyId)
-          // the completion flags below are derived from these rows
-          .forUpdate("pol")
-          .execute()
-      ).map(({ baseCurrencyCode, ...line }) => ({
-        ...line,
-        currencyCode: line.currencyCode ?? baseCurrencyCode
-      }));
+      const lines = await trx
+        .selectFrom("purchaseOrderLine as pol")
+        .innerJoin("purchaseOrder as po", "po.id", "pol.purchaseOrderId")
+        .innerJoin("company as c", "c.id", "po.companyId")
+        .select([
+          "pol.id",
+          "pol.supplierUnitPrice",
+          "pol.supplierShippingCost",
+          "pol.purchaseQuantity",
+          "pol.quantityReceived",
+          "pol.quantityInvoiced",
+          "pol.receivedComplete",
+          "pol.taxPercent",
+          "pol.supplierTaxAmount",
+          "pol.conversionFactor",
+          "po.currencyCode",
+          "c.baseCurrencyCode"
+        ])
+        .where("pol.id", "in", lineIds)
+        .where("pol.companyId", "=", companyId)
+        // the completion flags below are derived from these rows
+        .forUpdate("pol")
+        .execute();
       const lineById = new Map(lines.map((line) => [line.id, line]));
       const codes = [
         ...new Set(
-          lines.flatMap((l) => (l.currencyCode ? [l.currencyCode] : []))
+          lines.flatMap((l) => {
+            const code = planningLineCurrencyCode(l);
+            return code ? [code] : [];
+          })
         )
       ];
       const currencies =
@@ -2501,44 +2725,21 @@ export async function applyPurchasingPlanningActions(
       }[] = [];
       const unheld: string[] = [];
       for (const action of quantities) {
-        const line = lineById.get(action.lineId);
-        const decimals = line?.currencyCode
-          ? decimalsByCode.get(line.currencyCode)
-          : undefined;
-        if (!line || decimals === undefined) {
+        const change = planningQuantityChange(
+          lineById.get(action.lineId),
+          decimalsByCode,
+          Number(action.suggestedQuantity)
+        );
+        if (!change.ok) {
           result.failed.push({
             id: action.planningActionId,
-            message: line
-              ? `Currency ${line.currencyCode ?? "(none)"} has no precision`
-              : "Purchase order line not found"
+            message: change.message
           });
           unheld.push(action.planningActionId);
           continue;
         }
-        const conversionFactor = Number(line.conversionFactor) || 1;
-        // MRP suggests a whole number of purchase units already
-        // (`quantityAfterApply`, @carbon/planning); the inner round strips
-        // float noise (1.1 / 0.1 = 11.000000000000002) that would otherwise
-        // ceil it a whole purchase unit up.
-        const toReceive =
-          conversionFactor > 0
-            ? round(
-                round(Number(action.suggestedQuantity) / conversionFactor),
-                0,
-                RoundingMode.Up
-              )
-            : Number(action.suggestedQuantity);
-        const quantity = round(
-          (Number(line.quantityReceived) || 0) + toReceive
-        );
-        const pair = taxPairForQuantity(line, quantity, decimals);
-        values.push({
-          lineId: action.lineId,
-          quantity,
-          percent: pair.percent,
-          amount: pair.amount,
-          ...getCompletionAfterQuantityChange(line, quantity)
-        });
+        const { ok: _, ...value } = change;
+        values.push({ lineId: action.lineId, ...value });
       }
       // a failed computation never holds its claim
       for (const id of unheld) claimed.delete(id);
@@ -2986,10 +3187,13 @@ export async function upsertSupplierType(
       .select("id")
       .single();
   } else {
-    return client
-      .from("supplierType")
-      .update(sanitize(supplierType))
-      .eq("id", supplierType.id);
+    return requireAffected(
+      client
+        .from("supplierType")
+        .update(sanitize(supplierType))
+        .eq("id", supplierType.id)
+        .select("id")
+    );
   }
 }
 
@@ -3001,17 +3205,22 @@ export async function deletePurchasingRFQ(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ) {
-  return client.from("purchasingRfq").delete().eq("id", purchasingRfqId);
+  return requireAffected(
+    client.from("purchasingRfq").delete().eq("id", purchasingRfqId).select("id")
+  );
 }
 
 export async function deletePurchasingRFQLine(
   client: SupabaseClient<Database>,
   purchasingRfqLineId: string
 ) {
-  return client
-    .from("purchasingRfqLine")
-    .delete()
-    .eq("id", purchasingRfqLineId);
+  return requireAffected(
+    client
+      .from("purchasingRfqLine")
+      .delete()
+      .eq("id", purchasingRfqLineId)
+      .select("id")
+  );
 }
 
 export async function getPurchasingRFQ(
@@ -3020,6 +3229,10 @@ export async function getPurchasingRFQ(
 ) {
   return client.from("purchasingRfqs").select("*").eq("id", id).single();
 }
+
+export const PURCHASING_RFQS_PAGING: Paging = {
+  defaultSorts: [{ column: "rfqId", ascending: false }]
+};
 
 export async function getPurchasingRFQs(
   client: SupabaseClient<Database>,
@@ -3030,16 +3243,14 @@ export async function getPurchasingRFQs(
 ) {
   let query = client
     .from("purchasingRfqs")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.ilike("rfqId", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "rfqId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASING_RFQS_PAGING);
   return query;
 }
 
@@ -3083,8 +3294,8 @@ export async function getPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ): Promise<PostgrestResponse<PurchasingRfqSupplierWithSupplier>> {
-  // tsgo's limit; the cliff shifts as unrelated modules join the program.
-  // ts-ignore, not ts-expect-error, so it satisfies both tsc and tsgo.
+  // TypeScript's limit; the cliff shifts as unrelated modules join the
+  // program. ts-ignore, not ts-expect-error, since the error comes and goes.
   return client
     .from("purchasingRfqSupplier")
     .select("*, supplier(id, name)")
@@ -3548,6 +3759,82 @@ export async function getDefaultAttachmentsForPO(
 }
 
 /**
+ * Copies a changed order date to the lines that have no date or the order's
+ * current one. Run it before the delivery row changes, in the same
+ * transaction. The delivery date (when goods arrived) goes only to lines that
+ * received something; received-complete lines keep the other two.
+ *
+ * It locks the delivery rows first, so a concurrent save of the same order
+ * waits and then compares against the date this one commits.
+ */
+export async function cascadePurchaseOrderDateToLines(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    purchaseOrderIds: string[];
+    field: PurchaseOrderDateField;
+    value: string | null;
+  }
+) {
+  const { companyId, userId, purchaseOrderIds, field, value } = args;
+  if (!value || purchaseOrderIds.length === 0) return;
+  const lineField = purchaseOrderLineDateOfOrderDate[field];
+
+  await db
+    .selectFrom("purchaseOrderDelivery")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where("id", "in", purchaseOrderIds)
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+
+  let update = db
+    .updateTable("purchaseOrderLine")
+    .set({
+      [lineField]: value,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("purchaseOrderLine.companyId", "=", companyId)
+    .where("purchaseOrderLine.purchaseOrderId", "in", purchaseOrderIds)
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("purchaseOrderDelivery")
+          .select(sql.lit(1).as("one"))
+          .whereRef(
+            "purchaseOrderDelivery.id",
+            "=",
+            "purchaseOrderLine.purchaseOrderId"
+          )
+          .whereRef(
+            "purchaseOrderDelivery.companyId",
+            "=",
+            "purchaseOrderLine.companyId"
+          )
+          .where(`purchaseOrderDelivery.${field}`, "is distinct from", value)
+          .where((delivery) =>
+            delivery.or([
+              delivery(`purchaseOrderLine.${lineField}`, "is", null),
+              delivery(
+                `purchaseOrderLine.${lineField}`,
+                "=",
+                delivery.ref(`purchaseOrderDelivery.${field}`)
+              )
+            ])
+          )
+      )
+    );
+  update =
+    field === "deliveryDate"
+      ? update.where("purchaseOrderLine.quantityReceived", ">", 0)
+      : update.where("purchaseOrderLine.receivedComplete", "=", false);
+  await update.execute();
+}
+
+/**
  * Apply a planning schedule/quantity change to a PO line.
  * `purchaseQuantity` is in PURCHASE units — the caller converts from inventory
  * units via the line's conversionFactor.
@@ -3687,6 +3974,10 @@ export async function updatePurchaseOrderLineSchedule(
 
 // ─── Purchase Return Orders (Supplier Returns) ───
 
+export const PURCHASE_RETURN_ORDERS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getPurchaseReturnOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3698,7 +3989,7 @@ export async function getPurchaseReturnOrders(
 ) {
   let query = client
     .from("purchaseReturnOrders")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -3718,9 +4009,7 @@ export async function getPurchaseReturnOrders(
     query = query.eq("supplierId", args.supplierId);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASE_RETURN_ORDERS_PAGING);
   return query;
 }
 
@@ -3929,17 +4218,26 @@ export async function deletePurchaseReturnOrder(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string
 ) {
-  return client
-    .from("purchaseReturnOrder")
-    .delete()
-    .eq("id", purchaseReturnOrderId);
+  return requireAffected(
+    client
+      .from("purchaseReturnOrder")
+      .delete()
+      .eq("id", purchaseReturnOrderId)
+      .select("id")
+  );
 }
 
 export async function deletePurchaseReturnOrderLine(
   client: SupabaseClient<Database>,
   lineId: string
 ) {
-  return client.from("purchaseReturnOrderLine").delete().eq("id", lineId);
+  return requireAffected(
+    client
+      .from("purchaseReturnOrderLine")
+      .delete()
+      .eq("id", lineId)
+      .select("id")
+  );
 }
 
 /** Not published: `purchasing_updateReturnOrderLine` sets a line's entities, with its lock check. */
@@ -5017,15 +5315,18 @@ export async function createReplacementPurchaseOrder(
     return { data: null, error: insertLines.error };
   }
 
-  const link = await client
-    .from("purchaseReturnOrder")
-    .update({
-      replacementPurchaseOrderId: purchaseOrderId,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", purchaseReturnOrderId)
-    .eq("companyId", companyId);
+  const link = await requireAffected(
+    client
+      .from("purchaseReturnOrder")
+      .update({
+        replacementPurchaseOrderId: purchaseOrderId,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", purchaseReturnOrderId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
   if (link.error) return { data: null, error: link.error };
 
   return { data: { id: purchaseOrderId }, error: null };
@@ -5088,6 +5389,10 @@ function leaseRefusal(code: string, message: string) {
   };
 }
 
+export const LEASES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getLeases(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5095,7 +5400,7 @@ export async function getLeases(
 ) {
   let query = client
     .from("leases")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -5104,9 +5409,7 @@ export async function getLeases(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, LEASES_PAGING);
   return query;
 }
 
@@ -6024,18 +6327,73 @@ export async function draftLeaseSetupPath(
   return path.to.leaseSetup(id, "assets");
 }
 
+/**
+ * A supplier interaction's files without the PDFs finalize stored for its
+ * purchase orders. Every order converted from one supplier quote shares the
+ * interaction's folder, so attaching the whole listing sent a supplier the
+ * other orders' PDFs and every earlier copy of the order's own. Throws when
+ * the orders cannot be read, rather than let those PDFs through.
+ */
+export async function withoutStoredPurchaseOrderPdfs<
+  T extends { name: string }
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  interactionId: string,
+  docs: T[]
+): Promise<T[]> {
+  if (docs.length === 0) return docs;
+  // Paged: a page missing would let that order's PDF through.
+  const orders = await fetchAllFromTable<{
+    id: string;
+    purchaseOrderId: string;
+  }>(client, "purchaseOrder", "id, purchaseOrderId", (query) =>
+    query
+      .eq("companyId", companyId)
+      .eq("supplierInteractionId", interactionId)
+      .order("id")
+  );
+  if (orders.error) {
+    logger.error("Failed to read the supplier interaction's purchase orders", {
+      companyId,
+      interactionId,
+      error: orders.error
+    });
+    throw new Error(
+      "Failed to read the supplier interaction's purchase orders"
+    );
+  }
+  const purchaseOrderIds = orders.data.flatMap((order) =>
+    order.purchaseOrderId ? [order.purchaseOrderId] : []
+  );
+  return docs.filter((doc) => !isStoredDocumentPdf(doc.name, purchaseOrderIds));
+}
+
 /** Signed links to a supplier interaction's documents, for an email. A file
- *  that cannot be signed is logged and left out. */
+ *  that cannot be signed is logged and left out. With
+ *  `withoutPurchaseOrderPdfs`, the PDFs finalize stored for the interaction's
+ *  purchase orders are left out too (`withoutStoredPurchaseOrderPdfs`). */
 export async function interactionAttachments(
   client: SupabaseClient<Database>,
   companyId: string,
-  interactionId: string
+  interactionId: string,
+  {
+    withoutPurchaseOrderPdfs = false
+  }: { withoutPurchaseOrderPdfs?: boolean } = {}
 ): Promise<{ filename: string; path: string; size?: number }[]> {
-  const docs = await getSupplierInteractionDocuments(
+  const listed = await getSupplierInteractionDocuments(
     client,
     companyId,
     interactionId
   );
+  const docs = withoutPurchaseOrderPdfs
+    ? await withoutStoredPurchaseOrderPdfs(
+        client,
+        companyId,
+        interactionId,
+        listed
+      )
+    : listed;
   return signedAttachments(
     client,
     companyId,
@@ -6493,10 +6851,9 @@ export async function attachPurchaseOrderPdf(
     return ctx.error("internal", "Failed to generate PDF", err);
   }
 
-  const fileName = stripSpecialCharacters(
-    `${getPurchaseOrderDisplayId(purchaseOrder)} - ${datetime
-      .timestamp()
-      .slice(0, -5)}.pdf`
+  const fileName = storedDocumentPdfName(
+    getPurchaseOrderDisplayId(purchaseOrder),
+    datetime.timestamp()
   );
   const path = `${companyId}/supplier-interaction/${purchaseOrder.supplierInteractionId}/${fileName}`;
   const upload = await storage(ctx.asSystem.supabase)
@@ -6601,8 +6958,8 @@ export async function purchaseOrderEmail(
     to: [buyer.data.email, supplierEmail],
     from: buyer.data.email,
     subject: `Purchase Order ${getPurchaseOrderDisplayId(purchaseOrder.data)} from ${company.data.name}`,
-    html: await renderAsync(template),
-    text: await renderAsync(template, { plainText: true }),
+    html: await render(template),
+    text: await render(template, { plainText: true }),
     purchaseOrder: purchaseOrder.data,
     lines: lines.data ?? []
   };
@@ -6685,6 +7042,7 @@ export async function releaseApprovedPurchaseOrder(
           [{ filename: pdf.fileName, path: pdf.path }]
         );
         await trigger("send-email", {
+          document: true,
           to: email.to,
           cc: cc?.length ? cc : undefined,
           from: email.from,
@@ -7686,6 +8044,10 @@ export async function updatePurchasedPrices(
           .set(itemCostUpdate)
           .where("itemId", "=", itemCostUpdate.itemId!)
           .where("companyId", "=", companyId)
+          // An Average item's unit cost is its moving average, kept by the
+          // receipts and invoices that move its value; a year of purchase
+          // history is not what is on hand.
+          .where("costingMethod", "!=", "Average")
           .execute();
       }
     }

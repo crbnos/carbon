@@ -59,13 +59,19 @@ export type PeopleCardItem = {
   dayEndTime: string | null;
   /** day-scoped note (first non-empty across the day's rows) */
   note: string | null;
+  /**
+   * Booked for the whole shift at stations the department filter hides. Shown
+   * in Unassigned so the filter never hides a person; no drag, since a drop
+   * would replace that day.
+   */
+  bookedElsewhere?: boolean;
 };
 
 /** stable sortable/React id — assignment cards are keyed by the ROW, so one
  * person can appear in several columns (split days) */
 export function cardId(item: PeopleCardItem) {
   if (item.assignment && !item.isAbsent) return item.assignment.id;
-  return `${item.isAbsent ? "absent" : "free"}:${item.employee.id}`;
+  return `${item.isAbsent ? "absent" : item.bookedElsewhere ? "elsewhere" : "free"}:${item.employee.id}`;
 }
 
 export function PeopleCard({
@@ -129,6 +135,9 @@ export function PeopleCard({
   const otherStationNames = otherStations
     .map((row) => stationName(row.workCenterId))
     .join(", ");
+  const elsewhereStationNames = item.bookedElsewhere
+    ? item.dayRows.map((row) => stationName(row.workCenterId)).join(", ")
+    : "";
 
   return (
     <div
@@ -145,13 +154,13 @@ export function PeopleCard({
         isDragging && !isOverlay && "border-dashed bg-muted",
         isOverlay &&
           "ring-2 ring-primary opacity-100 !bg-card shadow-lg cursor-grabbing",
-        item.isAbsent && "opacity-60"
+        (item.isAbsent || item.bookedElsewhere) && "opacity-60"
       )}
     >
       {/* drag lives on the handle only — the rest of the card is tap-to-open.
           Ghost variant so it picks up the same hover fill as the schedule
           board's grip, but kept 44px tall for tablets. */}
-      {!isDisabled && !item.isAbsent && (
+      {!isDisabled && !item.isAbsent && !item.bookedElsewhere && (
         <IconButton
           aria-label={t`Drag to assign`}
           variant="ghost"
@@ -186,6 +195,11 @@ export function PeopleCard({
             <Trans>also at {otherStationNames}</Trans>
           </p>
         )}
+        {elsewhereStationNames && (
+          <p className="truncate text-xs text-muted-foreground">
+            <Trans>working at {elsewhereStationNames}</Trans>
+          </p>
+        )}
         {item.note && (
           <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
             <LuStickyNote className="h-3 w-3 flex-shrink-0" />
@@ -199,7 +213,7 @@ export function PeopleCard({
             {item.abilities.map((ability) => (
               <span
                 key={ability}
-                className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+                className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[0.6875rem] font-medium text-muted-foreground"
               >
                 {ability}
               </span>

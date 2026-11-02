@@ -7,16 +7,19 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
+  useIsomorphicLayoutEffect,
   useViewport
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
+import { animate, useReducedMotion } from "motion/react";
+import type { PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import { useOptimisticLocation } from "~/hooks";
 import type { CompactTabItem } from "./CompactTabRow";
 import { CompactTabRow } from "./CompactTabRow";
 import { createValueSlot } from "./Mobile/slots";
+import { dockedPanelTransition } from "./Navigation/CollapsibleSidebar";
 
 /**
  * Phones: a record's sub-route tabs (Details, Purchasing, …), provided by its
@@ -29,6 +32,12 @@ export const recordFrameSlot = createValueSlot<true>();
 interface PanelContextType {
   isExplorerCollapsed: boolean;
   isPropertiesCollapsed: boolean;
+  /**
+   * The last properties change came from `toggleProperties`. Only a toggle
+   * slides the panel: the collapse for small screens after mount snaps, so
+   * nothing animates on page load.
+   */
+  shouldSlideProperties: boolean;
   toggleExplorer: () => void;
   toggleProperties: () => void;
   setIsExplorerCollapsed: (collapsed: boolean) => void;
@@ -38,6 +47,7 @@ interface PanelContextType {
 const defaultPanelContext: PanelContextType = {
   isExplorerCollapsed: false,
   isPropertiesCollapsed: false,
+  shouldSlideProperties: false,
   // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
   toggleExplorer: () => {},
   // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
@@ -70,23 +80,33 @@ export function PanelProvider({ children }: PanelProviderProps) {
   // effect below. Reading `window.innerWidth` during render forks server vs
   // client output and triggers a hydration mismatch.
   const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(false);
-  const [isPropertiesCollapsed, setIsPropertiesCollapsed] = useState(false);
+  // `slide`: the change came from `toggleProperties`.
+  const [properties, setProperties] = useState({
+    isCollapsed: false,
+    slide: false
+  });
 
   const value = {
     isExplorerCollapsed,
-    isPropertiesCollapsed,
+    isPropertiesCollapsed: properties.isCollapsed,
+    shouldSlideProperties: properties.slide,
     toggleExplorer: () => setIsExplorerCollapsed((prev) => !prev),
-    toggleProperties: () => setIsPropertiesCollapsed((prev) => !prev),
+    toggleProperties: () =>
+      setProperties((prev) => ({
+        isCollapsed: !prev.isCollapsed,
+        slide: true
+      })),
     setIsExplorerCollapsed,
-    setIsPropertiesCollapsed
+    setIsPropertiesCollapsed: (isCollapsed: boolean) =>
+      setProperties({ isCollapsed, slide: false })
   };
 
   useEffect(() => {
     if (isPhone) {
       setIsExplorerCollapsed(true);
-      setIsPropertiesCollapsed(true);
+      setProperties({ isCollapsed: true, slide: false });
     } else if (window.innerWidth < 1024) {
-      setIsPropertiesCollapsed(true);
+      setProperties({ isCollapsed: true, slide: false });
     }
   }, [isPhone]);
 
@@ -206,14 +226,130 @@ function CompactRecordTabs({
   );
 }
 
+/** Back to rest: both wrappers lay out as `display: contents` again. */
+function clearSlideStyles(...elements: (HTMLElement | null)[]) {
+  for (const element of elements) element?.removeAttribute("style");
+}
+
+/**
+ * The properties panel beside a record's content. A toggle slides it in and
+ * out the way the module sidebar does (`CollapsibleSidebar`: width and
+ * opacity, `dockedPanelTransition`).
+ *
+ * At rest both wrappers are `display: contents`, so the panel lays out as a
+ * direct child of the record's row, as it would without them. While it
+ * slides, the outer wrapper clips to an animated width and the inner one
+ * holds the panel at its open width: the content column resizes smoothly and
+ * the panel's own contents never reflow.
+ */
+function PropertiesColumn({
+  isOpen,
+  shouldSlide,
+  children
+}: PropsWithChildren<{ isOpen: boolean; shouldSlide: boolean }>) {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
+
+  // The panel stays mounted while it slides out.
+  const [isMounted, setIsMounted] = useState(isOpen);
+  if (isOpen && !isMounted) setIsMounted(true);
+
+  const wasOpen = useRef(isOpen);
+  const slide = useRef<ReturnType<typeof animate> | null>(null);
+  // The panel's open width, held while it slides.
+  const openWidth = useRef(0);
+
+  useEffect(() => () => slide.current?.stop(), []);
+
+  // Slid out: back to rest in the same commit that unmounts the panel.
+  useIsomorphicLayoutEffect(() => {
+    if (!isMounted) clearSlideStyles(outerRef.current, innerRef.current);
+  }, [isMounted]);
+
+  useIsomorphicLayoutEffect(() => {
+    if (wasOpen.current === isOpen) return;
+    wasOpen.current = isOpen;
+
+    const wasSliding = slide.current !== null;
+    slide.current?.stop();
+    slide.current = null;
+
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (!outer || !inner || !shouldSlide || shouldReduceMotion) {
+      clearSlideStyles(outer, inner);
+      if (!isOpen) setIsMounted(false);
+      return;
+    }
+
+    let fromWidth: number;
+    let fromOpacity: number;
+    if (wasSliding) {
+      // Reversed mid-slide: carry on from where it is.
+      fromWidth = outer.getBoundingClientRect().width;
+      fromOpacity = Number(window.getComputedStyle(outer).opacity);
+    } else {
+      // At rest the panel sits in the row itself, at its open width (on
+      // opening it was mounted in this commit).
+      clearSlideStyles(outer, inner);
+      openWidth.current =
+        inner.firstElementChild?.getBoundingClientRect().width ?? 0;
+      fromWidth = isOpen ? 0 : openWidth.current;
+      fromOpacity = isOpen ? 0 : 1;
+    }
+
+    Object.assign(outer.style, {
+      display: "flex",
+      flexShrink: "0",
+      overflow: "hidden",
+      width: `${fromWidth}px`,
+      opacity: String(fromOpacity)
+    });
+    Object.assign(inner.style, {
+      display: "flex",
+      flexShrink: "0",
+      width: `${openWidth.current}px`
+    });
+
+    const animation = animate(
+      outer,
+      {
+        width: [fromWidth, isOpen ? openWidth.current : 0],
+        opacity: [fromOpacity, isOpen ? 1 : 0]
+      },
+      dockedPanelTransition
+    );
+    slide.current = animation;
+    animation.then(() => {
+      if (slide.current !== animation) return;
+      slide.current = null;
+      if (isOpen) clearSlideStyles(outer, inner);
+      else setIsMounted(false);
+    });
+  }, [isOpen, shouldSlide, shouldReduceMotion]);
+
+  return (
+    <div ref={outerRef} className="contents">
+      <div ref={innerRef} className="contents">
+        {isMounted ? children : null}
+      </div>
+    </div>
+  );
+}
+
 export function ResizablePanels({
   explorer,
   content,
   properties,
   explorerLabel
 }: ResizablePanelsProps) {
-  const { isExplorerCollapsed, isPropertiesCollapsed, setIsExplorerCollapsed } =
-    usePanels();
+  const {
+    isExplorerCollapsed,
+    isPropertiesCollapsed,
+    shouldSlideProperties,
+    setIsExplorerCollapsed
+  } = usePanels();
   const panelRef = useRef<ImperativePanelHandle>(null);
   const { isPhone } = useViewport();
 
@@ -262,7 +398,14 @@ export function ResizablePanels({
       <ResizablePanel order={2} className="z-1 relative">
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           {content}
-          {!isPropertiesCollapsed && properties}
+          {properties ? (
+            <PropertiesColumn
+              isOpen={!isPropertiesCollapsed}
+              shouldSlide={shouldSlideProperties}
+            >
+              {properties}
+            </PropertiesColumn>
+          ) : null}
         </div>
       </ResizablePanel>
     </ResizablePanelGroup>

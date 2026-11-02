@@ -51,6 +51,8 @@ const taskToEvent = {
   "issue-sync-push": "carbon/issue-sync.push",
   "sync-issue-from-jira": "carbon/jira-sync",
   "sync-issue-from-linear": "carbon/linear-sync",
+  "table-bulk-action": "carbon/table-bulk-action",
+  "table-export": "carbon/table-export",
   "update-permissions": "carbon/update-permissions",
   "user-admin": "carbon/user-admin",
   "extract-document": "carbon/extract-document",

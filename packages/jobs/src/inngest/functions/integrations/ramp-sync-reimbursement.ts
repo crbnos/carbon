@@ -129,6 +129,31 @@ const REIMBURSEMENT_INVOICE_ONLY_STATES = new Set([
 ]);
 
 /**
+ * What a Ramp reimbursement state means here: Ramp has paid the employee
+ * (import with a payout intent), it is payable but unpaid (import the document
+ * only), or its accounting meaning is unknown (fail the item).
+ */
+export function rampReimbursementStateKind(
+  state: string | null | undefined
+): "paid" | "invoiceOnly" | "unsupported" {
+  if (REIMBURSEMENT_PAID_STATES.has(state ?? "")) return "paid";
+  if (REIMBURSEMENT_INVOICE_ONLY_STATES.has(state ?? "")) return "invoiceOnly";
+  return "unsupported";
+}
+
+/**
+ * Whether an already-imported reimbursement's mapping still needs its payout
+ * intent: only once Ramp has paid, and the first recorded intent wins (it
+ * carries the FX snapshot of the payout that happened).
+ */
+export function mappedReimbursementNeedsPayout(
+  stateKind: ReturnType<typeof rampReimbursementStateKind>,
+  mappingMetadata: unknown
+): boolean {
+  return stateKind === "paid" && !hasRecordedPayout(mappingMetadata);
+}
+
+/**
  * Atomically create the Draft `reimbursement`, its coding lines, and the Ramp
  * mapping that is its idempotency anchor.
  *
@@ -724,8 +749,9 @@ export async function syncRampReimbursement(
   reimbursement: RampReimbursement
 ): Promise<{ ok: SyncItem } | { fail: FailItem }> {
   const state = reimbursement.state ?? "";
-  const isRampPaid = REIMBURSEMENT_PAID_STATES.has(state);
-  if (!isRampPaid && !REIMBURSEMENT_INVOICE_ONLY_STATES.has(state)) {
+  const stateKind = rampReimbursementStateKind(state);
+  const isRampPaid = stateKind === "paid";
+  if (stateKind === "unsupported") {
     return {
       fail: {
         id: reimbursement.id,
@@ -757,7 +783,7 @@ export async function syncRampReimbursement(
     // has already paid, so "we cannot record it" is the operator's problem to
     // see. Nothing else about the mapped path can fail it — the document's
     // amount and coding are never re-read.
-    if (isRampPaid && !hasRecordedPayout(mapped.metadata)) {
+    if (mappedReimbursementNeedsPayout(stateKind, mapped.metadata)) {
       const payout = await resolveRampReimbursementPayout(deps, reimbursement);
       if ("error" in payout) {
         return { fail: { id: reimbursement.id, message: payout.error } };

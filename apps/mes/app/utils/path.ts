@@ -30,6 +30,7 @@ export const path = {
           `${api}/batch-numbers?itemId=${itemId}${operationId ? `&operationId=${operationId}` : ""}`
         ),
       failureModes: `${api}/failure-modes`,
+      loginVerifyCode: `${api}/login/verify-code`,
       modelArtifacts: (modelUploadId: string) =>
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
       modelDownload: (modelUploadId: string) =>
@@ -176,7 +177,6 @@ export const path = {
     jobMakeMethodDetail: (jobId: string, makeMethodId: string) =>
       `${getAppUrl()}${x}/job/${jobId}/make/${makeMethodId}`,
     jobs: `${x}/jobs`,
-    kanbanComplete: (id: string) => `${ERP_URL}/api/kanban/complete/${id}`,
     location: `${x}/location`,
     login: "/login",
     logout: "/logout",

@@ -5,7 +5,7 @@
 import type { Json } from "@carbon/database";
 import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -16,16 +16,15 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
   VStack
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import {
   LuCirclePlay,
   LuCopy,
   LuExternalLink,
-  LuInfo,
   LuKeySquare,
   LuLink,
   LuRefreshCcw
@@ -35,8 +34,8 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
   Assignee,
-  DateTime,
   EmployeeAvatar,
+  ExchangeRateUpdatedAt,
   Hyperlink,
   useOptimisticAssignment
 } from "~/components";
@@ -58,7 +57,10 @@ import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/purchase-order+/$orderId.exchange-rate";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import { isPurchaseOrderLocked } from "../../purchasing.models";
+import {
+  isPurchaseOrderLocked,
+  isPurchaseOrderPromisedDateEditable
+} from "../../purchasing.models";
 import type { PurchaseOrder, SupplierQuote } from "../../types";
 
 const PurchaseOrderProperties = () => {
@@ -68,13 +70,15 @@ const PurchaseOrderProperties = () => {
   const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
     supplierQuote: SupplierQuote;
+    approval: {
+      approvedById: string | null;
+      approvedDate: string;
+    } | null;
   }>(path.to.purchaseOrder(orderId));
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   const { company } = useUser();
@@ -133,6 +137,10 @@ const PurchaseOrderProperties = () => {
   const canUpdate = permissions.can("update", "purchasing");
   const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
   const isDisabled = !canUpdate || isLocked;
+  // The promise moves with the supplier until everything is received.
+  const isPromisedDateDisabled =
+    !canUpdate ||
+    !isPurchaseOrderPromisedDateEditable(routeData?.purchaseOrder?.status);
 
   return (
     <VStack
@@ -380,7 +388,7 @@ const PurchaseOrderProperties = () => {
           name="receiptPromisedDate"
           label={t`Receipt Promised Date`}
           inline
-          isDisabled={isDisabled}
+          isDisabled={isPromisedDateDisabled}
           onChange={(date) => {
             onUpdate("receiptPromisedDate", date);
           }}
@@ -458,13 +466,9 @@ const PurchaseOrderProperties = () => {
                 Exchange Rate
               </span>
               {routeData?.purchaseOrder?.exchangeRateUpdatedAt && (
-                <DateTime
+                <ExchangeRateUpdatedAt
                   value={routeData?.purchaseOrder?.exchangeRateUpdatedAt}
-                  variant="absolute"
-                  side="bottom"
-                >
-                  <LuInfo className="h-4 w-4 text-muted-foreground" />
-                </DateTime>
+                />
               )}
             </HStack>
             <HStack className="w-full justify-between">
@@ -494,6 +498,18 @@ const PurchaseOrderProperties = () => {
           employeeId={routeData?.purchaseOrder?.createdBy ?? null}
         />
       </VStack>
+
+      {routeData?.approval && (
+        <VStack spacing={2}>
+          <span className="text-xs font-medium text-muted-foreground">
+            <Trans>Approved By</Trans>
+          </span>
+          <EmployeeAvatar employeeId={routeData.approval.approvedById} />
+          <span className="text-xs text-muted-foreground">
+            {formatDate(routeData.approval.approvedDate)}
+          </span>
+        </VStack>
+      )}
 
       <CustomFormInlineFields
         customFields={

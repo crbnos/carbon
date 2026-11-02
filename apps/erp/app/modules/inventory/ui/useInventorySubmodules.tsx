@@ -12,6 +12,7 @@ import {
   LuListChecks,
   LuNetwork,
   LuPackageMinus,
+  LuPackageSearch,
   LuQrCode,
   LuScanQrCode,
   LuShieldCheck,
@@ -71,6 +72,13 @@ export default function useInventorySubmodules() {
     {
       name: t`Shipping & Receiving`,
       routes: [
+        {
+          name: t`Receiving`,
+          to: path.to.receiving,
+          icon: <LuPackageSearch />,
+          // Open purchase order lines are only readable with purchasing view.
+          permission: "purchasing"
+        },
         {
           name: t`Receipts`,
           to: path.to.receipts,
@@ -157,31 +165,19 @@ export default function useInventorySubmodules() {
     }
   ];
 
+  const isVisible = (route: AuthenticatedRouteGroup["routes"][number]) => {
+    if (route.role) return permissions.is(route.role);
+    if (route.permission) return permissions.can("view", route.permission);
+    return true;
+  };
+
   return {
     groups: inventoryRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
-          }
-        });
-
-        return filteredRoutes.length > 0;
-      })
       .map((group) => ({
         ...group,
-        routes: group.routes
-          .filter((route) => {
-            if (route.role) {
-              return permissions.is(route.role);
-            } else {
-              return true;
-            }
-          })
-          .map(addSavedViewsToRoutes)
+        routes: group.routes.filter(isVisible).map(addSavedViewsToRoutes)
       }))
+      .filter((group) => group.routes.length > 0)
   };
 }
 

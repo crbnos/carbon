@@ -410,7 +410,8 @@ const SalesOrderLineForm = ({
           carbon,
           itemId,
           locationId,
-          company.id
+          company.id,
+          { source: true }
         )
       : null;
 
@@ -488,7 +489,8 @@ const SalesOrderLineForm = ({
       carbon,
       itemData.itemId,
       newLocation.value,
-      company.id
+      company.id,
+      { source: true }
     );
 
     setItemData((d) => ({

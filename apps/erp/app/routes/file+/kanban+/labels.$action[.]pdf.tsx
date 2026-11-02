@@ -4,30 +4,33 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { KanbanLabelPDF } from "@carbon/documents/pdf";
+import type { KanbanLabelAction } from "@carbon/documents/zpl";
 import { getLogger } from "@carbon/logger";
-import { getRequestOrigin } from "@carbon/utils";
+import { getRequestOrigin, labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompany } from "~/modules/settings/settings.service";
+import { kanbanLabelSizes } from "~/modules/settings/settings.models";
+import {
+  getCompany,
+  getKanbanOutputSetting
+} from "~/modules/settings/settings.service";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
-const logger = getLogger("erp", "labels-action-pdf");
+const logger = getLogger("erp", "kanban-labels-pdf");
+
+// `all` prints every card a kanban has: Create, Start and Complete for Make,
+// Create only for Buy and Transfer.
+const ACTIONS = ["order", "start", "complete", "all"] as const;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "inventory"
   });
 
-  const company = await getCompany(client, companyId);
-  if (company.error) {
-    logger.error(company.error);
-    throw new Error("Failed to load company");
-  }
-
-  const { action } = params;
-  if (!action) throw new Error("Could not find kanban action");
-  if (!["order", "start", "complete"].includes(action)) {
-    throw new Error("Invalid kanban action");
+  // One action per card: Create, Start and Complete are separate cards.
+  const action = ACTIONS.find((a) => a === params.action);
+  if (!action) {
+    return new Response("Invalid kanban action", { status: 400 });
   }
 
   const url = new URL(request.url);
@@ -38,89 +41,91 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return new Response("No kanban IDs provided", { status: 400 });
   }
 
-  // Parse comma-separated IDs
-  const kanbanIds = idsParam.split(",").map((id) => id.trim());
-
+  const kanbanIds = idsParam
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
   if (kanbanIds.length === 0) {
     return new Response("No valid kanban IDs provided", { status: 400 });
   }
 
-  // Fetch all kanban records in parallel
-  const kanbanPromises = kanbanIds.map((id) =>
-    client.from("kanbans").select("*").eq("id", id).single()
+  const [company, setting, kanbans] = await Promise.all([
+    getCompany(client, companyId),
+    getKanbanOutputSetting(client, companyId),
+    client
+      .from("kanbans")
+      .select("*")
+      .in("id", kanbanIds)
+      .eq("companyId", companyId)
+  ]);
+  if (company.error) {
+    logger.error("Failed to load company", { companyId, error: company.error });
+    throw new Error("Failed to load company");
+  }
+  if (kanbans.error) {
+    logger.error("Failed to load kanbans", {
+      companyId,
+      error: kanbans.error
+    });
+    throw new Error("Failed to load kanbans");
+  }
+
+  // `?labelSize=` overrides the company's Label Size setting.
+  const requested = url.searchParams.get("labelSize");
+  const sizeId =
+    kanbanLabelSizes.find((s) => s === requested) ??
+    setting.data?.kanbanLabelSize ??
+    "letter";
+  const labelSize = labelSizes.find((s) => s.id === sizeId);
+
+  // In the order asked for: .in() returns rows in no particular order.
+  const rows = kanbanIds.flatMap(
+    (id) => kanbans.data?.filter((k) => k.id === id) ?? []
   );
-  const kanbanResults = await Promise.all(kanbanPromises);
-
-  // Collect all thumbnails paths first
-  const thumbnailPaths: Record<string, string> = {};
-  const validKanbans: typeof kanbanResults = [];
-
-  for (const result of kanbanResults) {
-    if (!result.error && result.data) {
-      validKanbans.push(result);
-      if (result.data.thumbnailPath && result.data.id) {
-        thumbnailPaths[result.data.id] = result.data.thumbnailPath;
-      }
-    }
-  }
-
-  // Fetch all thumbnails in parallel
-  const thumbnails: Record<string, string | null> = {};
-  if (Object.keys(thumbnailPaths).length > 0) {
-    const thumbnailPromises = Object.entries(thumbnailPaths).map(
-      async ([id, path]) => {
-        const base64 = await getBase64ImageFromSupabase(client, path);
-        return { id, data: base64 };
-      }
-    );
-
-    const thumbnailResults = await Promise.all(thumbnailPromises);
-    for (const thumbnail of thumbnailResults) {
-      if (thumbnail.data) {
-        thumbnails[thumbnail.id] = thumbnail.data;
-      }
-    }
-  }
-
-  // Transform to label format
-  const labels = [];
-
-  for (const result of validKanbans) {
-    if (!result.error && result.data) {
-      const kanban = result.data;
-
-      // Prepare label data
-      const labelData = {
-        id: kanban.id!,
-        itemId: kanban.itemId!,
-        itemName: kanban.name || "",
-        itemReadableId: kanban.readableIdWithRevision || kanban.itemId!,
-        locationName: kanban.locationName || "",
-        storageUnitId: kanban.storageUnitId,
-        storageUnitName: kanban.storageUnitName,
-        fromStorageUnitName: kanban.fromStorageUnitName,
-        supplierName: kanban.supplierName,
-        quantity: kanban.quantity ?? 0,
-        replenishmentLevel: kanban.replenishmentLevel,
-        unitOfMeasureCode: kanban.purchaseUnitOfMeasureCode,
-        thumbnail: thumbnails[kanban.id!] || null
-      };
-
-      labels.push(labelData);
-    }
-  }
-
-  if (labels.length === 0) {
+  if (rows.length === 0) {
     return new Response("No valid kanbans found", { status: 404 });
   }
 
-  // Generate PDF
+  // Only the letter sheet prints the item thumbnail.
+  const thumbnails: Record<string, string | null> = {};
+  if (!labelSize) {
+    await Promise.all(
+      rows.map(async (kanban) => {
+        if (!kanban.id || !kanban.thumbnailPath) return;
+        thumbnails[kanban.id] = await getBase64ImageFromSupabase(
+          client,
+          kanban.thumbnailPath
+        );
+      })
+    );
+  }
+
+  const labels = rows.flatMap((kanban) => {
+    const actions: KanbanLabelAction[] =
+      action !== "all"
+        ? [action]
+        : kanban.replenishmentSystem === "Make"
+          ? ["order", "start", "complete"]
+          : ["order"];
+    return actions.map((cardAction) => ({
+      action: cardAction,
+      id: kanban.id!,
+      kanbanId: kanban.kanbanId,
+      itemName: kanban.name || "",
+      itemReadableId: kanban.readableIdWithRevision || kanban.itemId || "",
+      locationName: kanban.locationName || "",
+      storageUnitName: kanban.storageUnitName,
+      fromStorageUnitName: kanban.fromStorageUnitName,
+      supplierName: kanban.supplierName,
+      quantity: kanban.quantity ?? 0,
+      replenishmentLevel: kanban.replenishmentLevel,
+      unitOfMeasureCode: kanban.purchaseUnitOfMeasureCode,
+      thumbnail: thumbnails[kanban.id!] ?? null
+    }));
+  });
+
   const stream = await renderToStream(
-    <KanbanLabelPDF
-      baseUrl={baseUrl}
-      labels={labels}
-      action={action as "order" | "start" | "complete"}
-    />
+    <KanbanLabelPDF baseUrl={baseUrl} labels={labels} labelSize={labelSize} />
   );
 
   const body: Buffer = await new Promise((resolve, reject) => {

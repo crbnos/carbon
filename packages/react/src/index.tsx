@@ -122,6 +122,7 @@ import {
   DatePicker,
   DateRangePicker,
   DateTimePicker,
+  TimeCombobox,
   TimePicker
 } from "./Date";
 import type { DateTimeProps } from "./DateTime";
@@ -135,9 +136,6 @@ import {
   DockFinderItem,
   DockFinderSeparator,
   DockItem,
-  DockMenu,
-  DockMenuContent,
-  DockMenuPanel,
   DockMenuSection,
   DockSeparator,
   DockSwitcher,
@@ -176,6 +174,7 @@ import {
   EnumerableAsText,
   useEnumerableAsText
 } from "./Enumerable";
+import { ErrorReason, errorDescription, toastError } from "./ErrorReason";
 import { File } from "./File";
 import {
   FormControl,
@@ -281,6 +280,7 @@ import {
   NavRailSwitcher,
   navRailItemClasses
 } from "./NavRail";
+import { NavSheet } from "./NavSheet";
 import type { NumberFieldProps } from "./Number";
 import {
   NumberDecrementStepper,
@@ -557,9 +557,6 @@ export {
   DockFinderItem,
   DockFinderSeparator,
   DockItem,
-  DockMenu,
-  DockMenuContent,
-  DockMenuPanel,
   DockMenuSection,
   DockSeparator,
   DockSwitcher,
@@ -590,6 +587,8 @@ export {
   dockMenuRowClassName,
   Enumerable,
   EnumerableAsText,
+  ErrorReason,
+  errorDescription,
   File,
   FormControl,
   FormErrorMessage,
@@ -680,6 +679,7 @@ export {
   NavRailItem,
   NavRailLink,
   NavRailSwitcher,
+  NavSheet,
   NumberDecrementStepper,
   NumberField,
   NumberIncrementStepper,
@@ -774,6 +774,7 @@ export {
   Tfoot,
   Th,
   Thead,
+  TimeCombobox,
   TimePicker,
   Toaster,
   Toggle,
@@ -788,6 +789,7 @@ export {
   TruncatedTooltipText,
   TVColorBars,
   toast,
+  toastError,
   useBotProtection,
   useEnumerableAsText,
   useModalCardType,

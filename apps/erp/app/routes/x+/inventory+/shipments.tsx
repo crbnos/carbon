@@ -2,19 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getShipments } from "~/modules/inventory/inventory.service";
 import ShipmentsTable from "~/modules/inventory/ui/Shipments/ShipmentsTable";
 import type { Handle } from "~/utils/handle";
+import { shipmentsList } from "~/utils/list-registry/inventory.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   realtime: ["shipment"],
@@ -23,43 +19,21 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory"
+  return loadListPage(request, shipmentsList, {
+    dataKey: "shipments",
+    onError: {
+      redirectTo: path.to.authenticatedRoot,
+      message: "Error loading shipments"
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const shipments = await getShipments(client, companyId, {
-    search,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
-
-  if (shipments.error) {
-    throw redirect(
-      path.to.authenticatedRoot,
-      await flash(request, error(null, "Error loading shipments"))
-    );
-  }
-
-  return {
-    shipments: shipments.data ?? [],
-    count: shipments.count ?? 0
-  };
 }
 
 export default function ShipmentsRoute() {
-  const { shipments, count } = useLoaderData<typeof loader>();
+  const { shipments, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ShipmentsTable data={shipments} count={count ?? 0} />
+      <ShipmentsTable data={shipments} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

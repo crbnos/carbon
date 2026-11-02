@@ -4,10 +4,15 @@
 
 import { TiptapText } from "@carbon/files/markdown";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import {
+  booleanField,
+  jsonInput,
   normalizeOperationSourceIds,
+  operationStepValidator,
   optionalPlainTextDoc,
   optionalTiptapDoc,
+  requiredTiptapDoc,
   toTiptapDoc
 } from "./shared.models";
 
@@ -237,5 +242,110 @@ describe("normalizeOperationSourceIds", () => {
     expect(
       normalizeOperationSourceIds({ operationType: "Process" })
     ).not.toHaveProperty("workCenterId");
+  });
+});
+
+// A List step needs at least one option. The error must sit on `listValues`,
+// the field the step forms render: on any other path the form refused the save
+// with no message. Blank rows are dropped first, so the empty row "Add option"
+// leaves behind never blocks a save and is never stored.
+describe("operationStepValidator list options", () => {
+  const listStep = (listValues?: string[]) => ({
+    operationId: "op1",
+    name: "Pick a finish",
+    description: "Choose one",
+    type: "List" as const,
+    listValues
+  });
+
+  const listValuesError = (listValues?: string[]) => {
+    const result = operationStepValidator.safeParse(listStep(listValues));
+    if (result.success) return undefined;
+    return result.error.issues.find(
+      (issue) => issue.path.join(".") === "listValues"
+    )?.message;
+  };
+
+  it("puts the missing-options error on the listValues field", () => {
+    expect(listValuesError(undefined)).toBe("List options are required");
+    expect(listValuesError([])).toBe("List options are required");
+  });
+
+  it("treats a list of blank rows as no options", () => {
+    expect(listValuesError(["", "  "])).toBe("List options are required");
+  });
+
+  it("drops a trailing empty row instead of refusing the save", () => {
+    const result = operationStepValidator.safeParse(
+      listStep(["Matte", "Gloss", ""])
+    );
+    expect(result.success).toBe(true);
+    expect(result.data?.listValues).toEqual(["Matte", "Gloss"]);
+  });
+
+  it("does not require options on other step types", () => {
+    expect(
+      operationStepValidator.safeParse({ ...listStep(), type: "Task" }).success
+    ).toBe(true);
+  });
+});
+
+// An API caller sends JSON values; a form sends text. Each input helper takes
+// both and gives the code the same value.
+
+describe("requiredTiptapDoc", () => {
+  it("stores Markdown text and a document alike as a document", () => {
+    expect(requiredTiptapDoc.parse("hi")).toEqual(doc);
+    expect(requiredTiptapDoc.parse(doc)).toEqual(doc);
+  });
+
+  it("reads a document sent as JSON text as that document", () => {
+    expect(requiredTiptapDoc.parse(JSON.stringify(doc))).toEqual(doc);
+  });
+
+  it("refuses an empty value", () => {
+    expect(requiredTiptapDoc.safeParse("  ").success).toBe(false);
+    expect(requiredTiptapDoc.safeParse(undefined).success).toBe(false);
+  });
+});
+
+describe("jsonInput", () => {
+  const schema = z.object({
+    configuration: jsonInput(
+      z.record(z.string(), z.any()).nullable().optional()
+    )
+  });
+
+  it("takes the value itself or the form's JSON text", () => {
+    expect(schema.parse({ configuration: { size: 2 } })).toEqual({
+      configuration: { size: 2 }
+    });
+    expect(schema.parse({ configuration: '{"size":2}' })).toEqual({
+      configuration: { size: 2 }
+    });
+  });
+
+  it("reads empty text as no value", () => {
+    expect(schema.parse({ configuration: "" })).toEqual({});
+  });
+
+  it("refuses text that is not the value", () => {
+    expect(schema.safeParse({ configuration: "size=2" }).success).toBe(false);
+  });
+});
+
+describe("booleanField", () => {
+  it.each([
+    [true, true],
+    [false, false],
+    ["true", true],
+    ["false", false]
+  ])("reads %s as %s", (value, expected) => {
+    expect(booleanField().parse(value)).toBe(expected);
+  });
+
+  it("refuses anything else", () => {
+    expect(booleanField().safeParse("yes").success).toBe(false);
+    expect(booleanField().safeParse(undefined).success).toBe(false);
   });
 });

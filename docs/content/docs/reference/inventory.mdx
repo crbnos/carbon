@@ -9,6 +9,8 @@ Carbon stores stock at a **location** and, optionally, in a **storage unit**. On
 
 A **location** is a site or warehouse. **Storage units** are nested bins or shelves within a location, such as aisle › shelf › bin, and can be typed as cold, hazardous, or returns. A storage unit attached to a work center is a **lineside** bin for point-of-use material; other storage units are warehouse bins.
 
+A storage unit or storage type can be marked **<Term id="non-nettable">non-nettable</Term>**, for a quarantine or hold area. A unit is non-nettable when it is marked itself, when one of its storage types is, or when the unit it sits in is. Its stock stays on hand and keeps its value, but MRP and the planning screens do not count it as supply, and picking lists never take from it. Backflush and issue take from it only when that bin is chosen. A stock transfer moves the stock out again.
+
 ## On hand is a ledger
 
 The **<Term id="item-ledger">item ledger</Term>** is the source of truth. On-hand is the sum of its signed movements: <Term id="receipt">receipts</Term> and outputs add, sales and consumption subtract, transfers move between places. A cached per-location quantity exists for quick reads, but the ledger is what's authoritative.

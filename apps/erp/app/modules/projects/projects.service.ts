@@ -119,6 +119,8 @@ import {
 import {
   type GenericQueryFilters,
   LIST_COUNT,
+  listCount,
+  type Paging,
   setGenericQueryFilters
 } from "~/utils/query";
 import { ruleError, sanitize } from "~/utils/supabase";
@@ -333,6 +335,10 @@ export async function getProjectSwitcherOptions(
     .limit(200);
 }
 
+export const PROJECTS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 /**
  * Lists the active projects of the company.
  */
@@ -350,7 +356,7 @@ export async function getProjects(
     .from("project")
     .select(
       "id, name, identifier, description, status, costTreatment, costAccountId, customerId, ownerId, locationId, startDate, endDate, priority, isTemplate, active, createdAt, createdBy, updatedAt, updatedBy",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId)
     .eq("active", true);
@@ -373,9 +379,7 @@ export async function getProjects(
     query = query.eq("ownerId", args.ownerId);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PROJECTS_PAGING);
 
   return query;
 }

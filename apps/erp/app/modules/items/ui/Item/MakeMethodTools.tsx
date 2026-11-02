@@ -7,6 +7,7 @@ import { Number, SelectControlled, Submit, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   Alert,
+  AlertDescription,
   AlertTitle,
   Badge,
   Button,
@@ -54,6 +55,7 @@ import {
   LuGitFork,
   LuGitMerge,
   LuGitPullRequestArrow,
+  LuInfo,
   LuStar,
   LuTriangleAlert
 } from "react-icons/lu";
@@ -69,6 +71,7 @@ import {
   getMethodValidator,
   makeMethodVersionValidator
 } from "../../items.models";
+import type { ChangeNoticeForItem } from "../../items.service";
 import type { MakeMethod } from "../../types";
 import {
   CreateChangeNoticeModal,
@@ -134,6 +137,16 @@ const MakeMethodTools = ({
 
   const activeMethod =
     makeMethods.find((m) => m.id === activeMethodId) ?? makeMethods[0];
+
+  // New jobs take the Active version over any Draft (`activeMakeMethods`), so
+  // edits to a Draft reach them only once it is made Active. Like that view,
+  // take the highest Active version if more than one is Active.
+  const liveMethod =
+    activeMethod.status === "Draft"
+      ? makeMethods
+          .filter((m) => m.status === "Active" && m.id !== activeMethod.id)
+          .sort((a, b) => b.version - a.version)[0]
+      : undefined;
 
   const maxVersion = Math.max(...makeMethods.map((m) => m.version));
   const [selectedVersion, setSelectedVersion] =
@@ -310,6 +323,11 @@ const MakeMethodTools = ({
                         <ItemChangeNoticeLock
                           changeNotices={openChangeNotices}
                           isLocked={isChangeNoticeLocked}
+                          reason={
+                            <ActiveVersionLockReason
+                              changeNotices={openChangeNotices}
+                            />
+                          }
                         >
                           <DropdownMenuItem
                             disabled={
@@ -417,6 +435,26 @@ const MakeMethodTools = ({
           )}
         </HStack>
       </Menubar>
+
+      {liveMethod && (
+        <DraftMethodNotice
+          draftVersion={activeMethod.version}
+          activeVersion={liveMethod.version}
+          isDisabled={
+            !permissions.can("update", "parts") || isChangeNoticeLocked
+          }
+          lock={{
+            changeNotices: openChangeNotices,
+            isLocked: isChangeNoticeLocked
+          }}
+          onMakeActive={() => {
+            flushSync(() => {
+              setSelectedVersion(activeMethod);
+            });
+            activeMethodModal.onOpen();
+          }}
+        />
+      )}
 
       {getMethodModal.isOpen && (
         <Modal
@@ -707,6 +745,87 @@ const MakeMethodTools = ({
     </Fragment>
   );
 };
+
+// Shown on a Draft version while another version is Active: new jobs are made
+// from the Active one, so nothing edited here reaches them yet.
+function DraftMethodNotice({
+  draftVersion,
+  activeVersion,
+  isDisabled,
+  lock,
+  onMakeActive
+}: {
+  draftVersion: number;
+  activeVersion: number;
+  isDisabled: boolean;
+  lock: { changeNotices: ChangeNoticeForItem[]; isLocked: boolean };
+  onMakeActive: () => void;
+}) {
+  return (
+    <Alert variant="info">
+      <LuInfo />
+      <AlertTitle>
+        <Trans>New jobs use version {activeVersion}</Trans>
+      </AlertTitle>
+      <AlertDescription>
+        <Trans>
+          You are editing draft version {draftVersion}. Its changes reach new
+          jobs once it is the Active version.
+        </Trans>
+        <div className="mt-2">
+          <ItemChangeNoticeLock
+            changeNotices={lock.changeNotices}
+            isLocked={lock.isLocked}
+            className="w-fit"
+            reason={
+              <ActiveVersionLockReason changeNotices={lock.changeNotices} />
+            }
+          >
+            <Button
+              size="sm"
+              variant="secondary"
+              leftIcon={<LuStar />}
+              isDisabled={isDisabled}
+              onClick={onMakeActive}
+            >
+              <Trans>Make Active</Trans>
+            </Button>
+          </ItemChangeNoticeLock>
+        </div>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+// Why the active version can't change: the lock's default wording is about
+// creating new versions, which is not what Make Active does.
+function ActiveVersionLockReason({
+  changeNotices
+}: {
+  changeNotices: ChangeNoticeForItem[];
+}) {
+  const ids = changeNotices.map((co) => co.changeOrderId).join(", ");
+  if (changeNotices.length === 0) {
+    return (
+      <Trans>
+        Change notices could not be loaded, so the active version cannot be
+        changed. Reload to try again.
+      </Trans>
+    );
+  }
+  if (changeNotices.length === 1) {
+    return (
+      <Trans>
+        Open in change notice {ids}. Release it to change the active version.
+      </Trans>
+    );
+  }
+  return (
+    <Trans>
+      Open in change notices {ids}. Release them to change the active version.
+    </Trans>
+  );
+}
 
 function AdvancedSection({
   onChange

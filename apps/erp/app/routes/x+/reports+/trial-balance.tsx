@@ -19,6 +19,7 @@ import {
   getFiscalYearSettings,
   translateCompanyBalances
 } from "~/modules/accounting/accounting.service";
+import { selectReportCompanyIds } from "~/modules/accounting/accounting.utils";
 import type { Chart } from "~/modules/accounting/types";
 import {
   exportTrialBalance,
@@ -29,14 +30,14 @@ import { months } from "~/modules/shared/shared.models";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { revalidateIgnoringOffset } from "~/utils/revalidate";
+import { revalidateOnSearchChange } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Trial Balance`,
   to: path.to.trialBalance
 };
 
-export const shouldRevalidate = revalidateIgnoringOffset;
+export const shouldRevalidate = revalidateOnSearchChange;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -82,18 +83,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const parentCompany = companiesList.find((c) => !c.parentCompanyId);
   const parentCurrency = parentCompany?.baseCurrencyCode ?? null;
 
-  const selectedCompanyIds =
-    companiesParam === "all"
-      ? companiesList.map((c) => c.id)
-      : companiesParam
-        ? [companiesParam]
-        : [companyId];
-  if (
-    selectedCompanyIds.length === 0 ||
-    selectedCompanyIds.some(
-      (id) => !companiesList.some((company) => company.id === id)
-    )
-  ) {
+  const selectedCompanyIds = selectReportCompanyIds(
+    companiesParam,
+    companiesList.map((c) => c.id),
+    companyId
+  );
+  if (!selectedCompanyIds) {
     throw new Response("Company not found", { status: 404 });
   }
   const isMultiCompany = selectedCompanyIds.length > 1;

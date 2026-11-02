@@ -15,6 +15,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData, useUser } from "~/hooks";
+import { isSalesInvoiceLocked } from "~/modules/invoicing/invoicing.models";
 import {
   getInvoiceSettlementsForInvoice,
   getSalesInvoice
@@ -57,13 +58,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     internalNotes: (invoice.data?.internalNotes ?? {}) as JSONContent,
+    externalNotes: (invoice.data?.externalNotes ?? {}) as JSONContent,
     paymentApplications: applications.data ?? []
   };
 }
 
 export default function SalesInvoiceBasicRoute() {
   const { t } = useLingui();
-  const { internalNotes, paymentApplications } = useLoaderData<typeof loader>();
+  const { internalNotes, externalNotes, paymentApplications } =
+    useLoaderData<typeof loader>();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("invoiceId not found");
 
@@ -109,7 +112,9 @@ export default function SalesInvoiceBasicRoute() {
         id={invoiceId}
         title={t`Notes`}
         table="salesInvoice"
+        isReadOnly={isSalesInvoiceLocked(salesInvoice.status)}
         internalNotes={internalNotes}
+        externalNotes={externalNotes}
       />
       {/* Documents live under the opportunity's storage folder, so an
           invoice without one has nowhere to keep them. */}

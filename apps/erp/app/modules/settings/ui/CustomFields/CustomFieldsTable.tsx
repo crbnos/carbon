@@ -18,6 +18,7 @@ import { LuDatabase, LuLayoutGrid, LuList, LuTags } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { modulesType } from "~/modules/settings/settings.models";
 import type { CustomFieldsTableType } from "~/modules/settings/types";
@@ -27,9 +28,11 @@ import { path } from "~/utils/path";
 type CustomFieldsTableProps = {
   data: CustomFieldsTableType[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
+const CustomFieldsTable = memo((props: CustomFieldsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const [params] = useUrlParams();
@@ -139,6 +142,8 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
         data={data}
         columns={columns}
         count={count ?? 0}
+        infinite={infinite}
+        getRowId={(row) => String(row.table)}
         title={t`Custom Fields`}
         renderContextMenu={renderContextMenu}
       />

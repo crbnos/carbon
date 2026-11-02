@@ -83,7 +83,7 @@ const InventoryDetails = ({
   const valueClassName = cn(
     "text-4xl font-medium tracking-tighter",
     isQuantity &&
-      "max-md:truncate max-md:text-[26px] max-md:font-semibold max-md:tracking-tight max-md:tabular-nums"
+      "max-md:truncate max-md:text-[1.625rem] max-md:font-semibold max-md:tracking-tight max-md:tabular-nums"
   );
 
   return (

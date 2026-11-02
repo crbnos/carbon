@@ -5,6 +5,7 @@
 import { resolveDate, resolveTimestamp } from "../dates.ts";
 import { inspectionPlan } from "../helpers/inspection.ts";
 import { addBomLine, addBopOperation, createItem } from "../helpers/items.ts";
+import { allItemSpecs } from "../item-tables.ts";
 import { insertId, insertRow, need, one, rows } from "../sql.ts";
 import type {
   AssemblySpec,
@@ -351,18 +352,9 @@ export async function runTier2(ctx: Ctx): Promise<void> {
   // its BOM/BOP in the app). The rungs share its readableId and stay out of
   // ctx.refs.items so later tiers keep resolving the active revision.
   ctx.log("revision ladder");
-  const allItemSpecs = [
-    ...data.buyParts,
-    ...data.materials,
-    ...data.consumables,
-    ...data.tools,
-    ...data.services,
-    ...data.makeParts
-  ];
+  const itemSpecs = allItemSpecs(data);
   for (const ladder of data.revisionLadder) {
-    const baseSpec = allItemSpecs.find(
-      (spec) => spec.readableId === ladder.item
-    );
+    const baseSpec = itemSpecs.find((spec) => spec.readableId === ladder.item);
     if (!baseSpec) {
       throw new Error(
         `Seed: revisionLadder item "${ladder.item}" is not a seeded item spec`

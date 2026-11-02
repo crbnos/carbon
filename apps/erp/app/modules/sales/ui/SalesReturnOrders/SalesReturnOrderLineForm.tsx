@@ -23,7 +23,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  toast,
+  toastError,
   useMount
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP, suggestCoverage } from "@carbon/utils";
@@ -212,7 +212,7 @@ const SalesReturnOrderLineForm = ({
       .limit(500)
       .then(({ data, error }) => {
         if (error) {
-          toast.error(t`Failed to load customer assets`);
+          toastError(t`Failed to load customer assets`, error);
           return;
         }
         setAssets(
@@ -250,7 +250,7 @@ const SalesReturnOrderLineForm = ({
       .order("name")
       .then(({ data, error }) => {
         if (error) {
-          toast.error(t`Failed to load return reasons`);
+          toastError(t`Failed to load return reasons`, error);
           return;
         }
         setReasons(data ?? []);
@@ -311,7 +311,7 @@ const SalesReturnOrderLineForm = ({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item data`);
+      toastError(t`Failed to load item data`, item.error);
       return;
     }
 

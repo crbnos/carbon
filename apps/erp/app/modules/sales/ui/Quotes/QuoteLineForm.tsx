@@ -25,7 +25,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -212,7 +212,7 @@ const QuoteLineForm = ({
       .maybeSingle();
 
     if (customerPart.error) {
-      toast.error(t`Failed to load customer part details`);
+      toastError(t`Failed to load customer part details`, customerPart.error);
       return;
     }
 
@@ -234,7 +234,7 @@ const QuoteLineForm = ({
       .maybeSingle();
 
     if (customerPart.error) {
-      toast.error(t`Failed to load customer part details`);
+      toastError(t`Failed to load customer part details`, customerPart.error);
       return;
     }
 
@@ -269,7 +269,7 @@ const QuoteLineForm = ({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 
@@ -312,7 +312,10 @@ const QuoteLineForm = ({
       ]);
 
       if (parameters.error || groups.error) {
-        toast.error(t`Failed to load configuration parameters`);
+        toastError(
+          t`Failed to load configuration parameters`,
+          parameters.error ?? groups.error
+        );
         return;
       }
 

@@ -14,11 +14,29 @@ const logger = getLogger("ee", "onshape", "panel");
  */
 export type OnshapeFailure = {
   status: 404 | 422 | 429 | 502 | 504;
-  body: { error: string; retryAfterSeconds?: number };
+  body: {
+    error: string;
+    retryAfterSeconds?: number;
+    diagnostics: OnshapeFailureDiagnostics;
+  };
 };
 
 /** A BOM read gets its own timeout wording: Onshape builds BOMs on demand. */
 export type OnshapeRead = "bom" | "other";
+
+/**
+ * What Onshape answered, for the panel's Details. Onshape's own `message`, never
+ * its raw body.
+ */
+export type OnshapeFailureDiagnostics = {
+  read: OnshapeRead;
+  /** The Onshape origin Carbon called, from `OnshapeApiError.apiOrigin`. */
+  onshapeApi: string | null;
+  onshapeStatus: number | null;
+  onshapeMessage: string | null;
+  /** No response at all: the client's own description (timeout, network). */
+  transport: string | null;
+};
 
 export function onshapeFailure(
   error: unknown,
@@ -29,6 +47,17 @@ export function onshapeFailure(
   const status =
     typeof apiError?.status === "number" ? apiError.status : undefined;
   const message = error instanceof Error ? error.message : String(error);
+  const diagnostics: OnshapeFailureDiagnostics = {
+    read,
+    onshapeApi:
+      typeof apiError?.apiOrigin === "string" ? apiError.apiOrigin : null,
+    onshapeStatus: status ?? null,
+    onshapeMessage:
+      typeof apiError?.onshapeMessage === "string"
+        ? apiError.onshapeMessage.slice(0, 500)
+        : null,
+    transport: status === undefined ? message.slice(0, 300) : null
+  };
   logger.warn("Onshape call failed", { read, status, message });
 
   if (status === undefined) {
@@ -37,6 +66,7 @@ export function onshapeFailure(
       return {
         status: 504,
         body: {
+          diagnostics,
           error:
             read === "bom"
               ? "Onshape is still building this BOM. It can take a minute the first time — try again shortly."
@@ -47,6 +77,7 @@ export function onshapeFailure(
     return {
       status: 502,
       body: {
+        diagnostics,
         error: "Carbon couldn't reach Onshape. Try again."
       }
     };
@@ -60,6 +91,7 @@ export function onshapeFailure(
     return {
       status: 429,
       body: {
+        diagnostics,
         error: `Onshape is rate-limiting this connection. Try again in ${
           retryAfterSeconds ?? 60
         } seconds.`,
@@ -72,6 +104,7 @@ export function onshapeFailure(
     return {
       status: 422,
       body: {
+        diagnostics,
         error:
           "Onshape rejected Carbon's connection. Reconnect Onshape in Carbon's integration settings."
       }
@@ -82,6 +115,7 @@ export function onshapeFailure(
     return {
       status: 404,
       body: {
+        diagnostics,
         error: "That Onshape document, version or element no longer exists."
       }
     };
@@ -93,6 +127,7 @@ export function onshapeFailure(
     return {
       status: 502,
       body: {
+        diagnostics,
         error:
           "Onshape refused the request: the yearly API limit for Carbon's Onshape app is used up. Ask your Carbon administrator to raise it with Onshape."
       }
@@ -102,6 +137,7 @@ export function onshapeFailure(
   return {
     status: 502,
     body: {
+      diagnostics,
       error: `Onshape returned an error (HTTP ${status}). Try again; if it keeps happening, contact support.`
     }
   };

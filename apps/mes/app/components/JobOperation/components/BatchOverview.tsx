@@ -62,9 +62,11 @@ import { TableSkeleton } from "./TableSkeleton";
 
 type ItemType = Parameters<typeof ItemThumbnail>[0]["type"];
 
-// The batch as the unit of work: aggregated quantities, the one shared pick
-// per material, where the output lands, and every member job. Rendered by
-// JobOperation in place of the per-job details when the "Batch" scope is on.
+/**
+ * The batch as the unit of work: aggregated quantities, the one shared pick
+ * per material, where the output lands, and every member job. Rendered by
+ * JobOperation in place of the per-job details when the "Batch" scope is on.
+ */
 export function BatchOverview({
   batch,
   totals,
@@ -151,23 +153,39 @@ export function BatchOverview({
       return next;
     });
 
+  // The planner's notes from the batch builder: plain text, shown before the
+  // steps on Instructions, and before the load list on Details, the tab the
+  // batch opens on, so an operator who loads and starts from Details reads them.
+  const notes = batch.notes?.trim() ? batch.notes : null;
+  /** The notes as a section of this tab, or nothing when there are none. */
+  const notesSection = (divider: boolean) =>
+    notes && (
+      <Section divider={divider} title={t`Batch notes`}>
+        <div className="prose dark:prose-invert whitespace-pre-wrap break-words">
+          {notes}
+        </div>
+      </Section>
+    );
+
   if (view === "instructions") {
     return (
       <>
+        {notesSection(false)}
         {workInstructions && (
           <Suspense fallback={<TableSkeleton />}>
             <Await resolve={workInstructions}>
               {(resolved) => (
                 <>
                   {resolved.steps.length === 0 &&
-                    resolved.parameters.length === 0 && (
+                    resolved.parameters.length === 0 &&
+                    !notes && (
                       <p className="p-6 text-sm text-muted-foreground">
                         <Trans>This batch has no work instructions.</Trans>
                       </p>
                     )}
                   {resolved.steps.length > 0 && (
                     <Section
-                      divider={false}
+                      divider={Boolean(notes)}
                       title={t`Work instructions`}
                       description={t`Every job in the batch follows these steps. Record a step for all of them at once.`}
                     >
@@ -458,6 +476,8 @@ export function BatchOverview({
           </Card>
         </div>
       </div>
+
+      {notesSection(true)}
 
       {/* Always shown in batch mode so the operator can see the jobs, parts
           and quantities that belong in the run — a laser nest or an oven load

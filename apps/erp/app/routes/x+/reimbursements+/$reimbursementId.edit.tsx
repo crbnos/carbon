@@ -104,15 +104,21 @@ export async function action(args: ActionFunctionArgs) {
     ? await api.invoicing.saveAndPostReimbursement(reimbursement)
     : await api.invoicing.saveReimbursement(reimbursement);
   // A refusal keeps the editor and what was typed in it.
-  if (result.error) return stay(args.request, result.error.message);
+  if (result.error) {
+    return stay(
+      args.request,
+      result.error.title ?? result.error.message,
+      result.error
+    );
+  }
   return respond(args.request, result).redirect(
     path.to.reimbursement(reimbursementId),
     { message: willPost ? "Reimbursement posted" : "Reimbursement updated" }
   );
 }
 
-async function stay(request: Request, message: string) {
-  return data({}, await flash(request, error(null, message)));
+async function stay(request: Request, message: string, cause: unknown = null) {
+  return data({}, await flash(request, error(cause, message)));
 }
 
 function generateKey() {

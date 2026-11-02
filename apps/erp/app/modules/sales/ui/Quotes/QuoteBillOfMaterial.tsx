@@ -25,6 +25,7 @@ import {
   IconButton,
   Label,
   toast,
+  toastError,
   useDebounce,
   useDisclosure
 } from "@carbon/react";
@@ -662,7 +663,7 @@ function MaterialForm({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 

@@ -6,15 +6,15 @@ import type { ServiceContext } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { datetime, searchFilter } from "@carbon/utils";
+import { datetime, requireAffected, searchFilter } from "@carbon/utils";
 import { getDayOfWeek, parseAbsolute, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { DataType } from "~/modules/shared/types";
 import type { Employee } from "~/modules/users/types";
 import { getEmployees } from "~/modules/users/users.service";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   departmentValidator,
@@ -27,34 +27,44 @@ export async function deleteAttribute(
   client: SupabaseClient<Database>,
   attributeId: string
 ) {
-  return client
-    .from("userAttribute")
-    .update({ active: false })
-    .eq("id", attributeId);
+  return requireAffected(
+    client
+      .from("userAttribute")
+      .update({ active: false })
+      .eq("id", attributeId)
+      .select("id")
+  );
 }
 
 export async function deleteAttributeCategory(
   client: SupabaseClient<Database>,
   attributeCategoryId: string
 ) {
-  return client
-    .from("userAttributeCategory")
-    .update({ active: false })
-    .eq("id", attributeCategoryId);
+  return requireAffected(
+    client
+      .from("userAttributeCategory")
+      .update({ active: false })
+      .eq("id", attributeCategoryId)
+      .select("id")
+  );
 }
 
 export async function deleteDepartment(
   client: SupabaseClient<Database>,
   departmentId: string
 ) {
-  return client.from("department").delete().eq("id", departmentId);
+  return requireAffected(
+    client.from("department").delete().eq("id", departmentId).select("id")
+  );
 }
 
 export async function deleteHoliday(
   client: SupabaseClient<Database>,
   holidayId: string
 ) {
-  return client.from("holiday").delete().eq("id", holidayId);
+  return requireAffected(
+    client.from("holiday").delete().eq("id", holidayId).select("id")
+  );
 }
 
 export async function deleteShift(
@@ -62,7 +72,13 @@ export async function deleteShift(
   shiftId: string
 ) {
   // TODO: Set all employeeShifts to null
-  return client.from("shift").update({ active: false }).eq("id", shiftId);
+  return requireAffected(
+    client
+      .from("shift")
+      .update({ active: false })
+      .eq("id", shiftId)
+      .select("id")
+  );
 }
 
 export async function getAttribute(
@@ -99,6 +115,10 @@ async function getAttributes(
     .order("sortOrder", { foreignTable: "userAttribute", ascending: true });
 }
 
+export const ATTRIBUTE_CATEGORIES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getAttributeCategories(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -107,7 +127,7 @@ export async function getAttributeCategories(
   let query = client
     .from("userAttributeCategory")
     .select("*, userAttribute(id, name, attributeDataType(id))", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true)
@@ -118,9 +138,7 @@ export async function getAttributeCategories(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, ATTRIBUTE_CATEGORIES_PAGING);
   }
 
   return query;
@@ -239,6 +257,10 @@ export async function getHoliday(
   return client.from("holiday").select("*").eq("id", holidayId).single();
 }
 
+export const HOLIDAYS_PAGING: Paging = {
+  defaultSorts: [{ column: "date", ascending: true }]
+};
+
 export async function getHolidays(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -247,7 +269,7 @@ export async function getHolidays(
   let query = client
     .from("holiday")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -256,9 +278,7 @@ export async function getHolidays(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "date", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, HOLIDAYS_PAGING);
   }
 
   return query;
@@ -408,6 +428,10 @@ export async function getShift(
     .single();
 }
 
+export const SHIFTS_PAGING: Paging = {
+  defaultSorts: [{ column: "locationId", ascending: true }]
+};
+
 export async function getShifts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -416,7 +440,7 @@ export async function getShifts(
   let query = client
     .from("shifts")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -425,9 +449,7 @@ export async function getShifts(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "locationId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SHIFTS_PAGING);
   return query;
 }
 
@@ -483,6 +505,25 @@ export async function getShiftsWithTimes(
     .eq("locationId", locationId)
     .eq("active", true)
     .order("name");
+}
+
+/**
+ * Active shifts by id, with their times. A work center can be linked to a
+ * shift of another location, which `getShiftsWithTimes` does not return.
+ */
+export async function getShiftsWithTimesByIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  shiftIds: string[]
+) {
+  return client
+    .from("shift")
+    .select(
+      "id, name, startTime, endTime, monday, tuesday, wednesday, thursday, friday, saturday, sunday"
+    )
+    .eq("companyId", companyId)
+    .in("id", shiftIds)
+    .eq("active", true);
 }
 
 export async function insertAttribute(
@@ -553,17 +594,20 @@ export async function updateAttribute(
   }
 ) {
   if (!attribute.id) throw new Error("id is required");
-  return client
-    .from("userAttribute")
-    .update(
-      sanitize({
-        name: attribute.name,
-        listOptions: attribute.listOptions,
-        canSelfManage: attribute.canSelfManage,
-        updatedBy: attribute.updatedBy
-      })
-    )
-    .eq("id", attribute.id);
+  return requireAffected(
+    client
+      .from("userAttribute")
+      .update(
+        sanitize({
+          name: attribute.name,
+          listOptions: attribute.listOptions,
+          canSelfManage: attribute.canSelfManage,
+          updatedBy: attribute.updatedBy
+        })
+      )
+      .eq("id", attribute.id)
+      .select("id")
+  );
 }
 
 export async function updateAttributeCategory(
@@ -577,10 +621,13 @@ export async function updateAttributeCategory(
   }
 ) {
   const { id, ...update } = attributeCategory;
-  return client
-    .from("userAttributeCategory")
-    .update(sanitize(update))
-    .eq("id", id);
+  return requireAffected(
+    client
+      .from("userAttributeCategory")
+      .update(sanitize(update))
+      .eq("id", id)
+      .select("id")
+  );
 }
 
 export async function updateAttributeSortOrder(
@@ -877,17 +924,20 @@ export async function clockOut(
     };
   }
 
-  return client
-    .from("timeCardEntry")
-    .update(
-      sanitize({
-        clockOut: at,
-        note: args.note,
-        updatedBy: args.updatedBy,
-        updatedAt: datetime.timestamp()
-      })
-    )
-    .eq("id", open.data.id);
+  return requireAffected(
+    client
+      .from("timeCardEntry")
+      .update(
+        sanitize({
+          clockOut: at,
+          note: args.note,
+          updatedBy: args.updatedBy,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .eq("id", open.data.id)
+      .select("id")
+  );
 }
 
 export async function createTimeCardEntry(
@@ -912,7 +962,9 @@ export async function deleteTimeCardEntry(
   client: SupabaseClient<Database>,
   entryId: string
 ) {
-  return client.from("timeCardEntry").delete().eq("id", entryId);
+  return requireAffected(
+    client.from("timeCardEntry").delete().eq("id", entryId).select("id")
+  );
 }
 
 export async function getClockedInEmployees(
@@ -1018,6 +1070,10 @@ export async function getTimeCardEntries(
   return query;
 }
 
+export const TIMECARD_ENTRIES_PAGING: Paging = {
+  defaultSorts: [{ column: "clockIn", ascending: false }]
+};
+
 export async function getTimecardEntries(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1025,16 +1081,14 @@ export async function getTimecardEntries(
 ) {
   let query = client
     .from("timeCardEntries")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.or(searchFilter(["firstName", "lastName"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "clockIn", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, TIMECARD_ENTRIES_PAGING);
 
   return query;
 }
@@ -1102,18 +1156,21 @@ export async function updateTimeCardEntry(
     updatedBy: string;
   }
 ) {
-  return client
-    .from("timeCardEntry")
-    .update(
-      sanitize({
-        clockIn: args.clockIn,
-        clockOut: args.clockOut,
-        note: args.note,
-        updatedBy: args.updatedBy,
-        updatedAt: datetime.timestamp()
-      })
-    )
-    .eq("id", args.entryId);
+  return requireAffected(
+    client
+      .from("timeCardEntry")
+      .update(
+        sanitize({
+          clockIn: args.clockIn,
+          clockOut: args.clockOut,
+          note: args.note,
+          updatedBy: args.updatedBy,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .eq("id", args.entryId)
+      .select("id")
+  );
 }
 /**
  * A time card helper's refusal ("Already clocked in") carries no database

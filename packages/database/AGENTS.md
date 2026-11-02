@@ -8,7 +8,7 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 - Tables: composite PK `("id", "companyId")`, `id` default `id()` or `id('prefix')` — never raw UUID. Audit columns (`createdBy`/`createdAt`/`updatedBy`/`updatedAt`) with inline `REFERENCES "user"("id")`.
 - RLS: every public table's policies are a rule in `src/authz/manifest.ts` (usually `company("<module>")` — the four standard policies) and the RLS helpers are `src/authz/helpers/<name>.sql`. `pnpm db:migrate` syncs them locally; `pnpm --filter @carbon/database authz migration <name>` ships them to production (`migration.test.ts` fails until it does). See `.claude/rules/authz-manifest.md`.
 - Event-system functions (dispatch, subscriptions, queue wake-up, audit log, search index, embeddings) are one file each in `src/event-system/functions/` (`<name>.sql`, `util.<name>.sql` for the `util` schema), synced and shipped by the same `authz sync` / `authz migration` commands. Edit the file; never redefine one in a migration.
-- Import `Database` type from `@carbon/database`; `KyselyDatabase` / `Kysely` from `@carbon/database/client`. Never hand-edit `src/types.ts` — it's generated.
+- Import `Database` type from `@carbon/database`; `KyselyDatabase` / `Kysely` from `@carbon/database/client`. A function that may be handed a transaction runs its writes through `withTransaction(db, fn)` from the same file: it joins the transaction `db` already is, else opens one (Kysely refuses `transaction()` on a `Transaction`). Never hand-edit `src/types.ts` — it's generated.
 - `scriptRun` is a deliberate exception to the table conventions above: no `companyId`, no
   composite PK, SELECT-only RLS. It is the per-database ledger of one-off scripts that
   `ci/src/migrations.ts` runs after `supabase db push` — see `scripts/one-off/README.md`.
@@ -17,7 +17,12 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
   `PRIMARY KEY ("id")` and no `createdBy`/`updatedBy`. A row belongs to one user and only that
   user writes it, so the audit columns would always repeat `userId`. They keep `companyId`
   (FK, `ON DELETE CASCADE`) for tenant attribution and the RLS rule `owner("userId")` +
-  `member("companyId")`. `pushSubscription` is unique per browser `endpoint`, not per company
+  `member("companyId")`. `notificationPreference.companyId` is NULL for an account-level topic
+  (only the changelog newsletter, `getNotificationTopicScope` in `@carbon/notifications`): one
+  row per user, unique `NULLS NOT DISTINCT`, RLS `owner("userId")` alone for that row. No CHECK
+  names the topics: `getNotificationTopicScope` is the only place that decides, and every reader
+  and writer goes through `notificationPreferenceCompanyId`, so a row stored under the wrong scope
+  (a per-company newsletter row from an older backup) is never read. `pushSubscription` is unique per browser `endpoint`, not per company
   (one browser, one owner); see `.ai/specs/2026-10-08-web-push-notifications.md`.
   It is intentionally NOT tenant-scoped so `selectWipeableTables` (company-backup.ts) cannot
   select it and a company restore cannot erase it. A migration landing in this package is
@@ -99,7 +104,8 @@ pnpm --filter @carbon/database authz migration <name>   # ship unshipped rules/h
 | `./legacy-documents` | Server-only. The one detection of legacy documents (`.ai/specs/implemented/2026-10-08-accounting-cutover.md` section 5a): posted, dated on or after the cutover, with no journal. Each function (`legacySalesInvoices`, `legacyPayments`, `legacyShipments`, `legacyAdjustmentCostRows`, `legacyJobMovements`, `legacyDepreciationRunLines`, …) returns a Kysely query, not rows: `activateAccounting` (`accounting.service.ts`, ported from the `activate-accounting` server function) executes it, and `getLegacyDocumentCounts` (`./accounting-cutover-reads`) counts the same rows for the wizard. Also `LEGACY_DOCUMENT_FAMILIES` (the families in the order the enable writes them), `LegacyDocumentCounts`, `assetsLeavingWithoutJournal` and `REBUILT_DISPOSAL_METHOD` |
 | `./timesheet-readiness` | Server-only. `getTimesheetCloseReadiness(db, { companyId, startDate, endDate })` — the "Timesheets complete" close check (Government Contracting 5a): in DCAA mode, the entries dated in the period that are not Posted (`OPEN_TIMESHEET_STATUSES`) plus the days `get_missing_timesheet_days` lists; Standard mode passes. It reads with the privileged Kysely client, so the count does not depend on the closing user's `people` / `projects` access. Called by `computePeriodReadiness` (ERP `accounting.service.ts`), pinned by `timesheet-readiness.test.ts` against the local database |
 | `./deposit-scope` | `loadSalesInvoiceDocumentIds` (the rental agreements / sales orders each sales invoice bills, one query) and `loadDepositScope` (a deposit payment's document + readable id) — the reads behind "a customer deposit funds only its own document", shared by `replaceInvoiceSettlements` and `post-payment` |
-| `./sequence` | `getNextSequences` (`count` numbers in one statement; `getNextSequence` is its count-of-one) / `getNextRevisionSequence` / `getNextSerialNumbers` — the one allocator for document and serial numbers (date tokens in the company timezone) |
+| `./sequence` | `getNextSequences` (`count` numbers in one statement; `getNextSequence` is its count-of-one) / `getNextRevisionSequence` — document numbers, formatted in TypeScript (date tokens in the company timezone). `getNextSerialNumbers` — serial numbers, a wrapper over SQL `get_next_serial_numbers`, which formats them so the job completion in SQL and TypeScript callers agree. Serial number timing: `getSerialNumberTiming` (the item's, else the company's), `resolveSerialNumberTiming` (the same from an item value already read), `assignSerialNumberIfMissing` (first-touch numbering of one unit), `getSpawnSerialNumber` (the number for a spawned unit, null under `production`) |
+| `./serial-number-timing` | Client-safe. `serialNumberTimings`, `SerialNumberTiming`, `asSerialNumberTiming` — the timing values the ERP's forms and tables import; `./sequence` re-exports them |
 | `./receipt-serials` | `releaseReceiptSerialEntities(db, companyId, ids)` — the one way a receipt serial is taken off a receipt, inside the caller's Kysely transaction: an entity with no `itemLedger` history is deleted, one with history only loses its `Receipt` / `Receipt Line` / `Receipt Line Index` attributes. Shared by the ERP's receipt serial routes and the receipt line split (`receiptLineSplit` in `shared.service.ts`). `planReceiptSerialRelease` is the pure split; `idsWithStockHistory` is the one "has stock movements" test. `idsWithLiveStockHistory` is the same test without the rows of voided receipts (a void writes its reversal under the receipt's `documentId`), and `voidedReceiptIds` filters receipt ids to the voided ones — together they let a serial from a voided receipt be received again as the same entity |
 | `./stock-transfer` | `expandSerialTrackedLines`, `isBelowReplenishmentLevel`, `levelReplenishmentQuantity` (the fewest whole kanban quantities that reach a level), `kanbanReplenishmentNote` — the stock-transfer line and kanban-note rules shared by the ERP's `insertStockTransfer` and `replenishKanban` (`inventory.service.ts`, ported from the `kanban-replenish` server function) |
 | `./seed-data` | The company seed data (accounts, sequences, groups + `getGroupId`, …) used by `seedCompany` (`settings.service.ts`, ported from the `seed-company` server function) and the dataset tooling |
@@ -120,8 +126,8 @@ pnpm --filter @carbon/database authz migration <name>   # ship unshipped rules/h
 `company-template` job go through the same `applyDataset()` entry point (`./datasets`).
 
 - **Data** — `data/<key>/`, one file per slice, pure TypeScript literals with no SQL and no
-  ids. Registered in `DATASETS` (`datasets/index.ts`). Four keys ship today, one per
-  onboarding industry: `satellite`, `robotics`, `precision`, `motor`. **New seed data goes
+  ids. Registered in `DATASETS` (`datasets/index.ts`). Five keys ship today, one per
+  onboarding industry: `satellite`, `robotics`, `precision`, `motor`, `defense`. **New seed data goes
   here**, not in a tier: the tiers are industry-agnostic shared code, and hard-coding one
   industry's content into them breaks every other dataset.
 - **Engine** — `tiers/01-foundation.ts` … `tiers/12-planning.ts`, run in numeric order because

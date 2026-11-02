@@ -94,7 +94,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       customerId: null,
       supplierId: null,
       limit: 6,
-      offset: 0,
+      cursor: null,
       sorts,
       filters
     })
@@ -108,7 +108,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ap: sumAging((apAging.data ?? []) as AgingRow[]),
     arTieOut: arTieOut.data ?? null,
     apTieOut: apTieOut.data ?? null,
-    recentPayments: (payments.data ?? []) as unknown as RecentPayment[]
+    // The query reads one row past `limit` (the next-page check); drop it.
+    recentPayments: (payments.data ?? []).slice(
+      0,
+      6
+    ) as unknown as RecentPayment[]
   };
 }
 

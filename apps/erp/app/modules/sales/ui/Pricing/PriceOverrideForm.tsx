@@ -48,6 +48,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuEllipsisVertical,
+  LuGlobe,
   LuHistory,
   LuSquareUser,
   LuTrash,
@@ -80,7 +81,7 @@ import {
 import { priceOverrideValidator } from "../../sales.models";
 import type { PriceOverrideBreak } from "../../types";
 
-type ScopeType = "customer" | "customerType";
+type ScopeType = "customer" | "customerType" | "all";
 
 type PriceOverrideFormProps = {
   initialValues: z.infer<typeof priceOverrideValidator>;
@@ -104,6 +105,7 @@ const PriceOverrideForm = ({
   const [scope, setScope] = useState<ScopeType>(() => {
     if (initialValues.customerId) return "customer";
     if (initialValues.customerTypeId) return "customerType";
+    if (initialValues.allCustomers) return "all";
     return initialScope ?? "customer";
   });
 
@@ -183,6 +185,12 @@ const PriceOverrideForm = ({
                       title: t`Customer Type`,
                       description: t`Override price for all customers of a type`,
                       icon: <LuUsers />
+                    },
+                    {
+                      value: "all",
+                      title: t`All Customers`,
+                      description: t`Override price for every customer`,
+                      icon: <LuGlobe />
                     }
                   ]}
                 />
@@ -201,6 +209,14 @@ const PriceOverrideForm = ({
                       label={t`Customer Type`}
                     />
                     <Hidden name="customerId" value="" />
+                  </>
+                )}
+
+                {scope === "all" && (
+                  <>
+                    <Hidden name="customerId" value="" />
+                    <Hidden name="customerTypeId" value="" />
+                    <Hidden name="allCustomers" value="on" />
                   </>
                 )}
 

@@ -295,7 +295,7 @@ export function PeopleHoursModal({
               size="sm"
             />
             <div className="min-w-0">
-              <ModalTitle className="text-[15px] font-medium truncate">
+              <ModalTitle className="text-[0.9375rem] font-medium truncate">
                 {employeeName}
               </ModalTitle>
               <p className="text-xs text-muted-foreground">{dayLabel}</p>
@@ -305,10 +305,10 @@ export function PeopleHoursModal({
         <ModalBody className="px-0 mb-0">
           <div className="divide-y divide-border/60 border-t border-border/60">
             <section className="flex items-center justify-between px-6 py-3.5">
-              <span className="text-[13px] text-muted-foreground">
+              <span className="text-[0.8125rem] text-muted-foreground">
                 <Trans>Shift</Trans>
               </span>
-              <span className="text-[15px] tabular-nums">
+              <span className="text-[0.9375rem] tabular-nums">
                 {shiftWindow ? `${shiftWindow} · ` : ""}
                 {formatHours(baseHours)}h
               </span>
@@ -320,7 +320,7 @@ export function PeopleHoursModal({
                 className="flex min-h-[44px] w-full items-center justify-between px-6 py-2 text-left"
                 onClick={() => setOffDay((value) => !value)}
               >
-                <span className="text-[15px]">
+                <span className="text-[0.9375rem]">
                   <Trans>Not working today</Trans>
                 </span>
                 <Switch
@@ -338,7 +338,7 @@ export function PeopleHoursModal({
               )}
             >
               {draft.length > 0 && (
-                <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                <div className="flex items-center gap-2 text-[0.8125rem] text-muted-foreground">
                   <span className="flex-1">
                     <Trans>Station</Trans>
                   </span>
@@ -351,7 +351,7 @@ export function PeopleHoursModal({
               {draft.map((row, index) => (
                 <div key={row.workCenterId} className="flex items-center gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px]">
+                    <p className="truncate text-[0.9375rem]">
                       {workCenterName(row.workCenterId)}
                     </p>
                     {timeEcho(index) && (
@@ -391,7 +391,7 @@ export function PeopleHoursModal({
               ))}
 
               {draft.length === 0 && (
-                <p className="text-[13px] text-muted-foreground">
+                <p className="text-[0.8125rem] text-muted-foreground">
                   <Trans>Nothing scheduled — add a station below.</Trans>
                 </p>
               )}
@@ -411,7 +411,7 @@ export function PeopleHoursModal({
                 availableStations.length > 0 && (
                   <button
                     type="button"
-                    className="inline-flex min-h-[44px] items-center gap-1.5 self-start rounded-md text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    className="inline-flex min-h-[44px] items-center gap-1.5 self-start rounded-md text-[0.8125rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
                     onClick={() => setAdding(true)}
                   >
                     <LuPlus className="h-3.5 w-3.5" />
@@ -421,7 +421,7 @@ export function PeopleHoursModal({
               )}
 
               <div className="flex items-center justify-between pt-1">
-                <span className="text-[13px] text-muted-foreground">
+                <span className="text-[0.8125rem] text-muted-foreground">
                   <Trans>Allocated</Trans>
                 </span>
                 {offDay ? (
@@ -462,7 +462,7 @@ export function PeopleHoursModal({
               )}
             >
               <div className="min-w-0">
-                <p className="text-[15px]">
+                <p className="text-[0.9375rem]">
                   <Trans>Overtime</Trans>
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -493,7 +493,7 @@ export function PeopleHoursModal({
               ) : (
                 <button
                   type="button"
-                  className="inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-md px-2 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  className="inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-md px-2 text-[0.8125rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
                   onClick={() => adjustOvertime(1)}
                 >
                   <LuPlus className="h-3.5 w-3.5" />
@@ -503,7 +503,7 @@ export function PeopleHoursModal({
             </section>
 
             <section className="flex flex-col gap-1.5 px-6 py-3.5">
-              <span className="text-[13px] text-muted-foreground">
+              <span className="text-[0.8125rem] text-muted-foreground">
                 <Trans>Note</Trans>
               </span>
               <Textarea
@@ -516,7 +516,7 @@ export function PeopleHoursModal({
 
             {confirmingRemoval && (
               <section className="px-6 py-3">
-                <p className="text-[13px] text-red-600 dark:text-red-400">
+                <p className="text-[0.8125rem] text-red-600 dark:text-red-400">
                   <Trans>
                     This takes {employeeName} off the board for the day. Save
                     again to confirm.

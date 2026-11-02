@@ -7,8 +7,9 @@ import { SITE } from "@/lib/seo";
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    // Allow everything except internal endpoints (search, OG generation).
-    rules: [{ userAgent: "*", allow: "/", disallow: ["/api/", "/og"] }],
+    // Keep /og crawlable: X's crawler obeys robots.txt and drops the share
+    // card when its image path is disallowed.
+    rules: [{ userAgent: "*", allow: "/", disallow: ["/api/"] }],
     sitemap: `${SITE.url}/sitemap.xml`,
     host: SITE.url
   };

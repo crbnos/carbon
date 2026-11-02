@@ -141,7 +141,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.items,
       await flash(
         request,
-        error(quantities, "Failed to load material quantities")
+        error(quantities.error, "Failed to load material quantities")
       )
     );
   }
@@ -151,7 +151,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.items,
       await flash(
         request,
-        error(itemStorageUnitQuantities, "Failed to load material quantities")
+        error(
+          itemStorageUnitQuantities.error,
+          "Failed to load material quantities"
+        )
       )
     );
   }

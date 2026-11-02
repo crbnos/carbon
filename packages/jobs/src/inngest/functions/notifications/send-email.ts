@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { sendEmail } from "@carbon/lib/email.server";
 import { NonRetriableError } from "inngest";
+import { sendCompanyEmail } from "../../../email/company-email";
 import { inngest } from "../../client";
 import { emailDeliveryFailure } from "./delivery-failure";
 
@@ -43,15 +43,22 @@ export const sendEmailFunction = inngest.createFunction(
 
     const result = await step.run("send-email", async () => {
       logger.info("Email Job");
-      const response = await sendEmail({
-        attachments: payload.attachments,
-        cc: ccRecipients,
-        html: payload.html,
-        replyTo: payload.from,
-        subject: payload.subject,
-        text: payload.text,
-        to: toRecipients
-      });
+      // Every company email follows the company's Email settings; `from` on
+      // the event is the person replies should reach.
+      const response = await sendCompanyEmail(
+        getCarbonServiceRole(),
+        payload.companyId,
+        {
+          attachments: payload.attachments,
+          cc: ccRecipients,
+          document: payload.document === true,
+          html: payload.html,
+          replyTo: payload.from || undefined,
+          subject: payload.subject,
+          text: payload.text,
+          to: toRecipients
+        }
+      );
       // Retry only what provably never reached the relay; everything else is
       // terminal, because a replay of an ambiguous failure is how one click
       // becomes three copies in the customer's inbox.

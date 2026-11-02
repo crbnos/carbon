@@ -56,7 +56,6 @@ import {
 // `useLingui`'s `t`; the grid's `i18n` renders them.
 const LABELS = {
   stockAvailability: msg`Stock Availability`,
-  presentWeek: msg`Present Week`,
   unitOfMeasure: msg`Unit of Measure`,
   itemGroup: msg`Item Group`,
   reorderPolicy: msg`Reorder Policy`,
@@ -68,8 +67,6 @@ const LABELS = {
   segment: msg`Segment`,
   common: msg`Common`
 };
-
-const weekLabel = (weekNumber: number) => msg`Week ${weekNumber}`;
 
 type PlanningRow = ProductionPlanningItem | PurchasingPlanningItem;
 type Option = { value: string; label: string };
@@ -89,11 +86,13 @@ export type PlanningSegmentProject = {
  * `accessorKey` is typed against the union of the two row types, which the
  * grid's own row type narrows; the cast at the end is that narrowing.
  *
- * Labels come from `LABELS` and render through the grid's `i18n`.
+ * Labels come from `LABELS` and render through the grid's `i18n`; a week's
+ * heading comes from `weekLabel` (`usePlanningWeekLabel`).
  */
 export function planningColumns<T extends PlanningRow>(ctx: {
   i18n: I18n;
   periods: { id: string; startDate: string; endDate: string }[];
+  weekLabel: (startDate: string, index: number) => string;
   locationToday: string;
   formatQuantity: (quantity: number) => string;
   unitOfMeasures: Option[];
@@ -105,6 +104,7 @@ export function planningColumns<T extends PlanningRow>(ctx: {
   const {
     i18n,
     periods,
+    weekLabel,
     locationToday,
     formatQuantity,
     unitOfMeasures,
@@ -135,6 +135,7 @@ export function planningColumns<T extends PlanningRow>(ctx: {
           <PlanningWeekStrip
             periods={periods}
             values={planningWeekValues(row.original, periods)}
+            weekLabel={weekLabel}
           />
         ),
         size: planningWeekStripSize(periods.length),
@@ -142,15 +143,11 @@ export function planningColumns<T extends PlanningRow>(ctx: {
           icon: <LuChartNoAxesColumn />
         }
       },
-      ...periods.map((_, index) => {
-        const weekNumber = index + 1;
-        const weekKey = `week${weekNumber}` as keyof PlanningRow;
+      ...periods.map((period, index) => {
+        const weekKey = `week${index + 1}` as keyof PlanningRow;
         return exportOnlyColumn<PlanningRow>({
           id: weekKey,
-          header:
-            index === 0
-              ? i18n._(LABELS.presentWeek)
-              : i18n._(weekLabel(weekNumber)),
+          header: weekLabel(period.startDate, index),
           value: (row) => {
             const value = row[weekKey] as number | undefined;
             return value === undefined ? null : value;

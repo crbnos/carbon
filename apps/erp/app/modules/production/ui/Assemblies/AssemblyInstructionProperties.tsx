@@ -619,7 +619,7 @@ function StepForm({
           </VStack>
         )}
         {stepType === "List" && (
-          <ArrayInput name="listValues" label={t`List Options`} />
+          <ArrayInput name="listValues" label={t`List Options`} isRequired />
         )}
         <BooleanInput
           name="required"

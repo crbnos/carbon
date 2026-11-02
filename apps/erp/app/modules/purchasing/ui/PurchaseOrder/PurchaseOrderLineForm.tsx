@@ -46,7 +46,7 @@ import {
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { LuBox, LuChevronRight, LuLandmark, LuReceipt } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
@@ -96,11 +96,18 @@ import type { action } from "~/routes/x+/purchase-order+/$orderId.$lineId.detail
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
+import { PurchaseOrderLineDateFields } from "./PurchaseOrderLineDates";
 
 type PurchaseOrderLineFormProps = {
   initialValues: z.infer<typeof purchaseOrderLineValidator> & {
     assetReadableId?: string;
     assetName?: string;
+  };
+  lineDates?: {
+    receivedComplete: boolean;
+    requiredDate: string | null;
+    promisedDate: string | null;
+    receivedDate: string | null;
   };
   type?: "card" | "modal";
   onClose?: () => void;
@@ -108,6 +115,7 @@ type PurchaseOrderLineFormProps = {
 
 const PurchaseOrderLineForm = ({
   initialValues,
+  lineDates,
   type,
   onClose
 }: PurchaseOrderLineFormProps) => {
@@ -150,6 +158,25 @@ const PurchaseOrderLineForm = ({
   // selected item.
   const [itemFilter, setItemFilter] = useState<ItemType | "Item">("Item");
   const isService = lineType === "Service";
+  const hasUnitOfMeasure = [
+    "Item",
+    "Part",
+    "Material",
+    "Consumable",
+    "Tool",
+    "Fixture"
+  ].includes(lineType);
+  // Outside processing is not received into a location.
+  const isReceivedToLocation =
+    [
+      "Item",
+      "Part",
+      "Service",
+      "Material",
+      "Tool",
+      "Consumable",
+      "Fixture"
+    ].includes(lineType) && !isOutsideProcessing;
   const [locationId, setLocationId] = useState(initialValues.locationId);
   const [itemData, setItemData] = useState<{
     itemId: string;
@@ -370,7 +397,7 @@ const PurchaseOrderLineForm = ({
       pricing: null,
       purchaseQuantity: 1,
       purchaseUom: "",
-      requiredDate: null,
+      requiredDate: routeData?.purchaseOrder?.receiptRequestedDate ?? null,
       storageUnitId: "",
       supplierPartId: "",
       supplierShippingCost: 0,
@@ -471,9 +498,10 @@ const PurchaseOrderLineForm = ({
               itemReplenishment?.conversionFactor ??
               1),
           requiredDate:
-            leadTime === 0
+            routeData?.purchaseOrder?.receiptRequestedDate ??
+            (leadTime === 0
               ? null
-              : today(getLocalTimeZone()).add({ days: leadTime }).toString(),
+              : today(getLocalTimeZone()).add({ days: leadTime }).toString()),
           storageUnitId: inventory.data?.defaultStorageUnitId ?? null,
           supplierPartId: supplierPart?.data?.supplierPartId ?? "",
           supplierTaxAmount: 0,
@@ -516,6 +544,20 @@ const PurchaseOrderLineForm = ({
   };
 
   const collapsedTaxPercent = initialValues?.taxPercent ?? 0;
+
+  const savedLineDates =
+    isEditing && lineDates ? (
+      <FormSection title={t`Dates`}>
+        <PurchaseOrderLineDateFields
+          line={{
+            id: initialValues.id!,
+            purchaseOrderId: orderId,
+            ...lineDates
+          }}
+          order={routeData?.purchaseOrder}
+        />
+      </FormSection>
+    ) : null;
 
   const lineSubtitle = isFixedAsset
     ? initialValues.assetName || indirectData.description
@@ -673,8 +715,8 @@ const PurchaseOrderLineForm = ({
                         <Hidden name="conversionFactor" value={1} />
                       </>
                     )}
-                    <VStack>
-                      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+                    <VStack spacing={4}>
+                      <FormSection title={t`Details`}>
                         <Item
                           autoFocus={!isEditing}
                           name="itemId"
@@ -714,23 +756,6 @@ const PurchaseOrderLineForm = ({
                           }
                         />
 
-                        {isOutsideProcessing && (
-                          <JobOperationSelect jobId={initialValues.jobId} />
-                        )}
-
-                        <DatePicker
-                          name="requiredDate"
-                          label={t`Required Date`}
-                          termId="purchase-order-line-required-date"
-                          value={itemData?.requiredDate ?? undefined}
-                          onChange={(date) => {
-                            setItemData((d) => ({
-                              ...d,
-                              requiredDate: date
-                            }));
-                          }}
-                        />
-
                         <NumberControlled
                           minValue={itemData.minimumOrderQuantity}
                           name="purchaseQuantity"
@@ -750,42 +775,20 @@ const PurchaseOrderLineForm = ({
                           }}
                         />
 
-                        {[
-                          "Item",
-                          "Part",
-                          "Material",
-                          "Consumable",
-                          "Tool",
-                          "Fixture"
-                        ].includes(lineType) && (
-                          <>
-                            <UnitOfMeasure
-                              name="purchaseUnitOfMeasureCode"
-                              label={t`Unit of Measure`}
-                              value={itemData.purchaseUom}
-                              onChange={(newValue) => {
-                                if (newValue) {
-                                  setItemData((d) => ({
-                                    ...d,
-                                    purchaseUom: newValue?.value as string
-                                  }));
-                                }
-                              }}
-                            />
-                            <ConversionFactor
-                              name="conversionFactor"
-                              termId="conversion-factor"
-                              purchasingCode={itemData.purchaseUom}
-                              inventoryCode={itemData.inventoryUom}
-                              value={itemData.conversionFactor}
-                              onChange={(value) => {
+                        {hasUnitOfMeasure && (
+                          <UnitOfMeasure
+                            name="purchaseUnitOfMeasureCode"
+                            label={t`Unit of Measure`}
+                            value={itemData.purchaseUom}
+                            onChange={(newValue) => {
+                              if (newValue) {
                                 setItemData((d) => ({
                                   ...d,
-                                  conversionFactor: value
+                                  purchaseUom: newValue?.value as string
                                 }));
-                              }}
-                            />
-                          </>
+                              }
+                            }}
+                          />
                         )}
                         <NumberControlled
                           name="supplierUnitPrice"
@@ -802,33 +805,43 @@ const PurchaseOrderLineForm = ({
                             }))
                           }
                         />
-                        {[
-                          "Item",
-                          "Part",
-                          "Service",
-                          "Material",
-                          "Tool",
-                          "Consumable",
-                          "Fixture"
-                        ].includes(lineType) &&
-                          !isOutsideProcessing && (
-                            <Location
-                              name="locationId"
-                              label={t`Delivery Location`}
-                              termId="purchase-order-line-delivery-location"
-                              value={locationId}
-                              onChange={onLocationChange}
+                        {hasUnitOfMeasure && (
+                          // Its own row, one column wide.
+                          <div className="col-span-full grid grid-cols-1 lg:grid-cols-3 gap-x-8">
+                            <ConversionFactor
+                              name="conversionFactor"
+                              termId="conversion-factor"
+                              purchasingCode={itemData.purchaseUom}
+                              inventoryCode={itemData.inventoryUom}
+                              value={itemData.conversionFactor}
+                              onChange={(value) => {
+                                setItemData((d) => ({
+                                  ...d,
+                                  conversionFactor: value
+                                }));
+                              }}
                             />
-                          )}
-                        {[
-                          "Item",
-                          "Part",
-                          "Material",
-                          "Tool",
-                          "Consumable",
-                          "Fixture"
-                        ].includes(lineType) &&
-                          !isOutsideProcessing && (
+                          </div>
+                        )}
+                        {isOutsideProcessing && (
+                          <JobOperationSelect jobId={initialValues.jobId} />
+                        )}
+                        {!isOutsideProcessing && (
+                          <ChargeNumber label={t`Charge Number`} isOptional />
+                        )}
+                        <CustomFormFields table="purchaseOrderLine" />
+                      </FormSection>
+
+                      {isReceivedToLocation && (
+                        <FormSection title={t`Receiving`}>
+                          <Location
+                            name="locationId"
+                            label={t`Delivery Location`}
+                            termId="purchase-order-line-delivery-location"
+                            value={locationId}
+                            onChange={onLocationChange}
+                          />
+                          {lineType !== "Service" && (
                             <StorageUnit
                               name="storageUnitId"
                               label={t`Storage Unit`}
@@ -845,15 +858,21 @@ const PurchaseOrderLineForm = ({
                               }}
                             />
                           )}
+                        </FormSection>
+                      )}
 
-                        {!isOutsideProcessing && (
-                          <ChargeNumber label={t`Charge Number`} isOptional />
-                        )}
+                      {isEditing ? (
+                        savedLineDates
+                      ) : (
+                        <NewLineDates
+                          requiredDate={itemData.requiredDate}
+                          onRequiredDateChange={(date) =>
+                            setItemData((d) => ({ ...d, requiredDate: date }))
+                          }
+                        />
+                      )}
 
-                        <CustomFormFields table="purchaseOrderLine" />
-                      </div>
-
-                      <div className="w-full border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 mt-4">
+                      <div className="w-full border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
                         <HStack
                           className="w-full justify-between cursor-pointer"
                           onClick={costsDisclosure.onToggle}
@@ -936,8 +955,8 @@ const PurchaseOrderLineForm = ({
                         name="description"
                         value={indirectData.description}
                       />
-                      <VStack>
-                        <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+                      <VStack spacing={4}>
+                        <FormSection title={t`Details`}>
                           {activeTab === "gl-account" ? (
                             <>
                               <Account
@@ -1010,18 +1029,6 @@ const PurchaseOrderLineForm = ({
                               }
                             />
                           </FormControl>
-                          <DatePicker
-                            name="requiredDate"
-                            label={t`Required Date`}
-                            termId="purchase-order-line-required-date"
-                            value={indirectData.requiredDate ?? undefined}
-                            onChange={(date) => {
-                              setIndirectData((d) => ({
-                                ...d,
-                                requiredDate: date
-                              }));
-                            }}
-                          />
                           <NumberControlled
                             name="purchaseQuantity"
                             label={t`Quantity`}
@@ -1056,9 +1063,21 @@ const PurchaseOrderLineForm = ({
                             }
                           />
                           <CustomFormFields table="purchaseOrderLine" />
-                        </div>
+                        </FormSection>
 
-                        <div className="h-4" />
+                        {isEditing ? (
+                          savedLineDates
+                        ) : (
+                          <NewLineDates
+                            requiredDate={indirectData.requiredDate}
+                            onRequiredDateChange={(date) =>
+                              setIndirectData((d) => ({
+                                ...d,
+                                requiredDate: date
+                              }))
+                            }
+                          />
+                        )}
 
                         <div className="w-full border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
                           <HStack
@@ -1215,5 +1234,48 @@ function JobOperationSelect(initialValues: { jobId?: string }) {
         options={jobOperationOptions}
       />
     </>
+  );
+}
+
+function FormSection({
+  title,
+  children
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="w-full border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+      <Label>{title}</Label>
+      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A new line's dates, sent with the form. A saved line's dates save on their
+ * own (PurchaseOrderLineDateFields).
+ */
+function NewLineDates({
+  requiredDate,
+  onRequiredDateChange
+}: {
+  requiredDate: string | null;
+  onRequiredDateChange: (date: string | null) => void;
+}) {
+  const { t } = useLingui();
+  return (
+    <FormSection title={t`Dates`}>
+      <DatePicker
+        name="requiredDate"
+        label={t`Requested Date`}
+        termId="purchase-order-line-required-date"
+        value={requiredDate ?? undefined}
+        onChange={onRequiredDateChange}
+      />
+      <DatePicker name="promisedDate" label={t`Promised Date`} />
+    </FormSection>
   );
 }

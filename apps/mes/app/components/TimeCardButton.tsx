@@ -71,7 +71,7 @@ export function TimeCardButton({ openClockEntry }: TimeCardButtonProps) {
             openClockEntry && (
               <Badge
                 variant="red"
-                className="min-h-5 px-1 text-[10px] tabular-nums"
+                className="min-h-5 px-1 text-[0.625rem] tabular-nums"
               >
                 {formatElapsed(openClockEntry.clockIn)}
               </Badge>

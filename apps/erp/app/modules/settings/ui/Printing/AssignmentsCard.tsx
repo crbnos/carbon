@@ -29,6 +29,7 @@ import {
   LuHandCoins,
   LuLocateFixed,
   LuMapPin,
+  LuSquareKanban,
   LuTruck
 } from "react-icons/lu";
 
@@ -110,8 +111,9 @@ export function AssignmentsCard({
         </CardTitle>
         <CardDescription>
           <Trans>
-            Assign printers to locations. Shipping, receiving, and work centers
-            inherit the location default unless overridden.
+            Assign printers to locations. Shipping, receiving, inventory,
+            kanbans, and work centers inherit the location default unless
+            overridden.
           </Trans>
         </CardDescription>
       </CardHeader>
@@ -203,6 +205,12 @@ function LocationSection({
       label: "Inventory",
       icon: <LuBlocks />,
       explicit: assignment?.inventory ?? null
+    },
+    {
+      context: "kanban",
+      label: "Kanbans",
+      icon: <LuSquareKanban />,
+      explicit: assignment?.kanban ?? null
     },
     ...workCenters.map<AssignmentRowModel>((wc) => ({
       context: "workCenter",

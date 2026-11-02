@@ -23,6 +23,7 @@ vi.mock("@carbon/env", () => ({
 }));
 vi.mock("@carbon/lib/email.server", () => ({
   DEFAULT_FROM: "Carbon <no-reply@carbon.ms>",
+  SERVER_MAIL_CONFIGURED: false,
   sendEmail: (...args: unknown[]) => sendEmail(...args)
 }));
 vi.mock("@carbon/ee/rules.server", () => ({
@@ -33,7 +34,7 @@ vi.mock("@carbon/ee/rules.server", () => ({
 // The Stripe API call only: the connected-account and customer-link reads run
 // for real against the fake client. The Stripe SDK module is replaced so
 // loading the real reads does not construct a Stripe or Supabase client.
-vi.mock("../../../stripe/src/connect.server", () => ({
+vi.mock("@carbon/stripe/connect.server", () => ({
   createAndSendConnectInvoice: () => {
     throw new Error("The Stripe API is not reachable in tests");
   }
@@ -70,8 +71,8 @@ vi.mock("@carbon/lib/sales-invoice-document.server", () => ({
 vi.mock("@carbon/documents/email", () => ({
   SalesInvoiceEmail: (props: unknown) => props
 }));
-vi.mock("@react-email/components", () => ({
-  renderAsync: async () => "<p>invoice</p>"
+vi.mock("react-email", () => ({
+  render: async () => "<p>invoice</p>"
 }));
 vi.mock("@carbon/files", () => ({
   getDocumentType: () => "PDF",
@@ -82,7 +83,6 @@ vi.mock("@carbon/files", () => ({
 
 import {
   attachPostedInvoicePdf,
-  companyFromAddress,
   emailPostedInvoice,
   INVOICE_POST_INTERRUPTED,
   INVOICE_SEND_NO_EMAIL,
@@ -409,7 +409,7 @@ describe("emailPostedInvoice", () => {
     });
     const sent = sendEmail.mock.calls[0]![0];
     expect(sent).toMatchObject({
-      from: '"Acme Rentals" <no-reply@carbon.ms>',
+      from: { name: "Acme Rentals", address: "no-reply@carbon.ms" },
       to: "ap@buyer.com",
       replyTo: "ar@acme.com",
       subject: "Invoice INV-1 from Acme Rentals"
@@ -580,15 +580,6 @@ describe("sendPostedInvoiceViaStripe", () => {
 });
 
 describe("email headers", () => {
-  it("names the company on the platform address", () => {
-    expect(
-      companyFromAddress("Acme Rentals", "Carbon <no-reply@carbon.ms>")
-    ).toBe('"Acme Rentals" <no-reply@carbon.ms>');
-    expect(companyFromAddress('Bob "B" Co', "no-reply@carbon.ms")).toBe(
-      '"Bob B Co" <no-reply@carbon.ms>'
-    );
-  });
-
   it("prefers the customer's CC over the company's and never repeats the recipient", () => {
     expect(
       invoiceEmailCc({

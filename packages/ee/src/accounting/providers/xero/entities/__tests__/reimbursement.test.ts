@@ -2,7 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { fakeDatabase } from "../../../../core/fake-database-test-fixture";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { ReimbursementSource } from "../../../../core/reimbursement-source";
 import {
@@ -14,33 +15,6 @@ import {
 // an employee Contact. The two things the mapper must not get wrong are the
 // ACCPAY field set (Reference is ACCREC-ONLY — the Carbon readable id has to
 // ride InvoiceNumber) and the two-decimal monetary boundary.
-
-/**
- * The JIT contact's mapping row is written inside `withTriggersDisabled`, a real
- * Kysely transaction that opens with a `SET LOCAL` statement. Stub it so the row
- * lands in `mappingRows` — the store the re-read under test then reads back.
- */
-const { mappingRows } = vi.hoisted(() => ({
-  mappingRows: new Map<string, string>()
-}));
-vi.mock("../../../../core/utils", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../../core/utils")>()),
-  withTriggersDisabled: async (
-    _db: unknown,
-    cb: (tx: unknown) => Promise<unknown>
-  ) => {
-    const builder: Record<string, any> = {};
-    builder.values = (value: any) => {
-      for (const row of Array.isArray(value) ? value : [value]) {
-        mappingRows.set(`${row.entityType}::${row.entityId}`, row.externalId);
-      }
-      return builder;
-    };
-    builder.onConflict = () => builder;
-    builder.execute = async () => [];
-    return cb({ insertInto: () => builder });
-  }
-}));
 
 const reimbursement = (
   overrides: Partial<ReimbursementSource> = {}
@@ -236,7 +210,21 @@ describe("mapReimbursementToXeroInvoice", () => {
  * failed Xero's unique-name validation and parked Failed. A Posted
  * reimbursement's `updatedAt` never changes, so nothing re-enqueued it.
  */
-function makeEmployeeContactSyncer() {
+/** `mappedTo`: the Contact the employee is already mapped to. */
+function makeEmployeeContactSyncer(mappedTo?: string) {
+  const db = fakeDatabase({
+    externalIntegrationMapping: mappedTo
+      ? [
+          {
+            entityType: "employeeVendor",
+            entityId: "emp_1",
+            integration: "xero",
+            companyId: "company-1",
+            externalId: mappedTo
+          }
+        ]
+      : []
+  });
   let created = 0;
   // Resolving now makes TWO kinds of request: a name lookup that recovers a
   // Contact a crashed run left behind, then a create when it finds none. The
@@ -260,17 +248,12 @@ function makeEmployeeContactSyncer() {
     request.mock.calls.filter(([method]) => method === "GET");
 
   const syncer = new XeroReimbursementSyncer({
-    database: {} as never,
+    database: db.database,
     companyId: "company-1",
     provider: { id: "xero", request } as never,
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType: "reimbursement"
   });
-
-  (syncer as any).mappingService = {
-    getExternalId: async (entityType: string, entityId: string) =>
-      mappingRows.get(`${entityType}::${entityId}`) ?? null
-  };
 
   return {
     resolve: (local: ReimbursementSource) =>
@@ -278,15 +261,17 @@ function makeEmployeeContactSyncer() {
     request,
     creates,
     lookups,
-    store: mappingRows
+    employeeMapping: () =>
+      db
+        .rows("externalIntegrationMapping")
+        .find(
+          (row) =>
+            row.entityType === "employeeVendor" && row.entityId === "emp_1"
+        )?.externalId
   };
 }
 
 describe("XeroReimbursementSyncer.resolveEmployeeContact", () => {
-  beforeEach(() => {
-    mappingRows.clear();
-  });
-
   it("creates the employee Contact ONCE for two reimbursements in one batch", async () => {
     const test = makeEmployeeContactSyncer();
     // Both snapshots come from the SAME fetchLocalBatch, so both say null.
@@ -300,12 +285,11 @@ describe("XeroReimbursementSyncer.resolveEmployeeContact", () => {
     expect(test.creates()).toHaveLength(1);
     expect(test.lookups()).toHaveLength(1);
     expect(second).toBe(first);
-    expect(test.store.get("employeeVendor::emp_1")).toBe(first);
+    expect(test.employeeMapping()).toBe(first);
   });
 
   it("reuses an already-mapped Contact without creating one", async () => {
-    const test = makeEmployeeContactSyncer();
-    test.store.set("employeeVendor::emp_1", "xero-contact-uuid");
+    const test = makeEmployeeContactSyncer("xero-contact-uuid");
 
     expect(
       await test.resolve(reimbursement({ employeeVendorExternalId: null }))

@@ -2,15 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 
-// Env is validated at import time (getEnv throws on missing required vars), so we
-// stub the config module rather than requiring a full environment in the test run.
-vi.mock("../../config/env", () => ({
-  SUPABASE_ANON_KEY: "sb_publishable_anon",
-  SUPABASE_INTERNAL_URL: "http://supabase.internal.test",
-  SUPABASE_URL: "http://supabase.test"
-}));
+// The module reads its configuration once, at import.
+vi.hoisted(() => {
+  vi.stubEnv("SUPABASE_ANON_KEY", "sb_publishable_anon");
+  vi.stubEnv("SUPABASE_INTERNAL_URL", "http://supabase.internal.test");
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+});
+
+afterAll(() => vi.unstubAllEnvs());
 
 const waitEnded = vi.fn();
 const startSpan = vi.fn((_name: string, _attributes: object) => waitEnded);

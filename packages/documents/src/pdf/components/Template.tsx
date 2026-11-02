@@ -49,7 +49,8 @@ const Template = ({
 }: TemplateProps) => {
   const safeFontFamily = getSafeFontFamily(fontFamily);
   const docStyle = useMemo(
-    () => ({ tw: makeDocTw(theme), theme, fontFamily: safeFontFamily }),
+    // The stack's first entry is the body font itself; the rest are fallbacks.
+    () => ({ tw: makeDocTw(theme), theme, fontFamily: safeFontFamily[0] }),
     [theme, safeFontFamily]
   );
   const hasHeader =

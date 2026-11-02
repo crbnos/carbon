@@ -80,7 +80,7 @@ function TooltipRow({
       >
         {label}
       </span>
-      <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+      <span className="text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">
         {suffix}
       </span>
       <span className="justify-self-end text-xs font-medium tabular-nums">

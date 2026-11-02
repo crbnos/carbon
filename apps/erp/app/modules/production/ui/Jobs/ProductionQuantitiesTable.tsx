@@ -25,6 +25,8 @@ import type { ProductionQuantity, ScrapReason } from "../../types";
 type ProductionQuantitiesTableProps = {
   data: ProductionQuantity[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   operations: { id: string; description: string | null }[];
   scrapReasons: ScrapReason[];
 };
@@ -33,6 +35,7 @@ const ProductionQuantitiesTable = memo(
   ({
     data,
     count,
+    nextCursor,
     operations,
     scrapReasons
   }: ProductionQuantitiesTableProps) => {
@@ -223,6 +226,8 @@ const ProductionQuantitiesTable = memo(
         <Table<ProductionQuantity>
           compact
           count={count}
+          // Scoped to one job: no list registry entry, so no `listKey`.
+          infinite={{ dataKey: "events", nextCursor }}
           columns={columns}
           data={data}
           primaryAction={

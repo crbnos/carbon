@@ -76,7 +76,9 @@ const Status = ({
     </Badge>
   );
 
-  if (disableTooltip && !iconOnly) return badge;
+  // A pill that shows its label needs no tooltip repeating it — only one
+  // that adds something (`tooltip`) or hides the label (`iconOnly`).
+  if (!iconOnly && (disableTooltip || !tooltip)) return badge;
 
   return (
     <Tooltip>

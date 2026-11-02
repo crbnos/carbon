@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getAppUrl } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -13,10 +12,10 @@ import {
   CustomerPortalsTable,
   CustomerPortalsUpgradeOverlay
 } from "~/modules/sales/ui/CustomerPortals";
-import { getCustomerPortals } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { customerPortalsList } from "~/utils/list-registry/sales.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Customer Portals`,
@@ -24,31 +23,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales",
-    role: "employee"
+  return loadListPage(request, customerPortalsList, {
+    dataKey: "data",
+    firstPage: () => ({ appUrl: getAppUrl() })
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  return {
-    appUrl: getAppUrl(),
-    ...(await getCustomerPortals(client, companyId, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }))
-  };
 }
 
 export default function CustomerPortalsRoute() {
-  const { appUrl, data, count } = useLoaderData<typeof loader>();
+  const { appUrl, data, count, infinite } = useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "CUSTOMER_PORTALS" });
 
   if (isGated) {
@@ -59,8 +41,9 @@ export default function CustomerPortalsRoute() {
     <VStack spacing={0} className="h-full">
       <CustomerPortalsTable
         appUrl={appUrl}
-        data={data ?? []}
-        count={count ?? 0}
+        data={data}
+        count={count}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

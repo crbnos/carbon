@@ -15,7 +15,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
-  toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import type { DefaultRentalRates, RateUnit } from "@carbon/utils";
@@ -149,7 +149,7 @@ const RentalAgreementLineForm = ({
       itemIds: [itemId]
     });
     if (error) {
-      toast.error(t`Failed to load the rental rates`);
+      toastError(t`Failed to load the rental rates`, error);
       return;
     }
     const defaults = data[itemId] ?? null;

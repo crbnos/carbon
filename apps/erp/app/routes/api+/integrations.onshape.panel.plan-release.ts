@@ -11,6 +11,7 @@ import type {
 } from "@carbon/ee";
 import {
   buildReleasePlan,
+  describeBomPayload,
   drawingModels,
   groupRevisionsIntoReleases,
   isModelReleaseItem,
@@ -34,6 +35,7 @@ import {
 } from "@carbon/ee/onshape";
 import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import { readPartProperties } from "@carbon/ee/onshape.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -42,6 +44,8 @@ import { findOpenReleaseNotice } from "~/modules/settings/settings.service";
 export const config = {
   runtime: "nodejs"
 };
+
+const logger = getLogger("erp", "integrations-onshape-panel-plan-release");
 
 const payloadSchema = z.object({
   documentId: z.string().min(1),
@@ -119,6 +123,8 @@ export async function action({ request }: ActionFunctionArgs) {
   // A drawing numbered apart from its model is tied to it by the release
   // package, which lists the model under the drawing. Read only when needed.
   const warnings: string[] = [];
+  /** The BOMs behind the "couldn't read" warnings, for the panel's Details. */
+  const unreadBoms: Record<string, unknown>[] = [];
   let drawingModelByElementId: ReturnType<typeof drawingModels> = new Map();
   if (
     drawingItems.some((item) => !releasePartNumbers.includes(item.partNumber))
@@ -229,6 +235,26 @@ export async function action({ request }: ActionFunctionArgs) {
       const { lines, missingColumns } = parseBomTree(bom);
       if (missingColumns.length > 0) {
         bomLinesByElementId[bomKey] = null;
+        const unread = {
+          partNumber: item.partNumber,
+          revision: item.revision,
+          request: {
+            documentId,
+            wv: "v",
+            wvId: item.versionId,
+            elementId: item.elementId,
+            configuration: item.configuration ?? null
+          },
+          missingColumns,
+          bom: describeBomPayload(bom)
+        };
+        unreadBoms.push(unread);
+        logger.warn("Onshape BOM is missing required columns", {
+          companyId,
+          releaseId,
+          onshapeApi: onshape.client.apiOrigin,
+          ...unread
+        });
         warnings.push(
           `${item.partNumber} Rev ${item.revision}: ${missingBomColumnsMessage(
             missingColumns
@@ -239,10 +265,21 @@ export async function action({ request }: ActionFunctionArgs) {
       bomLinesByElementId[bomKey] = lines;
     } catch (error) {
       bomLinesByElementId[bomKey] = null;
+      const failure = onshapeFailure(error, "bom");
+      unreadBoms.push({
+        partNumber: item.partNumber,
+        revision: item.revision,
+        request: {
+          documentId,
+          wv: "v",
+          wvId: item.versionId,
+          elementId: item.elementId,
+          configuration: item.configuration ?? null
+        },
+        onshape: failure.body.diagnostics
+      });
       warnings.push(
-        `${item.partNumber} Rev ${item.revision}: ${
-          onshapeFailure(error, "bom").body.error
-        }`
+        `${item.partNumber} Rev ${item.revision}: ${failure.body.error}`
       );
     }
   }
@@ -399,7 +436,21 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   return data(
-    { planId: saved.planId, expiresAt: saved.expiresAt, plan, warnings },
+    {
+      planId: saved.planId,
+      expiresAt: saved.expiresAt,
+      plan,
+      warnings,
+      ...(unreadBoms.length > 0
+        ? {
+            diagnostics: {
+              request: { documentId, releaseId },
+              onshapeApi: onshape.client.apiOrigin,
+              unreadBoms
+            }
+          }
+        : {})
+    },
     { headers: { "Cache-Control": "no-store" } }
   );
 }

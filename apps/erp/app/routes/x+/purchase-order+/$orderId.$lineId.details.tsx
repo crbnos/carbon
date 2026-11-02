@@ -63,7 +63,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (line.error) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),
-      await flash(request, error(line.error, "Failed to load sales order line"))
+      await flash(
+        request,
+        error(line.error, "Failed to load purchase order line")
+      )
     );
   }
 
@@ -146,8 +149,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
+  // Dates save on their own (the Dates section); sent empty here, the
+  // update would clear them.
+  const {
+    id: _id,
+    requiredDate: _requiredDate,
+    promisedDate: _promisedDate,
+    ...d
+  } = validation.data;
 
   const chargeError = await chargeNumberError(client, companyId, d);
   if (chargeError) {
@@ -246,7 +255,6 @@ export default function EditPurchaseOrderLineRoute() {
     locationId: line?.locationId ?? "",
     purchaseQuantity: line?.purchaseQuantity ?? 1,
     purchaseUnitOfMeasureCode: line?.purchaseUnitOfMeasureCode ?? "",
-    requiredDate: line?.requiredDate ?? undefined,
     storageUnitId: line?.storageUnitId ?? "",
     supplierPartId: line?.supplierPartId ?? "",
     supplierShippingCost: line?.supplierShippingCost ?? 0,
@@ -266,6 +274,12 @@ export default function EditPurchaseOrderLineRoute() {
       <PurchaseOrderLineForm
         key={initialValues.id}
         initialValues={initialValues}
+        lineDates={{
+          receivedComplete: line.receivedComplete ?? false,
+          requiredDate: line.requiredDate,
+          promisedDate: line.promisedDate,
+          receivedDate: line.receivedDate
+        }}
       />
       <SupplierInteractionLineNotes
         id={line?.id ?? ""}

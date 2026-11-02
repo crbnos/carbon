@@ -5,6 +5,7 @@
 import { $ } from "execa";
 
 import { client } from "./client";
+import { fetchFlagsDocument } from "./flags";
 
 export type Workspace = {
   id: number;
@@ -48,6 +49,9 @@ export type Workspace = {
   cloudflare_turnstile_site_key: string | null;
   controlled_environment: string | null;
   exchange_rates_api_key: string | null;
+  google_client_id: string | null;
+  google_client_secret: string | null;
+  google_oauth_redirect_url: string | null;
   google_places_api_key: string | null;
   inngest_base_url: string | null;
   inngest_event_key: string | null;
@@ -79,7 +83,6 @@ export type Workspace = {
   slack_client_secret: string | null;
   slack_oauth_redirect_url: string | null;
   slack_signing_secret: string | null;
-  slack_state_secret: string | null;
   stripe_bypass_company_ids: string | null;
   stripe_secret_key: string | null;
   stripe_webhook_secret: string | null;
@@ -89,6 +92,10 @@ export type Workspace = {
   xero_client_id: string | null;
   xero_client_secret: string | null;
   xero_webhook_secret: string | null;
+
+  // Feature flags, fetched at deploy time (fetchFlagsDocument).
+  flags_endpoint: string | null;
+  flags_token: string | null;
 };
 
 async function deploy(): Promise<void> {
@@ -137,6 +144,11 @@ async function deploy(): Promise<void> {
         database_url,
         domain_name,
         exchange_rates_api_key,
+        flags_endpoint,
+        flags_token,
+        google_client_id,
+        google_client_secret,
+        google_oauth_redirect_url,
         google_places_api_key,
         inngest_base_url,
         inngest_event_key,
@@ -170,7 +182,6 @@ async function deploy(): Promise<void> {
         slack_client_secret,
         slack_oauth_redirect_url,
         slack_signing_secret,
-        slack_state_secret,
         slug,
         stripe_bypass_company_ids,
         stripe_secret_key,
@@ -286,6 +297,12 @@ async function deploy(): Promise<void> {
           : `https://${assembler_domain}`
         : undefined;
 
+      // Feature flags are fixed at deploy time. A failed fetch fails this
+      // workspace's deploy, and the running release keeps its flags.
+      const carbon_flags_endpoint = flags_endpoint
+        ? await fetchFlagsDocument(flags_endpoint, flags_token, imageTag)
+        : undefined;
+
       const $$ = $({
         // @ts-ignore
         env: {
@@ -296,6 +313,7 @@ async function deploy(): Promise<void> {
           ASSEMBLER_SERVICE_URL: assembler_service_url,
           AUTH_PROVIDERS: auth_providers ?? undefined,
           CARBON_EDITION: carbon_edition ?? "enterprise",
+          CARBON_FLAGS_ENDPOINT: carbon_flags_endpoint,
           CERT_ARN_ERP: cert_arn_erp,
           CERT_ARN_MES: cert_arn_mes,
           CLOUDFLARE_TURNSTILE_SECRET_KEY:
@@ -305,6 +323,9 @@ async function deploy(): Promise<void> {
           CONTROLLED_ENVIRONMENT: controlled_environment ?? undefined,
           DOMAIN: domain_name,
           EXCHANGE_RATES_API_KEY: exchange_rates_api_key ?? undefined,
+          GOOGLE_CLIENT_ID: google_client_id ?? undefined,
+          GOOGLE_CLIENT_SECRET: google_client_secret ?? undefined,
+          GOOGLE_OAUTH_REDIRECT_URL: google_oauth_redirect_url ?? undefined,
           GOOGLE_PLACES_API_KEY: google_places_api_key ?? undefined,
           INNGEST_BASE_URL: inngest_base_url ?? undefined,
           INNGEST_EVENT_KEY: inngest_event_key,
@@ -337,7 +358,6 @@ async function deploy(): Promise<void> {
           SLACK_CLIENT_SECRET: slack_client_secret ?? undefined,
           SLACK_OAUTH_REDIRECT_URL: slack_oauth_redirect_url ?? undefined,
           SLACK_SIGNING_SECRET: slack_signing_secret ?? undefined,
-          SLACK_STATE_SECRET: slack_state_secret ?? undefined,
           STRIPE_BYPASS_COMPANY_IDS: stripe_bypass_company_ids ?? undefined,
           STRIPE_SECRET_KEY: stripe_secret_key ?? undefined,
           STRIPE_WEBHOOK_SECRET: stripe_webhook_secret ?? undefined,

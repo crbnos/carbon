@@ -222,7 +222,7 @@ export function NavRail({
     return (
       <Drawer open={openMobile} onOpenChange={setOpenMobile}>
         <DrawerContent position="left" size="content" className="p-0">
-          <DrawerTitle className="px-6 py-4 max-md:px-4 max-md:text-[17px] max-md:font-semibold max-md:text-foreground">
+          <DrawerTitle className="px-6 py-4 max-md:px-4 max-md:text-[1.0625rem] max-md:font-semibold max-md:text-foreground">
             <Trans>Navigation</Trans>
           </DrawerTitle>
           <NavRailHoldContext.Provider value={hold}>
@@ -398,7 +398,7 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
           {icon}
         </span>
         {tag ? (
-          <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium leading-4 text-center tabular-nums max-md:top-1/2 max-md:right-3 max-md:h-5 max-md:min-w-5 max-md:-translate-y-1/2 max-md:text-xs max-md:leading-5">
+          <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[0.625rem] font-medium leading-4 text-center tabular-nums max-md:top-1/2 max-md:right-3 max-md:h-5 max-md:min-w-5 max-md:-translate-y-1/2 max-md:text-xs max-md:leading-5">
             {tag}
           </span>
         ) : null}
@@ -606,7 +606,7 @@ export function NavRailGroup({
           aria-hidden
           className="absolute inset-x-0 top-1/2 mx-auto h-px w-6 bg-border opacity-100 transition-opacity duration-200 group-data-[state=expanded]:opacity-0"
         />
-        <span className="absolute inset-0 flex items-center px-2 text-[11px] font-medium uppercase tracking-wider text-foreground/50 whitespace-nowrap md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
+        <span className="absolute inset-0 flex items-center px-2 text-[0.6875rem] font-medium uppercase tracking-wider text-foreground/50 whitespace-nowrap md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
           {label}
         </span>
       </div>

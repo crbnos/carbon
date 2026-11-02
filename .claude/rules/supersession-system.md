@@ -142,8 +142,11 @@ The item planning tab's supply/demand list (`api+/items.$id.$locationId.forecast
 lines so the rows match the bars: the predecessor keeps what its on-hand
 covers, the successor lists the remainder "via <predecessor>".
 `hasWarehouseStock` / the SQL `EXISTS … GROUP BY storageUnitId HAVING SUM > 0`
-both count any single non-lineside bin (including the unassigned bin) with
-positive on-hand.
+both count any single non-lineside, nettable bin (including the unassigned bin)
+with positive on-hand. Stock in a non-nettable unit (quarantine) is never
+picked, and the job-creation and MRP Consume First reads use nettable on-hand
+(`quantityOnHand - quantityNonNettable`), so quarantined predecessor stock never
+keeps a line on the predecessor.
 
 **Lineside credit.** Before anything is picked, material already at the
 operation's lineside bin is credited, and both the generator and the schedule

@@ -11,7 +11,10 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { getWorkCenterCapitalCost } from "~/modules/accounting/accounting.service";
-import { workCenterValidator } from "~/modules/resources/resources.models";
+import {
+  withoutOperatingHours,
+  workCenterFormValidator
+} from "~/modules/resources/resources.models";
 import { getWorkCenter } from "~/modules/resources/resources.service";
 import { WorkCenterForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -49,13 +52,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(workCenterValidator).request(args, {
+  const input = await validator(workCenterFormValidator).request(args, {
     params: ["id"]
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.resources.updateWorkCenter({
-    ...input.data,
+    ...withoutOperatingHours(input.data),
     id: input.params.id,
     customFields: input.formData && setCustomFields(input.formData)
   });

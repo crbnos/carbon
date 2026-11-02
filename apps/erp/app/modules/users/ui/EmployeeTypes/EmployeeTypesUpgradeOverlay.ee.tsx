@@ -49,6 +49,7 @@ export default function EmployeeTypesUpgradeOverlay() {
         <EmployeeTypesTable
           data={mockEmployeeTypes}
           count={mockEmployeeTypes.length}
+          infinite={{ dataKey: "data", nextCursor: null }}
         />
       }
       title={<Trans>Employee Types</Trans>}

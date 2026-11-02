@@ -7,8 +7,8 @@ import { MfaEnabledEmail, MfaRequiredEmail } from "@carbon/documents/email";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
-import { render } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { render } from "react-email";
 import { getUser } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
 

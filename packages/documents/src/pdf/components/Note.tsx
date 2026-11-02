@@ -143,6 +143,10 @@ function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
         );
       }
 
+      // Shift+Enter in the editor: a new line inside the same paragraph.
+      case "hardBreak":
+        return "\n";
+
       default:
         return null;
     }

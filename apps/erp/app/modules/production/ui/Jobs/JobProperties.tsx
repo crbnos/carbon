@@ -10,7 +10,7 @@ import {
   Select,
   ValidatedForm
 } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -56,6 +56,7 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
+import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { TrackedEntity } from "~/modules/inventory/types";
 import type { MethodItemType } from "~/modules/shared/types";
@@ -87,9 +88,7 @@ const JobProperties = () => {
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   const [type, setType] = useState<MethodItemType>(
@@ -272,6 +271,14 @@ const JobProperties = () => {
           </HStack>
         </HStack>
         <span className="text-sm">{routeData?.job?.jobId}</span>
+        {routeData?.job?.thumbnailPath && routeData?.job?.itemId && (
+          <ItemThumbnailUpload
+            path={routeData.job.thumbnailPath}
+            itemId={routeData.job.itemId}
+            modelId={routeData.job.modelId}
+            isReadOnly
+          />
+        )}
       </VStack>
 
       <VStack spacing={2}>
@@ -549,10 +556,8 @@ const JobProperties = () => {
           onChange={(value) => {
             const next = value?.value ?? "";
             setDeadlineType(next);
+            // One post: the server clears the date a type takes none of.
             onUpdate("deadlineType", next || null);
-            if (!deadlineRequiresDueDate(next)) {
-              onUpdate("dueDate", null);
-            }
           }}
         />
       </ValidatedForm>

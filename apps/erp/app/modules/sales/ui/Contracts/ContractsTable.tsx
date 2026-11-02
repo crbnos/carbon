@@ -22,6 +22,7 @@ import {
 import { useNavigate } from "react-router";
 import { CustomerAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import {
   useCurrencyFormatter,
   useDateFormatter,
@@ -43,6 +44,7 @@ type ContractsTableProps = {
   count: number;
   /** Which list this is: service contracts or project contracts. */
   billingBasis: ContractBillingBasis;
+  infinite: InfiniteOptions;
 };
 
 /** The columns only a service contract fills: its value, what is invoiced of
@@ -55,7 +57,7 @@ const scheduleOnlyColumns = new Set([
 ]);
 
 const ContractsTable = memo((props: ContractsTableProps) => {
-  const { data, count, billingBasis } = props;
+  const { data, count, billingBasis, infinite } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -268,6 +270,7 @@ const ContractsTable = memo((props: ContractsTableProps) => {
     <>
       <Table<ContractListItem>
         count={count}
+        infinite={infinite}
         columns={columns}
         data={data}
         defaultColumnPinning={{

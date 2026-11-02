@@ -24,7 +24,7 @@ Stripe billing integration — checkout, subscriptions, webhooks, and customer s
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/stripe typecheck   # tsgo --noEmit
+pnpm --filter @carbon/stripe typecheck   # tsc --noEmit
 pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
 ```
 

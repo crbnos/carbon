@@ -9,9 +9,10 @@ it — `pnpm db:seed:dev` and onboarding's `company-template` Inngest job — an
 MRP + the scheduler over the committed company (`planDemoCompany`, `@carbon/jobs`), which is
 what fills the planning screens; nothing here writes engine output.
 
-Four datasets ship today, one per onboarding industry: `satellite` (Orbital Systems, Houston
+Five datasets ship today, one per onboarding industry: `satellite` (Orbital Systems, Houston
 TX), `robotics` (Helix Robotics, Pittsburgh PA), `precision` (Meridian Precision Works,
-Rockford IL) and `motor` (Torque Dynamics, Fort Wayne IN).
+Rockford IL), `motor` (Torque Dynamics, Fort Wayne IN) and `defense` (Halberd Unmanned
+Systems, Huntsville AL).
 
 Feature-level context (how onboarding reaches this, the two wipes, posted-document
 conventions, the drift check, adding an industry) lives in
@@ -43,7 +44,7 @@ rows back, insert the journal via `nextJournalEntryId`, and set `journalId`),
 `inspection.ts` (pure sampling-plan / sample-status math shared by tier 07 AND the validator,
 so seeded sample statuses equal what the engine derives) and `bootstrap-lookup.ts`
 (`bootstrapIdByName` — a bootstrap lookup row by name, cached in `ctx.refs.misc`, never module
-scope, which would leak across the drift check's four scratch companies).
+scope, which would leak across the drift check's scratch companies).
 
 ## Part thumbnails are bundled, not uploaded
 
@@ -70,7 +71,7 @@ New content goes in `data/`. Touch a tier only to support a new *shape* of data.
 standing violation is `tiers/workflow-definitions.ts`, which re-exports satellite's workflows
 so `@carbon/database/seed-workflows` stays a single import. It also exports
 `SEED_WORKFLOW_BUILDERS`, so `packages/ee/src/workflows/seed-workflows.test.ts` validates all
-four datasets' definitions — add a new dataset's builder there or its workflows go unchecked.
+five datasets' definitions — add a new dataset's builder there or its workflows go unchecked.
 
 ## `applyDataset` is the only entry point
 
@@ -147,7 +148,7 @@ now; the former silent skips in tiers 01/03/04/06/09/12 throw a named `Seed:` er
 ## Verifying a change
 
 ```bash
-pnpm --silent db:check:datasets            # pure validator, then apply + floors + rollback, ×4
+pnpm --silent db:check:datasets            # pure validator, then apply + floors + rollback, ×5
 pnpm db:seed:dev -- --email you@example.com --dataset satellite
 ```
 

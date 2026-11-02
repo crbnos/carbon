@@ -23,7 +23,12 @@ import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type Kysely,
+  type KyselyDatabase,
+  type KyselyTx,
+  withTransaction
+} from "@carbon/database/client";
 import { single, updateRows } from "@carbon/database/rows";
 import {
   accountDefaults,
@@ -119,6 +124,7 @@ import {
   pickBomChildRow,
   pickReuseRow,
   pickRevisionBase,
+  picksCredentialFreeEmail,
   proposeItem,
   reconcilePushDefaults,
   releaseBomKey,
@@ -153,6 +159,11 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
+import {
+  connectionsHealthy,
+  needsReconnect,
+  readConnections
+} from "@carbon/ee/integrations/connections";
 import type { OeeDevice } from "@carbon/ee/oee";
 import { getOeeProvider } from "@carbon/ee/oee.server";
 import type {
@@ -188,13 +199,17 @@ import {
   patchOnshapeOAuthGrant,
   patchOnshapeSettings
 } from "@carbon/ee/onshape.server";
-import { isIntegrationComingSoon } from "@carbon/ee/plan";
+import {
+  isIntegrationComingSoon,
+  isIntegrationWhitelisted
+} from "@carbon/ee/plan";
 import {
   companyHasFeature,
   hasIntegrationEarlyAccess
 } from "@carbon/ee/plan.server";
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
+import { flags } from "@carbon/env/flags.server";
 import { trigger } from "@carbon/jobs";
 import {
   compatibilityStatus,
@@ -203,6 +218,7 @@ import {
   reportBackupCompatibility,
   selectExportableTables
 } from "@carbon/jobs/backups";
+import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -210,6 +226,7 @@ import {
   datetime,
   isInternalEmail,
   labelSizes,
+  requireAffected,
   searchFilter
 } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
@@ -234,7 +251,7 @@ import {
 import { canEditChangeNoticeEngineering } from "~/modules/items/items.models";
 import {
   cascadeItemTrackingType,
-  copyMakeMethod,
+  createMakeMethodVersion,
   createRevision,
   deleteChangeNotice,
   deleteItem,
@@ -245,12 +262,12 @@ import {
   requireChangeNoticeEditable,
   updateDefaultRevision,
   updateItemMethodAndSourcing,
-  upsertMakeMethodVersion,
   upsertPart
 } from "~/modules/items/items.service";
 import { insertEmployeeJob } from "~/modules/people/people.service";
 import {
   getPurchaseOrder,
+  getPurchaseOrderApproval,
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
   getPurchasingTerms
@@ -280,15 +297,18 @@ import * as sharedService from "~/modules/shared/shared.service";
 import { getPermissionCacheKey } from "~/modules/users/users.service";
 import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
   type CompanyBackupSummary,
   listCompanyBackupFolders
 } from "./backups.service";
-import type { IntegrationErrorCode } from "./integration-errors";
+import type {
+  IntegrationErrorCode,
+  SharedIntegrationErrorCode
+} from "./integration-errors";
 import { integrationErrorSearch } from "./integration-errors";
 import type { OAuthPopupOutcome, OAuthPopupResult } from "./oauth-popup";
 import { OAUTH_POPUP_MESSAGE } from "./oauth-popup";
@@ -328,8 +348,30 @@ export async function deleteSubsidiary(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client.from("company").delete().eq("id", companyId);
+  return requireAffected(
+    client.from("company").delete().eq("id", companyId).select("id")
+  );
 }
+
+// The key hash never leaves the server.
+export async function getApiKey(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("apiKey")
+    .select(
+      "id, name, expiresAt, scopes, keyPreview, lastUsedAt, rateLimit, rateLimitWindow, createdAt, createdBy, updatedBy, companyId"
+    )
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export const API_KEYS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: true }]
+};
 
 export async function getApiKeys(
   client: SupabaseClient<Database>,
@@ -338,7 +380,7 @@ export async function getApiKeys(
 ) {
   let query = client
     .from("apiKey")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -346,9 +388,7 @@ export async function getApiKeys(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, API_KEYS_PAGING);
   }
 
   return query;
@@ -546,6 +586,12 @@ export async function getCustomFields(
     .single();
 }
 
+// The `customFieldTables` view has no `id`; one row is one table.
+export const CUSTOM_FIELD_TABLES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }],
+  idColumn: "table"
+};
+
 export async function getCustomFieldsTables(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -556,7 +602,7 @@ export async function getCustomFieldsTables(
   let query = client
     .from("customFieldTables")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -564,9 +610,7 @@ export async function getCustomFieldsTables(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, CUSTOM_FIELD_TABLES_PAGING);
   return query;
 }
 
@@ -584,6 +628,32 @@ export async function getIntegration(
 }
 
 const integrationInstallLogger = getLogger("erp", "settings", "integrations");
+
+/** The install action's checks, for the piece connect route and callback, which install without it. */
+export async function pieceConnectRefusal(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    integrationId: string;
+    email: string;
+    userId: string;
+  }
+): Promise<"unavailable" | SharedIntegrationErrorCode | null> {
+  const integration = availableIntegrations.find(
+    (i) => i.id === args.integrationId
+  );
+  if (!integration?.active) return "unavailable";
+  if (
+    !isIntegrationWhitelisted(args.integrationId) &&
+    !(await companyHasFeature(client, args.companyId, {
+      feature: "INTEGRATIONS"
+    }))
+  ) {
+    return "plan-required";
+  }
+  if (await isIntegrationInstallWithheld(client, args)) return "coming-soon";
+  return null;
+}
 
 /**
  * Whether a new install is refused: an `internalOnly` integration this user
@@ -605,7 +675,11 @@ export async function isIntegrationInstallWithheld(
     !isIntegrationComingSoon(integration, {
       edition: CarbonEdition,
       email,
-      hasEarlyAccess: hasIntegrationEarlyAccess(userId)
+      hasEarlyAccess: await hasIntegrationEarlyAccess({
+        companyId,
+        userId,
+        email
+      })
     })
   ) {
     return false;
@@ -636,7 +710,7 @@ export async function getKanbanOutputSetting(
 ) {
   return client
     .from("companySettings")
-    .select("kanbanOutput")
+    .select("kanbanOutput, kanbanLabelSize")
     .eq("id", companyId)
     .single();
 }
@@ -676,6 +750,10 @@ export async function getSequence(
     .single();
 }
 
+export const SEQUENCES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getSequences(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -686,7 +764,7 @@ export async function getSequences(
   let query = client
     .from("sequence")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -694,9 +772,7 @@ export async function getSequences(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SEQUENCES_PAGING);
   return query;
 }
 
@@ -713,6 +789,10 @@ export async function getSequencesList(
     .order("table");
 }
 
+export const ITEM_SERIAL_SEQUENCES_PAGING: Paging = {
+  defaultSorts: [{ column: "itemReadableId", ascending: true }]
+};
+
 export async function getItemSerialSequences(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -723,7 +803,7 @@ export async function getItemSerialSequences(
   let query = client
     .from("itemSerialSequences")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -731,9 +811,7 @@ export async function getItemSerialSequences(
     query = query.or(searchFilter(["itemReadableId", "itemName"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "itemReadableId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, ITEM_SERIAL_SEQUENCES_PAGING);
   return query;
 }
 
@@ -798,11 +876,14 @@ export async function deleteItemSerialSequence(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("itemSerialSequence")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("itemSerialSequence")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function getSubsidiaries(
@@ -859,9 +940,15 @@ export async function getDocumentTemplateConfig(
   return toDocumentTemplate(stored.data, documentType);
 }
 
-/** The template row only: `settings.documentTemplate.save` also saves the header layout onto its section. */
+/**
+ * The template row and, when given, its header section's layout, in one
+ * transaction: `settings.documentTemplate.save` is the operation. The header
+ * row is inserted when the company has none under that id (a built-in header
+ * is forked into the company's copy); an existing row takes only the new
+ * `config`.
+ */
 export async function upsertDocumentTemplate(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   documentTemplate: {
     companyId: string;
     documentType: DocumentTemplateType;
@@ -870,19 +957,66 @@ export async function upsertDocumentTemplate(
     settings: DocumentSettings;
     headerSectionId: string | null;
     footerSectionId: string | null;
-    createdBy: string;
-    updatedBy: string;
+    userId: string;
+  },
+  header?: {
+    id: string;
+    name: string;
+    content: JSONContent;
+    config: Record<string, unknown>;
   }
 ) {
-  return client.from("documentTemplate").upsert(
-    {
-      ...documentTemplate,
+  const { companyId, userId } = documentTemplate;
+  const now = datetime.timestamp();
+  const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
+
+  await withTransaction(db, async (trx) => {
+    if (header) {
+      await trx
+        .insertInto("documentSection")
+        .values({
+          id: header.id,
+          companyId,
+          name: header.name,
+          placement: "header",
+          content: jsonb(header.content),
+          config: jsonb(header.config),
+          createdBy: userId
+        })
+        .onConflict((oc) =>
+          oc.columns(["id", "companyId"]).doUpdateSet({
+            config: jsonb(header.config),
+            updatedBy: userId,
+            updatedAt: now
+          })
+        )
+        .execute();
+    }
+
+    const template = {
+      blocks: jsonb(documentTemplate.blocks),
+      theme: jsonb(documentTemplate.theme),
+      settings: jsonb(documentTemplate.settings),
+      headerSectionId: documentTemplate.headerSectionId,
+      footerSectionId: documentTemplate.footerSectionId,
       // Always persist the current schema version of the JSON we're writing.
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
-      updatedAt: new Date().toISOString()
-    },
-    { onConflict: "companyId,documentType" }
-  );
+      updatedBy: userId,
+      updatedAt: now
+    };
+    await trx
+      .insertInto("documentTemplate")
+      .values({
+        ...template,
+        companyId,
+        documentType: documentTemplate.documentType,
+        createdBy: userId
+      })
+      .onConflict((oc) =>
+        oc.columns(["companyId", "documentType"]).doUpdateSet(template)
+      )
+      .execute();
+  });
 }
 
 export async function getDocumentSections(
@@ -971,17 +1105,19 @@ export async function upsertDocumentSection(
       .select("id");
   }
   const { id, companyId, ...update } = documentSection;
-  return client
-    .from("documentSection")
-    .update({
-      ...update,
-      content: update.content as Json,
-      config: (update.config ?? {}) as Json,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id ?? "")
-    .eq("companyId", companyId)
-    .select("id");
+  return requireAffected(
+    client
+      .from("documentSection")
+      .update({
+        ...update,
+        content: update.content as Json,
+        config: (update.config ?? {}) as Json,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", id ?? "")
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 /** The section row: `settings.documentSection.delete` is the operation. */
@@ -990,11 +1126,14 @@ export async function deleteDocumentSection(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("documentSection")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("documentSection")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 /**
@@ -1033,6 +1172,10 @@ export async function getWebhook(client: SupabaseClient<Database>, id: string) {
   return client.from("webhook").select("*").eq("id", id).single();
 }
 
+export const WEBHOOKS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: true }]
+};
+
 export async function getWebhooks(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1041,7 +1184,7 @@ export async function getWebhooks(
   let query = client
     .from("webhook")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1050,9 +1193,7 @@ export async function getWebhooks(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, WEBHOOKS_PAGING);
   }
 
   return query;
@@ -1096,7 +1237,9 @@ export async function updateSubsidiary(
   }
 ) {
   const { id: _, ...data } = subsidiary;
-  return client.from("company").update(data).eq("id", id);
+  return requireAffected(
+    client.from("company").update(data).eq("id", id).select("id")
+  );
 }
 
 export async function updateCompanyPlan(
@@ -1112,7 +1255,13 @@ export async function updateCompanyPlan(
   // Extract companyId and build the update data without it
   const { companyId, ...updateData } = data;
 
-  return client.from("companyPlan").update(updateData).eq("id", companyId);
+  return requireAffected(
+    client
+      .from("companyPlan")
+      .update(updateData)
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 /** Only the company row: `settings.company.update` also handles a base-currency change and the cached time zone. */
@@ -1123,7 +1272,13 @@ export async function updateCompany(
     updatedBy: string;
   }
 ) {
-  return client.from("company").update(sanitize(company)).eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize(company))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 /**
@@ -1137,17 +1292,19 @@ export async function updateCompany(
 export async function updateCompanyWithBaseCurrencyChange(
   db: Kysely<KyselyDatabase>,
   companyId: string,
-  company: Partial<z.infer<typeof companyValidator>> & {
+  company: Partial<z.infer<typeof subsidiaryValidator>> & {
     updatedBy: string;
-  }
+  },
+  // The subsidiary update also writes `parentCompanyId`.
+  allowedFields: readonly string[] = Object.keys(companyValidator.shape)
 ) {
   // An explicit allow-list of the company form's fields, never the caller's
   // object: Kysely bypasses RLS and the API passes `company` through with
   // whatever keys were sent, so a spread would reach any column of the row.
-  const allowed = new Set<string>(Object.keys(companyValidator.shape));
+  const allowed = new Set<string>(allowedFields);
   const fields = Object.fromEntries(
     Object.entries(sanitize(company)).filter(([key]) => allowed.has(key))
-  ) as Partial<z.infer<typeof companyValidator>>;
+  ) as Partial<z.infer<typeof subsidiaryValidator>>;
 
   return db.transaction().execute(async (trx) => {
     await trx
@@ -1172,14 +1329,17 @@ export async function updateLogoDark(
   companyId: string,
   logoDark: string | null
 ) {
-  return client
-    .from("company")
-    .update(
-      sanitize({
-        logoDark
-      })
-    )
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(
+        sanitize({
+          logoDark
+        })
+      )
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoDarkIcon(
@@ -1187,10 +1347,13 @@ export async function updateLogoDarkIcon(
   companyId: string,
   logoDarkIcon: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoDarkIcon }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoDarkIcon }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoLight(
@@ -1198,10 +1361,13 @@ export async function updateLogoLight(
   companyId: string,
   logoLight: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoLight }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoLight }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoLightIcon(
@@ -1209,10 +1375,13 @@ export async function updateLogoLightIcon(
   companyId: string,
   logoLightIcon: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoLightIcon }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoLightIcon }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoWatermark(
@@ -1220,10 +1389,13 @@ export async function updateLogoWatermark(
   companyId: string,
   logoWatermark: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoWatermark }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoWatermark }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateProductLabelSize(
@@ -1231,10 +1403,13 @@ export async function updateProductLabelSize(
   companyId: string,
   productLabelSize: string
 ) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ productLabelSize }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("companySettings")
+      .update(sanitize({ productLabelSize }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateSequence(
@@ -1812,17 +1987,25 @@ export async function buildPreviewProps(
       };
     }
     case "purchaseOrder": {
-      const [order, lines, locations, terms, payment, ap] = await Promise.all([
-        getPurchaseOrder(client, id),
-        getPurchaseOrderLines(client, id),
-        getPurchaseOrderLocations(client, id),
-        getPurchasingTerms(client, companyId),
-        getPaymentTermsList(client, companyId),
-        getAccountsPayableBillingAddress(client, companyId)
-      ]);
+      const [order, lines, locations, terms, payment, ap, approval] =
+        await Promise.all([
+          getPurchaseOrder(client, id),
+          getPurchaseOrderLines(client, id),
+          getPurchaseOrderLocations(client, id),
+          getPurchasingTerms(client, companyId),
+          getPaymentTermsList(client, companyId),
+          getAccountsPayableBillingAddress(client, companyId),
+          getPurchaseOrderApproval(getCarbonServiceRole(), {
+            companyId,
+            purchaseOrderId: id,
+            timezone: company.data.timezone,
+            withSignature: true
+          })
+        ]);
       if (!order.data) return null;
       return {
         ...base,
+        approval,
         purchaseOrder: order.data,
         purchaseOrderLines: lines.data ?? [],
         purchaseOrderLocations: locations.data,
@@ -2081,6 +2264,7 @@ export async function getOeeDevicesTabData(
 }
 
 const INTEGRATION_CACHE_TTL = 3600;
+const PIECE_HEALTHY_CACHE_TTL = 300;
 
 /**
  * Drop the cached auth record for an API key so a scope change or revocation
@@ -2243,15 +2427,18 @@ export async function deactivateIntegration(
 ) {
   const { id, companyId, updatedBy } = args;
 
-  const result = await client
-    .from("companyIntegration")
-    .update({
-      active: false,
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id)
-    .eq("companyId", companyId);
+  const result = await requireAffected(
+    client
+      .from("companyIntegration")
+      .update({
+        active: false,
+        updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 
   if (result.error) {
     return result;
@@ -2270,7 +2457,9 @@ export async function deleteCustomField(
   try {
     clearCustomFieldsCache(companyId);
   } finally {
-    return client.from("customField").delete().eq("id", id);
+    return requireAffected(
+      client.from("customField").delete().eq("id", id).select("id")
+    );
   }
 }
 
@@ -2413,51 +2602,6 @@ export async function getCompanyIntegration(
   );
 }
 
-export async function getSlackIntegration(
-  client: SupabaseClient<Database>,
-  companyId: string
-): Promise<{ token: string; channelId?: string } | null> {
-  // The Redis cache (getCompanyIntegration) no longer holds secret material, so
-  // read the row directly with a service-role client — required both to resolve
-  // the vaulted access_token and, in the transitional window, to see the plaintext
-  // still in the column.
-  const serviceRole = getCarbonServiceRole();
-  const { data: integration } = await serviceRole
-    .from("companyIntegration")
-    .select("metadata, secretRef, active")
-    .eq("companyId", companyId)
-    .eq("id", "slack")
-    .maybeSingle();
-
-  if (!integration?.active || !integration.metadata) {
-    return null;
-  }
-
-  const metadata = (await resolveIntegrationSecrets(
-    serviceRole,
-    companyId,
-    "slack",
-    integration.metadata,
-    integration.secretRef
-  )) as any;
-
-  if (!metadata.access_token) {
-    return null;
-  }
-
-  return {
-    token: metadata.access_token,
-    channelId: metadata.channel_id || metadata.default_channel_id
-  };
-}
-
-export async function hasSlackIntegration(
-  client: SupabaseClient<Database>,
-  companyId: string
-): Promise<boolean> {
-  return hasIntegration(client, companyId, "slack");
-}
-
 export async function upsertCompanyIntegration(
   client: SupabaseClient<Database>,
   update: {
@@ -2561,6 +2705,43 @@ export async function upsertCompanyIntegration(
   return result;
 }
 
+/**
+ * Flip an integration to installed without touching anything else on the row. The
+ * piece callback marks its card installed after a connection is saved; an upsert
+ * that UPDATES on conflict would write empty metadata over whatever settings the
+ * row already holds.
+ */
+export async function markIntegrationInstalled(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; updatedBy: string }
+): Promise<{ error: PostgrestError | null }> {
+  // Two statements that are each safe against a concurrent callback, instead of
+  // read-then-insert (two callbacks both read "absent" and the second insert
+  // failed on the primary key): insert only when absent, then activate only
+  // when inactive. Neither touches `metadata`.
+  const inserted = await client.from("companyIntegration").upsert(
+    {
+      id: args.id,
+      companyId: args.companyId,
+      active: true,
+      metadata: {},
+      updatedBy: args.updatedBy
+    },
+    { onConflict: "id,companyId", ignoreDuplicates: true }
+  );
+  let error: PostgrestError | null = inserted.error;
+  if (error === null) {
+    ({ error } = await client
+      .from("companyIntegration")
+      .update({ active: true, updatedBy: args.updatedBy })
+      .eq("id", args.id)
+      .eq("companyId", args.companyId)
+      .eq("active", false));
+  }
+  if (error === null) await clearCompanyIntegrationCache(args.companyId);
+  return { error };
+}
+
 export async function upsertCustomField(
   client: SupabaseClient<Database>,
   customField:
@@ -2591,15 +2772,18 @@ export async function upsertCustomField(
         .from("customField")
         .insert([{ ...customField, sortOrder: maxSortOrder + 1 }]);
     }
-    return client
-      .from("customField")
-      .update(
-        sanitize({
-          ...customField,
-          updatedBy: customField.updatedBy
-        })
-      )
-      .eq("id", customField.id);
+    return requireAffected(
+      client
+        .from("customField")
+        .update(
+          sanitize({
+            ...customField,
+            updatedBy: customField.updatedBy
+          })
+        )
+        .eq("id", customField.id)
+        .select("id")
+    );
   }
 }
 
@@ -2671,6 +2855,53 @@ async function getConnectionHealth(
     };
   }
 
+  const key = `integrations:${companyId}:${integration.id}:health`;
+
+  // A workflow-piece card's health is its accounts: none revoked/expired, and none
+  // predating a scope the piece now needs (its steps would fail with
+  // `missing_scope`). One read serves both questions. Decided here rather than in
+  // an ee hook because only this side can see the allowlist's required list, and
+  // an ee hook would read the same rows a second time.
+  if (allowlistEntry(integration.id!) !== undefined) {
+    const cached = await redis.get(key);
+    if (cached === "1")
+      return { ...integration, health: "healthy", healthReason: null };
+    if (cached === "0")
+      return { ...integration, health: "unhealthy", healthReason: null };
+
+    // A failed read is one unhealthy card, never a crashed Settings page —
+    // `getIntegrationsWithHealth` runs these in a Promise.all with no catch. It
+    // is not cached: the next load should re-ask rather than pin a transient
+    // failure for the TTL.
+    let healthy: boolean;
+    try {
+      const [rows, required] = await Promise.all([
+        readConnections(getCarbonServiceRole(), companyId, integration.id!),
+        requiredScopesFor(integration.id!)
+      ]);
+      healthy =
+        connectionsHealthy(rows) &&
+        !rows.some((row) => needsReconnect(row, required));
+    } catch {
+      return { ...integration, health: "unhealthy", healthReason: null };
+    }
+    // The callback, disconnect and uninstall invalidate this key. A refresh the
+    // vendor rejects does not: ee's `markExpired` sets the connection Expired and
+    // cannot reach this key. So a healthy answer is kept for five minutes, not
+    // hours, and an unhealthy one for a minute.
+    await redis.set(
+      key,
+      healthy ? "1" : "0",
+      "EX",
+      healthy ? PIECE_HEALTHY_CACHE_TTL : 60
+    );
+    return {
+      ...integration,
+      health: healthy ? "healthy" : "unhealthy",
+      healthReason: null
+    };
+  }
+
   const serverHooks = getIntegrationServerHooks(integration.id!);
   const config = getIntegrationConfigById(integration.id as IntegrationID);
   const healthcheck = serverHooks?.onHealthcheck ?? config?.onHealthcheck;
@@ -2682,8 +2913,6 @@ async function getConnectionHealth(
       healthReason: null
     };
   }
-
-  const key = `integrations:${companyId}:${integration.id}:health`;
 
   const cached = await redis.get(key);
 
@@ -2704,14 +2933,18 @@ async function getConnectionHealth(
   // the row's `secretRef` itself (the `integrations` view doesn't expose it) and
   // throws when the secret can't be read — treat that as unhealthy rather than
   // crashing the whole settings page.
+  const metadata = (integration.metadata as Record<string, any>) ?? {};
   let resolvedMetadata: Record<string, any>;
   try {
-    resolvedMetadata = (await resolveIntegrationSecrets(
-      getCarbonServiceRole(),
-      companyId,
-      integration.id!,
-      (integration.metadata as Record<string, any>) ?? {}
-    )) as Record<string, any>;
+    // Email's server mail and Gmail store no secret for the vault to return.
+    resolvedMetadata = picksCredentialFreeEmail(integration.id!, metadata)
+      ? metadata
+      : ((await resolveIntegrationSecrets(
+          getCarbonServiceRole(),
+          companyId,
+          integration.id!,
+          metadata
+        )) as Record<string, any>);
   } catch {
     return {
       ...integration,
@@ -2824,17 +3057,20 @@ export async function updateIntegrationMetadata(
     }
   }
 
-  return client
-    .from("companyIntegration")
-    .update(
-      sanitize({
-        metadata: config as Json,
-        updatedAt: new Date().toISOString(),
-        updatedBy
-      })
-    )
-    .eq("companyId", companyId)
-    .eq("id", integrationId);
+  return requireAffected(
+    client
+      .from("companyIntegration")
+      .update(
+        sanitize({
+          metadata: config as Json,
+          updatedAt: new Date().toISOString(),
+          updatedBy
+        })
+      )
+      .eq("companyId", companyId)
+      .eq("id", integrationId)
+      .select("id")
+  );
 }
 
 /**
@@ -3021,6 +3257,28 @@ export async function getSyncOperationReadableIds(
   return Object.fromEntries(results.flat());
 }
 
+/**
+ * Each operation with its `reference` (`getSyncOperationReadableIds`), or
+ * null when it has none. Every page of the Sync Activity tab carries its own.
+ */
+export async function withSyncOperationReferences<
+  T extends SyncOperationReference
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operations: T[]
+): Promise<(T & { reference: { label: string; recordId: string } | null })[]> {
+  const readableIds = await getSyncOperationReadableIds(
+    client,
+    companyId,
+    operations
+  );
+  return operations.map((operation) => ({
+    ...operation,
+    reference: readableIds[syncOperationReadableIdKey(operation)] ?? null
+  }));
+}
+
 /** One provider analytics target with its selectable option values. */
 export type DimensionTargetWithValues = {
   id: string;
@@ -3199,10 +3457,13 @@ export async function saveCompanySettings(
 ): Promise<CarbonError | null> {
   const changes = sentFields(fields);
   if (Object.keys(changes).length === 0) return null;
-  const { error } = await ctx.asCaller.supabase
-    .from("companySettings")
-    .update(changes)
-    .eq("id", ctx.company.id);
+  const { error } = await requireAffected(
+    ctx.asCaller.supabase
+      .from("companySettings")
+      .update(changes)
+      .eq("id", ctx.company.id)
+      .select("id")
+  );
   return error ? ctx.error("internal", failure, error) : null;
 }
 
@@ -3303,8 +3564,8 @@ export async function dcaaTimekeepingRefusal(
   return null;
 }
 
-/** Multi-company management is open to internal (Carbon) users only, for now. */
-export async function refuseUnlessInternalUser(
+/** Multi-company management: Carbon staff, and the companies the `multi-company-management` flag turns it on for. */
+export async function refuseUnlessCanManageCompanies(
   ctx: ServiceContext
 ): Promise<CarbonError | null> {
   const refused = ctx.error(
@@ -3317,7 +3578,15 @@ export async function refuseUnlessInternalUser(
     .select("email")
     .eq("id", ctx.actor.userId)
     .maybeSingle();
-  return isInternalEmail(data?.email ?? "") ? null : refused;
+  const email = data?.email ?? "";
+  if (isInternalEmail(email)) return null;
+  // The same rule as the Settings → Companies pages: Carbon staff, and the
+  // companies the `multi-company-management` flag turns it on for.
+  const enabled = await flags.bool("multi-company-management", {
+    companyId: ctx.company.id,
+    email
+  });
+  return enabled ? null : refused;
 }
 
 /** The headquarters location and the creator's job at it: what a new company starts with. */
@@ -4282,8 +4551,8 @@ export async function loadMethodWriteRefusals(
 
 /**
  * The Draft a push writes into when the item's method is Active: the one this
- * integration made from that method (`pickReusableDraft`), else a new copy. The
- * reusable marker is written last; a failure before it deletes the new Draft.
+ * integration made from that method (`pickReusableDraft`), else a new copy. A
+ * new copy, its line ownership and its reusable marker are one transaction.
  */
 export async function ensureDraftMakeMethod(
   client: Client,
@@ -4343,187 +4612,128 @@ export async function ensureDraftMakeMethod(
   }
   const version = (highest.data?.version ?? 0) + 1;
 
-  const draft = await upsertMakeMethodVersion(client, {
-    copyFromId: activeMethodId,
-    // No `activeVersionId`: it sets a version Active, and the push leaves live methods alone.
-    version,
-    companyId,
-    createdBy: userId
-  });
-  if (draft.error || !draft.data?.id) {
-    return {
-      ok: false,
-      error: draft.error?.message ?? "could not create a draft version"
-    };
-  }
-  const draftId = draft.data.id;
-
-  // `upsertMakeMethodVersion` copies only the method row; the BOM and routing come here.
-  const copied = await copyMakeMethod(client, db, {
-    sourceId: activeMethodId,
-    targetId: draftId,
-    companyId,
-    userId,
-    billOfMaterial: true,
-    billOfProcess: true,
-    parameters: true,
-    tools: true,
-    steps: true,
-    workInstructions: true
-  });
-  const failure = copied.error
-    ? `its method could not be copied (${copied.error.message})`
-    : await carryLineOwnership(client, serviceRole, {
-        sourceMethodId: activeMethodId,
-        targetMethodId: draftId,
-        companyId,
-        userId
-      });
-  const marked = failure
-    ? null
-    : await client.from("externalIntegrationMapping").insert({
-        entityType: DRAFT_MARKER_ENTITY_TYPE,
-        entityId: draftId,
-        integration: ONSHAPE_V2_INTEGRATION_ID,
-        // Not the source id: two Drafts of one method would collide on the unique index.
-        externalId: draftId,
-        metadata: { sourceMethodId: activeMethodId, itemId } as Json,
-        lastSyncedAt: datetime.timestamp(),
+  // The Draft, its copied BOM and routing, the line ownership and the marker
+  // are one transaction: a failure in any of them leaves no Draft behind.
+  try {
+    const draftId = await withTransaction(db, async (trx) => {
+      const draft = await createMakeMethodVersion(client, trx, {
+        copyFromId: activeMethodId,
+        // No `activate`: the push leaves live methods alone.
+        version,
         companyId,
         createdBy: userId
       });
-  const problem =
-    failure ??
-    (marked?.error
-      ? `it could not be marked as Onshape's (${marked.error.message})`
-      : null);
-  if (!problem) {
-    return { ok: true, id: draftId, created: true, version };
-  }
-
-  // A half-built Draft, released, would ship without what failed to copy. Service
-  // role: line mappings have no user DELETE policy. The lines cascade.
-  const discarded = await discardDraft(serviceRole, {
-    draftId,
-    companyId
-  });
-  return {
-    ok: false,
-    error: discarded
-      ? `a draft version was created but ${problem}, so it was removed; push again`
-      : `a draft version was created but ${problem}, and it could not be removed — delete version ${version} before pushing again`
-  };
-}
-
-async function discardDraft(
-  serviceRole: Client,
-  args: { draftId: string; companyId: string }
-): Promise<boolean> {
-  const { draftId, companyId } = args;
-  const mappings = await serviceRole
-    .from("externalIntegrationMapping")
-    .delete()
-    .eq("companyId", companyId)
-    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-    .eq("entityType", "methodMaterial")
-    .eq("metadata->>makeMethodId", draftId);
-  const removed = await serviceRole
-    .from("makeMethod")
-    .delete()
-    .eq("id", draftId)
-    .eq("companyId", companyId);
-  const error = mappings.error ?? removed.error;
-  if (error) {
-    onshapeDraftMethodLogger.error(
-      "Failed to discard a half-built Onshape Draft",
-      {
-        companyId,
-        draftId,
-        error
+      if (draft.error) {
+        throw new Error(
+          draft.error.message || "could not create a draft version"
+        );
       }
-    );
-    return false;
+      await carryLineOwnership(trx, {
+        sourceMethodId: activeMethodId,
+        targetMethodId: draft.data.id,
+        companyId,
+        userId
+      });
+      await trx
+        .insertInto("externalIntegrationMapping")
+        .values({
+          entityType: DRAFT_MARKER_ENTITY_TYPE,
+          entityId: draft.data.id,
+          integration: ONSHAPE_V2_INTEGRATION_ID,
+          // Not the source id: two Drafts of one method would collide on the unique index.
+          externalId: draft.data.id,
+          metadata: { sourceMethodId: activeMethodId, itemId } as Json,
+          lastSyncedAt: datetime.timestamp(),
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+      return draft.data.id;
+    });
+    return { ok: true, id: draftId, created: true, version };
+  } catch (error) {
+    onshapeDraftMethodLogger.error("Failed to create an Onshape Draft", {
+      companyId,
+      activeMethodId,
+      version,
+      error
+    });
+    return {
+      ok: false,
+      error:
+        error instanceof Error && error.message
+          ? error.message
+          : "could not create a draft version"
+    };
   }
-  return true;
 }
 
 /**
  * Copy this integration's line mappings onto the copied lines: ownership is
  * keyed on line id, and unmapped copies would read as manual and be duplicated.
+ * Runs in the transaction that copied the lines, so it reads them there.
  */
 async function carryLineOwnership(
-  client: Client,
-  serviceRole: Client,
+  trx: KyselyTx,
   args: {
     sourceMethodId: string;
     targetMethodId: string;
     companyId: string;
     userId: string;
   }
-): Promise<string | null> {
+): Promise<void> {
   const { sourceMethodId, targetMethodId, companyId, userId } = args;
 
-  const mappings = await serviceRole
-    .from("externalIntegrationMapping")
-    .select("entityId, externalId, metadata, lastSyncedAt")
-    .eq("companyId", companyId)
-    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-    .eq("entityType", "methodMaterial")
-    .eq("metadata->>makeMethodId", sourceMethodId);
-  if (mappings.error) return mappings.error.message;
-  if ((mappings.data ?? []).length === 0) return null;
+  const mappings = await trx
+    .selectFrom("externalIntegrationMapping")
+    .select(["entityId", "externalId", "metadata", "lastSyncedAt"])
+    .where("companyId", "=", companyId)
+    .where("integration", "=", ONSHAPE_V2_INTEGRATION_ID)
+    .where("entityType", "=", "methodMaterial")
+    .where(sql<string>`"metadata"->>'makeMethodId'`, "=", sourceMethodId)
+    .execute();
+  if (mappings.length === 0) return;
 
-  const [sourceLines, targetLines] = await Promise.all([
-    client
-      .from("methodMaterial")
-      .select("id, itemId, order, quantity")
-      .eq("makeMethodId", sourceMethodId)
-      .eq("companyId", companyId),
-    client
-      .from("methodMaterial")
-      .select("id, itemId, order")
-      .eq("makeMethodId", targetMethodId)
-      .eq("companyId", companyId)
-  ]);
-  if (sourceLines.error) return sourceLines.error.message;
-  if (targetLines.error) return targetLines.error.message;
+  const lines = (makeMethodId: string) =>
+    trx
+      .selectFrom("methodMaterial")
+      .select(["id", "itemId", "order", "quantity"])
+      .where("makeMethodId", "=", makeMethodId)
+      .where("companyId", "=", companyId)
+      .execute();
+  const [sourceLines, targetLines] = [
+    await lines(sourceMethodId),
+    await lines(targetMethodId)
+  ];
 
-  const owned = new Set((mappings.data ?? []).map((row) => row.entityId));
   const paired = pairOwnedCopiedLines(
-    sourceLines.data ?? [],
-    targetLines.data ?? [],
-    owned
+    sourceLines,
+    targetLines,
+    new Set(mappings.map((row) => row.entityId))
   );
 
   const inserts = [];
-  for (const mapping of mappings.data ?? []) {
+  for (const mapping of mappings) {
     const targetLineId = paired.get(mapping.entityId);
     // Unpaired: left unmapped, so it reads as manual and is kept, not duplicated.
     if (!targetLineId) continue;
-    const metadata = {
-      ...((mapping.metadata as Record<string, unknown> | null) ?? {}),
-      makeMethodId: targetMethodId
-    };
     inserts.push({
       entityType: "methodMaterial",
       entityId: targetLineId,
       integration: ONSHAPE_V2_INTEGRATION_ID,
       externalId: mapping.externalId,
-      metadata: metadata as Json,
+      metadata: {
+        ...((mapping.metadata as Record<string, unknown> | null) ?? {}),
+        makeMethodId: targetMethodId
+      } as Json,
       lastSyncedAt: mapping.lastSyncedAt,
       companyId,
       createdBy: userId
     });
   }
-  if (inserts.length === 0) return null;
+  if (inserts.length === 0) return;
 
-  const written = await client
-    .from("externalIntegrationMapping")
-    .insert(inserts);
-  if (written.error) {
-    return `${inserts.length} of its lines could not be linked to Onshape (${written.error.message})`;
-  }
-  return null;
+  await trx.insertInto("externalIntegrationMapping").values(inserts).execute();
 }
 
 type MethodMaterialInsert =
@@ -5313,7 +5523,8 @@ export async function completeOnshapeAuthorization({
   }
 }
 
-function withCookie(response: Response, cookie: string) {
+/** Sets the OAuth state cookie a consume rewrote on the reply that ends the flow. */
+export function withCookie(response: Response, cookie: string) {
   response.headers.append("Set-Cookie", cookie);
   return response;
 }
@@ -8561,6 +8772,7 @@ function methodLinesMissingPullFrom(
   companyId: string,
   locationIds: string[]
 ) {
+  // A line with no Pull From at a location, or a non-nettable (quarantine) one.
   return db
     .selectFrom("methodMaterial")
     .innerJoin("makeMethod", (join) =>
@@ -8581,7 +8793,16 @@ function methodLinesMissingPullFrom(
       sql<boolean>`COALESCE("component"."itemTrackingType", 'Inventory') <> 'Non-Inventory'`
     )
     .where(
-      sql<boolean>`EXISTS (SELECT 1 FROM unnest(${locationIds}::text[]) AS loc WHERE COALESCE("methodMaterial"."storageUnitIds" ->> loc, '') = '')`
+      sql<boolean>`EXISTS (
+        SELECT 1 FROM unnest(${locationIds}::text[]) AS loc
+        WHERE COALESCE("methodMaterial"."storageUnitIds" ->> loc, '') = ''
+          OR EXISTS (
+            SELECT 1 FROM "storageUnit" su
+            WHERE su."id" = "methodMaterial"."storageUnitIds" ->> loc
+              AND su."companyId" = ${companyId}
+              AND su."effectiveNettable" = false
+          )
+      )`
     );
 }
 
@@ -8590,6 +8811,7 @@ function jobLinesMissingStorageUnit(
   companyId: string,
   locationIds: string[]
 ) {
+  // A line with no storage unit, or a non-nettable (quarantine) one.
   return db
     .selectFrom("jobMaterial")
     .innerJoin("job", (join) =>
@@ -8605,7 +8827,20 @@ function jobLinesMissingStorageUnit(
     )
     .where("job.locationId", "in", locationIds)
     .where("jobMaterial.companyId", "=", companyId)
-    .where("jobMaterial.storageUnitId", "is", null)
+    .where((eb) =>
+      eb.or([
+        eb("jobMaterial.storageUnitId", "is", null),
+        eb(
+          "jobMaterial.storageUnitId",
+          "in",
+          eb
+            .selectFrom("storageUnit")
+            .select("storageUnit.id")
+            .where("storageUnit.companyId", "=", companyId)
+            .where("storageUnit.effectiveNettable", "=", false)
+        )
+      ])
+    )
     .where("jobMaterial.methodType", "!=", "Make to Order")
     .where("jobMaterial.itemType", "in", [...PULLED_ITEM_TYPES])
     .where("jobMaterial.requiresBatchTracking", "=", false)
@@ -8682,6 +8917,38 @@ export async function getActiveMethodsMissingPullFrom(
       ])
       .execute();
 
+    // The Pull Froms at these locations that are non-nettable (quarantine),
+    // which count as missing too.
+    const pullFromAt = (storageUnitIds: unknown, locationId: string) => {
+      const value =
+        storageUnitIds && typeof storageUnitIds === "object"
+          ? (storageUnitIds as Record<string, unknown>)[locationId]
+          : undefined;
+      return typeof value === "string" && value.length > 0 ? value : null;
+    };
+    const namedIds = [
+      ...new Set(
+        lines.flatMap((line) =>
+          locationIds.flatMap((id) => pullFromAt(line.storageUnitIds, id) ?? [])
+        )
+      )
+    ];
+    const nonNettable = new Set(
+      namedIds.length === 0
+        ? []
+        : (
+            await db
+              .selectFrom("storageUnit")
+              .where("companyId", "=", companyId)
+              // One array parameter: a large company can name more units
+              // than Postgres allows bound parameters.
+              .where(sql<boolean>`"id" = ANY(${namedIds}::text[])`)
+              .where("effectiveNettable", "=", false)
+              .select("id")
+              .execute()
+          ).map((unit) => unit.id)
+    );
+
     const methods = new Map<
       string,
       Omit<MethodMissingPullFrom, "materials" | "locations"> & {
@@ -8706,6 +8973,12 @@ export async function getActiveMethodsMissingPullFrom(
         locationIds
       ))
         method.locations.add(locationName.get(id) ?? id);
+      for (const id of locationIds) {
+        const pullFrom = pullFromAt(line.storageUnitIds, id);
+        if (pullFrom && nonNettable.has(pullFrom)) {
+          method.locations.add(locationName.get(id) ?? id);
+        }
+      }
       methods.set(line.makeMethodId, method);
     }
 

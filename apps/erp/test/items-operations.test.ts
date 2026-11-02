@@ -4,27 +4,13 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// The module graph reaches Lingui `msg` macros at load, which only run compiled.
-vi.mock("@lingui/core/macro", () => ({
-  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
-}));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn() })
-}));
 const { trigger } = vi.hoisted(() => ({ trigger: vi.fn() }));
 vi.mock("@carbon/jobs", () => ({ trigger }));
+// The approval engine works in the database; here it answers per test.
 vi.mock("@carbon/ee/approvals/document.server", () => ({
   openApprovalRequests: vi.fn(),
   cancelPendingApprovals: vi.fn(),
   decideApprovalRequest: vi.fn()
-}));
-vi.mock("../app/modules/items/items.service", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  getItemSupersession: vi.fn(),
-  updateChangeNoticeStatus: vi.fn(),
-  updateItemMethodAndSourcing: vi.fn(),
-  upsertItemPlanning: vi.fn(),
-  upsertItemSupersession: vi.fn()
 }));
 
 import { openApprovalRequests } from "@carbon/ee/approvals/document.server";
@@ -34,15 +20,9 @@ import {
   setItemActive,
   setItemPostingGroup,
   setItemSourcing,
+  updateItem,
   updateItemPlanning
 } from "../app/modules/items/items.server";
-import {
-  getItemSupersession,
-  updateChangeNoticeStatus,
-  updateItemMethodAndSourcing,
-  upsertItemPlanning,
-  upsertItemSupersession
-} from "../app/modules/items/items.service";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
 type Write = {
@@ -163,16 +143,12 @@ describe("setItemPostingGroup", () => {
 });
 
 describe("setItemSourcing", () => {
-  it("refuses a call that sets none, or more than one, of the three fields", async () => {
-    const inputs: Parameters<typeof setItemSourcing>[1][] = [
-      { ids: ["i1"] },
-      { ids: ["i1"], replenishmentSystem: "Make", sourcingType: "Drop Ship" }
-    ];
-    for (const input of inputs) {
-      const result = await setItemSourcing(contextFor(unreachable), input);
-      expect(result.error).toMatchObject({ category: "validation" });
-    }
-    expect(updateItemMethodAndSourcing).not.toHaveBeenCalled();
+  it.each<Parameters<typeof setItemSourcing>[1]>([
+    { ids: ["i1"] },
+    { ids: ["i1"], replenishmentSystem: "Make", sourcingType: "Drop Ship" }
+  ])("refuses a call that sets none, or more than one, of the three fields", async (input) => {
+    const result = await setItemSourcing(contextFor(unreachable), input);
+    expect(result.error).toMatchObject({ category: "validation" });
   });
 });
 
@@ -226,7 +202,7 @@ describe("setChangeNoticeStatus", () => {
   });
 
   it("submits for approval instead of moving when a rule gates the step", async () => {
-    const { client } = fakeClient({
+    const { client, writes } = fakeClient({
       changeOrder: { status: "Engineering Complete" }
     });
     vi.mocked(openApprovalRequests).mockResolvedValue({
@@ -242,11 +218,11 @@ describe("setChangeNoticeStatus", () => {
     );
 
     expect(result.data).toMatchObject({ approvalRequested: true });
-    expect(updateChangeNoticeStatus).not.toHaveBeenCalled();
+    expect(writes).toEqual([]);
   });
 
   it("refuses a second request while one is pending", async () => {
-    const { client } = fakeClient({
+    const { client, writes } = fakeClient({
       changeOrder: { status: "Engineering Complete" }
     });
     vi.mocked(openApprovalRequests).mockResolvedValue({
@@ -262,7 +238,7 @@ describe("setChangeNoticeStatus", () => {
     );
 
     expect(result.error).toMatchObject({ category: "conflict" });
-    expect(updateChangeNoticeStatus).not.toHaveBeenCalled();
+    expect(writes).toEqual([]);
   });
 });
 
@@ -283,16 +259,13 @@ describe("addItemPredecessor", () => {
   });
 
   it("refuses a predecessor that already has another successor", async () => {
-    const { client } = fakeClient({
-      item: { id: "old-part", readableIdWithRevision: "P1" }
-    });
-    vi.mocked(getItemSupersession).mockResolvedValue({
-      data: {
+    const { client, writes } = fakeClient({
+      item: { id: "old-part", readableIdWithRevision: "P1" },
+      itemSupersession: {
         successorItemId: "other-part",
         successor: { readableIdWithRevision: "P9" }
-      },
-      error: null
-    } as any);
+      }
+    });
 
     const result = await addItemPredecessor(contextFor(client), {
       ...predecessor,
@@ -300,14 +273,13 @@ describe("addItemPredecessor", () => {
     });
 
     expect(result.error).toMatchObject({ category: "rule" });
-    expect(result.error?.message).toContain("P1 already has a successor (P9)");
-    expect(upsertItemSupersession).not.toHaveBeenCalled();
+    expect(writes).toEqual([]);
   });
 });
 
 describe("updateItemPlanning", () => {
   it("refuses a responsible employee who is not an active employee of the company", async () => {
-    const { client } = fakeClient({ employee: null });
+    const { client, writes } = fakeClient({ employee: null });
 
     const result = await updateItemPlanning(contextFor(client), {
       itemId: "i1",
@@ -317,6 +289,65 @@ describe("updateItemPlanning", () => {
     });
 
     expect(result.error).toMatchObject({ category: "rule" });
-    expect(upsertItemPlanning).not.toHaveBeenCalled();
+    expect(writes).toEqual([]);
+  });
+});
+
+describe("updateItem", () => {
+  const part = {
+    id: "i1",
+    name: "Bracket",
+    replenishmentSystem: "Buy",
+    defaultMethodType: "Purchase to Order",
+    itemTrackingType: "Inventory",
+    unitOfMeasureCode: "EA",
+    type: "Part"
+  } as const;
+
+  it("refuses a readable id that differs from the item's, and writes nothing", async () => {
+    const { client, writes } = fakeClient({ item: { readableId: "P-100" } });
+
+    for (const readableId of ["P-200", ""]) {
+      const result = await updateItem(contextFor(client), {
+        ...part,
+        readableId
+      });
+
+      expect(result.error).toMatchObject({ category: "rule" });
+      expect(result.error?.message).toContain("setItemReadableId");
+    }
+    expect(writes).toHaveLength(0);
+  });
+
+  it("refuses an item that is not of the type sent, and writes nothing", async () => {
+    const { client, writes } = fakeClient({ item: null });
+
+    const result = await updateItem(contextFor(client), {
+      ...part,
+      type: "Tool"
+    });
+
+    expect(result.error).toMatchObject({ category: "rule" });
+    expect(writes).toHaveLength(0);
+  });
+
+  it("writes neither the readable id nor the type", async () => {
+    const { client, writes } = fakeClient({ item: { readableId: "P-100" } });
+
+    const result = await updateItem(contextFor(client), {
+      ...part,
+      readableId: "P-100",
+      name: "Bracket, painted"
+    });
+
+    expect(result.error).toBeNull();
+    expect(writes).toHaveLength(1);
+    expect(writes[0]).toMatchObject({
+      table: "item",
+      op: "update",
+      values: { name: "Bracket, painted" }
+    });
+    expect(writes[0].values).not.toHaveProperty("readableId");
+    expect(writes[0].values).not.toHaveProperty("type");
   });
 });

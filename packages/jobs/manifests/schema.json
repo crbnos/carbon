@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261102011400",
+  "schemaVersion": "20261102032723",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-02T01:19:35.450Z",
+  "exportedAt": "2026-11-02T03:54:51.937Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -315,7 +315,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "decisionSignaturePath"
       ]
     },
     {
@@ -505,7 +506,11 @@
         "burdenRateType",
         "postAppliedBurden",
         "serviceLaborCostRate",
-        "serviceLaborBillRate"
+        "serviceLaborBillRate",
+        "requirePurchaseOrderApprovalSignature",
+        "serialNumberTiming",
+        "useCalendarWeeks",
+        "kanbanLabelSize"
       ]
     },
     {
@@ -1224,7 +1229,8 @@
         "companyId",
         "locationId",
         "quantityOnHand",
-        "projectId"
+        "projectId",
+        "quantityNonNettable"
       ]
     },
     {
@@ -1554,7 +1560,8 @@
         "optimizedAt",
         "optimizedSize",
         "originalSize",
-        "originalPath"
+        "originalPath",
+        "pmiPath"
       ]
     },
     {
@@ -2036,7 +2043,8 @@
         "requiresAbility",
         "batchable",
         "batchType",
-        "batchRules"
+        "batchRules",
+        "abilityPolicy"
       ]
     },
     {
@@ -2438,7 +2446,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "customFields"
+        "customFields",
+        "nettable"
       ]
     },
     {
@@ -3026,7 +3035,8 @@
         "samplingPercentage",
         "samplingAql",
         "samplingInspectionLevel",
-        "samplingSeverity"
+        "samplingSeverity",
+        "modelUploadId"
       ]
     },
     {
@@ -3054,7 +3064,8 @@
         "samplingAql",
         "samplingInspectionLevel",
         "samplingSeverity",
-        "gaugeTypeId"
+        "gaugeTypeId",
+        "pmiItemId"
       ]
     },
     {
@@ -3173,7 +3184,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "serialNumberTiming"
       ]
     },
     {
@@ -3937,7 +3949,9 @@
         "parentId",
         "storageTypeIds",
         "workCenterId",
-        "isWorkCenterDefault"
+        "isWorkCenterDefault",
+        "nettable",
+        "effectiveNettable"
       ]
     },
     {
@@ -5402,7 +5416,9 @@
         "updatedBy",
         "updatedAt",
         "customFields",
-        "projectId"
+        "projectId",
+        "foundDuringCount",
+        "assignedReadableId"
       ]
     },
     {
@@ -6928,7 +6944,8 @@
         "completedBarcodeOverride",
         "jobId",
         "fromStorageUnitId",
-        "replenishmentLevel"
+        "replenishmentLevel",
+        "kanbanId"
       ]
     },
     {
@@ -8977,6 +8994,7 @@
     "apiKeyRateLimit",
     "companyIntegration",
     "employeePin",
+    "integrationConnection",
     "oauthClient",
     "oauthCode",
     "oauthToken",

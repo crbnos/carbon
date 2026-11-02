@@ -5,6 +5,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import type { Database } from "@carbon/database";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { it } from "vitest";
+import { hasLocalDatabase } from "./local-database";
 
 function localEnv(): Record<string, string> | null {
   const file = [".env.local", "../../.env.local"].find((path) =>
@@ -32,11 +34,32 @@ export function localServiceRoleKey(): string | null {
  * when there is no local stack: the tests that need it skip.
  */
 export function localServiceRoleClient(): SupabaseClient<Database> | null {
+  return localClient("SUPABASE_SERVICE_ROLE_KEY");
+}
+
+/** The same PostgREST with the anonymous key: a caller with no permissions. */
+export function localAnonClient(): SupabaseClient<Database> | null {
+  return localClient("SUPABASE_ANON_KEY");
+}
+
+function localClient(
+  keyName: "SUPABASE_SERVICE_ROLE_KEY" | "SUPABASE_ANON_KEY"
+): SupabaseClient<Database> | null {
   const env = localEnv();
   const port = env?.PORT_API;
-  const key = env?.SUPABASE_SERVICE_ROLE_KEY;
+  const key = env?.[keyName];
   if (!port || !key) return null;
   return createClient<Database>(`http://localhost:${port}`, key, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
+}
+
+/** A database case that also reads through the local PostgREST: it skips when
+ *  there is no local stack to build the service-role client from. */
+export function postgrestTest(
+  name: string,
+  fn: (client: SupabaseClient<Database>) => void | Promise<void>
+): void {
+  const client = hasLocalDatabase ? localServiceRoleClient() : null;
+  it.skipIf(!client)(name, () => fn(client!), 60_000);
 }

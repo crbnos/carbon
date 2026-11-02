@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { round } from "@carbon/database/precision";
 import {
   type CurrencyRate,
   convertUnitPrice,
@@ -104,4 +105,40 @@ export function resolveSupplierPrice(
     : null;
   if (supplierPrice === null || !pricing) return documentFallbackPrice;
   return convertUnitPrice(supplierPrice, pricing.currency, document);
+}
+
+/**
+ * What one invoice bills of a flat charge (a line's add-ons or shipping, a
+ * supplier's shipping or tax): its share of the ordered quantity, rounded to
+ * the currency, and never more than earlier invoices left. The invoice that
+ * bills the rest of the quantity bills the rest of the charge, so the invoices
+ * add up to the charge exactly, even after a Draft invoice is edited or
+ * deleted.
+ */
+export function flatChargeShare({
+  charge,
+  billed,
+  quantity,
+  remainingQuantity,
+  orderedQuantity,
+  decimals
+}: {
+  /** The whole charge on the order line. */
+  charge: number;
+  /** What non-voided invoices already bill of it. */
+  billed: number;
+  /** The quantity this invoice bills. */
+  quantity: number;
+  /** The quantity no invoice bills yet (ordered − invoiced). */
+  remainingQuantity: number;
+  orderedQuantity: number | null;
+  /** The charge currency's settlement decimals. */
+  decimals: number;
+}): number {
+  const left = round(charge - billed);
+  if (left === 0 || Math.sign(left) !== Math.sign(charge)) return 0;
+  const ordered = orderedQuantity ?? 0;
+  if (ordered <= 0 || quantity >= remainingQuantity) return left;
+  const share = round((charge * quantity) / ordered, decimals);
+  return Math.abs(share) < Math.abs(left) ? share : left;
 }

@@ -4,10 +4,10 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("../../client", () => ({
-  inngest: { createFunction: () => ({}) }
+// @carbon/auth builds its Supabase client at import time.
+vi.mock("@carbon/auth/client.server", () => ({
+  getCarbonServiceRole: vi.fn()
 }));
-vi.mock("./company-cleanup", () => ({}));
 
 const { purgeRefusal, resolvePurgeOptions } = await import(
   "./purge-inactive-companies"

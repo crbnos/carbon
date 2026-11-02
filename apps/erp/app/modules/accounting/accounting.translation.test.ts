@@ -7,24 +7,6 @@ import { computeReportPeriodBuckets } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
-// The settings/glossary barrels evaluate Lingui macros that Vitest does not
-// transform. The real translation service needs neither dependency here.
-vi.mock("~/modules/settings/settings.service", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  getNextSequence: vi.fn()
-}));
-vi.mock("@carbon/content/glossary", () => ({
-  getDefinitionText: () => "",
-  getEntry: () => undefined,
-  getTermText: () => "",
-  glossaryEntries: () => [],
-  hasEntry: () => false,
-  listEntries: () => [],
-  lookupEntry: () => undefined,
-  termSlug: (term: string) => term,
-  terms: {}
-}));
-
 import {
   applyCtaToReportPeriodSeries,
   getFinancialStatementBalances,

@@ -36,12 +36,15 @@ type IngestOutputs = {
   glb?: { bytes?: number };
   raw?: { bytes?: number };
   thumbnail?: { bytes?: number };
+  pmi?: { bytes?: number; items?: number; views?: number };
 };
 
 /**
  * Model ingest on upload: one assembler job reads the raw once and writes the
  * optimised GLB (`optimizedModelPath`, the preview), the raw's compact form
- * (STEP → BinXCAF `.xbf.zst`, mesh → `.zst`), and the preview thumbnail. Before
+ * (STEP → BinXCAF `.xbf.zst`, mesh → `.zst`), the preview thumbnail, and —
+ * for a STEP with PMI (dimensions, tolerances, datums, saved views) — the
+ * `pmi.json` the viewer draws (`pmiPath`; null when the model has none). Before
  * this they were three jobs, each downloading and parsing the raw again.
  * Separate from assembly-convert, which produces the lossless GLB and graph
  * the assembly viewer needs, and only on demand.
@@ -163,6 +166,9 @@ export const modelOptimizeFunction = inngest.createFunction(
     // URL, so reusing a path would keep showing the browser-cached image.
     const run = event.id ?? event.ts ?? "run";
     const thumbnailPath = `${companyId}/thumbnails/${modelUploadId}/${modelUploadId}-${run}.png`;
+    // Unique per run, like the thumbnail: two runs of one model (a forced
+    // regen beside a retry) never write, or remove, each other's file.
+    const pmiPath = `${companyId}/models/${modelUploadId}/pmi-${run}.json`;
     // Idempotent per model — a re-run attaches to the in-flight optimise. A
     // FORCED regen must not: the assembler's job store keeps completed results
     // (24h TTL), so the stable id would attach to the previous run's result.
@@ -187,7 +193,9 @@ export const modelOptimizeFunction = inngest.createFunction(
           source: { url: internalizeStorageUrl(signedUrl), format },
           output: { path: optimizedPath },
           ...(compact ? { compact: { path: compact.path } } : {}),
-          thumbnail: { path: thumbnailPath }
+          thumbnail: { path: thumbnailPath },
+          // Written only when the model carries PMI.
+          pmi: { path: pmiPath }
           // quality omitted → the service applies its size-adaptive policy.
         };
       },
@@ -197,6 +205,7 @@ export const modelOptimizeFunction = inngest.createFunction(
         return signUploadUrls({
           glb: { bucket, path: optimizedPath },
           thumbnail: { bucket, path: thumbnailPath },
+          pmi: { bucket, path: pmiPath },
           ...(compact
             ? {
                 raw: {
@@ -213,18 +222,24 @@ export const modelOptimizeFunction = inngest.createFunction(
     const stats: Json = optimize.stats;
 
     await step.run("persist", async () => {
-      // Read the thumbnail now, not at queue time: an earlier run's thumbnail
-      // is superseded too.
-      const superseded = outputs.thumbnail
-        ? (await getModelUpload(companyId, modelUploadId))?.thumbnailPath
-        : null;
+      // Read the row now, not at queue time: an earlier run's thumbnail is
+      // superseded too.
+      const current = await getModelUpload(companyId, modelUploadId);
+      const superseded = outputs.thumbnail ? current?.thumbnailPath : null;
+      // An earlier run's pmi.json is superseded either way: by this run's, or
+      // by "no PMI" (the model has none, or this run could not read it).
+      const stalePmi =
+        current?.pmiPath && current.pmiPath !== pmiPath
+          ? current.pmiPath
+          : null;
       await updateModelUpload(companyId, modelUploadId, {
         optimizeStatus: "Success",
         optimizeError: null,
         optimizedModelPath: optimizedPath,
         optimizedSize: outputs.glb?.bytes ?? null,
         optimizedAt: datetime.timestamp(),
-        ...(outputs.thumbnail ? { thumbnailPath } : {})
+        ...(outputs.thumbnail ? { thumbnailPath } : {}),
+        pmiPath: outputs.pmi ? pmiPath : null
       });
       // Drop the superseded thumbnail (best-effort — never fail the run over it).
       if (superseded && superseded !== thumbnailPath) {
@@ -239,7 +254,28 @@ export const modelOptimizeFunction = inngest.createFunction(
           });
         }
       }
+      if (stalePmi) {
+        const removed = await storage(getCarbonServiceRole())
+          .company(companyId)
+          .remove([stalePmi]);
+        if (removed.error) {
+          logger.warn("failed to remove the superseded pmi.json", {
+            modelUploadId,
+            path: stalePmi,
+            error: removed.error
+          });
+        }
+      }
     });
+
+    if (outputs.pmi) {
+      // The model carries PMI: every item on it gets an inspection plan made
+      // from it (once per item and model — a re-optimise makes none).
+      await step.sendEvent("pmi-inspection-plan", {
+        name: "carbon/pmi-inspection-plan",
+        data: { companyId, modelUploadId }
+      });
+    }
 
     if (compact) {
       // The preview now exists, which is what lets an oversized raw be pruned.

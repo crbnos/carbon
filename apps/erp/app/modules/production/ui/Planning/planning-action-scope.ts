@@ -134,3 +134,30 @@ export function planningRowKey(row: {
 }): string {
   return `${row.id}\u001f${row.planningSegmentId ?? ""}`;
 }
+
+/**
+ * Each row with its own planning actions (by `planningRowKey`: the item and
+ * its netting segment). A grid page carries the actions of its rows, so the
+ * grid reads every loaded row's actions from the rows themselves, with no
+ * merge of later pages. Two rows of one item in different segments never
+ * share an action.
+ */
+export function withPlanningActions<
+  R extends { id: string; planningSegmentId?: string | null },
+  A extends { itemId: string; planningSegmentId?: string | null }
+>(rows: readonly R[], actions: readonly A[]): (R & { planningActions: A[] })[] {
+  const byRowKey = new Map<string, A[]>();
+  for (const action of actions) {
+    const key = planningRowKey({
+      id: action.itemId,
+      planningSegmentId: action.planningSegmentId
+    });
+    const list = byRowKey.get(key);
+    if (list) list.push(action);
+    else byRowKey.set(key, [action]);
+  }
+  return rows.map((row) => ({
+    ...row,
+    planningActions: byRowKey.get(planningRowKey(row)) ?? []
+  }));
+}

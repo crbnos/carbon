@@ -16,6 +16,10 @@ import type {
 import { forwardRef } from "react";
 import { LuChevronDown } from "react-icons/lu";
 import { RxMagnifyingGlass } from "react-icons/rx";
+import {
+  useFormControl,
+  useFormControlLabelledBy
+} from "./Form/useFormControl";
 import { Modal, ModalContent, ModalTitle } from "./Modal";
 import { cn } from "./utils/cn";
 import { HitArea, useViewport } from "./Viewport";
@@ -289,7 +293,7 @@ const commandTriggerVariants = cva(
       },
       asButton: {
         false:
-          "text-foreground flex w-full whitespace-nowrap rounded-md border border-input shadow-xs data-[placeholder]:text-muted-foreground outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 overflow-hidden",
+          "text-foreground flex w-full whitespace-nowrap rounded-md border border-input shadow-xs data-[placeholder]:text-muted-foreground outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>span]:line-clamp-1 overflow-hidden",
         true: "text-foreground relative font-medium shrink-0 group inline-flex select-none transform-gpu initial:border-none disabled:opacity-50 focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0 after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-lg after:border after:border-blue-500 after:opacity-0 after:ring-2 after:ring-blue-500/20 after:transition-opacity focus-visible:after:opacity-100 active:after:opacity-0 before:pointer-events-none before:bg-gradient-to-b before:transition-opacity before:from-white/[0.12] before:absolute before:inset-0 before:z-[1] before:rounded before:opacity-0 bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 shadow-button-base hover:scale-100 focus-visible:scale-100 transition-[background-color,color,transform,box-shadow] duration-150 ease-in-out max-md:rounded-full max-md:overflow-visible"
       }
     },
@@ -370,6 +374,8 @@ const CommandTrigger = forwardRef<ElementRef<"button">, CommandTriggerProps>(
     // Only mounted on phones: the trigger's `[&>span]:line-clamp-1` would
     // otherwise un-hide the hit-area span on desktop.
     const { isPhone } = useViewport();
+    const labelledBy = useFormControlLabelledBy(props);
+    const { ariaProps } = useFormControl(props);
     return (
       <button
         ref={ref}
@@ -382,6 +388,8 @@ const CommandTrigger = forwardRef<ElementRef<"button">, CommandTriggerProps>(
           className
         )}
         {...props}
+        {...ariaProps}
+        aria-labelledby={labelledBy}
       >
         {asButton && isPhone && <HitArea />}
         {children}

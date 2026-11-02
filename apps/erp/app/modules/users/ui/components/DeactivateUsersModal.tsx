@@ -15,13 +15,29 @@ import {
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { UserSelect } from "~/components/Selectors";
-import { deactivateUsersValidator } from "~/modules/users/users.models";
+import {
+  type AllMatchingSelection,
+  allMatchingRequest
+} from "~/components/Table";
+import {
+  deactivateUsersAllMatchingValidator,
+  deactivateUsersValidator
+} from "~/modules/users/users.models";
 import { path } from "~/utils/path";
+import {
+  AllMatchingUsersNote,
+  type BulkUserActionFetcher
+} from "./AllMatchingUsers";
 
 type DeactivateUsersModalProps = {
   userIds: string[];
   isOpen: boolean;
   redirectTo?: string;
+  /** Set when the action applies to every matching user of the list. */
+  allMatching?: AllMatchingSelection | null;
+  /** Posts the every-matching-user request. The table owns it, so its result
+   *  toast still shows after this modal closes. */
+  allMatchingFetcher?: BulkUserActionFetcher;
   onClose: () => void;
 };
 
@@ -29,9 +45,11 @@ const DeactivateUsersModal = ({
   userIds,
   isOpen,
   redirectTo = path.to.employeeAccounts,
+  allMatching,
+  allMatchingFetcher,
   onClose
 }: DeactivateUsersModalProps) => {
-  const isSingleUser = userIds.length === 1;
+  const isSingleUser = !allMatching && userIds.length === 1;
 
   return (
     <Modal
@@ -58,7 +76,11 @@ const DeactivateUsersModal = ({
               <Trans>Are you sure you want to deactivate these users?</Trans>
             )}
           </p>
-          <UserSelect value={userIds} readOnly isMulti />
+          {allMatching ? (
+            <AllMatchingUsersNote />
+          ) : (
+            <UserSelect value={userIds} readOnly isMulti />
+          )}
         </ModalBody>
         <ModalFooter>
           <HStack>
@@ -68,10 +90,24 @@ const DeactivateUsersModal = ({
             <ValidatedForm
               method="post"
               action={path.to.deactivateUsers}
-              validator={deactivateUsersValidator}
+              validator={
+                allMatching
+                  ? deactivateUsersAllMatchingValidator
+                  : deactivateUsersValidator
+              }
+              // Every matching user runs in the background: the route
+              // answers data, not a redirect, so it posts through a fetcher.
+              fetcher={allMatching ? allMatchingFetcher : undefined}
               onSubmit={onClose}
             >
-              {userIds.map((id, index) => (
+              {allMatching && (
+                <input
+                  type="hidden"
+                  name="allMatching"
+                  value={JSON.stringify(allMatchingRequest(allMatching))}
+                />
+              )}
+              {(allMatching ? [] : userIds).map((id, index) => (
                 <input
                   key={id}
                   type="hidden"

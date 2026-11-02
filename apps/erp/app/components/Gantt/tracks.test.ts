@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { assignTracks } from "./tracks";
+import { assignTracks, groupOverlaps, rowNonWorkingIntervals } from "./tracks";
 
 describe("assignTracks", () => {
   it("keeps back-to-back bars on one track", () => {
@@ -37,5 +37,49 @@ describe("assignTracks", () => {
 
   it("uses one track for an empty row", () => {
     expect(assignTracks([])).toEqual({ tracks: [], trackCount: 1 });
+  });
+});
+
+describe("groupOverlaps", () => {
+  it("merges bars that overlap into one span and keeps the rest apart", () => {
+    expect(
+      groupOverlaps([
+        { offset: 20, duration: 5 },
+        { offset: 0, duration: 10 },
+        { offset: 5, duration: 10 },
+        { offset: 15, duration: 5 }
+      ])
+    ).toEqual([
+      { offset: 0, duration: 15, indices: [1, 2] },
+      { offset: 15, duration: 5, indices: [3] },
+      { offset: 20, duration: 5, indices: [0] }
+    ]);
+  });
+});
+
+describe("rowNonWorkingIntervals", () => {
+  const plant = [{ start: 0, end: 8 }];
+  const lightsOut: { start: number; end: number }[] = [];
+
+  it("gives a row its own hours, its station's under it, the plant's elsewhere, and none to the rollup", () => {
+    expect(
+      rowNonWorkingIntervals(
+        [
+          { id: "root" },
+          { id: "lane:oven", parentId: "root" },
+          { id: "op", parentId: "lane:oven" },
+          { id: "lane:pool", parentId: "root" }
+        ],
+        { "lane:oven": lightsOut },
+        plant
+      )
+    ).toEqual(
+      new Map([
+        ["root", undefined],
+        ["lane:oven", lightsOut],
+        ["op", lightsOut],
+        ["lane:pool", plant]
+      ])
+    );
   });
 });

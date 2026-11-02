@@ -64,8 +64,10 @@ the type-scoped `revisions` array.
   revision label. After the commit, if `replenishmentSystem !== "Buy"`, it calls
   `getMethod` (`production.service.ts`, ported from the `get-method` server function) (`~/modules/production/production.service`,
   `type: "itemToItem"`) to copy the method/BOM from source to the new revision.
-  That call runs its own transaction, so it cannot join this one: a failure is
-  logged and the revision stands (the method can be copied again). Three callers, one behaviour: the New Revision
+  That call runs after the commit, in its own transaction: a failure is
+  logged and the revision stands (the method can be copied again). get-method
+  would now join a transaction it is handed (`withTransaction`), so the copy
+  could move inside; it has not been. Three callers, one behaviour: the New Revision
   route, material sizes (`upsertMaterial`), and a change notice's Revision draft
   (`createChangeNoticeDraftMethod`, `active: false`).
 - **Authorization.** Kysely bypasses RLS, so before the transaction

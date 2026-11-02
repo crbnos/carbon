@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import {
   RecordOutlet,
   ResizablePanel,
@@ -18,7 +19,8 @@ import {
   expandStorageUnitIdsWithDescendants,
   getInventoryItems,
   getStorageTypesList,
-  getStorageUnitsList
+  getStorageUnitsList,
+  INVENTORY_ITEMS_PAGING
 } from "~/modules/inventory/inventory.service";
 import type { InventoryItem } from "~/modules/inventory/types";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
@@ -30,9 +32,13 @@ import { getStockOwnerProjects } from "~/modules/projects/projects.service";
 import { getLocationsList } from "~/modules/resources/resources.service";
 import { getTagsList } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
+import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
+import { listErrorPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "inventory-quantities");
 
 export const handle: Handle = {
   realtime: ["itemStockQuantities"]
@@ -48,8 +54,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
 
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
+  // A later page (`?after=`) is read for its rows only: skip the option lists.
+  const isFirstPage = !cursor;
 
   const storageUnitFilter = filters?.find(
     (f) => f.column === "storageUnitIds" && f.value
@@ -117,20 +125,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getInventoryItems(client, locationId, companyId, {
       search,
       limit,
-      offset,
+      cursor,
       sorts,
       filters,
       projectId
     }),
-    getMaterialFormsList(client, companyId),
-    getMaterialSubstancesList(client, companyId),
-    getTagsList(client, companyId),
-    getStorageTypesList(client, companyId),
-    getStorageUnitsList(client, companyId),
-    getStockOwnerProjects(client, companyId)
+    isFirstPage ? getMaterialFormsList(client, companyId) : null,
+    isFirstPage ? getMaterialSubstancesList(client, companyId) : null,
+    isFirstPage ? getTagsList(client, companyId) : null,
+    isFirstPage ? getStorageTypesList(client, companyId) : null,
+    isFirstPage ? getStorageUnitsList(client, companyId) : null,
+    isFirstPage ? getStockOwnerProjects(client, companyId) : null
   ]);
 
   if (inventoryItems.error) {
+    if (cursor) {
+      logger.error("Failed to load a later page of inventory items", {
+        companyId,
+        error: inventoryItems.error
+      });
+      return listErrorPage("inventoryItems");
+    }
     throw redirect(
       path.to.authenticatedRoot,
       await flash(
@@ -140,18 +155,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const uniqueTags = pluckUnique(tags.data, (t) => t.name);
+  const uniqueTags = pluckUnique(tags?.data, (t) => t.name);
+
+  const page = toPage(
+    inventoryItems.data ?? [],
+    { limit, sorts },
+    INVENTORY_ITEMS_PAGING
+  );
 
   return {
     count: inventoryItems.count ?? 0,
-    inventoryItems: (inventoryItems.data ?? []) as InventoryItem[],
+    inventoryItems: page.rows as InventoryItem[],
+    nextCursor: page.nextCursor,
     locationId,
-    forms: forms.data ?? [],
-    substances: substances.data ?? [],
+    forms: forms?.data ?? [],
+    substances: substances?.data ?? [],
     tags: uniqueTags,
-    storageTypes: storageTypes.data ?? [],
-    storageUnits: storageUnits.data ?? [],
-    stockOwners: stockOwners.data ?? [],
+    storageTypes: storageTypes?.data ?? [],
+    storageUnits: storageUnits?.data ?? [],
+    stockOwners: stockOwners?.data ?? [],
     stockOwner
   };
 }
@@ -160,6 +182,7 @@ export default function QuantitiesRoute() {
   const {
     count,
     inventoryItems,
+    nextCursor,
     locationId,
     forms,
     substances,
@@ -182,6 +205,7 @@ export default function QuantitiesRoute() {
           <InventoryTable
             data={inventoryItems}
             count={count}
+            nextCursor={nextCursor}
             locationId={locationId}
             forms={forms}
             substances={substances}

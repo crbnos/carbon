@@ -9,7 +9,7 @@ import {
   isHeic,
   MediaUploader
 } from "@carbon/files/media";
-import { Button, cn, toast, useViewport } from "@carbon/react";
+import { Button, cn, toastError, useViewport } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type React from "react";
 import { useState } from "react";
@@ -52,10 +52,11 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
       try {
         files = await uploader.prepareForUpload(files);
       } catch (error) {
-        toast.error(
+        toastError(
           error instanceof DuplicateFileNameError
             ? t`Duplicate file names after image conversion`
-            : t`Failed to convert image`
+            : t`Failed to convert image`,
+          error
         );
         return;
       } finally {

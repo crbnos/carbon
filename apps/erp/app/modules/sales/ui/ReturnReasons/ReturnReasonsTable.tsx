@@ -16,6 +16,7 @@ import { LuBookMarked, LuCircleSlash, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -25,9 +26,11 @@ type ReturnReason = Database["public"]["Tables"]["returnReason"]["Row"];
 type ReturnReasonsTableProps = {
   data: ReturnReason[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ReturnReasonsTable = memo(({ data, count }: ReturnReasonsTableProps) => {
+const ReturnReasonsTable = memo((props: ReturnReasonsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -111,6 +114,7 @@ const ReturnReasonsTable = memo(({ data, count }: ReturnReasonsTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={infinite}
       primaryAction={
         permissions.can("create", "sales") && (
           <New

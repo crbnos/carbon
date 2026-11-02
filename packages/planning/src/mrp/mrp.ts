@@ -274,7 +274,8 @@ export async function runMrp(
     // rows, where the previous full-ledger GROUP BY grew with total history
     // (~6-8s of an 8M-row tenant's run). Semantics deliberately follow the
     // aggregate: Rejected tracked stock is NOT available to plan against,
-    // matching get_inventory_quantities — the raw ledger sum counted it.
+    // matching get_inventory_quantities — the raw ledger sum counted it. The
+    // nettable figure also leaves out stock in non-nettable storage units.
     //
     // Every stripe is read: planCompany sums each into its netting segment
     // (a project with project stock, else common), the rule of the SQL
@@ -289,7 +290,15 @@ export async function runMrp(
     ] = await Promise.all([
       db
         .selectFrom("itemStockQuantities")
-        .select(["itemId", "locationId", "projectId", "quantityOnHand"])
+        .select((eb) => [
+          "itemId",
+          "locationId",
+          "projectId",
+          // the nettable on-hand, under the name planCompany's onHand reads
+          eb("quantityOnHand", "-", eb.ref("quantityNonNettable")).as(
+            "quantityOnHand"
+          )
+        ])
         .where("companyId", "=", companyId)
         .execute(),
       db

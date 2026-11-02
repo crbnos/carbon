@@ -150,6 +150,64 @@ export const integrationErrors = {
       title: msg`Onshape is already connected`,
       description: msg`A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government.`
     }
+  },
+  // Workflow integration connections (Google Calendar and friends). One shared
+  // set of codes: the copy names "the integration" rather than a vendor, so a
+  // second allowlisted piece needs no new entries.
+  connection: {
+    denied: {
+      title: msg`The connection was refused`,
+      description: msg`Authorization was refused. Try connecting again.`
+    },
+    "invalid-response": {
+      title: msg`No authorization code was returned`,
+      description: msg`The response was missing required parameters. Try connecting again.`
+    },
+    "invalid-state": {
+      title: msg`The connection could not be verified`,
+      description: msg`The authorization took too long or came back altered. Start the connection again from this page.`
+    },
+    "not-configured": {
+      title: msg`This integration isn't configured`,
+      description: msg`This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them.`
+    },
+    "token-exchange": {
+      title: msg`The authorization was rejected`,
+      description: msg`Exchanging the authorization code for an access token failed. Try connecting again.`
+    },
+    "duplicate-name": {
+      title: msg`That connection name is already used`,
+      description: msg`Another connection to this integration already has that name. Choose a different one.`
+    },
+    "account-mismatch": {
+      title: msg`That's a different account`,
+      description: msg`Reconnect with the account this connection already uses, or use Add account to connect the other one.`
+    },
+    "account-unverified": {
+      title: msg`Couldn't confirm the account`,
+      description: msg`The integration didn't say which account signed in, so this connection was left unchanged. Try again.`
+    },
+    "workspace-taken": {
+      title: msg`That workspace is connected to another company`,
+      description: msg`A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace.`
+    },
+    "save-failed": {
+      title: msg`Couldn't save the connection`,
+      description: msg`The integration authorized the connection but saving it failed. Try connecting again.`
+    },
+    unexpected: {
+      title: msg`Couldn't complete the connection`,
+      description: msg`An unexpected error occurred while connecting. Try connecting again.`
+    },
+    // Answered by the connect route, before the consent screen opens.
+    unavailable: {
+      title: msg`That integration is not available`,
+      description: msg`This integration can't be connected on this Carbon instance.`
+    },
+    "account-missing": {
+      title: msg`That account no longer exists`,
+      description: msg`It was removed after this page loaded. Reload the page and try again.`
+    }
   }
 } satisfies Record<string, Record<string, IntegrationErrorMessage>>;
 
@@ -161,7 +219,7 @@ export type IntegrationErrorCode<T extends IntegrationWithErrors> =
 /** The query string an OAuth callback redirects to the integrations page with. */
 export function integrationErrorSearch<T extends IntegrationWithErrors>(
   integration: T,
-  error: IntegrationErrorCode<T>
+  error: IntegrationErrorCode<T> | SharedIntegrationErrorCode
 ) {
   return `?integration=${integration}&error=${error}`;
 }
@@ -172,8 +230,14 @@ const sharedErrors = {
   "coming-soon": {
     title: msg`This integration isn't available yet`,
     description: msg`It is coming soon. Contact Carbon to have it set up for your company.`
+  },
+  "plan-required": {
+    title: msg`Integrations aren't included in your plan`,
+    description: msg`Upgrade your plan to connect this integration.`
   }
 } satisfies Record<string, IntegrationErrorMessage>;
+
+export type SharedIntegrationErrorCode = keyof typeof sharedErrors;
 
 /** Resolves those params back to copy. Unknown integration or code → nothing. */
 export function getIntegrationError(

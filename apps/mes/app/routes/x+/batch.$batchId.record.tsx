@@ -13,6 +13,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { batchStepRecordsValidator } from "~/services/models";
 import {
+  abilityBlockRefusal,
   backflushUntrackedMaterialsOnStepRecord,
   insertBatchStepRecords
 } from "~/services/operations.service";
@@ -35,6 +36,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = await getCarbonServiceRole();
+
+  // Every member runs the batch's one process, so one member's check covers
+  // the whole batch.
+  const member = await serviceRole
+    .from("jobOperation")
+    .select("id")
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId)
+    .limit(1)
+    .maybeSingle();
+  const abilityRefusal = member.data
+    ? await abilityBlockRefusal(serviceRole, {
+        operationId: member.data.id,
+        employeeId: userId,
+        companyId
+      })
+    : null;
+  if (abilityRefusal) {
+    return data({}, await flash(request, error(null, abilityRefusal)));
+  }
+
   const inserted = await insertBatchStepRecords(serviceRole, {
     batchId,
     companyId,

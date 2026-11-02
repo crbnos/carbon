@@ -30,6 +30,7 @@ import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import {
@@ -42,12 +43,19 @@ import MaintenancePriority from "../Maintenance/MaintenancePriority";
 type MaintenanceSchedulesTableProps = {
   data: MaintenanceSchedule[];
   count: number;
+  infinite: InfiniteOptions;
   locations: { id: string; name: string }[];
   locationId: string | null;
 };
 
 const MaintenanceSchedulesTable = memo(
-  ({ data, count, locations, locationId }: MaintenanceSchedulesTableProps) => {
+  ({
+    data,
+    count,
+    infinite,
+    locations,
+    locationId
+  }: MaintenanceSchedulesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -277,6 +285,7 @@ const MaintenanceSchedulesTable = memo(
     return (
       <Table<MaintenanceSchedule>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

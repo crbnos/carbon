@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="epdmLiner" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#eef1f2"/>
+      <stop offset="1" stop-color="#d4d9dc"/>
+    </linearGradient>
+    <linearGradient id="epdmPad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a3d41"/>
+      <stop offset="0.5" stop-color="#232528"/>
+      <stop offset="1" stop-color="#141517"/>
+    </linearGradient>
+    <linearGradient id="epdmGlue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d939a"/>
+      <stop offset="0.35" stop-color="#5f656b"/>
+      <stop offset="0.6" stop-color="#a3a9ae"/>
+      <stop offset="1" stop-color="#4f5459"/>
+    </linearGradient>
+    <radialGradient id="epdmShadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.3"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="560" rx="470" ry="200" fill="url(#epdmShadow)"/>
+  <!-- release liner sheet -->
+  <polygon points="877,535 565.3,715 565.3,710 877,530" fill="#b9c0c4" stroke="#9aa2a8" stroke-width="2" stroke-linejoin="round"/>
+  <polygon points="565.3,715 158.2,480 158.2,475 565.3,710" fill="#c9cfd2" stroke="#9aa2a8" stroke-width="2" stroke-linejoin="round"/>
+  <polygon points="470,295 877,530 565.3,710 158.2,475" fill="url(#epdmLiner)" stroke="#9aa2a8" stroke-width="2" stroke-linejoin="round"/>
+  <!-- kiss-cut outlines on the liner -->
+  <polygon points="470,318 551.4,365 470,412 388.6,365" fill="none" stroke="#a7afb4" stroke-width="1.2"/>
+  <polygon points="374.7,373 456.1,420 374.7,467 293.3,420" fill="none" stroke="#a7afb4" stroke-width="1.2"/>
+  <polygon points="279.5,428 360.9,475 279.5,522 198.1,475" fill="#dfe4e6" stroke="#a7afb4" stroke-width="1.2"/>
+  <polygon points="565.3,373 646.7,420 565.3,467 483.9,420" fill="none" stroke="#a7afb4" stroke-width="1.2"/>
+  <polygon points="470,428 551.4,475 470,522 388.6,475" fill="none" stroke="#a7afb4" stroke-width="1.2"/>
+  <polygon points="374.7,483 456.1,530 374.7,577 293.3,530" fill="none" stroke="#a7afb4" stroke-width="1.2"/>
+  <polygon points="660.5,428 741.9,475 660.5,522 579.1,475" fill="none" stroke="#a7afb4" stroke-width="1.2"/>
+  <polygon points="565.3,483 646.7,530 565.3,577 483.9,530" fill="none" stroke="#a7afb4" stroke-width="1.2"/>
+  <polygon points="470,538 551.4,585 470,632 388.6,585" fill="none" stroke="#a7afb4" stroke-width="1.2"/>
+  <polygon points="755.8,483 837.2,530 755.8,577 674.4,530" fill="none" stroke="#a7afb4" stroke-width="1.2"/>
+  <polygon points="660.5,538 741.9,585 660.5,632 579.1,585" fill="none" stroke="#a7afb4" stroke-width="1.2"/>
+  <polygon points="565.3,593 646.7,640 565.3,687 483.9,640" fill="#dfe4e6" stroke="#a7afb4" stroke-width="1.2"/>
+  <!-- die-cut pads -->
+  <polygon points="549.7,365 470,411 470,400 549.7,354" fill="#0a0b0c" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="470,411 390.3,365 390.3,354 470,400" fill="#151618" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="470,308 549.7,354 470,400 390.3,354" fill="url(#epdmPad)" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polyline points="390.3,354 470,308 549.7,354" fill="none" stroke="#5c6066" stroke-width="1.6"/>
+  <polygon points="454.4,420 374.7,466 374.7,455 454.4,409" fill="#0a0b0c" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="374.7,466 295.1,420 295.1,409 374.7,455" fill="#151618" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="374.7,363 454.4,409 374.7,455 295.1,409" fill="url(#epdmPad)" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polyline points="295.1,409 374.7,363 454.4,409" fill="none" stroke="#5c6066" stroke-width="1.6"/>
+  <polygon points="644.9,420 565.3,466 565.3,455 644.9,409" fill="#0a0b0c" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="565.3,466 485.6,420 485.6,409 565.3,455" fill="#151618" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="565.3,363 644.9,409 565.3,455 485.6,409" fill="url(#epdmPad)" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polyline points="485.6,409 565.3,363 644.9,409" fill="none" stroke="#5c6066" stroke-width="1.6"/>
+  <polygon points="549.7,475 470,521 470,510 549.7,464" fill="#0a0b0c" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="470,521 390.3,475 390.3,464 470,510" fill="#151618" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="470,418 549.7,464 470,510 390.3,464" fill="url(#epdmPad)" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polyline points="390.3,464 470,418 549.7,464" fill="none" stroke="#5c6066" stroke-width="1.6"/>
+  <polygon points="740.2,475 660.5,521 660.5,510 740.2,464" fill="#0a0b0c" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="660.5,521 580.8,475 580.8,464 660.5,510" fill="#151618" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="660.5,418 740.2,464 660.5,510 580.8,464" fill="url(#epdmPad)" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polyline points="580.8,464 660.5,418 740.2,464" fill="none" stroke="#5c6066" stroke-width="1.6"/>
+  <polygon points="454.4,530 374.7,576 374.7,565 454.4,519" fill="#0a0b0c" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="374.7,576 295.1,530 295.1,519 374.7,565" fill="#151618" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="374.7,473 454.4,519 374.7,565 295.1,519" fill="url(#epdmPad)" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polyline points="295.1,519 374.7,473 454.4,519" fill="none" stroke="#5c6066" stroke-width="1.6"/>
+  <polygon points="644.9,530 565.3,576 565.3,565 644.9,519" fill="#0a0b0c" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="565.3,576 485.6,530 485.6,519 565.3,565" fill="#151618" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="565.3,473 644.9,519 565.3,565 485.6,519" fill="url(#epdmPad)" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polyline points="485.6,519 565.3,473 644.9,519" fill="none" stroke="#5c6066" stroke-width="1.6"/>
+  <polygon points="835.5,530 755.8,576 755.8,565 835.5,519" fill="#0a0b0c" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="755.8,576 676.1,530 676.1,519 755.8,565" fill="#151618" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="755.8,473 835.5,519 755.8,565 676.1,519" fill="url(#epdmPad)" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polyline points="676.1,519 755.8,473 835.5,519" fill="none" stroke="#5c6066" stroke-width="1.6"/>
+  <polygon points="549.7,585 470,631 470,620 549.7,574" fill="#0a0b0c" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="470,631 390.3,585 390.3,574 470,620" fill="#151618" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="470,528 549.7,574 470,620 390.3,574" fill="url(#epdmPad)" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polyline points="390.3,574 470,528 549.7,574" fill="none" stroke="#5c6066" stroke-width="1.6"/>
+  <polygon points="740.2,585 660.5,631 660.5,620 740.2,574" fill="#0a0b0c" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="660.5,631 580.8,585 580.8,574 660.5,620" fill="#151618" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="660.5,528 740.2,574 660.5,620 580.8,574" fill="url(#epdmPad)" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polyline points="580.8,574 660.5,528 740.2,574" fill="none" stroke="#5c6066" stroke-width="1.6"/>
+  <polygon points="615.5,657 565.3,686 515,657" fill="#e3e8ea" stroke="#a7afb4" stroke-width="1.2"/>
+  <polygon points="644.9,640 615.5,657 615.5,646 644.9,629" fill="#0a0b0c" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="615.5,657 515,657 515,646 615.5,646" fill="#0a0b0c" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="515,657 485.6,640 485.6,629 515,646" fill="#151618" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="565.3,583 644.9,629 615.5,646 515,646 485.6,629" fill="url(#epdmPad)" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polyline points="485.6,629 565.3,583 644.9,629" fill="none" stroke="#5c6066" stroke-width="1.6"/>
+  <path d="M615.5 646 L565.3 604.7 L515 646 Q565.3 654 615.5 646 Z" fill="#000" opacity="0.2" transform="translate(3 6)"/>
+  <path d="M615.5 646 L565.3 604.7 L515 646 Q565.3 654 615.5 646 Z" fill="url(#epdmGlue)" stroke="#1a1c1f" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M615.5 646 Q571.3 656 515 646" fill="none" stroke="#0a0b0c" stroke-width="7" stroke-linecap="round"/>
+  <line x1="551.3" y1="625.6" x2="559.3" y2="608.9" stroke="#ffffff" stroke-opacity="0.6" stroke-width="4" stroke-linecap="round"/>
+  <!-- a loose pad set beside the sheet -->
+  <polygon points="196.7,552.3 240.8,612.2 137.1,637.7 93,577.8" fill="#000" opacity="0.2" transform="translate(4 6)"/>
+  <polygon points="240.8,612.2 137.1,637.7 137.1,626.7 240.8,601.2" fill="#0a0b0c" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="137.1,637.7 93,577.8 93,566.8 137.1,626.7" fill="#151618" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+  <polygon points="196.7,541.3 240.8,601.2 137.1,626.7 93,566.8" fill="url(#epdmPad)" stroke="#050506" stroke-width="1.4" stroke-linejoin="round"/>
+</svg>

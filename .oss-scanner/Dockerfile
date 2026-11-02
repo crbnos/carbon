@@ -4,40 +4,30 @@
 #
 # It covers both workspaces: the TypeScript monorepo (apps/erp, apps/mes,
 # packages/*) and the Rust workspace (crates/*, apps/assembler). The Rust crates
-# link OpenCASCADE, FCL and Draco, built below from the same pinned sources as
-# apps/assembler/Dockerfile and occt.Dockerfile; keep the versions in step. Those
-# stages build in parallel with the JavaScript install, which keeps the whole
-# build inside the scanner's 45-minute limit.
+# link OpenCASCADE (our published production image, below), and FCL and Draco,
+# built from the same pinned sources as apps/assembler/Dockerfile; keep the
+# versions in step. Those stages build in parallel with the JavaScript steps.
 
-# ---- OpenCASCADE, static (as apps/assembler/occt.Dockerfile) ----
-FROM debian:bookworm AS occt
+# ---- Shared toolchain ----
+# The Node image already has git, g++, make and perl. Every native build and the
+# final image start here, so the package mirror is hit once, not once per stage:
+# four parallel toolchain installs from a slow mirror took 25 minutes on their own.
+FROM node:24.22.1-bookworm AS toolchain
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      git cmake g++ make ninja-build ca-certificates perl \
+      cmake ninja-build libeigen3-dev libopenblas-dev gfortran \
     && rm -rf /var/lib/apt/lists/*
-RUN git clone --depth 1 --branch V8_0_0_p1 https://github.com/Open-Cascade-SAS/OCCT.git /occt
-COPY apps/assembler/occt-patches /occt-patches
-RUN /occt-patches/apply.sh /occt
-RUN cmake -S /occt -B /occt/build -G Ninja \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_INSTALL_PREFIX=/opt/occt \
-      -DBUILD_LIBRARY_TYPE=Static \
-      -DBUILD_MODULE_Draw=OFF \
-      -DBUILD_MODULE_Visualization=OFF \
-      -DBUILD_MODULE_ApplicationFramework=ON \
-      -DBUILD_MODULE_DataExchange=ON \
-      -DBUILD_MODULE_ModelingAlgorithms=ON \
-      -DBUILD_MODULE_ModelingData=ON \
-      -DBUILD_MODULE_FoundationClasses=ON \
-      -DUSE_FREETYPE=OFF -DUSE_XLIB=OFF -DUSE_TK=OFF -DUSE_TCL=OFF \
-      -DUSE_OPENGL=OFF -DUSE_GLES2=OFF -DUSE_RAPIDJSON=OFF -DUSE_TBB=OFF \
-      -DUSE_FREEIMAGE=OFF -DUSE_DRACO=OFF -DUSE_VTK=OFF -DUSE_FFMPEG=OFF \
-    && cmake --build /occt/build --target install
+
+# ---- OpenCASCADE, static ----
+# The exact build the assembler links in production: build-images.yml publishes
+# apps/assembler/occt.Dockerfile to public ECR, tagged with a hash of that file and
+# occt-patches/ (.github/scripts/build-images.sh). Compiling it here took 31
+# minutes on a 4-core runner, most of the scanner's 45. The image is linux/amd64
+# only, like the scanner. When occt.Dockerfile or its patches change, move this
+# tag to the new hash.
+FROM public.ecr.aws/b8l5b8t9/carbon/occt:e0ef0c3bcf62 AS occt
 
 # ---- FCL + libccd, static (as apps/assembler/Dockerfile) ----
-FROM debian:bookworm AS fcl
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      git cmake ninja-build g++ libeigen3-dev ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+FROM toolchain AS fcl
 RUN git clone --depth 1 --branch v2.1 https://github.com/danfis/libccd.git /ccd \
     && cmake -S /ccd -B /ccd/b -G Ninja -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/opt/fcl -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
@@ -52,10 +42,7 @@ RUN git clone --depth 1 --branch 0.7.0 https://github.com/flexible-collision-lib
     && cmake --build /fcl/b --target install
 
 # ---- Draco encoder, static (as apps/assembler/Dockerfile) ----
-FROM debian:bookworm AS draco
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      git cmake ninja-build g++ ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+FROM toolchain AS draco
 RUN git clone --depth 1 --branch 1.5.7 https://github.com/google/draco.git /draco \
     && cmake -S /draco -B /draco/b -G Ninja -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/opt/draco -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
@@ -66,12 +53,8 @@ RUN git clone --depth 1 --branch 1.5.7 https://github.com/google/draco.git /drac
 FROM rust:1.99-bookworm AS rust
 
 # ---- The image the scanner audits ----
-FROM node:24.22.1-bookworm
-
-# Eigen for the collision shim, OpenBLAS and gfortran for the planner.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      libeigen3-dev libopenblas-dev gfortran cmake ninja-build \
-    && rm -rf /var/lib/apt/lists/*
+# Eigen (collision shim), OpenBLAS and gfortran (planner) come from the toolchain.
+FROM toolchain
 
 ENV CI=1 \
     COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
@@ -87,20 +70,21 @@ COPY . /src
 WORKDIR /src
 
 # TypeScript: the same install the production image runs (see /Dockerfile), then
-# both server apps. The ERP build also generates the MCP tool manifest.
+# both server apps (the ERP build also generates the MCP tool manifest), then the
+# unit tests. All of it, and the Rust dependency download, runs while the native
+# stages compile: OpenCASCADE is the longest step on a small machine.
 RUN corepack enable && pnpm --version
 RUN pnpm install --frozen-lockfile
 RUN pnpm run build:erp && pnpm run build:mes
-
-# Rust: the native libraries arrive here, after the JavaScript steps, so their
-# stages compile alongside them. A dev build keeps debug info for the auditor.
+# Tests run offline. A failure is reported, never fatal.
+RUN timeout 1200 pnpm run test || echo "WARNING: unit tests reported failures"
 COPY --from=rust /usr/local/rustup /usr/local/rustup
 COPY --from=rust /usr/local/cargo /usr/local/cargo
+RUN cargo fetch --locked
+
+# Rust: the native libraries arrive here. A dev build keeps debug info for the auditor.
 COPY --from=occt /opt/occt /opt/occt
 COPY --from=fcl /opt/fcl /opt/fcl
 COPY --from=draco /opt/draco /opt/draco
-RUN cargo fetch --locked && cargo build --workspace --all-targets --locked
-
-# Tests run offline. A failure is reported, never fatal.
-RUN timeout 1200 pnpm run test || echo "WARNING: unit tests reported failures"
+RUN cargo build --workspace --all-targets --locked --offline
 RUN timeout 900 cargo test --workspace --locked --offline || echo "WARNING: cargo tests reported failures"

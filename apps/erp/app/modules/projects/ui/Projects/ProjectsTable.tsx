@@ -29,6 +29,7 @@ import {
 import { useNavigate } from "react-router";
 import { EmployeeAvatar, Empty, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import {
   useCurrencyFormatter,
   useDateFormatter,
@@ -51,9 +52,10 @@ export type ProjectsTableRow = ProjectListItem & {
 type ProjectsTableProps = {
   data: ProjectsTableRow[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
+const ProjectsTable = memo(({ data, count, infinite }: ProjectsTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -273,6 +275,7 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
 
   return (
     <Table<ProjectsTableRow>
+      infinite={infinite}
       data={data}
       columns={columns}
       count={count}

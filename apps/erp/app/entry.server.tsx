@@ -9,6 +9,8 @@ import {
   setStrictContentSecurityPolicy
 } from "@carbon/auth/middleware/security.server";
 import { getProcessPool } from "@carbon/database/client";
+import { initFlags } from "@carbon/env/flags.server";
+import { redisFlagsStore } from "@carbon/kv";
 import { inngest } from "@carbon/lib/inngest";
 import { getLogger } from "@carbon/logger";
 import { ensureLoggingConfigured } from "@carbon/logger/config.server";
@@ -44,6 +46,17 @@ export const instrumentations = createTracing({
   spanProcessors: [new InngestSpanProcessor(inngest)]
 });
 scheduleInngestSelfSync();
+
+// Feature flags: every process reads the shared copy in Redis and syncs it in
+// the background. Until the first document loads, each flag answers its
+// registry default.
+const flagsLog = getLogger("erp", "flags");
+void initFlags({
+  store: redisFlagsStore,
+  waitUntil: process.env.VERCEL ? waitUntil : undefined,
+  // Structured, so Axiom can alert on stale flags (`ageMs`) and archived reads.
+  onWarning: (message, properties) => flagsLog.warn(message, properties)
+});
 
 const log = getLogger("erp");
 

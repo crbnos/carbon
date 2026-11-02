@@ -4,6 +4,9 @@
 
 import {
   cn,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Table,
   Tabs,
   TabsList,
@@ -12,12 +15,9 @@ import {
   Td,
   Th,
   Thead,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   Tr
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, RoundingMode, round } from "@carbon/utils";
 import {
   today as calendarToday,
   getLocalTimeZone
@@ -43,6 +43,7 @@ import {
   assignmentMatchesShift,
   buildAbsentSet,
   dayOvertime,
+  editorDayRows,
   ladderShiftHours,
   ladderShiftTime,
   STICKY_FIRST_COL,
@@ -87,10 +88,15 @@ type PeopleMatrixProps = {
   departmentId: string | null;
   /** employeeId → their department, for the department-first ordering */
   employeeDepartments: Record<string, string | null>;
+  /** The stations shown: the department filter's, else all. */
   workCenters: MatrixWorkCenter[];
+  /** Every station at the location: names a day spent elsewhere. */
+  allWorkCenters: MatrixWorkCenter[];
+  /** Every assignment of the week, at any station. */
   assignments: MatrixAssignment[];
   absences: { id: string; employeeId: string; date: string }[];
-  demandByWorkCenter: Record<string, { days: Record<string, number> }>;
+  /** work center → date → hands-on hours the schedule books there */
+  attendedByWorkCenter: Record<string, Record<string, number>>;
   shiftId: string | null;
   locationId: string;
   shiftHoursById: Record<string, number>;
@@ -113,9 +119,10 @@ export function PeopleMatrix({
   departmentId,
   employeeDepartments,
   workCenters,
+  allWorkCenters,
   assignments,
   absences,
-  demandByWorkCenter,
+  attendedByWorkCenter,
   shiftId,
   locationId,
   shiftHoursById,
@@ -138,7 +145,13 @@ export function PeopleMatrix({
   const today = calendarToday(getLocalTimeZone()).toString();
 
   const workCenterById = useMemo(
-    () => new Map(workCenters.map((wc) => [wc.id, wc])),
+    () => new Map(allWorkCenters.map((wc) => [wc.id, wc])),
+    [allWorkCenters]
+  );
+  // A day at a station the department filter hides still shows, greyed: the
+  // person is committed there.
+  const shownWorkCenterIds = useMemo(
+    () => new Set(workCenters.map((wc) => wc.id)),
     [workCenters]
   );
   const chipClassByWorkCenter = useMemo(
@@ -180,6 +193,19 @@ export function PeopleMatrix({
     }
     return map;
   }, [visibleAssignments]);
+
+  // every shift's rows by person and day — the day editor saves the person's
+  // own shift, which the page's shift filter may hide
+  const allAssignmentsByKey = useMemo(() => {
+    const map = new Map<string, MatrixAssignment[]>();
+    for (const assignment of assignments) {
+      const key = `${assignment.employeeId}:${assignment.date}`;
+      const list = map.get(key);
+      if (list) list.push(assignment);
+      else map.set(key, [assignment]);
+    }
+    return map;
+  }, [assignments]);
 
   const absentSet = useMemo(() => buildAbsentSet(absences), [absences]);
   const assignmentById = useMemo(
@@ -292,8 +318,8 @@ export function PeopleMatrix({
     (shiftId ? shiftHoursById[shiftId] : undefined) ?? defaultShiftHours;
 
   const neededCount = (workCenterId: string, date: string) => {
-    const demand = demandByWorkCenter[workCenterId]?.days[date] ?? 0;
-    return Math.ceil(demand / personDayHours);
+    const attended = attendedByWorkCenter[workCenterId]?.[date] ?? 0;
+    return round(attended / personDayHours, 0, RoundingMode.Up);
   };
 
   const dayHeaders = weekDates.map((date) => (
@@ -332,8 +358,8 @@ export function PeopleMatrix({
         </Tabs>
 
         {tab === "coverage" && (
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <Popover>
+            <PopoverTrigger asChild>
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -341,8 +367,8 @@ export function PeopleMatrix({
                 <LuInfo className="h-3.5 w-3.5" />
                 <Trans>How coverage is worked out</Trans>
               </button>
-            </TooltipTrigger>
-            <TooltipContent align="end" className="max-w-[320px]">
+            </PopoverTrigger>
+            <PopoverContent align="end" className="max-w-[320px] p-3">
               <div className="flex flex-col gap-1.5 text-xs">
                 <p>
                   <Trans>
@@ -352,9 +378,13 @@ export function PeopleMatrix({
                 </p>
                 <p>
                   <Trans>
-                    Needed is the job hours due that day divided by{" "}
-                    {personDayHours}h, rounded up — the shift you're filtering
-                    by, or the most common shift length at this location.
+                    Needed is the setup and labor hours the schedule books at
+                    the station that day, divided by {personDayHours}h and
+                    rounded up — the shift you're filtering by, or the most
+                    common shift length at this location. With a shift selected,
+                    only the hours booked inside that shift count. Machine time
+                    needs nobody, and neither does a lights-out station unless
+                    its process needs a qualified operator.
                   </Trans>
                 </p>
                 <p>
@@ -364,8 +394,8 @@ export function PeopleMatrix({
                   </Trans>
                 </p>
               </div>
-            </TooltipContent>
-          </Tooltip>
+            </PopoverContent>
+          </Popover>
         )}
       </div>
 
@@ -409,9 +439,17 @@ export function PeopleMatrix({
                 {rows.map((employee) => {
                   const byDate = assignmentsByEmployeeDate.get(employee.id);
                   let assignedHours = 0;
+                  const editorShiftId = employeeShiftId[employee.id] ?? null;
                   const cells = weekDates.map((date) => {
                     const absent = absentSet.has(`${employee.id}:${date}`);
                     const dayAssignments = byDate?.get(date) ?? [];
+                    const editorRows = editorDayRows(
+                      allAssignmentsByKey.get(`${employee.id}:${date}`) ?? [],
+                      employee.id,
+                      date,
+                      editorShiftId,
+                      employeeShiftId
+                    );
                     if (!absent) {
                       for (const assignment of dayAssignments) {
                         assignedHours += hoursFor(assignment);
@@ -424,26 +462,47 @@ export function PeopleMatrix({
                       </PeopleChip>
                     ) : dayAssignments.length > 0 ? (
                       <span className="inline-flex flex-col items-center gap-1">
-                        {dayAssignments.map((assignment) => (
-                          <MatrixChip
-                            key={assignment.id}
-                            chipId={assignment.id}
-                            rowId={employee.id}
-                            date={date}
-                            disabled={!canEdit}
-                          >
-                            <PeopleChip
-                              className={chipClassByWorkCenter.get(
-                                assignment.workCenterId
-                              )}
+                        {dayAssignments.map((assignment) => {
+                          const elsewhere = !shownWorkCenterIds.has(
+                            assignment.workCenterId
+                          );
+                          return (
+                            <MatrixChip
+                              key={assignment.id}
+                              chipId={assignment.id}
+                              rowId={employee.id}
+                              date={date}
+                              disabled={!canEdit}
                             >
-                              {chipLabel(assignment)}
-                            </PeopleChip>
-                          </MatrixChip>
-                        ))}
+                              <PeopleChip
+                                tooltip={
+                                  elsewhere
+                                    ? t`At a station outside this department`
+                                    : undefined
+                                }
+                                className={
+                                  elsewhere
+                                    ? "border border-dashed border-border bg-transparent text-muted-foreground"
+                                    : chipClassByWorkCenter.get(
+                                        assignment.workCenterId
+                                      )
+                                }
+                              >
+                                {chipLabel(assignment)}
+                                {/* the tooltip is hover-only; the cell's button
+                                    reads this */}
+                                {elsewhere && (
+                                  <span className="sr-only">
+                                    {t`(outside this department)`}
+                                  </span>
+                                )}
+                              </PeopleChip>
+                            </MatrixChip>
+                          );
+                        })}
                         {/* overtime is the day's, not any one station's */}
                         {dayOvertime(dayAssignments) > 0 && (
-                          <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 tabular-nums">
+                          <span className="text-[0.6875rem] font-medium text-amber-700 dark:text-amber-400 tabular-nums">
                             +{dayOvertime(dayAssignments)}h OT
                           </span>
                         )}
@@ -479,25 +538,25 @@ export function PeopleMatrix({
                               employeeId={employee.id}
                               employeeName={employee.name}
                               date={date}
-                              shiftId={employeeShiftId[employee.id] ?? null}
+                              shiftId={editorShiftId}
                               locationId={locationId}
                               locationTimeZone={locationTimeZone}
-                              workCenters={workCenters}
-                              rows={dayAssignments.map((assignment) => ({
+                              workCenters={allWorkCenters}
+                              rows={editorRows.map((assignment) => ({
                                 workCenterId: assignment.workCenterId,
                                 hours: assignment.hours
                               }))}
                               note={
-                                dayAssignments.find((a) => a.note)?.note ?? null
+                                editorRows.find((a) => a.note)?.note ?? null
                               }
-                              overtimeHours={dayOvertime(dayAssignments)}
+                              overtimeHours={dayOvertime(editorRows)}
                               baseHours={ladderShiftHours(
-                                shiftId,
+                                editorShiftId,
                                 employee.id,
                                 hoursLadder
                               )}
                               dayStartTime={ladderShiftTime(
-                                dayAssignments[0]?.shiftId,
+                                editorRows[0]?.shiftId,
                                 employee.id,
                                 {
                                   byShift: shiftStartById,
@@ -506,7 +565,7 @@ export function PeopleMatrix({
                                 }
                               )}
                               dayEndTime={ladderShiftTime(
-                                dayAssignments[0]?.shiftId,
+                                editorRows[0]?.shiftId,
                                 employee.id,
                                 {
                                   byShift: shiftEndById,

@@ -7,6 +7,7 @@ import { getQuoteDisplayId } from "../utils/quote";
 import type { BatchListMember } from "./BatchListPDF";
 import { BatchListPDF } from "./BatchListPDF";
 import type { JobTravelerMaterial } from "./blocks/jobTraveler";
+import type { PurchaseOrderApproval } from "./blocks/purchaseOrder";
 import type {
   ContractFinancingEventRow,
   ContractFinancingRow
@@ -25,6 +26,7 @@ import type { ProjectReaderSection } from "./ProjectReaderPDF";
 import ProjectReaderPDF from "./ProjectReaderPDF";
 import PurchaseOrderPDF from "./PurchaseOrderPDF";
 import PurchaseReturnOrderPDF from "./PurchaseReturnOrderPDF";
+import PurchasingRfqPDF from "./PurchasingRfqPDF";
 import { DOCUMENT_PDFS } from "./preview-documents";
 import { SAMPLE_PURCHASE_RETURN_ORDER } from "./purchaseReturnOrder.samples";
 import QuotePDF from "./QuotePDF";
@@ -49,6 +51,7 @@ export type {
   ContractFinancingRow,
   JobTravelerMaterial,
   ProjectReaderSection,
+  PurchaseOrderApproval,
   ServiceJobEstimate,
   ServiceJobEstimateLine
 };
@@ -70,6 +73,7 @@ export {
   ProjectReaderPDF,
   PurchaseOrderPDF,
   PurchaseReturnOrderPDF,
+  PurchasingRfqPDF,
   QuotePDF,
   registerDocumentFonts,
   SAMPLE_ISSUE,

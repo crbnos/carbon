@@ -26,6 +26,7 @@ import { insertSalesOrder } from "~/modules/sales/sales.service";
 import { invokeCreate, invokePosting } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { fromServerFn } from "../shared/shared.service";
+import { fixedAssetClassValidator } from "./accounting.models";
 import * as service from "./accounting.service";
 import {
   accountMoveRefusal,
@@ -4206,14 +4207,14 @@ export const getFixedAssetClassesList = defineServiceFn({
  * @mcp
  */
 export const createFixedAssetClass = defineServiceFn({
-  input: z.looseObject({ data: z.unknown() }),
+  input: fixedAssetClassValidator.omit({ id: true }),
   permission: { create: "accounting" },
   async run(ctx, input) {
     return unwrap(
       ctx,
       await service.upsertFixedAssetClass(
         ctx.asCaller.supabase,
-        payload(ctx, input.data).forCreate() as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -4228,9 +4229,7 @@ export const createFixedAssetClass = defineServiceFn({
  * @mcp
  */
 export const updateFixedAssetClass = defineServiceFn({
-  input: z.looseObject({
-    id: z.string()
-  }),
+  input: fixedAssetClassValidator.partial().extend({ id: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, input) {
     return unwrap(

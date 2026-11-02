@@ -12,6 +12,7 @@ import {
   datetime,
   EPSILON,
   pick,
+  requireAffected,
   resolveTrackedEntityBin,
   round,
   searchFilter
@@ -19,8 +20,8 @@ import {
 import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 
 const logger = getLogger("erp", "quality");
@@ -102,51 +103,70 @@ export async function activateGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
 ) {
-  return client
-    .from("gauges")
-    .update({ gaugeStatus: "Active" })
-    .eq("id", gaugeId);
+  return requireAffected(
+    client
+      .from("gauges")
+      .update({ gaugeStatus: "Active" })
+      .eq("id", gaugeId)
+      .select("id")
+  );
 }
 
 export async function deactivateGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
 ) {
-  return client
-    .from("gauges")
-    .update({ gaugeStatus: "Inactive" })
-    .eq("id", gaugeId);
+  return requireAffected(
+    client
+      .from("gauges")
+      .update({ gaugeStatus: "Inactive" })
+      .eq("id", gaugeId)
+      .select("id")
+  );
 }
 
 export async function deleteGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
 ) {
-  return client.from("gauges").delete().eq("id", gaugeId);
+  return requireAffected(
+    client.from("gauges").delete().eq("id", gaugeId).select("id")
+  );
 }
 
 export async function deleteGaugeCalibrationRecord(
   client: SupabaseClient<Database>,
   gaugeCalibrationRecordId: string
 ) {
-  return client
-    .from("gaugeCalibrationRecord")
-    .delete()
-    .eq("id", gaugeCalibrationRecordId);
+  return requireAffected(
+    client
+      .from("gaugeCalibrationRecord")
+      .delete()
+      .eq("id", gaugeCalibrationRecordId)
+      .select("id")
+  );
 }
 
 export async function deleteGaugeType(
   client: SupabaseClient<Database>,
   gaugeTypeId: string
 ) {
-  return client.from("gaugeType").delete().eq("id", gaugeTypeId);
+  return requireAffected(
+    client.from("gaugeType").delete().eq("id", gaugeTypeId).select("id")
+  );
 }
 
 export async function deleteIssue(
   client: SupabaseClient<Database>,
   nonConformanceId: string
 ) {
-  return client.from("nonConformance").delete().eq("id", nonConformanceId);
+  return requireAffected(
+    client
+      .from("nonConformance")
+      .delete()
+      .eq("id", nonConformanceId)
+      .select("id")
+  );
 }
 
 export async function deleteIssueAssociation(
@@ -156,50 +176,77 @@ export async function deleteIssueAssociation(
 ) {
   switch (type) {
     case "items":
-      return await client
-        .from("nonConformanceItem")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceItem")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "customers":
-      return await client
-        .from("nonConformanceCustomer")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceCustomer")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "suppliers":
-      return await client
-        .from("nonConformanceSupplier")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceSupplier")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "jobOperations":
-      return await client
-        .from("nonConformanceJobOperation")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceJobOperation")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "purchaseOrderLines":
-      return await client
-        .from("nonConformancePurchaseOrderLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformancePurchaseOrderLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "salesOrderLines":
-      return await client
-        .from("nonConformanceSalesOrderLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceSalesOrderLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "shipmentLines":
-      return await client
-        .from("nonConformanceShipmentLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceShipmentLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "receiptLines":
-      return await client
-        .from("nonConformanceReceiptLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceReceiptLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "salesReturnOrderLines":
-      return await client
-        .from("nonConformanceSalesReturnOrderLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceSalesReturnOrderLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "purchaseReturnOrderLines": {
       // This association row carries the per-quantity coverage that reduces
       // closeIssue's write-off. Deleting it after the linked return line has
@@ -228,21 +275,30 @@ export async function deleteIssueAssociation(
           } as PostgrestError
         };
       }
-      return await client
-        .from("nonConformancePurchaseReturnOrderLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformancePurchaseReturnOrderLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     }
     case "trackedEntities":
-      return await client
-        .from("nonConformanceTrackedEntity")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceTrackedEntity")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "inspections":
-      return await (client as any)
-        .from("nonConformanceInspection")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        (client as any)
+          .from("nonConformanceInspection")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     default:
       throw new Error(`Invalid type: ${type}`);
   }
@@ -252,44 +308,61 @@ export async function deleteIssueType(
   client: SupabaseClient<Database>,
   nonConformanceTypeId: string
 ) {
-  return client
-    .from("nonConformanceType")
-    .delete()
-    .eq("id", nonConformanceTypeId);
+  return requireAffected(
+    client
+      .from("nonConformanceType")
+      .delete()
+      .eq("id", nonConformanceTypeId)
+      .select("id")
+  );
 }
 
 export async function deleteIssueWorkflow(
   client: SupabaseClient<Database>,
   nonConformanceWorkflowId: string
 ) {
-  return client
-    .from("nonConformanceWorkflow")
-    .update({ active: false })
-    .eq("id", nonConformanceWorkflowId);
+  return requireAffected(
+    client
+      .from("nonConformanceWorkflow")
+      .update({ active: false })
+      .eq("id", nonConformanceWorkflowId)
+      .select("id")
+  );
 }
 
 export async function deleteRequiredAction(
   client: SupabaseClient<Database>,
   requiredActionId: string
 ) {
-  return client
-    .from("nonConformanceRequiredAction")
-    .delete()
-    .eq("id", requiredActionId);
+  return requireAffected(
+    client
+      .from("nonConformanceRequiredAction")
+      .delete()
+      .eq("id", requiredActionId)
+      .select("id")
+  );
 }
 
 export async function deleteQualityDocument(
   client: SupabaseClient<Database>,
   qualityDocumentId: string
 ) {
-  return client.from("qualityDocument").delete().eq("id", qualityDocumentId);
+  return requireAffected(
+    client
+      .from("qualityDocument")
+      .delete()
+      .eq("id", qualityDocumentId)
+      .select("id")
+  );
 }
 
 export async function deleteRisk(
   client: SupabaseClient<Database>,
   riskId: string
 ) {
-  return client.from("riskRegister").delete().eq("id", riskId);
+  return requireAffected(
+    client.from("riskRegister").delete().eq("id", riskId).select("id")
+  );
 }
 
 export async function getIssueFromExternalLink(
@@ -310,6 +383,10 @@ export async function getGauge(
   return client.from("gauges").select("*").eq("id", gaugeId).single();
 }
 
+export const GAUGES_PAGING: Paging = {
+  defaultSorts: [{ column: "gaugeId", ascending: false }]
+};
+
 export async function getGauges(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -317,7 +394,7 @@ export async function getGauges(
 ) {
   let query = client
     .from("gauges")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -330,9 +407,7 @@ export async function getGauges(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "gaugeId", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, GAUGES_PAGING);
   }
 
   return query;
@@ -363,6 +438,13 @@ export async function getGaugeCalibrationRecord(
     .single();
 }
 
+export const GAUGE_CALIBRATION_RECORDS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "createdAt", ascending: false },
+    { column: "dateCalibrated", ascending: false }
+  ]
+};
+
 export async function getGaugeCalibrationRecords(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -370,7 +452,7 @@ export async function getGaugeCalibrationRecords(
 ) {
   let query = client
     .from("gaugeCalibrationRecords")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -378,10 +460,11 @@ export async function getGaugeCalibrationRecords(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false },
-      { column: "dateCalibrated", ascending: false }
-    ]);
+    query = setGenericQueryFilters(
+      query,
+      args,
+      GAUGE_CALIBRATION_RECORDS_PAGING
+    );
   }
 
   return query;
@@ -416,6 +499,10 @@ export async function getGaugeType(
   return client.from("gaugeType").select("*").eq("id", gaugeTypeId).single();
 }
 
+export const GAUGE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getGaugeTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -423,7 +510,7 @@ export async function getGaugeTypes(
 ) {
   let query = client
     .from("gaugeType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -431,9 +518,7 @@ export async function getGaugeTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, GAUGE_TYPES_PAGING);
   }
 
   return query;
@@ -450,6 +535,10 @@ export async function getIssue(
     .single();
 }
 
+export const ISSUES_PAGING: Paging = {
+  defaultSorts: [{ column: "nonConformanceId", ascending: false }]
+};
+
 export async function getIssues(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -457,7 +546,7 @@ export async function getIssues(
 ) {
   let query = client
     .from("issues")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -465,9 +554,7 @@ export async function getIssues(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "nonConformanceId", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, ISSUES_PAGING);
   }
 
   return query;
@@ -1001,6 +1088,10 @@ export async function getIssueTypeByName(
   return query.limit(1).maybeSingle();
 }
 
+export const ISSUE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getIssueTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1008,7 +1099,7 @@ export async function getIssueTypes(
 ) {
   let query = client
     .from("nonConformanceType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1016,13 +1107,15 @@ export async function getIssueTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, ISSUE_TYPES_PAGING);
   }
 
   return query;
 }
+
+export const ISSUE_WORKFLOWS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
 
 export async function getIssueWorkflows(
   client: SupabaseClient<Database>,
@@ -1031,7 +1124,7 @@ export async function getIssueWorkflows(
 ) {
   let query = client
     .from("nonConformanceWorkflow")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -1040,9 +1133,7 @@ export async function getIssueWorkflows(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, ISSUE_WORKFLOWS_PAGING);
   }
 
   return query;
@@ -1071,6 +1162,10 @@ export async function getIssueTypesList(
     .order("name");
 }
 
+export const QUALITY_ACTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getQualityActions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1078,7 +1173,7 @@ export async function getQualityActions(
 ) {
   let query = client
     .from("qualityActions")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1091,9 +1186,7 @@ export async function getQualityActions(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, QUALITY_ACTIONS_PAGING);
   }
 
   return query;
@@ -1134,6 +1227,10 @@ export async function getQualityDocumentVersions(
     .order("version", { ascending: false });
 }
 
+export const QUALITY_DOCUMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getQualityDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1142,7 +1239,7 @@ export async function getQualityDocuments(
   let query = client
     .from("qualityDocuments")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1151,9 +1248,7 @@ export async function getQualityDocuments(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, QUALITY_DOCUMENTS_PAGING);
   }
 
   return query;
@@ -1182,6 +1277,10 @@ export async function getRequiredActionsList(
     .order("name");
 }
 
+export const REQUIRED_ACTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getRequiredActions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1189,7 +1288,7 @@ export async function getRequiredActions(
 ) {
   let query = client
     .from("nonConformanceRequiredAction")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1197,9 +1296,7 @@ export async function getRequiredActions(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, REQUIRED_ACTIONS_PAGING);
   }
 
   return query;
@@ -1223,6 +1320,10 @@ export async function getRisk(
   return client.from("riskRegister").select("*").eq("id", riskId).single();
 }
 
+export const RISKS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getRisks(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1237,7 +1338,7 @@ export async function getRisks(
   let query = client
     .from("riskRegisters")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1258,9 +1359,7 @@ export async function getRisks(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, RISKS_PAGING);
   }
 
   return query;
@@ -1561,24 +1660,27 @@ export async function upsertGaugeCalibrationRecord(
       })
       .toString();
 
-    const update = await client
-      .from("gauge")
-      .update({
-        gaugeCalibrationStatus:
-          gaugeCalibrationRecord.inspectionStatus === "Pass"
-            ? "In-Calibration"
-            : "Out-of-Calibration",
-        lastCalibrationDate: gaugeCalibrationRecord.dateCalibrated,
-        nextCalibrationDate: nextCalibrationDate,
-        // Reset lastCalibrationStatus when gauge passes calibration to allow future notifications
-        lastCalibrationStatus:
-          gaugeCalibrationRecord.inspectionStatus === "Pass"
-            ? "In-Calibration"
-            : gauge.data.lastCalibrationStatus,
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", gaugeCalibrationRecord.gaugeId);
+    const update = await requireAffected(
+      client
+        .from("gauge")
+        .update({
+          gaugeCalibrationStatus:
+            gaugeCalibrationRecord.inspectionStatus === "Pass"
+              ? "In-Calibration"
+              : "Out-of-Calibration",
+          lastCalibrationDate: gaugeCalibrationRecord.dateCalibrated,
+          nextCalibrationDate: nextCalibrationDate,
+          // Reset lastCalibrationStatus when gauge passes calibration to allow future notifications
+          lastCalibrationStatus:
+            gaugeCalibrationRecord.inspectionStatus === "Pass"
+              ? "In-Calibration"
+              : gauge.data.lastCalibrationStatus,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", gaugeCalibrationRecord.gaugeId)
+        .select("id")
+    );
 
     if (update.error) return update;
   }
@@ -1623,10 +1725,13 @@ export async function upsertGaugeType(
   if ("createdBy" in gaugeType) {
     return client.from("gaugeType").insert([gaugeType]).select("id");
   } else {
-    return client
-      .from("gaugeType")
-      .update(sanitize(gaugeType))
-      .eq("id", gaugeType.id);
+    return requireAffected(
+      client
+        .from("gaugeType")
+        .update(sanitize(gaugeType))
+        .eq("id", gaugeType.id)
+        .select("id")
+    );
   }
 }
 
@@ -1989,10 +2094,13 @@ export async function upsertIssueType(
       .insert([nonConformanceType])
       .select("id");
   } else {
-    return client
-      .from("nonConformanceType")
-      .update(sanitize(nonConformanceType))
-      .eq("id", nonConformanceType.id);
+    return requireAffected(
+      client
+        .from("nonConformanceType")
+        .update(sanitize(nonConformanceType))
+        .eq("id", nonConformanceType.id)
+        .select("id")
+    );
   }
 }
 
@@ -2016,10 +2124,13 @@ export async function upsertRequiredAction(
       .insert([requiredAction])
       .select("id");
   } else {
-    return client
-      .from("nonConformanceRequiredAction")
-      .update(sanitize(requiredAction))
-      .eq("id", requiredAction.id);
+    return requireAffected(
+      client
+        .from("nonConformanceRequiredAction")
+        .update(sanitize(requiredAction))
+        .eq("id", requiredAction.id)
+        .select("id")
+    );
   }
 }
 
@@ -2071,13 +2182,16 @@ export async function upsertQualityDocument(
     const workInstruction = (qualityDocument.data.content ?? {}) as JSONContent;
 
     const [updateWorkInstructions, insertSteps] = await Promise.all([
-      client
-        .from("qualityDocument")
-        .update({
-          content: workInstruction,
-          tags: qualityDocument.data.tags
-        })
-        .eq("id", insert.data.id),
+      requireAffected(
+        client
+          .from("qualityDocument")
+          .update({
+            content: workInstruction,
+            tags: qualityDocument.data.tags
+          })
+          .eq("id", insert.data.id)
+          .select("id")
+      ),
       steps.length > 0
         ? client.from("qualityDocumentStep").insert(
             steps.map((step) => {
@@ -2155,6 +2269,10 @@ export async function upsertRisk(
 // Inbound Inspections (lot-based)
 // -------------------------------------------------------------
 
+export const INSPECTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getInspections(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2170,7 +2288,7 @@ export async function getInspections(
     .from("inspection")
     .select(
       "*, item(readableId, name), supplier(name), inspectionSample(status)",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId);
 
@@ -2194,9 +2312,7 @@ export async function getInspections(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, INSPECTIONS_PAGING);
   }
 
   return query;
@@ -2296,7 +2412,7 @@ export async function getInspectionSamplingPlans(
   return client
     .from("inspectionSamplingPlan")
     .select(
-      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, gaugeType(name))"
+      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, pmiItemId, gaugeType(name))"
     )
     .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
@@ -2447,6 +2563,17 @@ function mapInspectionDocument(row: Record<string, unknown>) {
       annotations: [],
       features: []
     },
+    // A plan made from a model's PMI holds the model instead of a PDF.
+    // `modelPath` comes from the `modelUpload(modelPath)` embed when the read
+    // asked for it.
+    model: row.modelUploadId
+      ? {
+          modelUploadId: String(row.modelUploadId),
+          modelPath:
+            ((row.modelUpload as { modelPath?: string | null } | null)
+              ?.modelPath as string | null) ?? null
+        }
+      : null,
     // The document's default sampling rule (feature rule -> document default
     // -> All). NUMERIC columns arrive as strings from PostgREST — coerce.
     sampling: {
@@ -2462,6 +2589,10 @@ function mapInspectionDocument(row: Record<string, unknown>) {
   };
 }
 
+export const INSPECTION_DOCUMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "drawingNumber", ascending: true }]
+};
+
 export async function getInspectionDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2469,7 +2600,7 @@ export async function getInspectionDocuments(
 ) {
   let query = client
     .from("inspectionDocuments")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -2479,17 +2610,63 @@ export async function getInspectionDocuments(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "drawingNumber", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, INSPECTION_DOCUMENTS_PAGING);
   }
 
   const result = await query;
 
   return {
-    data: (result.data ?? []).map((row: Record<string, unknown>) =>
-      mapInspectionDocument(row)
-    ),
+    // The cursor reads the default sort column from the row.
+    data: (result.data ?? []).map((row: Record<string, unknown>) => ({
+      ...mapInspectionDocument(row),
+      drawingNumber: (row.drawingNumber as string | null) ?? null
+    })),
+    count: result.count ?? 0,
+    error: result.error
+  };
+}
+
+export const INSPECTION_PLAN_PARTS_PAGING: Paging = {
+  defaultSorts: [{ column: "partReadableId", ascending: true }]
+};
+
+/** One plan in a part's `plans` rollup (the `inspectionPlanParts` view). */
+export type InspectionPlanSummary = {
+  id: string;
+  name: string | null;
+  modelUploadId: string | null;
+  createdBy: string;
+  createdAt: string;
+};
+
+/** The Inspection Plans list: one row per part, with its plans. */
+export async function getInspectionPlanParts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: { search: string | null } & GenericQueryFilters
+) {
+  let query = client
+    .from("inspectionPlanParts")
+    .select("*", { count: listCount(args) })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      searchFilter(["partReadableId", "partName", "planNames"], args.search)
+    );
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, INSPECTION_PLAN_PARTS_PAGING);
+  }
+
+  const result = await query;
+
+  return {
+    data: (result.data ?? []).map((row) => ({
+      ...row,
+      plans: (row.plans as InspectionPlanSummary[] | null) ?? []
+    })),
     count: result.count ?? 0,
     error: result.error
   };
@@ -2515,7 +2692,7 @@ export async function getInspectionDocument(
 ) {
   const result = await client
     .from("inspectionDocument")
-    .select("*")
+    .select("*, modelUpload(modelPath)")
     .eq("id", id)
     .eq("companyId", companyId)
     .single();
@@ -2721,11 +2898,14 @@ export async function deleteInspectionDocument(
   const storagePath =
     (existingResult.data.storagePath as string | null) ?? null;
 
-  const deleteResult = await client
-    .from("inspectionDocument")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  const deleteResult = await requireAffected(
+    client
+      .from("inspectionDocument")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 
   if (deleteResult.error) {
     return { data: null, error: deleteResult.error };
@@ -2763,6 +2943,7 @@ function mapInspectionFeature(row: Record<string, unknown>) {
       (row.samplingInspectionLevel as string | null) ?? null,
     samplingSeverity: (row.samplingSeverity as string | null) ?? null,
     gaugeTypeId: (row.gaugeTypeId as string | null) ?? null,
+    pmiItemId: (row.pmiItemId as string | null) ?? null,
     balloonId:
       typeof balloonIdRaw === "string"
         ? balloonIdRaw
@@ -2914,15 +3095,18 @@ export async function updateInspectionDocumentSampling(
   }
 ) {
   const { inspectionDocumentId, companyId, userId, ...sampling } = args;
-  return client
-    .from("inspectionDocument")
-    .update({
-      ...sampling,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", inspectionDocumentId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("inspectionDocument")
+      .update({
+        ...sampling,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", inspectionDocumentId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function saveInspectionDocumentAtomic(

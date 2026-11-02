@@ -43,11 +43,13 @@ import { StockTransferWizard } from "./StockTransferWizard";
 type StockTransfersTableProps = {
   data: StockTransfer[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
 };
 
 const StockTransfersTable = memo(
-  ({ data, count, locationId }: StockTransfersTableProps) => {
+  ({ data, count, nextCursor, locationId }: StockTransfersTableProps) => {
     const wizardDisclosure = useDisclosure();
 
     const [params] = useUrlParams();
@@ -305,6 +307,8 @@ const StockTransfersTable = memo(
       <>
         <Table<(typeof data)[number]>
           data={data}
+          // Location-scoped: no list registry entry, so no `listKey`.
+          infinite={{ dataKey: "stockTransfers", nextCursor }}
           columns={columns}
           count={count}
           defaultColumnPinning={{

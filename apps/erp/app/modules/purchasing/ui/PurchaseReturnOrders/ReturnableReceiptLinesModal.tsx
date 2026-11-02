@@ -22,6 +22,7 @@ import {
   NumberInput,
   ScrollArea,
   toast,
+  toastError,
   useDebounce,
   VStack
 } from "@carbon/react";
@@ -197,7 +198,7 @@ const ReturnableReceiptLinesModal = ({
       revalidator.revalidate();
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t`Failed to add lines`);
+      toastError(t`Failed to add lines`, err);
       revalidator.revalidate();
     } finally {
       setIsSubmitting(false);

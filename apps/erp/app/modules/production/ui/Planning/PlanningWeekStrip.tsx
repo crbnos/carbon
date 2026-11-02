@@ -50,10 +50,12 @@ type Hovered = { index: number; element: HTMLElement };
  */
 export const PlanningWeekStrip = memo(function PlanningWeekStrip({
   periods,
-  values
+  values,
+  weekLabel
 }: {
   periods: PlanningPeriod[];
   values: (number | undefined)[];
+  weekLabel: (startDate: string, index: number) => string;
 }) {
   const { t } = useLingui();
   const dateFormatter = useDateFormatter({ month: "short", day: "numeric" });
@@ -81,7 +83,6 @@ export const PlanningWeekStrip = memo(function PlanningWeekStrip({
 
   const period = hovered ? periods[hovered.index] : undefined;
   const value = hovered ? values[hovered.index] : undefined;
-  const weekNumber = hovered ? hovered.index + 1 : 0;
 
   return (
     <Tooltip>
@@ -154,7 +155,7 @@ export const PlanningWeekStrip = memo(function PlanningWeekStrip({
         <TooltipContent anchor={hovered.element}>
           <div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-0.5">
             <span className="col-span-2 font-medium">
-              {weekNumber === 1 ? t`Present Week` : t`Week ${weekNumber}`}
+              {weekLabel(period.startDate, hovered.index)}
             </span>
             <span className="col-span-2 text-xs text-muted-foreground">
               {dateFormatter.formatRange(
