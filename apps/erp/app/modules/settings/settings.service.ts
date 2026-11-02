@@ -19,6 +19,7 @@ import {
 } from "@carbon/auth";
 import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
@@ -204,6 +205,7 @@ import {
   takePanelPlan
 } from "@carbon/ee/onshape";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
+import { panelCompanyChoices } from "@carbon/ee/onshape/panel-session.server";
 import {
   isOnshapeOAuthIntegrationId,
   loadOnshapeOAuthConfig,
@@ -239,6 +241,7 @@ import {
   isInternalEmail,
   labelSizes,
   requireAffected,
+  requiresItarEntityCertification,
   searchFilter
 } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
@@ -307,7 +310,10 @@ import type {
 } from "~/modules/settings/types";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import * as sharedService from "~/modules/shared/shared.service";
-import { getPermissionCacheKey } from "~/modules/users/users.service";
+import {
+  getItarCertificationStatus,
+  getPermissionCacheKey
+} from "~/modules/users/users.service";
 import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
@@ -5363,6 +5369,88 @@ function integrationsUrl(request: Request) {
   }
 
   return `${requestUrl.origin}${path.to.integrations}`;
+}
+
+/**
+ * The companies this user can move the Onshape panel to. The connection reads
+ * with the service role: its SELECT policy needs settings view, and a user who
+ * only pushes parts holds parts permissions.
+ */
+export async function getOnshapePanelCompanies(
+  client: SupabaseClient<Database>,
+  userId: string,
+  currentCompanyId: string
+) {
+  const memberships = await client
+    .from("companies")
+    .select("id, name, companyGroupId, role")
+    .eq("userId", userId)
+    .order("name");
+  if (memberships.error) {
+    return { data: null, error: memberships.error };
+  }
+
+  const serviceRole = getCarbonServiceRole();
+  const connected = await selectInBatches(
+    memberships.data.flatMap(({ id }) => (id ? [id] : [])),
+    (batch) =>
+      serviceRole
+        .from("companyIntegration")
+        .select("companyId")
+        .eq("id", ONSHAPE_V2_INTEGRATION_ID)
+        .eq("active", true)
+        .in("companyId", batch),
+    { orderBy: "companyId" }
+  );
+  if (connected.error) {
+    return { data: null, error: connected.error };
+  }
+
+  return {
+    data: panelCompanyChoices(
+      memberships.data,
+      new Set(connected.data.map(({ companyId }) => companyId)),
+      currentCompanyId
+    ),
+    error: null
+  };
+}
+
+/**
+ * The app shell's account gates for one company (MFA enrollment, ITAR
+ * attestation in a controlled environment). The panel never passes through the
+ * shell, so its sign-in and its company switch apply them here. A settings read
+ * that fails answers `unavailable`, never `open`.
+ */
+export async function getOnshapePanelAccountGate(
+  client: SupabaseClient<Database>,
+  account: {
+    companyId: string;
+    userId: string;
+    email: string;
+    ssoProviderId?: string;
+  }
+): Promise<"open" | "setup-required" | "unavailable"> {
+  const { companyId, userId, email, ssoProviderId } = account;
+  const [companySettings, itar] = await Promise.all([
+    getCompanySettings(client, companyId),
+    CONTROLLED_ENVIRONMENT
+      ? getItarCertificationStatus(client, companyId, userId)
+      : Promise.resolve({ entityCertified: true, userCertified: true })
+  ]);
+  if (companySettings.error) return "unavailable";
+
+  const itarBlocked =
+    CONTROLLED_ENVIRONMENT &&
+    ((requiresItarEntityCertification(email) && !itar.entityCertified) ||
+      !itar.userCertified);
+  const mfaRequired =
+    (CONTROLLED_ENVIRONMENT || companySettings.data?.requireMfa === true) &&
+    !ssoProviderId;
+  return itarBlocked ||
+    (mfaRequired && !(await userHasVerifiedTotpFactor(userId)))
+    ? "setup-required"
+    : "open";
 }
 
 /**

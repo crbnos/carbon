@@ -369,6 +369,8 @@ export type OnshapePanelMe = {
   userId: string;
   email: string;
   company: { id: string; name: string } | null;
+  /** Where the panel can work. More than one shows the selector. */
+  companies: Array<{ id: string; name: string }>;
   /** Settings update; the Fields page shows only with it. */
   canEditFields: boolean;
 };
@@ -696,6 +698,14 @@ function PanelListSkeleton({ rows = 5 }: { rows?: number }) {
 
 // fetch rejects with a TypeError worded per browser on a network failure. The
 // wording is matched too, so a TypeError that is a real bug still reports itself.
+function isReadInFlight(
+  state: PanelStatusState | PanelReleasesState | PanelFieldsState
+): boolean {
+  return (
+    state.status === "loading" || ("refreshing" in state && !!state.refreshing)
+  );
+}
+
 function thrownMessage(error: unknown): string {
   if (
     error instanceof TypeError &&
@@ -1008,6 +1018,11 @@ export function OnshapePanel({
 
   const [fields, setFields] = useState<PanelFieldsState>({ status: "closed" });
 
+  const [switchingCompany, setSwitchingCompany] = useState(false);
+  const [companySwitchError, setCompanySwitchError] = useState<string | null>(
+    null
+  );
+
   // A section renders its review in place of its list. A part or assembly
   // review is scoped to the element, a release review to the document.
   const [review, setReview] = useState<ReviewState | null>(null);
@@ -1035,17 +1050,25 @@ export function OnshapePanel({
     setTab("push");
   }, [elementScope, documentScope]);
 
-  // Sign-out drops everything read under the session: the next one can be another
-  // user or company, and a section a 401 abandoned mid-read would stay loading.
+  // Everything read under a session belongs to its user and company, and a section
+  // a 401 abandoned mid-read would stay loading.
+  const clearSessionReads = useCallback(() => {
+    setReview(null);
+    setParts({ status: "idle" });
+    setReleases({ status: "idle" });
+    setFields({ status: "closed" });
+    setTab("push");
+    setAssemblyOutcome(null);
+    setPartsOutcome(null);
+    setPushOutcome({});
+    setReleaseOutcome({});
+    setAssemblyTooLarge(null);
+    setCompanySwitchError(null);
+  }, []);
+
   useEffect(() => {
-    if (session.status === "signed-out") {
-      setReview(null);
-      setParts({ status: "idle" });
-      setReleases({ status: "idle" });
-      setFields({ status: "closed" });
-      setTab("push");
-    }
-  }, [session.status]);
+    if (session.status === "signed-out") clearSessionReads();
+  }, [session.status, clearSessionReads]);
 
   const loadParts = useCallback(
     async (token: string) => {
@@ -1579,6 +1602,40 @@ export function OnshapePanel({
     }
   };
 
+  const switchCompany = async (companyId: string) => {
+    if (session.status !== "signed-in") return;
+    setSwitchingCompany(true);
+    setCompanySwitchError(null);
+    try {
+      const response = await panelFetch(session.token, paths.session, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId })
+      });
+      const body = (await response.json()) as {
+        token?: string;
+        error?: string;
+      };
+      if (!response.ok || !body.token) {
+        setCompanySwitchError(
+          body.error ?? `Carbon answered ${response.status}`
+        );
+        return;
+      }
+      setPanelSessionToken(body.token);
+      clearSessionReads();
+      await loadMe(body.token);
+    } catch (error) {
+      if (error instanceof PanelUnauthorizedError) {
+        setSession({ status: "signed-out" });
+        return;
+      }
+      setCompanySwitchError(thrownMessage(error));
+    } finally {
+      setSwitchingCompany(false);
+    }
+  };
+
   const loadFields = useCallback(
     async (token: string) => {
       if (!canLoadParts) return;
@@ -1922,6 +1979,25 @@ export function OnshapePanel({
       : [])
   ];
 
+  // A read still landing would show the old company's answer under the new name.
+  const companySwitchLocked =
+    switchingCompany ||
+    !!pushing ||
+    !!pushingReleaseId ||
+    !!review?.applying ||
+    isReadInFlight(parts) ||
+    isReadInFlight(releases) ||
+    isReadInFlight(fields) ||
+    (fields.status === "ready" && fields.saving);
+
+  // Only someone who could have pushed elsewhere needs telling where this lands.
+  const pushTarget =
+    session.status === "signed-in" &&
+    session.me.company &&
+    session.me.companies.length > 1
+      ? session.me.company.name
+      : "Carbon";
+
   const pushTabLabel =
     parts.status === "ready-assembly"
       ? "Assembly"
@@ -1968,8 +2044,17 @@ export function OnshapePanel({
       }
       className="flex h-full min-h-0 flex-col"
     >
-      {/* The company tells a user in several companies where a push lands. */}
-      <HStack className="w-full shrink-0 justify-between gap-2 border-b border-border px-4 py-2">
+      {/*
+        The company tells a user in several companies where a push lands. Its
+        selector can't shrink and stay readable, so a narrow panel wraps it.
+      */}
+      <HStack
+        className={`w-full shrink-0 justify-between gap-2 border-b border-border px-4 py-2 ${
+          session.status === "signed-in" && session.me.companies.length > 1
+            ? "flex-wrap"
+            : ""
+        }`}
+      >
         {tabsPending ? (
           // Sized by invisible copies of the tabs, so it is as wide as the bar after it.
           <Skeleton
@@ -2001,13 +2086,37 @@ export function OnshapePanel({
           <span />
         )}
         {session.status === "signed-in" ? (
-          <HStack spacing={1} className="min-w-0">
-            <span
-              className="truncate text-xs text-muted-foreground"
-              title={session.me.email}
-            >
-              {session.me.company?.name ?? session.me.email}
-            </span>
+          <HStack spacing={1} className="ml-auto min-w-0">
+            {session.me.company && session.me.companies.length > 1 ? (
+              <Select
+                value={session.me.company.id}
+                onValueChange={switchCompany}
+                disabled={companySwitchLocked}
+              >
+                <SelectTrigger
+                  size="sm"
+                  className={`w-40 min-w-0 ${PANEL_CONTROL}`}
+                  aria-label="Carbon company"
+                  title={session.me.email}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="min-w-[220px]">
+                  {session.me.companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <span
+                className="truncate text-xs text-muted-foreground"
+                title={session.me.email}
+              >
+                {session.me.company?.name ?? session.me.email}
+              </span>
+            )}
             <Button variant="ghost" size="sm" onClick={signOut}>
               Sign out
             </Button>
@@ -2020,6 +2129,14 @@ export function OnshapePanel({
           <Alert variant="warning">
             <LuTriangleAlert />
             <AlertTitle>Open this panel from Onshape</AlertTitle>
+          </Alert>
+        ) : null}
+
+        {companySwitchError ? (
+          <Alert variant="destructive">
+            <LuTriangleAlert />
+            <AlertTitle>Couldn't switch company</AlertTitle>
+            <AlertDescription>{companySwitchError}</AlertDescription>
           </Alert>
         ) : null}
 
@@ -2077,6 +2194,7 @@ export function OnshapePanel({
                     onEditItem={editItem}
                     onSetAssets={setAssets}
                     replanning={!!pushing}
+                    pushTarget={pushTarget}
                   />
                 ) : (
                   <AssemblySection
@@ -2117,6 +2235,7 @@ export function OnshapePanel({
                   onReplan={() => replan(session.token)}
                   onEditItem={editItem}
                   replanning={!!pushing}
+                  pushTarget={pushTarget}
                 />
               ) : (
                 <PartsSection
@@ -2149,6 +2268,7 @@ export function OnshapePanel({
                 onReplan={() => replan(session.token)}
                 onEditItem={editItem}
                 replanning={!!pushingReleaseId}
+                pushTarget={pushTarget}
               />
             ) : (
               <ReleasesSection
@@ -4802,6 +4922,8 @@ type ReviewSectionProps<R extends ReviewState> = {
   onReplan: () => void;
   onEditItem: (key: string, patch: Partial<ItemFieldSnapshot>) => void;
   replanning: boolean;
+  /** Names where the push lands on its button. */
+  pushTarget: string;
 };
 
 // -bottom-4 cancels the body's p-4: sticky pins to the scrollport inset by its
@@ -4817,10 +4939,12 @@ function PanelActionBar({ children }: { children: ReactNode }) {
 function ReviewActionBar({
   review,
   replanning,
+  pushTarget,
   onApply
 }: {
   review: ReviewState;
   replanning: boolean;
+  pushTarget: string;
   onApply: () => void;
 }) {
   const count = applyCount(review);
@@ -4832,7 +4956,9 @@ function ReviewActionBar({
         isDisabled={review.applying || review.expired || count === 0}
         isLoading={review.applying || replanning}
       >
-        {count === 0 ? "Nothing to push" : `Push ${count} to Carbon`}
+        <span className="truncate">
+          {count === 0 ? "Nothing to push" : `Push ${count} to ${pushTarget}`}
+        </span>
       </Button>
     </PanelActionBar>
   );
@@ -5074,7 +5200,8 @@ function PartReviewSection({
   onApply,
   onReplan,
   onEditItem,
-  replanning
+  replanning,
+  pushTarget
 }: ReviewSectionProps<PartReview>) {
   const { plan } = review;
   const busy = review.applying || replanning;
@@ -5190,6 +5317,7 @@ function PartReviewSection({
           <ReviewActionBar
             review={review}
             replanning={replanning}
+            pushTarget={pushTarget}
             onApply={onApply}
           />
         </>
@@ -5205,7 +5333,8 @@ function AssemblyReviewSection({
   onReplan,
   onEditItem,
   onSetAssets,
-  replanning
+  replanning,
+  pushTarget
 }: ReviewSectionProps<AssemblyReview> & {
   onSetAssets: (kind: AssetKind, partNumbers: string[], on: boolean) => void;
 }) {
@@ -5560,6 +5689,7 @@ function AssemblyReviewSection({
       <ReviewActionBar
         review={review}
         replanning={replanning}
+        pushTarget={pushTarget}
         onApply={onApply}
       />
     </VStack>
@@ -5811,7 +5941,8 @@ function ReleaseReviewSection({
   onApply,
   onReplan,
   onEditItem,
-  replanning
+  replanning,
+  pushTarget
 }: ReviewSectionProps<ReleaseReview>) {
   const { plan } = review;
   const busy = review.applying || replanning;
@@ -6017,6 +6148,7 @@ function ReleaseReviewSection({
       <ReviewActionBar
         review={review}
         replanning={replanning}
+        pushTarget={pushTarget}
         onApply={onApply}
       />
     </VStack>
