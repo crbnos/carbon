@@ -58,7 +58,7 @@ export function unwrapResponseType(type: Type, at: Node): Type {
     const args = current.getTypeArguments();
 
     if ((name === "Promise" || /^Postgrest\w*Response$/.test(name ?? "")) && args.length > 0) {
-      current = args[0];
+      current = args[0]!;
       continue;
     }
 
@@ -80,7 +80,7 @@ function stripNullish(type: Type): Type {
   const concrete = type
     .getUnionTypes()
     .filter((t) => !t.isNull() && !t.isUndefined());
-  return concrete.length === 1 ? concrete[0] : type;
+  return concrete.length === 1 ? concrete[0]! : type;
 }
 
 /**
@@ -241,7 +241,7 @@ function unionToJsonSchema(
 
   if (concrete.length === 1) {
     const inner = typeToJsonSchema(
-      concrete[0],
+      concrete[0]!,
       at,
       depth,
       seen,
@@ -262,7 +262,7 @@ function unionToJsonSchema(
       typeToJsonSchema(t, at, depth + 1, seen, undefinedIsAbsent)
     )
   );
-  if (anyOf.length === 1 && !nullable) return anyOf[0];
+  if (anyOf.length === 1 && !nullable) return anyOf[0]!;
   return nullable ? { anyOf: [...anyOf, { type: "null" }] } : { anyOf };
 }
 

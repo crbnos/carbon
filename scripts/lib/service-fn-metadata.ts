@@ -22,7 +22,7 @@ import {
   type CallExpression,
   Node,
   type ObjectLiteralExpression,
-  Project,
+  type Project,
   type Symbol as TsSymbol,
   type VariableDeclaration
 } from "ts-morph";
@@ -269,7 +269,7 @@ function stringsOf(node: Node | undefined): string[] | null {
   if (Node.isArrayLiteralExpression(node)) {
     const values = node.getElements().map((element) => stringsOf(element));
     return values.every((v) => v?.length === 1)
-      ? values.map((v) => v![0])
+      ? values.map((v) => v![0]!)
       : null;
   }
   return null;
@@ -437,9 +437,10 @@ function pagedRows(response: JsonSchema | undefined): JsonSchema | undefined {
 /** The published leaves as manifest entries. */
 export function buildServiceFnTools(
   project: Project,
-  routerFile = ROUTER_FILE
+  routerFile = ROUTER_FILE,
+  leaves = routerLeaves(project, routerFile)
 ): ManifestEntry[] {
-  return routerLeaves(project, routerFile).flatMap((leaf) => {
+  return leaves.flatMap((leaf) => {
     const docs = leafDocs(leaf);
     if (!docs.published) return [];
     const where = `router.${leaf.path.join(".")}`;
@@ -502,17 +503,4 @@ export function buildServiceFnTools(
       }
     ];
   });
-}
-
-/**
- * The published manifest: every `@mcp` service function the ERP router
- * reaches. `generate-mcp` and `check-manifest` both build it here, so the
- * digest they compare cannot differ by construction.
- */
-export function buildManifest(): ManifestEntry[] {
-  const project = new Project({
-    tsConfigFilePath: path.resolve(__dirname, "../../apps/erp/tsconfig.json"),
-    skipAddingFilesFromTsConfig: true
-  });
-  return buildServiceFnTools(project);
 }
