@@ -66,3 +66,32 @@ it("a Scrapped lot counted to zero stays Scrapped", () => {
     })
   ).toEqual({ quantity: 0, status: "Scrapped" });
 });
+
+it("a Consumed unit takes the ledger total after the count", () => {
+  // Issued twice: the ledger held -1; counted 0, the count brings it to 0.
+  expect(
+    resolveCountedEntity({
+      currentQuantity: 0,
+      delta: 1,
+      currentStatus: "Consumed",
+      ledgerTotal: 0
+    })
+  ).toEqual({ quantity: 0, status: "Consumed" });
+  // Found on the shelf: it comes back with what was counted.
+  expect(
+    resolveCountedEntity({
+      currentQuantity: 0,
+      delta: 2,
+      currentStatus: "Consumed",
+      ledgerTotal: 1
+    })
+  ).toEqual({ quantity: 1, status: "Available" });
+  expect(
+    resolveCountedEntity({
+      currentQuantity: 0,
+      delta: 0,
+      currentStatus: "Consumed",
+      ledgerTotal: -1
+    })
+  ).toBeNull();
+});

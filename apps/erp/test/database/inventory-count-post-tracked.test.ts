@@ -671,3 +671,105 @@ databaseTest(
     }
   }
 );
+
+/** Writes a ledger row for a serial in bin B and marks it Consumed. */
+async function breakSerial(
+  f: Fixture,
+  units: CountUnits,
+  key: string,
+  quantities: number[]
+) {
+  await seed(f, async (trx) => {
+    if (quantities.length > 0) await trx
+      .insertInto("itemLedger")
+      .values(
+        quantities.map((quantity) => ({
+          postingDate: f.today,
+          entryType: (quantity < 0 ? "Consumption" : "Positive Adjmt.") as
+            | "Consumption"
+            | "Positive Adjmt.",
+          itemId: units.serialItemId,
+          locationId: f.locationId,
+          storageUnitId: units.binB,
+          trackedEntityId: units.entity(key),
+          quantity,
+          companyId: f.companyId,
+          createdBy: USER
+        }))
+      )
+      .execute();
+    await trx
+      .updateTable("trackedEntity")
+      .set({ status: "Consumed", quantity: 0 })
+      .where("id", "=", units.entity(key))
+      .execute();
+  });
+}
+
+async function binOnHand(f: Fixture, units: CountUnits) {
+  const row = await f.db
+    .selectFrom("itemLedger")
+    .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+    .where("itemId", "=", units.serialItemId)
+    .where("storageUnitId", "=", units.binB)
+    .executeTakeFirstOrThrow();
+  return Number(row.quantity ?? 0);
+}
+
+databaseTest(
+  "a Consumed serial issued twice is listed at -1 and a count of 0 brings on-hand to 0",
+  async () => {
+    const f = await alwaysPostFixture();
+    const units = await countUnits(f);
+    try {
+      // SN-3 (1 in B2) is issued to a job twice: the ledger says -1.
+      await breakSerial(f, units, "SN-3", [-1, -1]);
+      const countId = await draftCount(f, "twice", (args) =>
+        generateInventoryCountLines(f.db, args)
+      );
+      const line = await f.db
+        .selectFrom("inventoryCountLine")
+        .select("systemQuantity")
+        .where("inventoryCountId", "=", countId)
+        .where("trackedEntityId", "=", units.entity("SN-3"))
+        .executeTakeFirstOrThrow();
+      expect(Number(line.systemQuantity)).toBe(-1);
+
+      await countLine(f, countId, units.entity("SN-3"), 0);
+      const result = await post(f, countId);
+      expect(result.error).toBeNull();
+      expect(await binOnHand(f, units)).toBe(0);
+      expect(await entity(f, units.entity("SN-3"))).toMatchObject({
+        quantity: 0,
+        status: "Consumed"
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a serial marked Consumed with stock left is listed, and a count of 0 clears it",
+  async () => {
+    const f = await alwaysPostFixture();
+    const units = await countUnits(f);
+    try {
+      // SN-3 is marked Consumed but its +1 was never taken out.
+      await breakSerial(f, units, "SN-3", []);
+      const countId = await draftCount(f, "left", (args) =>
+        generateInventoryCountLines(f.db, args)
+      );
+      await countLine(f, countId, units.entity("SN-3"), 0);
+      const result = await post(f, countId);
+      expect(result.error).toBeNull();
+      expect(await binOnHand(f, units)).toBe(0);
+      expect(await entity(f, units.entity("SN-3"))).toMatchObject({
+        quantity: 0,
+        status: "Consumed"
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

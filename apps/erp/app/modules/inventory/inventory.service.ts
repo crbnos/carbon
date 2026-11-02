@@ -2768,16 +2768,15 @@ export async function generateInventoryCountLines(
       // A Non-Inventory item holds no stock, even with ledger rows from when
       // it was stocked.
       .where("item.itemTrackingType", "!=", "Non-Inventory")
-      // Status-aware on-hand: exclude Rejected and Consumed lots so a count
-      // never lists stock that's been used up or scrapped. Non-tracked rows
-      // have a NULL status and are always included.
+      // On-hand as the quantities screen reads it: Rejected lots are left
+      // out. A used-up (Consumed) unit nets to 0 and is dropped below; one
+      // that still holds stock in the ledger (issued twice, or marked
+      // Consumed with stock left) is listed, so the count can correct it.
+      // Non-tracked rows have a NULL status and are always included.
       .where((eb) =>
         eb.or([
           eb("itemLedger.trackedEntityStatus", "is", null),
-          eb("itemLedger.trackedEntityStatus", "not in", [
-            "Rejected",
-            "Consumed"
-          ])
+          eb("itemLedger.trackedEntityStatus", "!=", "Rejected")
         ])
       )
       .groupBy([
@@ -8042,14 +8041,23 @@ async function loadAccounting(
 // generated; the entity's live quantity may have moved since. Applying the same
 // delta to the live quantity keeps entity and ledger in step. Below zero, the
 // entity's own quantity is below what the ledger holds (it drifted), so it
-// takes `ledgerTotal`, the ledger's total after this count. Only a negative
-// ledger total means stock moved since the count: null, recount the line.
+// takes `ledgerTotal`, the ledger's total after this count. A Consumed unit
+// always takes `ledgerTotal`: counted on the shelf it comes back Available,
+// counted 0 it stays Consumed. Only a negative ledger total means stock moved
+// since the count: null, recount the line.
 export function resolveCountedEntity<S extends string>(input: {
   currentQuantity: number;
   delta: number;
   currentStatus: S;
   ledgerTotal?: number;
-}): { quantity: number; status: S | "Consumed" } | null {
+}): { quantity: number; status: S | "Consumed" | "Available" } | null {
+  if (input.currentStatus === "Consumed" && input.ledgerTotal !== undefined) {
+    const quantity = round(input.ledgerTotal);
+    if (quantity < 0) return null;
+    return quantity > 0
+      ? { quantity, status: "Available" }
+      : { quantity: 0, status: "Consumed" };
+  }
   let quantity = input.currentQuantity + input.delta;
   if (quantity < 0 && input.ledgerTotal !== undefined) {
     quantity = input.ledgerTotal;
@@ -8699,7 +8707,7 @@ export async function postInventoryCount(
           .executeTakeFirst();
         const currentQuantity = Number(entity?.quantity ?? 0);
         const ledger =
-          currentQuantity + delta < 0
+          currentQuantity + delta < 0 || entity?.status === "Consumed"
             ? await trx
                 .selectFrom("itemLedger")
                 .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
@@ -8707,16 +8715,12 @@ export async function postInventoryCount(
                 .where("companyId", "=", companyId)
                 .executeTakeFirst()
             : undefined;
-        // A Consumed unit found on the shelf comes back with what was counted.
-        const settled =
-          entity?.status === "Consumed" && delta > 0
-            ? { quantity: round(delta), status: "Available" as const }
-            : resolveCountedEntity({
-                currentQuantity,
-                delta,
-                currentStatus: entity?.status ?? "Available",
-                ledgerTotal: ledger ? Number(ledger.quantity ?? 0) : undefined
-              });
+        const settled = resolveCountedEntity({
+          currentQuantity,
+          delta,
+          currentStatus: entity?.status ?? "Available",
+          ledgerTotal: ledger ? Number(ledger.quantity ?? 0) : undefined
+        });
         if (!settled) {
           throw new InvalidLinesError(
             "Stock moved since the count was taken; recount this line before posting",
