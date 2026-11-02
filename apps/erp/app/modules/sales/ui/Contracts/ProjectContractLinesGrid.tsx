@@ -38,6 +38,7 @@ import {
   useQuantityFormatter,
   useSettings
 } from "~/hooks";
+import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import { path } from "~/utils/path";
 import {
   type contractBillingMethods,
@@ -125,6 +126,8 @@ const ProjectContractLinesGrid = ({
   const canEdit = permissions.can("update", "sales");
   // In DCAA mode the funding actions own a line's funded amount.
   const fundedByActions = settings.timekeepingControls === "DCAA";
+  // The CLIN column shows only to a company that does government contracting.
+  const isGovernmentContracting = useGovernmentContracting();
 
   const addLine = useDisclosure();
   const [editing, setEditing] = useState<ContractLine | null>(null);
@@ -201,18 +204,22 @@ const ProjectContractLinesGrid = ({
 
   const columns = useMemo<ColumnDef<LineRow>[]>(
     () => [
-      {
-        accessorKey: "lineItemNumber",
-        header: t`CLIN`,
-        cell: ({ row }) =>
-          row.original.lineItemNumber ? (
-            <span className="whitespace-nowrap tabular-nums">
-              {row.original.lineItemNumber}
-            </span>
-          ) : (
-            <Dash />
-          )
-      },
+      ...(isGovernmentContracting
+        ? [
+            {
+              accessorKey: "lineItemNumber",
+              header: t`CLIN`,
+              cell: ({ row }) =>
+                row.original.lineItemNumber ? (
+                  <span className="whitespace-nowrap tabular-nums">
+                    {row.original.lineItemNumber}
+                  </span>
+                ) : (
+                  <Dash />
+                )
+            } satisfies ColumnDef<LineRow>
+          ]
+        : []),
       {
         accessorKey: "description",
         header: t`Description`,
@@ -338,6 +345,7 @@ const ProjectContractLinesGrid = ({
     ],
     [
       t,
+      isGovernmentContracting,
       currencyCode,
       percent,
       formatQuantity,
@@ -505,10 +513,17 @@ const ProjectContractLinesGrid = ({
           className="rounded-lg border border-dashed border-border py-16"
           title={<Trans>No lines yet</Trans>}
           description={
-            <Trans>
-              Add a line for each CLIN: Time & Materials, Cost Plus or Fixed
-              Price.
-            </Trans>
+            isGovernmentContracting ? (
+              <Trans>
+                Add a line for each CLIN: Time & Materials, Cost Plus or Fixed
+                Price.
+              </Trans>
+            ) : (
+              <Trans>
+                Add a line for each part of the work: Time & Materials, Cost
+                Plus or Fixed Price.
+              </Trans>
+            )
           }
         >
           <Button

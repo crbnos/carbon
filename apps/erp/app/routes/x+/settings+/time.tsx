@@ -32,7 +32,6 @@ import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import {
   settingsToggle,
   timeCardSettingsValidator,
-  timekeepingControlsModes,
   timekeepingSettingsValidator,
   timesheetTimecardChecks
 } from "~/modules/settings/settings.models";
@@ -70,18 +69,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 // Two forms, told apart by their intent: the Timecards switch saves on its
-// own (it moved here from Settings → People), the controls form saves every
-// timekeeping field at once.
+// own (it moved here from Settings → People), the DCAA rules form saves every
+// timekeeping field at once. DCAA itself is turned on at Settings → Projects.
 const timeSettingsForm = z.discriminatedUnion("intent", [
   settingsToggle("timeCard", "timeCardEnabled"),
   timekeepingSettingsValidator
     .safeExtend({ intent: z.literal("timekeeping") })
-    // An emptied certification text clears the stored one.
-    .transform(({ intent: _, ...settings }) => ({
-      ...settings,
-      certificationTextExempt: settings.certificationTextExempt ?? null,
-      certificationTextNonExempt: settings.certificationTextNonExempt ?? null
-    }))
+    .transform(({ intent: _, ...settings }) => settings)
 ]);
 
 export async function action(args: ActionFunctionArgs) {
@@ -110,21 +104,8 @@ export default function TimeSettingsRoute() {
     }
   });
 
-  // The DCAA card follows the picker as it changes, before a save. Only the
-  // user's pick is state; until they pick, the saved setting decides.
-  const [controlsChoice, setControls] = useState<"Standard" | "DCAA" | null>(
-    null
-  );
-  const isDcaa =
-    (controlsChoice ?? companySettings.timekeepingControls) === "DCAA";
+  const isDcaa = companySettings.timekeepingControls === "DCAA";
 
-  const controlsLabels: Record<
-    (typeof timekeepingControlsModes)[number],
-    string
-  > = {
-    Standard: t`Standard`,
-    DCAA: t`DCAA`
-  };
   const timecardCheckLabels: Record<
     (typeof timesheetTimecardChecks)[number],
     string
@@ -134,14 +115,6 @@ export default function TimeSettingsRoute() {
     Block: t`Block`
   };
 
-  const save = (
-    <CardFooter>
-      <Submit isDisabled={fetcher.state !== "idle"}>
-        <Trans>Save</Trans>
-      </Submit>
-    </CardFooter>
-  );
-
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <SettingsPage className="gap-4">
@@ -149,117 +122,87 @@ export default function TimeSettingsRoute() {
           <Trans>Time</Trans>
         </SettingsPageHeading>
 
-        {/* One form over both cards: the action saves every field at once.
-            The DCAA card only hides under Standard, so its fields still
-            post (D14). */}
-        <ValidatedForm
-          method="post"
-          validator={timekeepingSettingsValidator}
-          defaultValues={{
-            timekeepingControls:
-              companySettings.timekeepingControls ?? "Standard",
-            timesheetEntryWindowDays:
-              companySettings.timesheetEntryWindowDays ?? 1,
-            timesheetTimecardCheck:
-              (companySettings.timesheetTimecardCheck as
-                | (typeof timesheetTimecardChecks)[number]
-                | null) ?? "Warn",
-            certificationTextExempt:
-              companySettings.certificationTextExempt ?? "",
-            certificationTextNonExempt:
-              companySettings.certificationTextNonExempt ?? "",
-            standardWeeklyHours: companySettings.standardWeeklyHours ?? 40
-          }}
-          fetcher={fetcher}
-          className="flex w-full flex-col gap-4"
-        >
-          <Hidden name="intent" value="timekeeping" />
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                <Trans>Controls</Trans>
-              </CardTitle>
-              <CardDescription>
-                <Trans>
-                  How employees record time on projects. Standard keeps the
-                  timesheet simple. DCAA adds the controls a government contract
-                  audit checks.
-                </Trans>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-8 max-w-[400px]">
-                <Select
-                  name="timekeepingControls"
-                  label={t`Controls`}
-                  termId="timekeeping-controls"
-                  options={timekeepingControlsModes.map((mode) => ({
-                    value: mode,
-                    label: controlsLabels[mode]
-                  }))}
-                  onChange={(option) =>
-                    setControls(option?.value === "DCAA" ? "DCAA" : "Standard")
-                  }
-                  helperText={t`DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members.`}
-                />
-              </div>
-            </CardContent>
-            {!isDcaa && save}
-          </Card>
-
-          <Card className={isDcaa ? undefined : "hidden"}>
-            <CardHeader>
-              <CardTitle>
-                <Trans>DCAA rules</Trans>
-              </CardTitle>
-              <CardDescription>
-                <Trans>
-                  The entry window, the timecard check, dilution and the
-                  certification an employee signs at submit.
-                </Trans>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-8">
-                <div className="flex flex-col gap-8 max-w-[400px]">
-                  <Number
-                    name="timesheetEntryWindowDays"
-                    label={t`Entry window (days)`}
-                    minValue={0}
-                    helperText={t`An entry older than this needs a late reason.`}
-                  />
-                  <Select
-                    name="timesheetTimecardCheck"
-                    label={t`Timecard check`}
-                    options={timesheetTimecardChecks.map((check) => ({
-                      value: check,
-                      label: timecardCheckLabels[check]
-                    }))}
-                    helperText={t`Compares a submitted week with the employee's timecards.`}
-                  />
-                  <Number
-                    name="standardWeeklyHours"
-                    label={t`Standard weekly hours`}
-                    termId="dilution"
-                    minValue={0}
-                    helperText={t`The hours an exempt employee's week is diluted to.`}
-                  />
+        {/* DCAA's rules show only while DCAA is on (Settings → Projects). */}
+        {isDcaa && (
+          <ValidatedForm
+            method="post"
+            validator={timekeepingSettingsValidator}
+            defaultValues={{
+              timesheetEntryWindowDays:
+                companySettings.timesheetEntryWindowDays ?? 1,
+              timesheetTimecardCheck:
+                (companySettings.timesheetTimecardCheck as
+                  | (typeof timesheetTimecardChecks)[number]
+                  | null) ?? "Warn",
+              certificationTextExempt:
+                companySettings.certificationTextExempt ?? "",
+              certificationTextNonExempt:
+                companySettings.certificationTextNonExempt ?? "",
+              standardWeeklyHours: companySettings.standardWeeklyHours ?? 40
+            }}
+            fetcher={fetcher}
+            className="flex w-full flex-col gap-4"
+          >
+            <Hidden name="intent" value="timekeeping" />
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <Trans>DCAA rules</Trans>
+                </CardTitle>
+                <CardDescription>
+                  <Trans>
+                    The entry window, the timecard check, dilution and the
+                    certification an employee signs at submit. DCAA is turned on
+                    and off at Settings → Projects.
+                  </Trans>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-8">
+                  <div className="flex flex-col gap-8 max-w-[400px]">
+                    <Number
+                      name="timesheetEntryWindowDays"
+                      label={t`Entry window (days)`}
+                      minValue={0}
+                      helperText={t`An entry older than this needs a late reason.`}
+                    />
+                    <Select
+                      name="timesheetTimecardCheck"
+                      label={t`Timecard check`}
+                      options={timesheetTimecardChecks.map((check) => ({
+                        value: check,
+                        label: timecardCheckLabels[check]
+                      }))}
+                      helperText={t`Compares a submitted week with the employee's timecards.`}
+                    />
+                    <Number
+                      name="standardWeeklyHours"
+                      label={t`Standard weekly hours`}
+                      termId="dilution"
+                      minValue={0}
+                      helperText={t`The hours an exempt employee's week is diluted to.`}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-8 max-w-[640px]">
+                    <TextArea
+                      name="certificationTextExempt"
+                      label={t`Certification text, exempt staff`}
+                    />
+                    <TextArea
+                      name="certificationTextNonExempt"
+                      label={t`Certification text, non-exempt staff`}
+                    />
+                  </div>
                 </div>
-                <div className="flex flex-col gap-8 max-w-[640px]">
-                  <TextArea
-                    name="certificationTextExempt"
-                    label={t`Certification text, exempt staff`}
-                  />
-                  <TextArea
-                    name="certificationTextNonExempt"
-                    label={t`Certification text, non-exempt staff`}
-                  />
-                </div>
-              </div>
-            </CardContent>
-            {isDcaa && save}
-          </Card>
-        </ValidatedForm>
+              </CardContent>
+              <CardFooter>
+                <Submit isDisabled={fetcher.state !== "idle"}>
+                  <Trans>Save</Trans>
+                </Submit>
+              </CardFooter>
+            </Card>
+          </ValidatedForm>
+        )}
 
         <Card>
           <CardHeader>

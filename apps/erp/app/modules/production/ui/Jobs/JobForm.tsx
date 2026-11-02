@@ -368,7 +368,7 @@ const JobForm = ({
           <TabsContent value="job" className="w-full">
             <ModalCardProvider type={formType}>
               <ModalCard onClose={onClose}>
-                <ModalCardContent size="large">
+                <ModalCardContent size="xlarge">
                   <ValidatedForm
                     method="post"
                     action={isModal ? path.to.newJob : undefined}

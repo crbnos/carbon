@@ -90,10 +90,11 @@ opens in layers. Each layer shows the least that a user needs.
   `projectPeg`) and Billing (every Contract project, `showBilling`, with `view: sales`;
   with no project contract the page offers New Project Contract). The header
   (`ProjectHeader`, on `RecordHeader`) is one line: the identifier and the name (a button
-  that opens the project switcher), the status badge, then the copy button and the ⋯ menu
-  at the right end. It has no primary button. The ⋯ menu lists the status transitions
-  first, the next step first, then Place in service, Stop work, Baselines, Change
-  requests, Copy project and Template.
+  that opens the project switcher), the status badge and the copy button, then at the
+  right the next step's buttons (a Draft project: **Release**; a Released one: **Put on
+  hold**, secondary, and **Work complete**, primary; Brad, 2026-11-01) and the ⋯ menu.
+  The ⋯ menu lists the other status transitions first, the next step first, then Place in
+  service, Stop work, Baselines, Change requests, Copy project and Template.
 - **Element page** (`/x/project/$id/element/$elementId`, `ElementView`): a full-screen page
   with no project header and no project sidebar. See *The Plan page*.
 - **Layer 5: a feature shows only when it is used.** Stock and Pegging as above. Billing is

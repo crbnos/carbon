@@ -43,6 +43,7 @@ import {
 import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
+import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import {
@@ -162,6 +163,8 @@ const ContractLineForm = ({
       }`
     }));
   const isSubClin = lineItemNumber.trim().length === 6;
+  // CLIN and SLIN show only to a company that does government contracting.
+  const isGovernmentContracting = useGovernmentContracting();
   const [showDelete, setShowDelete] = useState(false);
   // As a modal the form closes once its save has settled (the action
   // redirects back with a flash).
@@ -370,6 +373,14 @@ const ContractLineForm = ({
               {/* A new project line bills the contract's project; the line's
                   own page can point it elsewhere. */}
               {isProject && !isEditing && <Hidden name="projectId" />}
+              {/* Hidden, the CLIN and its parent still post their saved
+                  values: the update writes an absent number as null. */}
+              {isProject && !isGovernmentContracting && (
+                <>
+                  <Hidden name="lineItemNumber" />
+                  <Hidden name="parentLineId" />
+                </>
+              )}
 
               <div className="flex w-full flex-col gap-6">
                 <FormStepPanel {...panel("line")}>
@@ -377,7 +388,9 @@ const ContractLineForm = ({
                     title={t`What it bills`}
                     description={
                       isProject
-                        ? t`The part or service, and the CLIN it is billed under.`
+                        ? isGovernmentContracting
+                          ? t`The part or service, and the CLIN it is billed under.`
+                          : t`The part or service, and how it reads on the invoice.`
                         : t`The service, and how it reads on the invoice.`
                     }
                   >
@@ -391,7 +404,7 @@ const ContractLineForm = ({
                       isReadOnly={isLocked}
                       onChange={(option) => setItemId(option?.value ?? "")}
                     />
-                    {isProject && (
+                    {isProject && isGovernmentContracting && (
                       <Input
                         name="lineItemNumber"
                         label={t`CLIN / SLIN`}
@@ -403,7 +416,7 @@ const ContractLineForm = ({
                       />
                     )}
                     {/* Unmounted for a CLIN: only a SubCLIN has a parent. */}
-                    {isSubClin && (
+                    {isSubClin && isGovernmentContracting && (
                       <Select
                         name="parentLineId"
                         label={t`Parent CLIN`}

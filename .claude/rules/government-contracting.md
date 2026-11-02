@@ -30,14 +30,15 @@ has its own rule: `contract-financing.md`.
 
 Every timekeeping control waits for `companySettings.timekeepingControls = 'DCAA'`
 (enum `timekeepingControls`: Standard, DCAA; default Standard). In Standard mode each
-timesheet path keeps its Phase 1a behavior, and the tests pin that per path. Settings →
-Time (`x+/settings+/time.tsx`; `/x/settings/timekeeping` redirects there;
-`updateTimekeepingSettings`) holds the
-mode and these `companySettings` columns. The page uses the `SettingsPage` /
-`SettingsPageHeading` shell, like Settings → Inventory: a Controls card, then a DCAA
-rules card. One `ValidatedForm` spans both cards, because the action saves every field
-at once. The DCAA rules card follows the Controls picker before a save and is only
-hidden (not unmounted) under Standard, so its fields still post.
+timesheet path keeps its Phase 1a behavior, and the tests pin that per path. DCAA is
+turned on and off by the **Government Contracting** card's switch on Settings → Projects
+(`x+/settings+/projects.tsx`, intent `governmentContracting`, which calls
+`updateTimeSettings` with `timekeepingControls`). DCAA is refused without both
+certification texts, so turning it on with either empty opens a modal that asks for them
+(`certificationTextsValidator`) and sends them in the same call. Settings → Time
+(`x+/settings+/time.tsx`; `/x/settings/timekeeping` redirects there) has no mode picker:
+it renders the DCAA rules card, one `ValidatedForm` (`timekeepingSettingsValidator`,
+both texts required), only while DCAA is on, above the Timecards card.
 
 | Column | Default | Used by |
 |---|---|---|
@@ -46,22 +47,34 @@ hidden (not unmounted) under Standard, so its fields still post.
 | `certificationTextExempt` / `certificationTextNonExempt` | null | The certification dialog; `timekeepingSettingsValidator` requires both in DCAA mode |
 | `standardWeeklyHours` | 40 | `dilutionFactor` |
 
-Turning DCAA on is refused while a Released Standard project has no
-`costObjective` ("Set a cost objective on N projects first").
+Turning DCAA on is refused while a Released project has no `costObjective`
+("Set a cost objective on N projects first (NSG3, …)", naming up to three). So that it can be fixed, a Released
+project with no cost objective shows the field on its Settings page
+(`ProjectProperties`) even while DCAA is off.
 
 Unallowable cost, cost objectives, CLIN numbers and funding actions work in both modes.
 In DCAA mode the funding actions own the line's funded totals (below).
 
 **Where the fields show.** A company that does not use government contracting does
 not see its fields. `useGovernmentContracting()`
-(`apps/erp/app/modules/projects/ui/useGovernmentContracting.ts`) is true when
-`timekeepingControls = 'DCAA'` or the company has the `GOVERNMENT_CONTRACTING` feature
-(`usePlanGate`). It is display only; the server gates stay. Its callers: Cost Objective
-in `ProjectForm` (the New Project drawer and the project Settings page; when hidden, a
-`Hidden` field posts the saved value or the default), the Funding Actions card on a
-contract line's billing page (also shown when DCAA owns the totals or the line has
-actions), and People → Payroll Totals in the sidebar. The element page does not use
-it: its Government contracting group shows only under DCAA (below).
+(`apps/erp/app/modules/projects/ui/useGovernmentContracting.ts`) is true only when
+`timekeepingControls = 'DCAA'`; the `GOVERNMENT_CONTRACTING` plan feature does not
+decide it. It is display only; the server gates stay. Its callers: Cost Objective in
+`ProjectForm` and `ProjectProperties` (when hidden, a `Hidden` field posts the saved
+value or the default), Restrict charging, the contract's Financing tab, the Funding
+Actions card on a contract line's billing page (also shown when DCAA owns the totals or
+the line has actions), CLIN / SLIN and Parent CLIN (`ContractLineForm` posts them as
+`Hidden` fields when hidden, since `upsertContractLine` writes an absent one as null;
+`ContractLineSummary`, `ContractSummary`, the CLIN column of
+`ProjectContractLinesGrid`), Allowability, Unallowable reason and Element of cost in
+`ChartOfAccountForm` (not rendered when hidden; `upsertAccount` never writes an absent
+key), the Unallowable column and Preproduction note in `ProjectCostsTree` (its
+Allowable column reads Actual when hidden) and the Unallowable column in
+`ProjectLedgerTable`, the six DCAA reports on Projects → Reports
+(`dcaaProjectReports`), People → Payroll Totals, and Indirect Rates / Indirect Pools in
+the Accounting nav. The six report loaders and `payroll-totals.tsx` also redirect when
+DCAA is off. The R&D tax fields and reports are not gated. The element page does not
+use it: its Government contracting group shows only under DCAA (below).
 
 ## Cost objectives and unallowable cost
 

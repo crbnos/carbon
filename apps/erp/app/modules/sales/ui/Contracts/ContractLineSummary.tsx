@@ -24,6 +24,7 @@ import {
   useQuantityFormatter,
   useRouteData
 } from "~/hooks";
+import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import { path } from "~/utils/path";
 import type {
   contractRateUnits,
@@ -101,6 +102,8 @@ export default function ContractLineSummary({
     routeData?.contract.billingBasis
   );
   const isProject = routeData?.contract.billingBasis === "Project";
+  // CLIN and SLIN show only to a company that does government contracting.
+  const isGovernmentContracting = useGovernmentContracting();
 
   const revenueTypeLabels: Record<
     (typeof contractRevenueTypes)[number],
@@ -230,10 +233,12 @@ export default function ContractLineSummary({
           <ReadOnlyField label={t`Description`}>
             {line.description}
           </ReadOnlyField>
-          <ReadOnlyField label={t`CLIN / SLIN`} termId="clin">
-            {line.lineItemNumber}
-          </ReadOnlyField>
-          {line.lineItemNumber?.length === 6 && (
+          {isGovernmentContracting && (
+            <ReadOnlyField label={t`CLIN / SLIN`} termId="clin">
+              {line.lineItemNumber}
+            </ReadOnlyField>
+          )}
+          {isGovernmentContracting && line.lineItemNumber?.length === 6 && (
             <ReadOnlyField label={t`Parent CLIN`}>
               {parentLine
                 ? `${parentLine.lineItemNumber ?? ""} — ${

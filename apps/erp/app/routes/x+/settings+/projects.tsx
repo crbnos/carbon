@@ -6,25 +6,41 @@ import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validator } from "@carbon/form";
+import {
+  Hidden,
+  ValidatedForm,
+  validationError,
+  validator
+} from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
   HStack,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
   ScrollArea,
   Switch,
   toast
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { Submit, TextArea } from "~/components/Form";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import {
   projectLabelValidator,
@@ -41,6 +57,7 @@ import {
 } from "~/modules/projects/projects.service";
 import { ProjectLabelsGrid } from "~/modules/projects/ui/Settings/ProjectLabelsGrid";
 import { ProjectStatesGrid } from "~/modules/projects/ui/Settings/ProjectStatesGrid";
+import { certificationTextsValidator } from "~/modules/settings/settings.models";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
@@ -208,6 +225,32 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       return done("Label saved");
     }
+    case "governmentContracting": {
+      // DCAA needs both certification texts: the modal that turns it on
+      // sends them, turning it off sends none.
+      const enabled = formData.get("enabled") === "true";
+      let texts = {};
+      if (formData.has("certificationTextExempt")) {
+        const validation = await validator(
+          certificationTextsValidator
+        ).validate(formData);
+        if (validation.error) return validationError(validation.error);
+        texts = validation.data;
+      }
+      const api = await carbon(request);
+      const update = await api.settings.updateTimeSettings({
+        timekeepingControls: enabled ? "DCAA" : "Standard",
+        ...texts
+      });
+      if (update.error) {
+        return { success: false, message: update.error.message, error: null };
+      }
+      return done(
+        enabled
+          ? "Government contracting turned on"
+          : "Government contracting turned off"
+      );
+    }
     case "deleteLabel": {
       if (typeof id !== "string") return refuse(null, "No label was given");
       const result = await deleteProjectLabel(client, id, companyId);
@@ -239,6 +282,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function ProjectsSettingsRoute() {
   const { companySettings, states, labels } = useLoaderData<typeof loader>();
+  const { t } = useLingui();
   const fetcher = useAction<typeof action>({
     onSuccess: (data) => toast.success(data.message),
     onError: (data) => toast.error(data.message)
@@ -247,6 +291,35 @@ export default function ProjectsSettingsRoute() {
 
   const toggle = (intent: keyof typeof SETTING_BY_INTENT, checked: boolean) =>
     fetcher.submit({ intent, enabled: String(checked) }, { method: "POST" });
+
+  // DCAA needs both certification texts: turning it on without them opens a
+  // modal that asks for them and turns it on in the same save.
+  const isDcaa = companySettings.timekeepingControls === "DCAA";
+  const hasCertificationTexts =
+    !!companySettings.certificationTextExempt &&
+    !!companySettings.certificationTextNonExempt;
+  const [isAskingForTexts, setAskingForTexts] = useState(false);
+  const textsFetcher = useAction<typeof action>({
+    onSuccess: (data) => {
+      toast.success(data.message);
+      setAskingForTexts(false);
+    },
+    onError: (data) =>
+      toast.error(
+        ("message" in data ? data.message : null) ??
+          t`Failed to turn on government contracting`
+      )
+  });
+  const toggleGovernmentContracting = (checked: boolean) => {
+    if (checked && !hasCertificationTexts) {
+      setAskingForTexts(true);
+      return;
+    }
+    fetcher.submit(
+      { intent: "governmentContracting", enabled: String(checked) },
+      { method: "POST" }
+    );
+  };
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
@@ -310,9 +383,92 @@ export default function ProjectsSettingsRoute() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Government Contracting</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Turns on DCAA timekeeping and the government contracting fields:
+                cost objectives, allowable cost, CLINs and funding actions. Its
+                timesheet rules are at Settings → Time.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <span className="font-medium">
+                <Trans>Use DCAA controls</Trans>
+              </span>
+              <Switch
+                checked={isDcaa}
+                onCheckedChange={toggleGovernmentContracting}
+                disabled={isToggling}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
         <ProjectStatesGrid states={states} />
         <ProjectLabelsGrid labels={labels} />
       </SettingsPage>
+
+      {isAskingForTexts && (
+        <Modal open onOpenChange={(open) => !open && setAskingForTexts(false)}>
+          <ModalOverlay />
+          <ModalContent>
+            <ValidatedForm
+              method="post"
+              validator={certificationTextsValidator}
+              defaultValues={{
+                certificationTextExempt:
+                  companySettings.certificationTextExempt ?? "",
+                certificationTextNonExempt:
+                  companySettings.certificationTextNonExempt ?? ""
+              }}
+              fetcher={textsFetcher}
+            >
+              <Hidden name="intent" value="governmentContracting" />
+              <Hidden name="enabled" value="true" />
+              <ModalHeader>
+                <ModalTitle>
+                  <Trans>Turn on government contracting</Trans>
+                </ModalTitle>
+                <ModalDescription>
+                  <Trans>
+                    Employees certify their week with this text when they submit
+                    a timesheet.
+                  </Trans>
+                </ModalDescription>
+              </ModalHeader>
+              <ModalBody>
+                <div className="flex flex-col gap-6">
+                  <TextArea
+                    name="certificationTextExempt"
+                    label={t`Certification text, exempt staff`}
+                  />
+                  <TextArea
+                    name="certificationTextNonExempt"
+                    label={t`Certification text, non-exempt staff`}
+                  />
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  variant="secondary"
+                  onClick={() => setAskingForTexts(false)}
+                >
+                  <Trans>Cancel</Trans>
+                </Button>
+                <Submit isDisabled={textsFetcher.state !== "idle"}>
+                  <Trans>Turn On</Trans>
+                </Submit>
+              </ModalFooter>
+            </ValidatedForm>
+          </ModalContent>
+        </Modal>
+      )}
     </ScrollArea>
   );
 }

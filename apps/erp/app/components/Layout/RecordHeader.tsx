@@ -280,8 +280,8 @@ type RecordHeaderProps = {
   actions?: ReactNode;
   /**
    * Desktop: where the copy button and the ⋯ menu sit. `title` (the
-   * default) puts them beside the title; `end` puts them at the right end,
-   * after the actions.
+   * default) puts both beside the title; `end` puts the copy button after
+   * the status and the ⋯ menu at the right end, after the actions.
    */
   toolsPlacement?: "title" | "end";
 };
@@ -316,9 +316,9 @@ export function RecordHeader({
     </Heading>
   );
 
-  const tools = (
+  const copy = copyValue ? <Copy text={copyValue} /> : null;
+  const menuButton = (
     <>
-      {copyValue ? <Copy text={copyValue} /> : null}
       {menu ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -368,13 +368,19 @@ export function RecordHeader({
           ) : (
             heading
           )}
-          {toolsPlacement === "title" ? tools : null}
+          {toolsPlacement === "title" ? (
+            <>
+              {copy}
+              {menuButton}
+            </>
+          ) : null}
           {status}
+          {toolsPlacement === "end" ? copy : null}
         </HStack>
         <HStack>
           {aside}
           {actions}
-          {toolsPlacement === "end" ? tools : null}
+          {toolsPlacement === "end" ? menuButton : null}
           {onToggleProperties ? (
             <IconButton
               aria-label={t`Toggle Properties`}

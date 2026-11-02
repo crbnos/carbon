@@ -4081,6 +4081,20 @@ export const projectReportPermissions: Record<
 };
 
 /**
+ * The reports that exist only with DCAA timekeeping on
+ * (`companySettings.timekeepingControls = 'DCAA'`): the Reports list hides
+ * them and their pages redirect to it. The R&D tax reports always show.
+ */
+export const dcaaProjectReports: ReadonlySet<ProjectReportKey> = new Set([
+  "late-entries",
+  "missing-time",
+  "labor-distribution",
+  "labor-transfers",
+  "timesheet-audit",
+  "cost-by-clin"
+]);
+
+/**
  * The Missing Time report's actions: take an employee out of the report
  * (`timesheetRequired` off) or back in, or remind the selected employees.
  */

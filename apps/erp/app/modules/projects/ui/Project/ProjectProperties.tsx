@@ -212,7 +212,11 @@ export function ProjectProperties() {
                     }))}
                   />
                 )}
-                {isGovernmentContracting && (
+                {/* Off DCAA a Released project with no objective still
+                    shows it: turning DCAA on is refused until it has one. */}
+                {(isGovernmentContracting ||
+                  (project.status === "Released" &&
+                    !project.costObjective)) && (
                   <PropertySelect
                     {...common}
                     field="costObjective"

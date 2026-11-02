@@ -1,5 +1,5 @@
 {
-  "totalTools": 1749,
+  "totalTools": 1750,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -208,7 +208,7 @@
     {"name":"inventory_getReceipt","classification":"READ","schema":"85cf4fd2917f","response":"32c1c823ab1f","permission":"inventory:view","paginates":false},
     {"name":"inventory_getReceiptFiles","classification":"READ","schema":"72a93572f55f","response":"5483e69d7515","permission":"inventory:view","paginates":false},
     {"name":"inventory_getReceiptLines","classification":"READ","schema":"85cf4fd2917f","response":"15b7b17f7652","permission":"inventory:view","paginates":false},
-    {"name":"inventory_getReceiptRelatedItems","classification":"READ","schema":"8a3528c62244","response":"2f7d31c914c3","permission":"inventory:view","paginates":false},
+    {"name":"inventory_getReceiptRelatedItems","classification":"READ","schema":"8a3528c62244","response":"ccfc2551d69d","permission":"inventory:view","paginates":false},
     {"name":"inventory_getReceipts","classification":"READ","schema":"cd40ae40fad5","response":"c0e9f6bbdcad","permission":"inventory:view","paginates":true},
     {"name":"inventory_getReceiptTracking","classification":"READ","schema":"85cf4fd2917f","response":"ec54684c77fb","permission":"inventory:view","paginates":false},
     {"name":"inventory_getRentalReceiptLines","classification":"READ","schema":"85cf4fd2917f","response":"7fb4d944b992","permission":"inventory:view","paginates":false},
@@ -1625,9 +1625,10 @@
     {"name":"service_getServiceJobTime","classification":"READ","schema":"4999bd4be598","response":"5e8064f5d28e","permission":"service:view","paginates":false},
     {"name":"service_issueServiceJobPart","classification":"WRITE","schema":"ba28784eec62","response":"beee0f08282a","permission":"service:update","paginates":false},
     {"name":"service_moveServiceJobAssignment","classification":"WRITE","schema":"10c112469311","response":"d7c46146c56f","permission":"service:update","paginates":false},
-    {"name":"service_recordServiceJobEstimateResponse","classification":"WRITE","schema":"0546271d6827","response":"3797626bd17e","permission":"service:update","paginates":false},
+    {"name":"service_recordServiceJobEstimateResponse","classification":"WRITE","schema":"657899fc7a8a","response":"3797626bd17e","permission":"service:update","paginates":false},
     {"name":"service_reopenServiceJob","classification":"WRITE","schema":"a307cf7486c8","response":"98bdc3c64f30","permission":"service:update","paginates":false},
-    {"name":"service_sendServiceJobEstimate","classification":"WRITE","schema":"4999bd4be598","response":"3797626bd17e","permission":"service:update","paginates":false},
+    {"name":"service_reopenServiceJobEstimate","classification":"WRITE","schema":"4999bd4be598","response":"3797626bd17e","permission":"service:update","paginates":false},
+    {"name":"service_sendServiceJobEstimate","classification":"WRITE","schema":"73e8cdcec080","response":"7e0202853fcb","permission":"service:update","paginates":false},
     {"name":"service_setServiceJobCoverage","classification":"WRITE","schema":"e70f61ca614e","response":"98bdc3c64f30","permission":"service:update","paginates":false},
     {"name":"service_setServiceJobStatus","classification":"WRITE","schema":"17d35c9b6e76","response":"89fe60b74421","permission":"service:update","paginates":false},
     {"name":"service_stopServiceJobClock","classification":"WRITE","schema":"a307cf7486c8","response":"6a884dc1da07","permission":"service:update","paginates":false},

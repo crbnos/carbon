@@ -9,7 +9,7 @@ Everything on this page is included in every plan. The timekeeping controls stay
 
 ## Cost objectives
 
-Open a project's **Settings** page and set **Cost Objective** in the **Accounting** section. The field shows in DCAA mode, or when your plan has government contracting:
+Open a project's **Settings** page and set **Cost Objective** in the **Accounting** section. The field shows in DCAA mode, and on a Released project that has none:
 
 | Cost objective | Use it for |
 |---|---|
@@ -34,12 +34,15 @@ The project's **Costs** page shows **Allowable** and **Unallowable** in separate
 
 ## DCAA timekeeping
 
-Open **Settings → Time** and set **Controls** to **DCAA**. You need both certification texts first.
+Open **Settings → Projects** and turn on **Use DCAA controls** in the **Government Contracting** card. If the certification texts are empty, Carbon asks for both before it turns DCAA on. Turning it on is refused while a Released project has no cost objective; such a project shows **Cost objective** on its **Settings** page even while DCAA is off.
 
-<Screenshot label="Settings, Time page: the Controls card set to DCAA, and the DCAA rules card with Entry window (days), Timecard check, Standard weekly hours and the two certification texts" />
+The switch also decides what you see. While it is off, Carbon hides the government contracting fields: cost objectives, allowability on the chart of accounts, the **Allowable** and **Unallowable** columns, CLINs, funding actions and the government reports.
+
+The DCAA rules are on **Settings → Time**, which shows them only while DCAA is on.
+
+<Screenshot label="Settings, Time page with DCAA on: the DCAA rules card with Entry window (days), Timecard check, Standard weekly hours and the two certification texts" />
 
 <FieldTable>
-  <Field name="Controls" type="enum">**Standard** keeps the light timesheet. **DCAA** adds every control below.</Field>
   <Field name="Entry window (days)" type="number">Default 1. An entry older than this needs a reason for late entry.</Field>
   <Field name="Timecard check" type="enum">**Off**, **Warn** (default) or **Block**. Compares a submitted week with the employee's [time cards](/docs/reference/people#time-cards).</Field>
   <Field name="Certification text, exempt staff" type="text">The statement an exempt employee certifies at submit.</Field>

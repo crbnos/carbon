@@ -25,6 +25,7 @@ import type {
 } from "../../projects.models";
 import { buildElementTree } from "../../projects.models";
 import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
+import { useGovernmentContracting } from "../useGovernmentContracting";
 import type { ProjectBurdenPoolRow } from "./ProjectBurdenByPool.ee";
 import ProjectBurdenByPool from "./ProjectBurdenByPool.ee";
 
@@ -62,6 +63,8 @@ const FIGURE_CELL = "w-28 shrink-0 px-2 text-right tabular-nums";
  * The tree fits its pane (a container query on the page, not the viewport):
  * Budget, Committed, Allowable and Remaining always show; Plan and Estimate
  * from 58rem; Unallowable from 66rem, where all seven fit beside the names.
+ * A company that does no government contracting sees one Actual column in
+ * place of Allowable and Unallowable, and no preproduction marks.
  */
 const WIDE_CELL = cn(FIGURE_CELL, "hidden @min-[58rem]:block");
 const WIDEST_CELL = cn(FIGURE_CELL, "hidden @min-[66rem]:block");
@@ -86,6 +89,7 @@ export default function ProjectCostsTree({
   const { elementId: openElementId } = useParams();
   const parentRef = useRef<HTMLDivElement>(null);
   const formatMoney = useCurrencyFormatter();
+  const isGovernmentContracting = useGovernmentContracting();
   const tree = useMemo(() => buildElementTree(rows), [rows]);
 
   const { nodes, getTreeProps, getNodeProps, toggleExpandNode, virtualizer } =
@@ -100,39 +104,46 @@ export default function ProjectCostsTree({
     value === null ? "—" : formatMoney.format(value);
   const preproductionAmount = money(preproduction);
 
-  const figureCells = (figures: ProjectCostFigures, burden = 0) => (
-    <>
-      <span className={WIDE_CELL}>{money(figures.plan)}</span>
-      <span className={FIGURE_CELL}>{money(figures.budget)}</span>
-      <span className={FIGURE_CELL}>{money(figures.committed)}</span>
-      {burden !== 0 ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className={cn(FIGURE_CELL, "underline decoration-dotted")}>
-              {money(figures.actual - figures.unallowable)}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            {t`of which burden: ${money(burden)}`}
-          </TooltipContent>
-        </Tooltip>
-      ) : (
-        <span className={FIGURE_CELL}>
-          {money(figures.actual - figures.unallowable)}
-        </span>
-      )}
-      <span className={WIDEST_CELL}>{money(figures.unallowable)}</span>
-      <span
-        className={cn(
-          FIGURE_CELL,
-          figures.remaining !== null && figures.remaining < 0 && "text-red-500"
+  const figureCells = (figures: ProjectCostFigures, burden = 0) => {
+    const actual = isGovernmentContracting
+      ? figures.actual - figures.unallowable
+      : figures.actual;
+    return (
+      <>
+        <span className={WIDE_CELL}>{money(figures.plan)}</span>
+        <span className={FIGURE_CELL}>{money(figures.budget)}</span>
+        <span className={FIGURE_CELL}>{money(figures.committed)}</span>
+        {burden !== 0 ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={cn(FIGURE_CELL, "underline decoration-dotted")}>
+                {money(actual)}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              {t`of which burden: ${money(burden)}`}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <span className={FIGURE_CELL}>{money(actual)}</span>
         )}
-      >
-        {money(figures.remaining)}
-      </span>
-      <span className={WIDE_CELL}>{money(figures.estimateAtCompletion)}</span>
-    </>
-  );
+        {isGovernmentContracting && (
+          <span className={WIDEST_CELL}>{money(figures.unallowable)}</span>
+        )}
+        <span
+          className={cn(
+            FIGURE_CELL,
+            figures.remaining !== null &&
+              figures.remaining < 0 &&
+              "text-red-500"
+          )}
+        >
+          {money(figures.remaining)}
+        </span>
+        <span className={WIDE_CELL}>{money(figures.estimateAtCompletion)}</span>
+      </>
+    );
+  };
 
   return (
     <div className="@container flex h-full min-h-0 w-full flex-col overflow-x-auto">
@@ -153,13 +164,19 @@ export default function ProjectCostsTree({
             <Trans>Committed</Trans>
           </span>
           <span className={FIGURE_CELL}>
-            <Trans>Allowable</Trans>
+            {isGovernmentContracting ? (
+              <Trans>Allowable</Trans>
+            ) : (
+              <Trans>Actual</Trans>
+            )}
           </span>
-          <span className={WIDEST_CELL}>
-            <LabelWithHelp termId="allowability" variant="inline">
-              <Trans>Unallowable</Trans>
-            </LabelWithHelp>
-          </span>
+          {isGovernmentContracting && (
+            <span className={WIDEST_CELL}>
+              <LabelWithHelp termId="allowability" variant="inline">
+                <Trans>Unallowable</Trans>
+              </LabelWithHelp>
+            </span>
+          )}
           <span className={FIGURE_CELL}>
             <Trans>Remaining</Trans>
           </span>
@@ -172,7 +189,7 @@ export default function ProjectCostsTree({
             <span className="shrink-0">
               <Trans>Project total</Trans>
             </span>
-            {preproduction !== null && (
+            {isGovernmentContracting && preproduction !== null && (
               <span className="truncate text-xs font-normal text-muted-foreground">
                 <Trans>Preproduction: {preproductionAmount}</Trans>
               </span>
@@ -240,7 +257,7 @@ export default function ProjectCostsTree({
                       {row.readableId}
                     </span>
                     <span className="truncate">{row.name}</span>
-                    {row.isPreproduction && (
+                    {isGovernmentContracting && row.isPreproduction && (
                       <Badge variant="secondary" className="shrink-0">
                         <Trans>Preproduction</Trans>
                       </Badge>

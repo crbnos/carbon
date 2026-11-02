@@ -15,6 +15,7 @@ import {
   MenuIcon,
   MenuItem
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -56,6 +57,7 @@ import {
   ReportRangeSelect,
   useReportFormat
 } from "~/modules/projects/ui/Reports/ProjectReport";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -72,10 +74,18 @@ const FILTER_KEYS = [
 type FilterKey = (typeof FILTER_KEYS)[number];
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     ...projectReportPermissions["missing-time"],
     role: "employee"
   });
+  // A DCAA report: only with DCAA timekeeping on.
+  const settings = await getCompanySettings(client, companyId);
+  if (settings.data?.timekeepingControls !== "DCAA") {
+    throw redirect(
+      path.to.projectReports,
+      await flash(request, error(null, "This report needs DCAA timekeeping"))
+    );
+  }
   const db = getDatabaseClient();
   const params = new URL(request.url).searchParams;
   const excluded = params.get("excluded") === "true";

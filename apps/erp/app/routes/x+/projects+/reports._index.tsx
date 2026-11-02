@@ -43,9 +43,11 @@ import { usePermissions } from "~/hooks";
 import { reportPinValidator } from "~/modules/accounting/accounting.models";
 import { getReportPins } from "~/modules/accounting/accounting.service";
 import {
+  dcaaProjectReports,
   type ProjectReportKey,
   projectReportPermissions
 } from "~/modules/projects/projects.models";
+import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -126,6 +128,8 @@ export default function ProjectReportsRoute() {
   const permissions = usePermissions();
   const [search, setSearch] = useState("");
   const pinFetcher = useFetcher<typeof action>();
+  // The DCAA reports show only to a company that does government contracting.
+  const isGovernmentContracting = useGovernmentContracting();
 
   const reports = useMemo<ReportDefinition[]>(
     () => [
@@ -191,12 +195,14 @@ export default function ProjectReportsRoute() {
 
   const visibleReports = useMemo(
     () =>
-      reports.filter((report) =>
-        projectReportPermissions[report.key].view.every((module) =>
-          permissions.can("view", module)
-        )
+      reports.filter(
+        (report) =>
+          (isGovernmentContracting || !dcaaProjectReports.has(report.key)) &&
+          projectReportPermissions[report.key].view.every((module) =>
+            permissions.can("view", module)
+          )
       ),
-    [reports, permissions]
+    [reports, permissions, isGovernmentContracting]
   );
 
   const categories = useMemo(() => {

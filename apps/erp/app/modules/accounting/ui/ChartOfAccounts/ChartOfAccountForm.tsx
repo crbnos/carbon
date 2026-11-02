@@ -23,6 +23,7 @@ import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { Combobox, Hidden, Input, Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
+import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import { path } from "~/utils/path";
 import {
   accountAllowabilities,
@@ -72,6 +73,7 @@ const ChartOfAccountForm = ({
     (selectedGroup?.class as AccountClass) ?? initialValues.class;
   const accountType = selectedGroup?.accountType ?? initialValues.accountType;
 
+  const isGovernmentContracting = useGovernmentContracting();
   // Only the user's pick is state; until they pick, the saved value shows.
   const [pickedAllowability, setAllowability] = useState<string | null>(null);
   const allowability =
@@ -195,8 +197,10 @@ const ChartOfAccountForm = ({
                   </>
                 )}
                 {/* Government contracting: a group account takes no
-                    allowability, so the fields are only for a posting account. */}
-                {!initialValues.isGroup && (
+                    allowability, so the fields are only for a posting account.
+                    A company that does no government contracting does not see
+                    them; left unposted, the update keeps the saved values. */}
+                {isGovernmentContracting && !initialValues.isGroup && (
                   <>
                     <Select
                       name="allowability"

@@ -305,8 +305,8 @@ plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
 - `ui/Projects/` — the projects list (`ProjectsTable`) and `ProjectForm` (the New Project
   drawer; its folded `FormSection` keeps fields mounted). An existing project has no
   form: its fields are `ProjectProperties` on the Overview.
-- `ui/Project/` — the workspace: `ProjectHeader` (switcher, status, ⋯ menu with the status
-  transitions; no primary button), `ProjectSidebar` + `useProjectSidebarLinks`
+- `ui/Project/` — the workspace: `ProjectHeader` (switcher, status, Release on a Draft project,
+  Put on hold + Work complete on a Released one, ⋯ menu with the other status transitions), `ProjectSidebar` + `useProjectSidebarLinks`
   (`useProjectNavigation.tsx`), `ProjectElementTree` (the sidebar tree and the Plan page's
   only search), `ProjectOverview` (the Overview's card dashboard; the
   `$projectId._index.tsx` loader computes progress, coming up, activity, the Contract card

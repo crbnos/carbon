@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  Button,
   Command,
   CommandEmpty,
   CommandGroup,
@@ -38,7 +39,7 @@ import {
 } from "react-icons/lu";
 import { Link, useFetcher, useNavigate, useParams } from "react-router";
 import { usePanels } from "~/components/Layout";
-import { RecordHeader } from "~/components/Layout/RecordHeader";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -53,11 +54,14 @@ type ProjectSwitcherOption = { id: string; identifier: string; name: string };
 
 /**
  * The project workspace's one-line header (Layer 2): on the left the
- * identifier and name (a button that opens the project switcher) and the
- * status; on the right the copy button and the ⋯ menu. There is no primary
- * button (Brad, 2026-10-12): the menu opens with the status transitions, the
- * next step first, then everything else. Facts and exceptions (owner, cost
- * treatment, stop-work, overdue borrows) are on the Overview page.
+ * identifier and name (a button that opens the project switcher), the
+ * status and the copy button; on the right the next step's buttons and the ⋯
+ * menu. A Draft project shows Release; a Released one shows Put on hold
+ * (secondary) and Work complete (primary) (Brad, 2026-11-01: in the menu
+ * they were too hard to find). The menu opens with the other status
+ * transitions, the next step first, then everything else. Facts and
+ * exceptions (owner, cost treatment, stop-work, overdue borrows) are on the
+ * Overview page.
  */
 const ProjectHeader = () => {
   const { t } = useLingui();
@@ -108,9 +112,13 @@ const ProjectHeader = () => {
       { method: "post", action: path.to.projectStopWork(projectId) }
     );
 
-  // Brad, 2026-10-12: the header has no primary button. The status
+  // The next step of a Draft or Released project is a header button
+  // (Release; Work complete, with Put on hold beside it). The other status
   // transitions open the ⋯ menu, the next step first. A stop-work order
   // overrides them, because nothing else can change until work resumes.
+  const showRelease = !stopWorkDate && status === "Draft";
+  const showReleasedActions = !stopWorkDate && status === "Released";
+  const submittingStatus = statusFetcher.formData?.get("status");
   const transitions: ReactNode = stopWorkDate ? (
     <DropdownMenuItem disabled={!canUpdate || isChanging} onClick={resumeWork}>
       <DropdownMenuIcon icon={<LuCirclePlay />} />
@@ -118,24 +126,6 @@ const ProjectHeader = () => {
     </DropdownMenuItem>
   ) : (
     <>
-      {status === "Draft" && (
-        <DropdownMenuItem
-          disabled={!can("Released") || isChanging}
-          onClick={() => changeStatus("Released")}
-        >
-          <DropdownMenuIcon icon={<LuRocket />} />
-          <Trans>Release</Trans>
-        </DropdownMenuItem>
-      )}
-      {status === "Released" && (
-        <DropdownMenuItem
-          disabled={!can("Technically Complete") || isChanging}
-          onClick={() => changeStatus("Technically Complete")}
-        >
-          <DropdownMenuIcon icon={<LuCircleCheck />} />
-          <Trans>Work complete</Trans>
-        </DropdownMenuItem>
-      )}
       {status === "On Hold" && (
         <DropdownMenuItem
           disabled={!can("Released") || isChanging}
@@ -160,15 +150,6 @@ const ProjectHeader = () => {
   const menu = (
     <>
       {transitions}
-      {!stopWorkDate && status === "Released" && (
-        <DropdownMenuItem
-          disabled={!can("On Hold") || isChanging}
-          onClick={() => changeStatus("On Hold")}
-        >
-          <DropdownMenuIcon icon={<LuCirclePause />} />
-          <Trans>Put on hold</Trans>
-        </DropdownMenuItem>
-      )}
       {!stopWorkDate && status === "On Hold" && (
         <DropdownMenuItem
           disabled={!can("Technically Complete") || isChanging}
@@ -205,7 +186,11 @@ const ProjectHeader = () => {
           <Trans>Stop work</Trans>
         </DropdownMenuItem>
       )}
-      {(status !== "Closed" || canPlaceInService) && <DropdownMenuSeparator />}
+      {(stopWorkDate ||
+        status === "On Hold" ||
+        status === "Technically Complete" ||
+        canPlaceInService ||
+        showStopWork) && <DropdownMenuSeparator />}
       <DropdownMenuItem asChild>
         <Link to={path.to.projectBaselines(projectId)}>
           <DropdownMenuIcon icon={<LuHistory />} />
@@ -261,6 +246,46 @@ const ProjectHeader = () => {
         }
         copyValue={project.identifier ?? ""}
         menu={menu}
+        actions={
+          showRelease ? (
+            <RecordAction slot="primary">
+              <Button
+                variant="primary"
+                leftIcon={<LuRocket />}
+                isDisabled={!can("Released") || isChanging}
+                isLoading={submittingStatus === "Released"}
+                onClick={() => changeStatus("Released")}
+              >
+                <Trans>Release</Trans>
+              </Button>
+            </RecordAction>
+          ) : showReleasedActions ? (
+            <>
+              <RecordAction slot="secondary">
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuCirclePause />}
+                  isDisabled={!can("On Hold") || isChanging}
+                  isLoading={submittingStatus === "On Hold"}
+                  onClick={() => changeStatus("On Hold")}
+                >
+                  <Trans>Put on hold</Trans>
+                </Button>
+              </RecordAction>
+              <RecordAction slot="primary">
+                <Button
+                  variant="primary"
+                  leftIcon={<LuCircleCheck />}
+                  isDisabled={!can("Technically Complete") || isChanging}
+                  isLoading={submittingStatus === "Technically Complete"}
+                  onClick={() => changeStatus("Technically Complete")}
+                >
+                  <Trans>Work complete</Trans>
+                </Button>
+              </RecordAction>
+            </>
+          ) : undefined
+        }
         status={<ProjectStatus status={status} />}
         onToggleExplorer={toggleExplorer}
         toolsPlacement="end"

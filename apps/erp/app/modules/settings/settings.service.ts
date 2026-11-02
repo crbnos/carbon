@@ -3267,10 +3267,12 @@ export async function dcaaTimekeepingRefusal(
   if (current.data?.timekeepingControls === "DCAA") return null;
   const missing = await client
     .from("project")
-    .select("id", { count: "exact", head: true })
+    .select("identifier", { count: "exact" })
     .eq("companyId", companyId)
     .eq("status", "Released")
-    .is("costObjective", null);
+    .is("costObjective", null)
+    .order("identifier")
+    .limit(3);
   if (missing.error) {
     timekeepingLogger.error("Failed to count projects with no cost objective", {
       companyId,
@@ -3284,11 +3286,18 @@ export async function dcaaTimekeepingRefusal(
   }
   const count = missing.count ?? 0;
   if (count > 0) {
+    // Name the projects, so the person can find them: a Released project
+    // with none shows the field on its Settings page.
+    const named = (missing.data ?? [])
+      .map((project) => project.identifier)
+      .filter(Boolean)
+      .join(", ");
+    const more = count > 3 ? ` and ${count - 3} more` : "";
     return ctx.error(
       "rule",
       `Set a cost objective on ${count} ${
         count === 1 ? "project" : "projects"
-      } first`
+      } first${named ? ` (${named}${more})` : ""}`
     );
   }
   return null;

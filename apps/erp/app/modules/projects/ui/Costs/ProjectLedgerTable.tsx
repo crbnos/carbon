@@ -29,6 +29,7 @@ import { useItems, usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { projectCostTypes } from "../../projects.models";
 import type { ProjectLedgerEntry } from "../../types";
+import { useGovernmentContracting } from "../useGovernmentContracting";
 
 type ElementLabel = { readableId: string; name: string };
 
@@ -65,6 +66,9 @@ const ProjectLedgerTable = memo(
     const formatQuantity = useQuantityFormatter();
     const [items] = useItems();
     const [people] = usePeople();
+    // The Unallowable column and its filter show only to a company that does
+    // government contracting.
+    const isGovernmentContracting = useGovernmentContracting();
 
     const itemsById = useMemo(
       () => new Map(items.map((item) => [item.id, item])),
@@ -214,30 +218,35 @@ const ProjectLedgerTable = memo(
           ),
           meta: { icon: <LuCoins /> }
         },
-        {
-          accessorKey: "unallowable",
-          header: t`Unallowable`,
-          cell: ({ row }) =>
-            row.original.unallowable ? (
-              <LuCheck
-                className="size-4"
-                aria-label={t`Unallowable`}
-                role="img"
-              />
-            ) : null,
-          meta: {
-            icon: <LuBan />,
-            filter: {
-              type: "static",
-              options: [
-                { value: "true", label: t`Yes` },
-                { value: "false", label: t`No` }
-              ]
-            }
-          }
-        }
+        ...(isGovernmentContracting
+          ? [
+              {
+                accessorKey: "unallowable",
+                header: t`Unallowable`,
+                cell: ({ row }) =>
+                  row.original.unallowable ? (
+                    <LuCheck
+                      className="size-4"
+                      aria-label={t`Unallowable`}
+                      role="img"
+                    />
+                  ) : null,
+                meta: {
+                  icon: <LuBan />,
+                  filter: {
+                    type: "static",
+                    options: [
+                      { value: "true", label: t`Yes` },
+                      { value: "false", label: t`No` }
+                    ]
+                  }
+                }
+              } satisfies ColumnDef<ProjectLedgerEntry>
+            ]
+          : [])
       ],
       [
+        isGovernmentContracting,
         elements,
         formatDate,
         formatMoney,

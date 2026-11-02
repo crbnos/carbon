@@ -335,7 +335,8 @@ export const expiredEntityPolicies = [
   "BlockWithOverride"
 ] as const;
 
-// Government Contracting 5a: Settings → Time.
+// Government Contracting 5a: the switch on Settings → Projects turns DCAA
+// on, and Settings → Time holds its rules.
 export const timekeepingControlsModes = [
   "Standard",
   "DCAA"
@@ -343,39 +344,42 @@ export const timekeepingControlsModes = [
 
 export const timesheetTimecardChecks = ["Off", "Warn", "Block"] as const;
 
-export const timekeepingSettingsValidator = z
-  .object({
-    timekeepingControls: z.enum(timekeepingControlsModes, {
-      error: "Controls are required"
-    }),
+/** DCAA is refused without both texts, so turning it on asks for them. */
+export const certificationTextsValidator = z.object({
+  certificationTextExempt: zfd.text(
+    z
+      .string({
+        error: "DCAA mode needs the certification text for exempt staff"
+      })
+      .trim()
+      .min(1, {
+        message: "DCAA mode needs the certification text for exempt staff"
+      })
+  ),
+  certificationTextNonExempt: zfd.text(
+    z
+      .string({
+        error: "DCAA mode needs the certification text for non-exempt staff"
+      })
+      .trim()
+      .min(1, {
+        message: "DCAA mode needs the certification text for non-exempt staff"
+      })
+  )
+});
+
+/** Settings → Time's DCAA rules, shown only while DCAA is on. */
+export const timekeepingSettingsValidator =
+  certificationTextsValidator.safeExtend({
     timesheetEntryWindowDays: zfd.numeric(
       z.number().int().min(0, { message: "The window cannot be negative" })
     ),
     timesheetTimecardCheck: z.enum(timesheetTimecardChecks, {
       error: "The timecard check is required"
     }),
-    certificationTextExempt: zfd.text(z.string().trim().optional()),
-    certificationTextNonExempt: zfd.text(z.string().trim().optional()),
     standardWeeklyHours: zfd.numeric(
       z.number().gt(0, { message: "Weekly hours must be greater than 0" })
     )
-  })
-  .superRefine((data, ctx) => {
-    if (data.timekeepingControls !== "DCAA") return;
-    if (!data.certificationTextExempt) {
-      ctx.addIssue({
-        code: "custom",
-        message: "DCAA mode needs the certification text for exempt staff",
-        path: ["certificationTextExempt"]
-      });
-    }
-    if (!data.certificationTextNonExempt) {
-      ctx.addIssue({
-        code: "custom",
-        message: "DCAA mode needs the certification text for non-exempt staff",
-        path: ["certificationTextNonExempt"]
-      });
-    }
   });
 
 // Planning settings (MRP suggestions). Whole days / whole weekly buckets.

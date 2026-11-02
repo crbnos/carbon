@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { getCompanyTimeZone } from "@carbon/database";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -28,6 +30,7 @@ import {
   ReportPeriodSelect,
   useReportFormat
 } from "~/modules/projects/ui/Reports/ProjectReport";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -37,10 +40,18 @@ export const handle = projectReportHandle(
 );
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     ...projectReportPermissions["labor-distribution"],
     role: "employee"
   });
+  // A DCAA report: only with DCAA timekeeping on.
+  const settings = await getCompanySettings(client, companyId);
+  if (settings.data?.timekeepingControls !== "DCAA") {
+    throw redirect(
+      path.to.projectReports,
+      await flash(request, error(null, "This report needs DCAA timekeeping"))
+    );
+  }
   const db = getDatabaseClient();
   const [periods, timeZone] = await Promise.all([
     getLaborDistributionPeriods(db, { companyId }),

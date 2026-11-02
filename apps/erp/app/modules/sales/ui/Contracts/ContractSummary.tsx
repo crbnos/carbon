@@ -24,6 +24,7 @@ import {
   usePercentFormatter,
   useQuantityFormatter
 } from "~/hooks";
+import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import { path } from "~/utils/path";
 import {
   isProjectBillingMethod,
@@ -261,13 +262,16 @@ function SummaryLine({
   const isProject = contract.billingBasis === "Project";
   const billingMethodLabels = useBillingMethodLabels(contract.billingBasis);
   const isBillingLine = isProjectBillingMethod(line.billingMethod);
+  const isGovernmentContracting = useGovernmentContracting();
 
-  // A project contract line: its CLIN and billing method; a billing line's
-  // amount is what it is funded for, a Fixed Price line's is its price.
+  // A project contract line: its CLIN (government contracting only) and
+  // billing method; a billing line's amount is what it is funded for, a Fixed
+  // Price line's is its price.
   const details: string[] = isProject
-    ? [line.lineItemNumber, billingMethodLabels[line.billingMethod]].filter(
-        (part): part is string => !!part
-      )
+    ? [
+        isGovernmentContracting ? line.lineItemNumber : null,
+        billingMethodLabels[line.billingMethod]
+      ].filter((part): part is string => !!part)
     : [isRecurring ? t`Recurring` : t`One-time`];
   // A project contract line is quantity 1 unless it names a part: then the
   // quantity is the units to deliver, at the rate per unit (Fixed Price).
