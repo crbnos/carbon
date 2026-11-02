@@ -82,6 +82,16 @@ async function seedInstanceAdmin() {
   if (error && error.code !== "email_exists") {
     throw new Error(`seed: creating instance admin: ${error.message}`);
   }
+
+  // The instance admin can add companies (the switcher's Add Company).
+  // Set on every run, so an existing admin gets it on the next upgrade.
+  const admin = await supabaseAdmin
+    .from("user")
+    .update({ admin: true })
+    .eq("email", email);
+  if (admin.error) {
+    throw new Error(`seed: marking instance admin: ${admin.error.message}`);
+  }
 }
 
 // Postgres posts its Inngest events (util.send_inngest_event) to this URL.
