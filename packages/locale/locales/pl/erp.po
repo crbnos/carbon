@@ -20006,6 +20006,9 @@ msgstr "Poproś o zatwierdzenie"
 msgid "Requested Date"
 msgstr "Data żądana"
 
+msgid "Requests per minute"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Wymagaj 6-cyfrowego kodu z aplikacji Authenticator przy logowaniu."
 

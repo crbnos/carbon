@@ -20006,6 +20006,9 @@ msgstr "承認を依頼"
 msgid "Requested Date"
 msgstr "希望納期"
 
+msgid "Requests per minute"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
 

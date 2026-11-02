@@ -20006,6 +20006,9 @@ msgstr "승인 요청"
 msgid "Requested Date"
 msgstr "요청일"
 
+msgid "Requests per minute"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "로그인 시 인증 앱의 6자리 코드를 입력하세요."
 

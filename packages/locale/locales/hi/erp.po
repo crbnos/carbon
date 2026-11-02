@@ -20006,6 +20006,9 @@ msgstr "अनुमोदन का अनुरोध करें"
 msgid "Requested Date"
 msgstr "अनुरोधित तिथि"
 
+msgid "Requests per minute"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
 

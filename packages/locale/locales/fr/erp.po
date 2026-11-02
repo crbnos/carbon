@@ -20006,6 +20006,9 @@ msgstr "Demander l'approbation"
 msgid "Requested Date"
 msgstr "Date demandée"
 
+msgid "Requests per minute"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Exiger un code à 6 chiffres d'une application d'authentification lors de la connexion."
 

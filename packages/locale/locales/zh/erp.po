@@ -20006,6 +20006,9 @@ msgstr "请求审批"
 msgid "Requested Date"
 msgstr "要求日期"
 
+msgid "Requests per minute"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
 

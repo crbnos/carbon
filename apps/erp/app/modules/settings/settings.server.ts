@@ -1648,6 +1648,8 @@ export const removeDocumentSection = defineServiceFn({
 const apiKeyFields = {
   name: apiKeyValidator.shape.name,
   expiresAt: apiKeyValidator.shape.expiresAt,
+  /** Requests per minute. Saved on a single-tenant deployment only; Carbon Cloud sets it. */
+  rateLimit: z.number().int().min(1).max(1_000_000).optional(),
   /** Per module, the actions the key may run: `{ "sales": ["view"] }`. */
   scopes: z.record(z.string(), z.array(z.string()))
 };
@@ -1662,7 +1664,7 @@ const apiKeyFields = {
 export const createApiKey = defineServiceFn({
   input: z.object(apiKeyFields),
   permission: { update: "users" },
-  async run(ctx, { name, scopes, expiresAt }) {
+  async run(ctx, { name, scopes, expiresAt, rateLimit }) {
     const rawKey = `crbn_${nanoid()}`;
     let created: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
@@ -1670,6 +1672,7 @@ export const createApiKey = defineServiceFn({
         name,
         scopes,
         expiresAt: expiresAt || undefined,
+        rateLimit,
         rawKey,
         keyHash: hashApiKey(rawKey),
         keyPreview: rawKey.slice(-5),
@@ -1688,23 +1691,25 @@ export const createApiKey = defineServiceFn({
 });
 
 /**
- * Update an API key's name, scopes and expiry.
+ * Update an API key's name, scopes, expiry and, on a single-tenant deployment,
+ * requests per minute.
  *
  * @remarks
  * The key itself never changes. Its cached authentication is dropped, so a
- * narrower scope or an earlier expiry applies at once.
+ * narrower scope, an earlier expiry or a new limit applies at once.
  */
 export const updateApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1), ...apiKeyFields }),
   permission: { update: "users" },
-  async run(ctx, { id, name, scopes, expiresAt }) {
+  async run(ctx, { id, name, scopes, expiresAt, rateLimit }) {
     let updated: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
       updated = await upsertApiKey(ctx.asCaller.supabase, {
         id,
         name,
         scopes,
-        expiresAt: expiresAt || undefined
+        expiresAt: expiresAt || undefined,
+        rateLimit
       });
     } catch (err) {
       return service.apiKeysEntitlement(ctx, err);
