@@ -74,8 +74,10 @@ decides it after the entries are built:
   every app-code building block it reaches (six calls deep, through imports and
   re-exports, syntactically: the type checker took the build past its 4 GB
   heap). Package code is plumbing and is not walked. An `.rpc()`, `rpcRows`,
-  raw `` sql`…` ``, an app call it cannot follow or a deeper chain makes the
-  reads unknown, and an operation with unknown reads is never a lookup.
+  raw `` sql`…` ``, a relation passed as a variable (`client.from(table)`), an
+  app call it cannot follow or a deeper chain makes the reads unknown, and an
+  operation with unknown reads is never a lookup. A capitalised global's
+  `from` (`Array.from`, `Buffer.from`) is not a query.
 - **The lookup.** A general list READ returning rows with an `id` — paged,
   filterable, a `…List`, or scoped only by parents the table points at
   (`getJobOperationsList(jobId)`) — whose every read is that table or a view

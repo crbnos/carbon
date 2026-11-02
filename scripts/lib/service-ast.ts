@@ -335,6 +335,19 @@ const OPAQUE_CALLS = new Set(["rpc", "rpcRows", "rpcValue"]);
 /** How many calls deep the walk follows building blocks. */
 const MAX_CALL_DEPTH = 6;
 
+/**
+ * A supabase `.from(…)`: not a storage bucket, and not a global's `from`
+ * (`Array.from`, `Buffer.from`, `Observable.from`) — a query client is never
+ * a capitalised global.
+ */
+function isQueryFrom(call: CallExpression, name: string): boolean {
+  if (name !== "from" || isStorageFrom(call)) return false;
+  const callee = unwrap(call.getExpression());
+  const receiver =
+    callee && Node.isPropertyAccessExpression(callee) ? unwrap(callee.getExpression()) : undefined;
+  return !(receiver && Node.isIdentifier(receiver) && /^[A-Z]/.test(receiver.getText()));
+}
+
 function relationName(node: Node | undefined): string | undefined {
   const arg = unwrap(node);
   if (!arg || !(Node.isStringLiteral(arg) || Node.isNoSubstitutionTemplateLiteral(arg))) {
@@ -463,14 +476,16 @@ export function queriedRelations(run: ServiceFunctionNode): QueriedRelations {
     for (const call of fn.getDescendantsOfKind(SyntaxKind.CallExpression)) {
       const name = memberName(call) ?? "";
       if (OPAQUE_CALLS.has(name)) out.complete = false;
-      const relation =
-        (name === "from" && !isStorageFrom(call)) || KYSELY_RELATION_CALLS.has(name)
-          ? relationName(call.getArguments()[0])
-          : ROW_HELPERS.has(name)
-            ? relationName(call.getArguments()[1])
-            : undefined;
-      if (relation) {
-        out.relations.add(relation);
+      const argument = isQueryFrom(call, name) || KYSELY_RELATION_CALLS.has(name)
+        ? 0
+        : ROW_HELPERS.has(name)
+          ? 1
+          : undefined;
+      if (argument !== undefined) {
+        const relation = relationName(call.getArguments()[argument]);
+        // `client.from(table)`: a relation is read, but not one a name says.
+        if (relation) out.relations.add(relation);
+        else out.complete = false;
         continue;
       }
       const target = callTarget(call);

@@ -108,7 +108,8 @@ describe("resolveIdLookups", () => {
   const project = new Project({ useInMemoryFileSystem: true });
   project.createSourceFile(
     "/apps/erp/app.service.ts",
-    `export function getIssueTypesList(client: any) { return client.from("nonConformanceType").select("id, name"); }
+    `export function getIssueTypesList(client: any) { Array.from("ab"); return client.from("nonConformanceType").select("id, name"); }
+     export function getTypesList(client: any, table: string) { client.from(table).select("id"); return client.from("nonConformanceType").select("id"); }
      export function getIssueTypes(client: any) { return client.from("nonConformanceType").select("*"); }
      export function insertIssue(client: any, data: any) { return writeIssue(client, data); }
      function writeIssue(client: any, data: any) { return client.from("nonConformance").insert(data); }
@@ -131,6 +132,7 @@ describe("resolveIdLookups", () => {
      const createIssue = defineServiceFn({ run: (ctx: any, input: any) => service.insertIssue(ctx.client, input) });
      const getIssueTypesList = defineServiceFn({ run: (ctx: any) => service.getIssueTypesList(ctx.client) });
      const getIssueTypes = defineServiceFn({ run: (ctx: any) => service.getIssueTypes(ctx.client) });
+     const getTypesList = defineServiceFn({ run: (ctx: any) => service.getTypesList(ctx.client, "nonConformanceType") });
      const getParts = defineServiceFn({ run: (ctx: any) => service.getParts(ctx.client) });
      const getMaterials = defineServiceFn({ run: (ctx: any) => materials(ctx.client) });
      const getEmployees = defineServiceFn({ run: (ctx: any) => service.getEmployees(ctx.client) });
@@ -139,7 +141,7 @@ describe("resolveIdLookups", () => {
      const getJobOperations = defineServiceFn({ run: (ctx: any, input: any) => service.getJobOperations(ctx.client, input.jobId) });
      const getJobCosts = defineServiceFn({ run: (ctx: any) => service.getJobCosts(ctx.client) });
      export const router = {
-       quality: { createIssue, getIssueTypesList, getIssueTypes },
+       quality: { createIssue, getIssueTypesList, getIssueTypes, getTypesList },
        items: { getParts, getMaterials },
        users: { getEmployees, getInvitable },
        production: { getUnbatchedOperations, getJobOperations, getJobCosts }
@@ -183,6 +185,7 @@ describe("resolveIdLookups", () => {
     }),
     tool("quality_getIssueTypesList", {}),
     tool("quality_getIssueTypes", { paginates: true }),
+    tool("quality_getTypesList", {}),
     tool("items_getParts", { paginates: true }),
     tool("items_getMaterials", { paginates: true }),
     tool("users_getEmployees", { paginates: true }),
@@ -245,6 +248,13 @@ describe("resolveIdLookups", () => {
     expect(createIssue?.get("jobOperationId")).toEqual([
       "production_getJobOperations"
     ]);
+  });
+
+  it("links nothing to a list that names a relation only at runtime", () => {
+    // `quality_getTypesList` would outrank the …List below on its shorter name.
+    expect(createIssue?.get("nonConformanceTypeId")).not.toContain(
+      "quality_getTypesList"
+    );
   });
 
   it("links nothing to a list that also reads through an RPC", () => {
