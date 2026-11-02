@@ -57,7 +57,6 @@ import {
 import {
   isSalesReturnOrderLocked,
   isServiceReturnLine,
-  liveServiceJob,
   salesReturnDispositionType,
   salesReturnOrderLineFormValidator,
   type salesReturnOrderLineValidator
@@ -385,8 +384,6 @@ const SalesReturnOrderLineForm = ({
   // The receipt made the line's service job from its type and asset.
   const isReturnTypeLocked = isEditing && quantityReceived > 0;
 
-  const serviceJob = liveServiceJob(line?.serviceJob);
-
   // Source-document references shown under the line title — one subtle link
   // each, in place of the old badges.
   const sources = (
@@ -416,13 +413,6 @@ const SalesReturnOrderLineForm = ({
               : undefined,
             label: t`Invoice`,
             value: linkage.salesInvoiceReadableId
-          }
-        : null,
-      serviceJob
-        ? {
-            to: path.to.serviceJob(serviceJob.id),
-            label: t`Service Job`,
-            value: serviceJob.serviceJobId
           }
         : null
     ] as ({ to?: string; label: string; value: string } | null)[]

@@ -70,8 +70,9 @@ every child-row write goes through `editableServiceJob` (operations) or
 | Move | Done by | Rule |
 |---|---|---|
 | Start, Hold, Resume, Cancel | `setServiceJobStatus` (`SERVICE_JOB_STATUS_TRANSITIONS`, `service.models.ts`) | Start Open → In Progress; Hold Open or In Progress → On Hold; Resume On Hold → In Progress; Cancel from any open status, refused while the job has time entries or Part lines |
-| Send Estimate | `sendServiceJobEstimate` | Billable only, at least one line, not already Accepted. Estimate Sent, job Awaiting Approval |
-| Record Response | `recordServiceJobEstimateResponse` | Estimate must be Sent. Accepted → job Open; a Fixed Price job's `fixedPrice` = Σ quantity × unit price. Declined → job In Progress and `repairable = false` |
+| Send | `sendServiceJobEstimate` | Billable only, at least one line, not already Accepted. Files the estimate PDF in the job's files first (a failure changes nothing). Estimate Sent, job Awaiting Approval. With `notification` Email the PDF is emailed to `customerContact` (and `cc`); a failed email keeps the send and returns `warning` |
+| Accept / Reject | `recordServiceJobEstimateResponse` | Estimate must be Sent. Accepted → job In Progress (the repair starts; no Start needed); a Fixed Price job's `fixedPrice` = Σ quantity × unit price. Declined → job back to Open and `repairable = false`; the header's primary action is then Complete (`serviceJobPrimaryAction`), which closes the job and bills the evaluation. `estimateRespondedBy` is optional; the header sends none |
+| Reopen estimate | `reopenServiceJobEstimate` | Estimate Sent, Accepted or Declined on a job that is not locked → estimate Draft (lines and bill rate editable, Send again), the answer cleared; Awaiting Approval → Open; a Declined estimate's `repairable = false` back to null. Earlier sends' PDFs stay in the job's files |
 | Complete | `completeServiceJob` → `postServiceJob` `complete` | From Open, In Progress or On Hold. Refused while a clock runs. Runs the time reconcile and refuses if it fails; writes no journal of its own |
 | Reopen | `reopenServiceJob` → `postServiceJob` `reopen` | Completed → In Progress. Writes no journal: the time cost stays posted. Invoiced is refused; so is a job whose RMA unit shipped back, was scrapped or replaced (`SERVICE_JOB_UNIT_LEFT_ERROR`) |
 | Create Invoice | `createServiceInvoice` | Completed and Billable → Invoiced |
@@ -109,13 +110,39 @@ A line with no item is a **Labor** line: its quantity is hours, and
 `laborBillRate` (refused while the job has none). When the bill rate changes,
 `updateServiceJobLaborBillRate` sets `unitPrice` on the job's Labor lines in
 the same Kysely transaction. The estimate PDF (`ServiceJobEstimatePDF`) shows
-a Labor line as hours × rate.
+a Labor line as hours × rate. `renderServiceJobEstimatePdf` (`service.pdf.tsx`)
+renders it for both the Preview route
+(`file+/service-job-estimate+/$id[.]pdf.tsx`) and the email.
 
-`serviceJobPrimaryAction` picks the header's one primary action: Open → Start;
+`serviceJobPrimaryAction` picks the header's one primary action: Open → Start (Complete when its estimate was Declined);
 In Progress → Complete; Awaiting
 Approval → Record Response (Billable); Completed → Create Invoice (Billable).
-Everything else (Send/Print Estimate, Hold, Resume, Reopen, Cancel Job) is in
-the ⋯ menu (`ServiceJobHeader.tsx`).
+The estimate's buttons are in the header, as a quote's Preview, Finalize, Won
+and Lost are (`ServiceJobHeader.tsx`):
+
+- **Preview** opens the estimate PDF; disabled with no estimate lines.
+- **Send** (Billable jobs) opens `EstimateSendModal`, the quote Finalize
+  modal's sibling: Send Via (None / Email, when the email integration is on),
+  the customer contact (default the job's) and CC. Disabled unless the
+  estimate can be sent. While an Open job has estimate lines not yet Sent or
+  Accepted, Send is the primary button and Start drops to secondary (an
+  estimate stays optional, so Start stays enabled).
+- **Accept** (primary) and **Reject** replace Record Response while the
+  estimate is Sent. Each posts straight to `$jobId.estimate.response`, as a
+  quote's Lost does, with no modal.
+
+Hold, Resume, Reopen and Cancel Job are in the ⋯ menu. **Reopen** steps back
+one stage, as a quote's does: a Completed job reopens (`reopenServiceJob`),
+else a Sent, Accepted or Declined estimate goes back to Draft
+(`reopenServiceJobEstimate`) to be edited and sent again.
+
+The email is `ServiceJobEstimateEmail` (`@carbon/documents/email`, the
+notification card with no button: the job number, unit, serial and total),
+sent by `emailServiceJobEstimate` (`service.service.ts`) from the sending user
+to the contact and the user, the PDF attached as content. Every send files
+its PDF with `fileServiceJobEstimatePdf` in `${companyId}/service-job/${jobId}`
+(`SJ… - Estimate - <time>.pdf`), the folder the job page's Files card lists.
+It writes no `document` row: `documentSourceType` has no service job value.
 
 ## Coverage and its accounts
 
@@ -378,6 +405,18 @@ Service or Warranty line has quantity 1 (one unit, one job).
   sets the asset In Service at the RMA's site; adds `quantityShipped`
   (`addReturnLineQuantityShipped`). Void: `unshipServiceUnits` sets the asset
   At Depot and lowers `quantityShipped` (never below 0).
+- **Links**: the collapsed RMA line in the explorer shows the item and the
+  return type only; its jobs are in the expanded line. A Service or
+  Warranty line's page has a **Service Jobs** card, the sibling of the sales
+  order line's Jobs card (`SalesReturnOrderLineServiceJobs`, read by
+  `getServiceJobsForReturnLine`): every job of the line with its status,
+  assignee, coverage, hours and repairable. Expanding the line in the
+  explorer lists its service jobs (every status, with the status badge), receipts
+  and shipments (`SalesReturnOrderLineRelatedItems`; receipts and shipments
+  from `getSalesReturnOrderRelatedItems`), as a sales order line lists its jobs
+  and shipments. A receipt's Documents panel lists the service jobs of the
+  return lines it takes in (`getReceiptRelatedItems`, matched on
+  `receiptLine.lineId`).
 - **Credit and replacement**: Issue Credit (`getCreditableQuantities`,
   `createSalesReturnOrderCredit`) and the header's whole-RMA Create
   Replacement (`createReplacementSalesOrder` without `lineIds`) take Return to

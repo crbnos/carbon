@@ -7,8 +7,9 @@ import { useCallback } from "react";
 import { useUser } from "~/hooks";
 
 /**
- * Reads an item's sale price and unit of measure, so a charge or estimate line
- * defaults its unit price when the item is picked.
+ * Reads an item's name, sale price and unit of measure, so a charge or
+ * estimate line defaults its description and unit price when the item is
+ * picked.
  */
 export function useItemSalePrice() {
   const { carbon } = useCarbon();
@@ -17,8 +18,13 @@ export function useItemSalePrice() {
   return useCallback(
     async (
       itemId: string
-    ): Promise<{ unitPrice: number; unitOfMeasureCode: string | null }> => {
-      if (!carbon || !itemId) return { unitPrice: 0, unitOfMeasureCode: null };
+    ): Promise<{
+      name: string | null;
+      unitPrice: number;
+      unitOfMeasureCode: string | null;
+    }> => {
+      if (!carbon || !itemId)
+        return { name: null, unitPrice: 0, unitOfMeasureCode: null };
       const [price, item] = await Promise.all([
         carbon
           .from("itemUnitSalePrice")
@@ -28,12 +34,13 @@ export function useItemSalePrice() {
           .maybeSingle(),
         carbon
           .from("item")
-          .select("unitOfMeasureCode")
+          .select("name, unitOfMeasureCode")
           .eq("id", itemId)
           .eq("companyId", company.id)
           .maybeSingle()
       ]);
       return {
+        name: item.data?.name ?? null,
         unitPrice: price.data?.unitSalePrice ?? 0,
         unitOfMeasureCode: item.data?.unitOfMeasureCode ?? null
       };

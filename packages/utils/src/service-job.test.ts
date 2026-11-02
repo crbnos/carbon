@@ -82,6 +82,16 @@ describe("serviceJobPrimaryAction", () => {
     ).toBe("Start");
   });
 
+  it("is Complete for an Open job whose estimate was declined", () => {
+    // The customer declined the repair: what is left is to complete the job
+    // and bill the evaluation, not to start work.
+    expect(
+      serviceJobPrimaryAction(
+        job({ status: "Open", estimateStatus: "Declined", repairable: false })
+      )
+    ).toBe("Complete");
+  });
+
   it("is Complete for an In Progress job, with or without an estimate", () => {
     expect(serviceJobPrimaryAction(job())).toBe("Complete");
     expect(

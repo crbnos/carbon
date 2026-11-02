@@ -14,7 +14,8 @@ import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getSalesReturnOrder,
   getSalesReturnOrderLineServiceJobs,
-  getSalesReturnOrderLines
+  getSalesReturnOrderLines,
+  getSalesReturnOrderRelatedItems
 } from "~/modules/sales/sales.service";
 import {
   SalesReturnOrderExplorer,
@@ -78,7 +79,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       serviceJob: (serviceJobs.data ?? []).filter(
         (job) => job.salesReturnOrderLineId === line.id
       )
-    }))
+    })),
+    relatedItems: getSalesReturnOrderRelatedItems(client, id, companyId)
   };
 }
 

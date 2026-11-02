@@ -936,15 +936,17 @@ export async function getReceiptLines(
  * The documents around a receipt that its own row doesn't name: the purchase
  * invoices raised against its supplier interaction (the PO's, so every
  * receipt of that order shares them), and — for a customer return — the
- * customer it came back from.
+ * customer it came back from and the service jobs of the return lines it
+ * receives.
  */
 export async function getReceiptRelatedItems(
   client: SupabaseClient<Database>,
   companyId: string,
   supplierInteractionId: string | null,
-  salesReturnOrderId: string | null
+  salesReturnOrderId: string | null,
+  salesReturnOrderLineIds: string[] = []
 ) {
-  const [invoices, salesReturnOrder] = await Promise.all([
+  const [invoices, salesReturnOrder, serviceJobs] = await Promise.all([
     supplierInteractionId
       ? client
           .from("purchaseInvoice")
@@ -960,6 +962,14 @@ export async function getReceiptRelatedItems(
           .eq("id", salesReturnOrderId)
           .eq("companyId", companyId)
           .maybeSingle()
+      : null,
+    salesReturnOrderLineIds.length > 0
+      ? client
+          .from("serviceJob")
+          .select("id, serviceJobId, status, salesReturnOrderLineId")
+          .in("salesReturnOrderLineId", salesReturnOrderLineIds)
+          .eq("companyId", companyId)
+          .order("createdAt")
       : null
   ]);
 
@@ -978,9 +988,18 @@ export async function getReceiptRelatedItems(
     });
   }
 
+  if (serviceJobs?.error) {
+    logger.error("Failed to get receipt service jobs", {
+      companyId,
+      salesReturnOrderId,
+      error: serviceJobs.error
+    });
+  }
+
   return {
     invoices: invoices?.data ?? [],
-    customerId: salesReturnOrder?.data?.customerId ?? null
+    customerId: salesReturnOrder?.data?.customerId ?? null,
+    serviceJobs: serviceJobs?.data ?? []
   };
 }
 

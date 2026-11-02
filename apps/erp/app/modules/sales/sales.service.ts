@@ -6754,7 +6754,7 @@ export async function getSalesReturnOrderLines(
   return client
     .from("salesReturnOrderLine")
     .select(
-      "*, returnReason(name), item(name, readableIdWithRevision, itemTrackingType, thumbnailPath)"
+      "*, returnReason(name), item(name, readableIdWithRevision, itemTrackingType, thumbnailPath, type)"
     )
     .eq("salesReturnOrderId", salesReturnOrderId)
     .eq("companyId", companyId)
@@ -6777,6 +6777,72 @@ export async function getSalesReturnOrderLineServiceJobs(
     )
     .in("salesReturnOrderLineId", lineIds)
     .eq("companyId", companyId);
+}
+
+/**
+ * The service jobs of one RMA line, every status, with the hours logged on
+ * each, for the line's Service Jobs card.
+ */
+export async function getServiceJobsForReturnLine(
+  client: SupabaseClient<Database>,
+  salesReturnOrderLineId: string,
+  companyId: string
+) {
+  return client
+    .from("serviceJob")
+    .select(
+      "id, serviceJobId, status, coverage, assignee, repairable, serviceJobTime(hours)"
+    )
+    .eq("salesReturnOrderLineId", salesReturnOrderLineId)
+    .eq("companyId", companyId)
+    .order("createdAt");
+}
+
+/**
+ * The receipts and shipments of a sales return order, with the lines that
+ * name each return line, for the related items under each line.
+ */
+export async function getSalesReturnOrderRelatedItems(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string,
+  companyId: string
+) {
+  const [receipts, shipments] = await Promise.all([
+    client
+      .from("receipt")
+      .select("id, receiptId, status, receiptLine(lineId, receivedQuantity)")
+      .eq("sourceDocument", "Sales Return Order")
+      .eq("sourceDocumentId", salesReturnOrderId)
+      .eq("companyId", companyId)
+      .order("createdAt"),
+    client
+      .from("shipment")
+      .select("id, shipmentId, status, shipmentLine(lineId, shippedQuantity)")
+      .eq("sourceDocument", "Sales Return Order")
+      .eq("sourceDocumentId", salesReturnOrderId)
+      .eq("companyId", companyId)
+      .order("createdAt")
+  ]);
+
+  if (receipts.error) {
+    logger.error("Failed to get sales return order receipts", {
+      companyId,
+      salesReturnOrderId,
+      error: receipts.error
+    });
+  }
+  if (shipments.error) {
+    logger.error("Failed to get sales return order shipments", {
+      companyId,
+      salesReturnOrderId,
+      error: shipments.error
+    });
+  }
+
+  return {
+    receipts: receipts.data ?? [],
+    shipments: shipments.data ?? []
+  };
 }
 
 export async function getSalesReturnOrderLine(

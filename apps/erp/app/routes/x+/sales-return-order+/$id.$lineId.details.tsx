@@ -11,12 +11,17 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { salesReturnOrderLineFormValidator } from "~/modules/sales/sales.models";
+import {
+  isServiceReturnLine,
+  salesReturnOrderLineFormValidator
+} from "~/modules/sales/sales.models";
 import {
   getReturnReasonsList,
-  getSalesReturnOrderLine
+  getSalesReturnOrderLine,
+  getServiceJobsForReturnLine
 } from "~/modules/sales/sales.service";
 import { SalesReturnOrderLineForm } from "~/modules/sales/ui/SalesReturnOrders";
+import SalesReturnOrderLineServiceJobs from "~/modules/sales/ui/SalesReturnOrders/SalesReturnOrderLineServiceJobs";
 import type { SalesReturnOrderLine } from "~/modules/sales/ui/SalesReturnOrders/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -30,9 +35,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const [line, returnReasons] = await Promise.all([
+  const [line, returnReasons, serviceJobs] = await Promise.all([
     getSalesReturnOrderLine(client, lineId),
-    getReturnReasonsList(client, companyId)
+    getReturnReasonsList(client, companyId),
+    getServiceJobsForReturnLine(client, lineId, companyId)
   ]);
 
   if (line.error) {
@@ -112,6 +118,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     line: line.data,
     returnReasons: returnReasons.data ?? [],
+    serviceJobs: serviceJobs.data ?? [],
     linkage: {
       shipmentId,
       shipmentReadableId,
@@ -148,7 +155,8 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function SalesReturnOrderLineDetailsRoute() {
-  const { line, returnReasons, linkage } = useLoaderData<typeof loader>();
+  const { line, returnReasons, serviceJobs, linkage } =
+    useLoaderData<typeof loader>();
   const { id: orderId, lineId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
   if (!lineId) throw new Error("Could not find lineId");
@@ -179,12 +187,17 @@ export default function SalesReturnOrderLineDetailsRoute() {
   };
 
   return (
-    <SalesReturnOrderLineForm
-      key={lineId}
-      initialValues={initialValues}
-      line={fullLine}
-      returnReasons={returnReasons}
-      linkage={linkage}
-    />
+    <>
+      <SalesReturnOrderLineForm
+        key={lineId}
+        initialValues={initialValues}
+        line={fullLine}
+        returnReasons={returnReasons}
+        linkage={linkage}
+      />
+      {isServiceReturnLine(line.returnType) && (
+        <SalesReturnOrderLineServiceJobs serviceJobs={serviceJobs} />
+      )}
+    </>
   );
 }

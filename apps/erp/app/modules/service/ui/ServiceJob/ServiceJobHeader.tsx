@@ -29,18 +29,19 @@ import {
   LuCirclePlay,
   LuCircleX,
   LuCreditCard,
-  LuFile,
+  LuEye,
   LuLoaderCircle,
-  LuMessageSquareReply,
   LuPlay,
   LuSend,
-  LuTvMinimalPlay
+  LuTvMinimalPlay,
+  LuUndo2
 } from "react-icons/lu";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { action as completeAction } from "~/routes/x+/service-job+/$jobId.complete";
-import type { action as sendAction } from "~/routes/x+/service-job+/$jobId.estimate.send";
+import type { action as estimateReopenAction } from "~/routes/x+/service-job+/$jobId.estimate.reopen";
+import type { action as responseAction } from "~/routes/x+/service-job+/$jobId.estimate.response";
 import type { action as reopenAction } from "~/routes/x+/service-job+/$jobId.reopen";
 import type { action as statusAction } from "~/routes/x+/service-job+/$jobId.status";
 import type { action as stopClockAction } from "~/routes/x+/service-job+/$jobId.stop-clock";
@@ -54,7 +55,7 @@ import type {
   ServiceJobTime
 } from "../../types";
 import CoverageBadge from "./CoverageBadge";
-import EstimateResponseModal from "./EstimateResponseModal";
+import EstimateSendModal from "./EstimateSendModal";
 import ServiceJobActionModal from "./ServiceJobActionModal";
 import ServiceJobStatus from "./ServiceJobStatus";
 
@@ -71,6 +72,8 @@ const ServiceJobHeader = () => {
   }>(path.to.serviceJob(jobId));
   const job = routeData?.job;
   const status = job?.status;
+  const returnLine = job?.salesReturnOrderLine;
+  const returnOrder = returnLine?.salesReturnOrder;
   const hasEstimateLines = (routeData?.estimateLines.length ?? 0) > 0;
   const time = routeData?.time ?? [];
   const hasRunningClock = time.some(
@@ -86,7 +89,7 @@ const ServiceJobHeader = () => {
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "service");
   const cancelModal = useDisclosure();
-  const responseModal = useDisclosure();
+  const sendModal = useDisclosure();
   const completeModal = useDisclosure();
   const invoiceModal = useDisclosure();
   // The price the Complete dialog asked for, kept while the clock stops.
@@ -98,17 +101,20 @@ const ServiceJobHeader = () => {
       cancelModal.onClose();
     }
   });
-  const sendFetcher = useAction<typeof sendAction>({
-    onSuccess: () => toast.success(t`Estimate sent`)
-  });
   const completeFetcher = useAction<typeof completeAction>({
     onSuccess: () => {
       toast.success(t`Job completed`);
       completeModal.onClose();
     }
   });
+  const estimateReopenFetcher = useAction<typeof estimateReopenAction>({
+    onSuccess: () => toast.success(t`Estimate reopened`)
+  });
   const reopenFetcher = useAction<typeof reopenAction>({
     onSuccess: () => toast.success(t`Job reopened`)
+  });
+  const responseFetcher = useAction<typeof responseAction>({
+    onSuccess: () => toast.success(t`Recorded the customer's answer`)
   });
   const invoiceFetcher = useAction({
     onSettled: () => invoiceModal.onClose()
@@ -130,10 +136,11 @@ const ServiceJobHeader = () => {
 
   const isBusy = [
     statusFetcher,
-    sendFetcher,
     completeFetcher,
     stopClockFetcher,
     reopenFetcher,
+    estimateReopenFetcher,
+    responseFetcher,
     invoiceFetcher
   ].some((fetcher) => fetcher.state !== "idle");
   const isCompleting =
@@ -155,6 +162,14 @@ const ServiceJobHeader = () => {
     !isBusy &&
     hasEstimateLines &&
     job?.coverage === "Billable" &&
+    job?.estimateStatus !== "Accepted";
+  // Sending the estimate is the next step while an Open Billable job has an
+  // estimate the customer has not seen: Send is primary and Start steps back.
+  const isEstimateNext =
+    status === "Open" &&
+    job?.coverage === "Billable" &&
+    hasEstimateLines &&
+    job?.estimateStatus !== "Sent" &&
     job?.estimateStatus !== "Accepted";
   const canRecordResponse =
     canUpdate && !isLocked && !isBusy && job?.estimateStatus === "Sent";
@@ -195,28 +210,42 @@ const ServiceJobHeader = () => {
     );
   };
 
-  const sendEstimate = () => {
-    sendFetcher.submit(
-      {},
-      { method: "post", action: path.to.serviceJobEstimateSend(jobId) }
+  // Accept starts the repair; Reject marks the unit not repairable.
+  const respond = (response: "Accepted" | "Declined") => {
+    responseFetcher.submit(
+      { response },
+      { method: "post", action: path.to.serviceJobEstimateResponse(jobId) }
     );
+  };
+  const respondingWith =
+    responseFetcher.state !== "idle"
+      ? responseFetcher.formData?.get("response")
+      : null;
+
+  // Reopen steps back one stage: a Completed job reopens; otherwise a sent or
+  // answered estimate goes back to Draft, to be edited and sent again.
+  const canReopenJob = status === "Completed";
+  const canReopenEstimate =
+    !isLocked &&
+    (job?.estimateStatus === "Sent" ||
+      job?.estimateStatus === "Accepted" ||
+      job?.estimateStatus === "Declined");
+  const reopen = () => {
+    if (canReopenJob) {
+      reopenFetcher.submit(
+        {},
+        { method: "post", action: path.to.serviceJobReopen(jobId) }
+      );
+    } else if (canReopenEstimate) {
+      estimateReopenFetcher.submit(
+        {},
+        { method: "post", action: path.to.serviceJobEstimateReopen(jobId) }
+      );
+    }
   };
 
   const menuItems = (
     <>
-      <DropdownMenuItem disabled={!canSendEstimate} onClick={sendEstimate}>
-        <DropdownMenuIcon icon={<LuSend />} />
-        <Trans>Send Estimate</Trans>
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        disabled={!hasEstimateLines}
-        onClick={() =>
-          window.open(path.to.file.serviceJobEstimate(jobId), "_blank")
-        }
-      >
-        <DropdownMenuIcon icon={<LuFile />} />
-        <Trans>Print Estimate</Trans>
-      </DropdownMenuItem>
       <DropdownMenuItem asChild>
         <a
           href={path.to.external.mesServiceJob(jobId)}
@@ -242,13 +271,8 @@ const ServiceJobHeader = () => {
         <Trans>Resume</Trans>
       </DropdownMenuItem>
       <DropdownMenuItem
-        disabled={status !== "Completed" || !canUpdate || isBusy}
-        onClick={() =>
-          reopenFetcher.submit(
-            {},
-            { method: "post", action: path.to.serviceJobReopen(jobId) }
-          )
-        }
+        disabled={!(canReopenJob || canReopenEstimate) || !canUpdate || isBusy}
+        onClick={reopen}
       >
         <DropdownMenuIcon icon={<LuLoaderCircle />} />
         <Trans>Reopen</Trans>
@@ -293,7 +317,7 @@ const ServiceJobHeader = () => {
             <Button
               type="submit"
               leftIcon={<LuCirclePlay />}
-              variant="primary"
+              variant={isEstimateNext ? "secondary" : "primary"}
               isDisabled={!isAllowed("Start")}
               isLoading={statusFetcher.state !== "idle"}
             >
@@ -313,17 +337,9 @@ const ServiceJobHeader = () => {
             <Trans>Complete</Trans>
           </Button>
         );
+      // Accept and Reject answer a sent estimate (below).
       case "Record Response":
-        return (
-          <Button
-            leftIcon={<LuMessageSquareReply />}
-            variant="primary"
-            isDisabled={!canRecordResponse}
-            onClick={responseModal.onOpen}
-          >
-            <Trans>Record Response</Trans>
-          </Button>
-        );
+        return null;
       case "Create Invoice":
         return (
           <Button
@@ -355,11 +371,98 @@ const ServiceJobHeader = () => {
           </div>
         }
         actions={
-          primary ? <RecordAction slot="primary">{primary}</RecordAction> : null
+          <>
+            {returnLine && returnOrder && (
+              <RecordAction slot="overflow">
+                <Button leftIcon={<LuUndo2 />} variant="secondary" asChild>
+                  <Link
+                    to={path.to.salesReturnOrderLine(
+                      returnOrder.id,
+                      returnLine.id
+                    )}
+                  >
+                    {returnOrder.salesReturnOrderId}
+                  </Link>
+                </Button>
+              </RecordAction>
+            )}
+            {(job?.coverage === "Billable" || hasEstimateLines) && (
+              <RecordAction slot="icon">
+                <Button
+                  leftIcon={<LuEye />}
+                  variant="secondary"
+                  isDisabled={!hasEstimateLines}
+                  onClick={() =>
+                    window.open(
+                      path.to.file.serviceJobEstimate(jobId),
+                      "_blank"
+                    )
+                  }
+                >
+                  <Trans>Preview</Trans>
+                </Button>
+              </RecordAction>
+            )}
+            {job?.coverage === "Billable" && (
+              <RecordAction slot={isEstimateNext ? "primary" : "overflow"}>
+                <Button
+                  leftIcon={<LuSend />}
+                  variant={isEstimateNext ? "primary" : "secondary"}
+                  isDisabled={!canSendEstimate}
+                  onClick={sendModal.onOpen}
+                >
+                  <Trans>Send</Trans>
+                </Button>
+              </RecordAction>
+            )}
+            {job?.estimateStatus === "Sent" && (
+              <>
+                <RecordAction slot="primary">
+                  <Button
+                    leftIcon={<LuCircleCheck />}
+                    variant="primary"
+                    isDisabled={!canRecordResponse}
+                    isLoading={respondingWith === "Accepted"}
+                    onClick={() => respond("Accepted")}
+                  >
+                    <Trans>Accept</Trans>
+                  </Button>
+                </RecordAction>
+                <RecordAction slot="secondary">
+                  <Button
+                    leftIcon={<LuCircleX />}
+                    variant="destructive"
+                    isDisabled={!canRecordResponse}
+                    isLoading={respondingWith === "Declined"}
+                    onClick={() => respond("Declined")}
+                  >
+                    <Trans>Reject</Trans>
+                  </Button>
+                </RecordAction>
+              </>
+            )}
+            {primary && (
+              <RecordAction
+                slot={
+                  primaryAction === "Start" && isEstimateNext
+                    ? "overflow"
+                    : "primary"
+                }
+              >
+                {primary}
+              </RecordAction>
+            )}
+          </>
         }
       />
-      {responseModal.isOpen && (
-        <EstimateResponseModal jobId={jobId} onClose={responseModal.onClose} />
+      {sendModal.isOpen && job && (
+        <EstimateSendModal
+          jobId={jobId}
+          serviceJobId={job.serviceJobId}
+          customerId={job.customerId}
+          customerContactId={job.customerContactId}
+          onClose={sendModal.onClose}
+        />
       )}
       {completeModal.isOpen && (
         <ServiceJobActionModal

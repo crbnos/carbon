@@ -94,6 +94,7 @@ import {
   isSalesOrderLocked,
   salesOrderLineValidator
 } from "../../sales.models";
+import { methodTakesConfiguration } from "../../sales.utils";
 import type {
   PriceTraceStep,
   SalesOrder,
@@ -193,7 +194,9 @@ const SalesOrderLineForm = ({
     configuration: initialValues.configuration as ConfiguratorValues | null
   });
   const { configuration } = configurator;
-  const requiresConfiguration = configurator.parameters !== null;
+  const requiresConfiguration =
+    configurator.parameters !== null &&
+    methodTakesConfiguration(itemData.methodType);
 
   const isEditing = initialValues.id !== undefined;
   const isFixedAsset = initialValues.salesOrderLineType === "Fixed Asset";
@@ -1159,7 +1162,7 @@ const SalesOrderLineForm = ({
                   )}
                 </ModalCardBody>
                 <ModalCardFooter>
-                  {activeTab === "item" && (
+                  {activeTab === "item" && requiresConfiguration && (
                     <ItemConfigureButton
                       configurator={configurator}
                       isDisabled={

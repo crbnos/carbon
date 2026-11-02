@@ -14,11 +14,13 @@ import { VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { useRouteData } from "~/hooks";
 import { itemUnitSalePriceValidator } from "~/modules/items/items.models";
 import {
   getItemUnitSalePrice,
   upsertItemUnitSalePrice
 } from "~/modules/items/items.service";
+import type { ConsumableSummary } from "~/modules/items/types";
 import { ItemSalePriceForm } from "~/modules/items/ui/Item";
 import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -112,6 +114,11 @@ export default function ConsumableSalesRoute() {
     salesRuleLibrary,
     itemId
   } = useLoaderData<typeof loader>();
+  const consumableData = useRouteData<{ consumableSummary: ConsumableSummary }>(
+    path.to.consumable(itemId)
+  );
+  const isSerialTracked =
+    consumableData?.consumableSummary?.itemTrackingType === "Serial";
 
   const initialValues = {
     ...consumableUnitSalePrice,
@@ -130,6 +137,7 @@ export default function ConsumableSalesRoute() {
       <ItemSalePriceForm
         key={initialValues.itemId}
         initialValues={initialValues}
+        isSerialTracked={isSerialTracked}
       />
       <SalesRuleAssignmentsList
         itemId={itemId}

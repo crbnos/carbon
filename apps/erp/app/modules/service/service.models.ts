@@ -337,18 +337,37 @@ export const serviceJobStatusValidator = z.object({
   action: z.enum(serviceJobStatusActions, { message: "Action is required" })
 });
 
+/**
+ * Sending the estimate, as the Send modal posts it: with `notification` Email
+ * the estimate PDF goes to `customerContact`, copying `cc`.
+ */
+export const serviceJobEstimateSendFormValidator = z
+  .object({
+    notification: z.enum(["Email", "None"]).optional(),
+    customerContact: zfd.text(z.string().optional()),
+    cc: z.array(z.string()).optional()
+  })
+  .refine(
+    (data) => (data.notification === "Email" ? !!data.customerContact : true),
+    {
+      message: "Customer contact is required for email",
+      path: ["customerContact"]
+    }
+  );
+
 export const serviceJobEstimateSendValidator = z.object({
-  jobId: z.string().min(1, { message: "Job is required" })
+  jobId: z.string().min(1, { message: "Job is required" }),
+  notification: z.enum(["Email", "None"]).optional(),
+  customerContact: z.string().optional(),
+  cc: z.array(z.string()).optional(),
+  locale: z.string().default("en-US")
 });
 
-/** The customer's answer to a sent estimate, and who gave it. */
+/** The customer's answer to a sent estimate, and optionally who gave it. */
 export const serviceJobEstimateResponseValidator = z.object({
   jobId: z.string().min(1, { message: "Job is required" }),
   response: z.enum(["Accepted", "Declined"] as const, {
     message: "Response is required"
   }),
-  estimateRespondedBy: z
-    .string()
-    .trim()
-    .min(1, { message: "Customer name is required" })
+  estimateRespondedBy: zfd.text(z.string().trim().optional())
 });

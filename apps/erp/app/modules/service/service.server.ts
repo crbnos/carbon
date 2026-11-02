@@ -9,6 +9,7 @@ import { postServiceJobInput } from "@carbon/api/postings";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { getCompanyTimeZone, type Json } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import {
   datetime,
   isServiceJobLocked,
@@ -34,7 +35,10 @@ import {
   serviceJobUpdateValidator,
   serviceJobValidator
 } from "./service.models";
+import { renderServiceJobEstimatePdf } from "./service.pdf";
 import * as service from "./service.service";
+
+const logger = getLogger("erp", "service");
 
 /** A child row of a job: the job and the row's id. */
 const childRowInput = z.object({
@@ -737,15 +741,23 @@ export const deleteServiceJobEstimateLine = defineServiceFn({
  * @remarks
  * Only a Billable job has an estimate, and it needs at least one line. Marks
  * the estimate Sent now and the job Awaiting Approval. Refused when the job is
- * Completed, Invoiced or Cancelled, or the estimate is already Accepted.
+ * Completed, Invoiced or Cancelled, or the estimate is already Accepted. The
+ * estimate PDF is filed in the job's files first; when it cannot be made,
+ * nothing changes. With `notification` Email the PDF is then emailed to
+ * `customerContact` (and `cc`); when that fails the estimate is still Sent and
+ * `warning` says so. `locale` formats the PDF.
  *
+ * @param customerContact - The customer contact to email; required with Email
  * @mcp
  */
 export const sendServiceJobEstimate = defineServiceFn({
   input: serviceJobEstimateSendValidator,
   permission: { update: "service" },
 
-  async run(ctx, { jobId }) {
+  async run(ctx, { jobId, notification, customerContact, cc, locale }) {
+    if (notification === "Email" && !customerContact) {
+      return ctx.error("validation", "Customer contact is required for email");
+    }
     const job = await service.editableServiceJob(ctx, jobId);
     if (job instanceof CarbonError) return job;
     if (job.coverage !== "Billable") {
@@ -766,6 +778,31 @@ export const sendServiceJobEstimate = defineServiceFn({
     if (!lines.count) {
       return ctx.error("rule", "Add a line to the estimate before sending it");
     }
+
+    // The PDF is filed on the job before anything changes, as a quote's is on
+    // Finalize: a send that cannot produce its estimate changes nothing.
+    const rendered = await renderServiceJobEstimatePdf(ctx.asCaller.supabase, {
+      id: jobId,
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      locale
+    }).catch((err: unknown) => {
+      logger.error("Failed to render the service job estimate", {
+        companyId: ctx.company.id,
+        serviceJobId: jobId,
+        error: err
+      });
+      return null;
+    });
+    if (!rendered) {
+      return ctx.error("internal", "Failed to generate the estimate PDF");
+    }
+    const filed = await service.fileServiceJobEstimatePdf(ctx, {
+      jobId,
+      serviceJobId: rendered.estimate.serviceJobId,
+      pdf: rendered.pdf
+    });
+    if (filed instanceof CarbonError) return filed;
 
     const now = datetime.timestamp();
     const update = await ctx.asCaller.supabase
@@ -789,6 +826,95 @@ export const sendServiceJobEstimate = defineServiceFn({
     if (update.data.length === 0) {
       return ctx.error("conflict", "The job's status changed. Reload it.");
     }
+
+    if (notification !== "Email" || !customerContact) {
+      return { id: jobId, warning: null };
+    }
+    // The estimate is Sent either way; a failed email is reported, not undone.
+    try {
+      await service.emailServiceJobEstimate(ctx, {
+        serviceJobId: rendered.estimate.serviceJobId,
+        customerContactId: customerContact,
+        cc,
+        companyName: rendered.companyName,
+        total: rendered.estimate.total,
+        itemName: rendered.estimate.itemName,
+        serial: rendered.estimate.serial,
+        pdf: rendered.pdf,
+        fileName: filed.fileName
+      });
+      return { id: jobId, warning: null };
+    } catch (err) {
+      logger.error("Failed to email the service job estimate", {
+        companyId: ctx.company.id,
+        serviceJobId: jobId,
+        error: err
+      });
+      return {
+        id: jobId,
+        warning: "The estimate is marked Sent, but the email failed"
+      };
+    }
+  }
+});
+
+/**
+ * Reopen a service job's estimate, as a quote is reopened to Draft.
+ *
+ * @remarks
+ * For an estimate that is Sent, Accepted or Declined, on a job that is not
+ * Completed, Invoiced or Cancelled. The estimate goes back to Draft, so its
+ * lines and the job's bill rate can change and it can be sent again; the
+ * customer's answer is cleared. A job Awaiting Approval goes back to Open,
+ * and a Declined estimate's "not repairable" is undone. Each send files its
+ * own PDF, so the earlier ones stay in the job's files.
+ *
+ * @mcp
+ */
+export const reopenServiceJobEstimate = defineServiceFn({
+  input: z.object({ jobId: z.string().min(1) }),
+  permission: { update: "service" },
+
+  async run(ctx, { jobId }) {
+    const job = await service.editableServiceJob(ctx, jobId);
+    if (job instanceof CarbonError) return job;
+    if (
+      job.estimateStatus !== "Sent" &&
+      job.estimateStatus !== "Accepted" &&
+      job.estimateStatus !== "Declined"
+    ) {
+      return ctx.error("rule", "Only a sent or answered estimate is reopened");
+    }
+
+    const now = datetime.timestamp();
+    const update = await ctx.asCaller.supabase
+      .from("serviceJob")
+      .update({
+        estimateStatus: "Draft",
+        estimateRespondedAt: null,
+        estimateRespondedBy: null,
+        ...(job.status === "Awaiting Approval"
+          ? { status: "Open" as const }
+          : {}),
+        ...(job.estimateStatus === "Declined" ? { repairable: null } : {}),
+        updatedBy: ctx.auditUserId,
+        updatedAt: now
+      })
+      .eq("id", jobId)
+      .eq("companyId", ctx.company.id)
+      .eq("status", job.status)
+      .eq("estimateStatus", job.estimateStatus)
+      .select("id");
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to reopen the estimate",
+        update.error
+      );
+    }
+    if (update.data.length === 0) {
+      return ctx.error("conflict", "The job changed. Reload it.");
+    }
     return { id: jobId };
   }
 });
@@ -797,12 +923,13 @@ export const sendServiceJobEstimate = defineServiceFn({
  * Record the customer's answer to a sent estimate.
  *
  * @remarks
- * Accepted: the job goes back to Open, and a Fixed Price job's price becomes
- * the estimate total (each line's quantity × unit price). Declined: the unit
- * is not repaired (`repairable` false) and the job goes to In Progress, so the
- * technician can complete it and bill the evaluation time. Either way the
- * response time and the customer's name are stored. Refused unless the
- * estimate is Sent.
+ * Accepted: the repair starts, so the job goes to In Progress, and a Fixed
+ * Price job's price becomes the estimate total (each line's quantity × unit
+ * price). Declined: the unit
+ * is not repaired (`repairable` false) and the job goes back to Open, where
+ * Complete closes it and bills the evaluation time. Either way the
+ * response time is stored, and `estimateRespondedBy` (who gave the answer)
+ * when given. Refused unless the estimate is Sent.
  *
  * @mcp
  */
@@ -845,10 +972,10 @@ export const recordServiceJobEstimateResponse = defineServiceFn({
       .update({
         estimateStatus: response,
         estimateRespondedAt: now,
-        estimateRespondedBy,
+        estimateRespondedBy: estimateRespondedBy || null,
         ...(response === "Accepted"
-          ? { status: "Open" as const, fixedPrice }
-          : { status: "In Progress" as const, repairable: false }),
+          ? { status: "In Progress" as const, fixedPrice }
+          : { status: "Open" as const, repairable: false }),
         updatedBy: ctx.auditUserId,
         updatedAt: now
       })

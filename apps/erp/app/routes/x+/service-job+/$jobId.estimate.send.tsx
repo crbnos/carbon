@@ -4,11 +4,21 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
+import { getPreferenceHeaders } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
+import { serviceJobEstimateSendFormValidator } from "~/modules/service/service.models";
 
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator().request(args, { params: ["jobId"] });
+  const input = await validator(serviceJobEstimateSendFormValidator).request(
+    args,
+    { params: ["jobId"] }
+  );
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.service.sendServiceJobEstimate({ jobId: input.params.jobId });
+  // A failed email does not undo the send: the modal shows `warning`.
+  return api.service.sendServiceJobEstimate({
+    ...input.data,
+    jobId: input.params.jobId,
+    locale: getPreferenceHeaders(args.request).locale
+  });
 }

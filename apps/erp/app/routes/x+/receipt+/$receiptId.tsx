@@ -238,7 +238,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       receipt.data.supplierInteractionId,
       receipt.data.sourceDocument === "Sales Return Order"
         ? receipt.data.sourceDocumentId
-        : null
+        : null,
+      receipt.data.sourceDocument === "Sales Return Order"
+        ? (receiptLines.data ?? []).flatMap((line) =>
+            line.lineId ? [line.lineId] : []
+          )
+        : []
     )
   };
 }

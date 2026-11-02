@@ -25,7 +25,7 @@ import { useState } from "react";
 import type { z } from "zod";
 import {
   Hidden,
-  Input,
+  InputControlled,
   Item,
   Number,
   NumberControlled,
@@ -54,7 +54,8 @@ type LineType = "Labor" | "Item";
 
 /**
  * A priced line of a job's estimate. Labor is hours at the job's bill rate;
- * Item is a part or a charge item, and picking it fills in its sale price.
+ * Item is a part or a charge item, and picking it fills in its name and sale
+ * price.
  */
 const ServiceJobEstimateLineForm = ({
   initialValues,
@@ -77,6 +78,9 @@ const ServiceJobEstimateLineForm = ({
     isEditing && initialValues.itemId ? "Item" : "Labor"
   );
   const [unitPrice, setUnitPrice] = useState(initialValues.unitPrice ?? 0);
+  const [description, setDescription] = useState(
+    initialValues.description ?? ""
+  );
   const billRate =
     laborBillRate === null ? null : rateFormatter.format(laborBillRate);
   const [itemType, setItemType] = useState<MethodItemType | "Item">("Item");
@@ -159,11 +163,17 @@ const ServiceJobEstimateLineForm = ({
                     const itemId = value?.value as string | undefined;
                     if (!itemId) return;
                     const defaults = await getSalePrice(itemId);
+                    if (defaults.name) setDescription(defaults.name);
                     setUnitPrice(defaults.unitPrice);
                   }}
                 />
               )}
-              <Input name="description" label={t`Description`} />
+              <InputControlled
+                name="description"
+                label={t`Description`}
+                value={description}
+                onChange={setDescription}
+              />
               <Number
                 name="quantity"
                 label={lineType === "Labor" ? t`Hours` : t`Quantity`}

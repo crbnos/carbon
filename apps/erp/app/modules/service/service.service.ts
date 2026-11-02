@@ -29,6 +29,9 @@ import {
 } from "@carbon/database/journal-posting-status";
 import { inOrder, maybeSingle, rpcValue } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
+import { ServiceJobEstimateEmail } from "@carbon/documents/email";
+import { storage } from "@carbon/files";
+import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import {
   coverageAccountRole,
@@ -42,19 +45,24 @@ import {
   textToRichTextDoc,
   toBaseAmount
 } from "@carbon/utils";
+import { renderAsync } from "@react-email/components";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { stripSpecialCharacters } from "~/utils/string";
 import {
   diffLaborGroups,
   type LaborDimension,
   type LaborGroup,
   withoutSupersededEntries
 } from "../resources/resources.service";
-import { refreshSalesReturnOrderStatus } from "../sales/sales.service";
+import {
+  getCustomerContact,
+  refreshSalesReturnOrderStatus
+} from "../sales/sales.service";
 import {
   allocateJournalLineIds,
   createAdjustmentJournal,
@@ -64,6 +72,7 @@ import {
   resolveAccountingPeriod,
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "../shared/shared.service";
+import { getUser } from "../users/users.service";
 import type {
   customerAssetUpdateValidator,
   customerAssetValidator,
@@ -3089,5 +3098,95 @@ export async function createServiceInvoice(
       salesInvoiceId: invoice.id,
       invoiceId: readableInvoiceId
     };
+  });
+}
+
+/**
+ * Files a sent estimate's PDF in the job's files
+ * (`${companyId}/service-job/${jobId}`, the folder the job page lists), named
+ * by the job and the time it was sent so each send keeps its own copy. No
+ * `document` row: `documentSourceType` has no service job value.
+ */
+export async function fileServiceJobEstimatePdf(
+  ctx: ServiceContext,
+  args: { jobId: string; serviceJobId: string; pdf: Buffer }
+): Promise<{ fileName: string } | CarbonError> {
+  const companyId = ctx.company.id;
+  const fileName = stripSpecialCharacters(
+    `${args.serviceJobId} - Estimate - ${datetime.timestamp().slice(0, -5)}.pdf`
+  );
+  const upload = await storage(ctx.asSystem.supabase)
+    .company(companyId)
+    .upload(`${companyId}/service-job/${args.jobId}/${fileName}`, args.pdf, {
+      cacheControl: `${12 * 60 * 60}`,
+      contentType: "application/pdf",
+      upsert: true
+    });
+  if (upload.error) {
+    return ctx.error(
+      "internal",
+      "Failed to file the estimate PDF",
+      upload.error
+    );
+  }
+  return { fileName };
+}
+/**
+ * Emails a service job's estimate to a customer contact, the PDF attached,
+ * from the sending user (who is copied). Throws when the contact has no email
+ * or a record cannot be read: the caller keeps the send and reports a
+ * warning.
+ */
+export async function emailServiceJobEstimate(
+  ctx: ServiceContext,
+  args: {
+    serviceJobId: string;
+    customerContactId: string;
+    cc?: string[];
+    companyName: string;
+    total: string;
+    itemName: string | null;
+    serial: string | null;
+    pdf: Buffer;
+    fileName: string;
+  }
+) {
+  const serviceRole = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const [customerContact, user] = await Promise.all([
+    getCustomerContact(serviceRole, args.customerContactId, companyId),
+    getUser(serviceRole, ctx.auditUserId)
+  ]);
+  const recipient = customerContact.data?.contact;
+  if (!recipient?.email) throw new Error("The contact has no email address");
+  if (!user.data) throw new Error("Failed to get user");
+
+  const template = ServiceJobEstimateEmail({
+    companyName: args.companyName,
+    serviceJobId: args.serviceJobId,
+    total: args.total,
+    itemName: args.itemName,
+    serial: args.serial,
+    recipientName: recipient.firstName,
+    senderName: [user.data.firstName, user.data.lastName]
+      .filter(Boolean)
+      .join(" ")
+  });
+  const [html, text] = await Promise.all([
+    renderAsync(template),
+    renderAsync(template, { plainText: true })
+  ]);
+
+  await trigger("send-email", {
+    to: [user.data.email, recipient.email],
+    cc: args.cc?.length ? args.cc : undefined,
+    from: user.data.email,
+    subject: `Estimate ${args.serviceJobId}`,
+    html,
+    text,
+    attachments: [
+      { filename: args.fileName, content: args.pdf.toString("base64") }
+    ],
+    companyId
   });
 }

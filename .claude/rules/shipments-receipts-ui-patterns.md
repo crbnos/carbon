@@ -120,7 +120,7 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   `PrintButton`, Invoice, Post) and a `DocumentSidebar` whose Documents tab is
   `{Shipment,Receipt}Documents` — the customer/supplier, the source document, invoices
   (shipment: `getShipmentRelatedItems`; receipt: `getReceiptRelatedItems`, which also resolves a
-  sales return's customer), receipt inspections and line attachments, the shipment's packing slip
+  sales return's customer and the service jobs of its lines), receipt inspections and line attachments, the shipment's packing slip
   (only for the sources its PDF route renders: Sales Order, Sales Invoice, Purchase Order,
   Outbound Transfer, Rental Agreement, Customer Contract — `PACKING_SLIP_SOURCES`; a rental
   shipment prints as a "Delivery Ticket", one row per shipped unit with its serial number, through

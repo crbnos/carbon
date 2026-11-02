@@ -2619,6 +2619,8 @@ export const path = {
       generatePath(`${x}/service-job/${id}/coverage`),
     serviceJobEstimateLine: (jobId: string, lineId: string) =>
       generatePath(`${x}/service-job/${jobId}/estimate/${lineId}`),
+    serviceJobEstimateReopen: (id: string) =>
+      generatePath(`${x}/service-job/${id}/estimate/reopen`),
     serviceJobEstimateResponse: (id: string) =>
       generatePath(`${x}/service-job/${id}/estimate/response`),
     serviceJobEstimateSend: (id: string) =>

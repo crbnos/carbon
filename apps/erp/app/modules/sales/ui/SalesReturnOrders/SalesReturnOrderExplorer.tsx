@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  Badge,
   Button,
   cn,
   DropdownMenu,
@@ -50,11 +49,13 @@ import {
   useParams,
   useSubmit
 } from "react-router";
-import { Empty, ItemThumbnail } from "~/components";
+import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
-import ServiceJobStatus from "~/modules/service/ui/ServiceJob/ServiceJobStatus";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import { itemType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import {
@@ -67,6 +68,7 @@ import {
 import AddFromAssetsModal from "./AddFromAssetsModal";
 import ReturnableLinesModal from "./ReturnableLinesModal";
 import SalesReturnOrderLineForm from "./SalesReturnOrderLineForm";
+import SalesReturnOrderLineRelatedItems from "./SalesReturnOrderLineRelatedItems";
 import type { SalesReturnOrder, SalesReturnOrderLine } from "./types";
 
 export default function SalesReturnOrderExplorer() {
@@ -397,6 +399,14 @@ function SalesReturnOrderLineItem({
   const isSelected =
     location.pathname === path.to.salesReturnOrderLine(orderId, line.id!);
 
+  const lineItemType = line.item?.type;
+  const itemMasterLink =
+    line.itemId &&
+    lineItemType &&
+    (itemType as readonly string[]).includes(lineItemType)
+      ? getLinkToItemDetails(lineItemType as ItemType, line.itemId)
+      : null;
+
   const onLineClick = () => {
     if (!isSelected) {
       navigate(path.to.salesReturnOrderLine(orderId, line.id!));
@@ -430,18 +440,6 @@ function SalesReturnOrderLineItem({
               <span className="text-muted-foreground text-xs truncate line-clamp-1">
                 {returnTypeLabels[line.returnType]}
               </span>
-            )}
-            {serviceJob && (
-              <HStack spacing={1} className="min-w-0 flex-wrap">
-                <Link
-                  to={path.to.serviceJob(serviceJob.id)}
-                  className="text-xs font-medium whitespace-nowrap hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {serviceJob.serviceJobId}
-                </Link>
-                <ServiceJobStatus status={serviceJob.status} />
-              </HStack>
             )}
           </VStack>
         </HStack>
@@ -573,40 +571,28 @@ function SalesReturnOrderLineItem({
                   <DropdownMenuIcon icon={<LuTrash />} />
                   <Trans>Delete Line</Trans>
                 </DropdownMenuItem>
+                {itemMasterLink && (
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.view}
+                    asChild
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Link to={itemMasterLink}>
+                      <DropdownMenuIcon
+                        icon={<MethodItemTypeIcon type={lineItemType!} />}
+                      />
+                      <Trans>View Item Master</Trans>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </HStack>
         </div>
       </HStack>
       {disclosure.isOpen && (
-        <VStack
-          spacing={1}
-          className="border-b border-border px-3 py-2 text-xs"
-        >
-          <HStack className="w-full justify-between">
-            <span className="text-muted-foreground">
-              <Trans>Received</Trans>
-            </span>
-            <span className="tabular-nums">
-              {line.quantityReceived ?? 0} / {line.quantity ?? 0}
-            </span>
-          </HStack>
-          {line.returnReason?.name && (
-            <HStack className="w-full justify-between">
-              <span className="text-muted-foreground">
-                <Trans>Reason</Trans>
-              </span>
-              <span>{line.returnReason.name}</span>
-            </HStack>
-          )}
-          {line.disposition && line.disposition !== "Pending" && (
-            <HStack className="w-full justify-between">
-              <span className="text-muted-foreground">
-                <Trans>Disposition</Trans>
-              </span>
-              <Badge variant="secondary">{line.disposition}</Badge>
-            </HStack>
-          )}
+        <VStack className="border-b border-border p-1">
+          <SalesReturnOrderLineRelatedItems line={line} />
         </VStack>
       )}
       {nextStep && nextStepCopy && (

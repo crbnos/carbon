@@ -112,7 +112,8 @@ export function serviceJobPrimaryAction(
 ): ServiceJobPrimaryAction | null {
   switch (job.status) {
     case "Open":
-      return "Start";
+      // A declined estimate leaves only the evaluation to complete and bill.
+      return job.estimateStatus === "Declined" ? "Complete" : "Start";
     case "In Progress":
       return "Complete";
     case "Awaiting Approval":
